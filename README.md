@@ -67,6 +67,8 @@ Use the preset and library controls in the top bar, or supply query parameters:
 - `plan_id` selects the plan loaded at startup.
 - `language` selects the HI and planner locale.
 - `user_right` accepts `Simple`, `Advanced`, or `Master`.
+- `server_url` overrides the Rubens UI server the planner is loaded from.
+  Defaults to `https://www.roomle.com/t/bo-test/`.
 
 The page also forwards the optional feature and debug query parameters used by
 the original presets demo. Browser developer tools expose the planner as

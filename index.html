@@ -231,6 +231,7 @@
       } from 'https://unpkg.com/@roomle/embedding-lib@7.1.0/hi.js';
 
       const DEFAULT_PLAN_ID = 'ps_8jjg0zezlblb48vzn8qas9vwwn7fqbg';
+      const DEFAULT_SERVER_URL = 'https://www.roomle.com/t/bo-test/';
       const DEFAULT_PRESET = 'HI_DEV_HOMAG_DF_DEV_Testing';
       const EMBEDDING_ID = '948zg40lbmdbthwcoym0m1e4coqa55z';
       const EXTERNAL_ID_PREFIX = '__ext__obj__#';
@@ -482,6 +483,7 @@
       const options = {
         id:
           getQueryParam('plan_id') ?? selectedPreset?.planId ?? DEFAULT_PLAN_ID,
+        overrideServerUrl: getQueryParam('server_url') ?? DEFAULT_SERVER_URL,
         moc: true,
         saveToIdb: true,
         locale: language ?? externalObjectSettings.tecConfigInfo.language,

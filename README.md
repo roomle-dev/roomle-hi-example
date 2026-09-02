@@ -50,4 +50,5 @@ The agent authors article picks with a docking chain and a `placement` — one
 More: [example prompts](./docs/hi-mcp-server.md#example-prompts) ·
 [configuring the example](./docs/hi-mcp-server.md#the-example) ·
 [tool reference](./docs/hi-mcp-server.md#tool-reference) ·
-[troubleshooting](./docs/hi-mcp-server.md#troubleshooting)
+[troubleshooting](./docs/hi-mcp-server.md#troubleshooting) ·
+[PoC presentation with demo results](./docs/hi-mcp-poc-presentation.md)

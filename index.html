@@ -915,6 +915,826 @@
             button.disabled = false;
           }
         });
+
+      // MCP bridge - active only with the mcp=true query parameter. The page
+      // connects out to the MCP server in hi-mcp-server.js (which also serves
+      // this file) via SSE, executes relayed tool calls against
+      // roomDesignerApi.extended, and posts the results back.
+
+      // + 0 turns IEEE -0 into +0 so serialized values never show -0
+      const round2 = (value) => Math.round(value * 100) / 100 + 0;
+      const toRadians = (degrees) => (degrees * Math.PI) / 180;
+      const toDegrees = (radians) => (radians * 180) / Math.PI;
+      const normalizeDegrees = (degrees) => {
+        const normalized = degrees % 360;
+        return normalized < 0 ? normalized + 360 : normalized;
+      };
+
+      // The room contour is in plan space (2D floor plane); pos space is the
+      // group coordinate space of PosGroup.pos ([x, y, z], y up). The two share
+      // the x axis, and the contour y axis is the pos z axis with opposite sign.
+      const contourPointToPosSpace = (x, y) => [round2(x), round2(-y)];
+
+      // Side of the room as seen in the top-view plan image (and the default
+      // perspective view): a wall a group faces at rotationY 270 lies on the right.
+      const sideFromFacing = (facingRotationY) => {
+        const bucket = (Math.round(facingRotationY / 90) * 90) % 360;
+        if (bucket === 90) {
+          return 'left';
+        }
+        if (bucket === 180) {
+          return 'bottom';
+        }
+        if (bucket === 270) {
+          return 'right';
+        }
+        return 'top';
+      };
+
+      const deriveWalls = (room) => {
+        const contour =
+          room.levels?.find((level) => level.level === 0) ?? room.levels?.[0];
+        const segments = contour?.segments ?? [];
+        const onlyStraightSegments = segments.every(
+          (segment) => segment.cmd === 'M' || segment.cmd === 'L',
+        );
+        if (segments.length < 2 || !onlyStraightSegments) {
+          return [];
+        }
+        const walls = [];
+        for (let index = 0; index + 1 < segments.length; index++) {
+          const from = segments[index];
+          const to = segments[index + 1];
+          const directionX = to.x - from.x;
+          const directionY = to.y - from.y;
+          const length = Math.hypot(directionX, directionY);
+          if (length < 1e-6) {
+            continue;
+          }
+          // The contour runs counter-clockwise with the room interior on its
+          // left, so the interior-to-wall direction is (dy, -dx). A group
+          // standing against the wall needs its back to face that direction:
+          // atan2(-nx, ny).
+          const normalX = directionY / length;
+          const normalY = -directionX / length;
+          const facingRotationY = round2(
+            normalizeDegrees(toDegrees(Math.atan2(-normalX, normalY))),
+          );
+          walls.push({
+            index,
+            side: sideFromFacing(facingRotationY),
+            start: contourPointToPosSpace(from.x, from.y),
+            end: contourPointToPosSpace(to.x, to.y),
+            lengthMm: round2(length),
+            type: to.type,
+            heightMm: to.height,
+            thicknessMm: to.thickness,
+            facingRotationY,
+          });
+        }
+        return walls;
+      };
+
+      const transformPointByMatrix = (matrix, point) => {
+        const [x, y, z] = point;
+        return [
+          matrix[0] * x + matrix[4] * y + matrix[8] * z + matrix[12],
+          matrix[1] * x + matrix[5] * y + matrix[9] * z + matrix[13],
+          matrix[2] * x + matrix[6] * y + matrix[10] * z + matrix[14],
+        ];
+      };
+
+      const transformPointByRoot = (root, point) => {
+        const theta = toRadians(root.rotationY ?? 0);
+        const [translationX, translationY, translationZ] = root.articlePos ?? [
+          0, 0, 0,
+        ];
+        const [x, y, z] = point;
+        return [
+          translationX + x * Math.cos(theta) + z * Math.sin(theta),
+          translationY + y,
+          translationZ - x * Math.sin(theta) + z * Math.cos(theta),
+        ];
+      };
+
+      const collectParts = (module, parts) => {
+        for (const part of module.parts ?? []) {
+          if (
+            !part.hidden &&
+            (part.relPos?.length ?? 0) >= 3 &&
+            (part.dim?.length ?? 0) >= 3 &&
+            part.fullMatrix?.length === 16
+          ) {
+            parts.push(part);
+          }
+        }
+        for (const subModule of module.modules ?? []) {
+          collectParts(subModule, parts);
+        }
+        for (const container of module.containers ?? []) {
+          collectParts(container, parts);
+        }
+      };
+
+      const boxCorners = (minimum, size) => {
+        const corners = [];
+        for (const offsetX of [0, size[0]]) {
+          for (const offsetY of [0, size[1]]) {
+            for (const offsetZ of [0, size[2]]) {
+              corners.push([
+                minimum[0] + offsetX,
+                minimum[1] + offsetY,
+                minimum[2] + offsetZ,
+              ]);
+            }
+          }
+        }
+        return corners;
+      };
+
+      const dimensionAttribute = (root, attributeId) => {
+        const value = Number(
+          root.attributes?.find((attribute) => attribute.id === attributeId)
+            ?.value,
+        );
+        return Number.isFinite(value) && value > 0 ? value : undefined;
+      };
+
+      const rootFootprintPoints = (root, partMatricesAreGroupSpace) => {
+        const parts = [];
+        collectParts(root, parts);
+        const points = [];
+        for (const part of parts) {
+          for (const corner of boxCorners(part.relPos, part.dim)) {
+            let point = transformPointByMatrix(part.fullMatrix, corner);
+            if (!partMatricesAreGroupSpace) {
+              point = transformPointByRoot(root, point);
+            }
+            points.push([point[0], point[2]]);
+          }
+        }
+        if (points.length > 0) {
+          return points;
+        }
+        for (const dockInfo of root.dockInfos ?? []) {
+          for (const dockPoint of [dockInfo.start, dockInfo.end]) {
+            if ((dockPoint?.length ?? 0) >= 3) {
+              const point = transformPointByRoot(root, [
+                dockPoint[0],
+                dockPoint[1],
+                dockPoint[2],
+              ]);
+              points.push([point[0], point[2]]);
+            }
+          }
+        }
+        if (points.length > 0) {
+          return points;
+        }
+        const width = dimensionAttribute(root, 'b');
+        const depth = dimensionAttribute(root, 't');
+        if (width !== undefined && depth !== undefined) {
+          for (const corner of boxCorners([0, 0, 0], [width, 0, depth])) {
+            const point = transformPointByRoot(root, corner);
+            points.push([point[0], point[2]]);
+          }
+        }
+        return points;
+      };
+
+      const groupFootprint = (group) => {
+        const partMatricesAreGroupSpace = (group.ver ?? 0) > 0;
+        const points = [];
+        for (const root of group.roots ?? []) {
+          points.push(...rootFootprintPoints(root, partMatricesAreGroupSpace));
+        }
+        if (points.length === 0) {
+          return undefined;
+        }
+        let minX = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let minZ = Number.POSITIVE_INFINITY;
+        let maxZ = Number.NEGATIVE_INFINITY;
+        for (const [x, z] of points) {
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          minZ = Math.min(minZ, z);
+          maxZ = Math.max(maxZ, z);
+        }
+        return {
+          x: [round2(minX), round2(maxX)],
+          z: [round2(minZ), round2(maxZ)],
+          widthMm: round2(maxX - minX),
+          depthMm: round2(maxZ - minZ),
+        };
+      };
+
+      // A side label as alignment means: flush into the corner this wall
+      // shares with the wall on that side of the room.
+      const resolveWallAlignment = (wall, alignment) => {
+        if (
+          alignment === 'start' ||
+          alignment === 'center' ||
+          alignment === 'end'
+        ) {
+          return alignment;
+        }
+        const axis = alignment === 'left' || alignment === 'right' ? 0 : 1;
+        const startCoordinate = wall.start[axis];
+        const endCoordinate = wall.end[axis];
+        if (Math.abs(startCoordinate - endCoordinate) < 1e-6) {
+          throw new Error(
+            `Alignment '${alignment}' runs parallel to this '${wall.side}' wall - ` +
+              "use 'start', 'center', 'end' or the side of an adjoining wall.",
+          );
+        }
+        const smallerIsCloser = alignment === 'left' || alignment === 'top';
+        const startIsCloser = smallerIsCloser
+          ? startCoordinate < endCoordinate
+          : startCoordinate > endCoordinate;
+        return startIsCloser ? 'start' : 'end';
+      };
+
+      const placeAgainstWall = (wall, footprint, alignment, offsetMm) => {
+        const resolvedAlignment = resolveWallAlignment(wall, alignment);
+        const [startX, startZ] = wall.start;
+        const [endX, endZ] = wall.end;
+        const length = Math.hypot(endX - startX, endZ - startZ);
+        const alongX = (endX - startX) / length;
+        const alongZ = (endZ - startZ) / length;
+        const width = footprint.widthMm;
+        let spanStart;
+        if (resolvedAlignment === 'start') {
+          spanStart = offsetMm;
+        } else if (resolvedAlignment === 'end') {
+          spanStart = length - width - offsetMm;
+        } else {
+          spanStart = (length - width) / 2 + offsetMm;
+        }
+        // The group's local x axis runs against the wall direction, so the
+        // group origin corner sits at the far end of the occupied span.
+        const anchorX = startX + alongX * (spanStart + width);
+        const anchorZ = startZ + alongZ * (spanStart + width);
+        const theta = toRadians(wall.facingRotationY);
+        const [minX] = footprint.x;
+        const [minZ] = footprint.z;
+        return {
+          pos: [
+            round2(anchorX - (minX * Math.cos(theta) + minZ * Math.sin(theta))),
+            0,
+            round2(
+              anchorZ - (-minX * Math.sin(theta) + minZ * Math.cos(theta)),
+            ),
+          ],
+          rotationY: wall.facingRotationY,
+        };
+      };
+
+      const DIMENSION_ATTRIBUTE_IDS = [
+        'b',
+        'h',
+        't',
+        'mod_Width',
+        'mod_Height',
+        'mod_Depth',
+      ];
+
+      const compactArticle = (article) => ({
+        articleId: article.articleId,
+        articleName: article.articleName,
+        desc: article.desc,
+        imageUrl: article.imageUrl,
+        category: article.category,
+        libraryId: article.libraryId,
+        catalog: article.catalog,
+        rootModules: (article.roots ?? []).map((root) => ({
+          name: root.name,
+          dimensions: Object.fromEntries(
+            (root.attributes ?? [])
+              .filter((attribute) =>
+                DIMENSION_ATTRIBUTE_IDS.includes(attribute.id),
+              )
+              .map((attribute) => [attribute.id, attribute.value]),
+          ),
+        })),
+      });
+
+      const stripCalculatedGeometry = (module) => {
+        delete module.parts;
+        (module.modules ?? []).forEach(stripCalculatedGeometry);
+        (module.containers ?? []).forEach(stripCalculatedGeometry);
+      };
+
+      const shapeGroup = (group) => {
+        const shaped = JSON.parse(JSON.stringify(group));
+        delete shaped.contours;
+        // repositioning data is applied exactly once on load; stripping it
+        // here guarantees the field only ever reaches the planner when the
+        // agent authored it deliberately in a new payload
+        delete shaped.repositioningData;
+        shaped.footprint = groupFootprint(group);
+        (shaped.roots ?? []).forEach(stripCalculatedGeometry);
+        return shaped;
+      };
+
+      const shapeRooms = (rooms) => {
+        if (!rooms) {
+          return rooms;
+        }
+        return {
+          ...rooms,
+          rooms: (rooms.rooms ?? []).map((room) => ({
+            ...room,
+            walls: deriveWalls(room),
+          })),
+        };
+      };
+
+      const isArticlePickOnly = (root) =>
+        !root?.posData && !root?.modules && !root?.parts;
+
+      // A root authored by the agent is just an article pick (id, articleId,
+      // optional attribute overrides and docking contextData). The glue logic
+      // completes it from the article template; here the article id is
+      // validated against the catalog so the agent gets a helpful error
+      // instead of a half-calculated group.
+      const validateArticlePickIds = async (api, posGroups) => {
+        const articlePicks = posGroups.flatMap((group) =>
+          (group?.roots ?? []).filter(isArticlePickOnly),
+        );
+        if (articlePicks.length === 0) {
+          return;
+        }
+        const context = await api.extended.getExternalObjectPlanContext([
+          'articles',
+        ]);
+        const articles = context.articles ?? [];
+        for (const root of articlePicks) {
+          const article = articles.find(
+            (candidate) =>
+              candidate.articleId === root.articleId &&
+              (!root.libraryId || candidate.libraryId === root.libraryId),
+          );
+          if (!article) {
+            const validIds = articles.map((candidate) => candidate.articleId);
+            throw new Error(
+              `articleId '${root.articleId}' is not in the article catalog. ` +
+                `Valid article ids: ${validIds.slice(0, 100).join(', ')}`,
+            );
+          }
+        }
+      };
+
+      const WALL_SIDES = ['left', 'right', 'top', 'bottom'];
+      const ALIGNMENTS = ['start', 'center', 'end', ...WALL_SIDES];
+
+      const resolveWall = (rooms, spec) => {
+        const roomIndex = spec.roomIndex ?? 0;
+        const room = rooms[roomIndex];
+        if (!room) {
+          throw new Error(
+            `Room index ${roomIndex} not found - the plan has ${rooms.length} room(s).`,
+          );
+        }
+        const walls = deriveWalls(room);
+        let wall;
+        if (typeof spec.wall === 'number') {
+          wall = walls.find((candidate) => candidate.index === spec.wall);
+        } else if (typeof spec.wall === 'string') {
+          // side label: the longest real wall on that side of the room
+          wall = walls
+            .filter(
+              (candidate) =>
+                candidate.side === spec.wall && candidate.type === 'wall',
+            )
+            .sort((a, b) => b.lengthMm - a.lengthMm)[0];
+        }
+        if (!wall) {
+          throw new Error(
+            `Wall '${spec.wall}' not found. Pass a side label (left/right/top/bottom) or a wall index. ` +
+              'Available walls: ' +
+              JSON.stringify(walls),
+          );
+        }
+        // fails early on an alignment that runs parallel to the wall
+        resolveWallAlignment(wall, spec.alignment ?? 'center');
+        return wall;
+      };
+
+      const placeGroupAtWall = (group, wall, spec) => {
+        const footprint = groupFootprint(group);
+        if (!footprint) {
+          throw new Error(
+            `Group '${group.id}' has no geometry to derive a footprint from.`,
+          );
+        }
+        const placement = placeAgainstWall(
+          wall,
+          footprint,
+          spec.alignment ?? 'center',
+          spec.offsetMm ?? 0,
+        );
+        return { ...placement, footprint };
+      };
+
+      const mcpToolExecutors = {
+        'get-plan-context': async (api, args) => {
+          const context = await api.extended.getExternalObjectPlanContext(
+            args.include,
+          );
+          return {
+            masterData: context.masterData,
+            rooms: shapeRooms(context.rooms),
+            articles: context.articles?.map(compactArticle),
+            groups: context.groups?.map(shapeGroup),
+          };
+        },
+
+        'create-or-replace-groups': async (api, args) => {
+          const posGroups = args.posGroups;
+          const validationErrors = [];
+          posGroups.forEach((group, groupIndex) => {
+            if (!Array.isArray(group?.roots) || group.roots.length === 0) {
+              validationErrors.push(
+                `posGroups[${groupIndex}]: needs a non-empty roots array`,
+              );
+              return;
+            }
+            const rootIds = new Set();
+            group.roots.forEach((root, rootIndex) => {
+              const requiredFields = isArticlePickOnly(root)
+                ? ['id', 'articleId']
+                : ['id', 'libraryId', 'name'];
+              for (const field of requiredFields) {
+                const value = root?.[field];
+                if (typeof value !== 'string' || value.length === 0) {
+                  validationErrors.push(
+                    `posGroups[${groupIndex}].roots[${rootIndex}]: ${field} must be a non-empty string` +
+                      (field === 'articleId'
+                        ? ' (an article id from the catalog)'
+                        : ''),
+                  );
+                }
+              }
+              if (
+                isArticlePickOnly(root) &&
+                (root?.articlePos !== undefined || root?.rotationY !== undefined)
+              ) {
+                validationErrors.push(
+                  `posGroups[${groupIndex}].roots[${rootIndex}]: do not set articlePos/rotationY - ` +
+                    'all positions are computed by the planner; relate roots with docking contextData instead',
+                );
+              }
+              const rootId = root?.id;
+              if (typeof rootId === 'string' && rootId.length > 0) {
+                if (rootIds.has(rootId)) {
+                  validationErrors.push(
+                    `posGroups[${groupIndex}].roots[${rootIndex}]: duplicate root id '${rootId}' - every root id must be unique within its group`,
+                  );
+                }
+                rootIds.add(rootId);
+              }
+            });
+            if (group.roots.length > 1) {
+              const dockedRootIds = new Set();
+              for (const root of group.roots) {
+                for (const dockedContext of root?.contextData?.dockedRoots ??
+                  []) {
+                  if (dockedContext?.dockedRoots?.length) {
+                    dockedRootIds.add(root.id);
+                  }
+                  for (const dockedRoot of dockedContext?.dockedRoots ?? []) {
+                    dockedRootIds.add(dockedRoot?.id);
+                  }
+                }
+              }
+              const undockedPicks = group.roots.filter(
+                (root) => isArticlePickOnly(root) && !dockedRootIds.has(root.id),
+              );
+              const undockedLimit = dockedRootIds.size === 0 ? 1 : 0;
+              if (undockedPicks.length > undockedLimit) {
+                const ids = undockedPicks.map((root) => `'${root.id}'`);
+                validationErrors.push(
+                  `posGroups[${groupIndex}]: roots ${ids.join(', ')} are not related by docking - ` +
+                    'undocked roots all land at the same spot and look like a single unit. Give every ' +
+                    'additional root a contextData entry, e.g. to place root B directly right of root A: ' +
+                    '{ "id": "B", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "LeftBottom", ' +
+                    '"dockedRoots": [{ "id": "A", "dockingVector": "RightBottom", "mode": "StartStart", ' +
+                    '"offset": [0, 0, 0] }] }] } }',
+                );
+              }
+            }
+            const placement = group.placement;
+            if (placement !== undefined) {
+              const wallValid =
+                (typeof placement?.wall === 'string' &&
+                  WALL_SIDES.includes(placement.wall)) ||
+                (typeof placement?.wall === 'number' &&
+                  Number.isInteger(placement.wall) &&
+                  placement.wall >= 0);
+              if (!wallValid) {
+                validationErrors.push(
+                  `posGroups[${groupIndex}].placement: wall must be a side label (${WALL_SIDES.join('/')}) or a wall index`,
+                );
+              }
+              if (
+                placement?.alignment !== undefined &&
+                !ALIGNMENTS.includes(placement.alignment)
+              ) {
+                validationErrors.push(
+                  `posGroups[${groupIndex}].placement: alignment must be one of ${ALIGNMENTS.join(', ')}`,
+                );
+              }
+            }
+            if (
+              placement !== undefined &&
+              group.repositioningData !== undefined
+            ) {
+              validationErrors.push(
+                `posGroups[${groupIndex}]: use either placement or repositioningData, not both`,
+              );
+            }
+          });
+          if (validationErrors.length > 0) {
+            throw new Error(
+              'Invalid pos groups - nothing was loaded:\n' +
+                validationErrors.join('\n') +
+                '\nFetch the payload format with the get-authoring-rules tool.',
+            );
+          }
+          await validateArticlePickIds(api, posGroups);
+
+          // Declarative wall placements: resolve the walls before anything is
+          // loaded (so a bad wall fails the whole call), remember which input
+          // groups carry one, apply them after the calculation when the
+          // footprints exist. New group ids are regenerated by the planner, so
+          // created groups are matched to their placements by order of
+          // appearance.
+          const placementSpecs = new Map();
+          const preContext = await api.extended.getExternalObjectPlanContext([
+            'rooms',
+            'groups',
+          ]);
+          const rooms = preContext.rooms?.rooms ?? [];
+          const beforeGroupIds = new Set(
+            (preContext.groups ?? []).map((group) => group.id),
+          );
+          posGroups.forEach((group, groupIndex) => {
+            if (group.placement !== undefined) {
+              const spec = group.placement;
+              placementSpecs.set(groupIndex, {
+                spec,
+                wall: resolveWall(rooms, spec),
+              });
+              delete group.placement;
+            }
+          });
+
+          const loaded = await api.extended.loadExternalObjectGroupLayout(
+            { posGroups },
+            'posGroups',
+            // 'adjusted' makes the planner re-apply the group pos/rotationY
+            // when a group is replaced; without it a replace keeps the old
+            // position.
+            { reason: 'adjusted' },
+          );
+          if (!loaded || loaded.length === 0) {
+            throw new Error(
+              'No groups were created or replaced. Check that each root module name is a master-data ' +
+                'module id and the articleId comes from the article catalog (see get-plan-context), ' +
+                'and that the payload follows the rules returned by get-authoring-rules.',
+            );
+          }
+          let context = await api.extended.getExternalObjectPlanContext([
+            'groups',
+          ]);
+
+          if (placementSpecs.size > 0) {
+            const afterGroups = context.groups ?? [];
+            const newGroupIds = afterGroups
+              .map((group) => group.id)
+              .filter((id) => !beforeGroupIds.has(id));
+            const placedGroups = [];
+            let newGroupCursor = 0;
+            posGroups.forEach((group, groupIndex) => {
+              const isReplace = group.id && beforeGroupIds.has(group.id);
+              const resultGroupId = isReplace
+                ? group.id
+                : newGroupIds[newGroupCursor++];
+              const placementEntry = placementSpecs.get(groupIndex);
+              if (!placementEntry) {
+                return;
+              }
+              const resultGroup = afterGroups.find(
+                (candidate) => candidate.id === resultGroupId,
+              );
+              if (!resultGroup) {
+                return;
+              }
+              const placement = placeGroupAtWall(
+                resultGroup,
+                placementEntry.wall,
+                placementEntry.spec,
+              );
+              const placedGroup = JSON.parse(JSON.stringify(resultGroup));
+              delete placedGroup.contours;
+              delete placedGroup.repositioningData;
+              placedGroup.pos = placement.pos;
+              placedGroup.rotationY = placement.rotationY;
+              placedGroups.push(placedGroup);
+            });
+            if (placedGroups.length > 0) {
+              await api.extended.loadExternalObjectGroupLayout(
+                { posGroups: placedGroups },
+                'posGroups',
+                { reason: 'adjusted' },
+              );
+              context = await api.extended.getExternalObjectPlanContext([
+                'groups',
+              ]);
+            }
+          }
+
+          const groups = context.groups?.map(shapeGroup);
+          const replacedInputIds = new Set(
+            posGroups
+              .map((group) => group.id)
+              .filter((id) => id && beforeGroupIds.has(id)),
+          );
+          const unpositionedGroupIds = (groups ?? [])
+            .filter(
+              (group) =>
+                group.pos === undefined &&
+                (!beforeGroupIds.has(group.id) || replacedInputIds.has(group.id)),
+            )
+            .map((group) => group.id);
+          return {
+            loaded,
+            groups,
+            ...(unpositionedGroupIds.length > 0 && {
+              hint:
+                `Groups ${unpositionedGroupIds.join(', ')} are not positioned yet and sit at the plan origin. ` +
+                'Give the group a placement ({ wall, alignment?, offsetMm? }) in create-or-replace-groups ' +
+                'or call place-group to stand it against a wall.',
+            }),
+          };
+        },
+
+        'place-group': async (api, args) => {
+          const groupId = args.groupId;
+          const wallArg = args.wall ?? args.wallIndex;
+          const roomIndex = args.roomIndex ?? 0;
+          const alignment = args.alignment ?? 'center';
+          const offsetMm = args.offsetMm ?? 0;
+          const context = await api.extended.getExternalObjectPlanContext([
+            'rooms',
+            'groups',
+          ]);
+          const groups = context.groups ?? [];
+          let group = groups.find((candidate) => candidate.id === groupId);
+          if (!group && groupId) {
+            const prefixMatches = groups.filter((candidate) =>
+              candidate.id.startsWith(groupId),
+            );
+            if (prefixMatches.length === 1) {
+              group = prefixMatches[0];
+            }
+          }
+          if (!group) {
+            const groupIds = groups.map((candidate) => candidate.id);
+            throw new Error(
+              `Group '${groupId}' not found. Groups in the plan: ` +
+                `${groupIds.join(', ') || 'none'}.`,
+            );
+          }
+          const rooms = context.rooms?.rooms ?? [];
+          const spec = { wall: wallArg, alignment, offsetMm, roomIndex };
+          const wall = resolveWall(rooms, spec);
+          const placement = placeGroupAtWall(group, wall, spec);
+          const placedGroup = JSON.parse(JSON.stringify(group));
+          delete placedGroup.contours;
+          delete placedGroup.repositioningData;
+          placedGroup.pos = placement.pos;
+          placedGroup.rotationY = placement.rotationY;
+          const loaded = await api.extended.loadExternalObjectGroupLayout(
+            { posGroups: [placedGroup] },
+            'posGroups',
+            { reason: 'adjusted' },
+          );
+          if (!loaded || loaded.length === 0) {
+            throw new Error(
+              `Group '${groupId}' could not be reloaded at the new position.`,
+            );
+          }
+          const after = await api.extended.getExternalObjectPlanContext([
+            'groups',
+          ]);
+          const resultGroup = (after.groups ?? []).find(
+            (candidate) => candidate.id === group.id,
+          );
+          return {
+            pos: placement.pos,
+            rotationY: placement.rotationY,
+            footprint: placement.footprint,
+            wall,
+            group: resultGroup ? shapeGroup(resultGroup) : undefined,
+          };
+        },
+
+        'update-attribute': async (api, args) => {
+          await api.extended.updateExternalObjectGroupAttribute(
+            args.rootModuleId,
+            args.moduleId ?? null,
+            args.attributeId,
+            args.value,
+          );
+          return { ok: true };
+        },
+
+        'get-price': async (api) => {
+          return api.extended.fetchPrice();
+        },
+
+        'get-order-data': async (api) => {
+          const snapshot = await api.extended.getExternalObjectSnapshot({
+            orderData: true,
+          });
+          return snapshot?.orderData ?? null;
+        },
+
+        'get-plan-images': async (api) => {
+          const snapshot = await api.extended.getExternalObjectSnapshot({
+            perspectiveImage: true,
+            topImage: true,
+          });
+          return {
+            perspectiveImage: snapshot?.perspectiveImage,
+            topImage: snapshot?.topImage,
+          };
+        },
+      };
+
+      const startMcpBrowserBridge = (api) => {
+        const bridgeUrl = `/bridge?url=${encodeURIComponent(window.location.href)}`;
+        const reply = (result) =>
+          fetch('/bridge/result', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(result),
+          }).catch((error) => console.error('[hi-mcp] reply failed', error));
+        const connect = () => {
+          const source = new EventSource(bridgeUrl);
+          source.onopen = () =>
+            logMessage('MCP', 'connected to the MCP server');
+          source.onmessage = async (event) => {
+            let message;
+            try {
+              message = JSON.parse(event.data);
+            } catch {
+              return;
+            }
+            if (message.kind !== 'call') {
+              return;
+            }
+            const executor = mcpToolExecutors[message.tool];
+            if (!executor) {
+              reply({
+                kind: 'result',
+                id: message.id,
+                ok: false,
+                error: `Unknown tool: ${message.tool}`,
+              });
+              return;
+            }
+            logApiCall(`MCP ${message.tool}`);
+            try {
+              const result = await executor(api, message.args);
+              reply({ kind: 'result', id: message.id, ok: true, result });
+            } catch (error) {
+              console.error('[hi-mcp] tool failed', message.tool, error);
+              reply({
+                kind: 'result',
+                id: message.id,
+                ok: false,
+                error: error instanceof Error ? error.message : String(error),
+              });
+            }
+          };
+          // EventSource reconnects on its own; only a closed source (the
+          // server was gone) needs a manual restart
+          source.onerror = () => {
+            if (source.readyState === EventSource.CLOSED) {
+              source.close();
+              setTimeout(connect, 3000);
+            }
+          };
+        };
+        connect();
+      };
+
+      if (getQueryParam('mcp') === 'true') {
+        startMcpBrowserBridge(roomDesignerApi);
+      }
     </script>
   </body>
 </html>

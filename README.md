@@ -5,16 +5,52 @@ contains the complete interface and browser JavaScript in one
 [`index.html`](./index.html), requires no build step, and loads only
 `@roomle/embedding-lib@7.1.0` from unpkg.
 
+The repository also carries an optional MCP server
+([`hi-mcp-server.js`](./hi-mcp-server.js)) so an AI agent can orchestrate HI
+object groups in the live session — a standalone, zero-dependency variant of
+the roomle-ui repository's `packages/embedding-lib/examples/hi-mcp-server/`
+PoC ([RML-17693](https://roomle.atlassian.net/browse/RML-17693)).
+
 ## Run it
 
-Serve this directory over HTTP so browser ES module imports work:
+One process serves the example and hosts the MCP server (Node 18+, no
+`npm install`, no build):
 
 ```bash
-cd packages/embedding-lib/docs/hi-presets-example
-npx http-server -c-1 -p 39485
+npm start          # or directly: node hi-mcp-server.js
 ```
 
-Then open <http://127.0.0.1:39485>.
+It opens the example in the default browser at
+<http://localhost:3100/?mcp=true> (pass `--no-open` to skip that). Opening
+the page without the `mcp=true` query parameter runs the example without the
+MCP bridge.
+
+Without the MCP part the directory can still be served by any static file
+server (e.g. `npx http-server -c-1 -p 39485`); only the `mcp=true` bridge
+requires the page to be served by `hi-mcp-server.js`.
+
+## Connect an AI agent (MCP)
+
+The MCP endpoint is `http://localhost:3100/mcp` (Streamable HTTP). Register it
+in any MCP client, e.g. Claude Code:
+
+```bash
+claude mcp add --transport http --scope user hi-orchestrator http://localhost:3100/mcp
+```
+
+Open the example with `?mcp=true` and keep the tab open — the server terminal
+logs `page connected`, and the agent's tool calls (get-plan-context,
+create-or-replace-groups, place-group, update-attribute, get-price,
+get-order-data, get-plan-images) run in the page against
+`roomDesignerApi.extended`. Tool reference, client configuration for other
+agents, authoring rules, and troubleshooting: see the README of the source
+PoC in the roomle-ui repository
+(`packages/embedding-lib/examples/hi-mcp-server/`).
+
+`hi-mcp-server.js` has no dependencies: the MCP protocol layer (JSON-RPC over
+HTTP) is hand-rolled, and the page bridge uses SSE + `fetch` instead of a
+WebSocket. The tool executors and placement geometry live in the MCP section
+at the end of [`index.html`](./index.html).
 
 ## Configure it
 

@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>HI Presets Example</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+
+  <body>
+    <style>
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      #top-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 10px;
+        background-color: #e8e8e8;
+        font-family: sans-serif;
+        font-size: 12px;
+        border-bottom: 1px solid #ccc;
+        flex-wrap: wrap;
+      }
+      #top-bar label {
+        flex-shrink: 0;
+      }
+      #top-bar select,
+      #top-bar input[type='text'] {
+        padding: 2px 4px;
+      }
+      #top-bar button {
+        padding: 4px 8px;
+      }
+      .top-bar-group {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .top-bar-separator {
+        width: 1px;
+        height: 20px;
+        background-color: #aaa;
+        margin: 0 4px;
+      }
+      #price-display {
+        margin-left: auto;
+        font-weight: 600;
+      }
+      #price-value {
+        display: inline-block;
+        min-width: 70px;
+        text-align: right;
+      }
+      .container {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+      }
+      .left-section,
+      .right-section {
+        box-sizing: border-box;
+        overflow: auto;
+      }
+      .left-section {
+        padding: 10px;
+        flex: 1;
+        background-color: #f0f0f0;
+        display: none;
+        flex-direction: column;
+      }
+      .right-section {
+        flex: 3;
+        background-color: #fff;
+        position: relative;
+        overflow: hidden;
+      }
+      #tc-area {
+        box-sizing: border-box;
+      }
+      #ui-elements,
+      #console-ui-elements,
+      #console-log-control-elements,
+      #console-log {
+        margin-top: 10px;
+      }
+      #console-log {
+        text-align: left;
+        font-family: sans-serif;
+      }
+      #designer {
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      #designer iframe {
+        border: 0;
+        border-bottom: 1px solid #e7e7e7;
+        border-top: 1px solid #e7e7e7;
+      }
+      #overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #fff;
+        z-index: 1000;
+        overflow-y: scroll;
+      }
+      #overlay h2 {
+        padding-left: 1rem;
+      }
+      .hidden {
+        display: none;
+      }
+      #designer-container {
+        position: relative;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .item {
+        padding-left: 16px;
+      }
+    </style>
+
+    <div id="app">
+      <div id="top-bar">
+        <div class="top-bar-group">
+          <label for="preset-select">Preset:</label>
+          <select id="preset-select"></select>
+        </div>
+        <div class="top-bar-group">
+          <label for="library-id-input">Library ID:</label>
+          <input
+            type="text"
+            id="library-id-input"
+            placeholder="Enter library ID"
+          />
+        </div>
+        <button id="reload-config">Reload with config</button>
+        <div class="top-bar-separator"></div>
+        <button id="send-to-om">Send to OM</button>
+        <div class="top-bar-group">
+          <input type="checkbox" id="send-to-om-with-price" checked />
+          <label for="send-to-om-with-price">With price</label>
+        </div>
+        <div class="top-bar-separator"></div>
+        <div class="top-bar-group">
+          <input type="checkbox" id="toggle-panel" />
+          <label for="toggle-panel">Show panel</label>
+        </div>
+        <div id="price-display" class="top-bar-group" aria-live="polite">
+          <span>Price:</span>
+          <strong id="price-value">-</strong>
+        </div>
+      </div>
+      <div class="container">
+        <div class="left-section">
+          <div id="tc-area">
+            <div id="ui-elements"></div>
+            <div id="console-ui-elements">
+              <button
+                id="get-snapshot"
+                title="Generates and downloads current data and assets of the planning situation. Does not store any data in the database"
+              >
+                Get snapshot
+              </button>
+              <button
+                id="get-plan-xml"
+                title="Generates and downloads the current plan XML. Does not store any data in the database"
+              >
+                Get plan XML
+              </button>
+              <button
+                id="download-room-contours"
+                title="Generates order data and downloads only the room contour information"
+              >
+                Download room contours
+              </button>
+              <button id="load-plan-xml" title="Loads a plan XML from a file">
+                Load plan XML
+              </button>
+              <button
+                id="save-snapshot"
+                title="Save the current data and assets of the planning situation to the data store, then return the URLs to the assets"
+              >
+                Save snapshot
+              </button>
+              <button id="calc-price">Calc Price</button>
+              <button id="download-om-data">Download OM data</button>
+            </div>
+            <div id="console-log-control-elements">
+              <button id="console-clear" title="Clears the log">Clear</button>
+            </div>
+            <div id="console-log"></div>
+          </div>
+        </div>
+        <div class="right-section">
+          <div id="overlay" class="hidden"></div>
+          <div id="designer">
+            <div id="designer-container"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@7.1.0';
+      import {
+        libLoadArticleCatalog,
+        libLoadCalcScript,
+        libLoadMasterData,
+        omGetRequest,
+        omPostRequest,
+        setupHi,
+      } from 'https://unpkg.com/@roomle/embedding-lib@7.1.0/hi.js';
+
+      const DEFAULT_PLAN_ID = 'ps_8jjg0zezlblb48vzn8qas9vwwn7fqbg';
+      const DEFAULT_PRESET = 'HI_DEV_HOMAG_DF_DEV_Testing';
+      const EMBEDDING_ID = '948zg40lbmdbthwcoym0m1e4coqa55z';
+      const EXTERNAL_ID_PREFIX = '__ext__obj__#';
+      const FAKE_ROOT_TAG = 'external:root-tag';
+      const HI_AUTH_DATA = `Basic ${btoa('test:6mABjMDnEq4tvaN')}`;
+      const HI_SERVER_BASE_URL = 'https://dfscfgtest01-app.azurewebsites.net';
+      const HI_ROOT_TAGS = [
+        `${EXTERNAL_ID_PREFIX}${FAKE_ROOT_TAG}`,
+        'g1a15v0676q3kgibgvu7pqf1nsdykd',
+      ];
+      const externalObjectSettings = {
+        enableArrangementCorrection: true,
+        uiConfiguration: {
+          userRight: 'Simple',
+          showPossibleSubModules: true,
+          animatedOpenClose: false,
+          showThumbnails: true,
+        },
+        materialConfiguration: {
+          defaultMaterial: 'roomle_script_test:gray_transparent',
+        },
+        debugConfiguration: { createDebugGeometry: false },
+        tecConfigInfo: {
+          language: 'en-US,en',
+        },
+      };
+
+      const getQueryParam = (name) =>
+        new URLSearchParams(window.location.search).get(name);
+      const queryParamBoolean = (value) => value === 'true';
+      const queryParamNumber = (value) => {
+        const numberValue = Number(value);
+        return Number.isNaN(numberValue) ? undefined : numberValue;
+      };
+      const setOptionFromQueryParam = (
+        target,
+        property,
+        mapValue = (value) => value,
+        defaultValue = undefined,
+      ) => {
+        const queryValue = getQueryParam(property);
+        if (queryValue === null) {
+          return;
+        }
+        const value = mapValue(queryValue);
+        if (value !== undefined && value !== null) {
+          target[property] = value;
+        } else if (defaultValue !== undefined) {
+          target[property] = defaultValue;
+        }
+      };
+      const logInUi = (area, message) => {
+        const log = document.getElementById('console-log');
+        const entry = document.createElement('div');
+        entry.innerText = `${area}: ${message}`;
+        log.prepend(entry);
+      };
+      const logMessage = (message, detail = '') => {
+        console.log('LOG:', message, detail);
+        logInUi('LOG', detail ? `${message}: ${detail}` : message);
+      };
+      const logApiCall = (message) => {
+        console.log('API CALL:', message);
+        logInUi('API CALL', message);
+      };
+      const logLink = (message, linkUrl) => {
+        const log = document.getElementById('console-log');
+        const entry = document.createElement('div');
+        const link = document.createElement('a');
+        entry.innerText = `LOG: ${message}: `;
+        link.href = linkUrl;
+        link.innerText = linkUrl;
+        link.target = '_blank';
+        entry.appendChild(link);
+        log.prepend(entry);
+      };
+      const downloadBlob = (blob, filename) => {
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      };
+      const downloadJsonObject = (data, filename) =>
+        downloadBlob(
+          new Blob([JSON.stringify(data, null, 2)], {
+            type: 'application/json',
+          }),
+          filename,
+        );
+      const downloadXmlFile = (xml, filename) =>
+        downloadBlob(new Blob([xml], { type: 'application/xml' }), filename);
+      const parseRoomInformation = (roomInformation) => {
+        if (typeof roomInformation !== 'string') {
+          return typeof roomInformation === 'object' && roomInformation !== null
+            ? roomInformation
+            : undefined;
+        }
+        try {
+          const parsedRoomInformation = JSON.parse(roomInformation);
+          return typeof parsedRoomInformation === 'object' &&
+            parsedRoomInformation !== null
+            ? parsedRoomInformation
+            : undefined;
+        } catch (error) {
+          logMessage('ROOM-CONTOURS-ERROR', String(error));
+          return undefined;
+        }
+      };
+      const sumRecursiveItemsInCents = (items) => {
+        const total = items.find(
+          ({ type, priceType }) => type === 'Price' && priceType === 'Total',
+        );
+        if (total) {
+          return Math.round((total.totalPrice ?? 0) * 100);
+        }
+        return items.reduce((sum, item) => {
+          if (item.totalPrice !== undefined) {
+            return sum + Math.round(item.totalPrice * 100);
+          }
+          return item.items?.length
+            ? sum + sumRecursiveItemsInCents(item.items)
+            : sum;
+        }, 0);
+      };
+      const calculateTotalSum = (structure) =>
+        Number(
+          (
+            (structure?.items?.length
+              ? sumRecursiveItemsInCents(structure.items)
+              : 0) / 100
+          ).toFixed(2),
+        );
+      const createCoalescingTaskRunner = (task) => {
+        let activeRun = null;
+        let rerunRequested = false;
+        const runLoop = async () => {
+          do {
+            rerunRequested = false;
+            try {
+              await task();
+            } catch (error) {
+              console.error('Task of coalescing task runner failed:', error);
+            }
+          } while (rerunRequested);
+          activeRun = null;
+        };
+        return () => {
+          if (activeRun) {
+            rerunRequested = true;
+          } else {
+            activeRun = runLoop();
+          }
+          return activeRun;
+        };
+      };
+
+      const fetchHiPresets = async () => {
+        const response = await fetch(`${HI_SERVER_BASE_URL}/backends/list`, {
+          headers: { Authorization: HI_AUTH_DATA },
+        });
+        if (!response.ok) {
+          throw new Error(`${response.status} ${response.statusText}`);
+        }
+        const backends = await response.json();
+        if (!Array.isArray(backends) || backends.length === 0) {
+          throw new Error('the backend list is empty');
+        }
+        return Object.fromEntries(
+          backends.map((preset) => [preset.backendId, preset]),
+        );
+      };
+
+      let presets = {};
+      try {
+        presets = await fetchHiPresets();
+      } catch (error) {
+        logMessage('HI-PRESETS-ERROR', String(error));
+      }
+      const presetSelect = document.getElementById('preset-select');
+      const libraryIdInput = document.getElementById('library-id-input');
+      const presetNames = Object.keys(presets);
+      for (const presetName of presetNames) {
+        const option = document.createElement('option');
+        option.value = presetName;
+        option.textContent = presetName;
+        presetSelect.appendChild(option);
+      }
+      const queryBackendId = getQueryParam('backendId');
+      const selectedPreset =
+        presets[queryBackendId] ??
+        presets[DEFAULT_PRESET] ??
+        presets[presetNames[0]];
+      const selectedBackendId =
+        queryBackendId ?? selectedPreset?.backendId ?? '';
+      const libraryId =
+        getQueryParam('library_id') ?? selectedPreset?.libraryId ?? '';
+      let additionalCatalogs = [];
+      let configureInRoom = false;
+      if (selectedPreset) {
+        presetSelect.value = selectedPreset.backendId;
+        additionalCatalogs = selectedPreset.additionalCatalogs ?? [];
+        configureInRoom = selectedPreset.configureInRoom ?? false;
+      }
+      libraryIdInput.value = libraryId;
+      const reloadWithConfig = (backendId, selectedLibraryId, planId) => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('backendId', backendId);
+        url.searchParams.set('library_id', selectedLibraryId);
+        if (planId) {
+          url.searchParams.set('plan_id', planId);
+        } else {
+          url.searchParams.delete('plan_id');
+        }
+        window.location.href = url.toString();
+      };
+      presetSelect.addEventListener('change', () => {
+        const preset = presets[presetSelect.value];
+        libraryIdInput.value = preset.libraryId;
+        reloadWithConfig(preset.backendId, preset.libraryId, preset.planId);
+      });
+      document.getElementById('reload-config').addEventListener('click', () => {
+        const preset = presets[presetSelect.value];
+        reloadWithConfig(
+          preset?.backendId ?? selectedBackendId,
+          libraryIdInput.value,
+          preset?.planId,
+        );
+      });
+
+      externalObjectSettings.tecConfigInfo.libraryId = libraryId;
+      const userRight = getQueryParam('user_right');
+      if (['Simple', 'Advanced', 'Master'].includes(userRight)) {
+        externalObjectSettings.uiConfiguration.userRight = userRight;
+      }
+      const language = getQueryParam('language');
+      const hiOptions = {
+        libraryId,
+        serverOptions: {
+          authData: HI_AUTH_DATA || undefined,
+          baseUrl: `${HI_SERVER_BASE_URL}/proxy_request?backendId=${encodeURIComponent(selectedBackendId)}&url=`,
+          language: language ?? externalObjectSettings.tecConfigInfo.language,
+        },
+        debugLogging: true,
+      };
+      const options = {
+        id:
+          getQueryParam('plan_id') ?? selectedPreset?.planId ?? DEFAULT_PLAN_ID,
+        moc: true,
+        saveToIdb: true,
+        locale: language ?? externalObjectSettings.tecConfigInfo.language,
+        notifications: {
+          'first-person-controls': false,
+          'interaction.add-element': false,
+          'interaction.confirm-ghosts': false,
+          'interaction.parameters-changed': false,
+          'interaction.root-element': false,
+          'stop-configure-hint': false,
+        },
+        featureFlags: {
+          globalCallbacks: false,
+          openCloseAnimation: true,
+          localExport3d: true,
+        },
+        webGpuConfig: {
+          autoQualityMinFps: 0,
+        },
+        elements: { bottom_bar: false },
+        catalogRootTag: [...HI_ROOT_TAGS, ...additionalCatalogs],
+        buttons: {
+          swap_product: true,
+          export3d: true,
+        },
+        autoStart: true,
+        notifications: {
+          'load-idb-config': true,
+        },
+        configureInRoom: configureInRoom,
+        hi: hiOptions,
+        externalObjectSettings,
+      };
+      setOptionFromQueryParam(options, 'unit', (v) => v, 'mm');
+      setOptionFromQueryParam(
+        options,
+        'enableTwoLevelCatalog',
+        queryParamBoolean,
+        true,
+      );
+      setOptionFromQueryParam(options, 'debugGeometry', queryParamBoolean);
+      setOptionFromQueryParam(options, 'debugLines', queryParamBoolean);
+      setOptionFromQueryParam(options, 'debugBoundingBox', queryParamBoolean);
+      setOptionFromQueryParam(
+        options,
+        'envMapIntensity',
+        queryParamNumber,
+        1.25,
+      );
+      setOptionFromQueryParam(
+        options.featureFlags,
+        'mergeOnInsert',
+        queryParamBoolean,
+      );
+      setOptionFromQueryParam(
+        options.featureFlags,
+        'webGpu',
+        queryParamBoolean,
+        true,
+      );
+      setOptionFromQueryParam(
+        options.featureFlags,
+        'interiorLights',
+        queryParamBoolean,
+      );
+      setOptionFromQueryParam(
+        options.featureFlags,
+        'advancedHighlighting',
+        queryParamBoolean,
+        true,
+      );
+      setOptionFromQueryParam(
+        options.externalObjectSettings,
+        'transparentHighlighting',
+        queryParamBoolean,
+        true,
+      );
+      setOptionFromQueryParam(
+        options.externalObjectSettings,
+        'enableVerticalDocking',
+        queryParamBoolean,
+      );
+      setOptionFromQueryParam(
+        options.externalObjectSettings,
+        'maximumCatalogLevel',
+        queryParamNumber,
+        1,
+      );
+
+      let roomDesignerApi;
+      let masterDataJson = null;
+      let downloadOmData = false;
+      const groupMap = new Map();
+      const uiMap = new Map();
+      const uiContainer = document.getElementById('ui-elements');
+      const updatePriceDisplay = async () => {
+        if (!roomDesignerApi) {
+          return;
+        }
+        const priceData = await roomDesignerApi.extended.fetchPrice();
+        document.getElementById('price-value').innerText = priceData?.orderData
+          ? `€ ${calculateTotalSum(priceData.orderData).toFixed(2)}`
+          : '-';
+      };
+      const requestPriceUpdate = createCoalescingTaskRunner(updatePriceDisplay);
+      const getThumbnailUrl = (articleName) =>
+        masterDataJson?.modules?.find(({ id }) => id === articleName)?.imageUrl;
+      const createButton = (action, name, id, thumbnailUrl, clickEvent) => {
+        const button = document.createElement('button');
+        button.id = `${action}-${id}`;
+        if (thumbnailUrl) {
+          const image = document.createElement('img');
+          image.src = thumbnailUrl;
+          image.alt = id;
+          image.style.width = '20px';
+          image.style.height = '20px';
+          image.style.marginRight = '8px';
+          image.style.verticalAlign = 'middle';
+          button.appendChild(image);
+        }
+        button.appendChild(
+          document.createTextNode(thumbnailUrl ? id : `${name} ${id}`),
+        );
+        button.addEventListener('click', clickEvent);
+        uiContainer.appendChild(button);
+        return button;
+      };
+      const addSubmodules = (submodules, rootId, uiElements) => {
+        for (const submodule of submodules) {
+          const name = submodule.articleName ?? submodule.name ?? submodule.id;
+          uiElements.push(
+            createButton(
+              'select',
+              'sub➚',
+              name,
+              getThumbnailUrl(submodule.name),
+              () =>
+                roomDesignerApi.extended.selectExternalObject(
+                  rootId,
+                  submodule.id,
+                  'isolation',
+                ),
+            ),
+          );
+          if (submodule.modules) {
+            addSubmodules(submodule.modules, rootId, uiElements);
+          }
+        }
+      };
+      const clearUiElements = () => {
+        for (const uiElements of uiMap.values()) {
+          for (const uiElement of uiElements) {
+            uiElement.remove();
+          }
+        }
+        uiMap.clear();
+      };
+      const createUiElements = () => {
+        for (const posData of groupMap.values()) {
+          for (const root of posData.roots) {
+            const uiElements = [];
+            uiMap.set(root.id, uiElements);
+            const name = root.articleName ?? root.name ?? root.id;
+            const thumbnailUrl = getThumbnailUrl(root.name);
+            uiElements.push(
+              createButton(
+                'select',
+                'root➚',
+                thumbnailUrl ? `${name} ➚` : name,
+                thumbnailUrl,
+                () =>
+                  roomDesignerApi.extended.selectExternalObject(
+                    root.id,
+                    null,
+                    'isolation',
+                  ),
+              ),
+            );
+            if (!root.isGenerated && root.canBeDeleted) {
+              uiElements.push(
+                createButton(
+                  'delete',
+                  '🗑',
+                  thumbnailUrl ? `${name} 🗑` : name,
+                  thumbnailUrl,
+                  () => roomDesignerApi.extended.removeExternalObject(root.id),
+                ),
+              );
+            }
+            if (root.modules) {
+              addSubmodules(root.modules, root.id, uiElements);
+            }
+          }
+        }
+      };
+      const updatePosGroups = (posGroups, operation) => {
+        clearUiElements();
+        for (const posGroup of posGroups) {
+          if (operation === 'delete') {
+            groupMap.delete(posGroup);
+          } else {
+            groupMap.set(posGroup.id, posGroup);
+          }
+        }
+        createUiElements();
+        return Promise.resolve();
+      };
+      const requestHeader = {
+        'x-aux-header': libraryId.includes('nobilia') ? 'nobilia' : 'none',
+        Authorization: HI_AUTH_DATA,
+      };
+
+      await setupHi(hiOptions, {
+        onLoadJavascript: () => libLoadCalcScript(hiOptions),
+        onLoadArticleCatalog: () => libLoadArticleCatalog(hiOptions),
+        onLoadMasterData: async () => {
+          masterDataJson = await libLoadMasterData(hiOptions);
+          return masterDataJson;
+        },
+        onPriceCalc: requestPriceUpdate,
+        onFetchPrice: async (orderData) => {
+          const json = await omPostRequest(
+            hiOptions,
+            { orderData },
+            '/api/price/calculate',
+            requestHeader,
+          );
+          if (json.orderData) {
+            logMessage('FETCH-PRICE', json.orderData.id);
+          }
+          return json;
+        },
+        onPlaceOrder: async (orderData) => {
+          if (downloadOmData) {
+            downloadJsonObject(orderData, 'order-to-OM.json');
+            return;
+          }
+          const url = '/api/orderManager/orders/import';
+          const json = await omPostRequest(
+            hiOptions,
+            orderData,
+            url,
+            requestHeader,
+          );
+          logMessage('ORDER-RESPONSE', JSON.stringify(json));
+          if (!json.correlationId) {
+            return;
+          }
+          const responseOrder = await omGetRequest(
+            hiOptions,
+            `${url}/${json.correlationId}`,
+            requestHeader,
+          );
+          logMessage('IMPORT-STATUS', JSON.stringify(responseOrder));
+          if (responseOrder.link) {
+            logLink('OrderManager Order', responseOrder.link);
+          }
+        },
+        onLogMessage: logInUi,
+        onPosGroupAdded: (posGroups) => updatePosGroups(posGroups, 'add'),
+        onPosGroupChanged: (posGroups) => updatePosGroups(posGroups, 'change'),
+        onPosGroupDeleted: (ids) => updatePosGroups(ids, 'delete'),
+      });
+
+      roomDesignerApi = await RoomleConfiguratorApi.createPlanner(
+        EMBEDDING_ID,
+        document.getElementById('designer-container'),
+        options,
+        ['dragIn'],
+      );
+      window.instance = roomDesignerApi;
+      requestPriceUpdate();
+      roomDesignerApi.plugins.dragIn?.beforeUpdateGhost((x, y) => {
+        const bounds = document
+          .getElementById('overlay')
+          .getBoundingClientRect();
+        return {
+          x,
+          y,
+          options: {
+            ghost: {
+              visibleIn: {
+                x: bounds.x,
+                y: bounds.y,
+                height: bounds.height,
+                width: bounds.width,
+              },
+            },
+          },
+        };
+      });
+
+      document
+        .getElementById('toggle-panel')
+        .addEventListener('change', (event) => {
+          document.querySelector('.left-section').style.display = event.target
+            .checked
+            ? 'flex'
+            : 'none';
+        });
+      document.getElementById('console-clear').addEventListener('click', () => {
+        document.getElementById('console-log').replaceChildren();
+      });
+      document
+        .getElementById('get-snapshot')
+        .addEventListener('click', async () => {
+          logApiCall('getExternalObjectSnapshot');
+          const snapshot =
+            await roomDesignerApi.extended.getExternalObjectSnapshot();
+          if (snapshot) {
+            downloadJsonObject(snapshot, 'externalObjectSnapshot.json');
+          } else {
+            logMessage('No snapshot available');
+          }
+        });
+      document
+        .getElementById('get-plan-xml')
+        .addEventListener('click', async () => {
+          logApiCall('getExternalObjectSnapshot');
+          const snapshot =
+            await roomDesignerApi.extended.getExternalObjectSnapshot({
+              planXML: true,
+            });
+          if (typeof snapshot?.planXML === 'string') {
+            downloadXmlFile(snapshot.planXML, 'planXML.xml');
+          } else {
+            logMessage('No snapshot available');
+          }
+        });
+      document
+        .getElementById('download-room-contours')
+        .addEventListener('click', async (event) => {
+          const button = event.currentTarget;
+          button.disabled = true;
+          try {
+            logApiCall('getExternalObjectSnapshot');
+            const snapshot =
+              await roomDesignerApi.extended.getExternalObjectSnapshot({
+                orderData: 'room',
+              });
+            const roomInformation = parseRoomInformation(
+              snapshot?.orderData?.roomInformation,
+            );
+            if (roomInformation) {
+              downloadJsonObject(roomInformation, 'roomContours.json');
+            } else {
+              logMessage('No room contours available');
+            }
+          } finally {
+            button.disabled = false;
+          }
+        });
+      document.getElementById('load-plan-xml').addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xml';
+        input.addEventListener('change', async () => {
+          const file = input.files?.[0];
+          if (file) {
+            logApiCall('loadPlanXml');
+            await roomDesignerApi.extended.loadPlanXml(await file.text());
+            logMessage('Plan XML loaded successfully');
+          }
+        });
+        input.click();
+      });
+      document
+        .getElementById('save-snapshot')
+        .addEventListener('click', async () => {
+          logApiCall('saveExternalObjectSnapshot');
+          const snapshot =
+            await roomDesignerApi.extended.saveExternalObjectSnapshot();
+          if (!snapshot) {
+            logMessage('No snapshot available');
+            return;
+          }
+          logMessage('Snapshot ID', snapshot.planSnapshotId);
+          for (const [name, link] of [
+            ['Object GLB', snapshot.objectGlbLink],
+            ['Object perspectiveImage', snapshot.perspectiveObjectImageLink],
+            ['Object topImage', snapshot.topObjectImageLink],
+            ['Plan GLB', snapshot.fullPlanGlbLink],
+            ['Plan perspectiveImage', snapshot.perspectiveImageLink],
+            ['Plan topImage', snapshot.topImageLink],
+          ]) {
+            if (link) {
+              logLink(name, link);
+            }
+          }
+          downloadJsonObject(snapshot.orderData, 'orderManagerGroupData.json');
+        });
+      document
+        .getElementById('calc-price')
+        .addEventListener('click', async (event) => {
+          const button = event.currentTarget;
+          button.disabled = true;
+          try {
+            const price = await roomDesignerApi.extended.fetchPrice();
+            if (price) {
+              downloadJsonObject(price.orderData, 'order-price.json');
+            }
+          } finally {
+            button.disabled = false;
+          }
+        });
+      document
+        .getElementById('send-to-om')
+        .addEventListener('click', async (event) => {
+          const button = event.currentTarget;
+          button.disabled = true;
+          downloadOmData = false;
+          try {
+            await roomDesignerApi.extended.placeOrder(
+              document.getElementById('send-to-om-with-price').checked,
+            );
+          } finally {
+            button.disabled = false;
+          }
+        });
+      document
+        .getElementById('download-om-data')
+        .addEventListener('click', async (event) => {
+          const button = event.currentTarget;
+          button.disabled = true;
+          downloadOmData = true;
+          try {
+            await roomDesignerApi.extended.placeOrder(
+              document.getElementById('send-to-om-with-price').checked,
+            );
+          } finally {
+            button.disabled = false;
+          }
+        });
+    </script>
+  </body>
+</html>

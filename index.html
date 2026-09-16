@@ -1421,6 +1421,95 @@
           .map((dockInfo) => dockInfo.id)
           .filter((id) => id !== 'CollisionBox');
 
+      const isGeneratedRoot = (root) => root?.isGenerated === true;
+
+      const stripDockingIndices = (contextData) => ({
+        dockedRoots: (contextData?.dockedRoots ?? []).map((dockedContext) => ({
+          ownDockingVector: dockedContext.ownDockingVector,
+          dockedRoots: (dockedContext.dockedRoots ?? []).map((dockedRoot) => ({
+            id: dockedRoot.id,
+            dockingVector: dockedRoot.dockingVector,
+            ...(dockedRoot.mode !== undefined && { mode: dockedRoot.mode }),
+            ...(dockedRoot.offset !== undefined && {
+              offset: dockedRoot.offset,
+            }),
+          })),
+        })),
+      });
+
+      // The only shape a root module takes on its way from the agent to the
+      // planner: an article pick with attribute overrides and docking. Root
+      // positions never travel; the arrangement derives them from contextData.
+      const toArticlePick = (root) => ({
+        id: root.id,
+        articleId: root.articleId,
+        ...(root.libraryId && { libraryId: root.libraryId }),
+        ...(root.attributes?.length && {
+          attributes: root.attributes.map((attribute) => ({
+            id: attribute.id,
+            value: attribute.value,
+          })),
+        }),
+        ...(root.contextData && {
+          contextData: stripDockingIndices(root.contextData),
+        }),
+      });
+
+      // The planner's own roots on the way back into the planner: unchanged
+      // apart from the positions and the docking indices.
+      const withoutPositions = (root) => {
+        const copy = { ...root };
+        delete copy.articlePos;
+        delete copy.rotationY;
+        if (copy.contextData) {
+          copy.contextData = stripDockingIndices(copy.contextData);
+        }
+        return copy;
+      };
+
+      // The group placement expressed as the room transform of one root
+      // module, so the planner derives the group position from its own
+      // arrangement and no root position has to travel in the payload.
+      const repositioningFromPlacement = (placement, anchor) => {
+        const [x, y, z] = transformPointByRoot(
+          { articlePos: placement.pos, rotationY: placement.rotationY },
+          [
+            anchor.articlePos?.[0] ?? 0,
+            anchor.articlePos?.[1] ?? 0,
+            anchor.articlePos?.[2] ?? 0,
+          ],
+        );
+        return {
+          posGroup: [round2(x), round2(y), round2(z)],
+          posRotationY: round2(
+            normalizeDegrees(placement.rotationY + (anchor.rotationY ?? 0)),
+          ),
+          rootId: anchor.id,
+        };
+      };
+
+      // A calculated group sent back with a new placement: the placement
+      // becomes repositioningData of the first article root, the library
+      // regenerates the generated roots (worktop, toe kick), and no root
+      // carries a position.
+      const repositionedGroup = (resultGroup, placement) => {
+        const roots = (resultGroup.roots ?? []).filter(
+          (root) => !isGeneratedRoot(root),
+        );
+        const anchor = roots[0];
+        if (!anchor) {
+          throw new Error(
+            `Group '${resultGroup.id}' has no article root to place.`,
+          );
+        }
+        return {
+          id: resultGroup.id,
+          ...(resultGroup.libraryId && { libraryId: resultGroup.libraryId }),
+          roots: roots.map(withoutPositions),
+          repositioningData: repositioningFromPlacement(placement, anchor),
+        };
+      };
+
       // The docking vectors of the calculated roots in the plan by article
       // id - the fallback for an article template that does not carry its own.
       const calculatedDockingVectorsByArticle = (groups) => {
@@ -1529,23 +1618,41 @@
             String(value).toLowerCase().includes(needle),
         );
 
-      const stripCalculatedGeometry = (module) => {
-        delete module.parts;
-        (module.modules ?? []).forEach(stripCalculatedGeometry);
-        (module.containers ?? []).forEach(stripCalculatedGeometry);
-      };
+      // A root as the agent sees it: the article pick it can resubmit (id,
+      // articleId, input attributes, docking) plus read-only facts. No
+      // positions, no geometry.
+      const shapeRoot = (root) => ({
+        id: root.id,
+        articleId: root.articleId,
+        articleName: root.articleName,
+        desc: root.desc,
+        category: root.category,
+        ...(isGeneratedRoot(root) && { isGenerated: true }),
+        attributes: (root.attributes ?? [])
+          .filter((attribute) => attribute.isInput === true)
+          .map((attribute) => ({ id: attribute.id, value: attribute.value })),
+        ...(root.contextData && {
+          contextData: stripDockingIndices(root.contextData),
+        }),
+        dockingVectors: dockingVectorNames(root),
+        subModules: (root.modules ?? []).map((module) => module.name),
+        ...(root.logMessages?.length && { logMessages: root.logMessages }),
+      });
 
-      const shapeGroup = (group) => {
-        const shaped = JSON.parse(JSON.stringify(group));
-        delete shaped.contours;
-        // repositioning data is applied exactly once on load; stripping it
-        // here guarantees the field only ever reaches the planner when the
-        // agent authored it deliberately in a new payload
-        delete shaped.repositioningData;
-        shaped.footprint = groupFootprint(group);
-        (shaped.roots ?? []).forEach(stripCalculatedGeometry);
-        return shaped;
-      };
+      // A group as the agent sees it: resubmittable as it is (the read-only
+      // position block and the generated roots are dropped on the way back).
+      const shapeGroup = (group) => ({
+        id: group.id,
+        libraryId: group.libraryId,
+        position: {
+          pos: group.pos,
+          rotationY: group.rotationY,
+          footprint: groupFootprint(group),
+        },
+        ...(group.attributes && { attributes: group.attributes }),
+        roots: (group.roots ?? []).map(shapeRoot),
+        logMessages: group.logMessages ?? [],
+      });
 
       const shapeRooms = (rooms) => {
         if (!rooms) {
@@ -1772,12 +1879,22 @@
               );
               return;
             }
+            // the library regenerates its generated roots (worktop, toe kick)
+            group.roots = group.roots.filter((root) => !isGeneratedRoot(root));
+            if (group.roots.length === 0) {
+              validationErrors.push(
+                `posGroups[${groupIndex}]: needs at least one article root (generated roots are dropped)`,
+              );
+              return;
+            }
+            if (group.pos !== undefined || group.rotationY !== undefined) {
+              validationErrors.push(
+                `posGroups[${groupIndex}]: do not set pos/rotationY on a group - position it with placement or repositioningData`,
+              );
+            }
             const rootIds = new Set();
             group.roots.forEach((root, rootIndex) => {
-              const requiredFields = isArticlePickOnly(root)
-                ? ['id', 'articleId']
-                : ['id', 'libraryId', 'name'];
-              for (const field of requiredFields) {
+              for (const field of ['id', 'articleId']) {
                 const value = root?.[field];
                 if (typeof value !== 'string' || value.length === 0) {
                   validationErrors.push(
@@ -1789,12 +1906,12 @@
                 }
               }
               if (
-                isArticlePickOnly(root) &&
-                (root?.articlePos !== undefined || root?.rotationY !== undefined)
+                root?.articlePos !== undefined ||
+                root?.rotationY !== undefined
               ) {
                 validationErrors.push(
-                  `posGroups[${groupIndex}].roots[${rootIndex}]: do not set articlePos/rotationY - ` +
-                    'all positions are computed by the planner; relate roots with docking contextData instead',
+                  `posGroups[${groupIndex}].roots[${rootIndex}]: a root module carries no articlePos/rotationY - ` +
+                    'root positions come from the docking (contextData) only, the group position from placement or repositioningData',
                 );
               }
               const rootId = root?.id;
@@ -1820,12 +1937,12 @@
                   }
                 }
               }
-              const undockedPicks = group.roots.filter(
-                (root) => isArticlePickOnly(root) && !dockedRootIds.has(root.id),
+              const undockedRoots = group.roots.filter(
+                (root) => !dockedRootIds.has(root.id),
               );
               const undockedLimit = dockedRootIds.size === 0 ? 1 : 0;
-              if (undockedPicks.length > undockedLimit) {
-                const ids = undockedPicks.map((root) => `'${root.id}'`);
+              if (undockedRoots.length > undockedLimit) {
+                const ids = undockedRoots.map((root) => `'${root.id}'`);
                 validationErrors.push(
                   `posGroups[${groupIndex}]: roots ${ids.join(', ')} are not related by docking - ` +
                     'undocked roots all land at the same spot and look like a single unit. Dock every ' +
@@ -1873,6 +1990,23 @@
                 validationErrors.join('\n') +
                 '\nFetch the payload format with the get-authoring-rules tool.',
             );
+          }
+          // Only article picks, placement and repositioningData reach the planner.
+          for (const group of posGroups) {
+            group.roots = group.roots.map(toArticlePick);
+            for (const field of Object.keys(group)) {
+              if (
+                ![
+                  'id',
+                  'libraryId',
+                  'roots',
+                  'placement',
+                  'repositioningData',
+                ].includes(field)
+              ) {
+                delete group[field];
+              }
+            }
           }
           await validateArticlePickIds(api, posGroups);
 
@@ -1949,12 +2083,7 @@
                 placementEntry.resolved,
                 placementEntry.spec,
               );
-              const placedGroup = JSON.parse(JSON.stringify(resultGroup));
-              delete placedGroup.contours;
-              delete placedGroup.repositioningData;
-              placedGroup.pos = placement.pos;
-              placedGroup.rotationY = placement.rotationY;
-              placedGroups.push(placedGroup);
+              placedGroups.push(repositionedGroup(resultGroup, placement));
               placements.push({
                 groupId: resultGroup.id,
                 wall: placementEntry.resolved.wall.side,
@@ -1985,7 +2114,7 @@
           const unpositionedGroupIds = (groups ?? [])
             .filter(
               (group) =>
-                group.pos === undefined &&
+                group.position.pos === undefined &&
                 (!beforeGroupIds.has(group.id) || replacedInputIds.has(group.id)),
             )
             .map((group) => group.id);
@@ -2033,13 +2162,8 @@
           const spec = { wall: wallArg, alignment, offsetMm, roomIndex };
           const resolved = resolveWall(rooms, spec);
           const placement = placeGroupAtWall(group, resolved, spec);
-          const placedGroup = JSON.parse(JSON.stringify(group));
-          delete placedGroup.contours;
-          delete placedGroup.repositioningData;
-          placedGroup.pos = placement.pos;
-          placedGroup.rotationY = placement.rotationY;
           const loaded = await api.extended.loadExternalObjectGroupLayout(
-            { posGroups: [placedGroup] },
+            { posGroups: [repositionedGroup(group, placement)] },
             'posGroups',
             { reason: 'adjusted' },
           );

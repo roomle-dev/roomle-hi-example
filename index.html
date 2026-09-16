@@ -1192,34 +1192,172 @@
         };
       };
 
-      const DIMENSION_ATTRIBUTE_IDS = [
-        'b',
-        'h',
-        't',
-        'mod_Width',
-        'mod_Height',
-        'mod_Depth',
-      ];
+      const DEFAULT_SECTIONS = ['rooms', 'articles', 'groups'];
 
-      const compactArticle = (article) => ({
-        articleId: article.articleId,
-        articleName: article.articleName,
-        desc: article.desc,
-        imageUrl: article.imageUrl,
-        category: article.category,
-        libraryId: article.libraryId,
-        catalog: article.catalog,
-        rootModules: (article.roots ?? []).map((root) => ({
-          name: root.name,
-          dimensions: Object.fromEntries(
-            (root.attributes ?? [])
-              .filter((attribute) =>
-                DIMENSION_ATTRIBUTE_IDS.includes(attribute.id),
-              )
-              .map((attribute) => [attribute.id, attribute.value]),
-          ),
-        })),
+      const MAX_ATTRIBUTE_MATCHES = 20;
+
+      const isRootModule = (module) =>
+        module?.isRoot === true || module?.moduleType === 'RootModule';
+
+      const isCustomerFacingAttribute = (attribute) =>
+        attribute?.isMain === true || attribute?.userRight === 'Simple';
+
+      const compactSelection = (selection) => {
+        const compact = { ...selection };
+        delete compact.imageUrl;
+        if (compact.desc === compact.name) {
+          delete compact.desc;
+        }
+        return compact;
+      };
+
+      const compactAttribute = (attribute) => ({
+        id: attribute.id,
+        name: attribute.name,
+        desc: attribute.desc,
+        type: attribute.type,
+        group: attribute.group,
+        selections: attribute.selections?.map(compactSelection),
       });
+
+      // The root modules and the attributes a customer sees (isMain or
+      // userRight Simple). Everything else stays reachable through
+      // find-attributes.
+      const compactMasterData = (masterData) => {
+        const rootModules = (masterData?.modules ?? []).filter(isRootModule);
+        const assignedAttributeIds = new Set(
+          rootModules.flatMap((module) => module.assignedAttributes ?? []),
+        );
+        const attributes = (masterData?.attributes ?? []).filter(
+          (attribute) =>
+            assignedAttributeIds.has(attribute.id) &&
+            isCustomerFacingAttribute(attribute),
+        );
+        const attributeIds = new Set(
+          attributes.map((attribute) => attribute.id),
+        );
+        return {
+          libraryId: masterData?.libraryId,
+          modules: rootModules.map((module) => ({
+            id: module.id,
+            name: module.name,
+            desc: module.desc,
+            attributes: (module.assignedAttributes ?? []).filter((id) =>
+              attributeIds.has(id),
+            ),
+          })),
+          attributes: attributes.map(compactAttribute),
+        };
+      };
+
+      const dockingVectorNames = (root) =>
+        (root?.dockInfos ?? [])
+          .map((dockInfo) => dockInfo.id)
+          .filter((id) => id !== 'CollisionBox');
+
+      // The docking vectors of the calculated roots in the plan by article
+      // id - the fallback for an article template that does not carry its own.
+      const calculatedDockingVectorsByArticle = (groups) => {
+        const byArticle = new Map();
+        for (const group of groups) {
+          for (const root of group.roots ?? []) {
+            const names = dockingVectorNames(root);
+            if (
+              root.articleId &&
+              names.length > 0 &&
+              !byArticle.has(root.articleId)
+            ) {
+              byArticle.set(root.articleId, names);
+            }
+          }
+        }
+        return byArticle;
+      };
+
+      const compactArticle = (
+        article,
+        masterData,
+        calculatedDockingVectors,
+      ) => {
+        const attributeInfos = new Map(
+          (masterData?.attributes ?? []).map((attribute) => [
+            attribute.id,
+            attribute,
+          ]),
+        );
+        const moduleInfos = new Map(
+          (masterData?.modules ?? []).map((module) => [module.id, module]),
+        );
+        const namedValue = (attribute) => ({
+          id: attribute.id,
+          name: attributeInfos.get(attribute.id).name,
+          value: attribute.value,
+        });
+        return {
+          articleId: article.articleId,
+          articleName: article.articleName,
+          desc: article.desc,
+          imageUrl: article.imageUrl,
+          category: article.category,
+          libraryId: article.libraryId,
+          catalog: article.catalog,
+          rootModules: (article.roots ?? []).map((root) => {
+            const moduleInfo = moduleInfos.get(root.name);
+            const attributes = (root.attributes ?? []).filter((attribute) =>
+              attributeInfos.has(attribute.id),
+            );
+            const dimensions = attributes.filter(
+              (attribute) => attributeInfos.get(attribute.id).type === 'Dim',
+            );
+            const dimensionIds = new Set(
+              dimensions.map((attribute) => attribute.id),
+            );
+            const templateVectors = dockingVectorNames(root);
+            return {
+              module: {
+                id: root.name,
+                name: moduleInfo?.name,
+                desc: moduleInfo?.desc,
+              },
+              dimensions: dimensions.map(namedValue),
+              mainAttributes: attributes
+                .filter(
+                  (attribute) =>
+                    attributeInfos.get(attribute.id).isMain === true &&
+                    !dimensionIds.has(attribute.id),
+                )
+                .map(namedValue),
+              dockingVectors:
+                templateVectors.length > 0
+                  ? templateVectors
+                  : (calculatedDockingVectors.get(article.articleId) ?? []),
+              insertLevels: root.insertLevelInfos,
+              subModules: (root.modules ?? []).map((module) => ({
+                id: module.name,
+                name: moduleInfos.get(module.name)?.name ?? module.name,
+              })),
+            };
+          }),
+        };
+      };
+
+      const attributeMatches = (attribute, needle) =>
+        [
+          attribute.id,
+          attribute.name,
+          attribute.desc,
+          attribute.group,
+          ...(attribute.selections ?? []).flatMap((selection) => [
+            selection.name,
+            selection.desc,
+            selection.value,
+          ]),
+        ].some(
+          (value) =>
+            value !== undefined &&
+            value !== null &&
+            String(value).toLowerCase().includes(needle),
+        );
 
       const stripCalculatedGeometry = (module) => {
         delete module.parts;
@@ -1341,14 +1479,97 @@
 
       const mcpToolExecutors = {
         'get-plan-context': async (api, args) => {
-          const context = await api.extended.getExternalObjectPlanContext(
-            args.include,
-          );
+          const requested =
+            Array.isArray(args.include) && args.include.length > 0
+              ? args.include
+              : DEFAULT_SECTIONS;
+          const sections = new Set(requested);
+          // the compact articles need the attribute types and module names of
+          // the master data and the docking vectors of the calculated roots
+          const fetched = new Set(requested);
+          if (sections.has('articles')) {
+            fetched.add('masterData');
+            fetched.add('groups');
+          }
+          const context = await api.extended.getExternalObjectPlanContext([
+            ...fetched,
+          ]);
+          const masterData = context.masterData ?? {};
+          const result = {};
+          if (sections.has('masterData')) {
+            result.masterData = Object.fromEntries(
+              Object.entries(masterData).map(
+                ([libraryId, libraryMasterData]) => [
+                  libraryId,
+                  compactMasterData(libraryMasterData),
+                ],
+              ),
+            );
+          }
+          if (sections.has('rooms')) {
+            result.rooms = shapeRooms(context.rooms);
+          }
+          if (sections.has('articles')) {
+            const calculatedDockingVectors = calculatedDockingVectorsByArticle(
+              context.groups ?? [],
+            );
+            result.articles = (context.articles ?? []).map((article) =>
+              compactArticle(
+                article,
+                masterData[article.libraryId],
+                calculatedDockingVectors,
+              ),
+            );
+          }
+          if (sections.has('groups')) {
+            result.groups = context.groups?.map(shapeGroup);
+          }
+          return result;
+        },
+
+        'find-attributes': async (api, args) => {
+          const needle = String(args.text ?? '')
+            .trim()
+            .toLowerCase();
+          if (needle.length === 0) {
+            throw new Error('text must not be empty.');
+          }
+          const libraryId = args.libraryId;
+          const context = await api.extended.getExternalObjectPlanContext([
+            'masterData',
+          ]);
+          const matches = [];
+          for (const [id, masterData] of Object.entries(
+            context.masterData ?? {},
+          )) {
+            if (libraryId && id !== libraryId) {
+              continue;
+            }
+            const rootModules = (masterData.modules ?? []).filter(
+              isRootModule,
+            );
+            for (const attribute of masterData.attributes ?? []) {
+              if (!attributeMatches(attribute, needle)) {
+                continue;
+              }
+              matches.push({
+                libraryId: id,
+                ...compactAttribute(attribute),
+                userRight: attribute.userRight,
+                rootModules: rootModules
+                  .filter((module) =>
+                    (module.assignedAttributes ?? []).includes(attribute.id),
+                  )
+                  .map((module) => module.id),
+              });
+            }
+          }
           return {
-            masterData: context.masterData,
-            rooms: shapeRooms(context.rooms),
-            articles: context.articles?.map(compactArticle),
-            groups: context.groups?.map(shapeGroup),
+            matches: matches.slice(0, MAX_ATTRIBUTE_MATCHES),
+            total: matches.length,
+            ...(matches.length > MAX_ATTRIBUTE_MATCHES && {
+              hint: `Only the first ${MAX_ATTRIBUTE_MATCHES} of ${matches.length} matches are listed - narrow the text.`,
+            }),
           };
         },
 
@@ -1418,10 +1639,10 @@
                 const ids = undockedPicks.map((root) => `'${root.id}'`);
                 validationErrors.push(
                   `posGroups[${groupIndex}]: roots ${ids.join(', ')} are not related by docking - ` +
-                    'undocked roots all land at the same spot and look like a single unit. Give every ' +
-                    'additional root a contextData entry, e.g. to place root B directly right of root A: ' +
-                    '{ "id": "B", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "LeftBottom", ' +
-                    '"dockedRoots": [{ "id": "A", "dockingVector": "RightBottom", "mode": "StartStart", ' +
+                    'undocked roots all land at the same spot and look like a single unit. Dock every ' +
+                    'additional root to a placed root by listing it on that root, e.g. to place root B directly right of root A: ' +
+                    '{ "id": "A", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom", ' +
+                    '"dockedRoots": [{ "id": "B", "dockingVector": "LeftBottom", "mode": "StartStart", ' +
                     '"offset": [0, 0, 0] }] }] } }',
                 );
               }

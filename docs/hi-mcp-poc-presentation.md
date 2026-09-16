@@ -83,8 +83,12 @@ AI agent → MCP server (localhost:3100) → WebSocket bridge → demo page
 The agent gets a small set of tools:
 
 - get-plan-context — one consistent snapshot: the rooms (including a prepared
-  list of walls), the article catalog, the groups currently in the plan, and
-  the master data
+  list of walls), the article catalog (with descriptions, dimensions, docking
+  vector names and sub-modules per article), the groups currently in the
+  plan, and on request the master data reduced to the root modules and the
+  customer-facing attributes
+- find-attributes — looks an attribute up by text in the full master data,
+  e.g. the attribute behind "front colour" with its allowed values
 - create-or-replace-groups — creates or replaces groups; a root module is
   just an article pick plus its docking relation to a neighbouring module
 - place-group — stands a group against a wall ("right", "left", …) with

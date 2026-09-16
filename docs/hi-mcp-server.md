@@ -225,10 +225,8 @@ Returns a snapshot of the HI planning session, shaped for the agent.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `include` | `('masterData' \| 'rooms' \| 'articles' \| 'groups')[]` | no | Sections to include; all sections when omitted |
+| `include` | `('masterData' \| 'rooms' \| 'articles' \| 'groups')[]` | no | Sections to include; `rooms`, `articles` and `groups` when omitted |
 
-- `masterData` — module and attribute vocabulary per library, including
-  descriptions and allowed values (`selections`)
 - `rooms` — wall contours of all rooms; every room additionally carries a
   derived `walls` array — per wall: a `side` label (`left`/`right`/`top`/
   `bottom` as seen in the top-view image), `start`/`end` (`[x, z]` in
@@ -236,12 +234,21 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   `heightMm`, `thicknessMm`, and the `facingRotationY` a group needs to stand
   against that wall
 - `articles` — compact catalog: `articleId`, `articleName`, `desc`,
-  `imageUrl`, `category`, root-module names and dimension attributes
-  (`b`/`h`/`t` and `mod_Width`/`mod_Height`/`mod_Depth`)
+  `imageUrl`, `category`, and per root module its master-data `module` (id,
+  name, desc), `dimensions` (the template's `Dim` attributes with name and
+  value), `mainAttributes` (the values of the `isMain` attributes),
+  `dockingVectors` (the names of its docking vectors — from the template, or
+  from a calculated root of the same article in the plan), `insertLevels` and
+  `subModules` (fronts, appliances)
 - `groups` — the groups currently in the plan with their `pos`, `rotationY`
   and a derived `footprint`, without calculated geometry (`parts`,
   `contours`, and `repositioningData` stripped); a stripped group is still a
   valid `create-or-replace-groups` payload
+- `masterData` — only when included explicitly: per library the root modules
+  with their relevant attribute ids, and the attributes a customer sees
+  (`isMain` or `userRight` `Simple`) with description, type, group and
+  `selections` (value and name, no image URLs). Everything else is reachable
+  through [find-attributes](#find-attributes)
 
 Example: `{ "include": ["articles", "groups"] }`
 
@@ -249,11 +256,28 @@ Example: `{ "include": ["articles", "groups"] }`
 
 No parameters. Returns the [authoring rules](#authoring-pos-groups) as text:
 the payload format of `create-or-replace-groups`, the root-module fields, the
-coordinate and dimension conventions, and the docking-topology semantics.
-Answered by the server itself — it works even without a connected page.
-Agents should fetch this before authoring pos groups (the same text is
-delivered as server instructions at initialize, but not every client surfaces
-those).
+placement options, the docking vectors with their valid pairs, `mode` and
+`offset`, and the recipes for a row, a wall unit above a base unit, an island
+and a corner. Answered by the server itself — it works even without a
+connected page. Agents should fetch this before authoring pos groups (the same
+text is delivered as server instructions at initialize, but not every client
+surfaces those).
+
+### find-attributes
+
+Searches the attribute vocabulary of the loaded libraries by text — attribute
+id, name, description, group or selection name — and returns the matching
+attributes with their `selections`, their `userRight`, and the root modules
+that carry them. It searches the full master data, so it also finds the
+attributes the compact `masterData` section leaves out. At most 20 matches
+are returned; narrow the text when the result carries a `hint`.
+
+| Parameter | Type | Required | Description |
+| --------- | ---- | -------- | ----------- |
+| `text` | `string` | yes | Text to search for, case-insensitive |
+| `libraryId` | `string` | no | Restrict the search to one library |
+
+Example: `{ "text": "front" }`
 
 ### create-or-replace-groups
 
@@ -303,35 +327,35 @@ Example — a row of three tall units against the right wall, one call:
       "libraryId": "<libraryId>",
       "placement": { "wall": "right" },
       "roots": [
-        { "id": "u1", "articleId": "<articleId>" },
         {
-          "id": "u2",
+          "id": "u1",
           "articleId": "<articleId>",
           "contextData": {
             "dockedRoots": [
               {
-                "ownDockingVector": "LeftBottom",
+                "ownDockingVector": "RightBottom",
                 "dockedRoots": [
-                  { "id": "u1", "dockingVector": "RightBottom", "mode": "StartStart", "offset": [0, 0, 0] }
+                  { "id": "u2", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }
                 ]
               }
             ]
           }
         },
         {
-          "id": "u3",
+          "id": "u2",
           "articleId": "<articleId>",
           "contextData": {
             "dockedRoots": [
               {
-                "ownDockingVector": "LeftBottom",
+                "ownDockingVector": "RightBottom",
                 "dockedRoots": [
-                  { "id": "u2", "dockingVector": "RightBottom", "mode": "StartStart", "offset": [0, 0, 0] }
+                  { "id": "u3", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }
                 ]
               }
             ]
           }
-        }
+        },
+        { "id": "u3", "articleId": "<articleId>" }
       ]
     }
   ]
@@ -401,10 +425,15 @@ where.**
   contextData? }`. `id` is a temporary unique id of your choice for new roots
   (regenerated by the planner, docking and repositioning references are
   remapped automatically); keep the real ids of roots that already exist in a
-  replaced group. Everything else the calculation needs — the master-data
-  module and the full input attribute set — is completed automatically from
-  the article template. `attributes` are `[{ id, value }]` overrides;
-  attribute ids and allowed values come from `masterData`.
+  replaced group. The catalog says what an article is (`desc`, `category`),
+  how big it is (`dimensions`), how it docks (`dockingVectors`) and what it
+  contains (`subModules`). Sub-modules come with the article — the agent
+  authors articles, their attributes and their docking, nothing else.
+  Everything else the calculation needs — the master-data module and the full
+  input attribute set — is completed automatically from the article template.
+  `attributes` are `[{ id, value }]` overrides; attribute ids and allowed
+  values come from the `masterData` section (requested explicitly) or from
+  `find-attributes`.
 - **Never set `pos`, `rotationY` or `articlePos`** — all positions and
   rotations are computed by the planner, and new roots carrying
   `articlePos`/`rotationY` are rejected. Position a group declaratively
@@ -412,22 +441,48 @@ where.**
   [create-or-replace-groups](#create-or-replace-groups).
 - Docking (`contextData`) relates the root modules of a group to each other
   and is **required**: in a group with several roots, every additional root
-  must dock to another root (undocked roots are rejected — they would all
-  land at the same spot). Docking vector *names* suffice; the indices are
-  resolved automatically. The `mode` (`StartStart`, `EndEnd`, `StartEnd`,
-  `EndStart`) selects which endpoints of the two docking vectors are aligned.
-  The docking vectors of an article can be inspected on the calculated groups
-  in the plan (`dockInfos`).
-- Verify results numerically: the returned groups carry `pos`, `rotationY`
-  and `footprint`, and `logMessages` entries with category `Error` mean the
-  input is wrong (typically a bad `articleId` or attribute value).
+  must be docked to a root that is already placed (undocked roots are
+  rejected — they would all land at the same spot). The docking entry is
+  written on the placed root (the anchor) and lists the new root under
+  `dockedRoots`; the anchor's `ownDockingVector` meets the new root's
+  `dockingVector`. Docking vector *names* suffice; the indices are resolved
+  automatically. An `offset` only takes effect in this direction — an entry
+  written on the new root loses it.
+- Docking vectors are named edges of a root module (`dockInfos`; the names
+  per article are in the catalog as `dockingVectors`). `Left`/`Right` vectors
+  lie on the side faces and run from the back to the front, `Back` vectors
+  lie on the back face and run from left to right; `Top`/`Bottom` name the
+  upper and lower edge; `LeftBack`/`RightBack` are the back edges of the arms
+  of an L-shaped corner module. Valid pairs (anchor → new root): beside —
+  `RightBottom → LeftBottom` (to the right), `LeftBottom → RightBottom` (to
+  the left); on top — `LeftTop → LeftBottom`, `RightTop → RightBottom`,
+  `BackTop → BackBottom` (the new root may be narrower); back to back —
+  `BackBottom → BackBottom`, `BackTop → BackTop` (the new root is turned by
+  180°, omit `mode`). A root without docking vectors (a hood, for example)
+  cannot be docked and gets its own group.
+- `mode` selects which endpoints coincide: `StartStart` (default) the start
+  points — the backs for side vectors, the left edges for back vectors;
+  `EndEnd` the end points; `StartEnd` and `EndStart` mix them. `offset` is a
+  translation `[x, y, z]` in millimetres added to the new root after docking
+  — `y` for the gap between a base unit and the wall unit above it, `x` for a
+  gap in a row. Recipes: a row (`RightBottom → LeftBottom`, chained), a wall
+  unit above a base unit (`LeftTop → LeftBottom` with a `y` offset), a narrow
+  wall unit right-aligned above a wide base unit (`BackTop → BackBottom`,
+  `EndEnd`, `y` offset), a worktop lying on a unit (`LeftTop → LeftBottom`,
+  no offset), an island (`BackBottom → BackBottom`, no `mode`), a corner (the
+  rows continue from the L-shaped module's `RightBottom` and `LeftBottom`).
+- Verify results numerically: the returned groups carry `pos`, `rotationY`,
+  `footprint` and the `dockInfos` of every root, and `logMessages` entries
+  with category `Error` mean the input is wrong (typically a bad `articleId`
+  or attribute value).
 
 ## Demo walkthrough
 
 With a connected agent, this sequence exercises the whole example:
 
-1. `get-plan-context` — master data with descriptions, compact articles,
-   rooms (with walls), current groups
+1. `get-plan-context` — rooms (with walls), compact articles (with docking
+   vectors and dimensions), current groups; `find-attributes` for the
+   attribute behind a requested property
 2. `create-or-replace-groups` — create one group with two docked cabinets and
    `placement: { "wall": "right" }`; they appear arranged against the right
    wall
@@ -452,6 +507,8 @@ operations:
 | "Move the group to the back right corner." | `place-group` (`wall: "right", alignment: "top"`) |
 | "Add a wardrobe next to the existing group." | `get-plan-context`, `create-or-replace-groups` |
 | "Make all cabinets in the group 900 mm high." | `get-plan-context`, `create-or-replace-groups` (replace) or `update-attribute` |
+| "Which attribute sets the front colour, and which values are allowed?" | `find-attributes` |
+| "Put a wall unit above each base unit." | `get-plan-context`, `create-or-replace-groups` (replace, stacking recipe) |
 | "Replace the middle cabinet with a drawer unit." | `get-plan-context`, `create-or-replace-groups` (replace) |
 | "What does the current plan cost?" | `get-price` |
 | "Show me the plan." | `get-plan-images` |

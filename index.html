@@ -1358,6 +1358,71 @@
         return undefined;
       };
 
+      const groupPointToRoom = (group, [x, z]) => {
+        const [roomX, , roomZ] = transformPointByRoot(
+          { articlePos: group.pos, rotationY: group.rotationY },
+          [x, 0, z],
+        );
+        return [roomX, roomZ];
+      };
+
+      const footprintCornersInRoom = (footprint, group) => {
+        const [minX, maxX] = footprint.x;
+        const [minZ, maxZ] = footprint.z;
+        return [
+          [minX, minZ],
+          [maxX, minZ],
+          [maxX, maxZ],
+          [minX, maxZ],
+        ].map((corner) => groupPointToRoom(group, corner));
+      };
+
+      const rootFootprintInRoom = (group, root) =>
+        rootFootprintPoints(root, (group.ver ?? 0) > 0).map((point) =>
+          groupPointToRoom(group, point),
+        );
+
+      const edgeNormals = (polygon) => {
+        const normals = [];
+        for (let index = 0; index < polygon.length; index++) {
+          const from = polygon[index];
+          const to = polygon[(index + 1) % polygon.length];
+          const normal = unitDirection(from, to);
+          if (normal) {
+            normals.push([-normal[1], normal[0]]);
+          }
+        }
+        return normals;
+      };
+
+      const projectOntoAxis = (polygon, [axisX, axisZ]) => {
+        let minimum = Number.POSITIVE_INFINITY;
+        let maximum = Number.NEGATIVE_INFINITY;
+        for (const [x, z] of polygon) {
+          const projection = x * axisX + z * axisZ;
+          minimum = Math.min(minimum, projection);
+          maximum = Math.max(maximum, projection);
+        }
+        return [minimum, maximum];
+      };
+
+      // Two convex footprints touch when no edge normal of either separates
+      // them by more than the tolerance (separating axis theorem); flush
+      // contact counts.
+      const convexPolygonsTouch = (a, b, toleranceMm) => {
+        if (a.length < 3 || b.length < 3) {
+          return false;
+        }
+        for (const axis of [...edgeNormals(a), ...edgeNormals(b)]) {
+          const [minA, maxA] = projectOntoAxis(a, axis);
+          const [minB, maxB] = projectOntoAxis(b, axis);
+          if (maxA < minB - toleranceMm || maxB < minA - toleranceMm) {
+            return false;
+          }
+        }
+        return true;
+      };
+
       const DEFAULT_SECTIONS = ['rooms', 'articles', 'groups'];
 
       const MAX_ATTRIBUTE_MATCHES = 20;
@@ -1422,6 +1487,86 @@
           .filter((id) => id !== 'CollisionBox');
 
       const isGeneratedRoot = (root) => root?.isGenerated === true;
+
+      // The docking vectors of a root that no contextData entry uses -
+      // derived from the docking, not from geometry.
+      const freeDockingVectors = (root) => {
+        const used = new Set(
+          (root?.contextData?.dockedRoots ?? [])
+            .filter((dockedContext) => dockedContext?.dockedRoots?.length)
+            .map((dockedContext) => dockedContext.ownDockingVector),
+        );
+        return dockingVectorNames(root).filter((name) => !used.has(name));
+      };
+
+      const PARTNER_VECTOR = {
+        LeftBottom: 'RightBottom',
+        RightBottom: 'LeftBottom',
+        LeftTop: 'LeftBottom',
+        RightTop: 'RightBottom',
+        BackBottom: 'BackBottom',
+        BackTop: 'BackBottom',
+      };
+
+      const CONTACT_TOLERANCE_MM = 5;
+
+      // The existing group whose footprint the placed footprint touches or
+      // overlaps, with the root of that group nearest to the placed footprint.
+      const findGroupContact = (placedCorners, groups, excludedGroupIds) => {
+        const center = [
+          placedCorners.reduce((sum, [x]) => sum + x, 0) / placedCorners.length,
+          placedCorners.reduce((sum, [, z]) => sum + z, 0) /
+            placedCorners.length,
+        ];
+        for (const group of groups) {
+          if (excludedGroupIds.has(group.id)) {
+            continue;
+          }
+          const footprint = groupFootprint(group);
+          if (
+            !footprint ||
+            !convexPolygonsTouch(
+              placedCorners,
+              footprintCornersInRoom(footprint, group),
+              CONTACT_TOLERANCE_MM,
+            )
+          ) {
+            continue;
+          }
+          let nearestRoot;
+          let nearestDistance = Number.POSITIVE_INFINITY;
+          for (const root of group.roots ?? []) {
+            if (isGeneratedRoot(root)) {
+              continue;
+            }
+            for (const [x, z] of rootFootprintInRoom(group, root)) {
+              const distance = Math.hypot(x - center[0], z - center[1]);
+              if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestRoot = root;
+              }
+            }
+          }
+          return { group, root: nearestRoot ?? group.roots?.[0] };
+        }
+        return undefined;
+      };
+
+      const contactError = (what, contact) => {
+        const free = freeDockingVectors(contact.root);
+        const sideVector = free.find(
+          (name) => name.endsWith('Bottom') && !name.includes('Back'),
+        );
+        const example = sideVector
+          ? ` - e.g. on root '${contact.root.id}': { "ownDockingVector": "${sideVector}", "dockedRoots": [{ "id": "<new root>", "dockingVector": "${PARTNER_VECTOR[sideVector]}", "mode": "StartStart", "offset": [0, 0, 0] }] }`
+          : '';
+        return (
+          `${what} would meet group '${contact.group.id}' (root '${contact.root.id}', article ${contact.root.articleId}; ` +
+          `free docking vectors: ${free.join(', ') || 'none'}). Units next to an existing group are roots of that group: ` +
+          `take group '${contact.group.id}' from get-plan-context, add the new roots docked to a free vector of the root they ` +
+          `continue${example}, and resubmit it with its id. A new group with a placement is only for a free stretch of wall.`
+        );
+      };
 
       const stripDockingIndices = (contextData) => ({
         dockedRoots: (contextData?.dockedRoots ?? []).map((dockedContext) => ({
@@ -1635,6 +1780,7 @@
           contextData: stripDockingIndices(root.contextData),
         }),
         dockingVectors: dockingVectorNames(root),
+        freeDockingVectors: freeDockingVectors(root),
         subModules: (root.modules ?? []).map((module) => module.name),
         ...(root.logMessages?.length && { logMessages: root.logMessages }),
       });
@@ -2061,6 +2207,11 @@
             const newGroupIds = afterGroups
               .map((group) => group.id)
               .filter((id) => !beforeGroupIds.has(id));
+            const groupsOfThisCall = new Set([
+              ...newGroupIds,
+              ...posGroups.map((group) => group.id).filter(Boolean),
+            ]);
+            const contactErrors = [];
             const placedGroups = [];
             let newGroupCursor = 0;
             posGroups.forEach((group, groupIndex) => {
@@ -2083,6 +2234,22 @@
                 placementEntry.resolved,
                 placementEntry.spec,
               );
+              // a placement that meets another group is a docking relation
+              // expressed as a position: the roots belong into that group
+              const contact = findGroupContact(
+                footprintCornersInRoom(placement.footprint, placement),
+                afterGroups,
+                groupsOfThisCall,
+              );
+              if (contact) {
+                contactErrors.push(
+                  contactError(
+                    `posGroups[${groupIndex}] placed at the ${placementEntry.resolved.wall.side} wall`,
+                    contact,
+                  ),
+                );
+                return;
+              }
               placedGroups.push(repositionedGroup(resultGroup, placement));
               placements.push({
                 groupId: resultGroup.id,
@@ -2093,6 +2260,21 @@
                 }),
               });
             });
+            if (contactErrors.length > 0) {
+              // nothing of this call stays: the created groups are removed
+              // again, replaced groups keep their new roots but were not moved
+              for (const id of newGroupIds) {
+                api.extended.removeExternalObject(id);
+              }
+              throw new Error(
+                'Placement rejected - the groups created by this call were removed again' +
+                  (posGroups.some((group) => beforeGroupIds.has(group.id))
+                    ? ', replaced groups were not moved'
+                    : '') +
+                  ':\n' +
+                  contactErrors.join('\n'),
+              );
+            }
             if (placedGroups.length > 0) {
               await api.extended.loadExternalObjectGroupLayout(
                 { posGroups: placedGroups },
@@ -2162,6 +2344,20 @@
           const spec = { wall: wallArg, alignment, offsetMm, roomIndex };
           const resolved = resolveWall(rooms, spec);
           const placement = placeGroupAtWall(group, resolved, spec);
+          const contact = findGroupContact(
+            footprintCornersInRoom(placement.footprint, placement),
+            groups,
+            new Set([group.id]),
+          );
+          if (contact) {
+            throw new Error(
+              'Placement rejected - the group was not moved: ' +
+                contactError(
+                  `Group '${group.id}' placed at the ${resolved.wall.side} wall`,
+                  contact,
+                ),
+            );
+          }
           const loaded = await api.extended.loadExternalObjectGroupLayout(
             { posGroups: [repositionedGroup(group, placement)] },
             'posGroups',

@@ -245,8 +245,9 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   (`pos`, `rotationY`, `footprint`) and per root the article pick (`id`,
   `articleId`, input `attributes`, `contextData` with vector names only) plus
   read-only facts (`articleName`, `desc`, `category`, `dockingVectors`,
-  `subModules`, `isGenerated`). No root positions, no geometry. A returned
-  group is a valid `create-or-replace-groups` payload as it is
+  `freeDockingVectors` — the vectors no docking entry uses, where a new root
+  can dock — `subModules`, `isGenerated`). No root positions, no geometry. A
+  returned group is a valid `create-or-replace-groups` payload as it is
 - `masterData` — only when included explicitly: per library the root modules
   with their relevant attribute ids, and the attributes a customer sees
   (`isMain` or `userRight` `Simple`) with description, type, group and
@@ -304,7 +305,11 @@ Positioning, per group:
   is placed by its corner point: the point goes exactly into the room corner
   and the article is turned so that both back edges lie along the two walls;
   any other group is placed by its footprint. The wall is resolved before
-  anything loads, and the result reports `placedBy` per group.
+  anything loads, and the result reports `placedBy` per group. A placement
+  whose footprint touches or overlaps another group is rejected: the groups
+  created by the call are removed again, and the error names that group, its
+  nearest root and the root's free docking vectors — the new units belong
+  into that group, docked there.
 - `repositioningData: { posGroup, posRotationY?, rootId, rootRelPos?,
   rootRelRotationY? }` — places the root `rootId` at the free point
   `posGroup` (applied once, during the load, so the group never appears at
@@ -375,7 +380,10 @@ from the wall, the alignment, and the group's calculated footprint — or, for
 a group with a corner article and the adjoining wall as alignment, from the
 article's corner point — then reloads the group with that placement as
 `repositioningData` of its first root. No root positions travel; the planner
-arranges the roots from their docking and derives the group position.
+arranges the roots from their docking and derives the group position. A
+target that touches or overlaps another group is rejected and the group is
+not moved; the error names the group and the free docking vectors to dock to
+instead.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -455,6 +463,14 @@ where.**
   [create-or-replace-groups](#create-or-replace-groups). The server follows
   the same rule for its own re-loads: a placement travels as
   `repositioningData` of the group's first root, never as root positions.
+- **Extending a kitchen**: units next to an existing group are roots of that
+  group, never a new group. Take the group from `get-plan-context`, add the
+  new picks, dock each to a free docking vector of the root it continues
+  (`freeDockingVectors` per root: a free `LeftBottom` takes the new root's
+  `RightBottom`, a free `RightBottom` takes `LeftBottom`, a free `Top` vector
+  takes the new root's `Bottom` vector), and resubmit the group with its id.
+  A new group with a placement is only for a free stretch of wall — a
+  placement that meets another group is rejected.
 - Docking (`contextData`) relates the root modules of a group to each other
   and is **required**: in a group with several roots, every additional root
   must be docked to a root that is already placed (undocked roots are
@@ -526,7 +542,7 @@ operations:
 | "Create a sideboard of three docked cabinets, 800 mm wide each, against the longest wall." | `get-plan-context`, `create-or-replace-groups` |
 | "Add a group of three tall units to the wall on the right." | `get-plan-context`, `create-or-replace-groups` (with `placement`) |
 | "Move the group to the back right corner." | `place-group` (`wall: "right", alignment: "top"`) |
-| "Add a wardrobe next to the existing group." | `get-plan-context`, `create-or-replace-groups` |
+| "Add a wardrobe next to the existing group." | `get-plan-context`, `create-or-replace-groups` (replace: the wardrobe docks to a free vector of the group's end root) |
 | "Make all cabinets in the group 900 mm high." | `get-plan-context`, `create-or-replace-groups` (replace) or `update-attribute` |
 | "Which attribute sets the front colour, and which values are allowed?" | `find-attributes` |
 | "Put a wall unit above each base unit." | `get-plan-context`, `create-or-replace-groups` (replace, stacking recipe) |

@@ -35,14 +35,14 @@ const STATIC_CONTENT_TYPES = {
 };
 
 const AUTHORING_RULES = `Authoring rules for pos groups:
-- A group is { id?, libraryId?, placement?, repositioningData?, roots: [...] }. A root module is an article pick: { id, articleId, attributes?, contextData? }. Use a unique id of your choice for new roots (the planner regenerates it and remaps your docking and repositioning references); keep the real ids of roots that already exist in a replaced group. Choose the articleId from the article catalog of get-plan-context: desc and category say what an article is and what it is for, dimensions give its size, dockingVectors the names of its docking vectors, subModules its fronts and appliances. Sub-modules come with the article - you author articles, their attributes and their docking, nothing else. attributes is an optional list of { id, value } overrides; attribute ids and allowed values come from the masterData section (request it with include) or from find-attributes. Everything else the calculation needs is completed automatically from the article template.
+- A group is { id?, libraryId?, placement?, repositioningData?, roots: [...] }. A root module is an article pick: { id, articleId, attributes?, contextData? }. Use a unique id of your choice for new roots (the planner regenerates it and remaps your docking and repositioning references); keep the real ids of roots that already exist in a replaced group. Choose the articleId from the article catalog of get-plan-context: desc and category say what an article is and what it is for, dimensions give its size, dockingVectors the names of its docking vectors, subModules its fronts and appliances, cornerArticle true marks an article made for a room corner. Sub-modules come with the article - you author articles, their attributes and their docking, nothing else. attributes is an optional list of { id, value } overrides; attribute ids and allowed values come from the masterData section (request it with include) or from find-attributes. Everything else the calculation needs is completed automatically from the article template.
 - Never set pos, rotationY or articlePos anywhere - all positions and rotations are computed by the planner, and new roots carrying articlePos/rotationY are rejected. Position a group declaratively instead, with placement or repositioningData.
-- placement: { wall, alignment?, offsetMm?, roomIndex? } on a group stands it against a wall in the same call. wall is a side label ('left'/'right'/'top'/'bottom' as seen in the top-view image; the longest wall on that side is used) or a wall index from the room's walls array. alignment is 'center' (default), 'start'/'end' (the wall's endpoints), or the side label of an adjoining wall to sit flush in that corner - e.g. wall: "right", alignment: "top" is the corner the right and top walls share. offsetMm shifts along the wall.
+- placement: { wall, alignment?, offsetMm?, roomIndex? } on a group stands it against a wall in the same call. wall is a side label ('left'/'right'/'top'/'bottom' as seen in the top-view image; the longest wall on that side is used) or a wall index from the room's walls array. alignment is 'center' (default), 'start'/'end' (the wall's endpoints), or the side label of an adjoining wall to sit flush in that corner - e.g. wall: "right", alignment: "top" is the corner the right and top walls share. offsetMm shifts along the wall. With a corner article in the group, the side label of the adjoining wall as alignment puts the article's corner point exactly into that room corner and turns it so that both back edges lie along the two walls; without a corner article the group's footprint is placed flush into the corner.
 - repositioningData: { posGroup: [x, y, z], posRotationY?, rootId, rootRelPos?, rootRelRotationY? } positions a group at a free point: the root module rootId ends up at posGroup (millimetres, y up, y = 0 on the floor) with yaw posRotationY (degrees), and the planner derives the group transform. Take coordinates from the walls array (wall start/end are [x, z]; pos = [x, 0, z]). rootRelPos/rootRelRotationY offset the target. Applied exactly once when the group loads; groups returned by get-plan-context never carry this field. Use either placement or repositioningData, not both.
 - Docking (contextData) relates the root modules of a group to each other and is required: in a group with several roots, every additional root must be docked to a root that is already placed (undocked roots are rejected). Write the docking entry on the placed root (the anchor) and list the new root under dockedRoots - the anchor's own vector meets the named vector of the new root:
   { "id": "A", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom", "dockedRoots": [{ "id": "B", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }] }] } }
   puts B directly right of A. Chain it (A lists B, B lists C, ...) for a row; one anchor may carry several entries, one per own vector. Docking vector indices are resolved from the names automatically. An offset only takes effect in this direction - an entry written on the new root loses it.
-- Docking vectors are named edges of a root module (dockInfos; the names per article are in the catalog as dockingVectors). Left and Right vectors lie on the side faces and run from the back to the front, Back vectors lie on the back face and run from left to right; Top and Bottom name the upper and lower edge; LeftBack and RightBack are the back edges of the two arms of an L-shaped corner module. Valid pairs, written as own vector of the anchor -> vector of the new root:
+- Docking vectors are named edges of a root module (dockInfos; the names per article are in the catalog as dockingVectors). Left and Right vectors lie on the side faces and run from the back to the front, Back vectors lie on the back face and run from left to right; Top and Bottom name the upper and lower edge; LeftBack and RightBack exist only on corner articles - they are the back edges of the two arms of an L-shaped corner module, and their start point is the article's corner point. Valid pairs, written as own vector of the anchor -> vector of the new root:
   beside: RightBottom -> LeftBottom (new root to the right), LeftBottom -> RightBottom (new root to the left).
   on top: LeftTop -> LeftBottom, RightTop -> RightBottom, BackTop -> BackBottom (the new root may be narrower or shallower).
   back to back: BackBottom -> BackBottom, BackTop -> BackTop (the new root is turned by 180 degrees; omit mode for these pairs).
@@ -54,7 +54,7 @@ const AUTHORING_RULES = `Authoring rules for pos groups:
   narrow wall unit right-aligned above a wide base unit: A -> W BackTop -> BackBottom, mode EndEnd, offset [0, <gap>, 0].
   worktop or any part lying directly on a unit: A -> T LeftTop -> LeftBottom, no offset.
   island: front unit A -> back unit B BackBottom -> BackBottom, no mode.
-  corner with an L-shaped module C: the rows continue from C's RightBottom (to the right) and LeftBottom (to the left) like from any other unit.
+  room corner (an L-shaped kitchen, "in the corner"): start the group with a corner article C (cornerArticle true in the catalog), give the group placement { wall, alignment: <side label of the adjoining wall> }, and continue the rows along both walls from C's RightBottom (to the right) and LeftBottom (to the left) like from any other unit. Prefer a corner article over butting two straight units together in a corner.
 - To move an existing group, call place-group (same wall/alignment/offset vocabulary as placement). To modify an existing group, take it from get-plan-context, change it, and resubmit it with its id via create-or-replace-groups; keep the ids of the root modules you keep. A replace re-applies placement and positions.
 - Verify results numerically: the returned groups carry pos, rotationY, footprint and the dockInfos of every root, and logMessages entries with category Error mean the input is wrong (typically a bad articleId or attribute value). Do not judge placement from a rendering alone.
 
@@ -73,13 +73,13 @@ Second example - "two base units with a wall unit above each" is the same call w
   { "id": "w1", "articleId": "<wall unit>" },
   { "id": "w2", "articleId": "<wall unit>" }
 
-Third example - "a unit in the back right corner" (back = top in the top view): the same call with "placement": { "wall": "right", "alignment": "top" }. The equivalent with repositioningData, anchoring root u1 at the corner point taken from the walls array: "repositioningData": { "posGroup": [<corner x>, 0, <corner z>], "posRotationY": 270, "rootId": "u1" }.`;
+Third example - "a unit in the back right corner" (back = top in the top view): the same call with "placement": { "wall": "right", "alignment": "top" }. For an L-shaped kitchen in that corner make u1 a corner article and dock one row to its RightBottom and the other to its LeftBottom. The equivalent with repositioningData, anchoring root u1 at the corner point taken from the walls array: "repositioningData": { "posGroup": [<corner x>, 0, <corner z>], "posRotationY": 270, "rootId": "u1" }.`;
 
 const INSTRUCTIONS = `This server orchestrates HOMAG Intelligence (HI) object groups in a live Roomle room-planner session (proof of concept).
 
 Typical workflow:
 1. get-plan-context: fetch the rooms (each with a derived walls array), the article catalog (desc, category, dimensions, docking vector names, sub-modules per article) and the groups currently in the plan. Add masterData to include for the attribute vocabulary, or look an attribute up with find-attributes.
-2. create-or-replace-groups: author each group as article picks plus docking (the placed root lists the new root) plus a placement (wall side label) - one call creates, docks and positions the group; never author coordinates. A group whose id matches an existing group in the plan completely replaces that group; all other groups are created. The payload format, the docking pairs and the recipes are returned by get-authoring-rules.
+2. create-or-replace-groups: author each group as article picks plus docking (the placed root lists the new root) plus a placement (wall side label; a plan into a room corner starts with a corner article, cornerArticle true in the catalog) - one call creates, docks and positions the group; never author coordinates. A group whose id matches an existing group in the plan completely replaces that group; all other groups are created. The payload format, the docking pairs and the recipes are returned by get-authoring-rules.
 3. place-group: move an existing group to another wall when asked.
 4. Check the result with get-price or get-order-data, and inspect it with get-plan-images.
 
@@ -94,7 +94,8 @@ const TOOLS = [
       'top-view image), start/end [x, z] in millimetres, lengthMm, type, heightMm, thicknessMm and the ' +
       'facingRotationY a group needs to stand against that wall), articles (compact catalog: articleId, name, ' +
       'desc, category, image, and per root module its master-data module, dimensions, main attribute values, ' +
-      'docking vector names, insert levels and sub-modules) and groups (the groups currently in the plan with ' +
+      'docking vector names, insert levels and sub-modules, plus cornerArticle for articles made for a room ' +
+      'corner) and groups (the groups currently in the plan with ' +
       'their pos, rotationY and footprint, without calculated geometry). masterData (per library the root ' +
       'modules and the customer-facing attributes with their allowed values) is returned only when included ' +
       'explicitly; other attributes are found with find-attributes. Use it before authoring or modifying groups.',
@@ -153,7 +154,8 @@ const TOOLS = [
       '({ id, articleId, attributes?, contextData? }) - the server completes them from the article template, ' +
       'and the planner calculates and arranges the docked root modules (the docking vector names of an article ' +
       'are in the catalog as dockingVectors; the placed root lists the new root); never author coordinates. Position each ' +
-      'group in the same call: placement ({ wall, alignment?, offsetMm? }) stands it against a wall, ' +
+      'group in the same call: placement ({ wall, alignment?, offsetMm? }) stands it against a wall or, with a ' +
+      'corner article and the adjoining wall as alignment, puts its corner point into the room corner; ' +
       'repositioningData places a root at a free point. A group whose id matches an existing group completely ' +
       'replaces that group (root modules keep their ids when they already exist in the replaced group); all ' +
       'other groups are created with regenerated ids. Returns the loaded object ids and the resulting groups - ' +
@@ -177,7 +179,8 @@ const TOOLS = [
     name: 'place-group',
     description:
       'Places an existing group against a wall of a room: computes the group pos/rotationY from the wall, the ' +
-      "alignment and the group's calculated footprint, then reloads the group there. Pick the wall from the " +
+      "alignment and the group's calculated footprint - a group with a corner article is placed by its corner " +
+      'point when the alignment names the adjoining wall - then reloads the group there. Pick the wall from the ' +
       'walls array of get-plan-context by its side label (left/right/top/bottom as seen in the top-view image) ' +
       'and length, and pass its index. Use this after create-or-replace-groups to position a group - never ' +
       'author coordinates yourself. Returns the applied pos/rotationY, the footprint, the wall and the ' +

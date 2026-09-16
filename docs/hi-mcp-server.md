@@ -239,7 +239,8 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   value), `mainAttributes` (the values of the `isMain` attributes),
   `dockingVectors` (the names of its docking vectors — from the template, or
   from a calculated root of the same article in the plan), `insertLevels` and
-  `subModules` (fronts, appliances)
+  `subModules` (fronts, appliances); `cornerArticle` is `true` for an article
+  made for a room corner (it carries `LeftBack`/`RightBack` docking vectors)
 - `groups` — the groups currently in the plan with their `pos`, `rotationY`
   and a derived `footprint`, without calculated geometry (`parts`,
   `contours`, and `repositioningData` stripped); a stripped group is still a
@@ -297,8 +298,11 @@ Positioning, per group:
   longest wall on that side is used) or a wall index from the room's `walls`
   array. `alignment` is `center` (default), `start`/`end`, or the side label
   of an adjoining wall to sit flush in that corner (`wall: "right",
-  alignment: "top"` is the back right corner). The wall is resolved before
-  anything loads.
+  alignment: "top"` is the back right corner). A group with a corner article
+  is placed by its corner point: the point goes exactly into the room corner
+  and the article is turned so that both back edges lie along the two walls;
+  any other group is placed by its footprint. The wall is resolved before
+  anything loads, and the result reports `placedBy` per group.
 - `repositioningData: { posGroup, posRotationY?, rootId, rootRelPos?,
   rootRelRotationY? }` — places the root `rootId` at the free point
   `posGroup` (applied once, during the load, so the group never appears at
@@ -365,8 +369,9 @@ Example — a row of three tall units against the right wall, one call:
 ### place-group
 
 Moves an existing group against a wall: computes the group `pos`/`rotationY`
-from the wall, the alignment, and the group's calculated footprint, then
-reloads the group there.
+from the wall, the alignment, and the group's calculated footprint — or, for
+a group with a corner article and the adjoining wall as alignment, from the
+article's corner point — then reloads the group there.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -452,8 +457,10 @@ where.**
   per article are in the catalog as `dockingVectors`). `Left`/`Right` vectors
   lie on the side faces and run from the back to the front, `Back` vectors
   lie on the back face and run from left to right; `Top`/`Bottom` name the
-  upper and lower edge; `LeftBack`/`RightBack` are the back edges of the arms
-  of an L-shaped corner module. Valid pairs (anchor → new root): beside —
+  upper and lower edge; `LeftBack`/`RightBack` exist only on corner articles
+  — they are the back edges of the arms of an L-shaped corner module, and
+  their start point is the article's corner point. Valid pairs (anchor → new
+  root): beside —
   `RightBottom → LeftBottom` (to the right), `LeftBottom → RightBottom` (to
   the left); on top — `LeftTop → LeftBottom`, `RightTop → RightBottom`,
   `BackTop → BackBottom` (the new root may be narrower); back to back —
@@ -469,8 +476,11 @@ where.**
   unit above a base unit (`LeftTop → LeftBottom` with a `y` offset), a narrow
   wall unit right-aligned above a wide base unit (`BackTop → BackBottom`,
   `EndEnd`, `y` offset), a worktop lying on a unit (`LeftTop → LeftBottom`,
-  no offset), an island (`BackBottom → BackBottom`, no `mode`), a corner (the
-  rows continue from the L-shaped module's `RightBottom` and `LeftBottom`).
+  no offset), an island (`BackBottom → BackBottom`, no `mode`), a room corner
+  (start the group with a corner article, `cornerArticle: true` in the
+  catalog, give it `placement: { wall, alignment: <side of the adjoining
+  wall> }`, and continue the rows along both walls from its `RightBottom` and
+  `LeftBottom` — prefer this over butting two straight units together).
 - Verify results numerically: the returned groups carry `pos`, `rotationY`,
   `footprint` and the `dockInfos` of every root, and `logMessages` entries
   with category `Error` mean the input is wrong (typically a bad `articleId`
@@ -509,6 +519,7 @@ operations:
 | "Make all cabinets in the group 900 mm high." | `get-plan-context`, `create-or-replace-groups` (replace) or `update-attribute` |
 | "Which attribute sets the front colour, and which values are allowed?" | `find-attributes` |
 | "Put a wall unit above each base unit." | `get-plan-context`, `create-or-replace-groups` (replace, stacking recipe) |
+| "Plan an L-shaped kitchen into the back right corner." | `get-plan-context` (a `cornerArticle`), `create-or-replace-groups` (corner recipe, `placement: { wall: "right", alignment: "top" }`) |
 | "Replace the middle cabinet with a drawer unit." | `get-plan-context`, `create-or-replace-groups` (replace) |
 | "What does the current plan cost?" | `get-price` |
 | "Show me the plan." | `get-plan-images` |

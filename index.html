@@ -1192,52 +1192,613 @@
         };
       };
 
-      const DIMENSION_ATTRIBUTE_IDS = [
-        'b',
-        'h',
-        't',
-        'mod_Width',
-        'mod_Height',
-        'mod_Depth',
+      // Only corner articles carry these docking vectors; their start point is
+      // the article's corner point, and they run along the two back edges that
+      // lie against the two walls of a room corner.
+      const CORNER_DOCKING_VECTOR_IDS = [
+        'LeftBackTop',
+        'RightBackTop',
+        'LeftBackBottom',
+        'RightBackBottom',
       ];
 
-      const compactArticle = (article) => ({
-        articleId: article.articleId,
-        articleName: article.articleName,
-        desc: article.desc,
-        imageUrl: article.imageUrl,
-        category: article.category,
-        libraryId: article.libraryId,
-        catalog: article.catalog,
-        rootModules: (article.roots ?? []).map((root) => ({
-          name: root.name,
-          dimensions: Object.fromEntries(
-            (root.attributes ?? [])
-              .filter((attribute) =>
-                DIMENSION_ATTRIBUTE_IDS.includes(attribute.id),
-              )
-              .map((attribute) => [attribute.id, attribute.value]),
+      const isCornerDockingVector = (id) =>
+        CORNER_DOCKING_VECTOR_IDS.includes(id);
+
+      const POINT_EPSILON_MM = 1;
+
+      const samePoint = (a, b) =>
+        Math.hypot(a[0] - b[0], a[1] - b[1]) < POINT_EPSILON_MM;
+
+      const unitDirection = (from, to) => {
+        const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+        return length < 1e-6
+          ? undefined
+          : [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
+      };
+
+      const rotateDirection = ([x, z], degrees) => {
+        const theta = toRadians(degrees);
+        return [
+          x * Math.cos(theta) + z * Math.sin(theta),
+          -x * Math.sin(theta) + z * Math.cos(theta),
+        ];
+      };
+
+      const sameDirection = (a, b) => a[0] * b[0] + a[1] * b[1] > 0.999;
+
+      const rootCornerGeometry = (root) => {
+        const vectorPair = (row) => ({
+          left: root.dockInfos?.find(
+            (dockInfo) => dockInfo.id === `LeftBack${row}`,
           ),
+          right: root.dockInfos?.find(
+            (dockInfo) => dockInfo.id === `RightBack${row}`,
+          ),
+        });
+        const bottom = vectorPair('Bottom');
+        const { left, right } =
+          bottom.left && bottom.right ? bottom : vectorPair('Top');
+        if (!left?.start || !left.end || !right?.start || !right.end) {
+          return undefined;
+        }
+        const toGroupXz = (point) => {
+          const [x, , z] = transformPointByRoot(root, [
+            point[0],
+            point[1],
+            point[2],
+          ]);
+          return [x, z];
+        };
+        const leftStart = toGroupXz(left.start);
+        const rightStart = toGroupXz(right.start);
+        const leftDirection = unitDirection(leftStart, toGroupXz(left.end));
+        const rightDirection = unitDirection(rightStart, toGroupXz(right.end));
+        // one corner point and two back edges running along different walls
+        if (
+          !samePoint(leftStart, rightStart) ||
+          !leftDirection ||
+          !rightDirection ||
+          Math.abs(
+            leftDirection[0] * rightDirection[0] +
+              leftDirection[1] * rightDirection[1],
+          ) > 0.01
+        ) {
+          return undefined;
+        }
+        return {
+          rootId: root.id ?? '',
+          point: rightStart,
+          directions: [leftDirection, rightDirection],
+        };
+      };
+
+      const groupCornerGeometry = (group) => {
+        for (const root of group.roots ?? []) {
+          const geometry = rootCornerGeometry(root);
+          if (geometry) {
+            return geometry;
+          }
+        }
+        return undefined;
+      };
+
+      const sharedCorner = (wall, other) =>
+        [wall.start, wall.end].find((point) =>
+          [other.start, other.end].some((candidate) =>
+            samePoint(point, candidate),
+          ),
+        );
+
+      // The wall on the given side of the room that meets this wall in a corner.
+      const adjoiningWall = (walls, wall, side) =>
+        walls.find(
+          (candidate) =>
+            candidate.index !== wall.index &&
+            candidate.side === side &&
+            candidate.type === 'wall' &&
+            sharedCorner(wall, candidate) !== undefined,
+        );
+
+      // Puts the corner point of a corner article into the corner the two
+      // walls share and turns the group so that its two back edges run along
+      // the walls. Undefined when the article's back edges cannot be matched
+      // to both walls.
+      const placeCornerAtWalls = (wall, adjoining, corner, offsetMm) => {
+        const cornerPoint = sharedCorner(wall, adjoining);
+        if (!cornerPoint) {
+          return undefined;
+        }
+        const otherEnd = (candidate) =>
+          samePoint(candidate.start, cornerPoint)
+            ? candidate.end
+            : candidate.start;
+        const alongWall = unitDirection(cornerPoint, otherEnd(wall));
+        const alongAdjoining = unitDirection(cornerPoint, otherEnd(adjoining));
+        if (!alongWall || !alongAdjoining) {
+          return undefined;
+        }
+        const [leftDirection, rightDirection] = corner.directions;
+        const assignments = [
+          [alongWall, alongAdjoining],
+          [alongAdjoining, alongWall],
+        ];
+        for (const [leftTarget, rightTarget] of assignments) {
+          const angle = toDegrees(
+            Math.atan2(leftDirection[1], leftDirection[0]) -
+              Math.atan2(leftTarget[1], leftTarget[0]),
+          );
+          for (const rotationY of [angle, -angle]) {
+            if (
+              sameDirection(
+                rotateDirection(leftDirection, rotationY),
+                leftTarget,
+              ) &&
+              sameDirection(
+                rotateDirection(rightDirection, rotationY),
+                rightTarget,
+              )
+            ) {
+              const rotatedPoint = rotateDirection(corner.point, rotationY);
+              return {
+                pos: [
+                  round2(
+                    cornerPoint[0] - rotatedPoint[0] + alongWall[0] * offsetMm,
+                  ),
+                  0,
+                  round2(
+                    cornerPoint[1] - rotatedPoint[1] + alongWall[1] * offsetMm,
+                  ),
+                ],
+                rotationY: round2(normalizeDegrees(rotationY)),
+              };
+            }
+          }
+        }
+        return undefined;
+      };
+
+      const groupPointToRoom = (group, [x, z]) => {
+        const [roomX, , roomZ] = transformPointByRoot(
+          { articlePos: group.pos, rotationY: group.rotationY },
+          [x, 0, z],
+        );
+        return [roomX, roomZ];
+      };
+
+      const footprintCornersInRoom = (footprint, group) => {
+        const [minX, maxX] = footprint.x;
+        const [minZ, maxZ] = footprint.z;
+        return [
+          [minX, minZ],
+          [maxX, minZ],
+          [maxX, maxZ],
+          [minX, maxZ],
+        ].map((corner) => groupPointToRoom(group, corner));
+      };
+
+      const rootFootprintInRoom = (group, root) =>
+        rootFootprintPoints(root, (group.ver ?? 0) > 0).map((point) =>
+          groupPointToRoom(group, point),
+        );
+
+      const edgeNormals = (polygon) => {
+        const normals = [];
+        for (let index = 0; index < polygon.length; index++) {
+          const from = polygon[index];
+          const to = polygon[(index + 1) % polygon.length];
+          const normal = unitDirection(from, to);
+          if (normal) {
+            normals.push([-normal[1], normal[0]]);
+          }
+        }
+        return normals;
+      };
+
+      const projectOntoAxis = (polygon, [axisX, axisZ]) => {
+        let minimum = Number.POSITIVE_INFINITY;
+        let maximum = Number.NEGATIVE_INFINITY;
+        for (const [x, z] of polygon) {
+          const projection = x * axisX + z * axisZ;
+          minimum = Math.min(minimum, projection);
+          maximum = Math.max(maximum, projection);
+        }
+        return [minimum, maximum];
+      };
+
+      // Two convex footprints touch when no edge normal of either separates
+      // them by more than the tolerance (separating axis theorem); flush
+      // contact counts.
+      const convexPolygonsTouch = (a, b, toleranceMm) => {
+        if (a.length < 3 || b.length < 3) {
+          return false;
+        }
+        for (const axis of [...edgeNormals(a), ...edgeNormals(b)]) {
+          const [minA, maxA] = projectOntoAxis(a, axis);
+          const [minB, maxB] = projectOntoAxis(b, axis);
+          if (maxA < minB - toleranceMm || maxB < minA - toleranceMm) {
+            return false;
+          }
+        }
+        return true;
+      };
+
+      const DEFAULT_SECTIONS = ['rooms', 'articles', 'groups'];
+
+      const MAX_ATTRIBUTE_MATCHES = 20;
+
+      const isRootModule = (module) =>
+        module?.isRoot === true || module?.moduleType === 'RootModule';
+
+      const isCustomerFacingAttribute = (attribute) =>
+        attribute?.isMain === true || attribute?.userRight === 'Simple';
+
+      const compactSelection = (selection) => {
+        const compact = { ...selection };
+        delete compact.imageUrl;
+        if (compact.desc === compact.name) {
+          delete compact.desc;
+        }
+        return compact;
+      };
+
+      const compactAttribute = (attribute) => ({
+        id: attribute.id,
+        name: attribute.name,
+        desc: attribute.desc,
+        type: attribute.type,
+        group: attribute.group,
+        selections: attribute.selections?.map(compactSelection),
+      });
+
+      // The root modules and the attributes a customer sees (isMain or
+      // userRight Simple). Everything else stays reachable through
+      // find-attributes.
+      const compactMasterData = (masterData) => {
+        const rootModules = (masterData?.modules ?? []).filter(isRootModule);
+        const assignedAttributeIds = new Set(
+          rootModules.flatMap((module) => module.assignedAttributes ?? []),
+        );
+        const attributes = (masterData?.attributes ?? []).filter(
+          (attribute) =>
+            assignedAttributeIds.has(attribute.id) &&
+            isCustomerFacingAttribute(attribute),
+        );
+        const attributeIds = new Set(
+          attributes.map((attribute) => attribute.id),
+        );
+        return {
+          libraryId: masterData?.libraryId,
+          modules: rootModules.map((module) => ({
+            id: module.id,
+            name: module.name,
+            desc: module.desc,
+            attributes: (module.assignedAttributes ?? []).filter((id) =>
+              attributeIds.has(id),
+            ),
+          })),
+          attributes: attributes.map(compactAttribute),
+        };
+      };
+
+      const dockingVectorNames = (root) =>
+        (root?.dockInfos ?? [])
+          .map((dockInfo) => dockInfo.id)
+          .filter((id) => id !== 'CollisionBox');
+
+      const isGeneratedRoot = (root) => root?.isGenerated === true;
+
+      // The docking vectors of a root that no contextData entry uses -
+      // derived from the docking, not from geometry.
+      const freeDockingVectors = (root) => {
+        const used = new Set(
+          (root?.contextData?.dockedRoots ?? [])
+            .filter((dockedContext) => dockedContext?.dockedRoots?.length)
+            .map((dockedContext) => dockedContext.ownDockingVector),
+        );
+        return dockingVectorNames(root).filter((name) => !used.has(name));
+      };
+
+      const PARTNER_VECTOR = {
+        LeftBottom: 'RightBottom',
+        RightBottom: 'LeftBottom',
+        LeftTop: 'LeftBottom',
+        RightTop: 'RightBottom',
+        BackBottom: 'BackBottom',
+        BackTop: 'BackBottom',
+      };
+
+      const CONTACT_TOLERANCE_MM = 5;
+
+      // The existing group whose footprint the placed footprint touches or
+      // overlaps, with the root of that group nearest to the placed footprint.
+      const findGroupContact = (placedCorners, groups, excludedGroupIds) => {
+        const center = [
+          placedCorners.reduce((sum, [x]) => sum + x, 0) / placedCorners.length,
+          placedCorners.reduce((sum, [, z]) => sum + z, 0) /
+            placedCorners.length,
+        ];
+        for (const group of groups) {
+          if (excludedGroupIds.has(group.id)) {
+            continue;
+          }
+          const footprint = groupFootprint(group);
+          if (
+            !footprint ||
+            !convexPolygonsTouch(
+              placedCorners,
+              footprintCornersInRoom(footprint, group),
+              CONTACT_TOLERANCE_MM,
+            )
+          ) {
+            continue;
+          }
+          let nearestRoot;
+          let nearestDistance = Number.POSITIVE_INFINITY;
+          for (const root of group.roots ?? []) {
+            if (isGeneratedRoot(root)) {
+              continue;
+            }
+            for (const [x, z] of rootFootprintInRoom(group, root)) {
+              const distance = Math.hypot(x - center[0], z - center[1]);
+              if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestRoot = root;
+              }
+            }
+          }
+          return { group, root: nearestRoot ?? group.roots?.[0] };
+        }
+        return undefined;
+      };
+
+      const contactError = (what, contact) => {
+        const free = freeDockingVectors(contact.root);
+        const sideVector = free.find(
+          (name) => name.endsWith('Bottom') && !name.includes('Back'),
+        );
+        const example = sideVector
+          ? ` - e.g. on root '${contact.root.id}': { "ownDockingVector": "${sideVector}", "dockedRoots": [{ "id": "<new root>", "dockingVector": "${PARTNER_VECTOR[sideVector]}", "mode": "StartStart", "offset": [0, 0, 0] }] }`
+          : '';
+        return (
+          `${what} would meet group '${contact.group.id}' (root '${contact.root.id}', article ${contact.root.articleId}; ` +
+          `free docking vectors: ${free.join(', ') || 'none'}). Units next to an existing group are roots of that group: ` +
+          `take group '${contact.group.id}' from get-plan-context, add the new roots docked to a free vector of the root they ` +
+          `continue${example}, and resubmit it with its id. A new group with a placement is only for a free stretch of wall.`
+        );
+      };
+
+      const stripDockingIndices = (contextData) => ({
+        dockedRoots: (contextData?.dockedRoots ?? []).map((dockedContext) => ({
+          ownDockingVector: dockedContext.ownDockingVector,
+          dockedRoots: (dockedContext.dockedRoots ?? []).map((dockedRoot) => ({
+            id: dockedRoot.id,
+            dockingVector: dockedRoot.dockingVector,
+            ...(dockedRoot.mode !== undefined && { mode: dockedRoot.mode }),
+            ...(dockedRoot.offset !== undefined && {
+              offset: dockedRoot.offset,
+            }),
+          })),
         })),
       });
 
-      const stripCalculatedGeometry = (module) => {
-        delete module.parts;
-        (module.modules ?? []).forEach(stripCalculatedGeometry);
-        (module.containers ?? []).forEach(stripCalculatedGeometry);
+      // The only shape a root module takes on its way from the agent to the
+      // planner: an article pick with attribute overrides and docking. Root
+      // positions never travel; the arrangement derives them from contextData.
+      const toArticlePick = (root) => ({
+        id: root.id,
+        articleId: root.articleId,
+        ...(root.libraryId && { libraryId: root.libraryId }),
+        ...(root.attributes?.length && {
+          attributes: root.attributes.map((attribute) => ({
+            id: attribute.id,
+            value: attribute.value,
+          })),
+        }),
+        ...(root.contextData && {
+          contextData: stripDockingIndices(root.contextData),
+        }),
+      });
+
+      // The planner's own roots on the way back into the planner: unchanged
+      // apart from the positions and the docking indices.
+      const withoutPositions = (root) => {
+        const copy = { ...root };
+        delete copy.articlePos;
+        delete copy.rotationY;
+        if (copy.contextData) {
+          copy.contextData = stripDockingIndices(copy.contextData);
+        }
+        return copy;
       };
 
-      const shapeGroup = (group) => {
-        const shaped = JSON.parse(JSON.stringify(group));
-        delete shaped.contours;
-        // repositioning data is applied exactly once on load; stripping it
-        // here guarantees the field only ever reaches the planner when the
-        // agent authored it deliberately in a new payload
-        delete shaped.repositioningData;
-        shaped.footprint = groupFootprint(group);
-        (shaped.roots ?? []).forEach(stripCalculatedGeometry);
-        return shaped;
+      // The group placement expressed as the room transform of one root
+      // module, so the planner derives the group position from its own
+      // arrangement and no root position has to travel in the payload.
+      const repositioningFromPlacement = (placement, anchor) => {
+        const [x, y, z] = transformPointByRoot(
+          { articlePos: placement.pos, rotationY: placement.rotationY },
+          [
+            anchor.articlePos?.[0] ?? 0,
+            anchor.articlePos?.[1] ?? 0,
+            anchor.articlePos?.[2] ?? 0,
+          ],
+        );
+        return {
+          posGroup: [round2(x), round2(y), round2(z)],
+          posRotationY: round2(
+            normalizeDegrees(placement.rotationY + (anchor.rotationY ?? 0)),
+          ),
+          rootId: anchor.id,
+        };
       };
+
+      // A calculated group sent back with a new placement: the placement
+      // becomes repositioningData of the first article root, the library
+      // regenerates the generated roots (worktop, toe kick), and no root
+      // carries a position.
+      const repositionedGroup = (resultGroup, placement) => {
+        const roots = (resultGroup.roots ?? []).filter(
+          (root) => !isGeneratedRoot(root),
+        );
+        const anchor = roots[0];
+        if (!anchor) {
+          throw new Error(
+            `Group '${resultGroup.id}' has no article root to place.`,
+          );
+        }
+        return {
+          id: resultGroup.id,
+          ...(resultGroup.libraryId && { libraryId: resultGroup.libraryId }),
+          roots: roots.map(withoutPositions),
+          repositioningData: repositioningFromPlacement(placement, anchor),
+        };
+      };
+
+      // The docking vectors of the calculated roots in the plan by article
+      // id - the fallback for an article template that does not carry its own.
+      const calculatedDockingVectorsByArticle = (groups) => {
+        const byArticle = new Map();
+        for (const group of groups) {
+          for (const root of group.roots ?? []) {
+            const names = dockingVectorNames(root);
+            if (
+              root.articleId &&
+              names.length > 0 &&
+              !byArticle.has(root.articleId)
+            ) {
+              byArticle.set(root.articleId, names);
+            }
+          }
+        }
+        return byArticle;
+      };
+
+      const compactArticle = (
+        article,
+        masterData,
+        calculatedDockingVectors,
+      ) => {
+        const attributeInfos = new Map(
+          (masterData?.attributes ?? []).map((attribute) => [
+            attribute.id,
+            attribute,
+          ]),
+        );
+        const moduleInfos = new Map(
+          (masterData?.modules ?? []).map((module) => [module.id, module]),
+        );
+        const namedValue = (attribute) => ({
+          id: attribute.id,
+          name: attributeInfos.get(attribute.id).name,
+          value: attribute.value,
+        });
+        const rootModules = (article.roots ?? []).map((root) => {
+            const moduleInfo = moduleInfos.get(root.name);
+            const attributes = (root.attributes ?? []).filter((attribute) =>
+              attributeInfos.has(attribute.id),
+            );
+            const dimensions = attributes.filter(
+              (attribute) => attributeInfos.get(attribute.id).type === 'Dim',
+            );
+            const dimensionIds = new Set(
+              dimensions.map((attribute) => attribute.id),
+            );
+            const templateVectors = dockingVectorNames(root);
+            return {
+              module: {
+                id: root.name,
+                name: moduleInfo?.name,
+                desc: moduleInfo?.desc,
+              },
+              dimensions: dimensions.map(namedValue),
+              mainAttributes: attributes
+                .filter(
+                  (attribute) =>
+                    attributeInfos.get(attribute.id).isMain === true &&
+                    !dimensionIds.has(attribute.id),
+                )
+                .map(namedValue),
+              dockingVectors:
+                templateVectors.length > 0
+                  ? templateVectors
+                  : (calculatedDockingVectors.get(article.articleId) ?? []),
+              insertLevels: root.insertLevelInfos,
+              subModules: (root.modules ?? []).map((module) => ({
+                id: module.name,
+                name: moduleInfos.get(module.name)?.name ?? module.name,
+              })),
+            };
+          });
+        return {
+          articleId: article.articleId,
+          articleName: article.articleName,
+          desc: article.desc,
+          imageUrl: article.imageUrl,
+          category: article.category,
+          libraryId: article.libraryId,
+          catalog: article.catalog,
+          cornerArticle: rootModules.some((rootModule) =>
+            rootModule.dockingVectors.some(isCornerDockingVector),
+          ),
+          rootModules,
+        };
+      };
+
+      const attributeMatches = (attribute, needle) =>
+        [
+          attribute.id,
+          attribute.name,
+          attribute.desc,
+          attribute.group,
+          ...(attribute.selections ?? []).flatMap((selection) => [
+            selection.name,
+            selection.desc,
+            selection.value,
+          ]),
+        ].some(
+          (value) =>
+            value !== undefined &&
+            value !== null &&
+            String(value).toLowerCase().includes(needle),
+        );
+
+      // A root as the agent sees it: the article pick it can resubmit (id,
+      // articleId, input attributes, docking) plus read-only facts. No
+      // positions, no geometry.
+      const shapeRoot = (root) => ({
+        id: root.id,
+        articleId: root.articleId,
+        articleName: root.articleName,
+        desc: root.desc,
+        category: root.category,
+        ...(isGeneratedRoot(root) && { isGenerated: true }),
+        attributes: (root.attributes ?? [])
+          .filter((attribute) => attribute.isInput === true)
+          .map((attribute) => ({ id: attribute.id, value: attribute.value })),
+        ...(root.contextData && {
+          contextData: stripDockingIndices(root.contextData),
+        }),
+        dockingVectors: dockingVectorNames(root),
+        freeDockingVectors: freeDockingVectors(root),
+        subModules: (root.modules ?? []).map((module) => module.name),
+        ...(root.logMessages?.length && { logMessages: root.logMessages }),
+      });
+
+      // A group as the agent sees it: resubmittable as it is (the read-only
+      // position block and the generated roots are dropped on the way back).
+      const shapeGroup = (group) => ({
+        id: group.id,
+        libraryId: group.libraryId,
+        position: {
+          pos: group.pos,
+          rotationY: group.rotationY,
+          footprint: groupFootprint(group),
+        },
+        ...(group.attributes && { attributes: group.attributes }),
+        roots: (group.roots ?? []).map(shapeRoot),
+        logMessages: group.logMessages ?? [],
+      });
 
       const shapeRooms = (rooms) => {
         if (!rooms) {
@@ -1320,35 +1881,137 @@
         }
         // fails early on an alignment that runs parallel to the wall
         resolveWallAlignment(wall, spec.alignment ?? 'center');
-        return wall;
+        return { wall, walls };
       };
 
-      const placeGroupAtWall = (group, wall, spec) => {
+      // A corner article is placed by its corner point when the alignment
+      // names the adjoining wall; every other group is placed by its footprint.
+      const placeGroupAtWall = (group, { wall, walls }, spec) => {
         const footprint = groupFootprint(group);
         if (!footprint) {
           throw new Error(
             `Group '${group.id}' has no geometry to derive a footprint from.`,
           );
         }
-        const placement = placeAgainstWall(
-          wall,
-          footprint,
-          spec.alignment ?? 'center',
-          spec.offsetMm ?? 0,
-        );
-        return { ...placement, footprint };
+        const alignment = spec.alignment ?? 'center';
+        const offsetMm = spec.offsetMm ?? 0;
+        if (WALL_SIDES.includes(alignment)) {
+          const corner = groupCornerGeometry(group);
+          const adjoining = adjoiningWall(walls, wall, alignment);
+          if (corner && adjoining) {
+            const placement = placeCornerAtWalls(
+              wall,
+              adjoining,
+              corner,
+              offsetMm,
+            );
+            if (placement) {
+              return {
+                ...placement,
+                footprint,
+                placedBy: 'cornerPoint',
+                cornerRootId: corner.rootId,
+              };
+            }
+          }
+        }
+        const placement = placeAgainstWall(wall, footprint, alignment, offsetMm);
+        return { ...placement, footprint, placedBy: 'footprint' };
       };
 
       const mcpToolExecutors = {
         'get-plan-context': async (api, args) => {
-          const context = await api.extended.getExternalObjectPlanContext(
-            args.include,
-          );
+          const requested =
+            Array.isArray(args.include) && args.include.length > 0
+              ? args.include
+              : DEFAULT_SECTIONS;
+          const sections = new Set(requested);
+          // the compact articles need the attribute types and module names of
+          // the master data and the docking vectors of the calculated roots
+          const fetched = new Set(requested);
+          if (sections.has('articles')) {
+            fetched.add('masterData');
+            fetched.add('groups');
+          }
+          const context = await api.extended.getExternalObjectPlanContext([
+            ...fetched,
+          ]);
+          const masterData = context.masterData ?? {};
+          const result = {};
+          if (sections.has('masterData')) {
+            result.masterData = Object.fromEntries(
+              Object.entries(masterData).map(
+                ([libraryId, libraryMasterData]) => [
+                  libraryId,
+                  compactMasterData(libraryMasterData),
+                ],
+              ),
+            );
+          }
+          if (sections.has('rooms')) {
+            result.rooms = shapeRooms(context.rooms);
+          }
+          if (sections.has('articles')) {
+            const calculatedDockingVectors = calculatedDockingVectorsByArticle(
+              context.groups ?? [],
+            );
+            result.articles = (context.articles ?? []).map((article) =>
+              compactArticle(
+                article,
+                masterData[article.libraryId],
+                calculatedDockingVectors,
+              ),
+            );
+          }
+          if (sections.has('groups')) {
+            result.groups = context.groups?.map(shapeGroup);
+          }
+          return result;
+        },
+
+        'find-attributes': async (api, args) => {
+          const needle = String(args.text ?? '')
+            .trim()
+            .toLowerCase();
+          if (needle.length === 0) {
+            throw new Error('text must not be empty.');
+          }
+          const libraryId = args.libraryId;
+          const context = await api.extended.getExternalObjectPlanContext([
+            'masterData',
+          ]);
+          const matches = [];
+          for (const [id, masterData] of Object.entries(
+            context.masterData ?? {},
+          )) {
+            if (libraryId && id !== libraryId) {
+              continue;
+            }
+            const rootModules = (masterData.modules ?? []).filter(
+              isRootModule,
+            );
+            for (const attribute of masterData.attributes ?? []) {
+              if (!attributeMatches(attribute, needle)) {
+                continue;
+              }
+              matches.push({
+                libraryId: id,
+                ...compactAttribute(attribute),
+                userRight: attribute.userRight,
+                rootModules: rootModules
+                  .filter((module) =>
+                    (module.assignedAttributes ?? []).includes(attribute.id),
+                  )
+                  .map((module) => module.id),
+              });
+            }
+          }
           return {
-            masterData: context.masterData,
-            rooms: shapeRooms(context.rooms),
-            articles: context.articles?.map(compactArticle),
-            groups: context.groups?.map(shapeGroup),
+            matches: matches.slice(0, MAX_ATTRIBUTE_MATCHES),
+            total: matches.length,
+            ...(matches.length > MAX_ATTRIBUTE_MATCHES && {
+              hint: `Only the first ${MAX_ATTRIBUTE_MATCHES} of ${matches.length} matches are listed - narrow the text.`,
+            }),
           };
         },
 
@@ -1362,12 +2025,22 @@
               );
               return;
             }
+            // the library regenerates its generated roots (worktop, toe kick)
+            group.roots = group.roots.filter((root) => !isGeneratedRoot(root));
+            if (group.roots.length === 0) {
+              validationErrors.push(
+                `posGroups[${groupIndex}]: needs at least one article root (generated roots are dropped)`,
+              );
+              return;
+            }
+            if (group.pos !== undefined || group.rotationY !== undefined) {
+              validationErrors.push(
+                `posGroups[${groupIndex}]: do not set pos/rotationY on a group - position it with placement or repositioningData`,
+              );
+            }
             const rootIds = new Set();
             group.roots.forEach((root, rootIndex) => {
-              const requiredFields = isArticlePickOnly(root)
-                ? ['id', 'articleId']
-                : ['id', 'libraryId', 'name'];
-              for (const field of requiredFields) {
+              for (const field of ['id', 'articleId']) {
                 const value = root?.[field];
                 if (typeof value !== 'string' || value.length === 0) {
                   validationErrors.push(
@@ -1379,12 +2052,12 @@
                 }
               }
               if (
-                isArticlePickOnly(root) &&
-                (root?.articlePos !== undefined || root?.rotationY !== undefined)
+                root?.articlePos !== undefined ||
+                root?.rotationY !== undefined
               ) {
                 validationErrors.push(
-                  `posGroups[${groupIndex}].roots[${rootIndex}]: do not set articlePos/rotationY - ` +
-                    'all positions are computed by the planner; relate roots with docking contextData instead',
+                  `posGroups[${groupIndex}].roots[${rootIndex}]: a root module carries no articlePos/rotationY - ` +
+                    'root positions come from the docking (contextData) only, the group position from placement or repositioningData',
                 );
               }
               const rootId = root?.id;
@@ -1410,18 +2083,18 @@
                   }
                 }
               }
-              const undockedPicks = group.roots.filter(
-                (root) => isArticlePickOnly(root) && !dockedRootIds.has(root.id),
+              const undockedRoots = group.roots.filter(
+                (root) => !dockedRootIds.has(root.id),
               );
               const undockedLimit = dockedRootIds.size === 0 ? 1 : 0;
-              if (undockedPicks.length > undockedLimit) {
-                const ids = undockedPicks.map((root) => `'${root.id}'`);
+              if (undockedRoots.length > undockedLimit) {
+                const ids = undockedRoots.map((root) => `'${root.id}'`);
                 validationErrors.push(
                   `posGroups[${groupIndex}]: roots ${ids.join(', ')} are not related by docking - ` +
-                    'undocked roots all land at the same spot and look like a single unit. Give every ' +
-                    'additional root a contextData entry, e.g. to place root B directly right of root A: ' +
-                    '{ "id": "B", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "LeftBottom", ' +
-                    '"dockedRoots": [{ "id": "A", "dockingVector": "RightBottom", "mode": "StartStart", ' +
+                    'undocked roots all land at the same spot and look like a single unit. Dock every ' +
+                    'additional root to a placed root by listing it on that root, e.g. to place root B directly right of root A: ' +
+                    '{ "id": "A", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom", ' +
+                    '"dockedRoots": [{ "id": "B", "dockingVector": "LeftBottom", "mode": "StartStart", ' +
                     '"offset": [0, 0, 0] }] }] } }',
                 );
               }
@@ -1464,6 +2137,23 @@
                 '\nFetch the payload format with the get-authoring-rules tool.',
             );
           }
+          // Only article picks, placement and repositioningData reach the planner.
+          for (const group of posGroups) {
+            group.roots = group.roots.map(toArticlePick);
+            for (const field of Object.keys(group)) {
+              if (
+                ![
+                  'id',
+                  'libraryId',
+                  'roots',
+                  'placement',
+                  'repositioningData',
+                ].includes(field)
+              ) {
+                delete group[field];
+              }
+            }
+          }
           await validateArticlePickIds(api, posGroups);
 
           // Declarative wall placements: resolve the walls before anything is
@@ -1486,7 +2176,7 @@
               const spec = group.placement;
               placementSpecs.set(groupIndex, {
                 spec,
-                wall: resolveWall(rooms, spec),
+                resolved: resolveWall(rooms, spec),
               });
               delete group.placement;
             }
@@ -1511,11 +2201,17 @@
             'groups',
           ]);
 
+          const placements = [];
           if (placementSpecs.size > 0) {
             const afterGroups = context.groups ?? [];
             const newGroupIds = afterGroups
               .map((group) => group.id)
               .filter((id) => !beforeGroupIds.has(id));
+            const groupsOfThisCall = new Set([
+              ...newGroupIds,
+              ...posGroups.map((group) => group.id).filter(Boolean),
+            ]);
+            const contactErrors = [];
             const placedGroups = [];
             let newGroupCursor = 0;
             posGroups.forEach((group, groupIndex) => {
@@ -1535,16 +2231,50 @@
               }
               const placement = placeGroupAtWall(
                 resultGroup,
-                placementEntry.wall,
+                placementEntry.resolved,
                 placementEntry.spec,
               );
-              const placedGroup = JSON.parse(JSON.stringify(resultGroup));
-              delete placedGroup.contours;
-              delete placedGroup.repositioningData;
-              placedGroup.pos = placement.pos;
-              placedGroup.rotationY = placement.rotationY;
-              placedGroups.push(placedGroup);
+              // a placement that meets another group is a docking relation
+              // expressed as a position: the roots belong into that group
+              const contact = findGroupContact(
+                footprintCornersInRoom(placement.footprint, placement),
+                afterGroups,
+                groupsOfThisCall,
+              );
+              if (contact) {
+                contactErrors.push(
+                  contactError(
+                    `posGroups[${groupIndex}] placed at the ${placementEntry.resolved.wall.side} wall`,
+                    contact,
+                  ),
+                );
+                return;
+              }
+              placedGroups.push(repositionedGroup(resultGroup, placement));
+              placements.push({
+                groupId: resultGroup.id,
+                wall: placementEntry.resolved.wall.side,
+                placedBy: placement.placedBy,
+                ...(placement.cornerRootId && {
+                  cornerRootId: placement.cornerRootId,
+                }),
+              });
             });
+            if (contactErrors.length > 0) {
+              // nothing of this call stays: the created groups are removed
+              // again, replaced groups keep their new roots but were not moved
+              for (const id of newGroupIds) {
+                api.extended.removeExternalObject(id);
+              }
+              throw new Error(
+                'Placement rejected - the groups created by this call were removed again' +
+                  (posGroups.some((group) => beforeGroupIds.has(group.id))
+                    ? ', replaced groups were not moved'
+                    : '') +
+                  ':\n' +
+                  contactErrors.join('\n'),
+              );
+            }
             if (placedGroups.length > 0) {
               await api.extended.loadExternalObjectGroupLayout(
                 { posGroups: placedGroups },
@@ -1566,13 +2296,14 @@
           const unpositionedGroupIds = (groups ?? [])
             .filter(
               (group) =>
-                group.pos === undefined &&
+                group.position.pos === undefined &&
                 (!beforeGroupIds.has(group.id) || replacedInputIds.has(group.id)),
             )
             .map((group) => group.id);
           return {
             loaded,
             groups,
+            ...(placements.length > 0 && { placements }),
             ...(unpositionedGroupIds.length > 0 && {
               hint:
                 `Groups ${unpositionedGroupIds.join(', ')} are not positioned yet and sit at the plan origin. ` +
@@ -1611,15 +2342,24 @@
           }
           const rooms = context.rooms?.rooms ?? [];
           const spec = { wall: wallArg, alignment, offsetMm, roomIndex };
-          const wall = resolveWall(rooms, spec);
-          const placement = placeGroupAtWall(group, wall, spec);
-          const placedGroup = JSON.parse(JSON.stringify(group));
-          delete placedGroup.contours;
-          delete placedGroup.repositioningData;
-          placedGroup.pos = placement.pos;
-          placedGroup.rotationY = placement.rotationY;
+          const resolved = resolveWall(rooms, spec);
+          const placement = placeGroupAtWall(group, resolved, spec);
+          const contact = findGroupContact(
+            footprintCornersInRoom(placement.footprint, placement),
+            groups,
+            new Set([group.id]),
+          );
+          if (contact) {
+            throw new Error(
+              'Placement rejected - the group was not moved: ' +
+                contactError(
+                  `Group '${group.id}' placed at the ${resolved.wall.side} wall`,
+                  contact,
+                ),
+            );
+          }
           const loaded = await api.extended.loadExternalObjectGroupLayout(
-            { posGroups: [placedGroup] },
+            { posGroups: [repositionedGroup(group, placement)] },
             'posGroups',
             { reason: 'adjusted' },
           );
@@ -1638,7 +2378,11 @@
             pos: placement.pos,
             rotationY: placement.rotationY,
             footprint: placement.footprint,
-            wall,
+            placedBy: placement.placedBy,
+            ...(placement.cornerRootId && {
+              cornerRootId: placement.cornerRootId,
+            }),
+            wall: resolved.wall,
             group: resultGroup ? shapeGroup(resultGroup) : undefined,
           };
         },

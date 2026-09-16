@@ -37,8 +37,8 @@ clients (Copilot CLI, Cursor, …):
 Get the plan context of the HI session and summarize it.
 ```
 
-The agent calls `get-plan-context` and summarizes the master data, articles,
-rooms, and groups. Then try a write operation:
+The agent calls `get-plan-context` and summarizes the articles, rooms, and
+groups. Then try a write operation:
 
 ```text
 Add a group of three tall units to the wall on the right.

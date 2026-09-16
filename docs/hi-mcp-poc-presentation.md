@@ -2,60 +2,42 @@
 
 Migrated from the Confluence page
 [2026-09-01 Innovations day](https://roomle.atlassian.net/wiki/spaces/DT/pages/3987406850/2026-09-01+Innovations+day#HI-orchestrator-MCP),
-chapter *HI orchestrator MCP*. It presents the proof of concept as shown on
-the innovations day; the setup described there is the roomle-ui PoC this
-repository's standalone variant is derived from.
+chapter *HI orchestrator MCP*. It presents the proof of concept that was shown
+on the innovations day; the setup described there is the roomle-ui PoC this
+repository's standalone variant is derived from. The examples below are current
+results of that proof of concept, not the ones shown on the day.
 
 This is a proof of concept for creating HI object groups in a scene using an
-MCP server. The result is very shaky, but at least the overall process works.
+MCP server.
 
-This result was generated using the Claude app and the Opus 5 model.
+These results were generated using the Claude app and the Opus 5 model.
 
 ## Example 1
 
-> **use the current hi-orchestrator session**
-> **add a group of three tall units to the wall on the right**
+> **Use the current Hi-Orchestrator session to create a kitchen with an oven,
+> hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall
+> cabinets in the back right corner of the room. Arrange the kitchen around the
+> corner. The front of the kitchen should be made of walnut and the worktop
+> should be made of dark marble.**
 
-It took about 1 minute and 20 seconds until the final response.
+`ps_p804rz7o2flaq4kdlvs7ubgjrmmm7c6`
 
-`ps_nuenue3r0bn5y8rm9193yf5lr0u7va5`
+<https://rubens.alpha.roomle.com/examples/index.html?example=hi-presets-example&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith&plan_id=ps_p804rz7o2flaq4kdlvs7ubgjrmmm7c6>
 
-<https://rubens.alpha.roomle.com/examples/index.html?example=hi-presets-example&backendId=HI_DEV_Roomle_Milestone_2&library_id=Furniture_Smith&plan_id=ps_nuenue3r0bn5y8rm9193yf5lr0u7va5>
-
-![Three tall units against the right wall](./images/example-1-result.png)
+![L-shaped kitchen around the back right corner, walnut fronts and a dark stone worktop](./images/example-1-result.png)
 
 ## Example 2
 
-> **use the current hi-orchestrator session**
-> **create a kitchen with an oven, a fridge and a sink in the back right corner of the room**
-> **the front material of the kitchen should be walnut and the worktop material should be dark marble**
-
-It took about 3 minutes until the final response.
-
-`ps_nwrsaoyvxgqevc5j0idfs735xqh014e`
-
-<https://rubens.alpha.roomle.com/examples/index.html?example=hi-presets-example&backendId=HI_DEV_Roomle_Milestone_2&library_id=Furniture_Smith&plan_id=ps_nwrsaoyvxgqevc5j0idfs735xqh014e>
-
-![Kitchen with oven, fridge and sink in the back right corner](./images/example-2-result.png)
-
-## Example 3
-
-> **use the current hi-orchestrator session**
-> **create a kitchen like the one in the image on the right-hand wall of the room**
+> **Use the current Hi-Orchestrator session to create a kitchen like the one in
+> the back right corner of the room, as shown in the image.**
 >
-> ![Reference kitchen image given to the agent](./images/example-3-reference-kitchen.png)
+> ![Reference kitchen image given to the agent](./images/example-2-reference-kitchen.jpg)
 
-It took about 10 minutes until the final response. The agent had trouble
-getting the vent hood right. The vent hood actually works differently to the
-other objects and has no docking vectors. The agent also spent a lot of time
-on details such as the handles, and several attempts were needed to achieve
-the final result, which is still not quite right.
+`ps_p90kkxti16e1z9mpxayzll76mogt62z`
 
-`ps_nwtvz8kyo8994c6xnjrh5w37e4f6gzo`
+<https://rubens.alpha.roomle.com/examples/index.html?example=hi-presets-example&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith&plan_id=ps_p90kkxti16e1z9mpxayzll76mogt62z>
 
-<https://rubens.alpha.roomle.com/examples/index.html?example=hi-presets-example&backendId=HI_DEV_Roomle_Milestone_2&library_id=Furniture_Smith&plan_id=ps_nwtvz8kyo8994c6xnjrh5w37e4f6gzo>
-
-![Kitchen recreated from the reference image](./images/example-3-result.png)
+![L-shaped kitchen recreated from the reference image, white fronts and a wooden worktop](./images/example-2-result.png)
 
 ## Summary
 

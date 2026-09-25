@@ -73,10 +73,9 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 One document per feature question: a proposed feature, a change to an existing one, or *why* a
 feature behaves the way it does. Written **before** the work, closed out **after** it.
 
-*This folder is initially empty. Add feature analysis documents as needed.*
-
 | Document | Status | Last touched |
 |---|---|---|
+| [Planner MCP Server Analysis - roomle-model-exporter](feature-analysis/planner-mcp-server-analysis.md) | Implemented | 2026-09-25 |
 
 ### Refactoring Analyses
 

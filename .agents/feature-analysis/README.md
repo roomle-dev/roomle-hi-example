@@ -37,5 +37,9 @@ Never delete an analysis document.
 
 ## Current Documents
 
-This folder is initially empty. Add feature analysis documents as needed following the naming convention:
+| Document | Status | Description |
+|---|---|---|
+| [planner-mcp-server-analysis.md](planner-mcp-server-analysis.md) | Implemented | Comprehensive analysis of Planner MCP server from roomle-model-exporter |
+
+Add feature analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `group-adjustment-to-wall-width.md`).

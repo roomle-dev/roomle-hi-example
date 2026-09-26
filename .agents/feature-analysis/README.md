@@ -40,6 +40,10 @@ Never delete an analysis document.
 | Document | Status | Description |
 |---|---|---|
 | [planner-mcp-server-analysis.md](planner-mcp-server-analysis.md) | Implemented | Comprehensive analysis of Planner MCP server from roomle-model-exporter |
+| [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open | Feature analysis for Sales Configurator AI integration kickoff proposal |
+| [hi-mcp-poc-json.md](hi-mcp-poc-json.md) | Open | Feature analysis for the hi-mcp TypeScript project and the hi-mcp-poc-json MCP server with the INT-stage ligna-store as client |
+| [mcp-azure-deployment-and-session-bootstrapping.md](mcp-azure-deployment-and-session-bootstrapping.md) | Open | The three PoC setups (local/deployed store, local/Azure MCP server): one bridge URL rule plus env-driven server config, all implemented; Azure App Service deployment mechanics and roadmap |
+| [mcp-cloudflare-containers-deployment.md](mcp-cloudflare-containers-deployment.md) | Open | Hosting the hi-mcp server on Cloudflare Containers following the roomle-model-exporter cf/ pattern: unchanged server in a container, Worker front, per-session containers for company-wide try-out; WebSocket passthrough as the core unknown |
 
 Add feature analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `group-adjustment-to-wall-width.md`).

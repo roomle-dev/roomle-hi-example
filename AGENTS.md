@@ -94,6 +94,21 @@ The server provides:
 .
 ├── index.html                    # HI presets example page
 ├── hi-mcp-server.js             # Zero-dependency MCP server (Node.js)
+├── hi-mcp/                       # TypeScript MCP server PoCs (npm workspaces, vitest)
+│   ├── README.md                 # Project overview and PoC list
+│   ├── package.json              # Workspace root: test/typecheck/start scripts
+│   ├── tsconfig.base.json        # Shared compiler options for all PoCs
+│   ├── vitest.config.ts          # Unit tests across all PoCs
+│   └── hi-mcp-poc-json/          # PoC 1: HI groups from a single JSON pos-group payload
+│       ├── server.ts             # Entry point: /mcp + WebSocket bridge on :3100
+│       ├── hi-mcp-server.ts      # McpServer setup + tool registrations (zod)
+│       ├── page-bridge.ts        # Connected-page registry, call correlation
+│       ├── browser-bridge.ts     # Page-side bridge (reference copy; the store runs its own)
+│       ├── tool-executors.ts     # Tool → roomDesignerApi.extended calls
+│       ├── plan-space.ts         # Pure geometry: walls, footprints, placement
+│       ├── tests/                # Unit tests (plan-space, page-bridge, hi-mcp-server, tool-executors)
+│       ├── README.md             # Complete PoC documentation (client: INT-stage ligna-store)
+│       └── QUICKSTART.md         # Shortest path to a first tool call
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # This file - AI assistant instructions
@@ -126,6 +141,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | Skill | Load when the task involves |
 |---|---|
 | [`.agents/skills/hi-mcp-server.md`](./.agents/skills/hi-mcp-server.md) | MCP server architecture, tool definitions, protocol handling, SSE bridge |
+| [`.agents/skills/hi-mcp-cloudflare-deployment.md`](./.agents/skills/hi-mcp-cloudflare-deployment.md) | Updating/deploying the Cloudflare-hosted hi-mcp server: wrangler deploy, URL anatomy, container cleanup, teardown |
 | [`.agents/skills/hi-authoring-rules.md`](./.agents/skills/hi-authoring-rules.md) | HI authoring rules, docking patterns, group creation, article catalog |
 | [`.agents/skills/hi-mcp-tools.md`](./.agents/skills/hi-mcp-tools.md) | MCP tool reference, get-plan-context, create-or-replace-groups, place-group |
 | [`.agents/skills/roomle-hi-concepts.md`](./.agents/skills/roomle-hi-concepts.md) | HI concepts: rooms, walls, articles, groups, docking vectors, placements |

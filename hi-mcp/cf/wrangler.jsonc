@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hi-mcp-poc",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "containers": [
+    {
+      "class_name": "HiMcpContainer",
+      "image": "./Dockerfile",
+      "image_build_context": "..",
+      "instance_type": "basic",
+      "max_instances": 5
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "HI_MCP", "class_name": "HiMcpContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["HiMcpContainer"] }],
+  "vars": {
+    // The store URL the server names in its "no page connected" error -
+    // the URL users open to connect a page to this deployment.
+    "HI_MCP_STORE_URL": "https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev"
+  },
+  "observability": { "enabled": true }
+}

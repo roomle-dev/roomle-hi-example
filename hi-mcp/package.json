@@ -4,7 +4,8 @@
   "private": true,
   "description": "MCP server proof of concepts for orchestrating HI object groups",
   "workspaces": [
-    "hi-mcp-poc-json"
+    "hi-mcp-poc-json",
+    "cf"
   ],
   "scripts": {
     "start": "npm start --workspace hi-mcp-poc-json",

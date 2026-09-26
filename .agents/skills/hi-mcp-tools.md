@@ -16,8 +16,6 @@
 | Tool | Purpose |
 |---|---|
 | `find-attributes` | Look up attribute definitions |
-| `list-resources` | List MCP resources |
-| `read-resource` | Read resource content |
 
 ### Result Tools
 | Tool | Purpose |
@@ -34,7 +32,7 @@
 
 **Parameters**:
 ```typescript
-{ include?: 'rooms,articles,groups,masterData' }
+{ include?: Array<'masterData' | 'rooms' | 'articles' | 'groups'> }
 ```
 
 **Returns**: Rooms, articles, groups, masterData (if requested)
@@ -80,12 +78,12 @@ await placeGroup({ groupId: 'group-1', wall: 'right', alignment: 'center' });
 
 **Parameters**:
 ```typescript
-{ attributeIds?: string[] }
+{ text: string, libraryId?: string }
 ```
 
 **Usage**:
 ```javascript
-const { attributes } = await findAttributes({ attributeIds: ['color', 'front'] });
+const { matches } = await findAttributes({ text: 'front' });
 ```
 
 ### get-price, get-order-data, get-plan-images

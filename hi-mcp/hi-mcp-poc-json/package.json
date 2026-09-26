@@ -8,12 +8,14 @@
     "start": "vite-node server.ts",
     "lint:types": "tsc --noEmit --project tsconfig.json"
   },
-  "devDependencies": {
+  "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
-    "@types/ws": "8.18.1",
     "vite": "6.4.3",
     "vite-node": "3.2.4",
     "ws": "8.21.3",
     "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/ws": "8.18.1"
   }
 }

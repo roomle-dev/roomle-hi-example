@@ -447,3 +447,17 @@ Scope notes:
   one 800×600 mm root derived from `b`/`t` attributes) with expected positions computed by hand —
   not from the functions under test.
 
+Known limitations recorded from the PR review (2026-09-26), accepted for the PoC:
+
+1. **Placement rollback keeps replaced groups' new roots** — when a placement is rejected, the
+   created groups are removed but groups that replaced existing ones keep their new content
+   (positions unchanged), as the error message states. Restoring the pre-call state of replaced
+   groups would need a corrective load per rejected group — follow-up if the PoC becomes a shared
+   tool. A preflight before loading is not possible: footprints exist only after the planner has
+   calculated the load.
+2. **No collision check between groups of the same call** — the contact check excludes all groups
+   of the call, because the not-yet-placed ones sit at the plan origin (excluding only the current
+   group would produce false collisions with those). The accurate fix is pairwise checks among the
+   computed placements before the corrective load — follow-up; the next `get-plan-context` /
+   `place-group` reports such overlaps.
+

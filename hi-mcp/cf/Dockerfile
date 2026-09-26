@@ -5,10 +5,12 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# install first for layer caching: the workspace root plus the PoC manifest
+# install first for layer caching: the workspace root plus the manifests
 COPY package.json package-lock.json ./
 COPY hi-mcp-poc-json/package.json ./hi-mcp-poc-json/
-RUN npm ci
+COPY cf/package.json ./cf/
+# only the PoC workspace - the cf tooling (wrangler & co.) stays out of the image
+RUN npm ci --workspace hi-mcp-poc-json
 
 # the server sources (tests and docs ride along, they are small)
 COPY tsconfig.base.json vitest.config.ts ./

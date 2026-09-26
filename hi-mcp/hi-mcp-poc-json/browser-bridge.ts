@@ -15,6 +15,12 @@ export interface BrowserBridgeOptions {
    * local MCP server (port 3100).
    */
   serverUrl?: string;
+  /**
+   * Session id (the store's `mcp_session` query parameter). The Cloudflare
+   * Worker routes `?session=<id>` to a container of its own, so parallel
+   * users do not interfere; every other setup ignores it.
+   */
+  sessionId?: string;
 }
 
 // An explicit server URL (mcp_server query param) is normalized to the
@@ -35,14 +41,20 @@ const normalizeBridgeUrl = (serverUrl: string): string => {
 // Loopback connections are not mixed content, so ws://localhost works even
 // from an https page (deployed store). wss is the fallback for strict
 // browsers, served when the MCP server runs with a certificate
-// (HI_MCP_TLS_CERT/HI_MCP_TLS_KEY).
-export const resolveBridgeUrls = (serverUrl?: string): string[] => {
+// (HI_MCP_TLS_CERT/HI_MCP_TLS_KEY). With a session id, every URL carries
+// ?session=… so the server can route the page to its own container.
+export const resolveBridgeUrls = (
+  serverUrl?: string,
+  sessionId?: string,
+): string[] => {
+  const withSession = (url: string) =>
+    sessionId ? `${url}?session=${encodeURIComponent(sessionId)}` : url;
   if (serverUrl) {
-    return [normalizeBridgeUrl(serverUrl)];
+    return [withSession(normalizeBridgeUrl(serverUrl))];
   }
-  const urls = [`ws://localhost:${HI_MCP_PORT}/bridge`];
+  const urls = [withSession(`ws://localhost:${HI_MCP_PORT}/bridge`)];
   if (window.location.protocol === 'https:') {
-    urls.push(`wss://localhost:${HI_MCP_PORT}/bridge`);
+    urls.push(withSession(`wss://localhost:${HI_MCP_PORT}/bridge`));
   }
   return urls;
 };
@@ -51,7 +63,10 @@ export const startMcpBrowserBridge = (
   roomDesignerApi: RoomDesignerApiType,
   options: BrowserBridgeOptions = {},
 ): void => {
-  const bridgeUrls = resolveBridgeUrls(options.serverUrl);
+  const bridgeUrls = resolveBridgeUrls(
+      options.serverUrl,
+      options.sessionId,
+    );
   let candidate = 0;
 
   const connect = () => {

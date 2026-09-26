@@ -85,16 +85,23 @@ https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<w
    `get-plan-context` — the step-by-step for agents (with the Mistral example) is in
    [connect-agent-to-cloud-mcp.md](./connect-agent-to-cloud-mcp.md).
 
-## The handout for colleagues
+## The handout for colleagues (parallel use, per session)
+
+Each user picks a **session name** (any short word, e.g. their first name) and appends it to
+**both** URLs — every session id gets its own container, so users plan in parallel without
+interfering; each agent drives exactly the kitchen in its user's own browser tab.
 
 | Link | Where |
 | ---- | ----- |
-| Store page (browser, keep open) | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<worker>.<subdomain>.workers.dev` |
-| MCP server (for their client's connector) | `https://<worker>.<subdomain>.workers.dev/mcp` |
+| Store page (browser, keep open) | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<name>` |
+| MCP server (for their client's connector) | `https://<worker>.<subdomain>.workers.dev/mcp?session=<name>` |
 
-One planning session at a time (the server holds one connected page — per-session containers
-are the phase-2 step in the analysis). The store page's bridge reconnects on its own after the
-container slept; the first request after a sleep takes ~10 s (container boot).
+Without a session name, everyone shares one container (`default`) — the previous
+one-planning-session-at-a-time behavior. The store page's bridge reconnects on its own after the
+container slept; the first request after a sleep takes ~10 s (container boot — one boot per
+session). Which setup needs which URL parameters — local server, deployed store, cloud server,
+parallel sessions — is covered by the **setup matrix** in the
+[PoC README](../hi-mcp-poc-json/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
 
 ## Updating after code changes
 

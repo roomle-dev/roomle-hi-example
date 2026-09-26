@@ -97,7 +97,25 @@ The page connects to the MCP server; the server terminal logs `page connected`.
 | --------- | ------ |
 | `store.stage=INT` | Required for this PoC: selects the `bo-test` UI + `HI_PRE_Roomle_Milestone_2` HI backend and activates the store-side bridge |
 | `id=<plan id>` | Loads a plan / plan snapshot into the planner (a `ps_…` id from the INT environment) |
-| `mcp_server=<url>` | Points the bridge at a remote MCP server (e.g. the Azure deployment), e.g. `mcp_server=https://<app>.azurewebsites.net` — `http(s)` or `ws(s)` both accepted. Without it the bridge connects to the local server on the page's own protocol |
+| `mcp_server=<url>` | Points the bridge at a remote MCP server (e.g. the Azure or Cloudflare deployment), e.g. `mcp_server=https://hi-mcp-poc.example.com` — `http(s)` or `ws(s)` both accepted. Without it the bridge connects to the local server on the page's own protocol |
+| `mcp_session=<name>` | Session name for parallel use on a per-session deployment (Cloudflare): routes the page's bridge to a container of its own (`?session=` on the bridge URL). Without a remote server it is ignored — harmless everywhere else |
+
+### The setup matrix (which setup needs which URL parameters)
+
+Every combination below works; the parameters are purely additive — nothing breaks when they
+are left out, and a local server simply ignores `mcp_session`.
+
+| Store page | `mcp_server` | `mcp_session` | Bridge connects to | Parallel users |
+| ---------- | ------------ | -------------- | ------------------ | ------------- |
+| local (`http://localhost:3000`) | — | — | `ws://localhost:3100/bridge` | n/a — one local session |
+| deployed (`https://www.roomle.com/…`) | — | — | `ws://localhost:3100/bridge` (loopback), `wss://localhost:3100/bridge` as browser fallback — the **local server on the user's machine** | n/a — one local session per machine |
+| deployed | Cloudflare Worker URL | — | the Worker's shared `default` container | one shared session (newest tab wins) |
+| deployed | Cloudflare Worker URL | a session name | the Worker's container for `?session=<name>` | **each user plans in their own container — no interference** |
+| any | any (also none) | a session name | the session rides along on the bridge URL; local servers ignore it | harmless |
+
+MCP clients connect to `http://localhost:3100/mcp` for the local setups and to
+`https://<server>/mcp` (Cloudflare: plus `?session=<name>`, the same name as the store page's
+`mcp_session`) for the cloud setups.
 
 ### Server configuration (environment variables, all optional)
 

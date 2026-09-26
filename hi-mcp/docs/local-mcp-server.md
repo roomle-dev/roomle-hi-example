@@ -42,6 +42,9 @@ are not mixed content, so this works from the local http page and the deployed h
 https pages fall back to `wss://localhost:3100/bridge` for strict browsers (server then started
 with the optional `HI_MCP_TLS_CERT`/`HI_MCP_TLS_KEY`). The server terminal logs `page connected`.
 The server holds **one page at a time** — the most recently connected tab receives the tool calls.
+Which setup needs which URL parameters — local server, deployed store, cloud server, parallel
+sessions — is covered by the **setup matrix** in the
+[PoC README](../hi-mcp-poc-json/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
 
 ### Configuration (environment variables, all optional)
 

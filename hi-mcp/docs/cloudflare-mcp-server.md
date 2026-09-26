@@ -99,7 +99,9 @@ interfering; each agent drives exactly the kitchen in its user's own browser tab
 Without a session name, everyone shares one container (`default`) — the previous
 one-planning-session-at-a-time behavior. The store page's bridge reconnects on its own after the
 container slept; the first request after a sleep takes ~10 s (container boot — one boot per
-session).
+session). Which setup needs which URL parameters — local server, deployed store, cloud server,
+parallel sessions — is covered by the **setup matrix** in the
+[PoC README](../hi-mcp-poc-json/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
 
 ## Updating after code changes
 

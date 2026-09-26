@@ -1,0 +1,276 @@
+# GitHub Copilot Instructions — roomle-hi-example
+
+This file provides GitHub Copilot-specific context and guidance for the roomle-hi-example repository. For general AI assistant instructions, see [AGENTS.md](../AGENTS.md).
+
+## Repository Context
+
+- **Project**: roomle-hi-example
+- **Repository**: `roomle/roomle-hi-example`
+- **Purpose**: Standalone HI presets example with MCP server for orchestrating HOMAG Intelligence object groups in Roomle room-planner sessions
+- **Primary Language**: JavaScript/TypeScript (Node.js 18+), HTML
+- **Current Branch**: `feat/hi-mcp`
+
+## What This Repository Is
+
+roomle-hi-example provides:
+
+1. **HI Presets Example Page** (`index.html`) — Demonstrates HOMAG Intelligence (HI) room planning with preset configurations in a browser
+2. **MCP Server** (`hi-mcp-server.js`) — Zero-dependency Node.js HTTP server providing Model Context Protocol tools for AI agents
+
+The MCP server enables AI assistants (Claude, Copilot, etc.) to:
+- Query plan state (rooms, walls, articles, groups)
+- Create and manipulate HI object groups
+- Place groups in the scene
+- Calculate pricing
+- Generate order data
+- Render plan images
+
+## Key Concepts
+
+### HOMAG Intelligence (HI)
+
+HOMAG Intelligence is a system for kitchen cabinet management, price calculation, and order submission. In Roomle:
+- **Articles** — Individual cabinet modules from a catalog
+- **Groups** — Collections of articles (root modules) with docking relationships
+- **Docking Vectors** — Connection points that define how articles can attach to each other
+- **Placement** — Positioning groups against room walls
+
+### MCP (Model Context Protocol)
+
+MCP is a standard protocol for AI agents to interact with tools and resources. This server implements:
+- **Streamable HTTP transport** — JSON-RPC over HTTP POST
+- **SSE Bridge** — Server-Sent Events for connecting to the browser page
+- **Tool execution** — Relaying MCP tool calls to the Roomle planner API
+
+### Zero-Dependency Philosophy
+
+The server uses only Node.js built-in modules. No npm packages required. This ensures:
+- Easy deployment anywhere Node.js runs
+- No dependency conflicts
+- Minimal security surface area
+- Fast startup
+
+## Workflow Patterns
+
+### For AI Agents Using the MCP Server
+
+1. **Start the server**: `npm start` or `node hi-mcp-server.js`
+2. **Open the page**: Browser opens to `http://localhost:3100/?mcp=true`
+3. **Connect MCP client** (see below for client-specific instructions)
+4. **Call tools** to interact with the Roomle planner
+
+### MCP Client Connection
+
+| Client | Connection Method |
+|---|---|
+| **Claude Code** | `claude mcp add --transport http --scope user hi-orchestrator http://localhost:3100/mcp` |
+| **Claude Desktop** | Add to `claude_desktop_config.json` |
+| **Copilot VS Code** | MCP: Open User Configuration → Add Server → `http://localhost:3100/mcp` |
+| **Custom HTTP Client** | POST JSON-RPC to `http://localhost:3100/mcp` |
+
+**Important**: Browser-based Copilot cannot reach localhost servers due to CORS and security restrictions.
+
+### Available MCP Tools
+
+All tools are defined in `hi-mcp-server.js` and documented in:
+- [`.agents/skills/hi-mcp-tools.md`](../.agents/skills/hi-mcp-tools.md) — Complete tool reference
+- [`docs/hi-mcp-server.md`](../docs/hi-mcp-server.md) — User-facing documentation
+
+Primary tools:
+- `get-plan-context` — Get current rooms, walls, articles, groups, docking vectors
+- `create-or-replace-groups` — Add or modify groups with articles
+- `place-group` — Move existing groups to new positions
+- `get-price` — Calculate pricing for current configuration
+- `get-order-data` — Generate order data for manufacturing
+- `get-plan-images` — Render 2D and 3D images of the plan
+- `set-wall-configuration` — Configure room walls (experimental)
+- `remove-all-objects` — Clear the scene (for testing)
+
+### Common Workflows
+
+**Creating a Kitchen Layout:**
+```
+1. get-plan-context → inspect current rooms
+2. create-or-replace-groups → add cabinet groups
+3. place-group → position groups against walls
+4. get-price → calculate pricing
+```
+
+**Debugging Group Issues:**
+```
+1. get-plan-context → examine current groups and docking
+2. Analyze docking vectors and placement
+3. create-or-replace-groups → fix docking relationships
+4. place-group → adjust positions
+```
+
+## Digital Brain
+
+The `.agents/` folder is the "digital brain" for this repository, containing:
+
+```
+.agents/
+├── README.md                     # Digital brain index
+├── bug-analysis/                 # Bug root-cause analyses
+├── feature-analysis/             # Feature investigations
+├── refactoring-analysis/         # Refactoring analyses
+└── skills/                      # On-demand domain knowledge
+    ├── hi-mcp-server.md          # MCP server architecture
+    ├── hi-authoring-rules.md     # HI authoring patterns
+    ├── hi-mcp-tools.md           # MCP tool reference
+    └── roomle-hi-concepts.md      # Core HI concepts
+```
+
+**See Also**: [.agents/README.md](../.agents/README.md) for complete digital brain structure and analysis workflows.
+
+### On-Demand Skills
+
+Load these skills when the task matches their domain:
+
+| Skill | Load When |
+|---|---|
+| [hi-mcp-server.md](../.agents/skills/hi-mcp-server.md) | MCP server architecture, protocol handling, SSE bridge |
+| [hi-authoring-rules.md](../.agents/skills/hi-authoring-rules.md) | HI authoring, docking patterns, group creation |
+| [hi-mcp-tools.md](../.agents/skills/hi-mcp-tools.md) | Using MCP tools, tool parameters, examples |
+| [roomle-hi-concepts.md](../.agents/skills/roomle-hi-concepts.md) | HI data model, rooms, walls, articles, groups |
+
+## Code Style Guidelines
+
+### JavaScript/TypeScript
+
+- **ES Modules**: Use `import/export`, not CommonJS `require`
+- **JSDoc Types**: Use JSDoc comments for type annotations
+- **Async/Await**: Prefer over Promise chains
+- **Error Handling**: Use try/catch for sync errors, .catch() for promises
+
+### Naming
+
+- **Variables**: camelCase (`planContext`, `dockingVector`)
+- **Constants**: UPPER_SNAKE_CASE (`PORT`, `DEFAULT_CALL_TIMEOUT_MS`)
+- **Functions**: camelCase (`getPlanContext`, `createOrReplaceGroups`)
+- **Files**: kebab-case (`hi-mcp-server.js`, `hi-mcp-server.md`)
+
+### Comments
+
+- **Minimal**: Code should express intent through naming
+- **JSDoc**: Required for public APIs (MCP-exposed functions)
+- **No headers**: No file-level author/license comments
+- **No dividers**: No `// ===` or `// ---` section markers
+
+## Documentation Structure
+
+### For AI Agents
+
+- **[AGENTS.md](../AGENTS.md)** — Primary AI assistant instructions
+- **[.agents/README.md](../.agents/README.md)** — Digital brain index
+- **[.agents/skills/](../.agents/skills/)** — On-demand domain knowledge
+- **[.agents/bug-analysis/](../.agents/bug-analysis/)** — Bug analyses
+- **[.agents/feature-analysis/](../.agents/feature-analysis/)** — Feature investigations
+- **[.agents/refactoring-analysis/](../.agents/refactoring-analysis/)** — Refactoring analyses
+
+### For Humans
+
+- **[README.md](../README.md)** — Quickstart and usage
+- **[docs/hi-mcp-server.md](../docs/hi-mcp-server.md)** — MCP server documentation
+- **[docs/hi-mcp-poc-presentation.md](../docs/hi-mcp-poc-presentation.md)** — POC presentation
+
+## Analysis Workflow
+
+When investigating issues, follow this workflow:
+
+### Bug Analysis ("analyse the bug")
+1. **Reproduce** — Identify exact steps to trigger the issue
+2. **Investigate** — Trace data flow, identify root cause with file:line references
+3. **Document** — Create analysis in `.agents/bug-analysis/<slug>.md`
+4. **Fix** — Implement clean fix addressing root cause
+5. **Validate** — Test fix thoroughly
+6. **Close out** — Update analysis with results, promote durable knowledge
+
+### Feature Analysis ("analyse the feature")
+1. **Question** — Clearly state what needs investigation
+2. **Current State** — Document how it works today with code references
+3. **Gap/Question** — Identify what's missing or unclear
+4. **Proposed** — Design or change proposal
+5. **Alternatives** — Considered and rejected approaches
+6. **Document** — Create analysis in `.agents/feature-analysis/<slug>.md`
+
+### Refactoring Analysis ("analyse the refactoring")
+1. **Current** — What the code does and why it's a problem
+2. **Scope** — Full scope with file:line references
+3. **Target** — Proposed target shape
+4. **Tests** — Coverage of affected behaviour
+5. **Benchmark** — Performance measurements if applicable
+6. **Document** — Create analysis in `.agents/refactoring-analysis/<slug>.md`
+
+## Important Constraints
+
+1. **Zero Dependencies** — Do not add npm packages without explicit approval
+2. **Node.js 18+** — Target this minimum version
+3. **Browser Compatibility** — The example page must work in modern browsers
+4. **MCP Protocol** — Maintain compliance with MCP specification
+5. **Roomle API** — Work within Roomle planner API constraints
+
+## Common Pitfalls
+
+1. **SSE Connection Leaks** — Always clean up SSE connections on error
+2. **Timeout Values** — Use appropriate timeouts (30s default, 120s for snapshots)
+3. **Error Propagation** — Relay errors from the page back to MCP client
+4. **State Management** — Track bridge connection state carefully
+5. **Docking Validation** — Always validate docking vectors before placement
+
+## Testing
+
+The repository includes:
+
+- **Manual Testing**: Start server, open page, connect MCP client, call tools
+- **Tool Testing**: Use the MCP client to verify each tool works correctly
+- **Integration Testing**: Verify end-to-end workflows (create groups, place, price, order)
+
+For automated testing of the example page, use browser DevTools:
+- Console for errors
+- Network tab for API calls
+- Elements tab for DOM inspection
+
+## Performance Considerations
+
+- **MCP Call Timeouts**: Default 30s, use 120s for snapshot generation
+- **SSE Overhead**: Bridge communication has network overhead
+- **Large Plans**: Handle large plan contexts efficiently
+- **Image Generation**: Can be expensive — use with appropriate timeouts
+- **Memory**: Server should remain lightweight (zero dependencies helps)
+
+## Quick Reference
+
+### Server Commands
+
+```bash
+npm start                    # Start server and open browser
+node hi-mcp-server.js       # Start server only
+```
+
+### Port Configuration
+
+- **Default**: 3100
+- **Change**: Set `PORT` environment variable
+
+### URLs
+
+- **Server**: `http://localhost:3100/`
+- **MCP Endpoint**: `http://localhost:3100/mcp`
+- **SSE Bridge**: `http://localhost:3100/bridge`
+- **Example Page**: `http://localhost:3100/index.html`
+- **With MCP flag**: `http://localhost:3100/?mcp=true`
+
+## Related Resources
+
+- [RoomleCore AGENTS.md](https://github.com/roomle-internal/RoomleCore/blob/master/AGENTS.md) — Pattern repository for these instructions
+- [Roomle Documentation](https://roomle-documentation.netlify.app/) — General Roomle documentation
+- [MCP Specification](https://github.com/modelcontextprotocol/specification) — MCP protocol details
+
+## Version
+
+This file is maintained on the `feat/hi-mcp` branch and should be kept in sync with [AGENTS.md](../AGENTS.md).
+
+---
+
+**Last Updated**: 2026-09-25

@@ -22,4 +22,16 @@ describe('resolveBridgeUrls', () => {
       'ws://localhost:3100/bridge',
     ]);
   });
+
+  it('appends the session id to the bridge url', () => {
+    expect(
+      resolveBridgeUrls('https://hi-mcp-poc.example.com', 'alice'),
+    ).toEqual(['wss://hi-mcp-poc.example.com/bridge?session=alice']);
+  });
+
+  it('leaves the bridge url unchanged without a session id', () => {
+    expect(resolveBridgeUrls('https://hi-mcp-poc.example.com')).toEqual([
+      'wss://hi-mcp-poc.example.com/bridge',
+    ]);
+  });
 });

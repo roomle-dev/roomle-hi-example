@@ -70,7 +70,10 @@ const httpServer = tlsOptions
 const webSocketServer = new WebSocketServer({ noServer: true });
 httpServer.on('upgrade', (request, socket, head) => {
   const { origin } = request.headers;
-  if (request.url !== '/bridge' || (origin && !pageOrigins.includes(origin))) {
+  // query parameters are allowed on /bridge (the Cloudflare session routing
+  // appends ?session=…)
+  const { pathname } = new URL(request.url ?? '', 'http://localhost');
+  if (pathname !== '/bridge' || (origin && !pageOrigins.includes(origin))) {
     console.error(
       `[hi-mcp] rejected websocket upgrade (url: ${request.url}, origin: ${origin})`,
     );

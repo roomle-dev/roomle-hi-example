@@ -34,6 +34,29 @@ describe('worker routing', () => {
     expect(containerFetch).toHaveBeenCalledTimes(1);
   });
 
+  it('routes ?session= to a container of its own (parallel users)', async () => {
+    await fetchWorker('https://hi-mcp-poc.test/mcp?session=alice', {
+      method: 'POST',
+      body: '{"jsonrpc":"2.0"}',
+    });
+    await fetchWorker('https://hi-mcp-poc.test/bridge?session=alice');
+    await fetchWorker('https://hi-mcp-poc.test/mcp?session=bob', {
+      method: 'POST',
+      body: '{"jsonrpc":"2.0"}',
+    });
+    expect(getByName).toHaveBeenNthCalledWith(1, 'alice');
+    expect(getByName).toHaveBeenNthCalledWith(2, 'alice');
+    expect(getByName).toHaveBeenNthCalledWith(3, 'bob');
+  });
+
+  it('falls back to the shared default session without a session param', async () => {
+    await fetchWorker('https://hi-mcp-poc.test/mcp', {
+      method: 'POST',
+      body: '{"jsonrpc":"2.0"}',
+    });
+    expect(getByName).toHaveBeenCalledWith('default');
+  });
+
   it('answers 404 for other paths without touching the container', async () => {
     const response = await fetchWorker('https://hi-mcp-poc.test/other');
     expect(response.status).toBe(404);

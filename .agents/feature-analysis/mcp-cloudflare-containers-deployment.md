@@ -204,6 +204,14 @@ session end-to-end. Skill: [hi-mcp-cloudflare-deployment.md](../skills/hi-mcp-cl
 agent guide: [connect-agent-to-cloud-mcp.md](../hi-mcp/docs/connect-agent-to-cloud-mcp.md).
 Still open: phase 2 (per-session containers) and the access-control decision (6.3).
 
+**Status 2026-09-26 (evening), phase 2 implemented**: per-session containers are live — the
+Worker routes `?session=<id>` (MCP clients) and the store page's `mcp_session` → bridge URL
+query to `getByName(<session>)`, so parallel users each get their own container and never
+interfere; without a session id the shared `default` container is used. Store change: the
+`mcp_session` parameter is passed through `Planner.vue` to the bridge (kept verbatim in sync
+with the roomle-hi-example copy). Session names are user-chosen and act as weak access tokens
+(see 6.3); managed auth remains open. Remaining: the access-control decision (6.3).
+
 ---
 
 ## 5. Prerequisites and Open Questions for the Requester

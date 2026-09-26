@@ -30,11 +30,13 @@ Keep the tab open; it is the session the agent works in.
 ### 1. Open the store page (first, and keep the tab open)
 
 ```text
-https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<worker>.<subdomain>.workers.dev
+https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<your session name>
 ```
 
 Open it and start planning — no plan id needed; append `&id=<plan id>` only to open a specific
-existing plan. The page's bridge connects to the cloud server — in the server log
+existing plan. The `<your session name>` is any short word of your choice (e.g. your first
+name): it routes your tab and your agent into **your own container**, so parallel users do not
+interfere. The page's bridge connects to the cloud server — in the server log
 (`npx wrangler tail` in `hi-mcp/cf`) appears `page connected`. Without this tab, the tools
 answer `No HI page connected` — and the agent tells the user to open exactly this URL.
 
@@ -46,7 +48,8 @@ answer `No HI page connected` — and the agent tells the user to open exactly t
 2. Click **+ Add connector** (top right) → select the **Custom MCP Connector** tab.
 3. Fill in:
    - **Connector Name:** `hi-orchestrator`
-   - **Server URL:** `https://<worker>.<subdomain>.workers.dev/mcp`
+   - **Server URL:** `https://<worker>.<subdomain>.workers.dev/mcp?session=<your session name>`
+     — the **same session name** as in your store URL, so your agent lands in your container
 4. Click **Connect**.
 
 If Mistral refuses to connect: the URL is wrong — take it from the `wrangler deploy` output
@@ -83,8 +86,10 @@ the page the user sees.
 
 ## Rules and limits of this PoC
 
-- **One planning session at a time**: the server holds one connected page; a second tab
-  replaces the first. (Per-session containers are the planned phase 2.)
+- **Parallel use works per session**: pick a session name and use the **same** one in your store
+  URL (`&mcp_session=`) and your connector URL (`?session=`) — each session gets its own
+  container, your agent drives exactly your tab. Without a session name everyone shares one
+  session (`default`): the newest tab wins.
 - The store URL needs `store.stage=INT` and the `mcp_server` parameter; a plan `id` is optional
   (without it the user starts planning from the store).
 - Everything the agent does happens in the visible tab — reload the tab if the connection was

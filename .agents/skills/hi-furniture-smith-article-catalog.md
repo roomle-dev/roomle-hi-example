@@ -92,19 +92,19 @@ curl -s -X POST http://localhost:3100/mcp \
         "include":["masterData","rooms","articles","groups"]
       }
     }
-  }' | jq -r '.result.content[0].text' > docs/article-information/hi-plan-context.json
+  }' | jq -r '.result.content[0].text' > docs/library-information/hi-plan-context.json
 ```
 
 **Explanation:**
 - `get-plan-context` is the MCP tool that calls `roomDesignerApi.extended.getExternalObjectPlanContext()`
 - The `include` parameter specifies which sections to fetch (all four sections for completeness)
 - `jq -r '.result.content[0].text'` extracts the raw JSON from the MCP response wrapper
-- Output is saved to `docs/article-information/hi-plan-context.json`
+- Output is saved to `docs/library-information/hi-plan-context.json`
 
 ### Step 4: Create Directory Structure
 
 ```bash
-mkdir -p docs/article-information
+mkdir -p docs/library-information
 ```
 
 ### Step 5: Generate Markdown Catalog
@@ -115,7 +115,7 @@ Use the Python script below to transform the JSON into a markdown table:
 python3 << 'PYEOF'
 import json
 
-with open('docs/article-information/hi-plan-context.json', 'r') as f:
+with open('docs/library-information/hi-plan-context.json', 'r') as f:
     data = json.load(f)
 
 header = """# Furniture_Smith Article Catalog
@@ -157,7 +157,7 @@ for article in data['articles']:
     row = f"| {article['articleId']} | {category} | {article['articleName']} | {dims_text} | ![]({article.get('imageUrl', '')}) | {desc} |"
     rows.append(row)
 
-with open('docs/article-information/articles.md', 'w') as f:
+with open('docs/library-information/articles.md', 'w') as f:
     f.write(header)
     f.write('\n'.join(rows) + '\n')
 
@@ -173,13 +173,13 @@ PYEOF
 - Formats dimensions as `L {Depth} mm W {Width} mm H {Height} mm`
 - Replaces pipes in category with slashes (to avoid breaking markdown tables)
 - Generates table rows in the specified column order
-- Saves to `docs/article-information/articles.md`
+- Saves to `docs/library-information/articles.md`
 
 ### Step 6: Commit Changes
 
 ```bash
 cd /Users/gernotsteinegger/source/roomle/roomle-hi-example
-git add docs/article-information/
+git add docs/library-information/
 git commit -m "docs: update Furniture_Smith article catalog"
 ```
 
@@ -314,12 +314,12 @@ curl -s -X POST http://localhost:3100/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get-plan-context","arguments":{"include":["masterData","rooms","articles","groups"]}}}' | \
-  jq -r '.result.content[0].text' > docs/article-information/hi-plan-context.json
+  jq -r '.result.content[0].text' > docs/library-information/hi-plan-context.json
 
 # Generate markdown
 python3 << 'PYEOF'
 import json
-with open('docs/article-information/hi-plan-context.json', 'r') as f:
+with open('docs/library-information/hi-plan-context.json', 'r') as f:
     data = json.load(f)
 
 header = """# Furniture_Smith Article Catalog
@@ -348,11 +348,11 @@ for article in data['articles']:
     row = f"| {article['articleId']} | {category} | {article['articleName']} | {dims_text} | ![]({article.get('imageUrl', '')}) | {article.get('desc', '')} |"
     rows.append(row)
 
-with open('docs/article-information/articles.md', 'w') as f:
+with open('docs/library-information/articles.md', 'w') as f:
     f.write(header + '\n'.join(rows) + '\n')
 PYEOF
 
-echo "Catalog generated: $(wc -l < docs/article-information/articles.md) lines"
+echo "Catalog generated: $(wc -l < docs/library-information/articles.md) lines"
 ```
 
 ---
@@ -380,8 +380,8 @@ echo "Catalog generated: $(wc -l < docs/article-information/articles.md) lines"
 ## Related Files
 
 - `minimal-hi-example/hi-mcp-server.js` — MCP server (line 604: URL with library parameters)
-- `docs/article-information/hi-plan-context.json` — Raw HiPlanContext data
-- `docs/article-information/articles.md` — Generated markdown catalog
+- `docs/library-information/hi-plan-context.json` — Raw HiPlanContext data
+- `docs/library-information/articles.md` — Generated markdown catalog
 - `.agents/skills/hi-furniture-smith-article-catalog.md` — This skill document
 
 ---

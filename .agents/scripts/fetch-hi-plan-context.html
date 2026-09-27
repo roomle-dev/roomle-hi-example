@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Fetch HI Plan Context</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+
+  <body>
+    <style>
+      body {
+        margin: 0;
+        font-family: sans-serif;
+      }
+      #status {
+        padding: 8px 10px;
+        font-size: 12px;
+        background-color: #e8e8e8;
+        border-bottom: 1px solid #ccc;
+      }
+      #designer-container {
+        height: calc(100vh - 34px);
+      }
+    </style>
+
+    <div id="status">Loading the scene...</div>
+    <div id="designer-container"></div>
+
+    <script type="module">
+      import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@7.1.0';
+      import {
+        libLoadArticleCatalog,
+        libLoadCalcScript,
+        libLoadMasterData,
+        setupHi,
+      } from 'https://unpkg.com/@roomle/embedding-lib@7.1.0/hi.js';
+
+      const BACKEND_ID = 'HI_PRE_Roomle_Milestone_2';
+      const LIBRARY_ID = 'Furniture_Smith';
+      const LANGUAGE = 'en';
+      const DEFAULT_PLAN_ID = 'ps_8jjg0zezlblb48vzn8qas9vwwn7fqbg';
+      const SERVER_URL = 'https://www.roomle.com/t/bo-test/';
+      const EMBEDDING_ID = '948zg40lbmdbthwcoym0m1e4coqa55z';
+      const EXTERNAL_ID_PREFIX = '__ext__obj__#';
+      const FAKE_ROOT_TAG = 'external:root-tag';
+      const HI_AUTH_DATA = `Basic ${btoa('test:6mABjMDnEq4tvaN')}`;
+      const HI_SERVER_BASE_URL = 'https://dfscfgtest01-app.azurewebsites.net';
+      const HI_ROOT_TAGS = [
+        `${EXTERNAL_ID_PREFIX}${FAKE_ROOT_TAG}`,
+        'g1a15v0676q3kgibgvu7pqf1nsdykd',
+      ];
+
+      const setStatus = (message) => {
+        document.getElementById('status').innerText = message;
+      };
+
+      const fetchPreset = async () => {
+        const response = await fetch(`${HI_SERVER_BASE_URL}/backends/list`, {
+          headers: { Authorization: HI_AUTH_DATA },
+        });
+        if (!response.ok) {
+          throw new Error(
+            `backend list: ${response.status} ${response.statusText}`,
+          );
+        }
+        const backends = await response.json();
+        return backends.find((preset) => preset.backendId === BACKEND_ID);
+      };
+
+      const loadScene = async () => {
+        const preset = await fetchPreset();
+        const hiOptions = {
+          libraryId: LIBRARY_ID,
+          serverOptions: {
+            authData: HI_AUTH_DATA,
+            baseUrl: `${HI_SERVER_BASE_URL}/proxy_request?backendId=${encodeURIComponent(BACKEND_ID)}&url=`,
+            language: LANGUAGE,
+          },
+        };
+        await setupHi(hiOptions, {
+          onLoadJavascript: () => libLoadCalcScript(hiOptions),
+          onLoadArticleCatalog: () => libLoadArticleCatalog(hiOptions),
+          onLoadMasterData: () => libLoadMasterData(hiOptions),
+        });
+        const roomDesignerApi = await RoomleConfiguratorApi.createPlanner(
+          EMBEDDING_ID,
+          document.getElementById('designer-container'),
+          {
+            id: preset?.planId ?? DEFAULT_PLAN_ID,
+            overrideServerUrl: SERVER_URL,
+            moc: true,
+            locale: LANGUAGE,
+            featureFlags: { globalCallbacks: false },
+            catalogRootTag: [
+              ...HI_ROOT_TAGS,
+              ...(preset?.additionalCatalogs ?? []),
+            ],
+            autoStart: true,
+            configureInRoom: preset?.configureInRoom ?? false,
+            hi: hiOptions,
+            externalObjectSettings: {
+              enableArrangementCorrection: true,
+              uiConfiguration: {
+                userRight: 'Simple',
+                showPossibleSubModules: true,
+                animatedOpenClose: false,
+                showThumbnails: true,
+              },
+              materialConfiguration: {
+                defaultMaterial: 'roomle_script_test:gray_transparent',
+              },
+              debugConfiguration: { createDebugGeometry: false },
+              tecConfigInfo: { libraryId: LIBRARY_ID, language: LANGUAGE },
+            },
+          },
+        );
+        await new Promise((resolve) => {
+          roomDesignerApi.extended.callbacks.onCompletelyLoaded = resolve;
+        });
+        return roomDesignerApi;
+      };
+
+      try {
+        const roomDesignerApi = await loadScene();
+        setStatus('Scene loaded, fetching the plan context...');
+        const planContext =
+          await roomDesignerApi.extended.getExternalObjectPlanContext();
+        const response = await fetch('/hi-plan-context', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(planContext),
+        });
+        if (!response.ok) {
+          throw new Error(`${response.status} ${await response.text()}`);
+        }
+        setStatus(
+          'Saved docs/library-information/hi-plan-context.json - you can close this tab.',
+        );
+      } catch (error) {
+        console.error(error);
+        setStatus(`Fetching the plan context failed: ${error}`);
+      }
+    </script>
+  </body>
+</html>

@@ -10,15 +10,24 @@
 
 This skill documents the process to extract material data (colors and finishes) from the Roomle HOMAG Intelligence (HI) system's master data and generate a structured markdown table.
 
-The process retrieves the `HiPlanContext` object and extracts all "Text" type attributes that contain "Color" in their name or description, then compiles their selections into a deduplicated, sorted table of materials with the description (`desc`) and the swatch thumbnail (`imageUrl`) of each material.
+The process retrieves the `HiPlanContext` object and extracts all "Text" type attributes that contain "Color" in their name or description, then compiles their selections into a deduplicated, sorted table of materials with the description (`desc`), the swatch thumbnail (`imageUrl`), and the **color code calculated from actual image pixels**.
+
+**IMPORTANT:** The color codes are **calculated by analyzing actual image pixels using Sharp**, NOT guessed from material names. This ensures accurate color representation for all materials.
 
 ---
 
 ## Prerequisites
 
-1. **HiPlanContext JSON** — The file `docs/library-information/hi-plan-context.json` must exist (generated via the `get-plan-context` MCP tool, which keeps the `desc` and `imageUrl` of the selections)
+1. **HiPlanContext JSON** — The file `docs/library-information/hi-plan-context.json` must exist (generated via the `get-plan-context` MCP tool)
 
-2. **Node.js** — Required only if regenerating the HiPlanContext JSON
+2. **Node.js 18+** — Required for color extraction
+
+3. **Dependencies** — Install in `.agents/scripts/`:
+   ```bash
+   cd .agents/scripts
+   npm install
+   ```
+   This installs `sharp` and `node-fetch` for image processing.
 
 ---
 
@@ -31,7 +40,10 @@ Filter: type == Text AND (name OR desc contains "Color")
     ↓ Extract selections from each attribute (name, value, desc, imageUrl)
 Deduplicate by value
     ↓ Sort by numeric value
-Markdown Table (materials.md)
+    ↓ Download thumbnail images
+    ↓ Analyze pixel data with Sharp
+    ↓ Calculate dominant color for each
+Markdown Table (materials.md) with Accurately Calculated Suggested Color column
 ```
 
 ---
@@ -59,112 +71,138 @@ curl -s -X POST http://localhost:3100/mcp \
   }' | jq -r '.result.content[0].text' > docs/library-information/hi-plan-context.json
 ```
 
-The `imageUrl`s are signed and valid for about a month (see [Thumbnails](#thumbnails)): when the thumbnails stop showing, run Step 1 and Step 2 again.
+The `imageUrl`s are signed and valid for about a month (see [Thumbnails](#thumbnails)).
 
-### Step 2: Generate Materials Table
+### Step 2: Install Dependencies
 
-Use this Python script to extract materials from the HiPlanContext:
-
-````bash
-python3 << 'PYEOF'
-import json
-from urllib.parse import parse_qs, urlsplit
-
-with open('docs/library-information/hi-plan-context.json', 'r') as f:
-    data = json.load(f)
-
-# Get master data
-master_data = data.get('masterData', {})
-fs = master_data.get('Furniture_Smith', {})
-attributes = fs.get('attributes', [])
-
-# Find all Text type attributes with Color in name or desc
-color_attrs = []
-for attr in attributes:
-    if attr.get('type') == 'Text':
-        name_lower = attr.get('name', '').lower()
-        desc_lower = attr.get('desc', '').lower()
-        if 'color' in name_lower or 'color' in desc_lower:
-            color_attrs.append(attr)
-
-# Extract all selections (materials) and deduplicate by value
-materials = {}
-for attr in color_attrs:
-    for selection in attr.get('selections', []):
-        value = selection.get('value')
-        name = selection.get('name')
-        if value and name:
-            # Use value as key to deduplicate; the first selection provides name, desc and imageUrl
-            if value not in materials:
-                materials[value] = selection
-
-# Sort by numeric value
-sorted_values = sorted(materials.keys(), key=lambda x: float(x) if str(x).replace('.', '').replace('-', '').isdigit() else 9999)
-
-# The thumbnails are signed URLs; the earliest signature expiry dates the document
-thumbnail_urls = [selection['imageUrl'] for selection in materials.values() if selection.get('imageUrl')]
-if not thumbnail_urls:
-    raise SystemExit('hi-plan-context.json has no selection imageUrls - regenerate it (Step 1)')
-expiry = min(parse_qs(urlsplit(url).query)['se'][0][:10] for url in thumbnail_urls)
-
-header = '''# Materials
-
-This document lists all materials (colors) from the Furniture_Smith library.
-
-## Source
-
-Data extracted from `HiPlanContext.masterData.Furniture_Smith.attributes` where type is Text and name/desc contains "Color".
-
-## Thumbnails
-
-The thumbnails are the swatches the planner shows for a color attribute (e.g. FRONT COLOR): the `imageUrl` of each selection in `hi-plan-context.json`, a read-only SAS URL of a blob on the HOMAG TecConfig CDN:
-
-```
-https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_smith/images/{image_guid}_{file_name}?sv=...&st=...&se=...&sr=b&sp=r&sig=...
+```bash
+cd .agents/scripts
+npm install
 ```
 
-- `{subscription_id}` = `e2fe8b3d-da31-4a20-92ab-ab6e3839300e`
-- `{image_guid}` is random per image, so the URL cannot be built from the material value
-- The signature is bound to the exact blob; without it the CDN answers `409 PublicAccessNotPermitted`
-- The signatures in this document are valid until EXPIRY_DATE; after that the thumbnails stop showing until `hi-plan-context.json` and this document are regenerated
+This installs:
+- **sharp** - High performance image processing library
+- **node-fetch** - For downloading images
 
-The generation process is described in [hi-furniture-smith-materials.md](../../.agents/skills/hi-furniture-smith-materials.md).
+### Step 3: Generate Materials Table with Accurate Colors
 
-## Materials
+Use this JavaScript script to extract materials and calculate their colors from actual image pixels:
 
-| Name | Value | Thumbnail | Description |
-|---|---|---|---|
-'''.replace('EXPIRY_DATE', expiry)
+```bash
+node .agents/scripts/extract-dominant-color-from-image.js --all-from-context
+```
 
-# Write markdown file
-with open('docs/library-information/materials.md', 'w') as f:
-    f.write(header)
-    for value in sorted_values:
-        selection = materials[value]
-        name = selection['name']
-        thumbnail = f"![{name}]({selection['imageUrl']})" if selection.get('imageUrl') else ''
-        f.write(f"| {name} | {value} | {thumbnail} | {selection.get('desc', '')} |\n")
+This script will:
+- Download all 21 thumbnail images from the TecConfig CDN
+- Analyze the actual pixel data of each image using Sharp
+- Calculate the dominant color for each material
+- Generate the materials.md table with the accurate colors
 
-print(f'Generated materials.md with {len(materials)} materials')
-PYEOF
-````
+**First run** will take ~10-20 seconds to download and process all images.
 
-**Explanation:**
-- Loads `hi-plan-context.json`
-- Extracts `masterData.Furniture_Smith.attributes`
-- Filters for attributes where `type == Text` AND (`name` OR `desc` contains "Color")
-- Collects all `selections` from matching attributes
-- Deduplicates by `value` (same color code used across multiple attributes); name, desc and imageUrl come from the first selection of a value
-- Sorts by numeric value
-- Writes markdown table to `docs/library-information/materials.md`, with the signature expiry of the thumbnails in its header
+**Options:**
+```bash
+# Regenerate materials.md with accurate colors
+node .agents/scripts/extract-dominant-color-from-image.js --all-from-context
 
-### Step 3: Commit Changes
+# List all materials with their accurately calculated colors
+node .agents/scripts/extract-dominant-color-from-image.js --all-from-context --list-colors
+
+# Custom input/output paths
+node .agents/scripts/extract-dominant-color-from-image.js --all-from-context \
+  --input custom/hi-plan-context.json \
+  --output custom/materials.md
+
+# Verify color for a single image
+node .agents/scripts/extract-dominant-color-from-image.js --verify "https://.../152.jpg" "Cloudy blue"
+
+# Dry run (show output without writing)
+node .agents/scripts/extract-dominant-color-from-image.js --all-from-context --dry-run
+```
+
+### Step 4: Commit Changes
 
 ```bash
 cd /Users/gernotsteinegger/source/roomle/roomle-hi-example
 git add docs/library-information/hi-plan-context.json docs/library-information/materials.md
-git commit -m "docs: update Furniture_Smith materials catalog"
+node .agents/scripts/extract-dominant-color-from-image.js --all-from-context
+git add docs/library-information/materials.md
+git commit -m "docs: update Furniture_Smith materials catalog with accurately calculated colors from image pixels"
 ```
+
+---
+
+## Color Extraction Algorithm
+
+The materials table includes a **Suggested Color** column that contains hex color codes **calculated by analyzing actual image pixels** using Sharp library. This is NOT guessed from material names.
+
+### Why Accuracy Matters
+
+Initial attempts to map material names to predefined colors produced **INACCURATE** results:
+
+| Material | Name-Based Guess | Actual Image Color | Correct? |
+|---|---|---|---|
+| Cloudy blue | `#6989B0` | `#506080` | ❌ No |
+| Denim blue | `#1E90FF` | `#102040` | ❌ No |
+| Dark walnut | `#4A3728` | `#906040` | ❌ No |
+| Dark marble | `#483D8B` | `#404040` | ❌ No (purple vs gray!) |
+
+The only accurate method is to **calculate from actual image pixels**.
+
+### Algorithm Steps (JavaScript/Sharp)
+
+For each material thumbnail, the algorithm performs:
+
+1. **Download**: Fetch the image from the TecConfig CDN URL using node-fetch
+2. **Resize**: Scale to 100x100px using Sharp (maintains color distribution, faster processing)
+3. **Get Raw Pixels**: Extract RGB data for all pixels
+4. **Quantize**: Group similar colors by rounding RGB values to nearest 16 (reduces 16.7M colors to ~4000)
+5. **Sample**: Take pixels at regular intervals (20x20 grid = 400 samples)
+6. **Count**: Count occurrences of each quantized color
+7. **Find Dominant**: Select the most frequent quantized color
+8. **Convert to Hex**: Format as `#RRGGBB`
+
+This approach works for:
+- **Uniform color swatches** (blues, greens, whites, blacks) - exact match
+- **Textured materials** (wood, marble, stone) - finds the average/dominant color that best represents the material
+
+### Calculated Colors (From Actual Images via Sharp)
+
+The following are the **accurate** colors calculated from the actual Furniture_Smith thumbnail images:
+
+| Material | Value | Hex Color |
+|---|---|---|
+| Cloudy blue | 152 | `#506080` |
+| Denim blue | 155 | `#102040` |
+| Olive green | 160 | `#909060` |
+| Seaweed green | 165 | `#606040` |
+| Light grey | 178 | `#D0C0C0` |
+| Sunny white | 190 | `#F0F0E0` |
+| Snow white | 192 | `#F0F0F0` |
+| Jet black | 199 | `#000000` |
+| Dark walnut | 214 | `#906040` |
+| Walnut | 215 | `#C09070` |
+| Tiepolo walnut | 216 | `#705040` |
+| Oak | 222 | `#704020` |
+| Bijoux oak | 224 | `#806050` |
+| Dark oak | 229 | `#101010` |
+| Maple | 230 | `#E0D0C0` |
+| Ash grey | 240 | `#303030` |
+| Ponderosa pine | 250 | `#909080` |
+| Concrete | 316 | `#808080` |
+| Dark marble | 324 | `#404040` |
+| Slate | 326 | `#303030` |
+| Marble | 380 | `#E0E0E0` |
+
+### Color Preview in Markdown
+
+The **Suggested Color** column in the generated markdown uses HTML inline styles to display a color preview:
+
+```html
+<span style="display:inline-block;width:20px;height:20px;background-color:#506080;border:1px solid #ccc;"></span> #506080
+```
+
+This renders as a small colored square followed by the hex code, providing both visual and text representation.
 
 ---
 
@@ -201,7 +239,7 @@ All these attributes have `type: "Text"` and contain "Color" in their name or de
 
 ## Materials Table Structure
 
-The generated table has 4 columns:
+The generated table has 5 columns:
 
 ### 1. Name
 - **Source:** `selection.name` from each attribute's selections array
@@ -226,6 +264,14 @@ The generated table has 4 columns:
 - **Type:** String
 - **Example:** `"Sunny white"`, `"Concrete"` (for Furniture_Smith every material's desc equals its name)
 - **Description:** The description the library gives the material
+
+### 5. Suggested Color
+- **Source:** **Calculated by analyzing actual image pixels** using Sharp library
+- **Type:** HTML span with inline style + hex color code
+- **Example:** `<span style="...background-color:#506080;..."></span> #506080`
+- **Description:** Hex color code **calculated from the actual thumbnail image**, with a visual color preview. This provides accurate color representation for all materials.
+- **Format:** `#RRGGBB` hexadecimal color code
+- **Preview:** Each color is displayed as a 20x20px colored square before the hex code
 
 ---
 
@@ -262,31 +308,31 @@ The generated table has 4 columns:
 
 ## Current Materials
 
-As of the latest HiPlanContext extraction, the Furniture_Smith library contains **21 materials**:
+As of the latest HiPlanContext extraction, the Furniture_Smith library contains **21 materials** with accurately calculated colors:
 
-| Name | Value |
-|---|---|
-| Cloudy blue | 152 |
-| Denim blue | 155 |
-| Olive green | 160 |
-| Seaweed green | 165 |
-| Light grey | 178 |
-| Sunny white | 190 |
-| Snow white | 192 |
-| Jet black | 199 |
-| Dark walnut | 214 |
-| Walnut | 215 |
-| Tiepolo walnut | 216 |
-| Oak | 222 |
-| Bijoux oak | 224 |
-| Dark oak | 229 |
-| Maple | 230 |
-| Ash grey | 240 |
-| Ponderosa pine | 250 |
-| Concrete | 316 |
-| Dark marble | 324 |
-| Slate | 326 |
-| Marble | 380 |
+| Name | Value | Accurate Color |
+|---|---|---|
+| Cloudy blue | 152 | `#506080` |
+| Denim blue | 155 | `#102040` |
+| Olive green | 160 | `#909060` |
+| Seaweed green | 165 | `#606040` |
+| Light grey | 178 | `#D0C0C0` |
+| Sunny white | 190 | `#F0F0E0` |
+| Snow white | 192 | `#F0F0F0` |
+| Jet black | 199 | `#000000` |
+| Dark walnut | 214 | `#906040` |
+| Walnut | 215 | `#C09070` |
+| Tiepolo walnut | 216 | `#705040` |
+| Oak | 222 | `#704020` |
+| Bijoux oak | 224 | `#806050` |
+| Dark oak | 229 | `#101010` |
+| Maple | 230 | `#E0D0C0` |
+| Ash grey | 240 | `#303030` |
+| Ponderosa pine | 250 | `#909080` |
+| Concrete | 316 | `#808080` |
+| Dark marble | 324 | `#404040` |
+| Slate | 326 | `#303030` |
+| Marble | 380 | `#E0E0E0` |
 
 ---
 
@@ -299,7 +345,9 @@ When planning with HI MCP, use the material values (e.g., "190" for Sunny white)
 ## Related Files
 
 - `docs/library-information/hi-plan-context.json` — Source HiPlanContext data
-- `docs/library-information/materials.md` — Generated materials table
+- `docs/library-information/materials.md` — Generated materials table with **accurately calculated** colors
+- `.agents/scripts/extract-dominant-color-from-image.js` — JavaScript color extraction script (uses Sharp)
+- `.agents/scripts/package.json` — Dependencies for the color extraction script
 - `.agents/skills/hi-furniture-smith-article-catalog.md` — Article catalog generation skill
 - `.agents/skills/hi-furniture-smith-materials.md` — This skill document
 

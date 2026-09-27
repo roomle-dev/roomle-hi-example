@@ -14,7 +14,10 @@ This setup allows you to:
 - Run local models (e.g., `qwen2.5-coder:32b`, `phi4-tools`) on your machine
 - Use GitHub Copilot Chat as the interface
 - Access HI-specific MCP tools through the `hi-orchestrator` server
-- Keep sensitive data local while using cloud-based orchestration
+- Keep model inference local — only the inference runs on your machine. MCP tool arguments
+  and the returned plan/order context are sent to the configured MCP server (the
+  Cloudflare-hosted endpoint by default). Use the [local MCP server](#alternative-local-mcp-server)
+  if your plan data must remain local.
 
 ---
 
@@ -73,7 +76,9 @@ VS Code Copilot manages MCP connections natively using its user configuration.
 }
 ```
 
-*(Alternatively, you can save this configuration to `~/.copilot/mcp-config.json` using `"mcpServers"` as the top-level key).*
+**Note:** `~/.copilot/mcp-config.json` (with `"mcpServers"` as the top-level key) is the
+configuration file of the GitHub Copilot **CLI** — VS Code does not read it. In VS Code, use
+the `servers` configuration above.
 
 **Note:** If you're running a local HI MCP server (e.g., `node minimal-hi-example/hi-mcp-server.js`), use:
 ```json
@@ -102,7 +107,10 @@ VS Code Copilot manages MCP connections natively using its user configuration.
 
 1. In the Copilot Chat panel, switch the mode to **Agent Mode** (or ensure the **`⚡` Tools** button is enabled)
 2. Verify that **`hi-orchestrator`** is listed under attached tools
-3. Enter your kitchen planning prompt—VS Code Copilot will route the inference directly to your local Ollama model while calling HI-specific functions on your MCP server!
+3. Open the HI page the tools operate on and keep it open — the server is only a relay, every tool call executes in the connected browser page:
+   - Cloud server: open the Roomle store with the `mcp_server` parameter, e.g. `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev` (see [Connecting an agent to the cloud MCP server](connect-agent-to-cloud-mcp.md))
+   - Local server: open `http://localhost:3100/?mcp=true` (the server opens this page automatically on startup)
+4. Enter your kitchen planning prompt—VS Code Copilot will route the inference directly to your local Ollama model while calling HI-specific functions on your MCP server!
 
 ---
 
@@ -131,7 +139,7 @@ If Ollama doesn't appear in the model picker:
 
 If `hi-orchestrator` doesn't appear under attached tools:
 1. Verify the server URL is correct in your MCP configuration
-2. Ensure the server is running (check with `curl http://localhost:3100/mcp` for local servers)
+2. Ensure the server is running — for local servers, watch the startup log in the terminal running `hi-mcp-server.js`, or probe with `curl -i -X POST http://localhost:3100/mcp` (the `/mcp` endpoint accepts POST only and answers a plain GET with 405)
 3. Restart VS Code
 4. Check the Copilot Chat output for connection errors
 
@@ -139,7 +147,7 @@ If `hi-orchestrator` doesn't appear under attached tools:
 
 If tool calls to the HI MCP server fail:
 1. Verify the server is accessible from your network
-2. Check that the Roomle page is open in your browser (for local servers using SSE bridge)
+2. Check that the HI page is open in your browser — tool calls execute in the connected page for both server variants: the local server via its SSE bridge (`http://localhost:3100/?mcp=true`), the cloud server via the store page opened with the `mcp_server` parameter
 3. Ensure you have the correct permissions and session state
 
 ---
@@ -175,7 +183,7 @@ Then configure VS Code to use the local endpoint:
 
 ## Related Documentation
 
-- [HI MCP Server Documentation](../minimal-hi-example/docs/hi-mcp-server.md) - Complete server reference
-- [HI MCP Tools Reference](.agents/skills/hi-mcp-tools.md) - Available tool definitions
-- [Roomle HI Concepts](.agents/skills/roomle-hi-concepts.md) - Core HI data model
+- [HI MCP Server Documentation](../../minimal-hi-example/docs/hi-mcp-server.md) - Complete server reference
+- [HI MCP Tools Reference](../../.agents/skills/hi-mcp-tools.md) - Available tool definitions
+- [Roomle HI Concepts](../../.agents/skills/roomle-hi-concepts.md) - Core HI data model
 - [Cloudflare MCP Server Setup](cloudflare-mcp-server.md) - Cloudflare deployment guide

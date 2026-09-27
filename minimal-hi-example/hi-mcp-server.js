@@ -6,7 +6,7 @@
 //   - hosts the page bridge                       GET  /bridge (SSE), POST /bridge/result
 //
 // Start it with:  node hi-mcp-server.js
-// Then open:      http://localhost:3100/?mcp=true
+// Then open:      http://localhost:3100/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith
 // MCP endpoint:   http://localhost:3100/mcp
 //
 // The MCP protocol layer (JSON-RPC over HTTP with JSON responses) is
@@ -98,9 +98,10 @@ const TOOLS = [
       'docking vector names, insert levels and sub-modules, plus cornerArticle for articles made for a room ' +
       'corner) and groups (the groups currently in the plan: position with pos, rotationY and footprint, and ' +
       'per root the article pick with input attributes, docking, docking vector names and the free docking vectors ' +
-      'a new root can dock to - no root positions, ' +
+      'a new root can dock to, plus its desc and imageUrl - no root positions, ' +
       'no geometry; a returned group is a valid create-or-replace-groups payload). masterData (per library the root ' +
-      'modules and the customer-facing attributes with their allowed values) is returned only when included ' +
+      'modules and the customer-facing attributes with their allowed values; modules, attributes and values carry ' +
+      'their desc and imageUrl, e.g. the swatch of a colour) is returned only when included ' +
       'explicitly; other attributes are found with find-attributes. Use it before authoring or modifying groups.',
     inputSchema: {
       type: 'object',
@@ -121,8 +122,8 @@ const TOOLS = [
     name: 'find-attributes',
     description:
       'Searches the attribute vocabulary of the loaded libraries by text (attribute id, name, description, ' +
-      'group or selection name) and returns the matching attributes with their allowed values, their ' +
-      'userRight and the root modules that carry them - including the attributes the compact masterData ' +
+      'group or selection name) and returns the matching attributes with their allowed values (each with ' +
+      'desc and imageUrl), their userRight and the root modules that carry them - including the attributes the compact masterData ' +
       'section of get-plan-context leaves out. Use it to find the attribute for a requested property, e.g. ' +
       'the front colour, and the value to set.',
     inputSchema: {
@@ -331,7 +332,7 @@ const pageBridge = {
     if (!page || page.writableEnded) {
       throw new Error(
         'No HI example page connected. Open the example with the mcp=true query parameter ' +
-          `(http://localhost:${PORT}/?mcp=true) and keep the tab open.`,
+          `(http://localhost:${PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith) and keep the tab open.`,
       );
     }
     const id = this.nextCallId++;
@@ -601,7 +602,7 @@ const openInBrowser = (url) => {
 };
 
 httpServer.listen(PORT, () => {
-  const exampleUrl = `http://localhost:${PORT}/?mcp=true`;
+  const exampleUrl = `http://localhost:${PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`;
   console.log('');
   console.log('  HI group orchestrator MCP server ready');
   console.log('');

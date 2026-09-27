@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# Generated files
+package-lock.json
+
+# Cache
+.cache/
+*.cache

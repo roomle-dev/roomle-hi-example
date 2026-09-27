@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Standalone HI presets example with an MCP server - one HTML file, one zero-dependency Node server",
+  "description": "Standalone HI presets example page started together with the hi-mcp-poc-json MCP server",
   "scripts": {
-    "start": "node hi-mcp-server.js"
+    "start": "node start.mjs"
   }
 }

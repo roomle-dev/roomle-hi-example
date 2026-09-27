@@ -11,6 +11,6 @@
     "minimal-hi-example"
   ],
   "scripts": {
-    "start": "node minimal-hi-example/hi-mcp-server.js"
+    "start": "npm start --workspace minimal-hi-example"
   }
 }

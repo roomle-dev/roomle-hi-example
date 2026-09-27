@@ -90,6 +90,7 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Use hi-mcp-poc-json server for minimal-hi-example](refactoring-analysis/use-hi-mcp-poc-json-server-for-minimal-example.md) | Done | 2026-09-27 |
 
 ### Benchmarks & Performance Analyses
 

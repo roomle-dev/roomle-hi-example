@@ -15,7 +15,7 @@ This file provides GitHub Copilot-specific context and guidance for the roomle-h
 roomle-hi-example provides:
 
 1. **HI Presets Example Page** (`index.html`) — Demonstrates HOMAG Intelligence (HI) room planning with preset configurations in a browser
-2. **MCP Server** (`minimal-hi-example/hi-mcp-server.js`) — Zero-dependency Node.js HTTP server providing Model Context Protocol tools for AI agents
+2. **MCP Server** (`hi-mcp/hi-mcp-poc-json`) — TypeScript Node.js MCP server (started together with the example page by `minimal-hi-example/start.mjs`) providing Model Context Protocol tools for AI agents
 
 The MCP server enables AI assistants (Claude, Copilot, etc.) to:
 - Query plan state (rooms, walls, articles, groups)
@@ -54,8 +54,8 @@ The server uses only Node.js built-in modules. No npm packages required. This en
 
 ### For AI Agents Using the MCP Server
 
-1. **Start the server**: `npm start` or `node minimal-hi-example/hi-mcp-server.js`
-2. **Open the page**: Browser opens to `http://localhost:3100/?mcp=true`
+1. **Start the server**: `npm start` (installs and typechecks the `hi-mcp` workspace on first run, serves the example page on :3000, starts the MCP server on :3100)
+2. **Open the page**: Browser opens to `http://localhost:3000/?mcp=true`
 3. **Connect MCP client** (see below for client-specific instructions)
 4. **Call tools** to interact with the Roomle planner
 
@@ -72,7 +72,7 @@ The server uses only Node.js built-in modules. No npm packages required. This en
 
 ### Available MCP Tools
 
-All tools are defined in `minimal-hi-example/hi-mcp-server.js` and documented in:
+All tools are defined in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` and documented in:
 - [`.agents/skills/hi-mcp-tools.md`](../.agents/skills/hi-mcp-tools.md) — Complete tool reference
 - [`minimal-hi-example/docs/hi-mcp-server.md`](../minimal-hi-example/docs/hi-mcp-server.md) — User-facing documentation
 
@@ -151,7 +151,7 @@ Load these skills when the task matches their domain:
 - **Variables**: camelCase (`planContext`, `dockingVector`)
 - **Constants**: UPPER_SNAKE_CASE (`PORT`, `DEFAULT_CALL_TIMEOUT_MS`)
 - **Functions**: camelCase (`getPlanContext`, `createOrReplaceGroups`)
-- **Files**: kebab-case (`minimal-hi-example/hi-mcp-server.js`, `minimal-hi-example/docs/hi-mcp-server.md`)
+- **Files**: kebab-case (`minimal-hi-example/start.mjs`, `minimal-hi-example/docs/hi-mcp-server.md`)
 
 ### Comments
 
@@ -279,14 +279,13 @@ For automated testing of the example page, use browser DevTools:
 ### Server Commands
 
 ```bash
-npm start                    # Start server and open browser
-node minimal-hi-example/hi-mcp-server.js       # Start server only
+npm start                    # Start the example page and the MCP server
 ```
 
 ### Port Configuration
 
-- **Default**: 3100
-- **Change**: Set `PORT` environment variable
+- **MCP server**: 3100 — change with `HI_MCP_PORT`
+- **Example page**: 3000 — change with `EXAMPLE_PORT`
 
 ### URLs
 

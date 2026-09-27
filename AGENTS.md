@@ -77,24 +77,25 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Overview
 
-roomle-hi-example is a zero-dependency demonstration and development environment for:
+roomle-hi-example is a demonstration and development environment for:
 
 1. **HI Presets Example** — A standalone HTML page (`index.html`) that demonstrates HOMAG Intelligence (HI) room planning with preset configurations
-2. **MCP Server** — A Node.js HTTP server (`minimal-hi-example/hi-mcp-server.js`) that provides Model Context Protocol (MCP) tools for AI agents to orchestrate HI object groups in live Roomle sessions
+2. **MCP Server** — The TypeScript MCP server (`hi-mcp/hi-mcp-poc-json`) that provides Model Context Protocol (MCP) tools for AI agents to orchestrate HI object groups in live Roomle sessions, started together with the example page by the launcher `minimal-hi-example/start.mjs`
 
-The server provides:
-- Static file serving for the example HTML page
-- MCP endpoint (`POST /mcp`) with Streamable HTTP protocol
-- Page bridge (`GET /bridge`, `POST /bridge/result`) using Server-Sent Events (SSE) and fetch
-- Tool access to the Roomle planner API via `roomDesignerApi.extended`
+The start script (`npm start`) provides:
+- A build gate: installs and typechecks the `hi-mcp` workspace before starting
+- Static file serving for the example HTML page on port 3000
+- The MCP server on port 3100 with its MCP endpoint (`POST /mcp`, Streamable HTTP)
+- A page bridge (WebSocket `/bridge`) relaying tool calls to the Roomle planner API via `roomDesignerApi.extended`
+- Browser auto-open at the example URL
 
 ## Repository Structure
 
 ```
 .
 ├── minimal-hi-example/         # Minimal standalone HI example
-│   ├── index.html              # HI presets example page
-│   ├── hi-mcp-server.js         # Zero-dependency MCP server (Node.js)
+│   ├── index.html              # HI presets example page (single file, inline JS)
+│   ├── start.mjs               # Launcher: build gate, static serving (:3000), spawns the MCP server
 │   └── docs/                    # Documentation
 │       ├── hi-mcp-server.md    # Complete MCP server documentation
 │       ├── hi-mcp-poc-presentation.md # Proof of concept presentation
@@ -108,12 +109,15 @@ The server provides:
 │       ├── server.ts             # Entry point: /mcp + WebSocket bridge on :3100
 │       ├── hi-mcp-server.ts      # McpServer setup + tool registrations (zod)
 │       ├── page-bridge.ts        # Connected-page registry, call correlation
-│       ├── browser-bridge.ts     # Page-side bridge (reference copy; the store runs its own)
+│       ├── types.ts              # WebSocket message protocol
+│       ├── tests/                # Unit tests (page-bridge, hi-mcp-server)
+│       ├── README.md             # Complete PoC documentation (clients: INT-stage ligna-store, HI presets example)
+│       └── QUICKSTART.md         # Shortest path to a first tool call
+│   ├── hi-mcp-poc-json-client/   # Page side of the server (reference copy; the store runs its own)
+│       ├── browser-bridge.ts     # WebSocket client: connects, executes, replies
 │       ├── tool-executors.ts     # Tool → roomDesignerApi.extended calls
 │       ├── plan-space.ts         # Pure geometry: walls, footprints, placement
-│       ├── tests/                # Unit tests (plan-space, page-bridge, hi-mcp-server, tool-executors)
-│       ├── README.md             # Complete PoC documentation (client: INT-stage ligna-store)
-│       └── QUICKSTART.md         # Shortest path to a first tool call
+│       └── tests/                # Unit tests (plan-space, tool-executors, browser-bridge)
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # This file - AI assistant instructions
@@ -145,7 +149,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 
 | Skill | Load when the task involves |
 |---|---|
-| [`.agents/skills/hi-mcp-server.md`](./.agents/skills/hi-mcp-server.md) | MCP server architecture, tool definitions, protocol handling, SSE bridge |
+| [`.agents/skills/hi-mcp-server.md`](./.agents/skills/hi-mcp-server.md) | MCP server architecture, tool definitions, protocol handling, WebSocket bridge |
 | [`.agents/skills/hi-mcp-cloudflare-deployment.md`](./.agents/skills/hi-mcp-cloudflare-deployment.md) | Updating/deploying the Cloudflare-hosted hi-mcp server: wrangler deploy, URL anatomy, container cleanup, teardown |
 | [`.agents/skills/hi-authoring-rules.md`](./.agents/skills/hi-authoring-rules.md) | HI authoring rules, docking patterns, group creation, article catalog |
 | [`.agents/skills/hi-mcp-tools.md`](./.agents/skills/hi-mcp-tools.md) | MCP tool reference, get-plan-context, create-or-replace-groups, place-group |
@@ -156,9 +160,9 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 
 ### MCP Server Architecture
 
-1. **Zero Dependencies** — Pure Node.js with no npm packages required
-2. **Streamable HTTP** — MCP protocol implemented with hand-rolled JSON-RPC over HTTP
-3. **SSE Bridge** — Server-Sent Events connect the MCP server to the browser page
+1. **Single MCP Server Implementation** — The TypeScript server in `hi-mcp/hi-mcp-poc-json` (`@modelcontextprotocol/sdk`, `ws`, zod, run via `vite-node`) is the only MCP server; clients (example page, ligna-store) wire themselves to it via environment variables
+2. **Streamable HTTP** — MCP protocol handled by the MCP SDK, JSON response mode, stateless (a new transport per request)
+3. **WebSocket Bridge** — The `/bridge` WebSocket connects the MCP server to the browser page
 4. **Tool Relay** — MCP tool calls are relayed to `roomDesignerApi.extended` in the page context
 
 ### HI Data Model
@@ -185,14 +189,14 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 - **TypeScript Types** — Use JSDoc comments for type annotations when needed
 - **Async/Await** — Prefer async/await over Promise chains
 - **Error Handling** — Use try/catch for synchronous errors, .catch() for promises
-- **No external dependencies** — The server must remain zero-dependency
+- **No new dependencies without reason** — The MCP server is the `hi-mcp` workspace package with its own locked dependencies; do not add dependencies to it or to the launcher without need
 
 ### Naming Conventions
 
 - **Variables**: camelCase (`planContext`, `dockingVector`)
 - **Constants**: UPPER_SNAKE_CASE (`PORT`, `DEFAULT_CALL_TIMEOUT_MS`)
 - **Functions**: camelCase (`getPlanContext`, `createOrReplaceGroups`)
-- **Files**: kebab-case (`minimal-hi-example/hi-mcp-server.js`, `minimal-hi-example/docs/hi-mcp-server.md`)
+- **Files**: kebab-case (`minimal-hi-example/start.mjs`, `minimal-hi-example/docs/hi-mcp-server.md`)
 
 ### Comments
 
@@ -208,7 +212,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 ### Protocol Compliance
 
 - Support multiple MCP protocol versions as needed
-- Implement all required MCP endpoints: `/mcp`, `/sse`, etc.
+- Implement the required MCP endpoint: `POST /mcp` (Streamable HTTP, JSON response mode)
 - Validate tool call parameters before processing
 - Return proper error responses for invalid inputs
 
@@ -221,7 +225,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 
 ### Bridge Communication
 
-- SSE connections must be properly managed with cleanup
+- WebSocket connections must be properly managed with cleanup
 - Bridge messages should be validated before processing
 - Error responses from the page should be relayed back to the MCP client
 - Connection state should be tracked and logged
@@ -289,15 +293,15 @@ The server provides MCP endpoint at `http://localhost:3100/mcp` when running.
 ### Starting the Server
 
 ```bash
-npm start          # or: node minimal-hi-example/hi-mcp-server.js
+npm start          # or: node minimal-hi-example/start.mjs
 ```
 
 This starts:
-- HTTP server on port 3100
-- Static file serving for minimal-hi-example/index.html
-- MCP endpoint at /mcp
-- SSE bridge at /bridge
-- Opens browser to http://localhost:3100/?mcp=true
+- The build gate: `npm install` (first run) + typecheck of the `hi-mcp` workspace
+- Static file serving for minimal-hi-example/index.html on port 3000
+- The MCP server (hi-mcp/hi-mcp-poc-json) with its MCP endpoint at /mcp on port 3100
+- WebSocket bridge at /bridge
+- Opens browser to http://localhost:3000/?mcp=true
 
 ### Testing Tool Calls
 
@@ -314,10 +318,10 @@ This starts:
 
 ### Adding New Tools
 
-1. Add tool definition to `TOOLS` array in `minimal-hi-example/hi-mcp-server.js`
-2. Implement handler function
-3. Add JSDoc documentation
-4. Update `minimal-hi-example/docs/hi-mcp-server.md` tool reference
+1. Register the tool in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` (zod schema + handler)
+2. Implement the executor on both page sides: `mcpToolExecutors` in `minimal-hi-example/index.html` and `hi-mcp/hi-mcp-poc-json-client/tool-executors.ts`
+3. Add or extend unit tests in the matching `tests/` folder
+4. Update `minimal-hi-example/docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
 5. Test with MCP client
 
 ## Suggested Change Workflow
@@ -427,6 +431,6 @@ Examples:
 
 - MCP calls have timeout limits (default 30s, snapshots 120s)
 - Tool implementations should be efficient
-- Bridge communication uses SSE which has overhead
+- Bridge communication uses a WebSocket with auto-reconnect
 - Large plan contexts should be handled efficiently
 - Image generation can be expensive — use appropriate timeouts

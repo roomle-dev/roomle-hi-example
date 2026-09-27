@@ -10,6 +10,11 @@ The server is **agent-agnostic**: it contains no client-specific code. Any MCP c
 Streamable HTTP transport support can connect (Claude Code, the Claude desktop app, Cursor,
 VS Code Copilot agent mode, Gemini CLI, custom clients built with an MCP SDK).
 
+Besides the ligna-store, the standalone HI presets example of this repository is a client of
+the same server: `minimal-hi-example/start.mjs` serves it on port 3000, spawns this server,
+and its inline page bridge uses the same WebSocket protocol. See
+[`minimal-hi-example/docs/hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md).
+
 Copied from the roomle-ui repository's
 `packages/embedding-lib/examples/hi-mcp-server`
 ([RML-17693](https://roomle.atlassian.net/browse/RML-17693)) and adapted to the ligna-store client —
@@ -39,7 +44,7 @@ server side.
 
 | Port | Process |
 | ---- | ------- |
-| 3000 | ligna-store dev server (`npm run dev`) — the client page |
+| 3000 | the client page — ligna-store dev server (`npm run dev`) or the HI presets example launcher (`minimal-hi-example/start.mjs`) |
 | 3100 | this MCP server (`npm start`) — MCP endpoint `/mcp` + WebSocket bridge |
 
 | File | Responsibility |
@@ -562,7 +567,7 @@ Ready-to-use prompts for the connected agent, from read-only to write operations
 | ------- | ----------- |
 | Tool error `No HI page connected` | Start the store (`npm run dev`) and open `http://localhost:3000/?store.stage=INT&id=<plan id>` and keep the tab open — the bridge starts with the INT stage |
 | Tool error `... is not a function` | The UI served for the stage (`bo-test` at INT) does not contain the Part 1 HI APIs (`getExternalObjectPlanContext`, …) — the web-sdk deployment there has to catch up |
-| Port 3100 already in use | The server names the fix itself (`lsof -ti tcp:3100 \| xargs kill`); since the auto-shutdown guard this should only happen when a second instance is started deliberately. The zero-dependency `minimal-hi-example/hi-mcp-server.js` also uses 3100 — run only one of them |
+| Port 3100 already in use | The server names the fix itself (`lsof -ti tcp:3100 \| xargs kill`); since the auto-shutdown guard this should only happen when a second instance is started deliberately |
 | Several store tabs open | The most recently connected tab receives the tool calls; close the others |
 | `get-price` / `get-order-data` fail | Wrong stage (the HI backend is resolved from it — use `store.stage=INT`), or no HI backend reachable for the milestone backend id |
 | Page reloaded | The bridge reconnects automatically every 3 s — no restart needed |

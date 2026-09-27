@@ -37,22 +37,14 @@ const isRootModule = (module: any): boolean =>
 const isCustomerFacingAttribute = (attribute: any): boolean =>
   attribute?.isMain === true || attribute?.userRight === 'Simple';
 
-const compactSelection = (selection: any) => {
-  const compact = { ...selection };
-  delete compact.imageUrl;
-  if (compact.desc === compact.name) {
-    delete compact.desc;
-  }
-  return compact;
-};
-
 const compactAttribute = (attribute: any) => ({
   id: attribute.id,
   name: attribute.name,
   desc: attribute.desc,
+  imageUrl: attribute.imageUrl,
   type: attribute.type,
   group: attribute.group,
-  selections: attribute.selections?.map(compactSelection),
+  selections: attribute.selections,
 });
 
 // The root modules and the attributes a customer sees (isMain or userRight
@@ -76,6 +68,7 @@ const compactMasterData = (masterData: any) => {
       id: module.id,
       name: module.name,
       desc: module.desc,
+      imageUrl: module.imageUrl,
       attributes: (module.assignedAttributes ?? []).filter((id: string) =>
         attributeIds.has(id),
       ),
@@ -297,6 +290,7 @@ const compactArticle = (
         id: root.name,
         name: moduleInfo?.name,
         desc: moduleInfo?.desc,
+        imageUrl: moduleInfo?.imageUrl,
       },
       dimensions: dimensions.map(namedValue),
       mainAttributes: attributes
@@ -311,10 +305,15 @@ const compactArticle = (
           ? templateVectors
           : calculatedDockingVectors.get(article.articleId) ?? [],
       insertLevels: root.insertLevelInfos,
-      subModules: (root.modules ?? []).map((module: any) => ({
-        id: module.name,
-        name: moduleInfos.get(module.name)?.name ?? module.name,
-      })),
+      subModules: (root.modules ?? []).map((module: any) => {
+        const subModuleInfo = moduleInfos.get(module.name);
+        return {
+          id: module.name,
+          name: subModuleInfo?.name ?? module.name,
+          desc: subModuleInfo?.desc,
+          imageUrl: subModuleInfo?.imageUrl,
+        };
+      }),
     };
   });
   return {
@@ -358,6 +357,7 @@ const shapeRoot = (root: any) => ({
   articleId: root.articleId,
   articleName: root.articleName,
   desc: root.desc,
+  imageUrl: root.imageUrl,
   category: root.category,
   ...(isGeneratedRoot(root) && { isGenerated: true }),
   attributes: (root.attributes ?? [])
@@ -368,7 +368,10 @@ const shapeRoot = (root: any) => ({
   }),
   dockingVectors: dockingVectorNames(root),
   freeDockingVectors: freeDockingVectors(root),
-  subModules: (root.modules ?? []).map((module: any) => module.name),
+  subModules: (root.modules ?? []).map((module: any) => ({
+    id: module.name,
+    imageUrl: module.imageUrl,
+  })),
   ...(root.logMessages?.length && { logMessages: root.logMessages }),
 });
 

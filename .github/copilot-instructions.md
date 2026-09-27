@@ -114,12 +114,15 @@ The `.agents/` folder is the "digital brain" for this repository, containing:
 ├── bug-analysis/                 # Bug root-cause analyses
 ├── feature-analysis/             # Feature investigations
 ├── refactoring-analysis/         # Refactoring analyses
+├── scripts/                      # Utility scripts (JavaScript only)
 └── skills/                      # On-demand domain knowledge
     ├── hi-mcp-server.md          # MCP server architecture
     ├── hi-authoring-rules.md     # HI authoring patterns
     ├── hi-mcp-tools.md           # MCP tool reference
     └── roomle-hi-concepts.md      # Core HI concepts
 ```
+
+**IMPORTANT**: All scripts in `.agents/scripts/` MUST be JavaScript (Node.js), not Python. This ensures consistency with the repository's primary language (JavaScript/TypeScript) and tooling.
 
 **See Also**: [.agents/README.md](../.agents/README.md) for complete digital brain structure and analysis workflows.
 

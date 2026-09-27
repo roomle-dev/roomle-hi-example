@@ -1,0 +1,27 @@
+{
+  "name": "roomle-color-extractor",
+  "version": "1.0.0",
+  "description": "Extract dominant colors from Furniture_Smith material swatches by analyzing actual image pixels",
+  "type": "module",
+  "main": "extract-dominant-color-from-image.js",
+  "scripts": {
+    "extract-colors": "node extract-dominant-color-from-image.js --all-from-context --input ../../docs/library-information/hi-plan-context.json --output ../../docs/library-information/materials.md",
+    "generate-table": "node extract-dominant-color-from-image.js --all-from-context --input ../../docs/library-information/hi-plan-context.json --output ../../docs/library-information/materials.md",
+    "list-colors": "node extract-dominant-color-from-image.js --all-from-context --list-colors --input ../../docs/library-information/hi-plan-context.json"
+  },
+  "dependencies": {
+    "sharp": "^0.33.0",
+    "node-fetch": "^3.3.2"
+  },
+  "keywords": [
+    "color",
+    "extraction",
+    "image",
+    "dominant",
+    "roomle",
+    "furniture-smith",
+    "sharp"
+  ],
+  "author": "",
+  "license": "ISC"
+}

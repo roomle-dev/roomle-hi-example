@@ -33,8 +33,9 @@ The store page cannot listen on a port, so it connects **outward** to the MCP se
 The server relays each tool call into the page, where it runs against `roomDesignerApi.extended`
 (the `extended.*` proxy derives its methods automatically from `RoomlePlanner.prototype`, so the
 web-sdk APIs (`getExternalObjectPlanContext`, `loadExternalObjectGroupLayout`, …) are reachable
-as-is). The page-side bridge lives in the store repository (`ligna-store/hi-mcp/`); this folder
-contains the server side.
+as-is). The page-side bridge lives in the store repository (`ligna-store/hi-mcp/`), its tested
+copy in [`../hi-mcp-poc-json-client/`](../hi-mcp-poc-json-client/); this folder contains the
+server side.
 
 | Port | Process |
 | ---- | ------- |
@@ -47,11 +48,11 @@ contains the server side.
 | `package.json` | Self-contained dependencies of the server (MCP SDK, ws, zod, vite-node) |
 | `hi-mcp-server.ts` | `McpServer` setup: server instructions + tool registrations with zod schemas |
 | `page-bridge.ts` | Connected-page registry, call correlation, timeouts, "no page connected" error |
-| `browser-bridge.ts` | Browser side (reference copy — the store runs its own): WebSocket client, executes tool calls, replies with results |
-| `tool-executors.ts` | Tool name → `roomDesignerApi.extended` call + context shaping for the agent (also copied to the store) |
-| `plan-space.ts` | Pure geometry: wall derivation (side labels, facing rotation), group footprints, wall placement |
-| `types.ts` | Shared WebSocket message protocol |
-| `tests/` | Unit tests (vitest, configured at the `hi-mcp/` workspace root) |
+| `types.ts` | WebSocket message protocol (the page side carries its own copy) |
+| `tests/` | Unit tests of the server (vitest, configured at the `hi-mcp/` workspace root) |
+
+The page side — browser bridge, tool executors and plan geometry with their unit tests — is in
+[`../hi-mcp-poc-json-client/`](../hi-mcp-poc-json-client/).
 
 ## Prerequisites
 
@@ -275,22 +276,24 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   `start`/`end` (`[x, z]` in millimetres, the same space as a group's `pos`), `lengthMm`, `type`,
   `heightMm`, `thicknessMm`, and the `facingRotationY` a group needs to stand against that wall
 - `articles` — compact catalog: `articleId`, `articleName`, `desc`, `imageUrl`, `category`, and
-  per root module its master-data `module` (id, name, desc), `dimensions` (the template's `Dim`
-  attributes with name and value), `mainAttributes` (the values of the `isMain` attributes),
-  `dockingVectors` (the names of its docking vectors — from the template, or from a calculated
-  root of the same article in the plan), `insertLevels` and `subModules` (fronts, appliances);
+  per root module its master-data `module` (id, name, desc, imageUrl), `dimensions` (the
+  template's `Dim` attributes with name and value), `mainAttributes` (the values of the `isMain`
+  attributes), `dockingVectors` (the names of its docking vectors — from the template, or from a
+  calculated root of the same article in the plan), `insertLevels` and `subModules` (fronts,
+  appliances — id, name, desc, imageUrl);
   `cornerArticle` is `true` for an article made for a room corner (it carries `LeftBack`/`RightBack`
   docking vectors)
 - `groups` — the groups currently in the plan: a read-only `position` (`pos`, `rotationY`,
   `footprint`) and per root the article pick (`id`, `articleId`, input `attributes`,
-  `contextData` with vector names only) plus read-only facts (`articleName`, `desc`, `category`,
-  `dockingVectors`, `freeDockingVectors` — the vectors no docking entry uses, where a new root can
-  dock — `subModules`, `isGenerated`). No root positions, no geometry. A returned group is a valid
-  `create-or-replace-groups` payload as it is
-- `masterData` — only when included explicitly: per library the root modules with their relevant
-  attribute ids, and the attributes a customer sees (`isMain` or `userRight` `Simple`) with
-  description, type, group and `selections` (value and name, no image URLs). Everything else is
-  reachable through [find-attributes](#find-attributes)
+  `contextData` with vector names only) plus read-only facts (`articleName`, `desc`, `imageUrl`,
+  `category`, `dockingVectors`, `freeDockingVectors` — the vectors no docking entry uses, where a
+  new root can dock — `subModules` with id and imageUrl, `isGenerated`). No root positions, no
+  geometry. A returned group is a valid `create-or-replace-groups` payload as it is
+- `masterData` — only when included explicitly: per library the root modules (id, name, desc,
+  imageUrl) with their relevant attribute ids, and the attributes a customer sees (`isMain` or
+  `userRight` `Simple`) with desc, imageUrl, type, group and `selections` (value, name, desc and
+  imageUrl — the swatch of a material). Everything else is reachable through
+  [find-attributes](#find-attributes)
 
 Example: `{ "include": ["articles", "groups"] }`
 

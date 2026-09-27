@@ -55,7 +55,8 @@ Add a group of three tall units to the wall on the right.
 The agent authors article picks with a docking chain and a `placement` — one
 `create-or-replace-groups` call creates, docks, and positions the group.
 
-The unit tests live in `tests/` — `npm test` in the `hi-mcp/` folder runs them (vitest).
+The unit tests live in `tests/` (server) and `../hi-mcp-poc-json-client/tests/` (page side) —
+`npm test` in the `hi-mcp/` folder runs them (vitest).
 
 More: [example prompts](./README.md#example-prompts) ·
 [troubleshooting](./README.md#troubleshooting)

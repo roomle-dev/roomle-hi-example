@@ -10,7 +10,7 @@
   "scripts": {
     "start": "npm start --workspace hi-mcp-poc-json",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit --project hi-mcp-poc-json/tsconfig.json"
+    "typecheck": "tsc --noEmit --project hi-mcp-poc-json/tsconfig.json && tsc --noEmit --project hi-mcp-poc-json-client/tsconfig.json"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

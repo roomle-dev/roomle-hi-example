@@ -240,8 +240,11 @@ The `.agents/` folder serves as the "digital brain" for roomle-hi-example, conta
 ├── bug-analysis/                 # Bug root-cause analyses (written before fix)
 ├── feature-analysis/             # Feature investigations and decisions
 ├── refactoring-analysis/         # Refactoring analyses with reports
+├── scripts/                      # Utility scripts (JavaScript only)
 └── skills/                      # On-demand domain knowledge (skills)
 ```
+
+**IMPORTANT**: All scripts in `.agents/scripts/` MUST be JavaScript (Node.js), not Python. This ensures consistency with the repository's primary language and tooling.
 
 ### Analysis Documents
 

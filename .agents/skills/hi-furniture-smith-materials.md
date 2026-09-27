@@ -10,7 +10,7 @@
 
 This skill documents the process to extract material data (colors and finishes) from the Roomle HOMAG Intelligence (HI) system's master data and generate a structured markdown table.
 
-The process retrieves the `HiPlanContext` object and extracts all "Text" type attributes that contain "Color" in their name or description, then compiles their selections into a deduplicated, sorted table of materials with the description (`desc`), the swatch thumbnail (`imageUrl`), and the **color code calculated from actual image pixels**.
+The process retrieves the `HiPlanContext` object and extracts all "Text" type attributes that contain "Color" in their name or description, then compiles their selections into a deduplicated, sorted table of materials with the description (`desc`), the swatch thumbnail (`imageUrl`), and the **color code calculated from actual image pixels**. Materials without thumbnail (no `imageUrl` in any selection) are filtered out.
 
 **IMPORTANT:** The color codes are **calculated by analyzing actual image pixels using Sharp**, NOT guessed from material names. This ensures accurate color representation for all materials.
 
@@ -41,6 +41,7 @@ HiPlanContext JSON (from getExternalObjectPlanContext)
     ↓ Extract masterData.Furniture_Smith.attributes
 Filter: type == Text AND (name OR desc contains "Color")
     ↓ Extract selections from each attribute (name, value, desc, imageUrl)
+Filter: selection has an imageUrl (thumbnail)
 Deduplicate by value
     ↓ Sort by numeric value
     ↓ Download thumbnail images

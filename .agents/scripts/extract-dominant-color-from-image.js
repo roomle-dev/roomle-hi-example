@@ -137,13 +137,13 @@ function extractMaterials(data) {
     }
   }
   
-  // Extract all selections (materials) and deduplicate by value
+  // Extract all selections (materials) with a thumbnail and deduplicate by value
   const materials = {};
   for (const attr of colorAttrs) {
     for (const selection of attr?.selections || []) {
       const value = selection?.value;
       const name = selection?.name;
-      if (value && name) {
+      if (value && name && selection?.imageUrl) {
         if (!materials[value]) {
           materials[value] = selection;
         }

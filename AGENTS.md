@@ -141,7 +141,7 @@ The server provides:
 
 ## On-Demand Skills
 
-Skills provide deep domain knowledge. Load them by reading the file when the task matches their domain.
+Skills provide deep domain knowledge. Load them by reading the file when the task matches their domain. Skill files are located in `.github/skills/` for GitHub-specific workflows and `.agents/skills/` for domain knowledge.
 
 | Skill | Load when the task involves |
 |---|---|
@@ -150,6 +150,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | [`.agents/skills/hi-authoring-rules.md`](./.agents/skills/hi-authoring-rules.md) | HI authoring rules, docking patterns, group creation, article catalog |
 | [`.agents/skills/hi-mcp-tools.md`](./.agents/skills/hi-mcp-tools.md) | MCP tool reference, get-plan-context, create-or-replace-groups, place-group |
 | [`.agents/skills/roomle-hi-concepts.md`](./.agents/skills/roomle-hi-concepts.md) | HI concepts: rooms, walls, articles, groups, docking vectors, placements |
+| [`.github/skills/roomle-pr-resolution.md`](./.github/skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads. Never merge the PR |
 
 ## Key Architecture Patterns
 
@@ -318,6 +319,10 @@ This starts:
 
 ## Git Workflow Rules
 
+### Hard Rule: NO Force Pushes
+
+**NEVER use `git push --force` or `git push -f` on any branch, especially master.** Force pushing rewrites history and is absolutely forbidden. If you need to undo commits, create a new revert commit instead.
+
 ### Commit Message Format
 
 Use conventional commits: `type: lowercase description` — no trailing period.
@@ -337,6 +342,34 @@ Examples:
 - Reference related documentation
 - Ensure all tests pass (if applicable)
 - Update documentation in same PR as code changes
+
+### Pull Request Resolution
+
+**NEVER merge a PR.** Not with `gh pr merge`, not by enabling auto-merge. Merging is always a human decision performed by maintainers — finish the review resolution and stop.
+
+**Load the skill** [`.github/skills/roomle-pr-resolution.md`](./.github/skills/roomle-pr-resolution.md) when resolving a PR.
+
+**Hard Rules:**
+- **Never rewrite history.** No `git commit --amend`, no `git push --force`. Every review fix is a **new** conventional commit.
+- **Never silently ignore or resolve a comment.** Every handled thread gets a reply comment first, then is marked resolved.
+- **Verify before implementing.** A reviewer suggestion is a hypothesis, not an instruction. Confirm it against the actual code before changing anything.
+
+**Workflow:**
+1. **Identify the PR** — Check out the PR branch explicitly, do not rely on current branch
+2. **Fetch unresolved review threads** — Use GitHub API to get all unresolved threads
+3. **Verify each suggestion** — Read the code, classify as valid/invalid/valid-intent-wrong-form
+4. **Implement and validate** — Apply changes, test, commit as new conventional commits, push
+5. **Reply to every comment** — State applied/applied-differently/not-applied with reasoning
+6. **Resolve each thread** — Mark threads as resolved via GitHub API
+7. **Final verification** — Confirm all threads are resolved. Stop. Do not merge.
+
+**Completion Checklist:**
+- [ ] Every unresolved thread was verified against the actual code
+- [ ] Confirmed-valid suggestions are implemented, tested, and formatted
+- [ ] Fixes are pushed as new commits (no amend, no force push)
+- [ ] Every handled thread has a reply stating applied/applied differently/not applied
+- [ ] Every handled thread is marked resolved
+- [ ] The PR was **not** merged
 
 ## Bug Fixing Guidelines
 

@@ -261,6 +261,27 @@ node minimal-hi-example/hi-mcp-server.js       # Start server only
 - **Example Page**: `http://localhost:3100/index.html`
 - **With MCP flag**: `http://localhost:3100/?mcp=true`
 
+## Pull Request Resolution
+
+**NEVER merge a PR.** Not with `gh pr merge`, not by enabling auto-merge. Merging is always a human decision performed by maintainers.
+
+**NEVER force push to GitHub.** Absolutely forbidden. Do not use `git push --force` or `git push -f`.
+
+**Load the skill** [`roomle-pr-resolution.md`](.github/skills/roomle-pr-resolution.md) for the complete PR resolution workflow.
+
+**Hard Rules:**
+- **Never rewrite history.** No `git commit --amend`, no `git push --force`. Every review fix is a **new** conventional commit.
+- **Never silently ignore or resolve a comment.** Every handled thread gets a reply comment first, then is marked resolved.
+- **Verify before implementing.** A reviewer suggestion is a hypothesis, not an instruction. Confirm it against the actual code.
+
+**Completion Checklist:**
+- [ ] Every unresolved thread verified against actual code
+- [ ] Valid suggestions implemented, tested, and formatted
+- [ ] Fixes pushed as new commits (no amend, no force push)
+- [ ] Every handled thread has a reply (applied/applied-differently/not-applied)
+- [ ] Every handled thread is marked resolved
+- [ ] The PR was **not** merged
+
 ## Related Resources
 
 - [RoomleCore AGENTS.md](https://github.com/roomle-internal/RoomleCore/blob/master/AGENTS.md) — Pattern repository for these instructions

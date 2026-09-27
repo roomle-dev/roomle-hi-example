@@ -44,6 +44,7 @@ parameters:
 | Parameter | Effect |
 | --------- | ------ |
 | `mcp=true` | Enables the MCP browser bridge (without it the example behaves as a plain demo) |
+| `mcp_port` | The MCP server port the bridge connects to (default 3100; the launcher appends it when `HI_MCP_PORT` is set) |
 | `backendId` | Selects the HI backend |
 | `library_id` | Overrides the preset's library |
 | `plan_id` | Selects the plan loaded at startup |

@@ -2424,7 +2424,8 @@
       };
 
       const startMcpBrowserBridge = (api) => {
-        const bridgeUrl = 'ws://localhost:3100/bridge';
+        const mcpPort = getQueryParam('mcp_port') ?? '3100';
+        const bridgeUrl = `ws://localhost:${mcpPort}/bridge`;
         const reply = (socket, result) => socket.send(JSON.stringify(result));
         const connect = () => {
           const socket = new WebSocket(bridgeUrl);

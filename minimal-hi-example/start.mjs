@@ -20,7 +20,9 @@ const EXAMPLE_DIR = dirname(fileURLToPath(import.meta.url));
 const HI_MCP_DIR = join(EXAMPLE_DIR, '..', 'hi-mcp');
 const STATIC_PORT = Number(process.env.EXAMPLE_PORT ?? 3000);
 const MCP_PORT = process.env.HI_MCP_PORT ?? '3100';
-const EXAMPLE_URL = `http://localhost:${STATIC_PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`;
+const EXAMPLE_URL = `http://localhost:${STATIC_PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith${
+  process.env.HI_MCP_PORT ? `&mcp_port=${MCP_PORT}` : ''
+}`;
 const STATIC_CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -78,10 +80,14 @@ const startExampleServer = () =>
   });
 
 const startMcpServer = () => {
+  const childEnv = { ...process.env, HI_MCP_STORE_URL: EXAMPLE_URL };
+  if (!childEnv.HI_MCP_PAGE_ORIGINS) {
+    childEnv.HI_MCP_PAGE_ORIGINS = `http://localhost:${STATIC_PORT},http://127.0.0.1:${STATIC_PORT}`;
+  }
   const mcpServer = spawn(npmCommand, ['start', '--workspace', 'hi-mcp-poc-json'], {
     cwd: HI_MCP_DIR,
     stdio: 'inherit',
-    env: { ...process.env, HI_MCP_STORE_URL: EXAMPLE_URL },
+    env: childEnv,
   });
   mcpServer.on('exit', (code) => {
     if (!shuttingDown) {

@@ -38,16 +38,16 @@ HOMAG Intelligence is a system for kitchen cabinet management, price calculation
 ### MCP (Model Context Protocol)
 
 MCP is a standard protocol for AI agents to interact with tools and resources. This server implements:
-- **Streamable HTTP transport** — JSON-RPC over HTTP POST
-- **SSE Bridge** — Server-Sent Events for connecting to the browser page
+- **Streamable HTTP transport** — MCP SDK, JSON responses over HTTP POST
+- **WebSocket Bridge** — WebSocket connection to the browser page
 - **Tool execution** — Relaying MCP tool calls to the Roomle planner API
 
-### Zero-Dependency Philosophy
+### Server Stack
 
-The server uses only Node.js built-in modules. No npm packages required. This ensures:
-- Easy deployment anywhere Node.js runs
-- No dependency conflicts
-- Minimal security surface area
+The MCP server is the TypeScript workspace package `hi-mcp/hi-mcp-poc-json` (`@modelcontextprotocol/sdk`, `ws`, `zod`, run via `vite-node`). This ensures:
+- SDK protocol compliance and zod-validated tool schemas
+- Unit-tested server and client code (vitest at the `hi-mcp` root)
+- One implementation shared with the ligna-store client and the cloud deployments
 - Fast startup
 
 ## Workflow Patterns
@@ -132,7 +132,7 @@ Load these skills when the task matches their domain:
 
 | Skill | Load When |
 |---|---|
-| [hi-mcp-server.md](../.agents/skills/hi-mcp-server.md) | MCP server architecture, protocol handling, SSE bridge |
+| [hi-mcp-server.md](../.agents/skills/hi-mcp-server.md) | MCP server architecture, protocol handling, WebSocket bridge |
 | [hi-authoring-rules.md](../.agents/skills/hi-authoring-rules.md) | HI authoring, docking patterns, group creation |
 | [hi-mcp-tools.md](../.agents/skills/hi-mcp-tools.md) | Using MCP tools, tool parameters, examples |
 | [roomle-hi-concepts.md](../.agents/skills/roomle-hi-concepts.md) | HI data model, rooms, walls, articles, groups |
@@ -247,7 +247,7 @@ step.
 
 ## Common Pitfalls
 
-1. **SSE Connection Leaks** — Always clean up SSE connections on error
+1. **Bridge Reconnects** — The page reconnects its WebSocket every 3 s; no state to clean up in the server
 2. **Timeout Values** — Use appropriate timeouts (30s default, 120s for snapshots)
 3. **Error Propagation** — Relay errors from the page back to MCP client
 4. **State Management** — Track bridge connection state carefully
@@ -269,10 +269,10 @@ For automated testing of the example page, use browser DevTools:
 ## Performance Considerations
 
 - **MCP Call Timeouts**: Default 30s, use 120s for snapshot generation
-- **SSE Overhead**: Bridge communication has network overhead
+- **Bridge**: WebSocket with auto-reconnect
 - **Large Plans**: Handle large plan contexts efficiently
 - **Image Generation**: Can be expensive — use with appropriate timeouts
-- **Memory**: Server should remain lightweight (zero dependencies helps)
+- **Memory**: Server should remain lightweight
 
 ## Quick Reference
 
@@ -289,11 +289,9 @@ npm start                    # Start the example page and the MCP server
 
 ### URLs
 
-- **Server**: `http://localhost:3100/`
 - **MCP Endpoint**: `http://localhost:3100/mcp`
-- **SSE Bridge**: `http://localhost:3100/bridge`
-- **Example Page**: `http://localhost:3100/index.html`
-- **With MCP flag**: `http://localhost:3100/?mcp=true`
+- **WebSocket Bridge**: `ws://localhost:3100/bridge`
+- **Example Page**: `http://localhost:3000/?mcp=true`
 
 ## Pull Request Resolution
 

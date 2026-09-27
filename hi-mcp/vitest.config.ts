@@ -13,6 +13,7 @@ export default defineConfig({
   test: {
     include: [
       'hi-mcp-poc-json/tests/**/*.test.ts',
+      'hi-mcp-poc-json-client/tests/**/*.test.ts',
       'cf/tests/**/*.test.ts',
     ],
   },

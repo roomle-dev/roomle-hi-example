@@ -33,8 +33,9 @@ The store page cannot listen on a port, so it connects **outward** to the MCP se
 The server relays each tool call into the page, where it runs against `roomDesignerApi.extended`
 (the `extended.*` proxy derives its methods automatically from `RoomlePlanner.prototype`, so the
 web-sdk APIs (`getExternalObjectPlanContext`, `loadExternalObjectGroupLayout`, …) are reachable
-as-is). The page-side bridge lives in the store repository (`ligna-store/hi-mcp/`); this folder
-contains the server side.
+as-is). The page-side bridge lives in the store repository (`ligna-store/hi-mcp/`), its tested
+copy in [`../hi-mcp-poc-json-client/`](../hi-mcp-poc-json-client/); this folder contains the
+server side.
 
 | Port | Process |
 | ---- | ------- |
@@ -47,11 +48,11 @@ contains the server side.
 | `package.json` | Self-contained dependencies of the server (MCP SDK, ws, zod, vite-node) |
 | `hi-mcp-server.ts` | `McpServer` setup: server instructions + tool registrations with zod schemas |
 | `page-bridge.ts` | Connected-page registry, call correlation, timeouts, "no page connected" error |
-| `browser-bridge.ts` | Browser side (reference copy — the store runs its own): WebSocket client, executes tool calls, replies with results |
-| `tool-executors.ts` | Tool name → `roomDesignerApi.extended` call + context shaping for the agent (also copied to the store) |
-| `plan-space.ts` | Pure geometry: wall derivation (side labels, facing rotation), group footprints, wall placement |
-| `types.ts` | Shared WebSocket message protocol |
-| `tests/` | Unit tests (vitest, configured at the `hi-mcp/` workspace root) |
+| `types.ts` | WebSocket message protocol (the page side carries its own copy) |
+| `tests/` | Unit tests of the server (vitest, configured at the `hi-mcp/` workspace root) |
+
+The page side — browser bridge, tool executors and plan geometry with their unit tests — is in
+[`../hi-mcp-poc-json-client/`](../hi-mcp-poc-json-client/).
 
 ## Prerequisites
 

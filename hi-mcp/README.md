@@ -9,6 +9,13 @@ npm workspace folder per PoC.
 | [hi-mcp-poc-json](./hi-mcp-poc-json/) | HI object groups (kitchens) generated from a single JSON pos-group payload; client is the INT-stage ligna-store |
 | [cf](./cf/) | Cloudflare deployment of the hi-mcp-poc-json server: Worker + Container, one `wrangler deploy` |
 
+## Quick Access
+
+The HI MCP server is deployed at Cloudflare:
+- **Store Page**: https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev
+- **MCP Server Endpoint**: https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp
+- **Cloudflare Dashboard**: https://dash.cloudflare.com/be70a3966e4c4ccfa9349004b9ccf948/
+
 Documentation:
 
 - [docs/local-mcp-server.md](./docs/local-mcp-server.md) — install the local MCP server and connect every MCP client to it, including Mistral Le Chat via a localhost.run tunnel

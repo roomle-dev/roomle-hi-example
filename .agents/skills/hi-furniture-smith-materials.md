@@ -188,13 +188,13 @@ The following are the **accurate** colors calculated from the actual Furniture_S
 
 ### Color Preview in Markdown
 
-The **Suggested Color** column in the generated markdown uses HTML inline styles to display a color preview:
+The **Suggested Color** column in the generated markdown uses an inline math formula to display a color preview:
 
-```html
-<span style="display:inline-block;width:20px;height:20px;background-color:#506080;border:1px solid #ccc;"></span> #506080
+```markdown
+$\color{#506080}\blacksquare$ #506080
 ```
 
-This renders as a small colored square followed by the hex code, providing both visual and text representation.
+This renders as a small colored square followed by the hex code, providing both visual and text representation. GitHub renders the formula as inline math; an HTML `<span style="...">` preview does not work there, because GitHub removes `style` attributes.
 
 ---
 
@@ -259,17 +259,17 @@ The generated table has 6 columns:
 
 ### 5. Suggested Color
 - **Source:** **Calculated by analyzing actual image pixels** using Sharp library
-- **Type:** HTML span with inline style + hex color code
-- **Example:** `<span style="...background-color:#506080;..."></span> #506080`
+- **Type:** Inline math color square + hex color code
+- **Example:** `$\color{#506080}\blacksquare$ #506080`
 - **Description:** Hex color code **calculated from the actual thumbnail image**, with a visual color preview. This provides accurate color representation for all materials.
 - **Format:** `#RRGGBB` hexadecimal color code
-- **Preview:** Each color is displayed as a 20x20px colored square before the hex code
+- **Preview:** Each color is displayed as a colored square before the hex code
 
 ### 6. Suggested Description (NEW)
 - **Source:** Combination of `selection.desc` and the extracted color code
 - **Type:** String
 - **Example:** `"Cloudy blue (#506080)"`, `"Dark walnut (#906040)"`
-- **Description:** A combined identifier that includes both the material description and its dominant color code (hex only, without HTML preview). Useful for quick identification and as a compact reference.
+- **Description:** A combined identifier that includes both the material description and its dominant color code (hex only, without the preview). Useful for quick identification and as a compact reference.
 - **Format:** `{Description} ({ColorCode})`
 
 ---

@@ -249,7 +249,7 @@ async function extractAllColors(data, showProgress = true) {
  * Create markdown color display
  */
 function createMarkdownColorDisplay(hexColor) {
-  return `<span style="display:inline-block;width:20px;height:20px;background-color:${hexColor};border:1px solid #ccc;"></span> ${hexColor}`;
+  return `$\\color{${hexColor}}\\blacksquare$ ${hexColor}`;
 }
 
 /**

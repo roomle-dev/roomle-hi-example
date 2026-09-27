@@ -50,11 +50,17 @@ const masterDataFixture = {
         id: 'module-1',
         name: 'Tall module',
         desc: 'A tall module',
+        imageUrl: 'https://example.com/module-1.png',
         isRoot: true,
         moduleType: 'RootModule',
         assignedAttributes: ['b', 't', 'front'],
       },
-      { id: 'sub-1', name: 'Sub 1', desc: 'A sub module' },
+      {
+        id: 'sub-1',
+        name: 'Sub 1',
+        desc: 'A sub module',
+        imageUrl: 'https://example.com/sub-1.png',
+      },
     ],
     attributes: [
       {
@@ -80,11 +86,18 @@ const masterDataFixture = {
         id: 'front',
         name: 'Front colour',
         desc: 'the colour of the front',
+        imageUrl: 'https://example.com/front.png',
         type: 'Simple',
         group: 'fronts',
         isMain: true,
         selections: [
-          { id: 'white', name: 'White', value: 'white', desc: 'White' },
+          {
+            id: 'white',
+            name: 'White',
+            value: 'white',
+            desc: 'White',
+            imageUrl: 'https://example.com/white.png',
+          },
         ],
       },
     ],
@@ -170,12 +183,34 @@ describe('get-plan-context', () => {
         id: 'module-1',
         name: 'Tall module',
         desc: 'A tall module',
+        imageUrl: 'https://example.com/module-1.png',
         attributes: ['b', 't', 'front'],
       },
     ]);
     expect(masterData.attributes.map((attribute: any) => attribute.id)).toEqual(
       ['b', 't', 'front'],
     );
+  });
+
+  it('keeps the images and descriptions of the attributes and their selections', async () => {
+    const api = createApi(planContextFixture);
+    const result = (await toolExecutors['get-plan-context'](api, {
+      include: ['masterData'],
+    })) as Record<string, any>;
+    const front = result.masterData['lib-1'].attributes.find(
+      (attribute: any) => attribute.id === 'front',
+    );
+    expect(front.desc).toBe('the colour of the front');
+    expect(front.imageUrl).toBe('https://example.com/front.png');
+    expect(front.selections).toEqual([
+      {
+        id: 'white',
+        name: 'White',
+        value: 'white',
+        desc: 'White',
+        imageUrl: 'https://example.com/white.png',
+      },
+    ]);
   });
 
   it('compacts the article catalog with dimensions and docking vectors', async () => {
@@ -185,9 +220,16 @@ describe('get-plan-context', () => {
     });
     const article = (result as Record<string, any>).articles[0];
     expect(article.articleId).toBe('article-1');
+    expect(article.desc).toBe('A tall unit');
+    expect(article.imageUrl).toBe('https://example.com/a1.png');
     expect(article.cornerArticle).toBe(false);
     expect(article.rootModules[0]).toEqual({
-      module: { id: 'module-1', name: 'Tall module', desc: 'A tall module' },
+      module: {
+        id: 'module-1',
+        name: 'Tall module',
+        desc: 'A tall module',
+        imageUrl: 'https://example.com/module-1.png',
+      },
       dimensions: [
         { id: 'b', name: 'Width', value: 800 },
         { id: 't', name: 'Depth', value: 600 },
@@ -195,7 +237,14 @@ describe('get-plan-context', () => {
       mainAttributes: [{ id: 'front', name: 'Front colour', value: 'white' }],
       dockingVectors: ['LeftBottom', 'RightBottom'],
       insertLevels: [],
-      subModules: [{ id: 'sub-1', name: 'Sub 1' }],
+      subModules: [
+        {
+          id: 'sub-1',
+          name: 'Sub 1',
+          desc: 'A sub module',
+          imageUrl: 'https://example.com/sub-1.png',
+        },
+      ],
     });
   });
 
@@ -268,6 +317,35 @@ describe('get-plan-context', () => {
     expect(root.freeDockingVectors).toEqual(['LeftBottom', 'RightBottom']);
   });
 
+  it('keeps the images and descriptions of the roots and their sub-modules', async () => {
+    const withImages = {
+      ...planContextFixture,
+      groups: [
+        makeGroup({
+          roots: [
+            makeRoot({
+              desc: 'A tall unit',
+              imageUrl: 'https://example.com/a1.png',
+              modules: [
+                { name: 'sub-1', imageUrl: 'https://example.com/sub-1.png' },
+              ],
+            }),
+          ],
+        }),
+      ],
+    };
+    const api = createApi(withImages);
+    const result = await toolExecutors['get-plan-context'](api, {
+      include: ['groups'],
+    });
+    const root = (result as Record<string, any>).groups[0].roots[0];
+    expect(root.desc).toBe('A tall unit');
+    expect(root.imageUrl).toBe('https://example.com/a1.png');
+    expect(root.subModules).toEqual([
+      { id: 'sub-1', imageUrl: 'https://example.com/sub-1.png' },
+    ]);
+  });
+
   it('reports the docking vectors no docking entry uses as free', async () => {
     const withDocking = {
       ...planContextFixture,
@@ -321,9 +399,18 @@ describe('find-attributes', () => {
           id: 'front',
           name: 'Front colour',
           desc: 'the colour of the front',
+          imageUrl: 'https://example.com/front.png',
           type: 'Simple',
           group: 'fronts',
-          selections: [{ id: 'white', name: 'White', value: 'white' }],
+          selections: [
+            {
+              id: 'white',
+              name: 'White',
+              value: 'white',
+              desc: 'White',
+              imageUrl: 'https://example.com/white.png',
+            },
+          ],
           userRight: undefined,
           rootModules: ['module-1'],
         },

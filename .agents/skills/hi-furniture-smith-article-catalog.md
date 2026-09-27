@@ -10,7 +10,7 @@
 
 This skill documents the complete process to extract article data from the Roomle HOMAG Intelligence (HI) system via the MCP server and generate a structured markdown catalog with images, labels, descriptions, and dimensions.
 
-The process retrieves the `HiPlanContext` object (which contains master data, rooms, articles, and groups) and transforms it into a human-readable markdown table suitable for documentation and reference.
+The process retrieves the plan context of the MCP `get-plan-context` tool (master data, rooms, articles, and groups, shaped for the agent) and transforms it into a human-readable markdown table suitable for documentation and reference.
 
 ---
 
@@ -32,6 +32,7 @@ The process retrieves the `HiPlanContext` object (which contains master data, ro
 Roomle Planner (Browser)
     ↓ roomDesignerApi.extended.getExternalObjectPlanContext()
 HI Plan Context (HiPlanContext JSON)
+    ↓ get-plan-context in the page: shapes the context for the agent
     ↓ MCP Bridge (SSE + fetch)
 MCP Server (minimal-hi-example/hi-mcp-server.js)
     ↓ HTTP POST /mcp
@@ -55,7 +56,7 @@ npm start
 
 This automatically opens: `http://localhost:3100/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`
 
-**Note:** The URL parameters are hardcoded in `minimal-hi-example/hi-mcp-server.js` (line 604):
+**Note:** The URL parameters are hardcoded as `exampleUrl` in `minimal-hi-example/hi-mcp-server.js`:
 ```javascript
 const exampleUrl = `http://localhost:${PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`;
 ```
@@ -71,7 +72,7 @@ The MCP server logs will show:
 
 If no page is connected, the `get-plan-context` call will fail with:
 ```
-No HI page connected. Have the user open the ligna-store in their browser...
+No HI example page connected. Open the example with the mcp=true query parameter (http://localhost:3100/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith) and keep the tab open.
 ```
 
 ### Step 3: Fetch HiPlanContext JSON
@@ -96,7 +97,7 @@ curl -s -X POST http://localhost:3100/mcp \
 ```
 
 **Explanation:**
-- `get-plan-context` is the MCP tool that calls `roomDesignerApi.extended.getExternalObjectPlanContext()`
+- `get-plan-context` is the MCP tool that calls `roomDesignerApi.extended.getExternalObjectPlanContext()` in the page and shapes the result for the agent (see [HiPlanContext Section Details](#hiplancontext-section-details))
 - The `include` parameter specifies which sections to fetch (all four sections for completeness)
 - `jq -r '.result.content[0].text'` extracts the raw JSON from the MCP response wrapper
 - Output is saved to `docs/library-information/hi-plan-context.json`
@@ -528,7 +529,7 @@ The Suggested Description column is automatically generated using the following 
 ## Complete JSON Structure
 
 
-The `HiPlanContext` object returned by `getExternalObjectPlanContext()` has this structure:
+The JSON returned by the `get-plan-context` tool has this structure:
 
 ```json
 {
@@ -553,7 +554,7 @@ The `HiPlanContext` object returned by `getExternalObjectPlanContext()` has this
       "cornerArticle": false,
       "rootModules": [
         {
-          "module": {"id": "mr_StorageunitSingle", "name": "Storage unit", "desc": "Module for storage unit"},
+          "module": {"id": "mr_StorageunitSingle", "name": "Storage unit", "desc": "Module for storage unit", "imageUrl": "https://.../storageunit.png?..."},
           "dimensions": [
             {"id": "mod_Depth", "name": "Depth", "value": "350"},
             {"id": "mod_Height", "name": "Height", "value": "900"},
@@ -574,20 +575,14 @@ The `HiPlanContext` object returned by `getExternalObjectPlanContext()` has this
 
 ## HiPlanContext Section Details
 
-The `getExternalObjectPlanContext()` method accepts an optional `include` parameter:
+`get-plan-context` accepts an optional `include` parameter (`'masterData' | 'rooms' | 'articles' | 'groups'`). It does not return the raw `getExternalObjectPlanContext()` result: the page shapes every section for the agent.
 
-```typescript
-type HiPlanContextSection = 'masterData' | 'rooms' | 'articles' | 'groups';
+- `masterData` — per library the root modules and the attributes a customer sees (`isMain` or `userRight` `Simple`); modules, attributes and selections keep their `desc` and `imageUrl` (the material swatches). For Furniture_Smith these are 13 of 47 modules and 49 of 398 attributes (2026-09-27); the other attributes are found with `find-attributes`
+- `rooms` — wall contours plus a derived `walls` array
+- `articles` — compact catalog: per article `desc`, `imageUrl` and category, per root module the master-data module, dimensions, main attributes, docking vectors and sub-modules
+- `groups` — the groups currently in the plan
 
-interface HiPlanContext {
-  masterData?: Record<string, MasterData>;
-  rooms?: ExternalRoomInformation;
-  articles?: PosArticle[];
-  groups?: PosGroup[];
-}
-```
-
-For the article catalog, you need at least `['articles']`. Including `['masterData', 'rooms', 'articles', 'groups']` gives you the complete picture.
+The full field list is in the [tool reference](../../minimal-hi-example/docs/hi-mcp-server.md#get-plan-context). For the article catalog, you need at least `['articles']`; the four sections together are the snapshot stored in `hi-plan-context.json`.
 
 ---
 
@@ -784,7 +779,7 @@ echo "Catalog generated: $(wc -l < docs/library-information/articles.md) lines"
 
 ## Troubleshooting
 
-### "No HI page connected" Error
+### "No HI example page connected" Error
 **Cause:** Browser page not connected to MCP server  
 **Solution:** Open `http://localhost:3100/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith` in your browser
 
@@ -804,7 +799,7 @@ echo "Catalog generated: $(wc -l < docs/library-information/articles.md) lines"
 
 ## Related Files
 
-- `minimal-hi-example/hi-mcp-server.js` — MCP server (line 604: URL with library parameters)
+- `minimal-hi-example/hi-mcp-server.js` — MCP server (`exampleUrl`: URL with library parameters)
 - `docs/library-information/hi-plan-context.json` — Raw HiPlanContext data
 - `docs/library-information/articles.md` — Generated markdown catalog
 - `.agents/skills/hi-furniture-smith-article-catalog.md` — This skill document
@@ -821,89 +816,7 @@ echo "Catalog generated: $(wc -l < docs/library-information/articles.md) lines"
 
 ## Materials Catalog Generation
 
-In addition to the article catalog, you can generate a materials (colors) catalog from the same HiPlanContext data.
-
-### Step 1: Extract Materials from HiPlanContext
-
-Materials are defined as Text-type attributes with "Color" in the name or description. Each material has a name and a numeric value.
-
-```bash
-mkdir -p docs/library-information
-```
-
-### Step 2: Generate Materials Markdown
-
-Use this Python script to extract materials and generate a markdown table with thumbnails:
-
-```bash
-python3 << 'PYEOF'
-import json
-
-with open('docs/library-information/hi-plan-context.json', 'r') as f:
-    data = json.load(f)
-
-# Container GUID for Furniture_Smith library
-container_guid = "e2fe8b3d-da31-4a20-92ab-ab6e3839300e"
-
-# Get masterData attributes
-master_data = data.get('masterData', {}).get('Furniture_Smith', {})
-attributes = master_data.get('attributes', [])
-
-# Collect unique materials (name, value) pairs
-materials = {}
-for attr in attributes:
-    if attr.get('type') == 'Text' and ('Color' in attr.get('name', '') or 'Color' in attr.get('desc', '')):
-        if 'selections' in attr:
-            for sel in attr['selections']:
-                value = sel.get('value', '')
-                name = sel.get('name', '')
-                if value and name and value not in materials:
-                    materials[value] = name
-
-# Sort by numeric value
-sorted_materials = sorted(materials.items(), key=lambda x: int(x[0]))
-
-# Generate markdown
-header = """# Materials
-
-This document lists all materials (colors) from the Furniture_Smith library.
-
-## Source
-
-Data extracted from `HiPlanContext.masterData.Furniture_Smith.attributes` where type is Text and name/desc contains "Color".
-
-## Thumbnail URL Pattern
-
-Material thumbnails follow this pattern:
-```
-https://tecconfig-preview.homag.cloud/cdn/{container_guid}/materials/{value}.png
-```
-
-Where:
-- `{container_guid}` = e2fe8b3d-da31-4a20-92ab-ab6e3839300e (Furniture_Smith library container)
-- `{value}` = The numeric material code from the table below
-
-## Materials
-
-| Name | Value | Thumbnail |
-|---|---|---|
-"""
-
-rows = []
-for value, name in sorted_materials:
-    url = f"https://tecconfig-preview.homag.cloud/cdn/{container_guid}/materials/{value}.png"
-    rows.append(f"| {name} | {value} | ![]({url}) |")
-
-with open('docs/library-information/materials.md', 'w') as f:
-    f.write(header + '\n'.join(rows) + '\n')
-
-print(f"Generated materials.md with {len(rows)} materials")
-PYEOF
-```
-
-### Output Files
-
-- `docs/library-information/materials.md` — Generated materials catalog with thumbnails
+`docs/library-information/materials.md` is generated from the same `hi-plan-context.json` by the [materials skill](./hi-furniture-smith-materials.md), which also downloads the thumbnails into `docs/library-information/images/materials/`.
 
 ---
 
@@ -1063,32 +976,17 @@ def clean_and_enhance_description(desc, category, article_id, dimensions):
 
 **Question**: Where do the material/color thumbnails come from in the Roomle HI Planner UI?
 
-**Answer**: Material thumbnails are NOT included in the `HiPlanContext` JSON. They are constructed using a URL pattern based on the material value.
+**Answer**: Each thumbnail is the `imageUrl` of an attribute selection in the HI master data. The kernel copies every `selection.imageUrl` into the thumbnail of the parameter value when `uiConfiguration.showThumbnails` is on. `get-plan-context` keeps these `imageUrl`s, so `hi-plan-context.json` contains them, e.g. in the selections of `mod_FrontColor`.
 
 ### URL Pattern
 
 ```
-https://tecconfig-preview.homag.cloud/cdn/{container_guid}/materials/{value}.png
+https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_smith/images/{image_guid}_{file_name}?sv=...&st=...&se=...&sr=b&sp=r&sig=...
 ```
 
-Where:
-- `{container_guid}` = The library container GUID (for Furniture_Smith: `e2fe8b3d-da31-4a20-92ab-ab6e3839300e`)
-- `{value}` = The numeric material code (e.g., 152, 155, 160, etc.)
-
-### Verification
-
-To verify this pattern works, open a URL in your browser:
-```
-https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/materials/152.png
-```
-
-This should display the thumbnail for "Cloudy blue" material.
-
-### Alternative Patterns
-
-If the above pattern doesn't work, try these alternatives:
-- `https://cdn.roomle.com/static/planner/preview/homag/materials/{value}.png`
-- `https://config.roomle.com/cdn/config/homag/materials/{value}.png`
+- A read-only SAS URL of one Azure blob: the image GUID is random and the signature is bound to that blob, so the URL cannot be built from the material value
+- Without the signature the CDN answers `409 PublicAccessNotPermitted`
+- The signature is valid for about a month (`st` to `se`); downloaded copies are kept in `docs/library-information/images/materials/` (see the [materials skill](./hi-furniture-smith-materials.md))
 
 ### Material Values
 

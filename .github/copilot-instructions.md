@@ -15,7 +15,7 @@ This file provides GitHub Copilot-specific context and guidance for the roomle-h
 roomle-hi-example provides:
 
 1. **HI Presets Example Page** (`index.html`) — Demonstrates HOMAG Intelligence (HI) room planning with preset configurations in a browser
-2. **MCP Server** (`hi-mcp-server.js`) — Zero-dependency Node.js HTTP server providing Model Context Protocol tools for AI agents
+2. **MCP Server** (`minimal-hi-example/hi-mcp-server.js`) — Zero-dependency Node.js HTTP server providing Model Context Protocol tools for AI agents
 
 The MCP server enables AI assistants (Claude, Copilot, etc.) to:
 - Query plan state (rooms, walls, articles, groups)
@@ -54,7 +54,7 @@ The server uses only Node.js built-in modules. No npm packages required. This en
 
 ### For AI Agents Using the MCP Server
 
-1. **Start the server**: `npm start` or `node hi-mcp-server.js`
+1. **Start the server**: `npm start` or `node minimal-hi-example/hi-mcp-server.js`
 2. **Open the page**: Browser opens to `http://localhost:3100/?mcp=true`
 3. **Connect MCP client** (see below for client-specific instructions)
 4. **Call tools** to interact with the Roomle planner
@@ -72,9 +72,9 @@ The server uses only Node.js built-in modules. No npm packages required. This en
 
 ### Available MCP Tools
 
-All tools are defined in `hi-mcp-server.js` and documented in:
+All tools are defined in `minimal-hi-example/hi-mcp-server.js` and documented in:
 - [`.agents/skills/hi-mcp-tools.md`](../.agents/skills/hi-mcp-tools.md) — Complete tool reference
-- [`docs/hi-mcp-server.md`](../docs/hi-mcp-server.md) — User-facing documentation
+- [`minimal-hi-example/docs/hi-mcp-server.md`](../minimal-hi-example/docs/hi-mcp-server.md) — User-facing documentation
 
 Primary tools:
 - `get-plan-context` — Get current rooms, walls, articles, groups, docking vectors
@@ -148,7 +148,7 @@ Load these skills when the task matches their domain:
 - **Variables**: camelCase (`planContext`, `dockingVector`)
 - **Constants**: UPPER_SNAKE_CASE (`PORT`, `DEFAULT_CALL_TIMEOUT_MS`)
 - **Functions**: camelCase (`getPlanContext`, `createOrReplaceGroups`)
-- **Files**: kebab-case (`hi-mcp-server.js`, `hi-mcp-server.md`)
+- **Files**: kebab-case (`minimal-hi-example/hi-mcp-server.js`, `minimal-hi-example/docs/hi-mcp-server.md`)
 
 ### Comments
 
@@ -171,8 +171,8 @@ Load these skills when the task matches their domain:
 ### For Humans
 
 - **[README.md](../README.md)** — Quickstart and usage
-- **[docs/hi-mcp-server.md](../docs/hi-mcp-server.md)** — MCP server documentation
-- **[docs/hi-mcp-poc-presentation.md](../docs/hi-mcp-poc-presentation.md)** — POC presentation
+- **[minimal-hi-example/docs/hi-mcp-server.md](../minimal-hi-example/docs/hi-mcp-server.md)** — MCP server documentation
+- **[minimal-hi-example/docs/hi-mcp-poc-presentation.md](../minimal-hi-example/docs/hi-mcp-poc-presentation.md)** — POC presentation
 
 ## Analysis Workflow
 
@@ -245,7 +245,7 @@ For automated testing of the example page, use browser DevTools:
 
 ```bash
 npm start                    # Start server and open browser
-node hi-mcp-server.js       # Start server only
+node minimal-hi-example/hi-mcp-server.js       # Start server only
 ```
 
 ### Port Configuration

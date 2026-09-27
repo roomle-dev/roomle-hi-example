@@ -5,7 +5,7 @@
 ## Always Do This First
 
 1. **Load matching skills.** Check the [On-Demand Skills](#on-demand-skills) catalog and read every skill file whose domain matches the task *before* taking action. Multiple skills may apply to one task.
-2. **Read [`docs/hi-mcp-server.md`](./docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the comprehensive reference for the HI MCP server implementation and usage.
+2. **Read [`minimal-hi-example/docs/hi-mcp-server.md`](./minimal-hi-example/docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the comprehensive reference for the HI MCP server implementation and usage.
 3. **Read [`.agents/README.md`](./.agents/README.md)** for the complete digital brain index, separating living reference from historical records.
 4. **Treat documentation as part of the task, not a follow-up.** Every analysis produces a document, and every change to productive code updates one — see [Where Documentation Goes](#where-documentation-goes).
 5. **For GitHub Copilot users:** See [`.github/copilot-instructions.md`](./.github/copilot-instructions.md) for Copilot-specific guidance.
@@ -80,7 +80,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 roomle-hi-example is a zero-dependency demonstration and development environment for:
 
 1. **HI Presets Example** — A standalone HTML page (`index.html`) that demonstrates HOMAG Intelligence (HI) room planning with preset configurations
-2. **MCP Server** — A Node.js HTTP server (`hi-mcp-server.js`) that provides Model Context Protocol (MCP) tools for AI agents to orchestrate HI object groups in live Roomle sessions
+2. **MCP Server** — A Node.js HTTP server (`minimal-hi-example/hi-mcp-server.js`) that provides Model Context Protocol (MCP) tools for AI agents to orchestrate HI object groups in live Roomle sessions
 
 The server provides:
 - Static file serving for the example HTML page
@@ -92,8 +92,13 @@ The server provides:
 
 ```
 .
-├── index.html                    # HI presets example page
-├── hi-mcp-server.js             # Zero-dependency MCP server (Node.js)
+├── minimal-hi-example/         # Minimal standalone HI example
+│   ├── index.html              # HI presets example page
+│   ├── hi-mcp-server.js         # Zero-dependency MCP server (Node.js)
+│   └── docs/                    # Documentation
+│       ├── hi-mcp-server.md    # Complete MCP server documentation
+│       ├── hi-mcp-poc-presentation.md # Proof of concept presentation
+│       └── images/             # Diagram and screenshot assets
 ├── hi-mcp/                       # TypeScript MCP server PoCs (npm workspaces, vitest)
 │   ├── README.md                 # Project overview and PoC list
 │   ├── package.json              # Workspace root: test/typecheck/start scripts
@@ -186,7 +191,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 - **Variables**: camelCase (`planContext`, `dockingVector`)
 - **Constants**: UPPER_SNAKE_CASE (`PORT`, `DEFAULT_CALL_TIMEOUT_MS`)
 - **Functions**: camelCase (`getPlanContext`, `createOrReplaceGroups`)
-- **Files**: kebab-case (`hi-mcp-server.js`, `hi-mcp-server.md`)
+- **Files**: kebab-case (`minimal-hi-example/hi-mcp-server.js`, `minimal-hi-example/docs/hi-mcp-server.md`)
 
 ### Comments
 
@@ -254,7 +259,7 @@ Each analysis document follows the same lifecycle: written **before** the work, 
 | Bug analysis | new file in `.agents/bug-analysis/` with kebab-case slug |
 | Feature analysis | new file in `.agents/feature-analysis/` with kebab-case slug |
 | Refactoring analysis | new file in `.agents/refactoring-analysis/` with kebab-case slug |
-| New feature capability | Update `docs/hi-mcp-server.md` or create new file in `docs/` |
+| New feature capability | Update `minimal-hi-example/docs/hi-mcp-server.md` or create new file in `minimal-hi-example/docs/` |
 | MCP tool reference updates | `.agents/skills/hi-mcp-tools.md` |
 | Architecture decisions | Create ADR in `.agents/decisions/` (if needed) |
 | Living reference | `docs/` for user-facing documentation |
@@ -280,12 +285,12 @@ The server provides MCP endpoint at `http://localhost:3100/mcp` when running.
 ### Starting the Server
 
 ```bash
-npm start          # or: node hi-mcp-server.js
+npm start          # or: node minimal-hi-example/hi-mcp-server.js
 ```
 
 This starts:
 - HTTP server on port 3100
-- Static file serving for index.html
+- Static file serving for minimal-hi-example/index.html
 - MCP endpoint at /mcp
 - SSE bridge at /bridge
 - Opens browser to http://localhost:3100/?mcp=true
@@ -305,10 +310,10 @@ This starts:
 
 ### Adding New Tools
 
-1. Add tool definition to `TOOLS` array in `hi-mcp-server.js`
+1. Add tool definition to `TOOLS` array in `minimal-hi-example/hi-mcp-server.js`
 2. Implement handler function
 3. Add JSDoc documentation
-4. Update `docs/hi-mcp-server.md` tool reference
+4. Update `minimal-hi-example/docs/hi-mcp-server.md` tool reference
 5. Test with MCP client
 
 ## Git Workflow Rules

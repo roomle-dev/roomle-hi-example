@@ -265,6 +265,8 @@ node hi-mcp-server.js       # Start server only
 
 **NEVER merge a PR.** Not with `gh pr merge`, not by enabling auto-merge. Merging is always a human decision performed by maintainers.
 
+**NEVER force push to GitHub.** Absolutely forbidden. Do not use `git push --force` or `git push -f`.
+
 **Load the skill** [`roomle-pr-resolution.md`](.github/skills/roomle-pr-resolution.md) for the complete PR resolution workflow.
 
 **Hard Rules:**

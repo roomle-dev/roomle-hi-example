@@ -314,6 +314,10 @@ This starts:
 
 ## Git Workflow Rules
 
+### Hard Rule: NO Force Pushes
+
+**NEVER use `git push --force` or `git push -f` on any branch, especially master.** Force pushing rewrites history and is absolutely forbidden. If you need to undo commits, create a new revert commit instead.
+
 ### Commit Message Format
 
 Use conventional commits: `type: lowercase description` — no trailing period.

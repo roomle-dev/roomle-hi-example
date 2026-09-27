@@ -816,3 +816,284 @@ echo "Catalog generated: $(wc -l < docs/library-information/articles.md) lines"
 - `.agents/skills/hi-mcp-server.md` — MCP server architecture
 - `.agents/skills/hi-mcp-tools.md` — MCP tool reference
 - `.agents/skills/roomle-hi-concepts.md` — HI concepts and data model
+
+---
+
+## Materials Catalog Generation
+
+In addition to the article catalog, you can generate a materials (colors) catalog from the same HiPlanContext data.
+
+### Step 1: Extract Materials from HiPlanContext
+
+Materials are defined as Text-type attributes with "Color" in the name or description. Each material has a name and a numeric value.
+
+```bash
+mkdir -p docs/library-information
+```
+
+### Step 2: Generate Materials Markdown
+
+Use this Python script to extract materials and generate a markdown table with thumbnails:
+
+```bash
+python3 << 'PYEOF'
+import json
+
+with open('docs/library-information/hi-plan-context.json', 'r') as f:
+    data = json.load(f)
+
+# Container GUID for Furniture_Smith library
+container_guid = "e2fe8b3d-da31-4a20-92ab-ab6e3839300e"
+
+# Get masterData attributes
+master_data = data.get('masterData', {}).get('Furniture_Smith', {})
+attributes = master_data.get('attributes', [])
+
+# Collect unique materials (name, value) pairs
+materials = {}
+for attr in attributes:
+    if attr.get('type') == 'Text' and ('Color' in attr.get('name', '') or 'Color' in attr.get('desc', '')):
+        if 'selections' in attr:
+            for sel in attr['selections']:
+                value = sel.get('value', '')
+                name = sel.get('name', '')
+                if value and name and value not in materials:
+                    materials[value] = name
+
+# Sort by numeric value
+sorted_materials = sorted(materials.items(), key=lambda x: int(x[0]))
+
+# Generate markdown
+header = """# Materials
+
+This document lists all materials (colors) from the Furniture_Smith library.
+
+## Source
+
+Data extracted from `HiPlanContext.masterData.Furniture_Smith.attributes` where type is Text and name/desc contains "Color".
+
+## Thumbnail URL Pattern
+
+Material thumbnails follow this pattern:
+```
+https://tecconfig-preview.homag.cloud/cdn/{container_guid}/materials/{value}.png
+```
+
+Where:
+- `{container_guid}` = e2fe8b3d-da31-4a20-92ab-ab6e3839300e (Furniture_Smith library container)
+- `{value}` = The numeric material code from the table below
+
+## Materials
+
+| Name | Value | Thumbnail |
+|---|---|---|
+"""
+
+rows = []
+for value, name in sorted_materials:
+    url = f"https://tecconfig-preview.homag.cloud/cdn/{container_guid}/materials/{value}.png"
+    rows.append(f"| {name} | {value} | ![]({url}) |")
+
+with open('docs/library-information/materials.md', 'w') as f:
+    f.write(header + '\n'.join(rows) + '\n')
+
+print(f"Generated materials.md with {len(rows)} materials")
+PYEOF
+```
+
+### Output Files
+
+- `docs/library-information/materials.md` — Generated materials catalog with thumbnails
+
+---
+
+## Simplified Suggested Description Generation
+
+The Suggested Description column provides agents with technically accurate, complete descriptions without needing to analyze images. Based on practical experience, a simpler approach works better than complex type detection:
+
+### Approach
+
+1. **Clean the original description**: Remove redundant prefixes like "Fingergrip"
+2. **Translate German terms**: Convert German words to English (Oberschrank → Wall cabinet, Tür → door, etc.)
+3. **Add furniture type**: Ensure the description starts with the furniture type (Sideboard, Lowboard, Base cabinet, etc.)
+4. **Add height category**: Add "low" for < 500mm, "high" for ≥ 2000mm
+5. **Add corner designation**: Add "corner" if applicable
+6. **Format consistently**: Use comma-separated lists, capitalize first letter
+
+### Implementation
+
+```python
+def clean_and_enhance_description(desc, category, article_id, dimensions):
+    """Clean and enhance description to create suggested description"""
+    if not desc or desc.strip() == '':
+        return desc
+    
+    # Manual overrides
+    overrides = {
+        'DU': 'Range hood',
+        'GSP': 'Dishwasher unit',
+        'SM_TV': 'Wall unit, TV decoration',
+    }
+    if article_id in overrides:
+        return overrides[article_id]
+    
+    # Handle pure German
+    if desc.lower() == 'dunstabzug':
+        return 'Range hood'
+    
+    # Remove unwanted prefixes
+    enhanced = re.sub(r'^Fingergrip\s+', '', desc, flags=re.IGNORECASE)
+    
+    # Translate German terms
+    translations = {
+        'Oberschrank': 'Wall cabinet',
+        'Oberschrankregal': 'Wall cabinet shelf',
+        'Einlegeböden': 'adjustable shelves',
+        'feste Zwischenböden': 'fixed shelves',
+        'Tür': 'door',
+        'Türen': 'doors',
+        'Schublade': 'drawer',
+        'Schubladen': 'drawers',
+        'Auszug': 'pullout',
+        'Auszüge': 'pullouts',
+        'Dunstabzug': 'range hood',
+        'Kochfeld': 'hob',
+        'Herd': 'stove',
+        'Spüle': 'sink',
+        'Faltklappe': 'folding flap',
+        'Schwenkklappe': 'hinged flap',
+        'mit': 'with',
+    }
+    
+    for german, english in translations.items():
+        enhanced = re.sub(r'\b' + re.escape(german) + r'\b', english, enhanced, flags=re.IGNORECASE)
+    
+    # Clean up "with" → ", "
+    enhanced = re.sub(r'\bwith\s+', ', ', enhanced, flags=re.IGNORECASE)
+    
+    # Clean up spaces and commas
+    enhanced = re.sub(r'\s+', ' ', enhanced)
+    enhanced = re.sub(r'\s*,\s*', ', ', enhanced)
+    enhanced = enhanced.strip().strip(',')
+    
+    # Fix plural issues
+    enhanced = re.sub(r'\b1 doors\b', '1 door', enhanced, flags=re.IGNORECASE)
+    enhanced = re.sub(r'\b1 drawers\b', '1 drawer', enhanced, flags=re.IGNORECASE)
+    enhanced = re.sub(r'\b1 pullouts\b', '1 pullout', enhanced, flags=re.IGNORECASE)
+    
+    # Capitalize
+    if enhanced:
+        enhanced = enhanced[0].upper() + enhanced[1:]
+    
+    # Add furniture type prefix if missing
+    category_lower = category.lower()
+    enhanced_lower = enhanced.lower()
+    type_markers = ['sideboard', 'lowboard', 'tall cabinet', 'wall cabinet', 
+                   'base cabinet', 'filler', 'panel', 'closet']
+    has_type = any(marker in enhanced_lower for marker in type_markers)
+    
+    if not has_type:
+        if 'sideboard' in category_lower:
+            enhanced = f"Sideboard, {enhanced}"
+        elif 'lowboard' in category_lower:
+            enhanced = f"Lowboard, {enhanced}"
+        elif 'tall unit' in category_lower:
+            enhanced = f"Tall cabinet, {enhanced}"
+        elif 'wall unit' in category_lower:
+            enhanced = f"Wall cabinet, {enhanced}"
+        elif 'base unit' in category_lower:
+            enhanced = f"Base cabinet, {enhanced}"
+        elif 'filler' in category_lower:
+            enhanced = f"Filler, {enhanced}"
+        elif 'panel' in category_lower:
+            enhanced = f"Panel, {enhanced}"
+        elif 'closet' in category_lower:
+            enhanced = f"Closet cabinet, {enhanced}"
+    
+    # Update enhanced_lower after type was potentially added
+    enhanced_lower = enhanced.lower()
+    
+    # Add height category
+    has_low = bool(re.search(r'\blow\b', enhanced_lower))
+    has_high = bool(re.search(r'\bhigh\b', enhanced_lower))
+    
+    height = dimensions.get('mod_Height')
+    if height:
+        try:
+            h = int(height)
+            if h < 500 and not has_low:
+                enhanced = f"{enhanced}, low"
+            elif h >= 2000 and not has_high:
+                enhanced = f"{enhanced}, high"
+        except ValueError:
+            pass
+    
+    # Add corner designation
+    if ('corner' in category_lower or 'corner' in desc.lower()) and 'corner' not in enhanced_lower:
+        enhanced = f"{enhanced}, corner"
+    
+    # Final cleanup
+    enhanced = re.sub(r'\s*,\s*', ', ', enhanced)
+    enhanced = re.sub(r'\s+', ' ', enhanced)
+    enhanced = enhanced.strip().strip(',')
+    
+    return enhanced
+```
+
+### Rules Summary
+
+1. **Trust but verify**: Use the original description as the primary source
+2. **Translate**: Convert all German terms to English
+3. **Identify type**: Ensure furniture type is present (Sideboard, Lowboard, Cabinet, etc.)
+4. **Height classification**: Add "low" (< 500mm) or "high" (≥ 2000mm)
+5. **Corner detection**: Add "corner" if applicable
+6. **Be concise**: Remove redundant words and prefixes
+7. **Be accurate**: Ensure door/drawer counts are correct (1 door, not 1 doors)
+
+### Benefits
+
+- **Speed**: Agents don't need to analyze images
+- **Completeness**: All relevant information is in the description
+- **Consistency**: Technical terms are standardized
+- **Accuracy**: German terms are translated, counts are corrected
+
+---
+
+## Material Thumbnail Source
+
+**Question**: Where do the material/color thumbnails come from in the Roomle HI Planner UI?
+
+**Answer**: Material thumbnails are NOT included in the `HiPlanContext` JSON. They are constructed using a URL pattern based on the material value.
+
+### URL Pattern
+
+```
+https://tecconfig-preview.homag.cloud/cdn/{container_guid}/materials/{value}.png
+```
+
+Where:
+- `{container_guid}` = The library container GUID (for Furniture_Smith: `e2fe8b3d-da31-4a20-92ab-ab6e3839300e`)
+- `{value}` = The numeric material code (e.g., 152, 155, 160, etc.)
+
+### Verification
+
+To verify this pattern works, open a URL in your browser:
+```
+https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/materials/152.png
+```
+
+This should display the thumbnail for "Cloudy blue" material.
+
+### Alternative Patterns
+
+If the above pattern doesn't work, try these alternatives:
+- `https://cdn.roomle.com/static/planner/preview/homag/materials/{value}.png`
+- `https://config.roomle.com/cdn/config/homag/materials/{value}.png`
+
+### Material Values
+
+The material values (numeric codes) are defined in the `masterData.Furniture_Smith.attributes` where:
+- `type` = "Text"
+- `name` or `desc` contains "Color"
+- Each selection has a `value` (numeric code) and `name` (color name)
+

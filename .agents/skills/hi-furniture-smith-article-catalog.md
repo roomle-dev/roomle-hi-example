@@ -33,7 +33,7 @@ Roomle Planner (Browser)
     ↓ roomDesignerApi.extended.getExternalObjectPlanContext()
 HI Plan Context (HiPlanContext JSON)
     ↓ MCP Bridge (WebSocket)
-MCP Server (hi-mcp-server.js)
+MCP Server (minimal-hi-example/hi-mcp-server.js)
     ↓ HTTP POST /mcp
 Client (curl or MCP client)
     ↓ Extract and transform
@@ -55,7 +55,7 @@ npm start
 
 This automatically opens: `http://localhost:3100/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`
 
-**Note:** The URL parameters are hardcoded in `hi-mcp-server.js` (line 604):
+**Note:** The URL parameters are hardcoded in `minimal-hi-example/hi-mcp-server.js` (line 604):
 ```javascript
 const exampleUrl = `http://localhost:${PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`;
 ```
@@ -379,7 +379,7 @@ echo "Catalog generated: $(wc -l < docs/article-information/articles.md) lines"
 
 ## Related Files
 
-- `hi-mcp-server.js` — MCP server (line 604: URL with library parameters)
+- `minimal-hi-example/hi-mcp-server.js` — MCP server (line 604: URL with library parameters)
 - `docs/article-information/hi-plan-context.json` — Raw HiPlanContext data
 - `docs/article-information/articles.md` — Generated markdown catalog
 - `.agents/skills/hi-furniture-smith-article-catalog.md` — This skill document

@@ -1,6 +1,6 @@
 # Furniture_Smith Article Catalog
 
-This document lists all articles from the Furniture_Smith library as displayed in the Roomle planner catalog with images, labels, descriptions, and dimensions.
+This document lists all articles from the Furniture_Smith library as displayed in the Roomle planner catalog with images, labels, descriptions, dimensions, and suggested descriptions.
 
 ## Source
 

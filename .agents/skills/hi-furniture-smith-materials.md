@@ -10,17 +10,15 @@
 
 This skill documents the process to extract material data (colors and finishes) from the Roomle HOMAG Intelligence (HI) system's master data and generate a structured markdown table.
 
-The process retrieves the `HiPlanContext` object and extracts all "Text" type attributes that contain "Color" in their name or description, then compiles their selections into a deduplicated, sorted table of materials. The swatch thumbnails of the materials are downloaded from the raw HI master data into `docs/library-information/images/materials/`.
+The process retrieves the `HiPlanContext` object and extracts all "Text" type attributes that contain "Color" in their name or description, then compiles their selections into a deduplicated, sorted table of materials with the description (`desc`) and the swatch thumbnail (`imageUrl`) of each material.
 
 ---
 
 ## Prerequisites
 
-1. **HiPlanContext JSON** — The file `docs/library-information/hi-plan-context.json` must exist (generated via the `get-plan-context` MCP tool)
+1. **HiPlanContext JSON** — The file `docs/library-information/hi-plan-context.json` must exist (generated via the `get-plan-context` MCP tool, which keeps the `desc` and `imageUrl` of the selections)
 
 2. **Node.js** — Required only if regenerating the HiPlanContext JSON
-
-3. **HI test credential** — Required only for downloading thumbnails: the `user:password` that `HI_AUTH_DATA` in `minimal-hi-example/index.html` encodes
 
 ---
 
@@ -30,12 +28,10 @@ The process retrieves the `HiPlanContext` object and extracts all "Text" type at
 HiPlanContext JSON (from get-plan-context tool)
     ↓ Extract masterData.Furniture_Smith.attributes
 Filter: type == Text AND (name OR desc contains "Color")
-    ↓ Extract selections from each attribute
+    ↓ Extract selections from each attribute (name, value, desc, imageUrl)
 Deduplicate by value
     ↓ Sort by numeric value
 Markdown Table (materials.md)
-    ↑ Thumbnail column links the downloaded images
-Raw master data (HI proxy) → mod_FrontColor selections → imageUrl → images/materials/{value}.png
 ```
 
 ---
@@ -63,63 +59,16 @@ curl -s -X POST http://localhost:3100/mcp \
   }' | jq -r '.result.content[0].text' > docs/library-information/hi-plan-context.json
 ```
 
-### Step 2: Download Thumbnails
+The `imageUrl`s are signed and valid for about a month (see [Thumbnails](#thumbnails)): when the thumbnails stop showing, run Step 1 and Step 2 again.
 
-The swatches the planner shows for a color attribute (e.g. FRONT COLOR) are the `imageUrl`s of the attribute selections: the kernel copies each `selection.imageUrl` into the thumbnail of the parameter value when `uiConfiguration.showThumbnails` is on. `get-plan-context` returns them too, but needs a connected page; the script reads them from the raw master data, which the page loads through the HI test proxy.
+### Step 2: Generate Materials Table
 
-Each `imageUrl` is a read-only SAS URL of an Azure blob on the TecConfig CDN:
-
-```
-https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_smith/images/{image_guid}_{file_name}?sv=...&st=...&se=...&sr=b&sp=r&sig=...
-```
-
-- The image GUID is random and the signature is bound to the exact blob, so the URL cannot be built from the material value; without the signature the CDN answers `409 PublicAccessNotPermitted`
-- The signature is valid for about a month (`st` to `se`); within that window the image needs no authentication, e.g. `curl -o 152.png '<imageUrl>'`
-- Some blobs are PNG data under a `.jpg` name (served as `image/jpeg`), so the file extension is taken from the image data
-- `mod_FrontColor` carries all 21 materials. Light grey (178) is the only material with two different swatches: `mod_FrontColor`, `mod_CarcaseColor` and `mod_ToekickColor` use one, `mod_PaneltopColor`, `mod_UprightColor` and `mod_Color` a slightly warmer one
-
-```bash
-export HI_TEST_AUTH="$(grep -oE "btoa\('[^']+'\)" minimal-hi-example/index.html | head -1 | sed -E "s/btoa\('([^']+)'\)/\1/")"
-python3 << 'PYEOF'
-import base64, json, os, urllib.parse, urllib.request
-
-BACKEND_ID = 'HI_PRE_Roomle_Milestone_2'
-LIBRARY_ID = 'Furniture_Smith'
-PROXY_URL = 'https://dfscfgtest01-app.azurewebsites.net/proxy_request'
-OUT_DIR = 'docs/library-information/images/materials'
-
-auth = 'Basic ' + base64.b64encode(os.environ['HI_TEST_AUTH'].encode()).decode()
-query = urllib.parse.urlencode({'backendId': BACKEND_ID, 'url': f'api/pos/libraries/{LIBRARY_ID}/masterData'})
-request = urllib.request.Request(f'{PROXY_URL}?{query}', headers={'Authorization': auth, 'Accept-Language': 'en-US,en'})
-with urllib.request.urlopen(request) as response:
-    master_data = json.load(response)
-
-front_color = next(a for a in master_data['attributes'] if a['id'] == 'mod_FrontColor')
-os.makedirs(OUT_DIR, exist_ok=True)
-for selection in front_color['selections']:
-    with urllib.request.urlopen(selection['imageUrl']) as response:
-        image = response.read()
-    extension = '.png' if image.startswith(b'\x89PNG') else '.jpg'
-    target = os.path.join(OUT_DIR, selection['value'] + extension)
-    with open(target, 'wb') as file:
-        file.write(image)
-    print(f"{selection['value']} {selection['name']} -> {target}")
-PYEOF
-```
-
-**Explanation:**
-- Reads the HI test credential from `HI_AUTH_DATA` in `minimal-hi-example/index.html`
-- Loads the raw `Furniture_Smith` master data through the HI test proxy (`backendId` selects the HI backend, `url` is the TecConfig API path)
-- Downloads the `imageUrl` of every `mod_FrontColor` selection to `docs/library-information/images/materials/{value}.png`
-
-### Step 3: Generate Materials Table
-
-Use this Python script to extract materials from the HiPlanContext and link the thumbnails downloaded in Step 2:
+Use this Python script to extract materials from the HiPlanContext:
 
 ````bash
 python3 << 'PYEOF'
 import json
-import os
+from urllib.parse import parse_qs, urlsplit
 
 with open('docs/library-information/hi-plan-context.json', 'r') as f:
     data = json.load(f)
@@ -145,16 +94,18 @@ for attr in color_attrs:
         value = selection.get('value')
         name = selection.get('name')
         if value and name:
-            # Use value as key to deduplicate
+            # Use value as key to deduplicate; the first selection provides name, desc and imageUrl
             if value not in materials:
-                materials[value] = name
+                materials[value] = selection
 
 # Sort by numeric value
 sorted_values = sorted(materials.keys(), key=lambda x: float(x) if str(x).replace('.', '').replace('-', '').isdigit() else 9999)
 
-# Thumbnails downloaded in Step 2, keyed by value
-thumbnail_dir = 'docs/library-information/images/materials'
-thumbnails = {os.path.splitext(file_name)[0]: file_name for file_name in os.listdir(thumbnail_dir)}
+# The thumbnails are signed URLs; the earliest signature expiry dates the document
+thumbnail_urls = [selection['imageUrl'] for selection in materials.values() if selection.get('imageUrl')]
+if not thumbnail_urls:
+    raise SystemExit('hi-plan-context.json has no selection imageUrls - regenerate it (Step 1)')
+expiry = min(parse_qs(urlsplit(url).query)['se'][0][:10] for url in thumbnail_urls)
 
 header = '''# Materials
 
@@ -166,9 +117,7 @@ Data extracted from `HiPlanContext.masterData.Furniture_Smith.attributes` where 
 
 ## Thumbnails
 
-The thumbnails are the swatches the planner shows for a color attribute (e.g. FRONT COLOR). They are stored in [`images/materials/`](./images/materials/), downloaded from the `mod_FrontColor` selections of the Furniture_Smith master data.
-
-In the HI master data every attribute selection carries an `imageUrl`, a read-only SAS URL of a blob on the HOMAG TecConfig CDN:
+The thumbnails are the swatches the planner shows for a color attribute (e.g. FRONT COLOR): the `imageUrl` of each selection in `hi-plan-context.json`, a read-only SAS URL of a blob on the HOMAG TecConfig CDN:
 
 ```
 https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_smith/images/{image_guid}_{file_name}?sv=...&st=...&se=...&sr=b&sp=r&sig=...
@@ -177,23 +126,24 @@ https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_sm
 - `{subscription_id}` = `e2fe8b3d-da31-4a20-92ab-ab6e3839300e`
 - `{image_guid}` is random per image, so the URL cannot be built from the material value
 - The signature is bound to the exact blob; without it the CDN answers `409 PublicAccessNotPermitted`
-- The signature is valid for about a month (`st` to `se`), so a download needs a fresh master data response
+- The signatures in this document are valid until EXPIRY_DATE; after that the thumbnails stop showing until `hi-plan-context.json` and this document are regenerated
 
-The download process is described in [hi-furniture-smith-materials.md](../../.agents/skills/hi-furniture-smith-materials.md).
+The generation process is described in [hi-furniture-smith-materials.md](../../.agents/skills/hi-furniture-smith-materials.md).
 
 ## Materials
 
-| Name | Value | Thumbnail |
-|---|---|---|
-'''
+| Name | Value | Description | Thumbnail |
+|---|---|---|---|
+'''.replace('EXPIRY_DATE', expiry)
 
 # Write markdown file
 with open('docs/library-information/materials.md', 'w') as f:
     f.write(header)
     for value in sorted_values:
-        name = materials[value]
-        thumbnail = f'![{name}](images/materials/{thumbnails[value]})' if value in thumbnails else ''
-        f.write(f'| {name} | {value} | {thumbnail} |\n')
+        selection = materials[value]
+        name = selection['name']
+        thumbnail = f"![{name}]({selection['imageUrl']})" if selection.get('imageUrl') else ''
+        f.write(f"| {name} | {value} | {selection.get('desc', '')} | {thumbnail} |\n")
 
 print(f'Generated materials.md with {len(materials)} materials')
 PYEOF
@@ -204,18 +154,33 @@ PYEOF
 - Extracts `masterData.Furniture_Smith.attributes`
 - Filters for attributes where `type == Text` AND (`name` OR `desc` contains "Color")
 - Collects all `selections` from matching attributes
-- Deduplicates by `value` (same color code used across multiple attributes)
+- Deduplicates by `value` (same color code used across multiple attributes); name, desc and imageUrl come from the first selection of a value
 - Sorts by numeric value
-- Links each value to its thumbnail in `docs/library-information/images/materials/`
-- Writes markdown table to `docs/library-information/materials.md`
+- Writes markdown table to `docs/library-information/materials.md`, with the signature expiry of the thumbnails in its header
 
-### Step 4: Commit Changes
+### Step 3: Commit Changes
 
 ```bash
 cd /Users/gernotsteinegger/source/roomle/roomle-hi-example
-git add docs/library-information/materials.md docs/library-information/images/materials
+git add docs/library-information/hi-plan-context.json docs/library-information/materials.md
 git commit -m "docs: update Furniture_Smith materials catalog"
 ```
+
+---
+
+## Thumbnails
+
+The swatches the planner shows for a color attribute (e.g. FRONT COLOR) are the `imageUrl`s of the attribute selections: the kernel copies each `selection.imageUrl` into the thumbnail of the parameter value when `uiConfiguration.showThumbnails` is on, and `get-plan-context` keeps them.
+
+Each `imageUrl` is a read-only SAS URL of an Azure blob on the TecConfig CDN:
+
+```
+https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_smith/images/{image_guid}_{file_name}?sv=...&st=...&se=...&sr=b&sp=r&sig=...
+```
+
+- The image GUID is random and the signature is bound to the exact blob, so the URL cannot be built from the material value; without the signature the CDN answers `409 PublicAccessNotPermitted`
+- The signature is valid for about a month (`st` to `se`); within that window the image needs no authentication, e.g. `curl -o 152.png '<imageUrl>'`
+- Light grey (178) is the only material with two different swatches: `mod_FrontColor`, `mod_CarcaseColor` and `mod_CarcaseOutsideColor` use one, `mod_PaneltopColor`, `mod_UprightColor` and `mod_Color` a slightly warmer one. The table shows the first, the one of `mod_PaneltopColor`
 
 ---
 
@@ -236,7 +201,7 @@ All these attributes have `type: "Text"` and contain "Color" in their name or de
 
 ## Materials Table Structure
 
-The generated table has 3 columns:
+The generated table has 4 columns:
 
 ### 1. Name
 - **Source:** `selection.name` from each attribute's selections array
@@ -251,10 +216,16 @@ The generated table has 3 columns:
 - **Description:** Numeric code identifier for the material
 - **Sorting:** Materials are sorted ascending by this numeric value
 
-### 3. Thumbnail
-- **Source:** The image downloaded in Step 2 for the value
-- **Type:** Markdown image of `images/materials/{value}.png`
-- **Description:** Swatch the planner shows for the material; empty when no image was downloaded for the value
+### 3. Description
+- **Source:** `selection.desc` from each attribute's selections array
+- **Type:** String
+- **Example:** `"Sunny white"`, `"Concrete"` (for Furniture_Smith every material's desc equals its name)
+- **Description:** The description the library gives the material
+
+### 4. Thumbnail
+- **Source:** `selection.imageUrl` from each attribute's selections array
+- **Type:** Markdown image of the signed `imageUrl`
+- **Description:** Swatch the planner shows for the material; valid until the signature expires (see [Thumbnails](#thumbnails))
 
 ---
 
@@ -265,33 +236,27 @@ The generated table has 3 columns:
   "id": "mod_FrontColor",
   "name": "Front color",
   "desc": "Color of the front",
+  "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/4cebd23d-e05d-485f-8726-947230d62f88_frontcolor.png?sv=...&sig=...",
   "type": "Text",
   "group": "Front | Design",
   "selections": [
-    {"value": "152", "name": "Cloudy blue"},
-    {"value": "155", "name": "Denim blue"},
-    {"value": "160", "name": "Olive green"},
-    {"value": "165", "name": "Seaweed green"},
-    {"value": "178", "name": "Light grey"},
-    {"value": "190", "name": "Sunny white"},
-    {"value": "192", "name": "Snow white"},
-    {"value": "199", "name": "Jet black"},
-    {"value": "214", "name": "Dark walnut"},
-    {"value": "215", "name": "Walnut"},
-    {"value": "216", "name": "Tiepolo walnut"},
-    {"value": "222", "name": "Oak"},
-    {"value": "224", "name": "Bijoux oak"},
-    {"value": "229", "name": "Dark oak"},
-    {"value": "230", "name": "Maple"},
-    {"value": "240", "name": "Ash grey"},
-    {"value": "250", "name": "Ponderosa pine"},
-    {"value": "316", "name": "Concrete"},
-    {"value": "324", "name": "Dark marble"},
-    {"value": "326", "name": "Slate"},
-    {"value": "380", "name": "Marble"}
+    {
+      "value": "316",
+      "desc": "Concrete",
+      "name": "Concrete",
+      "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/3e219bf4-0d63-4eb1-86c4-96a9e69c052b_316_concrete.jpg?sv=...&sig=..."
+    },
+    {
+      "value": "326",
+      "desc": "Slate",
+      "name": "Slate",
+      "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/180cf5df-60d8-4179-bd00-fafd65ee74ef_326_slate.jpg?sv=...&sig=..."
+    }
   ]
 }
 ```
+
+`mod_FrontColor` lists all 21 materials; the example shows the first two.
 
 ---
 
@@ -335,7 +300,6 @@ When planning with HI MCP, use the material values (e.g., "190" for Sunny white)
 
 - `docs/library-information/hi-plan-context.json` — Source HiPlanContext data
 - `docs/library-information/materials.md` — Generated materials table
-- `docs/library-information/images/materials/` — Downloaded material thumbnails
 - `.agents/skills/hi-furniture-smith-article-catalog.md` — Article catalog generation skill
 - `.agents/skills/hi-furniture-smith-materials.md` — This skill document
 

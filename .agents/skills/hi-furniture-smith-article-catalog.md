@@ -816,7 +816,7 @@ echo "Catalog generated: $(wc -l < docs/library-information/articles.md) lines"
 
 ## Materials Catalog Generation
 
-`docs/library-information/materials.md` is generated from the same `hi-plan-context.json` by the [materials skill](./hi-furniture-smith-materials.md), which also downloads the thumbnails into `docs/library-information/images/materials/`.
+`docs/library-information/materials.md` is generated from the same `hi-plan-context.json` by the [materials skill](./hi-furniture-smith-materials.md); its thumbnails are the selection `imageUrl`s of that file.
 
 ---
 
@@ -986,7 +986,7 @@ https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_sm
 
 - A read-only SAS URL of one Azure blob: the image GUID is random and the signature is bound to that blob, so the URL cannot be built from the material value
 - Without the signature the CDN answers `409 PublicAccessNotPermitted`
-- The signature is valid for about a month (`st` to `se`); downloaded copies are kept in `docs/library-information/images/materials/` (see the [materials skill](./hi-furniture-smith-materials.md))
+- The signature is valid for about a month (`st` to `se`); after that, regenerate `hi-plan-context.json` and `materials.md` (see the [materials skill](./hi-furniture-smith-materials.md))
 
 ### Material Values
 

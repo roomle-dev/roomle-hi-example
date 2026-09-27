@@ -463,7 +463,6 @@ The markdown table has 7 columns. Here is the exact source of each column from t
   - Detects special attributes like "corner", "wall", "tall", "low" from category and description
   - Identifies appliances from description and article ID (sink, oven, fridge, range hood, dishwasher, hob, TV)
   - Counts and includes door, drawer, pullout, and fixed front counts
-  - Preserves height classification (tall, base-height, low, high)
   - Handles special cases: fillers, panels, modular cabinets, endless closets, walk-in closets
   - Removes duplicates and ensures technical accuracy
 - **Purpose:** Provides agents with complete article understanding without needing to analyze images
@@ -492,7 +491,6 @@ The Suggested Description column is automatically generated using the following 
 
 ### Attribute Detection
 - **Corner**: Detected from category or description containing "corner"
-- **Height**: Classified as tall (≥1800mm), base-height (700-1800mm), low (≤400mm)
 - **Direction**: "left" or "right" for corner cabinets and fillers
 
 ### Appliance Detection
@@ -510,7 +508,7 @@ The Suggested Description column is automatically generated using the following 
 - Regular doors and fridge doors can coexist in the same description
 
 ### Special Cases
-1. **Fillers**: Classified by height (tall, wall, base) with direction
+1. **Fillers**: Classified by type (tall, wall, base) from description text with direction
 2. **Panels**: Side, end, back, or kitchen end panels
 3. **Modular cabinets**: "Modular tall cabinet to add fronts"
 4. **Walk-in closets**: With shelves, hangers, drawers, or niches

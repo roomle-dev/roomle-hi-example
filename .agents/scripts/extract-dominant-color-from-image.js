@@ -219,15 +219,22 @@ async function extractAllColors(data, showProgress = true) {
         process.stdout.write(`  Extracting color for ${name}... `);
       }
       const color = await getColorFromUrl(imageUrl);
-      materialColors[value] = color || '#808080';
-      if (showProgress) {
-        console.log(color || '#808080');
+      if (color === null) {
+        if (showProgress) {
+          console.log(`FAILED (${imageUrl})`);
+        }
+        materialColors[value] = null;
+      } else {
+        materialColors[value] = color;
+        if (showProgress) {
+          console.log(color);
+        }
       }
     } else {
-      materialColors[value] = '#808080';
       if (showProgress) {
         console.log(`  No URL for ${name}`);
       }
+      materialColors[value] = null;
     }
   }
   
@@ -300,16 +307,23 @@ The color extraction script uses Node.js with the Sharp library for image proces
   
   for (const value of sortedValues) {
     const selection = materials[value];
-    const color = materialColors[value] || '#808080';
+    const color = materialColors[value];
     const name = selection.name || '';
     const desc = selection.desc || '';
     const imageUrl = selection.imageUrl || '';
     
     const thumbnail = imageUrl ? `![${name}](${imageUrl})` : '';
-    const colorDisplay = createMarkdownColorDisplay(color);
-    const suggestedDesc = desc ? `${desc} (${color})` : color;
     
-    markdown += `| ${name} | ${value} | ${thumbnail} | ${desc} | ${colorDisplay} | ${suggestedDesc} |\n`;
+    if (!color) {
+      // Mark as unavailable instead of using a fallback color
+      const colorDisplay = '_N/A_';
+      const suggestedDesc = desc ? `${desc} (color unavailable)` : 'Color unavailable';
+      markdown += `| ${name} | ${value} | ${thumbnail} | ${desc} | ${colorDisplay} | ${suggestedDesc} |\n`;
+    } else {
+      const colorDisplay = createMarkdownColorDisplay(color);
+      const suggestedDesc = desc ? `${desc} (${color})` : color;
+      markdown += `| ${name} | ${value} | ${thumbnail} | ${desc} | ${colorDisplay} | ${suggestedDesc} |\n`;
+    }
   }
   
   return markdown;
@@ -349,6 +363,16 @@ function parseArgs(args) {
       options.input = arg.substring(8);
     } else if (arg.startsWith('--output=')) {
       options.output = arg.substring(9);
+    } else if (arg === '--input') {
+      // Handle space-separated form: --input <path>
+      if (i + 1 < args.length) {
+        options.input = args[++i];
+      }
+    } else if (arg === '--output') {
+      // Handle space-separated form: --output <path>
+      if (i + 1 < args.length) {
+        options.output = args[++i];
+      }
     } else if (arg.startsWith('--')) {
       // Handle other flags
     } else {
@@ -465,8 +489,9 @@ export {
 // RUN MAIN
 // ============================================================================
 
-const isMainModule = process.argv[1]?.includes('extract-dominant-color-from-image.js') ||
-                     import.meta.url.includes('extract-dominant-color-from-image.js');
+// Determine if this module was run directly (not imported)
+// Using process.argv[1] which contains the entry point script path
+const isMainModule = process.argv[1]?.includes('extract-dominant-color-from-image.js');
 
 if (isMainModule) {
   main().catch(console.error);

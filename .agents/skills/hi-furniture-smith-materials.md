@@ -18,7 +18,23 @@ The process retrieves the `HiPlanContext` object and extracts all "Text" type at
 
 ## Prerequisites
 
-1. **HiPlanContext JSON** — The file `docs/library-information/hi-plan-context.json` must exist (generated via the `get-plan-context` MCP tool)
+1. **HiPlanContext JSON** — The file `docs/library-information/hi-plan-context.json` must exist. Generate it using the process described in [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md#step-3-fetch-hiplancontext-json):
+   ```bash
+   curl -s -X POST http://localhost:3100/mcp \
+     -H "Content-Type: application/json" \
+     -H "Accept: application/json, text/event-stream" \
+     -d '{
+       "jsonrpc":"2.0",
+       "id":1,
+       "method":"tools/call",
+       "params":{
+         "name":"get-plan-context",
+         "arguments":{
+           "include":["masterData","rooms","articles","groups"]
+         }
+       }
+     }' | jq -r '.result.content[0].text' > docs/library-information/hi-plan-context.json
+   ```
 
 2. **Node.js 18+** — Required for color extraction
 
@@ -352,11 +368,11 @@ When planning with HI MCP, use the material values (e.g., "190" for Sunny white)
 
 ## Related Files
 
-- `docs/library-information/hi-plan-context.json` — Source HiPlanContext data
-- `docs/library-information/materials.md` — Generated materials table with **accurately calculated** colors
+- `docs/library-information/hi-plan-context.json` — Source HiPlanContext data (generated using [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md))
+- `docs/library-information/materials.md` — Generated materials table with **accurately calculated** colors and suggested descriptions
 - `.agents/scripts/extract-dominant-color-from-image.js` — JavaScript color extraction script (uses Sharp)
 - `.agents/scripts/package.json` — Dependencies for the color extraction script
-- `.agents/skills/hi-furniture-smith-article-catalog.md` — Article catalog generation skill
+- `.agents/skills/hi-furniture-smith-article-catalog.md` — Article catalog generation skill (describes how to create hi-plan-context.json)
 - `.agents/skills/hi-furniture-smith-materials.md` — This skill document
 
 ---

@@ -1,20 +1,21 @@
 # HI Presets Example & MCP Server — Reference
 
-The complete documentation of this repository: the standalone HI presets
-example ([`index.html`](../index.html)) and the [MCP](https://modelcontextprotocol.io/)
-server ([`hi-mcp-server.js`](../hi-mcp-server.js)) that lets an AI agent
-orchestrate HOMAG Intelligence (HI) object groups in a live planning session.
-The agent retrieves the plan context (master data, rooms, articles, existing
-groups) and creates or modifies HI object groups — without computing
-root-module positions itself.
+The complete documentation of this directory: the standalone HI presets
+example ([`index.html`](../index.html)) and the start launcher
+([`start.mjs`](../start.mjs)) that serves it and starts the repository's single
+MCP server implementation, [`hi-mcp/hi-mcp-poc-json`](../../../hi-mcp/hi-mcp-poc-json/),
+so an AI agent can orchestrate HOMAG Intelligence (HI) object groups in a live
+planning session. The agent retrieves the plan context (master data, rooms,
+articles, existing groups) and creates or modifies HI object groups — without
+computing root-module positions itself.
 
-It is a standalone, zero-dependency variant of the roomle-ui repository's
-`packages/embedding-lib/examples/hi-mcp-server/` PoC
-([RML-17693](https://roomle.atlassian.net/browse/RML-17693)): the MCP
-protocol layer (JSON-RPC over Streamable HTTP) is hand-rolled instead of
-using `@modelcontextprotocol/sdk`, and the page bridge uses SSE + `fetch`
-instead of a WebSocket, so nothing needs `npm install`, TypeScript, or a
-build.
+The MCP server is the TypeScript implementation from
+`hi-mcp/hi-mcp-poc-json` (the copy of the roomle-ui PoC
+[RML-17693](https://roomle.atlassian.net/browse/RML-17693)): the MCP protocol
+layer is `@modelcontextprotocol/sdk` with zod tool schemas, and the page bridge
+is a WebSocket. It is used as-is; the launcher only wires environment
+variables. The same server also serves the INT-stage ligna-store as its client,
+and it is the one deployed to Azure and Cloudflare.
 
 The server is **agent-agnostic**: it contains no client-specific code. Any
 MCP client with Streamable HTTP transport support can connect (Claude Code,
@@ -22,7 +23,7 @@ the Claude desktop app, Cursor, VS Code Copilot agent mode, Gemini CLI,
 custom clients built with an MCP SDK).
 
 For the shortest path to a first successful tool call, see the
-[README](../README.md) in the repository root.
+[README](../README.md) in this directory.
 
 ## The example
 
@@ -43,6 +44,7 @@ parameters:
 | Parameter | Effect |
 | --------- | ------ |
 | `mcp=true` | Enables the MCP browser bridge (without it the example behaves as a plain demo) |
+| `mcp_port` | The MCP server port the bridge connects to (default 3100; the launcher appends it when `HI_MCP_PORT` is set) |
 | `backendId` | Selects the HI backend |
 | `library_id` | Overrides the preset's library |
 | `plan_id` | Selects the plan loaded at startup |
@@ -64,47 +66,52 @@ demo; it must not be reused as a production credential.
 
 ```text
 AI agent (any MCP client) --Streamable HTTP--> http://localhost:3100/mcp
-                                               hi-mcp-server.js (one Node process, zero deps)
-                                               |  SSE /bridge + POST /bridge/result
+                                               hi-mcp/hi-mcp-poc-json server.ts (vite-node)
+                                               |  WebSocket /bridge
                                                v
-                                   the example page (index.html, served by the same process)
+                                   the example page (index.html, served by the launcher on :3000)
                                    executes tools against roomDesignerApi.extended
 ```
 
-One process on port 3100 does everything: it serves `index.html`, hosts the
-MCP endpoint `/mcp`, and hosts the page bridge. The page cannot listen on a
-port, so it connects **outward** to the server: it receives tool calls over a
-server-sent-events stream (`GET /bridge`) and posts each result back
-(`POST /bridge/result`). Tool calls run in the page against
+Two processes started by one launcher: `start.mjs` serves `index.html` on
+port 3000 and spawns the MCP server (`hi-mcp/hi-mcp-poc-json/server.ts`) on
+port 3100, pointing its "no page connected" error at the example URL
+(`HI_MCP_STORE_URL`). Port 3000 is the server's default WebSocket origin
+allow-list entry, so no extra configuration is needed. The page cannot listen
+on a port, so it connects **outward** to the server: it opens a WebSocket
+(`ws://localhost:3100/bridge`), receives tool calls over it, and sends each
+result back over the same socket. Tool calls run in the page against
 `roomDesignerApi.extended`.
 
 | File | Responsibility |
 | ---- | -------------- |
-| `hi-mcp-server.js` | HTTP server on :3100: static files, `/mcp` (JSON-RPC: initialize, tools/list, tools/call), the SSE page bridge, call correlation and timeouts, tool definitions with JSON-Schema inputs, server instructions and authoring rules, browser auto-open |
-| `index.html` | The example itself, plus the MCP section at the end: the SSE browser bridge, the tool executors (tool name → `roomDesignerApi.extended` call + context shaping), and the placement geometry (wall derivation, group footprints, wall placement) |
-| `package.json` | Only the `start` script — there are no dependencies |
+| `start.mjs` | The launcher: build gate (`npm install` + typecheck of the `hi-mcp` workspace), static file server for this directory on :3000, spawns the MCP server with `HI_MCP_STORE_URL` set, opens the browser |
+| `hi-mcp/hi-mcp-poc-json/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), the WebSocket page bridge, call correlation and timeouts, tool definitions with zod schemas, server instructions and authoring rules — unchanged, shared with the ligna-store client and the cloud deployments |
+| `index.html` | The example itself, plus the MCP section at the end: the WebSocket browser bridge, the tool executors (tool name → `roomDesignerApi.extended` call + context shaping), and the placement geometry (wall derivation, group footprints, wall placement) |
+| `package.json` | Only the `start` script that runs the launcher |
 
 ## Prerequisites
 
-- Node 18+ (`npm install` is **not** needed)
+- Node 20+ (the first start installs the `hi-mcp` workspace and typechecks the server)
 
 ## Running
 
 ```bash
-npm start          # or directly: node hi-mcp-server.js
+npm start          # or directly: node start.mjs
 ```
 
-The server prints its URLs when ready and opens the example in the default
-browser at `http://localhost:3100/?mcp=true` (pass `--no-open` to skip that).
-It reports an occupied port with the command to free it instead of a bare
-stack trace.
+The launcher installs and typechecks the `hi-mcp` workspace (the build gate),
+serves the example, starts the MCP server, and opens the example in the
+default browser at `http://localhost:3000/?mcp=true` (pass `--no-open` to
+skip that). If port 3000 is taken (the ligna-store dev server uses it too),
+start with another page port: `EXAMPLE_PORT=3101 npm start`.
 
 Select a preset (or enter a library id) in the top bar and keep the tab
 open — the server terminal logs `page connected`.
 
-Without the MCP part the repository can still be served by any static file
+Without the MCP part the example can still be served by any static file
 server (e.g. `npx http-server -c-1 -p 39485`); only the `mcp=true` bridge
-requires the page to be served by `hi-mcp-server.js`.
+requires the MCP server started by the launcher.
 
 ## Connecting an MCP client
 
@@ -558,7 +565,7 @@ operations:
 
 | Symptom | Cause / fix |
 | ------- | ----------- |
-| Tool error `No HI example page connected` | Open `http://localhost:3100/?mcp=true` and keep the tab open |
+| Tool error `No HI page connected` | Open `http://localhost:3000/?mcp=true` (the URL the error names) and keep the tab open |
 | Tool error `... is not a function` | The page targets a Rubens UI whose web-sdk does not contain the plan-context APIs — override `server_url` to a deployment (or local UI dev server) that does |
 | Port 3100 already in use | The server names the fix itself (`lsof -ti tcp:3100 \| xargs kill`) |
 | Several example tabs open | The most recently connected tab receives the tool calls; close the others |

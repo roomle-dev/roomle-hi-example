@@ -15,7 +15,7 @@ This file provides GitHub Copilot-specific context and guidance for the roomle-h
 roomle-hi-example provides:
 
 1. **HI Presets Example Page** (`index.html`) — Demonstrates HOMAG Intelligence (HI) room planning with preset configurations in a browser
-2. **MCP Server** (`minimal-hi-example/hi-mcp-server.js`) — Zero-dependency Node.js HTTP server providing Model Context Protocol tools for AI agents
+2. **MCP Server** (`hi-mcp/hi-mcp-poc-json`) — TypeScript Node.js MCP server (started together with the example page by `minimal-hi-example/start.mjs`) providing Model Context Protocol tools for AI agents
 
 The MCP server enables AI assistants (Claude, Copilot, etc.) to:
 - Query plan state (rooms, walls, articles, groups)
@@ -38,24 +38,24 @@ HOMAG Intelligence is a system for kitchen cabinet management, price calculation
 ### MCP (Model Context Protocol)
 
 MCP is a standard protocol for AI agents to interact with tools and resources. This server implements:
-- **Streamable HTTP transport** — JSON-RPC over HTTP POST
-- **SSE Bridge** — Server-Sent Events for connecting to the browser page
+- **Streamable HTTP transport** — MCP SDK, JSON responses over HTTP POST
+- **WebSocket Bridge** — WebSocket connection to the browser page
 - **Tool execution** — Relaying MCP tool calls to the Roomle planner API
 
-### Zero-Dependency Philosophy
+### Server Stack
 
-The server uses only Node.js built-in modules. No npm packages required. This ensures:
-- Easy deployment anywhere Node.js runs
-- No dependency conflicts
-- Minimal security surface area
+The MCP server is the TypeScript workspace package `hi-mcp/hi-mcp-poc-json` (`@modelcontextprotocol/sdk`, `ws`, `zod`, run via `vite-node`). This ensures:
+- SDK protocol compliance and zod-validated tool schemas
+- Unit-tested server and client code (vitest at the `hi-mcp` root)
+- One implementation shared with the ligna-store client and the cloud deployments
 - Fast startup
 
 ## Workflow Patterns
 
 ### For AI Agents Using the MCP Server
 
-1. **Start the server**: `npm start` or `node minimal-hi-example/hi-mcp-server.js`
-2. **Open the page**: Browser opens to `http://localhost:3100/?mcp=true`
+1. **Start the server**: `npm start` (installs and typechecks the `hi-mcp` workspace on first run, serves the example page on :3000, starts the MCP server on :3100)
+2. **Open the page**: Browser opens to `http://localhost:3000/?mcp=true`
 3. **Connect MCP client** (see below for client-specific instructions)
 4. **Call tools** to interact with the Roomle planner
 
@@ -72,7 +72,7 @@ The server uses only Node.js built-in modules. No npm packages required. This en
 
 ### Available MCP Tools
 
-All tools are defined in `minimal-hi-example/hi-mcp-server.js` and documented in:
+All tools are defined in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` and documented in:
 - [`.agents/skills/hi-mcp-tools.md`](../.agents/skills/hi-mcp-tools.md) — Complete tool reference
 - [`minimal-hi-example/docs/hi-mcp-server.md`](../minimal-hi-example/docs/hi-mcp-server.md) — User-facing documentation
 
@@ -132,7 +132,7 @@ Load these skills when the task matches their domain:
 
 | Skill | Load When |
 |---|---|
-| [hi-mcp-server.md](../.agents/skills/hi-mcp-server.md) | MCP server architecture, protocol handling, SSE bridge |
+| [hi-mcp-server.md](../.agents/skills/hi-mcp-server.md) | MCP server architecture, protocol handling, WebSocket bridge |
 | [hi-authoring-rules.md](../.agents/skills/hi-authoring-rules.md) | HI authoring, docking patterns, group creation |
 | [hi-mcp-tools.md](../.agents/skills/hi-mcp-tools.md) | Using MCP tools, tool parameters, examples |
 | [roomle-hi-concepts.md](../.agents/skills/roomle-hi-concepts.md) | HI data model, rooms, walls, articles, groups |
@@ -151,7 +151,7 @@ Load these skills when the task matches their domain:
 - **Variables**: camelCase (`planContext`, `dockingVector`)
 - **Constants**: UPPER_SNAKE_CASE (`PORT`, `DEFAULT_CALL_TIMEOUT_MS`)
 - **Functions**: camelCase (`getPlanContext`, `createOrReplaceGroups`)
-- **Files**: kebab-case (`minimal-hi-example/hi-mcp-server.js`, `minimal-hi-example/docs/hi-mcp-server.md`)
+- **Files**: kebab-case (`minimal-hi-example/start.mjs`, `minimal-hi-example/docs/hi-mcp-server.md`)
 
 ### Comments
 
@@ -247,7 +247,7 @@ step.
 
 ## Common Pitfalls
 
-1. **SSE Connection Leaks** — Always clean up SSE connections on error
+1. **Bridge Reconnects** — The page reconnects its WebSocket every 3 s; no state to clean up in the server
 2. **Timeout Values** — Use appropriate timeouts (30s default, 120s for snapshots)
 3. **Error Propagation** — Relay errors from the page back to MCP client
 4. **State Management** — Track bridge connection state carefully
@@ -269,32 +269,29 @@ For automated testing of the example page, use browser DevTools:
 ## Performance Considerations
 
 - **MCP Call Timeouts**: Default 30s, use 120s for snapshot generation
-- **SSE Overhead**: Bridge communication has network overhead
+- **Bridge**: WebSocket with auto-reconnect
 - **Large Plans**: Handle large plan contexts efficiently
 - **Image Generation**: Can be expensive — use with appropriate timeouts
-- **Memory**: Server should remain lightweight (zero dependencies helps)
+- **Memory**: Server should remain lightweight
 
 ## Quick Reference
 
 ### Server Commands
 
 ```bash
-npm start                    # Start server and open browser
-node minimal-hi-example/hi-mcp-server.js       # Start server only
+npm start                    # Start the example page and the MCP server
 ```
 
 ### Port Configuration
 
-- **Default**: 3100
-- **Change**: Set `PORT` environment variable
+- **MCP server**: 3100 — change with `HI_MCP_PORT`
+- **Example page**: 3000 — change with `EXAMPLE_PORT`
 
 ### URLs
 
-- **Server**: `http://localhost:3100/`
 - **MCP Endpoint**: `http://localhost:3100/mcp`
-- **SSE Bridge**: `http://localhost:3100/bridge`
-- **Example Page**: `http://localhost:3100/index.html`
-- **With MCP flag**: `http://localhost:3100/?mcp=true`
+- **WebSocket Bridge**: `ws://localhost:3100/bridge`
+- **Example Page**: `http://localhost:3000/?mcp=true`
 
 ## Pull Request Resolution
 

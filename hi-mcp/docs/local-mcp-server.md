@@ -6,10 +6,9 @@ variant ([Azure deployment](../../.agents/feature-analysis/mcp-azure-deployment-
 The server relays tool calls of any connected AI agent into a connected ligna-store page (local or
 deployed), where they execute against the planner.
 
-> Note: [`minimal-hi-example/docs/hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md) in the repository root documents the
-> older, zero-dependency variant (`minimal-hi-example/hi-mcp-server.js`, SSE bridge, hi-presets example
-> page). This document covers the TypeScript workspace server in `hi-mcp/hi-mcp-poc-json/`
-> (WebSocket bridge, ligna-store client). Tool reference and authoring rules for both live in the
+> Note: [`minimal-hi-example/docs/hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md) documents the standalone HI presets
+> example, which uses this same server (started by `minimal-hi-example/start.mjs`) as its client.
+> Tool reference and authoring rules live in the
 > [PoC README](../hi-mcp-poc-json/README.md).
 
 ## Prerequisites

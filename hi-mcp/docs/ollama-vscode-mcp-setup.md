@@ -80,7 +80,7 @@ VS Code Copilot manages MCP connections natively using its user configuration.
 configuration file of the GitHub Copilot **CLI** — VS Code does not read it. In VS Code, use
 the `servers` configuration above.
 
-**Note:** If you're running a local HI MCP server (e.g., `node minimal-hi-example/hi-mcp-server.js`), use:
+**Note:** If you're running a local HI MCP server (e.g. `npm start` in `minimal-hi-example`), use:
 ```json
 {
   "servers": {
@@ -109,7 +109,7 @@ the `servers` configuration above.
 2. Verify that **`hi-orchestrator`** is listed under attached tools
 3. Open the HI page the tools operate on and keep it open — the server is only a relay, every tool call executes in the connected browser page:
    - Cloud server: open the Roomle store with the `mcp_server` parameter, e.g. `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev` (see [Connecting an agent to the cloud MCP server](connect-agent-to-cloud-mcp.md))
-   - Local server: open `http://localhost:3100/?mcp=true` (the server opens this page automatically on startup)
+   - Local server: open `http://localhost:3000/?mcp=true` (started with `npm start` in the repository root, which opens this page automatically)
 4. Enter your kitchen planning prompt—VS Code Copilot will route the inference directly to your local Ollama model while calling HI-specific functions on your MCP server!
 
 ---
@@ -139,7 +139,7 @@ If Ollama doesn't appear in the model picker:
 
 If `hi-orchestrator` doesn't appear under attached tools:
 1. Verify the server URL is correct in your MCP configuration
-2. Ensure the server is running — for local servers, watch the startup log in the terminal running `hi-mcp-server.js`, or probe with `curl -i -X POST http://localhost:3100/mcp` (the `/mcp` endpoint accepts POST only and answers a plain GET with 405)
+2. Ensure the server is running — for local servers, watch the startup log in the terminal running the launcher or the server, or probe with `curl -i -X POST http://localhost:3100/mcp` (the `/mcp` endpoint accepts POST only and answers a plain GET with 404)
 3. Restart VS Code
 4. Check the Copilot Chat output for connection errors
 
@@ -147,7 +147,7 @@ If `hi-orchestrator` doesn't appear under attached tools:
 
 If tool calls to the HI MCP server fail:
 1. Verify the server is accessible from your network
-2. Check that the HI page is open in your browser — tool calls execute in the connected page for both server variants: the local server via its SSE bridge (`http://localhost:3100/?mcp=true`), the cloud server via the store page opened with the `mcp_server` parameter
+2. Check that the HI page is open in your browser — tool calls execute in the connected page: the local server via the WebSocket bridge (the example page at `http://localhost:3000/?mcp=true`, or the store with `store.stage=INT`), the cloud server via the store page opened with the `mcp_server` parameter
 3. Ensure you have the correct permissions and session state
 
 ---
@@ -157,8 +157,8 @@ If tool calls to the HI MCP server fail:
 Instead of using the Cloudflare-hosted `hi-orchestrator`, you can run the MCP server locally:
 
 ```bash
-# Start the local HI MCP server
-node minimal-hi-example/hi-mcp-server.js
+# Start the local HI MCP server (example page + server)
+npm start          # from the repository root
 ```
 
 Then configure VS Code to use the local endpoint:

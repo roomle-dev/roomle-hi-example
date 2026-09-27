@@ -1,214 +1,128 @@
 # HI MCP Server Skill
 
-**Load this skill when the task involves:** MCP server architecture, HTTP handling, SSE bridge, Model Context Protocol implementation, tool registration, or server-side logic in `minimal-hi-example/hi-mcp-server.js`.
+**Load this skill when the task involves:** MCP server architecture, HTTP handling, the WebSocket bridge, Model Context Protocol implementation, tool registration, or server-side logic in `minimal-hi-example` / `hi-mcp/hi-mcp-poc-json`.
 
 ## Overview
 
-The HI MCP Server is a zero-dependency Node.js server that implements the Model Context Protocol (MCP) to enable AI agents to orchestrate HOMAG Intelligence (HI) object groups in live Roomle room-planner sessions.
+The HI MCP Server lets AI agents orchestrate HOMAG Intelligence (HI) object groups in live Roomle room-planner sessions. There is **one MCP server implementation** in this repository: the TypeScript server in `hi-mcp/hi-mcp-poc-json` (`@modelcontextprotocol/sdk` + `ws` + zod, run via `vite-node`). The former zero-dependency variant in `minimal-hi-example` was removed; its start UX lives on in the launcher `minimal-hi-example/start.mjs`.
+
+Clients of the same server: the standalone HI presets example (`minimal-hi-example/index.html`, started by the launcher) and the INT-stage ligna-store (its page-side bridge is `hi-mcp/hi-mcp-poc-json-client/`).
 
 ### Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  HI MCP Server (Node.js)                   │
-│                                                             │
+│              start.mjs launcher (port 3000)              │
+│  - build gate: npm install + typecheck of hi-mcp         │
+│  - serves minimal-hi-example/ (the example page)         │
+│  - spawns the MCP server, opens the browser              │
+└────────────────────────┬────────────────────────────────┘
+                         │ spawn
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│        hi-mcp/hi-mcp-poc-json server.ts (port 3100)       │
+│                                                          │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐  │
-│  │  HTTP Server │    │   MCP Layer  │    │  SSE Bridge  │  │
-│  │   (port 3100)│    │ (JSON-RPC)   │    │   (SSE+fetch)│  │
-│  └──────┬───────┘    └──────┬───────┘    └──────┬───────┘  │
-│         │                   │                   │          │
-│         ▼                   ▼                   ▼          │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │                  Tool Execution                        │  │
-│  │  - get-plan-context                                  │  │
-│  │  - create-or-replace-groups                          │  │
-│  │  - place-group                                       │  │
-│  │  - get-price                                         │  │
-│  │  - get-order-data                                    │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                                                         │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │                  Bridge to Browser                    │  │
-│  │  Relay tool calls to roomDesignerApi.extended        │  │
-│  └─────────────────────────────────────────────────────┘  │
+│  │  HTTP Server │    │   MCP Layer  │    │  WS Bridge  │  │
+│  │ POST /mcp only│   │ (MCP SDK,    │    │ (ws,        │  │
+│  │              │    │  zod tools)  │    │  /bridge)   │  │
+│  └─────────────┘    └─────────────┘    └─────────────┘  │
 └─────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-                     ┌─────────────────┐
-                     │  Browser Page    │
-                     │  (minimal-hi-example/index.html)    │
-                     │  roomDesignerApi │
-                     └─────────────────┘
+                         │  WebSocket
+                         ▼
+              ┌──────────────────────┐
+              │  Example page (index.html, :3000)  │
+              │  roomDesignerApi.extended          │
+              └──────────────────────┘
 ```
 
 ### Key Components
 
-#### 1. HTTP Server (`createServer`)
-- **Port**: 3100 (configurable via `PORT` constant)
-- **Static serving**: Serves `minimal-hi-example/index.html` and other static files
-- **Routes**:
-  - `GET /` — Serves minimal-hi-example/index.html
-  - `POST /mcp` — MCP endpoint (Streamable HTTP)
-  - `GET /bridge` — SSE endpoint for page bridge
-  - `POST /bridge/result` — Result endpoint for page bridge
+#### 1. Launcher (`minimal-hi-example/start.mjs`)
+- **Build gate**: installs the `hi-mcp` workspace when `node_modules` is missing and runs the typecheck (`npm run typecheck` at the `hi-mcp` root) before anything starts.
+- **Static serving**: serves `minimal-hi-example/` on port 3000 (configurable via `EXAMPLE_PORT`) — the port in the server's default WebSocket origin allow-list, so no extra configuration is needed.
+- **Server spawn**: `npm start --workspace hi-mcp-poc-json` in the `hi-mcp` root, with `HI_MCP_STORE_URL` pointing the "no page connected" error at the example URL.
+- **Browser auto-open**, skipped with `--no-open`.
+- Exits when the MCP server exits; SIGINT/SIGTERM kill the child and exit.
 
-#### 2. MCP Protocol Layer
-- **Protocol**: JSON-RPC over HTTP with Streamable HTTP support
-- **Versions**: Supports `2025-06-18`, `2025-03-26`, `2024-11-05`
-- **Transport**: Hand-rolled implementation (no external dependencies)
-- **Capabilities**: Tools, Resources, Prompts
+#### 2. MCP server (`hi-mcp/hi-mcp-poc-json/server.ts`)
+- **Port**: 3100 (`HI_MCP_PORT` / `PORT` env)
+- **Routes**: `POST /mcp` (Streamable HTTP, JSON response mode, stateless — a new `McpServer` + transport per request); everything else is 404
+- **Protocol**: `@modelcontextprotocol/sdk`, tools registered with zod schemas in `hi-mcp-server.ts`
+- **Origin allow-list**: `HI_MCP_PAGE_ORIGINS` (default: `http://localhost:3000`, `http://127.0.0.1:3000`, `https://www.roomle.com`)
+- **Env**: `HI_MCP_PORT`, `HOST`, `HI_MCP_PAGE_ORIGINS`, `HI_MCP_STORE_URL`, `HI_MCP_TLS_CERT`/`HI_MCP_TLS_KEY` (optional TLS)
+- Orphan guard: shuts down with the dev script when its stdin pipe ends
 
-#### 3. SSE Bridge
-- **Technology**: Server-Sent Events (SSE) + fetch
-- **Purpose**: Connect MCP server to browser page context
-- **Flow**:
-  1. Page opens with `?mcp=true` parameter
-  2. Server establishes SSE connection to page
-  3. MCP tool calls are relayed to page via SSE
-  4. Page executes calls against `roomDesignerApi.extended`
-  5. Results returned via fetch to `/bridge/result`
+#### 3. WebSocket bridge
+- `GET ws://…/bridge` (WebSocket upgrade, origin-checked) connects the page
+- The page sends `{kind:'hello', example, url}`; the server relays `{kind:'call', id, tool, args}` and the page answers `{kind:'result', id, ok, result|error}` (`types.ts`)
+- The server correlates calls by id, with timeouts (30 s default, 120 s snapshot calls) and a single-page policy: a newer connection replaces the previous one
+
+### Bridge — page side (minimal-hi-example/index.html)
+
+- Active only with the `mcp=true` query parameter
+- Connects a `WebSocket` to `ws://localhost:3100/bridge`, reconnects every 3 s on close
+- Executes tool calls against `roomDesignerApi.extended` via the inline tool executors, sends results back over the socket
+
+The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (browser-bridge, tool-executors, plan-space) — no automatic sync, copy after changes.
 
 ## Server Lifecycle
 
-### Startup Sequence
-
-1. Parse command line arguments
-2. Create HTTP server
-3. Set up MCP state (connected clients, page connections, timeouts)
-4. Define tools in `TOOLS` array
-5. Start listening on port 3100
-6. Open browser (unless `--no-open` flag is set)
-
-### Request Handling
-
-All requests are routed through a central handler:
-- Static files served from the server directory
-- MCP requests handled via JSON-RPC protocol
-- SSE bridge connections managed separately
-
-## MCP Implementation Details
-
-### Protocol Version Negotiation
-
-The server supports multiple MCP protocol versions and negotiates with the client.
-
-### Tool Registration
-
-Tools are defined with:
-- Name
-- Description
-- Input schema
-- Handler function
-
-### MCP Request Types
-
-1. **Initialize** - Establish session, get server capabilities
-2. **Tools/List** - Get available tools
-3. **Tools/Call** - Execute a tool
-4. **Resources/List** - List available resources
-5. **Resources/Read** - Read resource content
-
-### Error Handling
-
-All errors returned in MCP-compatible format with proper error codes.
-
-## SSE Bridge Implementation
-
-### Connection Flow
-
-The bridge connects MCP server to browser page:
-1. Page opens with `?mcp=true`
-2. Server establishes SSE connection
-3. Tool calls relayed to page via SSE
-4. Page executes against `roomDesignerApi.extended`
-5. Results returned via fetch
-
-### Server-Side
-
-- Manages page connections with cleanup
-- Validates bridge messages
-- Relays tool calls and results
-
-### Client-Side (minimal-hi-example/index.html)
-
-- Establishes SSE connection when `?mcp=true`
-- Executes tool calls against `roomDesignerApi.extended`
-- Returns results via fetch to `/bridge/result`
+1. Launcher: build gate (install + typecheck)
+2. Launcher: static server listens on :3000
+3. Launcher: spawns the MCP server (vite-node server.ts) with env vars
+4. Server listens on :3100 and waits for a page
+5. Launcher opens the browser at the example URL (unless `--no-open`)
+6. Page with `mcp=true` connects via WebSocket; server logs `page connected`
 
 ## Tool Execution Flow
 
-1. MCP Client sends tool/call request
-2. Server validates request
-3. Server sends tool call to page via SSE
-4. Page executes tool via `roomDesignerApi.extended`
-5. Page returns result via fetch
-6. Server forwards result to MCP client
+1. MCP Client sends tools/call to `POST /mcp`
+2. SDK validates against the zod schema
+3. Server sends the call over the page WebSocket
+4. Page executes the tool via `roomDesignerApi.extended`
+5. Page sends the result back over the socket
+6. Server forwards the result to the MCP client
 
 ## Timeouts and Error Handling
 
 - Default timeout: 30 seconds
-- Snapshot calls: 2 minutes (120 seconds)
-- Proper error codes for all scenarios
-- Comprehensive logging
+- Snapshot calls (`create-or-replace-groups`, `place-group`, `get-order-data`, `get-plan-images`): 120 seconds
+- No page connected: error names the client URL (`HI_MCP_STORE_URL`)
+- Unit tests: `npm test` at the `hi-mcp` root (vitest)
 
-## Static File Serving
+## Adding New Tools
 
-Serves static files from server directory with proper content types.
+1. Register the tool in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` (zod schema, handler)
+2. Implement the executor in the page: `mcpToolExecutors` in `minimal-hi-example/index.html` **and** `hi-mcp/hi-mcp-poc-json-client/tool-executors.ts` (then copy to the ligna-store)
+3. Update documentation (`minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`)
+4. Add/extend unit tests in the matching `tests/` folder
+5. `npm test` + `npm run typecheck` at the `hi-mcp` root
 
-## Command Line Interface
+## Modifying Existing Tools
 
-```bash
-# Start server and open browser
-node minimal-hi-example/hi-mcp-server.js
-
-# Start server without opening browser
-node minimal-hi-example/hi-mcp-server.js --no-open
-```
-
-## Browser Integration
-
-The `minimal-hi-example/index.html` page:
-- Loads Roomle planner/editor
-- Exposes `roomDesignerApi.extended` globally
-- Sets up MCP bridge when `?mcp=true` is in URL
-- Provides preset configurations
-
-## Performance Considerations
-
-- Memory usage per page connection
-- CPU usage for image generation and snapshots
-- Connection limits (currently unlimited)
-
-## Development Guidelines
-
-### Adding New Tools
-
-1. Define tool in `TOOLS` array
-2. Implement handler with error handling
-3. Add JSDoc documentation
-4. Update documentation
-5. Test thoroughly
-
-### Modifying Existing Tools
-
-1. Understand current behavior
-2. Maintain backward compatibility
-3. Update schema if needed
+1. Understand current behavior; the tool layer is shared with the store client
+2. Maintain backward compatibility; update the zod schema if needed
+3. Apply the change on both page sides (example inline executors, client TS copy)
 4. Test with existing clients
 
 ## Common Issues and Solutions
 
 | Issue | Solution |
 |---|---|
-| Page not connecting | Ensure `?mcp=true` parameter |
-| Tools timing out | Check if expensive operation, increase timeout |
-| Invalid parameters | Validate against schema |
-| CORS errors | Verify headers and client configuration |
+| Page not connecting | Open `http://localhost:3000/?mcp=true` and keep the tab open |
+| Port 3000 in use | `EXAMPLE_PORT=3101 npm start` (then set `HI_MCP_PAGE_ORIGINS` for the chosen origin) |
+| Port 3100 in use | The server names the fix (`lsof -ti tcp:3100 \| xargs kill`) |
+| Tools timing out | Expensive operation — check the snapshot timeout class of the tool |
+| Invalid parameters | Validated against the zod schema by the SDK |
+| First start is slow | Build gate: workspace install + typecheck run first |
 
 ## Useful Commands
 
 ```bash
-npm start
-npm start -- --no-open
-PORT=4000 node minimal-hi-example/hi-mcp-server.js
+npm start                          # from the repository root: page + MCP server
+node minimal-hi-example/start.mjs --no-open   # same, without opening a browser
+EXAMPLE_PORT=3101 npm start         # other page port
+cd hi-mcp && npm test               # unit tests
+cd hi-mcp && npm run typecheck      # typecheck used by the build gate
 ```

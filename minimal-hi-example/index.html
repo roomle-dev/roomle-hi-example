@@ -919,9 +919,9 @@
         });
 
       // MCP bridge - active only with the mcp=true query parameter. The page
-      // connects out to the MCP server in hi-mcp-server.js (which also serves
-      // this file) via SSE, executes relayed tool calls against
-      // roomDesignerApi.extended, and posts the results back.
+      // connects out via WebSocket to the MCP server in
+      // hi-mcp/hi-mcp-poc-json (started by start.mjs), executes relayed tool
+      // calls against roomDesignerApi.extended, and sends the results back.
 
       // + 0 turns IEEE -0 into +0 so serialized values never show -0
       const round2 = (value) => Math.round(value * 100) / 100 + 0;
@@ -2424,18 +2424,22 @@
       };
 
       const startMcpBrowserBridge = (api) => {
-        const bridgeUrl = `/bridge?url=${encodeURIComponent(window.location.href)}`;
-        const reply = (result) =>
-          fetch('/bridge/result', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(result),
-          }).catch((error) => console.error('[hi-mcp] reply failed', error));
+        const mcpPort = getQueryParam('mcp_port') ?? '3100';
+        const bridgeUrl = `ws://localhost:${mcpPort}/bridge`;
+        const reply = (socket, result) => socket.send(JSON.stringify(result));
         const connect = () => {
-          const source = new EventSource(bridgeUrl);
-          source.onopen = () =>
+          const socket = new WebSocket(bridgeUrl);
+          socket.onopen = () => {
             logMessage('MCP', 'connected to the MCP server');
-          source.onmessage = async (event) => {
+            socket.send(
+              JSON.stringify({
+                kind: 'hello',
+                example: 'minimal-hi-example',
+                url: window.location.href,
+              }),
+            );
+          };
+          socket.onmessage = async (event) => {
             let message;
             try {
               message = JSON.parse(event.data);
@@ -2447,7 +2451,7 @@
             }
             const executor = mcpToolExecutors[message.tool];
             if (!executor) {
-              reply({
+              reply(socket, {
                 kind: 'result',
                 id: message.id,
                 ok: false,
@@ -2458,10 +2462,10 @@
             logApiCall(`MCP ${message.tool}`);
             try {
               const result = await executor(api, message.args);
-              reply({ kind: 'result', id: message.id, ok: true, result });
+              reply(socket, { kind: 'result', id: message.id, ok: true, result });
             } catch (error) {
               console.error('[hi-mcp] tool failed', message.tool, error);
-              reply({
+              reply(socket, {
                 kind: 'result',
                 id: message.id,
                 ok: false,
@@ -2469,13 +2473,8 @@
               });
             }
           };
-          // EventSource reconnects on its own; only a closed source (the
-          // server was gone) needs a manual restart
-          source.onerror = () => {
-            if (source.readyState === EventSource.CLOSED) {
-              source.close();
-              setTimeout(connect, 3000);
-            }
+          socket.onclose = () => {
+            setTimeout(connect, 3000);
           };
         };
         connect();

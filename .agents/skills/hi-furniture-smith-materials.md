@@ -132,7 +132,7 @@ The generation process is described in [hi-furniture-smith-materials.md](../../.
 
 ## Materials
 
-| Name | Value | Description | Thumbnail |
+| Name | Value | Thumbnail | Description |
 |---|---|---|---|
 '''.replace('EXPIRY_DATE', expiry)
 
@@ -143,7 +143,7 @@ with open('docs/library-information/materials.md', 'w') as f:
         selection = materials[value]
         name = selection['name']
         thumbnail = f"![{name}]({selection['imageUrl']})" if selection.get('imageUrl') else ''
-        f.write(f"| {name} | {value} | {selection.get('desc', '')} | {thumbnail} |\n")
+        f.write(f"| {name} | {value} | {thumbnail} | {selection.get('desc', '')} |\n")
 
 print(f'Generated materials.md with {len(materials)} materials')
 PYEOF
@@ -216,16 +216,16 @@ The generated table has 4 columns:
 - **Description:** Numeric code identifier for the material
 - **Sorting:** Materials are sorted ascending by this numeric value
 
-### 3. Description
+### 3. Thumbnail
+- **Source:** `selection.imageUrl` from each attribute's selections array
+- **Type:** Markdown image of the signed `imageUrl`
+- **Description:** Swatch the planner shows for the material; valid until the signature expires (see [Thumbnails](#thumbnails))
+
+### 4. Description
 - **Source:** `selection.desc` from each attribute's selections array
 - **Type:** String
 - **Example:** `"Sunny white"`, `"Concrete"` (for Furniture_Smith every material's desc equals its name)
 - **Description:** The description the library gives the material
-
-### 4. Thumbnail
-- **Source:** `selection.imageUrl` from each attribute's selections array
-- **Type:** Markdown image of the signed `imageUrl`
-- **Description:** Swatch the planner shows for the material; valid until the signature expires (see [Thumbnails](#thumbnails))
 
 ---
 

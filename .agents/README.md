@@ -47,8 +47,8 @@ ADRs document why the code is shaped the way it is. This folder is initially emp
 
 Living reference documentation for end users and developers is maintained in the `docs/` folder:
 
-- [hi-mcp-server.md](../docs/hi-mcp-server.md) — Complete MCP server documentation
-- [hi-mcp-poc-presentation.md](../docs/hi-mcp-poc-presentation.md) — Proof of concept presentation
+- [hi-mcp-server.md](../minimal-hi-example/docs/hi-mcp-server.md) — Complete MCP server documentation
+- [hi-mcp-poc-presentation.md](../minimal-hi-example/docs/hi-mcp-poc-presentation.md) — Proof of concept presentation
 
 ---
 

@@ -5,7 +5,7 @@
 ## Always Do This First
 
 1. **Load matching skills.** Check the [On-Demand Skills](#on-demand-skills) catalog and read every skill file whose domain matches the task *before* taking action. Multiple skills may apply to one task.
-2. **Read [`docs/hi-mcp-server.md`](./docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the comprehensive reference for the HI MCP server implementation and usage.
+2. **Read [`minimal-hi-example/docs/hi-mcp-server.md`](./minimal-hi-example/docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the comprehensive reference for the HI MCP server implementation and usage.
 3. **Read [`.agents/README.md`](./.agents/README.md)** for the complete digital brain index, separating living reference from historical records.
 4. **Treat documentation as part of the task, not a follow-up.** Every analysis produces a document, and every change to productive code updates one — see [Where Documentation Goes](#where-documentation-goes).
 5. **For GitHub Copilot users:** See [`.github/copilot-instructions.md`](./.github/copilot-instructions.md) for Copilot-specific guidance.
@@ -80,7 +80,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 roomle-hi-example is a zero-dependency demonstration and development environment for:
 
 1. **HI Presets Example** — A standalone HTML page (`index.html`) that demonstrates HOMAG Intelligence (HI) room planning with preset configurations
-2. **MCP Server** — A Node.js HTTP server (`hi-mcp-server.js`) that provides Model Context Protocol (MCP) tools for AI agents to orchestrate HI object groups in live Roomle sessions
+2. **MCP Server** — A Node.js HTTP server (`minimal-hi-example/hi-mcp-server.js`) that provides Model Context Protocol (MCP) tools for AI agents to orchestrate HI object groups in live Roomle sessions
 
 The server provides:
 - Static file serving for the example HTML page
@@ -92,8 +92,13 @@ The server provides:
 
 ```
 .
-├── index.html                    # HI presets example page
-├── hi-mcp-server.js             # Zero-dependency MCP server (Node.js)
+├── minimal-hi-example/         # Minimal standalone HI example
+│   ├── index.html              # HI presets example page
+│   ├── hi-mcp-server.js         # Zero-dependency MCP server (Node.js)
+│   └── docs/                    # Documentation
+│       ├── hi-mcp-server.md    # Complete MCP server documentation
+│       ├── hi-mcp-poc-presentation.md # Proof of concept presentation
+│       └── images/             # Diagram and screenshot assets
 ├── hi-mcp/                       # TypeScript MCP server PoCs (npm workspaces, vitest)
 │   ├── README.md                 # Project overview and PoC list
 │   ├── package.json              # Workspace root: test/typecheck/start scripts
@@ -136,7 +141,7 @@ The server provides:
 
 ## On-Demand Skills
 
-Skills provide deep domain knowledge. Load them by reading the file when the task matches their domain.
+Skills provide deep domain knowledge. Load them by reading the file when the task matches their domain. Skill files are located in `.github/skills/` for GitHub-specific workflows and `.agents/skills/` for domain knowledge.
 
 | Skill | Load when the task involves |
 |---|---|
@@ -145,6 +150,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | [`.agents/skills/hi-authoring-rules.md`](./.agents/skills/hi-authoring-rules.md) | HI authoring rules, docking patterns, group creation, article catalog |
 | [`.agents/skills/hi-mcp-tools.md`](./.agents/skills/hi-mcp-tools.md) | MCP tool reference, get-plan-context, create-or-replace-groups, place-group |
 | [`.agents/skills/roomle-hi-concepts.md`](./.agents/skills/roomle-hi-concepts.md) | HI concepts: rooms, walls, articles, groups, docking vectors, placements |
+| [`.github/skills/roomle-pr-resolution.md`](./.github/skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads. Never merge the PR |
 
 ## Key Architecture Patterns
 
@@ -186,7 +192,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 - **Variables**: camelCase (`planContext`, `dockingVector`)
 - **Constants**: UPPER_SNAKE_CASE (`PORT`, `DEFAULT_CALL_TIMEOUT_MS`)
 - **Functions**: camelCase (`getPlanContext`, `createOrReplaceGroups`)
-- **Files**: kebab-case (`hi-mcp-server.js`, `hi-mcp-server.md`)
+- **Files**: kebab-case (`minimal-hi-example/hi-mcp-server.js`, `minimal-hi-example/docs/hi-mcp-server.md`)
 
 ### Comments
 
@@ -254,7 +260,7 @@ Each analysis document follows the same lifecycle: written **before** the work, 
 | Bug analysis | new file in `.agents/bug-analysis/` with kebab-case slug |
 | Feature analysis | new file in `.agents/feature-analysis/` with kebab-case slug |
 | Refactoring analysis | new file in `.agents/refactoring-analysis/` with kebab-case slug |
-| New feature capability | Update `docs/hi-mcp-server.md` or create new file in `docs/` |
+| New feature capability | Update `minimal-hi-example/docs/hi-mcp-server.md` or create new file in `minimal-hi-example/docs/` |
 | MCP tool reference updates | `.agents/skills/hi-mcp-tools.md` |
 | Architecture decisions | Create ADR in `.agents/decisions/` (if needed) |
 | Living reference | `docs/` for user-facing documentation |
@@ -280,12 +286,12 @@ The server provides MCP endpoint at `http://localhost:3100/mcp` when running.
 ### Starting the Server
 
 ```bash
-npm start          # or: node hi-mcp-server.js
+npm start          # or: node minimal-hi-example/hi-mcp-server.js
 ```
 
 This starts:
 - HTTP server on port 3100
-- Static file serving for index.html
+- Static file serving for minimal-hi-example/index.html
 - MCP endpoint at /mcp
 - SSE bridge at /bridge
 - Opens browser to http://localhost:3100/?mcp=true
@@ -305,13 +311,17 @@ This starts:
 
 ### Adding New Tools
 
-1. Add tool definition to `TOOLS` array in `hi-mcp-server.js`
+1. Add tool definition to `TOOLS` array in `minimal-hi-example/hi-mcp-server.js`
 2. Implement handler function
 3. Add JSDoc documentation
-4. Update `docs/hi-mcp-server.md` tool reference
+4. Update `minimal-hi-example/docs/hi-mcp-server.md` tool reference
 5. Test with MCP client
 
 ## Git Workflow Rules
+
+### Hard Rule: NO Force Pushes
+
+**NEVER use `git push --force` or `git push -f` on any branch, especially master.** Force pushing rewrites history and is absolutely forbidden. If you need to undo commits, create a new revert commit instead.
 
 ### Commit Message Format
 
@@ -332,6 +342,34 @@ Examples:
 - Reference related documentation
 - Ensure all tests pass (if applicable)
 - Update documentation in same PR as code changes
+
+### Pull Request Resolution
+
+**NEVER merge a PR.** Not with `gh pr merge`, not by enabling auto-merge. Merging is always a human decision performed by maintainers — finish the review resolution and stop.
+
+**Load the skill** [`.github/skills/roomle-pr-resolution.md`](./.github/skills/roomle-pr-resolution.md) when resolving a PR.
+
+**Hard Rules:**
+- **Never rewrite history.** No `git commit --amend`, no `git push --force`. Every review fix is a **new** conventional commit.
+- **Never silently ignore or resolve a comment.** Every handled thread gets a reply comment first, then is marked resolved.
+- **Verify before implementing.** A reviewer suggestion is a hypothesis, not an instruction. Confirm it against the actual code before changing anything.
+
+**Workflow:**
+1. **Identify the PR** — Check out the PR branch explicitly, do not rely on current branch
+2. **Fetch unresolved review threads** — Use GitHub API to get all unresolved threads
+3. **Verify each suggestion** — Read the code, classify as valid/invalid/valid-intent-wrong-form
+4. **Implement and validate** — Apply changes, test, commit as new conventional commits, push
+5. **Reply to every comment** — State applied/applied-differently/not-applied with reasoning
+6. **Resolve each thread** — Mark threads as resolved via GitHub API
+7. **Final verification** — Confirm all threads are resolved. Stop. Do not merge.
+
+**Completion Checklist:**
+- [ ] Every unresolved thread was verified against the actual code
+- [ ] Confirmed-valid suggestions are implemented, tested, and formatted
+- [ ] Fixes are pushed as new commits (no amend, no force push)
+- [ ] Every handled thread has a reply stating applied/applied differently/not applied
+- [ ] Every handled thread is marked resolved
+- [ ] The PR was **not** merged
 
 ## Bug Fixing Guidelines
 

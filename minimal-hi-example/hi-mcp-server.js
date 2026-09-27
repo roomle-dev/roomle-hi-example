@@ -6,7 +6,7 @@
 //   - hosts the page bridge                       GET  /bridge (SSE), POST /bridge/result
 //
 // Start it with:  node hi-mcp-server.js
-// Then open:      http://localhost:3100/?mcp=true
+// Then open:      http://localhost:3100/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith
 // MCP endpoint:   http://localhost:3100/mcp
 //
 // The MCP protocol layer (JSON-RPC over HTTP with JSON responses) is
@@ -331,7 +331,7 @@ const pageBridge = {
     if (!page || page.writableEnded) {
       throw new Error(
         'No HI example page connected. Open the example with the mcp=true query parameter ' +
-          `(http://localhost:${PORT}/?mcp=true) and keep the tab open.`,
+          `(http://localhost:${PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith) and keep the tab open.`,
       );
     }
     const id = this.nextCallId++;
@@ -601,7 +601,7 @@ const openInBrowser = (url) => {
 };
 
 httpServer.listen(PORT, () => {
-  const exampleUrl = `http://localhost:${PORT}/?mcp=true`;
+  const exampleUrl = `http://localhost:${PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`;
   console.log('');
   console.log('  HI group orchestrator MCP server ready');
   console.log('');

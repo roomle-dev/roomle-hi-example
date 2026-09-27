@@ -83,9 +83,9 @@ permanent home in this repository, with one self-contained folder per attempt.
 
 ### 2.1 roomle-hi-example today
 
-- **Root** contains the zero-dependency variant: `hi-mcp-server.js` (hand-rolled JSON-RPC over
-  Streamable HTTP, **SSE + fetch** page bridge, port 3100) plus `index.html` (standalone copy of the
-  hi-presets demo). Documented in `docs/hi-mcp-server.md`.
+- **Root** contains the zero-dependency variant: `minimal-hi-example/hi-mcp-server.js` (hand-rolled JSON-RPC over
+  Streamable HTTP, **SSE + fetch** page bridge, port 3100) plus `minimal-hi-example/index.html` (standalone copy of the
+  hi-presets demo). Documented in `minimal-hi-example/docs/hi-mcp-server.md`.
 - The new `hi-mcp/` directory does not exist yet. No TypeScript project, no `tsconfig.json`, no npm
   dependencies anywhere in the repository (`package.json` is metadata-only).
 - Port 3100 is the established MCP port in both this repository and the roomle-ui source — relevant
@@ -211,7 +211,7 @@ hi-mcp/
 Rationale: npm **workspaces** at `hi-mcp/` root so `npm install` is one command for all future PoCs,
 while each PoC stays a **self-contained package** (exactly the roomle-ui pattern: its dependencies are
 deliberately kept out of the host repository root). The existing zero-dependency
-`hi-mcp-server.js` at the repository root remains untouched — the two are parallel approaches, and
+`minimal-hi-example/hi-mcp-server.js` remains untouched — the two are parallel approaches, and
 this is the successor line.
 
 ### 4.2 Changes to the copied server (hi-mcp-poc-json)
@@ -297,7 +297,7 @@ Differences from the roomle-ui runbook that the adapted README/QUICKSTART must r
 | ---- | ----- |
 | PoC runbook, tool reference, authoring rules, client registration | adapted `hi-mcp/hi-mcp-poc-json/README.md` + `QUICKSTART.md` (source: roomle-ui) |
 | Overview of the `hi-mcp/` project and its PoCs | new `hi-mcp/README.md`; link from root `README.md` |
-| Living reference for the new server | new `docs/hi-mcp-poc-json.md` (companion to `docs/hi-mcp-server.md`), indexed in `.agents/README.md` |
+| Living reference for the new server | new `minimal-hi-example/docs/hi-mcp-poc-presentation.md` (companion to `minimal-hi-example/docs/hi-mcp-server.md`), indexed in `.agents/README.md` |
 | Store-side bridge provenance | `ligna-store/hi-mcp/README.md` (states the copy origin; the roomle-ui original will be deleted, ongoing sync applies only between this repository and the store) |
 | Repository structure section | update `AGENTS.md` structure tree |
 | This analysis | closed out (status → Implemented) once the work lands |
@@ -339,7 +339,7 @@ Differences from the roomle-ui runbook that the adapted README/QUICKSTART must r
 | ---- | ------ |
 | `hi-mcp/package.json`, `hi-mcp/tsconfig.base.json`, `hi-mcp/README.md` | create (workspace root) |
 | `hi-mcp/hi-mcp-poc-json/*` | create — copy of roomle-ui `hi-mcp-server` (9 files per [2.2](#22-the-roomle-ui-source-what-gets-copied)), adapted per [4.2](#42-changes-to-the-copied-server-hi-mcp-poc-json) |
-| `docs/hi-mcp-poc-json.md` | create (living reference) |
+| `minimal-hi-example/docs/hi-mcp-poc-json.md` | create (living reference) |
 | `AGENTS.md`, root `README.md`, `.agents/README.md` | update structure/index links |
 
 ### ligna-store
@@ -384,8 +384,7 @@ an explicit opt-in flag or a stage-independent toggle) — revisit then.
 
 ### 7.4 Decision: port 3100 collision
 
-The new server defaults to 3100 — the same default as the repository root's existing zero-dependency
-`hi-mcp-server.js`. Both can never run at once (and only one can talk to a page at a time anyway —
+The new server defaults to 3100 — the same default as the `minimal-hi-example/hi-mcp-server.js` zero-dependency variant. Both can never run at once (and only one can talk to a page at a time anyway —
 the browser-bridge of each targets a different client). Proposal: keep 3100 (parity with all existing
 docs and MCP client registrations) and document that the two servers are mutually exclusive. A
 distinct port (3101) would avoid the `EADDRINUSE` footgun but forces every documented client
@@ -411,7 +410,7 @@ bridge copy is unit-tested here).
 | 2 | Copy the 9 source files from roomle-ui into `hi-mcp/hi-mcp-poc-json/`, adapt per [4.2](#42-changes-to-the-copied-server-hi-mcp-poc-json); local `RoomDesignerApiType` in `types.ts` replaces the roomle-ui examples import | `tsc --noEmit` passes; `npm start` serves `/mcp` |
 | 3 | Unit tests per [8.1](#81-unit-test-plan) in `hi-mcp-poc-json/tests/`, vitest configured at `hi-mcp/` root | `npm test` green |
 | 4 | ligna-store: `hi-mcp/` page-side copy (`browser-bridge`, `tool-executors`, `plan-space`, `types`, provenance README) + `Planner.vue` INT-stage hook per [4.3](#43-ligna-store-changes) | manual: INT-stage store connects (server logs "page connected"), MCP client `get-plan-context` succeeds — also resolves [7.1](#71-risk-getexternalobjectplancontext-availability) |
-| 5 | Documentation: adapt PoC `README.md`/`QUICKSTART.md` (done with step 2), update `AGENTS.md` structure tree (step 2), `docs/hi-mcp-poc-json.md` living reference at close-out, close out this analysis (status → Implemented) | docs indexed in `.agents/README.md` |
+| 5 | Documentation: adapt PoC `README.md`/`QUICKSTART.md` (done with step 2), update `AGENTS.md` structure tree (step 2), `minimal-hi-example/docs/hi-mcp-poc-json.md` living reference at close-out, close out this analysis (status → Implemented) | docs indexed in `.agents/README.md` |
 
 Status 2026-09-26: steps 1–4 are implemented. Steps 1–3: server copy adapted, vitest suite with 70
 unit tests green, typecheck clean, server smoke-tested on :3100. Step 4 (ligna-store,
@@ -419,7 +418,7 @@ commit `cd7cbf1` on its `feat/hi-mcp` branch): `hi-mcp/` page-side copy (verbati
 repository's tested copy, excluded from the store's lint to keep the sync diff clean),
 `Planner.vue` INT-stage hook, provenance README; verified by a dev-server smoke test (all four
 modules transform, the kitchens page renders, no compile errors). Still open: step 5 (living
-reference `docs/hi-mcp-poc-json.md`, close-out of this analysis) and the manual end-to-end
+reference `minimal-hi-example/docs/hi-mcp-poc-json.md`, close-out of this analysis) and the manual end-to-end
 verification of [7.1](#71-risk-getexternalobjectplancontext-availability) — the runtime check of
 `getExternalObjectPlanContext` on the `bo-test` UI needs the INT-stage store open in a real browser
 with the MCP server running (`page connected` in the server log, then `get-plan-context`).

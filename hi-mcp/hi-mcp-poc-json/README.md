@@ -559,7 +559,7 @@ Ready-to-use prompts for the connected agent, from read-only to write operations
 | ------- | ----------- |
 | Tool error `No HI page connected` | Start the store (`npm run dev`) and open `http://localhost:3000/?store.stage=INT&id=<plan id>` and keep the tab open — the bridge starts with the INT stage |
 | Tool error `... is not a function` | The UI served for the stage (`bo-test` at INT) does not contain the Part 1 HI APIs (`getExternalObjectPlanContext`, …) — the web-sdk deployment there has to catch up |
-| Port 3100 already in use | The server names the fix itself (`lsof -ti tcp:3100 \| xargs kill`); since the auto-shutdown guard this should only happen when a second instance is started deliberately. The zero-dependency `hi-mcp-server.js` in the repository root also uses 3100 — run only one of them |
+| Port 3100 already in use | The server names the fix itself (`lsof -ti tcp:3100 \| xargs kill`); since the auto-shutdown guard this should only happen when a second instance is started deliberately. The zero-dependency `minimal-hi-example/hi-mcp-server.js` also uses 3100 — run only one of them |
 | Several store tabs open | The most recently connected tab receives the tool calls; close the others |
 | `get-price` / `get-order-data` fail | Wrong stage (the HI backend is resolved from it — use `store.stage=INT`), or no HI backend reachable for the milestone backend id |
 | Page reloaded | The bridge reconnects automatically every 3 s — no restart needed |

@@ -87,7 +87,7 @@ The integration of generative AI into the Sales Configurator represents a **para
 
 ### 2.1 Existing Capabilities in roomle-hi-example
 
-The current **HI MCP Server** (`hi-mcp-server.js`) provides:
+The current **HI MCP Server** (`minimal-hi-example/hi-mcp-server.js`) provides:
 
 **Core Tools:**
 | Tool | Capability | Kitchen Relevance |
@@ -1684,7 +1684,7 @@ az group create --name myResourceGroup --location eastus
 az webapp create --resource-group myResourceGroup \
   --name kitchen-ai-mcp \
   --runtime "NODE:20-lts" \
-  --startup-file "hi-mcp-server.js" \
+  --startup-file "minimal-hi-example/hi-mcp-server.js" \
   --sku F1
 ```
 
@@ -1826,7 +1826,7 @@ To adapt the existing HI MCP server for Azure App Service:
 ```javascript
 // hi-mcp-server-azure.js
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
-import { createServer } from './hi-mcp-server.js';
+import { createServer } from './minimal-hi-example/hi-mcp-server.js';
 
 const PORT = process.env.PORT || 3100;
 

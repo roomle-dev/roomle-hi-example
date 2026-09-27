@@ -1,6 +1,6 @@
 # HI MCP Server Skill
 
-**Load this skill when the task involves:** MCP server architecture, HTTP handling, SSE bridge, Model Context Protocol implementation, tool registration, or server-side logic in `hi-mcp-server.js`.
+**Load this skill when the task involves:** MCP server architecture, HTTP handling, SSE bridge, Model Context Protocol implementation, tool registration, or server-side logic in `minimal-hi-example/hi-mcp-server.js`.
 
 ## Overview
 
@@ -36,7 +36,7 @@ The HI MCP Server is a zero-dependency Node.js server that implements the Model 
                               ▼
                      ┌─────────────────┐
                      │  Browser Page    │
-                     │  (index.html)    │
+                     │  (minimal-hi-example/index.html)    │
                      │  roomDesignerApi │
                      └─────────────────┘
 ```
@@ -45,9 +45,9 @@ The HI MCP Server is a zero-dependency Node.js server that implements the Model 
 
 #### 1. HTTP Server (`createServer`)
 - **Port**: 3100 (configurable via `PORT` constant)
-- **Static serving**: Serves `index.html` and other static files
+- **Static serving**: Serves `minimal-hi-example/index.html` and other static files
 - **Routes**:
-  - `GET /` — Serves index.html
+  - `GET /` — Serves minimal-hi-example/index.html
   - `POST /mcp` — MCP endpoint (Streamable HTTP)
   - `GET /bridge` — SSE endpoint for page bridge
   - `POST /bridge/result` — Result endpoint for page bridge
@@ -129,7 +129,7 @@ The bridge connects MCP server to browser page:
 - Validates bridge messages
 - Relays tool calls and results
 
-### Client-Side (index.html)
+### Client-Side (minimal-hi-example/index.html)
 
 - Establishes SSE connection when `?mcp=true`
 - Executes tool calls against `roomDesignerApi.extended`
@@ -159,15 +159,15 @@ Serves static files from server directory with proper content types.
 
 ```bash
 # Start server and open browser
-node hi-mcp-server.js
+node minimal-hi-example/hi-mcp-server.js
 
 # Start server without opening browser
-node hi-mcp-server.js --no-open
+node minimal-hi-example/hi-mcp-server.js --no-open
 ```
 
 ## Browser Integration
 
-The `index.html` page:
+The `minimal-hi-example/index.html` page:
 - Loads Roomle planner/editor
 - Exposes `roomDesignerApi.extended` globally
 - Sets up MCP bridge when `?mcp=true` is in URL
@@ -210,5 +210,5 @@ The `index.html` page:
 ```bash
 npm start
 npm start -- --no-open
-PORT=4000 node hi-mcp-server.js
+PORT=4000 node minimal-hi-example/hi-mcp-server.js
 ```

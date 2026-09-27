@@ -2,6 +2,7 @@
   "name": "roomle-hi-example",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "description": "Standalone HI presets example with an optional MCP server - one HTML file, one zero-dependency Node server",
   "scripts": {
     "start": "node hi-mcp-server.js"

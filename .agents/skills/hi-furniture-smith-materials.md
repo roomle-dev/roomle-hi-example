@@ -18,22 +18,9 @@ The process retrieves the `HiPlanContext` object and extracts all "Text" type at
 
 ## Prerequisites
 
-1. **HiPlanContext JSON** — The file `docs/library-information/hi-plan-context.json` must exist. Generate it using the process described in [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md#step-3-fetch-hiplancontext-json):
+1. **HiPlanContext JSON** — The file `docs/library-information/hi-plan-context.json` must exist. Generate it using the process described in [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md#step-1-fetch-hiplancontext-json):
    ```bash
-   curl -s -X POST http://localhost:3100/mcp \
-     -H "Content-Type: application/json" \
-     -H "Accept: application/json, text/event-stream" \
-     -d '{
-       "jsonrpc":"2.0",
-       "id":1,
-       "method":"tools/call",
-       "params":{
-         "name":"get-plan-context",
-         "arguments":{
-           "include":["masterData","rooms","articles","groups"]
-         }
-       }
-     }' | jq -r '.result.content[0].text' > docs/library-information/hi-plan-context.json
+   node .agents/scripts/fetch-hi-plan-context.js
    ```
 
 2. **Node.js 18+** — Required for color extraction
@@ -50,7 +37,7 @@ The process retrieves the `HiPlanContext` object and extracts all "Text" type at
 ## Data Flow
 
 ```
-HiPlanContext JSON (from get-plan-context tool)
+HiPlanContext JSON (from getExternalObjectPlanContext)
     ↓ Extract masterData.Furniture_Smith.attributes
 Filter: type == Text AND (name OR desc contains "Color")
     ↓ Extract selections from each attribute (name, value, desc, imageUrl)
@@ -72,20 +59,7 @@ Markdown Table (materials.md) with Suggested Color and Suggested Description col
 Use the process from [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md) to fetch the HiPlanContext:
 
 ```bash
-curl -s -X POST http://localhost:3100/mcp \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -d '{
-    "jsonrpc":"2.0",
-    "id":1,
-    "method":"tools/call",
-    "params":{
-      "name":"get-plan-context",
-      "arguments":{
-        "include":["masterData","rooms","articles","groups"]
-      }
-    }
-  }' | jq -r '.result.content[0].text' > docs/library-information/hi-plan-context.json
+node .agents/scripts/fetch-hi-plan-context.js
 ```
 
 The `imageUrl`s are signed and valid for about a month (see [Thumbnails](#thumbnails)).
@@ -225,7 +199,7 @@ This renders as a small colored square followed by the hex code, providing both 
 
 ## Thumbnails
 
-The swatches the planner shows for a color attribute (e.g. FRONT COLOR) are the `imageUrl`s of the attribute selections: the kernel copies each `selection.imageUrl` into the thumbnail of the parameter value when `uiConfiguration.showThumbnails` is on, and `get-plan-context` keeps them.
+The swatches the planner shows for a color attribute (e.g. FRONT COLOR) are the `imageUrl`s of the attribute selections: the kernel copies each `selection.imageUrl` into the thumbnail of the parameter value when `uiConfiguration.showThumbnails` is on, and `getExternalObjectPlanContext()` returns them.
 
 Each `imageUrl` is a read-only SAS URL of an Azure blob on the TecConfig CDN:
 

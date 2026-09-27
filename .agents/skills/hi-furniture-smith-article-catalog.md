@@ -46,11 +46,11 @@ node .agents/scripts/fetch-hi-plan-context.js
 ```
 
 - The script serves [`fetch-hi-plan-context.html`](../scripts/fetch-hi-plan-context.html) on `http://localhost:3101/` and opens it in the default browser
-- The page loads the scene the way `minimal-hi-example/index.html` does: backend `HI_PRE_Roomle_Milestone_2` (plan, additional catalogs and `configureInRoom` from its preset in the HI backend list), library `Furniture_Smith`, language `en` (the `Accept-Language` of the HI requests, the planner locale and `tecConfigInfo.language`)
+- The page loads the scene the way `minimal-hi-example/index.html` does: backend `HI_PRE_Roomle_Milestone_2` (plan, additional catalogs and `configureInRoom` from its preset in the HI backend list), library `Furniture_Smith`, language `en` (the `Accept-Language` of the HI requests, the planner locale and `tecConfigInfo.language`), user right `Master` (`uiConfiguration.userRight`)
 - Once `roomDesignerApi.extended.callbacks.onCompletelyLoaded` fires, the page calls `roomDesignerApi.extended.getExternalObjectPlanContext()` without arguments, which returns all four sections, and posts the result back
 - The script writes the result unchanged (pretty-printed) to `docs/library-information/hi-plan-context.json`, prints `Saved docs/library-information/hi-plan-context.json` and exits
 
-A run takes about 15 seconds. The status bar of the page shows the progress; close the tab when it reports the file as saved. Backend, library and language are the constants `BACKEND_ID`, `LIBRARY_ID` and `LANGUAGE` at the top of the page script.
+A run takes about 15 seconds. The status bar of the page shows the progress; close the tab when it reports the file as saved. Backend, library, language and user right are the constants `BACKEND_ID`, `LIBRARY_ID`, `LANGUAGE` and `USER_RIGHT` at the top of the page script.
 
 With `--no-open` the script only prints the URL, e.g. for a headless browser:
 

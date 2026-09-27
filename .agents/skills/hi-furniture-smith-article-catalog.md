@@ -32,7 +32,7 @@ The process retrieves the `HiPlanContext` object (which contains master data, ro
 Roomle Planner (Browser)
     ↓ roomDesignerApi.extended.getExternalObjectPlanContext()
 HI Plan Context (HiPlanContext JSON)
-    ↓ MCP Bridge (WebSocket)
+    ↓ MCP Bridge (SSE + fetch)
 MCP Server (minimal-hi-example/hi-mcp-server.js)
     ↓ HTTP POST /mcp
 Client (curl or MCP client)

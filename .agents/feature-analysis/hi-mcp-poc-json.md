@@ -297,7 +297,7 @@ Differences from the roomle-ui runbook that the adapted README/QUICKSTART must r
 | ---- | ----- |
 | PoC runbook, tool reference, authoring rules, client registration | adapted `hi-mcp/hi-mcp-poc-json/README.md` + `QUICKSTART.md` (source: roomle-ui) |
 | Overview of the `hi-mcp/` project and its PoCs | new `hi-mcp/README.md`; link from root `README.md` |
-| Living reference for the new server | new `minimal-hi-example/docs/hi-mcp-poc-json.md` (companion to `minimal-hi-example/docs/hi-mcp-server.md`), indexed in `.agents/README.md` |
+| Living reference for the new server | new `minimal-hi-example/docs/hi-mcp-poc-presentation.md` (companion to `minimal-hi-example/docs/hi-mcp-server.md`), indexed in `.agents/README.md` |
 | Store-side bridge provenance | `ligna-store/hi-mcp/README.md` (states the copy origin; the roomle-ui original will be deleted, ongoing sync applies only between this repository and the store) |
 | Repository structure section | update `AGENTS.md` structure tree |
 | This analysis | closed out (status → Implemented) once the work lands |

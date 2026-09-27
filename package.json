@@ -6,6 +6,11 @@
   "description": "HI example projects including minimal standalone example and MCP server PoCs",
   "workspaces": [
     "hi-mcp",
+    "hi-mcp/hi-mcp-poc-json",
+    "hi-mcp/cf",
     "minimal-hi-example"
-  ]
+  ],
+  "scripts": {
+    "start": "node minimal-hi-example/hi-mcp-server.js"
+  }
 }

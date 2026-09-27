@@ -205,6 +205,38 @@ When investigating issues, follow this workflow:
 5. **Benchmark** — Performance measurements if applicable
 6. **Document** — Create analysis in `.agents/refactoring-analysis/<slug>.md`
 
+## Suggested Change Workflow
+
+This workflow is a suggestion and a guideline, not a requirement. It describes how a feature, a bug
+fix, or a refactoring moves from an idea to a merged pull request when a human and an agent work on
+it together. Small changes may skip steps; large or risky changes benefit from every one of them.
+The steps alternate between agent work and human review, and every step builds on the reviewed
+result of the step before it.
+
+| # | Step | Who | Result |
+|---|---|---|---|
+| 1 | Describe the feature, bug, or refactoring and its definition of done | human, supported by the agent | a ticket with a clear problem statement and acceptance criteria |
+| 2 | Analyse the feature, bug, or refactoring | agent | the analysis document in the matching folder and the same content as a ticket comment — see [Analysis Workflow](#analysis-workflow) |
+| 3 | Review the analysis | human | the root cause, the gap, or the scope is confirmed |
+| 4 | Plan the implementation and the unit tests | agent | the implementation plan as a ticket comment |
+| 5 | Review the plan | human | the approach is approved before any code changes |
+| 6 | Implement the plan | agent | code, tests, and documentation on a purpose branch, opened as a pull request — see [Pull Requests in AGENTS.md](../AGENTS.md#pull-requests) |
+| 7 | Review the code | human | review comments on the pull request |
+| 8 | Apply the review suggestions | agent | new commits, every review thread replied to or resolved — see [Pull Request Resolution](#pull-request-resolution) |
+| 9 | Review the code again | agent, preferably a different one than the implementer | review comments on the pull request |
+| 10 | Apply the review suggestions | agent or human | new commits, every review thread replied to or resolved |
+| 11 | Final review and merge | human | the merged pull request — an agent never merges |
+
+**Every review gates the next step.** Each step trusts the reviewed result of the step before it:
+the plan builds on the analysis, the implementation on the plan, the code review on the
+implementation. Every review therefore has to be done very carefully — a flaw that passes a review
+is carried into every later step.
+
+**A review can send the work back.** If a review identifies a fundamental problem — the analysis
+missed the real root cause, the plan does not cover the definition of done, the implementation
+contradicts the plan — the work goes back one or more steps instead of being patched at the current
+step.
+
 ## Important Constraints
 
 1. **Zero Dependencies** — Do not add npm packages without explicit approval
@@ -297,4 +329,4 @@ This file is maintained on the `feat/hi-mcp` branch and should be kept in sync w
 
 ---
 
-**Last Updated**: 2026-09-25
+**Last Updated**: 2026-09-27

@@ -292,8 +292,8 @@ The color extraction script uses Node.js with the Sharp library for image proces
 
 ## Materials
 
-| Name | Value | Thumbnail | Description | Suggested Color |
-|---|---|---|---|---|
+| Name | Value | Thumbnail | Description | Suggested Color | Suggested Description |
+|---|---|---|---|---|---|
 `;
   
   let markdown = header;
@@ -307,8 +307,9 @@ The color extraction script uses Node.js with the Sharp library for image proces
     
     const thumbnail = imageUrl ? `![${name}](${imageUrl})` : '';
     const colorDisplay = createMarkdownColorDisplay(color);
+    const suggestedDesc = desc ? `${desc} (${color})` : color;
     
-    markdown += `| ${name} | ${value} | ${thumbnail} | ${desc} | ${colorDisplay} |\n`;
+    markdown += `| ${name} | ${value} | ${thumbnail} | ${desc} | ${colorDisplay} | ${suggestedDesc} |\n`;
   }
   
   return markdown;

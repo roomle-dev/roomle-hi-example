@@ -43,7 +43,8 @@ Deduplicate by value
     ↓ Download thumbnail images
     ↓ Analyze pixel data with Sharp
     ↓ Calculate dominant color for each
-Markdown Table (materials.md) with Accurately Calculated Suggested Color column
+    ↓ Combine description with color code
+Markdown Table (materials.md) with Suggested Color and Suggested Description columns
 ```
 
 ---
@@ -239,7 +240,7 @@ All these attributes have `type: "Text"` and contain "Color" in their name or de
 
 ## Materials Table Structure
 
-The generated table has 5 columns:
+The generated table has 6 columns:
 
 ### 1. Name
 - **Source:** `selection.name` from each attribute's selections array
@@ -272,6 +273,13 @@ The generated table has 5 columns:
 - **Description:** Hex color code **calculated from the actual thumbnail image**, with a visual color preview. This provides accurate color representation for all materials.
 - **Format:** `#RRGGBB` hexadecimal color code
 - **Preview:** Each color is displayed as a 20x20px colored square before the hex code
+
+### 6. Suggested Description (NEW)
+- **Source:** Combination of `selection.desc` and the extracted color code
+- **Type:** String
+- **Example:** `"Cloudy blue (#506080)"`, `"Dark walnut (#906040)"`
+- **Description:** A combined identifier that includes both the material description and its dominant color code (hex only, without HTML preview). Useful for quick identification and as a compact reference.
+- **Format:** `{Description} ({ColorCode})`
 
 ---
 
@@ -308,31 +316,31 @@ The generated table has 5 columns:
 
 ## Current Materials
 
-As of the latest HiPlanContext extraction, the Furniture_Smith library contains **21 materials** with accurately calculated colors:
+As of the latest HiPlanContext extraction, the Furniture_Smith library contains **21 materials** with accurately calculated colors and suggested descriptions:
 
-| Name | Value | Accurate Color |
-|---|---|---|
-| Cloudy blue | 152 | `#506080` |
-| Denim blue | 155 | `#102040` |
-| Olive green | 160 | `#909060` |
-| Seaweed green | 165 | `#606040` |
-| Light grey | 178 | `#D0C0C0` |
-| Sunny white | 190 | `#F0F0E0` |
-| Snow white | 192 | `#F0F0F0` |
-| Jet black | 199 | `#000000` |
-| Dark walnut | 214 | `#906040` |
-| Walnut | 215 | `#C09070` |
-| Tiepolo walnut | 216 | `#705040` |
-| Oak | 222 | `#704020` |
-| Bijoux oak | 224 | `#806050` |
-| Dark oak | 229 | `#101010` |
-| Maple | 230 | `#E0D0C0` |
-| Ash grey | 240 | `#303030` |
-| Ponderosa pine | 250 | `#909080` |
-| Concrete | 316 | `#808080` |
-| Dark marble | 324 | `#404040` |
-| Slate | 326 | `#303030` |
-| Marble | 380 | `#E0E0E0` |
+| Name | Value | Accurate Color | Suggested Description |
+|---|---|---|---|
+| Cloudy blue | 152 | `#506080` | Cloudy blue (#506080) |
+| Denim blue | 155 | `#102040` | Denim blue (#102040) |
+| Olive green | 160 | `#909060` | Olive green (#909060) |
+| Seaweed green | 165 | `#606040` | Seaweed green (#606040) |
+| Light grey | 178 | `#D0C0C0` | Light grey (#D0C0C0) |
+| Sunny white | 190 | `#F0F0E0` | Sunny white (#F0F0E0) |
+| Snow white | 192 | `#F0F0F0` | Snow white (#F0F0F0) |
+| Jet black | 199 | `#000000` | Jet black (#000000) |
+| Dark walnut | 214 | `#906040` | Dark walnut (#906040) |
+| Walnut | 215 | `#C09070` | Walnut (#C09070) |
+| Tiepolo walnut | 216 | `#705040` | Tiepolo walnut (#705040) |
+| Oak | 222 | `#704020` | Oak (#704020) |
+| Bijoux oak | 224 | `#806050` | Bijoux oak (#806050) |
+| Dark oak | 229 | `#101010` | Dark oak (#101010) |
+| Maple | 230 | `#E0D0C0` | Maple (#E0D0C0) |
+| Ash grey | 240 | `#303030` | Ash grey (#303030) |
+| Ponderosa pine | 250 | `#909080` | Ponderosa pine (#909080) |
+| Concrete | 316 | `#808080` | Concrete (#808080) |
+| Dark marble | 324 | `#404040` | Dark marble (#404040) |
+| Slate | 326 | `#303030` | Slate (#303030) |
+| Marble | 380 | `#E0E0E0` | Marble (#E0E0E0) |
 
 ---
 

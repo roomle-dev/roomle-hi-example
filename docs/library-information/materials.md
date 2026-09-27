@@ -21,7 +21,7 @@ https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_sm
 - The signature is bound to the exact blob; without it the CDN answers `409 PublicAccessNotPermitted`
 - The signature is valid for about a month (`st` to `se`), so a download needs a fresh master data response
 
-`get-plan-context` leaves the selection `imageUrl`s out of its compact masterData, so `hi-plan-context.json` does not contain them. The download process is described in [hi-furniture-smith-materials.md](../../.agents/skills/hi-furniture-smith-materials.md).
+The download process is described in [hi-furniture-smith-materials.md](../../.agents/skills/hi-furniture-smith-materials.md).
 
 ## Materials
 

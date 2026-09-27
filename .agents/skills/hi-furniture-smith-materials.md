@@ -65,7 +65,7 @@ curl -s -X POST http://localhost:3100/mcp \
 
 ### Step 2: Download Thumbnails
 
-The swatches the planner shows for a color attribute (e.g. FRONT COLOR) are the `imageUrl`s of the attribute selections: the kernel copies each `selection.imageUrl` into the thumbnail of the parameter value when `uiConfiguration.showThumbnails` is on. `get-plan-context` drops these `imageUrl`s from its compact masterData, so they are read from the raw master data, which the page loads through the HI test proxy.
+The swatches the planner shows for a color attribute (e.g. FRONT COLOR) are the `imageUrl`s of the attribute selections: the kernel copies each `selection.imageUrl` into the thumbnail of the parameter value when `uiConfiguration.showThumbnails` is on. `get-plan-context` returns them too, but needs a connected page; the script reads them from the raw master data, which the page loads through the HI test proxy.
 
 Each `imageUrl` is a read-only SAS URL of an Azure blob on the TecConfig CDN:
 
@@ -179,7 +179,7 @@ https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_sm
 - The signature is bound to the exact blob; without it the CDN answers `409 PublicAccessNotPermitted`
 - The signature is valid for about a month (`st` to `se`), so a download needs a fresh master data response
 
-`get-plan-context` leaves the selection `imageUrl`s out of its compact masterData, so `hi-plan-context.json` does not contain them. The download process is described in [hi-furniture-smith-materials.md](../../.agents/skills/hi-furniture-smith-materials.md).
+The download process is described in [hi-furniture-smith-materials.md](../../.agents/skills/hi-furniture-smith-materials.md).
 
 ## Materials
 

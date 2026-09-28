@@ -1,5 +1,9 @@
 # Digital Brain Index
 
+## Purpose
+
+The HI MCP Server enables interactive editing of HOMAG Intelligence objects (kitchens, cabinets, etc.) directly within the Roomle planner scene in the browser. This is explicitly **not** a headless approach where an AI agent defines a kitchen and outputs a file. The goal is to provide a chat window within a sales configurator where planning can be fully executed or modified through natural language prompting. The final deliverable will be an npm package that can be integrated into sales configurators with HI context, providing the infrastructure connection required for AI agent integration in the chat interface.
+
 Every markdown document in this folder, in one place. Add a line here whenever you add a document —
 see **Where Documentation Goes** in [`../AGENTS.md`](../AGENTS.md).
 

@@ -204,6 +204,185 @@ No open points remain.
 
 ---
 
+## Implementation Plan (reviewed before implementation)
+
+Work order: **roomle-ui first** (API producer), then **roomle-hi-example** (reference client, MCP
+server, example page, docs), then **ligna-store** (client copy). Each step lists its verification.
+
+### Step 1 — roomle-ui: new `hi-plan-context.ts` (types + pure shaping)
+
+New file `packages/web-sdk/packages/homag-intelligence/src/hi-plan-context.ts`:
+
+**New agent-facing types** (defined here, re-exported via `external-object-api.ts`):
+
+| Type | Shape |
+|---|---|
+| `HiPlanContourSegment` | Mirrors `PosContourSegment` exactly, except `x`/`y` are replaced by `pos: [x, level, -y]` (level from the parent `PosContour`). `cmd`, `angle`, `type`, `height`, `thickness` survive. |
+| `HiPlanContour` | `PosContour` shape otherwise unchanged: `{ level, segments }`. |
+| `HiPlanRoom` | `{ levels: HiPlanContour[], walls: HiPlanWall[] }` — converted contours plus derived walls. |
+| `HiPlanWall` | Today's `DerivedWall` from the client `plan-space.ts`: `index, side, start: [x, z], end: [x, z], lengthMm, type?, heightMm?, thicknessMm?, facingRotationY`. Walls live in the floor plane; the 2D `start`/`end` keep the placement math unchanged. |
+| `HiPlanMasterData`, `HiPlanMasterDataModule`, `HiPlanAttribute` | `compactMasterData` / `compactAttribute` output shapes (attribute: id, name, desc, imageUrl, type, group, selections). |
+| `HiPlanArticle` (+ root-module shape) | `compactArticle` output: articleId, articleName, desc, imageUrl, category, libraryId, catalog, cornerArticle, rootModules (module info, dimensions, mainAttributes, dockingVectors, insertLevels, subModules). |
+| `HiPlanGroup`, `HiPlanRoot` | `shapeGroup` / `shapeRoot` output (position with pos, rotationY, footprint; roots as article picks with docking, dockingVectors, freeDockingVectors, subModules, logMessages). |
+
+**Pure functions** (all testable without mocks; semantics identical to today's embedding-side
+implementations, ported from `hi-mcp/hi-mcp-poc-json-client/tool-executors.ts` and `plan-space.ts`):
+
+- master data: `compactAttribute`, `compactMasterData` (+ `isRootModule`,
+  `isCustomerFacingAttribute`)
+- articles: `dockingVectorNames`, `isCornerDockingVector`, `calculatedDockingVectorsByArticle`,
+  `compactArticle`
+- groups: `isGeneratedRoot`, `freeDockingVectors`, `stripDockingIndices`, `shapeRoot`,
+  `shapeGroup` plus the footprint helpers they need (`round2`, `transformPointByMatrix`,
+  `transformPointByRoot`, `collectParts`, `boxCorners`, `dimensionAttribute`,
+  `rootFootprintPoints`, `groupFootprint`)
+- rooms: contour conversion `(level, x, y) → [round2(x), level, -round2(y)]`, `sideFromFacing`,
+  `deriveWalls` (re-implemented on the converted 3D contour, reading `pos[0]`/`pos[2]`),
+  `shapeRooms` (contours + walls)
+
+Typed against the kernel types from `oc-scripts-domain.model.ts` — no `any`, unlike the client
+copies. Verify: `npx tsc` / the web-sdk type check passes.
+
+### Step 2 — roomle-ui: glue logic + API surface
+
+- `glue-logic.ts` `getPlanContext` (line 871): keep the per-section fetching (`getRoomInformation(PLAN)`,
+  `getPosDataOfAllGroups`, `_libraryData` master data, `_posArticleMap` articles) and the `include`
+  semantics, but shape every section through `hi-plan-context` before returning. Article compaction
+  uses the in-memory master data and calculated groups — no extra designer requests (this removes
+  the embedding-side "fetch extra sections for articles" workaround).
+- `external-object-api.ts`: update `HiPlanContext` to the new section types and rewrite the
+  `getExternalObjectPlanContext` header comment: returns agent-ready, compacted data in one
+  coordinate system (3D, right-handed, Y up); sections and include semantics.
+- `debug-logging.ts:399` passes the context through unchanged — only the logged shape changes;
+  verify it still compiles and the debug output remains useful.
+
+### Step 3 — roomle-hi-example: reference client (`hi-mcp/hi-mcp-poc-json-client/`)
+
+- `tool-executors.ts`:
+  - `get-plan-context` becomes a pass-through of
+    `getExternalObjectPlanContext(include ?? DEFAULT_SECTIONS)`. Remove `compactMasterData`,
+    `compactAttribute`, `compactArticle`, `calculatedDockingVectorsByArticle`, `shapeRoot`,
+    `shapeGroup`, `shapeRooms`.
+  - Keep `dockingVectorNames`, `freeDockingVectors`, `isGeneratedRoot`, `stripDockingIndices` —
+    the placement and input-shaping code (`contactError`, `toArticlePick`, `withoutPositions`,
+    create-or-replace-groups validation) still uses them. They now exist in both places
+    (roomle-ui for shaping, the client for tool logic) — inherent to the repository split, same
+    situation as the footprint helpers below.
+  - `find-attributes`: iterates the compacted attributes the API returns. `attributeMatches`
+    needs id, name, desc, group, selections (name, desc, value) — all survive `compactAttribute`.
+    The result carries libraryId, the compacted attribute and the root modules that reference it;
+    `userRight` is no longer available and is dropped.
+  - `create-or-replace-groups` / `place-group`: the placement math stays on the embedding side
+    (it is tool logic, not context preparation) but changes its data sources:
+    - walls: `resolveWall` reads `context.rooms[i].walls` instead of calling `deriveWalls`
+    - raw group geometry (`placeGroupAtWall` → `groupFootprint`/`groupCornerGeometry`,
+      `findGroupContact` → `rootFootprintInRoom`, `repositionedGroup` on calculated roots):
+      fetch via the existing public API `getExternalObjectGroups()`
+      (`external-object-api.ts:408`) instead of the now-shaped context groups
+    - agent-visible results (`loaded`, `groups`, `placements`, place-group result) come from the
+      pre-shaped context sections directly
+  - **Verification gate:** `getExternalObjectGroups()` must return the same calculated `PosGroup`
+    shape as the former context `groups` section. If it does not, the fallback is to extend the
+    shaped group with the geometry the placement math needs (corner geometry, root footprints) —
+    decision then, documented in the report.
+- `plan-space.ts`: remove `contourPointToPosSpace`, `sideFromFacing`, `deriveWalls` and the
+  contour types; keep the placement/geometry helpers (footprint stack, corner placement, contact
+  detection, `placeAgainstWall`, `repositioningFromPlacement`, `resolveWallAlignment`,
+  `adjoiningWall`, `convexPolygonsTouch`).
+- `types.ts`: extend `RoomDesignerApiType` with `getExternalObjectGroups` if missing.
+
+### Step 4 — roomle-hi-example: MCP server, example page, tests, docs
+
+- `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts`: update the `get-plan-context` description (3D
+  contour `pos: [x, level, -y]`, derived walls, compact sections as the API returns them),
+  the `find-attributes` description (compacted vocabulary, no `userRight`, no "attributes the
+  compact masterData leaves out"), and the coordinate references in the intro prompt text
+  (walls stay `[x, z]`, so the repositioningData guidance survives; contour references change).
+- `minimal-hi-example/index.html`: the same executor changes inline (pass-through, walls from
+  context, raw geometry via `getExternalObjectGroups`, find-attributes on compacted data).
+- Tests: adapt the existing `hi-mcp` tests (plan-space loses the `deriveWalls` cases,
+  tool-executors to pass-through and new shapes) so `npm test` and `npm run typecheck` at the
+  `hi-mcp` root stay green. No new unit tests here — the unit-test plan below is roomle-ui only.
+- Docs: `minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`,
+  `.agents/skills/hi-mcp-server.md`, `hi-mcp/hi-mcp-poc-json/README.md` / `QUICKSTART.md`
+  response examples.
+
+### Step 5 — ligna-store: client copy
+
+- Sync `hi-mcp/tool-executors.ts`, `hi-mcp/plan-space.ts`, `hi-mcp/types.ts` from the reference
+  client, checking for store-specific adaptations; run the store's checks.
+
+### Step 6 — end-to-end verification
+
+- roomle-ui: web-sdk vitest suite for homag-intelligence (new `hi-plan-context-test.ts` plus the
+  adapted `glue-logic-test.ts` getPlanContext block).
+- roomle-hi-example: `npm test` + `npm run typecheck` at the `hi-mcp` root; then `npm start`,
+  connect an MCP client, and verify: `get-plan-context` (compact masterData, 3D contour with
+  surviving segment properties, walls, footprints), `find-attributes` (finds compacted
+  attributes), `create-or-replace-groups` and `place-group` round-trips (placement against walls
+  and contact rejection still work).
+
+## Unit Test Plan (roomle-ui only)
+
+New `packages/web-sdk/packages/homag-intelligence/__tests__/hi-plan-context-test.ts` (pure
+functions, vitest, following `glue-logic-test.ts` / `orders-test.ts` conventions), plus adapting
+the existing `getPlanContext` describe block in `glue-logic-test.ts` (line 8244) to the new
+shapes. Run via the web-sdk vitest setup (`packages/web-sdk`: `npm test`).
+
+**hi-plan-context-test.ts:**
+
+1. Contour conversion: (x, y) with the parent level → `pos: [x, level, -y]`; rounding to two
+   decimals; IEEE `-0` normalized to `+0`; `cmd`, `angle`, `type`, `height`, `thickness` survive
+   unchanged; multiple levels; `PosRooms`/`PosRoom` wrappers preserved.
+2. Wall derivation on the converted contour: counter-clockwise rectangle → four walls with sides
+   left/right/top/bottom and the matching `facingRotationY` values (90/180/270/0); `start`/`end`
+   in pos space; `lengthMm`; `type`/`heightMm`/`thicknessMm` taken from the closing segment;
+   free-space segments (`type` undefined); fewer than two segments → no walls; non `M`/`L`
+   commands → no walls; zero-length segments skipped.
+3. Master-data compaction: only root modules (`isRoot` true or `moduleType: 'RootModule'`);
+   only attributes that are assigned to a surviving root module and customer-facing
+   (`isMain` or `userRight: 'Simple'`); module whitelist (id, name, desc, imageUrl, attributes);
+   `module.attributes` filtered to the surviving attribute ids.
+4. Attribute compaction: exact field whitelist (id, name, desc, imageUrl, type, group,
+   selections).
+5. Article compaction: module info resolved by root name; dimensions are the `Dim`-type
+   attributes; main attributes are `isMain` and not dimensions; docking vectors from the
+   template with the calculated fallback; insert levels; sub-modules with resolved module info;
+   `cornerArticle` true for the four corner docking vector ids; `CollisionBox` filtered.
+6. `calculatedDockingVectorsByArticle`: first calculated root per article id wins; roots without
+   article id or vectors skipped; empty groups.
+7. Group shaping: `shapeRoot` keeps only `isInput` attributes as `{id, value}`; strips the
+   docking indices from `contextData`; marks generated roots; `dockingVectors` without
+   `CollisionBox`; `freeDockingVectors` excludes the used ones; sub-modules as `{id, imageUrl}`;
+   log messages passed through. `shapeGroup`: position with `pos`, `rotationY` and footprint;
+   group attributes; shaped roots; log messages.
+8. Footprint: synthetic group (parts with `relPos`/`dim`/`fullMatrix`, hidden parts, `rotationY`,
+   `articlePos`) → correct footprint box; `-0` never serialized.
+9. `shapeRooms`: `undefined` rooms stay `undefined`; each room gains converted levels and walls.
+
+**glue-logic-test.ts (adapt the existing five getPlanContext tests):**
+
+10. All sections returned without a filter, now in the agent-ready shapes (compact masterData,
+    converted rooms with walls, compact articles, shaped groups); `getPosDataOfAllGroups` called
+    once; `getRoomInformation` called with `PLAN_ROOM_GEOMETRY_MODE.PLAN`.
+11. The include filter still controls which designer requests happen and which sections are set.
+12. Empty plan → empty sections.
+13. Mutation isolation: mutating the returned context does not touch `_posArticleMap`,
+    `_libraryData` master data or the group map.
+14. Articles section compaction uses the in-memory master data and calculated groups without
+    additional designer requests (spy counts).
+
+## Risks and Assumptions
+
+- `getExternalObjectGroups()` equivalence (Step 3 verification gate) is the main assumption; the
+  fallback is documented there.
+- The geometry helpers (`groupFootprint` and its chain) will exist in roomle-ui (shaping) and in
+  the embedding clients (placement math) — accepted duplication across repositories, the same
+  duplication that exists today between roomle-hi-example and ligna-store.
+- The shaped payload is larger than the raw kernel payload for rooms (walls added) and smaller
+  everywhere else; no performance concern expected, but the manual verification includes a
+  real-library session.
+
 ## References
 
 - Jira: RML-17966, comment 155424 (2026-09-28) — the authoritative request.

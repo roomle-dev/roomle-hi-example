@@ -3,7 +3,6 @@ import {
   convexPolygonsTouch,
   groupCornerGeometry,
   groupFootprint,
-  isCornerDockingVector,
   placeAgainstWall,
   placeCornerAtWalls,
   repositioningFromPlacement,
@@ -302,13 +301,5 @@ describe('repositioningFromPlacement', () => {
       posRotationY: 270,
       rootId: 'r2',
     });
-  });
-});
-
-describe('isCornerDockingVector', () => {
-  it('recognizes the LeftBack/RightBack vectors', () => {
-    expect(isCornerDockingVector('LeftBackTop')).toBe(true);
-    expect(isCornerDockingVector('RightBackBottom')).toBe(true);
-    expect(isCornerDockingVector('RightBottom')).toBe(false);
   });
 });

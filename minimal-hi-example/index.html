@@ -1127,19 +1127,6 @@
         };
       };
 
-      // Only corner articles carry these docking vectors; their start point is
-      // the article's corner point, and they run along the two back edges that
-      // lie against the two walls of a room corner.
-      const CORNER_DOCKING_VECTOR_IDS = [
-        'LeftBackTop',
-        'RightBackTop',
-        'LeftBackBottom',
-        'RightBackBottom',
-      ];
-
-      const isCornerDockingVector = (id) =>
-        CORNER_DOCKING_VECTOR_IDS.includes(id);
-
       const POINT_EPSILON_MM = 1;
 
       const samePoint = (a, b) =>

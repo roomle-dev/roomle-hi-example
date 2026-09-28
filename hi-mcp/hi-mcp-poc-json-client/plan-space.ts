@@ -42,19 +42,6 @@ interface FootprintRoot extends FootprintModule {
   attributes?: { id: string; value?: unknown }[];
 }
 
-// Only corner articles carry these docking vectors; their start point is the
-// article's corner point, and they run along the two back edges that lie
-// against the two walls of a room corner.
-export const CORNER_DOCKING_VECTOR_IDS = [
-  'LeftBackTop',
-  'RightBackTop',
-  'LeftBackBottom',
-  'RightBackBottom',
-];
-
-export const isCornerDockingVector = (id: string): boolean =>
-  CORNER_DOCKING_VECTOR_IDS.includes(id);
-
 export interface CornerGeometry {
   rootId: string;
   point: [number, number];

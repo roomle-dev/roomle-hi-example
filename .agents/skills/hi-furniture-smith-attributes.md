@@ -85,7 +85,7 @@ git commit -m "docs: add Furniture_Smith attributes reference table"
 
 ## Attributes Table Structure
 
-The generated table has 5 columns:
+The generated table has 6 columns:
 
 ### 1. id
 - **Source:** `attribute.id` from each attribute object

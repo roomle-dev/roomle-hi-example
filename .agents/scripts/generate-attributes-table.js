@@ -18,8 +18,8 @@ const repoRoot = resolve(__dirname, '../..');
 /**
  * Generate a technically accurate, detailed suggested description for an attribute.
  * Uses the name, description, group, and imageUrl to create a comprehensive description.
- * IMPORTANT: The original description is trusted and preserved. Only when missing or
- * inadequate is a new description generated.
+ * IMPORTANT: The original description is trusted and preserved EXACTLY as-is.
+ * Only when missing or equal to name is a new description generated.
  */
 function generateSuggestedDescription(attr) {
   const { id, name, desc, group, imageUrl } = attr;
@@ -27,13 +27,13 @@ function generateSuggestedDescription(attr) {
   // Start with the description if it exists
   let suggested = desc || '';
   
-  // Normalize
-  suggested = suggested.trim();
+  // Normalize newlines and trim
+  suggested = suggested.replace(/\n/g, ' ').trim();
   
-  // If we have a non-empty description, trust it and use it with minor cleanup
-  // If description equals name exactly, extend it with group context for better clarity
-  if (!suggested) {
-    return buildSuggestedDescription(id, name, group);
+  // If we have a non-empty description that is different from the name, 
+  // trust it EXACTLY as-is (preserving original capitalization, spacing, punctuation)
+  if (suggested && suggested !== name) {
+    return suggested;
   }
   
   // If description equals the name, extend it with group context
@@ -41,22 +41,10 @@ function generateSuggestedDescription(attr) {
     return extendDescriptionWithGroup(id, name, group, suggested);
   }
   
-  // For existing descriptions, only do very minor cleanup:
-  // - Normalize multiple spaces
-  // - Capitalize first letter
-  // - Remove trailing period
-  // - Ensure proper spacing
-  
-  // Capitalize first letter
-  if (suggested) {
-    suggested = suggested.charAt(0).toUpperCase() + suggested.slice(1);
+  // If we have an empty description, build from scratch
+  if (!suggested) {
+    return buildSuggestedDescription(id, name, group);
   }
-  
-  // Normalize multiple spaces
-  suggested = suggested.replace(/\s+\s+/g, ' ');
-  
-  // Remove trailing period
-  suggested = suggested.replace(/\.$/, '');
   
   return suggested;
 }
@@ -186,8 +174,8 @@ for (const attr of attributes) {
   // Format image as markdown image if present
   const imageCol = imageUrl ? `![${name}](${imageUrl})` : '';
 
-  // Escape pipes in content for markdown table
-  const escape = (str) => str.replace(/\|/g, '\\|');
+  // Escape pipes and newlines in content for markdown table
+  const escape = (str) => str.replace(/\|/g, '\\|').replace(/\n/g, ' ').replace(/\s+/g, ' ');
 
   markdown += `| ${escape(id)} | ${escape(name)} | ${escape(group)} | ${escape(imageCol)} | ${escape(desc)} | ${escape(suggested)} |\n`;
 }

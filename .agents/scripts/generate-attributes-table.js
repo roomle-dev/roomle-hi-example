@@ -13,6 +13,145 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '../..');
 
+// No patterns needed - we trust the descriptions from the master data
+
+/**
+ * Generate a technically accurate, detailed suggested description for an attribute.
+ * Uses the name, description, group, and imageUrl to create a comprehensive description.
+ * IMPORTANT: The original description is trusted and preserved. Only when missing or
+ * inadequate is a new description generated.
+ */
+function generateSuggestedDescription(attr) {
+  const { id, name, desc, group, imageUrl } = attr;
+  
+  // Start with the description if it exists
+  let suggested = desc || '';
+  
+  // Normalize
+  suggested = suggested.trim();
+  
+  // If we have a non-empty description, trust it and use it with minor cleanup
+  // If description equals name exactly, extend it with group context for better clarity
+  if (!suggested) {
+    return buildSuggestedDescription(id, name, group);
+  }
+  
+  // If description equals the name, extend it with group context
+  if (suggested === name) {
+    return extendDescriptionWithGroup(id, name, group, suggested);
+  }
+  
+  // For existing descriptions, only do very minor cleanup:
+  // - Normalize multiple spaces
+  // - Capitalize first letter
+  // - Remove trailing period
+  // - Ensure proper spacing
+  
+  // Capitalize first letter
+  if (suggested) {
+    suggested = suggested.charAt(0).toUpperCase() + suggested.slice(1);
+  }
+  
+  // Normalize multiple spaces
+  suggested = suggested.replace(/\s+\s+/g, ' ');
+  
+  // Remove trailing period
+  suggested = suggested.replace(/\.$/, '');
+  
+  return suggested;
+}
+
+/**
+ * Extend a description that equals the name with group context for better clarity.
+ */
+function extendDescriptionWithGroup(id, name, group, desc) {
+  const cleanId = id?.replace(/^mod_/, '') || '';
+  
+  // Split group by pipe for hierarchy
+  const groupParts = group?.split('|') || [];
+  const cleanGroupParts = groupParts.map(g => g.trim()).filter(g => g);
+  const groupContext = cleanGroupParts.join(' ');
+  
+  // Start with the description
+  let parts = [desc];
+  
+  // Add group context if it provides additional meaning
+  if (groupContext && groupContext.toLowerCase() !== desc.toLowerCase()) {
+    const descLower = desc.toLowerCase();
+    const groupLower = groupContext.toLowerCase();
+    
+    // Don't add group if it's already in the description
+    if (!descLower.includes(groupLower)) {
+      parts.unshift(groupContext);
+    }
+  }
+  
+  // Join and clean up
+  let suggested = parts.join(' ');
+  
+  // Normalize spaces
+  suggested = suggested.replace(/\s+\s+/g, ' ').trim();
+  
+  // Capitalize first letter of the first word, lowercase the rest
+  if (suggested) {
+    const words = suggested.split(' ');
+    suggested = words[0].charAt(0).toUpperCase() + words[0].slice(1).toLowerCase();
+    for (let i = 1; i < words.length; i++) {
+      suggested += ' ' + words[i].toLowerCase();
+    }
+  }
+  
+  return suggested;
+}
+
+/**
+ * Build a suggested description when the original is missing or inadequate.
+ */
+function buildSuggestedDescription(id, name, group) {
+  const cleanId = id?.replace(/^mod_/, '') || '';
+  
+  // Split group by pipe for hierarchy
+  const groupParts = group?.split('|') || [];
+  const cleanGroupParts = groupParts.map(g => g.trim()).filter(g => g);
+  const groupContext = cleanGroupParts.join(' ');
+  
+  // Start with the most meaningful information
+  let parts = [];
+  
+  // Add group context first if it provides additional meaning
+  if (groupContext && groupContext.toLowerCase() !== (name || '').toLowerCase()) {
+    const nameLower = (name || '').toLowerCase();
+    const groupLower = groupContext.toLowerCase();
+    
+    // Don't add group if it's already in the name or redundant
+    if (!nameLower.includes(groupLower)) {
+      parts.push(groupContext);
+    }
+  }
+  
+  // Add the name
+  if (name) {
+    parts.push(name);
+  } else if (cleanId) {
+    // Convert camelCase to space-separated words
+    const words = cleanId.replace(/([A-Z])/g, ' $1');
+    parts.push(words);
+  }
+  
+  // Join and clean up
+  let suggested = parts.join(' ');
+  
+  // Normalize spaces
+  suggested = suggested.replace(/\s+\s+/g, ' ').trim();
+  
+  // Capitalize first letter
+  if (suggested) {
+    suggested = suggested.charAt(0).toUpperCase() + suggested.slice(1);
+  }
+  
+  return suggested;
+}
+
 // Read master-data.json
 const masterDataPath = resolve(repoRoot, 'docs/library-information/master-data.json');
 const masterData = JSON.parse(readFileSync(masterDataPath, 'utf-8'));
@@ -30,8 +169,8 @@ markdown += '## Attributes Table\n\n';
 markdown += 'Total: ' + attributes.length + ' attributes\n\n';
 
 // Table header
-markdown += '| id | name | group | image | description |\n';
-markdown += '|---|---|---|---|---|\n';
+markdown += '| id | name | group | image | description | suggested description |\n';
+markdown += '|---|---|---|---|---|---|\n';
 
 // Table rows
 for (const attr of attributes) {
@@ -40,6 +179,9 @@ for (const attr of attributes) {
   const group = attr.group || '';
   const imageUrl = attr.imageUrl || '';
   const desc = attr.desc || '';
+  
+  // Generate suggested description
+  const suggested = generateSuggestedDescription(attr);
 
   // Format image as markdown image if present
   const imageCol = imageUrl ? `![${name}](${imageUrl})` : '';
@@ -47,7 +189,7 @@ for (const attr of attributes) {
   // Escape pipes in content for markdown table
   const escape = (str) => str.replace(/\|/g, '\\|');
 
-  markdown += `| ${escape(id)} | ${escape(name)} | ${escape(group)} | ${escape(imageCol)} | ${escape(desc)} |\n`;
+  markdown += `| ${escape(id)} | ${escape(name)} | ${escape(group)} | ${escape(imageCol)} | ${escape(desc)} | ${escape(suggested)} |\n`;
 }
 
 markdown += '\n---\n\n';

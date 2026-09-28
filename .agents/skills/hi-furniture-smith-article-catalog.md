@@ -1,36 +1,35 @@
 # HI Furniture_Smith Article Catalog Generation
 
 > **Skill Type:** Process Documentation  
-> **Purpose:** Recreate Furniture_Smith article catalog with dimensions from Roomle HI plan context  
+> **Purpose:** Recreate Furniture_Smith article catalog with dimensions from the HOMAG backend library data  
 > **Use When:** Library changes, new backend, or data refresh needed
 
 ---
 
 ## Overview
 
-This skill documents the complete process to extract article data from the Roomle HOMAG Intelligence (HI) system and generate a structured markdown catalog with images, labels, descriptions, and dimensions.
+This skill documents the complete process to fetch article and master data for the Furniture_Smith library from the HOMAG backend and generate a structured markdown catalog with images, labels, descriptions, and dimensions.
 
-The process stores the original result of `roomDesignerApi.extended.getExternalObjectPlanContext()` (master data, rooms, articles, and groups) in `docs/library-information/hi-plan-context.json` and transforms it into a human-readable markdown table suitable for documentation and reference. No MCP server is involved.
+The fetch script requests the article catalog and the master data directly from the HOMAG backend via its proxy server — no Roomle planner, no browser, no local HTTP server. It stores the articles (sub-articles filtered out) in `docs/library-information/article.json` and the master data in `docs/library-information/master-data.json`, and the generator script transforms the articles into a human-readable markdown table suitable for documentation and reference. No MCP server is involved.
 
 ---
 
 ## Prerequisites
 
 1. **Node.js 18+** — Runs the fetch and generator scripts; they have no dependencies, no `npm install` needed
-2. **A browser** — The plan context only exists in a loaded scene, so the script opens a page that loads one
 
 ---
 
 ## Data Flow
 
 ```
-node .agents/scripts/fetch-hi-plan-context.js
-    ↓ serves fetch-hi-plan-context.html on http://localhost:3101/ and opens it
-Roomle Planner (Browser): HI_PRE_Roomle_Milestone_2, Furniture_Smith, language en
-    ↓ roomDesignerApi.extended.callbacks.onCompletelyLoaded
-    ↓ roomDesignerApi.extended.getExternalObjectPlanContext()
-    ↓ POST /hi-plan-context
-HI Plan Context (HiPlanContext JSON, unchanged) → docs/library-information/hi-plan-context.json
+node .agents/scripts/fetch-hi-library-data.js
+    ↓ GET proxy_request?backendId=HI_PRE_Roomle_Milestone_2&url=api/pos/libraries/Furniture_Smith/articles
+    ↓ GET proxy_request?backendId=HI_PRE_Roomle_Milestone_2&url=api/pos/libraries/Furniture_Smith/masterData
+    ↓ https://dfscfgtest01-app.azurewebsites.net, Basic auth, Accept-Language: en
+Articles ({ articles: [...] }, sub-articles with isConfigDummy filtered out)
+    → docs/library-information/article.json
+Master data ({ modules, attributes }) → docs/library-information/master-data.json
     ↓ node .agents/scripts/generate-article-catalog.js
 Markdown Catalog (articles.md)
 ```
@@ -39,27 +38,19 @@ Markdown Catalog (articles.md)
 
 ## Step-by-Step Process
 
-### Step 1: Fetch HiPlanContext JSON
+### Step 1: Fetch the library data
 
 ```bash
-node .agents/scripts/fetch-hi-plan-context.js
+node .agents/scripts/fetch-hi-library-data.js
 ```
 
-- The script serves [`fetch-hi-plan-context.html`](../scripts/fetch-hi-plan-context.html) on `http://localhost:3101/` and opens it in the default browser
-- The page loads the scene the way `minimal-hi-example/index.html` does: backend `HI_PRE_Roomle_Milestone_2` (plan, additional catalogs and `configureInRoom` from its preset in the HI backend list), library `Furniture_Smith`, language `en` (the `Accept-Language` of the HI requests, the planner locale and `tecConfigInfo.language`), user right `Master` (`uiConfiguration.userRight`)
-- Once `roomDesignerApi.extended.callbacks.onCompletelyLoaded` fires, the page calls `roomDesignerApi.extended.getExternalObjectPlanContext()` without arguments, which returns all four sections, and posts the result back
-- The script writes the result unchanged (pretty-printed) to `docs/library-information/hi-plan-context.json`, prints `Saved docs/library-information/hi-plan-context.json` and exits
+- The script sends the two requests that `libLoadArticleCatalog` and `libLoadMasterData` of the roomle-ui embedding-lib send (`packages/embedding-lib/src/homag-intelligence/hi-requests.ts`): the URL-encoded relative path `api/pos/libraries/{libraryId}/{type}` after the proxy's `url=` parameter, with `Authorization` (Basic), `Accept-Language: en` and `Content-Type: application/json` headers
+- Constants at the top of the script: `BACKEND_ID` (`HI_PRE_Roomle_Milestone_2`), `LIBRARY_ID` (`Furniture_Smith`), `LANGUAGE` (`en`), `PROXY_BASE_URL` (`https://dfscfgtest01-app.azurewebsites.net`), `AUTH_DATA`
+- Articles are prepared the way `loadPosData` of the planner kernel does (`packages/web-sdk/packages/homag-intelligence/src/glue-logic.ts`): the response is wrapped in `{ articles: [...] }` and every article with `isConfigDummy` is a sub-article and is filtered out (16 of 127 for Furniture_Smith, leaving 111 articles)
+- `materialProviders` is dropped from the master data; no consumer needs it and the planner's plan context never contained it
+- The script writes `docs/library-information/article.json` and `docs/library-information/master-data.json` (pretty-printed), prints both paths and the article count, and exits
 
-A run takes about 15 seconds. The status bar of the page shows the progress; close the tab when it reports the file as saved. Backend, library, language and user right are the constants `BACKEND_ID`, `LIBRARY_ID`, `LANGUAGE` and `USER_RIGHT` at the top of the page script.
-
-With `--no-open` the script only prints the URL, e.g. for a headless browser:
-
-```bash
-node .agents/scripts/fetch-hi-plan-context.js --no-open & FETCH_PID=$!
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
-  --user-data-dir="$(mktemp -d)" --enable-unsafe-swiftshader http://localhost:3101/ & CHROME_PID=$!
-wait $FETCH_PID; kill $CHROME_PID
-```
+A run takes a few seconds. `userRight` needs no handling: it is a planner UI setting, not a backend request parameter — the backend returns all attributes with their per-attribute `userRight` fields.
 
 ### Step 2: Generate Markdown Catalog
 
@@ -68,7 +59,7 @@ node .agents/scripts/generate-article-catalog.js
 ```
 
 [`generate-article-catalog.js`](../scripts/generate-article-catalog.js) has no dependencies. It:
-- Loads `docs/library-information/hi-plan-context.json`
+- Loads `docs/library-information/article.json`
 - Writes one table row per article with the columns described in [Column Data Sources](#column-data-sources)
 - Takes the dimensions from the `roots[0].attributes` array and formats them as `L {Depth} mm W {Width} mm H {Height} mm`
 - Replaces pipes in the category with slashes (to avoid breaking markdown tables)
@@ -87,7 +78,7 @@ git commit -m "docs: update Furniture_Smith article catalog"
 
 ## Column Data Sources
 
-The markdown table has 7 columns. Here is the exact source of each column from the `HiPlanContext` JSON structure:
+The markdown table has 7 columns. Here is the exact source of each column from the `article.json` structure:
 
 ### 1. ID
 - **Source:** `article.articleId`
@@ -168,23 +159,13 @@ Example: `"Fingergrip corner base cabinet direction left with 1 door, adjustable
 
 ---
 
-## Complete JSON Structure
+## JSON Structure
 
 
-`hi-plan-context.json` is the unchanged `HiPlanContext` returned by `getExternalObjectPlanContext()`:
+`article.json` contains the article catalog (111 articles, sub-articles filtered out), unchanged from the backend response:
 
 ```json
 {
-  "rooms": {
-    "rooms": [{ "levels": [...] }]
-  },
-  "groups": [],
-  "masterData": {
-    "Furniture_Smith": {
-      "modules": [...],
-      "attributes": [...]
-    }
-  },
   "articles": [
     {
       "libraryId": "Furniture_Smith",
@@ -216,16 +197,11 @@ Example: `"Fingergrip corner base cabinet direction left with 1 door, adjustable
 }
 ```
 
----
+`master-data.json` contains the library master data (2026-09-28: 47 modules, 398 attributes, ~330 KB):
 
-## HiPlanContext Section Details
-
-`getExternalObjectPlanContext(include?)` takes an optional list of sections (`'masterData' | 'rooms' | 'articles' | 'groups'`) and returns all of them when the list is omitted or empty. The fetch script calls it without arguments. For Furniture_Smith (2026-09-27) the file has 26,562 lines (1.2 MB):
-
-- `masterData` — per library all modules (47) and all attributes (398), with every field of the library: modules with `assignedAttributes`, `moduleType`, `isRoot`, `allowedChildModules`, …; attributes with `type`, `isMain`, `userRight`, `group`, `selections`, `desc`, `imageUrl` (the material swatches), …
-- `rooms` — the room information of the plan: per room its `levels` with the contour segments
-- `articles` — the article catalog (111 articles): per article `articleId`, `articleName`, `desc`, `imageUrl`, `category` and the article template in `roots` (root module `name`, sub-`modules` and the attribute values in `attributes`)
-- `groups` — the groups currently loaded in the plan (none in the preset plan)
+- `modules` — all modules with every field of the library: `assignedAttributes`, `moduleType`, `isRoot`, `allowedChildModules`, …
+- `attributes` — all attributes with `type`, `isMain`, `userRight`, `group`, `selections`, `desc`, `imageUrl` (the material swatches), …
+- `materialProviders` is stripped by the fetch script
 
 The attribute and module names of an article are in the master data: `article.roots[0].name` is a module id, `attributes[].id` an attribute id.
 
@@ -234,24 +210,20 @@ The attribute and module names of an article are in the master data: `article.ro
 ## Automating the Process
 
 ```bash
-node .agents/scripts/fetch-hi-plan-context.js && node .agents/scripts/generate-article-catalog.js
+node .agents/scripts/fetch-hi-library-data.js && node .agents/scripts/generate-article-catalog.js
 ```
 
 ---
 
 ## Troubleshooting
 
-### "Port 3101 is already in use"
-**Cause:** A previous run is still waiting for the page  
-**Solution:** Stop it (`lsof -ti tcp:3101 | xargs kill`) and run the script again
-
-### The Script Keeps Waiting
-**Cause:** The page could not load the scene or fetch the plan context  
-**Solution:** The status bar of the page shows `Fetching the plan context failed: …`; the browser console has the details
+### The Script Fails with an HTTP Error
+**Cause:** The proxy or the backend rejected the request  
+**Solution:** The script prints the failing type (`articles` or `masterData`) with status and status text; check the constants `BACKEND_ID`, `LIBRARY_ID`, `LANGUAGE` and `AUTH_DATA` in `.agents/scripts/fetch-hi-library-data.js`
 
 ### Wrong Library Data or Empty Articles Array
-**Cause:** Wrong backend, library or language in the page  
-**Solution:** Check `BACKEND_ID` (`HI_PRE_Roomle_Milestone_2`), `LIBRARY_ID` (`Furniture_Smith`) and `LANGUAGE` (`en`) in `.agents/scripts/fetch-hi-plan-context.html`
+**Cause:** Wrong backend, library or language in the script  
+**Solution:** Check `BACKEND_ID` (`HI_PRE_Roomle_Milestone_2`), `LIBRARY_ID` (`Furniture_Smith`) and `LANGUAGE` (`en`) in `.agents/scripts/fetch-hi-library-data.js`
 
 ### Missing Dimensions
 **Cause:** Some articles don't define all dimension attributes  
@@ -261,11 +233,10 @@ node .agents/scripts/fetch-hi-plan-context.js && node .agents/scripts/generate-a
 
 ## Related Files
 
-- `.agents/scripts/fetch-hi-plan-context.js` — Fetch script: serves the page, writes `hi-plan-context.json`
-- `.agents/scripts/fetch-hi-plan-context.html` — Page that loads the scene and calls `getExternalObjectPlanContext()` (backend, library and language constants)
-- `.agents/scripts/generate-article-catalog.js` — Generator: writes `articles.md` from `hi-plan-context.json`
-- `minimal-hi-example/index.html` — The example the page is derived from
-- `docs/library-information/hi-plan-context.json` — Raw HiPlanContext data
+- `.agents/scripts/fetch-hi-library-data.js` — Fetch script: requests articles and master data from the HOMAG backend proxy, writes `article.json` and `master-data.json`
+- `.agents/scripts/generate-article-catalog.js` — Generator: writes `articles.md` from `article.json`
+- `docs/library-information/article.json` — Article catalog data (sub-articles filtered out)
+- `docs/library-information/master-data.json` — Library master data
 - `docs/library-information/articles.md` — Generated markdown catalog
 - `.agents/skills/hi-furniture-smith-article-catalog.md` — This skill document
 
@@ -279,7 +250,7 @@ node .agents/scripts/fetch-hi-plan-context.js && node .agents/scripts/generate-a
 
 ## Materials Catalog Generation
 
-`docs/library-information/materials.md` is generated from the same `hi-plan-context.json` by the [materials skill](./hi-furniture-smith-materials.md); its thumbnails are the selection `imageUrl`s of that file.
+`docs/library-information/materials.md` is generated from the same `master-data.json` by the [materials skill](./hi-furniture-smith-materials.md); its thumbnails are the selection `imageUrl`s of that file.
 
 ---
 
@@ -287,7 +258,7 @@ node .agents/scripts/fetch-hi-plan-context.js && node .agents/scripts/generate-a
 
 **Question**: Where do the material/color thumbnails come from in the Roomle HI Planner UI?
 
-**Answer**: Each thumbnail is the `imageUrl` of an attribute selection in the HI master data. The kernel copies every `selection.imageUrl` into the thumbnail of the parameter value when `uiConfiguration.showThumbnails` is on. `getExternalObjectPlanContext()` returns these `imageUrl`s, so `hi-plan-context.json` contains them, e.g. in the selections of `mod_FrontColor`.
+**Answer**: Each thumbnail is the `imageUrl` of an attribute selection in the HI master data. The kernel copies every `selection.imageUrl` into the thumbnail of the parameter value when `uiConfiguration.showThumbnails` is on. The master data fetched from the backend contains these `imageUrl`s unchanged, so `master-data.json` contains them, e.g. in the selections of `mod_FrontColor`.
 
 ### URL Pattern
 
@@ -297,12 +268,11 @@ https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_sm
 
 - A read-only SAS URL of one Azure blob: the image GUID is random and the signature is bound to that blob, so the URL cannot be built from the material value
 - Without the signature the CDN answers `409 PublicAccessNotPermitted`
-- The signature is valid for about a month (`st` to `se`); after that, regenerate `hi-plan-context.json`, `articles.md` and `materials.md` (see the [materials skill](./hi-furniture-smith-materials.md))
+- The signature is valid for about a month (`st` to `se`); after that, regenerate `master-data.json`, `articles.md` and `materials.md` (see the [materials skill](./hi-furniture-smith-materials.md))
 
 ### Material Values
 
-The material values are defined in the `masterData.Furniture_Smith.attributes` where:
+The material values are defined in the `attributes` of `master-data.json` where:
 - `type` = "Text"
 - `name` or `desc` contains "Color"
 - Each selection has a `value` (a numeric code for the 21 finishes, a name like `Inox` for hardware and glass) and a `name`
-

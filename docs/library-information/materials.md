@@ -4,11 +4,11 @@ This document lists all materials (colors) from the Furniture_Smith library.
 
 ## Source
 
-Data extracted from `HiPlanContext.masterData.Furniture_Smith.attributes` where type is Text and name/desc contains "Color".
+Data extracted from the `attributes` of the Furniture_Smith master data (`master-data.json`) where type is Text and name/desc contains "Color".
 
 ## Thumbnails
 
-The thumbnails are the swatches the planner shows for a color attribute (e.g. FRONT COLOR): the `imageUrl` of each selection in `hi-plan-context.json`, a read-only SAS URL of a blob on the HOMAG TecConfig CDN:
+The thumbnails are the swatches the planner shows for a color attribute (e.g. FRONT COLOR): the `imageUrl` of each selection in `master-data.json`, a read-only SAS URL of a blob on the HOMAG TecConfig CDN:
 
 ```
 https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_smith/images/{image_guid}_{file_name}?sv=...&st=...&se=...&sr=b&sp=r&sig=...
@@ -17,7 +17,7 @@ https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_sm
 - `{subscription_id}` = `e2fe8b3d-da31-4a20-92ab-ab6e3839300e`
 - `{image_guid}` is random per image, so the URL cannot be built from the material value
 - The signature is bound to the exact blob; without it the CDN answers `409 PublicAccessNotPermitted`
-- The signatures in this document are valid until 2026-10-19; after that the thumbnails stop showing until `hi-plan-context.json` and this document are regenerated
+- The signatures in this document are valid until 2026-10-19; after that the thumbnails stop showing until `master-data.json` and this document are regenerated
 
 The generation process is described in [hi-furniture-smith-materials.md](../../.agents/skills/hi-furniture-smith-materials.md).
 

@@ -10,7 +10,7 @@
 
 This skill documents the process to extract material data (colors and finishes) from the Roomle HOMAG Intelligence (HI) system's master data and generate a structured markdown table.
 
-The process retrieves the `HiPlanContext` object and extracts all "Text" type attributes that contain "Color" in their name or description, then compiles their selections into a deduplicated, sorted table of materials with the description (`desc`), the swatch thumbnail (`imageUrl`), and the **color code calculated from actual image pixels**. Materials without thumbnail (no `imageUrl` in any selection) are filtered out.
+The process reads the Furniture_Smith master data (`docs/library-information/master-data.json`) and extracts all "Text" type attributes that contain "Color" in their name or description, then compiles their selections into a deduplicated, sorted table of materials with the description (`desc`), the swatch thumbnail (`imageUrl`), and the **color code calculated from actual image pixels**. Materials without thumbnail (no `imageUrl` in any selection) are filtered out.
 
 **IMPORTANT:** The color codes are **calculated by analyzing actual image pixels using Sharp**, NOT guessed from material names. This ensures accurate color representation for all materials.
 
@@ -18,9 +18,9 @@ The process retrieves the `HiPlanContext` object and extracts all "Text" type at
 
 ## Prerequisites
 
-1. **HiPlanContext JSON** — The file `docs/library-information/hi-plan-context.json` must exist. Generate it using the process described in [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md#step-1-fetch-hiplancontext-json):
+1. **Master data JSON** — The file `docs/library-information/master-data.json` must exist. Generate it using the process described in [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md#step-1-fetch-the-library-data):
    ```bash
-   node .agents/scripts/fetch-hi-plan-context.js
+   node .agents/scripts/fetch-hi-library-data.js
    ```
 
 2. **Node.js 18+** — Required for color extraction
@@ -37,8 +37,8 @@ The process retrieves the `HiPlanContext` object and extracts all "Text" type at
 ## Data Flow
 
 ```
-HiPlanContext JSON (from getExternalObjectPlanContext)
-    ↓ Extract masterData.Furniture_Smith.attributes
+master-data.json (fetched directly from the HOMAG backend)
+    ↓ Extract attributes
 Filter: type == Text AND (name OR desc contains "Color")
     ↓ Extract selections from each attribute (name, value, desc, imageUrl)
 Filter: selection has an imageUrl (thumbnail)
@@ -55,12 +55,12 @@ Markdown Table (materials.md) with Suggested Color and Suggested Description col
 
 ## Step-by-Step Process
 
-### Step 1: Generate HiPlanContext JSON (if not already done)
+### Step 1: Fetch the library data (if not already done)
 
-Use the process from [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md) to fetch the HiPlanContext:
+Use the process from [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md) to fetch the master data:
 
 ```bash
-node .agents/scripts/fetch-hi-plan-context.js
+node .agents/scripts/fetch-hi-library-data.js
 ```
 
 The `imageUrl`s are signed and valid for about a month (see [Thumbnails](#thumbnails)).
@@ -81,7 +81,7 @@ This installs:
 Use this JavaScript script to extract materials and calculate their colors from actual image pixels:
 
 ```bash
-node .agents/scripts/extract-dominant-color-from-image.js --all-from-context
+node .agents/scripts/extract-dominant-color-from-image.js --all
 ```
 
 This script will:
@@ -95,30 +95,28 @@ This script will:
 **Options:**
 ```bash
 # Regenerate materials.md with accurate colors
-node .agents/scripts/extract-dominant-color-from-image.js --all-from-context
+node .agents/scripts/extract-dominant-color-from-image.js --all
 
 # List all materials with their accurately calculated colors
-node .agents/scripts/extract-dominant-color-from-image.js --all-from-context --list-colors
+node .agents/scripts/extract-dominant-color-from-image.js --all --list-colors
 
 # Custom input/output paths
-node .agents/scripts/extract-dominant-color-from-image.js --all-from-context \
-  --input custom/hi-plan-context.json \
+node .agents/scripts/extract-dominant-color-from-image.js --all \
+  --input custom/master-data.json \
   --output custom/materials.md
 
 # Verify color for a single image
 node .agents/scripts/extract-dominant-color-from-image.js --verify "https://.../152.jpg" "Cloudy blue"
 
 # Dry run (show output without writing)
-node .agents/scripts/extract-dominant-color-from-image.js --all-from-context --dry-run
+node .agents/scripts/extract-dominant-color-from-image.js --all --dry-run
 ```
 
 ### Step 4: Commit Changes
 
 ```bash
 cd /Users/gernotsteinegger/source/roomle/roomle-hi-example
-git add docs/library-information/hi-plan-context.json docs/library-information/materials.md
-node .agents/scripts/extract-dominant-color-from-image.js --all-from-context
-git add docs/library-information/materials.md
+git add docs/library-information/master-data.json docs/library-information/materials.md
 git commit -m "docs: update Furniture_Smith materials catalog with accurately calculated colors from image pixels"
 ```
 
@@ -200,7 +198,7 @@ This renders as a small colored square followed by the hex code, providing both 
 
 ## Thumbnails
 
-The swatches the planner shows for a color attribute (e.g. FRONT COLOR) are the `imageUrl`s of the attribute selections: the kernel copies each `selection.imageUrl` into the thumbnail of the parameter value when `uiConfiguration.showThumbnails` is on, and `getExternalObjectPlanContext()` returns them.
+The swatches the planner shows for a color attribute (e.g. FRONT COLOR) are the `imageUrl`s of the attribute selections: the kernel copies each `selection.imageUrl` into the thumbnail of the parameter value when `uiConfiguration.showThumbnails` is on, and the master data fetch returns them unchanged.
 
 Each `imageUrl` is a read-only SAS URL of an Azure blob on the TecConfig CDN:
 
@@ -307,7 +305,7 @@ The generated table has 6 columns:
 
 ## Current Materials
 
-As of the latest HiPlanContext extraction, the Furniture_Smith library contains **21 materials** with accurately calculated colors and suggested descriptions:
+As of the latest master data fetch, the Furniture_Smith library contains **21 materials** with accurately calculated colors and suggested descriptions:
 
 | Name | Value | Accurate Color | Suggested Description |
 |---|---|---|---|
@@ -343,11 +341,11 @@ When planning with HI MCP, use the material values (e.g., "190" for Sunny white)
 
 ## Related Files
 
-- `docs/library-information/hi-plan-context.json` — Source HiPlanContext data (generated using [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md))
+- `docs/library-information/master-data.json` — Source master data (generated using [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md))
 - `docs/library-information/materials.md` — Generated materials table with **accurately calculated** colors and suggested descriptions
 - `.agents/scripts/extract-dominant-color-from-image.js` — JavaScript color extraction script (uses Sharp)
 - `.agents/scripts/package.json` — Dependencies for the color extraction script
-- `.agents/skills/hi-furniture-smith-article-catalog.md` — Article catalog generation skill (describes how to create hi-plan-context.json)
+- `.agents/skills/hi-furniture-smith-article-catalog.md` — Article catalog generation skill (describes how to create article.json and master-data.json)
 - `.agents/skills/hi-furniture-smith-materials.md` — This skill document
 
 ---

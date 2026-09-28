@@ -19,12 +19,12 @@
  * 
  * Usage:
  *   node extract-dominant-color-from-image.js <imageUrl>
- *   node extract-dominant-color-from-image.js --all-from-context [--output colors.txt]
+ *   node extract-dominant-color-from-image.js --all [--output colors.txt]
  *   node extract-dominant-color-from-image.js --verify <imageUrl> [name]
  * 
  * Examples:
  *   node extract-dominant-color-from-image.js "https://.../152_cloudyblue.jpg"
- *   node extract-dominant-color-from-image.js --all-from-context
+ *   node extract-dominant-color-from-image.js --all
  */
 
 import sharp from 'sharp';
@@ -114,16 +114,14 @@ async function getColorFromUrl(url) {
 }
 
 // ============================================================================
-// HI PLAN CONTEXT PROCESSING
+// MASTER DATA PROCESSING
 // ============================================================================
 
 /**
- * Extract materials from HiPlanContext
+ * Extract materials from the master data
  */
 function extractMaterials(data) {
-  const masterData = data?.masterData || {};
-  const fs = masterData?.Furniture_Smith || {};
-  const attributes = fs?.attributes || [];
+  const attributes = data?.attributes || [];
   
   // Find all Text type attributes with Color in name or desc
   const colorAttrs = [];
@@ -266,11 +264,11 @@ This document lists all materials (colors) from the Furniture_Smith library.
 
 ## Source
 
-Data extracted from \`HiPlanContext.masterData.Furniture_Smith.attributes\` where type is Text and name/desc contains "Color".
+Data extracted from the \`attributes\` of the Furniture_Smith master data (\`master-data.json\`) where type is Text and name/desc contains "Color".
 
 ## Thumbnails
 
-The thumbnails are the swatches the planner shows for a color attribute (e.g. FRONT COLOR): the \`imageUrl\` of each selection in \`hi-plan-context.json\`, a read-only SAS URL of a blob on the HOMAG TecConfig CDN:
+The thumbnails are the swatches the planner shows for a color attribute (e.g. FRONT COLOR): the \`imageUrl\` of each selection in \`master-data.json\`, a read-only SAS URL of a blob on the HOMAG TecConfig CDN:
 
 \`\`\`
 https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_smith/images/{image_guid}_{file_name}?sv=...&st=...&se=...&sr=b&sp=r&sig=...
@@ -279,7 +277,7 @@ https://tecconfig-preview.homag.cloud/cdn/{subscription_id}/library/furniture_sm
 - \`{subscription_id}\` = \`e2fe8b3d-da31-4a20-92ab-ab6e3839300e\`
 - \`{image_guid}\` is random per image, so the URL cannot be built from the material value
 - The signature is bound to the exact blob; without it the CDN answers \`409 PublicAccessNotPermitted\`
-- The signatures in this document are valid until ${expiryDate}; after that the thumbnails stop showing until \`hi-plan-context.json\` and this document are regenerated
+- The signatures in this document are valid until ${expiryDate}; after that the thumbnails stop showing until \`master-data.json\` and this document are regenerated
 
 The generation process is described in [hi-furniture-smith-materials.md](../../.agents/skills/hi-furniture-smith-materials.md).
 
@@ -338,12 +336,12 @@ The color extraction script uses Node.js with the Sharp library for image proces
  */
 function parseArgs(args) {
   const options = {
-    input: 'docs/library-information/hi-plan-context.json',
+    input: 'docs/library-information/master-data.json',
     output: 'docs/library-information/materials.md',
     listColors: false,
     dryRun: false,
     verify: false,
-    allFromContext: false
+    all: false
   };
   
   let positional = [];
@@ -357,8 +355,8 @@ function parseArgs(args) {
       options.dryRun = true;
     } else if (arg === '--verify') {
       options.verify = true;
-    } else if (arg === '--all-from-context') {
-      options.allFromContext = true;
+    } else if (arg === '--all') {
+      options.all = true;
     } else if (arg.startsWith('--input=')) {
       options.input = arg.substring(8);
     } else if (arg.startsWith('--output=')) {
@@ -391,7 +389,7 @@ async function main() {
   
   try {
     // Single URL mode
-    if (positional.length > 0 && !options.allFromContext && !options.verify) {
+    if (positional.length > 0 && !options.all && !options.verify) {
       const url = positional[0];
       const color = await getColorFromUrl(url);
       if (color) {
@@ -419,8 +417,8 @@ async function main() {
       return;
     }
     
-    // All from context mode
-    if (options.allFromContext) {
+    // All from master data mode
+    if (options.all) {
       const data = JSON.parse(await readFile(options.input, 'utf-8'));
       const result = extractMaterials(data);
       const expiryDate = getExpiryDate(result.materials);
@@ -455,13 +453,13 @@ async function main() {
     // Default: show help
     console.error('Usage:');
     console.error('  node extract-dominant-color-from-image.js <imageUrl>');
-    console.error('  node extract-dominant-color-from-image.js --all-from-context [options]');
+    console.error('  node extract-dominant-color-from-image.js --all [options]');
     console.error('  node extract-dominant-color-from-image.js --verify <imageUrl> [name]');
     console.error('');
     console.error('Options:');
     console.error('  --list-colors      List all materials with their colors');
     console.error('  --dry-run          Don\'t write output file');
-    console.error('  --input <file>      Input hi-plan-context.json path');
+    console.error('  --input <file>      Input master-data.json path');
     console.error('  --output <file>     Output markdown path');
     process.exit(1);
     

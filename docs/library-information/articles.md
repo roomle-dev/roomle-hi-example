@@ -4,7 +4,7 @@ This document lists all articles from the Furniture_Smith library as displayed i
 
 ## Source
 
-Data extracted from `HiPlanContext` (`roomDesignerApi.extended.getExternalObjectPlanContext()`). The generation process is described in [hi-furniture-smith-article-catalog.md](../../.agents/skills/hi-furniture-smith-article-catalog.md).
+Data extracted from the Furniture_Smith article catalog of the HOMAG backend (sub-articles filtered out). The generation process is described in [hi-furniture-smith-article-catalog.md](../../.agents/skills/hi-furniture-smith-article-catalog.md).
 
 Image URLs are hosted on: `https://tecconfig-preview.homag.cloud/cdn/`
 

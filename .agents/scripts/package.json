@@ -5,9 +5,9 @@
   "type": "module",
   "main": "extract-dominant-color-from-image.js",
   "scripts": {
-    "extract-colors": "node extract-dominant-color-from-image.js --all-from-context --input ../../docs/library-information/hi-plan-context.json --output ../../docs/library-information/materials.md",
-    "generate-table": "node extract-dominant-color-from-image.js --all-from-context --input ../../docs/library-information/hi-plan-context.json --output ../../docs/library-information/materials.md",
-    "list-colors": "node extract-dominant-color-from-image.js --all-from-context --list-colors --input ../../docs/library-information/hi-plan-context.json"
+    "extract-colors": "node extract-dominant-color-from-image.js --all --input ../../docs/library-information/master-data.json --output ../../docs/library-information/materials.md",
+    "generate-table": "node extract-dominant-color-from-image.js --all --input ../../docs/library-information/master-data.json --output ../../docs/library-information/materials.md",
+    "list-colors": "node extract-dominant-color-from-image.js --all --list-colors --input ../../docs/library-information/master-data.json"
   },
   "dependencies": {
     "sharp": "^0.33.0",

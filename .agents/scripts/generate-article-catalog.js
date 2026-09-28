@@ -2,8 +2,8 @@
 /**
  * Generate the Furniture_Smith article catalog
  *
- * Reads docs/library-information/hi-plan-context.json (written by
- * fetch-hi-plan-context.js) and writes docs/library-information/articles.md:
+ * Reads docs/library-information/article.json (written by
+ * fetch-hi-library-data.js) and writes docs/library-information/articles.md:
  * one table row per article with id, category, label, dimensions, image,
  * description and suggested description.
  *
@@ -21,7 +21,7 @@ const LIBRARY_INFORMATION_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
   '../../docs/library-information',
 );
-const INPUT_PATH = join(LIBRARY_INFORMATION_DIR, 'hi-plan-context.json');
+const INPUT_PATH = join(LIBRARY_INFORMATION_DIR, 'article.json');
 const OUTPUT_PATH = join(LIBRARY_INFORMATION_DIR, 'articles.md');
 
 const HEADER = `# Furniture_Smith Article Catalog
@@ -30,7 +30,7 @@ This document lists all articles from the Furniture_Smith library as displayed i
 
 ## Source
 
-Data extracted from \`HiPlanContext\` (\`roomDesignerApi.extended.getExternalObjectPlanContext()\`). The generation process is described in [hi-furniture-smith-article-catalog.md](../../.agents/skills/hi-furniture-smith-article-catalog.md).
+Data extracted from the Furniture_Smith article catalog of the HOMAG backend (sub-articles filtered out). The generation process is described in [hi-furniture-smith-article-catalog.md](../../.agents/skills/hi-furniture-smith-article-catalog.md).
 
 Image URLs are hosted on: \`https://tecconfig-preview.homag.cloud/cdn/\`
 

@@ -88,7 +88,7 @@ result back over the same socket. Tool calls run in the page against
 | `start.mjs` | The launcher: build gate (`npm install` + typecheck of the `hi-mcp` workspace), static file server for this directory on :3000, spawns the MCP server with `HI_MCP_STORE_URL` set, opens the browser |
 | `hi-mcp/hi-mcp-poc-json/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), the WebSocket page bridge, call correlation and timeouts, tool definitions with zod schemas, server instructions and authoring rules — unchanged, shared with the ligna-store client and the cloud deployments |
 | `index.html` | The example itself, plus the MCP section at the end: the WebSocket browser bridge, the tool executors (tool name → `roomDesignerApi.extended` call + context shaping), and the placement geometry (wall derivation, group footprints, wall placement) |
-| `package.json` | Only the `start` script that runs the launcher |
+| `package.json` | The `start` script that runs the launcher, and `dev` which adds `server_url=http://localhost:5173/` |
 
 ## Prerequisites
 
@@ -99,6 +99,11 @@ result back over the same socket. Tool calls run in the page against
 ```bash
 npm start          # or directly: node start.mjs
 ```
+
+To develop against a local Rubens UI dev server (start it first on
+<http://localhost:5173/>), run `npm run dev` instead — it passes
+`server_url=http://localhost:5173/` to the example, so the planner loads from
+the local UI instead of `https://www.roomle.com/t/bo-test/`.
 
 The launcher installs and typechecks the `hi-mcp` workspace (the build gate),
 serves the example, starts the MCP server, and opens the example in the

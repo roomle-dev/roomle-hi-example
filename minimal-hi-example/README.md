@@ -16,6 +16,11 @@ starts the MCP server on :3100):
 npm start          # or directly: node start.mjs
 ```
 
+To develop against a local Rubens UI dev server (start it first on
+<http://localhost:5173/>), run `npm run dev` instead — it opens the example
+with `server_url=http://localhost:5173/` so the planner loads from the local
+UI instead of `https://www.roomle.com/t/bo-test/`.
+
 **3. The example opens** at <http://localhost:3000/?mcp=true> (pass
 `--no-open` to skip that). Select a preset in the top bar, keep the tab
 open — the server terminal logs `page connected`.

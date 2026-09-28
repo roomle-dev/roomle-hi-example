@@ -587,7 +587,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         ...newGroupIds,
         ...posGroups.map((group) => group.id).filter(Boolean),
       ]);
-      const contactErrors: string[] = [];
+      const placementErrors: string[] = [];
       const placedGroups: any[] = [];
       let newGroupCursor = 0;
       posGroups.forEach((group, groupIndex) => {
@@ -603,6 +603,13 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           (candidate) => candidate.id === resultGroupId,
         );
         if (!resultGroup) {
+          // a placement that cannot be resolved fails the whole call - a
+          // partially applied placement would silently leave the group
+          // unpositioned
+          placementErrors.push(
+            `posGroups[${groupIndex}]: the placement could not be applied - ` +
+              `the planner reported no calculated group for '${String(resultGroupId)}'.`,
+          );
           return;
         }
         const placement = placeGroupAtWall(
@@ -618,7 +625,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           groupsOfThisCall,
         );
         if (contact) {
-          contactErrors.push(
+          placementErrors.push(
             contactError(
               `posGroups[${groupIndex}] placed at the ${placementEntry.resolved.wall.side} wall`,
               contact,
@@ -636,7 +643,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           }),
         });
       });
-      if (contactErrors.length > 0) {
+      if (placementErrors.length > 0) {
         // nothing of this call stays: the created groups are removed again,
         // replaced groups keep their new roots but were not moved
         for (const id of newGroupIds) {
@@ -648,7 +655,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
               ? ', replaced groups were not moved'
               : '') +
             ':\n' +
-            contactErrors.join('\n'),
+            placementErrors.join('\n'),
         );
       }
       if (placedGroups.length > 0) {

@@ -1,22 +1,3 @@
-export interface ContourSegment {
-  cmd: string;
-  x: number;
-  y: number;
-  angle?: number;
-  type?: string;
-  height?: number;
-  thickness?: number;
-}
-
-export interface RoomContourLevel {
-  level: number;
-  segments: ContourSegment[];
-}
-
-export interface RoomInformationRoom {
-  levels: RoomContourLevel[];
-}
-
 export type WallSide = 'left' | 'right' | 'top' | 'bottom';
 
 export interface DerivedWall {
@@ -95,73 +76,6 @@ const toDegrees = (radians: number): number => (radians * 180) / Math.PI;
 const normalizeDegrees = (degrees: number): number => {
   const normalized = degrees % 360;
   return normalized < 0 ? normalized + 360 : normalized;
-};
-
-// The room contour is in plan space (2D floor plane); pos space is the group
-// coordinate space of PosGroup.pos ([x, y, z], y up). The two share the x axis,
-// and the contour y axis is the pos z axis with opposite sign.
-export const contourPointToPosSpace = (
-  x: number,
-  y: number,
-): [number, number] => [round2(x), round2(-y)];
-
-// Side of the room as seen in the top-view plan image (and the default
-// perspective view): a wall a group faces at rotationY 270 lies on the right.
-const sideFromFacing = (facingRotationY: number): WallSide => {
-  const bucket = (Math.round(facingRotationY / 90) * 90) % 360;
-  if (bucket === 90) {
-    return 'left';
-  }
-  if (bucket === 180) {
-    return 'bottom';
-  }
-  if (bucket === 270) {
-    return 'right';
-  }
-  return 'top';
-};
-
-export const deriveWalls = (room: RoomInformationRoom): DerivedWall[] => {
-  const contour =
-    room.levels?.find((level) => level.level === 0) ?? room.levels?.[0];
-  const segments = contour?.segments ?? [];
-  const onlyStraightSegments = segments.every(
-    (segment) => segment.cmd === 'M' || segment.cmd === 'L',
-  );
-  if (segments.length < 2 || !onlyStraightSegments) {
-    return [];
-  }
-  const walls: DerivedWall[] = [];
-  for (let index = 0; index + 1 < segments.length; index++) {
-    const from = segments[index];
-    const to = segments[index + 1];
-    const directionX = to.x - from.x;
-    const directionY = to.y - from.y;
-    const length = Math.hypot(directionX, directionY);
-    if (length < 1e-6) {
-      continue;
-    }
-    // The contour runs counter-clockwise with the room interior on its left,
-    // so the interior-to-wall direction is (dy, -dx). A group standing against
-    // the wall needs its back to face that direction: atan2(-nx, ny).
-    const normalX = directionY / length;
-    const normalY = -directionX / length;
-    const facingRotationY = round2(
-      normalizeDegrees(toDegrees(Math.atan2(-normalX, normalY))),
-    );
-    walls.push({
-      index,
-      side: sideFromFacing(facingRotationY),
-      start: contourPointToPosSpace(from.x, from.y),
-      end: contourPointToPosSpace(to.x, to.y),
-      lengthMm: round2(length),
-      type: to.type,
-      heightMm: to.height,
-      thicknessMm: to.thickness,
-      facingRotationY,
-    });
-  }
-  return walls;
 };
 
 type Point3 = [number, number, number];

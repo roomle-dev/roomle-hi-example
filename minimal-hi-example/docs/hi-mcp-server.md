@@ -233,18 +233,21 @@ default timeout is 30 s; `create-or-replace-groups`, `place-group`,
 
 ### get-plan-context
 
-Returns a snapshot of the HI planning session, shaped for the agent.
+Returns a snapshot of the HI planning session, agent-ready as the planner API
+(`getExternalObjectPlanContext`) provides it — compacted sections, one
+coordinate system throughout (3D, right-handed, Y up).
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `include` | `('masterData' \| 'rooms' \| 'articles' \| 'groups')[]` | no | Sections to include; `rooms`, `articles` and `groups` when omitted |
 
-- `rooms` — wall contours of all rooms; every room additionally carries a
-  derived `walls` array — per wall: a `side` label (`left`/`right`/`top`/
-  `bottom` as seen in the top-view image), `start`/`end` (`[x, z]` in
-  millimetres, the same space as a group's `pos`), `lengthMm`, `type`,
-  `heightMm`, `thicknessMm`, and the `facingRotationY` a group needs to stand
-  against that wall
+- `rooms` — every room carries its contour `levels` with 3D segments
+  (`pos: [x, level, -y]`, the same right-handed coordinate system as a group's
+  `pos`, Y up) and a derived `walls` array — per wall: a `side` label
+  (`left`/`right`/`top`/`bottom` as seen in the top-view image), `start`/`end`
+  (`[x, z]` in millimetres, the floor projection of the 3D contour),
+  `lengthMm`, `type`, `heightMm`, `thicknessMm`, and the `facingRotationY` a
+  group needs to stand against that wall
 - `articles` — compact catalog: `articleId`, `articleName`, `desc`,
   `imageUrl`, `category`, and per root module its master-data `module` (id,
   name, desc, imageUrl), `dimensions` (the template's `Dim` attributes with
@@ -266,8 +269,8 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   (id, name, desc, imageUrl) with their relevant attribute ids, and the
   attributes a customer sees (`isMain` or `userRight` `Simple`) with desc,
   imageUrl, type, group and `selections` (value, name, desc and imageUrl —
-  the swatch of a material). Everything else is reachable through
-  [find-attributes](#find-attributes)
+  the swatch of a material). The same compacted attribute vocabulary is
+  searched by [find-attributes](#find-attributes)
 
 Example: `{ "include": ["articles", "groups"] }`
 
@@ -286,10 +289,10 @@ surfaces those).
 
 Searches the attribute vocabulary of the loaded libraries by text — attribute
 id, name, description, group or selection name — and returns the matching
-attributes with their `selections`, their `userRight`, and the root modules
-that carry them. It searches the full master data, so it also finds the
-attributes the compact `masterData` section leaves out. At most 20 matches
-are returned; narrow the text when the result carries a `hint`.
+attributes with their `selections` and the root modules that carry them. The
+vocabulary is the compacted master data of `get-plan-context` (root modules
+and their customer-facing attributes). At most 20 matches are returned; narrow
+the text when the result carries a `hint`.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |

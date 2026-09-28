@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  contourPointToPosSpace,
   convexPolygonsTouch,
-  deriveWalls,
   groupCornerGeometry,
   groupFootprint,
   isCornerDockingVector,
@@ -14,29 +12,7 @@ import {
   type GroupFootprint,
 } from '../plan-space';
 
-// rectangular room 4000 x 3000 mm: a counter-clockwise contour with the room
-// interior on the left, five segments = four walls
-const RECTANGULAR_ROOM = {
-  levels: [
-    {
-      level: 0,
-      segments: [
-        { cmd: 'M', x: 0, y: 0 },
-        {
-          cmd: 'L',
-          x: 4000,
-          y: 0,
-          type: 'wall',
-          height: 2500,
-          thickness: 100,
-        },
-        { cmd: 'L', x: 4000, y: 3000, type: 'wall' },
-        { cmd: 'L', x: 0, y: 3000, type: 'wall' },
-        { cmd: 'L', x: 0, y: 0, type: 'wall' },
-      ],
-    },
-  ],
-};
+
 
 const IDENTITY_MATRIX = [
   1, 0, 0, 0,
@@ -71,81 +47,6 @@ const FOOTPRINT: GroupFootprint = {
   widthMm: 800,
   depthMm: 600,
 };
-
-describe('deriveWalls', () => {
-  it('derives the four walls of a rectangular room with side labels', () => {
-    const walls = deriveWalls(RECTANGULAR_ROOM);
-    expect(walls).toHaveLength(4);
-    expect(walls[0]).toEqual({
-      index: 0,
-      side: 'bottom',
-      start: [0, 0],
-      end: [4000, 0],
-      lengthMm: 4000,
-      type: 'wall',
-      heightMm: 2500,
-      thicknessMm: 100,
-      facingRotationY: 180,
-    });
-    expect(walls[1]).toEqual({
-      index: 1,
-      side: 'right',
-      start: [4000, 0],
-      end: [4000, -3000],
-      lengthMm: 3000,
-      type: 'wall',
-      facingRotationY: 270,
-    });
-    expect(walls[2]).toEqual({
-      index: 2,
-      side: 'top',
-      start: [4000, -3000],
-      end: [0, -3000],
-      lengthMm: 4000,
-      type: 'wall',
-      facingRotationY: 0,
-    });
-    expect(walls[3]).toEqual({
-      index: 3,
-      side: 'left',
-      start: [0, -3000],
-      end: [0, 0],
-      lengthMm: 3000,
-      type: 'wall',
-      facingRotationY: 90,
-    });
-  });
-
-  it('returns no walls for degenerate contours', () => {
-    expect(deriveWalls({ levels: [] })).toEqual([]);
-    expect(
-      deriveWalls({ levels: [{ level: 0, segments: [] }] }),
-    ).toEqual([]);
-    expect(
-      deriveWalls({ levels: [{ level: 0, segments: [{ cmd: 'M', x: 0, y: 0 }] }] }),
-    ).toEqual([]);
-    expect(
-      deriveWalls({
-        levels: [
-          {
-            level: 0,
-            segments: [
-              { cmd: 'M', x: 0, y: 0 },
-              { cmd: 'A', x: 4000, y: 0 },
-            ],
-          },
-        ],
-      }),
-    ).toEqual([]);
-  });
-});
-
-describe('contourPointToPosSpace', () => {
-  it('flips the contour y axis into the pos z axis and rounds to centimetres', () => {
-    expect(contourPointToPosSpace(10, -20)).toEqual([10, 20]);
-    expect(contourPointToPosSpace(10.123, 0)).toEqual([10.12, 0]);
-  });
-});
 
 describe('groupFootprint', () => {
   it('derives the bounding box from part boxes transformed by the root', () => {

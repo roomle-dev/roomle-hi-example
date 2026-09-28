@@ -74,10 +74,12 @@ export const createHiMcpServer = (bridge: PageBridge): McpServer => {
     'get-plan-context',
     {
       description:
-        'Returns a snapshot of the HI planning session. Default sections: rooms (wall contours of all rooms; every ' +
-        'room also carries a derived walls array - per wall: a side label (left/right/top/bottom as seen in the ' +
-        'top-view image), start/end [x, z] in millimetres, lengthMm, type, heightMm, thicknessMm and the ' +
-        'facingRotationY a group needs to stand against that wall), articles (compact catalog: articleId, name, ' +
+        'Returns a snapshot of the HI planning session, agent-ready as the planner API provides it - one coordinate ' +
+        'system throughout: 3D, right-handed, Y up (group pos and room contours use pos: [x, level, -y]). Default ' +
+        'sections: rooms (every room carries its contour levels with 3D segments and a derived walls array - per ' +
+        'wall: a side label (left/right/top/bottom as seen in the top-view image), start/end [x, z] in millimetres ' +
+        '(the floor projection of the 3D contour), lengthMm, type, heightMm, thicknessMm and the facingRotationY a ' +
+        'group needs to stand against that wall), articles (compact catalog: articleId, name, ' +
         'desc, category, image, and per root module its master-data module, dimensions, main attribute values, ' +
         'docking vector names, insert levels and sub-modules, plus cornerArticle for articles made for a room ' +
         'corner) and groups (the groups currently in the plan: position with pos, rotationY and footprint, and ' +
@@ -86,7 +88,8 @@ export const createHiMcpServer = (bridge: PageBridge): McpServer => {
         'no geometry; a returned group is a valid create-or-replace-groups payload). masterData (per library the root ' +
         'modules and the customer-facing attributes with their allowed values; modules, attributes and values carry ' +
         'their desc and imageUrl, e.g. the swatch of a colour) is returned only when included ' +
-        'explicitly; other attributes are found with find-attributes. Use it before authoring or modifying groups.',
+        'explicitly; the same compacted attribute vocabulary is searched by find-attributes. Use it before ' +
+        'authoring or modifying groups.',
       inputSchema: {
         include: z
           .array(z.enum(['masterData', 'rooms', 'articles', 'groups']))
@@ -106,9 +109,9 @@ export const createHiMcpServer = (bridge: PageBridge): McpServer => {
       description:
         'Searches the attribute vocabulary of the loaded libraries by text (attribute id, name, description, ' +
         'group or selection name) and returns the matching attributes with their allowed values (each with ' +
-        'desc and imageUrl), their userRight and the root modules that carry them - including the attributes the compact masterData ' +
-        'section of get-plan-context leaves out. Use it to find the attribute for a requested property, e.g. ' +
-        'the front colour, and the value to set.',
+        'desc and imageUrl) and the root modules that carry them. The vocabulary is the compacted master data ' +
+        'of get-plan-context (root modules and their customer-facing attributes). Use it to find the attribute ' +
+        'for a requested property, e.g. the front colour, and the value to set.',
       inputSchema: {
         text: z
           .string()

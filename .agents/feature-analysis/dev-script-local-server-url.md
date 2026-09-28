@@ -72,8 +72,9 @@ The `dev` script inherits everything from `start.mjs`: `--no-open`, `EXAMPLE_POR
   on Windows `cmd`.
 - The local dev server on port 5173 serves a Rubens UI compatible with the page
   (`overrideServerUrl` contract); the script does not check or start it.
-- Only `minimal-hi-example/package.json` gets the script; the repository root `package.json`
-  is left as is (root has `npm start`; a root `dev` was not requested).
+- Both `minimal-hi-example/package.json` and the repository root `package.json` gain a
+  `dev` script — the root one forwards to the workspace, mirroring the root `start`,
+  so `npm run dev` works from the repository root as well.
 
 ## Close-Out (2026-09-28)
 
@@ -83,10 +84,18 @@ Implemented as proposed:
   `server_url` to `EXAMPLE_URL` (header comment updated with the
   `npm run dev` usage line).
 - `minimal-hi-example/package.json` gained
-  `"dev": "EXAMPLE_SERVER_URL=http://localhost:5173/ node start.mjs"`.
+  `"dev": "node start.mjs --dev"`.
 - `minimal-hi-example/README.md` and
   `minimal-hi-example/docs/hi-mcp-server.md` document `npm run dev` (the
   docs' file table now describes both scripts).
+
+Review follow-up: the initial implementation set the env var inline in the
+npm script (`EXAMPLE_SERVER_URL=http://localhost:5173/ node start.mjs`),
+which is POSIX-only — on Windows, npm runs scripts through `cmd.exe` and the
+assignment fails. The default now lives in `start.mjs` behind the `--dev`
+flag; `EXAMPLE_SERVER_URL` still overrides it. The repository root
+`package.json` also gained `"dev": "npm run dev --workspace
+minimal-hi-example"` so `npm run dev` works from the root as well.
 
 Verified by running `npm run dev -- --no-open`: the launcher printed
 

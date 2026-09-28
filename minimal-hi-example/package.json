@@ -6,6 +6,6 @@
   "description": "Standalone HI presets example page started together with the hi-mcp-poc-json MCP server",
   "scripts": {
     "start": "node start.mjs",
-    "dev": "EXAMPLE_SERVER_URL=http://localhost:5173/ node start.mjs"
+    "dev": "node start.mjs --dev"
   }
 }

@@ -2,11 +2,9 @@ import type { RoomDesignerApiType } from './types';
 import {
   adjoiningWall,
   convexPolygonsTouch,
-  deriveWalls,
   footprintCornersInRoom,
   groupCornerGeometry,
   groupFootprint,
-  isCornerDockingVector,
   placeAgainstWall,
   placeCornerAtWalls,
   repositioningFromPlacement,
@@ -30,52 +28,6 @@ type PlanContextSection = 'masterData' | 'rooms' | 'articles' | 'groups';
 const DEFAULT_SECTIONS: PlanContextSection[] = ['rooms', 'articles', 'groups'];
 
 const MAX_ATTRIBUTE_MATCHES = 20;
-
-const isRootModule = (module: any): boolean =>
-  module?.isRoot === true || module?.moduleType === 'RootModule';
-
-const isCustomerFacingAttribute = (attribute: any): boolean =>
-  attribute?.isMain === true || attribute?.userRight === 'Simple';
-
-const compactAttribute = (attribute: any) => ({
-  id: attribute.id,
-  name: attribute.name,
-  desc: attribute.desc,
-  imageUrl: attribute.imageUrl,
-  type: attribute.type,
-  group: attribute.group,
-  selections: attribute.selections,
-});
-
-// The root modules and the attributes a customer sees (isMain or userRight
-// Simple). Everything else stays reachable through find-attributes.
-const compactMasterData = (masterData: any) => {
-  const rootModules = (masterData?.modules ?? []).filter(isRootModule);
-  const assignedAttributeIds = new Set<string>(
-    rootModules.flatMap((module: any) => module.assignedAttributes ?? []),
-  );
-  const attributes = (masterData?.attributes ?? []).filter(
-    (attribute: any) =>
-      assignedAttributeIds.has(attribute.id) &&
-      isCustomerFacingAttribute(attribute),
-  );
-  const attributeIds = new Set<string>(
-    attributes.map((attribute: any) => attribute.id),
-  );
-  return {
-    libraryId: masterData?.libraryId,
-    modules: rootModules.map((module: any) => ({
-      id: module.id,
-      name: module.name,
-      desc: module.desc,
-      imageUrl: module.imageUrl,
-      attributes: (module.assignedAttributes ?? []).filter((id: string) =>
-        attributeIds.has(id),
-      ),
-    })),
-    attributes: attributes.map(compactAttribute),
-  };
-};
 
 const dockingVectorNames = (root: any): string[] =>
   (root?.dockInfos ?? [])
@@ -233,104 +185,6 @@ const repositionedGroup = (resultGroup: any, placement: GroupPlacement) => {
   };
 };
 
-// The docking vectors of the calculated roots in the plan by article id - the
-// fallback for an article template that does not carry its own.
-const calculatedDockingVectorsByArticle = (
-  groups: any[],
-): Map<string, string[]> => {
-  const byArticle = new Map<string, string[]>();
-  for (const group of groups) {
-    for (const root of group.roots ?? []) {
-      const names = dockingVectorNames(root);
-      if (
-        root.articleId &&
-        names.length > 0 &&
-        !byArticle.has(root.articleId)
-      ) {
-        byArticle.set(root.articleId, names);
-      }
-    }
-  }
-  return byArticle;
-};
-
-const compactArticle = (
-  article: any,
-  masterData: any,
-  calculatedDockingVectors: Map<string, string[]>,
-) => {
-  const attributeInfos = new Map<string, any>(
-    (masterData?.attributes ?? []).map((attribute: any) => [
-      attribute.id,
-      attribute,
-    ]),
-  );
-  const moduleInfos = new Map<string, any>(
-    (masterData?.modules ?? []).map((module: any) => [module.id, module]),
-  );
-  const namedValue = (attribute: any) => ({
-    id: attribute.id,
-    name: attributeInfos.get(attribute.id).name,
-    value: attribute.value,
-  });
-  const rootModules = (article.roots ?? []).map((root: any) => {
-    const moduleInfo = moduleInfos.get(root.name);
-    const attributes = (root.attributes ?? []).filter((attribute: any) =>
-      attributeInfos.has(attribute.id),
-    );
-    const dimensions = attributes.filter(
-      (attribute: any) => attributeInfos.get(attribute.id).type === 'Dim',
-    );
-    const dimensionIds = new Set<string>(
-      dimensions.map((attribute: any) => attribute.id),
-    );
-    const templateVectors = dockingVectorNames(root);
-    return {
-      module: {
-        id: root.name,
-        name: moduleInfo?.name,
-        desc: moduleInfo?.desc,
-        imageUrl: moduleInfo?.imageUrl,
-      },
-      dimensions: dimensions.map(namedValue),
-      mainAttributes: attributes
-        .filter(
-          (attribute: any) =>
-            attributeInfos.get(attribute.id).isMain === true &&
-            !dimensionIds.has(attribute.id),
-        )
-        .map(namedValue),
-      dockingVectors:
-        templateVectors.length > 0
-          ? templateVectors
-          : calculatedDockingVectors.get(article.articleId) ?? [],
-      insertLevels: root.insertLevelInfos,
-      subModules: (root.modules ?? []).map((module: any) => {
-        const subModuleInfo = moduleInfos.get(module.name);
-        return {
-          id: module.name,
-          name: subModuleInfo?.name ?? module.name,
-          desc: subModuleInfo?.desc,
-          imageUrl: subModuleInfo?.imageUrl,
-        };
-      }),
-    };
-  });
-  return {
-    articleId: article.articleId,
-    articleName: article.articleName,
-    desc: article.desc,
-    imageUrl: article.imageUrl,
-    category: article.category,
-    libraryId: article.libraryId,
-    catalog: article.catalog,
-    cornerArticle: rootModules.some((rootModule: any) =>
-      rootModule.dockingVectors.some(isCornerDockingVector),
-    ),
-    rootModules,
-  };
-};
-
 const attributeMatches = (attribute: any, needle: string): boolean =>
   [
     attribute.id,
@@ -348,60 +202,6 @@ const attributeMatches = (attribute: any, needle: string): boolean =>
       value !== null &&
       String(value).toLowerCase().includes(needle),
   );
-
-// A root as the agent sees it: the article pick it can resubmit (id,
-// articleId, input attributes, docking) plus read-only facts. No positions,
-// no geometry.
-const shapeRoot = (root: any) => ({
-  id: root.id,
-  articleId: root.articleId,
-  articleName: root.articleName,
-  desc: root.desc,
-  imageUrl: root.imageUrl,
-  category: root.category,
-  ...(isGeneratedRoot(root) && { isGenerated: true }),
-  attributes: (root.attributes ?? [])
-    .filter((attribute: any) => attribute.isInput === true)
-    .map((attribute: any) => ({ id: attribute.id, value: attribute.value })),
-  ...(root.contextData && {
-    contextData: stripDockingIndices(root.contextData),
-  }),
-  dockingVectors: dockingVectorNames(root),
-  freeDockingVectors: freeDockingVectors(root),
-  subModules: (root.modules ?? []).map((module: any) => ({
-    id: module.name,
-    imageUrl: module.imageUrl,
-  })),
-  ...(root.logMessages?.length && { logMessages: root.logMessages }),
-});
-
-// A group as the agent sees it: resubmittable as it is (the read-only
-// position block and the generated roots are dropped on the way back).
-const shapeGroup = (group: any) => ({
-  id: group.id,
-  libraryId: group.libraryId,
-  position: {
-    pos: group.pos,
-    rotationY: group.rotationY,
-    footprint: groupFootprint(group),
-  },
-  ...(group.attributes && { attributes: group.attributes }),
-  roots: (group.roots ?? []).map(shapeRoot),
-  logMessages: group.logMessages ?? [],
-});
-
-const shapeRooms = (rooms: any) => {
-  if (!rooms) {
-    return rooms;
-  }
-  return {
-    ...rooms,
-    rooms: (rooms.rooms ?? []).map((room: any) => ({
-      ...room,
-      walls: deriveWalls(room),
-    })),
-  };
-};
 
 const isArticlePickOnly = (root: any): boolean =>
   !root?.posData && !root?.modules && !root?.parts;
@@ -477,7 +277,8 @@ const resolveWall = (rooms: any[], spec: WallPlacementSpec): ResolvedWall => {
       `Room index ${roomIndex} not found - the plan has ${rooms.length} room(s).`,
     );
   }
-  const walls = deriveWalls(room);
+  // the plan context derives the walls of every room
+  const walls = (room.walls ?? []) as DerivedWall[];
   let wall;
   if (typeof spec.wall === 'number') {
     wall = walls.find((candidate) => candidate.index === spec.wall);
@@ -537,51 +338,15 @@ const placeGroupAtWall = (
 };
 
 export const toolExecutors: Record<string, ToolExecutor> = {
+  // The plan context arrives agent-ready from the planner API (compacted
+// sections, 3D room contours with derived walls); the executor is a
+// pass-through.
   'get-plan-context': async (roomDesignerApi, args) => {
     const requested =
       Array.isArray(args.include) && args.include.length > 0
         ? (args.include as PlanContextSection[])
         : DEFAULT_SECTIONS;
-    const sections = new Set<PlanContextSection>(requested);
-    // the compact articles need the attribute types and module names of the
-    // master data and the docking vectors of the calculated roots
-    const fetched = new Set<PlanContextSection>(requested);
-    if (sections.has('articles')) {
-      fetched.add('masterData');
-      fetched.add('groups');
-    }
-    const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
-      [...fetched],
-    );
-    const masterData = (context.masterData ?? {}) as Record<string, any>;
-    const result: Record<string, unknown> = {};
-    if (sections.has('masterData')) {
-      result.masterData = Object.fromEntries(
-        Object.entries(masterData).map(([libraryId, libraryMasterData]) => [
-          libraryId,
-          compactMasterData(libraryMasterData),
-        ]),
-      );
-    }
-    if (sections.has('rooms')) {
-      result.rooms = shapeRooms(context.rooms);
-    }
-    if (sections.has('articles')) {
-      const calculatedDockingVectors = calculatedDockingVectorsByArticle(
-        (context.groups ?? []) as any[],
-      );
-      result.articles = ((context.articles ?? []) as any[]).map((article) =>
-        compactArticle(
-          article,
-          masterData[article.libraryId],
-          calculatedDockingVectors,
-        ),
-      );
-    }
-    if (sections.has('groups')) {
-      result.groups = context.groups?.map(shapeGroup);
-    }
-    return result;
+    return roomDesignerApi.extended.getExternalObjectPlanContext(requested);
   },
 
   'find-attributes': async (roomDesignerApi, args) => {
@@ -602,18 +367,19 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       if (libraryId && id !== libraryId) {
         continue;
       }
-      const rootModules = (masterData.modules ?? []).filter(isRootModule);
+      // the master data arrives compacted: root modules and customer-facing
+      // attributes only
+      const rootModules = (masterData.modules ?? []) as any[];
       for (const attribute of masterData.attributes ?? []) {
         if (!attributeMatches(attribute, needle)) {
           continue;
         }
         matches.push({
           libraryId: id,
-          ...compactAttribute(attribute),
-          userRight: attribute.userRight,
+          ...attribute,
           rootModules: rootModules
             .filter((module: any) =>
-              (module.assignedAttributes ?? []).includes(attribute.id),
+              (module.attributes ?? []).includes(attribute.id),
             )
             .map((module: any) => module.id),
         });
@@ -811,7 +577,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
 
     const placements: any[] = [];
     if (placementSpecs.size > 0) {
-      const afterGroups = (context.groups ?? []) as any[];
+      // the placement math needs the calculated groups with their geometry;
+      // the plan context returns them compacted
+      const afterGroups = (await roomDesignerApi.extended.getExternalObjectGroups()) as any[];
       const newGroupIds = afterGroups
         .map((group) => group.id)
         .filter((id) => !beforeGroupIds.has(id));
@@ -819,7 +587,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         ...newGroupIds,
         ...posGroups.map((group) => group.id).filter(Boolean),
       ]);
-      const contactErrors: string[] = [];
+      const placementErrors: string[] = [];
       const placedGroups: any[] = [];
       let newGroupCursor = 0;
       posGroups.forEach((group, groupIndex) => {
@@ -835,6 +603,13 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           (candidate) => candidate.id === resultGroupId,
         );
         if (!resultGroup) {
+          // a placement that cannot be resolved fails the whole call - a
+          // partially applied placement would silently leave the group
+          // unpositioned
+          placementErrors.push(
+            `posGroups[${groupIndex}]: the placement could not be applied - ` +
+              `the planner reported no calculated group for '${String(resultGroupId)}'.`,
+          );
           return;
         }
         const placement = placeGroupAtWall(
@@ -850,7 +625,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           groupsOfThisCall,
         );
         if (contact) {
-          contactErrors.push(
+          placementErrors.push(
             contactError(
               `posGroups[${groupIndex}] placed at the ${placementEntry.resolved.wall.side} wall`,
               contact,
@@ -868,7 +643,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           }),
         });
       });
-      if (contactErrors.length > 0) {
+      if (placementErrors.length > 0) {
         // nothing of this call stays: the created groups are removed again,
         // replaced groups keep their new roots but were not moved
         for (const id of newGroupIds) {
@@ -880,7 +655,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
               ? ', replaced groups were not moved'
               : '') +
             ':\n' +
-            contactErrors.join('\n'),
+            placementErrors.join('\n'),
         );
       }
       if (placedGroups.length > 0) {
@@ -895,7 +670,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       }
     }
 
-    const groups = context.groups?.map(shapeGroup);
+    const groups = context.groups;
     const replacedInputIds = new Set(
       posGroups
         .map((group) => group.id)
@@ -955,10 +730,19 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       roomIndex,
     };
     const resolved = resolveWall(rooms, spec);
-    const placement = placeGroupAtWall(group, resolved, spec);
+    // the placement math needs the calculated group with its geometry; the
+    // plan context returns the groups compacted
+    const rawGroups = (await roomDesignerApi.extended.getExternalObjectGroups()) as any[];
+    const rawGroup = rawGroups.find((candidate) => candidate.id === group.id);
+    if (!rawGroup) {
+      throw new Error(
+        `Group '${groupId}' has no calculated geometry to place.`,
+      );
+    }
+    const placement = placeGroupAtWall(rawGroup, resolved, spec);
     const contact = findGroupContact(
       footprintCornersInRoom(placement.footprint, placement),
-      groups,
+      rawGroups,
       new Set([group.id]),
     );
     if (contact) {
@@ -971,7 +755,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       );
     }
     const loaded = await roomDesignerApi.extended.loadExternalObjectGroupLayout(
-      { posGroups: [repositionedGroup(group, placement)] },
+      { posGroups: [repositionedGroup(rawGroup, placement)] },
       'posGroups',
       { reason: 'adjusted' },
     );
@@ -993,7 +777,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       placedBy: placement.placedBy,
       ...(placement.cornerRootId && { cornerRootId: placement.cornerRootId }),
       wall: resolved.wall,
-      group: resultGroup ? shapeGroup(resultGroup) : undefined,
+      group: resultGroup,
     };
   },
 

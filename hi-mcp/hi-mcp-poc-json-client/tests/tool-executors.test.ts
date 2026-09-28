@@ -1,18 +1,57 @@
 import { describe, expect, it, vi } from 'vitest';
 import { toolExecutors } from '../tool-executors';
 
-// rectangular room 4000 x 3000 mm, contour in plan space
+// rectangular room 4000 x 3000 mm as the plan context returns it: contour
+// in 3D pos space and the derived walls
 const room = {
   levels: [
     {
       level: 0,
       segments: [
-        { cmd: 'M', x: 0, y: 0 },
-        { cmd: 'L', x: 4000, y: 0, type: 'wall' },
-        { cmd: 'L', x: 4000, y: 3000, type: 'wall' },
-        { cmd: 'L', x: 0, y: 3000, type: 'wall' },
-        { cmd: 'L', x: 0, y: 0, type: 'wall' },
+        { cmd: 'M', pos: [0, 0, 0] },
+        { cmd: 'L', pos: [4000, 0, 0], type: 'wall' },
+        { cmd: 'L', pos: [4000, 0, -3000], type: 'wall' },
+        { cmd: 'L', pos: [0, 0, -3000], type: 'wall' },
+        { cmd: 'L', pos: [0, 0, 0], type: 'wall' },
       ],
+    },
+  ],
+  walls: [
+    {
+      index: 0,
+      side: 'bottom',
+      start: [0, 0],
+      end: [4000, 0],
+      lengthMm: 4000,
+      type: 'wall',
+      facingRotationY: 180,
+    },
+    {
+      index: 1,
+      side: 'right',
+      start: [4000, 0],
+      end: [4000, -3000],
+      lengthMm: 3000,
+      type: 'wall',
+      facingRotationY: 270,
+    },
+    {
+      index: 2,
+      side: 'top',
+      start: [4000, -3000],
+      end: [0, -3000],
+      lengthMm: 4000,
+      type: 'wall',
+      facingRotationY: 0,
+    },
+    {
+      index: 3,
+      side: 'left',
+      start: [0, -3000],
+      end: [0, 0],
+      lengthMm: 3000,
+      type: 'wall',
+      facingRotationY: 90,
     },
   ],
 };
@@ -42,6 +81,40 @@ const makeGroup = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+const FOOTPRINT = { x: [0, 800], z: [0, 600], widthMm: 800, depthMm: 600 };
+
+// a group as the plan context returns it (shaped); the raw makeGroup is what
+// getExternalObjectGroups returns
+const makeShapedRoot = (overrides: Record<string, unknown> = {}) => ({
+  id: 'r1',
+  articleId: 'article-1',
+  attributes: [
+    { id: 'b', value: 800 },
+    { id: 't', value: 600 },
+  ],
+  dockingVectors: ['LeftBottom', 'RightBottom'],
+  freeDockingVectors: ['LeftBottom', 'RightBottom'],
+  subModules: [],
+  ...overrides,
+});
+
+const makeShapedGroup = (overrides: Record<string, unknown> = {}) => {
+  const { position, ...rest } = overrides as Record<string, any>;
+  return {
+    id: 'g1',
+    libraryId: 'lib-1',
+    position: {
+      pos: [0, 0, 0],
+      rotationY: 0,
+      footprint: FOOTPRINT,
+      ...(position ?? {}),
+    },
+    roots: [makeShapedRoot()],
+    logMessages: [],
+    ...rest,
+  };
+};
+
 const masterDataFixture = {
   'lib-1': {
     libraryId: 'lib-1',
@@ -53,7 +126,7 @@ const masterDataFixture = {
         imageUrl: 'https://example.com/module-1.png',
         isRoot: true,
         moduleType: 'RootModule',
-        assignedAttributes: ['b', 't', 'front'],
+        attributes: ['b', 't', 'front'],
       },
       {
         id: 'sub-1',
@@ -62,6 +135,7 @@ const masterDataFixture = {
         imageUrl: 'https://example.com/sub-1.png',
       },
     ],
+    // the attributes as the compacted master data returns them
     attributes: [
       {
         id: 'b',
@@ -69,8 +143,6 @@ const masterDataFixture = {
         desc: 'the width',
         type: 'Dim',
         group: 'dim',
-        isMain: true,
-        userRight: 'Simple',
         selections: [],
       },
       {
@@ -79,7 +151,6 @@ const masterDataFixture = {
         desc: 'the depth',
         type: 'Dim',
         group: 'dim',
-        isMain: true,
         selections: [],
       },
       {
@@ -89,7 +160,6 @@ const masterDataFixture = {
         imageUrl: 'https://example.com/front.png',
         type: 'Simple',
         group: 'fronts',
-        isMain: true,
         selections: [
           {
             id: 'white',
@@ -132,7 +202,7 @@ const planContextFixture = {
   masterData: masterDataFixture,
   rooms: { rooms: [room] },
   articles: [articleFixture],
-  groups: [makeGroup()],
+  groups: [makeShapedGroup()],
 };
 
 const createApi = (
@@ -141,6 +211,7 @@ const createApi = (
 ) => ({
   extended: {
     getExternalObjectPlanContext: vi.fn(async () => planContext),
+    getExternalObjectGroups: vi.fn(async () => []),
     loadExternalObjectGroupLayout: vi.fn(async () => [{ id: 'loaded-1' }]),
     removeExternalObject: vi.fn(),
     updateExternalObjectGroupAttribute: vi.fn(async () => undefined),
@@ -153,7 +224,7 @@ const createApi = (
 const pick = () => ({ id: 'u1', articleId: 'article-1' });
 
 describe('get-plan-context', () => {
-  it('fetches and returns the default sections', async () => {
+  it('passes the plan context through with the default sections', async () => {
     const api = createApi(planContextFixture);
     const result = (await toolExecutors['get-plan-context'](api, {})) as Record<
       string,
@@ -163,41 +234,29 @@ describe('get-plan-context', () => {
       'rooms',
       'articles',
       'groups',
-      'masterData',
     ]);
-    expect(Object.keys(result).sort()).toEqual(['articles', 'groups', 'rooms']);
+    // the plan context arrives agent-ready from the planner API
+    expect(result).toEqual(planContextFixture);
   });
 
-  it('returns only the explicitly requested master data section', async () => {
-    const api = createApi(planContextFixture);
-    const result = (await toolExecutors['get-plan-context'](api, {
+  it('passes only the explicitly requested sections through', async () => {
+    const masterDataOnly = { masterData: masterDataFixture };
+    const api = createApi(masterDataOnly);
+    const result = await toolExecutors['get-plan-context'](api, {
       include: ['masterData'],
-    })) as Record<string, any>;
-    expect(Object.keys(result)).toEqual(['masterData']);
+    });
     expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
       'masterData',
     ]);
-    const masterData = (result as Record<string, any>).masterData['lib-1'];
-    expect(masterData.modules).toEqual([
-      {
-        id: 'module-1',
-        name: 'Tall module',
-        desc: 'A tall module',
-        imageUrl: 'https://example.com/module-1.png',
-        attributes: ['b', 't', 'front'],
-      },
-    ]);
-    expect(masterData.attributes.map((attribute: any) => attribute.id)).toEqual(
-      ['b', 't', 'front'],
-    );
+    expect(result).toEqual(masterDataOnly);
   });
 
   it('keeps the images and descriptions of the attributes and their selections', async () => {
     const api = createApi(planContextFixture);
-    const result = (await toolExecutors['get-plan-context'](api, {
+    const result = await toolExecutors['get-plan-context'](api, {
       include: ['masterData'],
-    })) as Record<string, any>;
-    const front = result.masterData['lib-1'].attributes.find(
+    });
+    const front = (result as Record<string, any>).masterData['lib-1'].attributes.find(
       (attribute: any) => attribute.id === 'front',
     );
     expect(front.desc).toBe('the colour of the front');
@@ -211,175 +270,6 @@ describe('get-plan-context', () => {
         imageUrl: 'https://example.com/white.png',
       },
     ]);
-  });
-
-  it('compacts the article catalog with dimensions and docking vectors', async () => {
-    const api = createApi(planContextFixture);
-    const result = await toolExecutors['get-plan-context'](api, {
-      include: ['articles'],
-    });
-    const article = (result as Record<string, any>).articles[0];
-    expect(article.articleId).toBe('article-1');
-    expect(article.desc).toBe('A tall unit');
-    expect(article.imageUrl).toBe('https://example.com/a1.png');
-    expect(article.cornerArticle).toBe(false);
-    expect(article.rootModules[0]).toEqual({
-      module: {
-        id: 'module-1',
-        name: 'Tall module',
-        desc: 'A tall module',
-        imageUrl: 'https://example.com/module-1.png',
-      },
-      dimensions: [
-        { id: 'b', name: 'Width', value: 800 },
-        { id: 't', name: 'Depth', value: 600 },
-      ],
-      mainAttributes: [{ id: 'front', name: 'Front colour', value: 'white' }],
-      dockingVectors: ['LeftBottom', 'RightBottom'],
-      insertLevels: [],
-      subModules: [
-        {
-          id: 'sub-1',
-          name: 'Sub 1',
-          desc: 'A sub module',
-          imageUrl: 'https://example.com/sub-1.png',
-        },
-      ],
-    });
-  });
-
-  it('flags a corner article and falls back to calculated docking vectors', async () => {
-    const withoutTemplateVectors = {
-      ...planContextFixture,
-      articles: [
-        {
-          ...articleFixture,
-          roots: articleFixture.roots.map((root) => ({
-            ...root,
-            dockInfos: undefined,
-          })),
-        },
-      ],
-    };
-    const api = createApi(withoutTemplateVectors);
-    const result = await toolExecutors['get-plan-context'](api, {
-      include: ['articles'],
-    });
-    const article = (result as Record<string, any>).articles[0];
-    // the calculated root of article-1 in the plan carries the vectors
-    expect(article.rootModules[0].dockingVectors).toEqual([
-      'LeftBottom',
-      'RightBottom',
-    ]);
-    expect(article.cornerArticle).toBe(false);
-
-    const withCornerArticle = {
-      ...planContextFixture,
-      articles: [
-        {
-          ...articleFixture,
-          roots: articleFixture.roots.map((root) => ({
-            ...root,
-            dockInfos: [{ id: 'LeftBackBottom' }, { id: 'RightBackBottom' }],
-          })),
-        },
-      ],
-    };
-    const cornerApi = createApi(withCornerArticle);
-    const cornerResult = await toolExecutors['get-plan-context'](cornerApi, {
-      include: ['articles'],
-    });
-    expect(
-      (cornerResult as Record<string, any>).articles[0].cornerArticle,
-    ).toBe(true);
-  });
-
-  it('shapes rooms with derived walls and groups with free docking vectors', async () => {
-    const api = createApi(planContextFixture);
-    const result = await toolExecutors['get-plan-context'](api, {});
-    const rooms = (result as Record<string, any>).rooms.rooms;
-    expect(rooms[0].walls).toHaveLength(4);
-    expect(rooms[0].walls[1].side).toBe('right');
-
-    const group = (result as Record<string, any>).groups[0];
-    expect(group.id).toBe('g1');
-    expect(group.position.footprint).toEqual({
-      x: [0, 800],
-      z: [0, 600],
-      widthMm: 800,
-      depthMm: 600,
-    });
-    const root = group.roots[0];
-    expect(root.attributes).toEqual([
-      { id: 'b', value: 800 },
-      { id: 't', value: 600 },
-    ]);
-    expect(root.freeDockingVectors).toEqual(['LeftBottom', 'RightBottom']);
-  });
-
-  it('keeps the images and descriptions of the roots and their sub-modules', async () => {
-    const withImages = {
-      ...planContextFixture,
-      groups: [
-        makeGroup({
-          roots: [
-            makeRoot({
-              desc: 'A tall unit',
-              imageUrl: 'https://example.com/a1.png',
-              modules: [
-                { name: 'sub-1', imageUrl: 'https://example.com/sub-1.png' },
-              ],
-            }),
-          ],
-        }),
-      ],
-    };
-    const api = createApi(withImages);
-    const result = await toolExecutors['get-plan-context'](api, {
-      include: ['groups'],
-    });
-    const root = (result as Record<string, any>).groups[0].roots[0];
-    expect(root.desc).toBe('A tall unit');
-    expect(root.imageUrl).toBe('https://example.com/a1.png');
-    expect(root.subModules).toEqual([
-      { id: 'sub-1', imageUrl: 'https://example.com/sub-1.png' },
-    ]);
-  });
-
-  it('reports the docking vectors no docking entry uses as free', async () => {
-    const withDocking = {
-      ...planContextFixture,
-      groups: [
-        makeGroup({
-          roots: [
-            makeRoot({
-              contextData: {
-                dockedRoots: [
-                  {
-                    ownDockingVector: 'RightBottom',
-                    dockedRoots: [
-                      { id: 'r2', dockingVector: 'LeftBottom' },
-                    ],
-                  },
-                ],
-              },
-            }),
-          ],
-        }),
-      ],
-    };
-    const api = createApi(withDocking);
-    const result = await toolExecutors['get-plan-context'](api, {});
-    const root = (result as Record<string, any>).groups[0].roots[0];
-    expect(root.freeDockingVectors).toEqual(['LeftBottom']);
-    expect(root.contextData).toEqual({
-      dockedRoots: [
-        {
-          ownDockingVector: 'RightBottom',
-          dockedRoots: [{ id: 'r2', dockingVector: 'LeftBottom' }],
-        },
-      ],
-    });
   });
 });
 
@@ -411,7 +301,6 @@ describe('find-attributes', () => {
               imageUrl: 'https://example.com/white.png',
             },
           ],
-          userRight: undefined,
           rootModules: ['module-1'],
         },
       ],
@@ -449,7 +338,7 @@ describe('find-attributes', () => {
               name: 'M',
               isRoot: true,
               moduleType: 'RootModule',
-              assignedAttributes: attributes.map((attribute) => attribute.id),
+              attributes: attributes.map((attribute) => attribute.id),
             },
           ],
           attributes,
@@ -682,16 +571,24 @@ describe('create-or-replace-groups loading', () => {
   });
 
   it('resolves a placement before loading and re-applies it as repositioningData', async () => {
-    const existingGroup = makeGroup({ id: 'g1', pos: [2000, 0, -3000] });
-    const loadedGroup = makeGroup({
+    const shapedExisting = makeShapedGroup({
+      id: 'g1',
+      position: { pos: [2000, 0, -3000] },
+    });
+    const shapedLoaded = makeShapedGroup({
+      id: 'g2',
+      position: { pos: undefined },
+      roots: [makeShapedRoot({ id: 'r2' })],
+    });
+    const shapedPlaced = makeShapedGroup({
+      id: 'g2',
+      position: { pos: [4000, 0, -1900], rotationY: 270 },
+      roots: [makeShapedRoot({ id: 'r2' })],
+    });
+    const rawExisting = makeGroup({ id: 'g1', pos: [2000, 0, -3000] });
+    const rawLoaded = makeGroup({
       id: 'g2',
       pos: undefined,
-      roots: [makeRoot({ id: 'r2' })],
-    });
-    const placedGroup = makeGroup({
-      id: 'g2',
-      pos: [4000, 0, -1900],
-      rotationY: 270,
       roots: [makeRoot({ id: 'r2' })],
     });
     let groupsFetches = 0;
@@ -704,17 +601,21 @@ describe('create-or-replace-groups loading', () => {
           if (sections.includes('rooms')) {
             return Promise.resolve({
               rooms: { rooms: [room] },
-              groups: [existingGroup],
+              groups: [shapedExisting],
             });
           }
           groupsFetches += 1;
           return Promise.resolve({
             groups:
               groupsFetches === 1
-                ? [existingGroup, loadedGroup]
-                : [existingGroup, placedGroup],
+                ? [shapedExisting, shapedLoaded]
+                : [shapedExisting, shapedPlaced],
           });
         }),
+        getExternalObjectGroups: vi.fn(async () => [
+          rawExisting,
+          rawLoaded,
+        ]),
         loadExternalObjectGroupLayout: vi.fn(async () => [{ id: 'g2' }]),
         removeExternalObject: vi.fn(),
       },
@@ -750,12 +651,21 @@ describe('create-or-replace-groups loading', () => {
   });
 
   it('removes the created groups again when a placement meets an existing group', async () => {
-    const existingGroup = makeGroup({
+    const shapedExisting = makeShapedGroup({
+      id: 'g1',
+      position: { pos: [4000, 0, -1500], rotationY: 270 },
+    });
+    const shapedLoaded = makeShapedGroup({
+      id: 'g2',
+      position: { pos: undefined },
+      roots: [makeShapedRoot({ id: 'r2' })],
+    });
+    const rawExisting = makeGroup({
       id: 'g1',
       pos: [4000, 0, -1500],
       rotationY: 270,
     });
-    const loadedGroup = makeGroup({
+    const rawLoaded = makeGroup({
       id: 'g2',
       pos: undefined,
       roots: [makeRoot({ id: 'r2' })],
@@ -769,11 +679,15 @@ describe('create-or-replace-groups loading', () => {
           if (sections.includes('rooms')) {
             return Promise.resolve({
               rooms: { rooms: [room] },
-              groups: [existingGroup],
+              groups: [shapedExisting],
             });
           }
-          return Promise.resolve({ groups: [existingGroup, loadedGroup] });
+          return Promise.resolve({ groups: [shapedExisting, shapedLoaded] });
         }),
+        getExternalObjectGroups: vi.fn(async () => [
+          rawExisting,
+          rawLoaded,
+        ]),
         loadExternalObjectGroupLayout: vi.fn(async () => [{ id: 'g2' }]),
         removeExternalObject: vi.fn(),
       },
@@ -794,29 +708,40 @@ describe('create-or-replace-groups loading', () => {
 });
 
 describe('place-group', () => {
-  const createPlaceApi = (groups: any[], afterGroups: any[] = groups) => ({
+  // shaped groups for the plan context, raw groups for the placement math
+  const createPlaceApi = (
+    shapedGroups: any[],
+    rawGroups: any[],
+    afterShapedGroups: any[] = shapedGroups,
+  ) => ({
     extended: {
       getExternalObjectPlanContext: vi.fn((sections: string[]) => {
         if (sections.includes('rooms')) {
-          return Promise.resolve({ rooms: { rooms: [room] }, groups });
+          return Promise.resolve({
+            rooms: { rooms: [room] },
+            groups: shapedGroups,
+          });
         }
-        return Promise.resolve({ groups: afterGroups });
+        return Promise.resolve({ groups: afterShapedGroups });
       }),
+      getExternalObjectGroups: vi.fn(async () => rawGroups),
       loadExternalObjectGroupLayout: vi.fn(async () => [{ id: 'g1' }]),
       removeExternalObject: vi.fn(),
     },
   });
 
   it('rejects an unknown group id', async () => {
-    const api = createPlaceApi([]);
+    const api = createPlaceApi([], []);
     await expect(
       toolExecutors['place-group'](api, { groupId: 'nope', wall: 'right' }),
     ).rejects.toThrow(/Group 'nope' not found/);
   });
 
   it('accepts a unique id prefix', async () => {
-    const group = makeGroup({ id: 'group-abc' });
-    const api = createPlaceApi([group]);
+    const api = createPlaceApi(
+      [makeShapedGroup({ id: 'group-abc' })],
+      [makeGroup({ id: 'group-abc' })],
+    );
     const result = await toolExecutors['place-group'](api, {
       groupId: 'group-a',
       wall: 'right',
@@ -825,13 +750,15 @@ describe('place-group', () => {
   });
 
   it('places the group against a wall and reloads it there', async () => {
-    const group = makeGroup({ id: 'g1', pos: [0, 0, 0] });
-    const movedGroup = makeGroup({
+    const movedShaped = makeShapedGroup({
       id: 'g1',
-      pos: [4000, 0, -3000],
-      rotationY: 270,
+      position: { pos: [4000, 0, -3000], rotationY: 270 },
     });
-    const api = createPlaceApi([group], [movedGroup]);
+    const api = createPlaceApi(
+      [makeShapedGroup()],
+      [makeGroup({ id: 'g1', pos: [0, 0, 0] })],
+      [movedShaped],
+    );
     const result = (await toolExecutors['place-group'](api, {
       groupId: 'g1',
       wall: 'right',
@@ -853,13 +780,19 @@ describe('place-group', () => {
   });
 
   it('rejects a target that meets another group without moving it', async () => {
-    const target = makeGroup({ id: 'g1', pos: [0, 0, 0] });
-    const blocker = makeGroup({
-      id: 'g2',
-      pos: [4000, 0, -1900],
-      rotationY: 270,
-    });
-    const api = createPlaceApi([target, blocker]);
+    const api = createPlaceApi(
+      [
+        makeShapedGroup({ id: 'g1' }),
+        makeShapedGroup({
+          id: 'g2',
+          position: { pos: [4000, 0, -1900], rotationY: 270 },
+        }),
+      ],
+      [
+        makeGroup({ id: 'g1', pos: [0, 0, 0] }),
+        makeGroup({ id: 'g2', pos: [4000, 0, -1900], rotationY: 270 }),
+      ],
+    );
     await expect(
       toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' }),
     ).rejects.toThrow(/Placement rejected - the group was not moved/);

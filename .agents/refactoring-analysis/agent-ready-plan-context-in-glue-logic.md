@@ -3,7 +3,16 @@
 > **Trigger**: Jira RML-17966, comment 155424 (Design flaw in the mcp api) — `compactMasterData` must not be used in the embedding systems; the plan context returned by `getExternalObjectPlanContext` must be agent-ready, compacted, and in one consistent 3D coordinate system, produced by the glue logic in roomle-ui.
 > **Date**: 2026-09-28
 > **Author**: AI Assistant
-> **Status**: Open (decisions resolved with the ticket author, 2026-09-28)
+> **Status**: Done
+
+> **Close-out (2026-09-28)**: Implemented as analyzed on branch `refactor/hi-plan-context-RML-17966` in
+> all three repositories. All decisions were applied as resolved; the placement math on the embedding
+> side reads the derived walls from the context and the calculated groups from
+> `getExternalObjectGroups()`. Verification: roomle-ui web-sdk vitest suite fully green (1922 tests,
+> including the new hi-plan-context-test.ts and the adapted glue-logic-test.ts; tsc clean), hi-mcp
+> typecheck clean and 70 tests passing (only the pre-existing `cf` worker test fails for a missing
+> `@cloudflare/containers` install), lint hook on the roomle-ui commit clean. Not verified here: a
+> live planner session (`npm start` + MCP client round-trip) - see Open items.
 
 ---
 
@@ -395,3 +404,82 @@ shapes. Run via the web-sdk vitest setup (`packages/web-sdk`: `npm test`).
 - `ligna-store/hi-mcp/tool-executors.ts`, `hi-mcp/plan-space.ts` — embedder-side shaping.
 - `roomle-hi-example/hi-mcp/hi-mcp-poc-json-client/` — reference copy of the store client.
 - `roomle-hi-example/minimal-hi-example/index.html` — inline executors of the minimal example.
+
+---
+
+## Report (close-out, 2026-09-28)
+
+### Summary of changes
+
+The plan context is now assembled agent-ready in the roomle-ui glue logic. `getPlanContext` returns
+compacted sections in one coordinate system (3D, right-handed, Y up), the embedding systems
+(ligna-store, minimal example) stopped reshaping it, and the MCP server information documents the
+new shapes. `compactMasterData` is completely removed from the embedding repositories, as the
+ticket demanded.
+
+### Changed files
+
+| Repository | File | Change |
+|---|---|---|
+| roomle-ui | `src/hi-plan-context.ts` | **New.** All shaping (compaction, article/group/room shaping, 3D contour conversion, wall derivation), typed against the kernel model, no `any`. |
+| roomle-ui | `src/glue-logic.ts` | `getPlanContext` shapes every section through hi-plan-context; articles and groups share one calculated-groups fetch; master data and articles are deep-copied before compaction. |
+| roomle-ui | `src/external-object-api.ts` | `HiPlanContext` uses the new agent-facing types; `getExternalObjectPlanContext` header comment rewritten (agent-ready, one coordinate system). |
+| roomle-ui | `src/model/oc-scripts-domain.model.ts` | `PosContextData`, `PosDockedContext`, `PosDockedContextRoot` exported (needed for typed shaping). |
+| roomle-ui | `__tests__/hi-plan-context-test.ts` | **New.** 23 unit tests for the pure shaping functions. |
+| roomle-ui | `__tests__/glue-logic-test.ts` | getPlanContext block adapted to the agent-ready shapes + new fetch-sharing test; master data seeded per test (the shared mock stays untouched). |
+| roomle-hi-example | `hi-mcp-poc-json-client/tool-executors.ts` | get-plan-context is a pass-through; find-attributes searches the compacted vocabulary (userRight dropped); placement math reads `room.walls` and `getExternalObjectGroups()`. |
+| roomle-hi-example | `hi-mcp-poc-json-client/plan-space.ts` | Contour conversion and wall derivation removed (moved to roomle-ui); placement/geometry helpers kept. |
+| roomle-hi-example | `hi-mcp-poc-json-client/tests/*` | plan-space tests lose the deriveWalls cases; tool-executor tests rewritten around pass-through, shaped context fixtures, walls and raw groups. |
+| roomle-hi-example | `hi-mcp-poc-json/hi-mcp-server.ts` | get-plan-context and find-attributes tool descriptions updated (3D contour, compacted vocabulary). |
+| roomle-hi-example | `minimal-hi-example/index.html` | Same executor changes inline (pass-through, walls from context, raw groups via getExternalObjectGroups). |
+| roomle-hi-example | `docs`, `hi-mcp-poc-json/README.md` | Rooms (3D contour + walls) and find-attributes (compacted vocabulary) documented. |
+| ligna-store | `hi-mcp/tool-executors.ts`, `hi-mcp/plan-space.ts` | Synced from the reference client (were byte-identical to it before the change). |
+
+Commits: roomle-ui `04b4e24bb`, roomle-hi-example `ef51785`, ligna-store `ce4dd48` (all on
+`refactor/hi-plan-context-RML-17966`, not pushed).
+
+### Before/after
+
+- **Before**: `getExternalObjectPlanContext` returned raw kernel data; ~500 lines of shaping code
+  existed in three copies (ligna-store client, reference client, inline example page), each
+  converting the 2D contour and compacting master data/articles/groups itself.
+- **After**: the shaping exists once, in roomle-ui `hi-plan-context.ts`, behind unit tests; the
+  embedding executors are pass-through for the context and consume `room.walls` plus
+  `getExternalObjectGroups()` for the placement math. Net effect in the embedding repos: about 750
+  lines removed in roomle-hi-example and 310 in ligna-store.
+- **Data shape**: room contours are 3D now - `HiPlanContourSegment.pos: [x, level, -y]` with all
+  other properties surviving, plus a derived `walls` array per room (unchanged wall shape, so the
+  placement vocabulary and `place-group` semantics are preserved).
+
+### Test adaptations
+
+- New roomle-ui unit tests (hi-plan-context-test.ts): contour conversion (pos, rounding, -0,
+  property survival), wall derivation (rectangle sides/facings, closing-segment properties,
+  degenerate/curved/zero-length contours), master-data compaction (root-only, assigned +
+  customer-facing, whitelists), attribute whitelist, article compaction (dimensions, main
+  attributes, docking-vector fallback, cornerArticle, no-master-data case),
+  calculatedDockingVectorsByArticle, root/group shaping (input attributes, stripped docking
+  indices, free vectors, footprint from part boxes).
+- glue-logic-test.ts: the five getPlanContext tests now assert the agent-ready shapes (converted
+  rooms with walls, compact master data and articles, shaped groups) and a new test pins the
+  single calculated-groups fetch shared by the articles and groups sections.
+- hi-mcp tests: fixtures now model the API contract (shaped context groups, walls-carrying rooms,
+  raw groups via a `getExternalObjectGroups` mock); the moved compaction semantics are covered by
+  the roomle-ui tests.
+
+### Risks and open items
+
+- **Live verification pending.** The unit and integration tests are green, but the full round-trip
+  (start the example with a real planner session, connect an MCP client, call get-plan-context /
+  find-attributes / create-or-replace-groups / place-group) has not been run in this session.
+  Specifically `getExternalObjectGroups()` (planner-core, `JSON.parse(group.serializedDefinition)`)
+  must return the calculated `PosGroup` shape the placement math needs - the plan's verification
+  gate. If it differs, the fallback is to extend the shaped group with the needed geometry.
+- The geometry helpers (`groupFootprint` and its chain, docking vector names) now exist in
+  roomle-ui (shaping) and in the embedding clients (placement math) - accepted duplication across
+  repositories, documented in the analysis.
+- The pre-existing `hi-mcp/cf` worker test fails for a missing `@cloudflare/containers` install in
+  this checkout; unrelated to this refactoring.
+- Not done (out of scope per the ticket comment): the `minimal-hi-example` `npm run dev` mode and
+  the INT-stage planner build still need the roomle-ui changes released/deployed before the store
+  and the example can consume them at runtime.

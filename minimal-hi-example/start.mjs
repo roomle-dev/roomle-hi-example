@@ -8,6 +8,7 @@
 // Start it with:  npm start   (from the repository root or this directory)
 // No browser:     npm start -- --no-open
 // Other page port: EXAMPLE_PORT=3101 npm start
+// Local Rubens UI: npm run dev  (server_url=http://localhost:5173/, override via EXAMPLE_SERVER_URL)
 
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
@@ -20,9 +21,13 @@ const EXAMPLE_DIR = dirname(fileURLToPath(import.meta.url));
 const HI_MCP_DIR = join(EXAMPLE_DIR, '..', 'hi-mcp');
 const STATIC_PORT = Number(process.env.EXAMPLE_PORT ?? 3000);
 const MCP_PORT = process.env.HI_MCP_PORT ?? '3100';
+const DEV_SERVER_URL = 'http://localhost:5173/';
+const EXAMPLE_SERVER_URL =
+  process.env.EXAMPLE_SERVER_URL ??
+  (process.argv.includes('--dev') ? DEV_SERVER_URL : undefined);
 const EXAMPLE_URL = `http://localhost:${STATIC_PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith${
   process.env.HI_MCP_PORT ? `&mcp_port=${MCP_PORT}` : ''
-}`;
+}${EXAMPLE_SERVER_URL ? `&server_url=${encodeURIComponent(EXAMPLE_SERVER_URL)}` : ''}`;
 const STATIC_CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',

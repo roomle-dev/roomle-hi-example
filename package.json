@@ -11,6 +11,7 @@
     "minimal-hi-example"
   ],
   "scripts": {
-    "start": "npm start --workspace minimal-hi-example"
+    "start": "npm start --workspace minimal-hi-example",
+    "dev": "npm run dev --workspace minimal-hi-example"
   }
 }

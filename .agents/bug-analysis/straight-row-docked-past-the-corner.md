@@ -14,9 +14,21 @@
 > wall, the per-corner leg table moved under the corner-article recipe and is marked "corner
 > article only" with the straight-unit alternative beside it, and the verify rule checks
 > `position.footprint` against the walls. Mirrored into `minimal-hi-example/docs/hi-mcp-server.md`
-> and `.agents/skills/hi-authoring-rules.md`; one test asserts the new rule text. F3 (docking
-> graph validation) and F4 (out-of-room hint) are not implemented; the live verification with a
-> fresh agent session is pending — the analysis stays Open until then.
+> and `.agents/skills/hi-authoring-rules.md`; one test asserts the new rule text.
+>
+> **Progress (2026-09-29, later)**: F3 and F4 are implemented in `tool-executors.ts` on the same
+> branch. F3 collects every beside and back-to-back joint (`RightBottom ↔ LeftBottom`,
+> `BackBottom ↔ BackBottom`, `BackTop ↔ BackTop`) from the authored `contextData` and rejects a
+> vector claimed by two different partners, naming root, vector and partners; stacking pairs are
+> exempt. F4 fetches `rooms` with the pre-load context and, after the load, tests the four corners
+> of each created or replaced group's `footprint` (shrunk by 1 mm) against the level-0 floor
+> contour of every room with a point-in-polygon test; a group inside no room gets a `hint` with
+> its footprint and the room extent that points at the docking. 20 new unit tests cover both
+> (conflicts through two joints, in one entry, back to back, on the new root; accepted chains,
+> two-sided joints, corner article rows, stacked wall units; hints for the back and the right
+> wall, flush placement, replaced versus untouched groups, combined hints, an L-shaped room,
+> several rooms, missing rooms or footprint). The live verification with a fresh agent session
+> is still pending — the analysis stays Open until then.
 
 ---
 

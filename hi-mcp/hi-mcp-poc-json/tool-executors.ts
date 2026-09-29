@@ -64,6 +64,154 @@ const attributeMatches = (attribute: any, needle: string): boolean =>
 const isArticlePickOnly = (root: any): boolean =>
   !root?.posData && !root?.modules && !root?.parts;
 
+// The pairs that put a root beside or back to back with another: both
+// vectors lie on the same level, so each side takes exactly one neighbour.
+// Stacking pairs (Top -> Bottom) are left out - a wall unit's LeftBottom is
+// legitimately claimed by the base unit below it and by the neighbour beside it.
+const NEIGHBOUR_DOCKING_PAIRS: Record<string, string> = {
+  RightBottom: 'LeftBottom',
+  LeftBottom: 'RightBottom',
+  BackBottom: 'BackBottom',
+  BackTop: 'BackTop',
+};
+
+interface NeighbourConflict {
+  rootId: string;
+  vector: string;
+  partnerIds: string[];
+}
+
+// Every beside or back-to-back joint occupies the own vector of the placed
+// root and the named vector of the new root. A vector with two different
+// partners means two units on the same side of one unit - they overlap.
+const conflictingNeighbourJoints = (roots: any[]): NeighbourConflict[] => {
+  const partnersBySlot = new Map<string, Set<string>>();
+  const claim = (rootId: string, vector: string, partnerId: string) => {
+    const slot = `${rootId}\u0000${vector}`;
+    const partners = partnersBySlot.get(slot) ?? new Set<string>();
+    partners.add(partnerId);
+    partnersBySlot.set(slot, partners);
+  };
+  for (const root of roots) {
+    for (const dockedContext of root?.contextData?.dockedRoots ?? []) {
+      const ownVector = dockedContext?.ownDockingVector;
+      for (const dockedRoot of dockedContext?.dockedRoots ?? []) {
+        if (NEIGHBOUR_DOCKING_PAIRS[ownVector] !== dockedRoot?.dockingVector) {
+          continue;
+        }
+        claim(root.id, ownVector, dockedRoot.id);
+        claim(dockedRoot.id, dockedRoot.dockingVector, root.id);
+      }
+    }
+  }
+  return Array.from(partnersBySlot.entries())
+    .filter(([, partners]) => partners.size > 1)
+    .map(([slot, partners]) => {
+      const [rootId, vector] = slot.split('\u0000');
+      return { rootId, vector, partnerIds: Array.from(partners) };
+    });
+};
+
+type FloorPoint = [number, number];
+
+interface FloorContour {
+  polygon: FloorPoint[];
+  x: [number, number];
+  z: [number, number];
+}
+
+// The floor contour of a room in pos space (x, z), from the level-0 contour
+// of the plan context; the closing 'Z' repeats the first point and is skipped.
+const floorContours = (roomsSection: any): FloorContour[] =>
+  ((roomsSection?.rooms ?? []) as any[]).flatMap((room) => {
+    const levels = (room?.levels ?? []) as any[];
+    const contour = levels.find((level) => level.level === 0) ?? levels[0];
+    const polygon: FloorPoint[] = (contour?.segments ?? [])
+      .filter((segment: any) => segment.cmd !== 'Z' && segment.pos?.length >= 3)
+      .map((segment: any): FloorPoint => [segment.pos[0], segment.pos[2]]);
+    if (polygon.length < 3) {
+      return [];
+    }
+    const xs = polygon.map(([x]) => x);
+    const zs = polygon.map(([, z]) => z);
+    return [
+      {
+        polygon,
+        x: [Math.min(...xs), Math.max(...xs)],
+        z: [Math.min(...zs), Math.max(...zs)],
+      },
+    ];
+  });
+
+const isInsidePolygon = ([x, z]: FloorPoint, polygon: FloorPoint[]): boolean => {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, zi] = polygon[i];
+    const [xj, zj] = polygon[j];
+    if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+};
+
+// A flush placement puts the footprint exactly on the wall face, so the box
+// is shrunk by a millimetre before its corners are tested.
+const FOOTPRINT_TOLERANCE_MM = 1;
+
+const isFootprintInsideRoom = (
+  footprint: any,
+  contour: FloorContour,
+): boolean => {
+  const [x0, x1] = footprint.x as [number, number];
+  const [z0, z1] = footprint.z as [number, number];
+  const corners: FloorPoint[] = [
+    [x0 + FOOTPRINT_TOLERANCE_MM, z0 + FOOTPRINT_TOLERANCE_MM],
+    [x1 - FOOTPRINT_TOLERANCE_MM, z0 + FOOTPRINT_TOLERANCE_MM],
+    [x0 + FOOTPRINT_TOLERANCE_MM, z1 - FOOTPRINT_TOLERANCE_MM],
+    [x1 - FOOTPRINT_TOLERANCE_MM, z1 - FOOTPRINT_TOLERANCE_MM],
+  ];
+  return corners.every((corner) => isInsidePolygon(corner, contour.polygon));
+};
+
+const isFootprint = (footprint: any): boolean =>
+  Array.isArray(footprint?.x) &&
+  footprint.x.length === 2 &&
+  Array.isArray(footprint?.z) &&
+  footprint.z.length === 2 &&
+  [...footprint.x, ...footprint.z].every(Number.isFinite);
+
+const formatRange = ([from, to]: [number, number]) => `[${from}, ${to}]`;
+
+// A positioned group whose footprint crosses every room contour: the anchor
+// is where it was sent, so a unit is docked in a direction the wall does not
+// continue (typically to the anchor's LeftBottom in a corner).
+const outOfRoomHints = (groups: any[], contours: FloorContour[]): string[] => {
+  if (contours.length === 0) {
+    return [];
+  }
+  return groups
+    .filter(
+      (group) =>
+        group.position?.pos !== undefined &&
+        isFootprint(group.position?.footprint) &&
+        !contours.some((contour) =>
+          isFootprintInsideRoom(group.position.footprint, contour),
+        ),
+    )
+    .map((group) => {
+      const { footprint } = group.position;
+      const room = contours[0];
+      return (
+        `Group ${group.id} extends beyond the room: footprint x ${formatRange(footprint.x)}, ` +
+        `z ${formatRange(footprint.z)}, room x ${formatRange(room.x)}, z ${formatRange(room.z)}. ` +
+        'Its anchor is where posGroup put it, so a unit is docked past a wall - with posGroup at a ' +
+        "wall's end the row continues from the anchor's RightBottom only. Fix the docking and " +
+        'resubmit the group with its id; see get-authoring-rules.'
+      );
+    });
+};
+
 // A root authored by the agent is just an article pick (id, articleId,
 // optional attribute overrides and docking contextData). The glue logic
 // completes it from the article template; here the article id is validated
@@ -235,6 +383,15 @@ export const toolExecutors: Record<string, ToolExecutor> = {
               '"offset": [0, 0, 0] }] }] } }',
           );
         }
+        for (const conflict of conflictingNeighbourJoints(group.roots)) {
+          const partners = conflict.partnerIds.map((id) => `'${id}'`);
+          validationErrors.push(
+            `posGroups[${groupIndex}]: root '${conflict.rootId}' ${conflict.vector} is docked to both ` +
+              `${partners.join(' and ')} - a side takes one neighbour, two units there overlap. ` +
+              'Chain the row instead (A lists B on its RightBottom, B lists C on its RightBottom, ...); ' +
+              "a row from a corner continues from the anchor's RightBottom only.",
+          );
+        }
       }
       if (group.placement !== undefined) {
         validationErrors.push(
@@ -298,8 +455,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     }
     await validateArticlePickIds(roomDesignerApi, posGroups);
 
-    const preContext =
-      await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']);
+    const preContext = await roomDesignerApi.extended.getExternalObjectPlanContext(
+      ['rooms', 'groups'],
+    );
     const beforeGroupIds = new Set(
       ((preContext.groups ?? []) as any[]).map((group) => group.id),
     );
@@ -328,22 +486,27 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         .map((group) => group.id)
         .filter((id) => id && beforeGroupIds.has(id)),
     );
-    const unpositionedGroupIds = (groups ?? [])
-      .filter(
-        (group: any) =>
-          group.position.pos === undefined &&
-          (!beforeGroupIds.has(group.id) || replacedInputIds.has(group.id)),
-      )
-      .map((group: any) => group.id);
+    const affectedGroups = ((groups ?? []) as any[]).filter(
+      (group) =>
+        !beforeGroupIds.has(group.id) || replacedInputIds.has(group.id),
+    );
+    const unpositionedGroupIds = affectedGroups
+      .filter((group) => group.position.pos === undefined)
+      .map((group) => group.id);
+    const hints = [
+      ...(unpositionedGroupIds.length > 0
+        ? [
+            `Groups ${unpositionedGroupIds.join(', ')} are not positioned yet and sit at the plan origin. ` +
+              'Resubmit them with their id and repositioningData ({ posGroup, posRotationY, rootId }) - ' +
+              'see get-authoring-rules.',
+          ]
+        : []),
+      ...outOfRoomHints(affectedGroups, floorContours(preContext.rooms)),
+    ];
     return {
       loaded,
       groups,
-      ...(unpositionedGroupIds.length > 0 && {
-        hint:
-          `Groups ${unpositionedGroupIds.join(', ')} are not positioned yet and sit at the plan origin. ` +
-          'Resubmit them with their id and repositioningData ({ posGroup, posRotationY, rootId }) - ' +
-          'see get-authoring-rules.',
-      }),
+      ...(hints.length > 0 && { hint: hints.join('\n') }),
     };
   },
 

@@ -339,17 +339,25 @@ anything is loaded: missing `roots`, missing pick fields (`id`, `articleId`),
 an unknown `articleId` (the error lists the catalog), `articlePos`/`rotationY`
 on any root or `pos`/`rotationY` on a group, undocked roots in a multi-root group,
 a `placement` (no longer supported — the error points to `repositioningData`),
-and invalid `repositioningData` (`posGroup` not three numbers, `posRotationY`
-missing or not a number — state 0 explicitly, `rootId` not a root of the
-group, `rootRelPos` not three numbers).
+a side docked to two neighbours (a `LeftBottom`, `RightBottom`, `BackBottom` or
+`BackTop` vector that two different roots dock beside or back to back — the
+error names the root, the vector and both partners; the row docked past the
+corner in [the analysis](../../.agents/bug-analysis/straight-row-docked-past-the-corner.md)
+is caught here), and invalid `repositioningData` (`posGroup` not three numbers,
+`posRotationY` missing or not a number — state 0 explicitly, `rootId` not a
+root of the group, `rootRelPos` not three numbers).
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `posGroups` | `object[]` (min 1) | yes | Pos groups following the [authoring rules](#authoring-pos-groups) |
 
 Returns the loaded runtime ids and the resulting groups (with their final
-ids, `pos`, `rotationY`, `footprint`), plus a hint when a group of this call
-is still unpositioned.
+ids, `pos`, `rotationY`, `footprint`), plus a `hint` when a group of this call
+is still unpositioned or extends beyond the room. For the latter the server
+tests the four corners of the group's `footprint` (shrunk by 1 mm, so a flush
+placement passes) against the level-0 floor contour of every room; the hint
+gives the footprint and the room extent and points at the docking, because
+the anchor stands where `posGroup` put it. Untouched groups are not checked.
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm
 room, from the back right corner, one call. `posGroup` is the right wall's
@@ -530,7 +538,8 @@ group one point and one rotation; the planner calculates every root position.
   their start point is the article's corner point. Valid pairs (anchor → new
   root): beside —
   `RightBottom → LeftBottom` (to the right), `LeftBottom → RightBottom` (to
-  the left); on top — `LeftTop → LeftBottom`, `RightTop → RightBottom`,
+  the left) — a side takes one neighbour, a vector docked beside or back to
+  back with two roots is rejected; on top — `LeftTop → LeftBottom`, `RightTop → RightBottom`,
   `BackTop → BackBottom` (the new root may be narrower); back to back —
   `BackBottom → BackBottom`, `BackTop → BackTop` (the new root is turned by
   180°, omit `mode`). A root without docking vectors (a hood, for example)

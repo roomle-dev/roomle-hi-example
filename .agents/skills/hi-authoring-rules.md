@@ -178,7 +178,12 @@ The corner columns hold for a **corner article only** (its arms are turned 90° 
 - Invalid `repositioningData` (`posGroup` not `[x, y, z]`, `posRotationY` missing or not a number — state 0 explicitly, `rootId` not a root of the group, `rootRelPos` not `[x, y, z]`)
 - Invalid articleId
 - Undocked roots
+- A side docked to two neighbours (`LeftBottom`/`RightBottom`/`BackBottom`/`BackTop` claimed beside or back to back by two roots — the error names root, vector and partners)
 - Invalid docking vectors
+
+### Returned as a hint (the group is loaded):
+- A group of the call still unpositioned
+- A group whose footprint crosses a wall of the room — fix the docking, not `posGroup`
 
 ## Practical Patterns
 

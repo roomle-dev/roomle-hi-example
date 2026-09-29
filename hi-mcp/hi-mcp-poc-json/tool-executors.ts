@@ -64,228 +64,6 @@ const attributeMatches = (attribute: any, needle: string): boolean =>
 const isArticlePickOnly = (root: any): boolean =>
   !root?.posData && !root?.modules && !root?.parts;
 
-// The pairs that put a root beside or back to back with another: both
-// vectors lie on the same level, so each side takes exactly one neighbour.
-// Stacking pairs (Top -> Bottom) are left out - a wall unit's LeftBottom is
-// legitimately claimed by the base unit below it and by the neighbour beside it.
-const NEIGHBOUR_DOCKING_PAIRS: Record<string, string> = {
-  RightBottom: 'LeftBottom',
-  LeftBottom: 'RightBottom',
-  BackBottom: 'BackBottom',
-  BackTop: 'BackTop',
-};
-
-interface NeighbourConflict {
-  rootId: string;
-  vector: string;
-  partnerIds: string[];
-}
-
-// Every beside or back-to-back joint occupies the own vector of the placed
-// root and the named vector of the new root. A vector with two different
-// partners means two units on the same side of one unit - they overlap.
-const conflictingNeighbourJoints = (roots: any[]): NeighbourConflict[] => {
-  const partnersBySlot = new Map<string, Set<string>>();
-  const claim = (rootId: string, vector: string, partnerId: string) => {
-    const slot = `${rootId}\u0000${vector}`;
-    const partners = partnersBySlot.get(slot) ?? new Set<string>();
-    partners.add(partnerId);
-    partnersBySlot.set(slot, partners);
-  };
-  for (const root of roots) {
-    for (const dockedContext of root?.contextData?.dockedRoots ?? []) {
-      const ownVector = dockedContext?.ownDockingVector;
-      for (const dockedRoot of dockedContext?.dockedRoots ?? []) {
-        if (NEIGHBOUR_DOCKING_PAIRS[ownVector] !== dockedRoot?.dockingVector) {
-          continue;
-        }
-        claim(root.id, ownVector, dockedRoot.id);
-        claim(dockedRoot.id, dockedRoot.dockingVector, root.id);
-      }
-    }
-  }
-  return Array.from(partnersBySlot.entries())
-    .filter(([, partners]) => partners.size > 1)
-    .map(([slot, partners]) => {
-      const [rootId, vector] = slot.split('\u0000');
-      return { rootId, vector, partnerIds: Array.from(partners) };
-    });
-};
-
-type FloorPoint = [number, number];
-
-interface FloorContour {
-  polygon: FloorPoint[];
-  x: [number, number];
-  z: [number, number];
-}
-
-// The floor contour of a room in pos space (x, z), from the level-0 contour
-// of the plan context; the closing 'Z' repeats the first point and is skipped.
-const floorContours = (roomsSection: any): FloorContour[] =>
-  ((roomsSection?.rooms ?? []) as any[]).flatMap((room) => {
-    const levels = (room?.levels ?? []) as any[];
-    const contour = levels.find((level) => level.level === 0) ?? levels[0];
-    const polygon: FloorPoint[] = (contour?.segments ?? [])
-      .filter((segment: any) => segment.cmd !== 'Z' && segment.pos?.length >= 3)
-      .map((segment: any): FloorPoint => [segment.pos[0], segment.pos[2]]);
-    if (polygon.length < 3) {
-      return [];
-    }
-    const xs = polygon.map(([x]) => x);
-    const zs = polygon.map(([, z]) => z);
-    return [
-      {
-        polygon,
-        x: [Math.min(...xs), Math.max(...xs)],
-        z: [Math.min(...zs), Math.max(...zs)],
-      },
-    ];
-  });
-
-const isInsidePolygon = ([x, z]: FloorPoint, polygon: FloorPoint[]): boolean => {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, zi] = polygon[i];
-    const [xj, zj] = polygon[j];
-    if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) {
-      inside = !inside;
-    }
-  }
-  return inside;
-};
-
-const orientation = (a: FloorPoint, b: FloorPoint, c: FloorPoint): number =>
-  Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
-
-// Proper crossing of two segments; touching endpoints and collinear overlap
-// do not count, the shrunk box never touches a wall it stands flush against.
-const segmentsCross = (
-  a: FloorPoint,
-  b: FloorPoint,
-  c: FloorPoint,
-  d: FloorPoint,
-): boolean =>
-  orientation(a, b, c) * orientation(a, b, d) < 0 &&
-  orientation(c, d, a) * orientation(c, d, b) < 0;
-
-// A flush placement puts the footprint exactly on the wall face, so the box
-// is shrunk by a millimetre before it is tested.
-const FOOTPRINT_TOLERANCE_MM = 1;
-
-// The whole box must lie in the room: every corner inside the contour and no
-// box edge crossing a contour edge - in a concave room a box can span two arms
-// with all corners inside while its middle crosses the recessed wall.
-const isFootprintInsideRoom = (
-  footprint: any,
-  contour: FloorContour,
-): boolean => {
-  const [x0, x1] = footprint.x as [number, number];
-  const [z0, z1] = footprint.z as [number, number];
-  const corners: FloorPoint[] = [
-    [x0 + FOOTPRINT_TOLERANCE_MM, z0 + FOOTPRINT_TOLERANCE_MM],
-    [x1 - FOOTPRINT_TOLERANCE_MM, z0 + FOOTPRINT_TOLERANCE_MM],
-    [x1 - FOOTPRINT_TOLERANCE_MM, z1 - FOOTPRINT_TOLERANCE_MM],
-    [x0 + FOOTPRINT_TOLERANCE_MM, z1 - FOOTPRINT_TOLERANCE_MM],
-  ];
-  if (!corners.every((corner) => isInsidePolygon(corner, contour.polygon))) {
-    return false;
-  }
-  const { polygon } = contour;
-  return corners.every((corner, index) => {
-    const nextCorner = corners[(index + 1) % corners.length];
-    return polygon.every(
-      (point, pointIndex) =>
-        !segmentsCross(
-          corner,
-          nextCorner,
-          point,
-          polygon[(pointIndex + 1) % polygon.length],
-        ),
-    );
-  });
-};
-
-// The room the anchor stands in - it is where posGroup put it - or, when
-// it stands in none, the room nearest to it.
-const roomOfAnchor = (
-  pos: number[],
-  contours: FloorContour[],
-): { contour: FloorContour; anchorInside: boolean } => {
-  const anchor: FloorPoint = [pos[0], pos[2]];
-  // a flush anchor lies exactly on the wall face, so a point a millimetre
-  // to any diagonal side counts as inside too
-  const nearAnchor: FloorPoint[] = [
-    anchor,
-    ...[-1, 1].flatMap((dx): FloorPoint[] =>
-      [-1, 1].map((dz): FloorPoint => [
-        anchor[0] + dx * FOOTPRINT_TOLERANCE_MM,
-        anchor[1] + dz * FOOTPRINT_TOLERANCE_MM,
-      ]),
-    ),
-  ];
-  const containing = contours.find((contour) =>
-    nearAnchor.some((point) => isInsidePolygon(point, contour.polygon)),
-  );
-  if (containing) {
-    return { contour: containing, anchorInside: true };
-  }
-  const distanceToExtent = (contour: FloorContour) =>
-    Math.hypot(
-      Math.max(contour.x[0] - anchor[0], 0, anchor[0] - contour.x[1]),
-      Math.max(contour.z[0] - anchor[1], 0, anchor[1] - contour.z[1]),
-    );
-  const nearest = contours.reduce((best, contour) =>
-    distanceToExtent(contour) < distanceToExtent(best) ? contour : best,
-  );
-  return { contour: nearest, anchorInside: false };
-};
-
-const isFootprint = (footprint: any): boolean =>
-  Array.isArray(footprint?.x) &&
-  footprint.x.length === 2 &&
-  Array.isArray(footprint?.z) &&
-  footprint.z.length === 2 &&
-  [...footprint.x, ...footprint.z].every(Number.isFinite);
-
-const formatRange = ([from, to]: [number, number]) => `[${from}, ${to}]`;
-
-// A positioned group whose footprint lies in no room. With the anchor inside
-// a room, posGroup is right and a unit is docked in a direction the wall does
-// not continue (typically to the anchor's LeftBottom in a corner); with the
-// anchor outside every room, posGroup itself is wrong.
-const outOfRoomHints = (groups: any[], contours: FloorContour[]): string[] => {
-  if (contours.length === 0) {
-    return [];
-  }
-  return groups
-    .filter(
-      (group) =>
-        Array.isArray(group.position?.pos) &&
-        group.position.pos.length >= 3 &&
-        isFootprint(group.position?.footprint) &&
-        !contours.some((contour) =>
-          isFootprintInsideRoom(group.position.footprint, contour),
-        ),
-    )
-    .map((group) => {
-      const { pos, footprint } = group.position;
-      const { contour: room, anchorInside } = roomOfAnchor(pos, contours);
-      const extent =
-        `Group ${group.id} extends beyond the room: footprint x ${formatRange(footprint.x)}, ` +
-        `z ${formatRange(footprint.z)}, room x ${formatRange(room.x)}, z ${formatRange(room.z)}. `;
-      return anchorInside
-        ? extent +
-            'Its anchor is where posGroup put it, so a unit is docked past a wall - with posGroup at a ' +
-            "wall's end the row continues from the anchor's RightBottom only. Fix the docking and " +
-            'resubmit the group with its id; see get-authoring-rules.'
-        : extent +
-            `Its anchor at pos [${pos.join(', ')}] stands in no room, so posGroup is wrong - ` +
-            'take it from the walls of that room and resubmit the group with its id and a new ' +
-            'repositioningData; see get-authoring-rules.';
-    });
-};
-
 // A root authored by the agent is just an article pick (id, articleId,
 // optional attribute overrides and docking contextData). The glue logic
 // completes it from the article template; here the article id is validated
@@ -457,15 +235,6 @@ export const toolExecutors: Record<string, ToolExecutor> = {
               '"offset": [0, 0, 0] }] }] } }',
           );
         }
-        for (const conflict of conflictingNeighbourJoints(group.roots)) {
-          const partners = conflict.partnerIds.map((id) => `'${id}'`);
-          validationErrors.push(
-            `posGroups[${groupIndex}]: root '${conflict.rootId}' ${conflict.vector} is docked to both ` +
-              `${partners.join(' and ')} - a side takes one neighbour, two units there overlap. ` +
-              'Chain the row instead (A lists B on its RightBottom, B lists C on its RightBottom, ...); ' +
-              "a row from a corner continues from the anchor's RightBottom only.",
-          );
-        }
       }
       if (group.placement !== undefined) {
         validationErrors.push(
@@ -529,9 +298,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     }
     await validateArticlePickIds(roomDesignerApi, posGroups);
 
-    const preContext = await roomDesignerApi.extended.getExternalObjectPlanContext(
-      ['rooms', 'groups'],
-    );
+    const preContext =
+      await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']);
     const beforeGroupIds = new Set(
       ((preContext.groups ?? []) as any[]).map((group) => group.id),
     );
@@ -560,27 +328,22 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         .map((group) => group.id)
         .filter((id) => id && beforeGroupIds.has(id)),
     );
-    const affectedGroups = ((groups ?? []) as any[]).filter(
-      (group) =>
-        !beforeGroupIds.has(group.id) || replacedInputIds.has(group.id),
-    );
-    const unpositionedGroupIds = affectedGroups
-      .filter((group) => group.position.pos === undefined)
-      .map((group) => group.id);
-    const hints = [
-      ...(unpositionedGroupIds.length > 0
-        ? [
-            `Groups ${unpositionedGroupIds.join(', ')} are not positioned yet and sit at the plan origin. ` +
-              'Resubmit them with their id and repositioningData ({ posGroup, posRotationY, rootId }) - ' +
-              'see get-authoring-rules.',
-          ]
-        : []),
-      ...outOfRoomHints(affectedGroups, floorContours(preContext.rooms)),
-    ];
+    const unpositionedGroupIds = (groups ?? [])
+      .filter(
+        (group: any) =>
+          group.position.pos === undefined &&
+          (!beforeGroupIds.has(group.id) || replacedInputIds.has(group.id)),
+      )
+      .map((group: any) => group.id);
     return {
       loaded,
       groups,
-      ...(hints.length > 0 && { hint: hints.join('\n') }),
+      ...(unpositionedGroupIds.length > 0 && {
+        hint:
+          `Groups ${unpositionedGroupIds.join(', ')} are not positioned yet and sit at the plan origin. ` +
+          'Resubmit them with their id and repositioningData ({ posGroup, posRotationY, rootId }) - ' +
+          'see get-authoring-rules.',
+      }),
     };
   },
 

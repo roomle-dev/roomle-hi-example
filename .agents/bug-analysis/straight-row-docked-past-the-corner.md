@@ -7,6 +7,17 @@
 > **Author**: AI Assistant
 > **Status**: Open
 
+> **Progress (2026-09-29)**: F1, F2 and F5 are implemented on branch
+> `fix/straight-row-corner-anchor-offset` (instructions only): the docking rules name the frame
+> of Left/Right (as seen from the front of the unit), the wall rule states that a row continues
+> from the anchor's `RightBottom` only and that a `LeftBottom` neighbour lands inside the adjoining
+> wall, the per-corner leg table moved under the corner-article recipe and is marked "corner
+> article only" with the straight-unit alternative beside it, and the verify rule checks
+> `position.footprint` against the walls. Mirrored into `minimal-hi-example/docs/hi-mcp-server.md`
+> and `.agents/skills/hi-authoring-rules.md`; one test asserts the new rule text. F3 (docking
+> graph validation) and F4 (out-of-room hint) are not implemented; the live verification with a
+> fresh agent session is pending — the analysis stays Open until then.
+
 ---
 
 ## Symptom and Reproduction

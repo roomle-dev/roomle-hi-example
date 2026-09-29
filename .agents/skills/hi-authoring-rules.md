@@ -56,7 +56,9 @@ Access via `get-plan-context` with `include: 'articles'`:
 
 ### Vector Types
 
-- **Side vectors** (Left/Right): Run back to front, start=back, end=front
+- **Side vectors** (Left/Right): Run back to front, start=back, end=front. Left and right are the
+  sides as seen from the front of the unit (group-local, turned with `posRotationY`) — not the
+  room's or the top view's left and right; both agree only at `posRotationY` 0
 - **Back vectors** (BackBottom/BackTop): Run left to right, start=left, end=right
 - **Top/Bottom vectors**: Run left to right, start=left, end=right
 - **Corner vectors** (LeftBack/RightBack): Only on corner articles, start at corner point
@@ -135,7 +137,10 @@ room:
   the wall and the group runs from `posGroup` towards the wall's `start`. `posGroup` = `end` puts
   it flush into the corner at the wall's end; `end + d · (start − end) / lengthMm` shifts it by d;
   d = (lengthMm − group width) / 2 centres it; d = lengthMm − group width puts its right end into
-  the corner at the wall's `start`.
+  the corner at the wall's `start`. The row continues from the anchor's `RightBottom` only
+  (`RightBottom → LeftBottom`, chained): with `posGroup` = `end` the anchor's left side is the
+  corner, and a unit docked to its `LeftBottom` stands beyond the corner, inside the adjoining
+  wall.
 - **Corner**: `posGroup` = the corner point, `posRotationY` = the `facingRotationY` of the wall that
   ends in that corner. A corner article's corner point can lie left of its root origin (the blind
   zone) — the catalog's `cornerPoint` says where, root-local (Furniture_Smith: `[-261, 0, 0]`).
@@ -144,8 +149,16 @@ room:
   rotating it by `posRotationY` first. No `cornerPoint` in the catalog yet (empty plan)? Load,
   then resubmit with `posGroup` shifted by (intended corner − returned `position.pos`), keeping
   `posRotationY` — the room-space delta already contains the rotation.
+- **Straight units in a corner** ("an oven, a sink and a fridge in the back right corner"): a
+  straight unit has no second arm — its `LeftBottom` and `RightBottom` lie on one line — so the
+  units form one row along one of the two walls, chained `RightBottom → LeftBottom` from the
+  anchor: along the wall that ends in the corner (anchor at its `end`, its `facingRotationY`) or
+  along the wall that starts there (anchor = the leftmost unit, d = lengthMm − group width). Never
+  dock the second unit to the anchor's `LeftBottom` in a corner.
 
-| Rectangular room (back = top in the top view) | `posRotationY` | Corner: `RightBottom` row along | Corner: `LeftBottom` row along |
+The corner columns hold for a **corner article only** (its arms are turned 90° against each other):
+
+| Rectangular room (back = top in the top view) | `posRotationY` | Corner article: `RightBottom` row along | Corner article: `LeftBottom` row along |
 |---|---|---|---|
 | Back wall / left back corner | 0 | back wall, to the right | left wall, to the front |
 | Left wall / left front corner | 90 | left wall, to the back | front wall, to the right |
@@ -243,7 +256,9 @@ room:
 2. Review rooms, articles, existing groups
 3. Create group with proper docking and repositioningData
 4. Submit: `create-or-replace-groups({ posGroups: [group] })`
-5. Verify with `get-plan-context` or `get-plan-images`
+5. Verify numerically: `position.pos` is the intended point, and `position.footprint` lies inside
+   the room contour — a footprint crossing a wall means a unit is docked in the wrong direction
+   (fix the docking, not `posGroup`); then `get-plan-images`
 
 ## Using Free Docking Vectors
 

@@ -14,6 +14,8 @@
 //                  npm start claude <api-key>           (claude-sonnet-4-5)
 //                  npm start azure <api-key>            (gpt-4o deployment; also set
 //                                                          AZURE_RESOURCE_NAME and HI_CHAT_MODEL=<deployment>)
+//                  npm start gpt-5-mini <api-key>       (gpt-5-mini / gpt-5.4-mini deployment
+//                                                          on the HI Azure AI Foundry resource)
 //                  npm start mistral-<model-id> <api-key> passes the id through
 //                  npm run dev <provider> <api-key> combines chat and local Rubens UI server.
 //                  spawns the hi-mcp-chat backend (Vercel AI SDK) and opens the
@@ -47,6 +49,8 @@ const CHAT_PROVIDERS = [
   'claude',
   'azure',
   'openai',
+  'gpt-5-mini',
+  'gpt-5.4-mini',
 ];
 const isChatProvider = (name) =>
   CHAT_PROVIDERS.includes(name) ||

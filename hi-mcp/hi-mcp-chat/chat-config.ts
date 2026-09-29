@@ -9,7 +9,13 @@ export type ChatProvider = 'mistral' | 'anthropic' | 'azure';
 export interface ChatModel {
   provider: ChatProvider;
   modelId: string;
+  baseUrl?: string;
 }
+
+// Deployments on the HI Azure AI Foundry resource, reached through its OpenAI
+// v1 endpoint: the CLI name is the deployment name.
+export const FOUNDRY_BASE_URL = 'https://dfhifoundrysweden.services.ai.azure.com/openai/v1';
+export const FOUNDRY_DEPLOYMENTS = ['gpt-5-mini', 'gpt-5.4-mini'];
 
 // CLI provider names (npm start <provider>) resolved to a provider and model.
 // Full model ids pass through: mistral-* and claude-* ids map to their
@@ -34,6 +40,9 @@ export const PROVIDER_MODEL_ALIASES: Record<ChatProvider, Record<string, string>
 
 export const resolveChatModel = (requested: string | undefined): ChatModel => {
   const name = requested ?? 'mistral';
+  if (FOUNDRY_DEPLOYMENTS.includes(name)) {
+    return { provider: 'azure', modelId: name, baseUrl: FOUNDRY_BASE_URL };
+  }
   for (const provider of Object.keys(PROVIDER_MODEL_ALIASES) as ChatProvider[]) {
     const modelId = PROVIDER_MODEL_ALIASES[provider][name];
     if (modelId) {
@@ -47,7 +56,7 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
     return { provider: 'anthropic', modelId: name };
   }
   throw new ChatRequestError(
-    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, azure, or a full mistral-*/claude-* model id`,
+    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, azure, gpt-5-mini, gpt-5.4-mini, or a full mistral-*/claude-* model id`,
   );
 };
 
@@ -62,6 +71,7 @@ export interface ChatConfig {
   apiToken: string | undefined;
   modelId: string;
   azureResourceName: string | undefined;
+  azureBaseUrl: string | undefined;
   mcpUrl: string;
   pageOrigins: string[];
 }
@@ -76,6 +86,7 @@ export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
     // name) without changing the provider
     modelId: env.HI_CHAT_MODEL || chatModel.modelId,
     azureResourceName: env.AZURE_RESOURCE_NAME || undefined,
+    azureBaseUrl: chatModel.baseUrl,
     mcpUrl: env.HI_MCP_URL || DEFAULT_MCP_URL,
     pageOrigins: env.HI_CHAT_PAGE_ORIGINS
       ? env.HI_CHAT_PAGE_ORIGINS.split(',')

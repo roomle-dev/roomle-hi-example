@@ -8,8 +8,7 @@
 | Tool | Purpose |
 |---|---|
 | `get-plan-context` | Get rooms, articles, groups, masterData |
-| `create-or-replace-groups` | Create/modify groups |
-| `place-group` | Move existing group |
+| `create-or-replace-groups` | Create, modify, position and move groups |
 | `get-authoring-rules` | Get HI authoring rules |
 
 ### Information Tools
@@ -58,19 +57,15 @@ const context = await getPlanContext({ include: 'rooms,articles' });
 await createOrReplaceGroups({ posGroups: [group1, group2] });
 ```
 
-### place-group
+**Positioning**: every group carries `repositioningData: { posGroup, posRotationY, rootId }` —
+`rootId` is the leftmost root of the back row, `posGroup` its left back bottom corner in the room,
+`posRotationY` the rotation in degrees, counter-clockwise as seen from above. Against a wall:
+`posRotationY` = the wall's `facingRotationY`, `posGroup` = the wall's `end` (flush into that
+corner) or a point from `end` towards `start`. See the
+[authoring rules skill](./hi-authoring-rules.md#positioning-a-group).
 
-**Purpose**: Move existing group to different wall
-
-**Parameters**:
-```typescript
-{ groupId: string, wall?: string | number, alignment?: string, offsetMm?: number }
-```
-
-**Usage**:
-```javascript
-await placeGroup({ groupId: 'group-1', wall: 'right', alignment: 'center' });
-```
+**Moving**: resubmit the group from `get-plan-context` with its id and a new `repositioningData`;
+without it a replaced group keeps its position.
 
 ### find-attributes
 
@@ -133,8 +128,8 @@ try {
 | No page connected | Page not loaded with ?mcp=true | Open browser page |
 | Invalid articleId | Article not in catalog | Use valid articleId from context |
 | Root not docked | Undocked root in group | Dock all non-first roots |
-| Invalid wall | Wall doesn't exist | Use valid wall from room.walls |
-| Placement overlap | Group overlaps existing | Adjust placement |
+| placement is not supported | Payload with the removed `placement` field | Use `repositioningData` |
+| repositioningData: rootId must be the id of one of the group's roots | `rootId` names no root of the group | Use the leftmost root of the back row |
 
 ## Timeouts
 
@@ -147,4 +142,4 @@ try {
 2. Validate article IDs before using
 3. Use free docking vectors when extending
 4. Check logMessages for warnings
-5. Use placement for walls, repositioningData for precise coordinates
+5. Position every group with repositioningData — for a wall, its end point and its facingRotationY

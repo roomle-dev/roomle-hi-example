@@ -33,7 +33,7 @@ HOMAG Intelligence is a system for kitchen cabinet management, price calculation
 - **Articles** — Individual cabinet modules from a catalog
 - **Groups** — Collections of articles (root modules) with docking relationships
 - **Docking Vectors** — Connection points that define how articles can attach to each other
-- **Placement** — Positioning groups against room walls
+- **Positioning** — Positioning groups with `repositioningData` (a point and a rotation taken from the walls)
 
 ### MCP (Model Context Protocol)
 
@@ -78,8 +78,7 @@ All tools are defined in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` and documente
 
 Primary tools:
 - `get-plan-context` — Get current rooms, walls, articles, groups, docking vectors
-- `create-or-replace-groups` — Add or modify groups with articles
-- `place-group` — Move existing groups to new positions
+- `create-or-replace-groups` — Add, modify, position (`repositioningData`) or move groups
 - `get-price` — Calculate pricing for current configuration
 - `get-order-data` — Generate order data for manufacturing
 - `get-plan-images` — Render 2D and 3D images of the plan
@@ -91,17 +90,15 @@ Primary tools:
 **Creating a Kitchen Layout:**
 ```
 1. get-plan-context → inspect current rooms
-2. create-or-replace-groups → add cabinet groups
-3. place-group → position groups against walls
-4. get-price → calculate pricing
+2. create-or-replace-groups → add cabinet groups, positioned with repositioningData
+3. get-price → calculate pricing
 ```
 
 **Debugging Group Issues:**
 ```
 1. get-plan-context → examine current groups and docking
-2. Analyze docking vectors and placement
-3. create-or-replace-groups → fix docking relationships
-4. place-group → adjust positions
+2. Analyze docking vectors and repositioningData
+3. create-or-replace-groups → fix docking relationships, or resubmit with a new repositioningData to move a group
 ```
 
 ## Digital Brain
@@ -251,7 +248,7 @@ step.
 2. **Timeout Values** — Use appropriate timeouts (30s default, 120s for snapshots)
 3. **Error Propagation** — Relay errors from the page back to MCP client
 4. **State Management** — Track bridge connection state carefully
-5. **Docking Validation** — Always validate docking vectors before placement
+5. **Docking Validation** — Always validate docking vectors before positioning a group
 
 ## Testing
 

@@ -1,10 +1,10 @@
 # HI Authoring Rules Skill
 
-**Load this skill when the task involves:** HI group authoring, docking patterns, article selection, placement rules, group creation, or understanding how to properly structure HI object groups.
+**Load this skill when the task involves:** HI group authoring, docking patterns, article selection, group positioning with repositioningData, group creation, or understanding how to properly structure HI object groups.
 
 ## Core Principle
 
-**Never author coordinates directly.** All positioning must be done through docking and placement.
+**Never author root positions.** Roots are positioned by docking; a group is positioned by its `repositioningData` — one point and one rotation taken from the walls.
 
 Direct coordinate properties like `articlePos`, `rotationY`, `pos`, or `rotationY` will be **rejected**.
 
@@ -15,8 +15,7 @@ Direct coordinate properties like `articlePos`, `rotationY`, `pos`, or `rotation
 {
   id: string,              // Unique identifier
   libraryId: string,       // Optional library identifier
-  placement: object,       // Wall-based positioning (mutually exclusive with repositioningData)
-  repositioningData: object, // Coordinate-based positioning (mutually exclusive with placement)
+  repositioningData: object, // { posGroup, posRotationY, rootId } - positions the group
   roots: Root[]            // Required: array of root modules
 }
 ```
@@ -109,66 +108,63 @@ Millimeters added after docking:
 5. Vector compatibility required
 6. No circular docking
 
-## Placement System
+## Positioning a group
+
+A group is positioned by one point and one rotation — at a wall, in a corner, or anywhere in the
+room:
 
 ```javascript
 {
-  wall: string | number,    // Wall label or index
-  alignment: string,        // Position along wall (optional)
-  offsetMm: number,        // Offset in mm (optional)
-  roomIndex: number        // Target room (optional)
+  posGroup: [x, y, z],   // left back bottom corner of the anchor root in the room, mm (y = 0 on the floor)
+  posRotationY: number,  // degrees, counter-clockwise as seen from above
+  rootId: string         // the anchor: leftmost root of the back row, standing on the floor, not turned in the group
 }
 ```
 
-### Wall Identifiers
+- **Origin**: the origin of a group is its left back point — the left back bottom corner of the
+  leftmost root of its back row (in an L-shaped group the corner article). For a group of wall
+  units only, `posGroup` y is their mounting height.
+- **Rotation sense**: positive `posRotationY` turns the group counter-clockwise as seen from above
+  (in the top-view image) — the `rotationY` convention of the kernel (RoomleCore) and the glue logic.
+  The right wall is **270**, the left wall **90**.
+- **Against a wall**: `posRotationY` = the wall's `facingRotationY`; the group's back stands against
+  the wall and the group runs from `posGroup` towards the wall's `start`. `posGroup` = `end` puts
+  it flush into the corner at the wall's end; `end + d · (start − end) / lengthMm` shifts it by d;
+  d = (lengthMm − group width) / 2 centres it; d = lengthMm − group width puts its right end into
+  the corner at the wall's `start`.
+- **Corner**: `posGroup` = the corner point, `posRotationY` = the `facingRotationY` of the wall that
+  ends in that corner. The corner point of a corner article is its left back point.
 
-- Side labels: `'left'`, `'right'`, `'top'`, `'bottom'` (uses longest wall)
-- Wall index: Numeric index from room's `walls` array
+| Rectangular room (back = top in the top view) | `posRotationY` |
+|---|---|
+| Back wall / left back corner | 0 |
+| Left wall / left front corner | 90 |
+| Front wall / right front corner | 180 |
+| Right wall / right back corner | 270 |
 
-### Alignment Options
-
-- `'center'` (default): Center of wall
-- `'start'`, `'end'`: Wall endpoints
-- `'left'`, `'right'`, `'top'`, `'bottom'`: Corner placement
-
-### Corner Placement
-
-With corner articles (`cornerArticle: true`):
-- Article's corner point placed exactly at room corner
-- Article rotated so both back edges lie along the two walls
-- Group footprint flush into corner
-
-### Repositioning Data (Alternative)
-
-```javascript
-{
-  posGroup: [x, y, z],        // Position in mm (y = vertical)
-  posRotationY: number,      // Yaw in degrees (optional)
-  rootId: string,            // Anchor root ID
-  rootRelPos: [x, y, z],     // Anchor offset (optional)
-  rootRelRotationY: number   // Anchor rotation offset (optional)
-}
-```
-
-**Note**: `placement` and `repositioningData` are mutually exclusive.
+- **Anywhere else** (island, middle of the room, next to a door): any free floor point, any rotation.
+- **Moving**: resubmit the group with its id and a new `repositioningData`; a replace without it
+  keeps the group where it is.
 
 ## Validation Rules
 
 ### Will be rejected:
 - Groups with `pos` or `rotationY`
 - Roots with `articlePos` or `rotationY`
-- Both `placement` and `repositioningData`
+- `placement` (removed — use `repositioningData`)
+- Invalid `repositioningData` (`posGroup` not `[x, y, z]`, `posRotationY` not a number, `rootId` not a root of the group)
 - Invalid articleId
 - Undocked roots
 - Invalid docking vectors
-- Invalid wall labels
 
 ## Practical Patterns
 
 ### Pattern 1: Simple Row
 ```javascript
 {
-  placement: { wall: 'left', alignment: 'center' },
+  // centred on the left wall of a 4000 x 3000 room (start [0, 0, -3000], end [0, 0, 0], facing 90):
+  // d = (3000 - 1200) / 2 = 900 from the end towards the start
+  repositioningData: { posGroup: [0, 0, -900], posRotationY: 90, rootId: 'u1' },
   roots: [
     {
       id: 'u1', articleId: 'base-unit-600',
@@ -184,7 +180,8 @@ With corner articles (`cornerArticle: true`):
 ### Pattern 2: L-Shaped Corner
 ```javascript
 {
-  placement: { wall: 'left', alignment: 'top' },
+  // left back corner of a 4000 x 3000 room: the end of the back wall, facing 0
+  repositioningData: { posGroup: [0, 0, -3000], posRotationY: 0, rootId: 'corner' },
   roots: [
     {
       id: 'corner', articleId: 'corner-unit-900', cornerArticle: true,
@@ -204,7 +201,8 @@ With corner articles (`cornerArticle: true`):
 ### Pattern 3: Base with Wall Unit Above
 ```javascript
 {
-  placement: { wall: 'left' },
+  // centred on the left wall: d = (3000 - 600) / 2 = 1200
+  repositioningData: { posGroup: [0, 0, -1200], posRotationY: 90, rootId: 'base' },
   roots: [
     {
       id: 'base', articleId: 'base-unit-600',
@@ -232,7 +230,7 @@ With corner articles (`cornerArticle: true`):
 
 1. Get context: `get-plan-context({ include: 'rooms,articles,groups' })`
 2. Review rooms, articles, existing groups
-3. Create group with proper docking and placement
+3. Create group with proper docking and repositioningData
 4. Submit: `create-or-replace-groups({ posGroups: [group] })`
 5. Verify with `get-plan-context` or `get-plan-images`
 

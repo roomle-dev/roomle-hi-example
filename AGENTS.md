@@ -117,8 +117,7 @@ The start script (`npm start`) provides:
 │   ├── hi-mcp-poc-json-client/   # Page side of the server (reference copy; the store runs its own)
 │       ├── browser-bridge.ts     # WebSocket client: connects, executes, replies
 │       ├── tool-executors.ts     # Tool → roomDesignerApi.extended calls
-│       ├── plan-space.ts         # Pure geometry: walls, footprints, placement
-│       └── tests/                # Unit tests (plan-space, tool-executors, browser-bridge)
+│       └── tests/                # Unit tests (tool-executors, browser-bridge)
 │   ├── hi-mcp-chat/              # AI chat backend (Vercel AI SDK, Mistral): POST /chat on :3200, MCP client of hi-mcp-poc-json, started by the launcher with `npm start mistral <api-key>`
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
@@ -154,8 +153,8 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | [`.agents/skills/hi-mcp-server.md`](./.agents/skills/hi-mcp-server.md) | MCP server architecture, tool definitions, protocol handling, WebSocket bridge |
 | [`.agents/skills/hi-mcp-cloudflare-deployment.md`](./.agents/skills/hi-mcp-cloudflare-deployment.md) | Updating/deploying the Cloudflare-hosted hi-mcp server: wrangler deploy, URL anatomy, container cleanup, teardown |
 | [`.agents/skills/hi-authoring-rules.md`](./.agents/skills/hi-authoring-rules.md) | HI authoring rules, docking patterns, group creation, article catalog |
-| [`.agents/skills/hi-mcp-tools.md`](./.agents/skills/hi-mcp-tools.md) | MCP tool reference, get-plan-context, create-or-replace-groups, place-group |
-| [`.agents/skills/roomle-hi-concepts.md`](./.agents/skills/roomle-hi-concepts.md) | HI concepts: rooms, walls, articles, groups, docking vectors, placements |
+| [`.agents/skills/hi-mcp-tools.md`](./.agents/skills/hi-mcp-tools.md) | MCP tool reference, get-plan-context, create-or-replace-groups |
+| [`.agents/skills/roomle-hi-concepts.md`](./.agents/skills/roomle-hi-concepts.md) | HI concepts: rooms, walls, articles, groups, docking vectors, positioning |
 | [`.agents/skills/vercel-ai-sdk-chat.md`](./.agents/skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: providers, server-side auth, @ai-sdk/mcp, streamText |
 | [`.github/skills/roomle-pr-resolution.md`](./.github/skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads. Never merge the PR |
 
@@ -174,12 +173,12 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 2. **Articles** — Catalog of available modules with dimensions, docking vectors, categories
 3. **Groups** — Collections of root modules (article picks) with docking relationships
 4. **Docking** — Roots are positioned relative to each other via docking vectors and modes
-5. **Placement** — Groups are positioned against walls using wall labels and alignments
+5. **Positioning** — Groups are positioned with `repositioningData`: one point and one rotation, taken from a wall's `end` and `facingRotationY`
 
 ### Authoring Rules
 
-- Never author coordinates directly — use docking and placement only
-- Groups are positioned with `placement` (wall/alignment/offset) or `repositioningData`
+- Never author root positions — roots are positioned by docking only
+- Groups are positioned with `repositioningData` only (`posRotationY` counter-clockwise as seen from above: right wall 270, left wall 90)
 - Roots within a group must be docked to already-placed roots
 - Docking uses vector pairs: ownDockingVector -> dockingVector with mode and offset
 - Free docking vectors indicate where new modules can be added
@@ -313,8 +312,7 @@ This starts:
 3. Connect MCP client
 4. Call tools like:
    - `get-plan-context` — Get current rooms, articles, groups
-   - `create-or-replace-groups` — Add or modify groups
-   - `place-group` — Move existing groups
+   - `create-or-replace-groups` — Add, modify, position or move groups
    - `get-price` — Calculate pricing
    - `get-order-data` — Get order information
    - `get-plan-images` — Render plan images

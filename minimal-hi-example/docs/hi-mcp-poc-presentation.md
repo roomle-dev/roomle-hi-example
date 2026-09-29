@@ -72,9 +72,9 @@ The agent gets a small set of tools:
 - find-attributes — looks an attribute up by text in the full master data,
   e.g. the attribute behind "front colour" with its allowed values
 - create-or-replace-groups — creates or replaces groups; a root module is
-  just an article pick plus its docking relation to a neighbouring module
-- place-group — stands a group against a wall ("right", "left", …) with
-  alignment and offset
+  just an article pick plus its docking relation to a neighbouring module,
+  the group is positioned with repositioningData (one point and one rotation
+  taken from a wall) and moved by resubmitting it
 - update-attribute, get-price, get-order-data, get-plan-images — changing
   attributes, verifying prices/order data, and inspecting the result visually
 

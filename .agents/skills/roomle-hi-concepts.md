@@ -7,7 +7,7 @@
 Load this skill when working with:
 - HI data structures (rooms, walls, articles, groups)
 - Docking vectors and docking relationships
-- Group placement and positioning
+- Group positioning with `repositioningData`
 - Article catalog and module selection
 - HI-specific parameters and attributes
 
@@ -97,8 +97,7 @@ A **Group** is a collection of root modules (article instances) with docking rel
 - `name` — Human-readable name
 - `roots` — Array of root module instances
 - `dockingConnections` — Relationships between roots
-- `placement` — Position against a room wall (optional)
-- `repositioningData` — Custom positioning data (alternative to placement)
+- `repositioningData` — `{ posGroup, posRotationY, rootId }`, the group position (see [Positioning](#5-positioning))
 
 **Root Module Properties:**
 - `articleId` — Reference to the article catalog
@@ -115,11 +114,11 @@ A **Group** is a collection of root modules (article instances) with docking rel
 - `mode` — Docking mode (e.g., "aligned", "flush", "center")
 - `offset` — [x, y, z] offset from ideal docking position
 
-**Placement Properties:**
-- `wallLabel` — Side label of the wall to place against (e.g., "front")
-- `alignment` — Alignment mode ("left", "center", "right")
-- `offset` — Distance from wall start in millimeters
-- `distanceFromWall` — Perpendicular distance from wall in millimeters
+**Repositioning Properties:**
+- `posGroup` — [x, y, z] in millimetres: where the left back bottom corner of the anchor root goes
+- `posRotationY` — rotation of the group in degrees, counter-clockwise as seen from above
+- `rootId` — the anchor: the root the docking starts from, listed first in `roots`
+- `rootRelPos` — optional root-local offset, rotated with `posRotationY`; the negated catalog `cornerPoint` of a corner article
 
 **Example Group:**
 ```javascript
@@ -148,11 +147,10 @@ A **Group** is a collection of root modules (article instances) with docking rel
       mode: "aligned"
     }
   ],
-  placement: {
-    wallLabel: "front",
-    alignment: "left",
-    offset: 500,
-    distanceFromWall: 0
+  repositioningData: {
+    posGroup: [4000, 0, -3000], // the end of the right wall of a 4000 x 3000 room
+    posRotationY: 270,          // the right wall's facingRotationY
+    rootId: "<id of the anchor root - the docking starts from it, listed first>"
   }
 }
 ```
@@ -183,25 +181,25 @@ worldDockingVector = articleDockingVector
   .translate(root.position)
 ```
 
-### 5. Placement System
+### 5. Positioning
 
-The **Placement System** positions groups in relation to room walls.
+A group is positioned by `repositioningData: { posGroup, posRotationY, rootId }` — one point and
+one rotation, the same for a group at a wall, in a corner or anywhere in the room. There is no
+separate wall placement.
 
-**Placement Methods:**
+- `rootId` is the anchor: the root the docking chains start from, listed first in `roots` (in an
+  L-shaped kitchen the corner article); `posGroup` is its left back bottom corner in the room.
+- One kitchen is one group: every further unit is a docked root of the same group, never a
+  separately positioned group.
+- `posRotationY` is in degrees, counter-clockwise as seen from above. Against a wall it is the
+  wall's `facingRotationY` (rectangular room: back 0, left 90, front 180, right 270), and
+  `posGroup` lies on the wall, from its `end` towards its `start`.
+- It is applied once when the group loads; moving a group means resubmitting it with a new
+  `repositioningData`.
 
-1. **Wall Placement** (using `placement`):
-   - Positions group against a specific wall
-   - Aligns to wall start, center, or end
-   - Maintains perpendicular distance from wall
-
-2. **Numeric Placement** (using `repositioningData`):
-   - Positions group at absolute coordinates
-   - Allows arbitrary positioning in the scene
-   - Does NOT automatically learn the wall it stands at
-
-**Important Rule (ADR 0010)**: A numeric placement keeps the wall the object stands at, instead of learning the measured wall.
-
-**Important Rule (ADR 0011)**: A numeric placement never rotates the object.
+The wall and corner rules are in [hi-authoring-rules.md](./hi-authoring-rules.md#positioning-a-group).
+RoomleCore ADR 0011 ("a numeric placement never rotates the object") concerns the planner's
+interactive numeric placement, not `repositioningData`: `posRotationY` does rotate the group.
 
 ## HI-Specific Concepts
 
@@ -287,7 +285,7 @@ HI Configuration
 3. Define Docking Connections
    │
    ▼
-4. Set Placement
+4. Set repositioningData
    │
    ▼
 5. create-or-replace-groups Tool
@@ -324,18 +322,18 @@ HI Configuration
 
 ### Authoring Rules
 
-1. **Never Author Coordinates Directly** — Always use docking and placement
+1. **Never Author Root Positions** — Roots are positioned by docking, the group by `repositioningData`
 2. **Groups Must Be Docked** — Roots within a group must be docked to already-placed roots
 3. **Valid Docking Pairs** — Only compatible categories can dock
-4. **Wall Labels Required** — Placement requires valid wall sideLabel
+4. **Positions Come From the Walls** — `posGroup` and `posRotationY` are taken from a wall's `start`/`end` and `facingRotationY`
 5. **Docking Vectors Must Exist** — Cannot dock to non-existent vectors
 
-### Placement Rules
+### Positioning Rules
 
-1. **Wall Placement** — Group is positioned relative to a wall
-2. **Numeric Placement** — Group is positioned at absolute coordinates
+1. **One Mechanism** — Every group is positioned with `repositioningData` (a point and a rotation)
+2. **Against a Wall** — `posRotationY` = the wall's `facingRotationY`, `posGroup` on the wall from its `end` towards its `start`
 3. **Docking Vectors Transform** — Vectors are transformed with root's position and rotation
-4. **Collision Detection** — Groups cannot overlap with walls or other groups
+4. **Extend, Don't Butt** — Units next to an existing group are docked into that group; overlapping groups are not rejected
 
 ### Docking Rules
 
@@ -371,11 +369,10 @@ const group = {
       mode: "aligned"
     }
   ],
-  placement: {
-    wallLabel: "front",
-    alignment: "left",
-    offset: 1000,
-    distanceFromWall: 0
+  repositioningData: {
+    posGroup: [3000, 0, 0], // front wall of a 4000 x 3000 room, 1000 mm from its end
+    posRotationY: 180,      // the front wall's facingRotationY
+    rootId: "<id of the anchor root - the docking starts from it, listed first>"
   }
 };
 
@@ -393,7 +390,7 @@ const context = await callTool("get-plan-context", {});
 const rooms = context.rooms;
 
 // Find a specific wall
-const frontWall = rooms[0].walls.find(w => w.sideLabel === "front");
+const frontWall = rooms.rooms[0].walls.find(w => w.side === "bottom"); // front = bottom in the top view
 
 // Get all groups
 const groups = context.groups;
@@ -406,8 +403,8 @@ const articles = context.articles;
 
 ```javascript
 // Get wall dimensions
-const wall = context.rooms[0].walls.find(w => w.sideLabel === "front");
-const wallWidth = wall.length;
+const wall = context.rooms.rooms[0].walls.find(w => w.side === "bottom");
+const wallWidth = wall.lengthMm;
 
 // Create group with adjustment
 const group = {
@@ -425,11 +422,10 @@ const group = {
       mode: "aligned"
     }
   ],
-  placement: {
-    wallLabel: "front",
-    alignment: "left",
-    offset: 0,
-    distanceFromWall: 0
+  repositioningData: {
+    posGroup: wall.end,               // flush into the corner at the wall's end
+    posRotationY: wall.facingRotationY,
+    rootId: "<id of the anchor root - the docking starts from it, listed first>"
   },
   // Group will be adjusted to fill wall width
   adjustToWallWidth: true
@@ -440,26 +436,19 @@ const group = {
 
 ### Common Errors
 
-1. **Invalid Wall Label** — `wallLabel` does not match any wall in the room
+1. **Removed `placement`** — a group with `placement` is rejected with a pointer to `repositioningData`
 2. **Incompatible Docking** — Articles with incompatible categories cannot dock
 3. **Missing Docking Vector** — Referenced docking vector does not exist on article
-4. **Collision** — Group would intersect with wall or other group
-5. **Invalid Placement** — Placement parameters are out of bounds
+4. **Invalid repositioningData** — `posGroup` not `[x, y, z]`, `posRotationY` missing or not a number, or `rootId` not a root of the group
 
 ### Error Response Format
 
-```javascript
-{
-  error: {
-    code: "INVALID_WALL_LABEL",
-    message: "Wall with label 'front' not found in room",
-    details: {
-      roomId: "room_1",
-      availableWalls: ["left", "right", "back"],
-      requestedWall: "front"
-    }
-  }
-}
+A rejected payload comes back as a tool error result whose text lists every problem:
+
+```text
+Invalid pos groups - nothing was loaded:
+posGroups[0].repositioningData: rootId must be the id of one of the group's roots - the anchor root the docking starts from
+Fetch the payload format with the get-authoring-rules tool.
 ```
 
 ## Best Practices
@@ -469,21 +458,21 @@ const group = {
 1. **Start with Base Cabinet** — Use as anchor for other modules
 2. **Dock Sequentially** — Add modules one at a time with proper docking
 3. **Validate Docking** — Always check docking compatibility before adding
-4. **Use Placement** — Position groups against walls for proper alignment
+4. **Position From the Walls** — Take `posGroup`/`posRotationY` from a wall's `end` and `facingRotationY`
 5. **Test Adjustment** — Verify group adjusts correctly to wall width
 
 ### Performance
 
 1. **Batch Operations** — Use `create-or-replace-groups` for multiple groups
 2. **Minimize Queries** — Cache plan context when possible
-3. **Validate Early** — Check docking and placement before creating groups
+3. **Validate Early** — Check docking and repositioningData before creating groups
 4. **Use Timeouts** — Set appropriate timeouts for tool calls (30s default, 120s for images)
 
 ### Debugging
 
 1. **Inspect Plan Context** — Use `get-plan-context` to see current state
 2. **Check Docking Vectors** — Verify vectors exist and are positioned correctly
-3. **Validate Walls** — Ensure wall labels match between placement and room
+3. **Check the Walls** — Take `start`/`end`/`facingRotationY` from the room's `walls` array
 4. **Test Incrementally** — Create groups one at a time to isolate issues
 
 ## Related Skills

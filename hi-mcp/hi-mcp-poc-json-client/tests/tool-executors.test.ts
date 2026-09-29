@@ -56,35 +56,9 @@ const room = {
   ],
 };
 
-const makeRoot = (overrides: Record<string, unknown> = {}) => ({
-  id: 'r1',
-  articleId: 'article-1',
-  articlePos: [0, 0, 0],
-  rotationY: 0,
-  attributes: [
-    { id: 'b', value: 800, isInput: true },
-    { id: 't', value: 600, isInput: true },
-  ],
-  dockInfos: [{ id: 'LeftBottom' }, { id: 'RightBottom' }],
-  contextData: { dockedRoots: [] },
-  modules: [],
-  ...overrides,
-});
-
-const makeGroup = (overrides: Record<string, unknown> = {}) => ({
-  id: 'g1',
-  libraryId: 'lib-1',
-  pos: [0, 0, 0],
-  rotationY: 0,
-  roots: [makeRoot()],
-  logMessages: [],
-  ...overrides,
-});
-
 const FOOTPRINT = { x: [0, 800], z: [0, 600], widthMm: 800, depthMm: 600 };
 
-// a group as the plan context returns it (shaped); the raw makeGroup is what
-// getExternalObjectGroups returns
+// a group as the plan context returns it (shaped)
 const makeShapedRoot = (overrides: Record<string, unknown> = {}) => ({
   id: 'r1',
   articleId: 'article-1',
@@ -211,9 +185,7 @@ const createApi = (
 ) => ({
   extended: {
     getExternalObjectPlanContext: vi.fn(async () => planContext),
-    getExternalObjectGroups: vi.fn(async () => []),
     loadExternalObjectGroupLayout: vi.fn(async () => [{ id: 'loaded-1' }]),
-    removeExternalObject: vi.fn(),
     updateExternalObjectGroupAttribute: vi.fn(async () => undefined),
     fetchPrice: vi.fn(async () => ({ price: 42 })),
     getExternalObjectSnapshot: vi.fn(async () => ({})),
@@ -437,28 +409,46 @@ describe('create-or-replace-groups validation', () => {
     );
   });
 
-  it('rejects an invalid placement', async () => {
+  it('rejects a placement and points to repositioningData', async () => {
     await expectRejectedBeforeLoad(
-      [{ roots: [pick()], placement: { wall: 'north' } }],
-      /placement: wall must be a side label/,
+      [{ roots: [pick()], placement: { wall: 'right' } }],
+      /placement is not supported - position the group with repositioningData/,
+    );
+  });
+
+  it('rejects invalid repositioningData', async () => {
+    const withRepositioning = (repositioningData: unknown) => [
+      { roots: [pick()], repositioningData },
+    ];
+    await expectRejectedBeforeLoad(
+      withRepositioning({ posGroup: [0, 0], posRotationY: 0, rootId: 'u1' }),
+      /posGroup must be \[x, y, z\] in millimetres/,
     );
     await expectRejectedBeforeLoad(
-      [{ roots: [pick()], placement: { wall: 'right', alignment: 'middle' } }],
-      /alignment must be one of/,
+      withRepositioning({ posGroup: [0, '0', 0], rootId: 'u1' }),
+      /posGroup must be \[x, y, z\] in millimetres/,
     );
     await expectRejectedBeforeLoad(
-      [
-        {
-          roots: [pick()],
-          placement: { wall: 'right' },
-          repositioningData: {
-            posGroup: [0, 0, 0],
-            posRotationY: 0,
-            rootId: 'u1',
-          },
-        },
-      ],
-      /use either placement or repositioningData/,
+      withRepositioning({ posGroup: [0, 0, 0], posRotationY: '90', rootId: 'u1' }),
+      /posRotationY must be a number of degrees/,
+    );
+    // posRotationY is required: 0 must be stated explicitly
+    await expectRejectedBeforeLoad(
+      withRepositioning({ posGroup: [0, 0, 0], rootId: 'u1' }),
+      /posRotationY must be a number of degrees/,
+    );
+    await expectRejectedBeforeLoad(
+      withRepositioning({ posGroup: [0, 0, 0], posRotationY: 0, rootId: 'u9' }),
+      /rootId must be the id of one of the group's roots/,
+    );
+    await expectRejectedBeforeLoad(
+      withRepositioning({
+        posGroup: [0, 0, 0],
+        posRotationY: 0,
+        rootId: 'u1',
+        rootRelPos: [261, 0],
+      }),
+      /rootRelPos must be \[x, y, z\] in millimetres/,
     );
   });
 
@@ -544,25 +534,20 @@ describe('create-or-replace-groups loading', () => {
       loaded: [{ id: 'loaded-1' }],
       groups: [{ id: 'g1' }],
     });
-    expect((result as Record<string, any>).placements).toBeUndefined();
     expect((result as Record<string, any>).hint).toBeUndefined();
   });
 
-  it('keeps repositioningData of a group without a placement', async () => {
+  it('passes repositioningData through to the planner in one load', async () => {
     const api = createApi(planContextFixture);
     const repositioningData = {
-      posGroup: [100, 0, 100],
-      posRotationY: 90,
+      posGroup: [4000, 0, -3000],
+      posRotationY: 270,
       rootId: 'u1',
     };
     await toolExecutors['create-or-replace-groups'](api, {
-      posGroups: [
-        {
-          roots: [pick()],
-          repositioningData,
-        },
-      ],
+      posGroups: [{ roots: [pick()], repositioningData }],
     });
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
       { posGroups: [{ roots: [pick()], repositioningData }] },
       'posGroups',
@@ -570,233 +555,62 @@ describe('create-or-replace-groups loading', () => {
     );
   });
 
-  it('resolves a placement before loading and re-applies it as repositioningData', async () => {
-    const shapedExisting = makeShapedGroup({
-      id: 'g1',
-      position: { pos: [2000, 0, -3000] },
-    });
-    const shapedLoaded = makeShapedGroup({
-      id: 'g2',
-      position: { pos: undefined },
-      roots: [makeShapedRoot({ id: 'r2' })],
-    });
-    const shapedPlaced = makeShapedGroup({
-      id: 'g2',
-      position: { pos: [4000, 0, -1900], rotationY: 270 },
-      roots: [makeShapedRoot({ id: 'r2' })],
-    });
-    const rawExisting = makeGroup({ id: 'g1', pos: [2000, 0, -3000] });
-    const rawLoaded = makeGroup({
-      id: 'g2',
-      pos: undefined,
-      roots: [makeRoot({ id: 'r2' })],
-    });
-    let groupsFetches = 0;
-    const api = {
-      extended: {
-        getExternalObjectPlanContext: vi.fn((sections: string[]) => {
-          if (sections.includes('articles')) {
-            return Promise.resolve({ articles: [articleFixture] });
-          }
-          if (sections.includes('rooms')) {
-            return Promise.resolve({
-              rooms: { rooms: [room] },
-              groups: [shapedExisting],
-            });
-          }
-          groupsFetches += 1;
-          return Promise.resolve({
-            groups:
-              groupsFetches === 1
-                ? [shapedExisting, shapedLoaded]
-                : [shapedExisting, shapedPlaced],
-          });
-        }),
-        getExternalObjectGroups: vi.fn(async () => [
-          rawExisting,
-          rawLoaded,
-        ]),
-        loadExternalObjectGroupLayout: vi.fn(async () => [{ id: 'g2' }]),
-        removeExternalObject: vi.fn(),
-      },
-    };
-    const result = await toolExecutors['create-or-replace-groups'](api, {
-      posGroups: [
-        {
-          placement: { wall: 'right' },
-          roots: [{ id: 'u1', articleId: 'article-1' }],
-        },
-      ],
-    });
-    const load = api.extended.loadExternalObjectGroupLayout.mock
-      .calls as any[][];
-    // the placement is resolved before anything loads and does not travel as a placement
-    expect(load[0][0].posGroups[0].placement).toBeUndefined();
-    expect(load[0][2]).toEqual({ reason: 'adjusted' });
-    // it is re-applied after the calculation as repositioningData of the first root
-    expect(load[1][0].posGroups).toHaveLength(1);
-    const reloaded = load[1][0].posGroups[0];
-    expect(reloaded.id).toBe('g2');
-    expect(reloaded.repositioningData).toEqual({
-      posGroup: [4000, 0, -1900],
-      posRotationY: 270,
-      rootId: 'r2',
-    });
-    expect(reloaded.roots[0].articlePos).toBeUndefined();
-    expect(load[1][2]).toEqual({ reason: 'adjusted' });
-    expect(result).toMatchObject({
-      placements: [{ groupId: 'g2', wall: 'right', placedBy: 'footprint' }],
-    });
-    expect((result as Record<string, any>).hint).toBeUndefined();
-  });
-
-  it('removes the created groups again when a placement meets an existing group', async () => {
-    const shapedExisting = makeShapedGroup({
-      id: 'g1',
-      position: { pos: [4000, 0, -1500], rotationY: 270 },
-    });
-    const shapedLoaded = makeShapedGroup({
-      id: 'g2',
-      position: { pos: undefined },
-      roots: [makeShapedRoot({ id: 'r2' })],
-    });
-    const rawExisting = makeGroup({
-      id: 'g1',
-      pos: [4000, 0, -1500],
-      rotationY: 270,
-    });
-    const rawLoaded = makeGroup({
-      id: 'g2',
-      pos: undefined,
-      roots: [makeRoot({ id: 'r2' })],
-    });
-    const api = {
-      extended: {
-        getExternalObjectPlanContext: vi.fn((sections: string[]) => {
-          if (sections.includes('articles')) {
-            return Promise.resolve({ articles: [articleFixture] });
-          }
-          if (sections.includes('rooms')) {
-            return Promise.resolve({
-              rooms: { rooms: [room] },
-              groups: [shapedExisting],
-            });
-          }
-          return Promise.resolve({ groups: [shapedExisting, shapedLoaded] });
-        }),
-        getExternalObjectGroups: vi.fn(async () => [
-          rawExisting,
-          rawLoaded,
-        ]),
-        loadExternalObjectGroupLayout: vi.fn(async () => [{ id: 'g2' }]),
-        removeExternalObject: vi.fn(),
-      },
-    };
-    await expect(
-      toolExecutors['create-or-replace-groups'](api, {
-        posGroups: [
-          {
-            placement: { wall: 'right' },
-            roots: [{ id: 'u1', articleId: 'article-1' }],
-          },
-        ],
-      }),
-    ).rejects.toThrow(/Placement rejected.*group 'g1'/s);
-    expect(api.extended.removeExternalObject).toHaveBeenCalledWith('g2');
-    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('place-group', () => {
-  // shaped groups for the plan context, raw groups for the placement math
-  const createPlaceApi = (
-    shapedGroups: any[],
-    rawGroups: any[],
-    afterShapedGroups: any[] = shapedGroups,
-  ) => ({
-    extended: {
-      getExternalObjectPlanContext: vi.fn((sections: string[]) => {
-        if (sections.includes('rooms')) {
-          return Promise.resolve({
-            rooms: { rooms: [room] },
-            groups: shapedGroups,
-          });
-        }
-        return Promise.resolve({ groups: afterShapedGroups });
-      }),
-      getExternalObjectGroups: vi.fn(async () => rawGroups),
-      loadExternalObjectGroupLayout: vi.fn(async () => [{ id: 'g1' }]),
-      removeExternalObject: vi.fn(),
-    },
-  });
-
-  it('rejects an unknown group id', async () => {
-    const api = createPlaceApi([], []);
-    await expect(
-      toolExecutors['place-group'](api, { groupId: 'nope', wall: 'right' }),
-    ).rejects.toThrow(/Group 'nope' not found/);
-  });
-
-  it('accepts a unique id prefix', async () => {
-    const api = createPlaceApi(
-      [makeShapedGroup({ id: 'group-abc' })],
-      [makeGroup({ id: 'group-abc' })],
-    );
-    const result = await toolExecutors['place-group'](api, {
-      groupId: 'group-a',
-      wall: 'right',
-    });
-    expect((result as Record<string, any>).pos).toEqual([4000, 0, -1900]);
-  });
-
-  it('places the group against a wall and reloads it there', async () => {
-    const movedShaped = makeShapedGroup({
-      id: 'g1',
-      position: { pos: [4000, 0, -3000], rotationY: 270 },
-    });
-    const api = createPlaceApi(
-      [makeShapedGroup()],
-      [makeGroup({ id: 'g1', pos: [0, 0, 0] })],
-      [movedShaped],
-    );
-    const result = (await toolExecutors['place-group'](api, {
-      groupId: 'g1',
-      wall: 'right',
-      alignment: 'top',
-    })) as Record<string, any>;
-    expect(result.pos).toEqual([4000, 0, -3000]);
-    expect(result.rotationY).toBe(270);
-    expect(result.placedBy).toBe('footprint');
-    expect(result.wall).toMatchObject({ side: 'right', facingRotationY: 270 });
-    const load = api.extended.loadExternalObjectGroupLayout.mock
-      .calls as any[][];
-    expect(load[0][0].posGroups[0].repositioningData).toEqual({
+  it('moves an existing group resubmitted with its id and new repositioningData', async () => {
+    const api = createApi(planContextFixture);
+    const repositioningData = {
       posGroup: [4000, 0, -3000],
       posRotationY: 270,
       rootId: 'r1',
+    };
+    // the group exactly as get-plan-context returns it, plus the new position
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [{ ...makeShapedGroup(), repositioningData }],
     });
-    expect(result.group.id).toBe('g1');
-    expect(result.group.position.pos).toEqual([4000, 0, -3000]);
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
+      {
+        posGroups: [
+          {
+            id: 'g1',
+            libraryId: 'lib-1',
+            roots: [
+              {
+                id: 'r1',
+                articleId: 'article-1',
+                attributes: [
+                  { id: 'b', value: 800 },
+                  { id: 't', value: 600 },
+                ],
+              },
+            ],
+            repositioningData,
+          },
+        ],
+      },
+      'posGroups',
+      { reason: 'adjusted' },
+    );
   });
 
-  it('rejects a target that meets another group without moving it', async () => {
-    const api = createPlaceApi(
-      [
-        makeShapedGroup({ id: 'g1' }),
-        makeShapedGroup({
-          id: 'g2',
-          position: { pos: [4000, 0, -1900], rotationY: 270 },
-        }),
-      ],
-      [
-        makeGroup({ id: 'g1', pos: [0, 0, 0] }),
-        makeGroup({ id: 'g2', pos: [4000, 0, -1900], rotationY: 270 }),
-      ],
-    );
-    await expect(
-      toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' }),
-    ).rejects.toThrow(/Placement rejected - the group was not moved/);
-    expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
+  it('hints at repositioningData for a created group without a position', async () => {
+    const unpositioned = makeShapedGroup({
+      id: 'g2',
+      position: { pos: undefined },
+    });
+    let groupsFetches = 0;
+    const api = createApi(planContextFixture, {
+      getExternalObjectPlanContext: vi.fn(async (sections: string[]) => {
+        if (sections.includes('articles')) {
+          return { articles: [articleFixture] };
+        }
+        groupsFetches += 1;
+        return { groups: groupsFetches === 1 ? [] : [unpositioned] };
+      }),
+    });
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [{ roots: [pick()] }],
+    })) as Record<string, any>;
+    expect(result.hint).toMatch(/Groups g2 are not positioned yet/);
+    expect(result.hint).toMatch(/repositioningData/);
   });
 });
 

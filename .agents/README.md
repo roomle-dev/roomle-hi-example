@@ -39,7 +39,7 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 |---|---|---|
 | [hi-mcp-server.md](./skills/hi-mcp-server.md) | MCP server architecture, HTTP handling, SSE bridge, protocol compliance | MCP server development, tool registration, bridge implementation |
 | [hi-mcp-cloudflare-deployment.md](./skills/hi-mcp-cloudflare-deployment.md) | Cloudflare deployment of the hi-mcp server: wrangler deploy/update, URL anatomy, container cleanup, teardown | Deploying, updating, or troubleshooting the Cloudflare-hosted hi-mcp server |
-| [hi-authoring-rules.md](./skills/hi-authoring-rules.md) | HI authoring patterns, docking vectors, group creation, placement rules | Creating or modifying HI groups, docking patterns, article selection |
+| [hi-authoring-rules.md](./skills/hi-authoring-rules.md) | HI authoring patterns, docking vectors, group creation, positioning with repositioningData | Creating or modifying HI groups, docking patterns, article selection |
 | [hi-mcp-tools.md](./skills/hi-mcp-tools.md) | Complete MCP tool reference with parameters, examples, error handling | Using MCP tools, tool implementation, error diagnosis |
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
 | [vercel-ai-sdk-chat.md](./skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: provider selection, server-side auth, @ai-sdk/mcp, streamText route | Implementing the AI chat window (RML-17984), Vercel AI SDK, MCP client integration |
@@ -73,6 +73,8 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Corner kitchen not docked after the positioning rules](bug-analysis/corner-kitchen-not-docked-after-positioning-rules.md) | Open | 2026-09-29 |
+| [Corner article's corner point offset from its root origin](bug-analysis/corner-article-corner-point-offset-from-root-origin.md) | Open | 2026-09-29 |
 
 ### Feature Analyses
 
@@ -98,6 +100,7 @@ done. The analysis and the report are the same document — the report is append
 | Document | Status | Last touched |
 |---|---|---|
 | [Use hi-mcp-poc-json server for minimal-hi-example](refactoring-analysis/use-hi-mcp-poc-json-server-for-minimal-example.md) | Done | 2026-09-27 |
+| [Group placement via repositioningData](refactoring-analysis/group-placement-via-repositioning-data.md) | Open | 2026-09-29 |
 
 ### Benchmarks & Performance Analyses
 

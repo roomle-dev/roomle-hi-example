@@ -13,7 +13,6 @@ const EXPECTED_TOOLS = [
   'get-plan-context',
   'get-plan-images',
   'get-price',
-  'place-group',
   'update-attribute',
 ];
 
@@ -46,7 +45,7 @@ const textOf = (result: unknown): string => {
 };
 
 describe('hi-mcp-server tool registration', () => {
-  it('exposes exactly the nine expected tools', async () => {
+  it('exposes exactly the eight expected tools', async () => {
     const client = await connectClient(createMockBridge());
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name).sort()).toEqual(EXPECTED_TOOLS);
@@ -61,6 +60,36 @@ describe('hi-mcp-server tool calls', () => {
     expect(bridge.call).not.toHaveBeenCalled();
     expect(textOf(result)).toMatch(/^Authoring rules for pos groups:/);
     expect(textOf(result)).toContain('Never author a position');
+  });
+
+  it('explains positioning with repositioningData in the verified rotation sense', async () => {
+    const client = await connectClient(createMockBridge());
+    const text = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    expect(text).toContain('counter-clockwise as seen from above');
+    expect(text).toContain("posRotationY = the wall's facingRotationY");
+    expect(text).toContain('right back 270');
+    expect(text).not.toMatch(/\bplace-group\b/);
+  });
+
+  it('carries the one-group principle and the docking examples', async () => {
+    const client = await connectClient(createMockBridge());
+    const text = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    expect(text).toContain('One kitchen is one group');
+    // docking to the left, spelled out as a payload snippet
+    expect(text).toContain(
+      '{ "ownDockingVector": "LeftBottom", "dockedRoots": [{ "id": "B", "dockingVector": "RightBottom"',
+    );
+    // the complete L-shaped corner kitchen example, anchored on the corner article
+    expect(text).toContain('"rootId": "c1"');
+    expect(text).toContain('Example 5');
+    // the corner point offset: compensated root-locally, verified via position.pos
+    expect(text).toContain('cornerPoint');
+    expect(text).toContain('"rootRelPos": [261, 0, 0]');
+    expect(text).toContain('posGroup shifted by (P - position.pos)');
   });
 
   it('relays get-plan-context with its arguments and returns the JSON text', async () => {
@@ -86,16 +115,6 @@ describe('hi-mcp-server tool calls', () => {
     expect(bridge.call).toHaveBeenCalledWith(
       'create-or-replace-groups',
       { posGroups: [{ roots: [{ id: 'u1', articleId: 'a' }] }] },
-      SNAPSHOT_CALL_TIMEOUT_MS,
-    );
-
-    await client.callTool({
-      name: 'place-group',
-      arguments: { groupId: 'g1', wall: 'right' },
-    });
-    expect(bridge.call).toHaveBeenCalledWith(
-      'place-group',
-      { groupId: 'g1', wall: 'right', roomIndex: undefined, alignment: undefined, offsetMm: undefined },
       SNAPSHOT_CALL_TIMEOUT_MS,
     );
 

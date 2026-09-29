@@ -64,7 +64,7 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 - Connects a `WebSocket` to `ws://localhost:3100/bridge`, reconnects every 3 s on close
 - Executes tool calls against `roomDesignerApi.extended` via the inline tool executors, sends results back over the socket
 
-The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (browser-bridge, tool-executors, plan-space) — no automatic sync, copy after changes.
+The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (browser-bridge, tool-executors, types) — no automatic sync, copy after changes.
 
 ## Server Lifecycle
 
@@ -87,7 +87,7 @@ The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (bro
 ## Timeouts and Error Handling
 
 - Default timeout: 30 seconds
-- Snapshot calls (`create-or-replace-groups`, `place-group`, `get-order-data`, `get-plan-images`): 120 seconds
+- Snapshot calls (`create-or-replace-groups`, `get-order-data`, `get-plan-images`): 120 seconds
 - No page connected: error names the client URL (`HI_MCP_STORE_URL`)
 - Unit tests: `npm test` at the `hi-mcp` root (vitest)
 

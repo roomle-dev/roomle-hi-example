@@ -7,11 +7,11 @@ against `roomDesignerApi.extended` and replies with the results.
 | File | Responsibility |
 | ---- | -------------- |
 | `browser-bridge.ts` | WebSocket client: connects to the server, executes tool calls, replies with results |
-| `tool-executors.ts` | Tool name → `roomDesignerApi.extended` calls + context shaping for the agent |
-| `plan-space.ts` | Pure geometry: wall derivation (side labels, facing rotation), group footprints, wall placement |
+| `tool-executors.ts` | Tool name → `roomDesignerApi.extended` calls, payload validation |
 | `types.ts` | WebSocket message protocol (the server carries its own copy) |
 | `tests/` | Unit tests (vitest, configured at the `hi-mcp/` workspace root) |
 
-The ligna-store runs a verbatim copy of these four source files in its `hi-mcp/` folder — there
-is no automatic sync, so copy them over after every change here. The message protocol in
+The ligna-store runs a verbatim copy of these three source files in its `hi-mcp/` folder — there
+is no automatic sync, so copy them over after every change here (and delete its `plan-space.ts`,
+which the page side no longer has). The message protocol in
 `types.ts` and the tool names must match the server.

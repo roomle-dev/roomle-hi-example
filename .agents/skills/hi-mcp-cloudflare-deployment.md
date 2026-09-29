@@ -64,6 +64,7 @@ npx wrangler containers delete <ID>        # stop and remove the container appli
 | Symptom | Fix |
 | ------- | --- |
 | wrangler refuses to start | Node < 22 on the PATH — use `~/.volta/bin` first |
+| image build: `npm ci` … `lock file's <pkg>@<a> does not satisfy <pkg>@<b>` | the image installs from `hi-mcp/package-lock.json`, which `npm install` never updates (`hi-mcp/` is a workspace of the repository root, so npm writes the root lockfile). Regenerate it outside the root workspace, as described in [Refreshing the image lockfile](../../hi-mcp/docs/cloudflare-mcp-server.md#refreshing-the-image-lockfile) |
 | `Cannot resolve host` / a client refuses the URL | URL built from the account ID instead of the account subdomain — take the URL from the deploy output |
 | deploy fails with "different durable object namespace" | orphaned container app from an earlier delete — `wrangler containers list` + `containers delete` |
 | deploy uploads the Worker, then `Unauthorized` | **nothing to delete** — the container-app update step lost authorization. In order: retry the deploy → fresh `wrangler logout && wrangler login` → check the container app state in the dashboard → fall back to an API token: dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template, then `CLOUDFLARE_API_TOKEN=<token> npx wrangler deploy` |

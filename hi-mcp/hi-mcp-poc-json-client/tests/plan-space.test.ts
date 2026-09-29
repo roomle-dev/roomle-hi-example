@@ -23,8 +23,8 @@ const IDENTITY_MATRIX = [
 const WALL_RIGHT: DerivedWall = {
   index: 1,
   side: 'right',
-  start: [4000, 0],
-  end: [4000, -3000],
+  start: [4000, 0, 0],
+  end: [4000, 0, -3000],
   lengthMm: 3000,
   type: 'wall',
   facingRotationY: 270,
@@ -33,8 +33,8 @@ const WALL_RIGHT: DerivedWall = {
 const WALL_TOP: DerivedWall = {
   index: 2,
   side: 'top',
-  start: [4000, -3000],
-  end: [0, -3000],
+  start: [4000, 0, -3000],
+  end: [0, 0, -3000],
   lengthMm: 4000,
   type: 'wall',
   facingRotationY: 0,

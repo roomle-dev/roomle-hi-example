@@ -20,8 +20,8 @@ const room = {
     {
       index: 0,
       side: 'bottom',
-      start: [0, 0],
-      end: [4000, 0],
+      start: [0, 0, 0],
+      end: [4000, 0, 0],
       lengthMm: 4000,
       type: 'wall',
       facingRotationY: 180,
@@ -29,8 +29,8 @@ const room = {
     {
       index: 1,
       side: 'right',
-      start: [4000, 0],
-      end: [4000, -3000],
+      start: [4000, 0, 0],
+      end: [4000, 0, -3000],
       lengthMm: 3000,
       type: 'wall',
       facingRotationY: 270,
@@ -38,8 +38,8 @@ const room = {
     {
       index: 2,
       side: 'top',
-      start: [4000, -3000],
-      end: [0, -3000],
+      start: [4000, 0, -3000],
+      end: [0, 0, -3000],
       lengthMm: 4000,
       type: 'wall',
       facingRotationY: 0,
@@ -47,8 +47,8 @@ const room = {
     {
       index: 3,
       side: 'left',
-      start: [0, -3000],
-      end: [0, 0],
+      start: [0, 0, -3000],
+      end: [0, 0, 0],
       lengthMm: 3000,
       type: 'wall',
       facingRotationY: 90,

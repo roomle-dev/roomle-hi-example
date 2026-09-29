@@ -6,9 +6,11 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { WebSocketServer } from 'ws';
 import { createHiMcpServer } from './hi-mcp-server';
 import { PageBridge } from './page-bridge';
+import { createPlannerApi } from './planner-api';
 import { HI_MCP_PORT } from './types';
 
 const bridge = new PageBridge();
+const plannerApi = createPlannerApi(bridge);
 
 // Azure App Service injects PORT and expects HOST=0.0.0.0; locally the
 // defaults keep the single-user setup: port 3100, all interfaces, the local
@@ -34,7 +36,7 @@ const requestHandler = async (
     return;
   }
   try {
-    const mcpServer = createHiMcpServer(bridge);
+    const mcpServer = createHiMcpServer(plannerApi);
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,

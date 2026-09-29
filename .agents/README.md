@@ -25,7 +25,9 @@ Decisions about *why* the code is shaped the way it is live in `.agents/decision
 Architecture Decision Records — why the code is shaped the way it is, and which approaches were
 deliberately rejected. Read these before proposing a change to an area they cover.
 
-*This folder is initially empty. Add ADR documents as needed.*
+| ADR | Status |
+|---|---|
+| [0001 — HI MCP tool logic runs in the MCP server, pages only execute planner methods](decisions/0001-hi-mcp-tool-logic-in-the-server.md) | Accepted |
 
 ---
 
@@ -101,7 +103,7 @@ done. The analysis and the report are the same document — the report is append
 |---|---|---|
 | [Use hi-mcp-poc-json server for minimal-hi-example](refactoring-analysis/use-hi-mcp-poc-json-server-for-minimal-example.md) | Done | 2026-09-27 |
 | [Group placement via repositioningData](refactoring-analysis/group-placement-via-repositioning-data.md) | Open | 2026-09-29 |
-| [HI MCP tool logic in every client page](refactoring-analysis/hi-mcp-tool-logic-in-client-pages.md) | Open | 2026-09-29 |
+| [HI MCP tool logic in every client page](refactoring-analysis/hi-mcp-tool-logic-in-client-pages.md) | Done | 2026-09-29 |
 
 ### Benchmarks & Performance Analyses
 

@@ -17,8 +17,8 @@ MCP client (anyone) ──https──> https://<worker>.<subdomain>.workers.dev/
 store page (anyone's browser) ──wss──> …/bridge
 ```
 
-The container is only a relay — the tool execution happens in the connected ligna-store page
-(opened with the `mcp_server` parameter). Modeled on roomle-model-exporter's `cf/` deployment
+The container runs the tools and relays their planner calls into the connected ligna-store page
+(opened with the `mcp_server` parameter) — the planning session itself lives in that page. Modeled on roomle-model-exporter's `cf/` deployment
 (see the
 [Cloudflare feature analysis](../../.agents/feature-analysis/mcp-cloudflare-containers-deployment.md)).
 

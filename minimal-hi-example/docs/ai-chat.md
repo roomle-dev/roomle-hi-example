@@ -86,8 +86,8 @@ like the embedding lib, the page has no build step. Replies stream as plain
 text; while the model executes
 tools, the chat backend emits `[tool] <name>` status lines into the stream —
 the page shows the running tool in the status line ("assistant is working…
-get-plan-context") and keeps those lines out of the reply. Tool calls relay
-through the MCP server to the page and can take seconds to minutes
+get-plan-context") and keeps those lines out of the reply. Tools run in the
+MCP server, their planner calls in the page, and can take seconds to minutes
 (`get-plan-images` up to 120s) — the status line is what tells you the agent
 is still working. The backend logs every request, MCP connection, tool call
 (with duration), stream error, and finish to its terminal.

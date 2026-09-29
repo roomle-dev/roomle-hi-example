@@ -40,7 +40,7 @@ HOMAG Intelligence is a system for kitchen cabinet management, price calculation
 MCP is a standard protocol for AI agents to interact with tools and resources. This server implements:
 - **Streamable HTTP transport** — MCP SDK, JSON responses over HTTP POST
 - **WebSocket Bridge** — WebSocket connection to the browser page
-- **Tool execution** — Relaying MCP tool calls to the Roomle planner API
+- **Tool execution** — Tool logic in the server, its planner calls relayed to the Roomle planner API in the page
 
 ### Server Stack
 

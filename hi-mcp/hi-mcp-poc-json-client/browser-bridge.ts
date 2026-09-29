@@ -1,12 +1,21 @@
-import { toolExecutors } from './tool-executors';
 import type {
   McpBridgeMessage,
   McpBridgeResult,
   RoomDesignerApiType,
 } from './types';
-import { HI_MCP_PORT } from './types';
+import { BRIDGE_PROTOCOL, HI_MCP_PORT } from './types';
 
 const RECONNECT_DELAY_MS = 3000;
+
+// The planner methods the MCP server may call on this page - nothing else
+// (no orders, no plan overwrites) is reachable from the server.
+export const PLANNER_METHODS = [
+  'getExternalObjectPlanContext',
+  'loadExternalObjectGroupLayout',
+  'updateExternalObjectGroupAttribute',
+  'fetchPrice',
+  'getExternalObjectSnapshot',
+];
 
 export interface BrowserBridgeOptions {
   /**
@@ -93,6 +102,7 @@ export const startMcpBrowserBridge = (
           kind: 'hello',
           example: 'ligna-store',
           url: window.location.href,
+          protocol: BRIDGE_PROTOCOL,
         }),
       );
     };
@@ -107,22 +117,23 @@ export const startMcpBrowserBridge = (
       if (message.kind !== 'call') {
         return;
       }
-      const executor = toolExecutors[message.tool];
-      if (!executor) {
+      if (!PLANNER_METHODS.includes(message.method)) {
         reply({
           kind: 'result',
           id: message.id,
           ok: false,
-          error: `Unknown tool: ${message.tool}`,
+          error: `Planner method not exposed: ${message.method}`,
         });
         return;
       }
-      console.log('[hi-mcp] executing tool', message.tool, message.args);
+      console.log('[hi-mcp] executing', message.method, message.args);
       try {
-        const result = await executor(roomDesignerApi, message.args);
+        const result = await roomDesignerApi.extended[message.method](
+          ...message.args,
+        );
         reply({ kind: 'result', id: message.id, ok: true, result });
       } catch (error) {
-        console.error('[hi-mcp] tool failed', message.tool, error);
+        console.error('[hi-mcp] planner call failed', message.method, error);
         reply({
           kind: 'result',
           id: message.id,

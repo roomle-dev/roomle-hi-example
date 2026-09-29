@@ -67,10 +67,11 @@ demo; it must not be reused as a production credential.
 ```text
 AI agent (any MCP client) --Streamable HTTP--> http://localhost:3100/mcp
                                                hi-mcp/hi-mcp-poc-json server.ts (vite-node)
-                                               |  WebSocket /bridge
+                                               runs the tools (validation, composition, hints)
+                                               |  WebSocket /bridge: planner method calls
                                                v
                                    the example page (index.html, served by the launcher on :3000)
-                                   executes tools against roomDesignerApi.extended
+                                   executes the allow-listed methods on roomDesignerApi.extended
 ```
 
 Two processes started by one launcher: `start.mjs` serves `index.html` on
@@ -79,15 +80,20 @@ port 3100, pointing its "no page connected" error at the example URL
 (`HI_MCP_STORE_URL`). Port 3000 is the server's default WebSocket origin
 allow-list entry, so no extra configuration is needed. The page cannot listen
 on a port, so it connects **outward** to the server: it opens a WebSocket
-(`ws://localhost:3100/bridge`), receives tool calls over it, and sends each
-result back over the same socket. Tool calls run in the page against
-`roomDesignerApi.extended`.
+(`ws://localhost:3100/bridge`), receives planner method calls over it, and
+sends each result back over the same socket. The tools themselves run in the
+server; each tool calls one or more planner methods, which the page executes
+against `roomDesignerApi.extended`. The page executes only the methods on its
+allow-list (`getExternalObjectPlanContext`, `loadExternalObjectGroupLayout`,
+`updateExternalObjectGroupAttribute`, `fetchPrice`,
+`getExternalObjectSnapshot`) — nothing else of the planner API, such as
+placing an order, is reachable from the server.
 
 | File | Responsibility |
 | ---- | -------------- |
 | `start.mjs` | The launcher: build gate (`npm install` + typecheck of the `hi-mcp` workspace), static file server for this directory on :3000, spawns the MCP server with `HI_MCP_STORE_URL` set, opens the browser |
-| `hi-mcp/hi-mcp-poc-json/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), the WebSocket page bridge, call correlation and timeouts, tool definitions with zod schemas, server instructions and authoring rules — unchanged, shared with the ligna-store client and the cloud deployments |
-| `index.html` | The example itself, plus the MCP section at the end: the WebSocket browser bridge and the tool executors (tool name → `roomDesignerApi.extended` call, payload validation) |
+| `hi-mcp/hi-mcp-poc-json/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), tool definitions with zod schemas, the tool logic (`tool-executors.ts`: payload validation, planner call composition, hints), the planner methods it calls (`planner-api.ts`), the WebSocket page bridge with call correlation and timeouts, server instructions and authoring rules — unchanged, shared with the ligna-store client and the cloud deployments |
+| `index.html` | The example itself, plus the MCP section at the end: the WebSocket browser bridge that executes the allow-listed planner methods |
 | `package.json` | The `start` script that runs the launcher, and `dev` which adds `server_url=http://localhost:5173/` |
 
 ## Prerequisites
@@ -232,9 +238,11 @@ workflow, the pos-group authoring rules, and the docking semantics (see
 
 ## Tool reference
 
-Tool calls run in the example page and are only as fast as the page. The
-default timeout is 30 s; `create-or-replace-groups`, `get-order-data`, and
-`get-plan-images` use 120 s.
+The tools run in the server, but every planner call they make executes in the
+example page, so a tool is only as fast as the page. The timeout applies per
+planner call: 30 s by default, 120 s for `loadExternalObjectGroupLayout`
+(`create-or-replace-groups`) and `getExternalObjectSnapshot`
+(`get-order-data`, `get-plan-images`).
 
 ### get-plan-context
 

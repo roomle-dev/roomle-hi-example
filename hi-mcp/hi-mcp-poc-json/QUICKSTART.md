@@ -56,7 +56,7 @@ The agent authors article picks with a docking chain and a `repositioningData`
 taken from the right wall — one `create-or-replace-groups` call creates, docks,
 and positions the group.
 
-The unit tests live in `tests/` (server) and `../hi-mcp-poc-json-client/tests/` (page side) —
+The unit tests live in `tests/` (server and tool logic) and `../hi-mcp-poc-json-client/tests/` (page bridge) —
 `npm test` in the `hi-mcp/` folder runs them (vitest).
 
 More: [example prompts](./README.md#example-prompts) ·

@@ -53,9 +53,9 @@ it is deployed anywhere.
 The MCP server is a small standalone Node process, and it is deliberately
 thin: it contains no planning logic of its own. Since a browser page cannot
 accept incoming connections, the demo page connects outward to the server
-over a WebSocket. Every tool call from the agent is relayed through this
-bridge into the open browser tab and executed there against the public
-web-sdk API — the same API embedding customers use. All real work (article
+over a WebSocket. The server runs the tools; every planner call a tool makes
+is relayed through this bridge into the open browser tab and executed there
+against the public web-sdk API — the same API embedding customers use. All real work (article
 calculation, docking arrangement, pricing) happens where it always happens:
 in the web-sdk glue logic and the HI calculation.
 

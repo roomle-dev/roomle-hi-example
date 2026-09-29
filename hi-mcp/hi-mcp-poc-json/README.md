@@ -35,12 +35,15 @@ AI agent (any MCP client) --Streamable HTTP--> http://localhost:3100/mcp
 ```
 
 The store page cannot listen on a port, so it connects **outward** to the MCP server via WebSocket.
-The server relays each tool call into the page, where it runs against `roomDesignerApi.extended`
-(the `extended.*` proxy derives its methods automatically from `RoomlePlanner.prototype`, so the
-web-sdk APIs (`getExternalObjectPlanContext`, `loadExternalObjectGroupLayout`, …) are reachable
-as-is). The page-side bridge lives in the store repository (`ligna-store/hi-mcp/`), its tested
-copy in [`../hi-mcp-poc-json-client/`](../hi-mcp-poc-json-client/); this folder contains the
-server side.
+The tools run in this server (`tool-executors.ts`: payload validation, planner call composition,
+agent hints). Each planner call a tool makes is relayed into the page as a method call, where it
+runs against `roomDesignerApi.extended` (the `extended.*` proxy derives its methods automatically
+from `RoomlePlanner.prototype`, so the web-sdk APIs (`getExternalObjectPlanContext`,
+`loadExternalObjectGroupLayout`, …) are reachable as-is). The page executes only the five planner
+methods on its allow-list — the ones `planner-api.ts` calls. The page-side bridge lives in the
+store repository (`ligna-store/hi-mcp/`), its tested copy in
+[`../hi-mcp-poc-json-client/`](../hi-mcp-poc-json-client/); this folder contains the server side
+and all tool logic.
 
 | Port | Process |
 | ---- | ------- |
@@ -51,12 +54,14 @@ server side.
 | ---- | -------------- |
 | `server.ts` | Entry point: HTTP server on :3100 hosting `/mcp` and the WebSocket upgrade |
 | `package.json` | Self-contained dependencies of the server (MCP SDK, ws, zod, vite-node) |
-| `hi-mcp-server.ts` | `McpServer` setup: server instructions + tool registrations with zod schemas |
-| `page-bridge.ts` | Connected-page registry, call correlation, timeouts, "no page connected" error |
-| `types.ts` | WebSocket message protocol (the page side carries its own copy) |
-| `tests/` | Unit tests of the server (vitest, configured at the `hi-mcp/` workspace root) |
+| `hi-mcp-server.ts` | `McpServer` setup: server instructions + tool registrations with zod schemas; the handlers run the tool executors |
+| `tool-executors.ts` | The tool logic: payload validation, planner call composition, response shaping, agent hints |
+| `planner-api.ts` | The planner methods the tools call, forwarded to the page with per-method timeouts |
+| `page-bridge.ts` | Connected-page registry, call correlation, timeouts, protocol check, "no page connected" error |
+| `types.ts` | WebSocket message protocol, `BRIDGE_PROTOCOL` (the page side carries its own copy) |
+| `tests/` | Unit tests of the server and the tool logic (vitest, configured at the `hi-mcp/` workspace root) |
 
-The page side — browser bridge, tool executors and plan geometry with their unit tests — is in
+The page side — the browser bridge with its planner method allow-list and its unit tests — is in
 [`../hi-mcp-poc-json-client/`](../hi-mcp-poc-json-client/).
 
 ## Prerequisites
@@ -265,8 +270,10 @@ authoring rules, and the docking semantics (see [Authoring pos groups](#authorin
 
 ## Tool reference
 
-Tool calls run in the store page and are only as fast as the page. The default timeout is 30 s;
-`create-or-replace-groups`, `get-order-data`, and `get-plan-images` use 120 s.
+The tools run in this server, but every planner call they make executes in the store page, so a
+tool is only as fast as the page. The timeout applies per planner call: 30 s by default, 120 s for
+`loadExternalObjectGroupLayout` (`create-or-replace-groups`) and `getExternalObjectSnapshot`
+(`get-order-data`, `get-plan-images`).
 
 ### get-plan-context
 

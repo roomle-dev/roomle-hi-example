@@ -3,8 +3,8 @@
 This documents the **local** MCP server of the `hi-mcp` workspace (`hi-mcp-poc-json`): running on
 your machine, with the MCP endpoint at `http://localhost:3100/mcp` — in contrast to the cloud
 variant ([Azure deployment](../../.agents/feature-analysis/mcp-azure-deployment-and-session-bootstrapping.md)).
-The server relays tool calls of any connected AI agent into a connected ligna-store page (local or
-deployed), where they execute against the planner.
+The server runs the tools of any connected AI agent and relays their planner calls into a connected
+ligna-store page (local or deployed), where they execute against the planner.
 
 > Note: [`minimal-hi-example/docs/hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md) documents the standalone HI presets
 > example, which uses this same server (started by `minimal-hi-example/start.mjs`) as its client.

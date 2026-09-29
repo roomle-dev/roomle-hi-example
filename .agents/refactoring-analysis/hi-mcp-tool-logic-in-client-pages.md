@@ -10,7 +10,20 @@
 > The request asked for a detailed answer and alternative solutions.
 > **Date**: 2026-09-29
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Done
+
+> **Close-out (2026-09-29)**: Alternative A is implemented as planned. The roomle-hi-example
+> changes are on branch `docs/hi-mcp-tool-logic-placement-analysis`; the ligna-store changes are
+> on branch `refactor/hi-mcp-tool-logic-in-server`. The decision is recorded in
+> [ADR 0001](../decisions/0001-hi-mcp-tool-logic-in-the-server.md).
+>
+> - The tool logic runs in the server. The pages execute only the five allow-listed planner
+>   methods, over bridge protocol 2.
+> - Verification: typecheck clean; 71 tests pass (56 in the five affected files, up from 46; the
+>   pre-existing `cf` load failure is unchanged). All eight tools ran live through the real server
+>   against the example page in headless Chrome.
+> - Not verified here: the INT-stage ligna-store live, and the Cloudflare redeploy. See the
+>   [report](#report).
 
 ---
 
@@ -53,6 +66,7 @@ reference client in this repository.
 9. [Tests Covering the Affected Behaviour](#9-tests-covering-the-affected-behaviour)
 10. [Output Changes to Expect](#10-output-changes-to-expect)
 11. [Risks and Open Questions](#11-risks-and-open-questions)
+12. [Report](#report)
 
 ---
 
@@ -580,3 +594,97 @@ with the example page (`npm start`) and one with the INT-stage store.
 - **Mutation of the payload:** the executors modify `args.posGroups` in place. On the server this
   is harmless, because the object is a parsed request. It is noted here because it is visible once
   the code moves.
+
+---
+
+## Report
+
+### Summary of changes
+
+Alternative A was implemented as planned (section 8), with decisions D1–D5 of the implementation
+plan applied:
+
+- **D1:** `createHiMcpServer` takes a `PlannerApi`; `server.ts` wires
+  `createHiMcpServer(createPlannerApi(bridge))`.
+- **D2:** the page's `hello` carries `protocol: 2` (`BRIDGE_PROTOCOL`). A page without it stays
+  connected, but every call fails with an "update the page bridge" error.
+- **D3:** the allow-list is exactly the five planner methods, and a contract test keeps the
+  server's `PlannerApi` and the reference client's `PLANNER_METHODS` identical.
+- **D4:** timeouts are set per planner method: 120 s for `loadExternalObjectGroupLayout` and
+  `getExternalObjectSnapshot`, 30 s otherwise.
+- **D5:** the rollout order is still to be carried out: roomle-hi-example first, then the
+  Cloudflare redeploy, then the ligna-store.
+
+The executors were moved with `git mv`. Their only code change is the parameter type
+(`PlannerApi` instead of `RoomDesignerApiType = any`). The tool handlers call them through a
+`runTool` helper that also logs the tool name. Tool names, descriptions, schemas, results, error
+texts and hints are unchanged. The one visible change in error text: a timeout now reads
+`Planner call '<method>' timed out after …ms` instead of `Tool call '<tool>' …`.
+
+### Changed files
+
+| Repository | Files |
+|---|---|
+| roomle-hi-example: server | `hi-mcp-poc-json/tool-executors.ts` (moved), `planner-api.ts` (new), `hi-mcp-server.ts`, `server.ts`, `page-bridge.ts`, `types.ts` |
+| roomle-hi-example: page side | `hi-mcp-poc-json-client/browser-bridge.ts`, `types.ts`; `minimal-hi-example/index.html` (executor block removed: +21 / −388 lines) |
+| roomle-hi-example: tests | `hi-mcp-poc-json/tests/tool-executors.test.ts` (moved, unchanged), `planner-api.test.ts` (new), `fake-page-socket.ts` (new helper, extracted from `page-bridge.test.ts`), `hi-mcp-server.test.ts`, `page-bridge.test.ts`; `hi-mcp-poc-json-client/tests/browser-bridge.test.ts` |
+| roomle-hi-example: docs | `AGENTS.md`, `.github/copilot-instructions.md`, `.agents/skills/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`, `.agents/decisions/0001-hi-mcp-tool-logic-in-the-server.md` (new), `.agents/README.md`, `minimal-hi-example/docs/hi-mcp-server.md`, `ai-chat.md`, `hi-mcp-poc-presentation.md`, `hi-mcp/README.md`, `hi-mcp/docs/*` (five setup guides: "the server is only a relay" wording), `hi-mcp-poc-json/README.md`, `QUICKSTART.md`, `hi-mcp-poc-json-client/README.md` |
+| ligna-store | `hi-mcp/tool-executors.ts` (deleted, −381 lines), `hi-mcp/browser-bridge.ts` and `hi-mcp/types.ts` (identical to the reference client), `hi-mcp/README.md`; `components/blocks/Planner.vue` unchanged |
+
+### Before and after
+
+| | Before | After |
+|---|---|---|
+| Tool logic | 3 copies: reference client, `index.html`, ligna-store | 1: `hi-mcp-poc-json/tool-executors.ts` |
+| Page-side code per client | about 550 lines (ligna-store), about 440 lines inline (`index.html`) | bridge only: 187 lines with `types.ts` (ligna-store, with URL resolution and reconnect), 80 lines inline (`index.html`, including comments and the `mcp=true` gate) |
+| Bridge protocol | tool-level `{ tool, args: {} }` | method-level `{ method, args: [] }`, versioned hello |
+| What the server can make the page do | any tool the page implements | the five allow-listed planner methods |
+| A tool change touches | 4 files in 2 repositories, 2 languages | the server only |
+| The pending `posRotationY` drift (section 2.1) | ligna-store accepted a missing value | gone: the store no longer carries validation |
+
+### Test adaptations
+
+| File | Before → after |
+|---|---|
+| `hi-mcp-poc-json/tests/tool-executors.test.ts` | 23 → 23 (moved; the `createApi` mock already matched `PlannerApi`, no cast needed) |
+| `hi-mcp-poc-json/tests/planner-api.test.ts` | 0 → 3 (forwarding with positional args, per-method timeouts, contract with `PLANNER_METHODS`) |
+| `hi-mcp-poc-json/tests/hi-mcp-server.test.ts` | 9 → 10 (mock planner API instead of the bridge; new: invalid payload rejected in the server without a load; new: end-to-end wiring through a real `PageBridge`; the snapshot-timeout test moved to `planner-api`) |
+| `hi-mcp-poc-json/tests/page-bridge.test.ts` | 9 → 10 (method-level calls; new: outdated page bridge rejected) |
+| `hi-mcp-poc-json-client/tests/browser-bridge.test.ts` | 5 → 10 (new: hello protocol, allowed method executed, `placeOrder` rejected, planner error relayed, non-call messages ignored) |
+
+The whole workspace went from 61 to 71 passing tests. `cf/tests/worker.test.ts` still fails to
+load `@cloudflare/containers`, as it did before.
+
+A mutation check confirmed that the new tests catch the failures they are meant for:
+
+- Removing the page allow-list check fails the `placeOrder` test.
+- Adding a sixth method to `PlannerApi` fails the contract test.
+
+### Live verification
+
+`node minimal-hi-example/start.mjs --no-open` ran the real launcher (build gate, :3000, :3100).
+The example page was opened in headless Chrome and connected with protocol 2. An MCP SDK client
+then called the tools over HTTP:
+
+| Tool | Result |
+|---|---|
+| `get-plan-context` | OK: 6 walls, 111 articles, 0 groups |
+| `find-attributes` (`front`) | OK: 12 matches |
+| `create-or-replace-groups`, invalid payload | Rejected in the server, no planner call logged |
+| `create-or-replace-groups`: `U2TB90` + `UHS60` docked `RightBottom → LeftBottom`, `repositioningData` at the back wall's end | OK: the group sits at `pos` [-685, 0, -3765], `rotationY` 0; both units docked; worktop and toe kick generated; no error log messages. The server log shows the four planner calls. |
+| `update-attribute` (`mod_FrontColor` = `326`) | OK |
+| `get-price`, `get-order-data` | OK |
+| `get-plan-images` | OK: the perspective and top images show the row in the back-left corner |
+
+### Risks and open items
+
+- **INT-stage ligna-store live check:** open the store with `?store.stage=INT` against the local
+  server and repeat the smoke test. Its bridge is byte-identical to the verified reference client
+  and typechecks, but it has not run live.
+- **Rollout order (D5):** redeploy the Cloudflare server with the new protocol before the
+  ligna-store change is deployed. See `.agents/skills/hi-mcp-cloudflare-deployment.md`. Store pages
+  still on the old bridge get the clear update error in the meantime.
+- **Catalog transfer:** the article-id check now moves the article catalog across the WebSocket
+  once per create call. This was not measurable in the live check (the local round trips were
+  fast), and alternative B removes it.
+- **Still open:** alternatives B and C, and the two product questions of section 11.

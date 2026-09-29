@@ -1042,523 +1042,11 @@
       // hi-mcp/hi-mcp-poc-json (started by start.mjs), executes relayed tool
       // calls against roomDesignerApi.extended, and sends the results back.
 
-      // + 0 turns IEEE -0 into +0 so serialized values never show -0
-      const round2 = (value) => Math.round(value * 100) / 100 + 0;
-      const toRadians = (degrees) => (degrees * Math.PI) / 180;
-      const toDegrees = (radians) => (radians * 180) / Math.PI;
-      const normalizeDegrees = (degrees) => {
-        const normalized = degrees % 360;
-        return normalized < 0 ? normalized + 360 : normalized;
-      };
-
-      const transformPointByMatrix = (matrix, point) => {
-        const [x, y, z] = point;
-        return [
-          matrix[0] * x + matrix[4] * y + matrix[8] * z + matrix[12],
-          matrix[1] * x + matrix[5] * y + matrix[9] * z + matrix[13],
-          matrix[2] * x + matrix[6] * y + matrix[10] * z + matrix[14],
-        ];
-      };
-
-      const transformPointByRoot = (root, point) => {
-        const theta = toRadians(root.rotationY ?? 0);
-        const [translationX, translationY, translationZ] = root.articlePos ?? [
-          0, 0, 0,
-        ];
-        const [x, y, z] = point;
-        return [
-          translationX + x * Math.cos(theta) + z * Math.sin(theta),
-          translationY + y,
-          translationZ - x * Math.sin(theta) + z * Math.cos(theta),
-        ];
-      };
-
-      const collectParts = (module, parts) => {
-        for (const part of module.parts ?? []) {
-          if (
-            !part.hidden &&
-            (part.relPos?.length ?? 0) >= 3 &&
-            (part.dim?.length ?? 0) >= 3 &&
-            part.fullMatrix?.length === 16
-          ) {
-            parts.push(part);
-          }
-        }
-        for (const subModule of module.modules ?? []) {
-          collectParts(subModule, parts);
-        }
-        for (const container of module.containers ?? []) {
-          collectParts(container, parts);
-        }
-      };
-
-      const boxCorners = (minimum, size) => {
-        const corners = [];
-        for (const offsetX of [0, size[0]]) {
-          for (const offsetY of [0, size[1]]) {
-            for (const offsetZ of [0, size[2]]) {
-              corners.push([
-                minimum[0] + offsetX,
-                minimum[1] + offsetY,
-                minimum[2] + offsetZ,
-              ]);
-            }
-          }
-        }
-        return corners;
-      };
-
-      const dimensionAttribute = (root, attributeId) => {
-        const value = Number(
-          root.attributes?.find((attribute) => attribute.id === attributeId)
-            ?.value,
-        );
-        return Number.isFinite(value) && value > 0 ? value : undefined;
-      };
-
-      const rootFootprintPoints = (root, partMatricesAreGroupSpace) => {
-        const parts = [];
-        collectParts(root, parts);
-        const points = [];
-        for (const part of parts) {
-          for (const corner of boxCorners(part.relPos, part.dim)) {
-            let point = transformPointByMatrix(part.fullMatrix, corner);
-            if (!partMatricesAreGroupSpace) {
-              point = transformPointByRoot(root, point);
-            }
-            points.push([point[0], point[2]]);
-          }
-        }
-        if (points.length > 0) {
-          return points;
-        }
-        for (const dockInfo of root.dockInfos ?? []) {
-          for (const dockPoint of [dockInfo.start, dockInfo.end]) {
-            if ((dockPoint?.length ?? 0) >= 3) {
-              const point = transformPointByRoot(root, [
-                dockPoint[0],
-                dockPoint[1],
-                dockPoint[2],
-              ]);
-              points.push([point[0], point[2]]);
-            }
-          }
-        }
-        if (points.length > 0) {
-          return points;
-        }
-        const width = dimensionAttribute(root, 'b');
-        const depth = dimensionAttribute(root, 't');
-        if (width !== undefined && depth !== undefined) {
-          for (const corner of boxCorners([0, 0, 0], [width, 0, depth])) {
-            const point = transformPointByRoot(root, corner);
-            points.push([point[0], point[2]]);
-          }
-        }
-        return points;
-      };
-
-      const groupFootprint = (group) => {
-        const partMatricesAreGroupSpace = (group.ver ?? 0) > 0;
-        const points = [];
-        for (const root of group.roots ?? []) {
-          points.push(...rootFootprintPoints(root, partMatricesAreGroupSpace));
-        }
-        if (points.length === 0) {
-          return undefined;
-        }
-        let minX = Number.POSITIVE_INFINITY;
-        let maxX = Number.NEGATIVE_INFINITY;
-        let minZ = Number.POSITIVE_INFINITY;
-        let maxZ = Number.NEGATIVE_INFINITY;
-        for (const [x, z] of points) {
-          minX = Math.min(minX, x);
-          maxX = Math.max(maxX, x);
-          minZ = Math.min(minZ, z);
-          maxZ = Math.max(maxZ, z);
-        }
-        return {
-          x: [round2(minX), round2(maxX)],
-          z: [round2(minZ), round2(maxZ)],
-          widthMm: round2(maxX - minX),
-          depthMm: round2(maxZ - minZ),
-        };
-      };
-
-      // A side label as alignment means: flush into the corner this wall
-      // shares with the wall on that side of the room.
-      const resolveWallAlignment = (wall, alignment) => {
-        if (
-          alignment === 'start' ||
-          alignment === 'center' ||
-          alignment === 'end'
-        ) {
-          return alignment;
-        }
-        const axis = alignment === 'left' || alignment === 'right' ? 0 : 1;
-        const [start, end] = wallFloorPoints(wall);
-        const startCoordinate = start[axis];
-        const endCoordinate = end[axis];
-        if (Math.abs(startCoordinate - endCoordinate) < 1e-6) {
-          throw new Error(
-            `Alignment '${alignment}' runs parallel to this '${wall.side}' wall - ` +
-              "use 'start', 'center', 'end' or the side of an adjoining wall.",
-          );
-        }
-        const smallerIsCloser = alignment === 'left' || alignment === 'top';
-        const startIsCloser = smallerIsCloser
-          ? startCoordinate < endCoordinate
-          : startCoordinate > endCoordinate;
-        return startIsCloser ? 'start' : 'end';
-      };
-
-      const placeAgainstWall = (wall, footprint, alignment, offsetMm) => {
-        const resolvedAlignment = resolveWallAlignment(wall, alignment);
-        const [[startX, startZ], [endX, endZ]] = wallFloorPoints(wall);
-        const length = Math.hypot(endX - startX, endZ - startZ);
-        const alongX = (endX - startX) / length;
-        const alongZ = (endZ - startZ) / length;
-        const width = footprint.widthMm;
-        let spanStart;
-        if (resolvedAlignment === 'start') {
-          spanStart = offsetMm;
-        } else if (resolvedAlignment === 'end') {
-          spanStart = length - width - offsetMm;
-        } else {
-          spanStart = (length - width) / 2 + offsetMm;
-        }
-        // The group's local x axis runs against the wall direction, so the
-        // group origin corner sits at the far end of the occupied span.
-        const anchorX = startX + alongX * (spanStart + width);
-        const anchorZ = startZ + alongZ * (spanStart + width);
-        const theta = toRadians(wall.facingRotationY);
-        const [minX] = footprint.x;
-        const [minZ] = footprint.z;
-        return {
-          pos: [
-            round2(anchorX - (minX * Math.cos(theta) + minZ * Math.sin(theta))),
-            0,
-            round2(
-              anchorZ - (-minX * Math.sin(theta) + minZ * Math.cos(theta)),
-            ),
-          ],
-          rotationY: wall.facingRotationY,
-        };
-      };
-
-      const POINT_EPSILON_MM = 1;
-
-      const samePoint = (a, b) =>
-        Math.hypot(a[0] - b[0], a[1] - b[1]) < POINT_EPSILON_MM;
-
-      const unitDirection = (from, to) => {
-        const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
-        return length < 1e-6
-          ? undefined
-          : [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
-      };
-
-      const rotateDirection = ([x, z], degrees) => {
-        const theta = toRadians(degrees);
-        return [
-          x * Math.cos(theta) + z * Math.sin(theta),
-          -x * Math.sin(theta) + z * Math.cos(theta),
-        ];
-      };
-
-      const sameDirection = (a, b) => a[0] * b[0] + a[1] * b[1] > 0.999;
-
-      const rootCornerGeometry = (root) => {
-        const vectorPair = (row) => ({
-          left: root.dockInfos?.find(
-            (dockInfo) => dockInfo.id === `LeftBack${row}`,
-          ),
-          right: root.dockInfos?.find(
-            (dockInfo) => dockInfo.id === `RightBack${row}`,
-          ),
-        });
-        const bottom = vectorPair('Bottom');
-        const { left, right } =
-          bottom.left && bottom.right ? bottom : vectorPair('Top');
-        if (!left?.start || !left.end || !right?.start || !right.end) {
-          return undefined;
-        }
-        const toGroupXz = (point) => {
-          const [x, , z] = transformPointByRoot(root, [
-            point[0],
-            point[1],
-            point[2],
-          ]);
-          return [x, z];
-        };
-        const leftStart = toGroupXz(left.start);
-        const rightStart = toGroupXz(right.start);
-        const leftDirection = unitDirection(leftStart, toGroupXz(left.end));
-        const rightDirection = unitDirection(rightStart, toGroupXz(right.end));
-        // one corner point and two back edges running along different walls
-        if (
-          !samePoint(leftStart, rightStart) ||
-          !leftDirection ||
-          !rightDirection ||
-          Math.abs(
-            leftDirection[0] * rightDirection[0] +
-              leftDirection[1] * rightDirection[1],
-          ) > 0.01
-        ) {
-          return undefined;
-        }
-        return {
-          rootId: root.id ?? '',
-          point: rightStart,
-          directions: [leftDirection, rightDirection],
-        };
-      };
-
-      const groupCornerGeometry = (group) => {
-        for (const root of group.roots ?? []) {
-          const geometry = rootCornerGeometry(root);
-          if (geometry) {
-            return geometry;
-          }
-        }
-        return undefined;
-      };
-
-      const wallFloorPoints = ({ start, end }) => [
-        [start[0], start[2]],
-        [end[0], end[2]],
-      ];
-
-      const sharedCorner = (wall, other) =>
-        wallFloorPoints(wall).find((point) =>
-          wallFloorPoints(other).some((candidate) =>
-            samePoint(point, candidate),
-          ),
-        );
-
-      // The wall on the given side of the room that meets this wall in a corner.
-      const adjoiningWall = (walls, wall, side) =>
-        walls.find(
-          (candidate) =>
-            candidate.index !== wall.index &&
-            candidate.side === side &&
-            candidate.type === 'wall' &&
-            sharedCorner(wall, candidate) !== undefined,
-        );
-
-      // Puts the corner point of a corner article into the corner the two
-      // walls share and turns the group so that its two back edges run along
-      // the walls. Undefined when the article's back edges cannot be matched
-      // to both walls.
-      const placeCornerAtWalls = (wall, adjoining, corner, offsetMm) => {
-        const cornerPoint = sharedCorner(wall, adjoining);
-        if (!cornerPoint) {
-          return undefined;
-        }
-        const otherEnd = (candidate) => {
-          const [start, end] = wallFloorPoints(candidate);
-          return samePoint(start, cornerPoint) ? end : start;
-        };
-        const alongWall = unitDirection(cornerPoint, otherEnd(wall));
-        const alongAdjoining = unitDirection(cornerPoint, otherEnd(adjoining));
-        if (!alongWall || !alongAdjoining) {
-          return undefined;
-        }
-        const [leftDirection, rightDirection] = corner.directions;
-        const assignments = [
-          [alongWall, alongAdjoining],
-          [alongAdjoining, alongWall],
-        ];
-        for (const [leftTarget, rightTarget] of assignments) {
-          const angle = toDegrees(
-            Math.atan2(leftDirection[1], leftDirection[0]) -
-              Math.atan2(leftTarget[1], leftTarget[0]),
-          );
-          for (const rotationY of [angle, -angle]) {
-            if (
-              sameDirection(
-                rotateDirection(leftDirection, rotationY),
-                leftTarget,
-              ) &&
-              sameDirection(
-                rotateDirection(rightDirection, rotationY),
-                rightTarget,
-              )
-            ) {
-              const rotatedPoint = rotateDirection(corner.point, rotationY);
-              return {
-                pos: [
-                  round2(
-                    cornerPoint[0] - rotatedPoint[0] + alongWall[0] * offsetMm,
-                  ),
-                  0,
-                  round2(
-                    cornerPoint[1] - rotatedPoint[1] + alongWall[1] * offsetMm,
-                  ),
-                ],
-                rotationY: round2(normalizeDegrees(rotationY)),
-              };
-            }
-          }
-        }
-        return undefined;
-      };
-
-      const groupPointToRoom = (group, [x, z]) => {
-        const [roomX, , roomZ] = transformPointByRoot(
-          { articlePos: group.pos, rotationY: group.rotationY },
-          [x, 0, z],
-        );
-        return [roomX, roomZ];
-      };
-
-      const footprintCornersInRoom = (footprint, group) => {
-        const [minX, maxX] = footprint.x;
-        const [minZ, maxZ] = footprint.z;
-        return [
-          [minX, minZ],
-          [maxX, minZ],
-          [maxX, maxZ],
-          [minX, maxZ],
-        ].map((corner) => groupPointToRoom(group, corner));
-      };
-
-      const rootFootprintInRoom = (group, root) =>
-        rootFootprintPoints(root, (group.ver ?? 0) > 0).map((point) =>
-          groupPointToRoom(group, point),
-        );
-
-      const edgeNormals = (polygon) => {
-        const normals = [];
-        for (let index = 0; index < polygon.length; index++) {
-          const from = polygon[index];
-          const to = polygon[(index + 1) % polygon.length];
-          const normal = unitDirection(from, to);
-          if (normal) {
-            normals.push([-normal[1], normal[0]]);
-          }
-        }
-        return normals;
-      };
-
-      const projectOntoAxis = (polygon, [axisX, axisZ]) => {
-        let minimum = Number.POSITIVE_INFINITY;
-        let maximum = Number.NEGATIVE_INFINITY;
-        for (const [x, z] of polygon) {
-          const projection = x * axisX + z * axisZ;
-          minimum = Math.min(minimum, projection);
-          maximum = Math.max(maximum, projection);
-        }
-        return [minimum, maximum];
-      };
-
-      // Two convex footprints touch when no edge normal of either separates
-      // them by more than the tolerance (separating axis theorem); flush
-      // contact counts.
-      const convexPolygonsTouch = (a, b, toleranceMm) => {
-        if (a.length < 3 || b.length < 3) {
-          return false;
-        }
-        for (const axis of [...edgeNormals(a), ...edgeNormals(b)]) {
-          const [minA, maxA] = projectOntoAxis(a, axis);
-          const [minB, maxB] = projectOntoAxis(b, axis);
-          if (maxA < minB - toleranceMm || maxB < minA - toleranceMm) {
-            return false;
-          }
-        }
-        return true;
-      };
-
       const DEFAULT_SECTIONS = ['rooms', 'articles', 'groups'];
 
       const MAX_ATTRIBUTE_MATCHES = 20;
 
-      const dockingVectorNames = (root) =>
-        (root?.dockInfos ?? [])
-          .map((dockInfo) => dockInfo.id)
-          .filter((id) => id !== 'CollisionBox');
-
       const isGeneratedRoot = (root) => root?.isGenerated === true;
-
-      // The docking vectors of a root that no contextData entry uses -
-      // derived from the docking, not from geometry.
-      const freeDockingVectors = (root) => {
-        const used = new Set(
-          (root?.contextData?.dockedRoots ?? [])
-            .filter((dockedContext) => dockedContext?.dockedRoots?.length)
-            .map((dockedContext) => dockedContext.ownDockingVector),
-        );
-        return dockingVectorNames(root).filter((name) => !used.has(name));
-      };
-
-      const PARTNER_VECTOR = {
-        LeftBottom: 'RightBottom',
-        RightBottom: 'LeftBottom',
-        LeftTop: 'LeftBottom',
-        RightTop: 'RightBottom',
-        BackBottom: 'BackBottom',
-        BackTop: 'BackBottom',
-      };
-
-      const CONTACT_TOLERANCE_MM = 5;
-
-      // The existing group whose footprint the placed footprint touches or
-      // overlaps, with the root of that group nearest to the placed footprint.
-      const findGroupContact = (placedCorners, groups, excludedGroupIds) => {
-        const center = [
-          placedCorners.reduce((sum, [x]) => sum + x, 0) / placedCorners.length,
-          placedCorners.reduce((sum, [, z]) => sum + z, 0) /
-            placedCorners.length,
-        ];
-        for (const group of groups) {
-          if (excludedGroupIds.has(group.id)) {
-            continue;
-          }
-          const footprint = groupFootprint(group);
-          if (
-            !footprint ||
-            !convexPolygonsTouch(
-              placedCorners,
-              footprintCornersInRoom(footprint, group),
-              CONTACT_TOLERANCE_MM,
-            )
-          ) {
-            continue;
-          }
-          let nearestRoot;
-          let nearestDistance = Number.POSITIVE_INFINITY;
-          for (const root of group.roots ?? []) {
-            if (isGeneratedRoot(root)) {
-              continue;
-            }
-            for (const [x, z] of rootFootprintInRoom(group, root)) {
-              const distance = Math.hypot(x - center[0], z - center[1]);
-              if (distance < nearestDistance) {
-                nearestDistance = distance;
-                nearestRoot = root;
-              }
-            }
-          }
-          return { group, root: nearestRoot ?? group.roots?.[0] };
-        }
-        return undefined;
-      };
-
-      const contactError = (what, contact) => {
-        const free = freeDockingVectors(contact.root);
-        const sideVector = free.find(
-          (name) => name.endsWith('Bottom') && !name.includes('Back'),
-        );
-        const example = sideVector
-          ? ` - e.g. on root '${contact.root.id}': { "ownDockingVector": "${sideVector}", "dockedRoots": [{ "id": "<new root>", "dockingVector": "${PARTNER_VECTOR[sideVector]}", "mode": "StartStart", "offset": [0, 0, 0] }] }`
-          : '';
-        return (
-          `${what} would meet group '${contact.group.id}' (root '${contact.root.id}', article ${contact.root.articleId}; ` +
-          `free docking vectors: ${free.join(', ') || 'none'}). Units next to an existing group are roots of that group: ` +
-          `take group '${contact.group.id}' from get-plan-context, add the new roots docked to a free vector of the root they ` +
-          `continue${example}, and resubmit it with its id. A new group with a placement is only for a free stretch of wall.`
-        );
-      };
 
       const stripDockingIndices = (contextData) => ({
         dockedRoots: (contextData?.dockedRoots ?? []).map((dockedContext) => ({
@@ -1591,61 +1079,6 @@
           contextData: stripDockingIndices(root.contextData),
         }),
       });
-
-      // The planner's own roots on the way back into the planner: unchanged
-      // apart from the positions and the docking indices.
-      const withoutPositions = (root) => {
-        const copy = { ...root };
-        delete copy.articlePos;
-        delete copy.rotationY;
-        if (copy.contextData) {
-          copy.contextData = stripDockingIndices(copy.contextData);
-        }
-        return copy;
-      };
-
-      // The group placement expressed as the room transform of one root
-      // module, so the planner derives the group position from its own
-      // arrangement and no root position has to travel in the payload.
-      const repositioningFromPlacement = (placement, anchor) => {
-        const [x, y, z] = transformPointByRoot(
-          { articlePos: placement.pos, rotationY: placement.rotationY },
-          [
-            anchor.articlePos?.[0] ?? 0,
-            anchor.articlePos?.[1] ?? 0,
-            anchor.articlePos?.[2] ?? 0,
-          ],
-        );
-        return {
-          posGroup: [round2(x), round2(y), round2(z)],
-          posRotationY: round2(
-            normalizeDegrees(placement.rotationY + (anchor.rotationY ?? 0)),
-          ),
-          rootId: anchor.id,
-        };
-      };
-
-      // A calculated group sent back with a new placement: the placement
-      // becomes repositioningData of the first article root, the library
-      // regenerates the generated roots (worktop, toe kick), and no root
-      // carries a position.
-      const repositionedGroup = (resultGroup, placement) => {
-        const roots = (resultGroup.roots ?? []).filter(
-          (root) => !isGeneratedRoot(root),
-        );
-        const anchor = roots[0];
-        if (!anchor) {
-          throw new Error(
-            `Group '${resultGroup.id}' has no article root to place.`,
-          );
-        }
-        return {
-          id: resultGroup.id,
-          ...(resultGroup.libraryId && { libraryId: resultGroup.libraryId }),
-          roots: roots.map(withoutPositions),
-          repositioningData: repositioningFromPlacement(placement, anchor),
-        };
-      };
 
       // The docking vectors of the calculated roots in the plan by article
       // id - the fallback for an article template that does not carry its own.
@@ -1700,78 +1133,6 @@
             );
           }
         }
-      };
-
-      const WALL_SIDES = ['left', 'right', 'top', 'bottom'];
-      const ALIGNMENTS = ['start', 'center', 'end', ...WALL_SIDES];
-
-      const resolveWall = (rooms, spec) => {
-        const roomIndex = spec.roomIndex ?? 0;
-        const room = rooms[roomIndex];
-        if (!room) {
-          throw new Error(
-            `Room index ${roomIndex} not found - the plan has ${rooms.length} room(s).`,
-          );
-        }
-        // the plan context derives the walls of every room
-        const walls = room.walls ?? [];
-        let wall;
-        if (typeof spec.wall === 'number') {
-          wall = walls.find((candidate) => candidate.index === spec.wall);
-        } else if (typeof spec.wall === 'string') {
-          // side label: the longest real wall on that side of the room
-          wall = walls
-            .filter(
-              (candidate) =>
-                candidate.side === spec.wall && candidate.type === 'wall',
-            )
-            .sort((a, b) => b.lengthMm - a.lengthMm)[0];
-        }
-        if (!wall) {
-          throw new Error(
-            `Wall '${spec.wall}' not found. Pass a side label (left/right/top/bottom) or a wall index. ` +
-              'Available walls: ' +
-              JSON.stringify(walls),
-          );
-        }
-        // fails early on an alignment that runs parallel to the wall
-        resolveWallAlignment(wall, spec.alignment ?? 'center');
-        return { wall, walls };
-      };
-
-      // A corner article is placed by its corner point when the alignment
-      // names the adjoining wall; every other group is placed by its footprint.
-      const placeGroupAtWall = (group, { wall, walls }, spec) => {
-        const footprint = groupFootprint(group);
-        if (!footprint) {
-          throw new Error(
-            `Group '${group.id}' has no geometry to derive a footprint from.`,
-          );
-        }
-        const alignment = spec.alignment ?? 'center';
-        const offsetMm = spec.offsetMm ?? 0;
-        if (WALL_SIDES.includes(alignment)) {
-          const corner = groupCornerGeometry(group);
-          const adjoining = adjoiningWall(walls, wall, alignment);
-          if (corner && adjoining) {
-            const placement = placeCornerAtWalls(
-              wall,
-              adjoining,
-              corner,
-              offsetMm,
-            );
-            if (placement) {
-              return {
-                ...placement,
-                footprint,
-                placedBy: 'cornerPoint',
-                cornerRootId: corner.rootId,
-              };
-            }
-          }
-        }
-        const placement = placeAgainstWall(wall, footprint, alignment, offsetMm);
-        return { ...placement, footprint, placedBy: 'footprint' };
       };
 
       // The plan context arrives agent-ready from the planner API
@@ -1851,7 +1212,7 @@
             }
             if (group.pos !== undefined || group.rotationY !== undefined) {
               validationErrors.push(
-                `posGroups[${groupIndex}]: do not set pos/rotationY on a group - position it with placement or repositioningData`,
+                `posGroups[${groupIndex}]: do not set pos/rotationY on a group - position it with repositioningData`,
               );
             }
             const rootIds = new Set();
@@ -1873,7 +1234,7 @@
               ) {
                 validationErrors.push(
                   `posGroups[${groupIndex}].roots[${rootIndex}]: a root module carries no articlePos/rotationY - ` +
-                    'root positions come from the docking (contextData) only, the group position from placement or repositioningData',
+                    'root positions come from the docking (contextData) only, the group position from repositioningData',
                 );
               }
               const rootId = root?.id;
@@ -1915,35 +1276,35 @@
                 );
               }
             }
-            const placement = group.placement;
-            if (placement !== undefined) {
-              const wallValid =
-                (typeof placement?.wall === 'string' &&
-                  WALL_SIDES.includes(placement.wall)) ||
-                (typeof placement?.wall === 'number' &&
-                  Number.isInteger(placement.wall) &&
-                  placement.wall >= 0);
-              if (!wallValid) {
-                validationErrors.push(
-                  `posGroups[${groupIndex}].placement: wall must be a side label (${WALL_SIDES.join('/')}) or a wall index`,
-                );
-              }
+            if (group.placement !== undefined) {
+              validationErrors.push(
+                `posGroups[${groupIndex}]: placement is not supported - position the group with ` +
+                  'repositioningData { posGroup, posRotationY, rootId }',
+              );
+            }
+            if (group.repositioningData !== undefined) {
+              const { posGroup, posRotationY, rootId } =
+                group.repositioningData ?? {};
               if (
-                placement?.alignment !== undefined &&
-                !ALIGNMENTS.includes(placement.alignment)
+                !Array.isArray(posGroup) ||
+                posGroup.length !== 3 ||
+                !posGroup.every(Number.isFinite)
               ) {
                 validationErrors.push(
-                  `posGroups[${groupIndex}].placement: alignment must be one of ${ALIGNMENTS.join(', ')}`,
+                  `posGroups[${groupIndex}].repositioningData: posGroup must be [x, y, z] in millimetres`,
                 );
               }
-            }
-            if (
-              placement !== undefined &&
-              group.repositioningData !== undefined
-            ) {
-              validationErrors.push(
-                `posGroups[${groupIndex}]: use either placement or repositioningData, not both`,
-              );
+              if (posRotationY !== undefined && !Number.isFinite(posRotationY)) {
+                validationErrors.push(
+                  `posGroups[${groupIndex}].repositioningData: posRotationY must be a number of degrees`,
+                );
+              }
+              if (!rootIds.has(rootId)) {
+                validationErrors.push(
+                  `posGroups[${groupIndex}].repositioningData: rootId must be the id of one of the group's roots ` +
+                    '- the leftmost root of its back row',
+                );
+              }
             }
           });
           if (validationErrors.length > 0) {
@@ -1953,18 +1314,14 @@
                 '\nFetch the payload format with the get-authoring-rules tool.',
             );
           }
-          // Only article picks, placement and repositioningData reach the planner.
+          // Only article picks and repositioningData reach the planner.
           for (const group of posGroups) {
             group.roots = group.roots.map(toArticlePick);
             for (const field of Object.keys(group)) {
               if (
-                ![
-                  'id',
-                  'libraryId',
-                  'roots',
-                  'placement',
-                  'repositioningData',
-                ].includes(field)
+                !['id', 'libraryId', 'roots', 'repositioningData'].includes(
+                  field,
+                )
               ) {
                 delete group[field];
               }
@@ -1972,31 +1329,12 @@
           }
           await validateArticlePickIds(api, posGroups);
 
-          // Declarative wall placements: resolve the walls before anything is
-          // loaded (so a bad wall fails the whole call), remember which input
-          // groups carry one, apply them after the calculation when the
-          // footprints exist. New group ids are regenerated by the planner, so
-          // created groups are matched to their placements by order of
-          // appearance.
-          const placementSpecs = new Map();
           const preContext = await api.extended.getExternalObjectPlanContext([
-            'rooms',
             'groups',
           ]);
-          const rooms = preContext.rooms?.rooms ?? [];
           const beforeGroupIds = new Set(
             (preContext.groups ?? []).map((group) => group.id),
           );
-          posGroups.forEach((group, groupIndex) => {
-            if (group.placement !== undefined) {
-              const spec = group.placement;
-              placementSpecs.set(groupIndex, {
-                spec,
-                resolved: resolveWall(rooms, spec),
-              });
-              delete group.placement;
-            }
-          });
 
           const loaded = await api.extended.loadExternalObjectGroupLayout(
             { posGroups },
@@ -2013,104 +1351,9 @@
                 'and that the payload follows the rules returned by get-authoring-rules.',
             );
           }
-          let context = await api.extended.getExternalObjectPlanContext([
+          const context = await api.extended.getExternalObjectPlanContext([
             'groups',
           ]);
-
-          const placements = [];
-          if (placementSpecs.size > 0) {
-            // the placement math needs the calculated groups with their
-            // geometry; the plan context returns them compacted
-            const afterGroups = await api.extended.getExternalObjectGroups();
-            const newGroupIds = afterGroups
-              .map((group) => group.id)
-              .filter((id) => !beforeGroupIds.has(id));
-            const groupsOfThisCall = new Set([
-              ...newGroupIds,
-              ...posGroups.map((group) => group.id).filter(Boolean),
-            ]);
-            const placementErrors = [];
-            const placedGroups = [];
-            let newGroupCursor = 0;
-            posGroups.forEach((group, groupIndex) => {
-              const isReplace = group.id && beforeGroupIds.has(group.id);
-              const resultGroupId = isReplace
-                ? group.id
-                : newGroupIds[newGroupCursor++];
-              const placementEntry = placementSpecs.get(groupIndex);
-              if (!placementEntry) {
-                return;
-              }
-              const resultGroup = afterGroups.find(
-                (candidate) => candidate.id === resultGroupId,
-              );
-              if (!resultGroup) {
-                // a placement that cannot be resolved fails the whole call -
-                // a partially applied placement would silently leave the
-                // group unpositioned
-                placementErrors.push(
-                  `posGroups[${groupIndex}]: the placement could not be applied - ` +
-                    `the planner reported no calculated group for '${String(resultGroupId)}'.`,
-                );
-                return;
-              }
-              const placement = placeGroupAtWall(
-                resultGroup,
-                placementEntry.resolved,
-                placementEntry.spec,
-              );
-              // a placement that meets another group is a docking relation
-              // expressed as a position: the roots belong into that group
-              const contact = findGroupContact(
-                footprintCornersInRoom(placement.footprint, placement),
-                afterGroups,
-                groupsOfThisCall,
-              );
-              if (contact) {
-                placementErrors.push(
-                  contactError(
-                    `posGroups[${groupIndex}] placed at the ${placementEntry.resolved.wall.side} wall`,
-                    contact,
-                  ),
-                );
-                return;
-              }
-              placedGroups.push(repositionedGroup(resultGroup, placement));
-              placements.push({
-                groupId: resultGroup.id,
-                wall: placementEntry.resolved.wall.side,
-                placedBy: placement.placedBy,
-                ...(placement.cornerRootId && {
-                  cornerRootId: placement.cornerRootId,
-                }),
-              });
-            });
-            if (placementErrors.length > 0) {
-              // nothing of this call stays: the created groups are removed
-              // again, replaced groups keep their new roots but were not moved
-              for (const id of newGroupIds) {
-                api.extended.removeExternalObject(id);
-              }
-              throw new Error(
-                'Placement rejected - the groups created by this call were removed again' +
-                  (posGroups.some((group) => beforeGroupIds.has(group.id))
-                    ? ', replaced groups were not moved'
-                    : '') +
-                  ':\n' +
-                  placementErrors.join('\n'),
-              );
-            }
-            if (placedGroups.length > 0) {
-              await api.extended.loadExternalObjectGroupLayout(
-                { posGroups: placedGroups },
-                'posGroups',
-                { reason: 'adjusted' },
-              );
-              context = await api.extended.getExternalObjectPlanContext([
-                'groups',
-              ]);
-            }
-          }
 
           const groups = context.groups;
           const replacedInputIds = new Set(
@@ -2128,98 +1371,12 @@
           return {
             loaded,
             groups,
-            ...(placements.length > 0 && { placements }),
             ...(unpositionedGroupIds.length > 0 && {
               hint:
                 `Groups ${unpositionedGroupIds.join(', ')} are not positioned yet and sit at the plan origin. ` +
-                'Give the group a placement ({ wall, alignment?, offsetMm? }) in create-or-replace-groups ' +
-                'or call place-group to stand it against a wall.',
+                'Resubmit them with their id and repositioningData ({ posGroup, posRotationY, rootId }) - ' +
+                'see get-authoring-rules.',
             }),
-          };
-        },
-
-        'place-group': async (api, args) => {
-          const groupId = args.groupId;
-          const wallArg = args.wall ?? args.wallIndex;
-          const roomIndex = args.roomIndex ?? 0;
-          const alignment = args.alignment ?? 'center';
-          const offsetMm = args.offsetMm ?? 0;
-          const context = await api.extended.getExternalObjectPlanContext([
-            'rooms',
-            'groups',
-          ]);
-          const groups = context.groups ?? [];
-          let group = groups.find((candidate) => candidate.id === groupId);
-          if (!group && groupId) {
-            const prefixMatches = groups.filter((candidate) =>
-              candidate.id.startsWith(groupId),
-            );
-            if (prefixMatches.length === 1) {
-              group = prefixMatches[0];
-            }
-          }
-          if (!group) {
-            const groupIds = groups.map((candidate) => candidate.id);
-            throw new Error(
-              `Group '${groupId}' not found. Groups in the plan: ` +
-                `${groupIds.join(', ') || 'none'}.`,
-            );
-          }
-          const rooms = context.rooms?.rooms ?? [];
-          const spec = { wall: wallArg, alignment, offsetMm, roomIndex };
-          const resolved = resolveWall(rooms, spec);
-          // the placement math needs the calculated group with its geometry;
-          // the plan context returns the groups compacted
-          const rawGroups = await api.extended.getExternalObjectGroups();
-          const rawGroup = rawGroups.find(
-            (candidate) => candidate.id === group.id,
-          );
-          if (!rawGroup) {
-            throw new Error(
-              `Group '${groupId}' has no calculated geometry to place.`,
-            );
-          }
-          const placement = placeGroupAtWall(rawGroup, resolved, spec);
-          const contact = findGroupContact(
-            footprintCornersInRoom(placement.footprint, placement),
-            rawGroups,
-            new Set([group.id]),
-          );
-          if (contact) {
-            throw new Error(
-              'Placement rejected - the group was not moved: ' +
-                contactError(
-                  `Group '${group.id}' placed at the ${resolved.wall.side} wall`,
-                  contact,
-                ),
-            );
-          }
-          const loaded = await api.extended.loadExternalObjectGroupLayout(
-            { posGroups: [repositionedGroup(rawGroup, placement)] },
-            'posGroups',
-            { reason: 'adjusted' },
-          );
-          if (!loaded || loaded.length === 0) {
-            throw new Error(
-              `Group '${groupId}' could not be reloaded at the new position.`,
-            );
-          }
-          const after = await api.extended.getExternalObjectPlanContext([
-            'groups',
-          ]);
-          const resultGroup = (after.groups ?? []).find(
-            (candidate) => candidate.id === group.id,
-          );
-          return {
-            pos: placement.pos,
-            rotationY: placement.rotationY,
-            footprint: placement.footprint,
-            placedBy: placement.placedBy,
-            ...(placement.cornerRootId && {
-              cornerRootId: placement.cornerRootId,
-            }),
-            wall: resolved.wall,
-            group: resultGroup,
           };
         },
 

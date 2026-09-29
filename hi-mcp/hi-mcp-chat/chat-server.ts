@@ -156,7 +156,10 @@ server.on('error', (error: NodeJS.ErrnoException) => {
   process.exit(1);
 });
 
-server.listen(config.port, () => {
+// The chat backend holds the provider API key and accepts originless
+// requests (curl debugging), so it binds to loopback only - no other device
+// on the local network can reach the token-backed endpoint.
+server.listen(config.port, '127.0.0.1', () => {
   console.log('');
   console.log('  HI example AI chat ready');
   console.log('');

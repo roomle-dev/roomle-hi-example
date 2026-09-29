@@ -329,8 +329,6 @@
         omPostRequest,
         setupHi,
       } from 'https://unpkg.com/@roomle/embedding-lib@7.1.0/hi.js';
-      import { marked } from 'https://unpkg.com/marked@18.0.14/lib/marked.esm.js';
-      import DOMPurify from 'https://unpkg.com/dompurify@3.4.16/dist/purify.es.mjs';
 
       const DEFAULT_PLAN_ID = 'ps_8jjg0zezlblb48vzn8qas9vwwn7fqbg';
       const DEFAULT_SERVER_URL = 'https://www.roomle.com/t/bo-test/';
@@ -2322,7 +2320,13 @@
       // `npm start mistral <api-key>`), which calls the HI tools through the
       // MCP server via the bridge above.
 
-      const startChat = () => {
+      // The chat loads its markdown dependencies dynamically, so the plain
+      // (non-chat) page stays independent of them.
+      const startChat = async () => {
+        const [{ marked }, { default: DOMPurify }] = await Promise.all([
+          import('https://unpkg.com/marked@18.0.14/lib/marked.esm.js'),
+          import('https://unpkg.com/dompurify@3.4.16/dist/purify.es.mjs'),
+        ]);
         const chatPort = getQueryParam('chat_port') ?? '3200';
         const chatUrl = `http://localhost:${chatPort}/chat`;
         const messagesArea = document.getElementById('chat-messages');
@@ -2441,7 +2445,9 @@
       };
 
       if (chatEnabled) {
-        startChat();
+        startChat().catch((error) =>
+          logMessage('chat', `failed to load: ${error.message}`),
+        );
       }
     </script>
   </body>

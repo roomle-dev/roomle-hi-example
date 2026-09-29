@@ -6,6 +6,8 @@
 
 **Never author root positions.** Roots are positioned by docking; a group is positioned by its `repositioningData` — one point and one rotation taken from the walls.
 
+**One kitchen is one group.** Every unit standing beside, above or back to back with another unit is a docked root of the same group; only the anchor root carries a position. Never split a kitchen into several positioned groups.
+
 Direct coordinate properties like `articlePos`, `rotationY`, `pos`, or `rotationY` will be **rejected**.
 
 ## Group Structure
@@ -117,13 +119,14 @@ room:
 {
   posGroup: [x, y, z],   // left back bottom corner of the anchor root in the room, mm (y = 0 on the floor)
   posRotationY: number,  // degrees, counter-clockwise as seen from above
-  rootId: string         // the anchor: leftmost root of the back row, standing on the floor, not turned in the group
+  rootId: string         // the anchor: the root the docking starts from, listed first in roots
 }
 ```
 
-- **Origin**: the origin of a group is its left back point — the left back bottom corner of the
-  leftmost root of its back row (in an L-shaped group the corner article). For a group of wall
-  units only, `posGroup` y is their mounting height.
+- **Anchor**: `rootId` names the root the docking chains start from, listed first in `roots` (in
+  an L-shaped kitchen the corner article, in a row its leftmost unit). Its left back bottom corner
+  is placed exactly at `posGroup`; for a group of wall units only, `posGroup` y is their mounting
+  height.
 - **Rotation sense**: positive `posRotationY` turns the group counter-clockwise as seen from above
   (in the top-view image) — the `rotationY` convention of the kernel (RoomleCore) and the glue logic.
   The right wall is **270**, the left wall **90**.
@@ -135,12 +138,12 @@ room:
 - **Corner**: `posGroup` = the corner point, `posRotationY` = the `facingRotationY` of the wall that
   ends in that corner. The corner point of a corner article is its left back point.
 
-| Rectangular room (back = top in the top view) | `posRotationY` |
-|---|---|
-| Back wall / left back corner | 0 |
-| Left wall / left front corner | 90 |
-| Front wall / right front corner | 180 |
-| Right wall / right back corner | 270 |
+| Rectangular room (back = top in the top view) | `posRotationY` | Corner: `RightBottom` row along | Corner: `LeftBottom` row along |
+|---|---|---|---|
+| Back wall / left back corner | 0 | back wall, to the right | left wall, to the front |
+| Left wall / left front corner | 90 | left wall, to the back | front wall, to the right |
+| Front wall / right front corner | 180 | front wall, to the left | right wall, to the back |
+| Right wall / right back corner | 270 | right wall, to the front | back wall, to the left |
 
 - **Anywhere else** (island, middle of the room, next to a door): any free floor point, any rotation.
 - **Moving**: resubmit the group with its id and a new `repositioningData`; a replace without it

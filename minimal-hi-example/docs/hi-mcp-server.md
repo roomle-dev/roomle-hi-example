@@ -342,8 +342,8 @@ is still unpositioned.
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm
 room, from the back right corner, one call. `posGroup` is the right wall's
-`end` (`[4000, 0, -3000]`), `270` its `facingRotationY`, and `u1` the leftmost
-root:
+`end` (`[4000, 0, -3000]`), `270` its `facingRotationY`, and `u1` the anchor
+(the docking starts from it, listed first):
 
 ```json
 {
@@ -381,6 +381,46 @@ root:
           }
         },
         { "id": "u3", "articleId": "<articleId>" }
+      ]
+    }
+  ]
+}
+```
+
+Example — an L-shaped kitchen in the back right corner of the same room is
+ONE group: the corner article `c1` is the anchor at the corner point;
+the row docked to its `RightBottom` runs along the right wall, the row
+docked to its `LeftBottom` along the back wall (one unit per row shown):
+
+```json
+{
+  "posGroups": [
+    {
+      "libraryId": "<libraryId>",
+      "repositioningData": { "posGroup": [4000, 0, -3000], "posRotationY": 270, "rootId": "c1" },
+      "roots": [
+        {
+          "id": "c1",
+          "articleId": "<corner article>",
+          "contextData": {
+            "dockedRoots": [
+              {
+                "ownDockingVector": "RightBottom",
+                "dockedRoots": [
+                  { "id": "r1", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }
+                ]
+              },
+              {
+                "ownDockingVector": "LeftBottom",
+                "dockedRoots": [
+                  { "id": "l1", "dockingVector": "RightBottom", "mode": "StartStart", "offset": [0, 0, 0] }
+                ]
+              }
+            ]
+          }
+        },
+        { "id": "r1", "articleId": "<base unit>" },
+        { "id": "l1", "articleId": "<base unit>" }
       ]
     }
   ]
@@ -507,12 +547,16 @@ A group is positioned by one point and one rotation,
 `repositioningData: { posGroup, posRotationY, rootId }` — the same mechanism
 for a group at a wall, in a corner, or anywhere in the room.
 
-- **Origin**: the origin of a group is its left back point. `rootId` is the
-  leftmost root of the group's back row — a unit standing on the floor that
-  is not turned within the group (in an L-shaped group the corner article).
-  `posGroup` is the position of that root's left back bottom corner in the
-  room, in millimetres (`y` = 0 on the floor; for a group of wall units only,
-  their mounting height).
+- **One group per kitchen**: every unit standing beside, above or back to
+  back with another unit is a root of the same group, docked to it. Only the
+  anchor root carries a position — a kitchen is never split into several
+  positioned groups.
+- **Anchor**: `rootId` names the anchor — the root the docking chains start
+  from, listed first in `roots` (in an L-shaped kitchen the corner article,
+  in a row its leftmost unit). Its left back bottom corner is placed exactly
+  at `posGroup`, in millimetres (`y` = 0 on the floor; for a group of wall
+  units only, their mounting height), and it stands in the room with
+  rotation `posRotationY`.
 - **Rotation**: `posRotationY` turns the group around `posGroup`, in degrees,
   **counter-clockwise as seen from above** (in the top-view image). This is
   the `rotationY` convention of the kernel and the glue logic, verified in
@@ -537,12 +581,12 @@ for a group at a wall, in a corner, or anywhere in the room.
   wall that ends in that corner; the corner point of a corner article is its
   left back point, so it goes exactly into the corner:
 
-  | Wall / corner | `posRotationY` |
-  | --- | --- |
-  | Back wall / left back corner | 0 |
-  | Left wall / left front corner | 90 |
-  | Front wall / right front corner | 180 |
-  | Right wall / right back corner | 270 |
+  | Wall / corner | `posRotationY` | Corner: `RightBottom` row runs along | Corner: `LeftBottom` row runs along |
+  | --- | --- | --- | --- |
+  | Back wall / left back corner | 0 | back wall, to the right | left wall, to the front |
+  | Left wall / left front corner | 90 | left wall, to the back | front wall, to the right |
+  | Front wall / right front corner | 180 | front wall, to the left | right wall, to the back |
+  | Right wall / right back corner | 270 | right wall, to the front | back wall, to the left |
 
 - **Anywhere else** (an island, the middle of the room, next to a door): any
   free floor point as `posGroup`, any `posRotationY`.

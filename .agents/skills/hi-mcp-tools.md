@@ -58,8 +58,10 @@ await createOrReplaceGroups({ posGroups: [group1, group2] });
 ```
 
 **Positioning**: every group carries `repositioningData: { posGroup, posRotationY, rootId }` —
-`rootId` is the leftmost root of the back row, `posGroup` its left back bottom corner in the room,
-`posRotationY` the rotation in degrees, counter-clockwise as seen from above. Against a wall:
+`rootId` is the anchor (the root the docking starts from, listed first in `roots`; in a corner
+kitchen the corner article), `posGroup` its left back bottom corner in the room, `posRotationY`
+the rotation in degrees, counter-clockwise as seen from above. One kitchen is one group: dock
+every further unit instead of positioning it. Against a wall:
 `posRotationY` = the wall's `facingRotationY`, `posGroup` = the wall's `end` (flush into that
 corner) or a point from `end` towards `start`. See the
 [authoring rules skill](./hi-authoring-rules.md#positioning-a-group).
@@ -129,7 +131,7 @@ try {
 | Invalid articleId | Article not in catalog | Use valid articleId from context |
 | Root not docked | Undocked root in group | Dock all non-first roots |
 | placement is not supported | Payload with the removed `placement` field | Use `repositioningData` |
-| repositioningData: rootId must be the id of one of the group's roots | `rootId` names no root of the group | Use the leftmost root of the back row |
+| repositioningData: rootId must be the id of one of the group's roots | `rootId` names no root of the group | Use the anchor root the docking starts from |
 
 ## Timeouts
 

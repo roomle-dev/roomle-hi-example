@@ -117,7 +117,7 @@ A **Group** is a collection of root modules (article instances) with docking rel
 **Repositioning Properties:**
 - `posGroup` — [x, y, z] in millimetres: where the left back bottom corner of the anchor root goes
 - `posRotationY` — rotation of the group in degrees, counter-clockwise as seen from above
-- `rootId` — the anchor: the leftmost root of the back row
+- `rootId` — the anchor: the root the docking starts from, listed first in `roots`
 
 **Example Group:**
 ```javascript
@@ -149,7 +149,7 @@ A **Group** is a collection of root modules (article instances) with docking rel
   repositioningData: {
     posGroup: [4000, 0, -3000], // the end of the right wall of a 4000 x 3000 room
     posRotationY: 270,          // the right wall's facingRotationY
-    rootId: "<id of the leftmost root>"
+    rootId: "<id of the anchor root - the docking starts from it, listed first>"
   }
 }
 ```
@@ -186,8 +186,10 @@ A group is positioned by `repositioningData: { posGroup, posRotationY, rootId }`
 one rotation, the same for a group at a wall, in a corner or anywhere in the room. There is no
 separate wall placement.
 
-- `rootId` is the leftmost root of the group's back row (standing on the floor, not turned within
-  the group); `posGroup` is its left back bottom corner in the room.
+- `rootId` is the anchor: the root the docking chains start from, listed first in `roots` (in an
+  L-shaped kitchen the corner article); `posGroup` is its left back bottom corner in the room.
+- One kitchen is one group: every further unit is a docked root of the same group, never a
+  separately positioned group.
 - `posRotationY` is in degrees, counter-clockwise as seen from above. Against a wall it is the
   wall's `facingRotationY` (rectangular room: back 0, left 90, front 180, right 270), and
   `posGroup` lies on the wall, from its `end` towards its `start`.
@@ -369,7 +371,7 @@ const group = {
   repositioningData: {
     posGroup: [3000, 0, 0], // front wall of a 4000 x 3000 room, 1000 mm from its end
     posRotationY: 180,      // the front wall's facingRotationY
-    rootId: "<id of the leftmost root>"
+    rootId: "<id of the anchor root - the docking starts from it, listed first>"
   }
 };
 
@@ -422,7 +424,7 @@ const group = {
   repositioningData: {
     posGroup: wall.end,               // flush into the corner at the wall's end
     posRotationY: wall.facingRotationY,
-    rootId: "<id of the leftmost root>"
+    rootId: "<id of the anchor root - the docking starts from it, listed first>"
   },
   // Group will be adjusted to fill wall width
   adjustToWallWidth: true
@@ -445,7 +447,7 @@ A rejected payload comes back as a tool error result whose text lists every prob
 
 ```text
 Invalid pos groups - nothing was loaded:
-posGroups[0].repositioningData: rootId must be the id of one of the group's roots - the leftmost root of its back row
+posGroups[0].repositioningData: rootId must be the id of one of the group's roots - the anchor root the docking starts from
 Fetch the payload format with the get-authoring-rules tool.
 ```
 

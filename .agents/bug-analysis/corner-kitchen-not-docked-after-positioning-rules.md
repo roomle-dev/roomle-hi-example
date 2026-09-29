@@ -5,6 +5,16 @@
 > **Author**: AI Assistant
 > **Status**: Open
 
+> **Progress (2026-09-29)**: The instruction fix is implemented on branch
+> `refactor/group-placement-via-repositioning-data-RML-17966`: docking rules before positioning
+> rules, "one kitchen is one group" stated in the rules, the workflow and the tool description,
+> the anchor rule replaced ("the root the docking starts from, listed first in roots"), the
+> per-corner leg list added, and complete payload examples for docking to the left, the L-shaped
+> corner kitchen and extending a group. The `rootId` validation message names the anchor rule; the
+> living docs mirror all of it. The optional code items (multi-group hint, server-side argument
+> logging) were not implemented. The verification (a fresh agent session with the same prompt) is
+> pending — the analysis stays Open until then.
+
 ---
 
 ## Symptom and Reproduction

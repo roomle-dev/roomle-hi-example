@@ -119,7 +119,8 @@ room:
 {
   posGroup: [x, y, z],   // left back bottom corner of the anchor root in the room, mm (y = 0 on the floor)
   posRotationY: number,  // degrees, counter-clockwise as seen from above
-  rootId: string         // the anchor: the root the docking starts from, listed first in roots
+  rootId: string,        // the anchor: the root the docking starts from, listed first in roots
+  rootRelPos: [x, y, z]  // optional root-local offset, rotated with posRotationY - the negated cornerPoint of a corner article
 }
 ```
 
@@ -136,7 +137,13 @@ room:
   d = (lengthMm − group width) / 2 centres it; d = lengthMm − group width puts its right end into
   the corner at the wall's `start`.
 - **Corner**: `posGroup` = the corner point, `posRotationY` = the `facingRotationY` of the wall that
-  ends in that corner. The corner point of a corner article is its left back point.
+  ends in that corner. A corner article's corner point can lie left of its root origin (the blind
+  zone) — the catalog's `cornerPoint` says where, root-local (Furniture_Smith: `[-261, 0, 0]`).
+  Add `rootRelPos` = the negated `cornerPoint`: it is rotated with `posRotationY`, so the same
+  value is right in every corner; never add the offset to the room point `posGroup` without
+  rotating it by `posRotationY` first. No `cornerPoint` in the catalog yet (empty plan)? Load,
+  then resubmit with `posGroup` shifted by (intended corner − returned `position.pos`), keeping
+  `posRotationY` — the room-space delta already contains the rotation.
 
 | Rectangular room (back = top in the top view) | `posRotationY` | Corner: `RightBottom` row along | Corner: `LeftBottom` row along |
 |---|---|---|---|
@@ -155,7 +162,7 @@ room:
 - Groups with `pos` or `rotationY`
 - Roots with `articlePos` or `rotationY`
 - `placement` (removed — use `repositioningData`)
-- Invalid `repositioningData` (`posGroup` not `[x, y, z]`, `posRotationY` not a number, `rootId` not a root of the group)
+- Invalid `repositioningData` (`posGroup` not `[x, y, z]`, `posRotationY` not a number, `rootId` not a root of the group, `rootRelPos` not `[x, y, z]`)
 - Invalid articleId
 - Undocked roots
 - Invalid docking vectors
@@ -183,8 +190,9 @@ room:
 ### Pattern 2: L-Shaped Corner
 ```javascript
 {
-  // left back corner of a 4000 x 3000 room: the end of the back wall, facing 0
-  repositioningData: { posGroup: [0, 0, -3000], posRotationY: 0, rootId: 'corner' },
+  // left back corner of a 4000 x 3000 room: the end of the back wall, facing 0;
+  // rootRelPos negates the corner article's catalog cornerPoint [-261, 0, 0]
+  repositioningData: { posGroup: [0, 0, -3000], posRotationY: 0, rootId: 'corner', rootRelPos: [261, 0, 0] },
   roots: [
     {
       id: 'corner', articleId: 'corner-unit-900', cornerArticle: true,

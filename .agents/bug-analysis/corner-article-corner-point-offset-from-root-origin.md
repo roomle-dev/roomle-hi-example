@@ -5,6 +5,18 @@
 > **Author**: AI Assistant
 > **Status**: Open
 
+> **Progress (2026-09-29)**: S1 and S2 are implemented. roomle-ui
+> (`refactor/hi-plan-context-RML-17966`, commit `06119863c`) exposes `cornerPoint` on the compacted
+> article, from the template dockInfos or — Furniture_Smith templates carry none — from a
+> calculated root of the article in the plan, with one new unit test. roomle-hi-example
+> (`refactor/group-placement-via-repositioning-data-RML-17966`) teaches the offset (`rootRelPos` =
+> the negated `cornerPoint`, root-local and rotated with `posRotationY` — never added to the room
+> point `posGroup` unrotated) and the verify-and-correct rule for the empty-plan case, validates
+> `rootRelPos`, and mirrors both into the docs. S3 was not needed; S4 remains a suggestion for the
+> library team. Verification with a live agent run is pending — note that on an empty plan the
+> first corner placement still relies on the S1 correction, because `cornerPoint` only exists once
+> a calculated root of the corner article is in the plan.
+
 ---
 
 ## Symptom and Reproduction

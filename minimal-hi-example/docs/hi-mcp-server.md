@@ -262,7 +262,9 @@ coordinate system throughout (3D, right-handed, Y up).
   from a calculated root of the same article in the plan), `insertLevels` and
   `subModules` (fronts, appliances — id, name, desc, imageUrl);
   `cornerArticle` is `true` for an article made for a room corner (it carries
-  `LeftBack`/`RightBack` docking vectors)
+  `LeftBack`/`RightBack` docking vectors), and `cornerPoint` is its root-local
+  corner point — the start of those vectors, measured from the template or
+  from a calculated root of the article in the plan
 - `groups` — the groups currently in the plan: a read-only `position`
   (`pos`, `rotationY`, `footprint`) and per root the article pick (`id`,
   `articleId`, input `attributes`, `contextData` with vector names only) plus
@@ -330,7 +332,8 @@ an unknown `articleId` (the error lists the catalog), `articlePos`/`rotationY`
 on any root or `pos`/`rotationY` on a group, undocked roots in a multi-root group,
 a `placement` (no longer supported — the error points to `repositioningData`),
 and invalid `repositioningData` (`posGroup` not three numbers, `posRotationY`
-not a number, `rootId` not a root of the group).
+not a number, `rootId` not a root of the group, `rootRelPos` not three
+numbers).
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -388,16 +391,17 @@ room, from the back right corner, one call. `posGroup` is the right wall's
 ```
 
 Example — an L-shaped kitchen in the back right corner of the same room is
-ONE group: the corner article `c1` is the anchor at the corner point;
-the row docked to its `RightBottom` runs along the right wall, the row
-docked to its `LeftBottom` along the back wall (one unit per row shown):
+ONE group: the corner article `c1` is the anchor at the corner point, with
+`rootRelPos` negating its catalog `cornerPoint` of `[-261, 0, 0]`; the row
+docked to its `RightBottom` runs along the right wall, the row docked to its
+`LeftBottom` along the back wall (one unit per row shown):
 
 ```json
 {
   "posGroups": [
     {
       "libraryId": "<libraryId>",
-      "repositioningData": { "posGroup": [4000, 0, -3000], "posRotationY": 270, "rootId": "c1" },
+      "repositioningData": { "posGroup": [4000, 0, -3000], "posRotationY": 270, "rootId": "c1", "rootRelPos": [261, 0, 0] },
       "roots": [
         {
           "id": "c1",
@@ -531,7 +535,8 @@ group one point and one rotation; the planner calculates every root position.
   `EndEnd`, `y` offset), a worktop lying on a unit (`LeftTop → LeftBottom`,
   no offset), an island (`BackBottom → BackBottom`, no `mode`), a room corner
   (start the group with a corner article, `cornerArticle: true` in the
-  catalog, give it `repositioningData` with the corner point as `posGroup` and
+  catalog, give it `repositioningData` with the corner point as `posGroup`,
+  `rootRelPos` = the negated `cornerPoint`, and
   the `facingRotationY` of the wall that ends in that corner as
   `posRotationY`, and continue the rows along both walls from its
   `RightBottom` and `LeftBottom` — prefer this over butting two straight units
@@ -557,6 +562,18 @@ for a group at a wall, in a corner, or anywhere in the room.
   at `posGroup`, in millimetres (`y` = 0 on the floor; for a group of wall
   units only, their mounting height), and it stands in the room with
   rotation `posRotationY`.
+- **Corner offset**: a corner article's corner point can lie left of its
+  origin — the blind zone. The catalog's `cornerPoint` says where, in
+  root-local millimetres (Furniture_Smith: `[-261, 0, 0]`). Add `rootRelPos`
+  = the negated `cornerPoint` to the `repositioningData`: the corner point
+  then lands exactly at `posGroup`. `rootRelPos` is root-local and is rotated
+  with `posRotationY` by the planner, so the same value is right in every
+  corner — never add the offset to a room point like `posGroup` without
+  rotating it by `posRotationY` first. An empty plan carries no `cornerPoint`
+  yet (it is measured from calculated roots): then load, compare the returned
+  `position.pos` — the corner point in the room — with the intended point P,
+  and resubmit with `posGroup` shifted by `P − position.pos`, keeping
+  `posRotationY`; the room-space delta already contains the rotation.
 - **Rotation**: `posRotationY` turns the group around `posGroup`, in degrees,
   **counter-clockwise as seen from above** (in the top-view image). This is
   the `rotationY` convention of the kernel and the glue logic, verified in
@@ -578,8 +595,9 @@ for a group at a wall, in a corner, or anywhere in the room.
   the catalog; `position.footprint.widthMm` once the group is loaded).
 - **Rectangular room** (back = top, front = bottom in the top-view image). A
   corner takes the corner point as `posGroup` and the `facingRotationY` of the
-  wall that ends in that corner; the corner point of a corner article is its
-  left back point, so it goes exactly into the corner:
+  wall that ends in that corner; with the article's `cornerPoint` offset
+  compensated by `rootRelPos` (see **Corner offset**), its corner point goes
+  exactly into the corner:
 
   | Wall / corner | `posRotationY` | Corner: `RightBottom` row runs along | Corner: `LeftBottom` row runs along |
   | --- | --- | --- | --- |

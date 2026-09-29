@@ -118,6 +118,7 @@ A **Group** is a collection of root modules (article instances) with docking rel
 - `posGroup` — [x, y, z] in millimetres: where the left back bottom corner of the anchor root goes
 - `posRotationY` — rotation of the group in degrees, counter-clockwise as seen from above
 - `rootId` — the anchor: the root the docking starts from, listed first in `roots`
+- `rootRelPos` — optional root-local offset, rotated with `posRotationY`; the negated catalog `cornerPoint` of a corner article
 
 **Example Group:**
 ```javascript

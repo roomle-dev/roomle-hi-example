@@ -60,7 +60,10 @@ await createOrReplaceGroups({ posGroups: [group1, group2] });
 **Positioning**: every group carries `repositioningData: { posGroup, posRotationY, rootId }` —
 `rootId` is the anchor (the root the docking starts from, listed first in `roots`; in a corner
 kitchen the corner article), `posGroup` its left back bottom corner in the room, `posRotationY`
-the rotation in degrees, counter-clockwise as seen from above. One kitchen is one group: dock
+the rotation in degrees, counter-clockwise as seen from above. A corner article adds `rootRelPos`
+= the negated catalog `cornerPoint` (root-local, rotated with `posRotationY`); verify a flush
+placement against the returned `position.pos` and correct `posGroup` by the room-space delta,
+keeping `posRotationY`. One kitchen is one group: dock
 every further unit instead of positioning it. Against a wall:
 `posRotationY` = the wall's `facingRotationY`, `posGroup` = the wall's `end` (flush into that
 corner) or a point from `end` towards `start`. See the

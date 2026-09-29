@@ -126,6 +126,25 @@ docker logs -f hi-mcp-cf-test      # Local: http://localhost:3000/mcp
 docker rm -f hi-mcp-cf-test
 ```
 
+## Refreshing the image lockfile
+
+The image installs from `hi-mcp/package-lock.json`, not from the repository-root lockfile.
+`hi-mcp/` is a workspace of the repository root, so an `npm install` inside `hi-mcp/` writes only
+the root lockfile, and `hi-mcp/package-lock.json` goes stale after every dependency change in a
+`hi-mcp` workspace. The image build then fails with *"`npm ci` can only install packages when your
+package.json and package-lock.json … are in sync"*. To refresh the file, regenerate it outside the
+root workspace, starting from the current file so that unchanged pins stay the same:
+
+```bash
+cd hi-mcp
+T=$(mktemp -d) && mkdir -p $T/hi-mcp-poc-json $T/hi-mcp-chat $T/cf
+cp package.json package-lock.json $T/
+for w in hi-mcp-poc-json hi-mcp-chat cf; do cp $w/package.json $T/$w/; done
+(cd $T && npm install --package-lock-only --ignore-scripts) && cp $T/package-lock.json .
+```
+
+Then check the result with the local docker build above and commit the updated lockfile.
+
 ## Teardown (the container app needs its own delete)
 
 `wrangler delete` removes the Worker but **leaves the container application running as an
@@ -144,6 +163,7 @@ npx wrangler containers delete <ID>  # stop and remove the container application
 | Symptom | Cause / fix |
 | ------- | ----------- |
 | wrangler refuses to start | Node < 22 on the PATH — use `~/.volta/bin` first |
+| image build: `npm ci` … `Invalid: lock file's <pkg>@<a> does not satisfy <pkg>@<b>` | `hi-mcp/package-lock.json` is stale — see [Refreshing the image lockfile](#refreshing-the-image-lockfile) |
 | deploy uploads the Worker, then `Unauthorized` | **nothing to delete** — the container-app update step lost authorization (the Worker upload itself succeeded). In order: retry the deploy → fresh `wrangler logout && wrangler login` → check the container app state in the dashboard (Containers → `hi-mcp-poc-himcpcontainer`) → fall back to an API token: dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template, then `CLOUDFLARE_API_TOKEN=<token> npx wrangler deploy`. Until a deploy fully succeeds, the running container keeps the previous image |
 | `Cannot resolve host` / client refuses the URL | URL built from the **account ID** instead of the account **subdomain** — take the URL from the deploy output |
 | deploy: "already an application … different durable object namespace" | orphaned container app from an earlier `wrangler delete` — `wrangler containers list` + `wrangler containers delete <ID>` |

@@ -6,7 +6,7 @@
 > **Status**: Open
 
 > **Progress (2026-09-29)**: S1 and S2 are implemented. roomle-ui
-> (`refactor/hi-plan-context-RML-17966`, commit `06119863c`) exposes `cornerPoint` on the compacted
+> (`refactor/hi-plan-context-RML-17966`, commit `a574b204b`) exposes `cornerPoint` on the compacted
 > article, from the template dockInfos or — Furniture_Smith templates carry none — from a
 > calculated root of the article in the plan, with one new unit test. roomle-hi-example
 > (`refactor/group-placement-via-repositioning-data-RML-17966`) teaches the offset (`rootRelPos` =

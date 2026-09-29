@@ -162,7 +162,7 @@ room:
 - Groups with `pos` or `rotationY`
 - Roots with `articlePos` or `rotationY`
 - `placement` (removed — use `repositioningData`)
-- Invalid `repositioningData` (`posGroup` not `[x, y, z]`, `posRotationY` not a number, `rootId` not a root of the group, `rootRelPos` not `[x, y, z]`)
+- Invalid `repositioningData` (`posGroup` not `[x, y, z]`, `posRotationY` missing or not a number — state 0 explicitly, `rootId` not a root of the group, `rootRelPos` not `[x, y, z]`)
 - Invalid articleId
 - Undocked roots
 - Invalid docking vectors

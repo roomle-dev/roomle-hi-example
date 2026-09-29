@@ -347,8 +347,8 @@ Invalid payloads are rejected with per-group validation errors before anything i
 `roots`, missing pick fields (`id`, `articleId`), an unknown `articleId` (the error lists the
 catalog), `articlePos`/`rotationY` on any root or `pos`/`rotationY` on a group, undocked roots in a multi-root group,
 a `placement` (no longer supported — the error points to `repositioningData`), and invalid
-`repositioningData` (`posGroup` not three numbers, `posRotationY` not a number, `rootId` not a root
-of the group, `rootRelPos` not three numbers).
+`repositioningData` (`posGroup` not three numbers, `posRotationY` missing or not a number — state 0
+explicitly, `rootId` not a root of the group, `rootRelPos` not three numbers).
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -579,8 +579,9 @@ rootId }` — the same mechanism for a group at a wall, in a corner, or anywhere
   | Centred on the wall | the same, d = (lengthMm − group width) / 2 |
   | Right end flush into the corner at the wall's start | the same, d = lengthMm − group width |
 
-  The group width is the sum of the unit widths of the row (`dimensions` in the catalog;
-  `position.footprint.widthMm` once the group is loaded).
+  The group width is the sum of the unit widths of the row plus any x docking offsets (gaps)
+  between them (`dimensions` in the catalog; `position.footprint.widthMm` of a loaded group
+  already includes the gaps).
 - **Rectangular room** (back = top, front = bottom in the top-view image). A corner takes the
   corner point as `posGroup` and the `facingRotationY` of the wall that ends in that corner; with
   the article's `cornerPoint` offset compensated by `rootRelPos` (see **Corner offset**), its

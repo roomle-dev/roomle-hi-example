@@ -439,8 +439,7 @@ const group = {
 1. **Removed `placement`** — a group with `placement` is rejected with a pointer to `repositioningData`
 2. **Incompatible Docking** — Articles with incompatible categories cannot dock
 3. **Missing Docking Vector** — Referenced docking vector does not exist on article
-4. **Collision** — Group would intersect with wall or other group
-5. **Invalid repositioningData** — `posGroup` not `[x, y, z]`, `posRotationY` not a number, or `rootId` not a root of the group
+4. **Invalid repositioningData** — `posGroup` not `[x, y, z]`, `posRotationY` missing or not a number, or `rootId` not a root of the group
 
 ### Error Response Format
 

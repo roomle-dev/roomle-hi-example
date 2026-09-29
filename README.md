@@ -13,6 +13,12 @@ npm start
 
 All possibilities for `npm start`:
 
+e.g.
+
+```bash
+npm start openai <api-key>
+```
+
 | Invocation | What you get |
 | ---------- | ------------ |
 | `npm start` | Example page on :3000, MCP server on :3100, browser opens |

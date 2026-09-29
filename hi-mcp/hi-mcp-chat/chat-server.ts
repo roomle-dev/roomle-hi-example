@@ -75,7 +75,7 @@ const streamChat: StreamChat = async (messages) => {
           {
             ...tool,
             execute: async (input: never, options: never) => {
-              emit(`${TOOL_STATUS_PREFIX}${name}\n`);
+              emit(`\n${TOOL_STATUS_PREFIX}${name}\n`);
               const toolStartedAt = Date.now();
               console.log(`[hi-chat] tool call: ${name}`);
               try {

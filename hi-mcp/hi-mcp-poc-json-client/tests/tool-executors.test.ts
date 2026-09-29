@@ -432,6 +432,11 @@ describe('create-or-replace-groups validation', () => {
       withRepositioning({ posGroup: [0, 0, 0], posRotationY: '90', rootId: 'u1' }),
       /posRotationY must be a number of degrees/,
     );
+    // posRotationY is required: 0 must be stated explicitly
+    await expectRejectedBeforeLoad(
+      withRepositioning({ posGroup: [0, 0, 0], rootId: 'u1' }),
+      /posRotationY must be a number of degrees/,
+    );
     await expectRejectedBeforeLoad(
       withRepositioning({ posGroup: [0, 0, 0], posRotationY: 0, rootId: 'u9' }),
       /rootId must be the id of one of the group's roots/,
@@ -439,6 +444,7 @@ describe('create-or-replace-groups validation', () => {
     await expectRejectedBeforeLoad(
       withRepositioning({
         posGroup: [0, 0, 0],
+        posRotationY: 0,
         rootId: 'u1',
         rootRelPos: [261, 0],
       }),

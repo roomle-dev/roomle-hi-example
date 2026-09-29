@@ -1294,9 +1294,9 @@
                   `posGroups[${groupIndex}].repositioningData: posGroup must be [x, y, z] in millimetres`,
                 );
               }
-              if (posRotationY !== undefined && !Number.isFinite(posRotationY)) {
+              if (!Number.isFinite(posRotationY)) {
                 validationErrors.push(
-                  `posGroups[${groupIndex}].repositioningData: posRotationY must be a number of degrees`,
+                  `posGroups[${groupIndex}].repositioningData: posRotationY must be a number of degrees - state 0 explicitly for no rotation`,
                 );
               }
               if (

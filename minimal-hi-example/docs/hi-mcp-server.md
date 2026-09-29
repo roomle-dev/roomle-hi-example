@@ -103,7 +103,8 @@ npm start          # or directly: node start.mjs
 To develop against a local Rubens UI dev server (start it first on
 <http://localhost:5173/>), run `npm run dev` instead — it passes
 `server_url=http://localhost:5173/` to the example, so the planner loads from
-the local UI instead of `https://www.roomle.com/t/bo-test/`.
+the local UI instead of `https://www.roomle.com/t/bo-test/`. `--dev` implies
+that URL; override it with `EXAMPLE_SERVER_URL=<url> npm run dev`.
 
 The launcher installs and typechecks the `hi-mcp` workspace (the build gate),
 serves the example, starts the MCP server, and opens the example in the

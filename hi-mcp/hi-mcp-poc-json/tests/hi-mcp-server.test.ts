@@ -86,6 +86,10 @@ describe('hi-mcp-server tool calls', () => {
     // the complete L-shaped corner kitchen example, anchored on the corner article
     expect(text).toContain('"rootId": "c1"');
     expect(text).toContain('Example 5');
+    // the corner point offset: compensated root-locally, verified via position.pos
+    expect(text).toContain('cornerPoint');
+    expect(text).toContain('"rootRelPos": [261, 0, 0]');
+    expect(text).toContain('posGroup shifted by (P - position.pos)');
   });
 
   it('relays get-plan-context with its arguments and returns the JSON text', async () => {

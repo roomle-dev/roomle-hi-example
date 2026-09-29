@@ -436,6 +436,14 @@ describe('create-or-replace-groups validation', () => {
       withRepositioning({ posGroup: [0, 0, 0], posRotationY: 0, rootId: 'u9' }),
       /rootId must be the id of one of the group's roots/,
     );
+    await expectRejectedBeforeLoad(
+      withRepositioning({
+        posGroup: [0, 0, 0],
+        rootId: 'u1',
+        rootRelPos: [261, 0],
+      }),
+      /rootRelPos must be \[x, y, z\] in millimetres/,
+    );
   });
 
   it('rejects an article id that is not in the catalog', async () => {

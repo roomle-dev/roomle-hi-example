@@ -243,7 +243,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         );
       }
       if (group.repositioningData !== undefined) {
-        const { posGroup, posRotationY, rootId } = group.repositioningData ?? {};
+        const { posGroup, posRotationY, rootId, rootRelPos } =
+          group.repositioningData ?? {};
         if (
           !Array.isArray(posGroup) ||
           posGroup.length !== 3 ||
@@ -256,6 +257,17 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         if (posRotationY !== undefined && !Number.isFinite(posRotationY)) {
           validationErrors.push(
             `posGroups[${groupIndex}].repositioningData: posRotationY must be a number of degrees`,
+          );
+        }
+        if (
+          rootRelPos !== undefined &&
+          (!Array.isArray(rootRelPos) ||
+            rootRelPos.length !== 3 ||
+            !rootRelPos.every(Number.isFinite))
+        ) {
+          validationErrors.push(
+            `posGroups[${groupIndex}].repositioningData: rootRelPos must be [x, y, z] in millimetres ` +
+              "- the negated cornerPoint of the anchor's article",
           );
         }
         if (!rootIds.has(rootId)) {

@@ -25,33 +25,10 @@ UI instead of `https://www.roomle.com/t/bo-test/`.
 `--no-open` to skip that). Select a preset in the top bar, keep the tab
 open — the server terminal logs `page connected`.
 
-**4. Connect your client** (once) to `http://localhost:3100/mcp`:
-
-| Client | How |
-| ------ | --- |
-| Claude Code | `claude mcp add --transport http --scope user hi-orchestrator http://localhost:3100/mcp` |
-| Claude desktop app | Register the server in `claude_desktop_config.json` — see [docs](./docs/hi-mcp-server.md#claude-desktop-app) |
-| GitHub Copilot (VS Code) | Command Palette → _MCP: Open User Configuration_ → add the server ([docs](./docs/hi-mcp-server.md#github-copilot-vs-code-agent-mode)), then Copilot Chat in **Agent** mode |
-
-Copilot in the browser (github.com) cannot reach a localhost server. Other
-clients (Copilot CLI, Cursor, …):
-[docs/hi-mcp-server.md](./docs/hi-mcp-server.md#connecting-an-mcp-client).
-
-**5. Ask the agent:**
-
-```text
-Get the plan context of the HI session and summarize it.
-```
-
-The agent calls `get-plan-context` and summarizes the articles, rooms, and
-groups. Then try a write operation:
-
-```text
-Add a group of three tall units to the wall on the right.
-```
-
-The agent authors article picks with a docking chain and a `placement` — one
-`create-or-replace-groups` call creates, docks, and positions the group.
+**4. Ask the agent** — the repository root [README](../README.md) lists every
+`npm start` variant (including the built-in AI chat with Mistral, Anthropic, or
+Azure) and the agent prompts. External MCP clients (Claude Code, Copilot,
+Cursor, …) connect to `http://localhost:3100/mcp`.
 
 Port 3000 taken (e.g. by the ligna-store dev server)? Start with
 `EXAMPLE_PORT=3101 npm start`. More: [example prompts](./docs/hi-mcp-server.md#example-prompts) ·

@@ -9,6 +9,15 @@
 // No browser:     npm start -- --no-open
 // Other page port: EXAMPLE_PORT=3101 npm start
 // Local Rubens UI: npm run dev  (server_url=http://localhost:5173/, override via EXAMPLE_SERVER_URL)
+// AI chat:        npm start mistral <api-key>          (mistral-large-latest)
+//                  npm start mistral-medium <api-key>   (mistral-medium-latest)
+//                  npm start claude <api-key>           (claude-sonnet-4-5)
+//                  npm start azure <api-key>            (gpt-4o deployment; also set
+//                                                          AZURE_RESOURCE_NAME and HI_CHAT_MODEL=<deployment>)
+//                  npm start mistral-<model-id> <api-key> passes the id through
+//                  npm run dev <provider> <api-key> combines chat and local Rubens UI server.
+//                  spawns the hi-mcp-chat backend (Vercel AI SDK) and opens the
+//                  example with the chat window visible
 
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
@@ -21,13 +30,58 @@ const EXAMPLE_DIR = dirname(fileURLToPath(import.meta.url));
 const HI_MCP_DIR = join(EXAMPLE_DIR, '..', 'hi-mcp');
 const STATIC_PORT = Number(process.env.EXAMPLE_PORT ?? 3000);
 const MCP_PORT = process.env.HI_MCP_PORT ?? '3100';
+const CHAT_PORT = process.env.HI_CHAT_PORT ?? '3200';
 const DEV_SERVER_URL = 'http://localhost:5173/';
 const EXAMPLE_SERVER_URL =
   process.env.EXAMPLE_SERVER_URL ??
   (process.argv.includes('--dev') ? DEV_SERVER_URL : undefined);
+// Chat providers the launcher accepts: the aliases below plus any full
+// mistral-*/claude-* model id. The chat backend resolves the same names
+// (chat-config.ts PROVIDER_MODEL_ALIASES); azure deployments are user-named
+// and set via HI_CHAT_MODEL.
+const CHAT_PROVIDERS = [
+  'mistral',
+  'mistral-medium',
+  'mistral-large',
+  'anthropic',
+  'claude',
+  'azure',
+  'openai',
+];
+const isChatProvider = (name) =>
+  CHAT_PROVIDERS.includes(name) ||
+  name.startsWith('mistral-') ||
+  name.startsWith('claude-');
+const parseChatArgs = () => {
+  const positionalArgs = process.argv
+    .slice(2)
+    .filter((arg) => !arg.startsWith('--'));
+  if (positionalArgs.length === 0) {
+    return undefined;
+  }
+  const [provider, apiKey] = positionalArgs;
+  if (!isChatProvider(provider)) {
+    console.error(
+      `[hi-example] unsupported chat provider "${provider}" - currently supported: ${CHAT_PROVIDERS.join(
+        ', ',
+      )} or any mistral-*/claude-* model id`,
+    );
+    process.exit(1);
+  }
+  if (!apiKey) {
+    console.error(
+      `[hi-example] missing API key - start with: npm start <provider> <api-key>`,
+    );
+    process.exit(1);
+  }
+  return { provider, apiKey };
+};
+const chat = parseChatArgs();
 const EXAMPLE_URL = `http://localhost:${STATIC_PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith${
   process.env.HI_MCP_PORT ? `&mcp_port=${MCP_PORT}` : ''
-}${EXAMPLE_SERVER_URL ? `&server_url=${encodeURIComponent(EXAMPLE_SERVER_URL)}` : ''}`;
+}${chat ? '&chat=true' : ''}${process.env.HI_CHAT_PORT ? `&chat_port=${CHAT_PORT}` : ''}${
+  EXAMPLE_SERVER_URL ? `&server_url=${encodeURIComponent(EXAMPLE_SERVER_URL)}` : ''
+}`;
 const STATIC_CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -102,6 +156,29 @@ const startMcpServer = () => {
   return mcpServer;
 };
 
+const startChatServer = () => {
+  const childEnv = {
+    ...process.env,
+    HI_CHAT_TOKEN: chat.apiKey,
+    HI_CHAT_PROVIDER: chat.provider,
+    HI_MCP_URL: `http://localhost:${MCP_PORT}/mcp`,
+  };
+  if (!childEnv.HI_CHAT_PAGE_ORIGINS) {
+    childEnv.HI_CHAT_PAGE_ORIGINS = `http://localhost:${STATIC_PORT},http://127.0.0.1:${STATIC_PORT}`;
+  }
+  const chatServer = spawn(npmCommand, ['start', '--workspace', 'hi-mcp-chat'], {
+    cwd: HI_MCP_DIR,
+    stdio: 'inherit',
+    env: childEnv,
+  });
+  chatServer.on('exit', (code) => {
+    if (!shuttingDown) {
+      process.exit(code ?? 0);
+    }
+  });
+  return chatServer;
+};
+
 const openInBrowser = (url) => {
   const command =
     process.platform === 'darwin'
@@ -129,11 +206,15 @@ const main = async () => {
     process.exit(1);
   }
   const mcpServer = startMcpServer();
+  const chatServer = chat ? startChatServer() : undefined;
   console.log('');
   console.log('  HI example ready');
   console.log('');
   console.log(`  ➜  Example:  ${EXAMPLE_URL}`);
   console.log(`  ➜  MCP:      http://localhost:${MCP_PORT}/mcp`);
+  if (chatServer) {
+    console.log(`  ➜  Chat:     http://localhost:${CHAT_PORT}/chat`);
+  }
   console.log('');
   if (!process.argv.includes('--no-open')) {
     openInBrowser(EXAMPLE_URL);
@@ -141,6 +222,7 @@ const main = async () => {
   const shutdown = () => {
     shuttingDown = true;
     mcpServer.kill();
+    chatServer?.kill();
     process.exit(0);
   };
   process.on('SIGINT', shutdown);

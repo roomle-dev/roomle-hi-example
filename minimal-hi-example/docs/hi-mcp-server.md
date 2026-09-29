@@ -103,7 +103,8 @@ npm start          # or directly: node start.mjs
 To develop against a local Rubens UI dev server (start it first on
 <http://localhost:5173/>), run `npm run dev` instead — it passes
 `server_url=http://localhost:5173/` to the example, so the planner loads from
-the local UI instead of `https://www.roomle.com/t/bo-test/`.
+the local UI instead of `https://www.roomle.com/t/bo-test/`. `--dev` implies
+that URL; override it with `EXAMPLE_SERVER_URL=<url> npm run dev`.
 
 The launcher installs and typechecks the `hi-mcp` workspace (the build gate),
 serves the example, starts the MCP server, and opens the example in the
@@ -117,6 +118,10 @@ open — the server terminal logs `page connected`.
 Without the MCP part the example can still be served by any static file
 server (e.g. `npx http-server -c-1 -p 39485`); only the `mcp=true` bridge
 requires the MCP server started by the launcher.
+
+The launcher also supports a built-in AI chat (Mistral) that drives the same
+MCP tools without an external client: `npm start mistral <api-key>` — see
+[ai-chat.md](./ai-chat.md).
 
 ## Connecting an MCP client
 

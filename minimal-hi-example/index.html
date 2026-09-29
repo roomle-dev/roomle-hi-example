@@ -77,6 +77,7 @@
         background-color: #f0f0f0;
         display: none;
         flex-direction: column;
+        font-size: 14px;
       }
       .right-section {
         flex: 3;
@@ -96,6 +97,90 @@
       #console-log {
         text-align: left;
         font-family: sans-serif;
+      }
+      #chat-area {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+      }
+      #chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        font-family: sans-serif;
+        font-size: 14px;
+      }
+      .chat-message {
+        margin: 6px 0;
+        padding: 6px 8px;
+        border-radius: 6px;
+        white-space: pre-wrap;
+      }
+      .chat-user {
+        background-color: #e1e9f5;
+      }
+      .chat-assistant {
+        background-color: #fff;
+        border: 1px solid #e0e0e0;
+      }
+      .chat-message p {
+        margin: 0 0 4px;
+      }
+      .chat-message p:last-child {
+        margin-bottom: 0;
+      }
+      .chat-message ul,
+      .chat-message ol {
+        margin: 4px 0;
+        padding-left: 20px;
+      }
+      .chat-message li {
+        margin: 2px 0;
+      }
+      .chat-message h1,
+      .chat-message h2,
+      .chat-message h3,
+      .chat-message h4 {
+        margin: 6px 0 2px;
+        font-size: 1em;
+      }
+      .chat-message code {
+        background-color: #f0f0f0;
+        padding: 0 3px;
+        border-radius: 3px;
+      }
+      .chat-message pre {
+        margin: 4px 0;
+        padding: 6px;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+      .chat-message pre code {
+        background: none;
+        padding: 0;
+      }
+      #chat-status {
+        margin-top: 6px;
+        font-family: sans-serif;
+        font-size: 13px;
+        font-style: italic;
+        color: #666;
+      }
+      #chat-form {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        align-items: flex-end;
+      }
+      #chat-input {
+        flex: 1;
+        box-sizing: border-box;
+        padding: 4px 6px;
+        font-family: sans-serif;
+        font-size: 14px;
+        resize: vertical;
+        min-height: 3.4em;
       }
       #designer {
         width: 100%;
@@ -208,6 +293,23 @@
               <button id="console-clear" title="Clears the log">Clear</button>
             </div>
             <div id="console-log"></div>
+          </div>
+          <div id="chat-area" class="hidden">
+            <div id="chat-messages" aria-live="polite"></div>
+            <div id="chat-status" class="hidden" role="status">
+              assistant is working...
+            </div>
+            <form id="chat-form">
+              <textarea
+                id="chat-input"
+                rows="3"
+                placeholder="Ask the assistant..."
+                title="Enter to send, Shift+Enter for a new line"
+              ></textarea>
+              <button type="submit" title="Send the message to the AI assistant">
+                Send
+              </button>
+            </form>
           </div>
         </div>
         <div class="right-section">
@@ -696,6 +798,31 @@
         Authorization: HI_AUTH_DATA,
       };
 
+      // With ?chat=true the left section opens with the AI chat and the
+      // checkbox switches between chat (unchecked) and debug panel (checked).
+      // Without it, the checkbox keeps toggling the whole left section.
+      const chatEnabled = getQueryParam('chat') === 'true';
+      if (chatEnabled) {
+        document.querySelector('.left-section').style.display = 'flex';
+        document.getElementById('tc-area').classList.add('hidden');
+        document.getElementById('chat-area').classList.remove('hidden');
+      }
+      document
+        .getElementById('toggle-panel')
+        .addEventListener('change', (event) => {
+          if (chatEnabled) {
+            document
+              .getElementById('tc-area')
+              .classList.toggle('hidden', !event.target.checked);
+            document
+              .getElementById('chat-area')
+              .classList.toggle('hidden', event.target.checked);
+          } else {
+            document.querySelector('.left-section').style.display =
+              event.target.checked ? 'flex' : 'none';
+          }
+        });
+
       await setupHi(hiOptions, {
         onLoadJavascript: () => libLoadCalcScript(hiOptions),
         onLoadArticleCatalog: () => libLoadArticleCatalog(hiOptions),
@@ -776,14 +903,6 @@
         };
       });
 
-      document
-        .getElementById('toggle-panel')
-        .addEventListener('change', (event) => {
-          document.querySelector('.left-section').style.display = event.target
-            .checked
-            ? 'flex'
-            : 'none';
-        });
       document.getElementById('console-clear').addEventListener('click', () => {
         document.getElementById('console-log').replaceChildren();
       });
@@ -2196,6 +2315,141 @@
 
       if (getQueryParam('mcp') === 'true') {
         startMcpBrowserBridge(roomDesignerApi);
+      }
+
+      // AI chat - active with the chat=true query parameter. The page streams
+      // plain text from the hi-mcp-chat backend (spawned by start.mjs for
+      // `npm start mistral <api-key>`), which calls the HI tools through the
+      // MCP server via the bridge above.
+
+      // The chat loads its markdown dependencies dynamically, so the plain
+      // (non-chat) page stays independent of them.
+      const startChat = async () => {
+        const [{ marked }, { default: DOMPurify }] = await Promise.all([
+          import('https://unpkg.com/marked@18.0.14/lib/marked.esm.js'),
+          import('https://unpkg.com/dompurify@3.4.16/dist/purify.es.mjs'),
+        ]);
+        const chatPort = getQueryParam('chat_port') ?? '3200';
+        const chatUrl = `http://localhost:${chatPort}/chat`;
+        const messagesArea = document.getElementById('chat-messages');
+        const status = document.getElementById('chat-status');
+        const input = document.getElementById('chat-input');
+        const TOOL_STATUS_PREFIX = '[tool] ';
+        const conversation = [];
+        let busy = false;
+
+        const addMessage = (role, text) => {
+          const entry = document.createElement('div');
+          entry.className = `chat-message chat-${role}`;
+          entry.innerText = text;
+          messagesArea.append(entry);
+          messagesArea.scrollTop = messagesArea.scrollHeight;
+          return entry;
+        };
+
+        // The stream carries answer text and [tool] status lines; only the
+        // answer belongs in the bubble, the tool name goes to the status line.
+        const splitStreamText = (raw) => {
+          const lines = raw.split('\n');
+          const toolLines = lines.filter((line) =>
+            line.startsWith(TOOL_STATUS_PREFIX),
+          );
+          return {
+            answer: lines
+              .filter((line) => !line.startsWith(TOOL_STATUS_PREFIX))
+              .join('\n'),
+            lastTool: toolLines.length
+              ? toolLines[toolLines.length - 1].slice(TOOL_STATUS_PREFIX.length)
+              : '',
+          };
+        };
+
+        const send = async () => {
+          const text = input.value.trim();
+          if (!text || busy) {
+            return;
+          }
+          input.value = '';
+          conversation.push({ role: 'user', content: text });
+          addMessage('user', text);
+          const assistantEntry = addMessage('assistant', '');
+          busy = true;
+          status.textContent = 'assistant is working...';
+          status.classList.remove('hidden');
+          logApiCall('chat');
+          const startedAt = performance.now();
+          logMessage('chat', `request sent (${conversation.length} messages)`);
+          try {
+            const response = await fetch(chatUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ messages: conversation }),
+            });
+            if (!response.ok || !response.body) {
+              const errorText = await response.text().catch(() => '');
+              logMessage(
+                'chat',
+                `failed (HTTP ${response.status}): ${errorText || 'no details'}`,
+              );
+              assistantEntry.innerText =
+                errorText || `Chat failed (HTTP ${response.status})`;
+              return;
+            }
+            logMessage('chat', 'stream started');
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let raw = '';
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) {
+                break;
+              }
+              raw += decoder.decode(value, { stream: true });
+              const { answer, lastTool } = splitStreamText(raw);
+              assistantEntry.innerHTML = DOMPurify.sanitize(
+                marked.parse(answer, { breaks: true }),
+              );
+              status.textContent = lastTool
+                ? `assistant is working... ${lastTool}`
+                : 'assistant is working...';
+              messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
+            const { answer } = splitStreamText(raw);
+            conversation.push({ role: 'assistant', content: answer });
+            logMessage(
+              'chat',
+              `finished in ${Math.round(performance.now() - startedAt)}ms`,
+            );
+          } catch (error) {
+            logMessage('chat', `failed: ${error.message}`);
+            assistantEntry.innerText = `Chat failed: ${error.message}`;
+          } finally {
+            busy = false;
+            status.classList.add('hidden');
+          }
+        };
+
+        document
+          .getElementById('chat-form')
+          .addEventListener('submit', (event) => {
+            event.preventDefault();
+            send();
+          });
+
+        document
+          .getElementById('chat-input')
+          .addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              document.getElementById('chat-form').requestSubmit();
+            }
+          });
+      };
+
+      if (chatEnabled) {
+        startChat().catch((error) =>
+          logMessage('chat', `failed to load: ${error.message}`),
+        );
       }
     </script>
   </body>

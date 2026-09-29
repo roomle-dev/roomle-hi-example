@@ -42,6 +42,7 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [hi-authoring-rules.md](./skills/hi-authoring-rules.md) | HI authoring patterns, docking vectors, group creation, placement rules | Creating or modifying HI groups, docking patterns, article selection |
 | [hi-mcp-tools.md](./skills/hi-mcp-tools.md) | Complete MCP tool reference with parameters, examples, error handling | Using MCP tools, tool implementation, error diagnosis |
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
+| [vercel-ai-sdk-chat.md](./skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: provider selection, server-side auth, @ai-sdk/mcp, streamText route | Implementing the AI chat window (RML-17984), Vercel AI SDK, MCP client integration |
 
 ### Decisions (Architecture Decision Records)
 
@@ -85,6 +86,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [MCP Azure deployment and session bootstrapping](feature-analysis/mcp-azure-deployment-and-session-bootstrapping.md) | Open | 2026-09-26 |
 | [MCP Cloudflare Containers deployment](feature-analysis/mcp-cloudflare-containers-deployment.md) | Open | 2026-09-26 |
 | [`npm run dev` with local Rubens UI server](feature-analysis/dev-script-local-server-url.md) | Implemented | 2026-09-28 |
+| [Add AI chat to the HI MCP example](feature-analysis/add-ai-chat-to-hi-example.md) | Implemented | 2026-09-29 |
 
 ### Refactoring Analyses
 

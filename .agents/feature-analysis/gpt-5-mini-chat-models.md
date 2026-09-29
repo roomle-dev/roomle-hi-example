@@ -61,7 +61,8 @@ npm start gpt-5.4-mini <api-key>
 - `chat-server.ts`: `createAzure({ apiKey, resourceName, baseURL })`; the error only fires when
   neither a base URL nor a resource name is configured. With a base URL, `@ai-sdk/azure` ignores
   the resource name, so an `AZURE_RESOURCE_NAME` left in the shell does not redirect the Foundry
-  aliases.
+  aliases. For the same reason `HI_CHAT_MODEL` does not override their deployment (added in the
+  PR review).
 - `start.mjs`: add both names to `CHAT_PROVIDERS` and to the usage comment.
 - Tests in `hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts` for the resolution and the config.
 - The GPT-5 models are reasoning models and reject `temperature`; `streamText` sets none, so no

@@ -131,6 +131,10 @@ describe('getChatConfig', () => {
     expect(config.provider).toBe('azure');
     expect(config.modelId).toBe('gpt-5.4-mini');
     expect(config.azureBaseUrl).toBe(foundryBaseUrl);
+    expect(
+      getChatConfig({ HI_CHAT_PROVIDER: 'gpt-5-mini', HI_CHAT_MODEL: 'my-gpt4o-deployment' })
+        .modelId,
+    ).toBe('gpt-5-mini');
     expect(getChatConfig({ HI_CHAT_PROVIDER: 'azure' }).azureBaseUrl).toBeUndefined();
   });
 });

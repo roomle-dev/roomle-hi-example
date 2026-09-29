@@ -52,7 +52,8 @@ AZURE_RESOURCE_NAME=my-resource HI_CHAT_MODEL=my-gpt4o-deployment npm start azur
 `gpt-5-mini` and `gpt-5.4-mini` need neither: they are deployments on the HI
 Azure AI Foundry resource and are called through its OpenAI v1 endpoint
 `https://dfhifoundrysweden.services.ai.azure.com/openai/v1` with the resource's
-API key. `AZURE_RESOURCE_NAME` is ignored for them.
+API key. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
+left in the shell from an `azure` run cannot redirect them.
 
 The launcher then:
 
@@ -145,7 +146,7 @@ origins, `500` when the MCP server or Mistral call fails.
 | `HI_CHAT_TOKEN` | — | The provider API key (set by the launcher from the CLI argument) |
 | `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `claude`, `azure`, `gpt-5-mini`, `gpt-5.4-mini`, or a full `mistral-*`/`claude-*` model id) |
 | `HI_CHAT_PORT` | `3200` | Port of the chat backend (the page reads it via the `chat_port` query parameter) |
-| `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider |
+| `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider; ignored for `gpt-5-mini`/`gpt-5.4-mini` |
 | `AZURE_RESOURCE_NAME` | — | Required for `azure`/`openai`: the Azure OpenAI resource name (ignored for `gpt-5-mini`/`gpt-5.4-mini`) |
 | `HI_MCP_URL` | `http://localhost:3100/mcp` | The MCP server the chat backend connects to |
 | `HI_CHAT_PAGE_ORIGINS` | `http://localhost:3000`, `http://127.0.0.1:3000` | Allowed CORS origins (the launcher sets it to match `EXAMPLE_PORT`) |

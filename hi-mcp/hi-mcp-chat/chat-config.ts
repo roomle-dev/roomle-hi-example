@@ -83,8 +83,9 @@ export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
     provider: chatModel.provider,
     apiToken: env.HI_CHAT_TOKEN || undefined,
     // HI_CHAT_MODEL overrides the resolved model id (e.g. an Azure deployment
-    // name) without changing the provider
-    modelId: env.HI_CHAT_MODEL || chatModel.modelId,
+    // name) without changing the provider; Foundry deployments are fixed by
+    // their CLI name
+    modelId: chatModel.baseUrl ? chatModel.modelId : env.HI_CHAT_MODEL || chatModel.modelId,
     azureResourceName: env.AZURE_RESOURCE_NAME || undefined,
     azureBaseUrl: chatModel.baseUrl,
     mcpUrl: env.HI_MCP_URL || DEFAULT_MCP_URL,

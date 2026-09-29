@@ -136,7 +136,8 @@ try {
 | placement is not supported | Payload with the removed `placement` field | Use `repositioningData` |
 | repositioningData: rootId must be the id of one of the group's roots | `rootId` names no root of the group | Use the anchor root the docking starts from |
 | root 'A' RightBottom is docked to both 'B' and 'C' | Two roots docked beside (or back to back with) the same side of one root — they would overlap | Chain the row: A lists B, B lists C; from a corner continue from the anchor's `RightBottom` only |
-| Hint: Group g extends beyond the room | The loaded group's footprint crosses a wall while its anchor is where `posGroup` put it — a unit is docked in the wrong direction | Fix the docking (not `posGroup`) and resubmit the group with its id |
+| Hint: Group g extends beyond the room … Its anchor is where posGroup put it | The loaded group's footprint crosses a wall of the room the anchor stands in — a unit is docked in the wrong direction | Fix the docking (not `posGroup`) and resubmit the group with its id |
+| Hint: Group g extends beyond the room … Its anchor … stands in no room | `posGroup` itself lies outside every room | Take `posGroup` from the walls and resubmit with a new `repositioningData` |
 
 ## Timeouts
 

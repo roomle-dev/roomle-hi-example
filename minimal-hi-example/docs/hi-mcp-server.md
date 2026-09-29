@@ -354,10 +354,13 @@ root of the group, `rootRelPos` not three numbers).
 Returns the loaded runtime ids and the resulting groups (with their final
 ids, `pos`, `rotationY`, `footprint`), plus a `hint` when a group of this call
 is still unpositioned or extends beyond the room. For the latter the server
-tests the four corners of the group's `footprint` (shrunk by 1 mm, so a flush
-placement passes) against the level-0 floor contour of every room; the hint
-gives the footprint and the room extent and points at the docking, because
-the anchor stands where `posGroup` put it. Untouched groups are not checked.
+tests the group's `footprint` (shrunk by 1 mm, so a flush placement passes)
+against the level-0 floor contour of every room — every corner inside and no
+box edge crossing a contour edge, so a box spanning the arms of a concave
+room is caught too. The hint gives the footprint and the extent of the room
+the anchor stands in; with the anchor inside that room it points at the
+docking (`posGroup` is right), with the anchor in no room at
+`repositioningData`. Untouched groups are not checked.
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm
 room, from the back right corner, one call. `posGroup` is the right wall's

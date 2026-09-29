@@ -1045,6 +1045,40 @@ describe('create-or-replace-groups room bounds', () => {
     ).toBeUndefined();
   });
 
+  it('reports a footprint spanning the arms of a U-shaped room', async () => {
+    // 4000 x 3000 with a 1000 x 1500 notch entering the front wall in the
+    // middle: all four corners of the box lie in the arms, its middle crosses
+    // the recessed wall
+    const uShapedRoom = {
+      levels: [
+        {
+          level: 0,
+          segments: [
+            { cmd: 'M', pos: [0, 0, 0] },
+            { cmd: 'L', pos: [1500, 0, 0], type: 'wall' },
+            { cmd: 'L', pos: [1500, 0, -1500], type: 'wall' },
+            { cmd: 'L', pos: [2500, 0, -1500], type: 'wall' },
+            { cmd: 'L', pos: [2500, 0, 0], type: 'wall' },
+            { cmd: 'L', pos: [4000, 0, 0], type: 'wall' },
+            { cmd: 'L', pos: [4000, 0, -3000], type: 'wall' },
+            { cmd: 'L', pos: [0, 0, -3000], type: 'wall' },
+            { cmd: 'Z', pos: [0, 0, 0], type: 'wall' },
+          ],
+        },
+      ],
+      walls: [],
+    };
+    const rooms = { rooms: [uShapedRoom] };
+    const spanningTheNotch = { x: [1000, 3000], z: [-1000, -400], widthMm: 2000, depthMm: 600 };
+    const behindTheNotch = { x: [1000, 3000], z: [-2500, -1900], widthMm: 2000, depthMm: 600 };
+    expect(
+      (await create(createLoadApi({ after: [positioned('g1', spanningTheNotch, [1000, 0, -1000])], rooms }))).hint,
+    ).toMatch(/^Group g1 extends beyond the room: footprint x \[1000, 3000\], z \[-1000, -400\]/);
+    expect(
+      (await create(createLoadApi({ after: [positioned('g1', behindTheNotch, [1000, 0, -2500])], rooms }))).hint,
+    ).toBeUndefined();
+  });
+
   it('accepts a group inside any room of a plan with several rooms', async () => {
     const secondRoom = {
       levels: [
@@ -1067,6 +1101,44 @@ describe('create-or-replace-groups room bounds', () => {
       rooms: { rooms: [room, secondRoom] },
     });
     expect((await create(api)).hint).toBeUndefined();
+  });
+
+  it('reports the extent of the room the anchor stands in', async () => {
+    const secondRoom = {
+      levels: [
+        {
+          level: 0,
+          segments: [
+            { cmd: 'M', pos: [5000, 0, 0] },
+            { cmd: 'L', pos: [8000, 0, 0], type: 'wall' },
+            { cmd: 'L', pos: [8000, 0, -3000], type: 'wall' },
+            { cmd: 'L', pos: [5000, 0, -3000], type: 'wall' },
+            { cmd: 'L', pos: [5000, 0, 0], type: 'wall' },
+          ],
+        },
+      ],
+      walls: [],
+    };
+    // anchored flush in the back right corner of the second room, the row
+    // docked past its back wall
+    const pastSecondRoomBackWall = { x: [7439, 8000], z: [-3600, -2100], widthMm: 561, depthMm: 1500 };
+    const api = createLoadApi({
+      after: [positioned('g1', pastSecondRoomBackWall, [8000, 0, -3000])],
+      rooms: { rooms: [room, secondRoom] },
+    });
+    expect((await create(api)).hint).toMatch(
+      /^Group g1 extends beyond the room: footprint x \[7439, 8000\], z \[-3600, -2100\], room x \[5000, 8000\], z \[-3000, 0\]\. Its anchor is where posGroup put it/,
+    );
+  });
+
+  it('points at repositioningData when the anchor itself stands in no room', async () => {
+    // posGroup 600 mm behind the back wall: the whole row is outside
+    const outside = { x: [3439, 4000], z: [-3600, -3100], widthMm: 561, depthMm: 500 };
+    const api = createLoadApi({ after: [positioned('g1', outside, [4000, 0, -3600])] });
+    const { hint } = await create(api);
+    expect(hint).toMatch(/^Group g1 extends beyond the room: footprint x \[3439, 4000\], z \[-3600, -3100\], room x \[0, 4000\], z \[-3000, 0\]\. Its anchor at pos \[4000, 0, -3600\] stands in no room, so posGroup is wrong/);
+    expect(hint).toMatch(/new repositioningData/);
+    expect(hint).not.toMatch(/Fix the docking/);
   });
 
   it('skips the check without a room contour or without a footprint', async () => {

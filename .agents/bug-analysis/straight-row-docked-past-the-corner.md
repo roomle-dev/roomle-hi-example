@@ -27,8 +27,12 @@
 > (conflicts through two joints, in one entry, back to back, on the new root; accepted chains,
 > two-sided joints, corner article rows, stacked wall units; hints for the back and the right
 > wall, flush placement, replaced versus untouched groups, combined hints, an L-shaped room,
-> several rooms, missing rooms or footprint). The live verification with a fresh agent session
-> is still pending — the analysis stays Open until then.
+> several rooms, missing rooms or footprint). After the PR review (#24) the room check also
+> rejects a box edge crossing a contour edge (a box spanning the arms of a U-shaped room), the hint
+> names the extent of the room the anchor stands in, and an anchor in no room is reported as a
+> wrong `posGroup` instead of wrong docking; the PoC README carries the same rules and contract.
+> The live verification with a fresh agent session is still pending — the analysis stays Open
+> until then.
 
 ---
 

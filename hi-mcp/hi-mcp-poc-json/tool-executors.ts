@@ -155,10 +155,27 @@ const isInsidePolygon = ([x, z]: FloorPoint, polygon: FloorPoint[]): boolean => 
   return inside;
 };
 
+const orientation = (a: FloorPoint, b: FloorPoint, c: FloorPoint): number =>
+  Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
+
+// Proper crossing of two segments; touching endpoints and collinear overlap
+// do not count, the shrunk box never touches a wall it stands flush against.
+const segmentsCross = (
+  a: FloorPoint,
+  b: FloorPoint,
+  c: FloorPoint,
+  d: FloorPoint,
+): boolean =>
+  orientation(a, b, c) * orientation(a, b, d) < 0 &&
+  orientation(c, d, a) * orientation(c, d, b) < 0;
+
 // A flush placement puts the footprint exactly on the wall face, so the box
-// is shrunk by a millimetre before its corners are tested.
+// is shrunk by a millimetre before it is tested.
 const FOOTPRINT_TOLERANCE_MM = 1;
 
+// The whole box must lie in the room: every corner inside the contour and no
+// box edge crossing a contour edge - in a concave room a box can span two arms
+// with all corners inside while its middle crosses the recessed wall.
 const isFootprintInsideRoom = (
   footprint: any,
   contour: FloorContour,
@@ -168,10 +185,60 @@ const isFootprintInsideRoom = (
   const corners: FloorPoint[] = [
     [x0 + FOOTPRINT_TOLERANCE_MM, z0 + FOOTPRINT_TOLERANCE_MM],
     [x1 - FOOTPRINT_TOLERANCE_MM, z0 + FOOTPRINT_TOLERANCE_MM],
-    [x0 + FOOTPRINT_TOLERANCE_MM, z1 - FOOTPRINT_TOLERANCE_MM],
     [x1 - FOOTPRINT_TOLERANCE_MM, z1 - FOOTPRINT_TOLERANCE_MM],
+    [x0 + FOOTPRINT_TOLERANCE_MM, z1 - FOOTPRINT_TOLERANCE_MM],
   ];
-  return corners.every((corner) => isInsidePolygon(corner, contour.polygon));
+  if (!corners.every((corner) => isInsidePolygon(corner, contour.polygon))) {
+    return false;
+  }
+  const { polygon } = contour;
+  return corners.every((corner, index) => {
+    const nextCorner = corners[(index + 1) % corners.length];
+    return polygon.every(
+      (point, pointIndex) =>
+        !segmentsCross(
+          corner,
+          nextCorner,
+          point,
+          polygon[(pointIndex + 1) % polygon.length],
+        ),
+    );
+  });
+};
+
+// The room the anchor stands in - it is where posGroup put it - or, when
+// it stands in none, the room nearest to it.
+const roomOfAnchor = (
+  pos: number[],
+  contours: FloorContour[],
+): { contour: FloorContour; anchorInside: boolean } => {
+  const anchor: FloorPoint = [pos[0], pos[2]];
+  // a flush anchor lies exactly on the wall face, so a point a millimetre
+  // to any diagonal side counts as inside too
+  const nearAnchor: FloorPoint[] = [
+    anchor,
+    ...[-1, 1].flatMap((dx): FloorPoint[] =>
+      [-1, 1].map((dz): FloorPoint => [
+        anchor[0] + dx * FOOTPRINT_TOLERANCE_MM,
+        anchor[1] + dz * FOOTPRINT_TOLERANCE_MM,
+      ]),
+    ),
+  ];
+  const containing = contours.find((contour) =>
+    nearAnchor.some((point) => isInsidePolygon(point, contour.polygon)),
+  );
+  if (containing) {
+    return { contour: containing, anchorInside: true };
+  }
+  const distanceToExtent = (contour: FloorContour) =>
+    Math.hypot(
+      Math.max(contour.x[0] - anchor[0], 0, anchor[0] - contour.x[1]),
+      Math.max(contour.z[0] - anchor[1], 0, anchor[1] - contour.z[1]),
+    );
+  const nearest = contours.reduce((best, contour) =>
+    distanceToExtent(contour) < distanceToExtent(best) ? contour : best,
+  );
+  return { contour: nearest, anchorInside: false };
 };
 
 const isFootprint = (footprint: any): boolean =>
@@ -183,9 +250,10 @@ const isFootprint = (footprint: any): boolean =>
 
 const formatRange = ([from, to]: [number, number]) => `[${from}, ${to}]`;
 
-// A positioned group whose footprint crosses every room contour: the anchor
-// is where it was sent, so a unit is docked in a direction the wall does not
-// continue (typically to the anchor's LeftBottom in a corner).
+// A positioned group whose footprint lies in no room. With the anchor inside
+// a room, posGroup is right and a unit is docked in a direction the wall does
+// not continue (typically to the anchor's LeftBottom in a corner); with the
+// anchor outside every room, posGroup itself is wrong.
 const outOfRoomHints = (groups: any[], contours: FloorContour[]): string[] => {
   if (contours.length === 0) {
     return [];
@@ -193,22 +261,28 @@ const outOfRoomHints = (groups: any[], contours: FloorContour[]): string[] => {
   return groups
     .filter(
       (group) =>
-        group.position?.pos !== undefined &&
+        Array.isArray(group.position?.pos) &&
+        group.position.pos.length >= 3 &&
         isFootprint(group.position?.footprint) &&
         !contours.some((contour) =>
           isFootprintInsideRoom(group.position.footprint, contour),
         ),
     )
     .map((group) => {
-      const { footprint } = group.position;
-      const room = contours[0];
-      return (
+      const { pos, footprint } = group.position;
+      const { contour: room, anchorInside } = roomOfAnchor(pos, contours);
+      const extent =
         `Group ${group.id} extends beyond the room: footprint x ${formatRange(footprint.x)}, ` +
-        `z ${formatRange(footprint.z)}, room x ${formatRange(room.x)}, z ${formatRange(room.z)}. ` +
-        'Its anchor is where posGroup put it, so a unit is docked past a wall - with posGroup at a ' +
-        "wall's end the row continues from the anchor's RightBottom only. Fix the docking and " +
-        'resubmit the group with its id; see get-authoring-rules.'
-      );
+        `z ${formatRange(footprint.z)}, room x ${formatRange(room.x)}, z ${formatRange(room.z)}. `;
+      return anchorInside
+        ? extent +
+            'Its anchor is where posGroup put it, so a unit is docked past a wall - with posGroup at a ' +
+            "wall's end the row continues from the anchor's RightBottom only. Fix the docking and " +
+            'resubmit the group with its id; see get-authoring-rules.'
+        : extent +
+            `Its anchor at pos [${pos.join(', ')}] stands in no room, so posGroup is wrong - ` +
+            'take it from the walls of that room and resubmit the group with its id and a new ' +
+            'repositioningData; see get-authoring-rules.';
     });
 };
 

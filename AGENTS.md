@@ -72,7 +72,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - **Repository**: `roomle/roomle-hi-example`
 - **Default branch**: `master`
 - **Current branch**: `feat/hi-mcp`
-- **Language**: JavaScript/TypeScript (Node.js 18+), HTML
+- **Language**: JavaScript/TypeScript (Node.js 20+), HTML
 - **Purpose**: Standalone HI presets example with MCP server for orchestrating HOMAG Intelligence object groups in Roomle room-planner sessions
 
 ## Project Overview

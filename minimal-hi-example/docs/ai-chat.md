@@ -34,6 +34,10 @@ The provider name selects the provider and model:
 | any `claude-*` model id | Anthropic | passed through |
 | `azure` / `openai` | Azure OpenAI | `gpt-4o` (deployment name — see below) |
 
+Node 20+ (the repository's minimum). The Vercel AI SDK packages declare
+`engines: node >= 22`; the chat is verified on Node 20, but stay on Node 22+
+to remain inside the SDK's declared support range.
+
 Azure needs two extra pieces: the resource name via the `AZURE_RESOURCE_NAME`
 environment variable, and the **deployment name** (not the model name) via
 `HI_CHAT_MODEL` — Azure deployments are user-named:

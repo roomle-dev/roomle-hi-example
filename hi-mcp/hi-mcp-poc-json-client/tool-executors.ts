@@ -261,7 +261,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         if (!rootIds.has(rootId)) {
           validationErrors.push(
             `posGroups[${groupIndex}].repositioningData: rootId must be the id of one of the group's roots ` +
-              '- the leftmost root of its back row',
+              '- the anchor root the docking starts from',
           );
         }
       }

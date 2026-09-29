@@ -73,6 +73,21 @@ describe('hi-mcp-server tool calls', () => {
     expect(text).not.toMatch(/\bplace-group\b/);
   });
 
+  it('carries the one-group principle and the docking examples', async () => {
+    const client = await connectClient(createMockBridge());
+    const text = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    expect(text).toContain('One kitchen is one group');
+    // docking to the left, spelled out as a payload snippet
+    expect(text).toContain(
+      '{ "ownDockingVector": "LeftBottom", "dockedRoots": [{ "id": "B", "dockingVector": "RightBottom"',
+    );
+    // the complete L-shaped corner kitchen example, anchored on the corner article
+    expect(text).toContain('"rootId": "c1"');
+    expect(text).toContain('Example 5');
+  });
+
   it('relays get-plan-context with its arguments and returns the JSON text', async () => {
     const bridge = createMockBridge(async () => ({ rooms: [], articles: [] }));
     const client = await connectClient(bridge);

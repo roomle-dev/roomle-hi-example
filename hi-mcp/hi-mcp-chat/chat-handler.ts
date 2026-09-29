@@ -62,7 +62,12 @@ export const createChatRequestHandler =
       return;
     }
     try {
-      const body = JSON.parse((await readBody(request)).toString('utf8'));
+      let body: unknown;
+      try {
+        body = JSON.parse((await readBody(request)).toString('utf8'));
+      } catch {
+        throw new ChatRequestError('Request body must be valid JSON');
+      }
       const messages = parseChatMessages(body);
       const stream = await streamChat(messages);
       const headers = Object.fromEntries(stream.headers);

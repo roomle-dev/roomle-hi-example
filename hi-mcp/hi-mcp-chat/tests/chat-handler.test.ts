@@ -211,6 +211,20 @@ describe('chat request handler', () => {
       });
       expect(noMessages.status).toBe(400);
 
+      const nullBody = await fetch(`${url}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: 'null',
+      });
+      expect(nullBody.status).toBe(400);
+
+      const malformedJson = await fetch(`${url}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{oops',
+      });
+      expect(malformedJson.status).toBe(400);
+
       const badRole = await fetch(`${url}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

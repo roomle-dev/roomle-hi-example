@@ -86,6 +86,9 @@ export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
 };
 
 export const parseChatMessages = (body: unknown): ChatMessage[] => {
+  if (typeof body !== 'object' || body === null) {
+    throw new ChatRequestError('Request body must be JSON with a messages array');
+  }
   const { messages } = body as { messages?: unknown };
   if (!Array.isArray(messages)) {
     throw new ChatRequestError('Request body must be JSON with a messages array');

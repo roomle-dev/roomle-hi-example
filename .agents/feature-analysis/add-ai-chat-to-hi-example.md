@@ -5,7 +5,23 @@
 > **Trigger**: Jira ticket [RML-17984](https://roomle.atlassian.net/browse/RML-17984) "add chat in hi mcp example" with the Vercel AI SDK comment ([155492](https://roomle.atlassian.net/browse/RML-17984?focusedCommentId=155492), preserved in [`../skills/vercel-ai-sdk-chat.md`](../skills/vercel-ai-sdk-chat.md))
 > **Date**: 2026-09-29
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Implemented
+
+---
+
+## Close-out (2026-09-29)
+
+Implemented per the plan posted on the ticket, scoped to **local use with Mistral**. Working tree: branch `feat/rml-17984-ai-chat-mistral`.
+
+- **Chat backend**: new workspace package `hi-mcp/hi-mcp-chat` (`chat-config.ts`, `chat-handler.ts`, `chat-server.ts`) with `POST /chat` (plain text stream via `toTextStreamResponse()`), `GET /health`, CORS for the example page origins. The `hi-mcp-poc-json` server is untouched; the chat is just another MCP client of it.
+- **Invocation**: `npm start mistral <api-key>` / `npm run dev mistral <api-key>` (verified: npm forwards the args through both workspace script layers without `--`). `start.mjs` parses them, spawns the chat backend with `HI_CHAT_TOKEN`, and appends `&chat=true` to the opened URL. Token never lands in URL, page, or logs.
+- **Page**: chat UI in `.left-section`, chat visible at startup with `chat=true`, "Show panel" switches between chat (unchecked) and debug panel (checked) — open question 1 resolved that way; without `chat=true` the old behavior is unchanged.
+- **Tests**: `hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts` (14 tests: config, body validation, CORS, 503/400/403/500 paths, streaming) — all pass; typecheck passes for all three workspace projects.
+- **Docs**: new `minimal-hi-example/docs/ai-chat.md`, quickstart and server-doc pointers, and the local-wiring section in `.agents/skills/vercel-ai-sdk-chat.md`.
+
+Not carried into this iteration (still open): Azure/Anthropic providers, AI SDK data stream protocol for per-tool status (open question 4), conversation memory (open question 5), deployment use. Open question 2 was settled by the plan: separate `chat=true` page param plus env-based key delivery instead of a token in the URL.
+
+Side effect worth noting: installing the new package forced a workspace-wide zod alignment — `hi-mcp/hi-mcp-poc-json` now pins zod 4.6.5 (was 4.5.4) because the Vercel AI SDK packages require 4.6+ and two zod copies broke the poc-json typecheck. The root `package-lock.json` was refreshed (it was stale and did not include the `cf` workspace yet). The `cf` test suite fails to load `@cloudflare/containers` in vitest, but this failure reproduces identically on the commit before this feature — pre-existing, not caused by the chat work.
 
 ---
 

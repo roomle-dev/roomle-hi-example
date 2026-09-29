@@ -2,7 +2,21 @@
 
 > **Provenance**: Jira ticket [RML-17984](https://roomle.atlassian.net/browse/RML-17984) ("add chat in hi mcp example"), comment [155492](https://roomle.atlassian.net/browse/RML-17984?focusedCommentId=155492) by Gernot Steinegger, 2026-09-29. Content added verbatim (formatting adapted to markdown).
 
-Load this skill when integrating an AI chat window with the HI MCP server using the Vercel AI SDK. The feature analysis for the concrete implementation in this repository is in [`../feature-analysis/add-ai-chat-to-hi-example.md`](../feature-analysis/add-ai-chat-to-hi-example.md).
+Load this skill when integrating an AI chat window with the HI MCP server using the Vercel AI SDK. The feature analysis for the concrete implementation in this repository is in [`../feature-analysis/add-ai-chat-to-hi-example.md`](../feature-analysis/add-ai-chat-to-hi-example.md); the living reference for the implemented chat is [`../../minimal-hi-example/docs/ai-chat.md`](../../minimal-hi-example/docs/ai-chat.md).
+
+## Local wiring in roomle-hi-example
+
+The comment's three-tier architecture is implemented as:
+
+- **Browser**: the chat UI in `minimal-hi-example/index.html` — no React, so instead of `useChat` the page streams the backend's plain text response (`toTextStreamResponse()`) with a fetch body reader.
+- **Backend API route**: the `hi-mcp/hi-mcp-chat` workspace package (`POST /chat`). Started by `minimal-hi-example/start.mjs` via `npm start mistral <api-key>`; the API key goes from the CLI argument into the backend's environment (`HI_CHAT_TOKEN`), never into the page or URL. Only the Mistral provider is wired (`createMistral({ apiKey })`); Azure and Anthropic from the comment above are not implemented.
+- **MCP server**: the existing `hi-mcp/hi-mcp-poc-json` server, unchanged. The chat backend creates a per-request MCP client via `@ai-sdk/mcp` + `StreamableHTTPClientTransport`, fetches the tools, and passes them to `streamText`.
+
+Deviations from the comment's example code, found during implementation:
+
+- `StreamableHTTPClientTransport` takes a `URL` object (`new StreamableHTTPClientTransport(new URL(url))`), not an options object with `url`.
+- The Vercel AI SDK packages require zod 4.6+; the workspace's `zod` pin was aligned so a single copy is deduped.
+- The provider API key does **not** come from a URL parameter (as the ticket required) — it is passed as a CLI argument to the launcher and forwarded as an environment variable, keeping it out of the browser history and server logs.
 
 ## System Architecture Overview
 

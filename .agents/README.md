@@ -86,7 +86,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [MCP Azure deployment and session bootstrapping](feature-analysis/mcp-azure-deployment-and-session-bootstrapping.md) | Open | 2026-09-26 |
 | [MCP Cloudflare Containers deployment](feature-analysis/mcp-cloudflare-containers-deployment.md) | Open | 2026-09-26 |
 | [`npm run dev` with local Rubens UI server](feature-analysis/dev-script-local-server-url.md) | Implemented | 2026-09-28 |
-| [Add AI chat to the HI MCP example](feature-analysis/add-ai-chat-to-hi-example.md) | Open | 2026-09-29 |
+| [Add AI chat to the HI MCP example](feature-analysis/add-ai-chat-to-hi-example.md) | Implemented | 2026-09-29 |
 
 ### Refactoring Analyses
 

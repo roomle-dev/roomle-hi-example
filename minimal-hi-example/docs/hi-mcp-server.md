@@ -118,6 +118,10 @@ Without the MCP part the example can still be served by any static file
 server (e.g. `npx http-server -c-1 -p 39485`); only the `mcp=true` bridge
 requires the MCP server started by the launcher.
 
+The launcher also supports a built-in AI chat (Mistral) that drives the same
+MCP tools without an external client: `npm start mistral <api-key>` — see
+[ai-chat.md](./ai-chat.md).
+
 ## Connecting an MCP client
 
 Prefer the **user scope**: the server is installed once and available in

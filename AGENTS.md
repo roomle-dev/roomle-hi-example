@@ -87,6 +87,7 @@ The start script (`npm start`) provides:
 - Static file serving for the example HTML page on port 3000
 - The MCP server on port 3100 with its MCP endpoint (`POST /mcp`, Streamable HTTP)
 - A page bridge (WebSocket `/bridge`) relaying tool calls to the Roomle planner API via `roomDesignerApi.extended`
+- With `npm start mistral <api-key>` (or the model variants `mistral-medium` / `mistral-large`): the AI chat backend on port 3200 (Vercel AI SDK, Mistral) and the page opened with the chat window visible
 - Browser auto-open at the example URL
 
 ## Repository Structure
@@ -118,6 +119,7 @@ The start script (`npm start`) provides:
 │       ├── tool-executors.ts     # Tool → roomDesignerApi.extended calls
 │       ├── plan-space.ts         # Pure geometry: walls, footprints, placement
 │       └── tests/                # Unit tests (plan-space, tool-executors, browser-bridge)
+│   ├── hi-mcp-chat/              # AI chat backend (Vercel AI SDK, Mistral): POST /chat on :3200, MCP client of hi-mcp-poc-json, started by the launcher with `npm start mistral <api-key>`
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # This file - AI assistant instructions

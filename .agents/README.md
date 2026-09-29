@@ -77,6 +77,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 |---|---|---|
 | [Corner kitchen not docked after the positioning rules](bug-analysis/corner-kitchen-not-docked-after-positioning-rules.md) | Open | 2026-09-29 |
 | [Corner article's corner point offset from its root origin](bug-analysis/corner-article-corner-point-offset-from-root-origin.md) | Open | 2026-09-29 |
+| [Straight row docked past the corner: anchor in the corner, neighbour inside the wall](bug-analysis/straight-row-docked-past-the-corner.md) | Open | 2026-09-29 |
 | [Cloudflare image build fails on the stale hi-mcp lockfile](bug-analysis/cf-docker-build-stale-hi-mcp-lockfile.md) | Fixed | 2026-09-29 |
 
 ### Feature Analyses

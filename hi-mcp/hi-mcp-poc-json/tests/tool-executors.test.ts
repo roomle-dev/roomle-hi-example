@@ -694,3 +694,459 @@ describe('remaining tools', () => {
   });
 });
 
+
+// docking helpers: the placed root lists the new root under its own vector
+const dock = (
+  ownDockingVector: string,
+  id: string,
+  dockingVector: string,
+  offset: number[] = [0, 0, 0],
+) => ({
+  ownDockingVector,
+  dockedRoots: [{ id, dockingVector, mode: 'StartStart', offset }],
+});
+
+const rootWith = (id: string, ...dockedRoots: unknown[]) => ({
+  id,
+  articleId: 'article-1',
+  ...(dockedRoots.length > 0 && { contextData: { dockedRoots } }),
+});
+
+describe('create-or-replace-groups docking conflicts', () => {
+  const expectRejected = async (posGroups: unknown[], message: RegExp) => {
+    const api = createApi(planContextFixture);
+    await expect(
+      toolExecutors['create-or-replace-groups'](api, { posGroups }),
+    ).rejects.toThrow(message);
+    expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
+  };
+
+  const expectLoaded = async (posGroups: unknown[]) => {
+    const api = createApi(planContextFixture);
+    await toolExecutors['create-or-replace-groups'](api, { posGroups });
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
+  };
+
+  it('rejects a side vector claimed through two joints - the row docked past the corner', async () => {
+    // the reconstructed payload of the analysis: the fridge lists the oven on
+    // its LeftBottom (the oven's RightBottom), the oven lists the sink on the
+    // same RightBottom
+    await expectRejected(
+      [
+        {
+          roots: [
+            rootWith('fridge', dock('LeftBottom', 'oven', 'RightBottom')),
+            rootWith('oven', dock('RightBottom', 'sink', 'LeftBottom')),
+            rootWith('sink'),
+          ],
+        },
+      ],
+      /posGroups\[0\]: root 'oven' RightBottom is docked to both 'fridge' and 'sink' - a side takes one neighbour/,
+    );
+  });
+
+  it('rejects two roots listed on the same side of one root', async () => {
+    await expectRejected(
+      [
+        {
+          roots: [
+            rootWith(
+              'a',
+              dock('RightBottom', 'b', 'LeftBottom'),
+              dock('RightBottom', 'c', 'LeftBottom'),
+            ),
+            rootWith('b'),
+            rootWith('c'),
+          ],
+        },
+      ],
+      /root 'a' RightBottom is docked to both 'b' and 'c'/,
+    );
+  });
+
+  it('rejects two roots on the same side listed in one entry', async () => {
+    await expectRejected(
+      [
+        {
+          roots: [
+            rootWith('a', {
+              ownDockingVector: 'LeftBottom',
+              dockedRoots: [
+                { id: 'b', dockingVector: 'RightBottom' },
+                { id: 'c', dockingVector: 'RightBottom' },
+              ],
+            }),
+            rootWith('b'),
+            rootWith('c'),
+          ],
+        },
+      ],
+      /root 'a' LeftBottom is docked to both 'b' and 'c'/,
+    );
+  });
+
+  it('rejects two roots back to back with the same root', async () => {
+    await expectRejected(
+      [
+        {
+          roots: [
+            rootWith(
+              'front',
+              dock('BackBottom', 'back1', 'BackBottom'),
+              dock('BackBottom', 'back2', 'BackBottom'),
+            ),
+            rootWith('back1'),
+            rootWith('back2'),
+          ],
+        },
+      ],
+      /root 'front' BackBottom is docked to both 'back1' and 'back2'/,
+    );
+  });
+
+  it('rejects a new root whose side is claimed by two placed roots', async () => {
+    // both a and b list c on the same side of c
+    await expectRejected(
+      [
+        {
+          roots: [
+            rootWith('a', dock('RightBottom', 'c', 'LeftBottom')),
+            rootWith('b', dock('RightBottom', 'c', 'LeftBottom')),
+            rootWith('c'),
+          ],
+        },
+      ],
+      /root 'c' LeftBottom is docked to both 'a' and 'b'/,
+    );
+  });
+
+  it('names the group index and reports every conflicting side', async () => {
+    const api = createApi(planContextFixture);
+    await expect(
+      toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [
+          { roots: [rootWith('ok1', dock('RightBottom', 'ok2', 'LeftBottom')), rootWith('ok2')] },
+          {
+            roots: [
+              rootWith(
+                'a',
+                dock('RightBottom', 'b', 'LeftBottom'),
+                dock('RightBottom', 'c', 'LeftBottom'),
+                dock('LeftBottom', 'd', 'RightBottom'),
+                dock('LeftBottom', 'e', 'RightBottom'),
+              ),
+              rootWith('b'),
+              rootWith('c'),
+              rootWith('d'),
+              rootWith('e'),
+            ],
+          },
+        ],
+      }),
+    ).rejects.toThrow(
+      /posGroups\[1\]: root 'a' RightBottom is docked to both 'b' and 'c'[\s\S]*posGroups\[1\]: root 'a' LeftBottom is docked to both 'd' and 'e'/,
+    );
+    expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
+  });
+
+  it('accepts a chained row', async () => {
+    await expectLoaded([
+      {
+        roots: [
+          rootWith('a', dock('RightBottom', 'b', 'LeftBottom')),
+          rootWith('b', dock('RightBottom', 'c', 'LeftBottom')),
+          rootWith('c'),
+        ],
+      },
+    ]);
+  });
+
+  it('accepts one joint written on both roots', async () => {
+    await expectLoaded([
+      {
+        roots: [
+          rootWith('a', dock('RightBottom', 'b', 'LeftBottom')),
+          rootWith('b', dock('LeftBottom', 'a', 'RightBottom')),
+        ],
+      },
+    ]);
+  });
+
+  it('accepts a row to the left and a row to the right of one root', async () => {
+    await expectLoaded([
+      {
+        roots: [
+          rootWith(
+            'c1',
+            dock('RightBottom', 'r1', 'LeftBottom'),
+            dock('LeftBottom', 'l1', 'RightBottom'),
+          ),
+          rootWith('r1'),
+          rootWith('l1'),
+        ],
+      },
+    ]);
+  });
+
+  it('accepts several wall units above one base unit and beside each other', async () => {
+    // w1 sits on b1's LeftTop, w2 on b2's LeftTop and beside w1: w2's
+    // LeftBottom is claimed by a stacking joint and a beside joint - fine
+    await expectLoaded([
+      {
+        roots: [
+          rootWith(
+            'b1',
+            dock('RightBottom', 'b2', 'LeftBottom'),
+            dock('LeftTop', 'w1', 'LeftBottom', [0, 600, 0]),
+            dock('LeftTop', 'w3', 'LeftBottom', [300, 600, 0]),
+          ),
+          rootWith('b2', dock('LeftTop', 'w2', 'LeftBottom', [0, 600, 0])),
+          rootWith('w1', dock('RightBottom', 'w2', 'LeftBottom')),
+          rootWith('w2'),
+          rootWith('w3'),
+        ],
+      },
+    ]);
+  });
+
+  it('accepts a root docked beside one root and back to back with another', async () => {
+    await expectLoaded([
+      {
+        roots: [
+          rootWith('a', dock('RightBottom', 'b', 'LeftBottom')),
+          rootWith('b', dock('BackBottom', 'c', 'BackBottom')),
+          rootWith('c'),
+        ],
+      },
+    ]);
+  });
+});
+
+describe('create-or-replace-groups room bounds', () => {
+  const inside = { x: [3400, 4000], z: [-3000, -2400], widthMm: 600, depthMm: 600 };
+  const flushCorner = { x: [3439, 4000], z: [-3000, -1500], widthMm: 561, depthMm: 1500 };
+  const pastBackWall = { x: [3439, 4000], z: [-3600, -2100], widthMm: 561, depthMm: 1500 };
+  const pastRightWall = { x: [3600, 4200], z: [-2000, -1400], widthMm: 600, depthMm: 600 };
+
+  // a planner whose groups fetch answers the pre-load fetch with `before`
+  // and the post-load fetch with `after`, together with the rooms
+  const createLoadApi = ({
+    before = [],
+    after,
+    rooms = { rooms: [room] } as unknown,
+  }: {
+    before?: unknown[];
+    after: unknown[];
+    rooms?: unknown; // null: the context carries no rooms section
+  }) => {
+    let groupsFetches = 0;
+    return createApi(planContextFixture, {
+      getExternalObjectPlanContext: vi.fn(async (sections: string[]) => {
+        if (sections.includes('articles')) {
+          return { articles: [articleFixture] };
+        }
+        groupsFetches += 1;
+        return {
+          ...(sections.includes('rooms') && rooms !== null && { rooms }),
+          groups: groupsFetches === 1 ? before : after,
+        };
+      }),
+    });
+  };
+
+  const positioned = (id: string, footprint: unknown, pos: number[] = [4000, 0, -3000]) =>
+    makeShapedGroup({ id, position: { pos, rotationY: 270, footprint } });
+
+  const create = async (api: ReturnType<typeof createApi>, posGroups: unknown[] = [{ roots: [pick()] }]) =>
+    (await toolExecutors['create-or-replace-groups'](api, { posGroups })) as Record<string, any>;
+
+  it('requests the rooms together with the groups before the load', async () => {
+    const api = createLoadApi({ after: [positioned('g1', inside)] });
+    await create(api);
+    expect(api.extended.getExternalObjectPlanContext).toHaveBeenNthCalledWith(2, [
+      'rooms',
+      'groups',
+    ]);
+  });
+
+  it('hints at a created group whose footprint crosses the back wall', async () => {
+    const api = createLoadApi({ after: [positioned('g1', pastBackWall)] });
+    const result = await create(api);
+    expect(result.loaded).toEqual([{ id: 'loaded-1' }]);
+    expect(result.hint).toBe(
+      'Group g1 extends beyond the room: footprint x [3439, 4000], z [-3600, -2100], ' +
+        'room x [0, 4000], z [-3000, 0]. Its anchor is where posGroup put it, so a unit is docked ' +
+        "past a wall - with posGroup at a wall's end the row continues from the anchor's RightBottom only. " +
+        'Fix the docking and resubmit the group with its id; see get-authoring-rules.',
+    );
+  });
+
+  it('hints at a group crossing the right wall', async () => {
+    const api = createLoadApi({ after: [positioned('g1', pastRightWall)] });
+    expect((await create(api)).hint).toMatch(/Group g1 extends beyond the room: footprint x \[3600, 4200\]/);
+  });
+
+  it('gives no hint for a group inside the room or flush in a corner', async () => {
+    for (const footprint of [inside, flushCorner]) {
+      const api = createLoadApi({ after: [positioned('g1', footprint)] });
+      expect((await create(api)).hint).toBeUndefined();
+    }
+  });
+
+  it('hints at a replaced group but not at an untouched group outside the room', async () => {
+    const untouched = positioned('old', pastBackWall);
+    const api = createLoadApi({
+      before: [untouched, positioned('g1', inside)],
+      after: [untouched, positioned('g1', pastBackWall)],
+    });
+    const result = await create(api, [{ ...makeShapedGroup({ id: 'g1' }) }]);
+    expect(result.hint).toMatch(/^Group g1 extends beyond the room/);
+    expect(result.hint).not.toMatch(/Group old/);
+  });
+
+  it('combines the unpositioned and the out-of-room hints', async () => {
+    const api = createLoadApi({
+      after: [
+        makeShapedGroup({ id: 'g2', position: { pos: undefined, footprint: pastBackWall } }),
+        positioned('g3', pastBackWall),
+      ],
+    });
+    const result = await create(api, [{ roots: [pick()] }, { roots: [pick()] }]);
+    expect(result.hint).toMatch(/^Groups g2 are not positioned yet[^\n]*\nGroup g3 extends beyond the room/);
+  });
+
+  it('checks the floor contour, not its bounding box, in an L-shaped room', async () => {
+    // 4000 x 3000 with the 1500 x 1500 front right quarter cut away
+    const lShapedRoom = {
+      levels: [
+        {
+          level: 0,
+          segments: [
+            { cmd: 'M', pos: [0, 0, 0] },
+            { cmd: 'L', pos: [2500, 0, 0], type: 'wall' },
+            { cmd: 'L', pos: [2500, 0, -1500], type: 'wall' },
+            { cmd: 'L', pos: [4000, 0, -1500], type: 'wall' },
+            { cmd: 'L', pos: [4000, 0, -3000], type: 'wall' },
+            { cmd: 'L', pos: [0, 0, -3000], type: 'wall' },
+            { cmd: 'Z', pos: [0, 0, 0], type: 'wall' },
+          ],
+        },
+      ],
+      walls: [],
+    };
+    const inNotch = { x: [3000, 3600], z: [-1000, -400], widthMm: 600, depthMm: 600 };
+    const inArm = { x: [3000, 3600], z: [-2500, -1900], widthMm: 600, depthMm: 600 };
+    const rooms = { rooms: [lShapedRoom] };
+    expect(
+      (await create(createLoadApi({ after: [positioned('g1', inNotch)], rooms }))).hint,
+    ).toMatch(/Group g1 extends beyond the room: footprint x \[3000, 3600\], z \[-1000, -400\], room x \[0, 4000\], z \[-3000, 0\]/);
+    expect(
+      (await create(createLoadApi({ after: [positioned('g1', inArm)], rooms }))).hint,
+    ).toBeUndefined();
+  });
+
+  it('reports a footprint spanning the arms of a U-shaped room', async () => {
+    // 4000 x 3000 with a 1000 x 1500 notch entering the front wall in the
+    // middle: all four corners of the box lie in the arms, its middle crosses
+    // the recessed wall
+    const uShapedRoom = {
+      levels: [
+        {
+          level: 0,
+          segments: [
+            { cmd: 'M', pos: [0, 0, 0] },
+            { cmd: 'L', pos: [1500, 0, 0], type: 'wall' },
+            { cmd: 'L', pos: [1500, 0, -1500], type: 'wall' },
+            { cmd: 'L', pos: [2500, 0, -1500], type: 'wall' },
+            { cmd: 'L', pos: [2500, 0, 0], type: 'wall' },
+            { cmd: 'L', pos: [4000, 0, 0], type: 'wall' },
+            { cmd: 'L', pos: [4000, 0, -3000], type: 'wall' },
+            { cmd: 'L', pos: [0, 0, -3000], type: 'wall' },
+            { cmd: 'Z', pos: [0, 0, 0], type: 'wall' },
+          ],
+        },
+      ],
+      walls: [],
+    };
+    const rooms = { rooms: [uShapedRoom] };
+    const spanningTheNotch = { x: [1000, 3000], z: [-1000, -400], widthMm: 2000, depthMm: 600 };
+    const behindTheNotch = { x: [1000, 3000], z: [-2500, -1900], widthMm: 2000, depthMm: 600 };
+    expect(
+      (await create(createLoadApi({ after: [positioned('g1', spanningTheNotch, [1000, 0, -1000])], rooms }))).hint,
+    ).toMatch(/^Group g1 extends beyond the room: footprint x \[1000, 3000\], z \[-1000, -400\]/);
+    expect(
+      (await create(createLoadApi({ after: [positioned('g1', behindTheNotch, [1000, 0, -2500])], rooms }))).hint,
+    ).toBeUndefined();
+  });
+
+  it('accepts a group inside any room of a plan with several rooms', async () => {
+    const secondRoom = {
+      levels: [
+        {
+          level: 0,
+          segments: [
+            { cmd: 'M', pos: [5000, 0, 0] },
+            { cmd: 'L', pos: [8000, 0, 0], type: 'wall' },
+            { cmd: 'L', pos: [8000, 0, -3000], type: 'wall' },
+            { cmd: 'L', pos: [5000, 0, -3000], type: 'wall' },
+            { cmd: 'L', pos: [5000, 0, 0], type: 'wall' },
+          ],
+        },
+      ],
+      walls: [],
+    };
+    const inSecondRoom = { x: [6000, 6600], z: [-2000, -1400], widthMm: 600, depthMm: 600 };
+    const api = createLoadApi({
+      after: [positioned('g1', inSecondRoom)],
+      rooms: { rooms: [room, secondRoom] },
+    });
+    expect((await create(api)).hint).toBeUndefined();
+  });
+
+  it('reports the extent of the room the anchor stands in', async () => {
+    const secondRoom = {
+      levels: [
+        {
+          level: 0,
+          segments: [
+            { cmd: 'M', pos: [5000, 0, 0] },
+            { cmd: 'L', pos: [8000, 0, 0], type: 'wall' },
+            { cmd: 'L', pos: [8000, 0, -3000], type: 'wall' },
+            { cmd: 'L', pos: [5000, 0, -3000], type: 'wall' },
+            { cmd: 'L', pos: [5000, 0, 0], type: 'wall' },
+          ],
+        },
+      ],
+      walls: [],
+    };
+    // anchored flush in the back right corner of the second room, the row
+    // docked past its back wall
+    const pastSecondRoomBackWall = { x: [7439, 8000], z: [-3600, -2100], widthMm: 561, depthMm: 1500 };
+    const api = createLoadApi({
+      after: [positioned('g1', pastSecondRoomBackWall, [8000, 0, -3000])],
+      rooms: { rooms: [room, secondRoom] },
+    });
+    expect((await create(api)).hint).toMatch(
+      /^Group g1 extends beyond the room: footprint x \[7439, 8000\], z \[-3600, -2100\], room x \[5000, 8000\], z \[-3000, 0\]\. Its anchor is where posGroup put it/,
+    );
+  });
+
+  it('points at repositioningData when the anchor itself stands in no room', async () => {
+    // posGroup 600 mm behind the back wall: the whole row is outside
+    const outside = { x: [3439, 4000], z: [-3600, -3100], widthMm: 561, depthMm: 500 };
+    const api = createLoadApi({ after: [positioned('g1', outside, [4000, 0, -3600])] });
+    const { hint } = await create(api);
+    expect(hint).toMatch(/^Group g1 extends beyond the room: footprint x \[3439, 4000\], z \[-3600, -3100\], room x \[0, 4000\], z \[-3000, 0\]\. Its anchor at pos \[4000, 0, -3600\] stands in no room, so posGroup is wrong/);
+    expect(hint).toMatch(/new repositioningData/);
+    expect(hint).not.toMatch(/Fix the docking/);
+  });
+
+  it('skips the check without a room contour or without a footprint', async () => {
+    const noRooms = createLoadApi({ after: [positioned('g1', pastBackWall)], rooms: null });
+    expect((await create(noRooms)).hint).toBeUndefined();
+    const emptyRooms = createLoadApi({ after: [positioned('g1', pastBackWall)], rooms: { rooms: [] } });
+    expect((await create(emptyRooms)).hint).toBeUndefined();
+    const noFootprint = createLoadApi({ after: [positioned('g1', undefined)] });
+    expect((await create(noFootprint)).hint).toBeUndefined();
+  });
+});

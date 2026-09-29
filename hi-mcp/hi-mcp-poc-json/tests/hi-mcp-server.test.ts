@@ -80,6 +80,17 @@ describe('hi-mcp-server tool calls', () => {
     expect(text).not.toMatch(/\bplace-group\b/);
   });
 
+  it('warns that a straight row continues from the anchor RightBottom only', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const text = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    expect(text).toContain("the row continues from the anchor's RightBottom only");
+    expect(text).toContain('corner article only');
+    expect(text).toContain('Never dock the second unit to the anchor\'s LeftBottom in a corner');
+    expect(text).toContain('check position.footprint against the walls');
+  });
+
   it('carries the one-group principle and the docking examples', async () => {
     const client = await connectClient(createMockPlannerApi());
     const text = textOf(

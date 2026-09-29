@@ -339,17 +339,28 @@ anything is loaded: missing `roots`, missing pick fields (`id`, `articleId`),
 an unknown `articleId` (the error lists the catalog), `articlePos`/`rotationY`
 on any root or `pos`/`rotationY` on a group, undocked roots in a multi-root group,
 a `placement` (no longer supported — the error points to `repositioningData`),
-and invalid `repositioningData` (`posGroup` not three numbers, `posRotationY`
-missing or not a number — state 0 explicitly, `rootId` not a root of the
-group, `rootRelPos` not three numbers).
+a side docked to two neighbours (a `LeftBottom`, `RightBottom`, `BackBottom` or
+`BackTop` vector that two different roots dock beside or back to back — the
+error names the root, the vector and both partners; the row docked past the
+corner in [the analysis](../../.agents/bug-analysis/straight-row-docked-past-the-corner.md)
+is caught here), and invalid `repositioningData` (`posGroup` not three numbers,
+`posRotationY` missing or not a number — state 0 explicitly, `rootId` not a
+root of the group, `rootRelPos` not three numbers).
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `posGroups` | `object[]` (min 1) | yes | Pos groups following the [authoring rules](#authoring-pos-groups) |
 
 Returns the loaded runtime ids and the resulting groups (with their final
-ids, `pos`, `rotationY`, `footprint`), plus a hint when a group of this call
-is still unpositioned.
+ids, `pos`, `rotationY`, `footprint`), plus a `hint` when a group of this call
+is still unpositioned or extends beyond the room. For the latter the server
+tests the group's `footprint` (shrunk by 1 mm, so a flush placement passes)
+against the level-0 floor contour of every room — every corner inside and no
+box edge crossing a contour edge, so a box spanning the arms of a concave
+room is caught too. The hint gives the footprint and the extent of the room
+the anchor stands in; with the anchor inside that room it points at the
+docking (`posGroup` is right), with the anchor in no room at
+`repositioningData`. Untouched groups are not checked.
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm
 room, from the back right corner, one call. `posGroup` is the right wall's
@@ -519,7 +530,10 @@ group one point and one rotation; the planner calculates every root position.
   automatically. An `offset` only takes effect in this direction — an entry
   written on the new root loses it.
 - Docking vectors are named edges of a root module (`dockInfos`; the names
-  per article are in the catalog as `dockingVectors`). `Left`/`Right` vectors
+  per article are in the catalog as `dockingVectors`). `Left`/`Right` are the
+  sides of the unit as seen from its front (group-local x, turned with
+  `posRotationY`) — not the left and right of the room or the top-view image;
+  both agree only at `posRotationY` 0. `Left`/`Right` vectors
   lie on the side faces and run from the back to the front, `Back` vectors
   lie on the back face and run from left to right; `Top`/`Bottom` name the
   upper and lower edge; `LeftBack`/`RightBack` exist only on corner articles
@@ -527,7 +541,8 @@ group one point and one rotation; the planner calculates every root position.
   their start point is the article's corner point. Valid pairs (anchor → new
   root): beside —
   `RightBottom → LeftBottom` (to the right), `LeftBottom → RightBottom` (to
-  the left); on top — `LeftTop → LeftBottom`, `RightTop → RightBottom`,
+  the left) — a side takes one neighbour, a vector docked beside or back to
+  back with two roots is rejected; on top — `LeftTop → LeftBottom`, `RightTop → RightBottom`,
   `BackTop → BackBottom` (the new root may be narrower); back to back —
   `BackBottom → BackBottom`, `BackTop → BackTop` (the new root is turned by
   180°, omit `mode`). A root without docking vectors (a hood, for example)
@@ -548,11 +563,25 @@ group one point and one rotation; the planner calculates every root position.
   the `facingRotationY` of the wall that ends in that corner as
   `posRotationY`, and continue the rows along both walls from its
   `RightBottom` and `LeftBottom` — prefer this over butting two straight units
-  together).
+  together). Straight units only in a corner ("an oven, a sink and a fridge
+  in the back right corner"): a straight unit has no second arm — its
+  `LeftBottom` and `RightBottom` lie on one line — so the units form one row
+  along one of the two walls, chained `RightBottom → LeftBottom` from the
+  anchor: either along the wall that ends in the corner (anchor at that wall's
+  `end`, its `facingRotationY`) or along the wall that starts there (anchor =
+  the leftmost unit, d = lengthMm − group width, see
+  [Positioning a group](#positioning-a-group)). Never dock the second unit to
+  the anchor's `LeftBottom` in a corner — it lands beyond the corner, inside
+  the other wall.
 - Verify results numerically: the returned groups carry `position` (`pos`,
   `rotationY`, `footprint`) and per root the `dockingVectors`, the input
   attributes and the docking; `logMessages` entries with category `Error`
   mean the input is wrong (typically a bad `articleId` or attribute value).
+  Check a flush placement against `position.pos` (see **Corner offset**
+  below), then `position.footprint` against the walls: its x and z ranges
+  must lie inside the room contour. A footprint that crosses a wall while
+  `pos` is right means a unit is docked in the wrong direction (typically to
+  the anchor's `LeftBottom` in a corner) — fix the docking, not `posGroup`.
 
 ## Positioning a group
 
@@ -590,7 +619,12 @@ for a group at a wall, in a corner, or anywhere in the room.
   in the coordinates of `posGroup`), `lengthMm`, `type` and
   `facingRotationY`. With `posRotationY` = the wall's `facingRotationY` the
   group's back stands against the wall, and the group runs from `posGroup`
-  towards the wall's `start`:
+  towards the wall's `start` — so the row continues from the anchor's
+  `RightBottom` only (`RightBottom → LeftBottom`, chained). With `posGroup` =
+  `end` the anchor's left side is the corner: a unit docked to its
+  `LeftBottom` stands beyond the corner, inside the adjoining wall. A row that
+  ends in that corner instead is anchored at its leftmost unit with
+  d = lengthMm − group width:
 
   | Target | `posGroup` |
   | --- | --- |
@@ -606,9 +640,11 @@ for a group at a wall, in a corner, or anywhere in the room.
   corner takes the corner point as `posGroup` and the `facingRotationY` of the
   wall that ends in that corner; with the article's `cornerPoint` offset
   compensated by `rootRelPos` (see **Corner offset**), its corner point goes
-  exactly into the corner:
+  exactly into the corner. The two corner columns hold for a **corner article
+  only** — its arms are turned 90° against each other; a straight anchor has
+  both side vectors on one line, and its `LeftBottom` row runs into the wall:
 
-  | Wall / corner | `posRotationY` | Corner: `RightBottom` row runs along | Corner: `LeftBottom` row runs along |
+  | Wall / corner | `posRotationY` | Corner article: `RightBottom` row runs along | Corner article: `LeftBottom` row runs along |
   | --- | --- | --- | --- |
   | Back wall / left back corner | 0 | back wall, to the right | left wall, to the front |
   | Left wall / left front corner | 90 | left wall, to the back | front wall, to the right |

@@ -107,7 +107,7 @@ the `servers` configuration above.
 
 1. In the Copilot Chat panel, switch the mode to **Agent Mode** (or ensure the **`⚡` Tools** button is enabled)
 2. Verify that **`hi-orchestrator`** is listed under attached tools
-3. Open the HI page the tools operate on and keep it open — the server is only a relay, every tool call executes in the connected browser page:
+3. Open the HI page the tools operate on and keep it open — the tools work on the planning session of the connected browser page, the server relays their planner calls into it:
    - Cloud server: open the Roomle store with the `mcp_server` parameter, e.g. `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev` (see [Connecting an agent to the cloud MCP server](connect-agent-to-cloud-mcp.md))
    - Local server: open `http://localhost:3000/?mcp=true` (started with `npm start` in the repository root, which opens this page automatically)
 4. Enter your kitchen planning prompt—VS Code Copilot will route the inference directly to your local Ollama model while calling HI-specific functions on your MCP server!

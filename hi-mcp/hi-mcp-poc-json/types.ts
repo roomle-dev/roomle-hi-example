@@ -1,16 +1,20 @@
 export const HI_MCP_PORT = 3100;
 
+// 2: the page executes planner methods, the tool logic runs in the server
+export const BRIDGE_PROTOCOL = 2;
+
 export interface McpBridgeHello {
   kind: 'hello';
   example: string;
   url: string;
+  protocol?: number;
 }
 
 export interface McpBridgeCall {
   kind: 'call';
   id: number;
-  tool: string;
-  args: Record<string, unknown>;
+  method: string;
+  args: unknown[];
 }
 
 export interface McpBridgeResult {

@@ -31,7 +31,7 @@ Because Ollama exposes an OpenAI-compatible API locally, you can attach your exi
 
 ## Step 3: Open the Store Page
 
-The MCP server is only a relay — tool calls execute in an open Roomle ligna-store tab. Before connecting Jan, open the store page in your browser and keep the tab open:
+The tools work on the planning session of an open Roomle ligna-store tab — the MCP server relays their planner calls into it. Before connecting Jan, open the store page in your browser and keep the tab open:
 
 1. Open this URL in your browser:
    ```text

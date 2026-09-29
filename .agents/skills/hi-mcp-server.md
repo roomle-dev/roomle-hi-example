@@ -55,16 +55,21 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 
 #### 3. WebSocket bridge
 - `GET ws://…/bridge` (WebSocket upgrade, origin-checked) connects the page
-- The page sends `{kind:'hello', example, url}`; the server relays `{kind:'call', id, tool, args}` and the page answers `{kind:'result', id, ok, result|error}` (`types.ts`)
-- The server correlates calls by id, with timeouts (30 s default, 120 s snapshot calls) and a single-page policy: a newer connection replaces the previous one
+- The page sends `{kind:'hello', example, url, protocol: 2}`; the server relays planner method calls `{kind:'call', id, method, args: [...]}` and the page answers `{kind:'result', id, ok, result|error}` (`types.ts`, `BRIDGE_PROTOCOL`)
+- A page whose hello carries no `protocol: 2` (an outdated, tool-level bridge) stays connected, but every call fails with an "update the page bridge" error
+- The server correlates calls by id, with per-method timeouts (`planner-api.ts`: 120 s for `loadExternalObjectGroupLayout` and `getExternalObjectSnapshot`, 30 s otherwise) and a single-page policy: a newer connection replaces the previous one
+
+#### 4. Tool logic (`tool-executors.ts`, `planner-api.ts`)
+- The tool handlers in `hi-mcp-server.ts` run the executors in `tool-executors.ts`: payload validation, planner call composition, response shaping, agent hints
+- The executors call the planner through `PlannerApi` (`planner-api.ts`): the five planner methods the tools need, each forwarded over the bridge with positional arguments. All parameters are required — the call travels as JSON, which turns `undefined` into `null`
 
 ### Bridge — page side (minimal-hi-example/index.html)
 
 - Active only with the `mcp=true` query parameter
 - Connects a `WebSocket` to `ws://localhost:3100/bridge`, reconnects every 3 s on close
-- Executes tool calls against `roomDesignerApi.extended` via the inline tool executors, sends results back over the socket
+- Executes the planner methods on its allow-list (`MCP_PLANNER_METHODS`) against `roomDesignerApi.extended`, rejects every other method, sends results back over the socket — no tool logic in the page
 
-The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (browser-bridge, tool-executors, types) — no automatic sync, copy after changes.
+The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (browser-bridge with `PLANNER_METHODS`, types) — no automatic sync, copy after changes. The allow-lists change only when a tool needs a new planner method; `tests/planner-api.test.ts` fails when the server's planner methods and the client allow-list diverge.
 
 ## Server Lifecycle
 
@@ -79,31 +84,32 @@ The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (bro
 
 1. MCP Client sends tools/call to `POST /mcp`
 2. SDK validates against the zod schema
-3. Server sends the call over the page WebSocket
-4. Page executes the tool via `roomDesignerApi.extended`
-5. Page sends the result back over the socket
-6. Server forwards the result to the MCP client
+3. Server runs the tool's executor (`tool-executors.ts`); an invalid payload is rejected here, before any planner call
+4. Each planner call of the executor goes over the page WebSocket as a method call
+5. Page executes the method via `roomDesignerApi.extended` and sends the result back over the socket
+6. The executor composes the results; the server returns the tool result to the MCP client
 
 ## Timeouts and Error Handling
 
-- Default timeout: 30 seconds
-- Snapshot calls (`create-or-replace-groups`, `get-order-data`, `get-plan-images`): 120 seconds
+- Timeouts apply per planner call; default: 30 seconds
+- Snapshot calls (`loadExternalObjectGroupLayout` for `create-or-replace-groups`, `getExternalObjectSnapshot` for `get-order-data` and `get-plan-images`): 120 seconds
 - No page connected: error names the client URL (`HI_MCP_STORE_URL`)
 - Unit tests: `npm test` at the `hi-mcp` root (vitest)
 
 ## Adding New Tools
 
-1. Register the tool in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` (zod schema, handler)
-2. Implement the executor in the page: `mcpToolExecutors` in `minimal-hi-example/index.html` **and** `hi-mcp/hi-mcp-poc-json-client/tool-executors.ts` (then copy to the ligna-store)
-3. Update documentation (`minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`)
-4. Add/extend unit tests in the matching `tests/` folder
-5. `npm test` + `npm run typecheck` at the `hi-mcp` root
+1. Register the tool in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` (zod schema, handler via `runTool`)
+2. Implement the executor in `hi-mcp/hi-mcp-poc-json/tool-executors.ts` — no page changes
+3. Only if the tool needs a planner method not exposed yet: add it to `planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-poc-json-client/browser-bridge.ts`, then copy to the ligna-store). Keep methods that place orders or overwrite the plan out unless explicitly decided
+4. Update documentation (`minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`)
+5. Add/extend unit tests in `hi-mcp/hi-mcp-poc-json/tests/`
+6. `npm test` + `npm run typecheck` at the `hi-mcp` root
 
 ## Modifying Existing Tools
 
-1. Understand current behavior; the tool layer is shared with the store client
+1. Understand current behavior; the tool logic lives in the server only (`tool-executors.ts`)
 2. Maintain backward compatibility; update the zod schema if needed
-3. Apply the change on both page sides (example inline executors, client TS copy)
+3. Deploy the server — the pages need no change unless the planner methods change
 4. Test with existing clients
 
 ## Common Issues and Solutions

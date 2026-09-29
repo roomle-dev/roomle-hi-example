@@ -1,5 +1,6 @@
 import { WebSocket } from 'ws';
 import type { McpBridgeCall, McpBridgeMessage } from './types';
+import { BRIDGE_PROTOCOL } from './types';
 
 export const DEFAULT_CALL_TIMEOUT_MS = 30_000;
 export const SNAPSHOT_CALL_TIMEOUT_MS = 120_000;
@@ -13,6 +14,7 @@ interface PendingCall {
 export class PageBridge {
   private _page: WebSocket | null = null;
   private _pageUrl = '';
+  private _pageProtocol: number | undefined;
   private _nextCallId = 1;
   private _pendingCalls = new Map<number, PendingCall>();
 
@@ -31,6 +33,7 @@ export class PageBridge {
         }
         this._page = socket;
         this._pageUrl = message.url;
+        this._pageProtocol = message.protocol;
         console.log(`[hi-mcp] page connected: ${message.url}`);
         return;
       }
@@ -66,8 +69,8 @@ export class PageBridge {
   }
 
   public async call(
-    tool: string,
-    args: Record<string, unknown>,
+    method: string,
+    args: unknown[],
     timeoutMs: number = DEFAULT_CALL_TIMEOUT_MS,
   ): Promise<unknown> {
     const page = this._page;
@@ -80,15 +83,24 @@ export class PageBridge {
           'tools work in that tab while it stays open.',
       );
     }
+    if (this._pageProtocol !== BRIDGE_PROTOCOL) {
+      throw new Error(
+        `The connected page (${this._pageUrl}) runs an outdated HI MCP page bridge that expects tool calls. ` +
+          `Have the user update the page bridge to protocol ${BRIDGE_PROTOCOL} (ligna-store hi-mcp/browser-bridge.ts, ` +
+          'minimal-hi-example/index.html) and reload the page.',
+      );
+    }
     const id = this._nextCallId++;
     console.log(
-      `[hi-mcp] call ${id}: ${tool} ${JSON.stringify(args).slice(0, 400)}`,
+      `[hi-mcp] call ${id}: ${method} ${JSON.stringify(args).slice(0, 400)}`,
     );
-    const call: McpBridgeCall = { kind: 'call', id, tool, args };
+    const call: McpBridgeCall = { kind: 'call', id, method, args };
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this._pendingCalls.delete(id);
-        reject(new Error(`Tool call '${tool}' timed out after ${timeoutMs}ms`));
+        reject(
+          new Error(`Planner call '${method}' timed out after ${timeoutMs}ms`),
+        );
       }, timeoutMs);
       this._pendingCalls.set(id, { resolve, reject, timeout });
       page.send(JSON.stringify(call));

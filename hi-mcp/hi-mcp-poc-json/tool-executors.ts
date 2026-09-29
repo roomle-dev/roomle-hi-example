@@ -1,7 +1,7 @@
-import type { RoomDesignerApiType } from './types';
+import type { PlannerApi } from './planner-api';
 
 export type ToolExecutor = (
-  roomDesignerApi: RoomDesignerApiType,
+  roomDesignerApi: PlannerApi,
   args: Record<string, unknown>,
 ) => Promise<unknown>;
 
@@ -70,7 +70,7 @@ const isArticlePickOnly = (root: any): boolean =>
 // against the catalog so the agent gets a helpful error instead of a
 // half-calculated group.
 const validateArticlePickIds = async (
-  roomDesignerApi: RoomDesignerApiType,
+  roomDesignerApi: PlannerApi,
   posGroups: any[],
 ): Promise<void> => {
   const articlePicks = posGroups.flatMap((group) =>

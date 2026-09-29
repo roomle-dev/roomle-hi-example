@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import type { PageBridge } from './page-bridge';
-import { SNAPSHOT_CALL_TIMEOUT_MS } from './page-bridge';
+import type { PlannerApi } from './planner-api';
+import { toolExecutors } from './tool-executors';
 
 const AUTHORING_RULES = `Authoring rules for pos groups:
 - A group is { id?, libraryId?, repositioningData?, roots: [...] }. A root module is an article pick and nothing else: { id, articleId, attributes?, contextData? }. The server rejects a root that carries articlePos or rotationY and a group that carries pos or rotationY, ignores every other field, and drops roots marked isGenerated (worktop, toe kick - the library regenerates them). Every root position comes from the docking (contextData); the group position comes from repositioningData. Groups returned by get-plan-context are in this shape - resubmit them as they are. Use a unique id of your choice for new roots (the planner regenerates it and remaps your docking and repositioning references); keep the real ids of roots that already exist in a replaced group. Choose the articleId from the article catalog of get-plan-context: desc and category say what an article is and what it is for, dimensions give its size, dockingVectors the names of its docking vectors, subModules its fronts and appliances, cornerArticle true marks an article made for a room corner. Sub-modules come with the article - you author articles, their attributes and their docking, nothing else. attributes is an optional list of { id, value } overrides; attribute ids and allowed values come from the masterData section (request it with include) or from find-attributes. Everything else the calculation needs is completed automatically from the article template.
@@ -80,11 +80,16 @@ const textResult = (result: unknown) => ({
 const stripDataUrlPrefix = (image: string): string =>
   image.replace(/^data:image\/\w+;base64,/, '');
 
-export const createHiMcpServer = (bridge: PageBridge): McpServer => {
+export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
   const server = new McpServer(
     { name: 'hi-group-orchestrator', version: '0.1.0' },
     { instructions: INSTRUCTIONS },
   );
+
+  const runTool = (tool: string, args: Record<string, unknown>) => {
+    console.log(`[hi-mcp] tool ${tool}`);
+    return toolExecutors[tool](plannerApi, args);
+  };
 
   server.registerTool(
     'get-plan-context',
@@ -116,7 +121,7 @@ export const createHiMcpServer = (bridge: PageBridge): McpServer => {
       },
     },
     async ({ include }) =>
-      textResult(await bridge.call('get-plan-context', { include })),
+      textResult(await runTool('get-plan-context', { include })),
   );
 
   server.registerTool(
@@ -140,7 +145,7 @@ export const createHiMcpServer = (bridge: PageBridge): McpServer => {
       },
     },
     async ({ text, libraryId }) =>
-      textResult(await bridge.call('find-attributes', { text, libraryId })),
+      textResult(await runTool('find-attributes', { text, libraryId })),
   );
 
   server.registerTool(
@@ -189,13 +194,7 @@ export const createHiMcpServer = (bridge: PageBridge): McpServer => {
       },
     },
     async ({ posGroups }) =>
-      textResult(
-        await bridge.call(
-          'create-or-replace-groups',
-          { posGroups },
-          SNAPSHOT_CALL_TIMEOUT_MS,
-        ),
-      ),
+      textResult(await runTool('create-or-replace-groups', { posGroups })),
   );
 
   server.registerTool(
@@ -220,7 +219,7 @@ export const createHiMcpServer = (bridge: PageBridge): McpServer => {
     },
     async ({ rootModuleId, moduleId, attributeId, value }) =>
       textResult(
-        await bridge.call('update-attribute', {
+        await runTool('update-attribute', {
           rootModuleId,
           moduleId,
           attributeId,
@@ -236,7 +235,7 @@ export const createHiMcpServer = (bridge: PageBridge): McpServer => {
         'Calculates and returns the price/order data of the current planning situation.',
       inputSchema: {},
     },
-    async () => textResult(await bridge.call('get-price', {})),
+    async () => textResult(await runTool('get-price', {})),
   );
 
   server.registerTool(
@@ -246,10 +245,7 @@ export const createHiMcpServer = (bridge: PageBridge): McpServer => {
         'Returns the order data of the current planning situation without placing an order.',
       inputSchema: {},
     },
-    async () =>
-      textResult(
-        await bridge.call('get-order-data', {}, SNAPSHOT_CALL_TIMEOUT_MS),
-      ),
+    async () => textResult(await runTool('get-order-data', {})),
   );
 
   server.registerTool(
@@ -262,11 +258,10 @@ export const createHiMcpServer = (bridge: PageBridge): McpServer => {
       inputSchema: {},
     },
     async () => {
-      const images = (await bridge.call(
-        'get-plan-images',
-        {},
-        SNAPSHOT_CALL_TIMEOUT_MS,
-      )) as { perspectiveImage?: string; topImage?: string };
+      const images = (await runTool('get-plan-images', {})) as {
+        perspectiveImage?: string;
+        topImage?: string;
+      };
       const content = [];
       for (const image of [images.perspectiveImage, images.topImage]) {
         if (image) {

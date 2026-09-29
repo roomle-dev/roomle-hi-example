@@ -1,17 +1,18 @@
 # hi-mcp-poc-json-client — page side of the hi-mcp-poc-json server
 
 The code that runs in the client page, not in the MCP server: the page connects outward to the
-[hi-mcp-poc-json](../hi-mcp-poc-json/) server via WebSocket, executes the relayed tool calls
-against `roomDesignerApi.extended` and replies with the results.
+[hi-mcp-poc-json](../hi-mcp-poc-json/) server via WebSocket, executes the planner method calls the
+server's tools make against `roomDesignerApi.extended` and replies with the results. The tool
+logic itself runs in the server (`../hi-mcp-poc-json/tool-executors.ts`).
 
 | File | Responsibility |
 | ---- | -------------- |
-| `browser-bridge.ts` | WebSocket client: connects to the server, executes tool calls, replies with results |
-| `tool-executors.ts` | Tool name → `roomDesignerApi.extended` calls, payload validation |
-| `types.ts` | WebSocket message protocol (the server carries its own copy) |
+| `browser-bridge.ts` | WebSocket client: connects to the server, executes the planner methods on its allow-list (`PLANNER_METHODS`), rejects every other method, replies with results |
+| `types.ts` | WebSocket message protocol, `BRIDGE_PROTOCOL` (the server carries its own copy) |
 | `tests/` | Unit tests (vitest, configured at the `hi-mcp/` workspace root) |
 
-The ligna-store runs a verbatim copy of these three source files in its `hi-mcp/` folder — there
-is no automatic sync, so copy them over after every change here (and delete its `plan-space.ts`,
-which the page side no longer has). The message protocol in
-`types.ts` and the tool names must match the server.
+The ligna-store runs a verbatim copy of these two source files in its `hi-mcp/` folder — there
+is no automatic sync, so copy them over after every change here. The message protocol in
+`types.ts` must match the server. `PLANNER_METHODS` must list exactly the methods of
+`../hi-mcp-poc-json/planner-api.ts` — `tests/planner-api.test.ts` in the server fails otherwise.
+It changes only when a tool needs a new planner method.

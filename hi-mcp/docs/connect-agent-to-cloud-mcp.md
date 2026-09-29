@@ -16,13 +16,13 @@ see [local-mcp-server.md](./local-mcp-server.md); for deploying the server itsel
 
 ```text
 your agent (e.g. Mistral) ──https──> https://<worker>.<subdomain>.workers.dev/mcp
-                                           │ the server relays tool calls…
+                                           │ the server runs the tools, relays their planner calls…
 your browser (store tab open) ──wss──> …/bridge
                                            ▼
                           the kitchen changes live in your visible browser tab
 ```
 
-The agent never touches the plan alone — every tool call executes in **your open store tab**.
+The agent never touches the plan alone — every planner call of a tool executes in **your open store tab**.
 Keep the tab open; it is the session the agent works in.
 
 ## Step by step (Mistral Le Chat)

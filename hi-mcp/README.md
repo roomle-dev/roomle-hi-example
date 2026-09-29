@@ -7,7 +7,7 @@ npm workspace folder per PoC.
 | PoC | Description |
 | --- | ----------- |
 | [hi-mcp-poc-json](./hi-mcp-poc-json/) | HI object groups (kitchens) generated from a single JSON pos-group payload; client is the INT-stage ligna-store |
-| [hi-mcp-poc-json-client](./hi-mcp-poc-json-client/) | Page side of hi-mcp-poc-json: browser bridge, tool executors and plan geometry with their unit tests; the ligna-store runs a verbatim copy in `hi-mcp/` |
+| [hi-mcp-poc-json-client](./hi-mcp-poc-json-client/) | Page side of hi-mcp-poc-json: the browser bridge that executes the allow-listed planner methods, with its unit tests; the ligna-store runs a verbatim copy in `hi-mcp/` |
 | [cf](./cf/) | Cloudflare deployment of the hi-mcp-poc-json server: Worker + Container, one `wrangler deploy` |
 
 ## Quick Access

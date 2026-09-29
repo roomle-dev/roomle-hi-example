@@ -138,8 +138,10 @@ try {
 
 ## Timeouts
 
-- Most tools: 30 seconds
-- `get-price`, `get-order-data`, `get-plan-images`: 2 minutes
+The tools run in the server; the timeout applies to each planner call they make in the page:
+
+- Most planner calls: 30 seconds
+- Loading groups (`create-or-replace-groups`) and snapshots (`get-order-data`, `get-plan-images`): 2 minutes
 
 ## Best Practices
 

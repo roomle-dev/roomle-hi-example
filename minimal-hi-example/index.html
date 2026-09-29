@@ -798,6 +798,31 @@
         Authorization: HI_AUTH_DATA,
       };
 
+      // With ?chat=true the left section opens with the AI chat and the
+      // checkbox switches between chat (unchecked) and debug panel (checked).
+      // Without it, the checkbox keeps toggling the whole left section.
+      const chatEnabled = getQueryParam('chat') === 'true';
+      if (chatEnabled) {
+        document.querySelector('.left-section').style.display = 'flex';
+        document.getElementById('tc-area').classList.add('hidden');
+        document.getElementById('chat-area').classList.remove('hidden');
+      }
+      document
+        .getElementById('toggle-panel')
+        .addEventListener('change', (event) => {
+          if (chatEnabled) {
+            document
+              .getElementById('tc-area')
+              .classList.toggle('hidden', !event.target.checked);
+            document
+              .getElementById('chat-area')
+              .classList.toggle('hidden', event.target.checked);
+          } else {
+            document.querySelector('.left-section').style.display =
+              event.target.checked ? 'flex' : 'none';
+          }
+        });
+
       await setupHi(hiOptions, {
         onLoadJavascript: () => libLoadCalcScript(hiOptions),
         onLoadArticleCatalog: () => libLoadArticleCatalog(hiOptions),
@@ -878,30 +903,6 @@
         };
       });
 
-      // With ?chat=true the left section opens with the AI chat and the
-      // checkbox switches between chat (unchecked) and debug panel (checked).
-      // Without it, the checkbox keeps toggling the whole left section.
-      const chatEnabled = getQueryParam('chat') === 'true';
-      if (chatEnabled) {
-        document.querySelector('.left-section').style.display = 'flex';
-        document.getElementById('tc-area').classList.add('hidden');
-        document.getElementById('chat-area').classList.remove('hidden');
-      }
-      document
-        .getElementById('toggle-panel')
-        .addEventListener('change', (event) => {
-          if (chatEnabled) {
-            document
-              .getElementById('tc-area')
-              .classList.toggle('hidden', !event.target.checked);
-            document
-              .getElementById('chat-area')
-              .classList.toggle('hidden', event.target.checked);
-          } else {
-            document.querySelector('.left-section').style.display =
-              event.target.checked ? 'flex' : 'none';
-          }
-        });
       document.getElementById('console-clear').addEventListener('click', () => {
         document.getElementById('console-log').replaceChildren();
       });

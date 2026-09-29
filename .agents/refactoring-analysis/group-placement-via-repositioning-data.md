@@ -5,6 +5,13 @@
 > **Author**: AI Assistant
 > **Status**: Open
 
+> **Progress (2026-09-29)**: roomle-hi-example is implemented on branch
+> `refactor/group-placement-via-repositioning-data-RML-17966`, with every decision applied as
+> recommended (D1–D7). The hi-mcp typecheck is clean and 45 tests pass in 4 files; the
+> pre-existing `cf` load failure is unchanged. ligna-store is held back until the change has been
+> tested locally. The live verification (Verification Plan, step 3) is still pending. The report
+> is appended at close-out, after both.
+
 ---
 
 ## Executive Summary
@@ -307,7 +314,7 @@ corner recipe gets the corner rule.
 
 ---
 
-## Decisions (open — to be confirmed in the analysis review)
+## Decisions (applied as recommended — implementation requested 2026-09-29)
 
 | # | Question | Recommendation | Alternative |
 |---|---|---|---|
@@ -413,7 +420,13 @@ unrelated.
 
 - `.agents/skills/roomle-hi-concepts.md` contains older inaccuracies beyond placement (e.g.
   `rotation: [x, y, z]` Euler rotations on roots, ADR 0010/0011 claims about numeric placement).
-  Only its placement sections are updated here.
+  Only its placement sections are updated here. Its "Group Adjustment" section (`wallLabel`,
+  `leftOffset`, …) is a separate concept and stays untouched.
+- `minimal-hi-example/index.html`: a stale comment above `attributeMatches` ("The docking vectors
+  of the calculated roots in the plan by article id …") is left over from the previous
+  refactoring.
+- `.github/copilot-instructions.md` lists two tools that do not exist (`set-wall-configuration`,
+  `remove-all-objects`).
 
 ---
 

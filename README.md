@@ -23,6 +23,8 @@ npm start openai <api-key>
 | ---------- | ------------ |
 | `npm start` | Example page on :3000, MCP server on :3100, browser opens |
 | `npm start --no-open` | Same, without opening the browser |
+| `npm start gpt-5-mini <api-key>` | Plus chat with the `gpt-5-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
+| `npm start gpt-5.4-mini <api-key>` | Plus chat with the `gpt-5.4-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start mistral <api-key>` | Plus built-in AI chat with `mistral-large-latest` |
 | `npm start mistral-medium <api-key>` | Plus chat with `mistral-medium-latest` (also `mistral-large`, or any `mistral-*` model id) |
 | `npm start claude <api-key>` | Plus chat with `claude-sonnet-4-5` (also `anthropic`, `claude-sonnet`, `claude-opus`, or any `claude-*` model id) |

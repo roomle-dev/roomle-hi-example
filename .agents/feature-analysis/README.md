@@ -45,6 +45,7 @@ Never delete an analysis document.
 | [mcp-azure-deployment-and-session-bootstrapping.md](mcp-azure-deployment-and-session-bootstrapping.md) | Open | The three PoC setups (local/deployed store, local/Azure MCP server): one bridge URL rule plus env-driven server config, all implemented; Azure App Service deployment mechanics and roadmap |
 | [mcp-cloudflare-containers-deployment.md](mcp-cloudflare-containers-deployment.md) | Open | Hosting the hi-mcp server on Cloudflare Containers following the roomle-model-exporter cf/ pattern: unchanged server in a container, Worker front, per-session containers for company-wide try-out; WebSocket passthrough as the core unknown |
 | [add-ai-chat-to-hi-example.md](add-ai-chat-to-hi-example.md) | Implemented | Built-in AI chat (Mistral, Vercel AI SDK) in the HI example, started with `npm start mistral <api-key>`; chat backend as MCP client of the hi-mcp server |
+| [gpt-5-mini-chat-models.md](gpt-5-mini-chat-models.md) | Implemented | `npm start gpt-5-mini`/`gpt-5.4-mini <api-key>`: chat with the deployments on the HI Azure AI Foundry resource via its OpenAI v1 endpoint; `azure`/`openai` stay on `gpt-4o` |
 
 Add feature analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `group-adjustment-to-wall-width.md`).

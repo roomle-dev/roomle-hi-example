@@ -46,6 +46,7 @@ describe('getChatConfig', () => {
     expect(config.provider).toBe('mistral');
     expect(config.modelId).toBe('mistral-large-latest');
     expect(config.azureResourceName).toBeUndefined();
+    expect(config.azureBaseUrl).toBeUndefined();
     expect(config.mcpUrl).toBe('http://localhost:3100/mcp');
     expect(config.pageOrigins).toEqual([
       'http://localhost:3000',
@@ -108,6 +109,33 @@ describe('getChatConfig', () => {
       getChatConfig({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'my-deployment' })
         .modelId,
     ).toBe('my-deployment');
+  });
+
+  it('resolves the Foundry deployments to the Foundry endpoint', () => {
+    const foundryBaseUrl = 'https://dfhifoundrysweden.services.ai.azure.com/openai/v1';
+    expect(resolveChatModel('gpt-5-mini')).toEqual({
+      provider: 'azure',
+      modelId: 'gpt-5-mini',
+      baseUrl: foundryBaseUrl,
+    });
+    expect(resolveChatModel('gpt-5.4-mini')).toEqual({
+      provider: 'azure',
+      modelId: 'gpt-5.4-mini',
+      baseUrl: foundryBaseUrl,
+    });
+    expect(resolveChatModel('openai')).toEqual({
+      provider: 'azure',
+      modelId: 'gpt-4o',
+    });
+    const config = getChatConfig({ HI_CHAT_PROVIDER: 'gpt-5.4-mini' });
+    expect(config.provider).toBe('azure');
+    expect(config.modelId).toBe('gpt-5.4-mini');
+    expect(config.azureBaseUrl).toBe(foundryBaseUrl);
+    expect(
+      getChatConfig({ HI_CHAT_PROVIDER: 'gpt-5-mini', HI_CHAT_MODEL: 'my-gpt4o-deployment' })
+        .modelId,
+    ).toBe('gpt-5-mini');
+    expect(getChatConfig({ HI_CHAT_PROVIDER: 'azure' }).azureBaseUrl).toBeUndefined();
   });
 });
 

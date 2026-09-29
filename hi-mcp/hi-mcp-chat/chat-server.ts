@@ -26,7 +26,7 @@ const getLanguageModel = (config: ChatConfig) => {
     case 'anthropic':
       return createAnthropic({ apiKey })(config.modelId);
     case 'azure':
-      if (!config.azureResourceName) {
+      if (!config.azureBaseUrl && !config.azureResourceName) {
         throw new Error(
           'AZURE_RESOURCE_NAME is required for the azure provider (the model id is the deployment name - set it with HI_CHAT_MODEL)',
         );
@@ -34,6 +34,7 @@ const getLanguageModel = (config: ChatConfig) => {
       return createAzure({
         apiKey,
         resourceName: config.azureResourceName,
+        baseURL: config.azureBaseUrl,
       })(config.modelId);
     default:
       return createMistral({ apiKey })(config.modelId);

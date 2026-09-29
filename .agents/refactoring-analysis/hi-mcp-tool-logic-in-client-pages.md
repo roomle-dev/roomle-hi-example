@@ -22,8 +22,8 @@
 > - Verification: typecheck clean; 71 tests pass (56 in the five affected files, up from 46; the
 >   pre-existing `cf` load failure is unchanged). All eight tools ran live through the real server
 >   against the example page in headless Chrome.
-> - Not verified here: the INT-stage ligna-store live, and the Cloudflare redeploy. See the
->   [report](#report).
+> - The maintainer tested and verified the change (2026-09-29). Still open: the Cloudflare
+>   redeploy. See the [report](#report).
 
 ---
 
@@ -678,9 +678,8 @@ then called the tools over HTTP:
 
 ### Risks and open items
 
-- **INT-stage ligna-store live check:** open the store with `?store.stage=INT` against the local
-  server and repeat the smoke test. Its bridge is byte-identical to the verified reference client
-  and typechecks, but it has not run live.
+- **Maintainer verification:** the maintainer tested and verified the change (2026-09-29), in
+  addition to the live check above.
 - **Rollout order (D5):** redeploy the Cloudflare server with the new protocol before the
   ligna-store change is deployed. See `.agents/skills/hi-mcp-cloudflare-deployment.md`. Store pages
   still on the old bridge get the clear update error in the meantime.

@@ -279,7 +279,7 @@ Returns a snapshot of the HI planning session, shaped for the agent.
 - `rooms` — every room carries its contour `levels` with 3D segments (`pos: [x, level, -y]`,
   the same right-handed coordinate system as a group's `pos`, Y up) and a derived `walls` array —
   per wall: a `side` label (`left`/`right`/`top`/`bottom` as seen in the top-view image),
-  `start`/`end` (`[x, z]` in millimetres, the floor projection of the 3D contour), `lengthMm`,
+  `start`/`end` (`[x, 0, z]` in millimetres, the 3D contour points on the floor), `lengthMm`,
   `type`, `heightMm`, `thicknessMm`, and the `facingRotationY` a group needs to stand against
   that wall
 - `articles` — compact catalog: `articleId`, `articleName`, `desc`, `imageUrl`, `category`, and

@@ -3,8 +3,8 @@ export type WallSide = 'left' | 'right' | 'top' | 'bottom';
 export interface DerivedWall {
   index: number;
   side: WallSide;
-  start: [number, number];
-  end: [number, number];
+  start: [number, number, number];
+  end: [number, number, number];
   lengthMm: number;
   type?: string;
   heightMm?: number;
@@ -291,12 +291,20 @@ export const groupCornerGeometry = (
   return undefined;
 };
 
+const wallFloorPoints = ({
+  start,
+  end,
+}: DerivedWall): [[number, number], [number, number]] => [
+  [start[0], start[2]],
+  [end[0], end[2]],
+];
+
 export const sharedCorner = (
   wall: DerivedWall,
   other: DerivedWall,
 ): [number, number] | undefined =>
-  [wall.start, wall.end].find((point) =>
-    [other.start, other.end].some((candidate) => samePoint(point, candidate)),
+  wallFloorPoints(wall).find((point) =>
+    wallFloorPoints(other).some((candidate) => samePoint(point, candidate)),
   );
 
 // The wall on the given side of the room that meets this wall in a corner.
@@ -326,8 +334,10 @@ export const placeCornerAtWalls = (
   if (!cornerPoint) {
     return undefined;
   }
-  const otherEnd = (candidate: DerivedWall): [number, number] =>
-    samePoint(candidate.start, cornerPoint) ? candidate.end : candidate.start;
+  const otherEnd = (candidate: DerivedWall): [number, number] => {
+    const [start, end] = wallFloorPoints(candidate);
+    return samePoint(start, cornerPoint) ? end : start;
+  };
   const alongWall = unitDirection(cornerPoint, otherEnd(wall));
   const alongAdjoining = unitDirection(cornerPoint, otherEnd(adjoining));
   if (!alongWall || !alongAdjoining) {
@@ -494,8 +504,9 @@ export const resolveWallAlignment = (
     return alignment;
   }
   const axis = alignment === 'left' || alignment === 'right' ? 0 : 1;
-  const startCoordinate = wall.start[axis];
-  const endCoordinate = wall.end[axis];
+  const [start, end] = wallFloorPoints(wall);
+  const startCoordinate = start[axis];
+  const endCoordinate = end[axis];
   if (Math.abs(startCoordinate - endCoordinate) < 1e-6) {
     throw new Error(
       `Alignment '${alignment}' runs parallel to this '${wall.side}' wall - ` +
@@ -516,8 +527,7 @@ export const placeAgainstWall = (
   offsetMm: number,
 ): { pos: [number, number, number]; rotationY: number } => {
   const resolvedAlignment = resolveWallAlignment(wall, alignment);
-  const [startX, startZ] = wall.start;
-  const [endX, endZ] = wall.end;
+  const [[startX, startZ], [endX, endZ]] = wallFloorPoints(wall);
   const length = Math.hypot(endX - startX, endZ - startZ);
   const alongX = (endX - startX) / length;
   const alongZ = (endZ - startZ) / length;

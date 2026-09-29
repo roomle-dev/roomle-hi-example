@@ -5,31 +5,42 @@ reads the plan context and creates, modifies, or positions object groups by
 calling the same MCP tools an external MCP client would call. It turns the
 example into a self-contained demo — no Claude Code or Copilot needed.
 
-The chat uses the [Vercel AI SDK](https://sdk.vercel.ai) with **Mistral** as
-the only supported provider for now, and reuses the MCP server from
+The chat uses the [Vercel AI SDK](https://sdk.vercel.ai) with **Mistral**,
+**Anthropic (Claude)**, and **Azure OpenAI** as supported providers, and reuses
+the MCP server from
 [`hi-mcp/hi-mcp-poc-json`](../../hi-mcp/hi-mcp-poc-json/) unchanged.
 
 ## Running it
 
 ```bash
-npm start mistral <api-key>          # mistral-large-latest (planner from bo-test)
-npm start mistral-medium <api-key>   # mistral-medium-3-5
-npm start mistral-large <api-key>    # mistral-large-latest
+npm start mistral <api-key>           # mistral-large-latest (default)
+npm start mistral-medium <api-key>   # mistral-medium-latest
+npm start claude <api-key>           # claude-sonnet-4-5
+npm start azure <api-key>            # gpt-4o deployment (see below)
 npm run dev <provider> <api-key>     # same, planner from the local Rubens UI dev server (:5173)
 ```
 
-The provider name selects the model:
+The provider name selects the provider and model:
 
-| CLI provider | Mistral model |
-| ------------ | ------------- |
-| `mistral` | `mistral-large-latest` (default) |
-| `mistral-large` | `mistral-large-latest` |
-| `mistral-medium` | `mistral-medium-latest` |
-| any `mistral-*` model id | passed through to Mistral (e.g. `mistral-medium-3-5`, `mistral-small-latest`) |
+| CLI provider | Provider | Model |
+| ------------ | -------- | ----- |
+| `mistral` | Mistral | `mistral-large-latest` (default) |
+| `mistral-medium` | Mistral | `mistral-medium-latest` |
+| `mistral-large` | Mistral | `mistral-large-latest` |
+| any `mistral-*` model id | Mistral | passed through (e.g. `mistral-small-latest`) |
+| `claude` / `anthropic` | Anthropic | `claude-sonnet-4-5` |
+| `claude-sonnet` | Anthropic | `claude-sonnet-4-5` |
+| `claude-opus` | Anthropic | `claude-opus-4-1` |
+| any `claude-*` model id | Anthropic | passed through |
+| `azure` / `openai` | Azure OpenAI | `gpt-4o` (deployment name — see below) |
 
-The `mistral-medium` alias follows Mistral's `-latest` pointer, so it moves
-when Mistral ships a newer medium generation. Pin a full id (e.g.
-`npm start mistral-medium-3-5 <api-key>`) when you need a specific generation.
+Azure needs two extra pieces: the resource name via the `AZURE_RESOURCE_NAME`
+environment variable, and the **deployment name** (not the model name) via
+`HI_CHAT_MODEL` — Azure deployments are user-named:
+
+```bash
+AZURE_RESOURCE_NAME=my-resource HI_CHAT_MODEL=my-gpt4o-deployment npm start azure <api-key>
+```
 
 The launcher then:
 
@@ -43,11 +54,12 @@ The launcher then:
 4. Opens the browser with `&chat=true` appended, so the page starts with the
    chat window visible.
 
-Supported arguments: the provider must be `mistral`, the API key follows it.
-Both are plain positional arguments — no `--` needed. Start without them and
-everything behaves exactly as before (no chat backend, no chat window).
+Supported arguments: the provider name, then the API key. Both are plain
+positional arguments — no `--` needed. Start without them and everything
+behaves exactly as before (no chat backend, no chat window).
 
-The provider aliases above map to model ids in `hi-mcp/hi-mcp-chat/chat-config.ts` (`MODEL_ALIASES`); `HI_CHAT_MODEL` also accepts any full Mistral model id (e.g. `mistral-small-latest`).
+The provider aliases map to providers and model ids in
+`hi-mcp/hi-mcp-chat/chat-config.ts` (`PROVIDER_MODEL_ALIASES`).
 
 ## The chat window
 
@@ -81,7 +93,7 @@ is still working. The backend logs every request, MCP connection, tool call
             │ ws://localhost:3100/bridge
             ▼
 [Chat backend: hi-mcp/hi-mcp-chat on :3200]
-  ├── Mistral via @ai-sdk/mistral (key from HI_CHAT_TOKEN)
+  ├── Mistral / Anthropic / Azure via the @ai-sdk provider packages (key from HI_CHAT_TOKEN)
   ├── MCP client via @ai-sdk/mcp → http://localhost:3100/mcp
   └── streamText(tools) → plain text stream
             │ Streamable HTTP /mcp
@@ -99,7 +111,7 @@ client, so every HI tool (`get-plan-context`, `create-or-replace-groups`,
 | ---- | ---- |
 | `chat-config.ts` | Environment parsing and request body validation |
 | `chat-handler.ts` | HTTP handler factory: CORS, `/health`, `POST /chat`, error relay |
-| `chat-server.ts` | Entry point: Mistral + `@ai-sdk/mcp` + `streamText`, listen on the chat port |
+| `chat-server.ts` | Entry point: provider model (Mistral/Anthropic/Azure) + `@ai-sdk/mcp` + `streamText`, listen on the chat port |
 | `tests/chat-handler.test.ts` | Unit tests (config, validation, CORS, error relay, streaming) |
 
 Endpoints: `GET /health` (used for smoke tests) and `POST /chat`
@@ -112,9 +124,11 @@ origins, `500` when the MCP server or Mistral call fails.
 
 | Variable | Default | Meaning |
 | -------- | ------- | ------- |
-| `HI_CHAT_TOKEN` | — | The Mistral API key (set by the launcher from the CLI argument) |
+| `HI_CHAT_TOKEN` | — | The provider API key (set by the launcher from the CLI argument) |
+| `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `claude`, `azure`, or a full `mistral-*`/`claude-*` model id) |
 | `HI_CHAT_PORT` | `3200` | Port of the chat backend (the page reads it via the `chat_port` query parameter) |
-| `HI_CHAT_MODEL` | `mistral-large-latest` | The Mistral model id or a provider alias (`mistral`, `mistral-large`, `mistral-medium`) |
+| `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider |
+| `AZURE_RESOURCE_NAME` | — | Required for the `azure` provider: the Azure OpenAI resource name |
 | `HI_MCP_URL` | `http://localhost:3100/mcp` | The MCP server the chat backend connects to |
 | `HI_CHAT_PAGE_ORIGINS` | `http://localhost:3000`, `http://127.0.0.1:3000` | Allowed CORS origins (the launcher sets it to match `EXAMPLE_PORT`) |
 
@@ -132,15 +146,13 @@ origins, `500` when the MCP server or Mistral call fails.
 
 | Symptom | Cause and fix |
 | ------- | ------------- |
-| `No API token configured` (503) | Chat backend started without a key — start with `npm start mistral <api-key>` |
+| `No API token configured` (503) | Chat backend started without a key — start with `npm start <provider> <api-key>` |
+| `AZURE_RESOURCE_NAME is required` | The `azure` provider needs the resource name env var and the deployment name in `HI_CHAT_MODEL` |
 | Reply says the tool failed with "no page connected" | The example page is not open (or not with `?mcp=true`) — the browser bridge is required for tool calls |
 | `port 3200 is already in use` | A previous chat backend is still running — `lsof -ti tcp:3200 \| xargs kill`, or pick another port with `HI_CHAT_PORT` |
-| Provider error in the reply | The Mistral API rejected the key or the model — check the key, or set `HI_CHAT_MODEL` |
+| Provider error in the reply | The provider API rejected the key or the model — check the key, or set `HI_CHAT_MODEL` |
 
 ## Open follow-ups
 
-- Azure and Anthropic providers (the analysis in
-  [`.agents/feature-analysis/add-ai-chat-to-hi-example.md`](../../.agents/feature-analysis/add-ai-chat-to-hi-example.md)
-  keeps the full list of open questions)
 - AI SDK data stream protocol for per-tool status in the chat UI
 - Conversation memory on the backend

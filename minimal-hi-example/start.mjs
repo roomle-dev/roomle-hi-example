@@ -9,13 +9,15 @@
 // No browser:     npm start -- --no-open
 // Other page port: EXAMPLE_PORT=3101 npm start
 // Local Rubens UI: npm run dev  (server_url=http://localhost:5173/, override via EXAMPLE_SERVER_URL)
-// AI chat:        npm start mistral <api-key>        (mistral-large-latest)
-//                  npm start mistral-medium <api-key> (mistral-medium-latest)
-//                  npm start mistral-large <api-key>  (mistral-large-latest)
+// AI chat:        npm start mistral <api-key>          (mistral-large-latest)
+//                  npm start mistral-medium <api-key>   (mistral-medium-latest)
+//                  npm start claude <api-key>           (claude-sonnet-4-5)
+//                  npm start azure <api-key>            (gpt-4o deployment; also set
+//                                                          AZURE_RESOURCE_NAME and HI_CHAT_MODEL=<deployment>)
 //                  npm start mistral-<model-id> <api-key> passes the id through
 //                  npm run dev <provider> <api-key> combines chat and local Rubens UI server.
-//                  spawns the hi-mcp-chat backend (Vercel AI SDK, Mistral) and
-//                  opens the example with the chat window visible
+//                  spawns the hi-mcp-chat backend (Vercel AI SDK) and opens the
+//                  example with the chat window visible
 
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
@@ -34,11 +36,22 @@ const EXAMPLE_SERVER_URL =
   process.env.EXAMPLE_SERVER_URL ??
   (process.argv.includes('--dev') ? DEV_SERVER_URL : undefined);
 // Chat providers the launcher accepts: the aliases below plus any full
-// Mistral model id (mistral-*, e.g. mistral-medium-latest). The chat backend
-// resolves the same names to model ids (chat-config.ts MODEL_ALIASES).
-const CHAT_PROVIDERS = ['mistral', 'mistral-medium', 'mistral-large'];
+// mistral-*/claude-* model id. The chat backend resolves the same names
+// (chat-config.ts PROVIDER_MODEL_ALIASES); azure deployments are user-named
+// and set via HI_CHAT_MODEL.
+const CHAT_PROVIDERS = [
+  'mistral',
+  'mistral-medium',
+  'mistral-large',
+  'anthropic',
+  'claude',
+  'azure',
+  'openai',
+];
 const isChatProvider = (name) =>
-  CHAT_PROVIDERS.includes(name) || name.startsWith('mistral-');
+  CHAT_PROVIDERS.includes(name) ||
+  name.startsWith('mistral-') ||
+  name.startsWith('claude-');
 const parseChatArgs = () => {
   const positionalArgs = process.argv
     .slice(2)
@@ -51,7 +64,7 @@ const parseChatArgs = () => {
     console.error(
       `[hi-example] unsupported chat provider "${provider}" - currently supported: ${CHAT_PROVIDERS.join(
         ', ',
-      )} or any mistral-* model id (e.g. mistral-medium-latest)`,
+      )} or any mistral-*/claude-* model id`,
     );
     process.exit(1);
   }
@@ -147,7 +160,7 @@ const startChatServer = () => {
   const childEnv = {
     ...process.env,
     HI_CHAT_TOKEN: chat.apiKey,
-    HI_CHAT_MODEL: chat.provider,
+    HI_CHAT_PROVIDER: chat.provider,
     HI_MCP_URL: `http://localhost:${MCP_PORT}/mcp`,
   };
   if (!childEnv.HI_CHAT_PAGE_ORIGINS) {

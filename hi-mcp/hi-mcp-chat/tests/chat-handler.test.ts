@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   getChatConfig,
   parseChatMessages,
-  resolveModelId,
+  resolveChatModel,
 } from '../chat-config';
 import { createChatRequestHandler, type StreamChat } from '../chat-handler';
 
@@ -43,7 +43,9 @@ describe('getChatConfig', () => {
     const config = getChatConfig({});
     expect(config.port).toBe(3200);
     expect(config.apiToken).toBeUndefined();
+    expect(config.provider).toBe('mistral');
     expect(config.modelId).toBe('mistral-large-latest');
+    expect(config.azureResourceName).toBeUndefined();
     expect(config.mcpUrl).toBe('http://localhost:3100/mcp');
     expect(config.pageOrigins).toEqual([
       'http://localhost:3000',
@@ -55,13 +57,17 @@ describe('getChatConfig', () => {
     const config = getChatConfig({
       HI_CHAT_PORT: '3300',
       HI_CHAT_TOKEN: 'secret',
-      HI_CHAT_MODEL: 'mistral-small-latest',
+      HI_CHAT_PROVIDER: 'claude',
+      HI_CHAT_MODEL: 'claude-opus-4-1',
+      AZURE_RESOURCE_NAME: 'my-resource',
       HI_MCP_URL: 'http://localhost:3101/mcp',
       HI_CHAT_PAGE_ORIGINS: 'http://localhost:3101, https://example.com',
     });
     expect(config.port).toBe(3300);
     expect(config.apiToken).toBe('secret');
-    expect(config.modelId).toBe('mistral-small-latest');
+    expect(config.provider).toBe('anthropic');
+    expect(config.modelId).toBe('claude-opus-4-1');
+    expect(config.azureResourceName).toBe('my-resource');
     expect(config.mcpUrl).toBe('http://localhost:3101/mcp');
     expect(config.pageOrigins).toEqual([
       'http://localhost:3101',
@@ -69,19 +75,39 @@ describe('getChatConfig', () => {
     ]);
   });
 
-  it('resolves model aliases and passes full model ids through', () => {
-    expect(resolveModelId(undefined)).toBe('mistral-large-latest');
-    expect(resolveModelId('mistral')).toBe('mistral-large-latest');
-    expect(resolveModelId('mistral-large')).toBe('mistral-large-latest');
-    expect(resolveModelId('mistral-medium')).toBe('mistral-medium-latest');
-    expect(resolveModelId('mistral-small-latest')).toBe('mistral-small-latest');
-    expect(resolveModelId('mistral-medium-3-5')).toBe('mistral-medium-3-5');
-    expect(resolveModelId('mistral-medium-latest')).toBe(
-      'mistral-medium-latest',
+  it('resolves providers, aliases, and full model ids', () => {
+    expect(resolveChatModel(undefined)).toEqual({
+      provider: 'mistral',
+      modelId: 'mistral-large-latest',
+    });
+    expect(resolveChatModel('mistral-medium')).toEqual({
+      provider: 'mistral',
+      modelId: 'mistral-medium-latest',
+    });
+    expect(resolveChatModel('mistral-small-latest')).toEqual({
+      provider: 'mistral',
+      modelId: 'mistral-small-latest',
+    });
+    expect(resolveChatModel('claude')).toEqual({
+      provider: 'anthropic',
+      modelId: 'claude-sonnet-4-5',
+    });
+    expect(resolveChatModel('claude-opus-4-1')).toEqual({
+      provider: 'anthropic',
+      modelId: 'claude-opus-4-1',
+    });
+    expect(resolveChatModel('azure')).toEqual({
+      provider: 'azure',
+      modelId: 'gpt-4o',
+    });
+    expect(() => resolveChatModel('gpt-4o')).toThrow(/Unknown chat provider/);
+    expect(getChatConfig({ HI_CHAT_PROVIDER: 'claude' }).modelId).toBe(
+      'claude-sonnet-4-5',
     );
-    expect(getChatConfig({ HI_CHAT_MODEL: 'mistral-medium' }).modelId).toBe(
-      'mistral-medium-latest',
-    );
+    expect(
+      getChatConfig({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'my-deployment' })
+        .modelId,
+    ).toBe('my-deployment');
   });
 });
 

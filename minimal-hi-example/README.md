@@ -53,12 +53,14 @@ Add a group of three tall units to the wall on the right.
 The agent authors article picks with a docking chain and a `placement` — one
 `create-or-replace-groups` call creates, docks, and positions the group.
 
-**No external client needed:** start with a Mistral API key and the example
+**No external client needed:** start with a provider API key and the example
 opens with a built-in AI chat that drives the same tools:
 
 ```bash
 npm start mistral <api-key>            # or: npm run dev mistral <api-key>
 npm start mistral-medium <api-key>     # mistral-medium-latest instead of mistral-large-latest
+npm start claude <api-key>             # Anthropic: claude-sonnet-4-5
+npm start azure <api-key>              # Azure OpenAI: needs AZURE_RESOURCE_NAME and HI_CHAT_MODEL
 ```
 
 Details: [docs/ai-chat.md](./docs/ai-chat.md).
@@ -76,8 +78,10 @@ Both root scripts delegate to the [`start.mjs`](./start.mjs) launcher:
 
 | Argument | Meaning |
 | -------- | ------- |
-| `mistral` / `mistral-medium` / `mistral-large` / any `mistral-*` model id | Starts the AI chat backend on :3200 with that model (`mistral-medium` → `mistral-medium-latest`, others → `mistral-large-latest`) and opens the page with the chat window visible |
-| `<api-key>` | Mistral API key — required when a provider is given |
+| `mistral` / `mistral-medium` / `mistral-large` / any `mistral-*` model id | Mistral chat backend on :3200 with that model and the page opened with the chat visible |
+| `claude` / `anthropic` / `claude-sonnet` / `claude-opus` / any `claude-*` model id | Anthropic chat backend (defaults to `claude-sonnet-4-5`) |
+| `azure` / `openai` | Azure OpenAI chat backend — also set `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL=<deployment-name>` |
+| `<api-key>` | Provider API key — required when a provider is given |
 
 **Flags:**
 

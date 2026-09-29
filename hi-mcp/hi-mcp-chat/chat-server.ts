@@ -1,8 +1,11 @@
 import { createServer } from 'node:http';
 import { createMCPClient } from '@ai-sdk/mcp';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import { createAzure } from '@ai-sdk/azure';
 import { createMistral } from '@ai-sdk/mistral';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { stepCountIs, streamText } from 'ai';
+import type { ChatConfig } from './chat-config';
 import { getChatConfig } from './chat-config';
 import { createChatRequestHandler, type StreamChat } from './chat-handler';
 
@@ -13,6 +16,29 @@ const CHAT_SYSTEM_PROMPT = [
 ].join(' ');
 
 const config = getChatConfig(process.env);
+
+const getLanguageModel = (config: ChatConfig) => {
+  const apiKey = config.apiToken;
+  if (!apiKey) {
+    throw new Error('No API token configured');
+  }
+  switch (config.provider) {
+    case 'anthropic':
+      return createAnthropic({ apiKey })(config.modelId);
+    case 'azure':
+      if (!config.azureResourceName) {
+        throw new Error(
+          'AZURE_RESOURCE_NAME is required for the azure provider (the model id is the deployment name - set it with HI_CHAT_MODEL)',
+        );
+      }
+      return createAzure({
+        apiKey,
+        resourceName: config.azureResourceName,
+      })(config.modelId);
+    default:
+      return createMistral({ apiKey })(config.modelId);
+  }
+};
 
 // [tool] lines are status, not answer text: the page shows them in the
 // status area while the tool call runs and keeps them out of the reply.
@@ -70,7 +96,7 @@ const streamChat: StreamChat = async (messages) => {
         ];
       }),
     );
-    const model = createMistral({ apiKey: config.apiToken })(config.modelId);
+    const model = getLanguageModel(config);
     const result = streamText({
       model,
       instructions: CHAT_SYSTEM_PROMPT,
@@ -136,7 +162,7 @@ server.listen(config.port, () => {
   console.log('');
   console.log(`  \u279c  Local:   http://localhost:${config.port}/chat`);
   console.log(`  \u279c  MCP:     ${config.mcpUrl}`);
-  console.log(`  \u279c  Model:   mistral:${config.modelId}`);
+  console.log(`  \u279c  Model:   ${config.provider}:${config.modelId}`);
   console.log('');
   if (!config.apiToken) {
     console.log('[hi-chat] no API token - POST /chat answers 503 until HI_CHAT_TOKEN is set');

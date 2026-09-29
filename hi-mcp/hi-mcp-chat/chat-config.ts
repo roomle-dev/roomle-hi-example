@@ -1,23 +1,55 @@
 export const DEFAULT_CHAT_PORT = 3200;
-export const DEFAULT_MODEL_ID = 'mistral-large-latest';
 export const DEFAULT_MCP_URL = 'http://localhost:3100/mcp';
-// Provider names accepted on the command line (npm start <provider>),
-// resolved to Mistral model ids. Full model ids pass through unchanged.
-export const MODEL_ALIASES = {
-  mistral: DEFAULT_MODEL_ID,
-  'mistral-large': 'mistral-large-latest',
-  'mistral-medium': 'mistral-medium-latest',
-} as const;
 const CHAT_ROLES = ['user', 'assistant'] as const;
 
-export const resolveModelId = (requested: string | undefined): string => {
-  if (!requested) {
-    return DEFAULT_MODEL_ID;
-  }
-  return MODEL_ALIASES[requested as keyof typeof MODEL_ALIASES] ?? requested;
+export class ChatRequestError extends Error {}
+
+export type ChatProvider = 'mistral' | 'anthropic' | 'azure';
+
+export interface ChatModel {
+  provider: ChatProvider;
+  modelId: string;
+}
+
+// CLI provider names (npm start <provider>) resolved to a provider and model.
+// Full model ids pass through: mistral-* and claude-* ids map to their
+// provider; azure deployments are user-named and come via HI_CHAT_MODEL.
+export const PROVIDER_MODEL_ALIASES: Record<ChatProvider, Record<string, string>> = {
+  mistral: {
+    mistral: 'mistral-large-latest',
+    'mistral-large': 'mistral-large-latest',
+    'mistral-medium': 'mistral-medium-latest',
+  },
+  anthropic: {
+    anthropic: 'claude-sonnet-4-5',
+    claude: 'claude-sonnet-4-5',
+    'claude-sonnet': 'claude-sonnet-4-5',
+    'claude-opus': 'claude-opus-4-1',
+  },
+  azure: {
+    azure: 'gpt-4o',
+    openai: 'gpt-4o',
+  },
 };
 
-export class ChatRequestError extends Error {}
+export const resolveChatModel = (requested: string | undefined): ChatModel => {
+  const name = requested ?? 'mistral';
+  for (const provider of Object.keys(PROVIDER_MODEL_ALIASES) as ChatProvider[]) {
+    const modelId = PROVIDER_MODEL_ALIASES[provider][name];
+    if (modelId) {
+      return { provider, modelId };
+    }
+  }
+  if (name.startsWith('mistral')) {
+    return { provider: 'mistral', modelId: name };
+  }
+  if (name.startsWith('claude')) {
+    return { provider: 'anthropic', modelId: name };
+  }
+  throw new ChatRequestError(
+    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, azure, or a full mistral-*/claude-* model id`,
+  );
+};
 
 export interface ChatMessage {
   role: (typeof CHAT_ROLES)[number];
@@ -26,23 +58,32 @@ export interface ChatMessage {
 
 export interface ChatConfig {
   port: number;
+  provider: ChatProvider;
   apiToken: string | undefined;
   modelId: string;
+  azureResourceName: string | undefined;
   mcpUrl: string;
   pageOrigins: string[];
 }
 
-export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => ({
-  port: Number(env.HI_CHAT_PORT) || DEFAULT_CHAT_PORT,
-  apiToken: env.HI_CHAT_TOKEN || undefined,
-  modelId: resolveModelId(env.HI_CHAT_MODEL),
-  mcpUrl: env.HI_MCP_URL || DEFAULT_MCP_URL,
-  pageOrigins: env.HI_CHAT_PAGE_ORIGINS
-    ? env.HI_CHAT_PAGE_ORIGINS.split(',')
-        .map((origin) => origin.trim())
-        .filter(Boolean)
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
-});
+export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
+  const chatModel = resolveChatModel(env.HI_CHAT_PROVIDER);
+  return {
+    port: Number(env.HI_CHAT_PORT) || DEFAULT_CHAT_PORT,
+    provider: chatModel.provider,
+    apiToken: env.HI_CHAT_TOKEN || undefined,
+    // HI_CHAT_MODEL overrides the resolved model id (e.g. an Azure deployment
+    // name) without changing the provider
+    modelId: env.HI_CHAT_MODEL || chatModel.modelId,
+    azureResourceName: env.AZURE_RESOURCE_NAME || undefined,
+    mcpUrl: env.HI_MCP_URL || DEFAULT_MCP_URL,
+    pageOrigins: env.HI_CHAT_PAGE_ORIGINS
+      ? env.HI_CHAT_PAGE_ORIGINS.split(',')
+          .map((origin) => origin.trim())
+          .filter(Boolean)
+      : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  };
+};
 
 export const parseChatMessages = (body: unknown): ChatMessage[] => {
   const { messages } = body as { messages?: unknown };

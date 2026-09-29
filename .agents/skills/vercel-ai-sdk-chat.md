@@ -12,6 +12,8 @@ The comment's three-tier architecture is implemented as:
 - **Backend API route**: the `hi-mcp/hi-mcp-chat` workspace package (`POST /chat`). Started by `minimal-hi-example/start.mjs` via `npm start mistral <api-key>`; the API key goes from the CLI argument into the backend's environment (`HI_CHAT_TOKEN`), never into the page or URL. Only the Mistral provider is wired (`createMistral({ apiKey })`); Azure and Anthropic from the comment above are not implemented.
 - **MCP server**: the existing `hi-mcp/hi-mcp-poc-json` server, unchanged. The chat backend creates a per-request MCP client via `@ai-sdk/mcp` + `StreamableHTTPClientTransport`, fetches the tools, and passes them to `streamText`.
 
+Providers wired in the local implementation: Mistral (`createMistral`), Anthropic (`createAnthropic`, CLI names `claude`/`anthropic`), and Azure OpenAI (`createAzure`, CLI names `azure`/`openai`, requires `AZURE_RESOURCE_NAME` and the deployment name in `HI_CHAT_MODEL` — the comment's keyless Azure Entra ID variant is not implemented). `streamText` needs `stopWhen: stepCountIs(n)` — with the default `stepCountIs(1)` tool calls are never executed and tool-driving prompts return an empty stream.
+
 Deviations from the comment's example code, found during implementation:
 
 - `StreamableHTTPClientTransport` takes a `URL` object (`new StreamableHTTPClientTransport(new URL(url))`), not an options object with `url`.

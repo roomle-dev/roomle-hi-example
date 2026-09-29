@@ -75,7 +75,11 @@ Without `chat=true` the checkbox keeps its old meaning: checked shows the
 debug panel, unchecked hides the left section.
 
 The conversation is held in the page and sent whole with every turn (the
-backend is stateless). Replies stream as plain text; while the model executes
+backend is stateless). Assistant replies are rendered as **markdown** (bold,
+lists, headings, code) with [marked](https://marked.js.org) and sanitized with
+[DOMPurify](https://github.com/cure53/DOMPurify), both loaded from unpkg —
+like the embedding lib, the page has no build step. Replies stream as plain
+text; while the model executes
 tools, the chat backend emits `[tool] <name>` status lines into the stream —
 the page shows the running tool in the status line ("assistant is working…
 get-plan-context") and keeps those lines out of the reply. Tool calls relay

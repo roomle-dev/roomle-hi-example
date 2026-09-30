@@ -316,6 +316,18 @@ rule for the served text; the docs are checked by a grep at close-out.
 > pass (the pre-existing `cf` load failure is unchanged); typecheck clean. Every create is one
 > load. Not done: the live verification (§8.2, §8.3) and the close-out (commit 5); P0 is still
 > open, so the first corner kitchen of an empty plan is anchored at the left end of its row.
+>
+> **Live run (2026-09-30), failed** — "Plan a kitchen in the back right corner of the room",
+> snapshot `ps_qid6jsck322rq3g2stszoxzue4uwnxw`, empty plan: the kitchen stood turned by 90°
+> with its corner mid-wall (group `pos [4554, 0, -1604]`, `rotationY 180`). Reconstructed from
+> the stored transform: the agent sent the correct corner point `[4815, 0, -3765]` with 270; the
+> server anchored `l2`, the far end of the corner article's left arm (local rotation 90), because
+> `isCornerArticle` read only the catalog flag, which is false on an empty plan (P0). An earlier
+> reading of this run blamed the agent's rotation; that was wrong. **Fixed**: a corner article is
+> also recognised by its category ("… | Base Units | Corner") or module name
+> (`mr_CornerunitStraight`), in the anchor walk and in the `cornerArticle` flag `get-plan-context`
+> returns; regression test with the snapshot's L. Still open from P0: the corner point of the
+> first corner article on an empty plan — that kitchen stands 261 mm inside the wall.
 
 > **Status**: proposed, awaiting review (step 5 of the suggested change workflow) — no code before
 > it is approved.

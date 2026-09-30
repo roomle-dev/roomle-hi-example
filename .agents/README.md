@@ -94,6 +94,8 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [`npm run dev` with local Rubens UI server](feature-analysis/dev-script-local-server-url.md) | Implemented | 2026-09-28 |
 | [Add AI chat to the HI MCP example](feature-analysis/add-ai-chat-to-hi-example.md) | Implemented | 2026-09-29 |
 | [AI model selection for kitchen planning](feature-analysis/ai-model-selection-for-kitchen-planning.md) | Open | 2026-09-30 |
+| [Group placement computed in the MCP server (RML-18007, Task 1)](feature-analysis/group-placement-computed-in-the-mcp-server.md) | Open | 2026-09-30 |
+| [Reintroduce the place-group tool in the MCP server (RML-18007, Task 2)](feature-analysis/reintroduce-place-group-tool-in-the-server.md) | Open | 2026-09-30 |
 
 ### Refactoring Analyses
 

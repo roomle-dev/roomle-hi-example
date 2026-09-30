@@ -45,6 +45,7 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [hi-mcp-tools.md](./skills/hi-mcp-tools.md) | Complete MCP tool reference with parameters, examples, error handling | Using MCP tools, tool implementation, error diagnosis |
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
 | [vercel-ai-sdk-chat.md](./skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: provider selection, server-side auth, @ai-sdk/mcp, streamText route | Implementing the AI chat window (RML-17984), Vercel AI SDK, MCP client integration |
+| [hi-mcp-testing.md](./skills/hi-mcp-testing.md) | "Test the MCP": every prompt of `docs/testing-prompts.md` without an image through the chat, one session directory in `.temp/result/`, `report.md` with plan snapshot ids, images, evaluation and bug verdicts; the script `run-hi-mcp-prompt.js` (prompts as chat turns in headless Chromium, snapshot, plan snapshot id, planner calls) | The user asks to "test the mcp"; testing prompts or models against the real planner |
 
 ### Decisions (Architecture Decision Records)
 
@@ -98,6 +99,8 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [Group placement computed in the MCP server (RML-18007, Task 1)](feature-analysis/group-placement-computed-in-the-mcp-server.md) | Open | 2026-09-30 |
 | [Reintroduce the place-group tool in the MCP server (RML-18007, Task 2)](feature-analysis/reintroduce-place-group-tool-in-the-server.md) | Open | 2026-09-30 |
 | [HI MCP command API (RML-18004)](feature-analysis/hi-mcp-command-api.md) | Implemented | 2026-09-30 |
+| [HI MCP testing skill: the prompt run script](feature-analysis/hi-mcp-prompt-run-script.md) | Implemented | 2026-09-30 |
+| ["test the mcp": the prompt suite of the HI MCP testing skill](feature-analysis/hi-mcp-test-the-mcp-skill.md) | Implemented | 2026-09-30 |
 
 ### Refactoring Analyses
 

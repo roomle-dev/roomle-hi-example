@@ -125,6 +125,17 @@ When testing these prompts with the MCP server:
    - Material specifications are applied correctly
    - Docking relationships between modules are valid
 
+To run every prompt here without an image and get an evaluated report, ask an agent to **"test the
+mcp"** ([HI MCP testing skill](../.agents/skills/hi-mcp-testing.md)). To run a single prompt without
+opening the page yourself and keep the result, use its script:
+
+```bash
+node .agents/scripts/run-hi-mcp-prompt.js mistral "$MISTRAL_API_KEY" "add a group of three tall units to the wall on the right"
+```
+
+It runs the prompt through the chat in a headless browser and stores the snapshot, the images and the
+model's answer in `.temp/result/<run>/`.
+
 ## Related Documentation
 
 - [HI MCP Server Documentation](./hi-mcp-server.md)

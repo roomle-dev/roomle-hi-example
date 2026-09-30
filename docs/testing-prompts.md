@@ -43,13 +43,13 @@ This document provides a collection of prompt examples for testing the Roomle HI
   ```
   create a kitchen like the one in the image on the right-hand wall of the room
   ```
-  *Reference: .temp/image.png*
+  *Reference: [kitchen-right-wall-reference.png](./images/kitchen-right-wall-reference.png)*
 
 - **Create a kitchen like the one in the back right corner of the room, as shown in the image**
   ```
   create a kitchen like the one in the back right corner of the room, as shown in the image
   ```
-  *Reference: .temp/image2.png*
+  *Reference: [kitchen-back-right-corner-reference.png](./images/kitchen-back-right-corner-reference.png)*
 
 ## Detailed Kitchen Specifications
 

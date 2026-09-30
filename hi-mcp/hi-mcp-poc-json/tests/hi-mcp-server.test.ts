@@ -8,15 +8,21 @@ import { createPlannerApi } from '../planner-api';
 import { attachPage } from './fake-page-socket';
 
 const EXPECTED_TOOLS = [
+  'change-group-attribute',
+  'change-module-attribute',
   'create-or-replace-groups',
+  'delete-group',
+  'delete-root-module',
+  'exchange-root-module',
   'find-attributes',
   'get-authoring-rules',
   'get-order-data',
   'get-plan-context',
   'get-plan-images',
   'get-price',
+  'merge-article-into-group',
+  'merge-groups',
   'place-group',
-  'update-attribute',
 ];
 
 const createMockPlannerApi = (
@@ -25,7 +31,7 @@ const createMockPlannerApi = (
   extended: {
     getExternalObjectPlanContext: vi.fn(async () => ({})),
     loadExternalObjectGroupLayout: vi.fn(async () => []),
-    updateExternalObjectGroupAttribute: vi.fn(async () => undefined),
+    externalObjectGroupOperation: vi.fn(async () => ({})),
     fetchPrice: vi.fn(async () => null),
     getExternalObjectSnapshot: vi.fn(async () => ({})),
     getExternalObjectGroups: vi.fn(async () => []),
@@ -53,7 +59,7 @@ const textOf = (result: unknown): string => {
 };
 
 describe('hi-mcp-server tool registration', () => {
-  it('exposes exactly the nine expected tools', async () => {
+  it('exposes exactly the expected tools', async () => {
     const client = await connectClient(createMockPlannerApi());
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name).sort()).toEqual(EXPECTED_TOOLS);
@@ -61,6 +67,70 @@ describe('hi-mcp-server tool registration', () => {
 });
 
 describe('hi-mcp-server tool calls', () => {
+  it('points the agent to the command tools for editing an existing group', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    const { tools } = await client.listTools();
+
+    expect(client.getInstructions()).toContain(
+      'Edit an existing group with the command tools',
+    );
+    expect(rules).toContain('To change an existing group, use the command tools');
+    expect(rules).toContain('call merge-article-into-group');
+    expect(
+      tools.find((tool) => tool.name === 'merge-groups')?.description,
+    ).toContain('nothing is moved and no docking is added');
+  });
+
+  it.each([
+    ['change-module-attribute', { attributeId: 'front', value: 'white' }],
+    ['change-group-attribute', { groupId: 'g1', value: 'white' }],
+    ['delete-group', {}],
+    ['delete-root-module', {}],
+    ['merge-article-into-group', { groupId: 'g1', articleId: 'a1' }],
+    ['exchange-root-module', { groupId: 'g1', rootModuleId: 'r1' }],
+    ['merge-groups', { targetGroupId: 'g1', groupIds: [] }],
+  ])(
+    'rejects %s without a required argument before any planner call',
+    async (name, args) => {
+      const plannerApi = createMockPlannerApi();
+      const client = await connectClient(plannerApi);
+
+      const result = await client.callTool({ name, arguments: args });
+
+      expect((result as { isError?: boolean }).isError).toBe(true);
+      expect(textOf(result)).toContain('Input validation error');
+      for (const method of Object.values(plannerApi.extended)) {
+        expect(method).not.toHaveBeenCalled();
+      }
+    },
+  );
+
+  it('runs a command tool against the planner API and returns its result', async () => {
+    const operationResult = {
+      command: 'delete-root-module',
+      groups: [{ id: 'g1' }],
+      removedGroupIds: [],
+    };
+    const plannerApi = createMockPlannerApi({
+      externalObjectGroupOperation: vi.fn(async () => operationResult),
+    });
+    const client = await connectClient(plannerApi);
+
+    const result = await client.callTool({
+      name: 'delete-root-module',
+      arguments: { rootModuleId: 'r1' },
+    });
+
+    expect(plannerApi.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+      'delete-root-module',
+      { rootModuleId: 'r1' },
+    );
+    expect(JSON.parse(textOf(result))).toEqual(operationResult);
+  });
+
   it('answers get-authoring-rules without a planner call', async () => {
     const plannerApi = createMockPlannerApi();
     const client = await connectClient(plannerApi);
@@ -118,6 +188,7 @@ describe('hi-mcp-server tool calls', () => {
       'cornerPoint',
       'blind zone',
       '261',
+      'externalObjectGroupOperation',
     ]) {
       expect(served.join('\n')).not.toContain(internal);
     }

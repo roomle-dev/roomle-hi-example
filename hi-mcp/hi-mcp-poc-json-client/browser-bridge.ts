@@ -12,7 +12,7 @@ const RECONNECT_DELAY_MS = 3000;
 export const PLANNER_METHODS = [
   'getExternalObjectPlanContext',
   'loadExternalObjectGroupLayout',
-  'updateExternalObjectGroupAttribute',
+  'externalObjectGroupOperation',
   'fetchPrice',
   'getExternalObjectSnapshot',
   'getExternalObjectGroups',

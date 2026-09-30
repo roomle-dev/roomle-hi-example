@@ -80,6 +80,7 @@ Primary tools:
 - `get-plan-context` — Get current rooms, walls, articles, groups, docking vectors
 - `create-or-replace-groups` — Add, modify or extend groups; position new groups (`placement`)
 - `place-group` — Move an existing group against a wall or into a room corner
+- `merge-article-into-group`, `exchange-root-module`, `delete-root-module`, `delete-group`, `change-module-attribute`, `change-group-attribute`, `merge-groups` — Edit an existing group
 - `get-price` — Calculate pricing for current configuration
 - `get-order-data` — Generate order data for manufacturing
 - `get-plan-images` — Render 2D and 3D images of the plan

@@ -57,11 +57,12 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 - `GET ws://…/bridge` (WebSocket upgrade, origin-checked) connects the page
 - The page sends `{kind:'hello', example, url, protocol: 2}`; the server relays planner method calls `{kind:'call', id, method, args: [...]}` and the page answers `{kind:'result', id, ok, result|error}` (`types.ts`, `BRIDGE_PROTOCOL`)
 - A page whose hello carries no `protocol: 2` (an outdated, tool-level bridge) stays connected, but every call fails with an "update the page bridge" error
-- The server correlates calls by id, with per-method timeouts (`planner-api.ts`: 120 s for `loadExternalObjectGroupLayout` and `getExternalObjectSnapshot`, 30 s otherwise) and a single-page policy: a newer connection replaces the previous one
+- The server correlates calls by id, with per-method timeouts (`planner-api.ts`: 120 s for `loadExternalObjectGroupLayout`, `externalObjectGroupOperation` and `getExternalObjectSnapshot`, 30 s otherwise) and a single-page policy: a newer connection replaces the previous one
 
 #### 4. Tool logic (`tool-executors.ts`, `planner-api.ts`)
 - The tool handlers in `hi-mcp-server.ts` run the executors in `tool-executors.ts`: payload validation, planner call composition, response shaping, agent hints
 - The executors call the planner through `PlannerApi` (`planner-api.ts`): the seven planner methods the tools need, each forwarded over the bridge with positional arguments. All parameters are required — the call travels as JSON, which turns `undefined` into `null`
+- The command tools (`change-module-attribute`, `change-group-attribute`, `merge-article-into-group`, `exchange-root-module`, `delete-root-module`, `delete-group`, `merge-groups`) share one planner method, `externalObjectGroupOperation(command, payload)`. Their executors resolve group id prefixes, check article ids against the catalog and forward the command; the edit runs in roomle-ui (`runGroupOperation` in `homag-intelligence/src/hi-plan-context.ts` over the operations of the glue logic), which answers with the affected groups in the plan-context shape once the planner has loaded them. Deletions and merges are performed by the kernel: the glue logic waits for the kernel's report of the group (`removedGroup`, `deleteRootModule`, `mergeGroups`), and a root module deletion the kernel does not report within the request is rejected as refused
 
 #### 5. Group placement (internal)
 
@@ -103,7 +104,7 @@ The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (bro
 ## Timeouts and Error Handling
 
 - Timeouts apply per planner call; default: 30 seconds
-- Snapshot calls (`loadExternalObjectGroupLayout` for `create-or-replace-groups` and `place-group`, `getExternalObjectSnapshot` for `get-order-data` and `get-plan-images`): 120 seconds
+- Snapshot calls (`loadExternalObjectGroupLayout` for `create-or-replace-groups` and `place-group`, `externalObjectGroupOperation` for the command tools, `getExternalObjectSnapshot` for `get-order-data` and `get-plan-images`): 120 seconds
 - No page connected: error names the client URL (`HI_MCP_STORE_URL`)
 - Unit tests: `npm test` at the `hi-mcp` root (vitest)
 
@@ -111,10 +112,11 @@ The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (bro
 
 1. Register the tool in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` (zod schema, handler via `runTool`)
 2. Implement the executor in `hi-mcp/hi-mcp-poc-json/tool-executors.ts` — no page changes
-3. Only if the tool needs a planner method not exposed yet: add it to `planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-poc-json-client/browser-bridge.ts`, then copy to the ligna-store). Keep methods that place orders or overwrite the plan out unless explicitly decided
-4. Update documentation (`minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`)
-5. Add/extend unit tests in `hi-mcp/hi-mcp-poc-json/tests/`
-6. `npm test` + `npm run typecheck` at the `hi-mcp` root
+3. An edit of existing groups is a command: add it in roomle-ui (`HI_GROUP_OPERATION`, a payload type and a handler in `hi-plan-context.ts`, an operation on the glue logic) and forward it here through `externalObjectGroupOperation` — no page change
+4. Only if the tool needs a planner method not exposed yet: add it to `planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-poc-json-client/browser-bridge.ts`, then copy to the ligna-store). Keep methods that place orders or overwrite the plan out unless explicitly decided
+5. Update documentation (`minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`)
+6. Add/extend unit tests in `hi-mcp/hi-mcp-poc-json/tests/`
+7. `npm test` + `npm run typecheck` at the `hi-mcp` root
 
 ## Modifying Existing Tools
 

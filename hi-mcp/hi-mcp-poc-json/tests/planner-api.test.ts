@@ -19,12 +19,6 @@ describe('createPlannerApi', () => {
       ['articles'],
     ]);
 
-    await extended.updateExternalObjectGroupAttribute('r1', null, 'front', 'white');
-    expect(bridge.call).toHaveBeenCalledWith(
-      'updateExternalObjectGroupAttribute',
-      ['r1', null, 'front', 'white'],
-    );
-
     await extended.fetchPrice();
     expect(bridge.call).toHaveBeenCalledWith('fetchPrice', []);
 
@@ -35,7 +29,7 @@ describe('createPlannerApi', () => {
     expect(bridge.call).toHaveBeenCalledWith('removeExternalObject', ['g1']);
   });
 
-  it('uses the snapshot timeout for loading and snapshots only', async () => {
+  it('uses the snapshot timeout for loading, group commands and snapshots only', async () => {
     const bridge = createMockBridge();
     const { extended } = createPlannerApi(bridge);
 
@@ -45,6 +39,15 @@ describe('createPlannerApi', () => {
     expect(bridge.call).toHaveBeenCalledWith(
       'loadExternalObjectGroupLayout',
       [{ posGroups: [] }, 'posGroups', { reason: 'adjusted' }],
+      SNAPSHOT_CALL_TIMEOUT_MS,
+    );
+
+    await extended.externalObjectGroupOperation('delete-group', {
+      groupId: 'g1',
+    });
+    expect(bridge.call).toHaveBeenCalledWith(
+      'externalObjectGroupOperation',
+      ['delete-group', { groupId: 'g1' }],
       SNAPSHOT_CALL_TIMEOUT_MS,
     );
 

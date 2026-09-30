@@ -186,7 +186,11 @@ const createApi = (
   extended: {
     getExternalObjectPlanContext: vi.fn(async () => planContext),
     loadExternalObjectGroupLayout: vi.fn(async () => [{ id: 'loaded-1' }]),
-    updateExternalObjectGroupAttribute: vi.fn(async () => undefined),
+    externalObjectGroupOperation: vi.fn(async (command: string) => ({
+      command,
+      groups: [],
+      removedGroupIds: [],
+    })),
     fetchPrice: vi.fn(async () => ({ price: 42 })),
     getExternalObjectSnapshot: vi.fn(async () => ({})),
     getExternalObjectGroups: vi.fn(async () => []),
@@ -1285,35 +1289,6 @@ describe('place-group', () => {
 });
 
 describe('remaining tools', () => {
-  it('updates an attribute of a root module or sub module', async () => {
-    const api = createApi({});
-    await expect(
-      toolExecutors['update-attribute'](api, {
-        rootModuleId: 'r1',
-        attributeId: 'b',
-        value: '900',
-      }),
-    ).resolves.toEqual({ ok: true });
-    expect(api.extended.updateExternalObjectGroupAttribute).toHaveBeenCalledWith(
-      'r1',
-      null,
-      'b',
-      '900',
-    );
-    await toolExecutors['update-attribute'](api, {
-      rootModuleId: 'r1',
-      moduleId: 'sub-1',
-      attributeId: 'front',
-      value: 'white',
-    });
-    expect(api.extended.updateExternalObjectGroupAttribute).toHaveBeenCalledWith(
-      'r1',
-      'sub-1',
-      'front',
-      'white',
-    );
-  });
-
   it('returns the fetched price', async () => {
     const api = createApi({});
     await expect(toolExecutors['get-price'](api, {})).resolves.toEqual({
@@ -1364,3 +1339,162 @@ describe('remaining tools', () => {
   });
 });
 
+
+describe('group command tools', () => {
+  const planWithGroups = {
+    ...planContextFixture,
+    groups: [
+      makeShapedGroup({ id: 'kitchen-1' }),
+      makeShapedGroup({ id: 'kitchen-2' }),
+      makeShapedGroup({ id: 'island-1' }),
+    ],
+  };
+
+  const dockTo = {
+    rootId: 'r1',
+    ownDockingVector: 'RightBottom',
+    dockingVector: 'LeftBottom',
+  };
+
+  it.each([
+    [
+      'change-module-attribute',
+      { rootModuleId: 'r1', attributeId: 'front', value: 'white' },
+      { rootModuleId: 'r1', moduleId: null, attributeId: 'front', value: 'white' },
+    ],
+    [
+      'change-module-attribute',
+      { rootModuleId: 'r1', moduleId: 'sub-1', attributeId: 'front', value: 'white' },
+      { rootModuleId: 'r1', moduleId: 'sub-1', attributeId: 'front', value: 'white' },
+    ],
+    [
+      'change-group-attribute',
+      { groupId: 'island', attributeId: 'front', value: 'white' },
+      { groupId: 'island-1', attributeId: 'front', value: 'white' },
+    ],
+    ['delete-group', { groupId: 'kitchen-2' }, { groupId: 'kitchen-2' }],
+    ['delete-root-module', { rootModuleId: 'r1' }, { rootModuleId: 'r1' }],
+    [
+      'merge-article-into-group',
+      { groupId: 'island', articleId: 'article-1', dockTo },
+      { groupId: 'island-1', articleId: 'article-1', dockTo },
+    ],
+    [
+      'merge-article-into-group',
+      {
+        groupId: 'kitchen-1',
+        articleId: 'article-1',
+        attributes: [{ id: 'front', value: 'white' }],
+        dockTo,
+      },
+      {
+        groupId: 'kitchen-1',
+        articleId: 'article-1',
+        attributes: [{ id: 'front', value: 'white' }],
+        dockTo,
+      },
+    ],
+    [
+      'exchange-root-module',
+      { groupId: 'kitchen-1', rootModuleId: 'r1', articleId: 'article-1' },
+      { groupId: 'kitchen-1', rootModuleId: 'r1', articleId: 'article-1' },
+    ],
+    [
+      'merge-groups',
+      { targetGroupId: 'kitchen-1', groupIds: ['kitchen-2', 'island'] },
+      { targetGroupId: 'kitchen-1', groupIds: ['kitchen-2', 'island-1'] },
+    ],
+  ])('%s forwards its command to the planner', async (tool, args, payload) => {
+    const api = createApi(planWithGroups);
+
+    await expect(toolExecutors[tool](api, args)).resolves.toEqual({
+      command: tool,
+      groups: [],
+      removedGroupIds: [],
+    });
+    expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+      tool,
+      payload,
+    );
+  });
+
+  it.each([
+    ['change-group-attribute', { groupId: 'kitchen', attributeId: 'front', value: 'white' }],
+    ['delete-group', { groupId: 'hall-1' }],
+    ['merge-article-into-group', { groupId: 'kitchen', articleId: 'article-1', dockTo }],
+    ['exchange-root-module', { groupId: 'hall', rootModuleId: 'r1', articleId: 'article-1' }],
+    ['merge-groups', { targetGroupId: 'kitchen-1', groupIds: ['kitchen'] }],
+  ])(
+    '%s rejects an unknown or ambiguous group id with the groups in the plan',
+    async (tool, args) => {
+      const api = createApi(planWithGroups);
+
+      await expect(toolExecutors[tool](api, args)).rejects.toThrow(
+        /Group '\w+(-\d)?' not found\. Groups in the plan: kitchen-1, kitchen-2, island-1\./,
+      );
+      expect(api.extended.externalObjectGroupOperation).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['merge-article-into-group', 'exchange-root-module'])(
+    '%s rejects an article that is not in the catalog with the catalog',
+    async (tool) => {
+      const api = createApi(planWithGroups);
+
+      await expect(
+        toolExecutors[tool](api, {
+          groupId: 'kitchen-1',
+          rootModuleId: 'r1',
+          articleId: 'article-9',
+          dockTo,
+        }),
+      ).rejects.toThrow(
+        "articleId 'article-9' is not in the article catalog of library 'lib-1'. Valid article ids: article-1",
+      );
+      expect(api.extended.externalObjectGroupOperation).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['merge-article-into-group', 'exchange-root-module'])(
+    "%s rejects an article of another library than the group's",
+    async (tool) => {
+      const api = createApi({
+        ...planWithGroups,
+        articles: [
+          articleFixture,
+          { ...articleFixture, articleId: 'article-2', libraryId: 'lib-2' },
+        ],
+      });
+
+      await expect(
+        toolExecutors[tool](api, {
+          groupId: 'kitchen-1',
+          rootModuleId: 'r1',
+          articleId: 'article-2',
+          dockTo,
+        }),
+      ).rejects.toThrow(
+        "articleId 'article-2' is not in the article catalog of library 'lib-1'. Valid article ids: article-1",
+      );
+      expect(api.extended.externalObjectGroupOperation).not.toHaveBeenCalled();
+    },
+  );
+
+  it('passes the reason of a refused command through', async () => {
+    const api = createApi(planWithGroups, {
+      externalObjectGroupOperation: vi.fn(async () => {
+        throw new Error(
+          "Root module 'r1' has no free docking vector 'RightBottom' - its free docking vectors: LeftBottom.",
+        );
+      }),
+    });
+
+    await expect(
+      toolExecutors['merge-article-into-group'](api, {
+        groupId: 'kitchen-1',
+        articleId: 'article-1',
+        dockTo,
+      }),
+    ).rejects.toThrow("Root module 'r1' has no free docking vector 'RightBottom'");
+  });
+});

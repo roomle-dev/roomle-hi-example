@@ -127,20 +127,52 @@ const isArticlePickOnly = (root: any): boolean =>
 // completes it from the article template; here the article id is validated
 // against the catalog so the agent gets a helpful error instead of a
 // half-calculated group.
+// With a libraryId, only the articles of that library are valid.
+const requireCatalogArticle = (articles: any[], root: any): void => {
+  if (!catalogArticleOf(articles, root)) {
+    const validIds = articles
+      .filter(
+        (candidate) => !root.libraryId || candidate.libraryId === root.libraryId,
+      )
+      .map((candidate) => candidate.articleId);
+    throw new Error(
+      `articleId '${root.articleId}' is not in the article catalog` +
+        (root.libraryId ? ` of library '${root.libraryId}'` : '') +
+        `. Valid article ids: ${validIds.slice(0, 100).join(', ')}`,
+    );
+  }
+};
+
 const validateArticlePickIds = (articles: any[], posGroups: any[]): void => {
   const articlePicks = posGroups.flatMap((group) =>
     (group?.roots ?? []).filter(isArticlePickOnly),
   );
   for (const root of articlePicks) {
-    if (!catalogArticleOf(articles, root)) {
-      const validIds = articles.map((candidate) => candidate.articleId);
-      throw new Error(
-        `articleId '${root.articleId}' is not in the article catalog. ` +
-          `Valid article ids: ${validIds.slice(0, 100).join(', ')}`,
-      );
-    }
+    requireCatalogArticle(articles, root);
   }
 };
+
+// A group by its id or a unique id prefix.
+const findGroup = (groups: any[], groupId: string): any => {
+  const prefixMatches = groupId
+    ? groups.filter((candidate) => candidate.id.startsWith(groupId))
+    : [];
+  const group =
+    groups.find((candidate) => candidate.id === groupId) ??
+    (prefixMatches.length === 1 ? prefixMatches[0] : undefined);
+  if (!group) {
+    const groupIds = groups.map((candidate) => candidate.id);
+    throw new Error(
+      `Group '${groupId}' not found. Groups in the plan: ` +
+        `${groupIds.join(', ') || 'none'}.`,
+    );
+  }
+  return group;
+};
+
+const planGroups = async (roomDesignerApi: PlannerApi): Promise<any[]> =>
+  ((await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']))
+    .groups ?? []) as any[];
 
 // The agent picks corner articles by cornerArticle; the flag is completed for
 // an empty plan, and the corner point stays with the server.
@@ -756,22 +788,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       ['rooms', 'groups'],
     );
     const groups = (context.groups ?? []) as any[];
-    let group = groups.find((candidate) => candidate.id === groupId);
-    if (!group && groupId) {
-      const prefixMatches = groups.filter((candidate) =>
-        candidate.id.startsWith(groupId),
-      );
-      if (prefixMatches.length === 1) {
-        group = prefixMatches[0];
-      }
-    }
-    if (!group) {
-      const groupIds = groups.map((candidate) => candidate.id);
-      throw new Error(
-        `Group '${groupId}' not found. Groups in the plan: ` +
-          `${groupIds.join(', ') || 'none'}.`,
-      );
-    }
+    const group = findGroup(groups, groupId);
     const rooms = ((context.rooms as any)?.rooms ?? []) as any[];
     const resolved = resolveWall(rooms, spec);
     // the placement math needs the calculated group with its geometry; the
@@ -820,14 +837,98 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     };
   },
 
-  'update-attribute': async (roomDesignerApi, args) => {
-    await roomDesignerApi.extended.updateExternalObjectGroupAttribute(
-      args.rootModuleId,
-      args.moduleId ?? null,
-      args.attributeId,
-      args.value,
+  // The group commands run in the planner (externalObjectGroupOperation); the
+  // executors resolve group id prefixes and check article ids against the
+  // catalog first, so the agent gets the lists of valid ids on a mistake.
+  'change-module-attribute': async (roomDesignerApi, args) =>
+    roomDesignerApi.extended.externalObjectGroupOperation(
+      'change-module-attribute',
+      {
+        rootModuleId: args.rootModuleId,
+        moduleId: args.moduleId ?? null,
+        attributeId: args.attributeId,
+        value: args.value,
+      },
+    ),
+
+  'change-group-attribute': async (roomDesignerApi, args) => {
+    const group = findGroup(
+      await planGroups(roomDesignerApi),
+      args.groupId as string,
     );
-    return { ok: true };
+    return roomDesignerApi.extended.externalObjectGroupOperation(
+      'change-group-attribute',
+      { groupId: group.id, attributeId: args.attributeId, value: args.value },
+    );
+  },
+
+  'delete-group': async (roomDesignerApi, args) => {
+    const group = findGroup(
+      await planGroups(roomDesignerApi),
+      args.groupId as string,
+    );
+    return roomDesignerApi.extended.externalObjectGroupOperation(
+      'delete-group',
+      { groupId: group.id },
+    );
+  },
+
+  'delete-root-module': async (roomDesignerApi, args) =>
+    roomDesignerApi.extended.externalObjectGroupOperation(
+      'delete-root-module',
+      { rootModuleId: args.rootModuleId },
+    ),
+
+  'merge-article-into-group': async (roomDesignerApi, args) => {
+    const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
+      ['groups', 'articles'],
+    );
+    const group = findGroup(context.groups ?? [], args.groupId as string);
+    requireCatalogArticle(context.articles ?? [], {
+      articleId: args.articleId,
+      libraryId: group.libraryId,
+    });
+    return roomDesignerApi.extended.externalObjectGroupOperation(
+      'merge-article-into-group',
+      {
+        groupId: group.id,
+        articleId: args.articleId,
+        ...(args.attributes !== undefined && { attributes: args.attributes }),
+        dockTo: args.dockTo,
+      },
+    );
+  },
+
+  'exchange-root-module': async (roomDesignerApi, args) => {
+    const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
+      ['groups', 'articles'],
+    );
+    const group = findGroup(context.groups ?? [], args.groupId as string);
+    requireCatalogArticle(context.articles ?? [], {
+      articleId: args.articleId,
+      libraryId: group.libraryId,
+    });
+    return roomDesignerApi.extended.externalObjectGroupOperation(
+      'exchange-root-module',
+      {
+        groupId: group.id,
+        rootModuleId: args.rootModuleId,
+        articleId: args.articleId,
+      },
+    );
+  },
+
+  'merge-groups': async (roomDesignerApi, args) => {
+    const groups = await planGroups(roomDesignerApi);
+    return roomDesignerApi.extended.externalObjectGroupOperation(
+      'merge-groups',
+      {
+        targetGroupId: findGroup(groups, args.targetGroupId as string).id,
+        groupIds: (args.groupIds as string[]).map(
+          (groupId) => findGroup(groups, groupId).id,
+        ),
+      },
+    );
   },
 
   'get-price': async (roomDesignerApi) => {

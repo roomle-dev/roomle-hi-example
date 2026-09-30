@@ -12,11 +12,9 @@ export interface PlannerApi {
       layoutType: string,
       options: Record<string, unknown>,
     ): Promise<any>;
-    updateExternalObjectGroupAttribute(
-      rootModuleId: unknown,
-      moduleId: unknown,
-      attributeId: unknown,
-      value: unknown,
+    externalObjectGroupOperation(
+      command: string,
+      payload: Record<string, unknown>,
     ): Promise<any>;
     fetchPrice(): Promise<any>;
     getExternalObjectSnapshot(options: Record<string, boolean>): Promise<any>;
@@ -35,18 +33,12 @@ export const createPlannerApi = (bridge: PageBridge): PlannerApi => ({
         [layout, layoutType, options],
         SNAPSHOT_CALL_TIMEOUT_MS,
       ),
-    updateExternalObjectGroupAttribute: (
-      rootModuleId,
-      moduleId,
-      attributeId,
-      value,
-    ) =>
-      bridge.call('updateExternalObjectGroupAttribute', [
-        rootModuleId,
-        moduleId,
-        attributeId,
-        value,
-      ]),
+    externalObjectGroupOperation: (command, payload) =>
+      bridge.call(
+        'externalObjectGroupOperation',
+        [command, payload],
+        SNAPSHOT_CALL_TIMEOUT_MS,
+      ),
     fetchPrice: () => bridge.call('fetchPrice', []),
     getExternalObjectSnapshot: (options) =>
       bridge.call(

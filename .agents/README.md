@@ -97,6 +97,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [AI model selection for kitchen planning](feature-analysis/ai-model-selection-for-kitchen-planning.md) | Open | 2026-09-30 |
 | [Group placement computed in the MCP server (RML-18007, Task 1)](feature-analysis/group-placement-computed-in-the-mcp-server.md) | Open | 2026-09-30 |
 | [Reintroduce the place-group tool in the MCP server (RML-18007, Task 2)](feature-analysis/reintroduce-place-group-tool-in-the-server.md) | Open | 2026-09-30 |
+| [HI MCP command API (RML-18004)](feature-analysis/hi-mcp-command-api.md) | Open | 2026-09-30 |
 
 ### Refactoring Analyses
 

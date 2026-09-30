@@ -14,8 +14,9 @@
  * saves the plan with saveExternalObjectSnapshot() for its plan snapshot id and
  * writes --out (default .temp/result/<UTC timestamp>-<provider>/): run.json,
  * plan-context.json (rooms and groups after the chat), planner-calls.json,
- * snapshot.json and every snapshot field as a file of its own. Exits 1 when the chat or the snapshot reported an error; a stopped run
- * (Ctrl+C) stops every server and stores nothing.
+ * snapshot.json and every snapshot field as a file of its own. Exits 1 when
+ * the chat or the snapshot reported an error or no snapshot or plan snapshot
+ * id came back; a stopped run (Ctrl+C) stops every server and stores nothing.
  *
  * Requires Playwright: npm install in .agents/scripts.
  */
@@ -306,15 +307,15 @@ const storeResult = async (runDir, { run, planContext, plannerCalls, snapshot })
   if (planContext !== undefined) {
     await write('plan-context.json', JSON.stringify(planContext, null, 2));
   }
-  if (snapshot === undefined) {
+  if (!snapshot) {
     return;
   }
   await write('snapshot.json', JSON.stringify(snapshot, null, 2));
-  if (snapshot?.orderData) {
+  if (snapshot.orderData) {
     await write('order-data.json', JSON.stringify(snapshot.orderData, null, 2));
   }
   for (const [field, file, encoding] of SNAPSHOT_FILES) {
-    if (typeof snapshot?.[field] === 'string') {
+    if (typeof snapshot[field] === 'string') {
       await write(file, Buffer.from(snapshot[field], encoding));
     }
   }
@@ -357,6 +358,9 @@ const runSession = async (options, launcher, browser) => {
   let snapshot;
   try {
     snapshot = await evaluateInPage(page, 'getExternalObjectSnapshot', 'the snapshot');
+    if (!snapshot) {
+      errors.push('getExternalObjectSnapshot returned no snapshot');
+    }
   } catch (error) {
     errors.push(`snapshot failed: ${error.message}`);
   }
@@ -368,6 +372,9 @@ const runSession = async (options, launcher, browser) => {
       'the saved snapshot',
     );
     planSnapshotId = saved?.planSnapshotId ?? null;
+    if (!planSnapshotId) {
+      errors.push('saveExternalObjectSnapshot returned no plan snapshot id');
+    }
   } catch (error) {
     errors.push(`saving the snapshot failed: ${error.message}`);
   }

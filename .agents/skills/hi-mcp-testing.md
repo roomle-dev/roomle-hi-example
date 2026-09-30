@@ -225,7 +225,8 @@ The script:
 | `object.glb` | the HI objects as GLB (missing when the plan has no groups) |
 | `plan.xml` | the plan XML |
 
-Exit code 0 when neither the chat nor the snapshot reported an error; 1 when one did — the result
+Exit code 0 when neither the chat nor the snapshot reported an error; 1 when one did, or when no
+snapshot or no plan snapshot id came back (the reason is in `errors`) — the result
 directory is written in both cases, after an error the snapshot shows the plan as the model left
 it. A failed planner call the model reports in its answer is not an error of the run: it is in
 `planner-calls.json`. A run that fails before the prompt (launcher, readiness timeout) writes no

@@ -26,9 +26,9 @@ const AUTHORING_RULES = `Authoring rules for pos groups:
 - placement: { posGroup: [x, y, z], posRotationY, rootId? } positions a new group. posGroup is the room point of the group's back left bottom corner, in millimetres (y up, y = 0 on the floor; for a group of wall units only, their mounting height) - against a wall the wall's end (flush into the corner at the wall's end) or a point from end towards start, in a room corner the corner point. posRotationY is the rotation of the group in degrees, counter-clockwise as seen from above (in the top-view image) - against a wall the wall's facingRotationY; posRotationY is required, state 0 explicitly for no rotation. rootId is optional: with two corner articles in the group, set it to the corner article that goes into the corner posGroup names. Applied exactly once, when the group is created; a placement on a group that is already in the plan is rejected (move it with place-group), and groups returned by get-plan-context never carry this field.
 - Take posGroup and posRotationY from the walls instead of computing them. Every room of get-plan-context carries a walls array - per wall start and end (points [x, 0, z] on the floor, in the coordinates of posGroup), lengthMm, type and facingRotationY; use the walls of type wall. Against a wall: posRotationY = the wall's facingRotationY (the group's back faces the wall), and posGroup = end puts the group flush into the corner at the wall's end, the row running towards start. Along the wall: posGroup = end + d * (start - end) / lengthMm - centred: d = (lengthMm - group width) / 2; right end flush into the corner at the wall's start: d = lengthMm - group width; the group width is the sum of the unit widths of the row plus any x docking offsets (gaps) between them - dimensions in the catalog; position.footprint.widthMm of a loaded group already includes the gaps. A room corner is the point two walls share. Anywhere else (an island, the middle of the room, next to a door): any free point on the floor as posGroup, any posRotationY.
 - Corners of a rectangular room (back = top, front = bottom in the top-view image), with the corner article in the corner: left back corner posRotationY 0 - the RightBottom row runs along the back wall to the right, the LeftBottom row along the left wall to the front. left front 90 - RightBottom along the left wall to the back, LeftBottom along the front wall to the right. right front 180 - RightBottom along the front wall to the left, LeftBottom along the right wall to the back. right back 270 - RightBottom along the right wall to the front, LeftBottom along the back wall to the left. Straight walls: back 0, left 90, front 180, right 270.
-- Extending a kitchen: units next to an existing group are roots of that group, never a new group. Take the group from get-plan-context, add the new picks, dock each to a free docking vector of the root it continues (freeDockingVectors per root: a free LeftBottom takes the new root's RightBottom, a free RightBottom takes LeftBottom, a free Top vector takes the new root's Bottom vector), and resubmit the group with its id. A new group is only for a free stretch of wall or a free spot in the room - never position a new group against an existing one.
+- Extending a kitchen: units next to an existing group are roots of that group, never a new group. Dock each new unit to a free docking vector of the root it continues (freeDockingVectors per root: a free LeftBottom takes the new root's RightBottom, a free RightBottom takes LeftBottom, a free Top vector takes the new root's Bottom vector) - one unit with merge-article-into-group, several at once by adding the picks to the group from get-plan-context and resubmitting it with its id. A new group is only for a free stretch of wall or a free spot in the room - never position a new group against an existing one.
 - To move an existing group against a wall or into a room corner, call place-group: the wall by side label or index, alignment start, center or end, or the side label of the adjoining wall to sit flush in that corner (wall right + alignment top is the back right corner), offsetMm along the wall. The group keeps its roots and docking.
-- To modify an existing group, take it from get-plan-context, change it, and resubmit it with its id and without placement via create-or-replace-groups - it keeps its position; keep the ids of the root modules you keep.
+- To change an existing group, use the command tools: merge-article-into-group docks one more unit to a free docking vector of a root, exchange-root-module replaces a unit and keeps its docking, delete-root-module removes a unit (units no longer docked together become separate groups where they stand), delete-group removes a group, change-module-attribute and change-group-attribute set attributes, merge-groups joins groups where they stand (nothing is moved, no docking is added). Every command keeps the group's position and returns the changed groups. To rebuild a group, take it from get-plan-context, change it, and resubmit it with its id and without placement via create-or-replace-groups - it keeps its position; keep the ids of the root modules you keep.
 - Verify results numerically: the returned groups carry position (pos, rotationY, footprint) and per root the dockingVectors, the input attributes and the docking; logMessages entries with category Error mean the input is wrong (typically a bad articleId or attribute value). Do not judge a position from a rendering alone.
 
 Example 1 - "a row of three tall units along the right wall, from the back right corner" is ONE call, create-or-replace-groups. posGroup is the right wall's end point (the back right corner), posRotationY its facingRotationY (270 in a rectangular room):
@@ -59,14 +59,14 @@ Example 3 - "an L-shaped kitchen in the back right corner" (back = top in the to
 
 Example 4 - "the row centred on the back wall": posRotationY 0 (the facingRotationY of the back wall) and posGroup = end + d * (start - end) / lengthMm of the back wall, with d = (lengthMm - <group width>) / 2.
 
-Example 5 - "add a unit to the right of the existing cabinets" is a REPLACE of that group, never a new group: take the group from get-plan-context, find the root with a free RightBottom (freeDockingVectors), add { "ownDockingVector": "RightBottom", "dockedRoots": [{ "id": "n1", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }] } to its contextData.dockedRoots, append { "id": "n1", "articleId": "<unit>" } to roots, and resubmit the group with its id and without placement - it keeps its position.`;
+Example 5 - "add a unit to the right of the existing cabinets" extends that group, never a new group: take the group from get-plan-context, find the root with a free RightBottom (freeDockingVectors) and call merge-article-into-group { "groupId": "<group id>", "articleId": "<unit>", "dockTo": { "rootId": "<that root>", "ownDockingVector": "RightBottom", "dockingVector": "LeftBottom" } } - the group keeps its position.`;
 
 const INSTRUCTIONS = `This server orchestrates HOMAG Intelligence (HI) object groups in a live Roomle room-planner session (proof of concept).
 
 Typical workflow:
 1. get-plan-context: fetch the rooms (each with a derived walls array), the article catalog (desc, category, dimensions, docking vector names, sub-modules per article) and the groups currently in the plan. Add masterData to include for the attribute vocabulary, or look an attribute up with find-attributes.
 2. create-or-replace-groups: author the whole kitchen as ONE group - article picks plus docking (every unit beside, above or back to back is docked to its neighbour; the placed root lists the new root) plus one placement for the new group ({ posGroup, posRotationY }: the room point of the group's back left corner and its rotation, taken from the walls array - a wall's end point and facingRotationY, or a room corner point with the rotation from the corner rules; a plan into a room corner starts with a corner article, cornerArticle true in the catalog). One call creates, docks and positions the group; never author root positions and never split a kitchen into several groups. A group whose id matches an existing group in the plan completely replaces that group and keeps its position; all other groups are created. Units next to an existing group are added to that group, docked to a free docking vector of the root they continue - a new group is only for a free stretch of wall. The payload format, the docking pairs, the corner rules and complete examples are returned by get-authoring-rules.
-3. place-group: move an existing group to another wall or into a room corner when asked.
+3. Edit an existing group with the command tools: merge-article-into-group (dock one more unit), exchange-root-module (replace a unit), delete-root-module and delete-group, change-module-attribute and change-group-attribute (attributes, e.g. the front colour of the whole kitchen), merge-groups (join groups that stand next to each other); place-group moves a group to another wall or into a room corner. Resubmit a whole group with create-or-replace-groups only to rebuild it.
 4. Check the result with get-price or get-order-data, and inspect it with get-plan-images.
 
 ${AUTHORING_RULES}`;
@@ -256,11 +256,13 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
   );
 
   server.registerTool(
-    'update-attribute',
+    'change-module-attribute',
     {
       description:
-        'Sets one attribute of a root module or sub module of a group in the plan. Attribute ids and allowed ' +
-        'values are described in the masterData section of get-plan-context. Numeric values are passed as strings.',
+        'Sets one attribute of a root module of a group in the plan, or of one of its sub modules, and ' +
+        'recalculates the group. The ids are the ones get-plan-context shows (a sub module by its id in ' +
+        'subModules); attribute ids and allowed values come from the masterData section of get-plan-context ' +
+        'or from find-attributes. Returns the changed group.',
       inputSchema: {
         rootModuleId: z.string().describe('The id of the root module.'),
         moduleId: z
@@ -275,15 +277,150 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .describe('The new value. Numbers are passed as strings.'),
       },
     },
-    async ({ rootModuleId, moduleId, attributeId, value }) =>
-      textResult(
-        await runTool('update-attribute', {
-          rootModuleId,
-          moduleId,
-          attributeId,
-          value,
-        }),
-      ),
+    async (args) => textResult(await runTool('change-module-attribute', args)),
+  );
+
+  server.registerTool(
+    'change-group-attribute',
+    {
+      description:
+        'Sets one attribute on every module of a group that has it - the root modules and their sub ' +
+        'modules, e.g. the front colour of a whole kitchen - in one recalculation. Returns the changed ' +
+        'group and the ids of the changed modules.',
+      inputSchema: {
+        groupId: z
+          .string()
+          .describe('The id of the group. A unique id prefix is accepted.'),
+        attributeId: z.string().describe('The id of the attribute.'),
+        value: z
+          .union([z.string(), z.boolean()])
+          .describe('The new value. Numbers are passed as strings.'),
+      },
+    },
+    async (args) => textResult(await runTool('change-group-attribute', args)),
+  );
+
+  server.registerTool(
+    'delete-group',
+    {
+      description:
+        'Removes a group with all its units from the plan. Returns the id of the removed group.',
+      inputSchema: {
+        groupId: z
+          .string()
+          .describe('The id of the group. A unique id prefix is accepted.'),
+      },
+    },
+    async (args) => textResult(await runTool('delete-group', args)),
+  );
+
+  server.registerTool(
+    'delete-root-module',
+    {
+      description:
+        'Removes one root module (one unit) from its group. Units that are no longer docked together ' +
+        'afterwards become separate groups where they stand; removing the only unit removes the group. ' +
+        'Generated roots (worktop, toe kick) cannot be removed - the library regenerates them. Returns the ' +
+        'remaining groups.',
+      inputSchema: {
+        rootModuleId: z.string().describe('The id of the root module.'),
+      },
+    },
+    async (args) => textResult(await runTool('delete-root-module', args)),
+  );
+
+  server.registerTool(
+    'merge-article-into-group',
+    {
+      description:
+        'Adds one unit to an existing group: docks a new root module of an article from the catalog to a ' +
+        'free docking vector of a root of the group, the way the authoring rules describe docking. dockTo ' +
+        'names the root the unit continues, that root\'s free vector (one of its freeDockingVectors in ' +
+        "get-plan-context) and the new unit's vector: RightBottom -> LeftBottom puts it to the right, " +
+        'LeftBottom -> RightBottom to the left, LeftTop -> LeftBottom with offset [0, <gap>, 0] above. The ' +
+        'group keeps its position. Returns the changed group.',
+      inputSchema: {
+        groupId: z
+          .string()
+          .describe('The id of the group. A unique id prefix is accepted.'),
+        articleId: z.string().describe('The article id from the catalog.'),
+        attributes: z
+          .array(
+            z.object({
+              id: z.string(),
+              value: z.union([z.string(), z.number(), z.boolean()]),
+            }),
+          )
+          .optional()
+          .describe('Attribute overrides of the new unit: [{ id, value }].'),
+        dockTo: z
+          .object({
+            rootId: z
+              .string()
+              .describe('The id of the root of the group the new unit docks to.'),
+            ownDockingVector: z
+              .string()
+              .describe("That root's free docking vector, e.g. RightBottom."),
+            dockingVector: z
+              .string()
+              .describe("The new unit's docking vector that meets it, e.g. LeftBottom."),
+            mode: z
+              .enum(['StartStart', 'EndEnd', 'StartEnd', 'EndStart'])
+              .optional()
+              .describe('Which endpoints of the two vectors coincide. Default StartStart.'),
+            offset: z
+              .tuple([z.number(), z.number(), z.number()])
+              .optional()
+              .describe(
+                '[x, y, z] in millimetres added after docking, e.g. [0, 600, 0] for a wall unit above. Default [0, 0, 0].',
+              ),
+          })
+          .describe('Where the new unit docks.'),
+      },
+    },
+    async (args) => textResult(await runTool('merge-article-into-group', args)),
+  );
+
+  server.registerTool(
+    'exchange-root-module',
+    {
+      description:
+        'Replaces one root module (one unit) of a group with an article from the catalog that has one root ' +
+        'module, e.g. a base unit with a drawer unit; the new unit takes over the position and the docking ' +
+        'of the replaced one. Returns the changed group.',
+      inputSchema: {
+        groupId: z
+          .string()
+          .describe('The id of the group. A unique id prefix is accepted.'),
+        rootModuleId: z
+          .string()
+          .describe('The id of the root module to replace.'),
+        articleId: z.string().describe('The article id from the catalog.'),
+      },
+    },
+    async (args) => textResult(await runTool('exchange-root-module', args)),
+  );
+
+  server.registerTool(
+    'merge-groups',
+    {
+      description:
+        'Joins groups into one: the groups in groupIds are merged into the target group where they stand, ' +
+        'like the merge action of the planner - nothing is moved and no docking is added, so merge groups ' +
+        'that already stand next to each other. Groups of different libraries cannot be merged. To add a unit ' +
+        'next to a group, use merge-article-into-group instead. Returns the merged group and the ids of the ' +
+        'groups merged into it.',
+      inputSchema: {
+        targetGroupId: z
+          .string()
+          .describe('The id of the group the others are merged into. A unique id prefix is accepted.'),
+        groupIds: z
+          .array(z.string())
+          .min(1)
+          .describe('The ids of the groups to merge into the target group.'),
+      },
+    },
+    async (args) => textResult(await runTool('merge-groups', args)),
   );
 
   server.registerTool(

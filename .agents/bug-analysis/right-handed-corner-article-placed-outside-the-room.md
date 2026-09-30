@@ -5,7 +5,7 @@
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-09-30_17-48-25/report.md`, prompt 04 — the only result classified as a bug; the same defect also hit prompt 04 of the run before (`mcp-test-2026-09-30_16-04-31`), hidden behind the docking bug fixed in [unconnected-docking-graph-accepted.md](unconnected-docking-graph-accepted.md)
 > **Date**: 2026-09-30
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Fixed
 > **Branch**: `fix/right-handed-corner-article-placement` (stacked on `fix/docking-graph-connectivity-check`)
 
 ---
@@ -95,7 +95,9 @@ without the attributes that decide the hand (`tool-executors.ts:196-246`, `group
 so even the offset is wrong when the hand comes from an attribute or from another article of the
 module.
 
-## Proposed fix
+## Fix
+
+Proposed before the work and implemented as written (see [Implementation](#implementation-2026-09-30)):
 
 1. **A corner frame instead of a corner point** (`group-placement.ts`): from a calculated root's
    `LeftBack*`/`RightBack*` vectors (bottom row preferred, as today) the corner point **and**
@@ -140,3 +142,57 @@ module.
    (`UERTB90` + `mod_CarcaseDirection = Right`, 270) through `create-or-replace-groups`; the loaded
    group's footprint lies inside the room with the corner in the back right corner.
 3. "test the mcp" again.
+
+---
+
+## Implementation (2026-09-30)
+
+Implemented as proposed in `6aeadd9` (code, served rule, tests) and `ca21966` (living docs):
+
+| Part | Where |
+|---|---|
+| `CornerFrame { point, turnY }`, `cornerFrameOfRoot`, `cornerVariantKey` | `group-placement.ts` |
+| `toRepositioningData` turns by `posRotationY − turnY` and offsets by the frame's point | `group-placement.ts` |
+| `probeCornerFrame` probes the anchor with its attribute overrides; `knownCornerFrames` per variant; the raw plan groups are read only when a variant is unknown | `tool-executors.ts` |
+| removed: `cornerPointOfRoot`, `cornerPointsByArticle`, `cornerPointFor`, `moduleIdOf`, the catalog `cornerPoint` fallback | `group-placement.ts`, `tool-executors.ts` |
+| served rule: "This holds for both hands of corner article: the server turns one whose corner lies on its right … by 90 degrees more itself" | `hi-mcp-server.ts` |
+
+Unit tests: 196 pass (the Cloudflare worker test file still cannot load `@cloudflare/containers`,
+unchanged). New: the frame of both hands from the live vectors, one vector only, no corner
+vectors; the variant key; the right-handed placement at all four rotations with the corner point
+in the corner; the variant the agent authored wins over the bare article; no frame across the
+module; the probe payload with attributes; a probe per variant and per article of the module;
+a probe although the plan or the catalog has a corner point.
+
+**Live check** (the launcher on ports 3002/3111, headless Chromium, `create-or-replace-groups`
+through the MCP client, placement `[4815, 0, -3765]`, 270, the L of run 17:48):
+
+| Corner article | Group `pos` | `rotationY` | Room extent of the footprint | Inside, in the corner |
+|---|---|---|---|---|
+| `UELTB90` (run 17:48) | `[3654, 0, -3765]` | 0 | x 2144 … 4815, z −3765 … −1904 | yes |
+| `UERTB90` + `mod_CarcaseDirection` Right (run 16:04) | `[3654, 0, -3765]` | 0 | x 2144 … 4815, z −3765 … −1904 | yes |
+| `UERTB90` (regression) | `[4815, 0, -3504]` | −90 | x 2644 … 4815, z −3765 … −1404 | yes |
+
+## Close-out (2026-09-30)
+
+"test the mcp" on `ca21966` (gpt-5.4-mini, planner `bo-test`), report
+`.temp/result/mcp-test-2026-09-30_18-34-07/report.md`: 6 pass, 1 partial, 6 fail, 1 bug (the chat
+backend's context window, run 06 — not related to this fix).
+
+| Corner run | Corner article | Sent | Result |
+|---|---|---|---|
+| 03 | `EUERTB90` + `mod_CarcaseDirection` Right (probed with the attributes) | `[3654, 0, -3765]`, 0 | the corner unit in the corner, inside the room |
+| 04 | `UERTB90` | `[4815, 0, -3504]`, 270 | in the corner, inside the room |
+| 05 | `UELTB90` (the case of run 17:48) | `[3654, 0, -3765]`, 0 | in the corner, inside the room |
+| 06 | `UERTB90` | `[4815, 0, -3504]`, 270 | corner point exactly at `[4815, -3765]` |
+
+Every corner group of the run stands with its corner in the corner and inside the room, for both
+hands and for the hand set by an attribute. The fails of the run have other causes, recorded in the
+report as model findings and hardening candidates: units docked to a side a neighbour already takes
+(04, 06, 12), a docking to roots outside a new group (03), a docking vector the article does not
+have (04), a new group overlapping an existing one (07), a wall cabinet through the wall (06).
+
+Durable knowledge promoted: the corner frame and the variant probe in
+`.agents/skills/hi-mcp-server.md`; the hand note under the corner table in
+`minimal-hi-example/docs/hi-mcp-server.md`, `hi-mcp/hi-mcp-poc-json/README.md`,
+`.agents/skills/hi-authoring-rules.md`, `.agents/skills/hi-mcp-tools.md` and the served rules.

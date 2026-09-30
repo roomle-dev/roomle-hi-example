@@ -82,7 +82,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [Agent placement in a room corner: findings](bug-analysis/agent-placement-in-a-room-corner-findings.md) | Open | 2026-09-30 |
 | [Corner article offset missing on an empty plan](bug-analysis/corner-offset-missing-on-an-empty-plan.md) | Open | 2026-09-30 |
 | [Unconnected docking graph accepted by create-or-replace-groups](bug-analysis/unconnected-docking-graph-accepted.md) | Open | 2026-09-30 |
-| [Right-handed corner article placed outside the room](bug-analysis/right-handed-corner-article-placed-outside-the-room.md) | Open | 2026-09-30 |
+| [Right-handed corner article placed outside the room](bug-analysis/right-handed-corner-article-placed-outside-the-room.md) | Fixed | 2026-09-30 |
 
 ### Feature Analyses
 

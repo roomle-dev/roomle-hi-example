@@ -337,7 +337,10 @@ rule for the served text; the docs are checked by a grep at close-out.
 > read from the planner's raw groups (`getExternalObjectGroups`, added to the planner API and the
 > page allow-lists), rotates its negation by `posRotationY` and adds it to `posGroup` when it derives
 > `repositioningData` (decided 2026-09-30: no `rootRelPos`, the planner gets the anchor origin's room
-> point). Still open:
+> point). **P0 decided 2026-09-30**: roomle-ui calculates the article templates for the catalog
+> (branch `refactor/hi-plan-context-RML-17966`), see
+> [corner-offset-missing-on-an-empty-plan.md](../bug-analysis/corner-offset-missing-on-an-empty-plan.md).
+> Until that UI is deployed or run locally, still open:
 > the very first corner article of an empty plan has no calculated root anywhere, so that one
 > kitchen keeps the 261 mm offset until the geometry exists before the load (P0).
 

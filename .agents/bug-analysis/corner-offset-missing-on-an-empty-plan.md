@@ -79,7 +79,14 @@ Alternatives:
 | A constant per module in the server (`mr_CornerunitStraight` → `[-261, 0, 0]`) | Immediate, but a library constant that is not calculated; wrong the day the library changes |
 | Correct the created group after the load | Repositions the group; ruled out for Task 1 |
 
-**Recommendation**: F1 now, F2 as the server-side fix for the empty plan.
+**Decision (2026-09-30)**: F1 done (`0dd5372`). For the empty plan the roomle-ui alternative was
+chosen instead of F2: `getPlanContext` calculates the template of every article without docking
+geometry once (a single-pick group through the library calculation, never added to the plan,
+cached per article) and derives `dockingVectors`, `cornerArticle` and `cornerPoint` from it —
+roomle-ui branch `refactor/hi-plan-context-RML-17966`, "feat: calculate article templates for the
+plan context catalog", with unit tests. The MCP server needs no further change: it already adds
+the negated catalog `cornerPoint` to `posGroup`. The fix reaches the example page only with a UI
+that carries it — the local dev server (`npm run dev`) or a deployment of `bo-test`.
 
 ## Verification
 

@@ -216,7 +216,7 @@ try {
 |---|---|---|
 | No page connected | Page not loaded with ?mcp=true | Open browser page |
 | Invalid articleId | Article not in catalog | Use valid articleId from context |
-| Root not docked | Undocked root in group | Dock all non-first roots |
+| roots '…' are not docked to a placed root | A root or a chain the docking does not connect to the first root of the group | Dock it to a placed root (the error names the placed roots) |
 | repositioningData is not supported | Payload with a `repositioningData` field | Use `placement` |
 | placement takes only posGroup, posRotationY and rootId | A stale field (`wall`, `alignment`, …) in the placement | Give `posGroup` and `posRotationY` from a wall, or create the group and call `place-group` |
 | placement: rootId must be the id of one of the group's roots | `rootId` names no root of the group | Name a root of the group, or leave `rootId` out |

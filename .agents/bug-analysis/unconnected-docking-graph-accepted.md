@@ -8,6 +8,11 @@
 > **Status**: Open
 > **Branch**: `fix/docking-graph-connectivity-check`
 
+> **Progress (2026-09-30)**: The connectivity check is implemented (`4f91b38`), with one change
+> to the reviewed plan: an entry that names an id outside the group is **not** rejected — it
+> connects nothing (see [Amendment](#amendment-ids-outside-the-group)). Unit tests pass; the
+> live "test the mcp" run is pending, the document stays Open until then.
+
 ---
 
 ## Scope
@@ -428,3 +433,31 @@ reaches `u1`), `positions a new corner kitchen by the corner article in one load
 - **Seeding from the placement anchor** (`findAnchorRoot`) instead of `roots[0]`: no effect on
   acceptance (one component is required either way) and one dependency more; the planner's own
   seed is `roots[0]`.
+
+### Amendment: ids outside the group
+
+Found while implementing: the planner's own groups carry docking entries that name roots no
+longer in the group. In the stored plan contexts of this test session:
+
+| Run | After | Group roots | Entry naming a root that is gone |
+|---|---|---|---|
+| 09 | `delete-root-module` of the middle unit | `35bda1c9` | `RightBottom -> 2091bc43` (the deleted unit) |
+| 09 | the same | `9f32378d` | `LeftBottom -> 2091bc43` |
+| 12 | `merge-groups` of the two remaining units | `b4ac6768`, `38b85ae7` | both to `74de77c9` (the deleted unit) |
+
+The rules tell the agent to resubmit a group from `get-plan-context` as it is, so step 1.2 of the
+plan (reject such an entry) would have rejected the planner's own output after every delete. The
+check therefore treats such an entry as no edge. The harmful case stays covered: a root whose only
+docking names an id outside the group is unreached and rejected — the merged group of run 12 is
+exactly that (both roots dock only to the deleted unit; resubmitted today, the second unit would
+land on the first, because root positions never travel to the planner).
+
+The tests follow the amendment: `does not count a docking to a root outside the group as
+connecting` (the run 12 shape, rejected) replaces the planned unknown-id rejection, and `accepts a
+group resubmitted with a docking to a root deleted from it` (the run 09 shape, loaded) is added.
+
+**A second finding, not fixed here**: the stale entry also makes the planner report the side as
+taken — in run 09, `35bda1c9` has no `RightBottom` in `freeDockingVectors` although nothing is
+docked there any more, so `merge-article-into-group` on that side would be refused. The entries
+come from roomle-ui's delete of a root module, which does not remove the references to the deleted
+root from its neighbours. Recorded for a separate analysis.

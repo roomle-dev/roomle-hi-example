@@ -127,6 +127,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | Document | Last touched |
 |---|---|
 | [Backlog](backlog/README.md) — make group positioning easier for the agent | 2026-09-30 |
+| [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — deferred roomle-ui alternative to the server's corner probe | 2026-09-30 |
 
 ---
 

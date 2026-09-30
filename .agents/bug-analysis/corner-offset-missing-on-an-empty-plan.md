@@ -79,14 +79,18 @@ Alternatives:
 | A constant per module in the server (`mr_CornerunitStraight` → `[-261, 0, 0]`) | Immediate, but a library constant that is not calculated; wrong the day the library changes |
 | Correct the created group after the load | Repositions the group; ruled out for Task 1 |
 
-**Decision (2026-09-30)**: F1 done (`0dd5372`). For the empty plan the roomle-ui alternative was
-chosen instead of F2: `getPlanContext` calculates the template of every article without docking
-geometry once (a single-pick group through the library calculation, never added to the plan,
-cached per article) and derives `dockingVectors`, `cornerArticle` and `cornerPoint` from it —
-roomle-ui branch `refactor/hi-plan-context-RML-17966`, "feat: calculate article templates for the
-plan context catalog", with unit tests. The MCP server needs no further change: it already adds
-the negated catalog `cornerPoint` to `posGroup`. The fix reaches the example page only with a UI
-that carries it — the local dev server (`npm run dev`) or a deployment of `bo-test`.
+**Decision (2026-09-30)**: F1 done (`0dd5372`). The roomle-ui alternative was implemented on
+`refactor/hi-plan-context-RML-17966` with unit tests and then reverted as too risky for now — it is
+recorded for the backlog in
+[roomle-ui-article-template-geometry.md](../backlog/roomle-ui-article-template-geometry.md).
+**F2 is implemented in the server**: `probeCornerPoint` in `tool-executors.ts` loads a single-pick
+probe of the corner article when neither the plan's raw groups nor the learned points nor the
+catalog know its corner point, reads the point from the probe's docking vectors, removes the probe
+(`removeExternalObject`, added to the planner API and the page allow-lists of the example page, the
+reference bridge and the ligna-store), remembers it per article and module for the server's
+lifetime (`knownCornerPoints`), and then loads the agent's group once at the corrected `posGroup`.
+Unit tests cover the probe sequence, the cache across articles of the same module, the plan already
+holding a calculated corner article (no probe) and a probe that yields nothing.
 
 ## Verification
 

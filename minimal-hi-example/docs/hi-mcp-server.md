@@ -86,7 +86,8 @@ server; each tool calls one or more planner methods, which the page executes
 against `roomDesignerApi.extended`. The page executes only the methods on its
 allow-list (`getExternalObjectPlanContext`, `loadExternalObjectGroupLayout`,
 `updateExternalObjectGroupAttribute`, `fetchPrice`,
-`getExternalObjectSnapshot`, `getExternalObjectGroups`) — nothing else of the planner API, such as
+`getExternalObjectSnapshot`, `getExternalObjectGroups`, `removeExternalObject` — the last two
+for the corner point of a corner article, see the server skill) — nothing else of the planner API, such as
 placing an order, is reachable from the server.
 
 | File | Responsibility |

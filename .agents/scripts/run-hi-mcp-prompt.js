@@ -1,18 +1,21 @@
 #!/usr/bin/env node
 /**
- * Runs one prompt through the HI example chat and stores the resulting plan:
+ * Runs prompts through the HI example chat and stores the resulting plan:
  *
- *   node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" [--dev] [--headed]
+ *   node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...]
+ *     [--out <dir>] [--dev] [--headed]
  *
  * Starts the launcher (minimal-hi-example/start.mjs <provider> <api-key>) with
  * the MCP server on its own port, opens the example page in Playwright
  * Chromium (headless unless --headed; --dev is passed to the launcher), waits
- * until get-plan-context lists articles, sends the prompt to the chat backend
- * and waits for the end of its stream. Then it reads
- * roomDesignerApi.extended.getExternalObjectSnapshot() in the page and writes
- * .temp/result/<UTC timestamp>-<provider>/: snapshot.json, run.json and every
- * snapshot field as a file of its own. Exits 1 when the chat reported an error;
- * a stopped run (Ctrl+C) stops every server and stores nothing.
+ * until get-plan-context lists articles, then sends the prompts to the chat
+ * backend as consecutive turns of one conversation, each until the end of its
+ * stream. Then it reads roomDesignerApi.extended.getExternalObjectSnapshot(),
+ * saves the plan with saveExternalObjectSnapshot() for its plan snapshot id and
+ * writes --out (default .temp/result/<UTC timestamp>-<provider>/): run.json,
+ * plan-context.json (rooms and groups after the chat), planner-calls.json,
+ * snapshot.json and every snapshot field as a file of its own. Exits 1 when the chat or the snapshot reported an error; a stopped run
+ * (Ctrl+C) stops every server and stores nothing.
  *
  * Requires Playwright: npm install in .agents/scripts.
  */
@@ -20,8 +23,9 @@
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { constants } from 'node:os';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAUNCHER = join(REPO_DIR, 'minimal-hi-example', 'start.mjs');
@@ -54,26 +58,27 @@ const SNAPSHOT_FILES = [
   ['planXML', 'plan.xml', 'utf8'],
 ];
 const USAGE =
-  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" [--dev] [--headed]';
+  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--out <dir>] [--dev] [--headed]';
 
-const parseArgs = () => {
-  const args = process.argv.slice(2);
-  const flags = args.filter((arg) => arg.startsWith('--'));
-  const [provider, apiKey, prompt, ...rest] = args.filter(
-    (arg) => !arg.startsWith('--'),
-  );
-  const unknownFlags = flags.filter((flag) => !['--dev', '--headed'].includes(flag));
-  if (!prompt || rest.length > 0 || unknownFlags.length > 0) {
+const parseOptions = () => {
+  try {
+    const { values, positionals } = parseArgs({
+      allowPositionals: true,
+      options: {
+        out: { type: 'string' },
+        dev: { type: 'boolean', default: false },
+        headed: { type: 'boolean', default: false },
+      },
+    });
+    const [provider, apiKey, ...prompts] = positionals;
+    if (prompts.length === 0) {
+      throw new Error('no prompt');
+    }
+    return { provider, apiKey, prompts, ...values };
+  } catch {
     console.error(USAGE);
     process.exit(1);
   }
-  return {
-    provider,
-    apiKey,
-    prompt,
-    dev: flags.includes('--dev'),
-    headed: flags.includes('--headed'),
-  };
 };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -199,6 +204,40 @@ const planContextHasArticles = async () => {
   return context?.articles?.length > 0;
 };
 
+const parseFrame = (payload) => {
+  try {
+    return JSON.parse(String(payload));
+  } catch {
+    return undefined;
+  }
+};
+
+// The planner calls the MCP server relays to the page, read from the bridge's
+// WebSocket frames: the server's own log cuts the arguments short.
+const recordPlannerCalls = (page) => {
+  const calls = [];
+  page.on('websocket', (socket) => {
+    socket.on('framereceived', ({ payload }) => {
+      const message = parseFrame(payload);
+      if (message?.kind === 'call') {
+        calls.push({ id: message.id, method: message.method, args: message.args });
+      }
+    });
+    socket.on('framesent', ({ payload }) => {
+      const message = parseFrame(payload);
+      const call =
+        message?.kind === 'result' && calls.find(({ id }) => id === message.id);
+      if (call) {
+        call.ok = message.ok;
+        if (!message.ok) {
+          call.error = message.error;
+        }
+      }
+    });
+  });
+  return calls;
+};
+
 const splitChatStream = (text) => {
   const lines = text.split('\n');
   return {
@@ -215,12 +254,12 @@ const splitChatStream = (text) => {
   };
 };
 
-const runPrompt = async (prompt) => {
+const sendChat = async (messages) => {
   try {
     const response = await fetch(`${CHAT_URL}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      body: JSON.stringify({ messages }),
       signal: AbortSignal.timeout(CHAT_TIMEOUT_MS),
     });
     const text = await response.text();
@@ -233,16 +272,42 @@ const runPrompt = async (prompt) => {
   }
 };
 
-const storeResult = async (run, snapshot) => {
-  const runDir = join(
-    RESULT_DIR,
-    `${run.startedAt.slice(0, 19).replaceAll(':', '-')}-${run.provider}`,
+// The prompts are the turns of one conversation, as in the chat window: the
+// history goes along with every turn. A turn with an error ends it.
+const runConversation = async (prompts) => {
+  const messages = [];
+  const turns = [];
+  for (const [index, prompt] of prompts.entries()) {
+    console.log(`[run-hi-mcp-prompt] turn ${index + 1}/${prompts.length}: ${prompt}`);
+    messages.push({ role: 'user', content: prompt });
+    const startedAt = Date.now();
+    const turn = await sendChat(messages);
+    turns.push({ prompt, ...turn, durationMs: Date.now() - startedAt });
+    if (turn.errors.length > 0) {
+      break;
+    }
+    messages.push({ role: 'assistant', content: turn.answer });
+  }
+  return turns;
+};
+
+const evaluateInPage = (page, method, description) =>
+  withTimeout(
+    page.evaluate((name) => window.instance.extended[name](), method),
+    SNAPSHOT_TIMEOUT_MS,
+    description,
   );
+
+const storeResult = async (runDir, { run, planContext, plannerCalls, snapshot }) => {
   await mkdir(runDir, { recursive: true });
   const write = (file, content) => writeFile(join(runDir, file), content);
   await write('run.json', JSON.stringify(run, null, 2));
+  await write('planner-calls.json', JSON.stringify(plannerCalls, null, 2));
+  if (planContext !== undefined) {
+    await write('plan-context.json', JSON.stringify(planContext, null, 2));
+  }
   if (snapshot === undefined) {
-    return runDir;
+    return;
   }
   await write('snapshot.json', JSON.stringify(snapshot, null, 2));
   if (snapshot?.orderData) {
@@ -253,7 +318,6 @@ const storeResult = async (run, snapshot) => {
       await write(file, Buffer.from(snapshot[field], encoding));
     }
   }
-  return runDir;
 };
 
 const runSession = async (options, launcher, browser) => {
@@ -269,33 +333,49 @@ const runSession = async (options, launcher, browser) => {
     'the chat backend',
   );
   const page = await browser.newPage();
+  const plannerCalls = recordPlannerCalls(page);
   await page.goto(exampleUrl, { waitUntil: 'domcontentloaded' });
   await pollUntil(
     planContextHasArticles,
     PAGE_READY_TIMEOUT_MS,
     'the page and the HI library',
   );
+  plannerCalls.length = 0;
   const readyAt = Date.now();
-  console.log('[run-hi-mcp-prompt] page ready, sending the prompt');
-  const chat = await runPrompt(options.prompt);
+  console.log('[run-hi-mcp-prompt] page ready');
+  const turns = await runConversation(options.prompts);
+  const chatPlannerCalls = plannerCalls.slice();
+  const errors = turns.flatMap((turn) => turn.errors);
   const chatDoneAt = Date.now();
-  console.log('[run-hi-mcp-prompt] chat done, reading the snapshot');
+  console.log('[run-hi-mcp-prompt] chat done, reading and saving the snapshot');
+  let planContext;
+  try {
+    planContext = await callMcpTool('get-plan-context', { include: ['rooms', 'groups'] });
+  } catch (error) {
+    errors.push(`plan context failed: ${error.message}`);
+  }
   let snapshot;
   try {
-    snapshot = await withTimeout(
-      page.evaluate(() => window.instance.extended.getExternalObjectSnapshot()),
-      SNAPSHOT_TIMEOUT_MS,
-      'the snapshot',
-    );
+    snapshot = await evaluateInPage(page, 'getExternalObjectSnapshot', 'the snapshot');
   } catch (error) {
-    chat.errors.push(`snapshot failed: ${error.message}`);
+    errors.push(`snapshot failed: ${error.message}`);
+  }
+  let planSnapshotId = null;
+  try {
+    const saved = await evaluateInPage(
+      page,
+      'saveExternalObjectSnapshot',
+      'the saved snapshot',
+    );
+    planSnapshotId = saved?.planSnapshotId ?? null;
+  } catch (error) {
+    errors.push(`saving the snapshot failed: ${error.message}`);
   }
   const run = {
     provider: options.provider,
-    prompt: options.prompt,
-    answer: chat.answer,
-    tools: chat.tools,
-    errors: chat.errors,
+    turns,
+    errors,
+    planSnapshotId,
     exampleUrl,
     startedAt: startedAt.toISOString(),
     durationsMs: {
@@ -304,11 +384,11 @@ const runSession = async (options, launcher, browser) => {
       snapshot: Date.now() - chatDoneAt,
     },
   };
-  return { run, snapshot };
+  return { run, planContext, plannerCalls: chatPlannerCalls, snapshot };
 };
 
 const main = async () => {
-  const options = parseArgs();
+  const options = parseOptions();
   const chromium = await loadChromium();
   // Playwright's own signal handlers exit before the servers are stopped.
   const browser = await chromium.launch({
@@ -319,17 +399,27 @@ const main = async () => {
   });
   const launcher = startLauncher(options);
   try {
-    const { run, snapshot } = await Promise.race([
+    const result = await Promise.race([
       runSession(options, launcher, browser),
       aborted(launcher),
     ]);
-    const runDir = await storeResult(run, snapshot);
+    const { run } = result;
+    const runDir = options.out
+      ? resolvePath(options.out)
+      : join(
+          RESULT_DIR,
+          `${run.startedAt.slice(0, 19).replaceAll(':', '-')}-${run.provider}`,
+        );
+    await storeResult(runDir, result);
     console.log('');
-    console.log(`  Answer:  ${run.answer || '(none)'}`);
-    console.log(`  Tools:   ${run.tools.join(', ') || '(none)'}`);
+    for (const [index, turn] of run.turns.entries()) {
+      console.log(`  Turn ${index + 1}:  ${turn.answer || '(no answer)'}`);
+      console.log(`  Tools:   ${turn.tools.join(', ') || '(none)'}`);
+    }
     if (run.errors.length > 0) {
       console.log(`  Errors:  ${run.errors.join(' | ')}`);
     }
+    console.log(`  Plan snapshot:  ${run.planSnapshotId ?? '(none)'}`);
     console.log(`  Result:  ${relative(process.cwd(), runDir)}`);
     console.log('');
     process.exitCode = run.errors.length > 0 ? 1 : 0;

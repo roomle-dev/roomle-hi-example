@@ -97,6 +97,18 @@ describe('getChatConfig', () => {
       provider: 'anthropic',
       modelId: 'claude-opus-4-1',
     });
+    expect(resolveChatModel('gemini')).toEqual({
+      provider: 'google',
+      modelId: 'gemini-2.5-pro',
+    });
+    expect(resolveChatModel('gemini-flash')).toEqual({
+      provider: 'google',
+      modelId: 'gemini-2.5-flash',
+    });
+    expect(resolveChatModel('gemini-3-pro-preview')).toEqual({
+      provider: 'google',
+      modelId: 'gemini-3-pro-preview',
+    });
     expect(resolveChatModel('azure')).toEqual({
       provider: 'azure',
       modelId: 'gpt-4o',

@@ -12,6 +12,7 @@
 // AI chat:        npm start mistral <api-key>          (mistral-large-latest)
 //                  npm start mistral-medium <api-key>   (mistral-medium-latest)
 //                  npm start claude <api-key>           (claude-sonnet-4-5)
+//                  npm start gemini <api-key>           (gemini-2.5-pro; gemini-flash: gemini-2.5-flash)
 //                  npm start azure <api-key>            (gpt-4o deployment; also set
 //                                                          AZURE_RESOURCE_NAME and HI_CHAT_MODEL=<deployment>)
 //                  npm start gpt-5-mini <api-key>       (gpt-5-mini / gpt-5.4-mini deployment
@@ -38,7 +39,7 @@ const EXAMPLE_SERVER_URL =
   process.env.EXAMPLE_SERVER_URL ??
   (process.argv.includes('--dev') ? DEV_SERVER_URL : undefined);
 // Chat providers the launcher accepts: the aliases below plus any full
-// mistral-*/claude-* model id. The chat backend resolves the same names
+// mistral-*/claude-*/gemini-* model id. The chat backend resolves the same names
 // (chat-config.ts PROVIDER_MODEL_ALIASES); azure deployments are user-named
 // and set via HI_CHAT_MODEL.
 const CHAT_PROVIDERS = [
@@ -47,6 +48,10 @@ const CHAT_PROVIDERS = [
   'mistral-large',
   'anthropic',
   'claude',
+  'google',
+  'gemini',
+  'gemini-pro',
+  'gemini-flash',
   'azure',
   'openai',
   'gpt-5-mini',
@@ -55,7 +60,8 @@ const CHAT_PROVIDERS = [
 const isChatProvider = (name) =>
   CHAT_PROVIDERS.includes(name) ||
   name.startsWith('mistral-') ||
-  name.startsWith('claude-');
+  name.startsWith('claude-') ||
+  name.startsWith('gemini-');
 const parseChatArgs = () => {
   const positionalArgs = process.argv
     .slice(2)
@@ -68,7 +74,7 @@ const parseChatArgs = () => {
     console.error(
       `[hi-example] unsupported chat provider "${provider}" - currently supported: ${CHAT_PROVIDERS.join(
         ', ',
-      )} or any mistral-*/claude-* model id`,
+      )} or any mistral-*/claude-*/gemini-* model id`,
     );
     process.exit(1);
   }

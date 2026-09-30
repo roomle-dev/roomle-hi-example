@@ -28,6 +28,7 @@ npm start openai <api-key>
 | `npm start mistral <api-key>` | Plus built-in AI chat with `mistral-large-latest` |
 | `npm start mistral-medium <api-key>` | Plus chat with `mistral-medium-latest` (also `mistral-large`, or any `mistral-*` model id) |
 | `npm start claude <api-key>` | Plus chat with `claude-sonnet-4-5` (also `anthropic`, `claude-sonnet`, `claude-opus`, or any `claude-*` model id) |
+| `npm start gemini <api-key>` | Plus chat with `gemini-2.5-pro` via the Gemini API, key from Google AI Studio (also `google`, `gemini-pro`, `gemini-flash` for `gemini-2.5-flash`, or any `gemini-*` model id) |
 | `npm start azure <api-key>` | Plus chat with Azure OpenAI (also `openai`; needs `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL=<deployment-name>`) |
 | `npm run dev <same arguments>` | Same as the matching `npm start` variant, but the planner loads from the local Rubens UI dev server (:5173) |
 

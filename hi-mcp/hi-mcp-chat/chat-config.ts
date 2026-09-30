@@ -4,7 +4,7 @@ const CHAT_ROLES = ['user', 'assistant'] as const;
 
 export class ChatRequestError extends Error {}
 
-export type ChatProvider = 'mistral' | 'anthropic' | 'azure';
+export type ChatProvider = 'mistral' | 'anthropic' | 'google' | 'azure';
 
 export interface ChatModel {
   provider: ChatProvider;
@@ -18,7 +18,7 @@ export const FOUNDRY_BASE_URL = 'https://dfhifoundrysweden.services.ai.azure.com
 export const FOUNDRY_DEPLOYMENTS = ['gpt-5-mini', 'gpt-5.4-mini'];
 
 // CLI provider names (npm start <provider>) resolved to a provider and model.
-// Full model ids pass through: mistral-* and claude-* ids map to their
+// Full model ids pass through: mistral-*, claude-* and gemini-* ids map to their
 // provider; azure deployments are user-named and come via HI_CHAT_MODEL.
 export const PROVIDER_MODEL_ALIASES: Record<ChatProvider, Record<string, string>> = {
   mistral: {
@@ -31,6 +31,12 @@ export const PROVIDER_MODEL_ALIASES: Record<ChatProvider, Record<string, string>
     claude: 'claude-sonnet-4-5',
     'claude-sonnet': 'claude-sonnet-4-5',
     'claude-opus': 'claude-opus-4-1',
+  },
+  google: {
+    google: 'gemini-2.5-pro',
+    gemini: 'gemini-2.5-pro',
+    'gemini-pro': 'gemini-2.5-pro',
+    'gemini-flash': 'gemini-2.5-flash',
   },
   azure: {
     azure: 'gpt-4o',
@@ -55,8 +61,11 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
   if (name.startsWith('claude')) {
     return { provider: 'anthropic', modelId: name };
   }
+  if (name.startsWith('gemini')) {
+    return { provider: 'google', modelId: name };
+  }
   throw new ChatRequestError(
-    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, azure, gpt-5-mini, gpt-5.4-mini, or a full mistral-*/claude-* model id`,
+    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, google, gemini, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, or a full mistral-*/claude-*/gemini-* model id`,
   );
 };
 

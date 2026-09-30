@@ -76,16 +76,17 @@ The provider aliases map to providers and model ids in
 
 ## The chat window
 
-With `?chat=true` the left section opens with the chat. The **Show panel**
-checkbox switches the view:
+With `?chat=true` the chat opens as an overlay on the left of the planner.
+The button in its header collapses the overlay to the header (**−**) and
+expands it again (**+**). The **Show panel** checkbox switches the view:
 
-| Checkbox | Left section shows |
-| -------- | ------------------ |
-| unchecked | AI chat |
-| checked | Debug panel (parameters, buttons, console log) |
+| Checkbox | Shows |
+| -------- | ----- |
+| unchecked | the chat overlay |
+| checked | the debug panel (parameters, buttons, console log); the chat overlay is hidden |
 
-Without `chat=true` the checkbox keeps its old meaning: checked shows the
-debug panel, unchecked hides the left section.
+Without `chat=true` there is no chat overlay: checked shows the debug panel,
+unchecked hides it.
 
 The conversation is held in the page and sent whole with every turn (the
 backend is stateless). Assistant replies are rendered as **markdown** (bold,

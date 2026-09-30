@@ -302,3 +302,129 @@ finding.
    results in the run script would close this for future runs.
 2. Whether the served pair list is complete for the planner (H3) has to be confirmed before a
    pair check is added.
+
+---
+
+## Implementation plan (2026-09-30)
+
+Scope: the bug of run 04 — the connectivity check and the unknown-id check. The hardening items
+H1–H3 are not part of this plan; they wait for the decision of the review.
+
+**Definition of done**
+
+1. The payload of run 04 (two docking chains that never meet) is rejected before any planner call,
+   with an error that names the unreached roots (`sink`, `oven`) and the placed ones.
+2. A docking entry that names an id outside the group is rejected before any planner call.
+3. A root docked by an entry written on the new root (the mirrored direction) is still accepted,
+   and so is a row authored in reverse order (existing test).
+4. The served rule, the living docs and the error table state what the check enforces.
+5. `npm run typecheck` and `npm test` in `hi-mcp` pass; the live check below shows no loaded
+   group with two roots at the same `articlePos`.
+
+### Step 1 — the check (`hi-mcp/hi-mcp-poc-json/tool-executors.ts`)
+
+Replace the block `if (group.roots.length > 1) { … }` (`:602-629`) by a call to a module-level
+helper, shaped like `placementErrors` (`:252`): it returns messages without the
+`posGroups[i]` prefix and the executor maps the prefix on.
+
+```ts
+validationErrors.push(
+  ...dockingErrors(group.roots).map((error) => `posGroups[${groupIndex}]${error}`),
+);
+```
+
+`dockingErrors(roots)`:
+
+1. `rootIds` = the ids of `roots` (built here, independent of the duplicate-id check above).
+2. Walk every entry `A.contextData.dockedRoots[].dockedRoots[]`:
+   - an entry whose `id` is not in `rootIds` (including a missing id) adds
+     `: the docking on root 'A' names 'X', which is not a root of this group` and is skipped;
+   - every other entry adds the undirected edge `A – B` to a `Map<string, Set<string>>`.
+3. Breadth-first search from `roots[0].id` over the map; `reached` is the set of visited ids.
+4. Every root not in `reached` is unreached. With unreached roots, add one message:
+   `: roots 'sink', 'oven' are not docked to a placed root ('corner', 'fridge', 'hood' are placed
+   - reached through the docking from the first root); roots docked only among themselves land on
+   the group origin, on top of the first root. Dock every additional root to a placed root by
+   listing it on that root, e.g. to place root B directly right of root A: { "id": "A", … }` —
+   the JSON example is the one of the current message.
+
+Why undirected and why from the first root: the planner mirrors every entry before it arranges
+(`_validateAndCompleteContextData`) and seeds the arrangement with `roots[0]`; and since the
+check requires *all* roots in one component, the start root changes only which roots the message
+names, never whether the payload passes. The helper runs for every group, also with one root —
+the reachability part is then trivially satisfied and the unknown-id check still applies. The
+`undockedLimit` special case goes away.
+
+### Step 2 — the served rule (`hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts:10`)
+
+Replace "in a group with several roots, every additional root must be docked to a root that is
+already placed (undocked roots are rejected)" by "in a group with several roots, every additional
+root must be docked, directly or through a chain, to the first root of the group — a root the
+docking does not connect to the first root is rejected, and so is a docking that names a root
+outside the group (roots docked only among themselves would land on the group origin)". The rest
+of the bullet (where to write the entry, the mirrored entry, chains) stays.
+
+### Step 3 — unit tests (`hi-mcp/hi-mcp-poc-json/tests/tool-executors.test.ts`)
+
+In `describe('create-or-replace-groups validation')`, with `expectRejectedBeforeLoad` (it also
+asserts that `loadExternalObjectGroupLayout` was not called):
+
+| Test | Payload | Expectation |
+|---|---|---|
+| `rejects duplicate root ids and undocked roots` (existing) | `u1`, `u2`, no docking | regex updated to `/roots 'u2' are not docked to a placed root/` |
+| `rejects roots docked only among themselves` (new, the shape of run 04) | `c -> f` (`RightBottom -> LeftBottom`), `s -> o`, four roots | `/roots 's', 'o' are not docked to a placed root \('c', 'f' are placed/` |
+| `rejects a docking that names a root outside the group` (new) | `u1 -> u2` and `u1 -> u9`, roots `u1`, `u2` | `/docking on root 'u1' names 'u9', which is not a root of this group/` |
+
+In `describe('create-or-replace-groups loading')`, with `createApi(planContextFixture)`:
+
+| Test | Payload | Expectation |
+|---|---|---|
+| `accepts a root docked by an entry written on the new root` (new) | `u1` without docking, `u2` lists `u1` (`LeftBottom -> RightBottom`) | `loadExternalObjectGroupLayout` called once with both roots, no error |
+
+Existing tests that must keep passing unchanged: `positions a new row by its leftmost root in one
+load, whatever order it is authored in` (reverse-ordered chain — the undirected walk from `u3`
+reaches `u1`), `positions a new corner kitchen by the corner article in one load` (example 3),
+`loads article picks only, with docking stripped to vector names`, and the corner probe tests
+(the probe loads its single-root group directly, not through the validation).
+
+### Step 4 — living docs
+
+| File | Change |
+|---|---|
+| `minimal-hi-example/docs/hi-mcp-server.md:339`, `hi-mcp/hi-mcp-poc-json/README.md:356` | "undocked roots in a multi-root group" → "roots the docking does not connect to the first root, a docking that names a root outside the group" |
+| `minimal-hi-example/docs/hi-mcp-server.md:558-562`, `hi-mcp/hi-mcp-poc-json/README.md:559-563` | the docking bullet mirrors the rule text of step 2 |
+| `.agents/skills/hi-authoring-rules.md:107`, `:185`, `:255` | "No undocked roots (except first)" → "Every root connected to the first root through the docking (either direction)"; the rejected list gains "a docking that names a root outside the group" |
+| `.agents/skills/hi-mcp-tools.md:219` | the error row: `roots … are not docked to a placed root` — cause: a root or chain the docking does not connect to the first root — fix: dock it to a placed root; a new row for `names '…', which is not a root of this group` |
+| this document | close-out: status `Fixed`, sections in past tense, fix summary and validation results |
+
+### Step 5 — verification
+
+1. `cd hi-mcp && npm run typecheck && npm test`.
+2. Live, with the run script of the testing skill (`gpt-5.4-mini`, `$AZURE_GPT_KEY`):
+   the prompt of run 04, "plan a kitchen with an oven, a range hood, a sink and a fridge in the
+   back right corner of the room". Evaluate with the commands of `.agents/skills/hi-mcp-testing.md`:
+   every `loadExternalObjectGroupLayout` in `planner-calls.json` carries one connected docking
+   graph, and in the saved plan (the node one-liner at the top of this document) no two roots
+   share an `articlePos`. The prompt of run 05 (a passing corner kitchen) as the regression check
+   of the corner path.
+
+### Step 6 — commits (conventional, no amend)
+
+1. `fix: reject roots the docking does not connect to the first root` — the helper, the rule
+   text, the tests.
+2. `docs: describe the docking connectivity check` — the living docs and the close-out of this
+   analysis.
+
+### Considered and rejected
+
+- **Directed reachability** (only entries written on the placed root count): would reject
+  payloads the planner arranges correctly — an entry on the new root, a row authored from its
+  right end — because the planner mirrors the entries first.
+- **A check after the load** (two roots at the same position): the plan context carries no root
+  positions, and the group would already be in the plan.
+- **The check in the planner** (roomle-ui refusing an unconnected group): the rule is served by
+  the MCP server and promises a rejection before anything is loaded; the planner deliberately
+  arranges what it is given (findings F-P1).
+- **Seeding from the placement anchor** (`findAnchorRoot`) instead of `roots[0]`: no effect on
+  acceptance (one component is required either way) and one dependency more; the planner's own
+  seed is `roots[0]`.

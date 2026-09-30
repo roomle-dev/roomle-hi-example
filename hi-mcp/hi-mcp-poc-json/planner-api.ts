@@ -21,6 +21,7 @@ export interface PlannerApi {
     fetchPrice(): Promise<any>;
     getExternalObjectSnapshot(options: Record<string, boolean>): Promise<any>;
     getExternalObjectGroups(): Promise<any>;
+    removeExternalObject(groupOrRootModuleId: string): Promise<any>;
   };
 }
 
@@ -54,5 +55,7 @@ export const createPlannerApi = (bridge: PageBridge): PlannerApi => ({
         SNAPSHOT_CALL_TIMEOUT_MS,
       ),
     getExternalObjectGroups: () => bridge.call('getExternalObjectGroups', []),
+    removeExternalObject: (groupOrRootModuleId) =>
+      bridge.call('removeExternalObject', [groupOrRootModuleId]),
   },
 });

@@ -16,6 +16,7 @@ export const PLANNER_METHODS = [
   'fetchPrice',
   'getExternalObjectSnapshot',
   'getExternalObjectGroups',
+  'removeExternalObject',
 ];
 
 export interface BrowserBridgeOptions {

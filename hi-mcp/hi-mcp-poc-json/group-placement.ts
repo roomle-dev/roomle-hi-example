@@ -179,8 +179,37 @@ export const cornerPointsByArticle = (
   return byKey;
 };
 
-const moduleIdOf = (articles: any[], root: any): string | undefined =>
+export const moduleIdOf = (articles: any[], root: any): string | undefined =>
   catalogArticleOf(articles, root)?.rootModules?.[0]?.module?.id;
+
+/**
+ * The corner point of the root's article: from the calculated corner points of
+ * the plan (by article or module), else from the catalog.
+ */
+export const cornerPointFor = (
+  articles: any[],
+  root: any,
+  cornerPoints: Map<string, [number, number, number]>,
+): [number, number, number] | undefined => {
+  const cornerPoint =
+    cornerPoints.get(root.articleId) ??
+    cornerPoints.get(moduleIdOf(articles, root) ?? '') ??
+    catalogArticleOf(articles, root)?.cornerPoint;
+  return Array.isArray(cornerPoint) &&
+    cornerPoint.length === 3 &&
+    !isOrigin(cornerPoint)
+    ? [cornerPoint[0], cornerPoint[1], cornerPoint[2]]
+    : undefined;
+};
+
+export const anchorRootOf = (
+  roots: any[],
+  placement: Placement,
+  articles: any[],
+): any =>
+  findAnchorRoot(roots, placement.rootId, (root) =>
+    isCornerArticle(articles, root),
+  );
 
 // Counter-clockwise as seen from above (the planner's rotationY): local +x
 // turns towards room -z, local +z towards room +x.
@@ -209,18 +238,9 @@ export const toRepositioningData = (
   articles: any[],
   cornerPoints: Map<string, [number, number, number]> = new Map(),
 ): RepositioningData => {
-  const anchor = findAnchorRoot(roots, placement.rootId, (root) =>
-    isCornerArticle(articles, root),
-  );
-  const cornerPoint =
-    cornerPoints.get(anchor.articleId) ??
-    cornerPoints.get(moduleIdOf(articles, anchor) ?? '') ??
-    catalogArticleOf(articles, anchor)?.cornerPoint;
-  const hasCornerOffset =
-    Array.isArray(cornerPoint) &&
-    cornerPoint.length === 3 &&
-    !isOrigin(cornerPoint);
-  if (!hasCornerOffset) {
+  const anchor = anchorRootOf(roots, placement, articles);
+  const cornerPoint = cornerPointFor(articles, anchor, cornerPoints);
+  if (!cornerPoint) {
     return {
       posGroup: placement.posGroup,
       posRotationY: placement.posRotationY,

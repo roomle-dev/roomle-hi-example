@@ -28,6 +28,7 @@ const createMockPlannerApi = (
     fetchPrice: vi.fn(async () => null),
     getExternalObjectSnapshot: vi.fn(async () => ({})),
     getExternalObjectGroups: vi.fn(async () => []),
+    removeExternalObject: vi.fn(async () => undefined),
     ...overrides,
   },
 });

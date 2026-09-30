@@ -1,7 +1,10 @@
 import {
+  anchorRootOf,
   catalogArticleOf,
+  cornerPointFor,
   cornerPointsByArticle,
   isCornerArticle,
+  moduleIdOf,
   toRepositioningData,
 } from './group-placement';
 import type { PlannerApi } from './planner-api';
@@ -99,6 +102,63 @@ const agentFacingArticle = (article: any, articles: any[]) => {
 };
 
 const PLACEMENT_FIELDS = ['posGroup', 'posRotationY', 'rootId'];
+
+const PROBE_ROOT_ID = 'corner-probe';
+
+// Corner points the server has learned from calculated corner articles, by
+// article id and module name, for its lifetime.
+const knownCornerPoints = new Map<string, [number, number, number]>();
+
+export const forgetCornerPoints = (): void => knownCornerPoints.clear();
+
+const learnCornerPoints = (
+  cornerPoints: Map<string, [number, number, number]>,
+): void => {
+  for (const [key, point] of cornerPoints) {
+    knownCornerPoints.set(key, point);
+  }
+};
+
+// The corner point of a corner article exists only as calculated geometry.
+// When neither the plan nor the catalog has it, the planner calculates the
+// article once: a single-pick probe group is loaded, its docking vectors are
+// read from the raw groups, and the probe is removed again.
+const probeCornerPoint = async (
+  roomDesignerApi: PlannerApi,
+  anchor: any,
+  libraryId: string | undefined,
+  beforeGroupIds: Set<string>,
+): Promise<void> => {
+  await roomDesignerApi.extended.loadExternalObjectGroupLayout(
+    {
+      posGroups: [
+        {
+          ...(libraryId && { libraryId }),
+          roots: [{ id: PROBE_ROOT_ID, articleId: anchor.articleId }],
+        },
+      ],
+    },
+    'posGroups',
+    { reason: 'adjusted' },
+  );
+  const rawGroups =
+    (await roomDesignerApi.extended.getExternalObjectGroups()) as any[];
+  const probe = (rawGroups ?? []).find(
+    (group) =>
+      !beforeGroupIds.has(group.id) &&
+      (group.roots ?? []).some(
+        (root: any) => root.articleId === anchor.articleId,
+      ),
+  );
+  if (!probe) {
+    console.warn(
+      `[hi-mcp] corner probe of ${anchor.articleId} produced no calculated group`,
+    );
+    return;
+  }
+  learnCornerPoints(cornerPointsByArticle([probe]));
+  await roomDesignerApi.extended.removeExternalObject(probe.id);
+};
 
 const isPoint = (value: unknown): boolean =>
   Array.isArray(value) && value.length === 3 && value.every(Number.isFinite);
@@ -335,17 +395,42 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       throw invalidPosGroups(existingGroupErrors);
     }
     // The corner point of a corner article - its origin offset - comes from
-    // the docking vectors of a calculated root of that article in the plan,
-    // which only the planner's raw groups carry.
-    const cornerPoints = posGroups.some(
-      (group) =>
-        group.placement !== undefined &&
-        group.roots.some((root: any) => isCornerArticle(articles, root)),
-    )
-      ? cornerPointsByArticle(
+    // the docking vectors of a calculated root of that article: in the plan
+    // (the planner's raw groups), learned earlier, or calculated by a probe.
+    const cornerAnchors = posGroups
+      .filter(
+        (group) =>
+          group.placement !== undefined &&
+          group.roots.some((root: any) => isCornerArticle(articles, root)),
+      )
+      .map((group) => ({
+        anchor: anchorRootOf(group.roots, group.placement, articles),
+        libraryId: group.libraryId as string | undefined,
+      }))
+      .filter(({ anchor }) => isCornerArticle(articles, anchor));
+    if (cornerAnchors.length > 0) {
+      learnCornerPoints(
+        cornerPointsByArticle(
           (await roomDesignerApi.extended.getExternalObjectGroups()) as any[],
-        )
-      : new Map();
+        ),
+      );
+      const probed = new Set<string>();
+      for (const { anchor, libraryId } of cornerAnchors) {
+        if (
+          cornerPointFor(articles, anchor, knownCornerPoints) ||
+          probed.has(anchor.articleId)
+        ) {
+          continue;
+        }
+        probed.add(anchor.articleId);
+        await probeCornerPoint(roomDesignerApi, anchor, libraryId, beforeGroupIds);
+        const moduleId = moduleIdOf(articles, anchor);
+        if (moduleId) {
+          probed.add(moduleId);
+        }
+      }
+    }
+    const cornerPoints = knownCornerPoints;
     // Only article picks and the repositioning derived from the placement
     // reach the planner.
     for (const group of posGroups) {

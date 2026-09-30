@@ -50,7 +50,7 @@ const context = await getPlanContext({ include: 'rooms,articles' });
 { posGroups: PosGroup[] }
 ```
 
-**Returns**: Created/updated groups, deleted IDs, log messages
+**Returns**: Created/updated groups, deleted IDs, log messages, and a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — resubmit it with its id and `repositioningData`)
 
 **Usage**:
 ```javascript

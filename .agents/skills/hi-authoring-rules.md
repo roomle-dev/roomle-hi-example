@@ -167,6 +167,9 @@ room:
 - Undocked roots
 - Invalid docking vectors
 
+### Returned as a hint (the group is loaded):
+- A group of the call that is still unpositioned — it sits at the plan origin; resubmit it with its id and `repositioningData`
+
 ## Practical Patterns
 
 ### Pattern 1: Simple Row

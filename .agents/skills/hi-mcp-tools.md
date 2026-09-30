@@ -75,7 +75,8 @@ degrees, counter-clockwise as seen from above; `rootId` only with two corner art
 one that goes into the corner `posGroup` names. One kitchen is one group: dock every further unit
 instead of positioning it. Against a wall: `posRotationY` = the wall's `facingRotationY`,
 `posGroup` = the wall's `end` (flush into that corner) or a point from `end` towards `start`; in a
-corner: the corner point and the `facingRotationY` of the wall that ends there. See the
+corner: the corner point and the `facingRotationY` of the wall that ends there (for a right-handed
+corner article the server adds 90°, see the table in the authoring rules). See the
 [authoring rules skill](./hi-authoring-rules.md#positioning-a-group).
 
 **Existing groups**: a group resubmitted with its id and without placement keeps its position; a
@@ -216,7 +217,7 @@ try {
 |---|---|---|
 | No page connected | Page not loaded with ?mcp=true | Open browser page |
 | Invalid articleId | Article not in catalog | Use valid articleId from context |
-| Root not docked | Undocked root in group | Dock all non-first roots |
+| roots '…' are not docked to a placed root | A root or a chain the docking does not connect to the first root of the group | Dock it to a placed root (the error names the placed roots) |
 | repositioningData is not supported | Payload with a `repositioningData` field | Use `placement` |
 | placement takes only posGroup, posRotationY and rootId | A stale field (`wall`, `alignment`, …) in the placement | Give `posGroup` and `posRotationY` from a wall, or create the group and call `place-group` |
 | placement: rootId must be the id of one of the group's roots | `rootId` names no root of the group | Name a root of the group, or leave `rootId` out |

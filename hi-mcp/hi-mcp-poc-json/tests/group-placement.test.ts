@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   catalogArticleOf,
-  cornerPointOfRoot,
-  cornerPointsByArticle,
+  cornerFrameOfRoot,
+  cornerVariantKey,
   findAnchorRoot,
   isCornerArticle,
   toRepositioningData,
 } from '../group-placement';
+import type { CornerFrame } from '../group-placement';
 
 const articles = [
   { articleId: 'unit', libraryId: 'lib-1', cornerArticle: false },
@@ -59,11 +60,16 @@ const root = (id: string, articleId = 'unit', ...entries: object[]) => ({
   ...(entries.length > 0 && { contextData: { dockedRoots: entries } }),
 });
 
+// the frame the server learns for a left-handed corner article by probing it
+const LEFT_HANDED: CornerFrame = { point: [-261, 0, 0], turnY: 0 };
+const FRAMES = new Map([[cornerVariantKey({ articleId: 'corner' }), LEFT_HANDED]]);
+
 const anchorOf = (roots: any[], rootId?: string) =>
   toRepositioningData(
     roots,
     { ...PLACEMENT, ...(rootId && { rootId }) },
     articles,
+    FRAMES,
   );
 
 // the L of the authoring rules' example 3
@@ -193,12 +199,14 @@ describe('toRepositioningData', () => {
     }
   });
 
-  it('adds no offset for a corner point at the origin or an unmeasured one', () => {
-    for (const articleId of ['corner-at-origin', 'corner-unmeasured']) {
+  it('adds no offset and no turn without a learned frame, whatever corner point the catalog has', () => {
+    for (const articleId of ['corner', 'corner-at-origin', 'corner-unmeasured']) {
       const roots = lShape.map((candidate) =>
         candidate.id === 'c1' ? { ...candidate, articleId } : candidate,
       );
-      expect(anchorOf(roots, 'r2')).toEqual({ ...PLACEMENT, rootId: 'c1' });
+      expect(
+        toRepositioningData(roots, { ...PLACEMENT, rootId: 'r2' }, articles),
+      ).toEqual({ ...PLACEMENT, rootId: 'c1' });
     }
   });
 
@@ -237,53 +245,148 @@ describe('toRepositioningData', () => {
   });
 });
 
-describe('cornerPointOfRoot and cornerPointsByArticle', () => {
-  const cornerRoot = {
-    articleId: 'EUERTB90',
-    dockInfos: [
-      { id: 'LeftBackTop', start: [-261, 720, 0], end: [-261, 720, 661] },
-      { id: 'LeftBackBottom', start: [-261, 0, 0], end: [-261, 0, 661] },
-      { id: 'RightBottom', start: [900, 0, 0], end: [900, 0, 561] },
-    ],
-  };
+// root-local docking vectors of the corner articles as the planner calculates them
+const LEFT_HANDED_ROOT = {
+  articleId: 'UERTB90',
+  dockInfos: [
+    { id: 'LeftBackBottom', start: [-261, 0, 0], end: [-261, 0, 661] },
+    { id: 'LeftBackTop', start: [-261, 820, 0], end: [-261, 820, 661] },
+    { id: 'RightBottom', start: [900, 0, 0], end: [900, 0, 561] },
+    { id: 'RightBackBottom', start: [-261, 0, 0], end: [900, 0, 0] },
+    { id: 'LeftBottom', start: [-261, 0, 661], end: [300, 0, 661] },
+  ],
+};
+const RIGHT_HANDED_ROOT = {
+  articleId: 'UELTB90',
+  dockInfos: [
+    { id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, 561] },
+    { id: 'RightBackBottom', start: [1161, 0, 0], end: [1161, 0, 661] },
+    { id: 'LeftBackBottom', start: [1161, 0, 0], end: [0, 0, 0] },
+    { id: 'LeftBackTop', start: [1161, 820, 0], end: [0, 820, 0] },
+    { id: 'RightBottom', start: [1161, 0, 661], end: [600, 0, 661] },
+  ],
+};
 
-  it('reads the root-local corner point from the bottom corner vector', () => {
-    expect(cornerPointOfRoot(cornerRoot)).toEqual([-261, 0, 0]);
-    expect(cornerPointOfRoot({ dockInfos: [{ id: 'LeftBottom', start: [0, 0, 0] }] })).toBeUndefined();
-    expect(cornerPointOfRoot({})).toBeUndefined();
+// the planner's rotationY convention, as in group-placement.ts
+const rotated = ([x, y, z]: number[], degrees: number): number[] => {
+  const radians = (degrees * Math.PI) / 180;
+  return [
+    x * Math.cos(radians) + z * Math.sin(radians),
+    y,
+    -x * Math.sin(radians) + z * Math.cos(radians),
+  ];
+};
+
+describe('cornerFrameOfRoot', () => {
+  it('reads the corner point and no turn from a left-handed corner article', () => {
+    expect(cornerFrameOfRoot(LEFT_HANDED_ROOT)).toEqual({ point: [-261, 0, 0], turnY: 0 });
   });
 
-  it('collects one corner point per article and per module from the calculated groups', () => {
-    const groups = [
-      { roots: [{ articleId: 'unit', dockInfos: [{ id: 'LeftBottom', start: [0, 0, 0] }] }] },
-      { roots: [{ ...cornerRoot, name: 'mr_CornerunitStraight' }, { ...cornerRoot, dockInfos: [{ id: 'LeftBackBottom', start: [-9, 0, 0] }] }] },
-    ];
-    expect([...cornerPointsByArticle(groups)]).toEqual([
-      ['EUERTB90', [-261, 0, 0]],
-      ['mr_CornerunitStraight', [-261, 0, 0]],
-    ]);
+  it('reads the corner point on the right and a turn of 270 from a right-handed one', () => {
+    expect(cornerFrameOfRoot(RIGHT_HANDED_ROOT)).toEqual({ point: [1161, 0, 0], turnY: 270 });
   });
 
-  it('serves another corner article of the same module from a calculated one', () => {
-    // a calculated EUERTB90 in the plan, a new UERTB90 kitchen
-    const cornerPoints = new Map([['mr_CornerunitStraight', [-261, 0, 0] as [number, number, number]]]);
-    const roots = [root('c1', 'UERTB90')];
-    const catalog = [
-      ...articles,
-      { articleId: 'UERTB90', libraryId: 'lib-1', category: 'Kitchen | Base Units | Corner',
-        rootModules: [{ module: { id: 'mr_CornerunitStraight' } }] },
-    ];
-    expect(toRepositioningData(roots, PLACEMENT, catalog, cornerPoints).posGroup).toEqual([4815, 0, -3504]);
+  it('takes the frame from the one corner vector there is, bottom before top', () => {
+    const only = (root: any, id: string) => ({
+      dockInfos: root.dockInfos.filter((dockInfo: any) => dockInfo.id === id),
+    });
+    expect(cornerFrameOfRoot(only(LEFT_HANDED_ROOT, 'LeftBackTop'))).toEqual({
+      point: [-261, 820, 0],
+      turnY: 0,
+    });
+    expect(cornerFrameOfRoot(only(RIGHT_HANDED_ROOT, 'LeftBackBottom'))).toEqual({
+      point: [1161, 0, 0],
+      turnY: 270,
+    });
   });
 
-  it('prefers the corner point from the plan over the catalog and negates it', () => {
-    const cornerPoints = new Map([['EUERTB90', [-261, 0, 0] as [number, number, number]]]);
-    const emptyPlanL = lShape.map((candidate) =>
-      candidate.id === 'c1' ? { ...candidate, articleId: 'EUERTB90' } : candidate,
+  it('has no frame without corner vectors', () => {
+    expect(cornerFrameOfRoot({ dockInfos: [{ id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, 561] }] })).toBeUndefined();
+    expect(cornerFrameOfRoot({})).toBeUndefined();
+  });
+});
+
+describe('cornerVariantKey', () => {
+  it('tells articles, attribute overrides and libraries apart, whatever the attribute order', () => {
+    const right = { id: 'mod_CarcaseDirection', value: 'Right' };
+    const handle = { id: 'mod_HandleDesign', value: '10' };
+    const key = (root: any, libraryId?: string) => cornerVariantKey(root, libraryId);
+    expect(key({ articleId: 'UERTB90', attributes: [right, handle] })).toBe(
+      key({ articleId: 'UERTB90', attributes: [handle, right] }),
     );
-    expect(toRepositioningData(emptyPlanL, PLACEMENT, articles, cornerPoints)).toEqual({
+    expect(key({ articleId: 'UERTB90', attributes: [right] })).not.toBe(key({ articleId: 'UERTB90' }));
+    expect(key({ articleId: 'UERTB90' })).not.toBe(key({ articleId: 'UELTB90' }));
+    expect(key({ articleId: 'UERTB90' }, 'lib-1')).not.toBe(key({ articleId: 'UERTB90' }, 'lib-2'));
+    expect(key({ articleId: 'UERTB90', libraryId: 'lib-1' }, 'lib-2')).toBe(key({ articleId: 'UERTB90' }, 'lib-1'));
+  });
+});
+
+describe('toRepositioningData with a corner frame', () => {
+  const catalog = [
+    ...articles,
+    { articleId: 'UERTB90', libraryId: 'lib-1', category: 'Kitchen | Base Units | Corner' },
+    { articleId: 'UELTB90', libraryId: 'lib-1', category: 'Kitchen | Base Units | Corner' },
+  ];
+  const framesOf = (root: any) =>
+    new Map([[cornerVariantKey(root), cornerFrameOfRoot(root) as CornerFrame]]);
+
+  it('turns a right-handed corner article by 90 degrees and puts its corner point into the corner', () => {
+    // plan of "test the mcp" 17:48, prompt 04: UELTB90 at 270 stood behind the back wall
+    const roots = [root('c1', 'UELTB90')];
+    expect(toRepositioningData(roots, PLACEMENT, catalog, framesOf(RIGHT_HANDED_ROOT))).toEqual({
+      posGroup: [3654, 0, -3765],
+      posRotationY: 0,
+      rootId: 'c1',
+    });
+  });
+
+  it.each([0, 90, 180, 270])(
+    'puts the corner point of either hand into the corner at %d degrees, the right-handed one turned by 90',
+    (rotation) => {
+      const placement = { posGroup: [1000, 0, -2000] as [number, number, number], posRotationY: rotation };
+      for (const [cornerRoot, turn] of [[LEFT_HANDED_ROOT, 0], [RIGHT_HANDED_ROOT, 90]] as const) {
+        const repositioning = toRepositioningData(
+          [root('c1', cornerRoot.articleId)],
+          placement,
+          catalog,
+          framesOf(cornerRoot),
+        );
+        expect(repositioning.posRotationY).toBe((rotation + turn) % 360);
+        const frame = cornerFrameOfRoot(cornerRoot) as CornerFrame;
+        const cornerInRoom = rotated(frame.point, repositioning.posRotationY).map(
+          (value, axis) => Math.round(value + repositioning.posGroup[axis]),
+        );
+        expect(cornerInRoom).toEqual([1000, 0, -2000]);
+      }
+    },
+  );
+
+  it('uses the frame of the variant the agent authored, not of the bare article', () => {
+    // plan of "test the mcp" 16:04, prompt 04: UERTB90 with the carcase direction Right
+    const overridden = {
+      ...root('c1', 'UERTB90'),
+      attributes: [{ id: 'mod_CarcaseDirection', value: 'Right' }],
+    };
+    const frames = new Map([
+      [cornerVariantKey({ articleId: 'UERTB90' }), LEFT_HANDED],
+      [cornerVariantKey(overridden), cornerFrameOfRoot(RIGHT_HANDED_ROOT) as CornerFrame],
+    ]);
+    expect(toRepositioningData([overridden], PLACEMENT, catalog, frames)).toEqual({
+      posGroup: [3654, 0, -3765],
+      posRotationY: 0,
+      rootId: 'c1',
+    });
+    expect(toRepositioningData([root('c1', 'UERTB90')], PLACEMENT, catalog, frames)).toEqual({
       posGroup: [4815, 0, -3504],
       posRotationY: 270,
+      rootId: 'c1',
+    });
+  });
+
+  it('serves no frame to another article of the same module', () => {
+    const roots = [root('c1', 'UELTB90')];
+    expect(toRepositioningData(roots, PLACEMENT, catalog, framesOf(LEFT_HANDED_ROOT))).toEqual({
+      ...PLACEMENT,
       rootId: 'c1',
     });
   });
@@ -293,11 +396,10 @@ describe('cornerPointOfRoot and cornerPointsByArticle', () => {
     [90, [0, 0, -261]],
     [180, [-261, 0, 0]],
     [270, [0, 0, 261]],
-  ])('adds the rotated origin offset to posGroup at %d degrees', (rotation, shift) => {
-    const cornerPoints = new Map([['EUERTB90', [-261, 0, 0] as [number, number, number]]]);
-    const roots = [root('c1', 'EUERTB90')];
+  ])('adds the rotated origin offset of a left-handed corner article at %d degrees', (rotation, shift) => {
+    const roots = [root('c1', 'UERTB90')];
     const placement = { posGroup: [1000, 0, -2000] as [number, number, number], posRotationY: rotation };
-    expect(toRepositioningData(roots, placement, articles, cornerPoints).posGroup).toEqual([
+    expect(toRepositioningData(roots, placement, catalog, framesOf(LEFT_HANDED_ROOT)).posGroup).toEqual([
       1000 + shift[0],
       0 + shift[1],
       -2000 + shift[2],

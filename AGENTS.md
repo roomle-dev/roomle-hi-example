@@ -326,7 +326,7 @@ This starts:
 ### Adding New Tools
 
 1. Register the tool in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` (zod schema + handler)
-2. Implement the executor in `hi-mcp/hi-mcp-poc-json/tool-executors.ts` — the pages stay untouched
+2. Implement the executor in `hi-mcp/hi-mcp-poc-json/tool-executors.ts` — the pages stay untouched; an executor that changes the plan is wrapped in `oneAtATime`, so it never runs beside another plan change
 3. An edit of existing groups needs no new planner method: add the command in roomle-ui (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`) and forward it through `externalObjectGroupOperation`. Only if the tool needs a planner method the pages do not expose yet: add it to `hi-mcp/hi-mcp-poc-json/planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-poc-json-client/browser-bridge.ts`, then copy to the ligna-store)
 4. Add or extend unit tests in the matching `tests/` folder
 5. Update `minimal-hi-example/docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`

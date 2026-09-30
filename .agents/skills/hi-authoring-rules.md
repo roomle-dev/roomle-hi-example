@@ -104,7 +104,7 @@ Millimeters added after docking:
 ## Docking Rules
 
 1. Anchor must be placed first
-2. No undocked roots (except first)
+2. Every root connected to the first root through the docking, directly or through a chain (entries count in either direction)
 3. Chain docking allowed (A → B → C)
 4. Multiple dockings per anchor allowed
 5. Vector compatibility required
@@ -134,7 +134,8 @@ placement: {
   d = (lengthMm − group width) / 2 centres it; d = lengthMm − group width puts its right end into
   the corner at the wall's `start`.
 - **Corner**: `posGroup` = the corner point, `posRotationY` = the `facingRotationY` of the wall that
-  ends in that corner; a corner kitchen starts with a corner article.
+  ends in that corner; a corner kitchen starts with a corner article. For a right-handed corner
+  article (`mod_CarcaseDirection` Right) the server adds 90° itself; the returned `rotationY` shows it.
 
 | Rectangular room (back = top in the top view) | `posRotationY` | Corner: `RightBottom` row along | Corner: `LeftBottom` row along |
 |---|---|---|---|
@@ -182,7 +183,7 @@ docking. Every command keeps the group's position. Resubmitting the group with
 - Invalid `placement` (`posGroup` not `[x, y, z]`, `posRotationY` missing or not a number — state 0 explicitly, `rootId` not a root of the group, any other field)
 - A `placement` on a group that is already in the plan
 - Invalid articleId
-- Undocked roots
+- Roots the docking does not connect to the first root (two chains that never meet, a root with no docking)
 - Invalid docking vectors
 
 ### Returned as a hint (the group is loaded):
@@ -252,9 +253,9 @@ docking. Every command keeps the group's position. Resubmitting the group with
 ## Common Mistakes
 
 1. **Direct coordinates**: Never use `articlePos`, `rotationY`, `pos`, `rotationY`
-2. **Undocked roots**: Every non-first root must be docked
+2. **Unconnected roots**: Every root must be reachable through the docking from the first root; roots docked only among themselves land on top of the first root
 3. **Wrong vector pairs**: Use compatible pairs (RightBottom → LeftBottom, etc.)
-4. **Docking to non-existent root**: All referenced IDs must exist in group
+4. **Docking to non-existent root**: An entry naming an id outside the group connects nothing; a root docked only that way is rejected
 5. **Circular docking**: A root cannot dock to itself directly or indirectly
 
 ## Workflow

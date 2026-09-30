@@ -1,12 +1,12 @@
 import {
   anchorRootOf,
   catalogArticleOf,
-  cornerPointFor,
-  cornerPointsByArticle,
+  cornerFrameOfRoot,
+  cornerVariantKey,
   isCornerArticle,
-  moduleIdOf,
   toRepositioningData,
 } from './group-placement';
+import type { CornerFrame } from './group-placement';
 import {
   adjoiningWall,
   convexPolygonsTouch,
@@ -188,39 +188,40 @@ const WALL_PLACEMENT_FIELDS = ['wall', 'alignment', 'offsetMm'];
 
 const PROBE_ROOT_ID = 'corner-probe';
 
-// Corner points the server has learned from calculated corner articles, by
-// article id and module name, for its lifetime.
-const knownCornerPoints = new Map<string, [number, number, number]>();
+// Corner frames the server has learned by probing, per library, article and
+// attribute overrides, for its lifetime.
+const knownCornerFrames = new Map<string, CornerFrame>();
 
-export const forgetCornerPoints = (): void => knownCornerPoints.clear();
+export const forgetCornerFrames = (): void => knownCornerFrames.clear();
 
-const learnCornerPoints = (
-  cornerPoints: Map<string, [number, number, number]>,
-): void => {
-  for (const [key, point] of cornerPoints) {
-    knownCornerPoints.set(key, point);
-  }
-};
+const NO_CORNER_FRAME: CornerFrame = { point: [0, 0, 0], turnY: 0 };
 
-// The corner point of a corner article exists only as calculated geometry.
-// When neither the plan nor the catalog has it, the planner calculates the
-// article once: a single-pick probe group is loaded, its docking vectors are
-// read from the raw groups, and every group the probe load added is removed
-// again (the load result carries runtime ids only, which removal does not
-// take). An article calculated without corner vectors has no offset. False
-// when the planner calculated nothing.
-const probeCornerPoint = async (
+// The corner frame of a corner article exists only as calculated geometry, and
+// its hand and corner point depend on the attributes. The planner calculates
+// the anchor once as authored - article and attribute overrides - in a
+// single-pick probe group; its docking vectors are read from the raw groups,
+// and every group the probe load added is removed again (the load result
+// carries runtime ids only, which removal does not take). An article calculated
+// without corner vectors gets no offset and no turn. Undefined when the planner
+// calculated nothing.
+const probeCornerFrame = async (
   roomDesignerApi: PlannerApi,
   anchor: any,
   libraryId: string | undefined,
   planGroupIds: Set<string>,
-): Promise<boolean> => {
+): Promise<CornerFrame | undefined> => {
   await roomDesignerApi.extended.loadExternalObjectGroupLayout(
     {
       posGroups: [
         {
           ...(libraryId && { libraryId }),
-          roots: [{ id: PROBE_ROOT_ID, articleId: anchor.articleId }],
+          roots: [
+            {
+              id: PROBE_ROOT_ID,
+              articleId: anchor.articleId,
+              ...(anchor.attributes?.length && { attributes: anchor.attributes }),
+            },
+          ],
         },
       ],
     },
@@ -234,15 +235,14 @@ const probeCornerPoint = async (
     await roomDesignerApi.extended.removeExternalObject(probe.id);
   }
   if (probes.length === 0) {
-    return false;
+    return undefined;
   }
-  const cornerPoints = cornerPointsByArticle(probes);
-  learnCornerPoints(
-    cornerPoints.size > 0
-      ? cornerPoints
-      : new Map([[anchor.articleId, [0, 0, 0] as [number, number, number]]]),
+  return (
+    probes
+      .flatMap((probe) => probe.roots ?? [])
+      .map(cornerFrameOfRoot)
+      .find(Boolean) ?? NO_CORNER_FRAME
   );
-  return true;
 };
 
 const isPoint = (value: unknown): boolean =>
@@ -284,6 +284,54 @@ const placementErrors = (placement: any, rootIds: Set<string>): string[] => {
     );
   }
   return errors;
+};
+
+// The planner mirrors every docking entry and arranges the roots reachable
+// from the first root; a part the docking does not connect to it is arranged
+// on its own from the group origin, on top of the first root. An entry naming
+// a root outside the group connects nothing - a group keeps such an entry to
+// a root deleted from it. Each error continues the "posGroups[i]" prefix.
+const dockingErrors = (roots: any[]): string[] => {
+  const neighbours = new Map<string, Set<string>>();
+  const link = (from: string, to: string) =>
+    neighbours.set(from, (neighbours.get(from) ?? new Set()).add(to));
+  const rootIds = new Set(roots.map((root) => root?.id));
+  for (const root of roots) {
+    for (const dockedContext of root?.contextData?.dockedRoots ?? []) {
+      for (const dockedRoot of dockedContext?.dockedRoots ?? []) {
+        if (rootIds.has(dockedRoot?.id)) {
+          link(root.id, dockedRoot.id);
+          link(dockedRoot.id, root.id);
+        }
+      }
+    }
+  }
+  const reached = new Set<string>([roots[0]?.id]);
+  const queue = [roots[0]?.id];
+  while (queue.length > 0) {
+    for (const next of neighbours.get(queue.shift()) ?? []) {
+      if (!reached.has(next)) {
+        reached.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  const quoted = (selected: any[]) =>
+    selected.map((root) => `'${root?.id}'`).join(', ');
+  const unreached = roots.filter((root) => !reached.has(root?.id));
+  if (unreached.length === 0) {
+    return [];
+  }
+  const placed = roots.filter((root) => reached.has(root?.id));
+  return [
+    `: roots ${quoted(unreached)} are not docked to a placed root (${quoted(placed)} ` +
+      `${placed.length === 1 ? 'is' : 'are'} placed - reached through the docking from the first root); ` +
+      'roots docked only among themselves land on the group origin, on top of the first root. Dock every ' +
+      'additional root to a placed root by listing it on that root, e.g. to place root B directly right of root A: ' +
+      '{ "id": "A", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom", ' +
+      '"dockedRoots": [{ "id": "B", "dockingVector": "LeftBottom", "mode": "StartStart", ' +
+      '"offset": [0, 0, 0] }] }] } }',
+  ];
 };
 
 const invalidPosGroups = (errors: string[]): Error =>
@@ -480,6 +528,21 @@ const placeGroupAtWall = (
   return { pos: [x, height, z], rotationY, footprint, placedIn: 'wall' };
 };
 
+// The page runs every planner call it receives at once, so the tool calls that
+// change the plan run one after another: the corner probe tells the groups it
+// loaded by comparing the plan's groups before and after its load, and the
+// groups a concurrent call loads or splits meanwhile would count as its own
+// and be removed.
+let planChanges: Promise<unknown> = Promise.resolve();
+
+const oneAtATime =
+  (executor: ToolExecutor): ToolExecutor =>
+  (roomDesignerApi, args) => {
+    const run = planChanges.then(() => executor(roomDesignerApi, args));
+    planChanges = run.catch(() => undefined);
+    return run;
+  };
+
 export const toolExecutors: Record<string, ToolExecutor> = {
   // The plan context arrives agent-ready from the planner API (compacted
 // sections, 3D room contours with derived walls); the executor passes it
@@ -547,7 +610,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     };
   },
 
-  'create-or-replace-groups': async (roomDesignerApi, args) => {
+  'create-or-replace-groups': oneAtATime(async (roomDesignerApi, args) => {
     const posGroups = args.posGroups as any[];
     const validationErrors: string[] = [];
     posGroups.forEach((group, groupIndex) => {
@@ -599,34 +662,11 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           rootIds.add(rootId);
         }
       });
-      if (group.roots.length > 1) {
-        const dockedRootIds = new Set<string>();
-        for (const root of group.roots) {
-          for (const dockedContext of root?.contextData?.dockedRoots ?? []) {
-            if (dockedContext?.dockedRoots?.length) {
-              dockedRootIds.add(root.id);
-            }
-            for (const dockedRoot of dockedContext?.dockedRoots ?? []) {
-              dockedRootIds.add(dockedRoot?.id);
-            }
-          }
-        }
-        const undockedRoots = group.roots.filter(
-          (root: any) => !dockedRootIds.has(root.id),
-        );
-        const undockedLimit = dockedRootIds.size === 0 ? 1 : 0;
-        if (undockedRoots.length > undockedLimit) {
-          const ids = undockedRoots.map((root: any) => `'${root.id}'`);
-          validationErrors.push(
-            `posGroups[${groupIndex}]: roots ${ids.join(', ')} are not related by docking - ` +
-              'undocked roots all land at the same spot and look like a single unit. Dock every ' +
-              'additional root to a placed root by listing it on that root, e.g. to place root B directly right of root A: ' +
-              '{ "id": "A", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom", ' +
-              '"dockedRoots": [{ "id": "B", "dockingVector": "LeftBottom", "mode": "StartStart", ' +
-              '"offset": [0, 0, 0] }] }] } }',
-          );
-        }
-      }
+      validationErrors.push(
+        ...dockingErrors(group.roots).map(
+          (error) => `posGroups[${groupIndex}]${error}`,
+        ),
+      );
       if (group.repositioningData !== undefined) {
         validationErrors.push(
           `posGroups[${groupIndex}]: repositioningData is not supported - position the group with ` +
@@ -670,9 +710,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     if (existingGroupErrors.length > 0) {
       throw invalidPosGroups(existingGroupErrors);
     }
-    // The corner point of a corner article - its origin offset - comes from
-    // the docking vectors of a calculated root of that article: in the plan
-    // (the planner's raw groups), learned earlier, or calculated by a probe.
+    // The corner frame of a corner anchor - its corner point and hand - comes
+    // from the docking vectors of the anchor calculated as authored: learned
+    // earlier, or calculated by a probe.
     const cornerAnchors = posGroups.flatMap((group, groupIndex) => {
       if (
         group.placement === undefined ||
@@ -685,34 +725,29 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         ? [{ anchor, libraryId: group.libraryId as string | undefined, groupIndex }]
         : [];
     });
-    if (cornerAnchors.length > 0) {
+    const unknownCornerAnchors = cornerAnchors.filter(
+      ({ anchor, libraryId }) => !knownCornerFrames.has(cornerVariantKey(anchor, libraryId)),
+    );
+    if (unknownCornerAnchors.length > 0) {
       const planGroups = ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
         []) as any[];
-      learnCornerPoints(cornerPointsByArticle(planGroups));
       const planGroupIds = new Set(planGroups.map((group) => group.id));
-      const probed = new Set<string>();
-      for (const { anchor, libraryId, groupIndex } of cornerAnchors) {
-        if (
-          cornerPointFor(articles, anchor, knownCornerPoints) ||
-          probed.has(anchor.articleId)
-        ) {
+      for (const { anchor, libraryId, groupIndex } of unknownCornerAnchors) {
+        const key = cornerVariantKey(anchor, libraryId);
+        if (knownCornerFrames.has(key)) {
           continue;
         }
-        probed.add(anchor.articleId);
         // a corner group without its corner geometry would stand off the corner
-        if (!(await probeCornerPoint(roomDesignerApi, anchor, libraryId, planGroupIds))) {
+        const frame = await probeCornerFrame(roomDesignerApi, anchor, libraryId, planGroupIds);
+        if (!frame) {
           throw new Error(
             `Nothing was loaded: the corner article '${anchor.articleId}' of posGroups[${groupIndex}] ` +
               'could not be calculated to position the group - check its articleId, libraryId and attributes.',
           );
         }
-        const moduleId = moduleIdOf(articles, anchor);
-        if (moduleId) {
-          probed.add(moduleId);
-        }
+        knownCornerFrames.set(key, frame);
       }
     }
-    const cornerPoints = knownCornerPoints;
     // Only article picks and the repositioning derived from the placement
     // reach the planner.
     for (const group of posGroups) {
@@ -721,7 +756,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           group.roots,
           group.placement,
           articles,
-          cornerPoints,
+          knownCornerFrames,
+          group.libraryId,
         );
       }
       for (const field of Object.keys(group)) {
@@ -774,9 +810,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           'with (see get-authoring-rules), or place-group moves it against a wall or into a room corner.',
       }),
     };
-  },
+  }),
 
-  'place-group': async (roomDesignerApi, args) => {
+  'place-group': oneAtATime(async (roomDesignerApi, args) => {
     const groupId = args.groupId as string;
     const spec: WallPlacementSpec = {
       wall: args.wall as string | number,
@@ -835,12 +871,12 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         (candidate) => candidate.id === group.id,
       ),
     };
-  },
+  }),
 
   // The group commands run in the planner (externalObjectGroupOperation); the
   // executors resolve group id prefixes and check article ids against the
   // catalog first, so the agent gets the lists of valid ids on a mistake.
-  'change-module-attribute': async (roomDesignerApi, args) =>
+  'change-module-attribute': oneAtATime(async (roomDesignerApi, args) =>
     roomDesignerApi.extended.externalObjectGroupOperation(
       'change-module-attribute',
       {
@@ -850,8 +886,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         value: args.value,
       },
     ),
+  ),
 
-  'change-group-attribute': async (roomDesignerApi, args) => {
+  'change-group-attribute': oneAtATime(async (roomDesignerApi, args) => {
     const group = findGroup(
       await planGroups(roomDesignerApi),
       args.groupId as string,
@@ -860,9 +897,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       'change-group-attribute',
       { groupId: group.id, attributeId: args.attributeId, value: args.value },
     );
-  },
+  }),
 
-  'delete-group': async (roomDesignerApi, args) => {
+  'delete-group': oneAtATime(async (roomDesignerApi, args) => {
     const group = findGroup(
       await planGroups(roomDesignerApi),
       args.groupId as string,
@@ -871,15 +908,16 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       'delete-group',
       { groupId: group.id },
     );
-  },
+  }),
 
-  'delete-root-module': async (roomDesignerApi, args) =>
+  'delete-root-module': oneAtATime(async (roomDesignerApi, args) =>
     roomDesignerApi.extended.externalObjectGroupOperation(
       'delete-root-module',
       { rootModuleId: args.rootModuleId },
     ),
+  ),
 
-  'merge-article-into-group': async (roomDesignerApi, args) => {
+  'merge-article-into-group': oneAtATime(async (roomDesignerApi, args) => {
     const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
       ['groups', 'articles'],
     );
@@ -897,9 +935,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         dockTo: args.dockTo,
       },
     );
-  },
+  }),
 
-  'exchange-root-module': async (roomDesignerApi, args) => {
+  'exchange-root-module': oneAtATime(async (roomDesignerApi, args) => {
     const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
       ['groups', 'articles'],
     );
@@ -916,9 +954,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         articleId: args.articleId,
       },
     );
-  },
+  }),
 
-  'merge-groups': async (roomDesignerApi, args) => {
+  'merge-groups': oneAtATime(async (roomDesignerApi, args) => {
     const groups = await planGroups(roomDesignerApi);
     return roomDesignerApi.extended.externalObjectGroupOperation(
       'merge-groups',
@@ -929,7 +967,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         ),
       },
     );
-  },
+  }),
 
   'get-price': async (roomDesignerApi) => {
     return roomDesignerApi.extended.fetchPrice();

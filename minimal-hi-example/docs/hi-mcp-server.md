@@ -336,7 +336,8 @@ the origin first.
 Invalid payloads are rejected with per-group validation errors before
 anything is loaded: missing `roots`, missing pick fields (`id`, `articleId`),
 an unknown `articleId` (the error lists the catalog), `articlePos`/`rotationY`
-on any root or `pos`/`rotationY` on a group, undocked roots in a multi-root group,
+on any root or `pos`/`rotationY` on a group, roots the docking does not connect
+to the first root of a multi-root group,
 an invalid `placement` (`posGroup` not three numbers, `posRotationY` missing
 or not a number — state 0 explicitly, `rootId` not a root of the group, any
 other field), and a `placement` on a group that is already in the plan.
@@ -557,8 +558,12 @@ group one point and one rotation; the planner calculates every root position.
   or remove a unit, change attributes, join groups — are command tools too.
 - Docking (`contextData`) relates the root modules of a group to each other
   and is **required**: in a group with several roots, every additional root
-  must be docked to a root that is already placed (undocked roots are
-  rejected — they would all land at the same spot). The docking entry is
+  must be docked, directly or through a chain, to the first root of the
+  group. A root the docking does not connect to the first root is rejected —
+  roots docked only among themselves would land on the group origin, on top
+  of the first root. The check reads every entry in both directions, as the
+  planner does; an entry that names a root outside the group (a group keeps
+  one to a root deleted from it) connects nothing. The docking entry is
   written on the placed root (the anchor) and lists the new root under
   `dockedRoots`; the anchor's `ownDockingVector` meets the new root's
   `dockingVector`. Docking vector *names* suffice; the indices are resolved
@@ -643,6 +648,10 @@ for a group at a wall, in a corner, or anywhere in the room.
   | Left wall / left front corner | 90 | left wall, to the back | front wall, to the right |
   | Front wall / right front corner | 180 | front wall, to the left | right wall, to the back |
   | Right wall / right back corner | 270 | right wall, to the front | back wall, to the left |
+
+  The table holds for both hands of corner article: the server turns one whose corner point lies
+  on its right (`mod_CarcaseDirection` Right, e.g. `UELTB90`) by 90° more itself, so its rows run
+  as listed and the returned `rotationY` is `posRotationY` + 90.
 
 - **Two corner articles** (a U-shaped kitchen): set `rootId` to the corner
   article that goes into the corner `posGroup` names.

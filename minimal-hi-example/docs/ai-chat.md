@@ -6,7 +6,7 @@ calling the same MCP tools an external MCP client would call. It turns the
 example into a self-contained demo — no Claude Code or Copilot needed.
 
 The chat uses the [Vercel AI SDK](https://sdk.vercel.ai) with **Mistral**,
-**Anthropic (Claude)**, and **Azure OpenAI** as supported providers, and reuses
+**Anthropic (Claude)**, **Google (Gemini)**, and **Azure OpenAI** as supported providers, and reuses
 the MCP server from
 [`hi-mcp/hi-mcp-poc-json`](../../hi-mcp/hi-mcp-poc-json/) unchanged.
 
@@ -16,6 +16,7 @@ the MCP server from
 npm start mistral <api-key>           # mistral-large-latest (default)
 npm start mistral-medium <api-key>   # mistral-medium-latest
 npm start claude <api-key>           # claude-sonnet-4-5
+npm start gemini <api-key>           # gemini-2.5-pro (Gemini API key from Google AI Studio)
 npm start azure <api-key>            # gpt-4o deployment (see below)
 npm start gpt-5-mini <api-key>       # gpt-5-mini on the HI Azure AI Foundry resource
 npm start gpt-5.4-mini <api-key>     # gpt-5.4-mini on the HI Azure AI Foundry resource
@@ -34,6 +35,9 @@ The provider name selects the provider and model:
 | `claude-sonnet` | Anthropic | `claude-sonnet-4-5` |
 | `claude-opus` | Anthropic | `claude-opus-4-1` |
 | any `claude-*` model id | Anthropic | passed through |
+| `gemini` / `google` / `gemini-pro` | Google (Gemini API) | `gemini-2.5-pro` |
+| `gemini-flash` | Google (Gemini API) | `gemini-2.5-flash` |
+| any `gemini-*` model id | Google (Gemini API) | passed through (e.g. `gemini-3-pro-preview`) |
 | `azure` / `openai` | Azure OpenAI | `gpt-4o` (deployment name — see below) |
 | `gpt-5-mini` / `gpt-5.4-mini` | Azure OpenAI (HI Azure AI Foundry resource) | the deployment of the same name |
 
@@ -111,7 +115,7 @@ is still working. The backend logs every request, MCP connection, tool call
             │ ws://localhost:3100/bridge
             ▼
 [Chat backend: hi-mcp/hi-mcp-chat on :3200]
-  ├── Mistral / Anthropic / Azure via the @ai-sdk provider packages (key from HI_CHAT_TOKEN)
+  ├── Mistral / Anthropic / Google / Azure via the @ai-sdk provider packages (key from HI_CHAT_TOKEN)
   ├── MCP client via @ai-sdk/mcp → http://localhost:3100/mcp
   └── streamText(tools) → plain text stream
             │ Streamable HTTP /mcp
@@ -130,7 +134,7 @@ Copilot. A new group is positioned by the `placement` it is created with.
 | ---- | ---- |
 | `chat-config.ts` | Environment parsing and request body validation |
 | `chat-handler.ts` | HTTP handler factory: CORS, `/health`, `POST /chat`, error relay |
-| `chat-server.ts` | Entry point: provider model (Mistral/Anthropic/Azure) + `@ai-sdk/mcp` + `streamText`, listen on the chat port |
+| `chat-server.ts` | Entry point: provider model (Mistral/Anthropic/Google/Azure) + `@ai-sdk/mcp` + `streamText`, listen on the chat port |
 | `tests/chat-handler.test.ts` | Unit tests (config, validation, CORS, error relay, streaming) |
 
 Endpoints: `GET /health` (used for smoke tests) and `POST /chat`
@@ -144,7 +148,7 @@ origins, `500` when the MCP server or Mistral call fails.
 | Variable | Default | Meaning |
 | -------- | ------- | ------- |
 | `HI_CHAT_TOKEN` | — | The provider API key (set by the launcher from the CLI argument) |
-| `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `claude`, `azure`, `gpt-5-mini`, `gpt-5.4-mini`, or a full `mistral-*`/`claude-*` model id) |
+| `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `claude`, `gemini`, `azure`, `gpt-5-mini`, `gpt-5.4-mini`, or a full `mistral-*`/`claude-*`/`gemini-*` model id) |
 | `HI_CHAT_PORT` | `3200` | Port of the chat backend (the page reads it via the `chat_port` query parameter) |
 | `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider; ignored for `gpt-5-mini`/`gpt-5.4-mini` |
 | `AZURE_RESOURCE_NAME` | — | Required for `azure`/`openai`: the Azure OpenAI resource name (ignored for `gpt-5-mini`/`gpt-5.4-mini`) |

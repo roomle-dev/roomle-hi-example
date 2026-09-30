@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { createMCPClient } from '@ai-sdk/mcp';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createAzure } from '@ai-sdk/azure';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createMistral } from '@ai-sdk/mistral';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { stepCountIs, streamText } from 'ai';
@@ -25,6 +26,8 @@ const getLanguageModel = (config: ChatConfig) => {
   switch (config.provider) {
     case 'anthropic':
       return createAnthropic({ apiKey })(config.modelId);
+    case 'google':
+      return createGoogleGenerativeAI({ apiKey })(config.modelId);
     case 'azure':
       if (!config.azureBaseUrl && !config.azureResourceName) {
         throw new Error(

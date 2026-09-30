@@ -5,8 +5,15 @@
 > **Trigger**: Request of 2026-09-30: "create a new skill for testing the hi mcp … the first thing you need to do is a script in .agents/scripts" — start the MCP with a provider and key given as parameters (like `npm start`), apply a prompt given as a parameter and wait for the result, read the result with `roomDesignerApi.extended.getExternalObjectSnapshot()` and store it in a new subdirectory of `.temp/result`
 > **Date**: 2026-09-30
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Implemented
 > **Branch**: `feat/hi-mcp-testing-skill` (roomle-hi-example)
+
+> **Close-out (2026-09-30)**: implemented with the recommendations of the open questions (decoded
+> assets, `<UTC timestamp>-<provider>`, MCP port 3110, `--dev` and `--headed`, the names as
+> proposed) and the implementation decisions in the [close-out report](#close-out-report-2026-09-30)
+> — the main one: one abort race around the whole session instead of one per wait. Verified with
+> real Mistral runs. The living reference is `.agents/skills/hi-mcp-testing.md`. The analysis
+> below is kept as written.
 
 ---
 
@@ -264,3 +271,57 @@ Written ahead so the review can cover it; it assumes the recommendations above.
    → verify: every link resolves.
 4. Close out this analysis with the results → commit on `feat/hi-mcp-testing-skill`; push and pull
    request wait for the review.
+
+## Close-out report (2026-09-30)
+
+### What was built
+
+- `.agents/scripts/run-hi-mcp-prompt.js` — the script along the proposed flow, with the
+  recommendations of all five open questions.
+- `.agents/scripts/package.json` — `playwright` 1.55.0; the cached Chromium 1187 is used without a
+  download.
+- `.agents/skills/hi-mcp-testing.md` — the skill, first version, registered in `AGENTS.md`,
+  `.agents/README.md` and `.github/copilot-instructions.md`; `docs/testing-prompts.md` points to it.
+- `minimal-hi-example/index.html`, `start.mjs` and `hi-mcp/*` are unchanged.
+
+### Decisions taken during the implementation
+
+| Decision | Why |
+|---|---|
+| One abort race around the whole session (launcher ready → page ready → chat → snapshot) against a promise that rejects on the launcher's exit or on SIGINT/SIGTERM; the result is stored only when the session wins | A race per wait let a stopped run continue: stopping the servers failed the chat request, the session went on to the snapshot, stored a partial result and overwrote the exit code |
+| Playwright's `handleSIGINT`/`handleSIGTERM` off | Playwright's own handlers call `process.exit(130)` after closing the browser — before the script stopped the servers; the MCP server was left running on its port |
+| `process.exit()` once the servers are stopped | An aborted session keeps its timers and polls; the unknown-provider run otherwise took the full 3-minute launcher timeout to end |
+| The browser starts before the launcher | The session and the cleanup both need it; the signal handlers are in place from the launcher's start on |
+| The example URL is taken only from a complete `Example:` line | A stdout chunk can end inside the URL |
+| Readiness through a single JSON-RPC `tools/call` without `initialize` | Works against the stateless server as expected; no MCP SDK needed in `.agents/scripts` |
+
+### Verification
+
+| Check | Result |
+|---|---|
+| Usage error (prompt missing) | usage printed, exit 1 |
+| Unknown provider | the launcher's message, `the launcher exited with code 1`, exit 1 after 0.2 s, no result directory |
+| "add a group of three tall units to the wall on the right", Mistral Large | exit 0; ready 9.7 s, chat 99 s, snapshot 17 s; tools `get-plan-context`, `get-authoring-rules`, `create-or-replace-groups`; all nine files written (`snapshot.json` 21 MB, `object.glb` 13 MB, PNGs 1024 px) |
+| Invalid API key | `errors: ["Unauthorized"]`, exit 1, snapshot of the empty plan stored without the object images and the GLB |
+| SIGINT during the chat | exit 130, `stopped by SIGINT`, no result directory, ports 3000/3110/3200 free, no process left |
+| SIGTERM during the chat | exit 143, same cleanup |
+| "plan a kitchen in the back right corner of the room", Mistral Large (after the restructure) | exit 1 with the model's error (see finding 2), result stored |
+| `--headed`, `--dev`, an example tab open during a run | not run: `--headed` opens a window on the desktop, `--dev` needs the roomle-ui dev server, the tab isolation holds by construction (nothing listens on 3100 during a run) |
+
+Testing the signals from a second shell needs the real Node binary: with Volta, `node` is a shim
+that does not pass `kill -INT <pid>` on to the script (a Ctrl+C in the terminal reaches both).
+
+### Findings for the next steps
+
+Not bugs of the script — results of the first runs, for the HI MCP and the chat:
+
+1. **Groups placed outside the room.** Both groups Mistral Large created stand on the far side of
+   the right wall: the three tall units beyond the wall's front end
+   (`.temp/result/2026-09-30T12-42-58-mistral`), the L-shaped corner kitchen behind the wall at
+   the back (`.temp/result/2026-09-30T12-53-16-mistral`).
+2. **`get-plan-images` overflows the model's context.** After creating the corner kitchen the model
+   called `get-plan-images`; the next model call failed with
+   `Prompt 2125087 > 262144 maximum context length` — the base64 images of the tool result reach
+   the model as text.
+
+The result directories are local (`.temp` is ignored by git).

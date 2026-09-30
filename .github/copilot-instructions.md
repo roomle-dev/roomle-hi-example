@@ -135,6 +135,7 @@ Load these skills when the task matches their domain:
 | [hi-authoring-rules.md](../.agents/skills/hi-authoring-rules.md) | HI authoring, docking patterns, group creation |
 | [hi-mcp-tools.md](../.agents/skills/hi-mcp-tools.md) | Using MCP tools, tool parameters, examples |
 | [roomle-hi-concepts.md](../.agents/skills/roomle-hi-concepts.md) | HI data model, rooms, walls, articles, groups |
+| [hi-mcp-testing.md](../.agents/skills/hi-mcp-testing.md) | Running a prompt end to end and checking the stored result |
 
 ## Code Style Guidelines
 

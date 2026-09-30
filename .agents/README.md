@@ -45,6 +45,7 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [hi-mcp-tools.md](./skills/hi-mcp-tools.md) | Complete MCP tool reference with parameters, examples, error handling | Using MCP tools, tool implementation, error diagnosis |
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
 | [vercel-ai-sdk-chat.md](./skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: provider selection, server-side auth, @ai-sdk/mcp, streamText route | Implementing the AI chat window (RML-17984), Vercel AI SDK, MCP client integration |
+| [hi-mcp-testing.md](./skills/hi-mcp-testing.md) | End-to-end test runs: `run-hi-mcp-prompt.js` starts the launcher, runs one prompt through the chat in headless Chromium, stores the snapshot in `.temp/result/` | Testing prompts or models against the real planner, checking the plan a prompt produces |
 
 ### Decisions (Architecture Decision Records)
 
@@ -98,7 +99,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [Group placement computed in the MCP server (RML-18007, Task 1)](feature-analysis/group-placement-computed-in-the-mcp-server.md) | Open | 2026-09-30 |
 | [Reintroduce the place-group tool in the MCP server (RML-18007, Task 2)](feature-analysis/reintroduce-place-group-tool-in-the-server.md) | Open | 2026-09-30 |
 | [HI MCP command API (RML-18004)](feature-analysis/hi-mcp-command-api.md) | Implemented | 2026-09-30 |
-| [HI MCP testing skill: the prompt run script](feature-analysis/hi-mcp-prompt-run-script.md) | Open | 2026-09-30 |
+| [HI MCP testing skill: the prompt run script](feature-analysis/hi-mcp-prompt-run-script.md) | Implemented | 2026-09-30 |
 
 ### Refactoring Analyses
 

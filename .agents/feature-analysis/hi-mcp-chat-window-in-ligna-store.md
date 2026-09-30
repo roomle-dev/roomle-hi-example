@@ -1,6 +1,8 @@
 # Feature Analysis: The AI Chat Window in the ligna-store
 
-**Status**: Open
+**Status**: Implemented
+
+Implemented differently from the design below, as decided in review: the Vercel AI SDK runs in the store page (`ligna-store/hi-mcp/chat.ts`, `chat-window.ts`, `chat-options.ts`), calling Mistral and the Foundry endpoint directly (both allow browser CORS) and the tools at `<mcp_server>/mcp`. The only server change is CORS for `/mcp` (`hi-mcp-poc-json/server.ts`). Found in the live check: the bridge hello announced the page URL with `api_key` (now stripped), the layout focus guard took focus from the chat input (now exempted), and `@ai-sdk/mcp` needs a bound `fetch` in the browser. Verified live with `mistral-large-latest` and `gpt-5-mini` against a local MCP server; not yet deployed to Cloudflare.
 
 **Date**: 2026-09-30
 

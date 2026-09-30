@@ -103,7 +103,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [HI MCP command API (RML-18004)](feature-analysis/hi-mcp-command-api.md) | Implemented | 2026-09-30 |
 | [HI MCP testing skill: the prompt run script](feature-analysis/hi-mcp-prompt-run-script.md) | Implemented | 2026-09-30 |
 | ["test the mcp": the prompt suite of the HI MCP testing skill](feature-analysis/hi-mcp-test-the-mcp-skill.md) | Implemented | 2026-09-30 |
-| [The AI chat window in the ligna-store](feature-analysis/hi-mcp-chat-window-in-ligna-store.md) | Open | 2026-09-30 |
+| [The AI chat window in the ligna-store](feature-analysis/hi-mcp-chat-window-in-ligna-store.md) | Implemented | 2026-09-30 |
 
 ### Refactoring Analyses
 

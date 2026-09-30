@@ -1,4 +1,8 @@
-import { catalogArticleOf, toRepositioningData } from './group-placement';
+import {
+  catalogArticleOf,
+  isCornerArticle,
+  toRepositioningData,
+} from './group-placement';
 import type { PlannerApi } from './planner-api';
 
 export type ToolExecutor = (
@@ -85,8 +89,10 @@ const validateArticlePickIds = (articles: any[], posGroups: any[]): void => {
   }
 };
 
-const withoutCornerPoint = (article: any) => {
-  const compact = { ...article };
+// The agent picks corner articles by cornerArticle; the flag is completed for
+// an empty plan, and the corner point stays with the server.
+const agentFacingArticle = (article: any, articles: any[]) => {
+  const compact = { ...article, cornerArticle: isCornerArticle(articles, article) };
   delete compact.cornerPoint;
   return compact;
 };
@@ -141,7 +147,8 @@ const invalidPosGroups = (errors: string[]): Error =>
 export const toolExecutors: Record<string, ToolExecutor> = {
   // The plan context arrives agent-ready from the planner API (compacted
 // sections, 3D room contours with derived walls); the executor passes it
-// through without the articles' corner points, which only the server uses.
+// through with the articles' cornerArticle flag completed and without their
+// corner points, which only the server uses.
   'get-plan-context': async (roomDesignerApi, args) => {
     const requested =
       Array.isArray(args.include) && args.include.length > 0
@@ -152,7 +159,11 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     if (!Array.isArray(context?.articles)) {
       return context;
     }
-    return { ...context, articles: context.articles.map(withoutCornerPoint) };
+    const articles = context.articles as any[];
+    return {
+      ...context,
+      articles: articles.map((article) => agentFacingArticle(article, articles)),
+    };
   },
 
   'find-attributes': async (roomDesignerApi, args) => {

@@ -24,6 +24,24 @@ export const catalogArticleOf = (articles: any[], root: any): any | undefined =>
       (!root.libraryId || candidate.libraryId === root.libraryId),
   );
 
+const CORNER = /corner/i;
+
+// The catalog's cornerArticle flag is derived from docking data that only a
+// calculated root of the article provides; on an empty plan the category
+// ("... | Base Units | Corner") and the module name (mr_CornerunitStraight)
+// still tell a corner article.
+export const isCornerArticle = (articles: any[], root: any): boolean => {
+  const article = catalogArticleOf(articles, root);
+  return (
+    article !== undefined &&
+    (article.cornerArticle === true ||
+      CORNER.test(String(article.category ?? '')) ||
+      (article.rootModules ?? []).some((rootModule: any) =>
+        CORNER.test(String(rootModule?.module?.id ?? '')),
+      ))
+  );
+};
+
 // Read in both directions: groups returned by get-plan-context carry the
 // reciprocal entries the planner completes.
 const dockingRelations = (roots: any[]): DockingRelations => {
@@ -126,9 +144,9 @@ export const toRepositioningData = (
   placement: Placement,
   articles: any[],
 ): RepositioningData => {
-  const isCornerArticle = (root: any) =>
-    catalogArticleOf(articles, root)?.cornerArticle === true;
-  const anchor = findAnchorRoot(roots, placement.rootId, isCornerArticle);
+  const anchor = findAnchorRoot(roots, placement.rootId, (root) =>
+    isCornerArticle(articles, root),
+  );
   const cornerPoint = catalogArticleOf(articles, anchor)?.cornerPoint;
   const hasCornerOffset =
     Array.isArray(cornerPoint) &&

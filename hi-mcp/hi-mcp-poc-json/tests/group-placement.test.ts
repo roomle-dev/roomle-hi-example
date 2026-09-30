@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   catalogArticleOf,
   findAnchorRoot,
+  isCornerArticle,
   toRepositioningData,
 } from '../group-placement';
 
@@ -20,6 +21,20 @@ const articles = [
     cornerPoint: [0, 0, 0],
   },
   { articleId: 'corner-unmeasured', libraryId: 'lib-1', cornerArticle: true },
+  // the catalog of an empty plan: no calculated root yet, so no flag and no corner point
+  {
+    articleId: 'EUERTB90',
+    libraryId: 'lib-1',
+    category: 'Kitchen handleless | Base Units | Corner',
+    cornerArticle: false,
+    rootModules: [{ module: { id: 'mr_CornerunitStraight' } }],
+  },
+  {
+    articleId: 'corner-by-module',
+    libraryId: 'lib-1',
+    category: 'Kitchen | Base Units | Storage',
+    rootModules: [{ module: { id: 'mr_CornerunitStraight' } }],
+  },
 ];
 
 const PLACEMENT = {
@@ -66,6 +81,16 @@ describe('catalogArticleOf', () => {
     expect(
       catalogArticleOf(articles, { articleId: 'corner', libraryId: 'lib-2' }),
     ).toBeUndefined();
+  });
+});
+
+describe('isCornerArticle', () => {
+  it('recognises a corner article by its flag, its category or its module name', () => {
+    expect(isCornerArticle(articles, { articleId: 'corner' })).toBe(true);
+    expect(isCornerArticle(articles, { articleId: 'EUERTB90' })).toBe(true);
+    expect(isCornerArticle(articles, { articleId: 'corner-by-module' })).toBe(true);
+    expect(isCornerArticle(articles, { articleId: 'unit' })).toBe(false);
+    expect(isCornerArticle(articles, { articleId: 'unknown' })).toBe(false);
   });
 });
 
@@ -153,6 +178,17 @@ describe('toRepositioningData', () => {
       });
     },
   );
+
+  it('anchors the L at the corner article on an empty plan, where the catalog has no flag yet', () => {
+    // plan snapshot ps_qid6jsck322rq3g2stszoxzue4uwnxw: the agent placed the L at the back
+    // right corner with 270, the server anchored l2 and turned the kitchen by 90 degrees
+    const emptyPlanL = lShape.map((candidate) =>
+      candidate.id === 'c1' ? { ...candidate, articleId: 'EUERTB90' } : candidate,
+    );
+    for (const start of [undefined, 'c1', 'l2', 'r2']) {
+      expect(anchorOf(emptyPlanL, start)).toEqual({ ...PLACEMENT, rootId: 'c1' });
+    }
+  });
 
   it('adds no offset for a corner point at the origin or an unmeasured one', () => {
     for (const articleId of ['corner-at-origin', 'corner-unmeasured']) {

@@ -1449,7 +1449,32 @@ describe('group command tools', () => {
           dockTo,
         }),
       ).rejects.toThrow(
-        "articleId 'article-9' is not in the article catalog. Valid article ids: article-1",
+        "articleId 'article-9' is not in the article catalog of library 'lib-1'. Valid article ids: article-1",
+      );
+      expect(api.extended.externalObjectGroupOperation).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['merge-article-into-group', 'exchange-root-module'])(
+    "%s rejects an article of another library than the group's",
+    async (tool) => {
+      const api = createApi({
+        ...planWithGroups,
+        articles: [
+          articleFixture,
+          { ...articleFixture, articleId: 'article-2', libraryId: 'lib-2' },
+        ],
+      });
+
+      await expect(
+        toolExecutors[tool](api, {
+          groupId: 'kitchen-1',
+          rootModuleId: 'r1',
+          articleId: 'article-2',
+          dockTo,
+        }),
+      ).rejects.toThrow(
+        "articleId 'article-2' is not in the article catalog of library 'lib-1'. Valid article ids: article-1",
       );
       expect(api.extended.externalObjectGroupOperation).not.toHaveBeenCalled();
     },

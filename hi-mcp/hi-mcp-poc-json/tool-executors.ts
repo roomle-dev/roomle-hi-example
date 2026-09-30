@@ -127,12 +127,18 @@ const isArticlePickOnly = (root: any): boolean =>
 // completes it from the article template; here the article id is validated
 // against the catalog so the agent gets a helpful error instead of a
 // half-calculated group.
+// With a libraryId, only the articles of that library are valid.
 const requireCatalogArticle = (articles: any[], root: any): void => {
   if (!catalogArticleOf(articles, root)) {
-    const validIds = articles.map((candidate) => candidate.articleId);
+    const validIds = articles
+      .filter(
+        (candidate) => !root.libraryId || candidate.libraryId === root.libraryId,
+      )
+      .map((candidate) => candidate.articleId);
     throw new Error(
-      `articleId '${root.articleId}' is not in the article catalog. ` +
-        `Valid article ids: ${validIds.slice(0, 100).join(', ')}`,
+      `articleId '${root.articleId}' is not in the article catalog` +
+        (root.libraryId ? ` of library '${root.libraryId}'` : '') +
+        `. Valid article ids: ${validIds.slice(0, 100).join(', ')}`,
     );
   }
 };
@@ -880,6 +886,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     const group = findGroup(context.groups ?? [], args.groupId as string);
     requireCatalogArticle(context.articles ?? [], {
       articleId: args.articleId,
+      libraryId: group.libraryId,
     });
     return roomDesignerApi.extended.externalObjectGroupOperation(
       'merge-article-into-group',
@@ -899,6 +906,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     const group = findGroup(context.groups ?? [], args.groupId as string);
     requireCatalogArticle(context.articles ?? [], {
       articleId: args.articleId,
+      libraryId: group.libraryId,
     });
     return roomDesignerApi.extended.externalObjectGroupOperation(
       'exchange-root-module',

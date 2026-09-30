@@ -173,10 +173,11 @@ describe('toRepositioningData', () => {
   it.each(['c1', 'r1', 'r2', 'l1', 'l2'])(
     'anchors the L at the corner article by its corner point, from %s',
     (start) => {
+      // at 270 the root-local offset [261, 0, 0] points towards room +z
       expect(anchorOf(lShape, start)).toEqual({
-        ...PLACEMENT,
+        posGroup: [4815, 0, -3504],
+        posRotationY: 270,
         rootId: 'c1',
-        rootRelPos: [261, 0, 0],
       });
     },
   );
@@ -266,9 +267,25 @@ describe('cornerPointOfRoot and cornerPointsByArticle', () => {
       candidate.id === 'c1' ? { ...candidate, articleId: 'EUERTB90' } : candidate,
     );
     expect(toRepositioningData(emptyPlanL, PLACEMENT, articles, cornerPoints)).toEqual({
-      ...PLACEMENT,
+      posGroup: [4815, 0, -3504],
+      posRotationY: 270,
       rootId: 'c1',
-      rootRelPos: [261, 0, 0],
     });
+  });
+
+  it.each([
+    [0, [261, 0, 0]],
+    [90, [0, 0, -261]],
+    [180, [-261, 0, 0]],
+    [270, [0, 0, 261]],
+  ])('adds the rotated origin offset to posGroup at %d degrees', (rotation, shift) => {
+    const cornerPoints = new Map([['EUERTB90', [-261, 0, 0] as [number, number, number]]]);
+    const roots = [root('c1', 'EUERTB90')];
+    const placement = { posGroup: [1000, 0, -2000] as [number, number, number], posRotationY: rotation };
+    expect(toRepositioningData(roots, placement, articles, cornerPoints).posGroup).toEqual([
+      1000 + shift[0],
+      0 + shift[1],
+      -2000 + shift[2],
+    ]);
   });
 });

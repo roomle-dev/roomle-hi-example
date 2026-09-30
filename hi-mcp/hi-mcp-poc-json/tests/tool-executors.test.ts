@@ -676,10 +676,11 @@ describe('create-or-replace-groups loading', () => {
           {
             roots: lShape,
             repositioningData: {
-              posGroup: [4815, 0, -3765],
+              // the corner point [-261, 0, 0] of c1 lands at the corner: the
+              // origin offset [261, 0, 0], turned by 270, points to room +z
+              posGroup: [4815, 0, -3504],
               posRotationY: 270,
               rootId: 'c1',
-              rootRelPos: [261, 0, 0],
             },
           },
         ],
@@ -721,7 +722,7 @@ describe('create-or-replace-groups loading', () => {
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
       { posGroups: [{ roots: lShape, repositioningData: {
-        posGroup: [4815, 0, -3765], posRotationY: 270, rootId: 'c1', rootRelPos: [261, 0, 0],
+        posGroup: [4815, 0, -3504], posRotationY: 270, rootId: 'c1',
       } }] },
       'posGroups',
       { reason: 'adjusted' },

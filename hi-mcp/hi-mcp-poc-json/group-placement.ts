@@ -8,7 +8,6 @@ export interface RepositioningData {
   posGroup: [number, number, number];
   posRotationY: number;
   rootId: string;
-  rootRelPos?: [number, number, number];
 }
 
 interface DockingRelations {
@@ -174,9 +173,26 @@ export const cornerPointsByArticle = (
   return byArticle;
 };
 
+// Counter-clockwise as seen from above (the planner's rotationY): local +x
+// turns towards room -z, local +z towards room +x.
+const rotatedAboutY = (
+  [x, y, z]: [number, number, number],
+  degrees: number,
+): [number, number, number] => {
+  const radians = (degrees * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  return [x * cos + z * sin, y, -x * sin + z * cos];
+};
+
+// + 0 turns -0 into 0
+const round2 = (value: number): number => Math.round(value * 100) / 100 + 0;
+
 /**
  * The planner's repositioning of a new group from the agent's placement: the
- * anchor root lands at posGroup, a corner article by its corner point.
+ * anchor root's origin lands at posGroup. A corner article is anchored by its
+ * corner point, so its origin offset, rotated into the room, is added to the
+ * point the agent gave.
  */
 export const toRepositioningData = (
   roots: any[],
@@ -194,18 +210,24 @@ export const toRepositioningData = (
     Array.isArray(cornerPoint) &&
     cornerPoint.length === 3 &&
     !isOrigin(cornerPoint);
-  // + 0 turns -0 into 0
-  const negated = (coordinate: number) => -coordinate + 0;
+  if (!hasCornerOffset) {
+    return {
+      posGroup: placement.posGroup,
+      posRotationY: placement.posRotationY,
+      rootId: anchor.id,
+    };
+  }
+  const originOffset = rotatedAboutY(
+    [-cornerPoint[0], -cornerPoint[1], -cornerPoint[2]],
+    placement.posRotationY,
+  );
   return {
-    posGroup: placement.posGroup,
+    posGroup: [
+      round2(placement.posGroup[0] + originOffset[0]),
+      round2(placement.posGroup[1] + originOffset[1]),
+      round2(placement.posGroup[2] + originOffset[2]),
+    ],
     posRotationY: placement.posRotationY,
     rootId: anchor.id,
-    ...(hasCornerOffset && {
-      rootRelPos: [
-        negated(cornerPoint[0]),
-        negated(cornerPoint[1]),
-        negated(cornerPoint[2]),
-      ],
-    }),
   };
 };

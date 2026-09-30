@@ -23,10 +23,11 @@ const AUTHORING_RULES = `Authoring rules for pos groups:
   worktop or any part lying directly on a unit: A -> T LeftTop -> LeftBottom, no offset.
   island: front unit A -> back unit B BackBottom -> BackBottom, no mode.
   room corner (an L-shaped kitchen, "in the corner"): start the group with a corner article C (cornerArticle true in the catalog), give the group a placement with the room corner point as posGroup and the rotation from the corner rules, and continue one row from C's RightBottom and the other row from C's LeftBottom like from any other unit - the complete payload is example 3. Prefer a corner article over butting two straight units together in a corner.
-- placement: { posGroup: [x, y, z], posRotationY, rootId? } positions a new group. posGroup is the room point of the group's back left bottom corner, in millimetres (y up, y = 0 on the floor; for a group of wall units only, their mounting height) - against a wall the wall's end (flush into the corner at the wall's end) or a point from end towards start, in a room corner the corner point. posRotationY is the rotation of the group in degrees, counter-clockwise as seen from above (in the top-view image) - against a wall the wall's facingRotationY; posRotationY is required, state 0 explicitly for no rotation. rootId is optional: with two corner articles in the group, set it to the corner article that goes into the corner posGroup names. Applied exactly once, when the group is created; a placement on a group that is already in the plan is rejected, and groups returned by get-plan-context never carry this field.
+- placement: { posGroup: [x, y, z], posRotationY, rootId? } positions a new group. posGroup is the room point of the group's back left bottom corner, in millimetres (y up, y = 0 on the floor; for a group of wall units only, their mounting height) - against a wall the wall's end (flush into the corner at the wall's end) or a point from end towards start, in a room corner the corner point. posRotationY is the rotation of the group in degrees, counter-clockwise as seen from above (in the top-view image) - against a wall the wall's facingRotationY; posRotationY is required, state 0 explicitly for no rotation. rootId is optional: with two corner articles in the group, set it to the corner article that goes into the corner posGroup names. Applied exactly once, when the group is created; a placement on a group that is already in the plan is rejected (move it with place-group), and groups returned by get-plan-context never carry this field.
 - Take posGroup and posRotationY from the walls instead of computing them. Every room of get-plan-context carries a walls array - per wall start and end (points [x, 0, z] on the floor, in the coordinates of posGroup), lengthMm, type and facingRotationY; use the walls of type wall. Against a wall: posRotationY = the wall's facingRotationY (the group's back faces the wall), and posGroup = end puts the group flush into the corner at the wall's end, the row running towards start. Along the wall: posGroup = end + d * (start - end) / lengthMm - centred: d = (lengthMm - group width) / 2; right end flush into the corner at the wall's start: d = lengthMm - group width; the group width is the sum of the unit widths of the row plus any x docking offsets (gaps) between them - dimensions in the catalog; position.footprint.widthMm of a loaded group already includes the gaps. A room corner is the point two walls share. Anywhere else (an island, the middle of the room, next to a door): any free point on the floor as posGroup, any posRotationY.
 - Corners of a rectangular room (back = top, front = bottom in the top-view image), with the corner article in the corner: left back corner posRotationY 0 - the RightBottom row runs along the back wall to the right, the LeftBottom row along the left wall to the front. left front 90 - RightBottom along the left wall to the back, LeftBottom along the front wall to the right. right front 180 - RightBottom along the front wall to the left, LeftBottom along the right wall to the back. right back 270 - RightBottom along the right wall to the front, LeftBottom along the back wall to the left. Straight walls: back 0, left 90, front 180, right 270.
 - Extending a kitchen: units next to an existing group are roots of that group, never a new group. Take the group from get-plan-context, add the new picks, dock each to a free docking vector of the root it continues (freeDockingVectors per root: a free LeftBottom takes the new root's RightBottom, a free RightBottom takes LeftBottom, a free Top vector takes the new root's Bottom vector), and resubmit the group with its id. A new group is only for a free stretch of wall or a free spot in the room - never position a new group against an existing one.
+- To move an existing group against a wall or into a room corner, call place-group: the wall by side label or index, alignment start, center or end, or the side label of the adjoining wall to sit flush in that corner (wall right + alignment top is the back right corner), offsetMm along the wall. The group keeps its roots and docking.
 - To modify an existing group, take it from get-plan-context, change it, and resubmit it with its id and without placement via create-or-replace-groups - it keeps its position; keep the ids of the root modules you keep.
 - Verify results numerically: the returned groups carry position (pos, rotationY, footprint) and per root the dockingVectors, the input attributes and the docking; logMessages entries with category Error mean the input is wrong (typically a bad articleId or attribute value). Do not judge a position from a rendering alone.
 
@@ -65,7 +66,8 @@ const INSTRUCTIONS = `This server orchestrates HOMAG Intelligence (HI) object gr
 Typical workflow:
 1. get-plan-context: fetch the rooms (each with a derived walls array), the article catalog (desc, category, dimensions, docking vector names, sub-modules per article) and the groups currently in the plan. Add masterData to include for the attribute vocabulary, or look an attribute up with find-attributes.
 2. create-or-replace-groups: author the whole kitchen as ONE group - article picks plus docking (every unit beside, above or back to back is docked to its neighbour; the placed root lists the new root) plus one placement for the new group ({ posGroup, posRotationY }: the room point of the group's back left corner and its rotation, taken from the walls array - a wall's end point and facingRotationY, or a room corner point with the rotation from the corner rules; a plan into a room corner starts with a corner article, cornerArticle true in the catalog). One call creates, docks and positions the group; never author root positions and never split a kitchen into several groups. A group whose id matches an existing group in the plan completely replaces that group and keeps its position; all other groups are created. Units next to an existing group are added to that group, docked to a free docking vector of the root they continue - a new group is only for a free stretch of wall. The payload format, the docking pairs, the corner rules and complete examples are returned by get-authoring-rules.
-3. Check the result with get-price or get-order-data, and inspect it with get-plan-images.
+3. place-group: move an existing group to another wall or into a room corner when asked.
+4. Check the result with get-price or get-order-data, and inspect it with get-plan-images.
 
 ${AUTHORING_RULES}`;
 
@@ -151,7 +153,8 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     {
       description:
         'Returns the authoring rules for pos groups: the payload format of create-or-replace-groups, the root ' +
-        'module fields, how to position a new group with a placement, the docking vectors with their valid ' +
+        'module fields, how to position a new group with a placement and move an existing one with place-group, ' +
+        'the docking vectors with their valid ' +
         'pairs, mode and offset, and complete examples for a row against a wall, wall units above base units, ' +
         'an L-shaped corner kitchen and extending a group. Fetch this before authoring pos groups.',
       inputSchema: {},
@@ -190,6 +193,66 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     },
     async ({ posGroups }) =>
       textResult(await runTool('create-or-replace-groups', { posGroups })),
+  );
+
+  server.registerTool(
+    'place-group',
+    {
+      description:
+        'Moves an existing group against a wall of a room or into a room corner and reloads it there: the ' +
+        "server computes the position from the wall, the alignment and the group's calculated footprint; a " +
+        'group with a corner article goes into the corner when the alignment names the adjoining wall. A ' +
+        'target that meets another group is rejected and the group is not moved. Name the wall by its side ' +
+        'label (left/right/top/bottom as seen in the top-view image) or its index in the walls array of ' +
+        'get-plan-context. Use it to move a group, or to position a group created without placement, against ' +
+        'a wall or into a corner - never compute wall points for this yourself. Returns placedIn (corner or ' +
+        'wall), the wall and the resulting group.',
+      inputSchema: {
+        groupId: z
+          .string()
+          .describe('The id of the group to move. A unique id prefix is accepted.'),
+        wall: z
+          .union([
+            z.enum(['left', 'right', 'top', 'bottom']),
+            z.number().int().min(0),
+          ])
+          .describe(
+            "The target wall: a side label as seen in the top view ('right' places the group " +
+              'against the longest wall on the right) or a wall index from the walls array of ' +
+              'get-plan-context.',
+          ),
+        roomIndex: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe('The index of the room in the rooms array. Defaults to 0.'),
+        alignment: z
+          .enum(['start', 'center', 'end', 'left', 'right', 'top', 'bottom'])
+          .optional()
+          .describe(
+            "Where the group sits along the wall: 'center' (default), 'start'/'end' (the wall's endpoints), " +
+              'or the side label of an adjoining wall to sit flush in that corner (e.g. wall "right" + ' +
+              'alignment "top" is the back right corner in the top view).',
+          ),
+        offsetMm: z
+          .number()
+          .optional()
+          .describe(
+            'Extra distance in millimetres along the wall from the chosen alignment. Defaults to 0.',
+          ),
+      },
+    },
+    async ({ groupId, wall, roomIndex, alignment, offsetMm }) =>
+      textResult(
+        await runTool('place-group', {
+          groupId,
+          wall,
+          roomIndex,
+          alignment,
+          offsetMm,
+        }),
+      ),
   );
 
   server.registerTool(

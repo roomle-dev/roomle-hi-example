@@ -491,7 +491,11 @@ describe('create-or-replace-groups validation', () => {
     );
     await expectRejectedBeforeLoad(
       withPlacement({ wall: 'right', alignment: 'top' }),
-      /placement takes only posGroup, posRotationY and rootId - remove wall, alignment/,
+      /placement takes only posGroup, posRotationY and rootId - remove wall, alignment - to stand a group against a wall or into a corner by its side label, call place-group/,
+    );
+    await expectRejectedBeforeLoad(
+      withPlacement({ posGroup: [0, 0, 0], posRotationY: 0, scale: 2 }),
+      /placement takes only posGroup, posRotationY and rootId - remove scale\n/,
     );
   });
 
@@ -507,7 +511,7 @@ describe('create-or-replace-groups validation', () => {
         ],
       }),
     ).rejects.toThrow(
-      /placement positions a new group only - group 'g1' is already in the plan/,
+      /placement positions a new group only - group 'g1' is already in the plan; resubmit it without placement to keep its position, or move it with place-group/,
     );
     expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
   });
@@ -951,7 +955,268 @@ describe('create-or-replace-groups loading', () => {
     })) as Record<string, any>;
     expect(result.hint).toMatch(/Groups g2 are not positioned/);
     expect(result.hint).toMatch(/placement/);
+    expect(result.hint).toMatch(/place-group moves it against a wall or into a room corner/);
     expect(result.hint).not.toMatch(/repositioningData/);
+  });
+});
+
+describe('place-group', () => {
+  // a calculated group as getExternalObjectGroups returns it (raw), next to
+  // the shaped groups of the plan context
+  const makeRoot = (overrides: Record<string, unknown> = {}) => ({
+    id: 'r1',
+    articleId: 'article-1',
+    articlePos: [0, 0, 0],
+    rotationY: 0,
+    attributes: [
+      { id: 'b', value: 800, isInput: true },
+      { id: 't', value: 600, isInput: true },
+    ],
+    dockInfos: [{ id: 'LeftBottom' }, { id: 'RightBottom' }],
+    contextData: { dockedRoots: [] },
+    modules: [],
+    ...overrides,
+  });
+
+  const makeGroup = (overrides: Record<string, unknown> = {}) => ({
+    id: 'g1',
+    libraryId: 'lib-1',
+    pos: [0, 0, 0],
+    rotationY: 0,
+    roots: [makeRoot()],
+    logMessages: [],
+    ...overrides,
+  });
+
+  // mr_CornerunitStraight as calculated: the corner point lies 261 mm left of
+  // the root origin
+  const cornerDockInfos = [
+    { id: 'LeftBackBottom', start: [-261, 0, 0], end: [-261, 0, 661] },
+    { id: 'RightBackBottom', start: [-261, 0, 0], end: [900, 0, 0] },
+  ];
+
+  const createPlaceApi = (
+    shapedGroups: any[],
+    rawGroups: any[],
+    afterShapedGroups: any[] = shapedGroups,
+  ) =>
+    createApi(undefined, {
+      getExternalObjectPlanContext: vi.fn(async (sections: string[]) =>
+        sections.includes('rooms')
+          ? { rooms: { rooms: [room] }, groups: shapedGroups }
+          : { groups: afterShapedGroups },
+      ),
+      getExternalObjectGroups: vi.fn(async () => rawGroups),
+      loadExternalObjectGroupLayout: vi.fn(async () => [{ id: 'g1' }]),
+    });
+
+  const reloadedGroup = (api: ReturnType<typeof createPlaceApi>) => {
+    const calls = api.extended.loadExternalObjectGroupLayout.mock
+      .calls as unknown as any[][];
+    expect(calls).toHaveLength(1);
+    return calls[0][0].posGroups[0];
+  };
+
+  it('rejects an unknown group id', async () => {
+    const api = createPlaceApi([makeShapedGroup({ id: 'g7' })], []);
+    await expect(
+      toolExecutors['place-group'](api, { groupId: 'nope', wall: 'right' }),
+    ).rejects.toThrow(/Group 'nope' not found. Groups in the plan: g7/);
+    expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
+  });
+
+  it('accepts a unique id prefix and a wall index', async () => {
+    const api = createPlaceApi(
+      [makeShapedGroup({ id: 'group-abc' })],
+      [makeGroup({ id: 'group-abc' })],
+    );
+    await toolExecutors['place-group'](api, { groupId: 'group-a', wall: 1 });
+    const reloaded = reloadedGroup(api);
+    expect(reloaded.id).toBe('group-abc');
+    // centred on the right wall by default
+    expect(reloaded.repositioningData).toEqual({
+      posGroup: [4000, 0, -1900],
+      posRotationY: 270,
+      rootId: 'r1',
+    });
+  });
+
+  it('places the group against a wall and reloads it there once', async () => {
+    const moved = makeShapedGroup({
+      position: { pos: [4000, 0, -3000], rotationY: 270 },
+    });
+    const api = createPlaceApi([makeShapedGroup()], [makeGroup()], [moved]);
+    const result = await toolExecutors['place-group'](api, {
+      groupId: 'g1',
+      wall: 'right',
+      alignment: 'top',
+    });
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
+      {
+        posGroups: [
+          {
+            id: 'g1',
+            libraryId: 'lib-1',
+            roots: [
+              {
+                id: 'r1',
+                articleId: 'article-1',
+                attributes: [
+                  { id: 'b', value: 800, isInput: true },
+                  { id: 't', value: 600, isInput: true },
+                ],
+                dockInfos: [{ id: 'LeftBottom' }, { id: 'RightBottom' }],
+                contextData: { dockedRoots: [] },
+                modules: [],
+              },
+            ],
+            repositioningData: {
+              posGroup: [4000, 0, -3000],
+              posRotationY: 270,
+              rootId: 'r1',
+            },
+          },
+        ],
+      },
+      'posGroups',
+      { reason: 'adjusted' },
+    );
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      placedIn: 'wall',
+      wall: room.walls[1],
+      group: moved,
+    });
+  });
+
+  it('rejects a target that meets another group without moving it', async () => {
+    const api = createPlaceApi(
+      [
+        makeShapedGroup(),
+        makeShapedGroup({
+          id: 'g2',
+          roots: [makeShapedRoot({ id: 'r2', freeDockingVectors: ['LeftBottom'] })],
+        }),
+      ],
+      [
+        makeGroup(),
+        makeGroup({
+          id: 'g2',
+          pos: [4000, 0, -1900],
+          rotationY: 270,
+          roots: [makeRoot({ id: 'r2' })],
+        }),
+      ],
+    );
+    await expect(
+      toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' }),
+    ).rejects.toThrow(
+      /Placement rejected - the group was not moved: Group 'g1' placed at the right wall would meet group 'g2' \(root 'r2', article article-1; free docking vectors: LeftBottom\).*"ownDockingVector": "LeftBottom", "dockedRoots": \[\{ "id": "<new root>", "dockingVector": "RightBottom"/s,
+    );
+    expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
+  });
+
+  it('puts a group with a corner article into the corner the alignment names', async () => {
+    const api = createPlaceApi(
+      [makeShapedGroup({ roots: [makeShapedRoot({ id: 'c1' })] })],
+      [makeGroup({ roots: [makeRoot({ id: 'c1', dockInfos: cornerDockInfos })] })],
+    );
+    const result = (await toolExecutors['place-group'](api, {
+      groupId: 'g1',
+      wall: 'right',
+      alignment: 'top',
+    })) as Record<string, any>;
+    // the corner point [-261, 0, 0], turned by 270, lands on [4000, 0, -3000]
+    expect(reloadedGroup(api).repositioningData).toEqual({
+      posGroup: [4000, 0, -2739],
+      posRotationY: 270,
+      rootId: 'c1',
+    });
+    expect(result.placedIn).toBe('corner');
+    expect(JSON.stringify(result)).not.toMatch(
+      /repositioningData|rootRelPos|cornerPoint/,
+    );
+  });
+
+  it('puts the corner point into the corner whichever root comes first', async () => {
+    // r1 at the group origin, the corner article docked left of it
+    const api = createPlaceApi(
+      [makeShapedGroup()],
+      [
+        makeGroup({
+          roots: [
+            makeRoot(),
+            makeRoot({
+              id: 'c1',
+              articlePos: [-900, 0, 0],
+              dockInfos: cornerDockInfos,
+            }),
+          ],
+        }),
+      ],
+    );
+    await toolExecutors['place-group'](api, {
+      groupId: 'g1',
+      wall: 'right',
+      alignment: 'top',
+    });
+    const { posGroup, posRotationY, rootId } = reloadedGroup(api).repositioningData;
+    expect(rootId).toBe('r1');
+    expect(posRotationY).toBe(270);
+    // the planner puts r1 at posGroup; c1's corner point lies at x -1161 in
+    // the group and turns with it
+    const theta = (posRotationY * Math.PI) / 180;
+    expect(posGroup[0] - 1161 * Math.cos(theta)).toBeCloseTo(4000);
+    expect(posGroup[2] + 1161 * Math.sin(theta)).toBeCloseTo(-3000);
+  });
+
+  it('keeps the height of a group of wall units', async () => {
+    const api = createPlaceApi(
+      [makeShapedGroup()],
+      [makeGroup({ pos: [0, 1400, 0] })],
+    );
+    await toolExecutors['place-group'](api, {
+      groupId: 'g1',
+      wall: 'right',
+      alignment: 'top',
+    });
+    expect(reloadedGroup(api).repositioningData.posGroup).toEqual([
+      4000, 1400, -3000,
+    ]);
+  });
+
+  it('reloads the article roots only and anchors the first of them', async () => {
+    const api = createPlaceApi(
+      [makeShapedGroup()],
+      [makeGroup({ roots: [makeRoot({ id: 'w1', isGenerated: true }), makeRoot()] })],
+    );
+    await toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' });
+    const reloaded = reloadedGroup(api);
+    expect(reloaded.roots.map((root: any) => root.id)).toEqual(['r1']);
+    expect(reloaded.repositioningData.rootId).toBe('r1');
+  });
+
+  it('rejects an unknown room or wall and a parallel alignment before reading the calculated groups', async () => {
+    const api = createPlaceApi([makeShapedGroup()], [makeGroup()]);
+    const place = (args: Record<string, unknown>) =>
+      toolExecutors['place-group'](api, { groupId: 'g1', ...args });
+    await expect(place({ wall: 'right', alignment: 'right' })).rejects.toThrow(
+      /Alignment 'right' runs parallel to this 'right' wall/,
+    );
+    await expect(place({ wall: 'right', roomIndex: 1 })).rejects.toThrow(
+      /Room index 1 not found - the plan has 1 room\(s\)/,
+    );
+    await expect(place({ wall: 7 })).rejects.toThrow(/Wall '7' not found/);
+    expect(api.extended.getExternalObjectGroups).not.toHaveBeenCalled();
+    expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
+  });
+
+  it('rejects a group the planner has not calculated', async () => {
+    const api = createPlaceApi([makeShapedGroup()], []);
+    await expect(
+      toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' }),
+    ).rejects.toThrow(/Group 'g1' has no calculated geometry to place/);
+    expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
   });
 });
 

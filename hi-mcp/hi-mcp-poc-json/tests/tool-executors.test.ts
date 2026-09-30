@@ -859,23 +859,87 @@ describe('create-or-replace-groups loading', () => {
       expect(api.extended.removeExternalObject).not.toHaveBeenCalled();
     });
 
-    it('loads the group without the offset when the probe yields no calculated group', async () => {
+    it('rejects the call instead of loading the group off the corner when the probe yields no calculated group', async () => {
       const api = createApi(
         { ...planContextFixture, articles: [articleFixture, cornerArticle], groups: [] },
         { getExternalObjectGroups: vi.fn(async () => []) },
       );
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] });
-      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(2);
+      await expect(
+        toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] }),
+      ).rejects.toThrow(
+        /Nothing was loaded: the corner article 'EUERTB90' of posGroups\[0\] could not be calculated/,
+      );
+      // only the probe was loaded, and it left nothing behind
+      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
       expect(api.extended.removeExternalObject).not.toHaveBeenCalled();
-      expect(loadPayload(api, 1)).toEqual({
-        posGroups: [
-          {
-            libraryId: 'lib-1',
-            roots: [{ id: 'c1', articleId: 'EUERTB90' }],
-            repositioningData: { posGroup: [4815, 0, -3765], posRotationY: 270, rootId: 'c1' },
-          },
+    });
+
+    it('removes every group the probe load added, whatever its roots are called', async () => {
+      const inPlan = { id: 'kitchen-1', roots: [{ id: 'k1', articleId: 'article-1' }] };
+      let loads = 0;
+      const api = createApi(
+        { ...planContextFixture, articles: [articleFixture, cornerArticle], groups: [] },
+        {
+          loadExternalObjectGroupLayout: vi.fn(async () => [{ id: `loaded-${++loads}` }]),
+          getExternalObjectGroups: vi.fn(async () =>
+            loads === 1
+              ? [inPlan, { ...calculatedProbe('regenerated-article-id'), id: 'probe-group' }]
+              : [inPlan],
+          ),
+        },
+      );
+      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] });
+
+      expect(api.extended.removeExternalObject).toHaveBeenCalledTimes(1);
+      expect(api.extended.removeExternalObject).toHaveBeenCalledWith('probe-group');
+      // the corner point is known by the module all the same
+      expect(loadPayload(api, 1).posGroups[0].repositioningData.posGroup).toEqual([4815, 0, -3504]);
+    });
+
+    it.each([
+      [
+        'its corner point is the origin',
+        [
+          { id: 'LeftBackBottom', start: [0, 0, 0], end: [0, 0, 661] },
+          { id: 'RightBackBottom', start: [0, 0, 0], end: [900, 0, 0] },
         ],
+      ],
+      ['it has no corner vectors', [{ id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, 600] }]],
+    ])('probes a corner article only once when %s and adds no offset', async (_case, dockInfos) => {
+      let loads = 0;
+      const api = createApi(
+        { ...planContextFixture, articles: [articleFixture, cornerArticle], groups: [] },
+        {
+          loadExternalObjectGroupLayout: vi.fn(async () => [{ id: `loaded-${++loads}` }]),
+          getExternalObjectGroups: vi.fn(async () =>
+            loads === 1
+              ? [{ id: 'probe-group', roots: [{ id: 'p1', articleId: 'EUERTB90', dockInfos }] }]
+              : [],
+          ),
+        },
+      );
+      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] });
+      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] });
+
+      expect(api.extended.removeExternalObject).toHaveBeenCalledTimes(1);
+      // probe + two real loads
+      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(3);
+      for (const call of [1, 2]) {
+        expect(loadPayload(api, call).posGroups[0].repositioningData.posGroup).toEqual([
+          4815, 0, -3765,
+        ]);
+      }
+    });
+
+    it('does not probe a corner article whose catalog corner point is the origin', async () => {
+      const api = createApi({
+        ...planContextFixture,
+        articles: [articleFixture, { ...cornerArticle, cornerPoint: [0, 0, 0] }],
+        groups: [],
       });
+      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] });
+      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
+      expect(loadPayload(api, 0).posGroups[0].repositioningData.posGroup).toEqual([4815, 0, -3765]);
     });
   });
 

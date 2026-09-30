@@ -131,9 +131,6 @@ export const findAnchorRoot = (
   return rowEnd;
 };
 
-const isOrigin = (point: number[]): boolean =>
-  point.every((coordinate) => coordinate === 0);
-
 const isCornerVector = (id: unknown): boolean =>
   /^(Left|Right)Back(Bottom|Top)$/.test(String(id));
 
@@ -197,7 +194,7 @@ export const cornerPointFor = (
     catalogArticleOf(articles, root)?.cornerPoint;
   return Array.isArray(cornerPoint) &&
     cornerPoint.length === 3 &&
-    !isOrigin(cornerPoint)
+    cornerPoint.every(Number.isFinite)
     ? [cornerPoint[0], cornerPoint[1], cornerPoint[2]]
     : undefined;
 };

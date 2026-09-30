@@ -22,10 +22,13 @@ class FakeWebSocket {
   }
 }
 
-const startBridge = (extended: Record<string, unknown>): FakeWebSocket => {
+const startBridge = (
+  extended: Record<string, unknown>,
+  pageUrl = PAGE_URL,
+): FakeWebSocket => {
   FakeWebSocket.instances = [];
   vi.stubGlobal('WebSocket', FakeWebSocket);
-  vi.stubGlobal('window', { location: { href: PAGE_URL, protocol: 'http:' } });
+  vi.stubGlobal('window', { location: { href: pageUrl, protocol: 'http:' } });
   startMcpBrowserBridge({ extended });
   const socket = FakeWebSocket.instances[0];
   socket.onopen?.();
@@ -56,6 +59,16 @@ describe('startMcpBrowserBridge', () => {
       url: PAGE_URL,
       protocol: BRIDGE_PROTOCOL,
     });
+  });
+
+  it('keeps the api_key of the chat window out of the announced page url', () => {
+    const socket = startBridge(
+      {},
+      `${PAGE_URL}&model=gpt-5-mini&api_key=secret-key&mcp_server=http://localhost:3100`,
+    );
+    const { url } = JSON.parse(socket.sent[0]);
+    expect(url).toBe(`${PAGE_URL}&model=gpt-5-mini&mcp_server=http%3A%2F%2Flocalhost%3A3100`);
+    expect(url).not.toContain('secret-key');
   });
 
   it('executes an exposed planner method with its positional arguments', async () => {

@@ -26,6 +26,15 @@ const pageOrigins = process.env.HI_MCP_PAGE_ORIGINS
       'https://www.roomle.com',
     ];
 
+// The ligna-store chat window calls the tools from the browser, so the page
+// origins may reach /mcp cross-origin.
+const MCP_CORS_HEADERS = {
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers':
+    'Content-Type, Accept, Authorization, Mcp-Session-Id, Mcp-Protocol-Version, Mcp-Method, Mcp-Name, Last-Event-ID',
+  'Access-Control-Expose-Headers': 'Mcp-Session-Id, Mcp-Protocol-Version, WWW-Authenticate',
+};
+
 const requestHandler = async (
   request: IncomingMessage,
   response: ServerResponse,
@@ -33,6 +42,19 @@ const requestHandler = async (
   if (!request.url?.startsWith('/mcp')) {
     response.writeHead(404, { 'Content-Type': 'text/plain' });
     response.end('Not found - the MCP endpoint is /mcp');
+    return;
+  }
+  const { origin } = request.headers;
+  if (origin && pageOrigins.includes(origin)) {
+    response.setHeader('Access-Control-Allow-Origin', origin);
+    response.setHeader('Vary', 'Origin');
+    for (const [name, value] of Object.entries(MCP_CORS_HEADERS)) {
+      response.setHeader(name, value);
+    }
+  }
+  if (request.method === 'OPTIONS') {
+    response.writeHead(origin && pageOrigins.includes(origin) ? 204 : 403);
+    response.end();
     return;
   }
   try {

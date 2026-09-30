@@ -152,6 +152,9 @@
         flex-direction: column;
         box-sizing: border-box;
       }
+      #chat-overlay.hidden {
+        display: none;
+      }
       .chat-overlay-header {
         display: flex;
         justify-content: space-between;
@@ -355,9 +358,9 @@
       <div id="chat-overlay" class="hidden">
         <div class="chat-overlay-header">
           <h3>AI Chat</h3>
-          <button id="chat-overlay-toggle" class="chat-overlay-toggle" aria-label="Toggle chat">−</button>
+          <button id="chat-overlay-toggle" class="chat-overlay-toggle" aria-label="Toggle chat" aria-expanded="true" aria-controls="chat-overlay-content">−</button>
         </div>
-        <div id="chat-overlay-content">
+        <div id="chat-overlay-content" class="chat-overlay-content">
           <div id="chat-messages" aria-live="polite"></div>
           <div id="chat-status" class="hidden" role="status">
             assistant is working...
@@ -884,6 +887,7 @@
       chatOverlayToggle.addEventListener('click', () => {
         const isMinimized = chatOverlayContent.classList.toggle('minimized');
         chatOverlayToggle.textContent = isMinimized ? '+' : '−';
+        chatOverlayToggle.setAttribute('aria-expanded', String(!isMinimized));
       });
 
       // Debug panel toggle with mutual exclusion

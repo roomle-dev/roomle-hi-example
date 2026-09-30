@@ -114,6 +114,7 @@ describe('getChatConfig', () => {
       modelId: 'gpt-4o',
     });
     expect(() => resolveChatModel('gpt-4o')).toThrow(/Unknown chat provider/);
+    expect(() => resolveChatModel('geminix')).toThrow(/Unknown chat provider/);
     expect(getChatConfig({ HI_CHAT_PROVIDER: 'claude' }).modelId).toBe(
       'claude-sonnet-4-5',
     );

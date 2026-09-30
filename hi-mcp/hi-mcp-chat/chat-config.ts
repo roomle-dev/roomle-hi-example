@@ -61,11 +61,11 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
   if (name.startsWith('claude')) {
     return { provider: 'anthropic', modelId: name };
   }
-  if (name.startsWith('gemini')) {
+  if (name.startsWith('gemini-')) {
     return { provider: 'google', modelId: name };
   }
   throw new ChatRequestError(
-    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, google, gemini, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, or a full mistral-*/claude-*/gemini-* model id`,
+    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, or a full mistral-*/claude-*/gemini-* model id`,
   );
 };
 

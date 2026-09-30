@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   catalogArticleOf,
+  cornerPointOfRoot,
+  cornerPointsByArticle,
   findAnchorRoot,
   isCornerArticle,
   toRepositioningData,
@@ -231,5 +233,42 @@ describe('toRepositioningData', () => {
       root('u2', 'unit', toTheLeft('u1')),
     ];
     expect(anchorOf(roots, 'u2').rootId).toBe('u1');
+  });
+});
+
+describe('cornerPointOfRoot and cornerPointsByArticle', () => {
+  const cornerRoot = {
+    articleId: 'EUERTB90',
+    dockInfos: [
+      { id: 'LeftBackTop', start: [-261, 720, 0], end: [-261, 720, 661] },
+      { id: 'LeftBackBottom', start: [-261, 0, 0], end: [-261, 0, 661] },
+      { id: 'RightBottom', start: [900, 0, 0], end: [900, 0, 561] },
+    ],
+  };
+
+  it('reads the root-local corner point from the bottom corner vector', () => {
+    expect(cornerPointOfRoot(cornerRoot)).toEqual([-261, 0, 0]);
+    expect(cornerPointOfRoot({ dockInfos: [{ id: 'LeftBottom', start: [0, 0, 0] }] })).toBeUndefined();
+    expect(cornerPointOfRoot({})).toBeUndefined();
+  });
+
+  it('collects one corner point per article from the calculated groups', () => {
+    const groups = [
+      { roots: [{ articleId: 'unit', dockInfos: [{ id: 'LeftBottom', start: [0, 0, 0] }] }] },
+      { roots: [cornerRoot, { ...cornerRoot, dockInfos: [{ id: 'LeftBackBottom', start: [-9, 0, 0] }] }] },
+    ];
+    expect([...cornerPointsByArticle(groups)]).toEqual([['EUERTB90', [-261, 0, 0]]]);
+  });
+
+  it('prefers the corner point from the plan over the catalog and negates it', () => {
+    const cornerPoints = new Map([['EUERTB90', [-261, 0, 0] as [number, number, number]]]);
+    const emptyPlanL = lShape.map((candidate) =>
+      candidate.id === 'c1' ? { ...candidate, articleId: 'EUERTB90' } : candidate,
+    );
+    expect(toRepositioningData(emptyPlanL, PLACEMENT, articles, cornerPoints)).toEqual({
+      ...PLACEMENT,
+      rootId: 'c1',
+      rootRelPos: [261, 0, 0],
+    });
   });
 });

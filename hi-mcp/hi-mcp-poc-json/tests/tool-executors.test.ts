@@ -189,6 +189,7 @@ const createApi = (
     updateExternalObjectGroupAttribute: vi.fn(async () => undefined),
     fetchPrice: vi.fn(async () => ({ price: 42 })),
     getExternalObjectSnapshot: vi.fn(async () => ({})),
+    getExternalObjectGroups: vi.fn(async () => []),
     ...overrides,
   },
 });
@@ -686,6 +687,53 @@ describe('create-or-replace-groups loading', () => {
       'posGroups',
       { reason: 'adjusted' },
     );
+  });
+
+  it('takes the corner offset from the docking vectors of a calculated corner article in the plan', async () => {
+    // the deployed UI delivers no cornerPoint: the catalog flags the article only
+    const cornerArticle = { ...articleFixture, articleId: 'EUERTB90', cornerArticle: true };
+    const calculatedCornerRoot = {
+      id: 'in-plan',
+      articleId: 'EUERTB90',
+      name: 'mr_CornerunitStraight',
+      articlePos: [0, 0, 0],
+      rotationY: 0,
+      dockInfos: [
+        { id: 'LeftBackBottom', start: [-261, 0, 0], end: [-261, 0, 661] },
+        { id: 'RightBackBottom', start: [-261, 0, 0], end: [900, 0, 0] },
+        { id: 'LeftBottom', start: [-261, 0, 661], end: [300, 0, 661] },
+      ],
+    };
+    const api = createApi(
+      { ...planContextFixture, articles: [articleFixture, cornerArticle] },
+      { getExternalObjectGroups: vi.fn(async () => [{ id: 'g0', roots: [calculatedCornerRoot] }]) },
+    );
+    const lShape = [
+      { id: 'c1', articleId: 'EUERTB90', contextData: { dockedRoots: [
+        { ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'r1', dockingVector: 'LeftBottom' }] },
+      ] } },
+      { id: 'r1', articleId: 'article-1' },
+    ];
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [{ roots: lShape, placement: { posGroup: [4815, 0, -3765], posRotationY: 270 } }],
+    });
+    expect(api.extended.getExternalObjectGroups).toHaveBeenCalledTimes(1);
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
+      { posGroups: [{ roots: lShape, repositioningData: {
+        posGroup: [4815, 0, -3765], posRotationY: 270, rootId: 'c1', rootRelPos: [261, 0, 0],
+      } }] },
+      'posGroups',
+      { reason: 'adjusted' },
+    );
+  });
+
+  it('does not ask for the raw groups when no corner article is placed', async () => {
+    const api = createApi(planContextFixture);
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [{ roots: [pick()], placement: { posGroup: [4000, 0, -3000], posRotationY: 270 } }],
+    });
+    expect(api.extended.getExternalObjectGroups).not.toHaveBeenCalled();
   });
 
   it('replaces an existing group resubmitted without placement, which keeps its position', async () => {

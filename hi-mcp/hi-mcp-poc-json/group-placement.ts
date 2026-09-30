@@ -135,6 +135,45 @@ export const findAnchorRoot = (
 const isOrigin = (point: number[]): boolean =>
   point.every((coordinate) => coordinate === 0);
 
+const isCornerVector = (id: unknown): boolean =>
+  /^(Left|Right)Back(Bottom|Top)$/.test(String(id));
+
+/**
+ * The corner point of a calculated corner article, root-local: the shared
+ * start of its LeftBack/RightBack docking vectors. It lies left of the root
+ * origin for a blind corner unit.
+ */
+export const cornerPointOfRoot = (root: any): [number, number, number] | undefined => {
+  const cornerVectors = (root?.dockInfos ?? []).filter(
+    (dockInfo: any) =>
+      isCornerVector(dockInfo?.id) && Array.isArray(dockInfo.start) && dockInfo.start.length >= 3,
+  );
+  const vector =
+    cornerVectors.find((dockInfo: any) => String(dockInfo.id).endsWith('Bottom')) ??
+    cornerVectors[0];
+  return vector ? [vector.start[0], vector.start[1], vector.start[2]] : undefined;
+};
+
+/**
+ * The corner points the calculated groups of the plan reveal, by article id -
+ * the planner's raw groups carry the docking vectors with coordinates, the
+ * compact catalog only their names.
+ */
+export const cornerPointsByArticle = (
+  calculatedGroups: any[],
+): Map<string, [number, number, number]> => {
+  const byArticle = new Map<string, [number, number, number]>();
+  for (const group of calculatedGroups ?? []) {
+    for (const root of group?.roots ?? []) {
+      const cornerPoint = cornerPointOfRoot(root);
+      if (cornerPoint && root.articleId && !byArticle.has(root.articleId)) {
+        byArticle.set(root.articleId, cornerPoint);
+      }
+    }
+  }
+  return byArticle;
+};
+
 /**
  * The planner's repositioning of a new group from the agent's placement: the
  * anchor root lands at posGroup, a corner article by its corner point.
@@ -143,11 +182,14 @@ export const toRepositioningData = (
   roots: any[],
   placement: Placement,
   articles: any[],
+  cornerPoints: Map<string, [number, number, number]> = new Map(),
 ): RepositioningData => {
   const anchor = findAnchorRoot(roots, placement.rootId, (root) =>
     isCornerArticle(articles, root),
   );
-  const cornerPoint = catalogArticleOf(articles, anchor)?.cornerPoint;
+  const cornerPoint =
+    cornerPoints.get(anchor.articleId) ??
+    catalogArticleOf(articles, anchor)?.cornerPoint;
   const hasCornerOffset =
     Array.isArray(cornerPoint) &&
     cornerPoint.length === 3 &&

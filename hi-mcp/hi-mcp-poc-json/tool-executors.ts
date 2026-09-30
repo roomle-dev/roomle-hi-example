@@ -1,5 +1,6 @@
 import {
   catalogArticleOf,
+  cornerPointsByArticle,
   isCornerArticle,
   toRepositioningData,
 } from './group-placement';
@@ -333,6 +334,18 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     if (existingGroupErrors.length > 0) {
       throw invalidPosGroups(existingGroupErrors);
     }
+    // The corner point of a corner article - its origin offset - comes from
+    // the docking vectors of a calculated root of that article in the plan,
+    // which only the planner's raw groups carry.
+    const cornerPoints = posGroups.some(
+      (group) =>
+        group.placement !== undefined &&
+        group.roots.some((root: any) => isCornerArticle(articles, root)),
+    )
+      ? cornerPointsByArticle(
+          (await roomDesignerApi.extended.getExternalObjectGroups()) as any[],
+        )
+      : new Map();
     // Only article picks and the repositioning derived from the placement
     // reach the planner.
     for (const group of posGroups) {
@@ -341,6 +354,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           group.roots,
           group.placement,
           articles,
+          cornerPoints,
         );
       }
       for (const field of Object.keys(group)) {

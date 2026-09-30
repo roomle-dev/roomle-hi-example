@@ -198,6 +198,9 @@ anywhere in the room.
   it (the side label of the adjoining wall puts it flush into that corner, a corner article into
   the corner) and an offset; the server computes the position from the calculated group — see
   [hi-mcp-tools.md](./hi-mcp-tools.md#place-group).
+- An existing group is edited with the command tools: a unit is added (docked to a free docking
+  vector), replaced or removed, attributes are changed, and groups are joined, all without changing
+  the group's position — see [hi-mcp-tools.md](./hi-mcp-tools.md#the-command-tools).
 
 The wall and corner rules are in [hi-authoring-rules.md](./hi-authoring-rules.md#positioning-a-group).
 RoomleCore ADR 0011 ("a numeric placement never rotates the object") concerns the planner's
@@ -336,7 +339,7 @@ HI Configuration
 1. **One Mechanism** — Every new group is positioned with a `placement` (a point and a rotation)
 2. **Against a Wall** — `posRotationY` = the wall's `facingRotationY`, `posGroup` on the wall from its `end` towards its `start`
 3. **Docking Vectors Transform** — Vectors are transformed with root's position and rotation
-4. **Extend, Don't Butt** — Units next to an existing group are docked into that group; overlapping groups are not rejected when created, but `place-group` rejects a move onto another group
+4. **Extend, Don't Butt** — Units next to an existing group are docked into that group (one unit: `merge-article-into-group`); overlapping groups are not rejected when created, but `place-group` rejects a move onto another group
 5. **Moving** — An existing group is moved with `place-group`, never with a placement
 
 ### Docking Rules

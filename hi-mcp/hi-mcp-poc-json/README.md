@@ -39,7 +39,7 @@ The tools run in this server (`tool-executors.ts`: payload validation, planner c
 agent hints). Each planner call a tool makes is relayed into the page as a method call, where it
 runs against `roomDesignerApi.extended` (the `extended.*` proxy derives its methods automatically
 from `RoomlePlanner.prototype`, so the web-sdk APIs (`getExternalObjectPlanContext`,
-`loadExternalObjectGroupLayout`, …) are reachable as-is). The page executes only the five planner
+`loadExternalObjectGroupLayout`, …) are reachable as-is). The page executes only the planner
 methods on its allow-list — the ones `planner-api.ts` calls. The page-side bridge lives in the
 store repository (`ligna-store/hi-mcp/`), its tested copy in
 [`../hi-mcp-poc-json-client/`](../hi-mcp-poc-json-client/); this folder contains the server side
@@ -274,8 +274,9 @@ authoring rules, and the docking semantics (see [Authoring pos groups](#authorin
 
 The tools run in this server, but every planner call they make executes in the store page, so a
 tool is only as fast as the page. The timeout applies per planner call: 30 s by default, 120 s for
-`loadExternalObjectGroupLayout` (`create-or-replace-groups`, `place-group`) and
-`getExternalObjectSnapshot` (`get-order-data`, `get-plan-images`).
+`loadExternalObjectGroupLayout` (`create-or-replace-groups`, `place-group`),
+`externalObjectGroupOperation` (the command tools) and `getExternalObjectSnapshot`
+(`get-order-data`, `get-plan-images`).
 
 ### get-plan-context
 
@@ -474,19 +475,37 @@ The group keeps its height, so a group of wall units only stays at its mounting 
 
 Example: `{ "groupId": "a1b2c3", "wall": "right", "alignment": "top" }`
 
-### update-attribute
+### Editing a group: the command tools
 
-Sets one attribute of a root module or sub module. Attribute ids and allowed values come from the
-`masterData` section of `get-plan-context`.
+The command tools change a group that is already in the plan. Each one calls
+the planner's group command API (`externalObjectGroupOperation`, roomle-ui),
+which performs the edit with the planner's own group features and answers once
+the planner has loaded the result. Every command keeps the group's position and
+returns `{ command, groups, removedGroupIds }`: the affected groups in the
+`get-plan-context` shape and the ids of removed groups. An unknown id, an
+occupied docking vector or groups of different libraries are rejected before
+anything changes. Group ids accept a unique prefix; article ids are checked
+against the catalog, and the error lists the valid ones.
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `rootModuleId` | `string` | yes | Id of the root module |
-| `moduleId` | `string` | no | Id of the sub module; omit to change the root module itself |
-| `attributeId` | `string` | yes | Id of the attribute |
-| `value` | `string \| boolean` | yes | New value; numbers are passed as strings |
+| Tool | Parameters | Effect |
+| ---- | ---------- | ------ |
+| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | Sets an attribute of a root module, or of one of its sub modules (the id in `subModules`) |
+| `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it; the result lists the `changedModuleIds` |
+| `delete-group` | `groupId` | Removes the group |
+| `delete-root-module` | `rootModuleId` | Removes one unit; units no longer docked together become separate groups where they stand, and removing the only unit removes the group. Generated roots (worktop, toe kick) cannot be removed |
+| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }` | Docks a new unit of the article to a free docking vector of a root of the group (`mode` default `StartStart`, `offset` default `[0, 0, 0]`) |
+| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | Replaces a unit with an article of one root module; the new unit keeps the position and the docking |
+| `merge-groups` | `targetGroupId`, `groupIds` | Merges the groups into the target group where they stand, like the planner's merge action; nothing is moved and no docking is added |
 
-Example: `{ "rootModuleId": "id0001", "attributeId": "b", "value": "900" }`
+`value` is a string or a boolean; numbers are passed as strings. Attribute ids
+and allowed values come from the `masterData` section of `get-plan-context` or
+from `find-attributes`.
+
+Examples:
+
+- `change-module-attribute`: `{ "rootModuleId": "id0001", "attributeId": "b", "value": "900" }`
+- `change-group-attribute`: `{ "groupId": "a1b2c3", "attributeId": "front", "value": "white" }`
+- `merge-article-into-group`: `{ "groupId": "a1b2c3", "articleId": "<drawer unit>", "dockTo": { "rootId": "id0003", "ownDockingVector": "RightBottom", "dockingVector": "LeftBottom" } }`
 
 ### get-price
 
@@ -530,11 +549,13 @@ calculates every root position.
   group — the payload is rejected. Roots are positioned by docking only; a new group is
   positioned with `placement` only — see [Positioning a group](#positioning-a-group).
 - **Extending a kitchen**: units next to an existing group are roots of that group, never a new
-  group. Take the group from `get-plan-context`, add the new picks, dock each to a free docking
-  vector of the root it continues (`freeDockingVectors` per root: a free `LeftBottom` takes the new
-  root's `RightBottom`, a free `RightBottom` takes `LeftBottom`, a free `Top` vector takes the new
-  root's `Bottom` vector), and resubmit the group with its id. A new group is only for a free
-  stretch of wall or a free spot in the room.
+  group. Dock each new unit to a free docking vector of the root it continues (`freeDockingVectors`
+  per root: a free `LeftBottom` takes the new root's `RightBottom`, a free `RightBottom` takes
+  `LeftBottom`, a free `Top` vector takes the new root's `Bottom` vector) — one unit with
+  `merge-article-into-group`, several at once by adding the picks to the group from
+  `get-plan-context` and resubmitting it with its id. A new group is only for a free stretch of
+  wall or a free spot in the room. The other edits of an existing group — replace or remove a unit,
+  change attributes, join groups — are command tools too.
 - Docking (`contextData`) relates the root modules of a group to each other and is **required**:
   in a group with several roots, every additional root must be docked to a root that is already
   placed (undocked roots are rejected — they would all land at the same spot). The docking entry
@@ -635,7 +656,9 @@ With a connected agent, this sequence exercises the whole PoC:
    duplicated
 4. `place-group` — move the group to another wall or into a corner (`wall: "left"`, or
    `wall: "right"` with `alignment: "top"` for the back right corner)
-5. `update-attribute` — change a dimension; the plan updates visibly
+5. `change-module-attribute` — change a dimension; the plan updates visibly.
+   `merge-article-into-group`, `exchange-root-module` and
+   `delete-root-module` add, replace and remove a unit
 6. `get-price` — returns the total
 7. `get-plan-images` — the agent sees the plan
 
@@ -649,14 +672,18 @@ Ready-to-use prompts for the connected agent, from read-only to write operations
 | "Describe the room and the groups currently in the plan." | `get-plan-context` (`rooms`, `groups`) |
 | "Create a sideboard of three docked cabinets, 800 mm wide each, against the longest wall." | `get-plan-context`, `create-or-replace-groups` |
 | "Add a group of three tall units to the wall on the right." | `get-plan-context`, `create-or-replace-groups` (`placement` from the right wall) |
-| "Add a wardrobe next to the existing group." | `get-plan-context`, `create-or-replace-groups` (replace: the wardrobe docks to a free vector of the group's end root) |
-| "Make all cabinets in the group 900 mm high." | `get-plan-context`, `create-or-replace-groups` (replace) or `update-attribute` |
+| "Add a wardrobe next to the existing group." | `get-plan-context`, `merge-article-into-group` (the wardrobe docks to a free vector of the group's end root) |
+| "Make all cabinets in the group 900 mm high." | `get-plan-context`, `change-group-attribute` |
+| "Make the fronts of the whole kitchen white." | `find-attributes`, `change-group-attribute` |
 | "Which attribute sets the front colour, and which values are allowed?" | `find-attributes` |
 | "Put a wall unit above each base unit." | `get-plan-context`, `create-or-replace-groups` (replace, stacking recipe) |
 | "Plan an L-shaped kitchen into the back right corner." | `get-plan-context` (a `cornerArticle`), `create-or-replace-groups` (corner recipe, `placement` at the corner point, `posRotationY` 270) |
 | "Move the group to the back right corner." | `get-plan-context`, `place-group` (`wall: "right"`, `alignment: "top"`) |
 | "Move the kitchen to the left wall, centred." | `get-plan-context`, `place-group` (`wall: "left"`) |
-| "Replace the middle cabinet with a drawer unit." | `get-plan-context`, `create-or-replace-groups` (replace) |
+| "Replace the middle cabinet with a drawer unit." | `get-plan-context`, `exchange-root-module` |
+| "Remove the middle cabinet." | `get-plan-context`, `delete-root-module` (the rest splits into two groups) |
+| "Join the two groups standing side by side." | `get-plan-context`, `merge-groups` |
+| "Delete the island." | `get-plan-context`, `delete-group` |
 | "What does the current plan cost?" | `get-price` |
 | "Show me the plan." | `get-plan-images` |
 

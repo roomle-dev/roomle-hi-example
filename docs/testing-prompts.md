@@ -66,6 +66,46 @@ This document provides a collection of prompt examples for testing the Roomle HI
   - **Placement**: back right corner, arranged around the corner
   - **Materials**: walnut front, dark marble worktop
 
+## Group Editing
+
+Start from a plan with a kitchen group, e.g. the three tall units on the right wall above. Each
+prompt exercises one command tool; check the result with `get-plan-images`.
+
+- **Add one unit** (`merge-article-into-group`)
+  ```
+  add a cabinet with drawers to the right of the kitchen
+  ```
+
+- **Replace a unit** (`exchange-root-module`)
+  ```
+  replace the middle unit with a cabinet with drawers
+  ```
+
+- **Remove a unit** (`delete-root-module`) — the kitchen splits into two groups
+  ```
+  remove the middle unit
+  ```
+
+- **Change one unit** (`change-module-attribute`)
+  ```
+  make the first unit 900 mm wide
+  ```
+
+- **Change the whole kitchen** (`change-group-attribute`)
+  ```
+  make the fronts of the whole kitchen white
+  ```
+
+- **Join groups** (`merge-groups`) — after removing the middle unit
+  ```
+  join the two groups on the right wall
+  ```
+
+- **Delete a group** (`delete-group`)
+  ```
+  delete the kitchen
+  ```
+
 ## Testing Guidelines
 
 When testing these prompts with the MCP server:
@@ -77,6 +117,7 @@ When testing these prompts with the MCP server:
    - `get-plan-context` - Retrieve current room and article information
    - `create-or-replace-groups` - Create new kitchen groups with specified articles
    - `place-group` - Position groups against walls or in corners
+   - the command tools - Edit an existing group (see Group Editing)
 
 5. **Verify results** by checking:
    - Groups are created with correct articles

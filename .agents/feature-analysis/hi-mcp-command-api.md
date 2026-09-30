@@ -5,8 +5,15 @@
 > **Trigger**: Jira [RML-18004](https://roomle.atlassian.net/browse/RML-18004) "hi mcp command api" — a new planner API `externalObjectGroupOperation(command, payload)` in roomle-ui that delegates to the glue logic, the operations implemented in `hi-plan-context.ts` on top of existing glue-logic features, and one MCP tool per command; designed so that new commands are easy to add
 > **Date**: 2026-09-30
 > **Author**: AI Assistant
-> **Status**: Open
-> **Branch**: `feat/hi-mcp-command-api-RML-18004` (roomle-hi-example)
+> **Status**: Implemented
+> **Branch**: `feat/hi-mcp-command-api-RML-18004` (roomle-ui, roomle-hi-example, ligna-store)
+
+> **Close-out (2026-09-30)**: implemented as planned, with the implementation decisions listed in
+> the [close-out report](#close-out-report-2026-09-30) — the main one: no timeout, every kernel
+> operation completes with the kernel's own report. Verified with the unit tests of both
+> repositories and live, through the real planner. The living reference is
+> `minimal-hi-example/docs/hi-mcp-server.md` (the command tools), `.agents/skills/hi-mcp-tools.md`
+> and roomle-ui `.agents/homag-intelligence.md`.
 
 > **Update (2026-09-30, implementation plan)**: the [implementation plan](#implementation-plan-2026-09-30)
 > below resolves the open questions with the recommendations of the analysis and with the kernel
@@ -622,3 +629,64 @@ Step → verify:
   typed tools are the ticket's requirement and the agent's interface; the server maps tool → command
   explicitly, so an unknown command never reaches the planner from the agent.
 - **Keeping `update-attribute` beside `change-module-attribute`**: two tools for one edit.
+
+---
+
+## Close-out report (2026-09-30)
+
+### What was built
+
+- **roomle-ui**: `ExternalObjectAPI.externalObjectGroupOperation(command, payload)` on
+  `RoomlePlanner` (throws without HI); the vocabulary `HI_GROUP_OPERATION`, the payload types, the
+  `HiGroupOperations` interface and the dispatcher `runGroupOperation` in `hi-plan-context.ts`; the
+  seven operations on `GlueLogicImplementation` (`changeModuleAttribute`, `changeGroupAttribute`,
+  `deleteGroup`, `deleteRootModuleById`, `mergeArticleIntoGroup`, `exchangeRootModule`,
+  `mergeGroupsById`) plus `getCalculatedGroups`; `RoomDesignerRequests.mergeGroups` with the internal
+  planner method `_mergeExternalObjects`; both debug-logging forwarders; exports and the embedding
+  API reference entry.
+- **roomle-hi-example**: seven MCP tools replacing `update-attribute`, one planner method
+  (`externalObjectGroupOperation`, snapshot timeout) replacing `updateExternalObjectGroupAttribute`
+  in `planner-api.ts` and both allow-lists; the served workflow step, the authoring rules and
+  example 5 point to the command tools; documentation and skills updated.
+- **ligna-store**: the allow-list entry (`hi-mcp/browser-bridge.ts`, identical to the reference
+  client).
+
+### Decisions taken during the implementation
+
+1. **No timeout.** The plan's 10 s rejection was a timer for correctness (roomle-ui
+   `.agents/async-shared-state.md`, Rules 7 and 9). The completion signal exists: the glue logic's
+   kernel reports `removedGroup`, `deleteRootModule` and `mergeGroups` settle a deferred armed per
+   group id before the request. A root module deletion is reported within the request, so an
+   unreported one is rejected at once as refused; a group deletion and a merge are reported later,
+   so their preconditions (group in the scene, one library) are checked before the request. A
+   second operation on a group with a pending one is rejected.
+2. **Operations resolve after the planner load.** The plan context reads the groups from the
+   kernel, so `updateAttribute`, `modifyAttribute`, `swapRootModule` and the `deleteRootModule` and
+   `mergeGroups` reports now await their `loadPosGroups` at the end; the order of their side effects
+   is unchanged.
+3. **`removeExternalObject` switches child object mode off before it deletes a group** (found live).
+   Deleting a root module by id puts its group into child object mode, and in that mode the kernel
+   deleted only the group's first root module. This was a defect of the public API, not of the new
+   commands; the fix mirrors `selectExternalObject`.
+4. **Merge results name the merged groups from the request** (found live): the kernel reports them
+   as removed while the merge is loaded, before `mergeGroups` does its own bookkeeping.
+5. A sub module is accepted by its master-data module name, because the plan context shows sub
+   modules by `name`; `changedModuleIds` use the same names.
+6. `_mergeExternalObjects` is internal (underscore), so the public API gains only the one method.
+7. `merge-article-into-group` keeps the generated roots in the replaced group, like the glue
+   logic's own merge, swap and delete.
+8. The ligna-store branch is stacked on the local, unpushed `refactor/hi-mcp-group-positioning-RML-18007`
+   (`f4f6619`), whose allow-list already carries the two methods the merged server calls.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| roomle-ui SDK suite (`npm run test`, web-sdk) | 126 files, 2000 passed, 24 skipped; a second full run after the last fixes had 7 unrelated tests hit the 100 ms timeout, all 7 files pass on their own (316 tests) |
+| roomle-ui types (`npm run lint:types`: ui, sdk, embedding) | clean |
+| roomle-ui `lint:code:sdk`, `format:push` | 0 errors (1 existing warning in an unrelated file), formatted |
+| roomle-ui `lint:docs:ui` / `lint:docs:sdk` | exit 3 with the same 22 warnings as clean master / a type error inside the third-party `bun-webgpu` package |
+| hi-mcp `npm run typecheck`, `npm test` | clean, 181 tests pass; the `cf` worker suite does not load (`@cloudflare/containers` not installed, as before) |
+| Live, local roomle-ui dev server + example page in headless Chromium + MCP client | 8 of 8 steps: change module and group attribute, merge an article, exchange, delete a root (the row splits), merge the two groups, three rejections, delete the merged group (plan empty) |
+
+Not done: the ligna-store page was not run live; nothing is pushed and no pull request is open.

@@ -160,6 +160,19 @@ roots and their docking stay as they are, and the group keeps its height. A targ
 another group is rejected and the group is not moved — units that belong together are docked into
 one group.
 
+### Editing a group
+
+An existing group is edited with the command tools, never by positioning new units:
+`merge-article-into-group` docks one more unit with the docking pairs above (`dockTo: { rootId,
+ownDockingVector, dockingVector, mode?, offset? }`, `ownDockingVector` one of the root's
+`freeDockingVectors`), `exchange-root-module` replaces a unit and keeps its docking,
+`delete-root-module` removes a unit (units no longer docked together become separate groups where
+they stand), `delete-group` removes a group, `change-module-attribute` and `change-group-attribute`
+set attributes, and `merge-groups` joins groups where they stand, without moving them or adding
+docking. Every command keeps the group's position. Resubmitting the group with
+`create-or-replace-groups` is for a rebuild, e.g. several new units at once — see
+[hi-mcp-tools.md](./hi-mcp-tools.md#the-command-tools).
+
 ## Validation Rules
 
 ### Will be rejected:

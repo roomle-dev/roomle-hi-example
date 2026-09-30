@@ -78,8 +78,10 @@ The agent gets a small set of tools:
 - place-group — moves an existing group against a wall or into a room
   corner; the server computes the position from the wall, the alignment and
   the group's footprint
-- update-attribute, get-price, get-order-data, get-plan-images — changing
-  attributes, verifying prices/order data, and inspecting the result visually
+- the command tools — edit an existing group: change attributes, add,
+  replace or remove a unit, delete or merge groups; the planner performs them
+- get-price, get-order-data, get-plan-images — verifying prices/order data,
+  and inspecting the result visually
 
 The central design principle: the agent declares what, the system computes
 where. The agent never calculates coordinates or root-module positions. It

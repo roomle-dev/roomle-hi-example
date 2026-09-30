@@ -57,6 +57,7 @@ and all tool logic.
 | `hi-mcp-server.ts` | `McpServer` setup: server instructions + tool registrations with zod schemas; the handlers run the tool executors |
 | `tool-executors.ts` | The tool logic: payload validation, planner call composition, response shaping, agent hints |
 | `group-placement.ts` | The placement of a new group: finds the root it is anchored at by following the docking and derives the planner's repositioning |
+| `plan-space.ts` | The geometry of `place-group`: footprint and corner geometry of a calculated group, wall and corner placement, the contact test between groups |
 | `planner-api.ts` | The planner methods the tools call, forwarded to the page with per-method timeouts |
 | `page-bridge.ts` | Connected-page registry, call correlation, timeouts, protocol check, "no page connected" error |
 | `types.ts` | WebSocket message protocol, `BRIDGE_PROTOCOL` (the page side carries its own copy) |
@@ -273,8 +274,8 @@ authoring rules, and the docking semantics (see [Authoring pos groups](#authorin
 
 The tools run in this server, but every planner call they make executes in the store page, so a
 tool is only as fast as the page. The timeout applies per planner call: 30 s by default, 120 s for
-`loadExternalObjectGroupLayout` (`create-or-replace-groups`) and `getExternalObjectSnapshot`
-(`get-order-data`, `get-plan-images`).
+`loadExternalObjectGroupLayout` (`create-or-replace-groups`, `place-group`) and
+`getExternalObjectSnapshot` (`get-order-data`, `get-plan-images`).
 
 ### get-plan-context
 
@@ -449,6 +450,30 @@ back corner; the row docked to its `RightBottom` runs along the right wall, the 
 }
 ```
 
+### place-group
+
+Moves an existing group against a wall or into a room corner. The tool runs in the server: it
+reads the rooms and the groups, takes the calculated group from the planner
+(`getExternalObjectGroups`), computes the position from the wall, the alignment and the group's
+footprint — a group with a corner article goes into the corner when the alignment names the
+adjoining wall — and reloads the group there, once. The roots and their docking stay as they are.
+A target that touches or overlaps another group is rejected and the group is not moved; the error
+names the group, its nearest root and the free docking vectors to dock to instead. No page
+change: the planner methods it calls are on every page's allow-list.
+
+| Parameter | Type | Required | Description |
+| --------- | ---- | -------- | ----------- |
+| `groupId` | `string` | yes | Id of the group (a unique prefix is accepted) |
+| `wall` | `'left' \| 'right' \| 'top' \| 'bottom' \| number` | yes | Side label (the longest wall of type `wall` on that side) or wall index |
+| `alignment` | `'start' \| 'center' \| 'end' \| side label` | no | Position along the wall; the side label of an adjoining wall means flush into that corner (`wall: "right"` + `alignment: "top"` is the back right corner). Default `center` |
+| `offsetMm` | `number` | no | Extra distance along the wall. Default 0 |
+| `roomIndex` | `number` | no | Room in the `rooms` array. Default 0 |
+
+Returns `placedIn` (`corner` or `wall`), the wall, and the resulting group with its `position`.
+The group keeps its height, so a group of wall units only stays at its mounting height.
+
+Example: `{ "groupId": "a1b2c3", "wall": "right", "alignment": "top" }`
+
 ### update-attribute
 
 Sets one attribute of a root module or sub module. Attribute ids and allowed values come from the
@@ -593,6 +618,9 @@ or anywhere in the room.
 - **New groups only**: the placement is applied once, when the group is created. A placement on a
   group that is already in the plan is rejected; a group resubmitted without placement keeps its
   position.
+- **Moving a group**: [place-group](#place-group) moves an existing group against a wall or into a
+  room corner by the wall's side label, an alignment and an offset — the server computes the
+  position.
 
 ## Demo walkthrough
 
@@ -605,9 +633,11 @@ With a connected agent, this sequence exercises the whole PoC:
    appear arranged along the right wall, from the back right corner
 3. Take the group from the result, change it, resubmit with its id — the group is updated, not
    duplicated
-4. `update-attribute` — change a dimension; the plan updates visibly
-5. `get-price` — returns the total
-6. `get-plan-images` — the agent sees the plan
+4. `place-group` — move the group to another wall or into a corner (`wall: "left"`, or
+   `wall: "right"` with `alignment: "top"` for the back right corner)
+5. `update-attribute` — change a dimension; the plan updates visibly
+6. `get-price` — returns the total
+7. `get-plan-images` — the agent sees the plan
 
 ## Example prompts
 
@@ -624,6 +654,8 @@ Ready-to-use prompts for the connected agent, from read-only to write operations
 | "Which attribute sets the front colour, and which values are allowed?" | `find-attributes` |
 | "Put a wall unit above each base unit." | `get-plan-context`, `create-or-replace-groups` (replace, stacking recipe) |
 | "Plan an L-shaped kitchen into the back right corner." | `get-plan-context` (a `cornerArticle`), `create-or-replace-groups` (corner recipe, `placement` at the corner point, `posRotationY` 270) |
+| "Move the group to the back right corner." | `get-plan-context`, `place-group` (`wall: "right"`, `alignment: "top"`) |
+| "Move the kitchen to the left wall, centred." | `get-plan-context`, `place-group` (`wall: "left"`) |
 | "Replace the middle cabinet with a drawer unit." | `get-plan-context`, `create-or-replace-groups` (replace) |
 | "What does the current plan cost?" | `get-price` |
 | "Show me the plan." | `get-plan-images` |

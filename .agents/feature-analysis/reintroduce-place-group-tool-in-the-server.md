@@ -235,6 +235,13 @@ from `plan-space.ts`):
 
 ## Implementation plan (2026-09-30)
 
+> **Progress (2026-09-30)**: the plan was approved as proposed (Q1, D1, Q3, Q4 as recommended; D2
+> and Q5 out of scope). Commits 1–3 of §6 are implemented on the branch: `plan-space.ts` with 27
+> tests (22 recovered, 5 new), the `place-group` executor, registration and agent text with 10
+> executor tests and 2 server tests, the documentation. `npx vitest run`: 152 tests pass (the
+> pre-existing `cf` load failure is unchanged); typecheck clean. Not done: the live verification
+> (§7.2, §7.3), the deployment and the close-out (commit 4).
+
 > **Status**: proposed, awaiting review (step 5 of the suggested change workflow) — no code before
 > it is approved.
 > **Scope**: `place-group` moves an **existing** group against a wall or into a room corner. New

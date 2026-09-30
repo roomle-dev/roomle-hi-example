@@ -79,6 +79,7 @@ All tools are defined in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` and documente
 Primary tools:
 - `get-plan-context` — Get current rooms, walls, articles, groups, docking vectors
 - `create-or-replace-groups` — Add, modify or extend groups; position new groups (`placement`)
+- `place-group` — Move an existing group against a wall or into a room corner
 - `get-price` — Calculate pricing for current configuration
 - `get-order-data` — Generate order data for manufacturing
 - `get-plan-images` — Render 2D and 3D images of the plan

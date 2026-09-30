@@ -149,6 +149,17 @@ placement: {
 - **New groups only**: the placement is applied once, when the group is created. A placement on a
   group already in the plan is rejected; a group resubmitted without placement keeps its position.
 
+### Moving a group
+
+An existing group is moved with `place-group`, not with a placement: the wall by side label or
+index, `alignment` `start`, `center` (default) or `end` along it, or the side label of the
+adjoining wall to sit flush in that corner (`wall: 'right'`, `alignment: 'top'` is the back right
+corner), and `offsetMm` along the wall. The server computes the position from the group's
+calculated footprint; a group with a corner article goes into the corner the alignment names. The
+roots and their docking stay as they are, and the group keeps its height. A target that meets
+another group is rejected and the group is not moved — units that belong together are docked into
+one group.
+
 ## Validation Rules
 
 ### Will be rejected:
@@ -162,7 +173,7 @@ placement: {
 - Invalid docking vectors
 
 ### Returned as a hint (the group is loaded):
-- A group of the call that is still unpositioned — it sits at the plan origin; a group gets its position from the placement it is created with
+- A group of the call that is still unpositioned — it sits at the plan origin; a group gets its position from the placement it is created with, or `place-group` moves it against a wall or into a corner
 
 ## Practical Patterns
 

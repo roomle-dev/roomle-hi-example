@@ -194,6 +194,10 @@ anywhere in the room.
   `posGroup` lies on the wall, from its `end` towards its `start`.
 - It is applied once, when the group is created. A placement on a group that is already in the
   plan is rejected; a group resubmitted without placement keeps its position.
+- An existing group is moved with `place-group`: a wall by side label or index, an alignment along
+  it (the side label of the adjoining wall puts it flush into that corner, a corner article into
+  the corner) and an offset; the server computes the position from the calculated group — see
+  [hi-mcp-tools.md](./hi-mcp-tools.md#place-group).
 
 The wall and corner rules are in [hi-authoring-rules.md](./hi-authoring-rules.md#positioning-a-group).
 RoomleCore ADR 0011 ("a numeric placement never rotates the object") concerns the planner's
@@ -332,7 +336,8 @@ HI Configuration
 1. **One Mechanism** — Every new group is positioned with a `placement` (a point and a rotation)
 2. **Against a Wall** — `posRotationY` = the wall's `facingRotationY`, `posGroup` on the wall from its `end` towards its `start`
 3. **Docking Vectors Transform** — Vectors are transformed with root's position and rotation
-4. **Extend, Don't Butt** — Units next to an existing group are docked into that group; overlapping groups are not rejected
+4. **Extend, Don't Butt** — Units next to an existing group are docked into that group; overlapping groups are not rejected when created, but `place-group` rejects a move onto another group
+5. **Moving** — An existing group is moved with `place-group`, never with a placement
 
 ### Docking Rules
 
@@ -437,6 +442,7 @@ const group = {
 2. **Incompatible Docking** — Articles with incompatible categories cannot dock
 3. **Missing Docking Vector** — Referenced docking vector does not exist on article
 4. **Invalid placement** — `posGroup` not `[x, y, z]`, `posRotationY` missing or not a number, `rootId` not a root of the group, any other field, or a placement on a group that is already in the plan
+5. **Placement rejected - the group was not moved** — a `place-group` target meets another group; the error names that group's free docking vectors to dock to instead
 
 ### Error Response Format
 

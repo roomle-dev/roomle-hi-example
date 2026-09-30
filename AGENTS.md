@@ -111,10 +111,11 @@ The start script (`npm start`) provides:
 │       ├── hi-mcp-server.ts      # McpServer setup + tool registrations (zod)
 │       ├── tool-executors.ts     # Tool logic: validation, planner call composition, hints
 │       ├── group-placement.ts    # Placement of a new group -> anchor root and planner repositioning
+│       ├── plan-space.ts         # place-group geometry: footprint, wall and corner placement, contact test
 │       ├── planner-api.ts        # The planner methods the tools call, relayed to the page
 │       ├── page-bridge.ts        # Connected-page registry, call correlation
 │       ├── types.ts              # WebSocket message protocol
-│       ├── tests/                # Unit tests (tool-executors, group-placement, planner-api, page-bridge, hi-mcp-server)
+│       ├── tests/                # Unit tests (tool-executors, group-placement, plan-space, planner-api, page-bridge, hi-mcp-server)
 │       ├── README.md             # Complete PoC documentation (clients: INT-stage ligna-store, HI presets example)
 │       └── QUICKSTART.md         # Shortest path to a first tool call
 │   ├── hi-mcp-poc-json-client/   # Page side of the server (reference copy; the store runs its own)
@@ -175,7 +176,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 2. **Articles** — Catalog of available modules with dimensions, docking vectors, categories
 3. **Groups** — Collections of root modules (article picks) with docking relationships
 4. **Docking** — Roots are positioned relative to each other via docking vectors and modes
-5. **Positioning** — New groups are positioned with a `placement`: one point and one rotation, taken from a wall's `end` and `facingRotationY`; the server anchors the group (`group-placement.ts`)
+5. **Positioning** — New groups are positioned with a `placement`: one point and one rotation, taken from a wall's `end` and `facingRotationY`; the server anchors the group (`group-placement.ts`). Existing groups are moved with `place-group` (`plan-space.ts`)
 
 ### Authoring Rules
 
@@ -315,6 +316,7 @@ This starts:
 4. Call tools like:
    - `get-plan-context` — Get current rooms, articles, groups
    - `create-or-replace-groups` — Add, modify or extend groups; position new groups
+   - `place-group` — Move an existing group against a wall or into a room corner
    - `get-price` — Calculate pricing
    - `get-order-data` — Get order information
    - `get-plan-images` — Render plan images

@@ -9,6 +9,7 @@
 |---|---|
 | `get-plan-context` | Get rooms, articles, groups, masterData |
 | `create-or-replace-groups` | Create, modify and extend groups; position new groups |
+| `place-group` | Move an existing group against a wall or into a room corner |
 | `get-authoring-rules` | Get HI authoring rules |
 
 ### Information Tools
@@ -67,7 +68,35 @@ corner: the corner point and the `facingRotationY` of the wall that ends there. 
 [authoring rules skill](./hi-authoring-rules.md#positioning-a-group).
 
 **Existing groups**: a group resubmitted with its id and without placement keeps its position; a
-placement on a group that is already in the plan is rejected.
+placement on a group that is already in the plan is rejected — move it with `place-group`.
+
+### place-group
+
+**Purpose**: Move an existing group against a wall or into a room corner; the server computes the
+position
+
+**Parameters**:
+```typescript
+{
+  groupId: string,                       // a unique prefix is accepted
+  wall: 'left' | 'right' | 'top' | 'bottom' | number, // side label or wall index
+  alignment?: 'start' | 'center' | 'end' | 'left' | 'right' | 'top' | 'bottom', // default 'center'
+  offsetMm?: number,                     // along the wall, default 0
+  roomIndex?: number,                    // default 0
+}
+```
+
+A side label as alignment means flush into the corner with that adjoining wall (`wall: 'right'`,
+`alignment: 'top'` is the back right corner); a group with a corner article goes into that corner.
+A target that meets another group is rejected and the group is not moved.
+
+**Returns**: `placedIn` (`'corner'` or `'wall'`), the wall, and the resulting group with its
+`position`
+
+**Usage**:
+```javascript
+await placeGroup({ groupId: 'group-1', wall: 'right', alignment: 'top' });
+```
 
 ### find-attributes
 
@@ -131,16 +160,18 @@ try {
 | Invalid articleId | Article not in catalog | Use valid articleId from context |
 | Root not docked | Undocked root in group | Dock all non-first roots |
 | repositioningData is not supported | Payload with a `repositioningData` field | Use `placement` |
-| placement takes only posGroup, posRotationY and rootId | A stale field (`wall`, `alignment`, …) in the placement | Give `posGroup` and `posRotationY` from a wall |
+| placement takes only posGroup, posRotationY and rootId | A stale field (`wall`, `alignment`, …) in the placement | Give `posGroup` and `posRotationY` from a wall, or create the group and call `place-group` |
 | placement: rootId must be the id of one of the group's roots | `rootId` names no root of the group | Name a root of the group, or leave `rootId` out |
-| placement positions a new group only | A placement on a group that is already in the plan | Resubmit the group without placement |
+| placement positions a new group only | A placement on a group that is already in the plan | Resubmit the group without placement, or move it with `place-group` |
+| Placement rejected - the group was not moved | `place-group` target meets another group | Dock the units to that group instead (the error names its free docking vectors) |
+| Alignment '…' runs parallel to this '…' wall | `place-group` alignment names a wall parallel to the target wall | Use `start`, `center`, `end` or the side label of an adjoining wall |
 
 ## Timeouts
 
 The tools run in the server; the timeout applies to each planner call they make in the page:
 
 - Most planner calls: 30 seconds
-- Loading groups (`create-or-replace-groups`) and snapshots (`get-order-data`, `get-plan-images`): 2 minutes
+- Loading groups (`create-or-replace-groups`, `place-group`) and snapshots (`get-order-data`, `get-plan-images`): 2 minutes
 
 ## Best Practices
 

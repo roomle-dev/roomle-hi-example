@@ -75,6 +75,9 @@ The agent gets a small set of tools:
   just an article pick plus its docking relation to a neighbouring module,
   a new group is positioned with a placement (one point and one rotation
   taken from a wall)
+- place-group — moves an existing group against a wall or into a room
+  corner; the server computes the position from the wall, the alignment and
+  the group's footprint
 - update-attribute, get-price, get-order-data, get-plan-images — changing
   attributes, verifying prices/order data, and inspecting the result visually
 

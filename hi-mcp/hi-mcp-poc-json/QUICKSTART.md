@@ -54,7 +54,14 @@ Add a group of three tall units to the wall on the right.
 
 The agent authors article picks with a docking chain and a `placement` taken
 from the right wall — one `create-or-replace-groups` call creates, docks, and
-positions the group.
+positions the group. Then move it:
+
+```text
+Move the group to the back right corner.
+```
+
+The agent calls `place-group` with the right wall and the back wall's side
+label as alignment; the server computes the position and reloads the group.
 
 The unit tests live in `tests/` (server and tool logic) and `../hi-mcp-poc-json-client/tests/` (page bridge) —
 `npm test` in the `hi-mcp/` folder runs them (vitest).

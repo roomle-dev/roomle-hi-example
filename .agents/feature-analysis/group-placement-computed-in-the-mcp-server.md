@@ -335,7 +335,9 @@ rule for the served text; the docs are checked by a grep at close-out.
 > (finding F-C2 was wrong; the compact catalog carries vector names only). **Fixed**: the server
 > computes the corner point itself from the docking vectors of a calculated root of the article,
 > read from the planner's raw groups (`getExternalObjectGroups`, added to the planner API and the
-> page allow-lists), and applies it as `rootRelPos` when it derives `repositioningData`. Still open:
+> page allow-lists), rotates its negation by `posRotationY` and adds it to `posGroup` when it derives
+> `repositioningData` (decided 2026-09-30: no `rootRelPos`, the planner gets the anchor origin's room
+> point). Still open:
 > the very first corner article of an empty plan has no calculated root anywhere, so that one
 > kitchen keeps the 261 mm offset until the geometry exists before the load (P0).
 

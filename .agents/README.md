@@ -79,6 +79,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [Corner article's corner point offset from its root origin](bug-analysis/corner-article-corner-point-offset-from-root-origin.md) | Open | 2026-09-29 |
 | [Cloudflare image build fails on the stale hi-mcp lockfile](bug-analysis/cf-docker-build-stale-hi-mcp-lockfile.md) | Fixed | 2026-09-29 |
 | [Agent placement in a room corner: findings](bug-analysis/agent-placement-in-a-room-corner-findings.md) | Open | 2026-09-30 |
+| [Corner article offset missing on an empty plan](bug-analysis/corner-offset-missing-on-an-empty-plan.md) | Open | 2026-09-30 |
 
 ### Feature Analyses
 

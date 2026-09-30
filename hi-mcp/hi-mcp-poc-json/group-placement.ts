@@ -154,24 +154,33 @@ export const cornerPointOfRoot = (root: any): [number, number, number] | undefin
 };
 
 /**
- * The corner points the calculated groups of the plan reveal, by article id -
- * the planner's raw groups carry the docking vectors with coordinates, the
- * compact catalog only their names.
+ * The corner points the calculated groups of the plan reveal, by article id
+ * and by root module name (the four corner articles share one module and its
+ * geometry) - the planner's raw groups carry the docking vectors with
+ * coordinates, the compact catalog only their names.
  */
 export const cornerPointsByArticle = (
   calculatedGroups: any[],
 ): Map<string, [number, number, number]> => {
-  const byArticle = new Map<string, [number, number, number]>();
+  const byKey = new Map<string, [number, number, number]>();
   for (const group of calculatedGroups ?? []) {
     for (const root of group?.roots ?? []) {
       const cornerPoint = cornerPointOfRoot(root);
-      if (cornerPoint && root.articleId && !byArticle.has(root.articleId)) {
-        byArticle.set(root.articleId, cornerPoint);
+      if (!cornerPoint) {
+        continue;
+      }
+      for (const key of [root.articleId, root.name]) {
+        if (key && !byKey.has(key)) {
+          byKey.set(key, cornerPoint);
+        }
       }
     }
   }
-  return byArticle;
+  return byKey;
 };
+
+const moduleIdOf = (articles: any[], root: any): string | undefined =>
+  catalogArticleOf(articles, root)?.rootModules?.[0]?.module?.id;
 
 // Counter-clockwise as seen from above (the planner's rotationY): local +x
 // turns towards room -z, local +z towards room +x.
@@ -205,6 +214,7 @@ export const toRepositioningData = (
   );
   const cornerPoint =
     cornerPoints.get(anchor.articleId) ??
+    cornerPoints.get(moduleIdOf(articles, anchor) ?? '') ??
     catalogArticleOf(articles, anchor)?.cornerPoint;
   const hasCornerOffset =
     Array.isArray(cornerPoint) &&

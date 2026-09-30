@@ -253,12 +253,27 @@ describe('cornerPointOfRoot and cornerPointsByArticle', () => {
     expect(cornerPointOfRoot({})).toBeUndefined();
   });
 
-  it('collects one corner point per article from the calculated groups', () => {
+  it('collects one corner point per article and per module from the calculated groups', () => {
     const groups = [
       { roots: [{ articleId: 'unit', dockInfos: [{ id: 'LeftBottom', start: [0, 0, 0] }] }] },
-      { roots: [cornerRoot, { ...cornerRoot, dockInfos: [{ id: 'LeftBackBottom', start: [-9, 0, 0] }] }] },
+      { roots: [{ ...cornerRoot, name: 'mr_CornerunitStraight' }, { ...cornerRoot, dockInfos: [{ id: 'LeftBackBottom', start: [-9, 0, 0] }] }] },
     ];
-    expect([...cornerPointsByArticle(groups)]).toEqual([['EUERTB90', [-261, 0, 0]]]);
+    expect([...cornerPointsByArticle(groups)]).toEqual([
+      ['EUERTB90', [-261, 0, 0]],
+      ['mr_CornerunitStraight', [-261, 0, 0]],
+    ]);
+  });
+
+  it('serves another corner article of the same module from a calculated one', () => {
+    // a calculated EUERTB90 in the plan, a new UERTB90 kitchen
+    const cornerPoints = new Map([['mr_CornerunitStraight', [-261, 0, 0] as [number, number, number]]]);
+    const roots = [root('c1', 'UERTB90')];
+    const catalog = [
+      ...articles,
+      { articleId: 'UERTB90', libraryId: 'lib-1', category: 'Kitchen | Base Units | Corner',
+        rootModules: [{ module: { id: 'mr_CornerunitStraight' } }] },
+    ];
+    expect(toRepositioningData(roots, PLACEMENT, catalog, cornerPoints).posGroup).toEqual([4815, 0, -3504]);
   });
 
   it('prefers the corner point from the plan over the catalog and negates it', () => {

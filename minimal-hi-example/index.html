@@ -98,90 +98,7 @@
         text-align: left;
         font-family: sans-serif;
       }
-      #chat-area {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        min-height: 0;
-      }
-      #chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        font-family: sans-serif;
-        font-size: 14px;
-      }
-      .chat-message {
-        margin: 6px 0;
-        padding: 6px 8px;
-        border-radius: 6px;
-        white-space: pre-wrap;
-      }
-      .chat-user {
-        background-color: #e1e9f5;
-      }
-      .chat-assistant {
-        background-color: #fff;
-        border: 1px solid #e0e0e0;
-      }
-      .chat-message p {
-        margin: 0 0 4px;
-      }
-      .chat-message p:last-child {
-        margin-bottom: 0;
-      }
-      .chat-message ul,
-      .chat-message ol {
-        margin: 4px 0;
-        padding-left: 20px;
-      }
-      .chat-message li {
-        margin: 2px 0;
-      }
-      .chat-message h1,
-      .chat-message h2,
-      .chat-message h3,
-      .chat-message h4 {
-        margin: 6px 0 2px;
-        font-size: 1em;
-      }
-      .chat-message code {
-        background-color: #f0f0f0;
-        padding: 0 3px;
-        border-radius: 3px;
-      }
-      .chat-message pre {
-        margin: 4px 0;
-        padding: 6px;
-        background-color: #f0f0f0;
-        border-radius: 4px;
-        overflow-x: auto;
-      }
-      .chat-message pre code {
-        background: none;
-        padding: 0;
-      }
-      #chat-status {
-        margin-top: 6px;
-        font-family: sans-serif;
-        font-size: 13px;
-        font-style: italic;
-        color: #666;
-      }
-      #chat-form {
-        display: flex;
-        gap: 6px;
-        margin-top: 8px;
-        align-items: flex-end;
-      }
-      #chat-input {
-        flex: 1;
-        box-sizing: border-box;
-        padding: 4px 6px;
-        font-family: sans-serif;
-        font-size: 14px;
-        resize: vertical;
-        min-height: 3.4em;
-      }
+
       #designer {
         width: 100%;
         height: 100%;
@@ -220,6 +137,138 @@
       }
       .item {
         padding-left: 16px;
+      }
+      /* Chat overlay on the left */
+      #chat-overlay {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: 400px;
+        z-index: 100;
+        background: rgba(128, 128, 128, 0.3);
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+      }
+      .chat-overlay-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+        cursor: pointer;
+        user-select: none;
+        border-radius: 8px 8px 0 0;
+      }
+      .chat-overlay-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #ffffff;
+      }
+      .chat-overlay-toggle {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 4px;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        padding: 2px 6px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .chat-overlay-content {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        background: rgba(128, 128, 128, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        box-sizing: border-box;
+      }
+      .chat-overlay-content.minimized {
+        display: none;
+      }
+      /* Chat overlay styling */
+      #chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        font-family: sans-serif;
+        font-size: 14px;
+        color: #ffffff;
+        margin-bottom: 10px;
+        max-height: 400px;
+      }
+      .chat-message {
+        margin: 6px 0;
+        padding: 6px 8px;
+        border-radius: 6px;
+        white-space: pre-wrap;
+        max-width: 100%;
+      }
+      .chat-user {
+        background-color: rgba(74, 158, 255, 0.3);
+        color: #ffffff;
+        border: 1px solid rgba(74, 158, 255, 0.6);
+      }
+      .chat-assistant {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .chat-message p {
+        margin: 0 0 4px;
+      }
+      .chat-message p:last-child {
+        margin-bottom: 0;
+      }
+      #chat-status {
+        margin-top: 6px;
+        font-family: sans-serif;
+        font-size: 13px;
+        font-style: italic;
+        color: #aaaaaa;
+      }
+      #chat-form {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        align-items: flex-end;
+      }
+      #chat-input {
+        flex: 1;
+        box-sizing: border-box;
+        padding: 4px 6px;
+        font-family: sans-serif;
+        font-size: 14px;
+        resize: vertical;
+        min-height: 3.4em;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+      }
+      #chat-input:focus {
+        outline: none;
+        border-color: rgba(74, 158, 255, 0.6);
+      }
+      #chat-form button[type="submit"] {
+        padding: 4px 8px;
+        background-color: rgba(74, 158, 255, 0.6);
+        color: white;
+        border: 1px solid rgba(74, 158, 255, 0.6);
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #chat-form button[type="submit"]:hover {
+        background-color: rgba(74, 158, 255, 0.8);
       }
     </style>
 
@@ -294,29 +343,36 @@
             </div>
             <div id="console-log"></div>
           </div>
-          <div id="chat-area" class="hidden">
-            <div id="chat-messages" aria-live="polite"></div>
-            <div id="chat-status" class="hidden" role="status">
-              assistant is working...
-            </div>
-            <form id="chat-form">
-              <textarea
-                id="chat-input"
-                rows="3"
-                placeholder="Ask the assistant..."
-                title="Enter to send, Shift+Enter for a new line"
-              ></textarea>
-              <button type="submit" title="Send the message to the AI assistant">
-                Send
-              </button>
-            </form>
-          </div>
         </div>
         <div class="right-section">
           <div id="overlay" class="hidden"></div>
           <div id="designer">
             <div id="designer-container"></div>
           </div>
+        </div>
+      </div>
+      <!-- Chat overlay on the left -->
+      <div id="chat-overlay" class="hidden">
+        <div class="chat-overlay-header">
+          <h3>AI Chat</h3>
+          <button id="chat-overlay-toggle" class="chat-overlay-toggle" aria-label="Toggle chat">−</button>
+        </div>
+        <div id="chat-overlay-content">
+          <div id="chat-messages" aria-live="polite"></div>
+          <div id="chat-status" class="hidden" role="status">
+            assistant is working...
+          </div>
+          <form id="chat-form">
+            <textarea
+              id="chat-input"
+              rows="3"
+              placeholder="Ask the assistant..."
+              title="Enter to send, Shift+Enter for a new line"
+            ></textarea>
+            <button type="submit" title="Send the message to the AI assistant">
+              Send
+            </button>
+          </form>
         </div>
       </div>
     </div>
@@ -798,30 +854,55 @@
         Authorization: HI_AUTH_DATA,
       };
 
-      // With ?chat=true the left section opens with the AI chat and the
-      // checkbox switches between chat (unchecked) and debug panel (checked).
-      // Without it, the checkbox keeps toggling the whole left section.
+      // Chat overlay on the left with mutual exclusion with debug panel.
+      // With ?chat=true the chat overlay is shown by default and the
+      // debug panel is hidden. Checkbox toggles between them.
       const chatEnabled = getQueryParam('chat') === 'true';
+      const chatOverlay = document.getElementById('chat-overlay');
+      const chatOverlayContent = document.getElementById('chat-overlay-content');
+      const chatOverlayToggle = document.getElementById('chat-overlay-toggle');
+      const leftSection = document.querySelector('.left-section');
+      const tcArea = document.getElementById('tc-area');
+      const togglePanelCheckbox = document.getElementById('toggle-panel');
+
+      // Initialize states
       if (chatEnabled) {
-        document.querySelector('.left-section').style.display = 'flex';
-        document.getElementById('tc-area').classList.add('hidden');
-        document.getElementById('chat-area').classList.remove('hidden');
+        // Chat mode: show chat overlay, hide debug panel
+        chatOverlay.classList.remove('hidden');
+        chatOverlayContent.classList.remove('minimized');
+        chatOverlayToggle.textContent = '−';
+        leftSection.style.display = 'none';
+        togglePanelCheckbox.checked = false;
+      } else {
+        // Default mode: hide chat overlay
+        chatOverlay.classList.add('hidden');
+        chatOverlayContent.classList.remove('minimized');
+        chatOverlayToggle.textContent = '−';
       }
-      document
-        .getElementById('toggle-panel')
-        .addEventListener('change', (event) => {
-          if (chatEnabled) {
-            document
-              .getElementById('tc-area')
-              .classList.toggle('hidden', !event.target.checked);
-            document
-              .getElementById('chat-area')
-              .classList.toggle('hidden', event.target.checked);
+
+      // Chat overlay toggle
+      chatOverlayToggle.addEventListener('click', () => {
+        const isMinimized = chatOverlayContent.classList.toggle('minimized');
+        chatOverlayToggle.textContent = isMinimized ? '+' : '−';
+      });
+
+      // Debug panel toggle with mutual exclusion
+      togglePanelCheckbox.addEventListener('change', (event) => {
+        if (chatEnabled) {
+          // In chat mode: toggle between debug panel and chat overlay
+          if (event.target.checked) {
+            leftSection.style.display = 'flex';
+            tcArea.classList.remove('hidden');
+            chatOverlay.classList.add('hidden');
           } else {
-            document.querySelector('.left-section').style.display =
-              event.target.checked ? 'flex' : 'none';
+            leftSection.style.display = 'none';
+            chatOverlay.classList.remove('hidden');
           }
-        });
+        } else {
+          // Default mode: just toggle debug panel
+          leftSection.style.display = event.target.checked ? 'flex' : 'none';
+        }
+      });
 
       await setupHi(hiOptions, {
         onLoadJavascript: () => libLoadCalcScript(hiOptions),

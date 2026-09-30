@@ -75,7 +75,8 @@ degrees, counter-clockwise as seen from above; `rootId` only with two corner art
 one that goes into the corner `posGroup` names. One kitchen is one group: dock every further unit
 instead of positioning it. Against a wall: `posRotationY` = the wall's `facingRotationY`,
 `posGroup` = the wall's `end` (flush into that corner) or a point from `end` towards `start`; in a
-corner: the corner point and the `facingRotationY` of the wall that ends there. See the
+corner: the corner point and the `facingRotationY` of the wall that ends there (for a right-handed
+corner article the server adds 90°, see the table in the authoring rules). See the
 [authoring rules skill](./hi-authoring-rules.md#positioning-a-group).
 
 **Existing groups**: a group resubmitted with its id and without placement keeps its position; a

@@ -134,7 +134,8 @@ placement: {
   d = (lengthMm − group width) / 2 centres it; d = lengthMm − group width puts its right end into
   the corner at the wall's `start`.
 - **Corner**: `posGroup` = the corner point, `posRotationY` = the `facingRotationY` of the wall that
-  ends in that corner; a corner kitchen starts with a corner article.
+  ends in that corner; a corner kitchen starts with a corner article. For a right-handed corner
+  article (`mod_CarcaseDirection` Right) the server adds 90° itself; the returned `rotationY` shows it.
 
 | Rectangular room (back = top in the top view) | `posRotationY` | Corner: `RightBottom` row along | Corner: `LeftBottom` row along |
 |---|---|---|---|

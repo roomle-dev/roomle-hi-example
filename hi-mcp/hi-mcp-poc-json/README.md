@@ -637,6 +637,10 @@ or anywhere in the room.
   | Front wall / right front corner | 180 | front wall, to the left | right wall, to the back |
   | Right wall / right back corner | 270 | right wall, to the front | back wall, to the left |
 
+  The table holds for both hands of corner article: the server turns one whose corner point lies
+  on its right (`mod_CarcaseDirection` Right, e.g. `UELTB90`) by 90° more itself, so its rows run
+  as listed and the returned `rotationY` is `posRotationY` + 90.
+
 - **Two corner articles** (a U-shaped kitchen): set `rootId` to the corner article that goes into
   the corner `posGroup` names.
 - **Anywhere else** (an island, the middle of the room, next to a door): any free floor point as

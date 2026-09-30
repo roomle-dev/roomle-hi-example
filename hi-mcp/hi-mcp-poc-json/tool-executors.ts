@@ -1,3 +1,4 @@
+import { catalogArticleOf, toRepositioningData } from './group-placement';
 import type { PlannerApi } from './planner-api';
 
 export type ToolExecutor = (
@@ -69,27 +70,12 @@ const isArticlePickOnly = (root: any): boolean =>
 // completes it from the article template; here the article id is validated
 // against the catalog so the agent gets a helpful error instead of a
 // half-calculated group.
-const validateArticlePickIds = async (
-  roomDesignerApi: PlannerApi,
-  posGroups: any[],
-): Promise<void> => {
+const validateArticlePickIds = (articles: any[], posGroups: any[]): void => {
   const articlePicks = posGroups.flatMap((group) =>
     (group?.roots ?? []).filter(isArticlePickOnly),
   );
-  if (articlePicks.length === 0) {
-    return;
-  }
-  const context = await roomDesignerApi.extended.getExternalObjectPlanContext([
-    'articles',
-  ]);
-  const articles = (context.articles ?? []) as any[];
   for (const root of articlePicks) {
-    const article = articles.find(
-      (candidate) =>
-        candidate.articleId === root.articleId &&
-        (!root.libraryId || candidate.libraryId === root.libraryId),
-    );
-    if (!article) {
+    if (!catalogArticleOf(articles, root)) {
       const validIds = articles.map((candidate) => candidate.articleId);
       throw new Error(
         `articleId '${root.articleId}' is not in the article catalog. ` +
@@ -99,16 +85,74 @@ const validateArticlePickIds = async (
   }
 };
 
+const withoutCornerPoint = (article: any) => {
+  const compact = { ...article };
+  delete compact.cornerPoint;
+  return compact;
+};
+
+const PLACEMENT_FIELDS = ['posGroup', 'posRotationY', 'rootId'];
+
+const isPoint = (value: unknown): boolean =>
+  Array.isArray(value) && value.length === 3 && value.every(Number.isFinite);
+
+// Each error continues the "posGroups[i]" prefix of its group.
+const placementErrors = (placement: any, rootIds: Set<string>): string[] => {
+  if (
+    typeof placement !== 'object' ||
+    placement === null ||
+    Array.isArray(placement)
+  ) {
+    return [': placement must be { posGroup, posRotationY, rootId? }'];
+  }
+  const errors: string[] = [];
+  const unknownFields = Object.keys(placement).filter(
+    (field) => !PLACEMENT_FIELDS.includes(field),
+  );
+  if (unknownFields.length > 0) {
+    errors.push(
+      '.placement takes only posGroup, posRotationY and rootId - remove ' +
+        unknownFields.join(', '),
+    );
+  }
+  if (!isPoint(placement.posGroup)) {
+    errors.push('.placement: posGroup must be [x, y, z] in millimetres');
+  }
+  if (!Number.isFinite(placement.posRotationY)) {
+    errors.push(
+      '.placement: posRotationY must be a number of degrees - state 0 explicitly for no rotation',
+    );
+  }
+  if (placement.rootId !== undefined && !rootIds.has(placement.rootId)) {
+    errors.push(
+      ".placement: rootId must be the id of one of the group's roots",
+    );
+  }
+  return errors;
+};
+
+const invalidPosGroups = (errors: string[]): Error =>
+  new Error(
+    'Invalid pos groups - nothing was loaded:\n' +
+      errors.join('\n') +
+      '\nFetch the payload format with the get-authoring-rules tool.',
+  );
+
 export const toolExecutors: Record<string, ToolExecutor> = {
   // The plan context arrives agent-ready from the planner API (compacted
-// sections, 3D room contours with derived walls); the executor is a
-// pass-through.
+// sections, 3D room contours with derived walls); the executor passes it
+// through without the articles' corner points, which only the server uses.
   'get-plan-context': async (roomDesignerApi, args) => {
     const requested =
       Array.isArray(args.include) && args.include.length > 0
         ? (args.include as PlanContextSection[])
         : DEFAULT_SECTIONS;
-    return roomDesignerApi.extended.getExternalObjectPlanContext(requested);
+    const context =
+      await roomDesignerApi.extended.getExternalObjectPlanContext(requested);
+    if (!Array.isArray(context?.articles)) {
+      return context;
+    }
+    return { ...context, articles: context.articles.map(withoutCornerPoint) };
   },
 
   'find-attributes': async (roomDesignerApi, args) => {
@@ -176,7 +220,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       }
       if (group.pos !== undefined || group.rotationY !== undefined) {
         validationErrors.push(
-          `posGroups[${groupIndex}]: do not set pos/rotationY on a group - position it with repositioningData`,
+          `posGroups[${groupIndex}]: do not set pos/rotationY on a group - position a new group with placement`,
         );
       }
       const rootIds = new Set<string>();
@@ -195,7 +239,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         if (root?.articlePos !== undefined || root?.rotationY !== undefined) {
           validationErrors.push(
             `posGroups[${groupIndex}].roots[${rootIndex}]: a root module carries no articlePos/rotationY - ` +
-              'root positions come from the docking (contextData) only, the group position from repositioningData',
+              'root positions come from the docking (contextData) only, the group position from placement',
           );
         }
         const rootId = root?.id;
@@ -236,58 +280,58 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           );
         }
       }
-      if (group.placement !== undefined) {
+      if (group.repositioningData !== undefined) {
         validationErrors.push(
-          `posGroups[${groupIndex}]: placement is not supported - position the group with ` +
-            'repositioningData { posGroup, posRotationY, rootId }',
+          `posGroups[${groupIndex}]: repositioningData is not supported - position the group with ` +
+            'placement { posGroup, posRotationY }',
         );
       }
-      if (group.repositioningData !== undefined) {
-        const { posGroup, posRotationY, rootId, rootRelPos } =
-          group.repositioningData ?? {};
-        if (
-          !Array.isArray(posGroup) ||
-          posGroup.length !== 3 ||
-          !posGroup.every(Number.isFinite)
-        ) {
-          validationErrors.push(
-            `posGroups[${groupIndex}].repositioningData: posGroup must be [x, y, z] in millimetres`,
-          );
-        }
-        if (!Number.isFinite(posRotationY)) {
-          validationErrors.push(
-            `posGroups[${groupIndex}].repositioningData: posRotationY must be a number of degrees - state 0 explicitly for no rotation`,
-          );
-        }
-        if (
-          rootRelPos !== undefined &&
-          (!Array.isArray(rootRelPos) ||
-            rootRelPos.length !== 3 ||
-            !rootRelPos.every(Number.isFinite))
-        ) {
-          validationErrors.push(
-            `posGroups[${groupIndex}].repositioningData: rootRelPos must be [x, y, z] in millimetres ` +
-              "- the negated cornerPoint of the anchor's article",
-          );
-        }
-        if (!rootIds.has(rootId)) {
-          validationErrors.push(
-            `posGroups[${groupIndex}].repositioningData: rootId must be the id of one of the group's roots ` +
-              '- the anchor root the docking starts from',
-          );
-        }
+      if (group.placement !== undefined) {
+        validationErrors.push(
+          ...placementErrors(group.placement, rootIds).map(
+            (error) => `posGroups[${groupIndex}]${error}`,
+          ),
+        );
       }
     });
     if (validationErrors.length > 0) {
-      throw new Error(
-        'Invalid pos groups - nothing was loaded:\n' +
-          validationErrors.join('\n') +
-          '\nFetch the payload format with the get-authoring-rules tool.',
-      );
+      throw invalidPosGroups(validationErrors);
     }
-    // Only article picks and repositioningData reach the planner.
     for (const group of posGroups) {
       group.roots = group.roots.map(toArticlePick);
+    }
+    const catalog =
+      await roomDesignerApi.extended.getExternalObjectPlanContext(['articles']);
+    const articles = (catalog.articles ?? []) as any[];
+    validateArticlePickIds(articles, posGroups);
+
+    const preContext =
+      await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']);
+    const beforeGroupIds = new Set(
+      ((preContext.groups ?? []) as any[]).map((group) => group.id),
+    );
+    // a placement on a group in the plan would move it on the replace
+    const existingGroupErrors = posGroups.flatMap((group, groupIndex) =>
+      group.placement !== undefined && beforeGroupIds.has(group.id)
+        ? [
+            `posGroups[${groupIndex}]: placement positions a new group only - group '${group.id}' is ` +
+              'already in the plan; resubmit it without placement to keep its position',
+          ]
+        : [],
+    );
+    if (existingGroupErrors.length > 0) {
+      throw invalidPosGroups(existingGroupErrors);
+    }
+    // Only article picks and the repositioning derived from the placement
+    // reach the planner.
+    for (const group of posGroups) {
+      if (group.placement !== undefined) {
+        group.repositioningData = toRepositioningData(
+          group.roots,
+          group.placement,
+          articles,
+        );
+      }
       for (const field of Object.keys(group)) {
         if (
           !['id', 'libraryId', 'roots', 'repositioningData'].includes(field)
@@ -296,13 +340,6 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         }
       }
     }
-    await validateArticlePickIds(roomDesignerApi, posGroups);
-
-    const preContext =
-      await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']);
-    const beforeGroupIds = new Set(
-      ((preContext.groups ?? []) as any[]).map((group) => group.id),
-    );
 
     const loaded = await roomDesignerApi.extended.loadExternalObjectGroupLayout(
       { posGroups },
@@ -340,9 +377,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       groups,
       ...(unpositionedGroupIds.length > 0 && {
         hint:
-          `Groups ${unpositionedGroupIds.join(', ')} are not positioned yet and sit at the plan origin. ` +
-          'Resubmit them with their id and repositioningData ({ posGroup, posRotationY, rootId }) - ' +
-          'see get-authoring-rules.',
+          `Groups ${unpositionedGroupIds.join(', ')} are not positioned and sit at the plan origin. ` +
+          'A group gets its position from the placement ({ posGroup, posRotationY }) it is created ' +
+          'with - see get-authoring-rules.',
       }),
     };
   },

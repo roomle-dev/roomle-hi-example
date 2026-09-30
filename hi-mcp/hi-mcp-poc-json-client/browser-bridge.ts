@@ -70,6 +70,14 @@ export const resolveBridgeUrls = (
   return urls;
 };
 
+// The page URL the server logs and names in its errors - without the API key
+// of the chat window.
+const pageUrlWithoutApiKey = (): string => {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('api_key');
+  return url.toString();
+};
+
 export const startMcpBrowserBridge = (
   roomDesignerApi: RoomDesignerApiType,
   options: BrowserBridgeOptions = {},
@@ -103,7 +111,7 @@ export const startMcpBrowserBridge = (
         JSON.stringify({
           kind: 'hello',
           example: 'ligna-store',
-          url: window.location.href,
+          url: pageUrlWithoutApiKey(),
           protocol: BRIDGE_PROTOCOL,
         }),
       );

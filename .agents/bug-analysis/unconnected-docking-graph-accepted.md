@@ -11,7 +11,9 @@
 > **Progress (2026-09-30)**: The connectivity check is implemented (`4f91b38`), with one change
 > to the reviewed plan: an entry that names an id outside the group is **not** rejected — it
 > connects nothing (see [Amendment](#amendment-ids-outside-the-group)). Unit tests pass; the
-> live "test the mcp" run is pending, the document stays Open until then.
+> live "test the mcp" run (2026-09-30 17:48) loaded only connected layouts but showed that the
+> amendment leaves a gap for new groups (see [Live verification](#live-verification-2026-09-30-1748)).
+> The document stays Open until that is decided.
 
 ---
 
@@ -461,3 +463,34 @@ taken — in run 09, `35bda1c9` has no `RightBottom` in `freeDockingVectors` alt
 docked there any more, so `merge-article-into-group` on that side would be refused. The entries
 come from roomle-ui's delete of a root module, which does not remove the references to the deleted
 root from its neighbours. Recorded for a separate analysis.
+
+## Live verification (2026-09-30 17:48)
+
+"test the mcp" on `c32f38d` (gpt-5.4-mini, planner `bo-test`), report
+`.temp/result/mcp-test-2026-09-30_17-48-25/report.md`: 9 pass, 1 partial, 3 fail, 1 bug.
+
+| Check | Result |
+|---|---|
+| Every loaded layout has one connected docking graph | yes — 13 layout loads in 13 runs, plus 4 single-root corner probes |
+| No root stacked on the group origin by a detached part | yes — the only shared position (07, setup) comes from two roots docked to one vector (H2), in a connected graph |
+| Run 04 of the previous session | not reproduced; the model sent a connected layout on its first call, so the new rejection was not exercised there |
+| Rejections before any planner call | 05 (1), 07 (3), 10 (1), 12 (1); the rejection texts are not recorded (open point 1); in 05 the model reports "invalid docking structure" and corrected it |
+
+**The gap the amendment left open (run 06)**: the model sent a new group with one root whose
+docking entries name `hob1` and `back1` — no docking vector, and no roots of that name in the
+group (the other units were most likely nested in the entries, which the server reduces to id,
+vector, mode and offset). The check accepted it (one root, trivially reached), the planner loaded
+the corner unit alone, the rest of the kitchen was dropped without an error. The plan's original
+step 1.2 would have rejected this payload. The stale entries that made the amendment necessary
+exist only in groups already in the plan (runs 09 and 12 again), so the rejection can be restored
+for **new** groups — a group whose id is not in the plan — after the pre-context is read
+(`beforeGroupIds`, where the existing-group placement check already runs). Proposed, not
+implemented.
+
+**A new bug, not related to this fix (run 04)**: the served corner rules ("right back 270 -
+RightBottom along the right wall, LeftBottom along the back wall") fit corner articles whose corner
+point lies on their left (`UERTB90`, `EUERTB90`: root-local x −261). For `UELTB90` the probe
+gave the corner point at x 1161 (its right end); the server put that point into the corner and the
+rule's rotation 270 turned the whole kitchen behind the back wall. The catalog descriptions do not
+tell the two apart (`EUERTB90` says "direction right" with its corner on the left). To be analysed
+separately.

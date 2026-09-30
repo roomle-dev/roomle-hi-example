@@ -1,0 +1,92 @@
+# Testing Prompts for Roomle HI Example
+
+This document provides a collection of prompt examples for testing the Roomle HI (HOMAG Intelligence) room planning capabilities. These prompts can be used to verify the functionality of the MCP server tools when creating and positioning kitchen groups in Roomle sessions.
+
+## Basic Group Placement
+
+### Simple Group Additions
+
+- **Add a group of three tall units to the wall on the right**
+  ```
+  add a group of three tall units to the wall on the right
+  ```
+
+- **Add a group of 4 cabinets to the wall in the back**
+  ```
+  add a group of 4 cabinets to the wall in the back
+  ```
+
+## Kitchen Planning
+
+### Corner Kitchen Configurations
+
+- **Plan a kitchen in the back right corner of the room**
+  ```
+  plan a kitchen in the back right corner of the room
+  ```
+
+- **Plan a kitchen with an oven, a range hood, a sink and a fridge in the back right corner of the room**
+  ```
+  plan a kitchen with an oven, a range hood, a sink and a fridge in the back right corner of the room
+  ```
+
+- **Create a kitchen with an oven, a fridge and a sink in the back right corner of the room**
+  ```
+  create a kitchen with an oven, a fridge and a sink in the back right corner of the room
+  ```
+
+## Image-Based Kitchen Creation
+
+### Reference Image Prompts
+
+- **Create a kitchen like the one in the image on the right-hand wall of the room**
+  ```
+  create a kitchen like the one in the image on the right-hand wall of the room
+  ```
+  *Reference: [kitchen-right-wall-reference.png](./images/kitchen-right-wall-reference.png)*
+
+- **Create a kitchen like the one in the back right corner of the room, as shown in the image**
+  ```
+  create a kitchen like the one in the back right corner of the room, as shown in the image
+  ```
+  *Reference: [kitchen-back-right-corner-reference.png](./images/kitchen-back-right-corner-reference.png)*
+
+## Detailed Kitchen Specifications
+
+### Full Kitchen with Specific Requirements
+
+- **Create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room**
+  ```
+  create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room. Arrange the kitchen around the corner. The front of the kitchen should be made of walnut and the worktop should be made of dark marble
+  ```
+
+  **Specifications:**
+  - **Appliances**: oven, hob, cooker hood, fridge, sink
+  - **Storage**: cabinet with drawers, wall cabinets
+  - **Placement**: back right corner, arranged around the corner
+  - **Materials**: walnut front, dark marble worktop
+
+## Testing Guidelines
+
+When testing these prompts with the MCP server:
+
+1. **Start the server** using `npm start` from the repository root
+2. **Open the example page** at http://localhost:3000
+3. **Connect your MCP client** to http://localhost:3100/mcp
+4. **Use the tools** to execute the prompts:
+   - `get-plan-context` - Retrieve current room and article information
+   - `create-or-replace-groups` - Create new kitchen groups with specified articles
+   - `place-group` - Position groups against walls or in corners
+
+5. **Verify results** by checking:
+   - Groups are created with correct articles
+   - Groups are positioned at the specified locations (right wall, back wall, back right corner)
+   - Material specifications are applied correctly
+   - Docking relationships between modules are valid
+
+## Related Documentation
+
+- [HI MCP Server Documentation](./hi-mcp-server.md)
+- [HI MCP Tools Reference](../.agents/skills/hi-mcp-tools.md)
+- [Roomle HI Concepts](../.agents/skills/roomle-hi-concepts.md)
+- [Article Catalog](../.agents/skills/hi-authoring-rules.md)

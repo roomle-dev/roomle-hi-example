@@ -131,73 +131,67 @@ export const findAnchorRoot = (
   return rowEnd;
 };
 
-const isCornerVector = (id: unknown): boolean =>
-  /^(Left|Right)Back(Bottom|Top)$/.test(String(id));
+// The corner geometry of a calculated corner article, root-local: the corner
+// point - the shared start of its LeftBack/RightBack docking vectors - and the
+// turn of its corner from the left-handed frame, whose RightBack edge runs
+// along +x and whose LeftBack edge runs along +z. A right-handed article
+// (carcase direction Right) has its corner on its right and a turn of 270.
+export interface CornerFrame {
+  point: [number, number, number];
+  turnY: number;
+}
 
-/**
- * The corner point of a calculated corner article, root-local: the shared
- * start of its LeftBack/RightBack docking vectors. It lies left of the root
- * origin for a blind corner unit.
- */
-export const cornerPointOfRoot = (root: any): [number, number, number] | undefined => {
-  const cornerVectors = (root?.dockInfos ?? []).filter(
-    (dockInfo: any) =>
-      isCornerVector(dockInfo?.id) && Array.isArray(dockInfo.start) && dockInfo.start.length >= 3,
-  );
-  const vector =
-    cornerVectors.find((dockInfo: any) => String(dockInfo.id).endsWith('Bottom')) ??
-    cornerVectors[0];
-  return vector ? [vector.start[0], vector.start[1], vector.start[2]] : undefined;
-};
+// + 0 turns -0 into 0
+const round2 = (value: number): number => Math.round(value * 100) / 100 + 0;
 
-/**
- * The corner points the calculated groups of the plan reveal, by article id
- * and by root module name (the four corner articles share one module and its
- * geometry) - the planner's raw groups carry the docking vectors with
- * coordinates, the compact catalog only their names.
- */
-export const cornerPointsByArticle = (
-  calculatedGroups: any[],
-): Map<string, [number, number, number]> => {
-  const byKey = new Map<string, [number, number, number]>();
-  for (const group of calculatedGroups ?? []) {
-    for (const root of group?.roots ?? []) {
-      const cornerPoint = cornerPointOfRoot(root);
-      if (!cornerPoint) {
-        continue;
-      }
-      for (const key of [root.articleId, root.name]) {
-        if (key && !byKey.has(key)) {
-          byKey.set(key, cornerPoint);
-        }
-      }
-    }
+const normalizeDegrees = (degrees: number): number =>
+  round2(((degrees % 360) + 360) % 360);
+
+const cornerVector = (root: any, side: 'Left' | 'Right'): any =>
+  ['Bottom', 'Top']
+    .map((row) =>
+      (root?.dockInfos ?? []).find(
+        (dockInfo: any) =>
+          dockInfo?.id === `${side}Back${row}` &&
+          Array.isArray(dockInfo.start) &&
+          dockInfo.start.length >= 3 &&
+          Array.isArray(dockInfo.end) &&
+          dockInfo.end.length >= 3,
+      ),
+    )
+    .find(Boolean);
+
+const degreesOf = (radians: number): number => (radians * 180) / Math.PI;
+
+export const cornerFrameOfRoot = (root: any): CornerFrame | undefined => {
+  const right = cornerVector(root, 'Right');
+  const left = cornerVector(root, 'Left');
+  const vector = right ?? left;
+  if (!vector) {
+    return undefined;
   }
-  return byKey;
+  const dx = vector.end[0] - vector.start[0];
+  const dz = vector.end[2] - vector.start[2];
+  // rotatedAboutY turns +x into [cos, -sin] and +z into [sin, cos] (x, z)
+  const turnY = right
+    ? degreesOf(Math.atan2(-dz, dx))
+    : degreesOf(Math.atan2(dx, dz));
+  return {
+    point: [vector.start[0], vector.start[1], vector.start[2]],
+    turnY: normalizeDegrees(turnY),
+  };
 };
 
-export const moduleIdOf = (articles: any[], root: any): string | undefined =>
-  catalogArticleOf(articles, root)?.rootModules?.[0]?.module?.id;
-
-/**
- * The corner point of the root's article: from the calculated corner points of
- * the plan (by article or module), else from the catalog.
- */
-export const cornerPointFor = (
-  articles: any[],
-  root: any,
-  cornerPoints: Map<string, [number, number, number]>,
-): [number, number, number] | undefined => {
-  const cornerPoint =
-    cornerPoints.get(root.articleId) ??
-    cornerPoints.get(moduleIdOf(articles, root) ?? '') ??
-    catalogArticleOf(articles, root)?.cornerPoint;
-  return Array.isArray(cornerPoint) &&
-    cornerPoint.length === 3 &&
-    cornerPoint.every(Number.isFinite)
-    ? [cornerPoint[0], cornerPoint[1], cornerPoint[2]]
-    : undefined;
-};
+// The hand and the corner point depend on the article and its attributes, so a
+// frame is learned per library, article and attribute overrides.
+export const cornerVariantKey = (root: any, libraryId?: string): string =>
+  JSON.stringify([
+    root.libraryId ?? libraryId ?? '',
+    root.articleId,
+    (root.attributes ?? [])
+      .map((attribute: any) => [attribute.id, String(attribute.value)])
+      .sort(([a]: string[], [b]: string[]) => a.localeCompare(b)),
+  ]);
 
 export const anchorRootOf = (
   roots: any[],
@@ -220,33 +214,35 @@ const rotatedAboutY = (
   return [x * cos + z * sin, y, -x * sin + z * cos];
 };
 
-// + 0 turns -0 into 0
-const round2 = (value: number): number => Math.round(value * 100) / 100 + 0;
-
 /**
  * The planner's repositioning of a new group from the agent's placement: the
  * anchor root's origin lands at posGroup. A corner article is anchored by its
- * corner point, so its origin offset, rotated into the room, is added to the
- * point the agent gave.
+ * corner point, and its turn is taken off the rotation, so that its back edges
+ * run along the walls the corner rules name whatever its hand; the origin
+ * offset, rotated into the room, is added to the point the agent gave.
  */
 export const toRepositioningData = (
   roots: any[],
   placement: Placement,
   articles: any[],
-  cornerPoints: Map<string, [number, number, number]> = new Map(),
+  cornerFrames: Map<string, CornerFrame> = new Map(),
+  libraryId?: string,
 ): RepositioningData => {
   const anchor = anchorRootOf(roots, placement, articles);
-  const cornerPoint = cornerPointFor(articles, anchor, cornerPoints);
-  if (!cornerPoint) {
+  const frame = isCornerArticle(articles, anchor)
+    ? cornerFrames.get(cornerVariantKey(anchor, libraryId))
+    : undefined;
+  if (!frame) {
     return {
       posGroup: placement.posGroup,
       posRotationY: placement.posRotationY,
       rootId: anchor.id,
     };
   }
+  const posRotationY = normalizeDegrees(placement.posRotationY - frame.turnY);
   const originOffset = rotatedAboutY(
-    [-cornerPoint[0], -cornerPoint[1], -cornerPoint[2]],
-    placement.posRotationY,
+    [-frame.point[0], -frame.point[1], -frame.point[2]],
+    posRotationY,
   );
   return {
     posGroup: [
@@ -254,7 +250,7 @@ export const toRepositioningData = (
       round2(placement.posGroup[1] + originOffset[1]),
       round2(placement.posGroup[2] + originOffset[2]),
     ],
-    posRotationY: placement.posRotationY,
+    posRotationY,
     rootId: anchor.id,
   };
 };

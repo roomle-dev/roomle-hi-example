@@ -46,6 +46,7 @@ Never delete an analysis document.
 | [mcp-cloudflare-containers-deployment.md](mcp-cloudflare-containers-deployment.md) | Open | Hosting the hi-mcp server on Cloudflare Containers following the roomle-model-exporter cf/ pattern: unchanged server in a container, Worker front, per-session containers for company-wide try-out; WebSocket passthrough as the core unknown |
 | [add-ai-chat-to-hi-example.md](add-ai-chat-to-hi-example.md) | Implemented | Built-in AI chat (Mistral, Vercel AI SDK) in the HI example, started with `npm start mistral <api-key>`; chat backend as MCP client of the hi-mcp server |
 | [gpt-5-mini-chat-models.md](gpt-5-mini-chat-models.md) | Implemented | `npm start gpt-5-mini`/`gpt-5.4-mini <api-key>`: chat with the deployments on the HI Azure AI Foundry resource via its OpenAI v1 endpoint; `azure`/`openai` stay on `gpt-4o` |
+| [ai-model-selection-for-kitchen-planning.md](ai-model-selection-for-kitchen-planning.md) | Open | Team evaluation recommending GPT-5 Mini with function calling, catalog search, and a validation loop for kitchen planning; mapped to the current chat and open questions |
 
 Add feature analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `group-adjustment-to-wall-width.md`).

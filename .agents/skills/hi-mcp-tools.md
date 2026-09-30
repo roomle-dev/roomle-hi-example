@@ -8,7 +8,8 @@
 | Tool | Purpose |
 |---|---|
 | `get-plan-context` | Get rooms, articles, groups, masterData |
-| `create-or-replace-groups` | Create, modify, position and move groups |
+| `create-or-replace-groups` | Create, modify and extend groups; position new groups |
+| `place-group` | Move an existing group against a wall or into a room corner |
 | `get-authoring-rules` | Get HI authoring rules |
 
 ### Information Tools
@@ -50,27 +51,52 @@ const context = await getPlanContext({ include: 'rooms,articles' });
 { posGroups: PosGroup[] }
 ```
 
-**Returns**: Created/updated groups, deleted IDs, log messages, and a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — resubmit it with its id and `repositioningData`)
+**Returns**: Created/updated groups, deleted IDs, log messages, and a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with)
 
 **Usage**:
 ```javascript
 await createOrReplaceGroups({ posGroups: [group1, group2] });
 ```
 
-**Positioning**: every group carries `repositioningData: { posGroup, posRotationY, rootId }` —
-`rootId` is the anchor (the root the docking starts from, listed first in `roots`; in a corner
-kitchen the corner article), `posGroup` its left back bottom corner in the room, `posRotationY`
-the rotation in degrees, counter-clockwise as seen from above. A corner article adds `rootRelPos`
-= the negated catalog `cornerPoint` (root-local, rotated with `posRotationY`); verify a flush
-placement against the returned `position.pos` and correct `posGroup` by the room-space delta,
-keeping `posRotationY`. One kitchen is one group: dock
-every further unit instead of positioning it. Against a wall:
-`posRotationY` = the wall's `facingRotationY`, `posGroup` = the wall's `end` (flush into that
-corner) or a point from `end` towards `start`. See the
+**Positioning**: a new group carries `placement: { posGroup, posRotationY, rootId? }` —
+`posGroup` the room point of the group's back left bottom corner, `posRotationY` the rotation in
+degrees, counter-clockwise as seen from above; `rootId` only with two corner articles, naming the
+one that goes into the corner `posGroup` names. One kitchen is one group: dock every further unit
+instead of positioning it. Against a wall: `posRotationY` = the wall's `facingRotationY`,
+`posGroup` = the wall's `end` (flush into that corner) or a point from `end` towards `start`; in a
+corner: the corner point and the `facingRotationY` of the wall that ends there. See the
 [authoring rules skill](./hi-authoring-rules.md#positioning-a-group).
 
-**Moving**: resubmit the group from `get-plan-context` with its id and a new `repositioningData`;
-without it a replaced group keeps its position.
+**Existing groups**: a group resubmitted with its id and without placement keeps its position; a
+placement on a group that is already in the plan is rejected — move it with `place-group`.
+
+### place-group
+
+**Purpose**: Move an existing group against a wall or into a room corner; the server computes the
+position
+
+**Parameters**:
+```typescript
+{
+  groupId: string,                       // a unique prefix is accepted
+  wall: 'left' | 'right' | 'top' | 'bottom' | number, // side label or wall index
+  alignment?: 'start' | 'center' | 'end' | 'left' | 'right' | 'top' | 'bottom', // default 'center'
+  offsetMm?: number,                     // along the wall, default 0
+  roomIndex?: number,                    // default 0
+}
+```
+
+A side label as alignment means flush into the corner with that adjoining wall (`wall: 'right'`,
+`alignment: 'top'` is the back right corner); a group with a corner article goes into that corner.
+A target that meets another group is rejected and the group is not moved.
+
+**Returns**: `placedIn` (`'corner'` or `'wall'`), the wall, and the resulting group with its
+`position`
+
+**Usage**:
+```javascript
+await placeGroup({ groupId: 'group-1', wall: 'right', alignment: 'top' });
+```
 
 ### find-attributes
 
@@ -133,15 +159,19 @@ try {
 | No page connected | Page not loaded with ?mcp=true | Open browser page |
 | Invalid articleId | Article not in catalog | Use valid articleId from context |
 | Root not docked | Undocked root in group | Dock all non-first roots |
-| placement is not supported | Payload with the removed `placement` field | Use `repositioningData` |
-| repositioningData: rootId must be the id of one of the group's roots | `rootId` names no root of the group | Use the anchor root the docking starts from |
+| repositioningData is not supported | Payload with a `repositioningData` field | Use `placement` |
+| placement takes only posGroup, posRotationY and rootId | A stale field (`wall`, `alignment`, …) in the placement | Give `posGroup` and `posRotationY` from a wall, or create the group and call `place-group` |
+| placement: rootId must be the id of one of the group's roots | `rootId` names no root of the group | Name a root of the group, or leave `rootId` out |
+| placement positions a new group only | A placement on a group that is already in the plan | Resubmit the group without placement, or move it with `place-group` |
+| Placement rejected - the group was not moved | `place-group` target meets another group | Dock the units to that group instead (the error names its free docking vectors) |
+| Alignment '…' runs parallel to this '…' wall | `place-group` alignment names a wall parallel to the target wall | Use `start`, `center`, `end` or the side label of an adjoining wall |
 
 ## Timeouts
 
 The tools run in the server; the timeout applies to each planner call they make in the page:
 
 - Most planner calls: 30 seconds
-- Loading groups (`create-or-replace-groups`) and snapshots (`get-order-data`, `get-plan-images`): 2 minutes
+- Loading groups (`create-or-replace-groups`, `place-group`) and snapshots (`get-order-data`, `get-plan-images`): 2 minutes
 
 ## Best Practices
 
@@ -149,4 +179,4 @@ The tools run in the server; the timeout applies to each planner call they make 
 2. Validate article IDs before using
 3. Use free docking vectors when extending
 4. Check logMessages for warnings
-5. Position every group with repositioningData — for a wall, its end point and its facingRotationY
+5. Position every new group with a placement — for a wall, its end point and its facingRotationY

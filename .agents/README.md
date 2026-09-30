@@ -41,7 +41,7 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 |---|---|---|
 | [hi-mcp-server.md](./skills/hi-mcp-server.md) | MCP server architecture, HTTP handling, SSE bridge, protocol compliance | MCP server development, tool registration, bridge implementation |
 | [hi-mcp-cloudflare-deployment.md](./skills/hi-mcp-cloudflare-deployment.md) | Cloudflare deployment of the hi-mcp server: wrangler deploy/update, URL anatomy, container cleanup, teardown | Deploying, updating, or troubleshooting the Cloudflare-hosted hi-mcp server |
-| [hi-authoring-rules.md](./skills/hi-authoring-rules.md) | HI authoring patterns, docking vectors, group creation, positioning with repositioningData | Creating or modifying HI groups, docking patterns, article selection |
+| [hi-authoring-rules.md](./skills/hi-authoring-rules.md) | HI authoring patterns, docking vectors, group creation, positioning new groups with a placement | Creating or modifying HI groups, docking patterns, article selection |
 | [hi-mcp-tools.md](./skills/hi-mcp-tools.md) | Complete MCP tool reference with parameters, examples, error handling | Using MCP tools, tool implementation, error diagnosis |
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
 | [vercel-ai-sdk-chat.md](./skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: provider selection, server-side auth, @ai-sdk/mcp, streamText route | Implementing the AI chat window (RML-17984), Vercel AI SDK, MCP client integration |
@@ -79,6 +79,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [Corner article's corner point offset from its root origin](bug-analysis/corner-article-corner-point-offset-from-root-origin.md) | Open | 2026-09-29 |
 | [Cloudflare image build fails on the stale hi-mcp lockfile](bug-analysis/cf-docker-build-stale-hi-mcp-lockfile.md) | Fixed | 2026-09-29 |
 | [Agent placement in a room corner: findings](bug-analysis/agent-placement-in-a-room-corner-findings.md) | Open | 2026-09-30 |
+| [Corner article offset missing on an empty plan](bug-analysis/corner-offset-missing-on-an-empty-plan.md) | Open | 2026-09-30 |
 
 ### Feature Analyses
 
@@ -94,6 +95,8 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [`npm run dev` with local Rubens UI server](feature-analysis/dev-script-local-server-url.md) | Implemented | 2026-09-28 |
 | [Add AI chat to the HI MCP example](feature-analysis/add-ai-chat-to-hi-example.md) | Implemented | 2026-09-29 |
 | [AI model selection for kitchen planning](feature-analysis/ai-model-selection-for-kitchen-planning.md) | Open | 2026-09-30 |
+| [Group placement computed in the MCP server (RML-18007, Task 1)](feature-analysis/group-placement-computed-in-the-mcp-server.md) | Open | 2026-09-30 |
+| [Reintroduce the place-group tool in the MCP server (RML-18007, Task 2)](feature-analysis/reintroduce-place-group-tool-in-the-server.md) | Open | 2026-09-30 |
 
 ### Refactoring Analyses
 
@@ -124,6 +127,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | Document | Last touched |
 |---|---|
 | [Backlog](backlog/README.md) — make group positioning easier for the agent | 2026-09-30 |
+| [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — deferred roomle-ui alternative to the server's corner probe | 2026-09-30 |
 
 ---
 

@@ -15,6 +15,7 @@ const EXPECTED_TOOLS = [
   'get-plan-context',
   'get-plan-images',
   'get-price',
+  'place-group',
   'update-attribute',
 ];
 
@@ -27,6 +28,8 @@ const createMockPlannerApi = (
     updateExternalObjectGroupAttribute: vi.fn(async () => undefined),
     fetchPrice: vi.fn(async () => null),
     getExternalObjectSnapshot: vi.fn(async () => ({})),
+    getExternalObjectGroups: vi.fn(async () => []),
+    removeExternalObject: vi.fn(async () => undefined),
     ...overrides,
   },
 });
@@ -50,7 +53,7 @@ const textOf = (result: unknown): string => {
 };
 
 describe('hi-mcp-server tool registration', () => {
-  it('exposes exactly the eight expected tools', async () => {
+  it('exposes exactly the nine expected tools', async () => {
     const client = await connectClient(createMockPlannerApi());
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name).sort()).toEqual(EXPECTED_TOOLS);
@@ -69,15 +72,20 @@ describe('hi-mcp-server tool calls', () => {
     expect(textOf(result)).toContain('Never author a position');
   });
 
-  it('explains positioning with repositioningData in the verified rotation sense', async () => {
+  it('explains positioning with placement in the verified rotation sense', async () => {
     const client = await connectClient(createMockPlannerApi());
     const text = textOf(
       await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
     );
+    expect(text).toContain(
+      'placement: { posGroup: [x, y, z], posRotationY, rootId? } positions a new group',
+    );
     expect(text).toContain('counter-clockwise as seen from above');
     expect(text).toContain("posRotationY = the wall's facingRotationY");
     expect(text).toContain('right back 270');
-    expect(text).not.toMatch(/\bplace-group\b/);
+    expect(text).toContain(
+      'To move an existing group against a wall or into a room corner, call place-group',
+    );
   });
 
   it('carries the one-group principle and the docking examples', async () => {
@@ -90,13 +98,29 @@ describe('hi-mcp-server tool calls', () => {
     expect(text).toContain(
       '{ "ownDockingVector": "LeftBottom", "dockedRoots": [{ "id": "B", "dockingVector": "RightBottom"',
     );
-    // the complete L-shaped corner kitchen example, anchored on the corner article
-    expect(text).toContain('"rootId": "c1"');
+    // the complete L-shaped corner kitchen example, placed at the room corner point
+    expect(text).toContain(
+      '"placement": { "posGroup": [<corner x>, 0, <corner z>], "posRotationY": 270 }',
+    );
     expect(text).toContain('Example 5');
-    // the corner point offset: compensated root-locally, verified via position.pos
-    expect(text).toContain('cornerPoint');
-    expect(text).toContain('"rootRelPos": [261, 0, 0]');
-    expect(text).toContain('posGroup shifted by (P - position.pos)');
+  });
+
+  it('never tells the agent how the server positions a group internally', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    const { tools } = await client.listTools();
+    const served = [client.getInstructions() ?? '', rules, JSON.stringify(tools)];
+    for (const internal of [
+      'repositioningData',
+      'rootRelPos',
+      'cornerPoint',
+      'blind zone',
+      '261',
+    ]) {
+      expect(served.join('\n')).not.toContain(internal);
+    }
   });
 
   it('runs get-plan-context against the planner API and returns the JSON text', async () => {
@@ -139,6 +163,20 @@ describe('hi-mcp-server tool calls', () => {
     expect(plannerApi.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
   });
 
+  it('rejects an unknown wall label of place-group without a planner call', async () => {
+    const plannerApi = createMockPlannerApi();
+    const client = await connectClient(plannerApi);
+    const result = await client.callTool({
+      name: 'place-group',
+      arguments: { groupId: 'g1', wall: 'north' },
+    });
+    expect((result as { isError?: boolean }).isError).toBe(true);
+    expect(textOf(result)).toContain('Input validation error');
+    for (const method of Object.values(plannerApi.extended)) {
+      expect(method).not.toHaveBeenCalled();
+    }
+  });
+
   it('shapes get-plan-images into MCP image content without the data-url prefix', async () => {
     const plannerApi = createMockPlannerApi({
       getExternalObjectSnapshot: vi.fn(async () => ({
@@ -179,11 +217,9 @@ describe('hi-mcp-server through the page bridge', () => {
       return { groups: loaded ? [{ id: 'g1', position: { pos: [0, 0, 0] } }] : [] };
     };
     const client = await connectClient(createPlannerApi(bridge));
+    const roots = [{ id: 'u1', articleId: 'a1' }];
     const posGroups = [
-      {
-        roots: [{ id: 'u1', articleId: 'a1' }],
-        repositioningData: { posGroup: [0, 0, 0], posRotationY: 0, rootId: 'u1' },
-      },
+      { roots, placement: { posGroup: [0, 0, 0], posRotationY: 0 } },
     ];
 
     const result = await client.callTool({
@@ -198,10 +234,96 @@ describe('hi-mcp-server through the page bridge', () => {
       'loadExternalObjectGroupLayout',
       'getExternalObjectPlanContext',
     ]);
-    expect(calls[2].args).toEqual([{ posGroups }, 'posGroups', { reason: 'adjusted' }]);
+    expect(calls[2].args).toEqual([
+      {
+        posGroups: [
+          {
+            roots,
+            repositioningData: { posGroup: [0, 0, 0], posRotationY: 0, rootId: 'u1' },
+          },
+        ],
+      },
+      'posGroups',
+      { reason: 'adjusted' },
+    ]);
     expect(JSON.parse(textOf(result))).toEqual({
       loaded: [{ id: 'g1' }],
       groups: [{ id: 'g1', position: { pos: [0, 0, 0] } }],
+    });
+  });
+
+  it('runs place-group as planner calls the page executes', async () => {
+    const bridge = new PageBridge();
+    const socket = attachPage(bridge);
+    const rightWall = {
+      index: 1,
+      side: 'right',
+      start: [4000, 0, 0],
+      end: [4000, 0, -3000],
+      lengthMm: 3000,
+      type: 'wall',
+      facingRotationY: 270,
+    };
+    const attributes = [
+      { id: 'b', value: 800 },
+      { id: 't', value: 600 },
+    ];
+    const calculatedGroup = {
+      id: 'g1',
+      libraryId: 'lib-1',
+      pos: [0, 0, 0],
+      rotationY: 0,
+      roots: [
+        { id: 'u1', articleId: 'a1', articlePos: [0, 0, 0], rotationY: 0, attributes },
+      ],
+    };
+    let loaded = false;
+    socket.respond = (method) => {
+      if (method === 'getExternalObjectGroups') {
+        return [calculatedGroup];
+      }
+      if (method === 'loadExternalObjectGroupLayout') {
+        loaded = true;
+        return [{ id: 'g1' }];
+      }
+      return {
+        rooms: { rooms: [{ walls: [rightWall] }] },
+        groups: [{ id: 'g1', position: { pos: loaded ? [4000, 0, -3000] : [0, 0, 0] } }],
+      };
+    };
+    const client = await connectClient(createPlannerApi(bridge));
+
+    const result = await client.callTool({
+      name: 'place-group',
+      arguments: { groupId: 'g1', wall: 'right', alignment: 'top' },
+    });
+
+    const calls = socket.sent.map((data) => JSON.parse(data));
+    expect(calls.map((call) => call.method)).toEqual([
+      'getExternalObjectPlanContext',
+      'getExternalObjectGroups',
+      'loadExternalObjectGroupLayout',
+      'getExternalObjectPlanContext',
+    ]);
+    expect(calls[0].args).toEqual([['rooms', 'groups']]);
+    expect(calls[2].args).toEqual([
+      {
+        posGroups: [
+          {
+            id: 'g1',
+            libraryId: 'lib-1',
+            roots: [{ id: 'u1', articleId: 'a1', attributes }],
+            repositioningData: { posGroup: [4000, 0, -3000], posRotationY: 270, rootId: 'u1' },
+          },
+        ],
+      },
+      'posGroups',
+      { reason: 'adjusted' },
+    ]);
+    expect(JSON.parse(textOf(result))).toEqual({
+      placedIn: 'wall',
+      wall: rightWall,
+      group: { id: 'g1', position: { pos: [4000, 0, -3000] } },
     });
   });
 });

@@ -27,6 +27,12 @@ describe('createPlannerApi', () => {
 
     await extended.fetchPrice();
     expect(bridge.call).toHaveBeenCalledWith('fetchPrice', []);
+
+    await extended.getExternalObjectGroups();
+    expect(bridge.call).toHaveBeenCalledWith('getExternalObjectGroups', []);
+
+    await extended.removeExternalObject('g1');
+    expect(bridge.call).toHaveBeenCalledWith('removeExternalObject', ['g1']);
   });
 
   it('uses the snapshot timeout for loading and snapshots only', async () => {

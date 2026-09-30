@@ -1,3 +1,30 @@
+import {
+  anchorRootOf,
+  catalogArticleOf,
+  cornerPointFor,
+  cornerPointsByArticle,
+  isCornerArticle,
+  moduleIdOf,
+  toRepositioningData,
+} from './group-placement';
+import {
+  adjoiningWall,
+  convexPolygonsTouch,
+  footprintCornersInRoom,
+  groupCornerGeometry,
+  groupFootprint,
+  placeAgainstWall,
+  placeCornerAtWalls,
+  repositioningFromPlacement,
+  resolveWallAlignment,
+  rootFootprintInRoom,
+} from './plan-space';
+import type {
+  DerivedWall,
+  GroupFootprint,
+  WallAlignment,
+  WallSide,
+} from './plan-space';
 import type { PlannerApi } from './planner-api';
 
 export type ToolExecutor = (
@@ -43,6 +70,37 @@ const toArticlePick = (root: any) => ({
   }),
 });
 
+// The planner's own roots on the way back into the planner: unchanged apart
+// from the positions and the docking indices.
+const withoutPositions = (root: any) => {
+  const copy = { ...root };
+  delete copy.articlePos;
+  delete copy.rotationY;
+  if (copy.contextData) {
+    copy.contextData = stripDockingIndices(copy.contextData);
+  }
+  return copy;
+};
+
+// A calculated group sent back with a new placement: the placement becomes
+// repositioningData of the first article root, the library regenerates the
+// generated roots (worktop, toe kick), and no root carries a position.
+const repositionedGroup = (resultGroup: any, placement: GroupPlacement) => {
+  const roots = (resultGroup.roots ?? []).filter(
+    (root: any) => !isGeneratedRoot(root),
+  );
+  const anchor = roots[0];
+  if (!anchor) {
+    throw new Error(`Group '${resultGroup.id}' has no article root to place.`);
+  }
+  return {
+    id: resultGroup.id,
+    ...(resultGroup.libraryId && { libraryId: resultGroup.libraryId }),
+    roots: roots.map(withoutPositions),
+    repositioningData: repositioningFromPlacement(placement, anchor),
+  };
+};
+
 const attributeMatches = (attribute: any, needle: string): boolean =>
   [
     attribute.id,
@@ -69,27 +127,12 @@ const isArticlePickOnly = (root: any): boolean =>
 // completes it from the article template; here the article id is validated
 // against the catalog so the agent gets a helpful error instead of a
 // half-calculated group.
-const validateArticlePickIds = async (
-  roomDesignerApi: PlannerApi,
-  posGroups: any[],
-): Promise<void> => {
+const validateArticlePickIds = (articles: any[], posGroups: any[]): void => {
   const articlePicks = posGroups.flatMap((group) =>
     (group?.roots ?? []).filter(isArticlePickOnly),
   );
-  if (articlePicks.length === 0) {
-    return;
-  }
-  const context = await roomDesignerApi.extended.getExternalObjectPlanContext([
-    'articles',
-  ]);
-  const articles = (context.articles ?? []) as any[];
   for (const root of articlePicks) {
-    const article = articles.find(
-      (candidate) =>
-        candidate.articleId === root.articleId &&
-        (!root.libraryId || candidate.libraryId === root.libraryId),
-    );
-    if (!article) {
+    if (!catalogArticleOf(articles, root)) {
       const validIds = articles.map((candidate) => candidate.articleId);
       throw new Error(
         `articleId '${root.articleId}' is not in the article catalog. ` +
@@ -99,16 +142,332 @@ const validateArticlePickIds = async (
   }
 };
 
+// The agent picks corner articles by cornerArticle; the flag is completed for
+// an empty plan, and the corner point stays with the server.
+const agentFacingArticle = (article: any, articles: any[]) => {
+  const compact = { ...article, cornerArticle: isCornerArticle(articles, article) };
+  delete compact.cornerPoint;
+  return compact;
+};
+
+const PLACEMENT_FIELDS = ['posGroup', 'posRotationY', 'rootId'];
+
+const WALL_PLACEMENT_FIELDS = ['wall', 'alignment', 'offsetMm'];
+
+const PROBE_ROOT_ID = 'corner-probe';
+
+// Corner points the server has learned from calculated corner articles, by
+// article id and module name, for its lifetime.
+const knownCornerPoints = new Map<string, [number, number, number]>();
+
+export const forgetCornerPoints = (): void => knownCornerPoints.clear();
+
+const learnCornerPoints = (
+  cornerPoints: Map<string, [number, number, number]>,
+): void => {
+  for (const [key, point] of cornerPoints) {
+    knownCornerPoints.set(key, point);
+  }
+};
+
+// The corner point of a corner article exists only as calculated geometry.
+// When neither the plan nor the catalog has it, the planner calculates the
+// article once: a single-pick probe group is loaded, its docking vectors are
+// read from the raw groups, and every group the probe load added is removed
+// again (the load result carries runtime ids only, which removal does not
+// take). An article calculated without corner vectors has no offset. False
+// when the planner calculated nothing.
+const probeCornerPoint = async (
+  roomDesignerApi: PlannerApi,
+  anchor: any,
+  libraryId: string | undefined,
+  planGroupIds: Set<string>,
+): Promise<boolean> => {
+  await roomDesignerApi.extended.loadExternalObjectGroupLayout(
+    {
+      posGroups: [
+        {
+          ...(libraryId && { libraryId }),
+          roots: [{ id: PROBE_ROOT_ID, articleId: anchor.articleId }],
+        },
+      ],
+    },
+    'posGroups',
+    { reason: 'adjusted' },
+  );
+  const probes = (
+    ((await roomDesignerApi.extended.getExternalObjectGroups()) ?? []) as any[]
+  ).filter((group) => !planGroupIds.has(group.id));
+  for (const probe of probes) {
+    await roomDesignerApi.extended.removeExternalObject(probe.id);
+  }
+  if (probes.length === 0) {
+    return false;
+  }
+  const cornerPoints = cornerPointsByArticle(probes);
+  learnCornerPoints(
+    cornerPoints.size > 0
+      ? cornerPoints
+      : new Map([[anchor.articleId, [0, 0, 0] as [number, number, number]]]),
+  );
+  return true;
+};
+
+const isPoint = (value: unknown): boolean =>
+  Array.isArray(value) && value.length === 3 && value.every(Number.isFinite);
+
+// Each error continues the "posGroups[i]" prefix of its group.
+const placementErrors = (placement: any, rootIds: Set<string>): string[] => {
+  if (
+    typeof placement !== 'object' ||
+    placement === null ||
+    Array.isArray(placement)
+  ) {
+    return [': placement must be { posGroup, posRotationY, rootId? }'];
+  }
+  const errors: string[] = [];
+  const unknownFields = Object.keys(placement).filter(
+    (field) => !PLACEMENT_FIELDS.includes(field),
+  );
+  if (unknownFields.length > 0) {
+    errors.push(
+      '.placement takes only posGroup, posRotationY and rootId - remove ' +
+        unknownFields.join(', ') +
+        (unknownFields.some((field) => WALL_PLACEMENT_FIELDS.includes(field))
+          ? ' - to stand a group against a wall or into a corner by its side label, call place-group'
+          : ''),
+    );
+  }
+  if (!isPoint(placement.posGroup)) {
+    errors.push('.placement: posGroup must be [x, y, z] in millimetres');
+  }
+  if (!Number.isFinite(placement.posRotationY)) {
+    errors.push(
+      '.placement: posRotationY must be a number of degrees - state 0 explicitly for no rotation',
+    );
+  }
+  if (placement.rootId !== undefined && !rootIds.has(placement.rootId)) {
+    errors.push(
+      ".placement: rootId must be the id of one of the group's roots",
+    );
+  }
+  return errors;
+};
+
+const invalidPosGroups = (errors: string[]): Error =>
+  new Error(
+    'Invalid pos groups - nothing was loaded:\n' +
+      errors.join('\n') +
+      '\nFetch the payload format with the get-authoring-rules tool.',
+  );
+
+const PARTNER_VECTOR: Record<string, string> = {
+  LeftBottom: 'RightBottom',
+  RightBottom: 'LeftBottom',
+  LeftTop: 'LeftBottom',
+  RightTop: 'RightBottom',
+  BackBottom: 'BackBottom',
+  BackTop: 'BackBottom',
+};
+
+const CONTACT_TOLERANCE_MM = 5;
+
+interface GroupContact {
+  group: any;
+  root: any;
+}
+
+// The existing group whose footprint the placed footprint touches or
+// overlaps, with the root of that group nearest to the placed footprint.
+const findGroupContact = (
+  placedCorners: [number, number][],
+  groups: any[],
+  excludedGroupIds: Set<string>,
+): GroupContact | undefined => {
+  const center: [number, number] = [
+    placedCorners.reduce((sum, [x]) => sum + x, 0) / placedCorners.length,
+    placedCorners.reduce((sum, [, z]) => sum + z, 0) / placedCorners.length,
+  ];
+  for (const group of groups) {
+    if (excludedGroupIds.has(group.id)) {
+      continue;
+    }
+    const footprint = groupFootprint(group);
+    if (
+      !footprint ||
+      !convexPolygonsTouch(
+        placedCorners,
+        footprintCornersInRoom(footprint, group),
+        CONTACT_TOLERANCE_MM,
+      )
+    ) {
+      continue;
+    }
+    let nearestRoot: any;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    for (const root of group.roots ?? []) {
+      if (isGeneratedRoot(root)) {
+        continue;
+      }
+      for (const [x, z] of rootFootprintInRoom(group, root)) {
+        const distance = Math.hypot(x - center[0], z - center[1]);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestRoot = root;
+        }
+      }
+    }
+    return { group, root: nearestRoot ?? group.roots?.[0] };
+  }
+  return undefined;
+};
+
+// The free docking vectors are the ones get-plan-context shows for that root.
+const contactError = (
+  what: string,
+  contact: GroupContact,
+  shapedGroups: any[],
+): string => {
+  const free: string[] =
+    shapedGroups
+      .find((group) => group.id === contact.group.id)
+      ?.roots?.find((root: any) => root.id === contact.root.id)
+      ?.freeDockingVectors ?? [];
+  const sideVector = free.find(
+    (name) => name.endsWith('Bottom') && !name.includes('Back'),
+  );
+  const example = sideVector
+    ? ` - e.g. on root '${contact.root.id}': { "ownDockingVector": "${sideVector}", "dockedRoots": [{ "id": "<new root>", "dockingVector": "${PARTNER_VECTOR[sideVector]}", "mode": "StartStart", "offset": [0, 0, 0] }] }`
+    : '';
+  return (
+    `${what} would meet group '${contact.group.id}' (root '${contact.root.id}', article ${contact.root.articleId}; ` +
+    `free docking vectors: ${free.join(', ') || 'none'}). Units next to an existing group are roots of that group: ` +
+    `take group '${contact.group.id}' from get-plan-context, add the new roots docked to a free vector of the root they ` +
+    `continue${example}, and resubmit it with its id. A new group with a placement is only for a free stretch of wall.`
+  );
+};
+
+const WALL_SIDES = ['left', 'right', 'top', 'bottom'];
+
+interface WallPlacementSpec {
+  wall: string | number;
+  alignment?: WallAlignment;
+  offsetMm?: number;
+  roomIndex?: number;
+}
+
+interface ResolvedWall {
+  wall: DerivedWall;
+  walls: DerivedWall[];
+}
+
+interface GroupPlacement {
+  pos: [number, number, number];
+  rotationY: number;
+  footprint: GroupFootprint;
+  placedIn: 'corner' | 'wall';
+}
+
+const isWallSide = (
+  alignment: WallAlignment | undefined,
+): alignment is WallSide =>
+  alignment !== undefined && WALL_SIDES.includes(alignment);
+
+const resolveWall = (rooms: any[], spec: WallPlacementSpec): ResolvedWall => {
+  const roomIndex = spec.roomIndex ?? 0;
+  const room = rooms[roomIndex];
+  if (!room) {
+    throw new Error(
+      `Room index ${roomIndex} not found - the plan has ${rooms.length} room(s).`,
+    );
+  }
+  // the plan context derives the walls of every room
+  const walls = (room.walls ?? []) as DerivedWall[];
+  let wall;
+  if (typeof spec.wall === 'number') {
+    wall = walls.find((candidate) => candidate.index === spec.wall);
+  } else if (typeof spec.wall === 'string') {
+    // side label: the longest real wall on that side of the room
+    wall = walls
+      .filter(
+        (candidate) =>
+          candidate.side === spec.wall && candidate.type === 'wall',
+      )
+      .sort((a, b) => b.lengthMm - a.lengthMm)[0];
+  }
+  if (!wall) {
+    throw new Error(
+      `Wall '${spec.wall}' not found. Pass a side label (left/right/top/bottom) or a wall index. ` +
+        'Available walls: ' +
+        JSON.stringify(walls),
+    );
+  }
+  // fails early on an alignment that runs parallel to the wall
+  resolveWallAlignment(wall, spec.alignment ?? 'center');
+  return { wall, walls };
+};
+
+// A corner article is placed by its corner point when the alignment names the
+// adjoining wall; every other group is placed by its footprint. The wall
+// arithmetic works on the floor, so the group keeps its height (a group of
+// wall units only stays at its mounting height).
+const placeGroupAtWall = (
+  group: any,
+  { wall, walls }: ResolvedWall,
+  spec: WallPlacementSpec,
+): GroupPlacement => {
+  const footprint = groupFootprint(group);
+  if (!footprint) {
+    throw new Error(
+      `Group '${group.id}' has no geometry to derive a footprint from.`,
+    );
+  }
+  const alignment = spec.alignment ?? 'center';
+  const offsetMm = spec.offsetMm ?? 0;
+  const height = group.pos?.[1] ?? 0;
+  if (isWallSide(alignment)) {
+    const corner = groupCornerGeometry(group);
+    const adjoining = adjoiningWall(walls, wall, alignment);
+    if (corner && adjoining) {
+      const placement = placeCornerAtWalls(wall, adjoining, corner, offsetMm);
+      if (placement) {
+        const [x, , z] = placement.pos;
+        return {
+          pos: [x, height, z],
+          rotationY: placement.rotationY,
+          footprint,
+          placedIn: 'corner',
+        };
+      }
+    }
+  }
+  const {
+    pos: [x, , z],
+    rotationY,
+  } = placeAgainstWall(wall, footprint, alignment, offsetMm);
+  return { pos: [x, height, z], rotationY, footprint, placedIn: 'wall' };
+};
+
 export const toolExecutors: Record<string, ToolExecutor> = {
   // The plan context arrives agent-ready from the planner API (compacted
-// sections, 3D room contours with derived walls); the executor is a
-// pass-through.
+// sections, 3D room contours with derived walls); the executor passes it
+// through with the articles' cornerArticle flag completed and without their
+// corner points, which only the server uses.
   'get-plan-context': async (roomDesignerApi, args) => {
     const requested =
       Array.isArray(args.include) && args.include.length > 0
         ? (args.include as PlanContextSection[])
         : DEFAULT_SECTIONS;
-    return roomDesignerApi.extended.getExternalObjectPlanContext(requested);
+    const context =
+      await roomDesignerApi.extended.getExternalObjectPlanContext(requested);
+    if (!Array.isArray(context?.articles)) {
+      return context;
+    }
+    const articles = context.articles as any[];
+    return {
+      ...context,
+      articles: articles.map((article) => agentFacingArticle(article, articles)),
+    };
   },
 
   'find-attributes': async (roomDesignerApi, args) => {
@@ -176,7 +535,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       }
       if (group.pos !== undefined || group.rotationY !== undefined) {
         validationErrors.push(
-          `posGroups[${groupIndex}]: do not set pos/rotationY on a group - position it with repositioningData`,
+          `posGroups[${groupIndex}]: do not set pos/rotationY on a group - position a new group with placement`,
         );
       }
       const rootIds = new Set<string>();
@@ -195,7 +554,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         if (root?.articlePos !== undefined || root?.rotationY !== undefined) {
           validationErrors.push(
             `posGroups[${groupIndex}].roots[${rootIndex}]: a root module carries no articlePos/rotationY - ` +
-              'root positions come from the docking (contextData) only, the group position from repositioningData',
+              'root positions come from the docking (contextData) only, the group position from placement',
           );
         }
         const rootId = root?.id;
@@ -236,58 +595,103 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           );
         }
       }
-      if (group.placement !== undefined) {
+      if (group.repositioningData !== undefined) {
         validationErrors.push(
-          `posGroups[${groupIndex}]: placement is not supported - position the group with ` +
-            'repositioningData { posGroup, posRotationY, rootId }',
+          `posGroups[${groupIndex}]: repositioningData is not supported - position the group with ` +
+            'placement { posGroup, posRotationY }',
         );
       }
-      if (group.repositioningData !== undefined) {
-        const { posGroup, posRotationY, rootId, rootRelPos } =
-          group.repositioningData ?? {};
-        if (
-          !Array.isArray(posGroup) ||
-          posGroup.length !== 3 ||
-          !posGroup.every(Number.isFinite)
-        ) {
-          validationErrors.push(
-            `posGroups[${groupIndex}].repositioningData: posGroup must be [x, y, z] in millimetres`,
-          );
-        }
-        if (!Number.isFinite(posRotationY)) {
-          validationErrors.push(
-            `posGroups[${groupIndex}].repositioningData: posRotationY must be a number of degrees - state 0 explicitly for no rotation`,
-          );
-        }
-        if (
-          rootRelPos !== undefined &&
-          (!Array.isArray(rootRelPos) ||
-            rootRelPos.length !== 3 ||
-            !rootRelPos.every(Number.isFinite))
-        ) {
-          validationErrors.push(
-            `posGroups[${groupIndex}].repositioningData: rootRelPos must be [x, y, z] in millimetres ` +
-              "- the negated cornerPoint of the anchor's article",
-          );
-        }
-        if (!rootIds.has(rootId)) {
-          validationErrors.push(
-            `posGroups[${groupIndex}].repositioningData: rootId must be the id of one of the group's roots ` +
-              '- the anchor root the docking starts from',
-          );
-        }
+      if (group.placement !== undefined) {
+        validationErrors.push(
+          ...placementErrors(group.placement, rootIds).map(
+            (error) => `posGroups[${groupIndex}]${error}`,
+          ),
+        );
       }
     });
     if (validationErrors.length > 0) {
-      throw new Error(
-        'Invalid pos groups - nothing was loaded:\n' +
-          validationErrors.join('\n') +
-          '\nFetch the payload format with the get-authoring-rules tool.',
-      );
+      throw invalidPosGroups(validationErrors);
     }
-    // Only article picks and repositioningData reach the planner.
     for (const group of posGroups) {
       group.roots = group.roots.map(toArticlePick);
+    }
+    const catalog =
+      await roomDesignerApi.extended.getExternalObjectPlanContext(['articles']);
+    const articles = (catalog.articles ?? []) as any[];
+    validateArticlePickIds(articles, posGroups);
+
+    const preContext =
+      await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']);
+    const beforeGroupIds = new Set(
+      ((preContext.groups ?? []) as any[]).map((group) => group.id),
+    );
+    // a placement on a group in the plan would move it on the replace
+    const existingGroupErrors = posGroups.flatMap((group, groupIndex) =>
+      group.placement !== undefined && beforeGroupIds.has(group.id)
+        ? [
+            `posGroups[${groupIndex}]: placement positions a new group only - group '${group.id}' is ` +
+              'already in the plan; resubmit it without placement to keep its position, or move it ' +
+              'with place-group',
+          ]
+        : [],
+    );
+    if (existingGroupErrors.length > 0) {
+      throw invalidPosGroups(existingGroupErrors);
+    }
+    // The corner point of a corner article - its origin offset - comes from
+    // the docking vectors of a calculated root of that article: in the plan
+    // (the planner's raw groups), learned earlier, or calculated by a probe.
+    const cornerAnchors = posGroups.flatMap((group, groupIndex) => {
+      if (
+        group.placement === undefined ||
+        !group.roots.some((root: any) => isCornerArticle(articles, root))
+      ) {
+        return [];
+      }
+      const anchor = anchorRootOf(group.roots, group.placement, articles);
+      return isCornerArticle(articles, anchor)
+        ? [{ anchor, libraryId: group.libraryId as string | undefined, groupIndex }]
+        : [];
+    });
+    if (cornerAnchors.length > 0) {
+      const planGroups = ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
+        []) as any[];
+      learnCornerPoints(cornerPointsByArticle(planGroups));
+      const planGroupIds = new Set(planGroups.map((group) => group.id));
+      const probed = new Set<string>();
+      for (const { anchor, libraryId, groupIndex } of cornerAnchors) {
+        if (
+          cornerPointFor(articles, anchor, knownCornerPoints) ||
+          probed.has(anchor.articleId)
+        ) {
+          continue;
+        }
+        probed.add(anchor.articleId);
+        // a corner group without its corner geometry would stand off the corner
+        if (!(await probeCornerPoint(roomDesignerApi, anchor, libraryId, planGroupIds))) {
+          throw new Error(
+            `Nothing was loaded: the corner article '${anchor.articleId}' of posGroups[${groupIndex}] ` +
+              'could not be calculated to position the group - check its articleId, libraryId and attributes.',
+          );
+        }
+        const moduleId = moduleIdOf(articles, anchor);
+        if (moduleId) {
+          probed.add(moduleId);
+        }
+      }
+    }
+    const cornerPoints = knownCornerPoints;
+    // Only article picks and the repositioning derived from the placement
+    // reach the planner.
+    for (const group of posGroups) {
+      if (group.placement !== undefined) {
+        group.repositioningData = toRepositioningData(
+          group.roots,
+          group.placement,
+          articles,
+          cornerPoints,
+        );
+      }
       for (const field of Object.keys(group)) {
         if (
           !['id', 'libraryId', 'roots', 'repositioningData'].includes(field)
@@ -296,13 +700,6 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         }
       }
     }
-    await validateArticlePickIds(roomDesignerApi, posGroups);
-
-    const preContext =
-      await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']);
-    const beforeGroupIds = new Set(
-      ((preContext.groups ?? []) as any[]).map((group) => group.id),
-    );
 
     const loaded = await roomDesignerApi.extended.loadExternalObjectGroupLayout(
       { posGroups },
@@ -340,10 +737,86 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       groups,
       ...(unpositionedGroupIds.length > 0 && {
         hint:
-          `Groups ${unpositionedGroupIds.join(', ')} are not positioned yet and sit at the plan origin. ` +
-          'Resubmit them with their id and repositioningData ({ posGroup, posRotationY, rootId }) - ' +
-          'see get-authoring-rules.',
+          `Groups ${unpositionedGroupIds.join(', ')} are not positioned and sit at the plan origin. ` +
+          'A group gets its position from the placement ({ posGroup, posRotationY }) it is created ' +
+          'with (see get-authoring-rules), or place-group moves it against a wall or into a room corner.',
       }),
+    };
+  },
+
+  'place-group': async (roomDesignerApi, args) => {
+    const groupId = args.groupId as string;
+    const spec: WallPlacementSpec = {
+      wall: args.wall as string | number,
+      alignment: (args.alignment as WallAlignment | undefined) ?? 'center',
+      offsetMm: (args.offsetMm as number | undefined) ?? 0,
+      roomIndex: (args.roomIndex as number | undefined) ?? 0,
+    };
+    const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
+      ['rooms', 'groups'],
+    );
+    const groups = (context.groups ?? []) as any[];
+    let group = groups.find((candidate) => candidate.id === groupId);
+    if (!group && groupId) {
+      const prefixMatches = groups.filter((candidate) =>
+        candidate.id.startsWith(groupId),
+      );
+      if (prefixMatches.length === 1) {
+        group = prefixMatches[0];
+      }
+    }
+    if (!group) {
+      const groupIds = groups.map((candidate) => candidate.id);
+      throw new Error(
+        `Group '${groupId}' not found. Groups in the plan: ` +
+          `${groupIds.join(', ') || 'none'}.`,
+      );
+    }
+    const rooms = ((context.rooms as any)?.rooms ?? []) as any[];
+    const resolved = resolveWall(rooms, spec);
+    // the placement math needs the calculated group with its geometry; the
+    // plan context returns the groups compacted
+    const rawGroups =
+      ((await roomDesignerApi.extended.getExternalObjectGroups()) ?? []) as any[];
+    const rawGroup = rawGroups.find((candidate) => candidate.id === group.id);
+    if (!rawGroup) {
+      throw new Error(`Group '${groupId}' has no calculated geometry to place.`);
+    }
+    const placement = placeGroupAtWall(rawGroup, resolved, spec);
+    const contact = findGroupContact(
+      footprintCornersInRoom(placement.footprint, placement),
+      rawGroups,
+      new Set([group.id]),
+    );
+    if (contact) {
+      throw new Error(
+        'Placement rejected - the group was not moved: ' +
+          contactError(
+            `Group '${group.id}' placed at the ${resolved.wall.side} wall`,
+            contact,
+            groups,
+          ),
+      );
+    }
+    const loaded = await roomDesignerApi.extended.loadExternalObjectGroupLayout(
+      { posGroups: [repositionedGroup(rawGroup, placement)] },
+      'posGroups',
+      { reason: 'adjusted' },
+    );
+    if (!loaded || loaded.length === 0) {
+      throw new Error(
+        `Group '${groupId}' could not be reloaded at the new position.`,
+      );
+    }
+    const after = await roomDesignerApi.extended.getExternalObjectPlanContext([
+      'groups',
+    ]);
+    return {
+      placedIn: placement.placedIn,
+      wall: resolved.wall,
+      group: ((after.groups ?? []) as any[]).find(
+        (candidate) => candidate.id === group.id,
+      ),
     };
   },
 

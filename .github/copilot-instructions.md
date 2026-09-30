@@ -33,7 +33,7 @@ HOMAG Intelligence is a system for kitchen cabinet management, price calculation
 - **Articles** — Individual cabinet modules from a catalog
 - **Groups** — Collections of articles (root modules) with docking relationships
 - **Docking Vectors** — Connection points that define how articles can attach to each other
-- **Positioning** — Positioning groups with `repositioningData` (a point and a rotation taken from the walls)
+- **Positioning** — Positioning new groups with a `placement` (a point and a rotation taken from the walls)
 
 ### MCP (Model Context Protocol)
 
@@ -78,7 +78,8 @@ All tools are defined in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` and documente
 
 Primary tools:
 - `get-plan-context` — Get current rooms, walls, articles, groups, docking vectors
-- `create-or-replace-groups` — Add, modify, position (`repositioningData`) or move groups
+- `create-or-replace-groups` — Add, modify or extend groups; position new groups (`placement`)
+- `place-group` — Move an existing group against a wall or into a room corner
 - `get-price` — Calculate pricing for current configuration
 - `get-order-data` — Generate order data for manufacturing
 - `get-plan-images` — Render 2D and 3D images of the plan
@@ -90,15 +91,15 @@ Primary tools:
 **Creating a Kitchen Layout:**
 ```
 1. get-plan-context → inspect current rooms
-2. create-or-replace-groups → add cabinet groups, positioned with repositioningData
+2. create-or-replace-groups → add cabinet groups, positioned with a placement
 3. get-price → calculate pricing
 ```
 
 **Debugging Group Issues:**
 ```
 1. get-plan-context → examine current groups and docking
-2. Analyze docking vectors and repositioningData
-3. create-or-replace-groups → fix docking relationships, or resubmit with a new repositioningData to move a group
+2. Analyze docking vectors and positions
+3. create-or-replace-groups → fix docking relationships
 ```
 
 ## Digital Brain

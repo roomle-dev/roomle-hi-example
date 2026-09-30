@@ -326,8 +326,18 @@ rule for the served text; the docs are checked by a grep at close-out.
 > reading of this run blamed the agent's rotation; that was wrong. **Fixed**: a corner article is
 > also recognised by its category ("… | Base Units | Corner") or module name
 > (`mr_CornerunitStraight`), in the anchor walk and in the `cornerArticle` flag `get-plan-context`
-> returns; regression test with the snapshot's L. Still open from P0: the corner point of the
-> first corner article on an empty plan — that kitchen stands 261 mm inside the wall.
+> returns; regression test with the snapshot's L.
+>
+> **Live run (2026-09-30)** — "plan a kitchen with an oven, a sink and a fridge in the back right
+> corner", snapshot `ps_qig8umdjdt1k2rl5nten51kyiuzlt19`: correct corner and rotation, the corner
+> point 261 mm inside the back wall — no `rootRelPos`. Checked live against the running server: the
+> deployed UI returns `cornerPoint: null` for `EUERTB90` even with a calculated root in the plan
+> (finding F-C2 was wrong; the compact catalog carries vector names only). **Fixed**: the server
+> computes the corner point itself from the docking vectors of a calculated root of the article,
+> read from the planner's raw groups (`getExternalObjectGroups`, added to the planner API and the
+> page allow-lists), and applies it as `rootRelPos` when it derives `repositioningData`. Still open:
+> the very first corner article of an empty plan has no calculated root anywhere, so that one
+> kitchen keeps the 261 mm offset until the geometry exists before the load (P0).
 
 > **Status**: proposed, awaiting review (step 5 of the suggested change workflow) — no code before
 > it is approved.

@@ -49,7 +49,7 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 - **Port**: 3100 (`HI_MCP_PORT` / `PORT` env)
 - **Routes**: `POST /mcp` (Streamable HTTP, JSON response mode, stateless — a new `McpServer` + transport per request); everything else is 404
 - **Protocol**: `@modelcontextprotocol/sdk`, tools registered with zod schemas in `hi-mcp-server.ts`
-- **Origin allow-list**: `HI_MCP_PAGE_ORIGINS` (default: `http://localhost:3000`, `http://127.0.0.1:3000`, `https://www.roomle.com`)
+- **Origin allow-list**: `HI_MCP_PAGE_ORIGINS` (default: `http://localhost:3000`, `http://127.0.0.1:3000`, `https://www.roomle.com`) — applies to the `/bridge` upgrade and to browser calls of `/mcp`: these origins get CORS headers (`OPTIONS` preflight 204), every other origin gets none (preflight 403). Requests without an `Origin` (curl, server-side MCP clients) are unaffected
 - **Env**: `HI_MCP_PORT`, `HOST`, `HI_MCP_PAGE_ORIGINS`, `HI_MCP_STORE_URL`, `HI_MCP_TLS_CERT`/`HI_MCP_TLS_KEY` (optional TLS)
 - Orphan guard: shuts down with the dev script when its stdin pipe ends
 

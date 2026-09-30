@@ -51,7 +51,7 @@ sessions — is covered by the **setup matrix** in the
 | -------- | ------- | ------- |
 | `HI_MCP_PORT` / `PORT` | `3100` | listen port |
 | `HOST` | all interfaces | bind address |
-| `HI_MCP_PAGE_ORIGINS` | `http://localhost:3000`, `http://127.0.0.1:3000`, `https://www.roomle.com` | comma-separated allowed page origins |
+| `HI_MCP_PAGE_ORIGINS` | `http://localhost:3000`, `http://127.0.0.1:3000`, `https://www.roomle.com` | comma-separated allowed page origins: the only origins that may open the `/bridge` WebSocket and call `/mcp` from a browser (CORS, e.g. the ligna-store chat window) |
 | `HI_MCP_TLS_CERT` + `HI_MCP_TLS_KEY` | plain HTTP | optional TLS for the wss fallback |
 
 ## Connecting an MCP client

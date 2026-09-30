@@ -103,6 +103,28 @@ session). Which setup needs which URL parameters — local server, deployed stor
 parallel sessions — is covered by the **setup matrix** in the
 [PoC README](../hi-mcp-poc-json/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
 
+## Browser clients (CORS)
+
+Besides server-side MCP clients, a browser page may call `/mcp` directly: the ligna-store chat
+window (`?store.stage=INT&model=…&api_key=…&mcp_server=<this URL>`) runs the Vercel AI SDK in the
+page and takes its tools from here. The server answers such cross-origin calls only for the page
+origins in `HI_MCP_PAGE_ORIGINS` (default `http://localhost:3000`, `http://127.0.0.1:3000`,
+`https://www.roomle.com`) — the same list that guards the `/bridge` WebSocket. Allowed origins get
+the CORS headers and a `204` preflight; any other origin gets no CORS headers and a `403` preflight,
+so the browser blocks it. The container does not set the variable, so the default applies; a store
+on another origin needs it in the container's `envVars` (`cf/src/container.ts`).
+
+Check after a deploy (expect `204` and the origin echoed back):
+
+```bash
+curl -s -o /dev/null -D - -X OPTIONS https://<worker>.<subdomain>.workers.dev/mcp \
+  -H "Origin: https://www.roomle.com" -H "Access-Control-Request-Method: POST" \
+  | grep -i -E "^HTTP|access-control-allow-origin"
+```
+
+A browser that cached a page from before the deploy may keep failing with "Failed to fetch" —
+reload without cache.
+
 ## Updating after code changes
 
 One command, in place — nothing is deleted, the URL stays the same:

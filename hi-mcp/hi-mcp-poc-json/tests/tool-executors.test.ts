@@ -1631,3 +1631,41 @@ describe('group command tools', () => {
     ).rejects.toThrow("Root module 'r1' has no free docking vector 'RightBottom'");
   });
 });
+
+describe('plan changes', () => {
+  // a planner command that takes a moment and records when it runs
+  const recordingApi = (events: string[], failing: string[] = []) =>
+    createApi(planContextFixture, {
+      externalObjectGroupOperation: vi.fn(async (command: string, payload: any) => {
+        events.push(`start ${payload.rootModuleId}`);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        events.push(`end ${payload.rootModuleId}`);
+        if (failing.includes(payload.rootModuleId)) {
+          throw new Error(`refused ${payload.rootModuleId}`);
+        }
+        return { command, groups: [], removedGroupIds: [] };
+      }),
+    });
+
+  it('runs tool calls that change the plan one after another', async () => {
+    const events: string[] = [];
+    const api = recordingApi(events);
+    await Promise.all([
+      toolExecutors['delete-root-module'](api, { rootModuleId: 'a' }),
+      toolExecutors['change-module-attribute'](api, { rootModuleId: 'b', attributeId: 'b', value: '900' }),
+    ]);
+    expect(events).toEqual(['start a', 'end a', 'start b', 'end b']);
+  });
+
+  it('runs the next plan change after one that fails', async () => {
+    const events: string[] = [];
+    const api = recordingApi(events, ['a']);
+    const [first, second] = await Promise.allSettled([
+      toolExecutors['delete-root-module'](api, { rootModuleId: 'a' }),
+      toolExecutors['delete-root-module'](api, { rootModuleId: 'b' }),
+    ]);
+    expect(first).toMatchObject({ status: 'rejected', reason: new Error('refused a') });
+    expect(second).toMatchObject({ status: 'fulfilled' });
+    expect(events).toEqual(['start a', 'end a', 'start b', 'end b']);
+  });
+});

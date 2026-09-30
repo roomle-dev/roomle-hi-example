@@ -528,6 +528,21 @@ const placeGroupAtWall = (
   return { pos: [x, height, z], rotationY, footprint, placedIn: 'wall' };
 };
 
+// The page runs every planner call it receives at once, so the tool calls that
+// change the plan run one after another: the corner probe tells the groups it
+// loaded by comparing the plan's groups before and after its load, and the
+// groups a concurrent call loads or splits meanwhile would count as its own
+// and be removed.
+let planChanges: Promise<unknown> = Promise.resolve();
+
+const oneAtATime =
+  (executor: ToolExecutor): ToolExecutor =>
+  (roomDesignerApi, args) => {
+    const run = planChanges.then(() => executor(roomDesignerApi, args));
+    planChanges = run.catch(() => undefined);
+    return run;
+  };
+
 export const toolExecutors: Record<string, ToolExecutor> = {
   // The plan context arrives agent-ready from the planner API (compacted
 // sections, 3D room contours with derived walls); the executor passes it
@@ -595,7 +610,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     };
   },
 
-  'create-or-replace-groups': async (roomDesignerApi, args) => {
+  'create-or-replace-groups': oneAtATime(async (roomDesignerApi, args) => {
     const posGroups = args.posGroups as any[];
     const validationErrors: string[] = [];
     posGroups.forEach((group, groupIndex) => {
@@ -795,9 +810,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           'with (see get-authoring-rules), or place-group moves it against a wall or into a room corner.',
       }),
     };
-  },
+  }),
 
-  'place-group': async (roomDesignerApi, args) => {
+  'place-group': oneAtATime(async (roomDesignerApi, args) => {
     const groupId = args.groupId as string;
     const spec: WallPlacementSpec = {
       wall: args.wall as string | number,
@@ -856,12 +871,12 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         (candidate) => candidate.id === group.id,
       ),
     };
-  },
+  }),
 
   // The group commands run in the planner (externalObjectGroupOperation); the
   // executors resolve group id prefixes and check article ids against the
   // catalog first, so the agent gets the lists of valid ids on a mistake.
-  'change-module-attribute': async (roomDesignerApi, args) =>
+  'change-module-attribute': oneAtATime(async (roomDesignerApi, args) =>
     roomDesignerApi.extended.externalObjectGroupOperation(
       'change-module-attribute',
       {
@@ -871,8 +886,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         value: args.value,
       },
     ),
+  ),
 
-  'change-group-attribute': async (roomDesignerApi, args) => {
+  'change-group-attribute': oneAtATime(async (roomDesignerApi, args) => {
     const group = findGroup(
       await planGroups(roomDesignerApi),
       args.groupId as string,
@@ -881,9 +897,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       'change-group-attribute',
       { groupId: group.id, attributeId: args.attributeId, value: args.value },
     );
-  },
+  }),
 
-  'delete-group': async (roomDesignerApi, args) => {
+  'delete-group': oneAtATime(async (roomDesignerApi, args) => {
     const group = findGroup(
       await planGroups(roomDesignerApi),
       args.groupId as string,
@@ -892,15 +908,16 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       'delete-group',
       { groupId: group.id },
     );
-  },
+  }),
 
-  'delete-root-module': async (roomDesignerApi, args) =>
+  'delete-root-module': oneAtATime(async (roomDesignerApi, args) =>
     roomDesignerApi.extended.externalObjectGroupOperation(
       'delete-root-module',
       { rootModuleId: args.rootModuleId },
     ),
+  ),
 
-  'merge-article-into-group': async (roomDesignerApi, args) => {
+  'merge-article-into-group': oneAtATime(async (roomDesignerApi, args) => {
     const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
       ['groups', 'articles'],
     );
@@ -918,9 +935,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         dockTo: args.dockTo,
       },
     );
-  },
+  }),
 
-  'exchange-root-module': async (roomDesignerApi, args) => {
+  'exchange-root-module': oneAtATime(async (roomDesignerApi, args) => {
     const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
       ['groups', 'articles'],
     );
@@ -937,9 +954,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         articleId: args.articleId,
       },
     );
-  },
+  }),
 
-  'merge-groups': async (roomDesignerApi, args) => {
+  'merge-groups': oneAtATime(async (roomDesignerApi, args) => {
     const groups = await planGroups(roomDesignerApi);
     return roomDesignerApi.extended.externalObjectGroupOperation(
       'merge-groups',
@@ -950,7 +967,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         ),
       },
     );
-  },
+  }),
 
   'get-price': async (roomDesignerApi) => {
     return roomDesignerApi.extended.fetchPrice();

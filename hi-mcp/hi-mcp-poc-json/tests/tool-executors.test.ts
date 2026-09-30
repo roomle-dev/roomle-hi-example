@@ -448,7 +448,51 @@ describe('create-or-replace-groups validation', () => {
           ],
         },
       ],
-      /are not related by docking/,
+      /roots 'u2' are not docked to a placed root \('u1' is placed/,
+    );
+  });
+
+  it('rejects roots docked only among themselves', async () => {
+    const dockedRight = (id: string) => ({
+      dockedRoots: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [{ id, dockingVector: 'LeftBottom' }],
+        },
+      ],
+    });
+    await expectRejectedBeforeLoad(
+      [
+        {
+          roots: [
+            { id: 'c', articleId: 'article-1', contextData: dockedRight('f') },
+            { id: 's', articleId: 'article-1', contextData: dockedRight('o') },
+            { id: 'o', articleId: 'article-1' },
+            { id: 'f', articleId: 'article-1' },
+          ],
+        },
+      ],
+      /roots 's', 'o' are not docked to a placed root \('c', 'f' are placed/,
+    );
+  });
+
+  it('does not count a docking to a root outside the group as connecting', async () => {
+    // a merged group whose middle unit was deleted: both roots still name it
+    const dockedTo = (ownDockingVector: string, dockingVector: string) => ({
+      dockedRoots: [
+        { ownDockingVector, dockedRoots: [{ id: 'deleted', dockingVector }] },
+      ],
+    });
+    await expectRejectedBeforeLoad(
+      [
+        {
+          roots: [
+            { id: 'u1', articleId: 'article-1', contextData: dockedTo('RightBottom', 'LeftBottom') },
+            { id: 'u2', articleId: 'article-1', contextData: dockedTo('LeftBottom', 'RightBottom') },
+          ],
+        },
+      ],
+      /roots 'u2' are not docked to a placed root \('u1' is placed/,
     );
   });
 
@@ -980,6 +1024,72 @@ describe('create-or-replace-groups loading', () => {
           },
         ],
       },
+      'posGroups',
+      { reason: 'adjusted' },
+    );
+  });
+
+  it('accepts a root docked by an entry written on the new root', async () => {
+    const api = createApi(planContextFixture);
+    const roots = [
+      { id: 'u1', articleId: 'article-1' },
+      {
+        id: 'u2',
+        articleId: 'article-1',
+        contextData: {
+          dockedRoots: [
+            {
+              ownDockingVector: 'LeftBottom',
+              dockedRoots: [{ id: 'u1', dockingVector: 'RightBottom' }],
+            },
+          ],
+        },
+      },
+    ];
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [{ libraryId: 'lib-1', roots }],
+    });
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
+      { posGroups: [{ libraryId: 'lib-1', roots }] },
+      'posGroups',
+      { reason: 'adjusted' },
+    );
+  });
+
+  it('accepts a group resubmitted with a docking to a root deleted from it', async () => {
+    const api = createApi(planContextFixture);
+    // get-plan-context after delete-root-module: r2 still names the deleted root
+    const roots = [
+      {
+        id: 'r1',
+        articleId: 'article-1',
+        contextData: {
+          dockedRoots: [
+            {
+              ownDockingVector: 'RightBottom',
+              dockedRoots: [{ id: 'r2', dockingVector: 'LeftBottom' }],
+            },
+          ],
+        },
+      },
+      {
+        id: 'r2',
+        articleId: 'article-1',
+        contextData: {
+          dockedRoots: [
+            {
+              ownDockingVector: 'RightBottom',
+              dockedRoots: [{ id: 'deleted', dockingVector: 'LeftBottom' }],
+            },
+          ],
+        },
+      },
+    ];
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [makeShapedGroup({ roots })],
+    });
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
+      { posGroups: [{ id: 'g1', libraryId: 'lib-1', roots }] },
       'posGroups',
       { reason: 'adjusted' },
     );

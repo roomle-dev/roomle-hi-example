@@ -286,6 +286,54 @@ const placementErrors = (placement: any, rootIds: Set<string>): string[] => {
   return errors;
 };
 
+// The planner mirrors every docking entry and arranges the roots reachable
+// from the first root; a part the docking does not connect to it is arranged
+// on its own from the group origin, on top of the first root. An entry naming
+// a root outside the group connects nothing - a group keeps such an entry to
+// a root deleted from it. Each error continues the "posGroups[i]" prefix.
+const dockingErrors = (roots: any[]): string[] => {
+  const neighbours = new Map<string, Set<string>>();
+  const link = (from: string, to: string) =>
+    neighbours.set(from, (neighbours.get(from) ?? new Set()).add(to));
+  const rootIds = new Set(roots.map((root) => root?.id));
+  for (const root of roots) {
+    for (const dockedContext of root?.contextData?.dockedRoots ?? []) {
+      for (const dockedRoot of dockedContext?.dockedRoots ?? []) {
+        if (rootIds.has(dockedRoot?.id)) {
+          link(root.id, dockedRoot.id);
+          link(dockedRoot.id, root.id);
+        }
+      }
+    }
+  }
+  const reached = new Set<string>([roots[0]?.id]);
+  const queue = [roots[0]?.id];
+  while (queue.length > 0) {
+    for (const next of neighbours.get(queue.shift()) ?? []) {
+      if (!reached.has(next)) {
+        reached.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  const quoted = (selected: any[]) =>
+    selected.map((root) => `'${root?.id}'`).join(', ');
+  const unreached = roots.filter((root) => !reached.has(root?.id));
+  if (unreached.length === 0) {
+    return [];
+  }
+  const placed = roots.filter((root) => reached.has(root?.id));
+  return [
+    `: roots ${quoted(unreached)} are not docked to a placed root (${quoted(placed)} ` +
+      `${placed.length === 1 ? 'is' : 'are'} placed - reached through the docking from the first root); ` +
+      'roots docked only among themselves land on the group origin, on top of the first root. Dock every ' +
+      'additional root to a placed root by listing it on that root, e.g. to place root B directly right of root A: ' +
+      '{ "id": "A", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom", ' +
+      '"dockedRoots": [{ "id": "B", "dockingVector": "LeftBottom", "mode": "StartStart", ' +
+      '"offset": [0, 0, 0] }] }] } }',
+  ];
+};
+
 const invalidPosGroups = (errors: string[]): Error =>
   new Error(
     'Invalid pos groups - nothing was loaded:\n' +
@@ -599,34 +647,11 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           rootIds.add(rootId);
         }
       });
-      if (group.roots.length > 1) {
-        const dockedRootIds = new Set<string>();
-        for (const root of group.roots) {
-          for (const dockedContext of root?.contextData?.dockedRoots ?? []) {
-            if (dockedContext?.dockedRoots?.length) {
-              dockedRootIds.add(root.id);
-            }
-            for (const dockedRoot of dockedContext?.dockedRoots ?? []) {
-              dockedRootIds.add(dockedRoot?.id);
-            }
-          }
-        }
-        const undockedRoots = group.roots.filter(
-          (root: any) => !dockedRootIds.has(root.id),
-        );
-        const undockedLimit = dockedRootIds.size === 0 ? 1 : 0;
-        if (undockedRoots.length > undockedLimit) {
-          const ids = undockedRoots.map((root: any) => `'${root.id}'`);
-          validationErrors.push(
-            `posGroups[${groupIndex}]: roots ${ids.join(', ')} are not related by docking - ` +
-              'undocked roots all land at the same spot and look like a single unit. Dock every ' +
-              'additional root to a placed root by listing it on that root, e.g. to place root B directly right of root A: ' +
-              '{ "id": "A", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom", ' +
-              '"dockedRoots": [{ "id": "B", "dockingVector": "LeftBottom", "mode": "StartStart", ' +
-              '"offset": [0, 0, 0] }] }] } }',
-          );
-        }
-      }
+      validationErrors.push(
+        ...dockingErrors(group.roots).map(
+          (error) => `posGroups[${groupIndex}]${error}`,
+        ),
+      );
       if (group.repositioningData !== undefined) {
         validationErrors.push(
           `posGroups[${groupIndex}]: repositioningData is not supported - position the group with ` +

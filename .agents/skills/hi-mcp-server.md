@@ -63,6 +63,16 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 - The tool handlers in `hi-mcp-server.ts` run the executors in `tool-executors.ts`: payload validation, planner call composition, response shaping, agent hints
 - The executors call the planner through `PlannerApi` (`planner-api.ts`): the five planner methods the tools need, each forwarded over the bridge with positional arguments. All parameters are required — the call travels as JSON, which turns `undefined` into `null`
 
+#### 5. Group placement (internal)
+
+Internal to the server: not part of the tool interface and never mentioned to the agent — the served rules, the tool descriptions, the tool reference and the authoring skills only know `placement`. `tests/hi-mcp-server.test.ts` guards the served text.
+
+- A new group carries `placement { posGroup, posRotationY, rootId? }`. `create-or-replace-groups` turns it into the planner's `repositioningData { posGroup, posRotationY, rootId, rootRelPos? }` before the one load that creates the group (`toRepositioningData` in `group-placement.ts`).
+- The anchor (`findAnchorRoot`): from `rootId` or the first root down to the unit carrying it (`*Top → *Bottom` docking), then left along its row (`RightBottom`/`LeftBottom` docking, read in both directions); a corner article (`cornerArticle` in the catalog) on the row is the anchor, because its left arm turns away along the second wall.
+- A corner article's corner point can lie off its origin: `rootRelPos` = the negated catalog `cornerPoint` puts the corner point at `posGroup`. `get-plan-context` strips `cornerPoint` from the articles it returns.
+- A placement on a group that is already in the plan is rejected: the planner would re-apply it on the replace and move the group. Moving groups is not part of the placement.
+- Known gap: on an empty plan the catalog carries neither `cornerArticle` nor `cornerPoint` for Furniture_Smith articles (their templates have no `dockInfos`), so the first corner kitchen is anchored at the left end of its row — the open prerequisite of [the group placement analysis](../feature-analysis/group-placement-computed-in-the-mcp-server.md#open-prerequisite-corner-data-on-an-empty-plan).
+
 ### Bridge — page side (minimal-hi-example/index.html)
 
 - Active only with the `mcp=true` query parameter

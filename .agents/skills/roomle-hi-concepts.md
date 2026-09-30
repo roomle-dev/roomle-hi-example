@@ -7,7 +7,7 @@
 Load this skill when working with:
 - HI data structures (rooms, walls, articles, groups)
 - Docking vectors and docking relationships
-- Group positioning with `repositioningData`
+- Positioning new groups with a `placement`
 - Article catalog and module selection
 - HI-specific parameters and attributes
 
@@ -97,7 +97,7 @@ A **Group** is a collection of root modules (article instances) with docking rel
 - `name` — Human-readable name
 - `roots` — Array of root module instances
 - `dockingConnections` — Relationships between roots
-- `repositioningData` — `{ posGroup, posRotationY, rootId }`, the group position (see [Positioning](#5-positioning))
+- `placement` — `{ posGroup, posRotationY, rootId? }`, the position of a new group (see [Positioning](#5-positioning))
 
 **Root Module Properties:**
 - `articleId` — Reference to the article catalog
@@ -114,11 +114,10 @@ A **Group** is a collection of root modules (article instances) with docking rel
 - `mode` — Docking mode (e.g., "aligned", "flush", "center")
 - `offset` — [x, y, z] offset from ideal docking position
 
-**Repositioning Properties:**
-- `posGroup` — [x, y, z] in millimetres: where the left back bottom corner of the anchor root goes
+**Placement Properties:**
+- `posGroup` — [x, y, z] in millimetres: the room point of the group's back left bottom corner
 - `posRotationY` — rotation of the group in degrees, counter-clockwise as seen from above
-- `rootId` — the anchor: the root the docking starts from, listed first in `roots`
-- `rootRelPos` — optional root-local offset, rotated with `posRotationY`; the negated catalog `cornerPoint` of a corner article
+- `rootId` — optional, only with two corner articles: the one that goes into the corner `posGroup` names
 
 **Example Group:**
 ```javascript
@@ -147,10 +146,9 @@ A **Group** is a collection of root modules (article instances) with docking rel
       mode: "aligned"
     }
   ],
-  repositioningData: {
+  placement: {
     posGroup: [4000, 0, -3000], // the end of the right wall of a 4000 x 3000 room
-    posRotationY: 270,          // the right wall's facingRotationY
-    rootId: "<id of the anchor root - the docking starts from it, listed first>"
+    posRotationY: 270           // the right wall's facingRotationY
   }
 }
 ```
@@ -183,23 +181,24 @@ worldDockingVector = articleDockingVector
 
 ### 5. Positioning
 
-A group is positioned by `repositioningData: { posGroup, posRotationY, rootId }` — one point and
-one rotation, the same for a group at a wall, in a corner or anywhere in the room. There is no
-separate wall placement.
+A new group is positioned by `placement: { posGroup, posRotationY, rootId? }` — one point and one
+rotation, given in the call that creates it, the same for a group at a wall, in a corner or
+anywhere in the room.
 
-- `rootId` is the anchor: the root the docking chains start from, listed first in `roots` (in an
-  L-shaped kitchen the corner article); `posGroup` is its left back bottom corner in the room.
+- `posGroup` is the room point of the group's back left bottom corner; in a room corner it is the
+  corner point.
 - One kitchen is one group: every further unit is a docked root of the same group, never a
   separately positioned group.
 - `posRotationY` is in degrees, counter-clockwise as seen from above. Against a wall it is the
   wall's `facingRotationY` (rectangular room: back 0, left 90, front 180, right 270), and
   `posGroup` lies on the wall, from its `end` towards its `start`.
-- It is applied once when the group loads; moving a group means resubmitting it with a new
-  `repositioningData`.
+- It is applied once, when the group is created. A placement on a group that is already in the
+  plan is rejected; a group resubmitted without placement keeps its position.
 
 The wall and corner rules are in [hi-authoring-rules.md](./hi-authoring-rules.md#positioning-a-group).
 RoomleCore ADR 0011 ("a numeric placement never rotates the object") concerns the planner's
-interactive numeric placement, not `repositioningData`: `posRotationY` does rotate the group.
+interactive numeric placement, not the `placement` of a new group: `posRotationY` does rotate the
+group.
 
 ## HI-Specific Concepts
 
@@ -285,7 +284,7 @@ HI Configuration
 3. Define Docking Connections
    │
    ▼
-4. Set repositioningData
+4. Set the placement
    │
    ▼
 5. create-or-replace-groups Tool
@@ -322,7 +321,7 @@ HI Configuration
 
 ### Authoring Rules
 
-1. **Never Author Root Positions** — Roots are positioned by docking, the group by `repositioningData`
+1. **Never Author Root Positions** — Roots are positioned by docking, a new group by its `placement`
 2. **Groups Must Be Docked** — Roots within a group must be docked to already-placed roots
 3. **Valid Docking Pairs** — Only compatible categories can dock
 4. **Positions Come From the Walls** — `posGroup` and `posRotationY` are taken from a wall's `start`/`end` and `facingRotationY`
@@ -330,7 +329,7 @@ HI Configuration
 
 ### Positioning Rules
 
-1. **One Mechanism** — Every group is positioned with `repositioningData` (a point and a rotation)
+1. **One Mechanism** — Every new group is positioned with a `placement` (a point and a rotation)
 2. **Against a Wall** — `posRotationY` = the wall's `facingRotationY`, `posGroup` on the wall from its `end` towards its `start`
 3. **Docking Vectors Transform** — Vectors are transformed with root's position and rotation
 4. **Extend, Don't Butt** — Units next to an existing group are docked into that group; overlapping groups are not rejected
@@ -369,10 +368,9 @@ const group = {
       mode: "aligned"
     }
   ],
-  repositioningData: {
+  placement: {
     posGroup: [3000, 0, 0], // front wall of a 4000 x 3000 room, 1000 mm from its end
-    posRotationY: 180,      // the front wall's facingRotationY
-    rootId: "<id of the anchor root - the docking starts from it, listed first>"
+    posRotationY: 180       // the front wall's facingRotationY
   }
 };
 
@@ -422,10 +420,9 @@ const group = {
       mode: "aligned"
     }
   ],
-  repositioningData: {
+  placement: {
     posGroup: wall.end,               // flush into the corner at the wall's end
-    posRotationY: wall.facingRotationY,
-    rootId: "<id of the anchor root - the docking starts from it, listed first>"
+    posRotationY: wall.facingRotationY
   },
   // Group will be adjusted to fill wall width
   adjustToWallWidth: true
@@ -436,10 +433,10 @@ const group = {
 
 ### Common Errors
 
-1. **Removed `placement`** — a group with `placement` is rejected with a pointer to `repositioningData`
+1. **`repositioningData`** — a group with `repositioningData` is rejected with a pointer to `placement`
 2. **Incompatible Docking** — Articles with incompatible categories cannot dock
 3. **Missing Docking Vector** — Referenced docking vector does not exist on article
-4. **Invalid repositioningData** — `posGroup` not `[x, y, z]`, `posRotationY` missing or not a number, or `rootId` not a root of the group
+4. **Invalid placement** — `posGroup` not `[x, y, z]`, `posRotationY` missing or not a number, `rootId` not a root of the group, any other field, or a placement on a group that is already in the plan
 
 ### Error Response Format
 
@@ -447,7 +444,7 @@ A rejected payload comes back as a tool error result whose text lists every prob
 
 ```text
 Invalid pos groups - nothing was loaded:
-posGroups[0].repositioningData: rootId must be the id of one of the group's roots - the anchor root the docking starts from
+posGroups[0].placement: rootId must be the id of one of the group's roots
 Fetch the payload format with the get-authoring-rules tool.
 ```
 
@@ -465,7 +462,7 @@ Fetch the payload format with the get-authoring-rules tool.
 
 1. **Batch Operations** — Use `create-or-replace-groups` for multiple groups
 2. **Minimize Queries** — Cache plan context when possible
-3. **Validate Early** — Check docking and repositioningData before creating groups
+3. **Validate Early** — Check docking and the placement before creating groups
 4. **Use Timeouts** — Set appropriate timeouts for tool calls (30s default, 120s for images)
 
 ### Debugging

@@ -121,8 +121,7 @@ is still working. The backend logs every request, MCP connection, tool call
 The chain keeps the MCP server untouched: the chat backend is just another MCP
 client, so every HI tool (`get-plan-context`, `create-or-replace-groups`,
 `get-plan-images`, …) works in the chat exactly as it does for Claude or
-Copilot. Moving a group is a `create-or-replace-groups` resubmit with its id
-and a new `repositioningData` — there is no separate placement tool.
+Copilot. A new group is positioned by the `placement` it is created with.
 
 ### The chat backend package
 

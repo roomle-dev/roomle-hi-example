@@ -52,9 +52,9 @@ Then try a write operation:
 Add a group of three tall units to the wall on the right.
 ```
 
-The agent authors article picks with a docking chain and a `repositioningData`
-taken from the right wall — one `create-or-replace-groups` call creates, docks,
-and positions the group.
+The agent authors article picks with a docking chain and a `placement` taken
+from the right wall — one `create-or-replace-groups` call creates, docks, and
+positions the group.
 
 The unit tests live in `tests/` (server and tool logic) and `../hi-mcp-poc-json-client/tests/` (page bridge) —
 `npm test` in the `hi-mcp/` folder runs them (vitest).

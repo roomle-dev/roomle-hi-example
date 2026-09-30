@@ -73,8 +73,8 @@ The agent gets a small set of tools:
   e.g. the attribute behind "front colour" with its allowed values
 - create-or-replace-groups — creates or replaces groups; a root module is
   just an article pick plus its docking relation to a neighbouring module,
-  the group is positioned with repositioningData (one point and one rotation
-  taken from a wall) and moved by resubmitting it
+  a new group is positioned with a placement (one point and one rotation
+  taken from a wall)
 - update-attribute, get-price, get-order-data, get-plan-images — changing
   attributes, verifying prices/order data, and inspecting the result visually
 

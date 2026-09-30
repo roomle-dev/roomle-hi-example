@@ -309,6 +309,14 @@ rule for the served text; the docs are checked by a grep at close-out.
 
 ## Implementation plan (2026-09-30)
 
+> **Progress (2026-09-30)**: commits 1–4 of §7 are implemented on the branch, with P1, P3 and P4
+> applied as recommended: `group-placement.ts` with 19 tests; `create-or-replace-groups` with the
+> placement input, the rejections and the rewritten agent text, guarded by a test of the served
+> text; `get-plan-context` without `cornerPoint`; the documentation. `npx vitest run`: 96 tests
+> pass (the pre-existing `cf` load failure is unchanged); typecheck clean. Every create is one
+> load. Not done: the live verification (§8.2, §8.3) and the close-out (commit 5); P0 is still
+> open, so the first corner kitchen of an empty plan is anchored at the left end of its row.
+
 > **Status**: proposed, awaiting review (step 5 of the suggested change workflow) — no code before
 > it is approved.
 > **Scope**: the position of **new** groups only, set in the one load that creates them. Nothing in

@@ -110,10 +110,11 @@ The start script (`npm start`) provides:
 │       ├── server.ts             # Entry point: /mcp + WebSocket bridge on :3100
 │       ├── hi-mcp-server.ts      # McpServer setup + tool registrations (zod)
 │       ├── tool-executors.ts     # Tool logic: validation, planner call composition, hints
+│       ├── group-placement.ts    # Placement of a new group -> anchor root and planner repositioning
 │       ├── planner-api.ts        # The planner methods the tools call, relayed to the page
 │       ├── page-bridge.ts        # Connected-page registry, call correlation
 │       ├── types.ts              # WebSocket message protocol
-│       ├── tests/                # Unit tests (tool-executors, planner-api, page-bridge, hi-mcp-server)
+│       ├── tests/                # Unit tests (tool-executors, group-placement, planner-api, page-bridge, hi-mcp-server)
 │       ├── README.md             # Complete PoC documentation (clients: INT-stage ligna-store, HI presets example)
 │       └── QUICKSTART.md         # Shortest path to a first tool call
 │   ├── hi-mcp-poc-json-client/   # Page side of the server (reference copy; the store runs its own)
@@ -174,12 +175,12 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 2. **Articles** — Catalog of available modules with dimensions, docking vectors, categories
 3. **Groups** — Collections of root modules (article picks) with docking relationships
 4. **Docking** — Roots are positioned relative to each other via docking vectors and modes
-5. **Positioning** — Groups are positioned with `repositioningData`: one point and one rotation, taken from a wall's `end` and `facingRotationY`
+5. **Positioning** — New groups are positioned with a `placement`: one point and one rotation, taken from a wall's `end` and `facingRotationY`; the server anchors the group (`group-placement.ts`)
 
 ### Authoring Rules
 
 - Never author root positions — roots are positioned by docking only
-- Groups are positioned with `repositioningData` only (`posRotationY` counter-clockwise as seen from above: right wall 270, left wall 90)
+- New groups are positioned with a `placement` only (`posRotationY` counter-clockwise as seen from above: right wall 270, left wall 90)
 - Roots within a group must be docked to already-placed roots
 - Docking uses vector pairs: ownDockingVector -> dockingVector with mode and offset
 - Free docking vectors indicate where new modules can be added
@@ -313,7 +314,7 @@ This starts:
 3. Connect MCP client
 4. Call tools like:
    - `get-plan-context` — Get current rooms, articles, groups
-   - `create-or-replace-groups` — Add, modify, position or move groups
+   - `create-or-replace-groups` — Add, modify or extend groups; position new groups
    - `get-price` — Calculate pricing
    - `get-order-data` — Get order information
    - `get-plan-images` — Render plan images

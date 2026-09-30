@@ -270,9 +270,7 @@ coordinate system throughout (3D, right-handed, Y up).
   from a calculated root of the same article in the plan), `insertLevels` and
   `subModules` (fronts, appliances — id, name, desc, imageUrl);
   `cornerArticle` is `true` for an article made for a room corner (it carries
-  `LeftBack`/`RightBack` docking vectors), and `cornerPoint` is its root-local
-  corner point — the start of those vectors, measured from the template or
-  from a calculated root of the article in the plan
+  `LeftBack`/`RightBack` docking vectors)
 - `groups` — the groups currently in the plan: a read-only `position`
   (`pos`, `rotationY`, `footprint`) and per root the article pick (`id`,
   `articleId`, input `attributes`, `contextData` with vector names only) plus
@@ -294,7 +292,7 @@ Example: `{ "include": ["articles", "groups"] }`
 
 No parameters. Returns the [authoring rules](#authoring-pos-groups) as text:
 the payload format of `create-or-replace-groups`, the root-module fields, how
-to position a group with `repositioningData`, the docking vectors with their valid pairs, `mode` and
+to position a new group with a `placement`, the docking vectors with their valid pairs, `mode` and
 `offset`, and the recipes for a row, a wall unit above a base unit, an island
 and a corner. Answered by the server itself — it works even without a
 connected page. Agents should fetch this before authoring pos groups (the same
@@ -320,28 +318,26 @@ Example: `{ "text": "front" }`
 ### create-or-replace-groups
 
 Creates or replaces HI object groups from an array of pos groups — and
-positions them in the same call. A group whose `id` matches an existing group
-**completely replaces** that group (root modules keep their ids when they
-already exist in the replaced group); all other groups are created with
-regenerated ids. Roots are **article picks** (`{ id, articleId, attributes?,
+positions new groups in the same call. A group whose `id` matches an existing
+group **completely replaces** that group and keeps its position (root modules
+keep their ids when they already exist in the replaced group); all other
+groups are created with regenerated ids. Roots are **article picks** (`{ id, articleId, attributes?,
 contextData? }`) — the glue logic completes them from the article template;
 the planner calculates and arranges the docked root modules. The agent never
 authors root positions.
 
-Each group is positioned with `repositioningData: { posGroup, posRotationY,
-rootId }` — see [Positioning a group](#positioning-a-group). It is applied
-once, during the load, so the group never appears at the origin first. To
-move an existing group, resubmit it with its id and a new
-`repositioningData`; a replace without it keeps the group where it is.
+A new group is positioned with `placement: { posGroup, posRotationY,
+rootId? }` — see [Positioning a group](#positioning-a-group). It is applied
+once, during the load that creates the group, so the group never appears at
+the origin first.
 
 Invalid payloads are rejected with per-group validation errors before
 anything is loaded: missing `roots`, missing pick fields (`id`, `articleId`),
 an unknown `articleId` (the error lists the catalog), `articlePos`/`rotationY`
 on any root or `pos`/`rotationY` on a group, undocked roots in a multi-root group,
-a `placement` (no longer supported — the error points to `repositioningData`),
-and invalid `repositioningData` (`posGroup` not three numbers, `posRotationY`
-missing or not a number — state 0 explicitly, `rootId` not a root of the
-group, `rootRelPos` not three numbers).
+an invalid `placement` (`posGroup` not three numbers, `posRotationY` missing
+or not a number — state 0 explicitly, `rootId` not a root of the group, any
+other field), and a `placement` on a group that is already in the plan.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -353,15 +349,14 @@ is still unpositioned.
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm
 room, from the back right corner, one call. `posGroup` is the right wall's
-`end` (`[4000, 0, -3000]`), `270` its `facingRotationY`, and `u1` the anchor
-(the docking starts from it, listed first):
+`end` (`[4000, 0, -3000]`), `270` its `facingRotationY`:
 
 ```json
 {
   "posGroups": [
     {
       "libraryId": "<libraryId>",
-      "repositioningData": { "posGroup": [4000, 0, -3000], "posRotationY": 270, "rootId": "u1" },
+      "placement": { "posGroup": [4000, 0, -3000], "posRotationY": 270 },
       "roots": [
         {
           "id": "u1",
@@ -399,17 +394,17 @@ room, from the back right corner, one call. `posGroup` is the right wall's
 ```
 
 Example — an L-shaped kitchen in the back right corner of the same room is
-ONE group: the corner article `c1` is the anchor at the corner point, with
-`rootRelPos` negating its catalog `cornerPoint` of `[-261, 0, 0]`; the row
-docked to its `RightBottom` runs along the right wall, the row docked to its
-`LeftBottom` along the back wall (one unit per row shown):
+ONE group starting with the corner article `c1`: `posGroup` is the corner
+point, `270` the rotation of the right back corner; the row docked to its
+`RightBottom` runs along the right wall, the row docked to its `LeftBottom`
+along the back wall (one unit per row shown):
 
 ```json
 {
   "posGroups": [
     {
       "libraryId": "<libraryId>",
-      "repositioningData": { "posGroup": [4000, 0, -3000], "posRotationY": 270, "rootId": "c1", "rootRelPos": [261, 0, 0] },
+      "placement": { "posGroup": [4000, 0, -3000], "posRotationY": 270 },
       "roots": [
         {
           "id": "c1",
@@ -477,17 +472,18 @@ The guiding principle: **the agent declares what and where, the planner
 arranges the units.** The agent picks the articles, docks them and gives the
 group one point and one rotation; the planner calculates every root position.
 
-- A pos group is `{ id?, libraryId?, repositioningData?, roots: [...] }`.
+- A pos group is `{ id?, libraryId?, placement?, roots: [...] }`.
   Sending a group whose `id` matches an existing group
-  replaces that group; without a matching `id` a new group is created.
+  replaces that group and keeps its position; without a matching `id` a new
+  group is created at its `placement`.
 - A root module is an **article pick and nothing else**: `{ id, articleId,
   attributes?, contextData? }`. The server rejects a root that carries
   `articlePos` or `rotationY` and a group that carries `pos` or `rotationY`,
   ignores every other field, and drops roots marked `isGenerated` (worktop,
   toe kick — the library regenerates them). Every root position comes from
-  the docking; the group position comes from `repositioningData`. `id` is a
+  the docking; the position of a new group comes from its `placement`. `id` is a
   temporary unique id of your choice for new
-  roots (regenerated by the planner, docking and repositioning references are
+  roots (regenerated by the planner, docking and placement references are
   remapped automatically); keep the real ids of roots that already exist in a
   replaced group. The catalog says what an article is (`desc`, `category`),
   how big it is (`dimensions`), how it docks (`dockingVectors`) and what it
@@ -500,7 +496,7 @@ group one point and one rotation; the planner calculates every root position.
   `find-attributes`.
 - **Never author a position**: no `articlePos`/`rotationY` on a root, no
   `pos`/`rotationY` on a group — the payload is rejected. Roots are
-  positioned by docking only; a group is positioned with `repositioningData`
+  positioned by docking only; a new group is positioned with `placement`
   only — see [Positioning a group](#positioning-a-group).
 - **Extending a kitchen**: units next to an existing group are roots of that
   group, never a new group. Take the group from `get-plan-context`, add the
@@ -543,10 +539,9 @@ group one point and one rotation; the planner calculates every root position.
   `EndEnd`, `y` offset), a worktop lying on a unit (`LeftTop → LeftBottom`,
   no offset), an island (`BackBottom → BackBottom`, no `mode`), a room corner
   (start the group with a corner article, `cornerArticle: true` in the
-  catalog, give it `repositioningData` with the corner point as `posGroup`,
-  `rootRelPos` = the negated `cornerPoint`, and
-  the `facingRotationY` of the wall that ends in that corner as
-  `posRotationY`, and continue the rows along both walls from its
+  catalog, give the group a `placement` with the corner point as
+  `posGroup` and the `facingRotationY` of the wall that ends in that corner
+  as `posRotationY`, and continue the rows along both walls from its
   `RightBottom` and `LeftBottom` — prefer this over butting two straight units
   together).
 - Verify results numerically: the returned groups carry `position` (`pos`,
@@ -556,32 +551,17 @@ group one point and one rotation; the planner calculates every root position.
 
 ## Positioning a group
 
-A group is positioned by one point and one rotation,
-`repositioningData: { posGroup, posRotationY, rootId }` — the same mechanism
+A new group is positioned by one point and one rotation, given in the call
+that creates it: `placement: { posGroup, posRotationY, rootId? }` — the same
 for a group at a wall, in a corner, or anywhere in the room.
 
 - **One group per kitchen**: every unit standing beside, above or back to
-  back with another unit is a root of the same group, docked to it. Only the
-  anchor root carries a position — a kitchen is never split into several
-  positioned groups.
-- **Anchor**: `rootId` names the anchor — the root the docking chains start
-  from, listed first in `roots` (in an L-shaped kitchen the corner article,
-  in a row its leftmost unit). Its left back bottom corner is placed exactly
-  at `posGroup`, in millimetres (`y` = 0 on the floor; for a group of wall
-  units only, their mounting height), and it stands in the room with
-  rotation `posRotationY`.
-- **Corner offset**: a corner article's corner point can lie left of its
-  origin — the blind zone. The catalog's `cornerPoint` says where, in
-  root-local millimetres (Furniture_Smith: `[-261, 0, 0]`). Add `rootRelPos`
-  = the negated `cornerPoint` to the `repositioningData`: the corner point
-  then lands exactly at `posGroup`. `rootRelPos` is root-local and is rotated
-  with `posRotationY` by the planner, so the same value is right in every
-  corner — never add the offset to a room point like `posGroup` without
-  rotating it by `posRotationY` first. An empty plan carries no `cornerPoint`
-  yet (it is measured from calculated roots): then load, compare the returned
-  `position.pos` — the corner point in the room — with the intended point P,
-  and resubmit with `posGroup` shifted by `P − position.pos`, keeping
-  `posRotationY`; the room-space delta already contains the rotation.
+  back with another unit is a root of the same group, docked to it. The group
+  carries one placement — a kitchen is never split into several positioned
+  groups.
+- **Point**: `posGroup` is the room point of the group's back left bottom
+  corner, in millimetres (`y` = 0 on the floor; for a group of wall units
+  only, their mounting height). In a room corner it is the corner point.
 - **Rotation**: `posRotationY` turns the group around `posGroup`, in degrees,
   **counter-clockwise as seen from above** (in the top-view image). This is
   the `rotationY` convention of the kernel and the glue logic, verified in
@@ -604,9 +584,8 @@ for a group at a wall, in a corner, or anywhere in the room.
   `position.footprint.widthMm` of a loaded group already includes the gaps).
 - **Rectangular room** (back = top, front = bottom in the top-view image). A
   corner takes the corner point as `posGroup` and the `facingRotationY` of the
-  wall that ends in that corner; with the article's `cornerPoint` offset
-  compensated by `rootRelPos` (see **Corner offset**), its corner point goes
-  exactly into the corner:
+  wall that ends in that corner; a corner kitchen starts with a corner
+  article, and its rows run along both walls:
 
   | Wall / corner | `posRotationY` | Corner: `RightBottom` row runs along | Corner: `LeftBottom` row runs along |
   | --- | --- | --- | --- |
@@ -615,10 +594,13 @@ for a group at a wall, in a corner, or anywhere in the room.
   | Front wall / right front corner | 180 | front wall, to the left | right wall, to the back |
   | Right wall / right back corner | 270 | right wall, to the front | back wall, to the left |
 
+- **Two corner articles** (a U-shaped kitchen): set `rootId` to the corner
+  article that goes into the corner `posGroup` names.
 - **Anywhere else** (an island, the middle of the room, next to a door): any
   free floor point as `posGroup`, any `posRotationY`.
-- **Moving a group**: resubmit it from `get-plan-context` with its id and a
-  new `repositioningData`.
+- **New groups only**: the placement is applied once, when the group is
+  created. A placement on a group that is already in the plan is rejected; a
+  group resubmitted without placement keeps its position.
 
 ## Demo walkthrough
 
@@ -628,16 +610,14 @@ With a connected agent, this sequence exercises the whole example:
    vectors and dimensions), current groups; `find-attributes` for the
    attribute behind a requested property
 2. `create-or-replace-groups` — create one group with two docked cabinets and
-   `repositioningData` with the right wall's `end` as `posGroup` and its
+   a `placement` with the right wall's `end` as `posGroup` and its
    `facingRotationY` as `posRotationY`; they appear arranged along the right
    wall, from the back right corner
 3. Take the group from the result, change it, resubmit with its id — the
    group is updated, not duplicated
-4. Resubmit the group with a new `repositioningData` (another wall's `end`
-   and `facingRotationY`) — the group moves to that wall
-5. `update-attribute` — change a dimension; the plan updates visibly
-6. `get-price` — returns the total
-7. `get-plan-images` — the agent sees the plan
+4. `update-attribute` — change a dimension; the plan updates visibly
+5. `get-price` — returns the total
+6. `get-plan-images` — the agent sees the plan
 
 ## Example prompts
 
@@ -649,13 +629,12 @@ operations:
 | "What articles are available in this library? Summarize them with their descriptions." | `get-plan-context` (`articles`) |
 | "Describe the room and the groups currently in the plan." | `get-plan-context` (`rooms`, `groups`) |
 | "Create a sideboard of three docked cabinets, 800 mm wide each, against the longest wall." | `get-plan-context`, `create-or-replace-groups` |
-| "Add a group of three tall units to the wall on the right." | `get-plan-context`, `create-or-replace-groups` (`repositioningData` from the right wall) |
-| "Move the group to the back right corner." | `get-plan-context`, `create-or-replace-groups` (resubmit with `repositioningData`: the right wall's `end`, `posRotationY` 270) |
+| "Add a group of three tall units to the wall on the right." | `get-plan-context`, `create-or-replace-groups` (`placement` from the right wall) |
 | "Add a wardrobe next to the existing group." | `get-plan-context`, `create-or-replace-groups` (replace: the wardrobe docks to a free vector of the group's end root) |
 | "Make all cabinets in the group 900 mm high." | `get-plan-context`, `create-or-replace-groups` (replace) or `update-attribute` |
 | "Which attribute sets the front colour, and which values are allowed?" | `find-attributes` |
 | "Put a wall unit above each base unit." | `get-plan-context`, `create-or-replace-groups` (replace, stacking recipe) |
-| "Plan an L-shaped kitchen into the back right corner." | `get-plan-context` (a `cornerArticle`), `create-or-replace-groups` (corner recipe, `repositioningData` at the corner point, `posRotationY` 270) |
+| "Plan an L-shaped kitchen into the back right corner." | `get-plan-context` (a `cornerArticle`), `create-or-replace-groups` (corner recipe, `placement` at the corner point, `posRotationY` 270) |
 | "Replace the middle cabinet with a drawer unit." | `get-plan-context`, `create-or-replace-groups` (replace) |
 | "What does the current plan cost?" | `get-price` |
 | "Show me the plan." | `get-plan-images` |

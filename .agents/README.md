@@ -78,6 +78,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [Corner kitchen not docked after the positioning rules](bug-analysis/corner-kitchen-not-docked-after-positioning-rules.md) | Open | 2026-09-29 |
 | [Corner article's corner point offset from its root origin](bug-analysis/corner-article-corner-point-offset-from-root-origin.md) | Open | 2026-09-29 |
 | [Cloudflare image build fails on the stale hi-mcp lockfile](bug-analysis/cf-docker-build-stale-hi-mcp-lockfile.md) | Fixed | 2026-09-29 |
+| [Agent placement in a room corner: findings](bug-analysis/agent-placement-in-a-room-corner-findings.md) | Open | 2026-09-30 |
 
 ### Feature Analyses
 
@@ -119,10 +120,9 @@ Performance measurements, bottleneck analyses, and optimization studies.
 
 Outstanding defects, performance optimizations, and refactoring follow-ups for roomle-hi-example.
 
-*This folder is initially empty. Add backlog documents as needed.*
-
 | Document | Last touched |
 |---|---|
+| [Backlog](backlog/README.md) — make group positioning easier for the agent | 2026-09-30 |
 
 ---
 

@@ -206,6 +206,9 @@
         border-top: none;
         box-sizing: border-box;
       }
+      #chat-overlay.minimized .chat-overlay-content {
+        display: none;
+      }
       /* Chat overlay styling */
       #chat-messages {
         flex: 1;
@@ -377,7 +380,7 @@
       <div id="chat-overlay" class="hidden">
         <div class="chat-overlay-header">
           <h3>Planning Assistant</h3>
-          <button id="chat-overlay-toggle" class="chat-overlay-toggle" aria-label="Toggle chat" aria-expanded="true" aria-controls="chat-overlay-content">−</button>
+          <button id="chat-overlay-toggle" class="chat-overlay-toggle" aria-label="Toggle chat" aria-expanded="false" aria-controls="chat-overlay-content">−</button>
         </div>
         <div id="chat-overlay-content" class="chat-overlay-content">
           <div id="chat-messages" aria-live="polite"></div>
@@ -899,6 +902,7 @@
         chatOverlay.classList.add('expanded');
         chatOverlay.classList.remove('minimized');
         chatOverlayToggle.textContent = '−';
+        chatOverlayToggle.setAttribute('aria-expanded', 'true');
         leftSection.style.display = 'none';
         togglePanelCheckbox.checked = false;
       } else {
@@ -907,6 +911,7 @@
         chatOverlay.classList.add('expanded');
         chatOverlay.classList.remove('minimized');
         chatOverlayToggle.textContent = '−';
+        chatOverlayToggle.setAttribute('aria-expanded', 'false');
       }
 
       // Chat overlay toggle - expand/collapse upwards
@@ -914,6 +919,7 @@
         const isMinimized = chatOverlay.classList.toggle('minimized');
         chatOverlay.classList.toggle('expanded', !isMinimized);
         chatOverlayToggle.textContent = isMinimized ? '+' : '−';
+        chatOverlayToggle.setAttribute('aria-expanded', String(!isMinimized));
       });
 
       // Debug panel toggle with mutual exclusion
@@ -924,11 +930,14 @@
             leftSection.style.display = 'flex';
             tcArea.classList.remove('hidden');
             chatOverlay.classList.add('hidden');
+            chatOverlayToggle.setAttribute('aria-expanded', 'false');
           } else {
             leftSection.style.display = 'none';
             chatOverlay.classList.remove('hidden');
             chatOverlay.classList.add('expanded');
             chatOverlay.classList.remove('minimized');
+            chatOverlayToggle.textContent = '−';
+            chatOverlayToggle.setAttribute('aria-expanded', 'true');
           }
         } else {
           // Default mode: just toggle debug panel

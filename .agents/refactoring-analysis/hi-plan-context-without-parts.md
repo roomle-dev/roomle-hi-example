@@ -25,7 +25,7 @@ planner's part list. And the heavy part of the groups section is something else:
 of category `Info`, about 65 % of it.
 
 Recommendation: no code change for parts. If the goal is a smaller groups section, the lever is the
-`Info` log messages (see [Follow-up](#follow-up-needs-a-decision)).
+`Info` log messages (see [Follow-up](#follow-up-can-the-log-messages-be-removed)).
 
 ## The assumption checked
 

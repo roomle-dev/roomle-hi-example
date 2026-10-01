@@ -175,6 +175,33 @@ describe('hi-mcp-server tool calls', () => {
     expect(text).toContain('Example 5');
   });
 
+  it('tells the agent where the size of an article is and to trust every desc over an image', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    const { tools } = await client.listTools();
+    const descriptionOf = (name: string) =>
+      tools.find((tool) => tool.name === name)?.description;
+
+    expect(rules).toContain('its value in millimetres');
+    expect(rules).toContain(
+      'change-module-attribute with that attribute id, never its name, changes the size of a unit',
+    );
+    expect(rules).toContain('Every desc');
+    expect(rules).toContain('is authoritative');
+    expect(rules).toContain('only for what no desc and no dimension states');
+    expect(descriptionOf('get-plan-context')).toContain(
+      'with their values in millimetres',
+    );
+    expect(descriptionOf('get-plan-context')).toContain(
+      'trust them over any image',
+    );
+    expect(descriptionOf('get-plan-images')).toContain(
+      'evaluate the images only for what those do not state',
+    );
+  });
+
   it('never tells the agent how the server positions a group internally', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(

@@ -50,6 +50,18 @@
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens)
 
+**Article size**: per root module of an article, `dimensions` lists the size attributes with id,
+name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels
+`mod_UprightDepth`, `mod_UprightHeight`; the range hood `DU` and the TV `SM_TV` have none). A root
+in `groups` carries the same ids among its `attributes`; a group's `position.footprint` gives
+`widthMm`/`depthMm` of the whole group. A unit is resized with `change-module-attribute` and the
+attribute id, never its name.
+
+**Trusted descriptions**: every `desc` (article, root, module, attribute, attribute value) is
+authoritative, and `dimensions` give the size. The agent evaluates an image (`get-plan-images`, a
+user picture) only for what no `desc` and no dimension states — the rule is in
+`get-authoring-rules` and in the descriptions of `get-plan-context` and `get-plan-images`.
+
 **Usage**:
 ```javascript
 const context = await getPlanContext({ include: 'rooms,articles' });

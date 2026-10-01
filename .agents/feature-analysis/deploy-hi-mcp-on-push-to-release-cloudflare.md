@@ -3,7 +3,7 @@
 > **Trigger**: "Is it possible to implement a GitHub workflow which deploys the hi-mcp on Cloudflare? I want that if something is pushed to the branch release/cloudflare, the hi mcp is deployed for this branch."
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Implemented (first deploy run pending the one-time setup)
 
 ---
 
@@ -300,3 +300,18 @@ Every later release works the same way: merge into `master`, then fast-forward
 | `.agents/skills/hi-mcp-cloudflare-deployment.md` | "Updating the server": the workflow first; the missing Containers permission as a pitfall |
 | `AGENTS.md` | Repository structure (`.github/workflows/`); Development workflow: deploying via `release/cloudflare` |
 | `.agents/README.md` | index line for this document |
+
+---
+
+## 9. Close-out (2026-10-01)
+
+Implemented on `feat/cloudflare-deploy-workflow`:
+
+| Change | Verified |
+| ------ | -------- |
+| `.github/workflows/deploy-cloudflare.yml`, as in section 4 | actionlint 1.7.7 clean. The verify step's `curl` gets 200 from the live deployment. The install, typecheck and test steps pass on a clean clone of `release/cloudflare` with this branch's vitest config |
+| `hi-mcp/vitest.config.ts`: `@cloudflare/containers` inlined (section 3.2) | 214/214 tests in 11 files, in the working copy and in the clean clone |
+| Docs: [cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md) (deploy from GitHub, one-time setup, update section, troubleshooting), the [skill](../skills/hi-mcp-cloudflare-deployment.md), `README.md`, `minimal-hi-example/docs/hi-mcp-server.md`, `AGENTS.md` | — |
+
+Not verified yet: the first authenticated run. It needs the one-time setup of section 5 (token,
+environment, secrets), the merge into `master`, and the fast-forward of `release/cloudflare`.

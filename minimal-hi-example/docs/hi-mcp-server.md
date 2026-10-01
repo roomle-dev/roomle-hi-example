@@ -118,7 +118,9 @@ To use the MCP server deployed on Cloudflare instead of a local one, run
 `--dev`). The launcher then starts no local MCP server. It opens the example with
 `mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<OS user name>`,
 points the chat at `…/mcp?session=<OS user name>` and prints that URL for
-external MCP clients. Each developer gets a container of their own. The example
+external MCP clients. Each OS user name gets a container of its own. Two
+machines with the same user name share it, and their pages then take the
+connection from each other. The example
 has to run on port 3000, because `http://localhost:3000` is the only local origin
 the deployed server accepts, and the launcher refuses another `EXAMPLE_PORT`.
 The deployment runs the last deployed image, so server changes on a branch

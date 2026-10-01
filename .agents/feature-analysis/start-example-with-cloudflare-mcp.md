@@ -147,8 +147,9 @@ parameter, without a launcher change.
 
 The launcher always uses a session, and its name is the OS user name:
 
-- each developer gets their own container, so a store user on `default` and a second developer
-  are not affected
+- each OS user name gets its own container, so a store user on `default` is not affected, and
+  neither is a second developer with a different user name. Two machines with the **same** user
+  name share the container (see the limitations below)
 - the name stays the same across restarts, so an external MCP connector only has to be set up once
   with `…/mcp?session=<name>`
 - the same developer with two example tabs open still has the reconnect problem. This is the same
@@ -156,6 +157,11 @@ The launcher always uses a session, and its name is the OS user name:
 
 ### Known limitations (accepted)
 
+- The OS user name is unique per machine, not across machines. Two developers with the same user
+  name, such as generic container users (`node`, `root`, `vscode`) or the same short name, share
+  one session, and their pages take the connection from each other. A machine-unique name was
+  rejected (see the alternatives). If this happens in practice, the follow-up is an
+  `HI_MCP_SESSION` override.
 - The cloud server runs the **last deployed** image, not the working tree. Server changes on a
   branch are not tested with `start:cf` until `npm run deploy:cf` has run. If the protocol differs,
   the existing "outdated page bridge" error appears.
@@ -172,6 +178,8 @@ The launcher always uses a session, and its name is the OS user name:
 | ----------- | ------------ |
 | No session (`default` container) | Shared with every handout user of the store. The reconnect behavior makes two pages take the connection from each other every few seconds |
 | A random session per start | Every restart changes the MCP URL, so external connectors would have to be set up again each time |
+| OS user name plus hostname | Not stable. The macOS hostname depends on the network (`….local`, `….fritz.box`, …), so the session and the MCP URL would change between networks |
+| A random id stored in a local file | Unique and stable, but it adds state to the launcher (a file, a gitignore entry, and a name nobody recognizes in `wrangler tail`) for a collision that personal user names make unlikely |
 | `HI_MCP_SESSION` / `HI_MCP_SERVER_URL` environment overrides | Nobody asked for them; the page parameters already cover other servers when the URL is opened by hand. Easy to add later |
 | Allow more origins in the container (`HI_MCP_PAGE_ORIGINS` in `container.ts`) so other ports work | Needs a deploy and widens the origin list for everyone, only for a non-default port. Refusing the port is enough for now |
 | The launcher passes a ready `wss://…/bridge?session=` URL in its own parameter | That would be a second parameter vocabulary next to the store's. Using the same parameters keeps the setup matrix to one table |
@@ -253,6 +261,21 @@ Verified live on 2026-10-01 against `https://hi-mcp-poc.hi-orchestrator.workers.
 | 4 | `EXAMPLE_PORT=3001 node minimal-hi-example/start.mjs --cf` | exits with code 1 and the port message, before the build gate |
 | 5 | regression: `node minimal-hi-example/start.mjs --no-open` | URL without `mcp_server`, local server on :3100, the page opened `ws://localhost:3100/bridge`, `get-plan-context` returned 111 articles |
 | 6 | `npm test` in `hi-mcp` | 10 test files and 209 tests pass. `cf/tests/worker.test.ts` fails to load `@cloudflare/containers` in exactly the same way with this change stashed, so it was already failing and is unrelated |
+
+Review follow-up (Copilot on PR #45):
+
+- `userInfo()` ran on every launch, and it throws when the uid has no passwd entry, as in
+  development containers with an arbitrary uid. That stopped `npm start` and `npm run dev`
+  although only `--cf` uses the session. The lookup now runs only under `--cf`. Reproduced with a
+  preload that makes `os.userInfo` throw: before the fix the local launcher crashed, after it the
+  launcher and server start.
+- `mcp_server=wss://host/bridge` became `…/bridge/bridge`. The page now keeps an existing
+  `/bridge` suffix, as the ligna-store resolver does. Checked with 8 query cases taken from the
+  page's own `resolveBridgeUrl`, including the store's test inputs, and live again through the
+  Worker (111 articles).
+- The docs claimed that every developer gets their own container. That holds per OS user name, not
+  across machines, so the claim is corrected and the collision is recorded as an accepted
+  limitation.
 
 Two observations outside this feature:
 

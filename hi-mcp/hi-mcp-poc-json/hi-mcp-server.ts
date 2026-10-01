@@ -71,9 +71,14 @@ Typical workflow:
 
 ${AUTHORING_RULES}`;
 
+// The plan context carries a signed CDN image URL for every article, module
+// and attribute value - three quarters of its tokens, and no agent can open them.
+const withoutImageUrls = (key: string, value: unknown) =>
+  key === 'imageUrl' ? undefined : value;
+
 const textResult = (result: unknown) => ({
   content: [
-    { type: 'text' as const, text: JSON.stringify(result ?? null, null, 2) },
+    { type: 'text' as const, text: JSON.stringify(result ?? null, withoutImageUrls) },
   ],
 });
 
@@ -101,14 +106,14 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'wall: a side label (left/right/top/bottom as seen in the top-view image), start/end [x, 0, z] in millimetres ' +
         '(the 3D contour points on the floor), lengthMm, type, heightMm, thicknessMm and facingRotationY - the ' +
         'posRotationY of a group standing with its back against that wall), articles (compact catalog: articleId, ' +
-        'name, desc, category, image, and per root module its master-data module, dimensions, main attribute values, ' +
+        'name, desc, category, and per root module its master-data module, dimensions, main attribute values, ' +
         'docking vector names, insert levels and sub-modules, plus cornerArticle ' +
         'for articles made for a room corner) and groups (the groups currently in the plan: position with pos, rotationY and footprint, and ' +
         'per root the article pick with input attributes, docking, docking vector names and the free docking vectors ' +
-        'a new root can dock to, plus its desc and imageUrl - no root positions, ' +
+        'a new root can dock to, plus its desc - no root positions, ' +
         'no geometry; a returned group is a valid create-or-replace-groups payload). masterData (per library the root ' +
         'modules and the customer-facing attributes with their allowed values; modules, attributes and values carry ' +
-        'their desc and imageUrl, e.g. the swatch of a colour) is returned only when included ' +
+        'their desc) is returned only when included ' +
         'explicitly; the same compacted attribute vocabulary is searched by find-attributes. Use it before ' +
         'authoring or modifying groups.',
       inputSchema: {
@@ -130,7 +135,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       description:
         'Searches the attribute vocabulary of the loaded libraries by text (attribute id, name, description, ' +
         'group or selection name) and returns the matching attributes with their allowed values (each with ' +
-        'desc and imageUrl) and the root modules that carry them. The vocabulary is the compacted master data ' +
+        'its desc) and the root modules that carry them. The vocabulary is the compacted master data ' +
         'of get-plan-context (root modules and their customer-facing attributes). Use it to find the attribute ' +
         'for a requested property, e.g. the front colour, and the value to set.',
       inputSchema: {

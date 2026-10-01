@@ -5,8 +5,13 @@
 > **Trigger**: "parts (PosPartData) should be removed from the groups in the plan context (getPlanContext roomle-ui) … parts just put a huge amount of data in the context, but are not needed in any way". Analyse the assumption: is there anything that speaks against it?
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Done
 > **Branch**: `refactor/hi-plan-context-without-parts` (roomle-ui from `master`, roomle-hi-example)
+>
+> **Close-out (2026-10-01)**: Parts were not changed; they were never in the plan context. By
+> decision, **all** `logMessages` (not only `Info`) were removed from the plan context groups in
+> roomle-ui, and the MCP server no longer tells the agent to check them. See the
+> [Report](#report-close-out-2026-10-01).
 
 ## Verdict
 
@@ -130,7 +135,58 @@ Where to filter is open:
 - in the MCP server `textResult`, where the `imageUrl` stripping went because the plan context API
   also serves other callers ([tool results exceed the context](../bug-analysis/tool-results-exceed-mistral-context.md)).
 
-## Code and documents the work would touch
+**Decision (2026-10-01, Gernot Steinegger):** remove the `logMessages` in `getPlanContext`, all
+categories, in roomle-ui.
 
-None for the parts. The roomle-ui branch `refactor/hi-plan-context-without-parts` stays empty
-unless the follow-up lands there.
+---
+
+## Report (close-out, 2026-10-01)
+
+### Summary of changes
+
+`shapeRoot` and `shapeGroup` no longer copy `logMessages`, so the groups of `getPlanContext` carry
+none, at root level or group level. The agent instructions and docs of the MCP server no longer
+mention them. Parts stay as they were.
+
+### Changed files
+
+| Repository | File | Change |
+|---|---|---|
+| roomle-ui | `homag-intelligence/src/hi-plan-context.ts` | `logMessages` removed from `HiPlanRoot`, `HiPlanGroup`, `shapeRoot`, `shapeGroup`; the `PosErrorMsg` import dropped |
+| roomle-ui | `homag-intelligence/__tests__/hi-plan-context-test.ts` | the `shapeGroup` test gives the root an `Error` and the group an `Info` message and asserts that neither survives |
+| roomle-hi-example | `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` | the instruction "logMessages entries with category Error mean the input is wrong" and "any Error logMessages" in the `create-or-replace-groups` description removed |
+| roomle-hi-example | `hi-mcp/hi-mcp-poc-json/tests/tool-executors.test.ts` | the shaped-group fixture loses `logMessages` (the raw-group fixture keeps it) |
+| roomle-hi-example | `minimal-hi-example/docs/hi-mcp-server.md`, `hi-mcp/hi-mcp-poc-json/README.md`, `.agents/skills/hi-mcp-tools.md` | the same instruction removed from the docs |
+
+The group commands of the unmerged RML-18004 branches return their groups through `shapeGroup`, so
+they lose the log messages too once both are merged.
+
+### Before / after
+
+Computed from the stored run (compact JSON without `imageUrl`), not measured live:
+
+| Run | Groups section before | After |
+|---|---|---|
+| 06 full kitchen, 12 roots | 31,226 chars | about 11,000 chars |
+| 05 kitchen, 6 roots | 10,950 chars | about 4,150 chars |
+
+### Tests
+
+- roomle-ui: the adjusted `shapeGroup` test fails against the old `hi-plan-context.ts` and passes
+  with the change. The homag-intelligence suite passes (409 tests on the branch; 465 on
+  `feat/hi-mcp-command-api-RML-18004`, where the commit was cherry-picked as `e2712a6a7`).
+  `lint:types` (UI, SDK, embedding) is clean.
+- roomle-hi-example: the hi-mcp typecheck is clean and all 209 unit tests pass. `cf/tests/worker.test.ts`
+  fails to load because `@cloudflare/containers` is missing from the local `node_modules`, as on
+  `master`.
+
+### Risks and open items
+
+- **The agent loses its only feedback on a bad input in a new group.** Creating or replacing a group
+  loads a failed calculation as it is, and the MCP server does not validate attribute values (see
+  the follow-up above). A bad attribute override in `create-or-replace-groups` now goes unnoticed
+  unless the result shows it otherwise (missing docking vectors, a wrong footprint). Not verified
+  that the library writes an `Error` in that case at all.
+- **Deployment:** planners without this roomle-ui commit (bo-test today) still return the log
+  messages; the agent is no longer told about them.
+- Not verified in a live planner session.

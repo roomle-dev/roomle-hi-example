@@ -114,8 +114,8 @@ The chat takes an image only when the model reads images. The chat backend
 decides this from the model id it resolved (`readsImages` in
 `hi-mcp/hi-mcp-chat/chat-config.ts`): every Anthropic and Google model, and
 from the other providers the ids in `IMAGE_INPUT_MODELS`:
-`mistral-large-latest`, `mistral-medium-latest`, `gpt-4o`, `gpt-5-mini` and
-`gpt-6-astra`. Any other id gets no image input. That includes a pass-through
+`mistral-large-latest`, `mistral-medium-latest`, `gpt-4o`, `gpt-5-mini`,
+`gpt-5.4-mini` and `gpt-6-astra`. Any other id gets no image input. That includes a pass-through
 `mistral-*` id and an Azure deployment named with `HI_CHAT_MODEL`. The startup
 banner shows the result (`Images: yes` or `no`), and `GET /capabilities` gives
 it to the page.

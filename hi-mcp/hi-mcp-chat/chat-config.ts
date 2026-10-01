@@ -87,6 +87,7 @@ export const IMAGE_INPUT_MODELS = [
   'mistral-medium-latest',
   'gpt-4o',
   'gpt-5-mini',
+  'gpt-5.4-mini',
   'gpt-6-astra',
 ];
 

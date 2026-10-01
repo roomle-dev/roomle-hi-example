@@ -169,10 +169,10 @@ describe('getChatConfig', () => {
     expect(imageInput({ HI_CHAT_PROVIDER: 'gemini-flash' })).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'azure' })).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-5-mini' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-5.4-mini' })).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-6-astra' })).toBe(true);
 
     expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-large-2411' })).toBe(false);
-    expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-5.4-mini' })).toBe(false);
     expect(
       imageInput({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'my-deployment' }),
     ).toBe(false);

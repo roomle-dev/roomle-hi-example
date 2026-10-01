@@ -2,6 +2,38 @@
 
 This document provides a collection of prompt examples for testing the Roomle HI (HOMAG Intelligence) room planning capabilities. These prompts can be used to verify the functionality of the MCP server tools when creating and positioning kitchen groups in Roomle sessions.
 
+## Plans
+
+### Default Room
+
+plan snapshot id: `ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv`
+
+![Default Room](./images/default-room.png)
+
+### Living Room
+
+plan snapshot id: `ps_nwzhfk8bjc2gu02gsyocsdragi0rxey`
+
+![Living Room](./images/living-room.png)
+
+### Closets
+
+plan snapshot id: `ps_n9zrz89zsyy46l34mkf5pd52cx2ea2y`
+
+![Closets](./images/closets.png)
+
+### Utility Room
+
+plan snapshot id: `ps_mq3m2wuhq6w23ry742eh50nb2vub5ej`
+
+![Utility Room](./images/utility-room.png)
+
+### Room and Attic
+
+plan snapshot id: `ps_qn012p0tjux6dabt6oym0bzngmqex70u`
+
+![Rooms and Attic](./images/room-and-attic.png)
+
 ## Basic Group Placement
 
 ### Simple Group Additions

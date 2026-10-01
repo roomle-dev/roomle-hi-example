@@ -126,6 +126,7 @@ done. The analysis and the report are the same document — the report is append
 | [Use hi-mcp-poc-json server for minimal-hi-example](refactoring-analysis/use-hi-mcp-poc-json-server-for-minimal-example.md) | Done | 2026-09-27 |
 | [Group placement via repositioningData](refactoring-analysis/group-placement-via-repositioning-data.md) | Open | 2026-09-29 |
 | [HI MCP tool logic in every client page](refactoring-analysis/hi-mcp-tool-logic-in-client-pages.md) | Done | 2026-09-29 |
+| [Parts (PosPartData) in the groups of the plan context](refactoring-analysis/hi-plan-context-without-parts.md) | Open | 2026-10-01 |
 
 ### Benchmarks & Performance Analyses
 

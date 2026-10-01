@@ -334,6 +334,77 @@ const dockingErrors = (roots: any[]): string[] => {
   ];
 };
 
+const SIDE_VECTORS = ['LeftBottom', 'RightBottom'];
+
+const MIRRORED_MODE: Record<string, string> = {
+  StartEnd: 'EndStart',
+  EndStart: 'StartEnd',
+};
+
+// Where a docking entry puts the partner on a root's vector: the mode and the
+// offset as seen from that root. An entry written on the partner names the
+// two vectors the other way round, so its mode and offset are mirrored.
+const dockingPlace = (dockedRoot: any, mirrored: boolean): string => {
+  const mode = typeof dockedRoot.mode === 'string' ? dockedRoot.mode : 'StartStart';
+  const offset = [0, 1, 2].map(
+    (axis) => Math.round(Number(dockedRoot.offset?.[axis] ?? 0) || 0) * (mirrored ? -1 : 1),
+  );
+  return JSON.stringify([mirrored ? (MIRRORED_MODE[mode] ?? mode) : mode, ...offset]);
+};
+
+// The planner arranges every root docked to a side vector against that edge,
+// so two of them with the same mode and offset take the same place; a
+// different mode or offset can separate them along the edge or beside it.
+// Read in both directions, as the planner mirrors every entry; a mirrored
+// entry names the same partner again, and a root outside the group takes no
+// place. Each error continues the "posGroups[i]" prefix.
+const sideVectorErrors = (roots: any[]): string[] => {
+  const rootIds = new Set(roots.map((root) => root?.id));
+  const partnersOf = new Map<string, Map<string, Map<string, string>>>();
+  const meet = (rootId: string, vector: string, partnerId: string, place: string) => {
+    if (!SIDE_VECTORS.includes(vector)) {
+      return;
+    }
+    const vectors = partnersOf.get(rootId) ?? new Map<string, Map<string, string>>();
+    const partners = vectors.get(vector) ?? new Map<string, string>();
+    if (!partners.has(partnerId)) {
+      partners.set(partnerId, place);
+    }
+    vectors.set(vector, partners);
+    partnersOf.set(rootId, vectors);
+  };
+  for (const root of roots) {
+    for (const dockedContext of root?.contextData?.dockedRoots ?? []) {
+      for (const dockedRoot of dockedContext?.dockedRoots ?? []) {
+        if (!rootIds.has(dockedRoot?.id) || dockedRoot.id === root.id) {
+          continue;
+        }
+        meet(root.id, dockedContext.ownDockingVector, dockedRoot.id, dockingPlace(dockedRoot, false));
+        meet(dockedRoot.id, dockedRoot.dockingVector, root.id, dockingPlace(dockedRoot, true));
+      }
+    }
+  }
+  const errors: string[] = [];
+  for (const [rootId, vectors] of partnersOf) {
+    for (const [vector, partners] of vectors) {
+      const atPlace = new Map<string, string[]>();
+      for (const [partnerId, place] of partners) {
+        atPlace.set(place, [...(atPlace.get(place) ?? []), partnerId]);
+      }
+      for (const sharing of atPlace.values()) {
+        if (sharing.length > 1) {
+          errors.push(
+            `: roots ${sharing.map((id) => `'${id}'`).join(', ')} are docked to the ${vector} of root '${rootId}' ` +
+              'with the same mode and offset - they stand in the same place. A side vector (LeftBottom, RightBottom) ' +
+              'takes one neighbour there: continue a row from the free side vector of its last unit',
+          );
+        }
+      }
+    }
+  }
+  return errors;
+};
+
 const invalidPosGroups = (errors: string[]): Error =>
   new Error(
     'Invalid pos groups - nothing was loaded:\n' +
@@ -663,7 +734,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         }
       });
       validationErrors.push(
-        ...dockingErrors(group.roots).map(
+        ...[...dockingErrors(group.roots), ...sideVectorErrors(group.roots)].map(
           (error) => `posGroups[${groupIndex}]${error}`,
         ),
       );

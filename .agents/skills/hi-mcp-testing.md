@@ -118,9 +118,10 @@ A result is a bug when the system, not the model, is at fault:
 | the model's own input is wrong: another wall or point (a wall's `start` instead of its `end`), other articles, missing items, a broken docking graph the rules do not promise to reject, stopped early, no tool call | **model finding**, no bug |
 | provider errors: authorization, quota, rate limit | **environment**, no bug |
 
-A model finding the server could have caught — a footprint outside the room, several roots on one
-docking vector, a wall unit as the placement anchor — is also a **hardening candidate**: the report
-lists these separately, with how often they occurred.
+A model finding the server could have caught — a wall unit as the placement anchor — is also a
+**hardening candidate**: the report lists these separately, with how often they occurred. A group
+placed outside the room is a model finding only, never a hardening candidate: the user may ask for
+a placement outside the room, so the server must not refuse it.
 
 For a corner article the server adds the corner point offset to `posGroup` itself — compare the
 corner, not the raw point. State the evidence (file and value) behind every bug verdict.

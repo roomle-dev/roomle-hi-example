@@ -184,6 +184,7 @@ docking. Every command keeps the group's position. Resubmitting the group with
 - A `placement` on a group that is already in the plan
 - Invalid articleId
 - Roots the docking does not connect to the first root (two chains that never meet, a root with no docking)
+- Two roots on one side docking vector (`LeftBottom`, `RightBottom`) with the same mode and offset — they would stand in the same place; Top vectors and `BackBottom` may carry several
 - Invalid docking vectors
 
 ### Returned as a hint (the group is loaded):

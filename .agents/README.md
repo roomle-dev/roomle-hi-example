@@ -85,6 +85,10 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [Right-handed corner article placed outside the room](bug-analysis/right-handed-corner-article-placed-outside-the-room.md) | Fixed | 2026-09-30 |
 | [get-plan-images reaches Mistral as base64 text](bug-analysis/plan-images-sent-as-text-to-mistral.md) | Fixed | 2026-10-01 |
 | [Tool results fill Mistral's context within one turn](bug-analysis/tool-results-exceed-mistral-context.md) | Fixed | 2026-10-01 |
+| [A chat turn that reaches the step limit ends without an answer](bug-analysis/chat-turn-ends-without-answer-at-step-limit.md) | Fixed | 2026-10-01 |
+| [The worktop colour is not discoverable](bug-analysis/worktop-colour-not-discoverable.md) | Fixed (roomle-ui branch, not deployed) | 2026-10-01 |
+| [change-module-attribute reports success for an attribute the module does not have](bug-analysis/change-module-attribute-accepts-a-missing-attribute.md) | Fixed (roomle-ui branch, not deployed) | 2026-10-01 |
+| [A merged group's toe kick reaches 120 mm into the back wall](bug-analysis/merged-group-toe-kick-reaches-into-the-wall.md) | Open | 2026-10-01 |
 
 ### Feature Analyses
 

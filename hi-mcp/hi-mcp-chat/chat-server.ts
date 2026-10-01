@@ -5,10 +5,11 @@ import { createAzure } from '@ai-sdk/azure';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createMistral } from '@ai-sdk/mistral';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { stepCountIs, streamText, wrapLanguageModel } from 'ai';
+import { streamText, wrapLanguageModel } from 'ai';
 import type { ChatConfig } from './chat-config';
 import { getChatConfig } from './chat-config';
 import { createChatRequestHandler, type StreamChat } from './chat-handler';
+import { chatSteps } from './chat-steps';
 import { toolResultFilesAsUserMessages } from './tool-result-images';
 
 const CHAT_SYSTEM_PROMPT = [
@@ -113,7 +114,7 @@ const streamChat: StreamChat = async (messages) => {
       // Without this the stream stops after the first step: tool calls are
       // never executed and never sent back to the model, so tool-driving
       // prompts produce an empty answer.
-      stopWhen: stepCountIs(8),
+      ...chatSteps,
     });
     // Mid-stream failures (Mistral auth, tool relay) surface as [error] parts
     // in the stream - the response has already started by then.

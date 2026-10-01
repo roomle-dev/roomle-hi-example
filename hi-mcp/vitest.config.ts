@@ -11,6 +11,8 @@ export default defineConfig({
     },
   },
   test: {
+    // its dist imports files without extensions - Node cannot load it unbundled
+    server: { deps: { inline: ['@cloudflare/containers'] } },
     include: [
       'hi-mcp-poc-json/tests/**/*.test.ts',
       'hi-mcp-poc-json-client/tests/**/*.test.ts',

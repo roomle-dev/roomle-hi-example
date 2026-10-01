@@ -79,6 +79,8 @@ export interface ChatMessage {
 
 // Inline image data only: the AI SDK downloads an image given as a URL itself.
 const IMAGE_DATA_URL = /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/;
+// The text of a user message that carries images but no text.
+export const DEFAULT_IMAGE_PROMPT = 'Plan a kitchen like the one in the image.';
 
 // Models of the other providers known to read images; Anthropic and Google
 // models all do. Any other model id gets no image input.
@@ -180,7 +182,7 @@ export const toModelMessages = (messages: ChatMessage[]): ModelMessage[] =>
       ? {
           role: 'user',
           content: [
-            { type: 'text', text: content },
+            { type: 'text', text: content.trim() || DEFAULT_IMAGE_PROMPT },
             ...images.map((image) => ({
               type: 'file' as const,
               data: image,

@@ -528,6 +528,12 @@ Prerequisites:
 | `.agents/skills/vercel-ai-sdk-chat.md` | Local wiring: user images as data URLs only, because the SDK downloads URLs itself |
 | this document | Close-out: what was verified, status `Implemented` |
 
+Decision after the close-out: the default text "Plan a kitchen like the one in the image." moved
+from the page to the chat backend (`DEFAULT_IMAGE_PROMPT` in `toModelMessages`). Every client now
+gets it for a user message with images and an empty text. The page sends the empty text, and the
+user's message in the chat window shows only the image. Verified live with `mistral-large-latest`:
+the request carried `content: ""` and the model planned a kitchen from the image.
+
 ### Commits
 
 | # | Commit | Content |

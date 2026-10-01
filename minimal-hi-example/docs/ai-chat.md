@@ -136,8 +136,9 @@ In the page (only when `/capabilities` answers `imageInput: true`):
   (`image prepared: 1568x1276, … KB`).
 - **Preview**: the attached image is shown small above the input, with a × to
   remove it. After sending, it is shown in the user's message.
-- **Text**: with an image and an empty input, the message text is "Plan a
-  kitchen like the one in the image."
+- **Text**: an image can be sent with an empty input. The user's message then
+  shows only the image, and the chat backend gives the model the default text
+  (see below).
 - The images stay in the conversation and go along with every turn, so a
   follow-up can refer to the image.
 
@@ -148,8 +149,13 @@ A user message carries its images in `images`, an array of base64 data URLs
 (`image/jpeg`, `image/png`, `image/webp` or `image/gif`):
 
 ```json
-{ "role": "user", "content": "Plan a kitchen like the one in the image.", "images": ["data:image/jpeg;base64,/9j/..."] }
+{ "role": "user", "content": "", "images": ["data:image/jpeg;base64,/9j/..."] }
 ```
+
+A user message with images and an empty (or blank) `content` gets the text
+"Plan a kitchen like the one in the image." (`DEFAULT_IMAGE_PROMPT` in
+`chat-config.ts`). The backend adds it for every client, the page, the test
+script and curl alike.
 
 The backend accepts no image URL, because the AI SDK would download it in the
 backend. It passes the images to the model as file parts of the user message

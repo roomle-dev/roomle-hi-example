@@ -237,6 +237,20 @@ describe('parseChatMessages', () => {
 });
 
 describe('toModelMessages', () => {
+  it('gives a user message with images but no text the default image prompt', () => {
+    for (const content of ['', '  ']) {
+      expect(toModelMessages([{ role: 'user', content, images: [IMAGE] }])).toEqual([
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Plan a kitchen like the one in the image.' },
+            { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
+          ],
+        },
+      ]);
+    }
+  });
+
   it('turns the images of a user message into file parts', () => {
     expect(
       toModelMessages([

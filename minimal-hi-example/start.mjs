@@ -15,7 +15,7 @@
 //                  npm start gemini <api-key>           (gemini-2.5-pro; gemini-flash: gemini-2.5-flash)
 //                  npm start azure <api-key>            (gpt-4o deployment; also set
 //                                                          AZURE_RESOURCE_NAME and HI_CHAT_MODEL=<deployment>)
-//                  npm start gpt-5-mini <api-key>       (gpt-5-mini / gpt-5.4-mini deployment
+//                  npm start gpt-5-mini <api-key>       (gpt-5-mini / gpt-5.4-mini / gpt-6-astra deployment
 //                                                          on the HI Azure AI Foundry resource)
 //                  npm start mistral-<model-id> <api-key> passes the id through
 //                  npm run dev <provider> <api-key> combines chat and local Rubens UI server.
@@ -56,6 +56,7 @@ const CHAT_PROVIDERS = [
   'openai',
   'gpt-5-mini',
   'gpt-5.4-mini',
+  'gpt-6-astra',
 ];
 const isChatProvider = (name) =>
   CHAT_PROVIDERS.includes(name) ||

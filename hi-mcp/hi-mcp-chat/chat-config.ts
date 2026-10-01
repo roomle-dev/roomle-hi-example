@@ -15,7 +15,7 @@ export interface ChatModel {
 // Deployments on the HI Azure AI Foundry resource, reached through its OpenAI
 // v1 endpoint: the CLI name is the deployment name.
 export const FOUNDRY_BASE_URL = 'https://dfhifoundrysweden.services.ai.azure.com/openai/v1';
-export const FOUNDRY_DEPLOYMENTS = ['gpt-5-mini', 'gpt-5.4-mini'];
+export const FOUNDRY_DEPLOYMENTS = ['gpt-5-mini', 'gpt-5.4-mini', 'gpt-6-astra'];
 
 // CLI provider names (npm start <provider>) resolved to a provider and model.
 // Full model ids pass through: mistral-*, claude-* and gemini-* ids map to their
@@ -65,7 +65,7 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
     return { provider: 'google', modelId: name };
   }
   throw new ChatRequestError(
-    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, or a full mistral-*/claude-*/gemini-* model id`,
+    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, gpt-6-astra, or a full mistral-*/claude-*/gemini-* model id`,
   );
 };
 

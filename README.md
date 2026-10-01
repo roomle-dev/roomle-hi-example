@@ -33,6 +33,13 @@ npm start openai <api-key>
 | `npm start azure <api-key>` | Plus chat with Azure OpenAI (also `openai`; needs `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL=<deployment-name>`) |
 | `npm run dev <same arguments>` | Same as the matching `npm start` variant, but the planner loads from the local Rubens UI dev server (:5173) |
 
+Deploy the MCP server to Cloudflare (`npx wrangler deploy` in `hi-mcp/cf`; needs Node 22+ and a
+one-time `npx wrangler login`):
+
+```bash
+npm run deploy:cf
+```
+
 Details: [AI chat](./minimal-hi-example/docs/ai-chat.md) ·
 [example and MCP server reference](./minimal-hi-example/docs/hi-mcp-server.md) ·
 [hi-mcp PoCs](./hi-mcp/README.md)

@@ -47,7 +47,7 @@ const EXAMPLE_SERVER_URL =
 const CLOUDFLARE_MCP_SERVER_URL = 'https://hi-mcp-poc.hi-orchestrator.workers.dev';
 const CLOUDFLARE_PAGE_PORT = 3000;
 const useCloudflareMcp = process.argv.includes('--cf');
-const MCP_SESSION = userInfo().username;
+const MCP_SESSION = useCloudflareMcp ? userInfo().username : undefined;
 const MCP_URL = useCloudflareMcp
   ? `${CLOUDFLARE_MCP_SERVER_URL}/mcp?session=${encodeURIComponent(MCP_SESSION)}`
   : `http://localhost:${MCP_PORT}/mcp`;

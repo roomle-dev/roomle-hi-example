@@ -116,6 +116,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [Article size and trusted descriptions](feature-analysis/article-size-and-trusted-descriptions.md) | Implemented | 2026-10-01 |
 | [Start the HI example with the Cloudflare-hosted MCP server](feature-analysis/start-example-with-cloudflare-mcp.md) | Implemented | 2026-10-01 |
 | [Deploy hi-mcp to Cloudflare on a push to release/cloudflare](feature-analysis/deploy-hi-mcp-on-push-to-release-cloudflare.md) | Implemented (first run pending setup) | 2026-10-01 |
+| [Images in the Planning Assistant chat](feature-analysis/chat-image-input.md) | Open | 2026-10-01 |
 
 ### Refactoring Analyses
 

@@ -1,8 +1,8 @@
 # Feature Analysis: Images in the Planning Assistant Chat
 
 **Date:** 2026-10-01
-**Status:** Open — implementation plan proposed, awaiting review (two analysis reviews applied 2026-10-01, see [Review decisions](#review-decisions-2026-10-01))
-**Branch:** `feat/chat-image-input` (planned, from `master`)
+**Status:** Implemented (2026-10-01, see [Close-Out](#close-out-2026-10-01))
+**Branch:** `feat/chat-image-input` (from `master`)
 
 ## What Was Asked and Why
 
@@ -353,11 +353,10 @@ Follow-ups, not part of this feature:
    `false`, and the overlay shows no drop mark and the old placeholder.
 5. Text-only turns behave as before.
 
-
 ## Implementation Plan (2026-10-01)
 
-> **Status**: proposed, awaiting review (step 5 of the suggested change workflow). No code before
-> it is approved.
+> **Status**: implemented on 2026-10-01, see [Close-Out](#close-out-2026-10-01). The plan below is
+> the approved one; the close-out lists where the implementation differs.
 > **Branch**: `feat/chat-image-input`, from `master`. The analysis (this document and the two
 > index lines) is its first commit.
 > **Baseline**: `cd hi-mcp && npx vitest run`: 214 tests in 11 files pass. `npm run typecheck`
@@ -543,3 +542,66 @@ Prerequisites:
 
 Not touched: the MCP tools, `withoutImageUrls`, the page bridge, the launcher, the Mistral
 middleware, the ligna-store.
+
+## Close-Out (2026-10-01)
+
+Implemented as planned on `feat/chat-image-input`, with three differences:
+
+1. **File parts, not image parts.** User images go to `streamText` as
+   `{ type: 'file', data: <data URL>, mediaType: 'image/…' }`. AI SDK 7 deprecates the `image`
+   part, and the first live run logged that warning on every step. The SDK's mock model confirmed
+   that the data URL is converted inline (base64, `image/jpeg`, no download). The `gpt-5.4-mini`
+   run logged no warning.
+2. **Documentation in the code commits.** Each documentation update went into the commit of the
+   code it describes, at the review's request, instead of a separate docs commit.
+3. **`gpt-5.4-mini` reads images.** One direct call with the 1568 px reference listed its units
+   correctly (tall sage-green unit, wood wall cabinets, oven, sage base cabinets) at 892 input
+   tokens. It is now on `IMAGE_INPUT_MODELS`.
+
+### Commits
+
+| Commit | Content |
+| ------ | ------- |
+| `a9c5581` docs: analyse images in the planning assistant chat | this document, index lines |
+| `8e12a7c` feat: tell the chat page whether the model reads images | `readsImages`, `imageInput`, `GET /capabilities`, banner, tests, `ai-chat.md` |
+| `216767f` feat: accept images on user messages in the chat backend | `images`, validation, `toModelMessages`, `400`, tests, `ai-chat.md`, chat skill |
+| `3d1abd5` fix: limit the desc-over-image rule to the catalog images | the three server texts, tests, `hi-mcp-server.md`, `hi-mcp-tools.md` |
+| `6f66aba` feat: drop an image on the planning assistant chat | `index.html`, `ai-chat.md` (page part, troubleshooting) |
+| `5146d2a` fix: send user images as file parts instead of the deprecated image part | `toModelMessages`, tests, docs |
+| `0361391` feat: read images with gpt-5.4-mini | list, test, `ai-chat.md` |
+
+### Verification
+
+- `cd hi-mcp && npx vitest run`: 222 tests in 11 files pass (214 before). `npm run typecheck` is
+  clean.
+
+Live, headless Chromium (page :3001, MCP :3110, chat :3201, the deployed planner), with
+`docs/images/kitchen-right-wall-reference.png` (1858×1512 PNG, 1.9 MB) as a synthetic drop on the
+chat messages, then sent with an empty input:
+
+| Model | Page | Request | Image turn | Plan |
+| ----- | ---- | ------- | ---------- | ---- |
+| `mistral-large-latest` | outline while dragging, the drop is caught, 64 px preview, image and default text in the user message | one `image/jpeg`, 1568×1276, 194 KB, "Plan a kitchen like the one in the image." | 37 s | It read the photo (tall fridge unit, wall units, hood, oven, sink), but split the kitchen into three groups at the left wall, partly outside the room. This is a model finding, the known placement weakness. |
+| `gpt-6-astra` | the same | the same | 124 s | One straight 3 m run on the right wall: tall fridge unit on the left, oven and hob in the middle, sink on the right, three oak wall cabinets (one left of the hood, two right), olive-green fronts, wood worktop and plinth. It matches the reference. |
+| `gpt-5.4-mini` | the same | the same (file parts, no warning) | 23 s | It read the photo (tall unit on the left, green and wood fronts) but created only one tall unit, and said so in its answer. This is a model finding. |
+| `mistral-large-2411` (no image input) | `Images: no`, `/capabilities` false, old placeholder, the drop is neither prevented nor attached | — | — | — |
+
+In every run, the text turn that followed ("Which units did you use?") sent the image again in
+the first user message, and the model answered from its plan.
+
+Not verified: a real drop from the desktop by a person (only synthetic `DragEvent`s), a phone
+photo with an EXIF rotation, HEIC, Safari and Firefox. Claude and Gemini were not run either,
+because no keys were available.
+
+### Open
+
+- The server rule change (`3d1abd5`) reaches the Cloudflare-hosted MCP server with its next
+  deployment (a push to `release/cloudflare`).
+- The follow-ups listed above: `--image` for the run script and the testing skill, the ligna-store
+  chat, paste from the clipboard and a file picker.
+
+The living reference is the section "Images in the chat" in
+[ai-chat.md](../../minimal-hi-example/docs/ai-chat.md), plus
+[hi-mcp-server.md](../../minimal-hi-example/docs/hi-mcp-server.md) and
+[hi-mcp-tools.md](../skills/hi-mcp-tools.md) for the rule, and
+[vercel-ai-sdk-chat.md](../skills/vercel-ai-sdk-chat.md) for the wiring.

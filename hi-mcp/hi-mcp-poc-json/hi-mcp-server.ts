@@ -30,7 +30,7 @@ const AUTHORING_RULES = `Authoring rules for pos groups:
 - Extending a kitchen: units next to an existing group are roots of that group, never a new group. Dock each new unit to a free docking vector of the root it continues (freeDockingVectors per root: a free LeftBottom takes the new root's RightBottom, a free RightBottom takes LeftBottom, a free Top vector takes the new root's Bottom vector) - one unit with merge-article-into-group, several at once by adding the picks to the group from get-plan-context and resubmitting it with its id. A new group is only for a free stretch of wall or a free spot in the room - never position a new group against an existing one.
 - To move an existing group against a wall or into a room corner, call place-group: the wall by side label or index, alignment start, center or end, or the side label of the adjoining wall to sit flush in that corner (wall right + alignment top is the back right corner), offsetMm along the wall. The group keeps its roots and docking.
 - To change an existing group, use the command tools: merge-article-into-group docks one more unit to a free docking vector of a root, exchange-root-module replaces a unit and keeps its docking, delete-root-module removes a unit (units no longer docked together become separate groups where they stand), delete-group removes a group, change-module-attribute and change-group-attribute set attributes, merge-groups joins groups where they stand (nothing is moved, no docking is added). Every command keeps the group's position and returns the changed groups. To rebuild a group, take it from get-plan-context, change it, and resubmit it with its id and without placement via create-or-replace-groups - it keeps its position; keep the ids of the root modules you keep.
-- Verify results numerically: the returned groups carry position (pos, rotationY, footprint) and per root the dockingVectors, the input attributes and the docking; logMessages entries with category Error mean the input is wrong (typically a bad articleId or attribute value). Do not judge a position from a rendering alone.
+- Verify results numerically: the returned groups carry position (pos, rotationY, footprint) and per root the dockingVectors, the input attributes and the docking. Do not judge a position from a rendering alone.
 
 Example 1 - "a row of three tall units along the right wall, from the back right corner" is ONE call, create-or-replace-groups. posGroup is the right wall's end point (the back right corner), posRotationY its facingRotationY (270 in a rectangular room):
 { "posGroups": [{ "libraryId": "<libraryId>", "placement": { "posGroup": [<end x of the right wall>, 0, <end z of the right wall>], "posRotationY": 270 }, "roots": [
@@ -189,7 +189,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'rules puts a corner kitchen into that corner). A group whose id matches an existing group completely ' +
         'replaces that group and keeps its position (root modules keep their ids when they already exist in ' +
         'the replaced group; a placement on it is rejected); all other groups are created with regenerated ids. Returns the loaded object ids and the resulting groups - ' +
-        'check their pos, footprint and any Error logMessages. The payload format is returned by get-authoring-rules.',
+        'check their pos and footprint. The payload format is returned by get-authoring-rules.',
       inputSchema: {
         posGroups: z
           .array(z.record(z.string(), z.unknown()))

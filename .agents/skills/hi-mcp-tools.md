@@ -227,7 +227,6 @@ try {
   if (error.message.includes('No page connected')) {
     console.log('Open page with ?mcp=true');
   }
-  // Check logMessages for warnings even on success
 }
 ```
 
@@ -264,6 +263,5 @@ The tools run in the server; the timeout applies to each planner call they make 
 1. Always start with `get-plan-context`
 2. Validate article IDs before using
 3. Use free docking vectors when extending
-4. Check logMessages for warnings
-5. Position every new group with a placement — for a wall, its end point and its facingRotationY
-6. Edit existing groups with the command tools; resubmit a whole group only to rebuild it
+4. Position every new group with a placement — for a wall, its end point and its facingRotationY
+5. Edit existing groups with the command tools; resubmit a whole group only to rebuild it

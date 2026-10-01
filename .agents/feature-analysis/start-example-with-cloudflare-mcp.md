@@ -1,7 +1,7 @@
 # Feature Analysis: Start the HI Example with the Cloudflare-Hosted MCP Server
 
 **Date:** 2026-10-01
-**Status:** Open
+**Status:** Implemented
 **Branch:** `feat/start-example-with-cloudflare-mcp`
 
 ## What Was Asked and Why
@@ -222,3 +222,44 @@ not stopped.
    developer?
 3. Should a port other than 3000 be refused (recommended), or should the container allow more
    origins with a redeploy?
+
+## Close-Out (2026-10-01)
+
+The user asked to implement the analysis as written ("implement it"), so the recommended answers
+to all three questions apply: the name `start:cf`, the OS user name as the session, and other
+ports are refused.
+
+Implemented as proposed:
+
+- `package.json` (root) `start:cf` → `npm run start:cf --workspace minimal-hi-example`,
+  `minimal-hi-example/package.json` `start:cf` → `node start.mjs --cf`
+- `start.mjs`: `CLOUDFLARE_MCP_SERVER_URL`, `MCP_SESSION = userInfo().username`, `MCP_URL`
+  (the cloud URL with `?session=` under `--cf`, used for the chat backend and the printed line),
+  `mcp_server` + `mcp_session` in `EXAMPLE_URL`, no local MCP server, and an exit when
+  `EXAMPLE_PORT` is not 3000
+- `index.html`: `resolveBridgeUrl()` reads `mcp_server` / `mcp_session`, and without them falls
+  back to `ws://localhost:${mcp_port ?? 3100}/bridge`
+- living docs: root `README.md`, `minimal-hi-example/README.md`, `docs/hi-mcp-server.md`,
+  `docs/ai-chat.md`, the PoC setup matrix, `hi-mcp/docs/cloudflare-mcp-server.md` (new section
+  "Trying it with the HI example"), the Cloudflare and MCP server skills, and `AGENTS.md`
+
+Verified live on 2026-10-01 against `https://hi-mcp-poc.hi-orchestrator.workers.dev`:
+
+| # | Check | Result |
+| - | ----- | ------ |
+| 1 | `node minimal-hi-example/start.mjs --cf --no-open` | URL with `mcp_server=https%3A%2F%2Fhi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=gernotsteinegger`, MCP line `…/mcp?session=gernotsteinegger`, nothing on :3100 |
+| 2 | headless Chromium on that URL + MCP SDK client on the cloud URL | the page opened `wss://hi-mcp-poc.hi-orchestrator.workers.dev/bridge?session=gernotsteinegger`; `get-plan-context` returned 111 articles from the `bo-test` planner after 10 s |
+| 3 | `npm run start:cf mistral $MISTRAL_API_KEY` from the root (with a no-op `open` on the PATH, so no browser tab opened) | npm ran `node start.mjs --cf mistral <key>`; the chat backend printed the cloud MCP URL and connected with 15 tools; one chat turn called `get-plan-context` (1.9 s) and answered (Mistral miscounted the articles as 120, which is the model, not the bridge) |
+| 4 | `EXAMPLE_PORT=3001 node minimal-hi-example/start.mjs --cf` | exits with code 1 and the port message, before the build gate |
+| 5 | regression: `node minimal-hi-example/start.mjs --no-open` | URL without `mcp_server`, local server on :3100, the page opened `ws://localhost:3100/bridge`, `get-plan-context` returned 111 articles |
+| 6 | `npm test` in `hi-mcp` | 10 test files and 209 tests pass. `cf/tests/worker.test.ts` fails to load `@cloudflare/containers` in exactly the same way with this change stashed, so it was already failing and is unrelated |
+
+Two observations outside this feature:
+
+- Sending `SIGTERM` to the launcher's PID leaves its grandchild servers running: the vite-node
+  MCP server on :3100 and the chat backend on :3200. This happens with plain `npm start` as well,
+  because `npm` does not forward the signal. Ctrl+C in a terminal signals the whole process group
+  and is not affected.
+- `npm run start:cf -- --no-open` from the root does not pass `--no-open` on, because the inner
+  `npm run` takes it as its own flag. The same holds for `npm start -- --no-open` today.
+  `node minimal-hi-example/start.mjs --cf --no-open` works.

@@ -209,6 +209,28 @@ describe('hi-mcp-server tool calls', () => {
     expect(JSON.parse(textOf(result))).toEqual({ rooms: [], articles: [] });
   });
 
+  it('returns tool results as compact JSON without image URLs', async () => {
+    const imageUrl = 'https://tecconfig-preview.homag.cloud/cdn/x.png?sv=2023-11-03&sig=abc%3D';
+    const plannerApi = createMockPlannerApi({
+      getExternalObjectPlanContext: vi.fn(async () => ({
+        articles: [
+          {
+            articleId: 'HTB60',
+            imageUrl,
+            rootModules: [{ module: { id: 'mr_Tall', imageUrl }, subModules: [{ id: 'mf_Door', imageUrl }] }],
+          },
+        ],
+      })),
+    });
+    const client = await connectClient(plannerApi);
+    const text = textOf(
+      await client.callTool({ name: 'get-plan-context', arguments: {} }),
+    );
+    expect(text).toBe(
+      '{"articles":[{"articleId":"HTB60","rootModules":[{"module":{"id":"mr_Tall"},"subModules":[{"id":"mf_Door"}]}],"cornerArticle":false}]}',
+    );
+  });
+
   it('returns an error result when a planner call fails', async () => {
     const plannerApi = createMockPlannerApi({
       fetchPrice: vi.fn(async () => {

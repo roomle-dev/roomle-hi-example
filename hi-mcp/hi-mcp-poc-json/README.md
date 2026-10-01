@@ -278,6 +278,10 @@ tool is only as fast as the page. The timeout applies per planner call: 30 s by 
 `externalObjectGroupOperation` (the command tools) and `getExternalObjectSnapshot`
 (`get-order-data`, `get-plan-images`).
 
+A JSON result comes back as compact JSON without the `imageUrl` fields of the planner's plan
+context: a signed CDN URL for every article, module and attribute value — three quarters of the
+tokens of `get-plan-context`, and no agent can open them.
+
 ### get-plan-context
 
 Returns a snapshot of the HI planning session, shaped for the agent.
@@ -292,24 +296,23 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   `start`/`end` (`[x, 0, z]` in millimetres, the 3D contour points on the floor), `lengthMm`,
   `type`, `heightMm`, `thicknessMm`, and `facingRotationY` — the `posRotationY` of a group standing
   with its back against that wall (see [Positioning a group](#positioning-a-group))
-- `articles` — compact catalog: `articleId`, `articleName`, `desc`, `imageUrl`, `category`, and
-  per root module its master-data `module` (id, name, desc, imageUrl), `dimensions` (the
+- `articles` — compact catalog: `articleId`, `articleName`, `desc`, `category`, and
+  per root module its master-data `module` (id, name, desc), `dimensions` (the
   template's `Dim` attributes with name and value), `mainAttributes` (the values of the `isMain`
   attributes), `dockingVectors` (the names of its docking vectors — from the template, or from a
   calculated root of the same article in the plan), `insertLevels` and `subModules` (fronts,
-  appliances — id, name, desc, imageUrl);
+  appliances — id, name, desc);
   `cornerArticle` is `true` for an article made for a room corner (it carries `LeftBack`/`RightBack`
   docking vectors)
 - `groups` — the groups currently in the plan: a read-only `position` (`pos`, `rotationY`,
   `footprint`) and per root the article pick (`id`, `articleId`, input `attributes`,
-  `contextData` with vector names only) plus read-only facts (`articleName`, `desc`, `imageUrl`,
+  `contextData` with vector names only) plus read-only facts (`articleName`, `desc`,
   `category`, `dockingVectors`, `freeDockingVectors` — the vectors no docking entry uses, where a
-  new root can dock — `subModules` with id and imageUrl, `isGenerated`). No root positions, no
+  new root can dock — `subModules` with their id, `isGenerated`). No root positions, no
   geometry. A returned group is a valid `create-or-replace-groups` payload as it is
-- `masterData` — only when included explicitly: per library the root modules (id, name, desc,
-  imageUrl) with their relevant attribute ids, and the attributes a customer sees (`isMain` or
-  `userRight` `Simple`) with desc, imageUrl, type, group and `selections` (value, name, desc and
-  imageUrl — the swatch of a material). The same compacted attribute vocabulary is searched by
+- `masterData` — only when included explicitly: per library the root modules (id, name,
+  desc) with their relevant attribute ids, and the attributes a customer sees (`isMain` or
+  `userRight` `Simple`) with desc, type, group and `selections` (value, name and desc). The same compacted attribute vocabulary is searched by
   [find-attributes](#find-attributes)
 
 Example: `{ "include": ["articles", "groups"] }`

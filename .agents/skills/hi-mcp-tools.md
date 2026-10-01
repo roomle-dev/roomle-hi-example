@@ -46,7 +46,9 @@
 { include?: Array<'masterData' | 'rooms' | 'articles' | 'groups'> }
 ```
 
-**Returns**: Rooms, articles, groups, masterData (if requested)
+**Returns**: Rooms, articles, groups, masterData (if requested). Like every JSON result of the
+server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
+no agent can open, three quarters of the tokens)
 
 **Usage**:
 ```javascript

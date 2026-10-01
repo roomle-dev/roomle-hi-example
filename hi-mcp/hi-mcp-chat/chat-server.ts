@@ -5,10 +5,11 @@ import { createAzure } from '@ai-sdk/azure';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createMistral } from '@ai-sdk/mistral';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { stepCountIs, streamText } from 'ai';
+import { stepCountIs, streamText, wrapLanguageModel } from 'ai';
 import type { ChatConfig } from './chat-config';
 import { getChatConfig } from './chat-config';
 import { createChatRequestHandler, type StreamChat } from './chat-handler';
+import { toolResultFilesAsUserMessages } from './tool-result-images';
 
 const CHAT_SYSTEM_PROMPT = [
   'You are a planning assistant for a HOMAG Intelligence (HI) kitchen in a Roomle planner.',
@@ -40,7 +41,10 @@ const getLanguageModel = (config: ChatConfig) => {
         baseURL: config.azureBaseUrl,
       })(config.modelId);
     default:
-      return createMistral({ apiKey })(config.modelId);
+      return wrapLanguageModel({
+        model: createMistral({ apiKey })(config.modelId),
+        middleware: toolResultFilesAsUserMessages,
+      });
   }
 };
 

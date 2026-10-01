@@ -124,7 +124,7 @@ connection from each other. The example
 has to run on port 3000, because `http://localhost:3000` is the only local origin
 the deployed server accepts, and the launcher refuses another `EXAMPLE_PORT`.
 The deployment runs the last deployed image, so server changes on a branch
-need `npm run deploy:cf` first. Details:
+need a deploy first: a push to `release/cloudflare`, or `npm run deploy:cf`. Details:
 [cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md).
 
 The launcher installs and typechecks the `hi-mcp` workspace (the build gate),

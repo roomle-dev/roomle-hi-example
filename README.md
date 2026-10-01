@@ -34,11 +34,14 @@ npm start openai <api-key>
 | `npm run dev <same arguments>` | Same as the matching `npm start` variant, but the planner loads from the local Rubens UI dev server (:5173) |
 | `npm run start:cf <same arguments>` | Same as the matching `npm start` variant, but with the MCP server deployed on Cloudflare instead of a local one (session = your OS user name, page port 3000 only) |
 
-Deploy the MCP server to Cloudflare (`npx wrangler deploy` in `hi-mcp/cf`; needs Node 22+ and a
-one-time `npx wrangler login`):
+Deploy the MCP server to Cloudflare: push to `release/cloudflare`; the GitHub workflow
+`.github/workflows/deploy-cloudflare.yml` tests and deploys it. By hand, for dry runs and
+emergencies (`npx wrangler deploy` in `hi-mcp/cf`; needs Node 22+ and a one-time
+`npx wrangler login`):
 
 ```bash
-npm run deploy:cf
+git push origin origin/master:release/cloudflare   # release master
+npm run deploy:cf                                  # by hand
 ```
 
 Details: [AI chat](./minimal-hi-example/docs/ai-chat.md) ·

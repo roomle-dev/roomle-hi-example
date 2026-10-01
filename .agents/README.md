@@ -114,6 +114,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [The AI chat window in the ligna-store](feature-analysis/hi-mcp-chat-window-in-ligna-store.md) | Implemented | 2026-09-30 |
 | [Article size and trusted descriptions](feature-analysis/article-size-and-trusted-descriptions.md) | Implemented | 2026-10-01 |
 | [Start the HI example with the Cloudflare-hosted MCP server](feature-analysis/start-example-with-cloudflare-mcp.md) | Implemented | 2026-10-01 |
+| [Deploy hi-mcp to Cloudflare on a push to release/cloudflare](feature-analysis/deploy-hi-mcp-on-push-to-release-cloudflare.md) | Implemented (first run pending setup) | 2026-10-01 |
 
 ### Refactoring Analyses
 

@@ -1181,11 +1181,16 @@
       ];
 
       const resolveBridgeUrl = () => {
-        const mcpServer = getQueryParam('mcp_server');
+        const mcpServer = getQueryParam('mcp_server')
+          ?.trim()
+          .replace(/\/+$/, '')
+          .replace(/^http/, 'ws');
         const mcpSession = getQueryParam('mcp_session');
-        const bridgeUrl = mcpServer
-          ? `${mcpServer.replace(/\/+$/, '').replace(/^http/, 'ws')}/bridge`
-          : `ws://localhost:${getQueryParam('mcp_port') ?? '3100'}/bridge`;
+        const serverUrl =
+          mcpServer || `ws://localhost:${getQueryParam('mcp_port') ?? '3100'}`;
+        const bridgeUrl = serverUrl.endsWith('/bridge')
+          ? serverUrl
+          : `${serverUrl}/bridge`;
         return mcpSession
           ? `${bridgeUrl}?session=${encodeURIComponent(mcpSession)}`
           : bridgeUrl;

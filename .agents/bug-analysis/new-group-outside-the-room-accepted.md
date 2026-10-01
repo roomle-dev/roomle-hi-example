@@ -5,13 +5,13 @@
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-10-01_11-35-00/report.md` (Mistral Large, planner `bo-test`): 2 of 4 fails, runs 02 and 12
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
-> **Status**: Rejected — the fix (`e0c55d4`) was reverted in `eb950a3` the same day
+> **Status**: Rejected — the fix was implemented on `fix/mistral-mcp-test` and dropped in review before PR #42; it never reached `master`
 > **Branch**: `fix/mistral-mcp-test`
 
 > **Rejected (2026-10-01, review)**: a group outside the room is not a defect the server may
 > refuse. The user can ask for a placement outside the room (a terrace, a neighbouring space
 > without walls in the plan, a parking spot while planning), and the server cannot tell that
-> request from a wrong placement. The room check was reverted with its tests, rule sentence and
+> request from a wrong placement. The room check was removed with its tests, rule sentence and
 > docs. A group outside the room stays a **model finding** in "test the mcp", not a hardening
 > candidate (`.agents/skills/hi-mcp-testing.md`). The sections below record the analysis as it
 > was made. The validation numbers (suite 12:08) show what the check did while it existed.
@@ -136,7 +136,7 @@ check that runs on the final load only and adds no corner rule.
    `tests/tool-executors.test.ts` covers the run-02 shape (rejected, the new group removed), a
    flush group with a 10 mm overhang (loaded), and a group already in the plan (not checked).
    The existing test of the plan-context calls expects `['rooms', 'groups']`.
-5. **Living docs** (`6329f3a`): `minimal-hi-example/docs/hi-mcp-server.md`,
+5. **Living docs**: `minimal-hi-example/docs/hi-mcp-server.md`,
    `hi-mcp/hi-mcp-poc-json/README.md`, `.agents/skills/hi-mcp-tools.md` (common errors),
    `.agents/skills/hi-authoring-rules.md` (validation rules), `.agents/skills/hi-mcp-testing.md`
    (the footprint outside the room is no longer a hardening example).

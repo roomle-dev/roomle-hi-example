@@ -574,41 +574,51 @@ describe('create-or-replace-groups validation', () => {
     expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
   });
 
-  it('rejects two roots on one side vector at the same height', async () => {
-    // the corner and the fridge both meet the oven's RightBottom
+  it('rejects two roots on one side vector at the same place', async () => {
+    // the corner and the fridge both meet the oven's RightBottom; the corner's
+    // entry is written on the corner, so it reaches the oven mirrored
+    const kitchen = (cornerMode?: string, fridgeMode?: string) => [
+      {
+        roots: [
+          {
+            id: 'corner',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [
+                {
+                  ownDockingVector: 'LeftBottom',
+                  dockedRoots: [
+                    { id: 'oven', dockingVector: 'RightBottom', ...(cornerMode && { mode: cornerMode }) },
+                  ],
+                },
+              ],
+            },
+          },
+          {
+            id: 'oven',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [
+                {
+                  ownDockingVector: 'RightBottom',
+                  dockedRoots: [
+                    { id: 'fridge', dockingVector: 'LeftBottom', ...(fridgeMode && { mode: fridgeMode }) },
+                  ],
+                },
+              ],
+            },
+          },
+          { id: 'fridge', articleId: 'article-1' },
+        ],
+      },
+    ];
     await expectRejectedBeforeLoad(
-      [
-        {
-          roots: [
-            {
-              id: 'corner',
-              articleId: 'article-1',
-              contextData: {
-                dockedRoots: [
-                  {
-                    ownDockingVector: 'LeftBottom',
-                    dockedRoots: [{ id: 'oven', dockingVector: 'RightBottom' }],
-                  },
-                ],
-              },
-            },
-            {
-              id: 'oven',
-              articleId: 'article-1',
-              contextData: {
-                dockedRoots: [
-                  {
-                    ownDockingVector: 'RightBottom',
-                    dockedRoots: [{ id: 'fridge', dockingVector: 'LeftBottom' }],
-                  },
-                ],
-              },
-            },
-            { id: 'fridge', articleId: 'article-1' },
-          ],
-        },
-      ],
-      /posGroups\[0\]: roots 'corner', 'fridge' are docked to the RightBottom of root 'oven' - roots on one side vector stand in the same place/,
+      kitchen(),
+      /posGroups\[0\]: roots 'corner', 'fridge' are docked to the RightBottom of root 'oven' with the same mode and offset - they stand in the same place/,
+    );
+    await expectRejectedBeforeLoad(
+      kitchen('EndStart', 'StartEnd'),
+      /roots 'corner', 'fridge' are docked to the RightBottom of root 'oven' with the same mode and offset/,
     );
   });
 });
@@ -1236,6 +1246,40 @@ describe('create-or-replace-groups loading', () => {
               },
             },
             { id: 'wall', articleId: 'article-1' },
+          ],
+        },
+      ],
+    });
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts roots on one side vector that the mode or the offset separates', async () => {
+    // beside a deep tall unit: a shallow unit at the back, one at the front,
+    // and one further along the row
+    const api = createApi(planContextFixture);
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          roots: [
+            {
+              id: 'tall',
+              articleId: 'article-1',
+              contextData: {
+                dockedRoots: [
+                  {
+                    ownDockingVector: 'RightBottom',
+                    dockedRoots: [
+                      { id: 'back', dockingVector: 'LeftBottom', mode: 'StartStart' },
+                      { id: 'front', dockingVector: 'LeftBottom', mode: 'EndEnd' },
+                      { id: 'gap', dockingVector: 'LeftBottom', offset: [600, 0, 0] },
+                    ],
+                  },
+                ],
+              },
+            },
+            { id: 'back', articleId: 'article-1' },
+            { id: 'front', articleId: 'article-1' },
+            { id: 'gap', articleId: 'article-1' },
           ],
         },
       ],

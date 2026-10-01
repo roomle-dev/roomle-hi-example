@@ -36,8 +36,9 @@ The result is the same error as on GitHub.
 ## Root cause
 
 The root `package-lock.json` had rollup nested as `hi-mcp/node_modules/rollup` (4.63.5, the
-dependency of `hi-mcp/node_modules/vite` 6.4.3). Its lockfile entry listed all 26 platform
-binaries as `optionalDependencies`. The lockfile itself, however, contained an entry for only
+dependency of `hi-mcp/node_modules/vite` 6.4.3). Its lockfile entry listed 27
+`optionalDependencies`: the 25 `@rollup/*` platform binaries, `@napi-rs/lzma-linux-x64-gnu`,
+and `fsevents`. The lockfile itself, however, contained an entry for only
 one of them, `hi-mcp/node_modules/@rollup/rollup-darwin-arm64`. Neither rollup entry had a
 `resolved` or `integrity` field.
 
@@ -73,7 +74,8 @@ dependency of a package already in the lockfile.
 Result:
 
 - rollup moves to `node_modules/rollup` (4.63.5 → 4.63.6, a patch within vite's `^4.34.9`)
-- all 26 `@rollup/*` platform entries are added, with `resolved` and `integrity`
+- all 25 `@rollup/*` platform entries and `@napi-rs/lzma-linux-x64-gnu` are added, with
+  `resolved` and `integrity`
 - no other package changes
 
 ## Verification

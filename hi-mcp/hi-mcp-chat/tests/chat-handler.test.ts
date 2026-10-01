@@ -237,7 +237,7 @@ describe('parseChatMessages', () => {
 });
 
 describe('toModelMessages', () => {
-  it('turns the images of a user message into image parts', () => {
+  it('turns the images of a user message into file parts', () => {
     expect(
       toModelMessages([
         { role: 'user', content: 'hi' },
@@ -251,7 +251,7 @@ describe('toModelMessages', () => {
         role: 'user',
         content: [
           { type: 'text', text: 'like this' },
-          { type: 'image', image: IMAGE },
+          { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
         ],
       },
     ]);
@@ -384,7 +384,7 @@ describe('chat request handler', () => {
     });
   });
 
-  it('passes the images of a user message to the model as image parts', async () => {
+  it('passes the images of a user message to the model as file parts', async () => {
     const streamChat = vi.fn(async () => new Response('done'));
     await withServer({ HI_CHAT_TOKEN: 'secret' }, streamChat, async (url) => {
       const response = await fetch(`${url}/chat`, {
@@ -400,7 +400,7 @@ describe('chat request handler', () => {
           role: 'user',
           content: [
             { type: 'text', text: 'like this' },
-            { type: 'image', image: IMAGE },
+            { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
           ],
         },
       ]);

@@ -180,7 +180,11 @@ export const toModelMessages = (messages: ChatMessage[]): ModelMessage[] =>
           role: 'user',
           content: [
             { type: 'text', text: content },
-            ...images.map((image) => ({ type: 'image' as const, image })),
+            ...images.map((image) => ({
+              type: 'file' as const,
+              data: image,
+              mediaType: image.slice('data:'.length, image.indexOf(';')),
+            })),
           ],
         }
       : { role, content },

@@ -152,7 +152,7 @@ A user message carries its images in `images`, an array of base64 data URLs
 ```
 
 The backend accepts no image URL, because the AI SDK would download it in the
-backend. It passes the images to the model as image parts of the user message
+backend. It passes the images to the model as file parts of the user message
 (`toModelMessages`), and every provider reads them there. The Mistral
 middleware moves only the images of tool results. An image sent to a model
 that reads no images is answered with `400`.

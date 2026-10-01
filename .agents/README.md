@@ -113,6 +113,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | ["test the mcp": the prompt suite of the HI MCP testing skill](feature-analysis/hi-mcp-test-the-mcp-skill.md) | Implemented | 2026-09-30 |
 | [The AI chat window in the ligna-store](feature-analysis/hi-mcp-chat-window-in-ligna-store.md) | Implemented | 2026-09-30 |
 | [Article size and trusted descriptions](feature-analysis/article-size-and-trusted-descriptions.md) | Implemented | 2026-10-01 |
+| [Start the HI example with the Cloudflare-hosted MCP server](feature-analysis/start-example-with-cloudflare-mcp.md) | Open | 2026-10-01 |
 
 ### Refactoring Analyses
 

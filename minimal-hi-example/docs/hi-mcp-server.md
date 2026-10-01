@@ -271,8 +271,10 @@ coordinate system throughout (3D, right-handed, Y up).
   [Positioning a group](#positioning-a-group))
 - `articles` — compact catalog: `articleId`, `articleName`, `desc`,
   `category`, and per root module its master-data `module` (id, name,
-  desc), `dimensions` (the template's `Dim` attributes with
-  name and value), `mainAttributes` (the values of the `isMain` attributes),
+  desc), `dimensions` (the template's `Dim` attributes with id,
+  name and value in millimetres — for Furniture_Smith `mod_Width`, `mod_Depth`,
+  `mod_Height`; a root in `groups` carries the same ids among its input
+  `attributes`), `mainAttributes` (the values of the `isMain` attributes),
   `dockingVectors` (the names of its docking vectors — from the template, or
   from a calculated root of the same article in the plan), `insertLevels` and
   `subModules` (fronts, appliances — id, name, desc);
@@ -517,7 +519,9 @@ No parameters. Renders the current plan and returns a perspective image and a
 top-view image as MCP image content, so the agent can inspect the plan
 visually. The top-view orientation matches the wall `side` labels of
 `get-plan-context`: a wall with side `right` is at the right edge of the top
-image, `top` at the upper edge.
+image, `top` at the upper edge. The description tells the agent that the
+images show how the plan looks, while what an article is and how big it is
+come from `desc` and `dimensions` (see [Authoring pos groups](#authoring-pos-groups)).
 
 ## Authoring pos groups
 
@@ -546,7 +550,17 @@ group one point and one rotation; the planner calculates every root position.
   input attribute set — is completed automatically from the article template.
   `attributes` are `[{ id, value }]` overrides; attribute ids and allowed
   values come from the `masterData` section (requested explicitly) or from
-  `find-attributes`.
+  `find-attributes`. A unit's size is changed with `change-module-attribute`
+  and the attribute id of the dimension (e.g. `mod_Width`), never its name.
+- **Every `desc` is authoritative** — of an article, a root, a module, an
+  attribute and an attribute value: the agent trusts it for what a thing is,
+  and `dimensions` for how big an article is. It evaluates an image (a
+  rendering of `get-plan-images` or any other picture) only for what no
+  `desc` and no dimension states, and never takes the kind or the size of an
+  article from an image. Catalog images do not reach the agent at all: the
+  server strips every `imageUrl`. The range hood `DU` and the decoration TV
+  `SM_TV` of Furniture_Smith have no `dimensions` — their templates carry no
+  size attribute; the panels carry depth and height but no thickness.
 - **Never author a position**: no `articlePos`/`rotationY` on a root, no
   `pos`/`rotationY` on a group — the payload is rejected. Roots are
   positioned by docking only; a new group is positioned with `placement`

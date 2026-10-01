@@ -1161,7 +1161,8 @@
 
       // MCP bridge - active only with the mcp=true query parameter. The page
       // connects out via WebSocket to the MCP server in
-      // hi-mcp/hi-mcp-poc-json (started by start.mjs), executes the planner
+      // hi-mcp/hi-mcp-poc-json (started by start.mjs, or deployed: mcp_server
+      // and mcp_session as in the ligna-store), executes the planner
       // calls the server's tools make against roomDesignerApi.extended, and
       // sends the results back. The tool logic itself runs in the server.
 
@@ -1179,9 +1180,24 @@
         'removeExternalObject',
       ];
 
+      const resolveBridgeUrl = () => {
+        const mcpServer = getQueryParam('mcp_server')
+          ?.trim()
+          .replace(/\/+$/, '')
+          .replace(/^http/, 'ws');
+        const mcpSession = getQueryParam('mcp_session');
+        const serverUrl =
+          mcpServer || `ws://localhost:${getQueryParam('mcp_port') ?? '3100'}`;
+        const bridgeUrl = serverUrl.endsWith('/bridge')
+          ? serverUrl
+          : `${serverUrl}/bridge`;
+        return mcpSession
+          ? `${bridgeUrl}?session=${encodeURIComponent(mcpSession)}`
+          : bridgeUrl;
+      };
+
       const startMcpBrowserBridge = (api) => {
-        const mcpPort = getQueryParam('mcp_port') ?? '3100';
-        const bridgeUrl = `ws://localhost:${mcpPort}/bridge`;
+        const bridgeUrl = resolveBridgeUrl();
         const reply = (socket, result) => socket.send(JSON.stringify(result));
         const connect = () => {
           const socket = new WebSocket(bridgeUrl);

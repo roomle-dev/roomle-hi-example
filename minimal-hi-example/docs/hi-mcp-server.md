@@ -95,7 +95,7 @@ placing an order, is reachable from the server.
 | `start.mjs` | The launcher: build gate (`npm install` + typecheck of the `hi-mcp` workspace), static file server for this directory on :3000, spawns the MCP server with `HI_MCP_STORE_URL` set, opens the browser |
 | `hi-mcp/hi-mcp-poc-json/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), tool definitions with zod schemas, the tool logic (`tool-executors.ts`: payload validation, planner call composition, hints), the planner methods it calls (`planner-api.ts`), the WebSocket page bridge with call correlation and timeouts, server instructions and authoring rules — unchanged, shared with the ligna-store client and the cloud deployments |
 | `index.html` | The example itself, plus the MCP section at the end: the WebSocket browser bridge that executes the allow-listed planner methods |
-| `package.json` | The `start` script that runs the launcher, and `dev` which adds `server_url=http://localhost:5173/` |
+| `package.json` | The `start` script that runs the launcher, `dev` which adds `server_url=http://localhost:5173/`, and `start:cf` which uses the MCP server deployed on Cloudflare |
 
 ## Prerequisites
 
@@ -112,6 +112,20 @@ To develop against a local Rubens UI dev server (start it first on
 `server_url=http://localhost:5173/` to the example, so the planner loads from
 the local UI instead of `https://www.roomle.com/t/bo-test/`. `--dev` implies
 that URL; override it with `EXAMPLE_SERVER_URL=<url> npm run dev`.
+
+To use the MCP server deployed on Cloudflare instead of a local one, run
+`npm run start:cf` (`--cf`; it can be combined with the chat arguments and with
+`--dev`). The launcher then starts no local MCP server. It opens the example with
+`mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<OS user name>`,
+points the chat at `…/mcp?session=<OS user name>` and prints that URL for
+external MCP clients. Each OS user name gets a container of its own. Two
+machines with the same user name share it, and their pages then take the
+connection from each other. The example
+has to run on port 3000, because `http://localhost:3000` is the only local origin
+the deployed server accepts, and the launcher refuses another `EXAMPLE_PORT`.
+The deployment runs the last deployed image, so server changes on a branch
+need `npm run deploy:cf` first. Details:
+[cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md).
 
 The launcher installs and typechecks the `hi-mcp` workspace (the build gate),
 serves the example, starts the MCP server, and opens the example in the

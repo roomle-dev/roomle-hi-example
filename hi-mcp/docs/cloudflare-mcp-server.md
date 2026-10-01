@@ -126,6 +126,18 @@ curl -s -o /dev/null -D - -X OPTIONS https://<worker>.<subdomain>.workers.dev/mc
 A browser that cached a page from before the deploy may keep failing with "Failed to fetch" —
 reload without cache.
 
+## Trying it with the HI example (no store)
+
+From the repository root, `npm run start:cf` opens the HI presets example connected to this
+deployment. `npm run start:cf mistral <api-key>` also starts the built-in chat. No local MCP
+server starts. The page connects to `wss://<worker>.<subdomain>.workers.dev/bridge?session=<OS user name>`,
+and the launcher prints `https://<worker>.<subdomain>.workers.dev/mcp?session=<OS user name>` for
+external MCP clients. The example has to run on port 3000, because `http://localhost:3000` is the
+only local origin in the server's default `HI_MCP_PAGE_ORIGINS`, and the launcher refuses another
+`EXAMPLE_PORT`. The example always talks to the last deployed image, so deploy first to try server
+changes from a branch. The Worker URL is the constant `CLOUDFLARE_MCP_SERVER_URL` in
+`minimal-hi-example/start.mjs`, so a changed worker name needs it updated as well.
+
 ## Updating after code changes
 
 One command, in place — nothing is deleted, the URL stays the same:

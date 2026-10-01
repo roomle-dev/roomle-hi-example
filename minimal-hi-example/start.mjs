@@ -9,6 +9,8 @@
 // No browser:     npm start -- --no-open
 // Other page port: EXAMPLE_PORT=3101 npm start
 // Local Rubens UI: npm run dev  (server_url=http://localhost:5173/, override via EXAMPLE_SERVER_URL)
+// Cloudflare MCP: npm run start:cf  (the deployed MCP server instead of the local one,
+//                  session = the OS user name; page port 3000 only)
 // AI chat:        npm start mistral <api-key>          (mistral-large-latest)
 //                  npm start mistral-medium <api-key>   (mistral-medium-latest)
 //                  npm start claude <api-key>           (claude-sonnet-4-5)
@@ -19,6 +21,7 @@
 //                                                          on the HI Azure AI Foundry resource)
 //                  npm start mistral-<model-id> <api-key> passes the id through
 //                  npm run dev <provider> <api-key> combines chat and local Rubens UI server.
+//                  npm run start:cf <provider> <api-key> combines chat and the Cloudflare MCP server.
 //                  spawns the hi-mcp-chat backend (Vercel AI SDK) and opens the
 //                  example with the chat window visible
 
@@ -26,6 +29,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { userInfo } from 'node:os';
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,6 +42,15 @@ const DEV_SERVER_URL = 'http://localhost:5173/';
 const EXAMPLE_SERVER_URL =
   process.env.EXAMPLE_SERVER_URL ??
   (process.argv.includes('--dev') ? DEV_SERVER_URL : undefined);
+// The deployed server accepts the page only from its default origins
+// (http://localhost:3000), and routes every session to its own container.
+const CLOUDFLARE_MCP_SERVER_URL = 'https://hi-mcp-poc.hi-orchestrator.workers.dev';
+const CLOUDFLARE_PAGE_PORT = 3000;
+const useCloudflareMcp = process.argv.includes('--cf');
+const MCP_SESSION = useCloudflareMcp ? userInfo().username : undefined;
+const MCP_URL = useCloudflareMcp
+  ? `${CLOUDFLARE_MCP_SERVER_URL}/mcp?session=${encodeURIComponent(MCP_SESSION)}`
+  : `http://localhost:${MCP_PORT}/mcp`;
 // Chat providers the launcher accepts: the aliases below plus any full
 // mistral-*/claude-*/gemini-* model id. The chat backend resolves the same names
 // (chat-config.ts PROVIDER_MODEL_ALIASES); azure deployments are user-named
@@ -88,9 +101,12 @@ const parseChatArgs = () => {
   return { provider, apiKey };
 };
 const chat = parseChatArgs();
-const EXAMPLE_URL = `http://localhost:${STATIC_PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith${
-  process.env.HI_MCP_PORT ? `&mcp_port=${MCP_PORT}` : ''
-}${chat ? '&chat=true' : ''}${process.env.HI_CHAT_PORT ? `&chat_port=${CHAT_PORT}` : ''}${
+const MCP_SERVER_PARAMS = useCloudflareMcp
+  ? `&mcp_server=${encodeURIComponent(CLOUDFLARE_MCP_SERVER_URL)}&mcp_session=${encodeURIComponent(MCP_SESSION)}`
+  : process.env.HI_MCP_PORT
+    ? `&mcp_port=${MCP_PORT}`
+    : '';
+const EXAMPLE_URL = `http://localhost:${STATIC_PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith${MCP_SERVER_PARAMS}${chat ? '&chat=true' : ''}${process.env.HI_CHAT_PORT ? `&chat_port=${CHAT_PORT}` : ''}${
   EXAMPLE_SERVER_URL ? `&server_url=${encodeURIComponent(EXAMPLE_SERVER_URL)}` : ''
 }`;
 const STATIC_CONTENT_TYPES = {
@@ -172,7 +188,7 @@ const startChatServer = () => {
     ...process.env,
     HI_CHAT_TOKEN: chat.apiKey,
     HI_CHAT_PROVIDER: chat.provider,
-    HI_MCP_URL: `http://localhost:${MCP_PORT}/mcp`,
+    HI_MCP_URL: MCP_URL,
   };
   if (!childEnv.HI_CHAT_PAGE_ORIGINS) {
     childEnv.HI_CHAT_PAGE_ORIGINS = `http://localhost:${STATIC_PORT},http://127.0.0.1:${STATIC_PORT}`;
@@ -204,6 +220,12 @@ const openInBrowser = (url) => {
 };
 
 const main = async () => {
+  if (useCloudflareMcp && STATIC_PORT !== CLOUDFLARE_PAGE_PORT) {
+    console.error(
+      `[hi-example] --cf needs the example on port ${CLOUDFLARE_PAGE_PORT} - the Cloudflare MCP server accepts the page only from http://localhost:${CLOUDFLARE_PAGE_PORT}`,
+    );
+    process.exit(1);
+  }
   buildHiMcp();
   try {
     await startExampleServer();
@@ -216,13 +238,13 @@ const main = async () => {
     }
     process.exit(1);
   }
-  const mcpServer = startMcpServer();
+  const mcpServer = useCloudflareMcp ? undefined : startMcpServer();
   const chatServer = chat ? startChatServer() : undefined;
   console.log('');
   console.log('  HI example ready');
   console.log('');
   console.log(`  ➜  Example:  ${EXAMPLE_URL}`);
-  console.log(`  ➜  MCP:      http://localhost:${MCP_PORT}/mcp`);
+  console.log(`  ➜  MCP:      ${MCP_URL}`);
   if (chatServer) {
     console.log(`  ➜  Chat:     http://localhost:${CHAT_PORT}/chat`);
   }
@@ -232,7 +254,7 @@ const main = async () => {
   }
   const shutdown = () => {
     shuttingDown = true;
-    mcpServer.kill();
+    mcpServer?.kill();
     chatServer?.kill();
     process.exit(0);
   };

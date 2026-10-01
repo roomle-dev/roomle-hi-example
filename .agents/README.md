@@ -83,8 +83,8 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [Corner article offset missing on an empty plan](bug-analysis/corner-offset-missing-on-an-empty-plan.md) | Open | 2026-09-30 |
 | [Unconnected docking graph accepted by create-or-replace-groups](bug-analysis/unconnected-docking-graph-accepted.md) | Open | 2026-09-30 |
 | [Right-handed corner article placed outside the room](bug-analysis/right-handed-corner-article-placed-outside-the-room.md) | Fixed | 2026-09-30 |
-| [get-plan-images reaches Mistral as base64 text](bug-analysis/plan-images-sent-as-text-to-mistral.md) | Open | 2026-10-01 |
-| [Tool results fill Mistral's context within one turn](bug-analysis/tool-results-exceed-mistral-context.md) | Open | 2026-10-01 |
+| [get-plan-images reaches Mistral as base64 text](bug-analysis/plan-images-sent-as-text-to-mistral.md) | Fixed | 2026-10-01 |
+| [Tool results fill Mistral's context within one turn](bug-analysis/tool-results-exceed-mistral-context.md) | Fixed | 2026-10-01 |
 
 ### Feature Analyses
 

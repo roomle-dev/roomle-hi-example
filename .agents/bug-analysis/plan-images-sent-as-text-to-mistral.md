@@ -5,7 +5,7 @@
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-09-30_18-52-26/report.md` (mistral-large-latest, planner `bo-test`): 4 of 13 runs ended with `Prompt … > 262144 maximum context length` right after `get-plan-images`
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Fixed
 > **Branch**: `fix/chat-context-overflow-mistral`
 
 ---
@@ -63,7 +63,9 @@ unchanged (`chat-server.ts:42-43`, `:104-113`).
 
 ## Fix
 
-In the chat backend, wrap the Mistral model (`wrapLanguageModel` from `ai`) with a middleware
+*Implemented in `db97c16` as proposed.*
+
+In the chat backend, the Mistral model is wrapped (`wrapLanguageModel` from `ai`) with a middleware
 whose `transformParams` moves the `file` parts of every tool result into a user message right
 after that tool message. The tool result keeps its text parts and a short note that the images
 follow in the next message. The other providers keep their native image handling; only the
@@ -88,5 +90,10 @@ Mistral model is wrapped.
 
 ## Validation
 
-- Unit tests of the transform.
-- "test the mcp" with Mistral: no `get-plan-images` call ends a run with the context error.
+- Unit tests `hi-mcp-chat/tests/tool-result-images.test.ts` (4) pass; the workspace typecheck passes.
+- Live: "call get-plan-images and describe in two sentences what you see in the top view image"
+  with `mistral` — one tool call, no error, 12.6 s; the answer describes the empty preset room
+  correctly. Stored as `00-check-get-plan-images` of the run below.
+- "test the mcp" with Mistral, `.temp/result/mcp-test-2026-10-01_09-10-40/report.md`: no run
+  ended with an error (4 before). The model did not call `get-plan-images` in that suite, so the
+  live check above is the evidence for this fix.

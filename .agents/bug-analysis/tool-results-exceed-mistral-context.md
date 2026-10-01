@@ -5,7 +5,7 @@
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-09-30_18-52-26/report.md` (mistral-large-latest, planner `bo-test`): run 06 ended with `Prompt 262149 > 262144 maximum context length` after twelve tool calls without `get-plan-images`; gpt-5.4-mini's run 06 of 18:34 ended the same way
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Fixed
 > **Branch**: `fix/chat-context-overflow-mistral`
 
 ---
@@ -79,6 +79,8 @@ turn exceeds a 262k context.
 
 ## Fix
 
+*Implemented in `1ec4e16` as proposed; docs in `8783685`.*
+
 In the MCP server, `textResult` serializes compact JSON and omits every `imageUrl` field (a
 `JSON.stringify` replacer) — one place for every tool with a JSON result. The tool descriptions
 stop announcing `imageUrl`.
@@ -107,6 +109,18 @@ kitchen 29k → 16k; run 06's tool calls fit in about 110k tokens.
 
 ## Validation
 
-- Unit test of `textResult`.
-- Tool result sizes measured again against the fixed server.
-- "test the mcp" with Mistral: no run ends with the context error.
+- Unit test `returns tool results as compact JSON without image URLs`
+  (`hi-mcp-poc-json/tests/hi-mcp-server.test.ts`) passes; the workspace typecheck passes.
+- Measured against the fixed server (same page, same tokenizer):
+
+  | Text | Before | After |
+  |---|---|---|
+  | `get-plan-context` (default sections) | 138,084 | 29,656 |
+  | `find-attributes "walnut"` | 32,480 | 2,897 |
+
+- "test the mcp" with Mistral, `.temp/result/mcp-test-2026-10-01_09-10-40/report.md`: no run
+  ended with the context error (5 before); run 06 made the same twelve tool calls in one turn and
+  answered in 55 s (262,149 tokens and no answer before). Pass 7, partial 2, fail 4 (2 / 0 / 11
+  before).
+- The suite found a gap this fix does not touch: the worktop colour `mod_CountertopColor` is not
+  in the attribute vocabulary (see that report).

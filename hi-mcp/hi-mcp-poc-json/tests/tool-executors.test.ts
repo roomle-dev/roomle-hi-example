@@ -84,7 +84,6 @@ const makeShapedGroup = (overrides: Record<string, unknown> = {}) => {
       ...(position ?? {}),
     },
     roots: [makeShapedRoot()],
-    logMessages: [],
     ...rest,
   };
 };

@@ -595,9 +595,7 @@ calculates every root position.
   wall that ends in that corner as `posRotationY`, and continue the rows along both walls from its
   `RightBottom` and `LeftBottom` — prefer this over butting two straight units together).
 - Verify results numerically: the returned groups carry `position` (`pos`, `rotationY`,
-  `footprint`) and per root the `dockingVectors`, the input attributes and the docking; `logMessages`
-  entries with category `Error` mean the input is wrong (typically a bad `articleId` or attribute
-  value).
+  `footprint`) and per root the `dockingVectors`, the input attributes and the docking.
 
 ## Positioning a group
 

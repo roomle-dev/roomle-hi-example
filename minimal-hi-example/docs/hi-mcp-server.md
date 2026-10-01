@@ -622,8 +622,7 @@ group one point and one rotation; the planner calculates every root position.
   together).
 - Verify results numerically: the returned groups carry `position` (`pos`,
   `rotationY`, `footprint`) and per root the `dockingVectors`, the input
-  attributes and the docking; `logMessages` entries with category `Error`
-  mean the input is wrong (typically a bad `articleId` or attribute value).
+  attributes and the docking.
 
 ## Positioning a group
 

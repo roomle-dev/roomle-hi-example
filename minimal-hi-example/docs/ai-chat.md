@@ -120,6 +120,30 @@ from the other providers the ids in `IMAGE_INPUT_MODELS`:
 banner shows the result (`Images: yes` or `no`), and `GET /capabilities` gives
 it to the page.
 
+In the page (only when `/capabilities` answers `imageInput: true`):
+
+- **Drop**: the whole chat overlay catches a dropped file (header, messages
+  and input), and a dashed outline marks it while a file is dragged over it.
+  A drop on the collapsed overlay expands it. A file that is not an image, or
+  that the browser cannot decode (HEIC in Chrome), is not attached; the status
+  line says so. The input placeholder reads "Ask the assistant or drop an
+  image...". One image per message: a new drop replaces the attached one.
+- **The image the model gets**: the page redraws the image as a JPEG
+  (quality 0.9) with a long side of at most **1568 px**. That is the size
+  Claude reads natively, and enough detail for every configured model. A
+  smaller image keeps its size. The EXIF rotation of a phone photo is applied,
+  and transparent parts become white. The debug log records the result
+  (`image prepared: 1568x1276, … KB`).
+- **Preview**: the attached image is shown small above the input, with a × to
+  remove it. After sending, it is shown in the user's message.
+- **Text**: with an image and an empty input, the message text is "Plan a
+  kitchen like the one in the image."
+- The images stay in the conversation and go along with every turn, so a
+  follow-up can refer to the image.
+
+With images off, the chat is text-only and a dropped file behaves as in any
+page (the browser opens it).
+
 A user message carries its images in `images`, an array of base64 data URLs
 (`image/jpeg`, `image/png`, `image/webp` or `image/gif`):
 
@@ -216,6 +240,8 @@ origins, `500` when the MCP server or Mistral call fails.
 | Reply says the tool failed with "no page connected" | The example page is not open (or not with `?mcp=true`) — the browser bridge is required for tool calls |
 | `port 3200 is already in use` | A previous chat backend is still running — `lsof -ti tcp:3200 \| xargs kill`, or pick another port with `HI_CHAT_PORT` |
 | Provider error in the reply | The provider API rejected the key or the model — check the key, or set `HI_CHAT_MODEL` |
+| A dropped image opens in the tab instead of being attached | Images are off: the banner shows `Images: no` (the model is not known to read images), or the chat backend was not up yet when the page loaded the chat — the debug log says `images disabled - no capabilities`; reload the page |
+| `The model … does not read images` (400) | An image was sent to a model without image input (curl, a script, or a page from an earlier backend) |
 
 ## Open follow-ups
 

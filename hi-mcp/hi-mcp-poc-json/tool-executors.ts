@@ -334,6 +334,61 @@ const dockingErrors = (roots: any[]): string[] => {
   ];
 };
 
+const SIDE_VECTORS = ['LeftBottom', 'RightBottom'];
+
+// A side vector is one edge at floor level: the planner arranges every root
+// docked to it against that edge, so two of them at the same height take the
+// same place. Read in both directions, as the planner mirrors every entry; a
+// mirrored entry names the same partner again, and a root outside the group
+// takes no place. Each error continues the "posGroups[i]" prefix.
+const sideVectorErrors = (roots: any[]): string[] => {
+  const rootIds = new Set(roots.map((root) => root?.id));
+  const partnersOf = new Map<string, Map<string, Map<string, number>>>();
+  const meet = (rootId: string, vector: string, partnerId: string, heightMm: number) => {
+    if (!SIDE_VECTORS.includes(vector)) {
+      return;
+    }
+    const vectors = partnersOf.get(rootId) ?? new Map<string, Map<string, number>>();
+    const partners = vectors.get(vector) ?? new Map<string, number>();
+    if (!partners.has(partnerId)) {
+      partners.set(partnerId, Math.round(heightMm));
+    }
+    vectors.set(vector, partners);
+    partnersOf.set(rootId, vectors);
+  };
+  for (const root of roots) {
+    for (const dockedContext of root?.contextData?.dockedRoots ?? []) {
+      for (const dockedRoot of dockedContext?.dockedRoots ?? []) {
+        if (!rootIds.has(dockedRoot?.id) || dockedRoot.id === root.id) {
+          continue;
+        }
+        const heightMm = Number(dockedRoot.offset?.[1] ?? 0) || 0;
+        meet(root.id, dockedContext.ownDockingVector, dockedRoot.id, heightMm);
+        meet(dockedRoot.id, dockedRoot.dockingVector, root.id, -heightMm);
+      }
+    }
+  }
+  const errors: string[] = [];
+  for (const [rootId, vectors] of partnersOf) {
+    for (const [vector, partners] of vectors) {
+      const atHeight = new Map<number, string[]>();
+      for (const [partnerId, heightMm] of partners) {
+        atHeight.set(heightMm, [...(atHeight.get(heightMm) ?? []), partnerId]);
+      }
+      for (const sharing of atHeight.values()) {
+        if (sharing.length > 1) {
+          errors.push(
+            `: roots ${sharing.map((id) => `'${id}'`).join(', ')} are docked to the ${vector} of root '${rootId}' - ` +
+              'roots on one side vector stand in the same place. A side vector (LeftBottom, RightBottom) takes one ' +
+              'neighbour: continue a row from the free side vector of its last unit',
+          );
+        }
+      }
+    }
+  }
+  return errors;
+};
+
 const invalidPosGroups = (errors: string[]): Error =>
   new Error(
     'Invalid pos groups - nothing was loaded:\n' +
@@ -663,7 +718,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         }
       });
       validationErrors.push(
-        ...dockingErrors(group.roots).map(
+        ...[...dockingErrors(group.roots), ...sideVectorErrors(group.roots)].map(
           (error) => `posGroups[${groupIndex}]${error}`,
         ),
       );

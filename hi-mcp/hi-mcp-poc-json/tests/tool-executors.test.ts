@@ -573,6 +573,44 @@ describe('create-or-replace-groups validation', () => {
     ).rejects.toThrow(/articleId 'nope' is not in the article catalog/);
     expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
   });
+
+  it('rejects two roots on one side vector at the same height', async () => {
+    // the corner and the fridge both meet the oven's RightBottom
+    await expectRejectedBeforeLoad(
+      [
+        {
+          roots: [
+            {
+              id: 'corner',
+              articleId: 'article-1',
+              contextData: {
+                dockedRoots: [
+                  {
+                    ownDockingVector: 'LeftBottom',
+                    dockedRoots: [{ id: 'oven', dockingVector: 'RightBottom' }],
+                  },
+                ],
+              },
+            },
+            {
+              id: 'oven',
+              articleId: 'article-1',
+              contextData: {
+                dockedRoots: [
+                  {
+                    ownDockingVector: 'RightBottom',
+                    dockedRoots: [{ id: 'fridge', dockingVector: 'LeftBottom' }],
+                  },
+                ],
+              },
+            },
+            { id: 'fridge', articleId: 'article-1' },
+          ],
+        },
+      ],
+      /posGroups\[0\]: roots 'corner', 'fridge' are docked to the RightBottom of root 'oven' - roots on one side vector stand in the same place/,
+    );
+  });
 });
 
 describe('create-or-replace-groups loading', () => {
@@ -1158,6 +1196,51 @@ describe('create-or-replace-groups loading', () => {
     expect(result.hint).toMatch(/placement/);
     expect(result.hint).toMatch(/place-group moves it against a wall or into a room corner/);
     expect(result.hint).not.toMatch(/repositioningData/);
+  });
+
+  it('accepts several roots on one vector where they do not take the same place', async () => {
+    const dock = (
+      ownDockingVector: string,
+      id: string,
+      dockingVector: string,
+      offset?: number[],
+    ) => ({ ownDockingVector, dockedRoots: [{ id, dockingVector, ...(offset && { offset }) }] });
+    const api = createApi(planContextFixture);
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          roots: [
+            // beside the tall unit: a base unit on the floor and a wall unit
+            // at mounting height, both on its RightBottom
+            {
+              id: 'tall',
+              articleId: 'article-1',
+              contextData: {
+                dockedRoots: [
+                  dock('RightBottom', 'base', 'LeftBottom'),
+                  dock('RightBottom', 'wall', 'LeftBottom', [0, 1400, 0]),
+                ],
+              },
+            },
+            // mirrored as get-plan-context returns it, plus the wall unit
+            // above and the neighbour's top edge on the base unit's LeftTop
+            {
+              id: 'base',
+              articleId: 'article-1',
+              contextData: {
+                dockedRoots: [
+                  dock('LeftBottom', 'tall', 'RightBottom'),
+                  dock('LeftTop', 'wall', 'LeftBottom', [0, 600, 0]),
+                  dock('LeftTop', 'tall', 'RightTop'),
+                ],
+              },
+            },
+            { id: 'wall', articleId: 'article-1' },
+          ],
+        },
+      ],
+    });
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
   });
 });
 

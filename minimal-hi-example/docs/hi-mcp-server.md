@@ -341,7 +341,8 @@ Invalid payloads are rejected with per-group validation errors before
 anything is loaded: missing `roots`, missing pick fields (`id`, `articleId`),
 an unknown `articleId` (the error lists the catalog), `articlePos`/`rotationY`
 on any root or `pos`/`rotationY` on a group, roots the docking does not connect
-to the first root of a multi-root group,
+to the first root of a multi-root group, two roots on one side docking
+vector at the same height,
 an invalid `placement` (`posGroup` not three numbers, `posRotationY` missing
 or not a number — state 0 explicitly, `rootId` not a root of the group, any
 other field), and a `placement` on a group that is already in the plan.
@@ -567,7 +568,7 @@ group one point and one rotation; the planner calculates every root position.
   roots docked only among themselves would land on the group origin, on top
   of the first root. The check reads every entry in both directions, as the
   planner does; an entry that names a root outside the group (a group keeps
-  one to a root deleted from it) connects nothing. The docking entry is
+  one to a root deleted from it) connects nothing. A side vector (`LeftBottom`, `RightBottom`) takes one neighbour: two roots docked to it at the same height would stand in the same place and are rejected; Top vectors (the neighbour's top edge and a unit above) and `BackBottom` (two units back to back with a wide one) may carry several. The docking entry is
   written on the placed root (the anchor) and lists the new root under
   `dockedRoots`; the anchor's `ownDockingVector` meets the new root's
   `dockingVector`. Docking vector *names* suffice; the indices are resolved

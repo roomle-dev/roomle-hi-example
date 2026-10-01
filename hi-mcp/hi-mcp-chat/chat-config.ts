@@ -1,3 +1,5 @@
+import type { ModelMessage } from 'ai';
+
 export const DEFAULT_CHAT_PORT = 3200;
 export const DEFAULT_MCP_URL = 'http://localhost:3100/mcp';
 const CHAT_ROLES = ['user', 'assistant'] as const;
@@ -72,13 +74,34 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
 export interface ChatMessage {
   role: (typeof CHAT_ROLES)[number];
   content: string;
+  images?: string[];
 }
+
+// Inline image data only: the AI SDK downloads an image given as a URL itself.
+const IMAGE_DATA_URL = /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/;
+// The text of a user message that carries images but no text.
+export const DEFAULT_IMAGE_PROMPT = 'Plan a kitchen like the one in the image.';
+
+// Models of the other providers known to read images; Anthropic and Google
+// models all do. Any other model id gets no image input.
+export const IMAGE_INPUT_MODELS = [
+  'mistral-large-latest',
+  'mistral-medium-latest',
+  'gpt-4o',
+  'gpt-5-mini',
+  'gpt-5.4-mini',
+  'gpt-6-astra',
+];
+
+export const readsImages = (provider: ChatProvider, modelId: string) =>
+  provider === 'anthropic' || provider === 'google' || IMAGE_INPUT_MODELS.includes(modelId);
 
 export interface ChatConfig {
   port: number;
   provider: ChatProvider;
   apiToken: string | undefined;
   modelId: string;
+  imageInput: boolean;
   azureResourceName: string | undefined;
   azureBaseUrl: string | undefined;
   mcpUrl: string;
@@ -87,14 +110,18 @@ export interface ChatConfig {
 
 export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
   const chatModel = resolveChatModel(env.HI_CHAT_PROVIDER);
+  // HI_CHAT_MODEL overrides the resolved model id (e.g. an Azure deployment
+  // name) without changing the provider; Foundry deployments are fixed by
+  // their CLI name
+  const modelId = chatModel.baseUrl
+    ? chatModel.modelId
+    : env.HI_CHAT_MODEL || chatModel.modelId;
   return {
     port: Number(env.HI_CHAT_PORT) || DEFAULT_CHAT_PORT,
     provider: chatModel.provider,
     apiToken: env.HI_CHAT_TOKEN || undefined,
-    // HI_CHAT_MODEL overrides the resolved model id (e.g. an Azure deployment
-    // name) without changing the provider; Foundry deployments are fixed by
-    // their CLI name
-    modelId: chatModel.baseUrl ? chatModel.modelId : env.HI_CHAT_MODEL || chatModel.modelId,
+    modelId,
+    imageInput: readsImages(chatModel.provider, modelId),
     azureResourceName: env.AZURE_RESOURCE_NAME || undefined,
     azureBaseUrl: chatModel.baseUrl,
     mcpUrl: env.HI_MCP_URL || DEFAULT_MCP_URL,
@@ -118,13 +145,50 @@ export const parseChatMessages = (body: unknown): ChatMessage[] => {
     if (typeof message !== 'object' || message === null) {
       throw new ChatRequestError('Each message must be an object with role and content');
     }
-    const { role, content } = message as { role?: unknown; content?: unknown };
+    const { role, content, images } = message as {
+      role?: unknown;
+      content?: unknown;
+      images?: unknown;
+    };
     if (typeof role !== 'string' || !CHAT_ROLES.includes(role as ChatMessage['role'])) {
       throw new ChatRequestError(`Invalid message role: ${role}`);
     }
     if (typeof content !== 'string') {
       throw new ChatRequestError('Message content must be a string');
     }
-    return { role: role as ChatMessage['role'], content };
+    if (images === undefined) {
+      return { role: role as ChatMessage['role'], content };
+    }
+    if (
+      !Array.isArray(images) ||
+      !images.every((image) => typeof image === 'string' && IMAGE_DATA_URL.test(image))
+    ) {
+      throw new ChatRequestError(
+        'Message images must be an array of base64 data URLs (image/jpeg, image/png, image/webp or image/gif)',
+      );
+    }
+    if (images.length > 0 && role !== 'user') {
+      throw new ChatRequestError('Only user messages can carry images');
+    }
+    return images.length > 0
+      ? { role: role as ChatMessage['role'], content, images }
+      : { role: role as ChatMessage['role'], content };
   });
 };
+
+export const toModelMessages = (messages: ChatMessage[]): ModelMessage[] =>
+  messages.map(({ role, content, images }) =>
+    images?.length
+      ? {
+          role: 'user',
+          content: [
+            { type: 'text', text: content.trim() || DEFAULT_IMAGE_PROMPT },
+            ...images.map((image) => ({
+              type: 'file' as const,
+              data: image,
+              mediaType: image.slice('data:'.length, image.indexOf(';')),
+            })),
+          ],
+        }
+      : { role, content },
+  );

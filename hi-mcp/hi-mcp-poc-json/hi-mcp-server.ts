@@ -5,7 +5,7 @@ import { toolExecutors } from './tool-executors';
 
 const AUTHORING_RULES = `Authoring rules for pos groups:
 - A group is { id?, libraryId?, placement?, roots: [...] }. A root module is an article pick and nothing else: { id, articleId, attributes?, contextData? }. The server rejects a root that carries articlePos or rotationY and a group that carries pos or rotationY, ignores every other field, and drops roots marked isGenerated (worktop, toe kick - the library regenerates them). Every root position comes from the docking (contextData); the position of a new group comes from its placement. Groups returned by get-plan-context are in this shape - resubmit them as they are. Use a unique id of your choice for new roots (the planner regenerates it and remaps your docking references); keep the real ids of roots that already exist in a replaced group. Choose the articleId from the article catalog of get-plan-context: desc and category say what an article is and what it is for, dimensions give its size (per size attribute its id, its name - e.g. Width, Depth, Height - and its value in millimetres; a root in groups carries the same attribute ids among its attributes, and change-module-attribute with that attribute id, never its name, changes the size of a unit), dockingVectors the names of its docking vectors, subModules its fronts and appliances, cornerArticle true marks an article made for a room corner. Sub-modules come with the article - you author articles, their attributes and their docking, nothing else. attributes is an optional list of { id, value } overrides; attribute ids and allowed values come from the masterData section (request it with include) or from find-attributes. Everything else the calculation needs is completed automatically from the article template.
-- Every desc - of an article, a root, a module, an attribute and an attribute value - is authoritative: trust it for what that article, module or value is, and trust dimensions for how big an article is. Evaluate an image (a rendering of get-plan-images or any other picture) only for what no desc and no dimension states - never take the kind or the size of an article from an image.
+- Every desc - of an article, a root, a module, an attribute and an attribute value - is authoritative: trust it for what that article, module or value is, and trust dimensions for how big an article is. Both are authoritative over the catalog images of the master data (imageUrl): never take the kind or the size of an article from a catalog image.
 - One kitchen is one group. Every unit standing beside, above or back to back with another unit is a root of the SAME group, docked to it; a new group carries one placement, and the planner derives every root position from the docking. Never create a second group to put units next to existing ones, and never position two groups so that they touch - units that belong together are docked.
 - Never author a position: no articlePos or rotationY on a root, no pos or rotationY on a group - the payload is rejected. Roots are positioned by docking only; a new group is positioned with placement only.
 - Docking (contextData) relates the root modules of a group to each other and is required: in a group with several roots, every additional root must be docked, directly or through a chain, to the first root of the group - a root the docking does not connect to the first root is rejected (roots docked only among themselves would land on the group origin, on top of the first root). Write the docking entry on the placed root and list the new root under dockedRoots - the placed root's own vector meets the named vector of the new root:
@@ -117,7 +117,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'modules and the customer-facing attributes with their allowed values; modules, attributes and values carry ' +
         'their desc) is returned only when included ' +
         'explicitly; the same compacted attribute vocabulary is searched by find-attributes. Every desc is ' +
-        'authoritative and dimensions give the size - trust them over any image. Use it before ' +
+        'authoritative and dimensions give the size - trust them over the catalog images (imageUrl). Use it before ' +
         'authoring or modifying groups.',
       inputSchema: {
         include: z
@@ -457,9 +457,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       description:
         'Renders the current plan and returns a perspective image and a top-view image, so the plan can be ' +
         'inspected visually. The top-view orientation matches the wall side labels of get-plan-context: a wall ' +
-        "with side 'right' is at the right edge of the top image, 'top' at the upper edge. The images " +
-        'show how the plan looks: what an article is and how big it is come from the desc and ' +
-        'dimensions of get-plan-context - evaluate the images only for what those do not state.',
+        "with side 'right' is at the right edge of the top image, 'top' at the upper edge.",
       inputSchema: {},
     },
     async () => {

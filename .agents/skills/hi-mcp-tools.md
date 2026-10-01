@@ -58,9 +58,10 @@ in `groups` carries the same ids among its `attributes`; a group's `position.foo
 attribute id, never its name.
 
 **Trusted descriptions**: every `desc` (article, root, module, attribute, attribute value) is
-authoritative, and `dimensions` give the size. The agent evaluates an image (`get-plan-images`, a
-user picture) only for what no `desc` and no dimension states — the rule is in
-`get-authoring-rules` and in the descriptions of `get-plan-context` and `get-plan-images`.
+authoritative, and `dimensions` give the size, over the catalog images of the master data
+(`imageUrl`). The rule covers only the catalog images, not the renderings of `get-plan-images` or
+an image the user attaches. It is in `get-authoring-rules` and in the description of
+`get-plan-context`. The server strips every `imageUrl` from its results today.
 
 **Usage**:
 ```javascript

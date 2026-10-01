@@ -249,6 +249,45 @@
         font-style: italic;
         color: #aaaaaa;
       }
+      #chat-overlay.drop-target {
+        outline: 2px dashed #dd1818;
+        outline-offset: -2px;
+      }
+      #chat-attachment {
+        position: relative;
+        display: inline-block;
+        margin-top: 8px;
+      }
+      #chat-attachment.hidden {
+        display: none;
+      }
+      #chat-attachment img {
+        display: block;
+        max-height: 64px;
+        border-radius: 4px;
+      }
+      #chat-attachment button {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.6);
+        color: #ffffff;
+        font-size: 14px;
+        line-height: 20px;
+        cursor: pointer;
+      }
+      .chat-message img {
+        display: block;
+        max-width: 100%;
+        max-height: 120px;
+        margin-bottom: 4px;
+        border-radius: 4px;
+      }
       #chat-form {
         display: flex;
         gap: 6px;
@@ -386,6 +425,10 @@
           <div id="chat-messages" aria-live="polite"></div>
           <div id="chat-status" class="hidden" role="status">
             assistant is working...
+          </div>
+          <div id="chat-attachment" class="hidden">
+            <img alt="Attachment" />
+            <button type="button" aria-label="Remove image" title="Remove image">×</button>
           </div>
           <form id="chat-form">
             <textarea
@@ -1276,13 +1319,31 @@
         const status = document.getElementById('chat-status');
         const input = document.getElementById('chat-input');
         const TOOL_STATUS_PREFIX = '[tool] ';
+        // The image sent to the model: long side at most IMAGE_MAX_SIDE px,
+        // the size Claude reads natively - enough detail for every chat model.
+        const IMAGE_MAX_SIDE = 1568;
+        const IMAGE_QUALITY = 0.9;
+        const attachment = document.getElementById('chat-attachment');
+        const attachmentImage = attachment.querySelector('img');
         const conversation = [];
         let busy = false;
+        let attachedImage = null;
+        // Only the latest drop attaches its image; attaching, removing or
+        // sending makes a preparation still running stale.
+        let latestDrop = 0;
+        let imagePreparation = Promise.resolve();
+        let noteTimer;
 
-        const addMessage = (role, text) => {
+        const addMessage = (role, text, image) => {
           const entry = document.createElement('div');
           entry.className = `chat-message chat-${role}`;
           entry.innerText = text;
+          if (image) {
+            const sentImage = document.createElement('img');
+            sentImage.src = image;
+            sentImage.alt = 'Attachment';
+            entry.prepend(sentImage);
+          }
           messagesArea.append(entry);
           messagesArea.scrollTop = messagesArea.scrollHeight;
           return entry;
@@ -1305,16 +1366,82 @@
           };
         };
 
+        const setAttachedImage = (image) => {
+          latestDrop += 1;
+          attachedImage = image;
+          if (image) {
+            attachmentImage.src = image;
+          } else {
+            attachmentImage.removeAttribute('src');
+          }
+          attachment.classList.toggle('hidden', !image);
+        };
+
+        // A short note in the status line, unless a turn is running there.
+        const showNote = (note) => {
+          logMessage('chat', note);
+          if (busy) {
+            return;
+          }
+          clearTimeout(noteTimer);
+          status.textContent = note;
+          status.classList.remove('hidden');
+          noteTimer = setTimeout(() => {
+            if (!busy) {
+              status.classList.add('hidden');
+            }
+          }, 4000);
+        };
+
+        // Redrawn as JPEG on white (transparent parts would turn black), with
+        // the EXIF rotation of a phone photo applied - the re-encode drops it.
+        const prepareImage = async (file) => {
+          const bitmap = await createImageBitmap(file, {
+            imageOrientation: 'from-image',
+          });
+          const scale = Math.min(
+            1,
+            IMAGE_MAX_SIDE / Math.max(bitmap.width, bitmap.height),
+          );
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(bitmap.width * scale);
+          canvas.height = Math.round(bitmap.height * scale);
+          const context = canvas.getContext('2d');
+          context.imageSmoothingQuality = 'high';
+          context.fillStyle = '#ffffff';
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+          bitmap.close();
+          const image = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+          logMessage(
+            'chat',
+            `image prepared: ${canvas.width}x${canvas.height}, ${Math.round((image.length * 3) / 4 / 1024)} KB`,
+          );
+          return image;
+        };
+
         const send = async () => {
+          if (busy) {
+            return;
+          }
+          busy = true;
+          // An image dropped just before sending goes along with this message.
+          await imagePreparation;
+          const image = attachedImage;
           const text = input.value.trim();
-          if (!text || busy) {
+          if (!text && !image) {
+            busy = false;
             return;
           }
           input.value = '';
-          conversation.push({ role: 'user', content: text });
-          addMessage('user', text);
+          setAttachedImage(null);
+          conversation.push(
+            image
+              ? { role: 'user', content: text, images: [image] }
+              : { role: 'user', content: text },
+          );
+          addMessage('user', text, image);
           const assistantEntry = addMessage('assistant', '');
-          busy = true;
           status.textContent = 'assistant is working...';
           status.classList.remove('hidden');
           logApiCall('chat');
@@ -1385,6 +1512,77 @@
               document.getElementById('chat-form').requestSubmit();
             }
           });
+
+        // Images only when the chat backend says the model reads them;
+        // otherwise the chat stays text-only and drops behave as before.
+        let imageInput = false;
+        try {
+          const response = await fetch(`http://localhost:${chatPort}/capabilities`);
+          imageInput = (await response.json()).imageInput === true;
+          logMessage(
+            'chat',
+            imageInput ? 'images enabled' : 'images disabled - the model reads no images',
+          );
+        } catch (error) {
+          logMessage('chat', `images disabled - no capabilities: ${error.message}`);
+        }
+        if (!imageInput) {
+          return;
+        }
+
+        // The whole chat overlay catches file drops; text drags into the
+        // input stay native.
+        const carriesFiles = (event) => event.dataTransfer?.types.includes('Files');
+        const markDropTarget = (event) => {
+          if (!carriesFiles(event)) {
+            return;
+          }
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'copy';
+          chatOverlay.classList.add('drop-target');
+        };
+        chatOverlay.addEventListener('dragenter', markDropTarget);
+        chatOverlay.addEventListener('dragover', markDropTarget);
+        chatOverlay.addEventListener('dragleave', (event) => {
+          if (!chatOverlay.contains(event.relatedTarget)) {
+            chatOverlay.classList.remove('drop-target');
+          }
+        });
+        chatOverlay.addEventListener('drop', async (event) => {
+          if (!carriesFiles(event)) {
+            return;
+          }
+          event.preventDefault();
+          chatOverlay.classList.remove('drop-target');
+          const file = [...event.dataTransfer.files].find((candidate) =>
+            candidate.type.startsWith('image/'),
+          );
+          if (!file) {
+            showNote('Only images can be added.');
+            return;
+          }
+          if (chatOverlay.classList.contains('minimized')) {
+            chatOverlayToggle.click();
+          }
+          latestDrop += 1;
+          const drop = latestDrop;
+          imagePreparation = prepareImage(file).then(
+            (image) => {
+              if (drop === latestDrop) {
+                setAttachedImage(image);
+              }
+            },
+            () => {
+              if (drop === latestDrop) {
+                showNote('The image could not be read.');
+              }
+            },
+          );
+        });
+        attachment
+          .querySelector('button')
+          .addEventListener('click', () => setAttachedImage(null));
+        input.placeholder = 'Ask the assistant or drop an image...';
       };
 
       if (chatEnabled) {

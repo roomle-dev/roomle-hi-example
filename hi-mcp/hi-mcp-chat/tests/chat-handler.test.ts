@@ -4,10 +4,12 @@ import {
   getChatConfig,
   parseChatMessages,
   resolveChatModel,
+  toModelMessages,
 } from '../chat-config';
 import { createChatRequestHandler, type StreamChat } from '../chat-handler';
 
 const PAGE_ORIGIN = 'http://localhost:3000';
+const IMAGE = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
 
 const startServer = (env: NodeJS.ProcessEnv, streamChat: StreamChat) =>
   new Promise<{ server: Server; url: string }>((resolve, reject) => {
@@ -155,6 +157,26 @@ describe('getChatConfig', () => {
     ).toBe('gpt-5-mini');
     expect(getChatConfig({ HI_CHAT_PROVIDER: 'azure' }).azureBaseUrl).toBeUndefined();
   });
+
+  it('knows which models read images', () => {
+    const imageInput = (env: NodeJS.ProcessEnv) => getChatConfig(env).imageInput;
+    expect(imageInput({})).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-medium' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'claude' })).toBe(true);
+    expect(
+      imageInput({ HI_CHAT_PROVIDER: 'claude', HI_CHAT_MODEL: 'claude-haiku-4-5' }),
+    ).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'gemini-flash' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'azure' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-5-mini' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-5.4-mini' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-6-astra' })).toBe(true);
+
+    expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-large-2411' })).toBe(false);
+    expect(
+      imageInput({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'my-deployment' }),
+    ).toBe(false);
+  });
 });
 
 describe('parseChatMessages', () => {
@@ -187,6 +209,67 @@ describe('parseChatMessages', () => {
       parseChatMessages({ messages: [{ role: 'user', content: 42 }] }),
     ).toThrow(/content must be a string/);
   });
+
+  it('keeps the images of a user message', () => {
+    expect(
+      parseChatMessages({
+        messages: [{ role: 'user', content: 'like this', images: [IMAGE] }],
+      }),
+    ).toEqual([{ role: 'user', content: 'like this', images: [IMAGE] }]);
+    expect(
+      parseChatMessages({ messages: [{ role: 'user', content: 'hi', images: [] }] }),
+    ).toEqual([{ role: 'user', content: 'hi' }]);
+  });
+
+  it('accepts images as inline data URLs only', () => {
+    const parseImages = (images: unknown) => () =>
+      parseChatMessages({ messages: [{ role: 'user', content: 'x', images }] });
+    expect(parseImages(['https://example.com/kitchen.jpg'])).toThrow(/data URLs/);
+    expect(parseImages(['data:text/plain;base64,aGk='])).toThrow(/data URLs/);
+    expect(parseImages(['data:image/jpeg;base64,not base64!'])).toThrow(/data URLs/);
+    expect(parseImages(IMAGE)).toThrow(/data URLs/);
+    expect(() =>
+      parseChatMessages({
+        messages: [{ role: 'assistant', content: 'x', images: [IMAGE] }],
+      }),
+    ).toThrow(/Only user messages/);
+  });
+});
+
+describe('toModelMessages', () => {
+  it('gives a user message with images but no text the default image prompt', () => {
+    for (const content of ['', '  ']) {
+      expect(toModelMessages([{ role: 'user', content, images: [IMAGE] }])).toEqual([
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Plan a kitchen like the one in the image.' },
+            { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
+          ],
+        },
+      ]);
+    }
+  });
+
+  it('turns the images of a user message into file parts', () => {
+    expect(
+      toModelMessages([
+        { role: 'user', content: 'hi' },
+        { role: 'assistant', content: 'hello' },
+        { role: 'user', content: 'like this', images: [IMAGE] },
+      ]),
+    ).toEqual([
+      { role: 'user', content: 'hi' },
+      { role: 'assistant', content: 'hello' },
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'like this' },
+          { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
+        ],
+      },
+    ]);
+  });
 });
 
 describe('chat request handler', () => {
@@ -195,6 +278,22 @@ describe('chat request handler', () => {
       const response = await fetch(`${url}/health`);
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('ok');
+    });
+  });
+
+  it('tells the page whether the model reads images', async () => {
+    await withServer({}, vi.fn(), async (url) => {
+      const response = await fetch(`${url}/capabilities`, {
+        headers: { Origin: PAGE_ORIGIN },
+      });
+      expect(response.status).toBe(200);
+      expect(response.headers.get('Content-Type')).toBe('application/json');
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe(PAGE_ORIGIN);
+      expect(await response.json()).toEqual({ imageInput: true });
+    });
+    await withServer({ HI_CHAT_PROVIDER: 'mistral-large-2411' }, vi.fn(), async (url) => {
+      const response = await fetch(`${url}/capabilities`);
+      expect(await response.json()).toEqual({ imageInput: false });
     });
   });
 
@@ -297,6 +396,51 @@ describe('chat request handler', () => {
         { role: 'user', content: 'hi' },
       ]);
     });
+  });
+
+  it('passes the images of a user message to the model as file parts', async () => {
+    const streamChat = vi.fn(async () => new Response('done'));
+    await withServer({ HI_CHAT_TOKEN: 'secret' }, streamChat, async (url) => {
+      const response = await fetch(`${url}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'like this', images: [IMAGE] }],
+        }),
+      });
+      expect(response.status).toBe(200);
+      expect(streamChat).toHaveBeenCalledWith([
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'like this' },
+            { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
+          ],
+        },
+      ]);
+    });
+  });
+
+  it('rejects images for a model that does not read images', async () => {
+    const streamChat = vi.fn();
+    await withServer(
+      { HI_CHAT_TOKEN: 'secret', HI_CHAT_PROVIDER: 'mistral-large-2411' },
+      streamChat,
+      async (url) => {
+        const response = await fetch(`${url}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: 'like this', images: [IMAGE] }],
+          }),
+        });
+        expect(response.status).toBe(400);
+        expect(await response.text()).toBe(
+          'The model mistral:mistral-large-2411 does not read images',
+        );
+        expect(streamChat).not.toHaveBeenCalled();
+      },
+    );
   });
 
   it('relays stream errors as 500', async () => {

@@ -108,6 +108,64 @@ MCP server, their planner calls in the page, and can take seconds to minutes
 is still working. The backend logs every request, MCP connection, tool call
 (with duration), stream error, and finish to its terminal.
 
+## Images in the chat
+
+The chat takes an image only when the model reads images. The chat backend
+decides this from the model id it resolved (`readsImages` in
+`hi-mcp/hi-mcp-chat/chat-config.ts`): every Anthropic and Google model, and
+from the other providers the ids in `IMAGE_INPUT_MODELS`:
+`mistral-large-latest`, `mistral-medium-latest`, `gpt-4o`, `gpt-5-mini`,
+`gpt-5.4-mini` and `gpt-6-astra`. Any other id gets no image input. That includes a pass-through
+`mistral-*` id and an Azure deployment named with `HI_CHAT_MODEL`. The startup
+banner shows the result (`Images: yes` or `no`), and `GET /capabilities` gives
+it to the page.
+
+In the page (only when `/capabilities` answers `imageInput: true`):
+
+- **Drop**: the whole chat overlay catches a dropped file (header, messages
+  and input), and a dashed outline marks it while a file is dragged over it.
+  A drop on the collapsed overlay expands it. A file that is not an image, or
+  that the browser cannot decode (HEIC in Chrome), is not attached; the status
+  line says so. The input placeholder reads "Ask the assistant or drop an
+  image...". One image per message: a new drop replaces the attached one, and
+  only the latest drop is attached, even if an earlier one takes longer to
+  prepare. A send waits for an image that is still being prepared, so it goes
+  along with that message.
+- **The image the model gets**: the page redraws the image as a JPEG
+  (quality 0.9) with a long side of at most **1568 px**. That is the size
+  Claude reads natively, and enough detail for every configured model. A
+  smaller image keeps its size. The EXIF rotation of a phone photo is applied,
+  and transparent parts become white. The debug log records the result
+  (`image prepared: 1568x1276, … KB`).
+- **Preview**: the attached image is shown small above the input, with a × to
+  remove it. After sending, it is shown in the user's message.
+- **Text**: an image can be sent with an empty input. The user's message then
+  shows only the image, and the chat backend gives the model the default text
+  (see below).
+- The images stay in the conversation and go along with every turn, so a
+  follow-up can refer to the image.
+
+With images off, the chat is text-only and a dropped file behaves as in any
+page (the browser opens it).
+
+A user message carries its images in `images`, an array of base64 data URLs
+(`image/jpeg`, `image/png`, `image/webp` or `image/gif`):
+
+```json
+{ "role": "user", "content": "", "images": ["data:image/jpeg;base64,/9j/..."] }
+```
+
+A user message with images and an empty (or blank) `content` gets the text
+"Plan a kitchen like the one in the image." (`DEFAULT_IMAGE_PROMPT` in
+`chat-config.ts`). The backend adds it for every client, the page, the test
+script and curl alike.
+
+The backend accepts no image URL, because the AI SDK would download it in the
+backend. It passes the images to the model as file parts of the user message
+(`toModelMessages`), and every provider reads them there. The Mistral
+middleware moves only the images of tool results. An image sent to a model
+that reads no images is answered with `400`.
+
 ## Architecture
 
 ```
@@ -152,7 +210,9 @@ with a middleware (`tool-result-images.ts`) that moves the images of every
 tool result into a user message right after the tool message; Mistral reads
 them there (about 1.3k tokens per image).
 
-Endpoints: `GET /health` (used for smoke tests) and `POST /chat`
+Endpoints: `GET /health` (used for smoke tests), `GET /capabilities`
+(`{ "imageInput": true }` when the model reads images — see
+[Images in the chat](#images-in-the-chat)) and `POST /chat`
 (`{ "messages": [{ "role": "user", "content": "..." }] }` → plain text
 stream). Errors are relayed as plain text with a matching status code: `503`
 without a configured token, `400` for invalid bodies, `403` for disallowed
@@ -189,6 +249,8 @@ origins, `500` when the MCP server or Mistral call fails.
 | Reply says the tool failed with "no page connected" | The example page is not open (or not with `?mcp=true`) — the browser bridge is required for tool calls |
 | `port 3200 is already in use` | A previous chat backend is still running — `lsof -ti tcp:3200 \| xargs kill`, or pick another port with `HI_CHAT_PORT` |
 | Provider error in the reply | The provider API rejected the key or the model — check the key, or set `HI_CHAT_MODEL` |
+| A dropped image opens in the tab instead of being attached | Images are off: the banner shows `Images: no` (the model is not known to read images), or the chat backend was not up yet when the page loaded the chat — the debug log says `images disabled - no capabilities`; reload the page |
+| `The model … does not read images` (400) | An image was sent to a model without image input (curl, a script, or a page from an earlier backend) |
 
 ## Open follow-ups
 

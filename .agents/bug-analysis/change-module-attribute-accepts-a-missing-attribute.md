@@ -5,7 +5,7 @@
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-10-01_10-23-00/report.md` (gpt-5-mini, planner `bo-test`), run 06
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Fixed — roomle-ui `473191323` on `fix/hi-attribute-commands-RML-18004`, not merged, not deployed
 > **Branch**: roomle-ui `fix/hi-attribute-commands-RML-18004` (stacked on `feat/hi-mcp-command-api-RML-18004`, PR #3065)
 
 ---
@@ -55,17 +55,24 @@ while `changeGroupAttribute` does. A wrong attribute id is reported as a success
 
 ## Fix
 
-`changeModuleAttribute` checks the target module (the root or the named sub module) against the
-master data of its group's library, the check `_collectModulesWithAttribute` already makes for
-one module, and throws "Module '…' has no attribute '…'." before changing anything. Unit tests: a
-valid attribute is still set (existing tests), an attribute the module's master data does not
-assign is rejected and `updateAttribute` is not called.
+roomle-ui `473191323` "fix: reject an attribute the module does not have in
+change-module-attribute": `changeModuleAttribute` checks the target module — the root or the
+named sub module — against the master data of its group's library with `hasAttribute`, the check
+`_collectModulesWithAttribute` of `changeGroupAttribute` now shares, and throws "Module '…' has no
+attribute '…'." before anything is changed or loaded. The command table of
+`packages/embedding-lib/docs/homag-intelligence-embedding.md` says so. New unit test: an
+attribute the master data does not assign is rejected for a root and for a sub module, nothing is
+loaded and the value is not set; the existing tests (valid attributes) pass unchanged.
 
 The MCP server needs no change: the planner's error reaches the agent as the tool's error, as for
-`change-group-attribute`.
+`change-group-attribute`. Takes effect with the next deployment of the planner (bo-test).
 
 ## Validation
 
-- roomle-ui unit tests of `glue-logic`.
-- Live check against the branch's dev server: `change-module-attribute mod_PaneltopColor` on the
-  countertop root is rejected; `mod_Width` on a `UTB60` is still applied.
+- roomle-ui: the 465 tests of `homag-intelligence` pass, `lint:types:sdk` and `lint:code:sdk`
+  clean.
+- Live check against a dev server of the branch (see
+  [worktop-colour-not-discoverable.md](worktop-colour-not-discoverable.md#validation)):
+  `change-module-attribute mod_PaneltopColor 324` is rejected on a `UTB60` root and on the
+  countertop root ("iframe: Module '…' has no attribute 'mod_PaneltopColor'."); `mod_Width 900` on
+  the `UTB60` is still applied (footprint 1510 mm).

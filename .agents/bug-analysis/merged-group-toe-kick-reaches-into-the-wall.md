@@ -25,8 +25,10 @@ Setup: three `HTB60` against the right wall from the back right corner (`posGrou
 units at local x 120 and 1320, the toe kick at local x 0. The back wall's interior face is at
 z −3765: the merged group starts 120 mm inside the wall, and the top object image shows the first
 unit's toe kick reaching 120 mm past the unit's back end. The units stand where they stood; the
-renders of the whole plan do not show it. Three suites, three times the same numbers — the model
-input differs only in ids.
+renders of the whole plan do not show it. Four suites, four times the same numbers — the model
+input differs only in ids (Mistral 09:10, gpt-6-astra 09:44, gpt-5-mini 10:23 and its rerun
+10:57, where 09 again shows both split groups docked to the deleted root and sharing one toe-kick
+id).
 
 ## Investigation so far
 

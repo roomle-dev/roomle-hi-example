@@ -5,7 +5,7 @@
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-10-01_10-23-00/report.md` (gpt-5-mini, planner `bo-test`), run 06; the same in run 06 of the gpt-6-astra suite `mcp-test-2026-10-01_09-44-51`
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Fixed
 > **Branch**: `fix/mcp-test-gpt-5-mini`
 
 ---
@@ -16,7 +16,7 @@ Run 06, "create a kitchen with an oven, hob, cooker hood, fridge, sink and cabin
 as well as wall cabinets in the back right corner … walnut … dark marble". One turn, eight tool
 calls (`run.json`):
 
-```
+```text
 get-plan-context, get-authoring-rules, create-or-replace-groups ×2, change-group-attribute ×2,
 change-module-attribute, find-attributes
 ```
@@ -27,7 +27,8 @@ it looked up the worktop attribute after two failed attempts, the fridge was sti
 user gets no reply and does not learn what was done and what not.
 
 The gpt-6-astra suite of 09:44 had the same ending in its run 06: eight steps (twelve tool calls),
-no answer, the cooker hood missing.
+no answer, the cooker hood missing. The limit was flagged as close to a complete flow on
+2026-09-29 (F-A3 in [agent-placement-in-a-room-corner-findings.md](agent-placement-in-a-room-corner-findings.md)).
 
 ## Investigation
 
@@ -58,22 +59,31 @@ model's answer: the limit is enforced on tool calls, but nothing makes the model
 
 ## Fix
 
+`b93debe` "fix: end every chat turn with the model's answer":
+
 1. **The last step answers.** `prepareStep` returns `{ toolChoice: 'none' }` for the last step
    the limit allows (`stepNumber === MAX_CHAT_STEPS - 1`): the model gets every tool result and
    has to write its reply — what it did and what is left. The stop condition stays; the turn
    still ends after the last step.
 2. **Sixteen steps instead of eight.** With one tool call per step, eight steps covered the
    creation of the full kitchen and its fronts in 06, but not the worktop, the missing fridge and
-   the reply. Sixteen gives the same prompt room to finish; the simple prompts end after three or
+   the reply. Sixteen give the same prompt room to finish; the simple prompts end after three or
    four steps either way.
 
-The step settings move into `hi-mcp/hi-mcp-chat/chat-steps.ts` — `chat-server.ts` starts the server
-on import and cannot be loaded in a test. A unit test drives `streamText` with the SDK's
-`MockLanguageModelV3`, a model that calls a tool whenever it may: the turn makes
-`MAX_CHAT_STEPS` model calls, the last with `toolChoice: { type: 'none' }`, and ends with the
+The step settings live in `hi-mcp/hi-mcp-chat/chat-steps.ts` (`chatSteps`, spread into
+`streamText` in `chat-server.ts`) — `chat-server.ts` starts the server on import and cannot be
+loaded in a test. The unit test `hi-mcp-chat/tests/chat-steps.test.ts` drives `streamText` with
+the SDK's `MockLanguageModelV3`, a model that calls a tool whenever it may: the turn makes
+`MAX_CHAT_STEPS` model calls, only the last with `toolChoice: { type: 'none' }`, and ends with the
 model's text.
 
 ## Validation
 
-- Unit test of the step settings (above), the chat workspace's tests, typecheck.
-- "test the mcp" again with gpt-5-mini: run 06 ends with an answer.
+- `npm test` in `hi-mcp`: 205 tests pass (the suite `cf/tests/worker.test.ts` does not load
+  locally — `@cloudflare/containers` is not installed in this checkout, unrelated to the change);
+  `npm run typecheck` clean.
+- "test the mcp" with gpt-5-mini on `b93debe`
+  (`.temp/result/mcp-test-2026-10-01_10-57-08/report.md`): run 06 made the same
+  eight tool calls as before and then answered in a ninth step (135 s) — the turn that ended
+  without an answer at 10:23 now ends with the model's summary. No run reached sixteen steps, so
+  the forced last step is covered by the unit test only.

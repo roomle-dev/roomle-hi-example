@@ -5,7 +5,7 @@
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-10-01_10-23-00/report.md` (gpt-5-mini, planner `bo-test`), run 06 — the third suite in a row (Mistral 09:10, gpt-6-astra 09:44) where "the worktop should be made of dark marble" ends with a white marble worktop
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Fixed — roomle-ui `e76cb6c5c` on `fix/hi-attribute-commands-RML-18004`, not merged, not deployed
 > **Branch**: roomle-ui `fix/hi-attribute-commands-RML-18004` (stacked on `feat/hi-mcp-command-api-RML-18004`, PR #3065)
 
 ---
@@ -73,19 +73,25 @@ their attributes never reach the agent.
 
 ## Fix
 
-`compactMasterData` keeps the modules that stand as roots in a group: the `RootModule`s and the
-sub modules of the master data's `Root` group (the generated roots). The `GroupOrchestrator`
-(also in the `Root` group) is no root of a group and stays out. A unit test compacts master data
-with a `RootModule` and a generated-root `SubModule` and expects the generated root's
-customer-facing attribute in `attributes` and the module in `modules`.
+roomle-ui `e76cb6c5c` "fix: keep the attributes of generated hi roots in the plan context":
+`compactMasterData` keeps the modules that stand as roots in a group — the `RootModule`s and the
+sub modules of the master data's `Root` group (`isGeneratedRootModule`, the generated roots). The
+`GroupOrchestrator` (also in the `Root` group) is no root of a group and stays out. The unit test
+of `compactMasterData` got a generated-root `SubModule` (kept, with its customer-facing attribute)
+and a `GroupOrchestrator` (left out).
 
-No MCP server change: `find-attributes` lists the new module under `rootModules`, and
+No MCP server change: `find-attributes` lists the new modules under `rootModules`, and
 `change-group-attribute` already applies such attributes. The fix takes effect with the next
-deployment of the planner the page loads (bo-test); against the local planner it is checked with
-the live check above (`EXAMPLE_SERVER_URL` pointing at a dev server of the branch).
+deployment of the planner the page loads (bo-test); until then the "test the mcp" runs against
+bo-test still show the old behaviour.
 
 ## Validation
 
-- roomle-ui unit tests of `hi-plan-context` and `glue-logic`.
-- Live check against the branch's dev server: `find-attributes "countertop"` lists
-  `mod_CountertopColor` with `rootModules: ["mr_Countertop"]`.
+- roomle-ui: the 465 tests of `homag-intelligence` pass (`npm run test` in `packages/web-sdk`),
+  `npm run lint:types:sdk` and `npm run lint:code:sdk` clean, Prettier clean on the changed files.
+- Live check against a dev server of the branch (`npm run dev -- --port 5174`, the example page
+  with `EXAMPLE_SERVER_URL=http://localhost:5174/`, two `UTB60` on the back wall): the master data
+  has 20 modules, among them `mr_Countertop`, `mr_Toekick`, `mr_Fingergrip`, `mr_Paneltop`;
+  `find-attributes "countertop"` returns `mod_CreateCountertop`, `mod_CountertopColor` and
+  `mod_CountertopProgram`, the last two with `rootModules: ["mr_Countertop"]`;
+  `change-group-attribute mod_CountertopColor 324` sets it on the countertop root.

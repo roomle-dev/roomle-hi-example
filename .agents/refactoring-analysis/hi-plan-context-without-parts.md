@@ -95,16 +95,40 @@ told that only `Error` entries mean something (`hi-mcp-server.ts:33`, `:192`).
 - **Drop the footprint, so the shaping no longer needs parts**: rejected, because the agent
   positions rows with it.
 
-## Follow-up (needs a decision)
+## Follow-up: can the log messages be removed?
 
-Keeping only the `Warning` and `Error` root `logMessages` would cut the groups section by about 60 %.
-Where to filter is still open:
+**The `Info` ones, yes; the others, no.**
 
-- in roomle-ui `shapeRoot`, because the plan context is meant to be agent-ready as is (RML-17966); or
+`Info` has no reader. Across both stored sessions (52 plan contexts and planner call logs) there are
+532 log messages, all `Info`, from two library areas: `DataCompletionSetDefaultScripts_globalVars`
+(420) and `ModuleAfterDataCompletion` (97). The 427 "Exception used … 'X' is now 'Y' instead of
+'Z'" messages all concern internal `basic_*` construction attributes, never an attribute the agent
+set. The rest are toe-kick and worktop generation notes ("mr_Toekick has been instantiated and has
+received 3 generation contours."). No server code reads `logMessages`, and the glue logic reads only
+the raw groups (below). Dropping `Info` cuts the groups section by about 60 %.
+
+`Fatal`, `Error` and `Warning` must stay:
+
+- **They are the agent's only feedback on a bad input in a new group.** Creating or replacing a
+  group (`_calculateNewGroup`, roomle-ui `glue-logic.ts:1661`) loads the calculated result as it
+  is. Only the modify flows discard a failed calculation (`_runGroupCalculation` `:1749`,
+  `_rejectFailedCalculation` `:1825` in the sub-article flow). The MCP server validates article ids
+  and the docking of `create-or-replace-groups`, not attribute values (`toArticlePick`,
+  `tool-executors.ts:58`). The agent is told to check them (`hi-mcp-server.ts:33`, `:192`;
+  `minimal-hi-example/docs/hi-mcp-server.md:625`).
+- **The glue logic's own error check is not affected.** `rootModulesWithCalculationError`
+  (`glue-logic.ts:387`) reads `Fatal`/`Error` on the raw calculated group, before any shaping.
+
+Not verified: whether the HOMAG library writes an `Error` for an invalid attribute value. No stored
+run had one, because no run submitted an invalid value.
+
+Where to filter is open:
+
+- in roomle-ui `shapeRoot` (`hi-plan-context.ts:638`), because the plan context is meant to be
+  agent-ready as is (RML-17966), and no other caller reads the log messages of the plan context
+  (the example page logs through `onLogMessage`, not the context); or
 - in the MCP server `textResult`, where the `imageUrl` stripping went because the plan context API
   also serves other callers ([tool results exceed the context](../bug-analysis/tool-results-exceed-mistral-context.md)).
-
-This analysis does not cover that change.
 
 ## Code and documents the work would touch
 

@@ -175,7 +175,7 @@ describe('hi-mcp-server tool calls', () => {
     expect(text).toContain('Example 5');
   });
 
-  it('tells the agent where the size of an article is and to trust every desc over an image', async () => {
+  it('tells the agent where the size of an article is and to trust every desc over a catalog image', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(
       await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
@@ -190,16 +190,34 @@ describe('hi-mcp-server tool calls', () => {
     );
     expect(rules).toContain('Every desc');
     expect(rules).toContain('is authoritative');
-    expect(rules).toContain('only for what no desc and no dimension states');
+    expect(rules).toContain(
+      'authoritative over the catalog images of the master data (imageUrl)',
+    );
     expect(descriptionOf('get-plan-context')).toContain(
       'with their values in millimetres',
     );
     expect(descriptionOf('get-plan-context')).toContain(
-      'trust them over any image',
+      'trust them over the catalog images (imageUrl)',
     );
-    expect(descriptionOf('get-plan-images')).toContain(
-      'evaluate the images only for what those do not state',
+    expect(descriptionOf('get-plan-images')).not.toContain('evaluate the images only');
+  });
+
+  it('limits the desc-over-image rule to the catalog images', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
     );
+    const { tools } = await client.listTools();
+    const servedTexts = [
+      client.getInstructions() ?? '',
+      rules,
+      ...tools.map((tool) => tool.description ?? ''),
+    ];
+
+    for (const text of servedTexts) {
+      expect(text).not.toContain('any other picture');
+      expect(text).not.toContain('any image');
+    }
   });
 
   it('never tells the agent how the server positions a group internally', async () => {

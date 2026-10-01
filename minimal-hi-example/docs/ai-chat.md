@@ -127,7 +127,10 @@ In the page (only when `/capabilities` answers `imageInput: true`):
   A drop on the collapsed overlay expands it. A file that is not an image, or
   that the browser cannot decode (HEIC in Chrome), is not attached; the status
   line says so. The input placeholder reads "Ask the assistant or drop an
-  image...". One image per message: a new drop replaces the attached one.
+  image...". One image per message: a new drop replaces the attached one, and
+  only the latest drop is attached, even if an earlier one takes longer to
+  prepare. A send waits for an image that is still being prepared, so it goes
+  along with that message.
 - **The image the model gets**: the page redraws the image as a JPEG
   (quality 0.9) with a long side of at most **1568 px**. That is the size
   Claude reads natively, and enough detail for every configured model. A

@@ -1328,6 +1328,10 @@
         const conversation = [];
         let busy = false;
         let attachedImage = null;
+        // Only the latest drop attaches its image; attaching, removing or
+        // sending makes a preparation still running stale.
+        let latestDrop = 0;
+        let imagePreparation = Promise.resolve();
         let noteTimer;
 
         const addMessage = (role, text, image) => {
@@ -1363,6 +1367,7 @@
         };
 
         const setAttachedImage = (image) => {
+          latestDrop += 1;
           attachedImage = image;
           if (image) {
             attachmentImage.src = image;
@@ -1416,9 +1421,16 @@
         };
 
         const send = async () => {
+          if (busy) {
+            return;
+          }
+          busy = true;
+          // An image dropped just before sending goes along with this message.
+          await imagePreparation;
           const image = attachedImage;
           const text = input.value.trim();
-          if ((!text && !image) || busy) {
+          if (!text && !image) {
+            busy = false;
             return;
           }
           input.value = '';
@@ -1430,7 +1442,6 @@
           );
           addMessage('user', text, image);
           const assistantEntry = addMessage('assistant', '');
-          busy = true;
           status.textContent = 'assistant is working...';
           status.classList.remove('hidden');
           logApiCall('chat');
@@ -1553,11 +1564,20 @@
           if (chatOverlay.classList.contains('minimized')) {
             chatOverlayToggle.click();
           }
-          try {
-            setAttachedImage(await prepareImage(file));
-          } catch {
-            showNote('The image could not be read.');
-          }
+          latestDrop += 1;
+          const drop = latestDrop;
+          imagePreparation = prepareImage(file).then(
+            (image) => {
+              if (drop === latestDrop) {
+                setAttachedImage(image);
+              }
+            },
+            () => {
+              if (drop === latestDrop) {
+                showNote('The image could not be read.');
+              }
+            },
+          );
         });
         attachment
           .querySelector('button')

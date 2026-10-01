@@ -13,6 +13,9 @@ cd hi-mcp/cf
 npx wrangler deploy
 ```
 
+or, from the repository root, `npm run deploy:cf` (the same command; arguments after `--` go to
+wrangler, e.g. `npm run deploy:cf -- --dry-run` builds the image without deploying).
+
 - rebuilds the container image from the `hi-mcp/` context and replaces the running deployment
   **in place** — same Worker, same container app, **same URL**; connectors and store links keep
   working

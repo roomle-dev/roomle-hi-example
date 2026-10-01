@@ -40,7 +40,8 @@ npx wrangler deploy    # builds the container image and deploys the Worker
 ```
 
 The login lasts — wrangler refreshes its token automatically, so deploys are just
-`npx wrangler deploy`. Only when a deploy fails with `Unauthorized` (troubleshooting table
+`npx wrangler deploy`, or `npm run deploy:cf` from the repository root (the same command, run in
+`hi-mcp/cf`; arguments after `--` go to wrangler, e.g. `npm run deploy:cf -- --dry-run`). Only when a deploy fails with `Unauthorized` (troubleshooting table
 below) does a one-time `wrangler logout && wrangler login` fix the stale token.
 
 The output prints the public URL — **it is the source of truth**. If wrangler rejects
@@ -130,7 +131,7 @@ reload without cache.
 One command, in place — nothing is deleted, the URL stays the same:
 
 ```bash
-cd hi-mcp/cf && npx wrangler deploy
+npm run deploy:cf        # from the repository root; same as: cd hi-mcp/cf && npx wrangler deploy
 ```
 
 Optionally verify locally first: `npm test` in `hi-mcp/`, or the docker build below.

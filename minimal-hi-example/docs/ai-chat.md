@@ -136,7 +136,20 @@ Copilot. A new group is positioned by the `placement` it is created with.
 | `chat-config.ts` | Environment parsing and request body validation |
 | `chat-handler.ts` | HTTP handler factory: CORS, `/health`, `POST /chat`, error relay |
 | `chat-server.ts` | Entry point: provider model (Mistral/Anthropic/Google/Azure) + `@ai-sdk/mcp` + `streamText`, listen on the chat port |
+| `tool-result-images.ts` | Mistral middleware: the images of a tool result go to the model as a user message |
 | `tests/chat-handler.test.ts` | Unit tests (config, validation, CORS, error relay, streaming) |
+| `tests/tool-result-images.test.ts` | Unit tests of the Mistral middleware |
+
+### Images in tool results
+
+`get-plan-images` returns its two renders as MCP image blocks; `@ai-sdk/mcp`
+turns them into image parts of the tool result. Anthropic, Google and Azure
+send those to the model as images. `@ai-sdk/mistral` writes a tool result's
+content as JSON text — two renders were 1.5 to 2.1 million tokens of base64
+against Mistral Large's 262k context. The Mistral model is therefore wrapped
+with a middleware (`tool-result-images.ts`) that moves the images of every
+tool result into a user message right after the tool message; Mistral reads
+them there (about 1.3k tokens per image).
 
 Endpoints: `GET /health` (used for smoke tests) and `POST /chat`
 (`{ "messages": [{ "role": "user", "content": "..." }] }` → plain text

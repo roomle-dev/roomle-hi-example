@@ -254,7 +254,7 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 | `the launcher exited with code 1` right after the start | unknown provider, a missing key, a busy port or a failed typecheck — the launcher's message is printed above |
 | `timed out … waiting for the page and the HI library` | the page did not connect or the HI library did not load — run with `--headed` and look at the page |
 | `errors` in `run.json` with the provider's message | invalid key or a provider failure; the snapshot is still stored |
-| `Prompt … > 262144 maximum context length` in `errors` | the model called `get-plan-images`; the images in the tool result exceed the model's context (seen with Mistral Large) |
+| `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context — a **bug**. Fixed causes: the images of `get-plan-images` reached Mistral as base64 text ([analysis](../bug-analysis/plan-images-sent-as-text-to-mistral.md)); the image URLs and the pretty-printing of the tool results ([analysis](../bug-analysis/tool-results-exceed-mistral-context.md)) |
 | `api.extended[message.method] is not a function` in `planner-calls.json` | the planner build lacks the method (see the bug rules above) |
 | `chat request failed: … aborted` | a turn took longer than 10 minutes |
 

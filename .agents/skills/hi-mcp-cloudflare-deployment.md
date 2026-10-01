@@ -24,7 +24,8 @@ wrangler, e.g. `npm run deploy:cf -- --dry-run` builds the image without deployi
 - the login lasts — wrangler refreshes its token; every deploy is just `npx wrangler deploy`.
   A re-login (`wrangler logout && wrangler login`) is only the one-time recovery when a deploy
   fails with `Unauthorized` (see pitfalls below)
-- a changed worker name requires editing `"name"` in `hi-mcp/cf/wrangler.jsonc` first
+- a changed worker name requires editing `"name"` in `hi-mcp/cf/wrangler.jsonc` first, and then
+  the URL in `CLOUDFLARE_MCP_SERVER_URL` (`minimal-hi-example/start.mjs`, used by `npm run start:cf`)
 
 ## URL anatomy (where the public URL comes from)
 
@@ -45,6 +46,10 @@ https://<worker name>.<account subdomain>.workers.dev/mcp
 1. `initialize` over the public URL → HTTP 200 (the exact curl command is in
    [hi-mcp/docs/cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md))
 2. open the store with `&mcp_server=<the URL>` → `npx wrangler tail` shows `page connected`
+3. or, without the store: `npm run start:cf` opens the HI example against the deployment
+   (session = the OS user name, page port 3000 only) → the page log shows
+   `MCP connected to the MCP server`, and `get-plan-context` on the printed MCP URL returns the
+   articles
 
 Both verified live on 2026-09-26: the page's WebSocket upgrade passes through the Worker into
 the container, and Mistral Le Chat drives the visible store session end-to-end.

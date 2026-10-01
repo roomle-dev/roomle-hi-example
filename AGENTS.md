@@ -309,6 +309,9 @@ This starts:
 - WebSocket bridge at /bridge
 - Opens browser to http://localhost:3000/?mcp=true
 
+`npm run start:cf` starts the same page against the MCP server deployed on Cloudflare instead
+(no local MCP server; session = the OS user name; page port 3000 only).
+
 ### Testing Tool Calls
 
 1. Start the server

@@ -22,6 +22,7 @@ npm start gpt-5-mini <api-key>       # gpt-5-mini on the HI Azure AI Foundry res
 npm start gpt-5.4-mini <api-key>     # gpt-5.4-mini on the HI Azure AI Foundry resource
 npm start gpt-6-astra <api-key>      # gpt-6-astra on the HI Azure AI Foundry resource
 npm run dev <provider> <api-key>     # same, planner from the local Rubens UI dev server (:5173)
+npm run start:cf <provider> <api-key> # same, MCP server deployed on Cloudflare instead of a local one
 ```
 
 The provider name selects the provider and model:

@@ -125,6 +125,7 @@ are left out, and a local server simply ignores `mcp_session`.
 | deployed | Cloudflare Worker URL | — | the Worker's shared `default` container | one shared session (newest tab wins) |
 | deployed | Cloudflare Worker URL | a session name | the Worker's container for `?session=<name>` | **each user plans in their own container — no interference** |
 | any | any (also none) | a session name | the session rides along on the bridge URL; local servers ignore it | harmless |
+| HI example (`npm run start:cf`, `http://localhost:3000`) | Cloudflare Worker URL (set by the launcher) | the OS user name (set by the launcher) | the Worker's container for `?session=<user name>` | each developer plans in their own container |
 
 MCP clients connect to `http://localhost:3100/mcp` for the local setups and to
 `https://<server>/mcp` (Cloudflare: plus `?session=<name>`, the same name as the store page's

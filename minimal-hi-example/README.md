@@ -21,6 +21,13 @@ To develop against a local Rubens UI dev server (start it first on
 with `server_url=http://localhost:5173/` so the planner loads from the local
 UI instead of `https://www.roomle.com/t/bo-test/`.
 
+To use the MCP server deployed on Cloudflare instead of a local one, run
+`npm run start:cf` (with the chat: `npm run start:cf mistral <api-key>`). No
+local MCP server starts. The page connects to the deployment in a session
+named after your OS user name, and the launcher prints the matching MCP URL
+for external clients. It needs page port 3000, because that is the only local
+origin the deployed server accepts.
+
 **3. The example opens** at <http://localhost:3000/?mcp=true> (pass
 `--no-open` to skip that). Select a preset in the top bar, keep the tab
 open — the server terminal logs `page connected`.

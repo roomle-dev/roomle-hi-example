@@ -143,6 +143,7 @@ The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (bro
 npm start                          # from the repository root: page + MCP server
 node minimal-hi-example/start.mjs --no-open   # same, without opening a browser
 EXAMPLE_PORT=3101 npm start         # other page port
+npm run start:cf                    # page + the Cloudflare-hosted MCP server, no local server
 cd hi-mcp && npm test               # unit tests
 cd hi-mcp && npm run typecheck      # typecheck used by the build gate
 ```

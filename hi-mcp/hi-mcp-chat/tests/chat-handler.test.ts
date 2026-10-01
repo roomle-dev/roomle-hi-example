@@ -136,6 +136,11 @@ describe('getChatConfig', () => {
       modelId: 'gpt-5.4-mini',
       baseUrl: foundryBaseUrl,
     });
+    expect(resolveChatModel('gpt-6-astra')).toEqual({
+      provider: 'azure',
+      modelId: 'gpt-6-astra',
+      baseUrl: foundryBaseUrl,
+    });
     expect(resolveChatModel('openai')).toEqual({
       provider: 'azure',
       modelId: 'gpt-4o',

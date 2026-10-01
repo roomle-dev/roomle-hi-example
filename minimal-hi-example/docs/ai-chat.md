@@ -20,6 +20,7 @@ npm start gemini <api-key>           # gemini-2.5-pro (Gemini API key from Googl
 npm start azure <api-key>            # gpt-4o deployment (see below)
 npm start gpt-5-mini <api-key>       # gpt-5-mini on the HI Azure AI Foundry resource
 npm start gpt-5.4-mini <api-key>     # gpt-5.4-mini on the HI Azure AI Foundry resource
+npm start gpt-6-astra <api-key>      # gpt-6-astra on the HI Azure AI Foundry resource
 npm run dev <provider> <api-key>     # same, planner from the local Rubens UI dev server (:5173)
 ```
 
@@ -39,7 +40,7 @@ The provider name selects the provider and model:
 | `gemini-flash` | Google (Gemini API) | `gemini-2.5-flash` |
 | any `gemini-*` model id | Google (Gemini API) | passed through (e.g. `gemini-3-pro-preview`) |
 | `azure` / `openai` | Azure OpenAI | `gpt-4o` (deployment name — see below) |
-| `gpt-5-mini` / `gpt-5.4-mini` | Azure OpenAI (HI Azure AI Foundry resource) | the deployment of the same name |
+| `gpt-5-mini` / `gpt-5.4-mini` / `gpt-6-astra` | Azure OpenAI (HI Azure AI Foundry resource) | the deployment of the same name |
 
 Node 20+ (the repository's minimum). The Vercel AI SDK packages declare
 `engines: node >= 22`; the chat is verified on Node 20, but stay on Node 22+
@@ -53,7 +54,7 @@ environment variable, and the **deployment name** (not the model name) via
 AZURE_RESOURCE_NAME=my-resource HI_CHAT_MODEL=my-gpt4o-deployment npm start azure <api-key>
 ```
 
-`gpt-5-mini` and `gpt-5.4-mini` need neither: they are deployments on the HI
+`gpt-5-mini`, `gpt-5.4-mini` and `gpt-6-astra` need neither: they are deployments on the HI
 Azure AI Foundry resource and are called through its OpenAI v1 endpoint
 `https://dfhifoundrysweden.services.ai.azure.com/openai/v1` with the resource's
 API key. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
@@ -148,10 +149,10 @@ origins, `500` when the MCP server or Mistral call fails.
 | Variable | Default | Meaning |
 | -------- | ------- | ------- |
 | `HI_CHAT_TOKEN` | — | The provider API key (set by the launcher from the CLI argument) |
-| `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `claude`, `gemini`, `azure`, `gpt-5-mini`, `gpt-5.4-mini`, or a full `mistral-*`/`claude-*`/`gemini-*` model id) |
+| `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `claude`, `gemini`, `azure`, `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, or a full `mistral-*`/`claude-*`/`gemini-*` model id) |
 | `HI_CHAT_PORT` | `3200` | Port of the chat backend (the page reads it via the `chat_port` query parameter) |
-| `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider; ignored for `gpt-5-mini`/`gpt-5.4-mini` |
-| `AZURE_RESOURCE_NAME` | — | Required for `azure`/`openai`: the Azure OpenAI resource name (ignored for `gpt-5-mini`/`gpt-5.4-mini`) |
+| `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider; ignored for `gpt-5-mini`/`gpt-5.4-mini`/`gpt-6-astra` |
+| `AZURE_RESOURCE_NAME` | — | Required for `azure`/`openai`: the Azure OpenAI resource name (ignored for `gpt-5-mini`/`gpt-5.4-mini`/`gpt-6-astra`) |
 | `HI_MCP_URL` | `http://localhost:3100/mcp` | The MCP server the chat backend connects to |
 | `HI_CHAT_PAGE_ORIGINS` | `http://localhost:3000`, `http://127.0.0.1:3000` | Allowed CORS origins (the launcher sets it to match `EXAMPLE_PORT`) |
 

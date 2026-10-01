@@ -1,3 +1,5 @@
+import type { ModelMessage } from 'ai';
+
 export const DEFAULT_CHAT_PORT = 3200;
 export const DEFAULT_MCP_URL = 'http://localhost:3100/mcp';
 const CHAT_ROLES = ['user', 'assistant'] as const;
@@ -72,7 +74,11 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
 export interface ChatMessage {
   role: (typeof CHAT_ROLES)[number];
   content: string;
+  images?: string[];
 }
+
+// Inline image data only: the AI SDK downloads an image given as a URL itself.
+const IMAGE_DATA_URL = /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/;
 
 // Models of the other providers known to read images; Anthropic and Google
 // models all do. Any other model id gets no image input.
@@ -136,13 +142,46 @@ export const parseChatMessages = (body: unknown): ChatMessage[] => {
     if (typeof message !== 'object' || message === null) {
       throw new ChatRequestError('Each message must be an object with role and content');
     }
-    const { role, content } = message as { role?: unknown; content?: unknown };
+    const { role, content, images } = message as {
+      role?: unknown;
+      content?: unknown;
+      images?: unknown;
+    };
     if (typeof role !== 'string' || !CHAT_ROLES.includes(role as ChatMessage['role'])) {
       throw new ChatRequestError(`Invalid message role: ${role}`);
     }
     if (typeof content !== 'string') {
       throw new ChatRequestError('Message content must be a string');
     }
-    return { role: role as ChatMessage['role'], content };
+    if (images === undefined) {
+      return { role: role as ChatMessage['role'], content };
+    }
+    if (
+      !Array.isArray(images) ||
+      !images.every((image) => typeof image === 'string' && IMAGE_DATA_URL.test(image))
+    ) {
+      throw new ChatRequestError(
+        'Message images must be an array of base64 data URLs (image/jpeg, image/png, image/webp or image/gif)',
+      );
+    }
+    if (images.length > 0 && role !== 'user') {
+      throw new ChatRequestError('Only user messages can carry images');
+    }
+    return images.length > 0
+      ? { role: role as ChatMessage['role'], content, images }
+      : { role: role as ChatMessage['role'], content };
   });
 };
+
+export const toModelMessages = (messages: ChatMessage[]): ModelMessage[] =>
+  messages.map(({ role, content, images }) =>
+    images?.length
+      ? {
+          role: 'user',
+          content: [
+            { type: 'text', text: content },
+            ...images.map((image) => ({ type: 'image' as const, image })),
+          ],
+        }
+      : { role, content },
+  );

@@ -4,10 +4,12 @@ import {
   getChatConfig,
   parseChatMessages,
   resolveChatModel,
+  toModelMessages,
 } from '../chat-config';
 import { createChatRequestHandler, type StreamChat } from '../chat-handler';
 
 const PAGE_ORIGIN = 'http://localhost:3000';
+const IMAGE = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
 
 const startServer = (env: NodeJS.ProcessEnv, streamChat: StreamChat) =>
   new Promise<{ server: Server; url: string }>((resolve, reject) => {
@@ -207,6 +209,53 @@ describe('parseChatMessages', () => {
       parseChatMessages({ messages: [{ role: 'user', content: 42 }] }),
     ).toThrow(/content must be a string/);
   });
+
+  it('keeps the images of a user message', () => {
+    expect(
+      parseChatMessages({
+        messages: [{ role: 'user', content: 'like this', images: [IMAGE] }],
+      }),
+    ).toEqual([{ role: 'user', content: 'like this', images: [IMAGE] }]);
+    expect(
+      parseChatMessages({ messages: [{ role: 'user', content: 'hi', images: [] }] }),
+    ).toEqual([{ role: 'user', content: 'hi' }]);
+  });
+
+  it('accepts images as inline data URLs only', () => {
+    const parseImages = (images: unknown) => () =>
+      parseChatMessages({ messages: [{ role: 'user', content: 'x', images }] });
+    expect(parseImages(['https://example.com/kitchen.jpg'])).toThrow(/data URLs/);
+    expect(parseImages(['data:text/plain;base64,aGk='])).toThrow(/data URLs/);
+    expect(parseImages(['data:image/jpeg;base64,not base64!'])).toThrow(/data URLs/);
+    expect(parseImages(IMAGE)).toThrow(/data URLs/);
+    expect(() =>
+      parseChatMessages({
+        messages: [{ role: 'assistant', content: 'x', images: [IMAGE] }],
+      }),
+    ).toThrow(/Only user messages/);
+  });
+});
+
+describe('toModelMessages', () => {
+  it('turns the images of a user message into image parts', () => {
+    expect(
+      toModelMessages([
+        { role: 'user', content: 'hi' },
+        { role: 'assistant', content: 'hello' },
+        { role: 'user', content: 'like this', images: [IMAGE] },
+      ]),
+    ).toEqual([
+      { role: 'user', content: 'hi' },
+      { role: 'assistant', content: 'hello' },
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'like this' },
+          { type: 'image', image: IMAGE },
+        ],
+      },
+    ]);
+  });
 });
 
 describe('chat request handler', () => {
@@ -333,6 +382,51 @@ describe('chat request handler', () => {
         { role: 'user', content: 'hi' },
       ]);
     });
+  });
+
+  it('passes the images of a user message to the model as image parts', async () => {
+    const streamChat = vi.fn(async () => new Response('done'));
+    await withServer({ HI_CHAT_TOKEN: 'secret' }, streamChat, async (url) => {
+      const response = await fetch(`${url}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'like this', images: [IMAGE] }],
+        }),
+      });
+      expect(response.status).toBe(200);
+      expect(streamChat).toHaveBeenCalledWith([
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'like this' },
+            { type: 'image', image: IMAGE },
+          ],
+        },
+      ]);
+    });
+  });
+
+  it('rejects images for a model that does not read images', async () => {
+    const streamChat = vi.fn();
+    await withServer(
+      { HI_CHAT_TOKEN: 'secret', HI_CHAT_PROVIDER: 'mistral-large-2411' },
+      streamChat,
+      async (url) => {
+        const response = await fetch(`${url}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: 'like this', images: [IMAGE] }],
+          }),
+        });
+        expect(response.status).toBe(400);
+        expect(await response.text()).toBe(
+          'The model mistral:mistral-large-2411 does not read images',
+        );
+        expect(streamChat).not.toHaveBeenCalled();
+      },
+    );
   });
 
   it('relays stream errors as 500', async () => {

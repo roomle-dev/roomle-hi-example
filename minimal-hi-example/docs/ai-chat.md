@@ -120,6 +120,19 @@ from the other providers the ids in `IMAGE_INPUT_MODELS`:
 banner shows the result (`Images: yes` or `no`), and `GET /capabilities` gives
 it to the page.
 
+A user message carries its images in `images`, an array of base64 data URLs
+(`image/jpeg`, `image/png`, `image/webp` or `image/gif`):
+
+```json
+{ "role": "user", "content": "Plan a kitchen like the one in the image.", "images": ["data:image/jpeg;base64,/9j/..."] }
+```
+
+The backend accepts no image URL, because the AI SDK would download it in the
+backend. It passes the images to the model as image parts of the user message
+(`toModelMessages`), and every provider reads them there. The Mistral
+middleware moves only the images of tool results. An image sent to a model
+that reads no images is answered with `400`.
+
 ## Architecture
 
 ```

@@ -557,7 +557,9 @@ group one point and one rotation; the planner calculates every root position.
   and `dimensions` for how big an article is. It evaluates an image (a
   rendering of `get-plan-images` or any other picture) only for what no
   `desc` and no dimension states, and never takes the kind or the size of an
-  article from an image. Catalog images do not reach the agent at all: the
+  article from an image. This holds for a wrong `desc` too, by design: it is
+  fixed in the library data, never worked around in the agent's
+  instructions. Catalog images do not reach the agent at all: the
   server strips every `imageUrl`. The range hood `DU` and the decoration TV
   `SM_TV` of Furniture_Smith have no `dimensions` — their templates carry no
   size attribute; the panels carry depth and height but no thickness.

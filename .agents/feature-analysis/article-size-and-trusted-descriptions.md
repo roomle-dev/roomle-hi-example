@@ -13,8 +13,8 @@ from the local `node_modules`). Not verified: a live model run — whether a mod
 mcp" suite. The living reference is the `articles` section and [Authoring pos
 groups](../../minimal-hi-example/docs/hi-mcp-server.md#authoring-pos-groups) of
 `hi-mcp-server.md` and the `get-plan-context` entry of [hi-mcp-tools.md](../skills/hi-mcp-tools.md).
-Open: `DU` and `SM_TV` still have no size (gap 3), and the swapped hand in the `desc` of
-`UELTB90`/`UERTB90` is library data.
+Open: `DU` and `SM_TV` still have no size (gap 3). The swapped hand in the `desc` of
+`UELTB90`/`UERTB90` stays trusted by design — see [Decision](#decision-a-wrong-desc-is-trusted-too).
 
 ## What was asked and why
 
@@ -130,14 +130,16 @@ pin the new statements in the served texts.
 The attribute names are not hard-coded as ids (`mod_Width`): the server stays library-agnostic, and
 the id is always in front of the agent next to its name.
 
-### Known risk: a wrong `desc` in the library
+### Decision: a wrong `desc` is trusted too
 
-Trusting `desc` also trusts its errors. The descriptions of `UELTB90` ("direction right") and
-`UERTB90` ("direction left") name the opposite hand of their ids (also noted in
+Trusting `desc` also trusts its errors — and that is intended (confirmed by the user on 2026-10-01).
+The descriptions of `UELTB90` ("direction right") and `UERTB90` ("direction left") name the opposite
+hand of their ids (also noted in
 [hi-furniture-smith-article-catalog.md](../skills/hi-furniture-smith-article-catalog.md)). Placement
 is unaffected — the corner rules hold for both hands and the server turns a right-handed corner
-article itself — but an agent asked for a specific hand would pick the wrong article. The fix belongs
-in the library data, not in the agent's instructions.
+article itself — but an agent asked for a specific hand picks the article the `desc` names. The
+`desc` is the library's statement of what an article is; a wrong one is fixed in the library data,
+never worked around in the agent's instructions.
 
 ## Alternatives considered
 

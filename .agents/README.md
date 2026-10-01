@@ -91,6 +91,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [A merged group's toe kick reaches 120 mm into the back wall](bug-analysis/merged-group-toe-kick-reaches-into-the-wall.md) | Open | 2026-10-01 |
 | [create-or-replace-groups loads a new group outside the room](bug-analysis/new-group-outside-the-room-accepted.md) | Rejected | 2026-10-01 |
 | [create-or-replace-groups accepts two roots on one side docking vector](bug-analysis/two-roots-on-one-side-vector-accepted.md) | Fixed | 2026-10-01 |
+| [The deploy workflow misses the Linux rollup binary](bug-analysis/deploy-workflow-misses-linux-rollup-binary.md) | Fixed | 2026-10-01 |
 
 ### Feature Analyses
 

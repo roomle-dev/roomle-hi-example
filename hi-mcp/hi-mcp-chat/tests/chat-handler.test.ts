@@ -155,6 +155,26 @@ describe('getChatConfig', () => {
     ).toBe('gpt-5-mini');
     expect(getChatConfig({ HI_CHAT_PROVIDER: 'azure' }).azureBaseUrl).toBeUndefined();
   });
+
+  it('knows which models read images', () => {
+    const imageInput = (env: NodeJS.ProcessEnv) => getChatConfig(env).imageInput;
+    expect(imageInput({})).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-medium' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'claude' })).toBe(true);
+    expect(
+      imageInput({ HI_CHAT_PROVIDER: 'claude', HI_CHAT_MODEL: 'claude-haiku-4-5' }),
+    ).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'gemini-flash' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'azure' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-5-mini' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-6-astra' })).toBe(true);
+
+    expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-large-2411' })).toBe(false);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-5.4-mini' })).toBe(false);
+    expect(
+      imageInput({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'my-deployment' }),
+    ).toBe(false);
+  });
 });
 
 describe('parseChatMessages', () => {
@@ -195,6 +215,22 @@ describe('chat request handler', () => {
       const response = await fetch(`${url}/health`);
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('ok');
+    });
+  });
+
+  it('tells the page whether the model reads images', async () => {
+    await withServer({}, vi.fn(), async (url) => {
+      const response = await fetch(`${url}/capabilities`, {
+        headers: { Origin: PAGE_ORIGIN },
+      });
+      expect(response.status).toBe(200);
+      expect(response.headers.get('Content-Type')).toBe('application/json');
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe(PAGE_ORIGIN);
+      expect(await response.json()).toEqual({ imageInput: true });
+    });
+    await withServer({ HI_CHAT_PROVIDER: 'mistral-large-2411' }, vi.fn(), async (url) => {
+      const response = await fetch(`${url}/capabilities`);
+      expect(await response.json()).toEqual({ imageInput: false });
     });
   });
 

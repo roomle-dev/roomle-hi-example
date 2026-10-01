@@ -175,6 +175,7 @@ server.listen(config.port, '127.0.0.1', () => {
   console.log(`  \u279c  Local:   http://localhost:${config.port}/chat`);
   console.log(`  \u279c  MCP:     ${config.mcpUrl}`);
   console.log(`  \u279c  Model:   ${config.provider}:${config.modelId}`);
+  console.log(`  \u279c  Images:  ${config.imageInput ? 'yes' : 'no'}`);
   console.log('');
   if (!config.apiToken) {
     console.log('[hi-chat] no API token - POST /chat answers 503 until HI_CHAT_TOKEN is set');

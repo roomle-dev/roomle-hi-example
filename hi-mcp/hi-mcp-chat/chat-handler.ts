@@ -37,6 +37,11 @@ export const createChatRequestHandler =
       send(200, 'ok');
       return;
     }
+    if (pathname === '/capabilities') {
+      response.writeHead(200, { 'Content-Type': 'application/json', ...cors });
+      response.end(JSON.stringify({ imageInput: config.imageInput }));
+      return;
+    }
     if (pathname !== '/chat') {
       send(404, 'Not found - the chat endpoint is /chat');
       return;

@@ -74,11 +74,25 @@ export interface ChatMessage {
   content: string;
 }
 
+// Models of the other providers known to read images; Anthropic and Google
+// models all do. Any other model id gets no image input.
+export const IMAGE_INPUT_MODELS = [
+  'mistral-large-latest',
+  'mistral-medium-latest',
+  'gpt-4o',
+  'gpt-5-mini',
+  'gpt-6-astra',
+];
+
+export const readsImages = (provider: ChatProvider, modelId: string) =>
+  provider === 'anthropic' || provider === 'google' || IMAGE_INPUT_MODELS.includes(modelId);
+
 export interface ChatConfig {
   port: number;
   provider: ChatProvider;
   apiToken: string | undefined;
   modelId: string;
+  imageInput: boolean;
   azureResourceName: string | undefined;
   azureBaseUrl: string | undefined;
   mcpUrl: string;
@@ -87,14 +101,18 @@ export interface ChatConfig {
 
 export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
   const chatModel = resolveChatModel(env.HI_CHAT_PROVIDER);
+  // HI_CHAT_MODEL overrides the resolved model id (e.g. an Azure deployment
+  // name) without changing the provider; Foundry deployments are fixed by
+  // their CLI name
+  const modelId = chatModel.baseUrl
+    ? chatModel.modelId
+    : env.HI_CHAT_MODEL || chatModel.modelId;
   return {
     port: Number(env.HI_CHAT_PORT) || DEFAULT_CHAT_PORT,
     provider: chatModel.provider,
     apiToken: env.HI_CHAT_TOKEN || undefined,
-    // HI_CHAT_MODEL overrides the resolved model id (e.g. an Azure deployment
-    // name) without changing the provider; Foundry deployments are fixed by
-    // their CLI name
-    modelId: chatModel.baseUrl ? chatModel.modelId : env.HI_CHAT_MODEL || chatModel.modelId,
+    modelId,
+    imageInput: readsImages(chatModel.provider, modelId),
     azureResourceName: env.AZURE_RESOURCE_NAME || undefined,
     azureBaseUrl: chatModel.baseUrl,
     mcpUrl: env.HI_MCP_URL || DEFAULT_MCP_URL,

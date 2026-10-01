@@ -28,9 +28,66 @@ The container runs the tools and relays their planner calls into the connected l
   require it
 - **Node 22+** for wrangler (on this machine: `~/.volta/bin` first on the PATH; the plain
   Node 20 fails with a version error)
-- Nothing else: no domain, no certificates (Cloudflare terminates TLS), no CI
+- Nothing else: no domain, no certificates (Cloudflare terminates TLS)
+- For deploys from GitHub: the one-time [setup of the token and the environment](#one-time-setup-repository-admin)
 
-## Deploy (one command, run it yourself)
+## Deploy from GitHub (push to `release/cloudflare`)
+
+The workflow [`deploy-cloudflare.yml`](../../.github/workflows/deploy-cloudflare.yml) runs on
+every push to `release/cloudflare`:
+
+1. `npm ci`
+2. the typecheck and the unit tests of the `hi-mcp` workspace
+3. `npx wrangler deploy` — builds and pushes the image, uploads the Worker
+4. an `initialize` against the public URL, which must answer 200
+
+A failing test or image build deploys nothing. Only one deploy runs at a time; a second push
+waits for the first. A run takes about 3 minutes.
+
+To release `master`:
+
+```bash
+git fetch origin && git push origin origin/master:release/cloudflare   # fast-forward
+```
+
+Watch the run with `gh run watch --repo roomle-dev/roomle-hi-example` or in the Actions tab. To
+retry a failed deploy, use "Re-run jobs" there.
+
+A manual `npm run deploy:cf` (below) still replaces the deployment. After a manual deploy, the
+running server no longer matches `release/cloudflare` until the next push, so keep manual deploys
+for dry runs and emergencies.
+
+### One-time setup (repository admin)
+
+1. **Cloudflare API token** — create it in the account that owns `hi-mcp-poc`:
+   1. Go to My Profile → API Tokens → Create Token and pick the template
+      **"Edit Cloudflare Workers"**.
+   2. Keep the template's permissions and add one row: **Account · Containers · Edit**.
+   3. Under Account Resources, include this one account only.
+   4. Create the token and copy it (it is shown only once).
+   5. Get the account ID: `npx wrangler whoami` in `hi-mcp/cf` prints it.
+2. **GitHub environment `cloudflare` with the two secrets.** The environment hands its secrets
+   only to jobs that run for `release/cloudflare`. The repository is public, so no workflow on
+   another branch may read them.
+
+```bash
+R=roomle-dev/roomle-hi-example
+echo '{"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}' \
+  | gh api -X PUT repos/$R/environments/cloudflare --input -
+gh api -X POST repos/$R/environments/cloudflare/deployment-branch-policies \
+  -f name=release/cloudflare -f type=branch
+gh secret set CLOUDFLARE_API_TOKEN  --env cloudflare --repo $R   # prompts for the token
+gh secret set CLOUDFLARE_ACCOUNT_ID --env cloudflare --repo $R   # prompts for the account id
+```
+
+The same in the web UI:
+
+1. Go to Settings → Environments → New environment `cloudflare`.
+2. Under Deployment branches and tags, choose "Selected branches and tags" and add
+   `release/cloudflare`.
+3. Add both secrets as environment secrets.
+
+## Deploy by hand (one command, run it yourself)
 
 ```bash
 cd hi-mcp/cf
@@ -136,11 +193,14 @@ external MCP clients. The example has to run on port 3000, because `http://local
 only local origin in the server's default `HI_MCP_PAGE_ORIGINS`, and the launcher refuses another
 `EXAMPLE_PORT`. The example always talks to the last deployed image, so deploy first to try server
 changes from a branch. The Worker URL is the constant `CLOUDFLARE_MCP_SERVER_URL` in
-`minimal-hi-example/start.mjs`, so a changed worker name needs it updated as well.
+`minimal-hi-example/start.mjs`, so a changed worker name needs it updated as well, together with
+the URL in the verify step of `.github/workflows/deploy-cloudflare.yml`.
 
 ## Updating after code changes
 
-One command, in place — nothing is deleted, the URL stays the same:
+Push to `release/cloudflare` ([Deploy from GitHub](#deploy-from-github-push-to-releasecloudflare)).
+The deployment is replaced in place: nothing is deleted, and the URL stays the same. By hand, the
+same is one command:
 
 ```bash
 npm run deploy:cf        # from the repository root; same as: cd hi-mcp/cf && npx wrangler deploy
@@ -200,6 +260,8 @@ npx wrangler containers delete <ID>  # stop and remove the container application
 | wrangler refuses to start | Node < 22 on the PATH — use `~/.volta/bin` first |
 | image build: `npm ci` … `Invalid: lock file's <pkg>@<a> does not satisfy <pkg>@<b>` | `hi-mcp/package-lock.json` is stale — see [Refreshing the image lockfile](#refreshing-the-image-lockfile) |
 | deploy uploads the Worker, then `Unauthorized` | **nothing to delete** — the container-app update step lost authorization (the Worker upload itself succeeded). In order: retry the deploy → fresh `wrangler logout && wrangler login` → check the container app state in the dashboard (Containers → `hi-mcp-poc-himcpcontainer`) → fall back to an API token: dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template, then `CLOUDFLARE_API_TOKEN=<token> npx wrangler deploy`. Until a deploy fully succeeds, the running container keeps the previous image |
+| GitHub deploy uploads the Worker, then `Unauthorized`/403 at the container step | the API token lacks **Account · Containers · Edit** — edit the token in Cloudflare, then "Re-run jobs" |
+| GitHub deploy step: `CLOUDFLARE_API_TOKEN` missing / not authenticated | the secrets are not set in the `cloudflare` environment, or the run is not on `release/cloudflare` — see [One-time setup](#one-time-setup-repository-admin) |
 | `Cannot resolve host` / client refuses the URL | URL built from the **account ID** instead of the account **subdomain** — take the URL from the deploy output |
 | deploy: "already an application … different durable object namespace" | orphaned container app from an earlier `wrangler delete` — `wrangler containers list` + `wrangler containers delete <ID>` |
 | deploy rejects the config | `instance_type` naming — use `standard-1`; or Containers require the Workers Paid plan |

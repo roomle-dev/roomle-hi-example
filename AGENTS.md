@@ -144,7 +144,9 @@ The start script (`npm start`) provides:
 │   ├── hi-mcp-poc-presentation.md # Proof of concept presentation
 │   └── images/                   # Diagram and screenshot assets
 └── .github/
-    └── copilot-instructions.md   # GitHub Copilot specific instructions
+    ├── copilot-instructions.md   # GitHub Copilot specific instructions
+    └── workflows/
+        └── deploy-cloudflare.yml # Deploys hi-mcp to Cloudflare on a push to release/cloudflare
 ```
 
 ## On-Demand Skills
@@ -311,6 +313,13 @@ This starts:
 
 `npm run start:cf` starts the same page against the MCP server deployed on Cloudflare instead
 (no local MCP server; session = the OS user name; page port 3000 only).
+
+### Deploying to Cloudflare
+
+A push to `release/cloudflare` deploys the MCP server to Cloudflare
+(`.github/workflows/deploy-cloudflare.yml`: tests, `wrangler deploy`, `initialize` check).
+`npm run deploy:cf` deploys by hand — only for dry runs and emergencies. Details:
+[`.agents/skills/hi-mcp-cloudflare-deployment.md`](./.agents/skills/hi-mcp-cloudflare-deployment.md).
 
 ### Testing Tool Calls
 

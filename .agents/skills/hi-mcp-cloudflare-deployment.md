@@ -6,7 +6,24 @@ container application cleanup, verification, teardown.
 
 ## Updating the server (one command, never a delete/rebuild)
 
-The code lives in the repository; the cloud deployment is always replaced wholesale:
+The code lives in the repository; the cloud deployment is always replaced wholesale.
+
+**The normal path is a push to `release/cloudflare`.** The workflow
+`.github/workflows/deploy-cloudflare.yml` runs `npm ci`, the `hi-mcp` typecheck and unit tests,
+`npx wrangler deploy`, and an `initialize` → 200 check against the public URL (about 3 min, one
+deploy at a time). To release `master`:
+
+```bash
+git fetch origin && git push origin origin/master:release/cloudflare   # fast-forward
+```
+
+The credentials are the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets of the GitHub
+environment `cloudflare`, which only `release/cloudflare` may use. The token comes from the
+template "Edit Cloudflare Workers" plus **Account · Containers · Edit**. The one-time setup is in
+[cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md#one-time-setup-repository-admin).
+
+By hand (for dry runs and emergencies — the next push to `release/cloudflare` replaces a manual
+deploy again):
 
 ```bash
 cd hi-mcp/cf
@@ -26,6 +43,7 @@ wrangler, e.g. `npm run deploy:cf -- --dry-run` builds the image without deployi
   fails with `Unauthorized` (see pitfalls below)
 - a changed worker name requires editing `"name"` in `hi-mcp/cf/wrangler.jsonc` first, and then
   the URL in `CLOUDFLARE_MCP_SERVER_URL` (`minimal-hi-example/start.mjs`, used by `npm run start:cf`)
+  and in the verify step of `.github/workflows/deploy-cloudflare.yml`
 
 ## URL anatomy (where the public URL comes from)
 
@@ -76,6 +94,8 @@ npx wrangler containers delete <ID>        # stop and remove the container appli
 | `Cannot resolve host` / a client refuses the URL | URL built from the account ID instead of the account subdomain — take the URL from the deploy output |
 | deploy fails with "different durable object namespace" | orphaned container app from an earlier delete — `wrangler containers list` + `containers delete` |
 | deploy uploads the Worker, then `Unauthorized` | **nothing to delete** — the container-app update step lost authorization. In order: retry the deploy → fresh `wrangler logout && wrangler login` → check the container app state in the dashboard → fall back to an API token: dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template, then `CLOUDFLARE_API_TOKEN=<token> npx wrangler deploy` |
+| GitHub deploy uploads the Worker, then `Unauthorized`/403 at the container step | the API token lacks **Account · Containers · Edit** — edit the token in Cloudflare, then "Re-run jobs" |
+| GitHub deploy step is not authenticated | the secrets are missing in the `cloudflare` environment, or the run is not on `release/cloudflare` (the environment's branch rule) |
 | deploy rejects `"instance_type": "basic"` | change to `standard-1` in `wrangler.jsonc` |
 | first request takes ~10 s | the container boots on demand after sleeping — expected |
 | agent gets "No HI page connected" | the store tab is not open — the agent names the URL to open (`HI_MCP_STORE_URL`, configured in `wrangler.jsonc` vars); open it and start planning |

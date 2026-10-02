@@ -64,7 +64,7 @@ Per run, read:
 | File | Look at |
 |---|---|
 | `top-image.png`, `perspective-image.png` | where the group stands, what it consists of |
-| `run.json` | per turn the answer, the tools and `toolFeedback` — the `corrections`, `notLoaded` and `error` each tool gave the model, with the call's `args` for an error; `errors`; `planSnapshotId` |
+| `run.json` | per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId` |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
 | `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) and the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) |
 | `planner-calls.json` | what the MCP server sent to the planner: `loadExternalObjectGroupLayout` — `args[0].posGroups[]` with the roots, their docking (`contextData.dockedRoots`) and attributes, and `repositioningData` (the placement); `externalObjectGroupOperation` — `args` = the command and its payload; `ok: false` with the page's `error` |
@@ -73,7 +73,7 @@ Per run, read:
 The evidence at a glance (`R` = the run directory):
 
 ```bash
-jq '{planSnapshotId, errors, turns: [.turns[] | {prompt, answer: (.answer | .[0:500]), tools, toolFeedback}]}' "$R/run.json"
+jq '{planSnapshotId, errors, turns: [.turns[] | {prompt, answer: (.answer | .[0:500]), tools, toolCalls}]}' "$R/run.json"
 jq -c '.groups[]? | {group: .id[0:8], pos: .position.pos, rotationY: .position.rotationY, sizeMm: [.position.footprint.widthMm, .position.footprint.depthMm], roots: [.roots[]? | .desc]}' "$R/plan-context.json"
 jq -c '.[] | select(.method != "getExternalObjectPlanContext") | {method, ok, error, placement: [.args[0] | objects | .posGroups[]?.repositioningData | select(.)], firstArg: ([.args[0] | strings][0]), command: (if .method == "externalObjectGroupOperation" then .args else null end)}' "$R/planner-calls.json"
 jq -c '[.[] | select(.method == "loadExternalObjectGroupLayout")][-1].args[0].posGroups[].roots[] | {id, articleId, attributes: [.attributes[]? | "\(.id)=\(.value)"], docks: [.contextData.dockedRoots[]? | "\(.ownDockingVector)->" + ([.dockedRoots[].id] | join(","))]}' "$R/planner-calls.json"
@@ -91,10 +91,14 @@ Check:
 - the answer matches the plan (models claim materials, connections and corners they did not
   author).
 
-Tool results are not in the chat stream; their feedback is in `toolFeedback` of `run.json`, read from
-the MCP server's log: what the server corrected, the groups it could not build, and the tool errors.
-A schema error ("Input validation error") is not in it — it shows only as a tool call without planner
-calls.
+Tool results are not in the chat stream; `toolCalls` of `run.json`, read from the MCP server's log,
+holds per call of a plan-changing tool what the model sent (`args`, copied before the server
+corrected it) and what it got back: the corrections, the groups not built, the error. A schema
+error ("Input validation error") is not in it — it shows only as a tool call without planner calls.
+
+Before calling a result a model finding, compare the model's `args` with what reached the planner
+(`planner-calls.json`). Content the model sent that is missing in the planner call without a
+correction reporting it is a **bug** of the MCP server, not a model finding.
 
 #### Verdict
 
@@ -116,7 +120,8 @@ A result is a bug when the system, not the model, is at fault:
 | the placement the server sent is right (`repositioningData.posGroup` at the wall's `end` or the corner point, `posRotationY` the wall's `facingRotationY`), but the group stands elsewhere; or valid input yields impossible geometry (outside the room, through a wall, overlapping another group) | **bug** — MCP server placement or planner |
 | the plan contradicts what the tools reported (success, but the group is missing or unchanged) | **bug** |
 | a correction of the server is wrong for the request, or the server changed the input without reporting it in `corrections` | **bug** — MCP server correction |
-| the model's own input is wrong: another wall or point (a wall's `start` instead of its `end`), other articles, missing items, input the server had to correct (`toolFeedback`), stopped early, no tool call | **model finding**, no bug |
+| the server dropped content the model sent (its `args` in `toolCalls`) without reporting it | **bug** — MCP server |
+| the model's own input is wrong: another wall or point (a wall's `start` instead of its `end`), other articles, missing items, input the server had to correct (`toolCalls`), stopped early, no tool call | **model finding**, no bug |
 | provider errors: authorization, quota, rate limit | **environment**, no bug |
 
 A model finding the server could have caught — a wall unit as the placement anchor — and a
@@ -158,7 +163,7 @@ Write `$SESSION/report.md`:
 
 ## Corrections
 
-- <what the server corrected, from `toolFeedback`> — <n> runs ([02](#02-<slug>), …)
+- <what the server corrected, from `toolCalls`> — <n> runs ([02](#02-<slug>), …)
 
 ## Environment
 
@@ -172,7 +177,7 @@ Setup turns: <none, or the turns before the prompt>
 
 - **Plan snapshot**: `ps_…`
 - **Tools**: <per turn, in order>
-- **Corrections**: <per tool, the corrections, groups not loaded and errors of `toolFeedback`, or none>
+- **Corrections**: <per tool, the corrections, groups not loaded and errors of `toolCalls`, or none>
 - **Answer**: <the model's final answer, shortened>
 
 | Perspective | Top |
@@ -226,7 +231,7 @@ The script:
 
 | File | Content |
 |---|---|
-| `run.json` | provider; `turns` (per turn the prompt, the model's answer, the tools in order, `toolFeedback` — per tool call with feedback its `corrections`, `notLoaded`, or `error` with the call's `args` — errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
+| `run.json` | provider; `turns` (per turn the prompt, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` — errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
 | `plan-context.json` | `get-plan-context` with rooms and groups after the chat — the walls and where the groups stand |
 | `planner-calls.json` | every planner call during the chat: method, full arguments, `ok`, and the page's `error` |
 | `snapshot.json` | the return value of `getExternalObjectSnapshot()`, unchanged |

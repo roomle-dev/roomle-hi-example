@@ -8,7 +8,7 @@ const AUTHORING_RULES = `Authoring rules for pos groups:
 - Every desc - of an article, a root, a module, an attribute and an attribute value - is authoritative: trust it for what that article, module or value is, and trust dimensions for how big an article is. Both are authoritative over the catalog images of the master data (imageUrl): never take the kind or the size of an article from a catalog image.
 - One kitchen is one group. Every unit standing beside, above or back to back with another unit is a root of the SAME group, docked to it; a new group carries one placement, and the planner derives every root position from the docking. Never create a second group to put units next to existing ones - units that belong together are docked.
 - Never author a position: roots are positioned by docking only, a new group with placement only; a position on a root or a group is ignored.
-- Docking (contextData) relates the root modules of a group to each other and is required: in a group with several roots, every additional root must be docked, directly or through a chain, to the first root of the group. A root the docking does not connect to the first root is docked by the server to the free end of its row, which may not be where you meant it. Write the docking entry on the placed root and list the new root under dockedRoots - the placed root's own vector meets the named vector of the new root:
+- Docking (contextData) relates the root modules of a group to each other and is required: in a group with several roots, every additional root must be docked, directly or through a chain, to the first root of the group. A root the docking does not connect to the first root is docked by the server to the free end of its row, which may not be where you meant it. Write the docking entry on the placed root and name the new root by its id under dockedRoots - the new root itself is an entry of roots like every other root; the placed root's own vector meets the named vector of the new root:
   { "id": "A", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom", "dockedRoots": [{ "id": "B", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }] }] } }
   puts B directly right of A; the mirrored entry { "ownDockingVector": "LeftBottom", "dockedRoots": [{ "id": "B", "dockingVector": "RightBottom", "mode": "StartStart", "offset": [0, 0, 0] }] } written on A puts B directly left of A. Chain entries (A lists B, B lists C, ...) for a row; one placed root may carry several entries, one per own vector. A side vector (LeftBottom, RightBottom) takes one neighbour per place - a row continues from the free side vector of its last unit; a second root docked to the same place is moved to the free end of the row. Docking vector indices are resolved from the names automatically. An offset only takes effect in this direction - an entry written on the new root loses it.
 - Docking vectors are named edges of a root module (dockInfos; the names per article are in the catalog as dockingVectors). Left and Right vectors lie on the side faces and run from the back to the front, Back vectors lie on the back face and run from left to right; Top and Bottom name the upper and lower edge; LeftBack and RightBack exist only on corner articles - they are the back edges of the two arms of an L-shaped corner module, and their start point is the article's corner point. Valid pairs, written as own vector of the placed root -> vector of the new root:
@@ -67,7 +67,7 @@ const INSTRUCTIONS = `This server orchestrates HOMAG Intelligence (HI) object gr
 
 Typical workflow:
 1. get-plan-context: fetch the rooms (each with a derived walls array), the article catalog (desc, category, dimensions, docking vector names, sub-modules per article) and the groups currently in the plan. Add masterData to include for the attribute vocabulary, or look an attribute up with find-attributes.
-2. create-or-replace-groups: author the whole kitchen as ONE group - article picks plus docking (every unit beside, above or back to back is docked to its neighbour; the placed root lists the new root) plus one placement for the new group ({ posGroup, posRotationY }: the room point of the group's back left corner and its rotation, taken from the walls array - a wall's end point and facingRotationY, or a room corner point with the rotation from the corner rules; a plan into a room corner starts with a corner article, cornerArticle true in the catalog). One call creates, docks and positions the group; never author root positions and never split a kitchen into several groups. A group whose id matches an existing group in the plan completely replaces that group and keeps its position; all other groups are created. Units next to an existing group are added to that group, docked to a free docking vector of the root they continue - a new group is only for a free stretch of wall. The payload format, the docking pairs, the corner rules and complete examples are returned by get-authoring-rules.
+2. create-or-replace-groups: author the whole kitchen as ONE group - article picks plus docking (every unit is an entry of roots, and every unit beside, above or back to back is docked to its neighbour: the placed root names the new root by its id) plus one placement for the new group ({ posGroup, posRotationY }: the room point of the group's back left corner and its rotation, taken from the walls array - a wall's end point and facingRotationY, or a room corner point with the rotation from the corner rules; a plan into a room corner starts with a corner article, cornerArticle true in the catalog). One call creates, docks and positions the group; never author root positions and never split a kitchen into several groups. A group whose id matches an existing group in the plan completely replaces that group and keeps its position; all other groups are created. Units next to an existing group are added to that group, docked to a free docking vector of the root they continue - a new group is only for a free stretch of wall. The payload format, the docking pairs, the corner rules and complete examples are returned by get-authoring-rules.
 3. Edit an existing group with the command tools: merge-article-into-group (dock one more unit), exchange-root-module (replace a unit), delete-root-module and delete-group, change-module-attribute and change-group-attribute (attributes, e.g. the front colour of the whole kitchen), merge-groups (join groups that stand next to each other); place-group moves a group to another wall or into a room corner. Resubmit a whole group with create-or-replace-groups only to rebuild it.
 4. Check the result with get-price or get-order-data, and inspect it with get-plan-images.
 
@@ -84,6 +84,18 @@ const textResult = (result: unknown) => ({
   ],
 });
 
+const PLAN_CHANGING_TOOLS = [
+  'create-or-replace-groups',
+  'place-group',
+  'change-module-attribute',
+  'change-group-attribute',
+  'delete-group',
+  'delete-root-module',
+  'merge-article-into-group',
+  'exchange-root-module',
+  'merge-groups',
+];
+
 const stripDataUrlPrefix = (image: string): string =>
   image.replace(/^data:image\/\w+;base64,/, '');
 
@@ -93,10 +105,16 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     { instructions: INSTRUCTIONS },
   );
 
-  // The feedback a tool gives the agent goes to the log as one JSON line, so a
-  // test run can tell which corrections and errors the agent saw.
+  // What the agent sent to a tool that changes the plan, and the feedback it
+  // got, go to the log as one JSON line each, so a test run can tell what the
+  // agent sent and which corrections and errors it saw. The arguments are
+  // copied first: the tools correct their input in place.
   const runTool = async (tool: string, args: Record<string, unknown>) => {
     console.log(`[hi-mcp] tool ${tool}`);
+    const sent = structuredClone(args);
+    if (PLAN_CHANGING_TOOLS.includes(tool)) {
+      console.log(`[hi-mcp] tool ${tool} args ${JSON.stringify(sent)}`);
+    }
     try {
       const result = (await toolExecutors[tool](plannerApi, args)) as any;
       const { corrections, notLoaded } = result ?? {};
@@ -110,7 +128,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       console.log(
         `[hi-mcp] tool ${tool} error ${JSON.stringify({
           message: (error as Error)?.message ?? String(error),
-          args,
+          args: sent,
         })}`,
       );
       throw error;
@@ -200,7 +218,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'Creates or replaces HI object groups in the plan from an array of pos groups. Roots are article picks ' +
         'and nothing else ({ id, articleId, attributes?, contextData? }) - the server completes them from the article template, ' +
         'and the planner calculates and arranges the docked root modules (the docking vector names of an article ' +
-        'are in the catalog as dockingVectors; the placed root lists the new root); never author root ' +
+        'are in the catalog as dockingVectors; every unit is an entry of roots, and the placed root names the new root by its id); never author root ' +
         'positions. Author one kitchen as ONE group: units beside, above or back to back with each other are ' +
         'docked roots of the same group, never separately positioned groups. Position a new group in the same ' +
         "call with placement ({ posGroup, posRotationY }: the room point of the group's back left corner and " +

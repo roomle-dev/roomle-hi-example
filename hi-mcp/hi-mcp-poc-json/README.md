@@ -586,7 +586,7 @@ calculates every root position.
   keeps one to a root deleted from it) connects nothing.
   A side vector (`LeftBottom`, `RightBottom`) takes one neighbour per place: two roots docked to it with the same mode and offset would stand in the same place, so the server docks the later one to the free end of that row and reports it (a different mode or offset can put them at the back and the front of the edge, or apart); Top vectors (the neighbour's top edge and a unit above) and `BackBottom` (two units back to back with a wide one) may carry several.
   The docking entry
-  is written on the placed root (the anchor) and lists the new root under `dockedRoots`; the
+  is written on the placed root (the anchor) and names the new root by its id under `dockedRoots` — the new root itself is an entry of `roots` like every other root; the
   anchor's `ownDockingVector` meets the new root's `dockingVector`. Docking vector *names*
   suffice; the indices are resolved automatically. An `offset` only takes effect in this
   direction — an entry written on the new root loses it.

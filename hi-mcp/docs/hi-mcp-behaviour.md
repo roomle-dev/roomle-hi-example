@@ -151,6 +151,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D29 | **A unit docked to an occupied side goes to the free end of that row** (`merge-article-into-group`, and two roots on one side vector in `create-or-replace-groups`) | user decision 4 | in effect — `separateSideVectorPartners`, `dockTarget`, `tool-executors.ts` |
 | D30 | **A call loads every group that can be built** and reports the others with what to send instead | user decision 5 | in effect — `keepBuildable`, `tool-executors.ts` |
 | D31 | Guards are a last resort; the server corrects and informs, and gives feedback where it cannot correct | user guideline | in effect — §8 |
+| D32 | **Nothing the agent sends is dropped without a report.** What the server can build it builds — a unit written inside the docking becomes a root — and every field it cannot use is named in `corrections`. Only the read-only fields of a group from `get-plan-context` are ignored silently | user, 2026-10-02 ([bug analysis](../../.agents/bug-analysis/units-inside-docking-entries-dropped.md)) | in effect — `prepareGroup`, `tool-executors.ts` |
 
 ## 4. How a tool call runs
 
@@ -303,15 +304,18 @@ references are remapped.
 
 The server runs these steps:
 
-1. It drops generated roots (C1) and prepares each group: positions, root ids, repositioning data
+1. It drops generated roots (C1) and prepares each group: it takes units written inside the docking
+   as roots (G23), completes the docking entries (G24, G25), reports the fields it does not use
+   (G27), reads the attribute overrides (G28), and corrects positions, root ids, repositioning data
    and the placement (G1–G14).
 2. It reduces the roots to article picks and strips the docking indices (C2, C3).
-3. It reads the article ids in the catalog's spelling (G15), completes the docking (G7, G8), and
-   drops a placement on a group that is already in the plan (G16).
+3. It reads the article ids in the catalog's spelling (G15), reports the roots a new group names in
+   its docking but never sends (G26), completes the docking (G7, G8), and drops a placement on a
+   group that is already in the plan (G16).
 4. For a placed group whose anchor is a corner article, it learns the article's corner frame by a
    probe load, once per article and attribute set (C6, G17).
-5. It turns the placement into the planner's repositioning of the anchor root (C5, C6) and strips
-   every other group field.
+5. It turns the placement into the planner's repositioning of the anchor root (C5, C6). The group
+   reaches the planner with `id`, `libraryId`, `roots`, `attributes` and the repositioning.
 6. It loads the groups that can be built in one call with `reason: 'adjusted'`, reads the groups,
    and adds a hint for a group of the call that has no position.
 
@@ -418,24 +422,29 @@ shape — plus `corrections` when the server corrected the input before forwardi
 | Error result | nothing in the call can be done | `create-or-replace-groups`: no group can be built, or the planner loaded none; the other tools: a guard of §8.4–8.6, or the planner's message |
 
 A correction that the rules describe as normal is silent (§8.2). A correction of a mistake is
-always reported.
+always reported, and nothing the agent sends is dropped without a report (D32).
+
+For every call of a tool that changes the plan, the server logs what the agent sent — copied before
+it corrects anything — and the feedback, one JSON line each (`[hi-mcp] tool <name> args|feedback|error
+…`). A test run stores them per turn as `toolCalls` in `run.json`.
 
 ### 8.2 Silent corrections
 
 | ID | Correction | Where |
 |---|---|---|
 | C1 | Roots marked `isGenerated` (worktop, toe kick) are dropped; the library regenerates them | `prepareGroup` |
-| C2 | Every root field other than the article pick, and every group field other than `id`, `libraryId` and `roots`, is ignored | `toArticlePick`; the field strip of `create-or-replace-groups` |
+| C2 | The read-only fields of a group from `get-plan-context` are ignored: per root `articleName`, `desc`, `category`, `imageUrl`, `isGenerated`, `dockingVectors`, `freeDockingVectors`, `subModules`, `logMessages`; per group `position`, `logMessages`. Every other field the server does not use is reported (G27). The group `attributes` reach the planner | `prepareGroup`; the field strip of `create-or-replace-groups` |
 | C3 | Docking vector indices are stripped and resolved from the names | `stripDockingIndices` |
 | C4 | A unique prefix of a group id is accepted | `findGroup` |
 | C5 | The anchor is found by walking from the start root down to the floor unit carrying it, then left along its row, stopping at a corner article. A wall unit named as anchor leads to the base unit below it | `findAnchorRoot`, `group-placement.ts` |
 | C6 | A corner article is placed by its corner point, and a right-handed one is turned by 90°. The frame is learned by a probe load and remembered per library, article and attributes | `toRepositioningData`; `probeCornerFrame` |
 | C7 | `cornerArticle` is set on an empty plan from the category or the module name; `cornerPoint` is removed | `isCornerArticle`; `agentFacingArticle` |
-| C8 | A docking entry that names a root outside the group connects nothing and is kept, so a resubmitted group whose unit was deleted still loads | `dockingNeighbours` |
+| C8 | In a resubmitted group, a docking entry that names a root outside the group connects nothing and is kept, so a group whose unit was deleted still loads. In a new group it is reported (G26) | `dockingNeighbours`, `reportUnsentRoots` |
 | C9 | `place-group` defaults: alignment `center`, offset 0, room 0; the group keeps its height | `place-group` |
 | C10 | `back` and `front` name the `top` and the `bottom` wall (`place-group` `wall` and `alignment`) | `sideLabel` |
 | C11 | A number as an attribute value is passed on as its string | `attributeValue` |
 | C12 | An unknown `get-plan-context` section is ignored; none left means the default sections | `get-plan-context` |
+| C13 | A docking entry with `rootId` instead of `id` is read by its `rootId` | `completeDockingEntries` |
 
 ### 8.3 `create-or-replace-groups`
 
@@ -463,6 +472,12 @@ always reported.
 | G15 | an article id the catalog does not have | does not build the group | `notLoaded` with the valid article ids (the first 100) |
 | G16 | a placement on a group that is already in the plan | does not use it; the group keeps its position | correction |
 | G17 | a corner article the probe cannot calculate | does not build the group | `notLoaded`: "the corner article '…' could not be calculated" |
+| G23 | a unit written inside a docking entry — with its `articleId`, attributes and own docking | takes it as a root of the group, also nested deeper; the entry keeps the docking link | correction |
+| G24 | a docking entry without `dockingVector` | uses the partner of the root's own vector (`RightBottom` → `LeftBottom`, a Top vector → the Bottom vector of that side, `BackBottom` → `BackBottom`) | correction |
+| G25 | a docking context without `ownDockingVector` | drops it; the roots it named are docked like any undocked root (G7) | correction |
+| G26 | in a new group, a root named in the docking but never sent — no `articleId` | drops the entry; nothing can be built for it | correction: "roots '…' are named in the docking but were never sent - nothing was built for them; send each as a root { id, articleId }" |
+| G27 | a group, root or docking entry field the server does not use and `get-plan-context` does not return | ignores it | correction naming the fields |
+| G28 | attribute overrides as an object `{ id: value }`, or with `attributeId` instead of `id` | reads them as `[{ id, value }]` | correction; an entry without any id is ignored and reported |
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |
 | — | the planner loads nothing | — | error result: "No groups were created or replaced …" |
 | — | a group of the call has no position after the load | — | `hint` |

@@ -108,6 +108,23 @@ describe('hi-mcp-server tool calls', () => {
     },
   );
 
+  it('logs what the agent sent to a plan-changing tool before the server corrects it', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const client = await connectClient(createMockPlannerApi());
+    const posGroups = [
+      { roots: [{ id: 'c1', articleId: 'a', contextData: { dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'r1', articleId: 'b' }] }] } }] },
+    ];
+    // the in-memory transport hands the server this very object, which it corrects
+    const sent = JSON.stringify({ posGroups });
+    await client.callTool({ name: 'create-or-replace-groups', arguments: { posGroups } });
+    await client.callTool({ name: 'get-price', arguments: {} });
+
+    const lines = log.mock.calls.map(([line]) => String(line));
+    log.mockRestore();
+    expect(lines).toContain(`[hi-mcp] tool create-or-replace-groups args ${sent}`);
+    expect(lines.some((line) => line.startsWith('[hi-mcp] tool get-price args'))).toBe(false);
+  });
+
   it('logs the feedback and the errors of a tool as one JSON line', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const plannerApi = createMockPlannerApi({
@@ -281,6 +298,10 @@ describe('hi-mcp-server tool calls', () => {
     const { tools } = await client.listTools();
     const served = [client.getInstructions() ?? '', rules, JSON.stringify(tools)].join('\n');
     expect(served).not.toMatch(/reject/i);
+    expect(served).not.toMatch(/lists? the new root/);
+    expect(rules).toContain(
+      'name the new root by its id under dockedRoots - the new root itself is an entry of roots like every other root',
+    );
     expect(rules).toContain(
       'Read corrections and notLoaded in a result: corrections lists what the server changed in your input',
     );

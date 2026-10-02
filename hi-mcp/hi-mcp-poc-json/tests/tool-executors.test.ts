@@ -532,8 +532,8 @@ describe('create-or-replace-groups validation', () => {
     ]);
   });
 
-  it('docks roots whose only docking names a root outside the group', async () => {
-    // a merged group whose middle unit was deleted: both roots still name it
+  it('reports roots of a new group named in the docking but never sent, and docks the rest', async () => {
+    // the docking names a unit the payload does not contain
     const dockedTo = (ownDockingVector: string, dockingVector: string) => ({
       dockedRoots: [
         { ownDockingVector, dockedRoots: [{ id: 'deleted', dockingVector }] },
@@ -547,11 +547,119 @@ describe('create-or-replace-groups validation', () => {
         ],
       },
     ]);
-    expect(loadedGroup.roots[0].contextData.dockedRoots[0].dockedRoots).toEqual([
-      { id: 'deleted', dockingVector: 'LeftBottom' },
-      entry('u2', 'LeftBottom'),
+    expect(loadedGroup.roots[0].contextData.dockedRoots).toEqual([
+      { ownDockingVector: 'RightBottom', dockedRoots: [entry('u2', 'LeftBottom')] },
     ]);
-    expect(result.corrections).toHaveLength(1);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: roots 'deleted' are named in the docking but were never sent - nothing was built for them; send each as a root { id, articleId } of the group",
+      expect.stringContaining("'u2' was docked to the RightBottom of 'u1'"),
+    ]);
+  });
+
+  it('takes units written inside the docking as roots of the group', async () => {
+    // the shape of run 06: the corner names its neighbours with their articles
+    const { loadedGroup, result } = await loadedWith([
+      {
+        roots: [
+          {
+            id: 'corner1',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [
+                {
+                  ownDockingVector: 'RightBottom',
+                  dockedRoots: [
+                    {
+                      id: 'fridge1',
+                      articleId: 'article-1',
+                      contextData: {
+                        dockedRoots: [
+                          {
+                            ownDockingVector: 'RightBottom',
+                            dockedRoots: [{ id: 'oven1', articleId: 'article-1' }],
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+                {
+                  ownDockingVector: 'LeftBottom',
+                  dockedRoots: [{ id: 'sink1', articleId: 'article-1', attributes: { front: 'white' } }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+    expect(loadedGroup.roots.map((root: any) => root.id)).toEqual(['corner1', 'fridge1', 'sink1', 'oven1']);
+    expect(loadedGroup.roots[0].contextData).toEqual({
+      dockedRoots: [
+        { ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'fridge1', dockingVector: 'LeftBottom' }] },
+        { ownDockingVector: 'LeftBottom', dockedRoots: [{ id: 'sink1', dockingVector: 'RightBottom' }] },
+      ],
+    });
+    expect(loadedGroup.roots[1].contextData).toEqual({
+      dockedRoots: [
+        { ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'oven1', dockingVector: 'LeftBottom' }] },
+      ],
+    });
+    expect(loadedGroup.roots[2].attributes).toEqual([{ id: 'front', value: 'white' }]);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: roots 'fridge1', 'sink1', 'oven1' were written inside the docking - they are roots of the group now, linked by their docking entries",
+      "posGroups[0]: docking entries without dockingVector were completed - 'fridge1' meets the RightBottom of 'corner1' with its LeftBottom, 'sink1' meets the LeftBottom of 'corner1' with its RightBottom, 'oven1' meets the RightBottom of 'fridge1' with its LeftBottom",
+      "posGroups[0] root 'sink1': attributes were given as an object - read as [{ id, value }]",
+    ]);
+  });
+
+  it('reads a docking entry by rootId and drops one without the root\'s own vector', async () => {
+    const { loadedGroup, result } = await loadedWith([
+      {
+        roots: [
+          {
+            id: 'u1',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [
+                { ownDockingVector: 'RightBottom', dockedRoots: [{ rootId: 'u2', dockingVector: 'LeftBottom' }] },
+                { dockedRoots: [{ id: 'u3', dockingVector: 'LeftBottom' }] },
+              ],
+            },
+          },
+          { id: 'u2', articleId: 'article-1' },
+          { id: 'u3', articleId: 'article-1' },
+        ],
+      },
+    ]);
+    expect(loadedGroup.roots[0].contextData.dockedRoots[0]).toEqual({
+      ownDockingVector: 'RightBottom',
+      dockedRoots: [{ id: 'u2', dockingVector: 'LeftBottom' }],
+    });
+    expect(result.corrections).toEqual([
+      "posGroups[0]: docking entries without ownDockingVector were dropped - 'u1' -> 'u3'",
+      expect.stringContaining("'u3' was docked to the RightBottom of 'u2'"),
+    ]);
+  });
+
+  it('reports the fields it does not use and keeps the attributes of a group', async () => {
+    const { loadedGroup, result } = await loadedWith([
+      {
+        name: 'kitchen',
+        attributes: [{ id: 'mod_GroupHeight', value: 1500 }],
+        roots: [
+          { id: 'u1', articleId: 'article-1', width: 900, attributes: [{ attributeId: 'b', value: '900' }, { value: 1 }] },
+        ],
+      },
+    ]);
+    expect(loadedGroup).toEqual({
+      attributes: [{ id: 'mod_GroupHeight', value: 1500 }],
+      roots: [{ id: 'u1', articleId: 'article-1', attributes: [{ id: 'b', value: '900' }] }],
+    });
+    expect(result.corrections).toEqual([
+      "posGroups[0]: the server does not use the group's name; width of root 'u1' - ignored",
+      "posGroups[0] root 'u1': attribute entries 1 have no id - ignored",
+    ]);
   });
 
   it('docks articles whose docking vectors the catalog does not know yet', async () => {
@@ -1318,9 +1426,15 @@ describe('create-or-replace-groups loading', () => {
   it('replaces an existing group resubmitted without placement, which keeps its position', async () => {
     const api = createApi(planContextFixture);
     // the group exactly as get-plan-context returns it
-    await toolExecutors['create-or-replace-groups'](api, {
-      posGroups: [makeShapedGroup()],
+    const result = await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        makeShapedGroup({
+          logMessages: [],
+          roots: [makeShapedRoot({ articleName: 'Tall unit', desc: 'A tall unit', category: 'storage', isGenerated: false })],
+        }),
+      ],
     });
+    expect(result).not.toHaveProperty('corrections');
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
       {
         posGroups: [

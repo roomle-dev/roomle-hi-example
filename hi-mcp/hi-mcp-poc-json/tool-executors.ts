@@ -456,7 +456,7 @@ const dockingErrors = (roots: any[]): string[] => {
     `: roots ${quoted(unreached)} are not docked to a placed root (${quoted(placed)} ` +
       `${placed.length === 1 ? 'is' : 'are'} placed - reached through the docking from the first root); ` +
       'roots docked only among themselves land on the group origin, on top of the first root. Dock every ' +
-      'additional root to a placed root by listing it on that root, e.g. to place root B directly right of root A: ' +
+      'additional root to a placed root by naming it on that root - root B itself is an entry of roots too -, e.g. to place root B directly right of root A: ' +
       '{ "id": "A", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom", ' +
       '"dockedRoots": [{ "id": "B", "dockingVector": "LeftBottom", "mode": "StartStart", ' +
       '"offset": [0, 0, 0] }] }] } }',
@@ -748,6 +748,33 @@ const connectUnreachedRoots = (
   return dockingErrors(roots).map((error) => `${prefix}${error}`);
 };
 
+const reportUnsentRoots = (group: any, prefix: string, corrections: string[]): void => {
+  const rootIds = new Set((group.roots as any[]).map((root) => root.id));
+  const unsent = new Set<string>();
+  for (const root of group.roots as any[]) {
+    for (const context of root.contextData?.dockedRoots ?? []) {
+      context.dockedRoots = (context.dockedRoots ?? []).filter((entry: any) => {
+        if (rootIds.has(entry?.id)) {
+          return true;
+        }
+        unsent.add(String(entry?.id));
+        return false;
+      });
+    }
+    if (root.contextData?.dockedRoots) {
+      root.contextData.dockedRoots = root.contextData.dockedRoots.filter(
+        (context: any) => context.dockedRoots.length > 0,
+      );
+    }
+  }
+  if (unsent.size > 0) {
+    corrections.push(
+      `${prefix}: roots ${quotedIds([...unsent])} are named in the docking but were never sent - nothing ` +
+        'was built for them; send each as a root { id, articleId } of the group',
+    );
+  }
+};
+
 // The docking of a group as far as the server can complete it.
 const completeDocking = (
   group: any,
@@ -816,6 +843,181 @@ const dockedRootIds = (roots: any[]): Set<string> =>
     ),
   );
 
+// The fields a pos group and its roots are built from. A group from
+// get-plan-context also carries read-only fields; everything else would be
+// lost, so it is reported.
+const GROUP_FIELDS = ['id', 'libraryId', 'roots', 'placement', 'repositioningData', 'attributes', 'pos', 'rotationY'];
+
+const READ_ONLY_GROUP_FIELDS = ['position', 'logMessages'];
+
+const ROOT_FIELDS = ['id', 'articleId', 'libraryId', 'attributes', 'contextData', 'articlePos', 'rotationY'];
+
+const READ_ONLY_ROOT_FIELDS = [
+  'articleName',
+  'desc',
+  'category',
+  'imageUrl',
+  'isGenerated',
+  'dockingVectors',
+  'freeDockingVectors',
+  'subModules',
+  'logMessages',
+];
+
+const DOCKING_ENTRY_FIELDS = ['id', 'dockingVector', 'mode', 'offset', 'dockingVectorIndex'];
+
+const dockingEntriesOf = (root: any): { context: any; entry: any }[] =>
+  (root?.contextData?.dockedRoots ?? []).flatMap((context: any) =>
+    (context?.dockedRoots ?? []).map((entry: any) => ({ context, entry })),
+  );
+
+// A unit written inside a docking entry - with its articleId - is a root of
+// the group; the entry keeps the docking link to it.
+const liftNestedRoots = (group: any, prefix: string, corrections: string[]): void => {
+  const ids = new Set<string>(group.roots.map((root: any) => root?.id));
+  const lifted: string[] = [];
+  const pending = [...group.roots];
+  while (pending.length > 0) {
+    const root = pending.shift();
+    for (const context of root?.contextData?.dockedRoots ?? []) {
+      if (!Array.isArray(context?.dockedRoots)) {
+        continue;
+      }
+      context.dockedRoots = context.dockedRoots.map((entry: any) => {
+        if (typeof entry?.articleId !== 'string' || ids.has(entry.id)) {
+          return entry;
+        }
+        const { dockingVector, mode, offset, dockingVectorIndex: _index, ...unit } = entry;
+        if (typeof unit.id !== 'string' || unit.id.length === 0) {
+          unit.id = nextFreeId(ids, 'root', 1);
+        }
+        ids.add(unit.id);
+        group.roots.push(unit);
+        pending.push(unit);
+        lifted.push(unit.id);
+        return {
+          id: unit.id,
+          ...(dockingVector !== undefined && { dockingVector }),
+          ...(mode !== undefined && { mode }),
+          ...(offset !== undefined && { offset }),
+        };
+      });
+    }
+  }
+  if (lifted.length > 0) {
+    corrections.push(
+      `${prefix}: roots ${quotedIds(lifted)} were written inside the docking - they are roots of the ` +
+        'group now, linked by their docking entries',
+    );
+  }
+};
+
+// Docking entries completed where the intent is clear: the id from rootId,
+// and the vector of the new root from the vector of the root it docks to. An
+// entry without the root's own vector cannot be placed and is dropped.
+const completeDockingEntries = (roots: any[], prefix: string, corrections: string[]): void => {
+  const completed: string[] = [];
+  const dropped: string[] = [];
+  for (const root of roots) {
+    const contexts = root?.contextData?.dockedRoots;
+    if (!Array.isArray(contexts)) {
+      continue;
+    }
+    root.contextData.dockedRoots = contexts.filter((context: any) => {
+      const entries = (context?.dockedRoots ?? []) as any[];
+      for (const entry of entries) {
+        if (entry && entry.id === undefined && typeof entry.rootId === 'string') {
+          entry.id = entry.rootId;
+          delete entry.rootId;
+        }
+      }
+      if (typeof context?.ownDockingVector !== 'string') {
+        dropped.push(...entries.map((entry) => `'${root.id}' -> '${entry?.id}'`));
+        return false;
+      }
+      const partner = PARTNER_VECTOR[context.ownDockingVector];
+      for (const entry of entries) {
+        if (entry && typeof entry.dockingVector !== 'string' && partner) {
+          entry.dockingVector = partner;
+          completed.push(`'${entry.id}' meets the ${context.ownDockingVector} of '${root.id}' with its ${partner}`);
+        }
+      }
+      return true;
+    });
+  }
+  if (completed.length > 0) {
+    corrections.push(`${prefix}: docking entries without dockingVector were completed - ${completed.join(', ')}`);
+  }
+  if (dropped.length > 0) {
+    corrections.push(
+      `${prefix}: docking entries without ownDockingVector were dropped - ${dropped.join(', ')}`,
+    );
+  }
+};
+
+// Attribute overrides as [{ id, value }]: an object of ids and values and an
+// attributeId instead of id are read as such; an entry without an id is lost.
+const normalizedAttributes = (
+  attributes: unknown,
+  label: string,
+  corrections: string[],
+): { id: string; value: unknown }[] | undefined => {
+  if (attributes === undefined || attributes === null) {
+    return undefined;
+  }
+  if (!Array.isArray(attributes)) {
+    if (typeof attributes === 'object') {
+      corrections.push(`${label}: attributes were given as an object - read as [{ id, value }]`);
+      return Object.entries(attributes).map(([id, value]) => ({ id, value }));
+    }
+    corrections.push(`${label}: attributes must be [{ id, value }] - ignored`);
+    return undefined;
+  }
+  const withoutId: number[] = [];
+  const result = attributes.flatMap((attribute: any, index: number) => {
+    const id = typeof attribute?.id === 'string' ? attribute.id : attribute?.attributeId;
+    if (typeof id !== 'string' || id.length === 0) {
+      withoutId.push(index);
+      return [];
+    }
+    return [{ id, value: attribute.value }];
+  });
+  if (withoutId.length > 0) {
+    corrections.push(`${label}: attribute entries ${withoutId.join(', ')} have no id - ignored`);
+  }
+  return result;
+};
+
+const unusedFields = (object: any, used: string[]): string[] =>
+  object && typeof object === 'object' && !Array.isArray(object)
+    ? Object.keys(object).filter((field) => !used.includes(field))
+    : [];
+
+// Fields the server does not use would vanish without a trace; they are
+// reported.
+const reportUnusedFields = (group: any, prefix: string, corrections: string[]): void => {
+  const notes: string[] = [];
+  const groupFields = unusedFields(group, [...GROUP_FIELDS, ...READ_ONLY_GROUP_FIELDS]);
+  if (groupFields.length > 0) {
+    notes.push(`the group's ${groupFields.join(', ')}`);
+  }
+  for (const root of group.roots as any[]) {
+    const rootFields = unusedFields(root, [...ROOT_FIELDS, ...READ_ONLY_ROOT_FIELDS]);
+    if (rootFields.length > 0) {
+      notes.push(`${rootFields.join(', ')} of root '${root.id}'`);
+    }
+    for (const { entry } of dockingEntriesOf(root)) {
+      const entryFields = unusedFields(entry, DOCKING_ENTRY_FIELDS);
+      if (entryFields.length > 0) {
+        notes.push(`${entryFields.join(', ')} of the docking entry '${root.id}' -> '${entry.id}'`);
+      }
+    }
+  }
+  if (notes.length > 0) {
+    corrections.push(`${prefix}: the server does not use ${notes.join('; ')} - ignored`);
+  }
+};
+
 // One pos group before anything is fetched: corrected where the intent is
 // clear, each correction reported. The errors name what cannot be built.
 const prepareGroup = (
@@ -830,6 +1032,13 @@ const prepareGroup = (
   group.roots = group.roots.filter((root: any) => !isGeneratedRoot(root));
   if (group.roots.length === 0) {
     return [`${prefix}: needs at least one article root (generated roots are dropped)`];
+  }
+  liftNestedRoots(group, prefix, corrections);
+  completeDockingEntries(group.roots, prefix, corrections);
+  reportUnusedFields(group, prefix, corrections);
+  group.attributes = normalizedAttributes(group.attributes, `${prefix} group`, corrections);
+  for (const root of group.roots as any[]) {
+    root.attributes = normalizedAttributes(root?.attributes, `${prefix} root '${root?.id}'`, corrections);
   }
   if (group.pos !== undefined || group.rotationY !== undefined) {
     delete group.pos;
@@ -1206,9 +1415,6 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     callGroups = keepBuildable(callGroups, notLoaded, ({ group, index }) =>
       resolveArticleIds(articles, group, `posGroups[${index}]`, corrections),
     );
-    callGroups = keepBuildable(callGroups, notLoaded, ({ group, index }) =>
-      completeDocking(group, articles, `posGroups[${index}]`, corrections),
-    );
     failIfNothingLeft();
 
     const preContext =
@@ -1216,6 +1422,17 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     const beforeGroupIds = new Set(
       ((preContext.groups ?? []) as any[]).map((group) => group.id),
     );
+    // In a new group, a root named in the docking but never sent cannot be
+    // built; a replaced group keeps its entries to roots deleted from it.
+    for (const { group, index } of callGroups) {
+      if (!beforeGroupIds.has(group.id)) {
+        reportUnsentRoots(group, `posGroups[${index}]`, corrections);
+      }
+    }
+    callGroups = keepBuildable(callGroups, notLoaded, ({ group, index }) =>
+      completeDocking(group, articles, `posGroups[${index}]`, corrections),
+    );
+    failIfNothingLeft();
     // A placement on a group in the plan would move it on the replace. Without
     // repositioning the planner keeps the group where it is.
     for (const { group, index } of callGroups) {
@@ -1291,9 +1508,12 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           group.libraryId,
         );
       }
+      if (!group.attributes?.length) {
+        delete group.attributes;
+      }
       for (const field of Object.keys(group)) {
         if (
-          !['id', 'libraryId', 'roots', 'repositioningData'].includes(field)
+          !['id', 'libraryId', 'roots', 'repositioningData', 'attributes'].includes(field)
         ) {
           delete group[field];
         }

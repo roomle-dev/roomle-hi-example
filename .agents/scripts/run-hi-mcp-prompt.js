@@ -3,20 +3,22 @@
  * Runs prompts through the HI example chat and stores the resulting plan:
  *
  *   node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...]
- *     [--out <dir>] [--dev] [--headed]
+ *     [--image <file>] [--out <dir>] [--dev] [--headed]
  *
  * Starts the launcher (minimal-hi-example/start.mjs <provider> <api-key>) with
  * the MCP server on its own port, opens the example page in Playwright
  * Chromium (headless unless --headed; --dev is passed to the launcher), waits
  * until get-plan-context lists articles, then sends the prompts to the chat
  * backend as consecutive turns of one conversation, each until the end of its
- * stream. Then it reads roomDesignerApi.extended.getExternalObjectSnapshot(),
+ * stream. --image goes along with the last prompt, prepared as the chat window
+ * prepares a dropped image. Then it reads roomDesignerApi.extended.getExternalObjectSnapshot(),
  * saves the plan with saveExternalObjectSnapshot() for its plan snapshot id and
  * writes --out (default .temp/result/<UTC timestamp>-<provider>/): run.json
  * (with every call of a plan-changing MCP tool per turn: what the model sent,
  * and the corrections, groups not loaded or error it got back),
  * plan-context.json (rooms and groups after the chat), planner-calls.json,
- * snapshot.json and every snapshot field as a file of its own. Exits 1 when
+ * prompt-image.jpg (the image sent), snapshot.json and every snapshot field
+ * as a file of its own. Exits 1 when
  * the chat or the snapshot reported an error or no snapshot or plan snapshot
  * id came back; a stopped run (Ctrl+C) stops every server and stores nothing.
  *
@@ -24,7 +26,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { constants } from 'node:os';
 import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -55,6 +57,11 @@ const CHROMIUM_ARGS = [
   '--enable-unsafe-swiftshader',
   '--ignore-gpu-blocklist',
 ];
+// As the chat window sends a dropped image (prepareImage in
+// minimal-hi-example/index.html).
+const IMAGE_MAX_SIDE = 1568;
+const IMAGE_QUALITY = 0.9;
+const PROMPT_IMAGE_FILE = 'prompt-image.jpg';
 const SNAPSHOT_FILES = [
   ['topImage', 'top-image.png', 'base64'],
   ['perspectiveImage', 'perspective-image.png', 'base64'],
@@ -64,13 +71,14 @@ const SNAPSHOT_FILES = [
   ['planXML', 'plan.xml', 'utf8'],
 ];
 const USAGE =
-  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--out <dir>] [--dev] [--headed]';
+  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--image <file>] [--out <dir>] [--dev] [--headed]';
 
 const parseOptions = () => {
   try {
     const { values, positionals } = parseArgs({
       allowPositionals: true,
       options: {
+        image: { type: 'string' },
         out: { type: 'string' },
         dev: { type: 'boolean', default: false },
         headed: { type: 'boolean', default: false },
@@ -325,19 +333,52 @@ const sendChat = async (messages) => {
   }
 };
 
+// Redrawn in the page as JPEG on white with the EXIF rotation applied, the
+// long side at most IMAGE_MAX_SIDE px.
+const prepareImage = (page, bytes) =>
+  page.evaluate(
+    async ({ base64, maxSide, quality }) => {
+      const data = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+      const bitmap = await createImageBitmap(new Blob([data]), {
+        imageOrientation: 'from-image',
+      });
+      const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      const context = canvas.getContext('2d');
+      context.imageSmoothingQuality = 'high';
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      return canvas.toDataURL('image/jpeg', quality);
+    },
+    { base64: bytes.toString('base64'), maxSide: IMAGE_MAX_SIDE, quality: IMAGE_QUALITY },
+  );
+
 // The prompts are the turns of one conversation, as in the chat window: the
-// history goes along with every turn. A turn with an error ends it.
-const runConversation = async (prompts) => {
+// history goes along with every turn. A turn with an error ends it. The image
+// goes along with the last prompt.
+const runConversation = async (prompts, image) => {
   const messages = [];
   const turns = [];
   for (const [index, prompt] of prompts.entries()) {
-    console.log(`[run-hi-mcp-prompt] turn ${index + 1}/${prompts.length}: ${prompt}`);
-    messages.push({ role: 'user', content: prompt });
+    const turnImage = index === prompts.length - 1 ? image : undefined;
+    console.log(
+      `[run-hi-mcp-prompt] turn ${index + 1}/${prompts.length}: ${prompt}${turnImage ? ` [image: ${turnImage.file}]` : ''}`,
+    );
+    messages.push(
+      turnImage
+        ? { role: 'user', content: prompt, images: [turnImage.dataUrl] }
+        : { role: 'user', content: prompt },
+    );
     const startedAt = Date.now();
     toolCalls.turn = index;
     const turn = await sendChat(messages);
     turns.push({
       prompt,
+      ...(turnImage && { image: turnImage.file }),
       ...turn,
       toolCalls: toolCalls.entries
         .filter((entry) => entry.turn === index)
@@ -359,11 +400,17 @@ const evaluateInPage = (page, method, description) =>
     description,
   );
 
-const storeResult = async (runDir, { run, planContext, plannerCalls, snapshot }) => {
+const storeResult = async (
+  runDir,
+  { run, planContext, plannerCalls, promptImage, snapshot },
+) => {
   await mkdir(runDir, { recursive: true });
   const write = (file, content) => writeFile(join(runDir, file), content);
   await write('run.json', JSON.stringify(run, null, 2));
   await write('planner-calls.json', JSON.stringify(plannerCalls, null, 2));
+  if (promptImage) {
+    await write(PROMPT_IMAGE_FILE, Buffer.from(promptImage.split(',')[1], 'base64'));
+  }
   if (planContext !== undefined) {
     await write('plan-context.json', JSON.stringify(planContext, null, 2));
   }
@@ -404,7 +451,12 @@ const runSession = async (options, launcher, browser) => {
   plannerCalls.length = 0;
   const readyAt = Date.now();
   console.log('[run-hi-mcp-prompt] page ready');
-  const turns = await runConversation(options.prompts);
+  const promptImage =
+    options.imageBytes && (await prepareImage(page, options.imageBytes));
+  const turns = await runConversation(
+    options.prompts,
+    promptImage && { file: options.image, dataUrl: promptImage },
+  );
   toolCalls.turn = undefined;
   const chatPlannerCalls = plannerCalls.slice();
   const errors = turns.flatMap((turn) => turn.errors);
@@ -452,11 +504,12 @@ const runSession = async (options, launcher, browser) => {
       snapshot: Date.now() - chatDoneAt,
     },
   };
-  return { run, planContext, plannerCalls: chatPlannerCalls, snapshot };
+  return { run, planContext, plannerCalls: chatPlannerCalls, promptImage, snapshot };
 };
 
 const main = async () => {
   const options = parseOptions();
+  options.imageBytes = options.image && (await readFile(options.image));
   const chromium = await loadChromium();
   // Playwright's own signal handlers exit before the servers are stopped.
   const browser = await chromium.launch({

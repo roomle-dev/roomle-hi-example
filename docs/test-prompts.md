@@ -71,9 +71,12 @@ plan snapshot id: `ps_qn012p0tjux6dabt6oym0bzngmqex70u`
 
 ### Reference Image Prompts
 
-- **Create a kitchen like the one in the image on the right-hand wall of the room**
+The reference image goes along with the prompt: drop it into the chat window, or pass it to the
+script with `--image`. The model has to read images.
+
+- **Create a kitchen like the one in the image on the left-hand wall of the room**
   ```
-  create a kitchen like the one in the image on the right-hand wall of the room
+  create a kitchen like the one in the image on the left-hand wall of the room
   ```
   *Reference: [kitchen-1.png](./images/kitchen-1.png)*
 
@@ -82,6 +85,18 @@ plan snapshot id: `ps_qn012p0tjux6dabt6oym0bzngmqex70u`
   create a kitchen like the one shown in the image, in the back right corner of the room
   ```
   *Reference: [kitchen-2.png](./images/kitchen-2.png)*
+
+- **Create a planning as to the one shown in the picture on the right-hand wall of the room**
+  ```
+  create a planning as to the one shown in the picture on the right-hand wall of the room.
+  ```
+  *Reference: [kitchen-3.jpeg](./images/kitchen-3.jpeg)*
+
+- **Only an image, no text** — the model decides what to plan; the chat sends the image with its
+  default text "Plan a kitchen like the one in the image."
+  ```
+  ```
+  *Reference: [kitchen-4.png](./images/kitchen-4.png)*
 
 ## Detailed Kitchen Specifications
 
@@ -157,12 +172,13 @@ When testing these prompts with the MCP server:
    - Material specifications are applied correctly
    - Docking relationships between modules are valid
 
-To run every prompt here without an image and get an evaluated report, ask an agent to **"test the
-mcp"** ([HI MCP testing skill](../.agents/skills/hi-mcp-testing.md)). To run a single prompt without
+To run every prompt here and get an evaluated report, ask an agent to **"test the mcp"**
+([HI MCP testing skill](../.agents/skills/hi-mcp-testing.md)). To run a single prompt without
 opening the page yourself and keep the result, use its script:
 
 ```bash
 node .agents/scripts/run-hi-mcp-prompt.js mistral "$MISTRAL_API_KEY" "add a group of three tall units to the wall on the right"
+node .agents/scripts/run-hi-mcp-prompt.js gpt-5.4-mini "$AZURE_GPT_KEY" "create a kitchen like the one in the image on the left-hand wall of the room" --image docs/images/kitchen-1.png
 ```
 
 It runs the prompt through the chat in a headless browser and stores the snapshot, the images and the

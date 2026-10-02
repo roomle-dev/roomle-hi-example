@@ -6,9 +6,10 @@ running a prompt through the chat, checking the plan a prompt produces, comparin
 
 ## Test the MCP
 
-Runs every prompt of [test-prompts.md](../../docs/test-prompts.md) that needs no image through
-the chat, stores every result under one session directory and ends with `report.md`: per prompt the
-plan snapshot id, the perspective and the top image, an evaluation and a bug verdict.
+Runs every prompt of [test-prompts.md](../../docs/test-prompts.md) through the chat — an image
+prompt with its reference image — stores every result under one session directory and ends with
+`report.md`: per prompt the plan snapshot id, the perspective and the top image, an evaluation and
+a bug verdict.
 
 ### 1. Model
 
@@ -30,9 +31,12 @@ mkdir -p "$SESSION"
 Read `docs/test-prompts.md` at run time — it is the only prompt list:
 
 - every fenced block without a language tag is one prompt, in document order (the `bash` block
-  under "Testing Guidelines" is not);
-- skip the prompts that need an image (a `*Reference: …png*` line, or the prompt refers to "the
-  image") — the report lists them as skipped;
+  under "Testing Guidelines" is not); an empty block is an empty prompt, passed as `""`;
+- a prompt with a `*Reference: [<file>](./images/<file>)*` line below it runs with that image:
+  `--image docs/images/<file>`. Image prompts run only when the model reads images — every
+  `claude*` and `gemini*` model and the model ids in `IMAGE_INPUT_MODELS` of
+  [chat-config.ts](../../hi-mcp/hi-mcp-chat/chat-config.ts) (`gpt-5.4-mini` does); otherwise the
+  report lists them as skipped;
 - a prompt under "Group Editing" starts from the plan the section names: its setup turn
   `add a group of three tall units to the wall on the right` comes first, and a step its title
   names comes second ("after removing the middle unit" → `remove the middle unit`);
@@ -49,7 +53,7 @@ cleanly on the SIGTERM, but that run has to be repeated):
 ```bash
 mkdir -p "$SESSION/<NN>-<slug>"
 node .agents/scripts/run-hi-mcp-prompt.js gpt-5.4-mini "$AZURE_GPT_KEY" ["<setup turn>" ...] "<prompt>" \
-  --out "$SESSION/<NN>-<slug>" > "$SESSION/<NN>-<slug>/console.log" 2>&1
+  [--image docs/images/<file>] --out "$SESSION/<NN>-<slug>" > "$SESSION/<NN>-<slug>/console.log" 2>&1
 ```
 
 Create the run directory first — without it the shell cannot open `console.log` and the script
@@ -64,6 +68,7 @@ Per run, read:
 | File | Look at |
 |---|---|
 | `top-image.png`, `perspective-image.png` | where the group stands, what it consists of |
+| `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
 | `run.json` | per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId` |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
 | `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) and the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) |
@@ -83,7 +88,9 @@ Check:
 
 - the request is fulfilled — the units, appliances, count and materials asked for (materials are
   root `attributes` in the layout; none there means none applied); for an edit, the edit is
-  applied and nothing else changed;
+  applied and nothing else changed; for an image prompt, the plan follows the image — its layout
+  (one wall, around a corner), the kinds of units and appliances it shows and the colours of fronts
+  and worktop, as far as the catalog has them; without a wall in the prompt, any wall that fits;
 - the group stands where asked — on that wall or in that corner, back against the wall, inside the
   room, not through a wall, window or door, not overlapping another group;
 - the docking graph is sound — every root reachable from the placed root, at most one root per
@@ -150,7 +157,7 @@ Write `$SESSION/report.md`:
 
 | Model | Planner | Prompts | Pass | Partial | Fail | Bugs |
 |---|---|---|---|---|---|---|
-| gpt-5.4-mini | bo-test | 13 run, 2 skipped (image) | … | … | … | … |
+| gpt-5.4-mini | bo-test | 17 run, 0 skipped | … | … | … | … |
 
 ## Summary
 
@@ -193,9 +200,22 @@ Setup turns: <none, or the turns before the prompt>
 
 **Bug — <yes: component / no: model finding / no: environment>**: <why>
 
+## 12 <title of an image prompt>
+
+> <prompt, or "(empty)">
+
+- **Image**: `docs/images/<file>`
+- …
+
+| Image | Perspective | Top |
+|---|---|---|
+| <img src="12-<slug>/prompt-image.jpg" width="280"> | <img src="12-<slug>/perspective-image.png" width="280"> | <img src="12-<slug>/top-image.png" width="280"> |
+
+…
+
 ## Skipped
 
-- <title> — needs a reference image
+- <title> — the model reads no images
 ````
 
 ### 7. Open issues
@@ -214,14 +234,15 @@ Then tell the user the report's path, the verdicts and the bugs.
 ## Run a prompt (the script)
 
 ```bash
-node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--out <dir>] [--dev] [--headed]
+node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--image <file>] [--out <dir>] [--dev] [--headed]
 ```
 
 | Argument | Meaning |
 |---|---|
 | `<provider>` | a chat provider of the launcher, passed through unchanged (`gpt-5.4-mini`, `mistral`, `claude`, … — see [ai-chat.md](../../minimal-hi-example/docs/ai-chat.md)) |
 | `<api-key>` | the provider's API key, e.g. `"$AZURE_GPT_KEY"` |
-| `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it |
+| `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it. `""` with `--image` sends the image alone — the chat backend gives it the text "Plan a kitchen like the one in the image." |
+| `--image <file>` | an image (PNG, JPEG, WebP, GIF) that goes along with the last prompt, as an image dropped into the chat window: redrawn as JPEG with a long side of at most 1568 px. A model that reads no images answers `HTTP 400: The model … does not read images` |
 | `--out <dir>` | the result directory (default `.temp/result/<UTC timestamp>-<provider>/`) |
 | `--dev` | the planner from the local Rubens UI dev server (`npm run dev` in roomle-ui, :5173) |
 | `--headed` | shows the browser window |
@@ -247,9 +268,10 @@ The script:
 
 | File | Content |
 |---|---|
-| `run.json` | provider; `turns` (per turn the prompt, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` — errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
+| `run.json` | provider; `turns` (per turn the prompt, the `image` file it carried, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` — errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
 | `plan-context.json` | `get-plan-context` with rooms and groups after the chat — the walls and where the groups stand |
 | `planner-calls.json` | every planner call during the chat: method, full arguments, `ok`, and the page's `error` |
+| `prompt-image.jpg` | with `--image` only: the image as the model got it |
 | `snapshot.json` | the return value of `getExternalObjectSnapshot()`, unchanged |
 | `order-data.json` | `orderData` of the snapshot — the groups with their articles and attributes |
 | `top-image.png`, `perspective-image.png` | the whole plan rendered |

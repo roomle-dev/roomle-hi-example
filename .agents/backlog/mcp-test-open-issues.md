@@ -32,9 +32,7 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 15 | [A G7 correction docks a part by a wall unit at floor level](#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | bug, MCP server | image: kitchen in the back right corner | low — docking written as `contextData` only |
 | 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) | image only, no text | critical — an attribute edit fails |
 | 17 | [A chat turn without an answer for 10 minutes](#17-a-chat-turn-without-an-answer-for-10-minutes) | hardening, chat | image: kitchen on the left-hand wall; full kitchen around the corner | medium |
-| 18 | [A floor unit `rightOf` a wall unit hangs at wall-unit height](#18-a-floor-unit-rightof-a-wall-unit-hangs-at-wall-unit-height) | bug, MCP server | image: kitchen on the left-hand wall | high — five base units in the air |
 | 19 | [`above` a tall unit puts the unit on top of it, unreported](#19-above-a-tall-unit-puts-the-unit-on-top-of-it-unreported) | bug, MCP server | oven, range hood, sink, fridge in the corner | medium — a hood on the oven tower |
-| 20 | [A range hood beside a tall unit hangs by its chimney top](#20-a-range-hood-beside-a-tall-unit-hangs-by-its-chimney-top) | bug, MCP server | image: kitchen in the back right corner | high — hood and wall cabinet just above the worktop |
 | 21 | [Two units `above` one floor unit take the same place](#21-two-units-above-one-floor-unit-take-the-same-place) | hardening | image: kitchen on the left-hand wall; full kitchen around the corner | medium — the hood inside a wall unit |
 | 22 | [`place-group` resets the worktop and toe kick colours](#22-place-group-resets-the-worktop-and-toe-kick-colours) | bug, MCP server | image: kitchen on the left-hand wall | medium — the requested worktop colour is lost |
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui | full kitchen around the corner | high — wall cabinets on the worktop |
@@ -48,7 +46,8 @@ Since RML-18038 the agent writes relations (`rightOf`, `leftOf`, `onTop`, `above
 server compiles the docking (`group-layout.ts`). In the test with all three models
 (`mcp-test-2026-10-02_17-25-40`) no relation needed a correction. What comes first:
 
-- **Gaps of the compile**: 18 and 20 (a unit at a height it cannot have), 19 and 21.
+- **Gaps of the compile**: 19 and 21. 18 (a floor unit beside a wall unit) and 20 (a hood beside a
+  tall unit) are fixed by the review of PR #51 (G40, G41).
 - **Wrong results of the server's own corrections or placement**: 1, and 22 (`place-group` resets the
   worktop colour).
 - **Requests the tool API makes the agent get wrong**: 6 (a material for the whole kitchen).
@@ -556,23 +555,6 @@ kitchen and the full kitchen within 10 minutes.
 
 **Latest runs** (`mcp-test-2026-10-02_17-25-40`): not shown — with the relations (RML-18038) gpt-5-mini answered 06 in 68 s and 10 in 54 s. The chat still has no turn limit and no progress, so the issue stays.
 
-## 18. A floor unit `rightOf` a wall unit hangs at wall-unit height
-
-**Problem.** The model wrote one chain: the tall unit, three wall units and the hood, then
-`base1 rightOf wall2` and four more floor units. The compile docked `wall2.RightBottom →
-base1.LeftBottom`: the five base units with sink and hob hang at the bottom of the wall units, the toe
-kick stays on the floor. Nothing reports it.
-
-**Cause.** `relationsToDocking` (`group-layout.ts`) corrects a wall unit beside a base unit (G35) and
-a floor unit `above` a unit (G34), but a floor unit `rightOf` / `leftOf` a wall unit passes.
-
-**To do.** A floor unit `rightOf` / `leftOf` a wall unit gets the default of a root without a
-relation — right of the previous floor unit in the list (G31) — and the correction says so.
-
-**Test.** `group-layout.test.ts`: a floor unit `rightOf` a wall unit continues the floor row, reported.
-
-**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5.4-mini 06.
-
 ## 19. `above` a tall unit puts the unit on top of it, unreported
 
 **Problem.** `hood above oven`, where the oven is the 2100 mm `HOTS2AB60` tower, became
@@ -587,23 +569,6 @@ decision.
 **Test.** `above` a tall unit is reported; `onTop` a tall unit is not.
 
 **Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5.4-mini 04.
-
-## 20. A range hood beside a tall unit hangs by its chimney top
-
-**Problem.** `hood rightOf HK260` and `OFKB90 rightOf hood` were compiled to
-`HK260.RightTop → DU.LeftTop` and `DU.RightBottom → OFKB90.LeftBottom`. The hood's Top vector is its
-chimney top, so the hood and the wall cabinet hang at y 1072 instead of 1480. Nothing reports it.
-
-**Cause.** `unitKind` (`group-layout.ts`) counts the hood (`mr_Hood`) as a wall unit, and a wall
-unit beside a tall unit docks Top-Top. The served rule names the hood with the wall units.
-
-**To do.** A hood beside a tall unit hangs `above` the floor unit on that side of the tall unit
-(derived gap, D35), reported; the Top-Top pair stays for wall units.
-
-**Test.** `hood rightOf tall` with a base unit `rightOf` the tall unit compiles to
-`base.LeftTop → hood.LeftBottom [0, 660, 0]`.
-
-**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-6-astra 07.
 
 ## 21. Two units `above` one floor unit take the same place
 

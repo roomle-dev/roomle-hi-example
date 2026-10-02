@@ -582,8 +582,10 @@ calculates every root position.
   chain, to the first root of the group. A part the docking does not connect to the first root is
   docked by the server to the free end of a row of its kind — floor units or wall units, `mode`
   `StartStart`, `offset` `[0, 0, 0]` — and reported in `corrections`, which may not be where the
-  agent meant it; a part it cannot dock (an article with neither docking vectors nor a size, such as a range hood or a TV; no free row end, a
-  wall unit without a wall-unit row) leaves the group in `notLoaded`. The server reads every entry
+  agent meant it; a part it cannot dock (no free row end, a wall unit without a wall-unit row)
+  leaves the group in `notLoaded`. An article the catalog lists without docking vectors counts as
+  having them: their names are unknown on an empty plan, not missing, so a range hood is docked like
+  any other unit. The server reads every entry
   in both directions, as the planner does; an entry that names a root outside the group (a group
   keeps one to a root deleted from it) connects nothing.
   A side vector (`LeftBottom`, `RightBottom`) takes one neighbour per place: two roots docked to it with the same mode and offset would stand in the same place, so the server docks the later one to the free end of that row and reports it (a different mode or offset can put them at the back and the front of the edge, or apart); Top vectors (the neighbour's top edge and a unit above) and `BackBottom` (two units back to back with a wide one) may carry several.

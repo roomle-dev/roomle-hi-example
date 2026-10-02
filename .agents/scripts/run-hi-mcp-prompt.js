@@ -30,6 +30,7 @@
 
 import { spawn } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { request } from 'node:http';
 import { constants } from 'node:os';
 import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -383,22 +384,52 @@ const splitChatStream = (text) => {
   };
 };
 
+// node:http, not fetch: fetch ends a response after 300 s without data, and
+// a model may think that long before the chat streams its next line. What
+// came before a failure is kept.
+const postChat = (messages) =>
+  new Promise((resolve) => {
+    const body = JSON.stringify({ messages });
+    const chunks = [];
+    let status;
+    const settle = (error) => {
+      clearTimeout(timer);
+      resolve({ status, text: Buffer.concat(chunks).toString('utf8'), error });
+    };
+    const chatRequest = request(
+      `${CHAT_URL}/chat`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+        },
+      },
+      (response) => {
+        status = response.statusCode;
+        response.on('data', (chunk) => chunks.push(chunk));
+        response.on('end', () => settle());
+        response.on('error', settle);
+      },
+    );
+    const timer = setTimeout(
+      () => chatRequest.destroy(new Error(`aborted after ${CHAT_TIMEOUT_MS / 1000}s`)),
+      CHAT_TIMEOUT_MS,
+    );
+    chatRequest.on('error', settle);
+    chatRequest.end(body);
+  });
+
 const sendChat = async (messages) => {
-  try {
-    const response = await fetch(`${CHAT_URL}/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages }),
-      signal: AbortSignal.timeout(CHAT_TIMEOUT_MS),
-    });
-    const text = await response.text();
-    if (!response.ok) {
-      return { answer: '', tools: [], errors: [`HTTP ${response.status}: ${text}`] };
-    }
-    return splitChatStream(text);
-  } catch (error) {
-    return { answer: '', tools: [], errors: [`chat request failed: ${error.message}`] };
+  const { status, text, error } = await postChat(messages);
+  if (status !== undefined && status >= 300) {
+    return { answer: '', tools: [], errors: [`HTTP ${status}: ${text}`] };
   }
+  const turn = splitChatStream(text);
+  if (error) {
+    turn.errors.push(`chat request failed: ${error.message}`);
+  }
+  return turn;
 };
 
 // Redrawn in the page as JPEG on white with the EXIF rotation applied, the

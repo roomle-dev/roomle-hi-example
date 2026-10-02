@@ -348,7 +348,7 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 | `errors` in `run.json` with the provider's message | invalid key or a provider failure; the snapshot is still stored |
 | `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context — a **bug**. Fixed causes: the images of `get-plan-images` reached Mistral as base64 text ([analysis](../bug-analysis/plan-images-sent-as-text-to-mistral.md)); the image URLs and the pretty-printing of the tool results ([analysis](../bug-analysis/tool-results-exceed-mistral-context.md)) |
 | `api.extended[message.method] is not a function` in `planner-calls.json` | the planner build lacks the method (see the bug rules above) |
-| `chat request failed: … aborted` | a turn took longer than 10 minutes |
+| `chat request failed: aborted after 600s` | a turn took longer than 10 minutes — the turn keeps the tools and the text the chat streamed before. `gpt-5-mini` went silent this long after `get-authoring-rules` on the large kitchens (2026-10-02); the chat streams nothing while a model reasons |
 | `operation <tool> failed: …` in `errors` | an operation of the test did not apply to its plan — e.g. a root id that is not in the plan (still "not found" after 30 s); check the test against [test-prompts.md](../../docs/test-prompts.md#plans) |
 | the runner names problems of the test file and runs nothing | an empty key variable, an unknown plan name, a missing image, a duplicate id — fix the file or the environment |
 

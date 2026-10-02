@@ -1,6 +1,9 @@
-# Testing Prompts for Roomle HI Example
+# Test Prompts for Roomle HI Example
 
-This document provides a collection of prompt examples for testing the Roomle HI (HOMAG Intelligence) room planning capabilities. These prompts can be used to verify the functionality of the MCP server tools when creating and positioning kitchen groups in Roomle sessions.
+The test cases for the Roomle HI (HOMAG Intelligence) room planning live in
+[test-prompts.json](./test-prompts.json): each starts from one of the plans below, with a prompt, an
+image or both. They verify the MCP server tools that create, position and edit kitchen groups in
+Roomle sessions.
 
 ## Plans
 
@@ -34,128 +37,48 @@ plan snapshot id: `ps_qn012p0tjux6dabt6oym0bzngmqex70u`
 
 ![Rooms and Attic](./images/room-and-attic.png)
 
-## Basic Group Placement
+### Three Tall Units
 
-### Simple Group Additions
+plan snapshot id: `ps_qply732i7knwtkfjm1z86sa8vrt00ms`
 
-- **Add a group of three tall units to the wall on the right**
-  ```
-  add a group of three tall units to the wall on the right
-  ```
+![Three Tall Units](./images/three-tall-units.png)
 
-- **Add a group of 4 cabinets to the wall in the back**
-  ```
-  add a group of 4 cabinets to the wall in the back
-  ```
+The Default Room with one group: three `HTB60` along the right wall from the back right corner. The
+group editing tests start from it. It was built with `create-or-replace-groups` and saved with
+`saveExternalObjectSnapshot()`; the ids survive a reload:
 
-## Kitchen Planning
+| | id |
+|---|---|
+| group | `064a7d91-b583-4883-b71b-95c324d3d824` |
+| first unit (back corner) | `0010443c-519a-437b-8fe5-364f13887ca4` |
+| middle unit | `a7271f1b-50d5-4b50-97ca-7a5bf75f77fa` |
+| last unit (front) | `8774cac2-8b83-405d-b88c-f0e5cd2452fb` |
 
-### Corner Kitchen Configurations
+```json
+{ "posGroups": [{ "libraryId": "Furniture_Smith",
+  "placement": { "posGroup": [4815, 0, -3765], "posRotationY": 270 },
+  "roots": [
+    { "id": "t1", "articleId": "HTB60", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom",
+      "dockedRoots": [{ "id": "t2", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }] }] } },
+    { "id": "t2", "articleId": "HTB60", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom",
+      "dockedRoots": [{ "id": "t3", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }] }] } },
+    { "id": "t3", "articleId": "HTB60" }
+  ] }] }
+```
 
-- **Plan a kitchen in the back right corner of the room**
-  ```
-  plan a kitchen in the back right corner of the room
-  ```
+## Test Cases
 
-- **Plan a kitchen with an oven, a range hood, a sink and a fridge in the back right corner of the room**
-  ```
-  plan a kitchen with an oven, a range hood, a sink and a fridge in the back right corner of the room
-  ```
+[test-prompts.json](./test-prompts.json) holds:
 
-- **Create a kitchen with an oven, a fridge and a sink in the back right corner of the room**
-  ```
-  create a kitchen with an oven, a fridge and a sink in the back right corner of the room
-  ```
-
-## Image-Based Kitchen Creation
-
-### Reference Image Prompts
-
-The reference image goes along with the prompt: drop it into the chat window, or pass it to the
-script with `--image`. The model has to read images.
-
-- **Create a kitchen like the one in the image on the left-hand wall of the room**
-  ```
-  create a kitchen like the one in the image on the left-hand wall of the room
-  ```
-  *Reference: [kitchen-1.png](./images/kitchen-1.png)*
-
-- **Create a kitchen like the one shown in the image, in the back right corner of the room**
-  ```
-  create a kitchen like the one shown in the image, in the back right corner of the room
-  ```
-  *Reference: [kitchen-2.png](./images/kitchen-2.png)*
-
-- **Create a planning as to the one shown in the picture on the right-hand wall of the room**
-  ```
-  create a planning as to the one shown in the picture on the right-hand wall of the room.
-  ```
-  *Reference: [kitchen-3.jpeg](./images/kitchen-3.jpeg)*
-
-- **Only an image, no text** — the model decides what to plan; the chat sends the image with its
-  default text "Plan a kitchen like the one in the image."
-  ```
-  ```
-  *Reference: [kitchen-4.png](./images/kitchen-4.png)*
-
-## Detailed Kitchen Specifications
-
-### Full Kitchen with Specific Requirements
-
-- **Create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room**
-  ```
-  create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room. Arrange the kitchen around the corner. The front of the kitchen should be made of walnut and the worktop should be made of dark marble
-  ```
-
-  **Specifications:**
-  - **Appliances**: oven, hob, cooker hood, fridge, sink
-  - **Storage**: cabinet with drawers, wall cabinets
-  - **Placement**: back right corner, arranged around the corner
-  - **Materials**: walnut front, dark marble worktop
-
-## Group Editing
-
-Start from a plan with a kitchen group, e.g. the three tall units on the right wall above. Each
-prompt exercises one command tool; check the result with `get-plan-images`.
-
-- **Add one unit** (`merge-article-into-group`)
-  ```
-  add a cabinet with drawers to the right of the kitchen
-  ```
-
-- **Replace a unit** (`exchange-root-module`)
-  ```
-  replace the middle unit with a cabinet with drawers
-  ```
-
-- **Remove a unit** (`delete-root-module`) — the kitchen splits into two groups
-  ```
-  remove the middle unit
-  ```
-
-- **Change one unit** (`change-module-attribute`)
-  ```
-  make the first unit 900 mm wide
-  ```
-
-- **Change the whole kitchen** (`change-group-attribute`)
-  ```
-  make the fronts of the whole kitchen white
-  ```
-
-- **Join groups** (`merge-groups`) — after removing the middle unit
-  ```
-  join the two groups on the right wall
-  ```
-
-- **Delete a group** (`delete-group`)
-  ```
-  delete the kitchen
-  ```
+| Field | Content |
+|---|---|
+| `models` | the chat models to test, `{ provider, apiKeyEnv }`: a provider name of the launcher and the environment variable that holds its key — never the key |
+| `plans` | the plans above by name: `{ "<name>": "<plan snapshot id>" }` |
+| `tests` | `{ id, title, plan, prompt?, image?, operations?, expect? }` — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message; `operations` are MCP tool calls `{ tool, arguments }` made on the plan before the prompt (e.g. "join groups" deletes the middle unit first); `expect` says what the evaluation checks |
 
 ## Testing Guidelines
 
-When testing these prompts with the MCP server:
+When testing a prompt by hand with the MCP server:
 
 1. **Start the server** using `npm start` from the repository root
 2. **Open the example page** at http://localhost:3000
@@ -164,7 +87,7 @@ When testing these prompts with the MCP server:
    - `get-plan-context` - Retrieve current room and article information
    - `create-or-replace-groups` - Create new kitchen groups with specified articles
    - `place-group` - Position groups against walls or in corners
-   - the command tools - Edit an existing group (see Group Editing)
+   - the command tools - Edit an existing group (the tests on the Three Tall Units plan)
 
 5. **Verify results** by checking:
    - Groups are created with correct articles
@@ -172,17 +95,16 @@ When testing these prompts with the MCP server:
    - Material specifications are applied correctly
    - Docking relationships between modules are valid
 
-To run every prompt here and get an evaluated report, ask an agent to **"test the mcp"**
-([HI MCP testing skill](../.agents/skills/hi-mcp-testing.md)). To run a single prompt without
-opening the page yourself and keep the result, use its script:
+To run every test for every model and keep the results, use the runner; ask an agent to **"test the
+mcp"** ([HI MCP testing skill](../.agents/skills/hi-mcp-testing.md)) for an evaluated report:
 
 ```bash
-node .agents/scripts/run-hi-mcp-prompt.js mistral "$MISTRAL_API_KEY" "add a group of three tall units to the wall on the right"
-node .agents/scripts/run-hi-mcp-prompt.js gpt-5.4-mini "$AZURE_GPT_KEY" "create a kitchen like the one in the image on the left-hand wall of the room" --image docs/images/kitchen-1.png
+node .agents/scripts/run-hi-mcp-tests.js                     # docs/test-prompts.json, every model
+node .agents/scripts/run-hi-mcp-prompt.js gpt-5-mini "$AZURE_GPT_KEY" "add a group of three tall units to the wall on the right" --plan ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv
 ```
 
-It runs the prompt through the chat in a headless browser and stores the snapshot, the images and the
-model's answer in `.temp/result/<run>/`.
+The runner stores each run in `.temp/result/mcp-test-<time>/<model>/<NN>-<test id>/`; the second line
+runs a single prompt the same way.
 
 ## Related Documentation
 

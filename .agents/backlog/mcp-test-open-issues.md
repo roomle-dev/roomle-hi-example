@@ -2,8 +2,9 @@
 
 > **Type**: Backlog — what is to be done after the analyses of "test the mcp"
 > **Domain**: hi-mcp — `create-or-replace-groups`, `merge-article-into-group`, the command tools
-> (`hi-mcp/hi-mcp-poc-json/tool-executors.ts`, `group-placement.ts`), the served rules
-> (`hi-mcp-server.ts`), the chat (`hi-mcp/hi-mcp-chat`); one roomle-ui defect
+> (`hi-mcp/hi-mcp-poc-json/tool-executors.ts`, `group-layout.ts`, `group-placement.ts`), the served
+> rules (`hi-mcp-server.ts`), the chat (`hi-mcp/hi-mcp-chat`); two roomle-ui defects and one
+> RoomleCore defect
 > **Maintained by**: step 7 of [the testing skill](../skills/hi-mcp-testing.md#7-open-issues)
 
 Each issue names the problem, the test prompt that shows it, the cause in the code, the to-do and
@@ -16,19 +17,19 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | # | Issue | Kind | Test prompt | Priority |
 |---|---|---|---|---|
 | 1 | [A taken side is re-targeted to the far end of the row](#1-a-taken-side-is-re-targeted-to-the-far-end-of-the-row) | bug, MCP server | add one unit; image: kitchen in the back right corner | high — a unit behind the wall, a row through the wall |
-| 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | four cabinets on the back wall; oven, fridge, sink in the corner | high — a row through the wall |
+| 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | four cabinets on the back wall; oven, fridge, sink in the corner | low — docking written as `contextData` only |
 | 4 | [The side correction walks through a corner article](#4-the-side-correction-walks-through-a-corner-article) | hardening | kitchen in the back right corner | medium |
-| 5 | [A range hood without wall units has no docking recipe](#5-a-range-hood-without-wall-units-has-no-docking-recipe) | bug, rules | oven, range hood, sink, fridge; full kitchen around the corner | high — a hood on the floor or on the worktop |
+| 5 | [A range hood without wall units has no docking recipe](#5-a-range-hood-without-wall-units-has-no-docking-recipe) | bug, rules | oven, range hood, sink, fridge; full kitchen around the corner | low — with relations the hood hangs `above` the hob |
 | 6 | [A material for the whole kitchen is not applied](#6-a-material-for-the-whole-kitchen-is-not-applied) | bug, MCP server | full kitchen around the corner; image: kitchen on the left-hand wall | high — the requested material is missing |
 | 7 | [Docking to a vector the article does not have](#7-docking-to-a-vector-the-article-does-not-have) | hardening | oven, fridge, sink in the corner | medium |
 | 8 | [Root module ids are passed on unresolved](#8-root-module-ids-are-passed-on-unresolved) | hardening | change one unit | medium |
 | 9 | [Answers claim what the plan does not have](#9-answers-claim-what-the-plan-does-not-have) | hardening, chat | most prompts with a wrong result (8 of 17 runs on 2026-10-02 12:45) | medium |
-| 10 | [A wall unit stands on the worktop instead of hanging on the wall](#10-a-wall-unit-stands-on-the-worktop-instead-of-hanging-on-the-wall) | bug, MCP server | full kitchen around the corner | high — a wall cabinet on the worktop or on the floor |
+| 10 | [A wall unit stands on the worktop instead of hanging on the wall](#10-a-wall-unit-stands-on-the-worktop-instead-of-hanging-on-the-wall) | bug, MCP server | full kitchen around the corner | medium — `contextData` only; with relations the height is derived (D35, to confirm) |
 | 11 | [A merged group reaches into the back wall](#11-a-merged-group-reaches-into-the-back-wall) | bug, RoomleCore — [RML-18040](https://roomle.atlassian.net/browse/RML-18040) | join groups | — |
 | 12 | [The door opening is listed as a wall](#12-the-door-opening-is-listed-as-a-wall) | hardening | image: planning on the right-hand wall | medium |
-| 13 | [Undocked wall units reject the whole group](#13-undocked-wall-units-reject-the-whole-group) | hardening | full kitchen around the corner | medium — the retry loses content |
-| 14 | [A floor unit is docked onto a top vector](#14-a-floor-unit-is-docked-onto-a-top-vector) | hardening | image: kitchen on the left-hand wall | medium |
-| 15 | [A G7 correction docks a part by a wall unit at floor level](#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | bug, MCP server | image: kitchen in the back right corner | high — a wall unit on the floor carrying the kitchen |
+| 13 | [Undocked wall units reject the whole group](#13-undocked-wall-units-reject-the-whole-group) | hardening | full kitchen around the corner | low — docking written as `contextData` only |
+| 14 | [A floor unit is docked onto a top vector](#14-a-floor-unit-is-docked-onto-a-top-vector) | hardening | image: kitchen on the left-hand wall | low — docking written as `contextData` only |
+| 15 | [A G7 correction docks a part by a wall unit at floor level](#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | bug, MCP server | image: kitchen in the back right corner | low — docking written as `contextData` only |
 | 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) | image only, no text | critical — an attribute edit fails |
 | 17 | [A chat turn without an answer for 10 minutes](#17-a-chat-turn-without-an-answer-for-10-minutes) | hardening, chat | image: kitchen on the left-hand wall; full kitchen around the corner | medium |
 | 18 | [A floor unit `rightOf` a wall unit hangs at wall-unit height](#18-a-floor-unit-rightof-a-wall-unit-hangs-at-wall-unit-height) | bug, MCP server | image: kitchen on the left-hand wall | high — five base units in the air |
@@ -43,9 +44,19 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 27 | [A new group without a placement, moved with `place-group` right after](#27-a-new-group-without-a-placement-moved-with-place-group-right-after) | hardening | three tall units; four cabinets; image only | medium — a second call and a reload |
 | 28 | [`place-group` on a group that already stands where asked reloads it](#28-place-group-on-a-group-that-already-stands-where-asked-reloads-it) | hardening | image: kitchen in the back right corner; full kitchen around the corner | low |
 
-Issues 1 and 3 are wrong results of the server's own corrections or placement (issue 2, an on-top
-docking counted as a side neighbour, is fixed: `sidePartnersOf` counts side pairs only, RML-18038); issues 5, 6 and 10 are
-requests the tool API makes the agent get wrong. They come first.
+Since RML-18038 the agent writes relations (`rightOf`, `leftOf`, `onTop`, `above`, `behind`) and the
+server compiles the docking (`group-layout.ts`). In the test with all three models
+(`mcp-test-2026-10-02_17-25-40`) no relation needed a correction. What comes first:
+
+- **Gaps of the compile**: 18 and 20 (a unit at a height it cannot have), 19 and 21.
+- **Wrong results of the server's own corrections or placement**: 1, and 22 (`place-group` resets the
+  worktop colour).
+- **Requests the tool API makes the agent get wrong**: 6 (a material for the whole kitchen).
+- **Planner defects**: 23 (a worktop colour change drops hanging wall units), 16 (RML-18039).
+
+Issue 2 (an on-top docking counted as a side neighbour) is fixed: `sidePartnersOf` counts side pairs
+only. Issues 3, 13, 14 and 15 no longer occur with relations; they stay for docking written as
+`contextData`, which the server still accepts.
 
 ## 1. A taken side is re-targeted to the far end of the row
 
@@ -158,6 +169,10 @@ to the floor row on purpose.
 
 **Relation payloads** (RML-18038): the hood counts as a wall unit — it continues `rightOf` / `leftOf`
 the wall units, or hangs `above` the hob with the gap of the wall units (D35). Not verified live yet.
+
+**Latest runs** (`mcp-test-2026-10-02_17-25-40`): with relations the hood hangs `above` the hob —
+gpt-5-mini 04 (`[0, 660, 0]`, y 1480), gpt-6-astra 03 and 04 (`gapMm` 750). What stays: the served rules
+name the hood only beside wall units, and a hood `above` a tall unit stands on it (issue 19).
 
 ## 6. A material for the whole kitchen is not applied
 

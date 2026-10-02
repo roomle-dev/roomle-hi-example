@@ -118,8 +118,10 @@ const loadChromium = async () => {
 };
 
 // The tool calls of the turn that is running, from the launcher's output. The
-// plan-changing tools run one after another, so feedback belongs to the last
-// open call of its tool.
+// plan-changing tools run one after another in the order of their calls, and
+// each call ends with one feedback or error line, so feedback belongs to the
+// first open call of its tool - also when the agent calls a tool twice at
+// once, which logs both argument lines before the first call runs.
 const toolCalls = { turn: undefined, entries: [] };
 
 const recordToolCall = (line) => {
@@ -140,7 +142,7 @@ const recordToolCall = (line) => {
   }
   const feedback =
     kind === 'error' ? { error: payload?.message ?? payload } : payload;
-  const call = toolCalls.entries.findLast(
+  const call = toolCalls.entries.find(
     (entry) => entry.turn === toolCalls.turn && entry.tool === tool && entry.open,
   );
   if (call) {

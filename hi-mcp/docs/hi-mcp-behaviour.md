@@ -429,7 +429,9 @@ always reported, and nothing the agent sends is dropped without a report (D32).
 
 For every call of a tool that changes the plan, the server logs what the agent sent — copied before
 it corrects anything — and the feedback, one JSON line each (`[hi-mcp] tool <name> args|feedback|error
-…`). A test run stores them per turn as `toolCalls` in `run.json`.
+…`). Every such call ends with exactly one feedback or error line, an empty `feedback {}` included.
+The calls run in the order they were made (D4), so a test run pairs the lines in that order and stores
+them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twice at once.
 
 ### 8.2 Silent corrections
 

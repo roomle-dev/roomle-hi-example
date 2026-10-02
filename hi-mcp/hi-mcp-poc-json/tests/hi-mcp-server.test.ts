@@ -162,6 +162,19 @@ describe('hi-mcp-server tool calls', () => {
     });
   });
 
+  it('ends every call of a tool that changes the plan with one feedback line, also without feedback', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const client = await connectClient(createMockPlannerApi());
+
+    await client.callTool({ name: 'delete-root-module', arguments: { rootModuleId: 'r1' } });
+    await client.callTool({ name: 'get-price', arguments: {} });
+
+    const lines = log.mock.calls.map(([line]) => String(line));
+    log.mockRestore();
+    expect(lines).toContain('[hi-mcp] tool delete-root-module feedback {}');
+    expect(lines.some((line) => line.startsWith('[hi-mcp] tool get-price feedback'))).toBe(false);
+  });
+
   it('accepts a number as an attribute value and passes it on as its string', async () => {
     const plannerApi = createMockPlannerApi();
     const client = await connectClient(plannerApi);

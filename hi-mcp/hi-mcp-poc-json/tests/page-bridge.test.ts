@@ -104,6 +104,25 @@ describe('PageBridge.call', () => {
 });
 
 describe('PageBridge page lifecycle', () => {
+  it.fails('RML-18033: ignores a JSON null frame instead of throwing from the socket listener', () => {
+    const bridge = new PageBridge();
+    const socket = attachPage(bridge);
+    expect(() => socket.receive(null)).not.toThrow();
+  });
+
+  it.fails('RML-18033: accepts results only from the active planner socket', async () => {
+    const bridge = new PageBridge();
+    const active = attachPage(bridge);
+    const other = new FakePageSocket();
+    bridge.attachPage(other as unknown as WebSocket);
+
+    const pending = bridge.call('fetchPrice', []);
+    other.receive({ kind: 'result', id: 1, ok: true, result: { price: 999 } });
+    active.receive({ kind: 'result', id: 1, ok: true, result: { price: 42 } });
+
+    await expect(pending).resolves.toEqual({ price: 42 });
+  });
+
   it('a newer page replaces the current one and rejects its pending calls', async () => {
     const bridge = new PageBridge();
     const first = attachPage(bridge);

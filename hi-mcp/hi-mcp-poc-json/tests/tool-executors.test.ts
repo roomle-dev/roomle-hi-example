@@ -410,6 +410,78 @@ describe('find-attributes', () => {
 });
 
 describe('create-or-replace-groups validation', () => {
+  it.fails('RML-18033: reports a group omitted by the planner in notLoaded', async () => {
+    const api = createApi(planContextFixture);
+    api.extended.getExternalObjectPlanContext
+      .mockResolvedValueOnce(planContextFixture)
+      .mockResolvedValueOnce({ ...planContextFixture, groups: [] })
+      .mockResolvedValueOnce({
+        ...planContextFixture,
+        groups: [makeShapedGroup({ id: 'created-group' })],
+      });
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        { roots: [pick()] },
+        { roots: [{ ...pick(), id: 'other-root' }] },
+      ],
+    })) as Record<string, any>;
+    expect(result.notLoaded).toEqual([
+      { index: 1, errors: expect.any(Array) },
+    ]);
+  });
+
+  it.fails('RML-18033: converts numeric article overrides to planner strings', async () => {
+    const api = createApi(planContextFixture);
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [{ roots: [{ ...pick(), attributes: [{ id: 'b', value: 900 }] }] }],
+    });
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
+      { posGroups: [{ roots: [{ ...pick(), attributes: [{ id: 'b', value: '900' }] }] }] },
+      'posGroups',
+      { reason: 'adjusted' },
+    );
+  });
+
+  it('RML-18033: reports invalid attributes and still loads both groups', async () => {
+    const api = createApi(planContextFixture);
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        { roots: [{ ...pick(), attributes: 'invalid' }] },
+        { roots: [pick()] },
+      ],
+    })) as Record<string, any>;
+    expect(result).not.toHaveProperty('notLoaded');
+    expect(result.corrections).toContainEqual(
+      expect.stringMatching(/attributes must be.*ignored/),
+    );
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
+      { posGroups: [{ roots: [pick()] }, { roots: [pick()] }] },
+      'posGroups',
+      { reason: 'adjusted' },
+    );
+  });
+
+  it.fails.each([
+    { contextData: { dockedRoots: {} } },
+    { contextData: { dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: {} }] } },
+  ])('RML-18033: isolates malformed docking data from valid sibling groups: %j', async (malformed) => {
+    const api = createApi(planContextFixture);
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        { roots: [{ ...pick(), ...malformed }] },
+        { roots: [pick()] },
+      ],
+    })) as Record<string, any>;
+    expect(result.notLoaded).toEqual([
+      { index: 0, errors: expect.any(Array) },
+    ]);
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
+      { posGroups: [{ roots: [pick()] }] },
+      'posGroups',
+      { reason: 'adjusted' },
+    );
+  });
+
   const expectRejectedBeforeLoad = async (
     posGroups: unknown[],
     message: RegExp,

@@ -31,6 +31,17 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 15 | [A G7 correction docks a part by a wall unit at floor level](#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | bug, MCP server | image: kitchen in the back right corner | high — a wall unit on the floor carrying the kitchen |
 | 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) | image only, no text | critical — an attribute edit fails |
 | 17 | [A chat turn without an answer for 10 minutes](#17-a-chat-turn-without-an-answer-for-10-minutes) | hardening, chat | image: kitchen on the left-hand wall; full kitchen around the corner | medium |
+| 18 | [A floor unit `rightOf` a wall unit hangs at wall-unit height](#18-a-floor-unit-rightof-a-wall-unit-hangs-at-wall-unit-height) | bug, MCP server | image: kitchen on the left-hand wall | high — five base units in the air |
+| 19 | [`above` a tall unit puts the unit on top of it, unreported](#19-above-a-tall-unit-puts-the-unit-on-top-of-it-unreported) | bug, MCP server | oven, range hood, sink, fridge in the corner | medium — a hood on the oven tower |
+| 20 | [A range hood beside a tall unit hangs by its chimney top](#20-a-range-hood-beside-a-tall-unit-hangs-by-its-chimney-top) | bug, MCP server | image: kitchen in the back right corner | high — hood and wall cabinet just above the worktop |
+| 21 | [Two units `above` one floor unit take the same place](#21-two-units-above-one-floor-unit-take-the-same-place) | hardening | image: kitchen on the left-hand wall; full kitchen around the corner | medium — the hood inside a wall unit |
+| 22 | [`place-group` resets the worktop and toe kick colours](#22-place-group-resets-the-worktop-and-toe-kick-colours) | bug, MCP server | image: kitchen on the left-hand wall | medium — the requested worktop colour is lost |
+| 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui | full kitchen around the corner | high — wall cabinets on the worktop |
+| 24 | [A second create with the agent's own group id builds a duplicate group](#24-a-second-create-with-the-agents-own-group-id-builds-a-duplicate-group) | hardening | full kitchen around the corner | medium — two kitchens on one spot |
+| 25 | [`dockTo` written on the roots of `create-or-replace-groups`](#25-dockto-written-on-the-roots-of-create-or-replace-groups) | hardening | four cabinets on the back wall | low — corrected right by G7 |
+| 26 | [One unknown article id rejects the whole group](#26-one-unknown-article-id-rejects-the-whole-group) | hardening | full kitchen around the corner | medium — a retry step |
+| 27 | [A new group without a placement, moved with `place-group` right after](#27-a-new-group-without-a-placement-moved-with-place-group-right-after) | hardening | three tall units; four cabinets; image only | medium — a second call and a reload |
+| 28 | [`place-group` on a group that already stands where asked reloads it](#28-place-group-on-a-group-that-already-stands-where-asked-reloads-it) | hardening | image: kitchen in the back right corner; full kitchen around the corner | low |
 
 Issues 1 and 3 are wrong results of the server's own corrections or placement (issue 2, an on-top
 docking counted as a side neighbour, is fixed: `sidePartnersOf` counts side pairs only, RML-18038); issues 5, 6 and 10 are
@@ -207,6 +218,8 @@ dark marble" — the plan has one walnut front, and the worktop keeps its colour
 - gpt-5-mini 07 and every gpt-6-astra run set the materials with `change-group-attribute` and got
   the whole kitchen. The API change of the to-do matches what the stronger models do on their own.
 
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5.4-mini 10 — dark marble on the fridge root only; the worktop keeps 380.
+
 ## 7. Docking to a vector the article does not have
 
 **Problem.** The model docks the sink `BackBottom → BackBottom` to a corner article. A corner article
@@ -285,6 +298,8 @@ MCP server, which the chat's model reads only through `get-authoring-rules`.
 marble" for one walnut front and a white worktop.
 
 **Latest runs** (`mcp-test-2026-10-02_13-47-02`): gpt-5.4-mini 01, 02, 04, 10, 14.
+
+**Latest runs** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 06; gpt-5.4-mini 05, 07, 09, 10, 14.
 
 ## 10. A wall unit stands on the worktop instead of hanging on the wall
 
@@ -372,6 +387,8 @@ change.
 group next to the first with `place-group` before merging. The toe kick reaches into the wall only
 when the merged units stand apart.
 
+**Latest runs** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 16, gpt-5.4-mini 16 (1920 mm). Not in gpt-6-astra 16, which closed the gap with `place-group` first.
+
 ## 12. The door opening is listed as a wall
 
 **Problem.** The model placed a group at `[4815, 0, 280]` / 270: the `end` of the right wall's
@@ -392,6 +409,8 @@ the model to skip it, but `type: null` does not say that the entry is an opening
 the right-hand wall places the group at the end of the long right wall.
 
 **Latest run** (`mcp-test-2026-10-02_12-45-24`): 08.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 09 — wall units hang in front of the back wall's window; the walls list no windows either.
 
 ## 13. Undocked wall units reject the whole group
 
@@ -519,3 +538,173 @@ What the model did in those minutes is not logged.
 kitchen and the full kitchen within 10 minutes.
 
 **Latest runs** (`mcp-test-2026-10-02_13-47-02`): gpt-5-mini 06 (twice), 10.
+
+**Latest runs** (`mcp-test-2026-10-02_17-25-40`): not shown — with the relations (RML-18038) gpt-5-mini answered 06 in 68 s and 10 in 54 s. The chat still has no turn limit and no progress, so the issue stays.
+
+## 18. A floor unit `rightOf` a wall unit hangs at wall-unit height
+
+**Problem.** The model wrote one chain: the tall unit, three wall units and the hood, then
+`base1 rightOf wall2` and four more floor units. The compile docked `wall2.RightBottom →
+base1.LeftBottom`: the five base units with sink and hob hang at the bottom of the wall units, the toe
+kick stays on the floor. Nothing reports it.
+
+**Cause.** `relationsToDocking` (`group-layout.ts`) corrects a wall unit beside a base unit (G35) and
+a floor unit `above` a unit (G34), but a floor unit `rightOf` / `leftOf` a wall unit passes.
+
+**To do.** A floor unit `rightOf` / `leftOf` a wall unit gets the default of a root without a
+relation — right of the previous floor unit in the list (G31) — and the correction says so.
+
+**Test.** `group-layout.test.ts`: a floor unit `rightOf` a wall unit continues the floor row, reported.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5.4-mini 06.
+
+## 19. `above` a tall unit puts the unit on top of it, unreported
+
+**Problem.** `hood above oven`, where the oven is the 2100 mm `HOTS2AB60` tower, became
+`oven.LeftTop → hood.LeftBottom offset [0, 0, 0]`: the hood stands on the tower. Nothing reports it.
+
+**Cause.** `hangGap` (`group-layout.ts`) is negative above a tall unit and is set to 0 silently.
+
+**To do.** Report it: "hood stands on the tall unit oven - above hangs a unit above a floor
+unit". A hood `above` a tall unit could instead hang `above` the next floor unit of the row — needs a
+decision.
+
+**Test.** `above` a tall unit is reported; `onTop` a tall unit is not.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5.4-mini 04.
+
+## 20. A range hood beside a tall unit hangs by its chimney top
+
+**Problem.** `hood rightOf HK260` and `OFKB90 rightOf hood` were compiled to
+`HK260.RightTop → DU.LeftTop` and `DU.RightBottom → OFKB90.LeftBottom`. The hood's Top vector is its
+chimney top, so the hood and the wall cabinet hang at y 1072 instead of 1480. Nothing reports it.
+
+**Cause.** `unitKind` (`group-layout.ts`) counts the hood (`mr_Hood`) as a wall unit, and a wall
+unit beside a tall unit docks Top-Top. The served rule names the hood with the wall units.
+
+**To do.** A hood beside a tall unit hangs `above` the floor unit on that side of the tall unit
+(derived gap, D35), reported; the Top-Top pair stays for wall units.
+
+**Test.** `hood rightOf tall` with a base unit `rightOf` the tall unit compiles to
+`base.LeftTop → hood.LeftBottom [0, 660, 0]`.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-6-astra 07.
+
+## 21. Two units `above` one floor unit take the same place
+
+**Problem.** A wall unit and the hood both `above` one base unit get the same entry on its `LeftTop`
+with the same offset: the hood stands inside the wall unit.
+
+**Cause.** The side correction (G8) separates units on side vectors only; the compile writes both
+`above` entries as asked.
+
+**To do.** The later unit `above` the same floor unit goes `rightOf` the earlier one, reported.
+
+**Test.** Two units `above` one base unit: the second is `rightOf` the first.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 06, 10.
+
+## 22. `place-group` resets the worktop and toe kick colours
+
+**Problem.** After `mod_CountertopColor` 224 and `mod_ToekickColor` 224, `place-group` reloaded the
+group; the worktop ends with 380 and the toe kick with 326 (`order-data.json`). Nothing reports it.
+In 07–10 the model set the colour again after each reload.
+
+**Cause.** `repositionedGroup` (`tool-executors.ts`) reloads the group without its generated roots
+(C1), and the library regenerates them with the default colours.
+
+**To do.** Keep the attributes of the generated roots over the reload — read them before and set
+them again after it, or keep the generated roots in the reload — and say so.
+
+**Test.** `place-group` on a group whose worktop carries `mod_CountertopColor` keeps the colour.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-6-astra 06.
+
+## 23. A worktop colour change drops hanging wall units onto the worktop
+
+**Problem.** Replaying gpt-5-mini 10: the wall units and the hood stand at y 1480 after the load and
+after `change-group-attribute mod_FrontColor`, and at y 820 after `mod_CountertopColor`. A group of
+one base unit and one wall unit keeps y 1480 after the same command, with the relation and with the
+same docking written as `contextData`. gpt-6-astra 10 lost the wall units above the sink the same
+way and deleted them.
+
+**Cause.** Not found. The worktop regeneration of `mod_CountertopColor` is the likely trigger; the
+planner stores the reciprocal of a docking entry without its offset
+(`hi-root-module-arrangement.ts:684-692`).
+
+**To do.** Reproduce in roomle-ui with the payload of gpt-5-mini 10 (`run.json`, second
+`create-or-replace-groups`), find where the offset is lost, fix it there.
+
+**Test.** A glue-logic test: a group with a wall unit hung by an offset keeps its height after a
+worktop colour change.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 10, gpt-6-astra 10.
+
+## 24. A second create with the agent's own group id builds a duplicate group
+
+**Problem.** Both calls sent `"id": "kitchen1"` with a placement; the planner had regenerated the id,
+so the second call built a second kitchen on the same spot, unreported.
+
+**Cause.** The description says a group whose id matches an existing group replaces it; the model
+reused its own id, not the regenerated one.
+
+**To do.** Resolve an id the server regenerated earlier in the session to that group, or report a new
+group that stands on an existing one — report only, never refuse.
+
+**Test.** A second create with the same agent id reports the existing group.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5.4-mini 10.
+
+## 25. `dockTo` written on the roots of `create-or-replace-groups`
+
+**Problem.** The model skipped `get-authoring-rules` and docked each root with `dockTo` (the field of
+`merge-article-into-group`); the server ignored it (G27) and chained the roots (G7).
+
+**Cause.** The chat passes no server instructions; `dockTo` is the only typed docking field among the
+tools.
+
+**To do.** Read `dockTo` `RightBottom → LeftBottom` as `rightOf` (and the mirror as `leftOf`) and
+report it.
+
+**Test.** A root with `dockTo` compiles like the matching relation, reported.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5.4-mini 02.
+
+## 26. One unknown article id rejects the whole group
+
+**Problem.** `w2` `OTB90` returned "Invalid pos groups - nothing was loaded"; the eight valid roots
+were not built either. The model fixed the id on its next call.
+
+**Cause.** G15 fails the whole group for one unknown article id.
+
+**To do.** Build the group without that root and report it in `notLoaded` with the valid ids
+([guideline step 4](../../AGENTS.md#guards-are-a-last-resort)).
+
+**Test.** A group with one unknown article loads the other roots and reports the unknown one.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 10.
+
+## 27. A new group without a placement, moved with `place-group` right after
+
+**Problem.** For a centred or offset row the model sent no placement and called `place-group`
+(`alignment` center, `offsetMm`) right after; the reload exposes the group to issues 22 and 23.
+
+**Cause.** The rules make a centred row a computation (example 4); `place-group` takes alignment and
+offset. `placement { wall, alignment, offsetMm }` is deferred (D23).
+
+**To do.** Decide D23: a placement by wall, alignment and offset in `create-or-replace-groups`.
+
+**Test.** A centred row is placed in one call.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-6-astra 01, 02, 09.
+
+## 28. `place-group` on a group that already stands where asked reloads it
+
+**Problem.** After resubmitting a corner group, the model called `place-group` for the same corner;
+the server reloaded the group anyway (and reset the worktop colour, issue 22).
+
+**To do.** Skip the reload when the computed position equals the group's position, and say so.
+
+**Test.** `place-group` to the group's own position makes no load call.
+
+**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-6-astra 07, 10.

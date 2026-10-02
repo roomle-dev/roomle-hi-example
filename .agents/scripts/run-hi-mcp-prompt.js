@@ -82,12 +82,17 @@ const SNAPSHOT_REQUEST = Object.fromEntries(
 const USAGE =
   'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--operations <json>] [--image <file>] [--out <dir>] [--dev] [--headed]';
 
+// An MCP tool call: the tool name, and arguments that are an object if given.
+const isOperation = (operation) =>
+  typeof operation?.tool === 'string' &&
+  (operation.arguments === undefined ||
+    (typeof operation.arguments === 'object' &&
+      operation.arguments !== null &&
+      !Array.isArray(operation.arguments)));
+
 const parseOperations = (json) => {
   const operations = JSON.parse(json ?? '[]');
-  if (
-    !Array.isArray(operations) ||
-    !operations.every((operation) => typeof operation?.tool === 'string')
-  ) {
+  if (!Array.isArray(operations) || !operations.every(isOperation)) {
     throw new Error('operations must be [{ tool, arguments }]');
   }
   return operations;

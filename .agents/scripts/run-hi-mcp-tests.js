@@ -58,6 +58,14 @@ const localTimestamp = (date) => {
   );
 };
 
+// An MCP tool call: the tool name, and arguments that are an object if given.
+const isOperation = (operation) =>
+  typeof operation?.tool === 'string' &&
+  (operation.arguments === undefined ||
+    (typeof operation.arguments === 'object' &&
+      operation.arguments !== null &&
+      !Array.isArray(operation.arguments)));
+
 const problemsOf = ({ models, plans, tests }) => {
   const problems = [];
   if (!Array.isArray(models) || models.length === 0) {
@@ -91,10 +99,7 @@ const problemsOf = ({ models, plans, tests }) => {
     }
     if (
       test?.operations !== undefined &&
-      !(
-        Array.isArray(test.operations) &&
-        test.operations.every((operation) => typeof operation?.tool === 'string')
-      )
+      !(Array.isArray(test.operations) && test.operations.every(isOperation))
     ) {
       problems.push(`${name}: operations must be [{ tool, arguments }]`);
     }

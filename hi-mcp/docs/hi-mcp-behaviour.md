@@ -76,8 +76,8 @@ The full guideline, with the rules for adding a guard, is in
 Every result tells the agent what happened:
 
 - **what was built** — the resulting groups with their position
-- **what the server corrected** — **Planned**: a `corrections` list, one sentence per correction
-- **what was not built, and why** — **Planned**: a `notLoaded` list that names what to send instead
+- **what the server corrected** — a `corrections` list, one sentence per correction
+- **what was not built, and why** — a `notLoaded` list (`create-or-replace-groups`) that names what to send instead
 - **what to check** — a `hint` that stops nothing
 
 An error result (`isError`) is the answer only when nothing could be done. A message names the fix
@@ -88,8 +88,8 @@ server uses, because every MCP client supports it.
 
 - **One source.** The served text lives in `hi-mcp-server.ts`: `INSTRUCTIONS`, `AUTHORING_RULES` and
   the tool descriptions. Documents describe that text; they never extend it.
-- **Describe how to succeed**, not what is rejected. Eight sentences still announce rejections
-  today (§8.3); **Planned**: they are removed.
+- **Describe how to succeed**, not what is rejected. `tests/hi-mcp-server.test.ts` keeps the
+  served text free of rejections and checks that it explains `corrections` and `notLoaded`.
 - **Keep it short and plain.** A rule that needs a long explanation is a candidate for simplifying
   the API.
 - **Never mention internals**: `repositioningData`, the corner frame, the corner probe, `rootRelPos`,
@@ -145,11 +145,11 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 
 | # | Decision | Source | State |
 |---|---|---|---|
-| D26 | **A conflicting placement creates no `repositioningData`.** For a placement on a group that is already in the plan, or a placement the server cannot use, the server sends no `repositioningData`, and the planner (roomle-ui, RoomleCore) positions the group — an existing group keeps its position. The result says that the placement was not used | user decision 1 | planned |
-| D27 | **Intersecting groups are allowed** (`place-group`). When the target overlaps another group, the server corrects the position along the wall and informs the agent; it never rejects. Touching is not an overlap | user decision 2 | planned |
-| D28 | **Unconnected roots are connected automatically.** The server adds a docking entry (`PosDockedContextRoot`: `dockingVector`, `mode`, `offset`) that docks them to the free end of the row. The guard stays for roots that cannot be connected | user decision 3 | planned |
-| D29 | **A unit docked to an occupied side goes to the free end of that row** (`merge-article-into-group`, and two roots on one side vector in `create-or-replace-groups`) | user decision 4 | planned |
-| D30 | **A call loads every group that can be built** and reports the others with what to send instead | user decision 5 | planned |
+| D26 | **A conflicting placement creates no `repositioningData`.** For a placement on a group that is already in the plan, or a placement the server cannot use, the server sends no `repositioningData`, and the planner (roomle-ui, RoomleCore) positions the group — an existing group keeps its position. The result says that the placement was not used | user decision 1 | in effect — `normalizePlacement`, `tool-executors.ts` |
+| D27 | **Intersecting groups are allowed** (`place-group`). When the target overlaps another group, the server corrects the position along the wall and informs the agent; it never rejects. Touching is not an overlap | user decision 2 | in effect — `freePlacementAlongWall`, `tool-executors.ts` |
+| D28 | **Unconnected roots are connected automatically.** The server adds a docking entry (`PosDockedContextRoot`: `dockingVector`, `mode`, `offset`) that docks them to the free end of the row. The guard stays for roots that cannot be connected | user decision 3 | in effect — `connectUnreachedRoots`, `tool-executors.ts` |
+| D29 | **A unit docked to an occupied side goes to the free end of that row** (`merge-article-into-group`, and two roots on one side vector in `create-or-replace-groups`) | user decision 4 | in effect — `separateSideVectorPartners`, `dockTarget`, `tool-executors.ts` |
+| D30 | **A call loads every group that can be built** and reports the others with what to send instead | user decision 5 | in effect — `keepBuildable`, `tool-executors.ts` |
 | D31 | Guards are a last resort; the server corrects and informs, and gives feedback where it cannot correct | user guideline | planned (code), in effect (guidelines) |
 
 ## 4. How a tool call runs
@@ -226,8 +226,8 @@ tool. It covers:
 - **`get-authoring-rules`** returns the rules as plain text.
 - **An error** is an error result (`isError: true`) with the message as text. A schema error reads
   "Input validation error: …".
-- **Planned**: results that change the plan carry `corrections` and, for `create-or-replace-groups`,
-  `notLoaded` (§2.3).
+- Results that change the plan carry `corrections` when the server corrected the input, and
+  `create-or-replace-groups` reports the groups it could not build in `notLoaded` (§2.3).
 
 ### 5.4 The plan context (`get-plan-context`)
 
@@ -314,8 +314,8 @@ The server runs these steps:
    a group of the call that has no position.
 
 **Result**: `loaded` (the planner's runtime ids), `groups` (**every** group in the plan, in the
-plan-context shape) and `hint`. **Planned**: `corrections` and `notLoaded` (D30). A conflicting
-placement is not sent (D26).
+plan-context shape), `hint`, and `notLoaded` — `[{ index, id?, errors }]` for the groups it could not
+build (D30), and `corrections`. A conflicting placement is not sent (D26).
 
 ### place-group
 
@@ -338,8 +338,9 @@ type `wall` on that side. It reads the calculated group (G21) and computes the p
 The group keeps its height. The server checks the target against the other groups (G22) and reloads
 the group once, with its roots and docking unchanged.
 
-**Result**: `placedIn` (`corner` or `wall`), the `wall`, and the resulting `group`. **Planned**: an
-overlap moves the group along the wall instead of rejecting it (D27).
+**Result**: `placedIn` (`corner` or `wall`), the `wall`, the resulting `group`, and `corrections`
+when the server corrected the request — an overlap moves the group along the wall (D27), an
+alignment parallel to the wall centres it.
 
 ### The command tools
 
@@ -353,7 +354,7 @@ position.
 | `change-group-attribute` | `groupId`, `attributeId`, `value` | resolves the group id (G18) | sets it on every module that has it (D20, P3) |
 | `delete-group` | `groupId` | resolves the group id | removes the group |
 | `delete-root-module` | `rootModuleId` | — | removes the unit; units no longer docked together become separate groups where they stand (P4) |
-| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo { rootId, ownDockingVector, dockingVector, mode?, offset? }` | resolves the group id, checks the article (G15). **Planned**: an occupied side goes to the free end of the row (D29), and the partner vector is derived (P7) | docks the new unit (P5–P8) |
+| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo { rootId, ownDockingVector, dockingVector, mode?, offset? }` | resolves the group id, reads the article id in the catalog's spelling (G15), moves an occupied side to the free end of the row (D29) and derives a missing partner vector (P7) | docks the new unit (P5–P8) |
 | `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | resolves the group id, checks the article (G15) | replaces the unit, which keeps its docking (P9) |
 | `merge-groups` | `targetGroupId`, `groupIds` | resolves every group id | merges where they stand: nothing is moved, no docking is added (P10) |
 
@@ -404,10 +405,10 @@ groups in the plan-context shape.
 
 | Channel | When | Today | Planned |
 |---|---|---|---|
-| Error result | a guard fires | the whole call is discarded | only when nothing in the call can be built (D30) |
+| Error result | nothing in the call can be built, or a guard of another tool fires | `create-or-replace-groups`: only when no group can be built (D30); the other tools: the call is discarded | the same |
 | `hint` | something to check; nothing stopped | an unpositioned group (`create-or-replace-groups`), more than 20 matches (`find-attributes`) | unchanged |
 | `corrections` | the server changed the input | — | one sentence per correction of a mistake. A correction the rules describe as normal — dropping generated roots, ignoring read-only fields of a resubmitted group — is not reported |
-| `notLoaded` | a group could not be built | — | `[{ index, id?, errors }]` in `create-or-replace-groups` |
+| `notLoaded` | a group could not be built | `[{ index, id?, errors }]` in `create-or-replace-groups`; the other groups load | the same |
 | Planner message | a planner check fires | passed on unchanged as an error result | the same |
 
 ### 8.2 Corrections the server makes today

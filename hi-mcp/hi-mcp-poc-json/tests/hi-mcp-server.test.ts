@@ -108,6 +108,22 @@ describe('hi-mcp-server tool calls', () => {
     },
   );
 
+  it('accepts a number as an attribute value and passes it on as its string', async () => {
+    const plannerApi = createMockPlannerApi();
+    const client = await connectClient(plannerApi);
+
+    const result = await client.callTool({
+      name: 'change-module-attribute',
+      arguments: { rootModuleId: 'r1', attributeId: 'mod_Width', value: 900 },
+    });
+
+    expect((result as { isError?: boolean }).isError).toBeFalsy();
+    expect(plannerApi.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+      'change-module-attribute',
+      { rootModuleId: 'r1', moduleId: null, attributeId: 'mod_Width', value: '900' },
+    );
+  });
+
   it('runs a command tool against the planner API and returns its result', async () => {
     const operationResult = {
       command: 'delete-root-module',
@@ -218,6 +234,19 @@ describe('hi-mcp-server tool calls', () => {
       expect(text).not.toContain('any other picture');
       expect(text).not.toContain('any image');
     }
+  });
+
+  it('describes how to succeed instead of what is rejected, and where the corrections are', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    const { tools } = await client.listTools();
+    const served = [client.getInstructions() ?? '', rules, JSON.stringify(tools)].join('\n');
+    expect(served).not.toMatch(/reject/i);
+    expect(rules).toContain(
+      'Read corrections and notLoaded in a result: corrections lists what the server changed in your input',
+    );
   });
 
   it('never tells the agent how the server positions a group internally', async () => {

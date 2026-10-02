@@ -75,13 +75,13 @@ plan snapshot id: `ps_qn012p0tjux6dabt6oym0bzngmqex70u`
   ```
   create a kitchen like the one in the image on the right-hand wall of the room
   ```
-  *Reference: [kitchen-right-wall-reference.png](./images/kitchen-right-wall-reference.png)*
+  *Reference: [kitchen-1.png](./images/kitchen-1.png)*
 
 - **Create a kitchen like the one shown in the image, in the back right corner of the room**
   ```
   create a kitchen like the one shown in the image, in the back right corner of the room
   ```
-  *Reference: [kitchen-back-right-corner-reference.png](./images/kitchen-back-right-corner-reference.png)*
+  *Reference: [kitchen-2.png](./images/kitchen-2.png)*
 
 ## Detailed Kitchen Specifications
 

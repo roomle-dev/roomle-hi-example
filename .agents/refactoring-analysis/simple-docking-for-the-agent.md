@@ -377,9 +377,9 @@ hypothesis holds.
 Phase 1 covers every relation except `under`. `under` (tabletops) is phase 2, after the live check
 of Decision 4. Each step ends with its check.
 
-0. **Gate: the A/B run** ([Verification before the implementation](#verification-before-the-implementation)).
+1. **Gate: the A/B run** ([Verification before the implementation](#verification-before-the-implementation)).
    If gpt-5-mini stalls in both formats, the format is not the cause, and the plan stops here.
-1. **`group-layout.ts`** (new; pure functions, no planner call). Check: `group-layout.test.ts`.
+2. **`group-layout.ts`** (new; pure functions, no planner call). Check: `group-layout.test.ts`.
    - `RELATIONS`: `rightOf`, `leftOf`, `onTop`, `above`, `behind`. The options are `align`
      (`left` default, `right`, `back`) and `gapMm` (for `onTop` and `above` only).
    - `unitKind(article)`: `wall`, `tall` or `floor`. It is read from the catalog category
@@ -400,21 +400,16 @@ of Decision 4. Each step ends with its check.
         the side where the floor row continues.
      4. **Continue the row** when two units are `rightOf` / `leftOf` the same unit: the later one
         goes to the end of that row, reported (D29).
-     5. **Correct the intent**, each reported:
-        - a floor unit `above` a floor unit → `rightOf` it;
-        - a wall cabinet `rightOf` / `leftOf` a base unit → `above` it (issue 10: wall cabinets
-          on floor side vectors);
-        - `behind` a corner article → the default;
-        - `gapMm` on a side relation → ignored.
+     5. **Correct the intent**, each reported: a floor unit `above` a floor unit becomes `rightOf` it; a wall cabinet `rightOf` / `leftOf` a base unit becomes `above` it (issue 10: wall cabinets on floor side vectors); `behind` a corner article falls back to the default; `gapMm` on a side relation is ignored.
      6. **Write the entries.** The tree is oriented breadth-first from the first root, the order
         the planner arranges in. Each entry goes on the root reached first: `ownDockingVector`,
         `id`, `dockingVector`, `mode` (`StartStart`, none for `behind`) and `offset`. A relation
         whose target is reached later is written mirrored on the unit, with the offset negated.
      7. **Delete** the relation fields.
 
-     Errors only for what cannot be compiled at all, none expected in phase 1. Such a group goes
-     to `notLoaded` (D30).
-2. **`tool-executors.ts`.** Check: `tool-executors.test.ts`, with every existing test green.
+     8. **Return errors** only for what cannot be compiled at all, none expected in phase 1. Such a
+        group goes to `notLoaded` (D30).
+3. **`tool-executors.ts`.** Check: `tool-executors.test.ts`, with every existing test green.
    - `ROOT_FIELDS` (`:843`) gets the relation fields and options, so G27 does not report them;
      `toArticlePick` (`:65-78`) carries them to the compile.
    - In `create-or-replace-groups`, `relationsToDocking` runs through `keepBuildable` right after
@@ -426,10 +421,10 @@ of Decision 4. Each step ends with its check.
      this fix the side correction would move the neighbour of a stacked unit.
    - `WALL_UNIT` (`:619`) becomes `/\bwall ?units?\b/i`, so the Living wall units ("Living |
      Wallunits") count as wall units (Decision 3). `unitKind` uses the same expression.
-3. **`group-placement.ts`, `dockingRelations`** (`:50-81`). `RightTop → LeftTop` and
+4. **`group-placement.ts`, `dockingRelations`** (`:50-81`). `RightTop → LeftTop` and
    `LeftTop → RightTop` count as side neighbours, like the Bottom pairs. Otherwise the anchor walk
    stops at a wall cabinet docked to a tall cabinet. Check: `group-placement.test.ts`.
-4. **Served text, `hi-mcp-server.ts`.** Check: `hi-mcp-server.test.ts`.
+5. **Served text, `hi-mcp-server.ts`.** Check: `hi-mcp-server.test.ts`.
    - In `AUTHORING_RULES`, the root becomes `{ id, articleId, attributes?, <relation>? }`.
    - The four docking bullets (`Docking (contextData)…`, `Docking vectors are named edges…`,
      `mode selects…`, `Recipes…`) become one bullet with the relation table and the defaults.
@@ -440,7 +435,7 @@ of Decision 4. Each step ends with its check.
      unchanged (out of scope).
    - `INSTRUCTIONS` step 2 and the `create-or-replace-groups` description (`:216-243`) name the
      relations instead of "the placed root names the new root by its id".
-5. **Docs, in the same change.**
+6. **Docs, in the same change.**
    - `hi-mcp/docs/hi-mcp-behaviour.md`:
      - decision D34, the relations;
      - §5.2;
@@ -453,7 +448,7 @@ of Decision 4. Each step ends with its check.
      - issue 2 fixed;
      - 3, 13, 14 and 15 fixed for relation payloads, still open for `contextData`;
      - 10 depends on Decision 1.
-6. **Live check, then "test the mcp"** ([testing skill](../skills/hi-mcp-testing.md)).
+7. **Live check, then "test the mcp"** ([testing skill](../skills/hi-mcp-testing.md)).
    - Live, headless against the example page:
      - a row with wall cabinets beside a tall cabinet: the wall cabinets' bottom at y 1480;
      - wall cabinets above base units without a tall cabinet: y 1480 from the derived gap;

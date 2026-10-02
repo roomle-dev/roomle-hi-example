@@ -63,3 +63,10 @@ text — the model decides from the image alone.
 Implemented as designed. Smoke run: `gpt-5.4-mini`, empty prompt, `--image docs/images/kitchen-4.png`
 — exit 0, `run.json` `turns[0].image` set, `prompt-image.jpg` 896×1195, the model answered "a simple
 U-shaped, handleless kitchen inspired by the photo" and created the group (`ps_qphyyjuqikrrfdx3kdh6a147bbltij7`).
+
+Full "test the mcp" run, `gpt-5.4-mini`, `.temp/result/mcp-test-2026-10-02_12-45-24/`:
+- all 17 prompts ran, none skipped;
+- every image reached the model: kitchen-3 went from 4032×3024 to 1568×1176, and kitchen-1 from
+  1858×1512 to 1568×1276;
+- all four image prompts fail, on placement (3) and on a server correction (1). The findings went
+  to [the open issues](../backlog/mcp-test-open-issues.md) (#1, #6, #12, #14).

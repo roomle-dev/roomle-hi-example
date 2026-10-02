@@ -19,6 +19,7 @@ The HI MCP server is deployed at Cloudflare:
 
 Documentation:
 
+- [docs/hi-mcp-behaviour.md](./docs/hi-mcp-behaviour.md) — how the MCP server behaves towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback
 - [docs/local-mcp-server.md](./docs/local-mcp-server.md) — install the local MCP server and connect every MCP client to it, including Mistral Le Chat via a localhost.run tunnel
 - [docs/azure-mcp-server.md](./docs/azure-mcp-server.md) — deploy the MCP server to Azure App Service: access rights, the full setup runbook, verification, troubleshooting, teardown
 - [docs/cloudflare-mcp-server.md](./docs/cloudflare-mcp-server.md) — deploy the MCP server to Cloudflare Containers: the colleague handout links, verification, teardown

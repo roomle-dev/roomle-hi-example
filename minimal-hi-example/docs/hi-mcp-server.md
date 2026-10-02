@@ -253,6 +253,9 @@ workflow, the pos-group authoring rules, and the docking semantics (see
 
 ## Tool reference
 
+The behaviour reference — guidelines, decisions, every guard, correction and feedback message, and
+the information the server provides — is [../../hi-mcp/docs/hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md).
+
 The tools run in the server, but every planner call they make executes in the
 example page, so a tool is only as fast as the page. The timeout applies per
 planner call: 30 s by default, 120 s for `loadExternalObjectGroupLayout`

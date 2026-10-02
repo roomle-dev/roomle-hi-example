@@ -2,6 +2,9 @@
 
 **Load this skill when the task involves:** MCP tool definitions, tool parameters, usage patterns, error handling for specific tools.
 
+The behaviour reference — every guard, correction and feedback message, and the decisions behind
+them — is [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behaviour.md).
+
 ## Tool Overview
 
 ### Core Tools

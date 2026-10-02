@@ -244,6 +244,7 @@ step.
 3. **Browser Compatibility** — The example page must work in modern browsers
 4. **MCP Protocol** — Maintain compliance with MCP specification
 5. **Roomle API** — Work within Roomle planner API constraints
+6. **Guards Are a Last Resort** — When an agent creates wrong content, fix the misleading or too complex instruction or simplify the tool API; correct the input in the server before rejecting it — see [Guards Are a Last Resort](../AGENTS.md#guards-are-a-last-resort)
 
 ## Common Pitfalls
 

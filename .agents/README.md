@@ -55,6 +55,7 @@ ADRs document why the code is shaped the way it is. This folder is initially emp
 
 Living reference documentation for end users and developers is maintained in the `docs/` folder:
 
+- [hi-mcp-behaviour.md](../hi-mcp/docs/hi-mcp-behaviour.md) — How the MCP server behaves towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback
 - [hi-mcp-server.md](../minimal-hi-example/docs/hi-mcp-server.md) — Complete MCP server documentation
 - [hi-mcp-poc-presentation.md](../minimal-hi-example/docs/hi-mcp-poc-presentation.md) — Proof of concept presentation
 
@@ -131,6 +132,7 @@ done. The analysis and the report are the same document — the report is append
 | [Group placement via repositioningData](refactoring-analysis/group-placement-via-repositioning-data.md) | Open | 2026-09-29 |
 | [HI MCP tool logic in every client page](refactoring-analysis/hi-mcp-tool-logic-in-client-pages.md) | Done | 2026-09-29 |
 | [Parts (PosPartData) and log messages in the groups of the plan context](refactoring-analysis/hi-plan-context-without-parts.md) | Done | 2026-10-01 |
+| [Guards in the HI MCP server: what they reject, prevent and discard, and the refactoring plan (RML-18033)](refactoring-analysis/guards-in-the-hi-mcp-server.md) | Open | 2026-10-02 |
 
 ### Benchmarks & Performance Analyses
 

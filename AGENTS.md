@@ -5,7 +5,7 @@
 ## Always Do This First
 
 1. **Load matching skills.** Check the [On-Demand Skills](#on-demand-skills) catalog and read every skill file whose domain matches the task *before* taking action. Multiple skills may apply to one task.
-2. **Read [`minimal-hi-example/docs/hi-mcp-server.md`](./minimal-hi-example/docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the comprehensive reference for the HI MCP server implementation and usage.
+2. **Read [`minimal-hi-example/docs/hi-mcp-server.md`](./minimal-hi-example/docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the comprehensive reference for the HI MCP server implementation and usage. **Read [`hi-mcp/docs/hi-mcp-behaviour.md`](./hi-mcp/docs/hi-mcp-behaviour.md)** before changing a tool, a served rule, a guard or a correction — the single reference for how the MCP server behaves towards an agent, with every decision, guard, correction and feedback message.
 3. **Read [`.agents/README.md`](./.agents/README.md)** for the complete digital brain index, separating living reference from historical records.
 4. **Treat documentation as part of the task, not a follow-up.** Every analysis produces a document, and every change to productive code updates one — see [Where Documentation Goes](#where-documentation-goes).
 5. **For GitHub Copilot users:** See [`.github/copilot-instructions.md`](./.github/copilot-instructions.md) for Copilot-specific guidance.
@@ -103,6 +103,7 @@ The start script (`npm start`) provides:
 │       └── images/             # Diagram and screenshot assets
 ├── hi-mcp/                       # TypeScript MCP server PoCs (npm workspaces, vitest)
 │   ├── README.md                 # Project overview and PoC list
+│   ├── docs/hi-mcp-behaviour.md  # MCP server behaviour: guidelines, decisions, tools, information, guards, corrections, feedback
 │   ├── package.json              # Workspace root: test/typecheck/start scripts
 │   ├── tsconfig.base.json        # Shared compiler options for all PoCs
 │   ├── vitest.config.ts          # Unit tests across all PoCs
@@ -230,6 +231,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 - Tools should handle errors gracefully and return meaningful error messages
 - Tool timeouts should be configurable (default 30s, snapshot calls 120s)
 - Tools should log their operations for debugging
+- Tools correct agent input whose intent is clear rather than reject it — see [Guards Are a Last Resort](#guards-are-a-last-resort)
 
 ### Bridge Communication
 
@@ -237,6 +239,52 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 - Bridge messages should be validated before processing
 - Error responses from the page should be relayed back to the MCP client
 - Connection state should be tracked and logged
+
+### Guards Are a Last Resort
+
+A **guard** is a check in the MCP server that refuses an agent's input because it identifies the
+input as wrong: the call fails and nothing is created. A guard fights the symptom, not the cause, and it hinders the agent from creating the
+planning: every refusal costs the agent a step of its turn, and one wrong group discards every
+group of the call.
+
+When an agent creates wrong content, the root cause is the MCP instructions: a rule, a tool
+description or an example misleads the agent, asks it to combine more than it can, or the tool
+API makes the wrong payload easy to write. That is where the fix belongs.
+
+This is about the MCP server. The planner's checks (roomle-ui) protect the planner from breaking and
+stay as they are; the server corrects the input before it forwards it, where it can.
+
+**Guards are always treated as a last resort.** Take the first step that works:
+
+1. **Clarify the instructions.** Find the rule sentence, tool description or example that led the
+   agent to the wrong content, and make it say the right thing plainly — shorter, not longer.
+2. **Simplify the tool API.** When the agent has to compute or encode something the server can
+   derive — a point, a rotation, a docking entry, a partner vector — let the server derive it, so
+   the wrong payload cannot be written in the first place.
+3. **Correct the input and inform the agent.** Whenever the server can, it corrects the input,
+   creates the planning, and says in the tool result what it corrected, so the agent learns from
+   the note without losing a step.
+4. **Give feedback and ask for the correction.** When the server cannot correct the input, it
+   still builds what it can — a wrong group does not cancel the valid groups beside it — and the
+   result says what was not built, why, and what to send instead.
+5. **Reject only as a last resort** — when nothing in the call can be built, or its intent cannot
+   be told (an article id that matches nothing, a group id that is not in the plan). The error
+   says what to send instead.
+
+Rules:
+
+- A new guard needs a written reason in its analysis why steps 1–4 do not work.
+- An error message that names the one fix is a sign that the server can apply that fix itself.
+- Never refuse what the user may legitimately want — a group outside the room, for example. The
+  server cannot tell such a request from a mistake.
+- The served rules and tool descriptions describe how to succeed, not which payloads are rejected.
+- A bug analysis of wrong content an agent created names the instruction or the part of the tool
+  API that led the agent there. "The server accepted it" is not a root cause.
+
+Every guard, correction and feedback message of the server, and the decisions behind them, are in
+[`hi-mcp/docs/hi-mcp-behaviour.md`](./hi-mcp/docs/hi-mcp-behaviour.md); the analysis of the guards
+and the refactoring plan in
+[`.agents/refactoring-analysis/guards-in-the-hi-mcp-server.md`](./.agents/refactoring-analysis/guards-in-the-hi-mcp-server.md).
 
 ## Where Documentation Goes
 
@@ -276,6 +324,7 @@ Each analysis document follows the same lifecycle: written **before** the work, 
 | Feature analysis | new file in `.agents/feature-analysis/` with kebab-case slug |
 | Refactoring analysis | new file in `.agents/refactoring-analysis/` with kebab-case slug |
 | New feature capability | Update `minimal-hi-example/docs/hi-mcp-server.md` or create new file in `minimal-hi-example/docs/` |
+| MCP server behaviour — a tool, a served rule, a result, a guard, a correction, feedback, a decision | `hi-mcp/docs/hi-mcp-behaviour.md`, in the same change |
 | MCP tool reference updates | `.agents/skills/hi-mcp-tools.md` |
 | Architecture decisions | Create ADR in `.agents/decisions/` (if needed) |
 | Living reference | `docs/` for user-facing documentation |
@@ -341,7 +390,7 @@ A push to `release/cloudflare` deploys the MCP server to Cloudflare
 2. Implement the executor in `hi-mcp/hi-mcp-poc-json/tool-executors.ts` — the pages stay untouched; an executor that changes the plan is wrapped in `oneAtATime`, so it never runs beside another plan change
 3. An edit of existing groups needs no new planner method: add the command in roomle-ui (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`) and forward it through `externalObjectGroupOperation`. Only if the tool needs a planner method the pages do not expose yet: add it to `hi-mcp/hi-mcp-poc-json/planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-poc-json-client/browser-bridge.ts`, then copy to the ligna-store)
 4. Add or extend unit tests in the matching `tests/` folder
-5. Update `minimal-hi-example/docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
+5. Update `hi-mcp/docs/hi-mcp-behaviour.md`, the `minimal-hi-example/docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
 6. Test with MCP client
 
 ## Suggested Change Workflow
@@ -437,6 +486,9 @@ Examples:
 - **Root cause analysis is mandatory** — Understand why the bug occurs before fixing
 - **Reproduce first** — Verify the bug exists and understand its impact
 - **Fix at the source** — Address the root cause, not symptoms
+- **Wrong content from an agent is an instruction problem** — Find the misleading or too complex
+  instruction and clarify it, or simplify the tool API; correct the input automatically before
+  rejecting it. A guard is a last resort — see [Guards Are a Last Resort](#guards-are-a-last-resort)
 - **Test the fix** — Verify it resolves the issue without introducing regressions
 
 ### Process

@@ -119,9 +119,13 @@ A result is a bug when the system, not the model, is at fault:
 | provider errors: authorization, quota, rate limit | **environment**, no bug |
 
 A model finding the server could have caught — a wall unit as the placement anchor — is also a
-**hardening candidate**: the report lists these separately, with how often they occurred. A group
-placed outside the room is a model finding only, never a hardening candidate: the user may ask for
-a placement outside the room, so the server must not refuse it.
+**hardening candidate**: the report lists these separately, with how often they occurred, and
+names the rule sentence, tool description or part of the tool API that led the model there.
+Hardening follows [Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort): clarify
+the instruction or simplify the tool API first, correct the input in the server second, and reject
+it only as a last resort. A group placed outside the room is a model finding only, never a
+hardening candidate: the user may ask for a placement outside the room, so the server must not
+refuse it.
 
 For a corner article the server adds the corner point offset to `posGroup` itself — compare the
 corner, not the raw point. State the evidence (file and value) behind every bug verdict.
@@ -149,7 +153,7 @@ Write `$SESSION/report.md`:
 
 ## Hardening candidates
 
-- <what the server accepted> — <n> runs ([02](#02-<slug>), …)
+- <what the server accepted> — <the instruction or tool API part that led the model there> — <n> runs ([02](#02-<slug>), …)
 
 ## Environment
 

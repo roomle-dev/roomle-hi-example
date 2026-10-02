@@ -49,8 +49,8 @@ Two parts have different responsibilities:
 
 The agent picks articles, sets their attributes, docks them to each other, and gives a new group
 one point and one rotation. The planner calculates every root position. The server completes
-everything else: the article template, the docking indices, the anchor root, and the corner frame of
-a corner article.
+everything else: the article template, the docking indices, the anchor root, and the anchor's frame
+— where its back left bottom corner lies (D33).
 
 ### 2.2 Guards are a last resort
 
@@ -92,7 +92,7 @@ server uses, because every MCP client supports it.
   served text free of rejections and checks that it explains `corrections` and `notLoaded`.
 - **Keep it short and plain.** A rule that needs a long explanation is a candidate for simplifying
   the API.
-- **Never mention internals**: `repositioningData`, the corner frame, the corner probe, `rootRelPos`,
+- **Never mention internals**: `repositioningData`, the anchor frame, the anchor probe, `rootRelPos`,
   `cornerPoint`. `tests/hi-mcp-server.test.ts` guards this
   ("never tells the agent how the server positions a group internally").
 
@@ -132,7 +132,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D15 | A root is an article pick; root positions come from the docking only | 2026-09-16 | rules `hi-mcp-server.ts:7`, `:10` | in effect |
 | D16 | A new group is positioned with `placement { posGroup, posRotationY, rootId? }`, applied once, when the group is created; the server anchors it | 2026-09-30 | group placement | in effect |
 | D17 | With two corner articles, `rootId` names the one that goes into the corner `posGroup` names | 2026-09-30 | group placement P1 | in effect |
-| D18 | The server places a corner article by its corner point and turns a right-handed one by 90° itself | 2026-09-30 | group placement; `toRepositioningData` | in effect |
+| D18 | The server places a corner article by its corner point and turns a right-handed one by 90° itself | 2026-09-30 | group placement; `toRepositioningData` | superseded by D33, which keeps both for every article |
 | D19 | `merge-article-into-group` positions by docking (`dockTo`), never by coordinates | 2026-09-30 | command API Q3 | in effect |
 | D20 | `change-group-attribute` sets the attribute on every root and sub module of the group whose master-data module carries it, in one calculation | 2026-09-30 | command API Q2 | in effect |
 | D21 | `place-group` works on the calculated group, keeps the group's height, and returns `{ placedIn, wall, group }`; it knows walls and corners, not free points | 2026-09-30 | [place-group](../../.agents/feature-analysis/reintroduce-place-group-tool-in-the-server.md) Q1, Q3–Q5 | in effect |
@@ -151,6 +151,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D29 | **A unit docked to an occupied side goes to the free end of that row** (`merge-article-into-group`, and two roots on one side vector in `create-or-replace-groups`) | user decision 4 | in effect — `separateSideVectorPartners`, `dockTarget`, `tool-executors.ts` |
 | D30 | **A call loads every group that can be built** and reports the others with what to send instead | user decision 5 | in effect — `keepBuildable`, `tool-executors.ts` |
 | D31 | Guards are a last resort; the server corrects and informs, and gives feedback where it cannot correct | user guideline | in effect — §8 |
+| D33 | **One anchor frame for every article.** A placement puts the docking corner of the anchor root — the back left bottom corner of its docking vectors — at `posGroup`, whatever article it is: the origin of a cabinet, the left edge of a range hood, the corner point of a corner article, which is also turned so that its corner lies back left. The groups the tools return report their position in the same frame: `pos` is the back left bottom corner, `rotationY` the rotation of the placement. An anchor the probe cannot calculate no longer fails its group (G17) | user, 2026-10-02 ([analysis](../../.agents/refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md)) | in effect — `anchorFrameOfRoot`, `toRepositioningData`, `positionInPlacementFrame`, `group-placement.ts`; `inPlacementFrame`, `tool-executors.ts` |
 | D32 | **Nothing the agent sends is dropped without a report.** What the server can build it builds — a unit written inside the docking becomes a root — and every field it cannot use is named in `corrections`. Only the read-only fields of a group from `get-plan-context` are ignored silently | user, 2026-10-02 ([bug analysis](../../.agents/bug-analysis/units-inside-docking-entries-dropped.md)) | in effect — `prepareGroup`, `tool-executors.ts` |
 
 ## 4. How a tool call runs
@@ -166,14 +167,14 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
   | Method | Used by | Timeout |
   |---|---|---|
   | `getExternalObjectPlanContext(include)` | every tool that reads the plan | 30 s |
-  | `loadExternalObjectGroupLayout(layout, 'posGroups', { reason: 'adjusted' })` | `create-or-replace-groups`, `place-group`, the corner probe | 120 s |
+  | `loadExternalObjectGroupLayout(layout, 'posGroups', { reason: 'adjusted' })` | `create-or-replace-groups`, `place-group`, the anchor probe | 120 s |
   | `externalObjectGroupOperation(command, payload)` | the command tools | 120 s |
-  | `getExternalObjectGroups()` | `place-group`, the corner probe (calculated geometry) | 30 s |
-  | `removeExternalObject(id)` | the corner probe (removes its probe group) | 30 s |
+  | `getExternalObjectGroups()` | `place-group`, the anchor probe, the position of every returned group (calculated geometry) | 30 s |
+  | `removeExternalObject(id)` | the anchor probe (removes its probe group) | 30 s |
   | `fetchPrice()` | `get-price` | 30 s |
   | `getExternalObjectSnapshot(options)` | `get-order-data`, `get-plan-images` | 120 s |
 
-- **One plan change at a time.** The tools that change the plan wait for each other (D4). The corner
+- **One plan change at a time.** The tools that change the plan wait for each other (D4). The anchor
   probe tells its own groups by comparing the plan before and after its load, and a concurrent load
   would disturb that.
 - **The HI chat** (`hi-mcp-chat`) is an MCP client of this server. It gives the model a
@@ -239,7 +240,7 @@ One coordinate system throughout: 3D, right-handed, Y up, millimetres. A contour
 |---|---|
 | `rooms` | `{ rooms: [{ levels, walls }] }`. `levels`: the contour per level, segments with `cmd`, `pos`, `type` (e.g. `wall`, or none for an opening), `height`, `thickness`. `walls`, derived per room: `index`, `side` (as seen in the top view), `start`/`end` (`[x, 0, z]` on the floor), `lengthMm`, `type`, `heightMm`, `thicknessMm`, `facingRotationY` — the rotation of a group with its back against that wall |
 | `articles` | The catalog: `articleId`, `articleName`, `desc`, `category`, `libraryId`, `catalog`, `cornerArticle`. Per root module: `module` (id, name, desc), `dimensions` (size attributes with id, name and value in mm), `mainAttributes`, `dockingVectors` (names), `insertLevels`, `subModules` (id, name, desc). The server sets `cornerArticle` also on an empty plan (from the category or the module name) and removes `cornerPoint` (D10) |
-| `groups` | Per group: `id`, `libraryId`, `attributes`, read-only `position` (`pos`, `rotationY`, `footprint` with `x`, `z`, `widthMm`, `depthMm`), and `roots`. Per root: the article pick (`id`, `articleId`, input `attributes`, `contextData` with vector names only) and read-only facts (`articleName`, `desc`, `category`, `isGenerated`, `dockingVectors`, `freeDockingVectors`, `subModules` with their id). No root positions, no geometry |
+| `groups` | Per group: `id`, `libraryId`, `attributes`, read-only `position` (`pos`, `rotationY`, `footprint` with `x`, `z`, `widthMm`, `depthMm`), and `roots`. `pos` and `rotationY` are what a placement would name for the group where it stands: `pos` the room point of its back left bottom corner — the docking corner of its anchor root — and `rotationY` the rotation of the placement; the footprint is measured from `pos`. The server derives them from the planner's calculated groups, wherever the planner keeps the group origin (D33); a group the planner has not positioned keeps the planner's `position`. Per root: the article pick (`id`, `articleId`, input `attributes`, `contextData` with vector names only) and read-only facts (`articleName`, `desc`, `category`, `isGenerated`, `dockingVectors`, `freeDockingVectors`, `subModules` with their id). No root positions, no geometry |
 | `masterData` | Only when requested. Per library id: the root modules (`id`, `name`, `desc`, assigned attribute ids) and the customer-facing attributes (`id`, `name`, `desc`, `type`, `group`, `selections` with value, name and desc) |
 
 Default sections: `rooms`, `articles`, `groups`.
@@ -250,7 +251,7 @@ Default sections: `rooms`, `articles`, `groups`.
 |---|---|
 | `imageUrl` everywhere | The agent cannot open them, and they cost three quarters of the tokens (D7) |
 | Root positions and geometry | Root positions come from the docking (D15) |
-| Articles' `cornerPoint`, `repositioningData`, the corner frame | Internal to the server's placement (D10) |
+| Articles' `cornerPoint`, `repositioningData`, the anchor frame | Internal to the server's placement (D10) |
 | Parts and log messages of the groups | Not needed, and large (D9) |
 
 ## 6. Tools
@@ -312,8 +313,8 @@ The server runs these steps:
 3. It reads the article ids in the catalog's spelling (G15), reports the roots a new group names in
    its docking but never sends (G26), completes the docking (G7, G8), and drops a placement on a
    group that is already in the plan (G16).
-4. For a placed group whose anchor is a corner article, it learns the article's corner frame by a
-   probe load, once per article and attribute set (C6, G17).
+4. For every placed group, it learns the frame of the anchor — its docking corner and, for a corner
+   article, its turn — by a probe load, once per library, article and attribute set (C6, G17).
 5. It turns the placement into the planner's repositioning of the anchor root (C5, C6). The group
    reaches the planner with `id`, `libraryId`, `roots`, `attributes` and the repositioning.
 6. It loads the groups that can be built in one call with `reason: 'adjusted'`, reads the groups,
@@ -400,8 +401,9 @@ shape — plus `corrections` when the server corrected the input before forwardi
   | right back | 270 | right wall, to the front | back wall, to the left |
 
   The table holds for both hands of corner article: the server turns a right-handed one by 90° more
-  itself (D18).
-- **The anchor**: the root whose back left corner goes to `posGroup`. The server finds it (C5).
+  itself, and the group is read back with the rotation it was placed with (D33).
+- **The anchor**: the root whose back left corner goes to `posGroup`. The server finds it (C5) and
+  places it by its docking corner, wherever its origin is (C6, D33).
 - **Moving** an existing group: `place-group`, by wall, alignment and offset (D21).
 - **Outside the room** is allowed (D22).
 - **A conflicting placement** — on a group that is already in the plan, or one the server cannot
@@ -437,7 +439,7 @@ it corrects anything — and the feedback, one JSON line each (`[hi-mcp] tool <n
 | C3 | Docking vector indices are stripped and resolved from the names | `stripDockingIndices` |
 | C4 | A unique prefix of a group id is accepted | `findGroup` |
 | C5 | The anchor is found by walking from the start root down to the floor unit carrying it, then left along its row, stopping at a corner article. A wall unit named as anchor leads to the base unit below it | `findAnchorRoot`, `group-placement.ts` |
-| C6 | A corner article is placed by its corner point, and a right-handed one is turned by 90°. The frame is learned by a probe load and remembered per library, article and attributes | `toRepositioningData`; `probeCornerFrame` |
+| C6 | The anchor is placed by its docking corner — the origin of a cabinet, the left edge of a range hood, the corner point of a corner article — and a right-handed corner article is turned by 90°. The frame is learned by a probe load and remembered per library, article and attributes, and reaches the planner as `rootRelPos` and `rootRelRotationY` | `anchorFrameOfRoot`, `toRepositioningData`; `probeAnchorFrame` |
 | C7 | `cornerArticle` is set on an empty plan from the category or the module name; `cornerPoint` is removed | `isCornerArticle`; `agentFacingArticle` |
 | C8 | In a resubmitted group, a docking entry that names a root outside the group connects nothing and is kept, so a group whose unit was deleted still loads. In a new group it is reported (G26) | `dockingNeighbours`, `reportUnsentRoots` |
 | C9 | `place-group` defaults: alignment `center`, offset 0, room 0; the group keeps its height | `place-group` |
@@ -445,6 +447,7 @@ it corrects anything — and the feedback, one JSON line each (`[hi-mcp] tool <n
 | C11 | A number as an attribute value is passed on as its string | `attributeValue` |
 | C12 | An unknown `get-plan-context` section is ignored; none left means the default sections | `get-plan-context` |
 | C13 | A docking entry with `rootId` instead of `id` is read by its `rootId` | `completeDockingEntries` |
+| C14 | The position of a returned group is reported in the frame of a placement: `pos` the back left bottom corner, `rotationY` the rotation of the placement, the footprint from there (D33) | `positionInPlacementFrame`; `inPlacementFrame` |
 
 ### 8.3 `create-or-replace-groups`
 
@@ -459,7 +462,7 @@ it corrects anything — and the feedback, one JSON line each (`[hi-mcp] tool <n
 | G6 | a duplicate root id no docking entry names | renames it (`u1` → `u1-2`) | correction |
 | G6 | a duplicate root id a docking entry names | does not build the group — the entry is ambiguous | `notLoaded`: "duplicate root id '…' named in the docking" |
 | G7 | roots the docking does not connect to the first root | adds a docking entry (`dockingVector`, `mode` `StartStart`, `offset` `[0, 0, 0]`) that docks the part to the free end of a row of its kind — floor units or wall units (catalog category "Wall Units") | correction naming the roots and the entry |
-| G7 | a part that cannot be docked: an article with neither docking vectors nor a size (a range hood, a TV), no free end, a wall unit without a reached wall-unit row | does not build the group | `notLoaded` with the docking entry to send |
+| G7 | a part that cannot be docked: no free end, a wall unit without a reached wall-unit row. An article the catalog lists without docking vectors counts as having them — unknown, not undockable; a range hood, whose category does not say "Wall Units", joins the floor row | does not build the group | `notLoaded` with the docking entry to send |
 | G8 | two roots on one side vector at the same place (mode and offset) | docks the later one to the free end of that row | correction |
 | G8 | the same, where the later root already follows in that row (a chain plus an extra entry on the first root) | drops the extra entry | correction |
 | G9 | `repositioningData` | takes it as the placement, or drops it beside a placement | correction |
@@ -471,7 +474,7 @@ it corrects anything — and the feedback, one JSON line each (`[hi-mcp] tool <n
 | G15 | an article id in another spelling (case, whitespace) | reads it in the catalog's spelling | correction |
 | G15 | an article id the catalog does not have | does not build the group | `notLoaded` with the valid article ids (the first 100) |
 | G16 | a placement on a group that is already in the plan | does not use it; the group keeps its position | correction |
-| G17 | a corner article the probe cannot calculate | does not build the group | `notLoaded`: "the corner article '…' could not be calculated" |
+| G17 | an anchor the probe cannot calculate | loads the group without the frame, placed by the unit's origin (until 2026-10-02 the group was not built) | correction: "root '…' ('…') could not be calculated before loading - the group was placed by the unit's origin and may stand off posGroup; place-group puts it against a wall or into a room corner" |
 | G23 | a unit written inside a docking entry — with its `articleId`, attributes and own docking | takes it as a root of the group, also nested deeper; the entry keeps the docking link | correction |
 | G24 | a docking entry without `dockingVector` | uses the partner of the root's own vector (`RightBottom` → `LeftBottom`, a Top vector → the Bottom vector of that side, `BackBottom` → `BackBottom`) | correction |
 | G25 | a docking context without `ownDockingVector` | drops it; the roots it named are docked like any undocked root (G7) | correction |

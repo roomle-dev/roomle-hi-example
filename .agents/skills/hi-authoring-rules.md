@@ -69,6 +69,7 @@ Access via `get-plan-context` with `include: 'articles'`:
 | Left | LeftBottom | RightBottom | StartStart | 0 |
 | Above | LeftTop/RightTop/BackTop | LeftBottom/RightBottom/BackBottom | StartStart | ~600 |
 | Behind | BackBottom | BackBottom | (none) | 0 |
+| Range hood in a gap between wall units | RightBottom of the wall unit left of the gap | LeftBottom of the hood | StartStart | 0 |
 
 ### Mode Options
 
@@ -124,7 +125,10 @@ placement: {
 ```
 
 - **Point**: `posGroup` is the room point of the group's back left bottom corner; for a group of
-  wall units only, its y is their mounting height. In a room corner it is the corner point.
+  wall units only, its y is their mounting height. In a room corner it is the corner point. It
+  holds for every article: the server places the anchor by the back left bottom corner of its
+  docking vectors, also where its origin lies elsewhere (the centre of a range hood, the arm of a
+  corner article). A returned group's `position.pos` and `rotationY` are read the same way.
 - **Rotation sense**: positive `posRotationY` turns the group counter-clockwise as seen from above
   (in the top-view image) — the `rotationY` convention of the kernel (RoomleCore) and the glue logic.
   The right wall is **270**, the left wall **90**.
@@ -135,7 +139,8 @@ placement: {
   the corner at the wall's `start`.
 - **Corner**: `posGroup` = the corner point, `posRotationY` = the `facingRotationY` of the wall that
   ends in that corner; a corner kitchen starts with a corner article. For a right-handed corner
-  article (`mod_CarcaseDirection` Right) the server adds 90° itself; the returned `rotationY` shows it.
+  article (`mod_CarcaseDirection` Right) the server adds 90° itself; the group is read back with
+  the `posRotationY` it was placed with.
 
 | Rectangular room (back = top in the top view) | `posRotationY` | Corner: `RightBottom` row along | Corner: `LeftBottom` row along |
 |---|---|---|---|
@@ -191,13 +196,13 @@ built is an error. Every guard and correction:
 - Roots the docking does not connect to the first root — docked to the free end of a row of their kind (floor units or wall units), `mode` `StartStart`, `offset` `[0, 0, 0]`
 - Two roots on one side docking vector (`LeftBottom`, `RightBottom`) at the same place — the later one is docked to the free end of that row; Top vectors and `BackBottom` may carry several
 - An `articleId` in another spelling (case, whitespace) — read in the catalog's spelling
+- A placed group whose anchor the server cannot calculate beforehand — placed by the unit's origin; `place-group` puts it against a wall or into a corner
 
 ### Not built, reported in `notLoaded` (the other groups of the call load):
 - A group without roots, or with generated roots only
 - A root without `articleId`, or an `articleId` the catalog does not have
 - A duplicate root id that a docking entry names
-- Roots the server cannot dock: an article with neither docking vectors nor a size (a range hood, a TV — give it its own group), no free row end, a wall unit without a wall-unit row to continue
-- A corner article the server cannot calculate
+- Roots the server cannot dock: no free row end, a wall unit without a wall-unit row to continue
 
 ### Returned as a hint (the group is loaded):
 - A group of the call that is still unpositioned — it sits at the plan origin; a group gets its position from the placement it is created with, or `place-group` moves it against a wall or into a corner

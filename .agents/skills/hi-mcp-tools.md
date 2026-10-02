@@ -57,7 +57,9 @@ no agent can open, three quarters of the tokens)
 name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels
 `mod_UprightDepth`, `mod_UprightHeight`; the range hood `DU` and the TV `SM_TV` have none). A root
 in `groups` carries the same ids among its `attributes`; a group's `position.footprint` gives
-`widthMm`/`depthMm` of the whole group. A unit is resized with `change-module-attribute` and the
+`widthMm`/`depthMm` of the whole group. A group's `position.pos` and `rotationY` are what a
+placement would name for it: the room point of its back left bottom corner and the rotation of the
+placement, whatever origin the planner keeps the group at — the agent reads back what it placed. A unit is resized with `change-module-attribute` and the
 attribute id, never its name.
 
 **Trusted descriptions**: every `desc` (article, root, module, attribute, attribute value) is
@@ -94,7 +96,9 @@ one that goes into the corner `posGroup` names. One kitchen is one group: dock e
 instead of positioning it. Against a wall: `posRotationY` = the wall's `facingRotationY`,
 `posGroup` = the wall's `end` (flush into that corner) or a point from `end` towards `start`; in a
 corner: the corner point and the `facingRotationY` of the wall that ends there (for a right-handed
-corner article the server adds 90°, see the table in the authoring rules). See the
+corner article the server adds 90° itself, see the table in the authoring rules). `posGroup` is the
+back left bottom corner for every article — the server places the anchor by the back left bottom
+corner of its docking vectors, also for a range hood whose origin is its centre. See the
 [authoring rules skill](./hi-authoring-rules.md#positioning-a-group).
 
 **Existing groups**: a group resubmitted with its id and without placement keeps its position; a
@@ -251,7 +255,7 @@ try {
 | No page connected | Page not loaded with ?mcp=true | Open browser page |
 | Invalid pos groups - nothing was loaded | No group of the `create-or-replace-groups` call can be built | Fix the listed errors — each names what to send instead |
 | articleId '…' is not in the article catalog | Article not in catalog (another spelling of a catalog id is read in the catalog's spelling and reported in `corrections`) | Use a valid articleId from context (the message lists them). In `create-or-replace-groups` the group is in `notLoaded`; a command tool fails |
-| roots '…' are not docked to a placed root (in `notLoaded`) | A part the docking does not connect to the first root, which the server cannot dock to the free end of a row: an article with neither docking vectors nor a size (a range hood, a TV), no free row end, a wall unit without a wall-unit row | Dock it to a placed root (the error names the placed roots and the entry to send); give a hood its own group |
+| roots '…' are not docked to a placed root (in `notLoaded`) | A part the docking does not connect to the first root, which the server cannot dock to the free end of a row: no free row end, a wall unit without a wall-unit row | Dock it to a placed root (the error names the placed roots and the entry to send) |
 | duplicate root id '…' named in the docking (in `notLoaded`) | Two roots of a group share an id that a docking entry names | Give every root a unique id |
 | Root module '…' has no free docking vector '…' | `merge-article-into-group` on a side the planner reports as taken although the row ends there (a stale docking entry after a deletion); a taken side with a free row end is moved there and reported in `corrections` | Use one of the root's `freeDockingVectors` (the error lists them) |
 | Module '…' has no attribute '…' | `change-module-attribute` with an attribute the module's master data does not assign (planners with roomle-ui `fix/hi-attribute-commands-RML-18004`; older builds report success and change nothing) | Look the attribute up with `find-attributes` — its `rootModules` name the modules that have it |

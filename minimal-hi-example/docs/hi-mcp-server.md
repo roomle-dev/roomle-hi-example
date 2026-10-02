@@ -298,7 +298,9 @@ coordinate system throughout (3D, right-handed, Y up).
   `cornerArticle` is `true` for an article made for a room corner (it carries
   `LeftBack`/`RightBack` docking vectors)
 - `groups` — the groups currently in the plan: a read-only `position`
-  (`pos`, `rotationY`, `footprint`) and per root the article pick (`id`,
+  (`pos`, `rotationY`, `footprint`) as a placement names it — `pos` the room
+  point of the group's back left bottom corner, `rotationY` the rotation of the
+  placement, the footprint measured from `pos` — and per root the article pick (`id`,
   `articleId`, input `attributes`, `contextData` with vector names only) plus
   read-only facts (`articleName`, `desc`, `category`,
   `dockingVectors`, `freeDockingVectors` — the vectors no docking entry uses,
@@ -632,8 +634,8 @@ group one point and one rotation; the planner calculates every root position.
   the left); on top — `LeftTop → LeftBottom`, `RightTop → RightBottom`,
   `BackTop → BackBottom` (the new root may be narrower); back to back —
   `BackBottom → BackBottom`, `BackTop → BackTop` (the new root is turned by
-  180°, omit `mode`). A root without docking vectors (a hood, for example)
-  cannot be docked and gets its own group.
+  180°, omit `mode`). A range hood hangs between two wall units like a unit beside them:
+  `RightBottom` of the wall unit left of the gap → `LeftBottom` of the hood.
 - `mode` selects which endpoints coincide: `StartStart` (default) the start
   points — the backs for side vectors, the left edges for back vectors;
   `EndEnd` the end points; `StartEnd` and `EndStart` mix them. `offset` is a
@@ -701,7 +703,7 @@ for a group at a wall, in a corner, or anywhere in the room.
 
   The table holds for both hands of corner article: the server turns one whose corner point lies
   on its right (`mod_CarcaseDirection` Right, e.g. `UELTB90`) by 90° more itself, so its rows run
-  as listed and the returned `rotationY` is `posRotationY` + 90.
+  as listed. The group is read back with the `posGroup` and `posRotationY` it was placed with.
 
 - **Two corner articles** (a U-shaped kitchen): set `rootId` to the corner
   article that goes into the corner `posGroup` names.

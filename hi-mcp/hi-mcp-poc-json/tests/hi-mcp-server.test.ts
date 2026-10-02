@@ -307,6 +307,23 @@ describe('hi-mcp-server tool calls', () => {
     );
   });
 
+  it('docks a range hood like any unit and reads a position back in the frame of the placement', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    const { tools } = await client.listTools();
+    const served = [client.getInstructions() ?? '', rules, JSON.stringify(tools)].join('\n');
+    expect(rules).toContain(
+      'range hood: it hangs between two wall units like a unit beside them - RightBottom of the wall unit left of the gap -> LeftBottom of the hood.',
+    );
+    expect(served).not.toContain('cannot be docked');
+    expect(served).not.toContain('posRotationY + 90');
+    expect(JSON.stringify(tools)).toContain(
+      "position with pos - the room point of the group's back left bottom corner, as a placement names it",
+    );
+  });
+
   it('never tells the agent how the server positions a group internally', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(
@@ -429,20 +446,47 @@ describe('hi-mcp-server through the page bridge', () => {
   it('runs create-or-replace-groups as planner calls the page executes', async () => {
     const bridge = new PageBridge();
     const socket = attachPage(bridge);
+    // a range hood, whose origin is its centre: 299 mm right of its left edge
+    const hoodVectors = [
+      { id: 'LeftBottom', start: [-299, 0, 0], end: [-299, 0, 501] },
+      { id: 'RightBottom', start: [299, 0, 0], end: [299, 0, 501] },
+    ];
+    let rawGroups: object[] = [];
     let loaded = false;
     socket.respond = (method, args) => {
       if (method === 'loadExternalObjectGroupLayout') {
+        const [layout] = args as [any];
+        if (layout.posGroups[0].roots[0].id === 'anchor-probe') {
+          rawGroups = [{ id: 'probe', roots: [{ id: 'p1', articleId: 'DU', dockInfos: hoodVectors }] }];
+          return [{ id: 'probe' }];
+        }
+        // the planner keeps the group origin at the hood's centre
+        rawGroups = [
+          {
+            id: 'g1',
+            pos: [299, 0, 0],
+            rotationY: 0,
+            roots: [{ id: 'u1', articleId: 'DU', articlePos: [0, 0, 0], rotationY: 0, dockInfos: hoodVectors }],
+          },
+        ];
         loaded = true;
         return [{ id: 'g1' }];
       }
+      if (method === 'getExternalObjectGroups') {
+        return rawGroups;
+      }
+      if (method === 'removeExternalObject') {
+        rawGroups = [];
+        return undefined;
+      }
       const [include] = args as [string[]];
       if (include.includes('articles')) {
-        return { articles: [{ articleId: 'a1' }] };
+        return { articles: [{ articleId: 'DU' }] };
       }
-      return { groups: loaded ? [{ id: 'g1', position: { pos: [0, 0, 0] } }] : [] };
+      return { groups: loaded ? [{ id: 'g1', position: { pos: [299, 0, 0], rotationY: 0 } }] : [] };
     };
     const client = await connectClient(createPlannerApi(bridge));
-    const roots = [{ id: 'u1', articleId: 'a1' }];
+    const roots = [{ id: 'u1', articleId: 'DU' }];
     const posGroups = [
       { roots, placement: { posGroup: [0, 0, 0], posRotationY: 0 } },
     ];
@@ -456,24 +500,38 @@ describe('hi-mcp-server through the page bridge', () => {
     expect(calls.map((call) => call.method)).toEqual([
       'getExternalObjectPlanContext',
       'getExternalObjectPlanContext',
+      // the probe learns the hood's frame
+      'getExternalObjectGroups',
+      'loadExternalObjectGroupLayout',
+      'getExternalObjectGroups',
+      'removeExternalObject',
       'loadExternalObjectGroupLayout',
       'getExternalObjectPlanContext',
+      // the position read back in the placement frame
+      'getExternalObjectGroups',
     ]);
-    expect(calls[2].args).toEqual([
+    expect(calls[6].args).toEqual([
       {
         posGroups: [
           {
             roots,
-            repositioningData: { posGroup: [0, 0, 0], posRotationY: 0, rootId: 'u1' },
+            repositioningData: {
+              posGroup: [0, 0, 0],
+              posRotationY: 0,
+              rootId: 'u1',
+              rootRelPos: [299, 0, 0],
+              rootRelRotationY: 0,
+            },
           },
         ],
       },
       'posGroups',
       { reason: 'adjusted' },
     ]);
+    // the agent reads back the point it placed the hood's left edge at
     expect(JSON.parse(textOf(result))).toEqual({
       loaded: [{ id: 'g1' }],
-      groups: [{ id: 'g1', position: { pos: [0, 0, 0] } }],
+      groups: [{ id: 'g1', position: { pos: [0, 0, 0], rotationY: 0 } }],
     });
   });
 
@@ -505,7 +563,7 @@ describe('hi-mcp-server through the page bridge', () => {
     let loaded = false;
     socket.respond = (method) => {
       if (method === 'getExternalObjectGroups') {
-        return [calculatedGroup];
+        return [loaded ? { ...calculatedGroup, pos: [4000, 0, -3000], rotationY: 270 } : calculatedGroup];
       }
       if (method === 'loadExternalObjectGroupLayout') {
         loaded = true;
@@ -529,6 +587,7 @@ describe('hi-mcp-server through the page bridge', () => {
       'getExternalObjectGroups',
       'loadExternalObjectGroupLayout',
       'getExternalObjectPlanContext',
+      'getExternalObjectGroups',
     ]);
     expect(calls[0].args).toEqual([['rooms', 'groups']]);
     expect(calls[2].args).toEqual([
@@ -548,7 +607,7 @@ describe('hi-mcp-server through the page bridge', () => {
     expect(JSON.parse(textOf(result))).toEqual({
       placedIn: 'wall',
       wall: rightWall,
-      group: { id: 'g1', position: { pos: [4000, 0, -3000] } },
+      group: { id: 'g1', position: { pos: [4000, 0, -3000], rotationY: 270 } },
     });
   });
 });

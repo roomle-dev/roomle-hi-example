@@ -554,6 +554,43 @@ describe('create-or-replace-groups validation', () => {
     expect(result.corrections).toHaveLength(1);
   });
 
+  it('docks articles whose docking vectors the catalog does not know yet', async () => {
+    // on an empty plan the catalog has no docking vectors for any article
+    const uncalculated = (articleId: string, category: string) => ({
+      ...articleFixture,
+      articleId,
+      category,
+      rootModules: [
+        {
+          module: { id: 'module-1' },
+          dimensions: [{ id: 'mod_Width', name: 'Width', value: 600 }],
+          dockingVectors: [],
+        },
+      ],
+    });
+    const { loadedGroup, result } = await loadedWith(
+      [
+        {
+          roots: [
+            { id: 'c1', articleId: 'corner-1' },
+            { id: 'l1', articleId: 'base-1' },
+          ],
+        },
+      ],
+      {
+        ...planContextFixture,
+        articles: [
+          uncalculated('corner-1', 'Kitchen handleless | Base Units | Corner'),
+          uncalculated('base-1', 'Kitchen | Base Units | Storage'),
+        ],
+      },
+    );
+    expect(loadedGroup.roots[0].contextData).toEqual({
+      dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [entry('l1', 'LeftBottom')] }],
+    });
+    expect(result).not.toHaveProperty('notLoaded');
+  });
+
   it('docks wall units only to a row of wall units', async () => {
     const wallUnit = {
       ...articleFixture,
@@ -592,7 +629,7 @@ describe('create-or-replace-groups validation', () => {
     const hood = {
       ...articleFixture,
       articleId: 'hood-1',
-      rootModules: [{ module: { id: 'mr_Hood' }, dockingVectors: [] }],
+      rootModules: [{ module: { id: 'mr_Hood' }, dimensions: [], dockingVectors: [] }],
     };
     const wallUnit = { ...articleFixture, articleId: 'wall-1', category: 'Kitchen | Wall Units | Storage' };
     const api = createApi(catalogWith(hood, wallUnit));
@@ -708,6 +745,47 @@ describe('create-or-replace-groups validation', () => {
       }),
     ).rejects.toThrow(/articleId 'nope' is not in the article catalog/);
     expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
+  });
+
+  it('drops a second docking of a root that already follows in that row', async () => {
+    // a row u1 -> u2 -> u3, and u3 listed on u1's RightBottom as well
+    const { loadedGroup, result } = await loadedWith([
+      {
+        roots: [
+          {
+            id: 'u1',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [
+                {
+                  ownDockingVector: 'RightBottom',
+                  dockedRoots: [
+                    { id: 'u2', dockingVector: 'LeftBottom' },
+                    { id: 'u3', dockingVector: 'LeftBottom' },
+                  ],
+                },
+              ],
+            },
+          },
+          {
+            id: 'u2',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [
+                { ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'u3', dockingVector: 'LeftBottom' }] },
+              ],
+            },
+          },
+          { id: 'u3', articleId: 'article-1' },
+        ],
+      },
+    ]);
+    expect(loadedGroup.roots[0].contextData).toEqual({
+      dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'u2', dockingVector: 'LeftBottom' }] }],
+    });
+    expect(result.corrections).toEqual([
+      "posGroups[0]: roots 'u2', 'u3' were docked to the RightBottom of root 'u1' at the same place - 'u3' already follows in that row, so its second docking was dropped",
+    ]);
   });
 
   it('docks the second of two roots on one side vector to the free end of that row', async () => {

@@ -12,7 +12,8 @@
  * backend as consecutive turns of one conversation, each until the end of its
  * stream. Then it reads roomDesignerApi.extended.getExternalObjectSnapshot(),
  * saves the plan with saveExternalObjectSnapshot() for its plan snapshot id and
- * writes --out (default .temp/result/<UTC timestamp>-<provider>/): run.json,
+ * writes --out (default .temp/result/<UTC timestamp>-<provider>/): run.json
+ * (with the corrections, groups not loaded and errors the MCP tools reported per turn),
  * plan-context.json (rooms and groups after the chat), planner-calls.json,
  * snapshot.json and every snapshot field as a file of its own. Exits 1 when
  * the chat or the snapshot reported an error or no snapshot or plan snapshot
@@ -44,6 +45,8 @@ const SNAPSHOT_TIMEOUT_MS = 2 * 60_000;
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 const POLL_INTERVAL_MS = 1000;
 const TOOL_PREFIX = '[tool] ';
+// The MCP server logs the feedback of a tool as one JSON line.
+const TOOL_FEEDBACK_LINE = /^\[hi-mcp\] tool (\S+) (feedback|error) (.+)$/;
 const ERROR_PREFIX = '[error] ';
 const CHROMIUM_ARGS = [
   '--use-angle=swiftshader',
@@ -112,6 +115,27 @@ const loadChromium = async () => {
   }
 };
 
+// The tool feedback of the turn that is running, from the launcher's output.
+const toolFeedback = { turn: undefined, entries: [] };
+
+const recordToolFeedback = (line) => {
+  const match = line.match(TOOL_FEEDBACK_LINE);
+  if (!match || toolFeedback.turn === undefined) {
+    return;
+  }
+  const [, tool, kind, json] = match;
+  try {
+    const feedback = JSON.parse(json);
+    toolFeedback.entries.push({
+      turn: toolFeedback.turn,
+      tool,
+      ...(kind === 'error' ? { error: feedback.message, args: feedback.args } : feedback),
+    });
+  } catch {
+    toolFeedback.entries.push({ turn: toolFeedback.turn, tool, [kind]: json });
+  }
+};
+
 const startLauncher = ({ provider, apiKey, dev }) => {
   const launcher = spawn(
     process.execPath,
@@ -124,6 +148,12 @@ const startLauncher = ({ provider, apiKey, dev }) => {
     },
   );
   const exited = new Promise((resolve) => launcher.on('exit', resolve));
+  let pendingLine = '';
+  launcher.stdout.on('data', (chunk) => {
+    const lines = (pendingLine + chunk).split('\n');
+    pendingLine = lines.pop();
+    lines.forEach(recordToolFeedback);
+  });
   const exampleUrl = new Promise((resolve) => {
     let output = '';
     launcher.stdout.on('data', (chunk) => {
@@ -282,8 +312,16 @@ const runConversation = async (prompts) => {
     console.log(`[run-hi-mcp-prompt] turn ${index + 1}/${prompts.length}: ${prompt}`);
     messages.push({ role: 'user', content: prompt });
     const startedAt = Date.now();
+    toolFeedback.turn = index;
     const turn = await sendChat(messages);
-    turns.push({ prompt, ...turn, durationMs: Date.now() - startedAt });
+    turns.push({
+      prompt,
+      ...turn,
+      toolFeedback: toolFeedback.entries
+        .filter((entry) => entry.turn === index)
+        .map(({ turn: _turn, ...entry }) => entry),
+      durationMs: Date.now() - startedAt,
+    });
     if (turn.errors.length > 0) {
       break;
     }
@@ -345,6 +383,7 @@ const runSession = async (options, launcher, browser) => {
   const readyAt = Date.now();
   console.log('[run-hi-mcp-prompt] page ready');
   const turns = await runConversation(options.prompts);
+  toolFeedback.turn = undefined;
   const chatPlannerCalls = plannerCalls.slice();
   const errors = turns.flatMap((turn) => turn.errors);
   const chatDoneAt = Date.now();
@@ -422,6 +461,9 @@ const main = async () => {
     for (const [index, turn] of run.turns.entries()) {
       console.log(`  Turn ${index + 1}:  ${turn.answer || '(no answer)'}`);
       console.log(`  Tools:   ${turn.tools.join(', ') || '(none)'}`);
+      for (const { tool, ...feedback } of turn.toolFeedback) {
+        console.log(`  ${tool}:  ${JSON.stringify(feedback)}`);
+      }
     }
     if (run.errors.length > 0) {
       console.log(`  Errors:  ${run.errors.join(' | ')}`);

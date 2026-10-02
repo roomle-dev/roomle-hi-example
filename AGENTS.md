@@ -112,7 +112,7 @@ The start script (`npm start`) provides:
 │       ├── hi-mcp-server.ts      # McpServer setup + tool registrations (zod)
 │       ├── tool-executors.ts     # Tool logic: validation, planner call composition, hints
 │       ├── group-placement.ts    # Placement of a new group -> anchor root and planner repositioning
-│       ├── plan-space.ts         # place-group geometry: footprint, wall and corner placement, contact test
+│       ├── plan-space.ts         # place-group geometry: footprint, height, wall and corner placement, overlap test
 │       ├── planner-api.ts        # The planner methods the tools call, relayed to the page
 │       ├── page-bridge.ts        # Connected-page registry, call correlation
 │       ├── types.ts              # WebSocket message protocol

@@ -5,9 +5,9 @@
 > guard, automatic correction and feedback message. Every change to a tool, a served rule, a guard, a
 > correction or a result updates this document in the same change.
 >
-> **State**: the code of `bd69d38` (2026-10-02). Behaviour that is decided but not implemented yet is
-> marked **Planned**. The plan is in the
-> [refactoring analysis of the guards](../../.agents/refactoring-analysis/guards-in-the-hi-mcp-server.md#implementation-plan).
+> **State**: the code of 2026-10-02, after the refactoring of the guards
+> ([analysis and plan](../../.agents/refactoring-analysis/guards-in-the-hi-mcp-server.md)). A decision
+> that is not implemented yet would be marked **Planned**; none is.
 >
 > **Not covered here**: setup, clients and deployment. See
 > [hi-mcp-server.md](../../minimal-hi-example/docs/hi-mcp-server.md) (the example page and MCP
@@ -41,7 +41,7 @@ Two parts have different responsibilities:
 - **The planner** (roomle-ui `homag-intelligence`) decides what can be built. Its checks protect the
   planner from breaking, and they are not loosened for the agent. Where it can, the server corrects
   the input before forwarding it, and it passes the planner's messages on to the agent
-  ([§8.5](#85-planner-checks-the-command-tools-pass-on)).
+  ([§8.5](#85-command-tools)).
 
 ## 2. Guidelines
 
@@ -150,7 +150,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D28 | **Unconnected roots are connected automatically.** The server adds a docking entry (`PosDockedContextRoot`: `dockingVector`, `mode`, `offset`) that docks them to the free end of the row. The guard stays for roots that cannot be connected | user decision 3 | in effect — `connectUnreachedRoots`, `tool-executors.ts` |
 | D29 | **A unit docked to an occupied side goes to the free end of that row** (`merge-article-into-group`, and two roots on one side vector in `create-or-replace-groups`) | user decision 4 | in effect — `separateSideVectorPartners`, `dockTarget`, `tool-executors.ts` |
 | D30 | **A call loads every group that can be built** and reports the others with what to send instead | user decision 5 | in effect — `keepBuildable`, `tool-executors.ts` |
-| D31 | Guards are a last resort; the server corrects and informs, and gives feedback where it cannot correct | user guideline | planned (code), in effect (guidelines) |
+| D31 | Guards are a last resort; the server corrects and informs, and gives feedback where it cannot correct | user guideline | in effect — §8 |
 
 ## 4. How a tool call runs
 
@@ -303,26 +303,32 @@ references are remapped.
 
 The server runs these steps:
 
-1. It drops generated roots (C1) and checks each group (G1–G14).
+1. It drops generated roots (C1) and prepares each group: positions, root ids, repositioning data
+   and the placement (G1–G14).
 2. It reduces the roots to article picks and strips the docking indices (C2, C3).
-3. It checks the article ids against the catalog (G15) and the placements against the plan (G16).
+3. It reads the article ids in the catalog's spelling (G15), completes the docking (G7, G8), and
+   drops a placement on a group that is already in the plan (G16).
 4. For a placed group whose anchor is a corner article, it learns the article's corner frame by a
    probe load, once per article and attribute set (C6, G17).
 5. It turns the placement into the planner's repositioning of the anchor root (C5, C6) and strips
    every other group field.
-6. It loads all groups in one call with `reason: 'adjusted'`, reads the groups, and adds a hint for
-   a group of the call that has no position.
+6. It loads the groups that can be built in one call with `reason: 'adjusted'`, reads the groups,
+   and adds a hint for a group of the call that has no position.
+
+A group that cannot be built at one of these steps leaves the call and goes to `notLoaded`; the
+others go on.
 
 **Result**: `loaded` (the planner's runtime ids), `groups` (**every** group in the plan, in the
-plan-context shape), `hint`, and `notLoaded` — `[{ index, id?, errors }]` for the groups it could not
-build (D30), and `corrections`. A conflicting placement is not sent (D26).
+plan-context shape), `hint`, `corrections` (what the server changed in the input), and `notLoaded`
+— `[{ index, id?, errors }]` for the groups it could not build (D30). A conflicting placement is
+not sent (D26).
 
 ### place-group
 
 | Parameter | Type | Default |
 |---|---|---|
 | `groupId` | id or unique prefix | — |
-| `wall` | `left` \| `right` \| `top` \| `bottom` \| wall index | — |
+| `wall` | `left` \| `right` \| `top` \| `bottom` \| `back` \| `front` \| wall index | — |
 | `alignment` | `start` \| `center` \| `end` \| side label of an adjoining wall | `center` |
 | `offsetMm` | number, along the wall | 0 |
 | `roomIndex` | integer | 0 |
@@ -358,9 +364,9 @@ position.
 | `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | resolves the group id, checks the article (G15) | replaces the unit, which keeps its docking (P9) |
 | `merge-groups` | `targetGroupId`, `groupIds` | resolves every group id | merges where they stand: nothing is moved, no docking is added (P10) |
 
-`value` is a string or a boolean, and numbers are passed as strings (**Planned**: a number is
-accepted, S4). **Result**: `{ command, groups, removedGroupIds, changedModuleIds? }` — the affected
-groups in the plan-context shape.
+`value` is a string, a number (passed on as its string) or a boolean. **Result**:
+`{ command, groups, removedGroupIds, changedModuleIds? }` — the affected groups in the plan-context
+shape — plus `corrections` when the server corrected the input before forwarding.
 
 ### get-price, get-order-data, get-plan-images
 
@@ -394,116 +400,130 @@ groups in the plan-context shape.
 - **The anchor**: the root whose back left corner goes to `posGroup`. The server finds it (C5).
 - **Moving** an existing group: `place-group`, by wall, alignment and offset (D21).
 - **Outside the room** is allowed (D22).
-- **Planned**: a conflicting placement — on a group that is already in the plan, or one the server
-  cannot use — creates no `repositioningData`, and the planner positions the group; an existing
-  group keeps its position (D26). In `place-group`, a target that overlaps another group is moved
-  along the wall (D27).
+- **A conflicting placement** — on a group that is already in the plan, or one the server cannot
+  use — creates no `repositioningData`, and the planner positions the group; an existing group
+  keeps its position (D26).
+- **Overlaps**: in `place-group`, a target that overlaps another group is moved along the wall
+  (D27). Groups may touch.
 
 ## 8. Guards, corrections and feedback
 
 ### 8.1 How feedback reaches the agent
 
-| Channel | When | Today | Planned |
-|---|---|---|---|
-| Error result | nothing in the call can be built, or a guard of another tool fires | `create-or-replace-groups`: only when no group can be built (D30); the other tools: the call is discarded | the same |
-| `hint` | something to check; nothing stopped | an unpositioned group (`create-or-replace-groups`), more than 20 matches (`find-attributes`) | unchanged |
-| `corrections` | the server changed the input | — | one sentence per correction of a mistake. A correction the rules describe as normal — dropping generated roots, ignoring read-only fields of a resubmitted group — is not reported |
-| `notLoaded` | a group could not be built | `[{ index, id?, errors }]` in `create-or-replace-groups`; the other groups load | the same |
-| Planner message | a planner check fires | passed on unchanged as an error result | the same |
+| Channel | When | Content |
+|---|---|---|
+| `corrections` | the server changed the input | One sentence per correction: the group (input index and id) or the command, what was sent, and what the server did. In `create-or-replace-groups`, `place-group`, `merge-article-into-group` and `exchange-root-module` |
+| `notLoaded` | a group of `create-or-replace-groups` cannot be built | `[{ index, id?, errors }]`, each error naming what to send instead; the other groups load |
+| `hint` | something to check; nothing stopped | an unpositioned group (`create-or-replace-groups`), more than 20 matches (`find-attributes`) |
+| Error result | nothing in the call can be done | `create-or-replace-groups`: no group can be built, or the planner loaded none; the other tools: a guard of §8.4–8.6, or the planner's message |
 
-### 8.2 Corrections the server makes today
+A correction that the rules describe as normal is silent (§8.2). A correction of a mistake is
+always reported.
 
-They are silent: the agent is not told.
+### 8.2 Silent corrections
 
 | ID | Correction | Where |
 |---|---|---|
-| C1 | Roots marked `isGenerated` (worktop, toe kick) are dropped; the library regenerates them | `tool-executors.ts:694-695` |
-| C2 | Every root field other than the article pick, and every group field other than `id`, `libraryId` and `roots`, is ignored | `toArticlePick` `:55-71`, `:834-840` |
-| C3 | Docking vector indices are stripped and resolved from the names | `stripDockingIndices` `:43-53` |
-| C4 | A unique prefix of a group id is accepted | `findGroup` `:155-171` |
-| C5 | The anchor is found by walking from the start root down to the floor unit carrying it, then left along its row, stopping at a corner article. A wall unit named as anchor leads to the base unit below it | `findAnchorRoot`, `group-placement.ts:81-132` |
-| C6 | A corner article is placed by its corner point, and a right-handed one is turned by 90°. The frame is learned by a probe load and remembered per library, article and attributes | `toRepositioningData` `group-placement.ts:224-256`; probe `tool-executors.ts:199-246` |
-| C7 | `cornerArticle` is set on an empty plan from the category or the module name; `cornerPoint` is removed | `isCornerArticle` `group-placement.ts:32-42`; `:177-183` |
-| C8 | A docking entry that names a root outside the group connects nothing; it is kept, so a resubmitted group whose unit was deleted still loads | `dockingErrors` `:289-335` |
-| C9 | `place-group` defaults: alignment `center`, offset 0, room 0; the group keeps its height | `:887-893`, `:578` |
+| C1 | Roots marked `isGenerated` (worktop, toe kick) are dropped; the library regenerates them | `prepareGroup` |
+| C2 | Every root field other than the article pick, and every group field other than `id`, `libraryId` and `roots`, is ignored | `toArticlePick`; the field strip of `create-or-replace-groups` |
+| C3 | Docking vector indices are stripped and resolved from the names | `stripDockingIndices` |
+| C4 | A unique prefix of a group id is accepted | `findGroup` |
+| C5 | The anchor is found by walking from the start root down to the floor unit carrying it, then left along its row, stopping at a corner article. A wall unit named as anchor leads to the base unit below it | `findAnchorRoot`, `group-placement.ts` |
+| C6 | A corner article is placed by its corner point, and a right-handed one is turned by 90°. The frame is learned by a probe load and remembered per library, article and attributes | `toRepositioningData`; `probeCornerFrame` |
+| C7 | `cornerArticle` is set on an empty plan from the category or the module name; `cornerPoint` is removed | `isCornerArticle`; `agentFacingArticle` |
+| C8 | A docking entry that names a root outside the group connects nothing and is kept, so a resubmitted group whose unit was deleted still loads | `dockingNeighbours` |
+| C9 | `place-group` defaults: alignment `center`, offset 0, room 0; the group keeps its height | `place-group` |
+| C10 | `back` and `front` name the `top` and the `bottom` wall (`place-group` `wall` and `alignment`) | `sideLabel` |
+| C11 | A number as an attribute value is passed on as its string | `attributeValue` |
+| C12 | An unknown `get-plan-context` section is ignored; none left means the default sections | `get-plan-context` |
 
-### 8.3 Guards of `create-or-replace-groups`
+### 8.3 `create-or-replace-groups`
 
-**Today**, every guard discards the whole call ("Invalid pos groups - nothing was loaded: … Fetch
-the payload format with the get-authoring-rules tool."). The messages continue a
-`posGroups[i]` prefix. These rule sentences announce the guards: `hi-mcp-server.ts:7`, `:10`, `:11`,
-`:13`, `:27`, `:180-181`, `:190-191`, `:212-213` (**Planned**: removed, §2.4).
-
-| ID | Message today | Prevents | Planned behaviour |
+| ID | Input | What the server does | Feedback |
 |---|---|---|---|
-| G1 | "needs a non-empty roots array" | a group with nothing to build | `notLoaded`; the other groups load (D30) |
-| G2 | "needs at least one article root (generated roots are dropped)" | the same | as G1 |
-| G3 | "do not set pos/rotationY on a group - position a new group with placement" | the agent believing its position took effect (the server would strip the fields) | dropped and reported |
-| G4 | "roots[j]: id / articleId must be a non-empty string" | an unnamed root; an article that cannot be built | a missing `id` is generated and reported; a missing `articleId` puts the group into `notLoaded` |
-| G5 | "a root module carries no articlePos/rotationY - root positions come from the docking (contextData) only" | the same as G3 (the server would drop them) | dropped and reported |
-| G6 | "duplicate root id '…' - every root id must be unique within its group" | docking entries naming an ambiguous root | renamed and reported when no docking entry names the id; otherwise `notLoaded` |
-| G7 | "roots '…' are not docked to a placed root (… are placed - reached through the docking from the first root); roots docked only among themselves land on the group origin, on top of the first root. Dock every additional root to a placed root …" (with an example) | the unconnected part landing on the group origin, on top of the first root | **D28**: the server adds a docking entry — `dockingVector`, `mode`, `offset` — that docks the unconnected part to the free end of the row, and reports it. `notLoaded` only when no connection is possible |
-| G8 | "roots '…' are docked to the RightBottom of root '…' with the same mode and offset - they stand in the same place. A side vector (LeftBottom, RightBottom) takes one neighbour there: continue a row from the free side vector of its last unit" | two units in the same place | **D29**: the second root is docked to the free end of that row and reported |
-| G9 | "repositioningData is not supported - position the group with placement { posGroup, posRotationY }" | the agent's raw repositioning bypassing the anchor and the corner frame | taken as the placement (the same fields) and reported |
-| G10 | "placement must be { posGroup, posRotationY, rootId? }" | — | **D26**: no `repositioningData`, the planner positions the group; reported |
-| G11 | "placement takes only posGroup, posRotationY and rootId - remove … - to stand a group against a wall or into a corner by its side label, call place-group" | stale fields mistaken for working ones | the unknown fields are dropped and reported; `posGroup` and `posRotationY` are used as usual |
-| G12 | "placement: posGroup must be [x, y, z] in millimetres" | a group at an undefined point | `[x, z]` becomes `[x, 0, z]`; otherwise as G10. Reported |
-| G13 | "placement: posRotationY must be a number of degrees - state 0 explicitly for no rotation" | a group facing the wrong way | **D26**: no `repositioningData`, the planner positions the group; reported |
-| G14 | "placement: rootId must be the id of one of the group's roots" | — | dropped (the server picks the anchor) and reported |
-| G15 | "articleId '…' is not in the article catalog [of library '…']. Valid article ids: …" (the first 100) | a group the planner cannot calculate | an unambiguous match (case, whitespace, the article in another library) is corrected and reported; otherwise `notLoaded` with the valid ids |
-| G16 | "placement positions a new group only - group '…' is already in the plan; resubmit it without placement to keep its position, or move it with place-group" | the replace moving the group | **D26**: no `repositioningData` — the planner keeps the group's position; reported |
-| G17 | "Nothing was loaded: the corner article '…' of posGroups[i] could not be calculated to position the group - check its articleId, libraryId and attributes." | a corner group standing off its corner | `notLoaded` for that group; the others load (D30) |
-| — | "No groups were created or replaced. Check that each root module name is a master-data module id and the articleId comes from the article catalog …" (after the load) | a report, not a guard | `notLoaded` for the groups the planner did not load |
+| G1 | a group without roots | does not build the group | `notLoaded`: "needs a non-empty roots array" |
+| G2 | a group of generated roots only | does not build the group | `notLoaded`: "needs at least one article root" |
+| G3 | `pos`/`rotationY` on a group | drops them | correction |
+| G4 | a root without `articleId` | does not build the group | `notLoaded`: "articleId must be a non-empty string" |
+| G4 | a root without `id` | gives it `root-1`, `root-2`, … | correction |
+| G5 | `articlePos`/`rotationY` on roots | drops them; the docking positions the roots | correction |
+| G6 | a duplicate root id no docking entry names | renames it (`u1` → `u1-2`) | correction |
+| G6 | a duplicate root id a docking entry names | does not build the group — the entry is ambiguous | `notLoaded`: "duplicate root id '…' named in the docking" |
+| G7 | roots the docking does not connect to the first root | adds a docking entry (`dockingVector`, `mode` `StartStart`, `offset` `[0, 0, 0]`) that docks the part to the free end of a row of its kind — floor units or wall units (catalog category "Wall Units") | correction naming the roots and the entry |
+| G7 | a part that cannot be docked: an article with neither docking vectors nor a size (a range hood, a TV), no free end, a wall unit without a reached wall-unit row | does not build the group | `notLoaded` with the docking entry to send |
+| G8 | two roots on one side vector at the same place (mode and offset) | docks the later one to the free end of that row | correction |
+| G8 | the same, where the later root already follows in that row (a chain plus an extra entry on the first root) | drops the extra entry | correction |
+| G9 | `repositioningData` | takes it as the placement, or drops it beside a placement | correction |
+| G10 | a placement that is not an object | does not use it: no `repositioningData`, the planner positions the group | correction |
+| G11 | other placement fields (`wall`, `alignment`, `offsetMm`, …) | drops them; points to `place-group` for the wall fields | correction |
+| G12 | `posGroup` `[x, z]` | completes it to `[x, 0, z]` | correction |
+| G12, G13 | another `posGroup`, or no numeric `posRotationY` | does not use the placement, as G10 | correction |
+| G14 | a `rootId` that names no root | drops it; the server picks the anchor | correction |
+| G15 | an article id in another spelling (case, whitespace) | reads it in the catalog's spelling | correction |
+| G15 | an article id the catalog does not have | does not build the group | `notLoaded` with the valid article ids (the first 100) |
+| G16 | a placement on a group that is already in the plan | does not use it; the group keeps its position | correction |
+| G17 | a corner article the probe cannot calculate | does not build the group | `notLoaded`: "the corner article '…' could not be calculated" |
+| — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |
+| — | the planner loads nothing | — | error result: "No groups were created or replaced …" |
+| — | a group of the call has no position after the load | — | `hint` |
 
-### 8.4 Guards of `place-group`
+### 8.4 `place-group`
 
-Today, every guard leaves the group where it is.
-
-| ID | Message today | Prevents | Planned behaviour |
+| ID | Input | What the server does | Feedback |
 |---|---|---|---|
-| G18 | "Group '…' not found. Groups in the plan: …" (also in the command tools) | acting on a wrong group | kept — the message lists the groups |
-| G19 | "Room index … not found - the plan has n room(s)." / "Wall '…' not found. Pass a side label (left/right/top/bottom) or a wall index. Available walls: …" | — | kept |
-| G20 | "Alignment '…' runs parallel to this '…' wall - use 'start', 'center', 'end' or the side of an adjoining wall." | — | `center`, reported |
-| G21 | "Group '…' has no calculated geometry to place." / "… has no geometry to derive a footprint from." | — | kept |
-| G22 | "Placement rejected - the group was not moved: Group '…' placed at the … wall would meet group '…' (root '…', article …; free docking vectors: …). Units next to an existing group are roots of that group: … A new group with a placement is only for a free stretch of wall." | two groups touching or overlapping (5 mm tolerance) | **D27**: touching is allowed. An overlap moves the group along the wall to the nearest position without overlap, and the result reports it. The note names the neighbouring group and suggests `merge-groups` if the units belong together. Without a free position, the group is placed as asked, and the result says that it overlaps |
-| — | "Group '…' could not be reloaded at the new position." | a report, not a guard | kept |
+| G18 | a group id that is neither an id nor a unique prefix (also in the command tools) | nothing | error: "Group '…' not found. Groups in the plan: …" |
+| G19 | a room or wall index outside the plan, a side without a real wall | nothing | error: "Room index … not found" / "Wall '…' not found … Available walls: …" |
+| G20 | an alignment that names the target wall or the opposite one | centres the group on the wall | correction |
+| G21 | a group without calculated geometry | nothing | error: "Group '…' has no calculated geometry to place." |
+| G22 | a target that overlaps another group — footprints and height ranges overlap by more than 5 mm | moves the group along the same wall to the nearest position free of overlap. Touching is no overlap, and wall units above another group's base units do not overlap them | correction naming the group and the distance, suggesting `merge-groups` if the units belong together |
+| G22 | the same, placed into a corner or without a free position on the wall | places the group as asked | correction: "… overlaps group '…' - there is no free position …" |
+| — | the reload fails | — | error: "Group '…' could not be reloaded at the new position." |
 
-### 8.5 Planner checks the command tools pass on
+### 8.5 Command tools
 
-These checks live in roomle-ui (`glue-logic.ts`, `hi-plan-context.ts`). They protect the planner and
-stay as they are (D5). The server passes their message on as an error result. Where it can, it
-corrects the input before forwarding (**Planned**).
+**In the server, before forwarding:**
 
-| ID | Planner message | Server, planned |
-|---|---|---|
-| P1 | "Root module '…' has no sub-module '…'." | passed on |
-| P2 | "Module '…' has no attribute '…'." | passed on (`find-attributes` names the modules that have it) |
-| P3 | "No module of group '…' has the attribute '…'." | passed on |
-| P4 | "Root module '…' is generated by the library and cannot be deleted." | passed on |
-| P5 | "Root module '…' is not an article root of group '…'." | passed on |
-| P6 | "Root module '…' has no free docking vector '…' - its free docking vectors: …" | **D29**: before forwarding, the server moves `dockTo` to the root at the free end of the row and reports it. A side the planner still reports as taken after a deletion — a stale docking entry — remains the planner's message |
-| P7 | "Article '…' has no / more than one docking vector '…' - its docking vectors: …" | `dockingVector` derived from `ownDockingVector` (`RightBottom` → `LeftBottom`, …) when the article has the partner; reported |
-| P8 | "Group '…' is still being calculated - try again once it is loaded." | passed on |
-| P9 | "Article '…' has n root modules - a root module is exchanged with an article of exactly one." | passed on |
-| P10 | "Groups of different libraries cannot be merged: …" | passed on |
-| P11 | "Root module '…' not found." / "Group '…' is not in the plan." / "Article '…' is not in the article catalog." | passed on |
-| P12 | "Another operation on group '…' is still in progress." | passed on (rare: D4) |
-| P13 | payload-shape messages (`… must be a non-empty string`, `dockTo must be …`, …) | not reachable — the server builds these payloads |
-| — | "The planner did not delete …" (a refused deletion) | passed on |
+| ID | Input | What the server does | Feedback |
+|---|---|---|---|
+| G18 | an unknown group id | nothing | error with the groups in the plan |
+| G15 | an article id in another spelling (`merge-article-into-group`, `exchange-root-module`) | reads it in the catalog's spelling | correction |
+| G15 | an article id the catalog does not have | nothing | error with the valid article ids |
+| D29 | `merge-article-into-group` on a taken side vector | docks the unit to the root at the free end of that row | correction |
+| P7 | a `dockingVector` the new article does not have (by the catalog) | uses the partner of `ownDockingVector` when the article has it | correction |
+
+**In the planner** (roomle-ui `glue-logic.ts`, `hi-plan-context.ts`). These checks protect the
+planner and stay as they are (D5); the server passes their message on as an error result.
+
+| ID | Planner message |
+|---|---|
+| P1 | "Root module '…' has no sub-module '…'." |
+| P2 | "Module '…' has no attribute '…'." (`find-attributes` names the modules that have it) |
+| P3 | "No module of group '…' has the attribute '…'." |
+| P4 | "Root module '…' is generated by the library and cannot be deleted." |
+| P5 | "Root module '…' is not an article root of group '…'." |
+| P6 | "Root module '…' has no free docking vector '…' - its free docking vectors: …" — reached only when the planner reports a side as taken although the row ends there (a stale docking entry after a deletion) |
+| P7 | "Article '…' has no / more than one docking vector '…' - its docking vectors: …" |
+| P8 | "Group '…' is still being calculated - try again once it is loaded." |
+| P9 | "Article '…' has n root modules - a root module is exchanged with an article of exactly one." |
+| P10 | "Groups of different libraries cannot be merged: …" |
+| P11 | "Root module '…' not found." / "Group '…' is not in the plan." / "Article '…' is not in the article catalog." |
+| P12 | "Another operation on group '…' is still in progress." (rare: D4) |
+| P13 | payload-shape messages — not reachable, the server builds these payloads |
+| — | "The planner did not delete …" (a refused deletion) |
 
 ### 8.6 Schema checks
 
 The zod schemas in `hi-mcp-server.ts` reject a call before the tool logic runs, with "Input
 validation error: …".
 
-| ID | Schema | Planned behaviour |
-|---|---|---|
-| S1 | `posGroups`: a non-empty array of objects | kept |
-| S2 | `place-group` `wall`: `left`/`right`/`top`/`bottom` or an index ≥ 0; `roomIndex` an integer ≥ 0 | `back`/`front` and any case accepted, reported |
-| S3 | `place-group` `alignment`: `start`/`center`/`end` or a side label | as S2 |
-| S4 | attribute `value`: string or boolean (`change-module-attribute`, `change-group-attribute`) | a number accepted as its string |
-| S5 | `merge-article-into-group` `dockTo.mode` (4 modes), `offset` `[x, y, z]` | kept |
-| S6 | `get-plan-context` `include` (4 sections); `find-attributes` `text` non-empty (also "text must not be empty." in the executor); `merge-groups` `groupIds` non-empty | an unknown section is ignored and reported; the others kept |
+| ID | Schema |
+|---|---|
+| S1 | `create-or-replace-groups` `posGroups`: a non-empty array of objects |
+| S2 | `place-group` `wall`: `left`, `right`, `top`, `bottom`, `back`, `front` or an index ≥ 0; `roomIndex` an integer ≥ 0 |
+| S3 | `place-group` `alignment`: `start`, `center`, `end`, a side label, `back` or `front` |
+| S4 | attribute `value`: a string, a number or a boolean |
+| S5 | `merge-article-into-group` `dockTo.mode` (4 modes), `offset` `[x, y, z]`, `attributes` `[{ id, value }]` |
+| S6 | `get-plan-context` `include`: an array of strings; `find-attributes` `text` non-empty (also "text must not be empty." in the executor); `merge-groups` `groupIds` non-empty |
 
 ### 8.7 Connection and bridge messages
 
@@ -525,4 +545,4 @@ Infrastructure checks, kept. The page allow-list and the origin check are securi
 | Chat steps per turn | 16, the last without tools | `hi-mcp-chat/chat-steps.ts` |
 | `find-attributes` matches | 20 | `MAX_ATTRIBUTE_MATCHES` |
 | Valid article ids in G15's message | 100 | `requireCatalogArticle` |
-| Contact tolerance of `place-group` | 5 mm | `CONTACT_TOLERANCE_MM` |
+| Overlap tolerance of `place-group` | 5 mm | `OVERLAP_TOLERANCE_MM` |

@@ -5,10 +5,13 @@
 > **Trigger**: "Guards fight symptoms, but do not fix the root cause … when an agent creates wrong content, the root cause is that the MCP instructions are not good enough or misleading. Guards should always be treated as a last resort … analyse which guards are implemented and what they do. What do they prevent or discard?"
 > **Date**: 2026-10-02
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Done
 > **Ticket**: [RML-18033](https://roomle.atlassian.net/browse/RML-18033) — hi mcp guards and auto correction
 > **Branch**: `docs/guards-as-last-resort`
 > **Code read**: roomle-hi-example `bd69d38` (`master`); roomle-ui `e2712a6a7` (`origin/feat/hi-mcp-command-api-RML-18004`)
+>
+> **Close-out (2026-10-02)**: implemented on the same branch, steps 1–11 of the plan; see the
+> [Report](#report-close-out-2026-10-02). The plan below is kept as it was decided.
 >
 > **Decided (2026-10-02)**: the refactoring covers the MCP server only — the planner's checks (P1–P13)
 > protect the planner and stay as they are. The server corrects whenever it can and informs the agent;
@@ -485,3 +488,84 @@ replaced by a link to the behaviour document.
 ## Open points
 
 None — the decisions of 2026-10-02 answer the questions of this analysis.
+
+## Report (close-out 2026-10-02)
+
+### Summary of changes
+
+| Step | Commit | Change |
+|---|---|---|
+| 1, 2 | `3ba4f23` | `create-or-replace-groups` checks each group on its own and loads the ones it can build; `notLoaded` reports the others. The result is ready for `corrections` |
+| 3, 4 | `26c3826` | A placement on a group already in the plan, or one the server cannot use, sends no `repositioningData`. Field mistakes are corrected and reported: positions, root ids, `repositioningData`, placement fields, `[x, z]`, `rootId`, article id spelling, numbers as attribute values, unknown context sections |
+| 5 | `e90c964` | `place-group` moves a target that overlaps another group (footprint and height) along the wall; touching is allowed; a parallel alignment is centred; `back`/`front` are accepted |
+| 6, 7 | `aa520bb` | Unconnected roots get a docking entry to the free end of a row of their kind. Two roots on one side vector: the later one goes to the free end. `merge-article-into-group` re-targets a taken side and derives a missing partner vector |
+| 8 | `3f4ae9d` | The served rules describe how to succeed and explain `corrections` and `notLoaded`; no rejection sentence is left |
+| 9 | `3c9538f` | The behaviour document §8 and the tool references describe the implemented behaviour |
+| 10 | `4dcad54`, `5ff3d12` | Tool feedback is logged as a JSON line, with the arguments of a failed call; `run-hi-mcp-prompt.js` stores it as `toolFeedback` in `run.json` |
+| 11 | `3c4ae69`, `d293b02` | Two bugs found by "test the mcp" and fixed: unknown docking vectors read as none; a second side docking of a root already in the row |
+
+### Changed files
+
+- `hi-mcp/hi-mcp-poc-json/tool-executors.ts`, `plan-space.ts`, `hi-mcp-server.ts` and their tests
+- `.agents/scripts/run-hi-mcp-prompt.js`
+- `hi-mcp/docs/hi-mcp-behaviour.md`, `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`,
+  `hi-mcp-server.md`, `hi-mcp-testing.md`, `minimal-hi-example/docs/hi-mcp-server.md`,
+  `hi-mcp/hi-mcp-poc-json/README.md`, `AGENTS.md`, `.github/copilot-instructions.md`
+- No roomle-ui change.
+
+### Before and after
+
+| | Before | After |
+|---|---|---|
+| A wrong group in a call | the whole call is discarded | the other groups load; `notLoaded` names the wrong one and the fix |
+| A field the server would drop | the call is rejected | dropped; reported in `corrections` |
+| Placement on an existing group | rejected | not used; the group keeps its position; reported |
+| Unconnected roots | rejected | docked to the free end of the row; reported |
+| Two roots on one side vector | rejected | the later one at the free end of the row; reported |
+| `place-group` target touching or overlapping another group | rejected | touching allowed; an overlap moved along the wall; reported |
+| `merge-article-into-group` on a taken side | the planner's error | docked at the free end of the row; reported |
+| Served rules | 8 sentences on what is rejected | how to succeed, and how to read `corrections` and `notLoaded` |
+| Test runs | tool results not recorded | `toolFeedback` per turn: corrections, `notLoaded`, errors with arguments |
+
+### Test adaptations
+
+256 unit tests, typecheck clean. Every `rejects …` test of a guard that became a correction is now a
+test of the correction and its sentence. New tests cover:
+
+- partial loading
+- the geometry of overlaps, height and wall spans
+- the docking corrections, including unknown docking vectors
+- the `merge-article-into-group` re-targeting
+- the served text without rejections
+- the feedback log lines
+
+### Verification
+
+"Test the mcp" with gpt-5.4-mini against bo-test (`.temp/result/mcp-test-2026-10-02_07-09-23/report.md`):
+6 pass, 4 partial, 3 fail, 2 skipped (image).
+
+- **The two bugs found** — runs 03, 04 and the setup of 07 — are fixed. 03 and 04 were repeated
+  after the fix; no `create-or-replace-groups` call was rejected afterwards.
+- **The new correction** of unconnected roots turned two setup turns (09, 10) from rejections
+  into loaded rows.
+- **The fails are model findings**:
+  - a wall's `start` instead of its `end` (02, the setup of 10)
+  - a kitchen whose roots appear only in the docking (06)
+  - the wrong tool for a size change (10)
+
+### Risks and open items
+
+- **Docking entries that name roots missing from a new group** are dropped without a word. The model
+  then claims units that are not there (06, and 03/04 before the fix). This is the strongest
+  hardening candidate of the run: feedback in `corrections`, and a docking example that does not
+  read as if it created the root.
+- **A `Top → Top` pair used as "beside"** (02) puts a unit into its neighbour's place; the side
+  vector correction counts the `Bottom` vectors only.
+- **A range hood docked to a unit** (04) lands at the group origin; it is recognisable as
+  undockable and could be reported or moved into a group of its own.
+- **An undockable article is recognised** by having neither docking vectors nor a size in the
+  catalog — an approximation until the catalog carries docking vectors on an empty plan (backlog
+  "Article template geometry").
+- **P6 after a deletion**: a stale docking entry makes the planner report a side as taken; the
+  server's re-targeting cannot see past it (roomle-ui, not changed here).
+

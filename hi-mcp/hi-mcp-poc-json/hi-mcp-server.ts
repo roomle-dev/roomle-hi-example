@@ -93,9 +93,28 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     { instructions: INSTRUCTIONS },
   );
 
-  const runTool = (tool: string, args: Record<string, unknown>) => {
+  // The feedback a tool gives the agent goes to the log as one JSON line, so a
+  // test run can tell which corrections and errors the agent saw.
+  const runTool = async (tool: string, args: Record<string, unknown>) => {
     console.log(`[hi-mcp] tool ${tool}`);
-    return toolExecutors[tool](plannerApi, args);
+    try {
+      const result = (await toolExecutors[tool](plannerApi, args)) as any;
+      const { corrections, notLoaded } = result ?? {};
+      if (corrections || notLoaded) {
+        console.log(
+          `[hi-mcp] tool ${tool} feedback ${JSON.stringify({ corrections, notLoaded })}`,
+        );
+      }
+      return result;
+    } catch (error) {
+      console.log(
+        `[hi-mcp] tool ${tool} error ${JSON.stringify({
+          message: (error as Error)?.message ?? String(error),
+          args,
+        })}`,
+      );
+      throw error;
+    }
   };
 
   server.registerTool(

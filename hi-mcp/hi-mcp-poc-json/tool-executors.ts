@@ -621,14 +621,28 @@ const removeDocking = (roots: any[], rootId: string, vector: string, partnerId: 
 const WALL_UNIT = /\bwall units?\b/i;
 
 // The docking vector names of an article; undefined when the catalog does not
-// tell them.
+// tell them. The catalog takes them from the template or from a calculated
+// root of the article in the plan, so an article not in the plan has none.
 const articleDockingVectors = (article: any): string[] | undefined => {
+  const names = ((article?.rootModules ?? []) as any[]).flatMap(
+    (rootModule) => rootModule?.dockingVectors ?? [],
+  );
+  return names.length > 0 ? names : undefined;
+};
+
+// An article with neither docking vectors nor a size - a range hood, a TV -
+// cannot be docked.
+const isUndockable = (article: any): boolean => {
   const rootModules = article?.rootModules;
-  return Array.isArray(rootModules) &&
+  return (
+    Array.isArray(rootModules) &&
     rootModules.length > 0 &&
-    rootModules.every((rootModule: any) => Array.isArray(rootModule?.dockingVectors))
-    ? rootModules.flatMap((rootModule: any) => rootModule.dockingVectors)
-    : undefined;
+    rootModules.every(
+      (rootModule: any) =>
+        (rootModule?.dockingVectors?.length ?? 0) === 0 &&
+        (rootModule?.dimensions?.length ?? 0) === 0,
+    )
+  );
 };
 
 const quotedIds = (ids: string[]): string => ids.map((id) => `'${id}'`).join(', ');
@@ -649,8 +663,15 @@ const separateSideVectorPartners = (
     const [kept, moved] = sharing;
     removeDocking(roots, rootId, vector, moved);
     const end = rowEnd(sidePartnersOf(roots), rootId, vector);
+    if (end === moved) {
+      corrections.push(
+        `${prefix}: roots ${quotedIds([kept, moved])} were docked to the ${vector} of root '${rootId}' at the ` +
+          `same place - '${moved}' already follows in that row, so its second docking was dropped`,
+      );
+      continue;
+    }
     const endRoot = roots.find((root) => root.id === end);
-    if (!endRoot || end === moved) {
+    if (!endRoot) {
       break;
     }
     addDocking(endRoot, vector, moved, SIDE_PARTNER[vector]);
@@ -676,8 +697,11 @@ const connectUnreachedRoots = (
 ): string[] => {
   const isWallUnit = (root: any) =>
     WALL_UNIT.test(String(catalogArticleOf(articles, root)?.category ?? ''));
-  const hasVector = (root: any, vector: string) =>
-    articleDockingVectors(catalogArticleOf(articles, root))?.includes(vector) ?? true;
+  const hasVector = (root: any, vector: string) => {
+    const article = catalogArticleOf(articles, root);
+    const vectors = articleDockingVectors(article);
+    return vectors ? vectors.includes(vector) : !isUndockable(article);
+  };
   for (let round = 0; round < roots.length; round++) {
     const reached = reachedFrom(roots, [roots[0].id]);
     const unreached = roots.filter((root) => !reached.has(root.id));

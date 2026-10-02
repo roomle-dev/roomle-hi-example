@@ -108,6 +108,43 @@ describe('hi-mcp-server tool calls', () => {
     },
   );
 
+  it('logs the feedback and the errors of a tool as one JSON line', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const plannerApi = createMockPlannerApi({
+      getExternalObjectPlanContext: vi.fn(async () => ({
+        groups: [{ id: 'g1', libraryId: 'lib-1', roots: [] }],
+        articles: [{ articleId: 'article-1', libraryId: 'lib-1' }],
+      })),
+    });
+    const client = await connectClient(plannerApi);
+
+    await client.callTool({
+      name: 'exchange-root-module',
+      arguments: { groupId: 'g1', rootModuleId: 'r1', articleId: 'ARTICLE-1' },
+    });
+    await client.callTool({
+      name: 'create-or-replace-groups',
+      arguments: { posGroups: [{ roots: [] }] },
+    });
+
+    const lines = log.mock.calls.map(([line]) => String(line));
+    log.mockRestore();
+    expect(lines).toContain(
+      `[hi-mcp] tool exchange-root-module feedback ${JSON.stringify({
+        corrections: ["exchange-root-module: articleId 'ARTICLE-1' was read as 'article-1'"],
+      })}`,
+    );
+    const errorLine = lines.find((line) =>
+      line.startsWith('[hi-mcp] tool create-or-replace-groups error '),
+    );
+    expect(JSON.parse(errorLine!.slice('[hi-mcp] tool create-or-replace-groups error '.length))).toEqual({
+      message: expect.stringMatching(
+        /^Invalid pos groups - nothing was loaded:\nposGroups\[0\]: needs a non-empty roots array/,
+      ),
+      args: { posGroups: [{ roots: [] }] },
+    });
+  });
+
   it('accepts a number as an attribute value and passes it on as its string', async () => {
     const plannerApi = createMockPlannerApi();
     const client = await connectClient(plannerApi);

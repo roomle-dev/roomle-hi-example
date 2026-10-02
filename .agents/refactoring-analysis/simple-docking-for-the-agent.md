@@ -524,3 +524,51 @@ row.
 - gpt-5.4-mini's docking corrections drop;
 - gpt-6-astra stays at 17 passes;
 - every wall unit hangs at y 1480.
+
+## Report (2026-10-02)
+
+Implemented on `refactor/simple-group-layout`: `efbcd64` (code and tests), `c19a482` (docs). The
+close-out (status Done, the sections above in past tense) follows after the review.
+
+### Gate: the A/B run
+
+gpt-5-mini, the chat's system prompt and tools, every tool real against the example page except
+`create-or-replace-groups`, which recorded the payload and ended the run. Old format: the server of
+`master` (`contextData` taught); new format: the relations. The time is the time to the first
+`create-or-replace-groups` call.
+
+| Prompt | Old format (`contextData`) | New format (relations) |
+|---|---|---|
+| Full kitchen (10) | 41, 49, 58 s; 1–2 wall units | 27, 32, 42 s; 2 wall units each |
+| Image kitchen (06) | 60 s; **no call within 600 s**; no call after 7 min (stopped) | 35 s (two further runs hit the token rate limit, not measured) |
+
+- The old format reproduced the stall of the test run: after `get-plan-context` and
+  `get-authoring-rules` (44 s), the model wrote nothing more.
+- The old format's payloads: two of three corner kitchens continued the left leg on `l1.RightBottom`,
+  which the corner article takes; one docked the hood on two base units (a ring); every wall unit
+  had the guessed gap 600 (60 mm too low).
+- The new format's payloads: every leg with `leftOf` / `rightOf`, wall units and the hood with
+  `above`, no correction needed.
+
+The hypothesis holds: the new format does not stall, and it is faster and more correct.
+
+### Live check
+
+Against the example page (planner bo-test), `create-or-replace-groups` with relation payloads; root
+positions from the kernel (`getExternalObjectGroups`), images checked. No corrections.
+
+| Shape | Result |
+|---|---|
+| tall unit, base units, wall units `rightOf` the tall unit, a unit `onTop` a base unit (`align: back`) | wall units at y 1480, tops flush; the stacked unit at y 820 |
+| L corner, wall units `above` base units without a tall unit, the hood `rightOf` a wall unit | wall units and hood at y 1480 (820 + 660); the left leg turned by 90° |
+| island `behind`, a stack of two `onTop` | the back row turned by 180°; the stack at y 820 and 1540 |
+
+### Deviations from the plan
+
+- **Step 4 (`group-placement.ts`) not done.** Treating Top-Top pairs as neighbours in the anchor walk
+  would anchor a group on a wall unit when a tall unit has a wall unit hanging on its left. Instead,
+  the compile moves the first floor unit to the front of the list (C15), so the walk starts on the
+  floor.
+- **Two units `rightOf` one unit** are moved by the existing side correction (D29, G8) after the
+  compile, now that open issue 2 is fixed, not by the compile itself.
+- **The hang height** follows the proposed rule of Decision 1 (D35); still to be confirmed.

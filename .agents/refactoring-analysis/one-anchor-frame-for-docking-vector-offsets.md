@@ -5,7 +5,7 @@
 > **Trigger**: "There is already a fix for the corner cabinets, which also have offset. This is technically exactly the same situation, there is a docking vector offset. If we suggest a solution it should be one solution for both cases. Do a deeper analysis - one clean solution for articles with docking vector offsets."
 > **Date**: 2026-10-02
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Done
 > **Follows**: [The range hood lands half its width off](../bug-analysis/range-hood-placed-half-a-width-off.md) — this analysis replaces its proposed fix, point 1
 > **Branch**: `docs/guards-as-last-resort`
 > **Code read**: roomle-hi-example `dd88f9c`; roomle-ui `c2de4d15f` (`master`), the same repositioning code as `origin/feat/hi-mcp-command-api-RML-18004`; RoomleCore `feat/curved-walls-wall-curve`
@@ -397,3 +397,40 @@ The run uses the skill with gpt-5.4-mini. The two corner prompts with a range ho
 - `feat: report group positions in the placement frame`;
 - `fix: dock the range hood like a unit beside the wall units`;
 - `docs: …`.
+
+## Report
+
+Implemented on `refactor/one-anchor-frame`, based on `docs/guards-as-last-resort`:
+
+| Commit | Content |
+|---|---|
+| `4f712e7` refactor: place and report every group by its anchor's docking corner | Steps 1–3: `AnchorFrame`, `anchorFrameOfRoot`, `toRepositioningData` with `rootRelPos`/`rootRelRotationY`, `positionInPlacementFrame`; the probe of every placed anchor, G17 as a correction; `inPlacementFrame` around the ten tools that return groups |
+| `63d2775` fix: dock the range hood like a unit beside the wall units | Step 4: the hood sentence, the corner rules without "+ 90", `pos` in the `get-plan-context` description; `isUndockable` removed |
+| `87bd34f`, `0d4a14b` docs | Step 6: behaviour reference (D33, C6, C14, G7, G17), skills, the server docs, the testing skill |
+
+**Deviations from the plan.**
+- Steps 1–3 are one commit: they change the same two files, and the frame is one concept in both
+  directions.
+- No roomle-ui change was needed, as planned.
+
+**Verification.**
+- **Unit tests:** 280 pass (`npm test` in `hi-mcp`), and `npm run typecheck` is clean. New tests:
+  - the frame of a cabinet, a hood, a TV panel and both corner hands, from the survey's docking
+    vectors;
+  - the hand-off, checked with the planner's formula;
+  - the read-back after a create, after a reload and for a right-handed corner kitchen;
+  - the probe of every anchor, the G17 fallback, and the read-back in `get-plan-context`, in
+    `create-or-replace-groups` and in a command result;
+  - through the page bridge: a hood's `rootRelPos`, and the read-back after `place-group`.
+- **Live check, headless, through the MCP server:**
+  - `UTB60`, `DU`, `SM_TV`, `UERTB90` and `UELTB90` with a row on each arm, at 0 and 270: the
+    docking corner lands on `posGroup`, and `get-plan-context` reports `posGroup` and `posRotationY`.
+    The planner's own origin is off by 299, 635/40, 261 and 1161 mm.
+  - The hood docked `RightBottom → LeftBottom` between two wall units spans the gap at their height.
+  - A call took 30–370 ms with its probe; the first hood load took 3.9 s (loading its assets).
+- **"test the mcp"**, gpt-5.4-mini: 8 pass, 3 partial, 2 fail; no fail from the placement.
+  - Every placement reached the planner as sent, with the frame for the corner articles.
+  - Every group was read back with the `pos` and `rotationY` the model sent.
+  - The hood is no longer placed half a width off. In this run's two hood prompts the model did not
+    send one: the rules have no hood recipe without wall units —
+    [open issue 5](../backlog/mcp-test-open-issues.md#5-a-range-hood-without-wall-units-has-no-docking-recipe).

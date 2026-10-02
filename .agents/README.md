@@ -94,7 +94,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [create-or-replace-groups accepts two roots on one side docking vector](bug-analysis/two-roots-on-one-side-vector-accepted.md) | Fixed | 2026-10-01 |
 | [The deploy workflow misses the Linux rollup binary](bug-analysis/deploy-workflow-misses-linux-rollup-binary.md) | Fixed | 2026-10-01 |
 | [create-or-replace-groups drops the units the agent writes inside the docking](bug-analysis/units-inside-docking-entries-dropped.md) | Fixed | 2026-10-02 |
-| [The range hood lands half its width off and takes the agent several attempts](bug-analysis/range-hood-placed-half-a-width-off.md) | Open | 2026-10-02 |
+| [The range hood lands half its width off and takes the agent several attempts](bug-analysis/range-hood-placed-half-a-width-off.md) | Fixed | 2026-10-02 |
 
 ### Feature Analyses
 
@@ -135,7 +135,7 @@ done. The analysis and the report are the same document — the report is append
 | [HI MCP tool logic in every client page](refactoring-analysis/hi-mcp-tool-logic-in-client-pages.md) | Done | 2026-09-29 |
 | [Parts (PosPartData) and log messages in the groups of the plan context](refactoring-analysis/hi-plan-context-without-parts.md) | Done | 2026-10-01 |
 | [Guards in the HI MCP server: what they reject, prevent and discard, and the refactoring plan (RML-18033)](refactoring-analysis/guards-in-the-hi-mcp-server.md) | Done | 2026-10-02 |
-| [One anchor frame for articles with docking vector offsets (corner articles, range hood)](refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md) | Open | 2026-10-02 |
+| [One anchor frame for articles with docking vector offsets (corner articles, range hood)](refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md) | Done | 2026-10-02 |
 
 ### Benchmarks & Performance Analyses
 
@@ -154,7 +154,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 |---|---|
 | [Backlog](backlog/README.md) — make group positioning easier for the agent | 2026-09-30 |
 | [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — deferred roomle-ui alternative to the server's corner probe | 2026-09-30 |
-| [Remaining issues of "test the mcp" on 2026-10-02](backlog/mcp-test-2026-10-02-remaining-issues.md) — 3 MCP server bugs in the corrections, 5 hardening items, 1 decision, 1 known roomle-ui defect | 2026-10-02 |
+| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — what is to be done after the analyses of "test the mcp": MCP server bugs in the corrections, hardening of the server, the rules and the chat, one roomle-ui defect | 2026-10-02 |
 
 ---
 

@@ -5,7 +5,7 @@
 > **Trigger**: user report 2026-10-02 — "the agent always has a lot of trouble to get the range hood positioned correctly and needs several attempts", with two screenshots and the plan snapshots `ps_qou14tltrtkszff9n7m05kalrr2puem4` and `ps_qouy1f7diacd5ogftqoumxrpdkfu5bb`
 > **Date**: 2026-10-02
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Fixed
 
 ## Symptom
 
@@ -100,7 +100,8 @@ vectors nor a size cannot be docked. That describes the hood's catalog entry, no
 - An undocked hood in a new group is never connected to the free end of a row; the guard stays,
   and the group goes to `notLoaded`. That is the run 04 rejection of "test the mcp" on 2026-10-02.
 - Backlog item 5 of
-  [the test run's remaining issues](../backlog/mcp-test-2026-10-02-remaining-issues.md#5-an-undockable-unit-discards-its-group)
+  the test run's remaining issues ("An undockable unit discards its group", since removed from
+  [the open issues](../backlog/mcp-test-open-issues.md))
   rests on the same wrong premise.
 
 ## Root cause
@@ -157,3 +158,21 @@ Three causes add up. The decisive one is the second.
   docked to a row end
 - `hi-mcp/docs/hi-mcp-behaviour.md` (C6, G7, the rules), `.agents/skills/hi-authoring-rules.md`,
   backlog item 5
+
+## Fix
+
+Implemented with [One anchor frame for articles with docking vector offsets](../refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md)
+(`4f712e7`, `63d2775`):
+
+1. Every anchor is placed by its docking corner. A hood in a group of its own lands with its left
+   edge at `posGroup`.
+2. The groups the tools return report `pos` and `rotationY` as a placement names them. The agent
+   reads back what it sent.
+3. The rules dock the hood between two wall units: `RightBottom` of the wall unit left of the gap →
+   `LeftBottom` of the hood. The sentence "cannot be docked" is gone.
+4. `isUndockable` is removed: a catalog entry without docking vectors is unknown, not undockable.
+
+Not covered: the size and the docking vectors of the hood on an empty plan's catalog (the roomle-ui
+backlog item [article template geometry](../backlog/roomle-ui-article-template-geometry.md)), and a
+hood recipe without wall units
+([open issue 5](../backlog/mcp-test-open-issues.md#5-a-range-hood-without-wall-units-has-no-docking-recipe)).

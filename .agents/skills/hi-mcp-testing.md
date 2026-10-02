@@ -121,6 +121,8 @@ A result is a bug when the system, not the model, is at fault:
 | the plan contradicts what the tools reported (success, but the group is missing or unchanged) | **bug** |
 | a correction of the server is wrong for the request, or the server changed the input without reporting it in `corrections` | **bug** — MCP server correction |
 | the server dropped content the model sent (its `args` in `toolCalls`) without reporting it | **bug** — MCP server |
+| a material, colour or attribute the prompt asks for is missing in the plan or reaches only part of it (one walnut front of a walnut kitchen, a worktop colour set on a base unit) although the model sent it, and no correction says so | **bug** — MCP server: the instructions or the tool API let the model's input fall short |
+| a unit stands at a height it cannot have in a kitchen — a wall cabinet on the worktop or on the floor instead of hanging on the wall — and no correction says so | **bug** — MCP server: the instructions or the tool API leave the height to the model |
 | the model's own input is wrong: another wall or point (a wall's `start` instead of its `end`), other articles, missing items, input the server had to correct (`toolCalls`), stopped early, no tool call | **model finding**, no bug |
 | provider errors: authorization, quota, rate limit | **environment**, no bug |
 
@@ -133,8 +135,11 @@ it only as a last resort. A group placed outside the room is a model finding onl
 hardening candidate: the user may ask for a placement outside the room, so the server must not
 refuse it.
 
-For a corner article the server adds the corner point offset to `posGroup` itself — compare the
-corner, not the raw point. State the evidence (file and value) behind every bug verdict.
+The server sends `posGroup` and `posRotationY` as the model gave them; for an anchor whose docking
+corner is not its origin (a corner article, a range hood) it adds the offset as `rootRelPos` and
+`rootRelRotationY`. `plan-context.json` reports a group's `position.pos` and `rotationY` in the same
+frame — the back left bottom corner and the rotation of the placement — so compare them with the
+placement directly. State the evidence (file and value) behind every bug verdict.
 
 ### 6. Report
 
@@ -192,6 +197,17 @@ Setup turns: <none, or the turns before the prompt>
 
 - <title> — needs a reference image
 ````
+
+### 7. Open issues
+
+Update [mcp-test-open-issues.md](../backlog/mcp-test-open-issues.md) — what is to be done after
+the test analyses, nothing that was done:
+
+- add every bug and hardening candidate of the report that is not listed yet, with the problem, the
+  run that shows it, the cause in the code, the to-do and its test;
+- give a listed issue the latest run that shows it;
+- remove an issue only when its fix is in the code — a run that happens not to show it is no fix;
+- keep the backlog index ([README](../backlog/README.md)) in step.
 
 Then tell the user the report's path, the verdicts and the bugs.
 

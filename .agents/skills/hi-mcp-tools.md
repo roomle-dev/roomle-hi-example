@@ -83,6 +83,13 @@ const context = await getPlanContext({ include: 'rooms,articles' });
 { posGroups: PosGroup[] }
 ```
 
+**Roots**: `{ id, articleId, attributes? }` plus one relation that names the neighbour — `rightOf`,
+`leftOf`, `onTop` (`align`, `gapMm`), `above` (`gapMm`) or `behind`. The server builds the docking
+(`contextData`) from it, including the Top vectors of a wall unit beside a tall unit and the hang
+gap of a wall unit above a floor unit — see the
+[authoring rules skill](./hi-authoring-rules.md#relations). `contextData` is still accepted; a group
+from `get-plan-context` carries it.
+
 **Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, errors }]` — the groups it could not build, each error naming what to send instead; the other groups load)
 
 **Usage**:
@@ -93,8 +100,8 @@ await createOrReplaceGroups({ posGroups: [group1, group2] });
 **Positioning**: a new group carries `placement: { posGroup, posRotationY, rootId? }` —
 `posGroup` the room point of the group's back left bottom corner, `posRotationY` the rotation in
 degrees, counter-clockwise as seen from above; `rootId` only with two corner articles, naming the
-one that goes into the corner `posGroup` names. One kitchen is one group: dock every further unit
-instead of positioning it. Against a wall: `posRotationY` = the wall's `facingRotationY`,
+one that goes into the corner `posGroup` names. One kitchen is one group: relate every further unit
+to its neighbour instead of positioning it. Against a wall: `posRotationY` = the wall's `facingRotationY`,
 `posGroup` = the wall's `end` (flush into that corner) or a point from `end` towards `start`; in a
 corner: the corner point and the `facingRotationY` of the wall that ends there (for a right-handed
 corner article the server adds 90° itself, see the table in the authoring rules). `posGroup` is the
@@ -232,9 +239,9 @@ const { totalPrice } = await getPrice();
 ```javascript
 const context = await getPlanContext();
 const group = context.groups.find(g => g.id === 'target');
-// Add new root docked to existing
-const anchorRoot = group.roots.find(r => r.freeDockingVectors?.length > 0);
-// ... add docking and new root
+// Add the new root with its relation to the root it continues
+const anchorRoot = group.roots.find(r => r.freeDockingVectors?.includes('RightBottom'));
+group.roots.push({ id: 'n1', articleId: 'base-unit-600', rightOf: anchorRoot.id });
 await createOrReplaceGroups({ posGroups: [group] });
 ```
 
@@ -256,7 +263,7 @@ try {
 | No page connected | Page not loaded with ?mcp=true | Open browser page |
 | Invalid pos groups - nothing was loaded | No group of the `create-or-replace-groups` call can be built | Fix the listed errors — each names what to send instead |
 | articleId '…' is not in the article catalog | Article not in catalog (another spelling of a catalog id is read in the catalog's spelling and reported in `corrections`) | Use a valid articleId from context (the message lists them). In `create-or-replace-groups` the group is in `notLoaded`; a command tool fails |
-| roots '…' are not docked to a placed root (in `notLoaded`) | A part the docking does not connect to the first root, which the server cannot dock to the free end of a row: no free row end, a wall unit without a wall-unit row | Dock it to a placed root (the error names the placed roots and the entry to send) |
+| roots '…' are not docked to a placed root (in `notLoaded`) | A part the docking does not connect to the first root, which the server cannot dock to the free end of a row: no free row end, a wall unit without a wall-unit row | Dock it to a placed root (the error names the placed roots and the entry to send). Only for docking written as `contextData`: with relations, such a root continues the row of its kind |
 | duplicate root id '…' named in the docking (in `notLoaded`) | Two roots of a group share an id that a docking entry names | Give every root a unique id |
 | Root module '…' has no free docking vector '…' | `merge-article-into-group` on a side the planner reports as taken although the row ends there (a stale docking entry after a deletion); a taken side with a free row end is moved there and reported in `corrections` | Use one of the root's `freeDockingVectors` (the error lists them) |
 | Module '…' has no attribute '…' | `change-module-attribute` with an attribute the module's master data does not assign (planners with roomle-ui `fix/hi-attribute-commands-RML-18004`; older builds report success and change nothing) | Look the attribute up with `find-attributes` — its `rootModules` name the modules that have it |

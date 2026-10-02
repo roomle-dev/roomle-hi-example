@@ -320,9 +320,10 @@ Example: `{ "include": ["articles", "groups"] }`
 
 No parameters. Returns the [authoring rules](#authoring-pos-groups) as text:
 the payload format of `create-or-replace-groups`, the root-module fields, how
-to position a new group with a `placement`, the docking vectors with their valid pairs, `mode` and
-`offset`, and the recipes for a row, a wall unit above a base unit, an island
-and a corner. Answered by the server itself — it works even without a
+to position a new group with a `placement`, the relations a unit names its
+neighbour with (`rightOf`, `leftOf`, `onTop`, `above`, `behind`), how to read the docking
+vectors of existing groups, and examples for a row, wall units beside a tall unit and above base
+units, and a corner kitchen. Answered by the server itself — it works even without a
 connected page. Agents should fetch this before authoring pos groups (the same
 text is delivered as server instructions at initialize, but not every client
 surfaces those).
@@ -349,10 +350,12 @@ Creates or replaces HI object groups from an array of pos groups — and
 positions new groups in the same call. A group whose `id` matches an existing
 group **completely replaces** that group and keeps its position (root modules
 keep their ids when they already exist in the replaced group); all other
-groups are created with regenerated ids. Roots are **article picks** (`{ id, articleId, attributes?,
-contextData? }`) — the glue logic completes them from the article template;
-the planner calculates and arranges the docked root modules. The agent never
-authors root positions.
+groups are created with regenerated ids. Roots are **article picks** (`{ id, articleId,
+attributes? }`), and every root after the first names its neighbour with one relation — `rightOf`,
+`leftOf`, `onTop`, `above` or `behind` — from which the server builds the docking (`contextData`).
+The glue logic completes the picks from the article template, and the planner arranges the root
+modules. The agent never authors root positions. Docking written as `contextData` — a group from
+`get-plan-context` carries it — is still accepted.
 
 A new group is positioned with `placement: { posGroup, posRotationY,
 rootId? }` — see [Positioning a group](#positioning-a-group). It is applied
@@ -361,7 +364,7 @@ the origin first.
 
 The server corrects what it can and reports each correction in
 `corrections`: it drops `articlePos`/`rotationY` on roots and `pos`/`rotationY`
-on groups, completes the docking of roots it does not connect, and does not use
+on groups, puts a root without a relation into the row of its kind, and does not use
 a placement it cannot read or one on a group that is already in the plan (the
 planner positions the group, an existing group keeps its position). A group it
 cannot build — no roots, an unknown `articleId`, roots it cannot dock — is
@@ -390,35 +393,9 @@ room, from the back right corner, one call. `posGroup` is the right wall's
       "libraryId": "<libraryId>",
       "placement": { "posGroup": [4000, 0, -3000], "posRotationY": 270 },
       "roots": [
-        {
-          "id": "u1",
-          "articleId": "<articleId>",
-          "contextData": {
-            "dockedRoots": [
-              {
-                "ownDockingVector": "RightBottom",
-                "dockedRoots": [
-                  { "id": "u2", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "id": "u2",
-          "articleId": "<articleId>",
-          "contextData": {
-            "dockedRoots": [
-              {
-                "ownDockingVector": "RightBottom",
-                "dockedRoots": [
-                  { "id": "u3", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }
-                ]
-              }
-            ]
-          }
-        },
-        { "id": "u3", "articleId": "<articleId>" }
+        { "id": "u1", "articleId": "<articleId>" },
+        { "id": "u2", "articleId": "<articleId>", "rightOf": "u1" },
+        { "id": "u3", "articleId": "<articleId>", "rightOf": "u2" }
       ]
     }
   ]
@@ -427,9 +404,9 @@ room, from the back right corner, one call. `posGroup` is the right wall's
 
 Example — an L-shaped kitchen in the back right corner of the same room is
 ONE group starting with the corner article `c1`: `posGroup` is the corner
-point, `270` the rotation of the right back corner; the row docked to its
-`RightBottom` runs along the right wall, the row docked to its `LeftBottom`
-along the back wall (one unit per row shown):
+point, `270` the rotation of the right back corner; the units `rightOf` the
+corner article run along the right wall, the units `leftOf` it along the back
+wall, and the wall units hang beside the tall unit and above the base unit:
 
 ```json
 {
@@ -438,28 +415,12 @@ along the back wall (one unit per row shown):
       "libraryId": "<libraryId>",
       "placement": { "posGroup": [4000, 0, -3000], "posRotationY": 270 },
       "roots": [
-        {
-          "id": "c1",
-          "articleId": "<corner article>",
-          "contextData": {
-            "dockedRoots": [
-              {
-                "ownDockingVector": "RightBottom",
-                "dockedRoots": [
-                  { "id": "r1", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }
-                ]
-              },
-              {
-                "ownDockingVector": "LeftBottom",
-                "dockedRoots": [
-                  { "id": "l1", "dockingVector": "RightBottom", "mode": "StartStart", "offset": [0, 0, 0] }
-                ]
-              }
-            ]
-          }
-        },
-        { "id": "r1", "articleId": "<base unit>" },
-        { "id": "l1", "articleId": "<base unit>" }
+        { "id": "c1", "articleId": "<corner article>" },
+        { "id": "r1", "articleId": "<base unit>", "rightOf": "c1" },
+        { "id": "t1", "articleId": "<tall unit>", "rightOf": "r1" },
+        { "id": "l1", "articleId": "<base unit>", "leftOf": "c1" },
+        { "id": "w1", "articleId": "<wall unit>", "leftOf": "t1" },
+        { "id": "w2", "articleId": "<wall unit>", "above": "l1" }
       ]
     }
   ]
@@ -564,18 +525,18 @@ group one point and one rotation; the planner calculates every root position.
   replaces that group and keeps its position; without a matching `id` a new
   group is created at its `placement`.
 - A root module is an **article pick and nothing else**: `{ id, articleId,
-  attributes?, contextData? }`. The server drops `articlePos`/`rotationY` on a
+  attributes? }` plus one relation that names its neighbour. The server drops `articlePos`/`rotationY` on a
   root and `pos`/`rotationY` on a group (reported in `corrections`),
   ignores every other field, and drops roots marked `isGenerated` (worktop,
   toe kick — the library regenerates them). Every root position comes from
-  the docking; the position of a new group comes from its `placement`. `id` is a
+  its relation; the position of a new group comes from its `placement`. `id` is a
   temporary unique id of your choice for new
   roots (regenerated by the planner, docking and placement references are
   remapped automatically); keep the real ids of roots that already exist in a
   replaced group. The catalog says what an article is (`desc`, `category`),
   how big it is (`dimensions`), how it docks (`dockingVectors`) and what it
   contains (`subModules`). Sub-modules come with the article — the agent
-  authors articles, their attributes and their docking, nothing else.
+  authors articles, their attributes and their relations, nothing else.
   Everything else the calculation needs — the master-data module and the full
   input attribute set — is completed automatically from the article template.
   `attributes` are `[{ id, value }]` overrides; attribute ids and allowed
@@ -596,7 +557,7 @@ group one point and one rotation; the planner calculates every root position.
   size attribute; the panels carry depth and height but no thickness.
 - **Never author a position**: no `articlePos`/`rotationY` on a root, no
   `pos`/`rotationY` on a group — the server drops them. Roots are
-  positioned by docking only; a new group is positioned with `placement`
+  positioned by their relation only; a new group is positioned with `placement`
   only — see [Positioning a group](#positioning-a-group).
 - **Extending a kitchen**: units next to an existing group are roots of that
   group, never a new group. Dock each new unit to a free docking vector of the
@@ -604,58 +565,41 @@ group one point and one rotation; the planner calculates every root position.
   the new root's `RightBottom`, a free `RightBottom` takes `LeftBottom`, a
   free `Top` vector takes the new root's `Bottom` vector) — one unit with
   [merge-article-into-group](#editing-a-group-the-command-tools), several at
-  once by adding the picks to the group from `get-plan-context` and
-  resubmitting it with its id. A new group is only for a free stretch of wall
+  once by adding the picks, each with its relation, to the group from
+  `get-plan-context` and resubmitting it with its id. A new group is only for a free stretch of wall
   or a free spot in the room. The other edits of an existing group — replace
   or remove a unit, change attributes, join groups — are command tools too.
-- Docking (`contextData`) relates the root modules of a group to each other
-  and is **required**: in a group with several roots, every additional root
-  must be docked, directly or through a chain, to the first root of the
-  group. A part the docking does not connect to the first root is docked by
-  the server to the free end of a row of its kind — floor units or wall units,
-  `mode` `StartStart`, `offset` `[0, 0, 0]` — and reported in `corrections`,
-  which may not be where the agent meant it; a part it cannot dock (no free row
-  end, a wall unit without a wall-unit row) leaves the group in `notLoaded`. An
-  article the catalog lists without docking vectors counts as having them: their
-  names are unknown on an empty plan, not missing, so a range hood is docked
-  like any other unit. The server reads every entry
-  in both directions, as the planner does; an entry that names a root outside
-  the group (a group keeps one to a root deleted from it) connects nothing. A side vector (`LeftBottom`, `RightBottom`) takes one neighbour per place: two roots docked to it with the same mode and offset would stand in the same place, so the server docks the later one to the free end of that row and reports it (a different mode or offset can put them at the back and the front of the edge, or apart); Top vectors (the neighbour's top edge and a unit above) and `BackBottom` (two units back to back with a wide one) may carry several. The docking entry is
-  written on the placed root (the anchor) and names the new root by its id under
-  `dockedRoots` — the new root itself is an entry of `roots` like every other root; the anchor's `ownDockingVector` meets the new root's
-  `dockingVector`. Docking vector *names* suffice; the indices are resolved
-  automatically. An `offset` only takes effect in this direction — an entry
-  written on the new root loses it.
-- Docking vectors are named edges of a root module (`dockInfos`; the names
-  per article are in the catalog as `dockingVectors`). `Left`/`Right` vectors
-  lie on the side faces and run from the back to the front, `Back` vectors
-  lie on the back face and run from left to right; `Top`/`Bottom` name the
-  upper and lower edge; `LeftBack`/`RightBack` exist only on corner articles
-  — they are the back edges of the arms of an L-shaped corner module, and
-  their start point is the article's corner point. Valid pairs (anchor → new
-  root): beside —
-  `RightBottom → LeftBottom` (to the right), `LeftBottom → RightBottom` (to
-  the left); on top — `LeftTop → LeftBottom`, `RightTop → RightBottom`,
-  `BackTop → BackBottom` (the new root may be narrower); back to back —
-  `BackBottom → BackBottom`, `BackTop → BackTop` (the new root is turned by
-  180°, omit `mode`). A range hood hangs between two wall units like a unit beside them:
-  `RightBottom` of the wall unit left of the gap → `LeftBottom` of the hood.
-- `mode` selects which endpoints coincide: `StartStart` (default) the start
-  points — the backs for side vectors, the left edges for back vectors;
-  `EndEnd` the end points; `StartEnd` and `EndStart` mix them. `offset` is a
-  translation `[x, y, z]` in millimetres added to the new root after docking
-  — `y` for the gap between a base unit and the wall unit above it, `x` for a
-  gap in a row. Recipes: a row (`RightBottom → LeftBottom`, chained), a wall
-  unit above a base unit (`LeftTop → LeftBottom` with a `y` offset), a narrow
-  wall unit right-aligned above a wide base unit (`BackTop → BackBottom`,
-  `EndEnd`, `y` offset), a worktop lying on a unit (`LeftTop → LeftBottom`,
-  no offset), an island (`BackBottom → BackBottom`, no `mode`), a room corner
-  (start the group with a corner article, `cornerArticle: true` in the
-  catalog, give the group a `placement` with the corner point as
-  `posGroup` and the `facingRotationY` of the wall that ends in that corner
-  as `posRotationY`, and continue the rows along both walls from its
-  `RightBottom` and `LeftBottom` — prefer this over butting two straight units
-  together).
+- **Relations**: every root after the first names one neighbour of the same
+  group by its id, with exactly one of these fields; the server builds the
+  docking from it (D34 in the
+  [behaviour reference](../../hi-mcp/docs/hi-mcp-behaviour.md#3-decisions)):
+
+  | Relation | Meaning | Docking the server builds |
+  | --- | --- | --- |
+  | `rightOf` / `leftOf` | right / left of that unit, as seen from the front | `RightBottom → LeftBottom` / `LeftBottom → RightBottom`; a wall unit beside a tall unit `RightTop → LeftTop` / `LeftTop → RightTop` — the tops are flush |
+  | `onTop` | stands on top of that unit (stacking, several levels); `align` `left` (default), `right`, `back`; `gapMm` lifts it | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
+  | `above` | a wall unit hanging above that floor unit; `gapMm` sets the gap | `LeftTop → LeftBottom` with the gap that puts the wall unit's top at the top of the tall units (D35) |
+  | `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom` |
+
+  Wall units continue `rightOf` or `leftOf` each other, and so does the range
+  hood. A corner kitchen starts with a corner article (`cornerArticle: true`)
+  and continues one row `rightOf` it and the other `leftOf` it. A root without
+  a relation continues the row of its kind — right of the previous floor unit
+  or wall unit in the list — and `corrections` says so. The server writes each
+  entry on the root the planner reaches first, so an offset always takes
+  effect; vertical docking vectors are never used.
+- **Docking vectors** are the named edges behind the relations (`dockInfos`;
+  the names per article are in the catalog as `dockingVectors`). Groups from
+  `get-plan-context` show their docking as `contextData`: per root its
+  `ownDockingVector` and the `dockingVector` of each root it names —
+  `RightBottom → LeftBottom` puts that root to the right, `LeftBottom →
+  RightBottom` to the left, a `Top` vector → a `Bottom` vector on top,
+  `BackBottom → BackBottom` back to back. `freeDockingVectors` are the vectors
+  a new unit can dock to; [merge-article-into-group](#editing-a-group-the-command-tools)
+  names them in `dockTo`. A payload may still carry `contextData`; the server
+  then reads every entry in both directions, docks a part the docking does not
+  connect to the free end of a row of its kind, and moves the later of two roots
+  on one side vector at the same place to the free end of that row.
 - Verify results numerically: the returned groups carry `position` (`pos`,
   `rotationY`, `footprint`) and per root the `dockingVectors`, the input
   attributes and the docking.
@@ -667,7 +611,7 @@ that creates it: `placement: { posGroup, posRotationY, rootId? }` — the same
 for a group at a wall, in a corner, or anywhere in the room.
 
 - **One group per kitchen**: every unit standing beside, above or back to
-  back with another unit is a root of the same group, docked to it. The group
+  back with another unit is a root of the same group, related to it. The group
   carries one placement — a kitchen is never split into several positioned
   groups.
 - **Point**: `posGroup` is the room point of the group's back left bottom
@@ -690,9 +634,8 @@ for a group at a wall, in a corner, or anywhere in the room.
   | Centred on the wall | the same, d = (lengthMm − group width) / 2 |
   | Right end flush into the corner at the wall's start | the same, d = lengthMm − group width |
 
-  The group width is the sum of the unit widths of the row plus any x
-  docking offsets (gaps) between them (`dimensions` in the catalog;
-  `position.footprint.widthMm` of a loaded group already includes the gaps).
+  The group width is the sum of the unit widths of the row (`dimensions` in
+  the catalog; `position.footprint.widthMm` of a loaded group gives it).
 - **Rectangular room** (back = top, front = bottom in the top-view image). A
   corner takes the corner point as `posGroup` and the `facingRotationY` of the
   wall that ends in that corner; a corner kitchen starts with a corner
@@ -728,7 +671,8 @@ With a connected agent, this sequence exercises the whole example:
 1. `get-plan-context` — rooms (with walls), compact articles (with docking
    vectors and dimensions), current groups; `find-attributes` for the
    attribute behind a requested property
-2. `create-or-replace-groups` — create one group with two docked cabinets and
+2. `create-or-replace-groups` — create one group of two cabinets, the second
+   `rightOf` the first, and
    a `placement` with the right wall's `end` as `posGroup` and its
    `facingRotationY` as `posRotationY`; they appear arranged along the right
    wall, from the back right corner
@@ -758,8 +702,8 @@ operations:
 | "Make all cabinets in the group 900 mm high." | `get-plan-context`, `change-group-attribute` |
 | "Make the fronts of the whole kitchen white." | `find-attributes`, `change-group-attribute` |
 | "Which attribute sets the front colour, and which values are allowed?" | `find-attributes` |
-| "Put a wall unit above each base unit." | `get-plan-context`, `create-or-replace-groups` (replace, stacking recipe) |
-| "Plan an L-shaped kitchen into the back right corner." | `get-plan-context` (a `cornerArticle`), `create-or-replace-groups` (corner recipe, `placement` at the corner point, `posRotationY` 270) |
+| "Put a wall unit above each base unit." | `get-plan-context`, `create-or-replace-groups` (replace, a wall unit `above` each base unit) |
+| "Plan an L-shaped kitchen into the back right corner." | `get-plan-context` (a `cornerArticle`), `create-or-replace-groups` (a corner article with rows `rightOf` and `leftOf` it, `placement` at the corner point, `posRotationY` 270) |
 | "Move the group to the back right corner." | `get-plan-context`, `place-group` (`wall: "right"`, `alignment: "top"`) |
 | "Move the kitchen to the left wall, centred." | `get-plan-context`, `place-group` (`wall: "left"`) |
 | "Replace the middle cabinet with a drawer unit." | `get-plan-context`, `exchange-root-module` |

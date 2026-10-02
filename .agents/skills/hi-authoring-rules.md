@@ -4,9 +4,9 @@
 
 ## Core Principle
 
-**Never author root positions.** Roots are positioned by docking; a new group is positioned by its `placement` — one point and one rotation taken from the walls.
+**Never author root positions.** Roots are positioned by their relation — each unit names its neighbour, and the server builds the docking; a new group is positioned by its `placement` — one point and one rotation taken from the walls.
 
-**One kitchen is one group.** Every unit standing beside, above or back to back with another unit is a docked root of the same group; the group carries one placement. Never split a kitchen into several positioned groups.
+**One kitchen is one group.** Every unit standing beside, above or back to back with another unit is a related root of the same group; the group carries one placement. Never split a kitchen into several positioned groups.
 
 Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rotationY` on a root — are **ignored**: the server drops them and reports it in `corrections`.
 
@@ -28,7 +28,10 @@ Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rot
   id: string,              // Unique within group
   articleId: string,       // From catalog (required)
   attributes: Attribute[],  // Optional: attribute overrides
-  contextData: ContextData // Optional: docking information
+  // one relation to a root of the same group (every root after the first):
+  rightOf | leftOf | onTop | above | behind: string,
+  align: 'left' | 'right' | 'back',  // Optional, onTop and above
+  gapMm: number           // Optional, onTop and above
 }
 ```
 
@@ -52,7 +55,32 @@ Access via `get-plan-context` with `include: 'articles'`:
 }
 ```
 
+## Relations
+
+Every root after the first names one neighbour of the same group by its id, with exactly one
+relation; the server compiles the docking (`contextData`) from it
+([behaviour reference D34](../../hi-mcp/docs/hi-mcp-behaviour.md#3-decisions)):
+
+| Relation | Meaning | Docking the server builds |
+|---|---|---|
+| `rightOf` / `leftOf` | right / left of that unit, as seen from the front | `RightBottom → LeftBottom` / `LeftBottom → RightBottom`; a wall unit beside a tall unit: `RightTop → LeftTop` / `LeftTop → RightTop`, tops flush |
+| `onTop` | stands on that unit, any depth; `align` `left` (default), `right`, `back`; `gapMm` lifts it | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
+| `above` | a wall unit hanging above that floor unit; `gapMm` sets the gap | `LeftTop → LeftBottom` with the gap that puts its top at the top of the tall units (D35: tall − wall − base `mod_Height`, Furniture_Smith 660) |
+| `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom` |
+
+- Wall units and the range hood continue `rightOf` / `leftOf` each other.
+- A corner kitchen starts with a corner article and continues one row `rightOf` it and the other
+  `leftOf` it.
+- A root without a relation continues the row of its kind (floor units, wall units); the first
+  wall unit hangs beside a tall unit, else above a floor unit. `corrections` reports it.
+- The server writes each entry on the root the planner reaches first, so an offset takes effect,
+  and it never uses the vertical docking vectors.
+
 ## Docking System
+
+The relations compile to these docking vectors. Groups from `get-plan-context` show them as
+`contextData`, `merge-article-into-group` names them in `dockTo`, and a payload may still carry
+`contextData`.
 
 ### Vector Types
 
@@ -67,7 +95,8 @@ Access via `get-plan-context` with `include: 'articles'`:
 |---|---|---|---|---|
 | Right | RightBottom | LeftBottom | StartStart | 0 |
 | Left | LeftBottom | RightBottom | StartStart | 0 |
-| Above | LeftTop/RightTop/BackTop | LeftBottom/RightBottom/BackBottom | StartStart | ~600 |
+| Above | LeftTop/RightTop/BackTop | LeftBottom/RightBottom/BackBottom | StartStart | the gap below a wall unit (660 in Furniture_Smith) |
+| Wall unit beside a tall unit | RightTop / LeftTop of the tall unit | LeftTop / RightTop | StartStart | 0 — tops flush |
 | Behind | BackBottom | BackBottom | (none) | 0 |
 | Range hood in a gap between wall units | RightBottom of the wall unit left of the gap | LeftBottom of the hood | StartStart | 0 |
 
@@ -143,7 +172,7 @@ placement: {
   article (`mod_CarcaseDirection` Right) the server adds 90° itself; the group is read back with
   the `posRotationY` it was placed with.
 
-| Rectangular room (back = top in the top view) | `posRotationY` | Corner: `RightBottom` row along | Corner: `LeftBottom` row along |
+| Rectangular room (back = top in the top view) | `posRotationY` | Corner: the units `rightOf` the corner article run along | Corner: the units `leftOf` it run along |
 |---|---|---|---|
 | Back wall / left back corner | 0 | back wall, to the right | left wall, to the front |
 | Left wall / left front corner | 90 | left wall, to the back | front wall, to the right |
@@ -190,6 +219,9 @@ built is an error. Every guard and correction:
 [hi-mcp-behaviour.md §8](../../hi-mcp/docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
 
 ### Corrected and reported in `corrections` (the group is loaded):
+- A root without a relation (in a group with relations) — put into the row of its kind; a relation to an unknown root or to itself, or one that closes a ring — ignored or dropped
+- A floor unit `above` a unit — put `rightOf` it; a wall unit `rightOf` / `leftOf` a base unit — hung `above` it; `behind` a corner article — ignored
+- `gapMm` beside a unit, an unknown `align`, a second relation field — ignored
 - `pos`/`rotationY` on a group, `articlePos`/`rotationY` on a root — dropped
 - `repositioningData` on a group — taken as the placement
 - `placement`: other fields dropped, `posGroup` `[x, z]` completed to `[x, 0, z]`, a `rootId` that names no root dropped; a placement the server cannot use (`posGroup` not a point, no numeric `posRotationY`) and a placement on a group that is already in the plan are not used — the planner positions the group, an existing group keeps its position
@@ -217,13 +249,8 @@ built is an error. Every guard and correction:
   // d = (3000 - 1200) / 2 = 900 from the end towards the start
   placement: { posGroup: [0, 0, -900], posRotationY: 90 },
   roots: [
-    {
-      id: 'u1', articleId: 'base-unit-600',
-      contextData: {
-        dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'u2', dockingVector: 'LeftBottom' }] }]
-      }
-    },
-    { id: 'u2', articleId: 'base-unit-600' }
+    { id: 'u1', articleId: 'base-unit-600' },
+    { id: 'u2', articleId: 'base-unit-600', rightOf: 'u1' }
   ]
 }
 ```
@@ -234,37 +261,24 @@ built is an error. Every guard and correction:
   // left back corner of a 4000 x 3000 room: the end of the back wall, facing 0
   placement: { posGroup: [0, 0, -3000], posRotationY: 0 },
   roots: [
-    {
-      id: 'corner', articleId: 'corner-unit-900', cornerArticle: true,
-      contextData: {
-        dockedRoots: [
-          { ownDockingVector: 'LeftBottom', dockedRoots: [{ id: 'u1', dockingVector: 'RightBottom' }] },
-          { ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'u2', dockingVector: 'LeftBottom' }] }
-        ]
-      }
-    },
-    { id: 'u1', articleId: 'base-unit-600' },
-    { id: 'u2', articleId: 'base-unit-600' }
+    { id: 'corner', articleId: 'corner-unit-900' },
+    { id: 'u1', articleId: 'base-unit-600', leftOf: 'corner' },
+    { id: 'u2', articleId: 'base-unit-600', rightOf: 'corner' }
   ]
 }
 ```
 
-### Pattern 3: Base with Wall Unit Above
+### Pattern 3: Wall Units Beside a Tall Unit and Above a Base Unit
 ```javascript
 {
-  // centred on the left wall: d = (3000 - 600) / 2 = 1200
-  placement: { posGroup: [0, 0, -1200], posRotationY: 90 },
+  // centred on the left wall: d = (3000 - 1200) / 2 = 900
+  placement: { posGroup: [0, 0, -900], posRotationY: 90 },
   roots: [
-    {
-      id: 'base', articleId: 'base-unit-600',
-      contextData: {
-        dockedRoots: [{
-          ownDockingVector: 'LeftTop',
-          dockedRoots: [{ id: 'wall', dockingVector: 'LeftBottom', offset: [0, 600, 0] }]
-        }]
-      }
-    },
-    { id: 'wall', articleId: 'wall-unit-600' }
+    { id: 'tall', articleId: 'tall-unit-600' },
+    { id: 'base', articleId: 'base-unit-600', rightOf: 'tall' },
+    { id: 'wall1', articleId: 'wall-unit-600', rightOf: 'tall' },  // tops flush with the tall unit
+    // without a tall unit: { id: 'wall1', articleId: 'wall-unit-600', above: 'base' }
+    { id: 'top', articleId: 'top-unit-600', onTop: 'tall' }       // stacking
   ]
 }
 ```
@@ -272,8 +286,8 @@ built is an error. Every guard and correction:
 ## Common Mistakes
 
 1. **Direct coordinates**: Never use `articlePos`, `rotationY`, `pos`, `rotationY`
-2. **Unconnected roots**: Every root must be reachable through the docking from the first root; the server docks an unconnected root to the free end of a row of its kind, which may not be where you meant it
-3. **Wrong vector pairs**: Use compatible pairs (RightBottom → LeftBottom, etc.)
+2. **Roots without a relation**: Every root after the first names its neighbour; a root without a relation continues the row of its kind, which may not be where you meant it
+3. **Docking vectors in a new group**: Name the neighbour with a relation instead of writing `contextData`
 4. **Docking to non-existent root**: An entry naming an id outside the group connects nothing; a root docked only that way is treated as unconnected — docked to the free end of a row (reported in `corrections`), or the group is not built when that is impossible (`notLoaded`)
 5. **Circular docking**: A root cannot dock to itself directly or indirectly
 

@@ -187,8 +187,10 @@ anywhere in the room.
 
 - `posGroup` is the room point of the group's back left bottom corner; in a room corner it is the
   corner point.
-- One kitchen is one group: every further unit is a docked root of the same group, never a
-  separately positioned group.
+- One kitchen is one group: every further unit is a root of the same group, never a separately
+  positioned group. Each unit after the first names its neighbour with one relation (`rightOf`,
+  `leftOf`, `onTop`, `above`, `behind`), and the server builds the docking from it — see
+  [hi-authoring-rules.md](./hi-authoring-rules.md#relations).
 - `posRotationY` is in degrees, counter-clockwise as seen from above. Against a wall it is the
   wall's `facingRotationY` (rectangular room: back 0, left 90, front 180, right 270), and
   `posGroup` lies on the wall, from its `end` towards its `start`.

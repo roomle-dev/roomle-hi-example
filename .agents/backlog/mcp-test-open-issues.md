@@ -16,7 +16,6 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | # | Issue | Kind | Test prompt | Priority |
 |---|---|---|---|---|
 | 1 | [A taken side is re-targeted to the far end of the row](#1-a-taken-side-is-re-targeted-to-the-far-end-of-the-row) | bug, MCP server | add one unit; image: kitchen in the back right corner | high — a unit behind the wall, a row through the wall |
-| 2 | [An on-top docking is counted as a side neighbour](#2-an-on-top-docking-is-counted-as-a-side-neighbour) | bug, MCP server | full kitchen around the corner; image: kitchen in the back right corner | high — a wall cabinet on the floor |
 | 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | four cabinets on the back wall; oven, fridge, sink in the corner | high — a row through the wall |
 | 4 | [The side correction walks through a corner article](#4-the-side-correction-walks-through-a-corner-article) | hardening | kitchen in the back right corner | medium |
 | 5 | [A range hood without wall units has no docking recipe](#5-a-range-hood-without-wall-units-has-no-docking-recipe) | bug, rules | oven, range hood, sink, fridge; full kitchen around the corner | high — a hood on the floor or on the worktop |
@@ -33,7 +32,8 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) | image only, no text | critical — an attribute edit fails |
 | 17 | [A chat turn without an answer for 10 minutes](#17-a-chat-turn-without-an-answer-for-10-minutes) | hardening, chat | image: kitchen on the left-hand wall; full kitchen around the corner | medium |
 
-Issues 1–3 are wrong results of the server's own corrections or placement; issues 5, 6 and 10 are
+Issues 1 and 3 are wrong results of the server's own corrections or placement (issue 2, an on-top
+docking counted as a side neighbour, is fixed: `sidePartnersOf` counts side pairs only, RML-18038); issues 5, 6 and 10 are
 requests the tool API makes the agent get wrong. They come first.
 
 ## 1. A taken side is re-targeted to the far end of the row
@@ -65,31 +65,6 @@ named direction.
   later one went to the end of the tall row, not to the corner unit's free `LeftBottom`. The result
   is a straight 6271 mm row through the front wall instead of the image's L shape.
 
-## 2. An on-top docking is counted as a side neighbour
-
-**Problem.** `wall1` sits on top of a base unit (`base.LeftTop → wall1.LeftBottom`), and `wall2` is
-docked beside `wall1` on its `LeftBottom`. The side vector correction reports two roots on `wall1`'s
-`LeftBottom` at the same place and moves `wall2` along the floor row: a wall cabinet on the floor.
-
-**Cause.**
-- `sidePartnersOf` (`tool-executors.ts`) records a partner on a root's side vector whenever *that*
-  vector is `LeftBottom`/`RightBottom`, whatever the other end is. The entry `base.LeftTop →
-  wall1.LeftBottom` puts `base` on `wall1`'s `LeftBottom`, although it is a carrier below, not a
-  neighbour beside.
-- `rowEnd` then follows the carrier link down into the floor row.
-
-**To do.**
-- Count a pairing as side neighbours only when both vectors are side vectors (`LeftBottom` ↔
-  `RightBottom`). An on-top pairing (`*Top` ↔ `*Bottom`) is no neighbour.
-- `rowEnd` follows side pairings only, so a walk never changes level.
-- Check `dockTarget` with the reciprocal entries that `get-plan-context` returns.
-
-**Test.** A wall unit on a base unit with a second wall unit beside the first loads unchanged with
-no correction. Two wall units beside each other on one side vector are still separated.
-
-**Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-5.4-mini 07. `backRun1.LeftTop → backWall1` (a wall unit on a base
-unit) was counted on `backWall1`'s `LeftBottom`, and `leftTall` was moved to the end of another row.
-
 ## 3. A docking ring anchors the wrong root
 
 **Problem.** The model docks cab1 → cab2 → cab3 → cab4 along `RightBottom` and also cab4 on cab1's
@@ -112,6 +87,10 @@ docked to both ends of a corner kitchen's legs closes the same kind of ring.
 
 **Test.** The ring of four loads as one row with the ring entry dropped; the anchor is the row's
 left end (cab1); the correction is reported.
+
+**Relation payloads** (RML-18038): fixed — one relation per unit cannot form a ring that the server
+does not see; a relation that closes one is dropped and reported (G33). Open for docking written as
+`contextData`.
 
 ## 4. The side correction walks through a corner article
 
@@ -165,6 +144,9 @@ to the floor row on purpose.
 - Hoods that hang: gpt-5-mini 04 docked the hood on the oven base's `LeftTop` with
   `offset [0, 600, 0]`, and gpt-6-astra 03/04 hung it between two wall cabinets (offset 650/700).
   The recipe the to-do asks for works.
+
+**Relation payloads** (RML-18038): the hood counts as a wall unit — it continues `rightOf` / `leftOf`
+the wall units, or hangs `above` the hob with the gap of the wall units (D35). Not verified live yet.
 
 ## 6. A material for the whole kitchen is not applied
 
@@ -246,6 +228,9 @@ the anchor's docking vectors, but the server keeps only its frame.
 
 **Test.** The shape above with the corner's vectors known: the sink entry is dropped and reported,
 and the sink is docked to a free row end, not inside the corner.
+
+**Relation payloads** (RML-18038): the server picks the vectors of the relation; `behind` a corner
+article is ignored and reported (G36). Open for docking written as `contextData`.
 
 ## 8. Root module ids are passed on unresolved
 
@@ -365,6 +350,11 @@ The library never hangs a wall unit by itself; only the docking does.
 - gpt-6-astra hung its wall units with offsets 650/700. The height the server should derive is still
   the open decision.
 
+**Relation payloads** (RML-18038): `above` hangs a wall unit with the derived gap (D35: tall − wall −
+base `mod_Height`, 660 in Furniture_Smith), a wall unit beside a tall unit docks by the Top vectors,
+and a wall unit `rightOf` / `leftOf` a base unit is hung `above` it (G35). The source of the height
+(D35) is still to be confirmed. Open for docking written as `contextData`.
+
 ## 11. A merged group reaches into the back wall
 
 **Problem.** After `delete-root-module` and `merge-groups`, the merged group's toe kick reaches
@@ -431,6 +421,9 @@ floor row, and the correction names them.
   roots on one side vector the server could not move apart.
 - The third call loaded, with walnut on one unit.
 
+**Relation payloads** (RML-18038): fixed — a wall unit without a relation hangs beside a tall unit or
+above a floor unit (G31). Open for docking written as `contextData`.
+
 ## 14. A floor unit is docked onto a top vector
 
 **Problem.** The model docked the sink base unit `SUT60` on `U2TB90.LeftTop` with
@@ -447,6 +440,9 @@ puts a floor unit (category not "Wall Units") on a `*Top` vector passes unchange
 **Test.** A sink base unit on a base unit's `LeftTop` is docked beside it, with the correction.
 
 **Latest run** (`mcp-test-2026-10-02_12-45-24`): 06.
+
+**Relation payloads** (RML-18038): fixed — a floor unit `above` a unit is put `rightOf` it (G34). Open
+for docking written as `contextData`.
 
 ## 15. A G7 correction docks a part by a wall unit at floor level
 
@@ -470,6 +466,9 @@ unit as the first root of the part with a free `LeftBottom`: the part is docked 
 and the wall unit stays on its carrier.
 
 **Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-5.4-mini 07.
+
+**Relation payloads** (RML-18038): fixed — a root without a relation continues the row of its kind
+in list order (G31); G7 does not run for them. Open for docking written as `contextData`.
 
 ## 16. `change-module-attribute` fails with "checkAttributes.get is not a function"
 

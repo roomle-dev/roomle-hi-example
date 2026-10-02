@@ -37,10 +37,17 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKeyEnv": "AZURE_GPT_KEY" }]' docs
 ```
 
 - A subset of the tests the user names: filter `.tests` by `id` the same way.
-- Tests with an `image` stay only for models that read images — every `claude*` and `gemini*` model
-  and the model ids in `IMAGE_INPUT_MODELS` of [chat-config.ts](../../hi-mcp/hi-mcp-chat/chat-config.ts)
-  (`gpt-5-mini`, `gpt-5.4-mini` and `gpt-6-astra` do). For any other model, leave them out of the
-  file and list them in the report as skipped.
+- Tests with an `image` stay only for models that read images. The chat backend decides that for
+  the model the provider name resolves to: `readsImages(resolveChatModel(<provider>))` in
+  [chat-config.ts](../../hi-mcp/hi-mcp-chat/chat-config.ts).
+  - Every alias of the launcher reads images: `claude`, `anthropic`, `gemini`, `google`, `mistral`,
+    `mistral-large`, `mistral-medium`, `azure`, `openai`, and the deployments `gpt-5-mini`,
+    `gpt-5.4-mini`, `gpt-6-astra`.
+  - A full `mistral-*` id, or an Azure deployment named by `HI_CHAT_MODEL`, reads images only if it
+    is in `IMAGE_INPUT_MODELS`.
+  - The launcher prints `Images: yes` or `no` at its start.
+  - For a model without images, leave the image tests out of the file and list them in the report
+    as skipped.
 
 ### 4. Run
 

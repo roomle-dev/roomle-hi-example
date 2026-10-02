@@ -22,7 +22,7 @@ plan: https://www.roomle.com/t/ligna-store-test/kitchens/?id=ps_qowbl2cb7hbbio7i
 
 plan snapshot id: `ps_qowbl2cb7hbbio7iw6k611up93h8s8j`
 
-![Kitchen 3](./images/kitchen-3.png)
+![Kitchen 3](./images/kitchen-3.jpeg)
 
 ## Kitchen 4
 

@@ -177,7 +177,8 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 
 - **One plan change at a time.** The tools that change the plan wait for each other (D4). The anchor
   probe tells its own groups by comparing the plan before and after its load, and a concurrent load
-  would disturb that.
+  would disturb that. `get-plan-context` waits with them: it reads the plan context and the calculated
+  groups its positions come from, and both reads see the same plan.
 - **The HI chat** (`hi-mcp-chat`) is an MCP client of this server. It gives the model a
   three-sentence system prompt and **not** the server's instructions, so the model learns the rules
   only when it calls `get-authoring-rules`. A chat turn has 16 steps; the last one cannot call a

@@ -1344,7 +1344,9 @@ const freePlacementAlongWall = (
 // change the plan run one after another: the anchor probe tells the groups it
 // loaded by comparing the plan's groups before and after its load, and the
 // groups a concurrent call loads or splits meanwhile would count as its own
-// and be removed.
+// and be removed. get-plan-context waits as well: it reads the plan twice -
+// the plan context and the calculated groups its positions come from - and a
+// plan change between the two would mix two states of a group.
 let planChanges: Promise<unknown> = Promise.resolve();
 
 const oneAtATime =
@@ -1393,7 +1395,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
 // sections, 3D room contours with derived walls); the executor passes it
 // through with the articles' cornerArticle flag completed and without their
 // corner points, which only the server uses.
-  'get-plan-context': inPlacementFrame(async (roomDesignerApi, args) => {
+  'get-plan-context': oneAtATime(inPlacementFrame(async (roomDesignerApi, args) => {
     // an unknown section is ignored
     const known = (Array.isArray(args.include) ? args.include : []).filter(
       (section): section is PlanContextSection =>
@@ -1410,7 +1412,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       ...context,
       articles: articles.map((article) => agentFacingArticle(article, articles)),
     };
-  }),
+  })),
 
   'find-attributes': async (roomDesignerApi, args) => {
     const needle = String(args.text ?? '')

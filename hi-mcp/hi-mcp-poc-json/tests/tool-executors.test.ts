@@ -2638,7 +2638,25 @@ describe('plan changes', () => {
     expect(events).toEqual(['start a', 'end a', 'start b', 'end b']);
   });
 
-  it('runs the next plan change after one that fails', async () => {
+  it('reads the plan context after a running plan change, both reads in one plan state', async () => {
+    const events: string[] = [];
+    const api = recordingApi(events);
+    api.extended.getExternalObjectPlanContext.mockImplementation(async () => {
+      events.push('plan context');
+      return planContextFixture;
+    });
+    api.extended.getExternalObjectGroups.mockImplementation(async () => {
+      events.push('calculated groups');
+      return [];
+    });
+    await Promise.all([
+      toolExecutors['delete-root-module'](api, { rootModuleId: 'a' }),
+      toolExecutors['get-plan-context'](api, { include: ['groups'] }),
+    ]);
+    expect(events).toEqual(['start a', 'end a', 'plan context', 'calculated groups']);
+  });
+
+    it('runs the next plan change after one that fails', async () => {
     const events: string[] = [];
     const api = recordingApi(events, ['a']);
     const [first, second] = await Promise.allSettled([

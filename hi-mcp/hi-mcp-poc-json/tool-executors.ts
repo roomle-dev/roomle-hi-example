@@ -9,6 +9,7 @@ import {
   toRepositioningData,
 } from './group-placement';
 import type { AnchorFrame } from './group-placement';
+import { RELATIONS, RELATION_FIELDS, WALL_UNIT, relationsToDocking } from './group-layout';
 import {
   adjoiningWall,
   alignmentRunsParallel,
@@ -75,6 +76,9 @@ const toArticlePick = (root: any) => ({
   ...(root.contextData && {
     contextData: stripDockingIndices(root.contextData),
   }),
+  ...Object.fromEntries(
+    RELATION_FIELDS.filter((field) => root[field] !== undefined).map((field) => [field, root[field]]),
+  ),
 });
 
 // The planner's own roots on the way back into the planner: unchanged apart
@@ -506,6 +510,10 @@ const sidePartnersOf = (roots: any[]): SidePartners => {
         if (!rootIds.has(dockedRoot?.id) || dockedRoot.id === root.id) {
           continue;
         }
+        // a unit on top of another is no neighbour beside it
+        if (!SIDE_VECTORS.includes(dockedContext.ownDockingVector) || !SIDE_VECTORS.includes(dockedRoot.dockingVector)) {
+          continue;
+        }
         meet(root.id, dockedContext.ownDockingVector, dockedRoot.id, dockingPlace(dockedRoot, false));
         meet(dockedRoot.id, dockedRoot.dockingVector, root.id, dockingPlace(dockedRoot, true));
       }
@@ -615,8 +623,6 @@ const removeDocking = (roots: any[], rootId: string, vector: string, partnerId: 
     }
   }
 };
-
-const WALL_UNIT = /\bwall units?\b/i;
 
 // The docking vector names of an article; undefined when the catalog does not
 // tell them. The catalog takes them from the template or from a calculated
@@ -840,7 +846,16 @@ const GROUP_FIELDS = ['id', 'libraryId', 'roots', 'placement', 'repositioningDat
 
 const READ_ONLY_GROUP_FIELDS = ['position', 'logMessages'];
 
-const ROOT_FIELDS = ['id', 'articleId', 'libraryId', 'attributes', 'contextData', 'articlePos', 'rotationY'];
+const ROOT_FIELDS = [
+  'id',
+  'articleId',
+  'libraryId',
+  'attributes',
+  'contextData',
+  'articlePos',
+  'rotationY',
+  ...RELATION_FIELDS,
+];
 
 const READ_ONLY_ROOT_FIELDS = [
   'articleName',
@@ -1123,6 +1138,13 @@ const prepareGroup = (
       .filter((id: unknown) => typeof id === 'string' && id.length > 0),
   );
   const referenced = dockedRootIds(group.roots);
+  for (const root of group.roots as any[]) {
+    for (const relation of RELATIONS) {
+      if (typeof root[relation] === 'string') {
+        referenced.add(root[relation]);
+      }
+    }
+  }
   const rootIds = new Set<string>();
   group.roots.forEach((root: any, rootIndex: number) => {
     if (typeof root.id !== 'string' || root.id.length === 0) {
@@ -1481,6 +1503,10 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     const articles = (catalog.articles ?? []) as any[];
     callGroups = keepBuildable(callGroups, notLoaded, ({ group, index }) =>
       resolveArticleIds(articles, group, `posGroups[${index}]`, corrections),
+    );
+    failIfNothingLeft();
+    callGroups = keepBuildable(callGroups, notLoaded, ({ group, index }) =>
+      relationsToDocking(group, articles, `posGroups[${index}]`, corrections),
     );
     failIfNothingLeft();
 

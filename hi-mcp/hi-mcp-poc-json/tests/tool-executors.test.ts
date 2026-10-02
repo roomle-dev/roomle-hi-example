@@ -1834,6 +1834,159 @@ describe('create-or-replace-groups loading', () => {
   });
 });
 
+describe('create-or-replace-groups relations', () => {
+  const kitchenArticle = (articleId: string, category: string, height: number) => ({
+    articleId,
+    category,
+    libraryId: 'lib-1',
+    catalog: {},
+    cornerArticle: false,
+    rootModules: [
+      {
+        module: { id: 'mr_StorageunitSingle' },
+        dimensions: [{ id: 'mod_Height', name: 'Height', value: height }],
+        mainAttributes: [],
+        dockingVectors: [],
+        subModules: [],
+      },
+    ],
+  });
+  const kitchenContext = {
+    ...planContextFixture,
+    articles: [
+      kitchenArticle('base', 'Kitchen | Base Units | Storage', 720),
+      kitchenArticle('tall', 'Kitchen | Tall Units | Storage', 2100),
+      kitchenArticle('wall', 'Kitchen | Wall Units | Storage', 720),
+    ],
+  };
+  const loaded = async (posGroups: unknown[]) => {
+    const api = createApi(kitchenContext);
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups,
+    })) as Record<string, any>;
+    const calls = api.extended.loadExternalObjectGroupLayout.mock.calls as unknown as any[][];
+    return { result, loadedGroup: calls[calls.length - 1][0].posGroups[0] };
+  };
+  const dockingOf = (group: any) =>
+    Object.fromEntries(group.roots.map((root: any) => [root.id, root.contextData?.dockedRoots ?? []]));
+  const entry = (id: string, dockingVector: string) => ({
+    id,
+    dockingVector,
+    mode: 'StartStart',
+    offset: [0, 0, 0],
+  });
+
+  it('loads a relation payload as docking, without the relation fields', async () => {
+    const { result, loadedGroup } = await loaded([
+      {
+        libraryId: 'lib-1',
+        roots: [
+          { id: 't1', articleId: 'tall' },
+          { id: 'b1', articleId: 'base', rightOf: 't1' },
+          { id: 'w1', articleId: 'wall', rightOf: 't1' },
+          { id: 'w2', articleId: 'wall', rightOf: 'w1' },
+        ],
+      },
+    ]);
+    expect(dockingOf(loadedGroup)).toEqual({
+      t1: [
+        { ownDockingVector: 'RightBottom', dockedRoots: [entry('b1', 'LeftBottom')] },
+        { ownDockingVector: 'RightTop', dockedRoots: [entry('w1', 'LeftTop')] },
+      ],
+      b1: [],
+      w1: [{ ownDockingVector: 'RightBottom', dockedRoots: [entry('w2', 'LeftBottom')] }],
+      w2: [],
+    });
+    expect(JSON.stringify(loadedGroup)).not.toMatch(/rightOf|leftOf|onTop|"above"|behind/);
+    expect(result.corrections).toBeUndefined();
+  });
+
+  it('reports the defaults of the relations, and the relation fields not as unused', async () => {
+    const { result, loadedGroup } = await loaded([
+      {
+        roots: [
+          { id: 'b1', articleId: 'base' },
+          { id: 'b2', articleId: 'base' },
+          { id: 'w1', articleId: 'wall', above: 'b1', gapMm: 700 },
+        ],
+      },
+    ]);
+    expect(result.corrections).toEqual(["posGroups[0]: root 'b2' names no neighbour - it was put rightOf 'b1'"]);
+    expect(dockingOf(loadedGroup).b1).toHaveLength(2);
+    expect(dockingOf(loadedGroup).b1).toEqual(
+      expect.arrayContaining([
+        { ownDockingVector: 'RightBottom', dockedRoots: [entry('b2', 'LeftBottom')] },
+        {
+          ownDockingVector: 'LeftTop',
+          dockedRoots: [{ id: 'w1', dockingVector: 'LeftBottom', mode: 'StartStart', offset: [0, 700, 0] }],
+        },
+      ]),
+    );
+  });
+
+  it('anchors a placed relation payload at the left end of its floor row', async () => {
+    const { loadedGroup } = await loaded([
+      {
+        placement: { posGroup: [4000, 0, -3000], posRotationY: 270 },
+        roots: [
+          { id: 'w1', articleId: 'wall', above: 'b1' },
+          { id: 'b1', articleId: 'base' },
+          { id: 'b2', articleId: 'base', rightOf: 'b1' },
+          { id: 'b0', articleId: 'base', leftOf: 'b1' },
+        ],
+      },
+    ]);
+    expect(loadedGroup.roots[0].id).toBe('b1');
+    expect(loadedGroup.repositioningData.rootId).toBe('b0');
+  });
+
+  it('docks the second of two units rightOf one unit to the free end of that row', async () => {
+    const { result, loadedGroup } = await loaded([
+      {
+        roots: [
+          { id: 'b1', articleId: 'base' },
+          { id: 'b2', articleId: 'base', rightOf: 'b1' },
+          { id: 'b3', articleId: 'base', rightOf: 'b1' },
+        ],
+      },
+    ]);
+    expect(dockingOf(loadedGroup).b2).toEqual([
+      { ownDockingVector: 'RightBottom', dockedRoots: [entry('b3', 'LeftBottom')] },
+    ]);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: roots 'b2', 'b3' were docked to the RightBottom of root 'b1' at the same place - 'b3' was docked to the RightBottom of 'b2', the free end of that row",
+    ]);
+  });
+
+  it('does not count a unit on top of another as its neighbour beside it', async () => {
+    // open issue 2: base.LeftTop carries top1, whose LeftBottom also has a neighbour
+    const roots = [
+      {
+        id: 'base',
+        articleId: 'article-1',
+        contextData: {
+          dockedRoots: [{ ownDockingVector: 'LeftTop', dockedRoots: [entry('top1', 'LeftBottom')] }],
+        },
+      },
+      {
+        id: 'top1',
+        articleId: 'article-1',
+        contextData: {
+          dockedRoots: [{ ownDockingVector: 'LeftBottom', dockedRoots: [entry('top2', 'RightBottom')] }],
+        },
+      },
+      { id: 'top2', articleId: 'article-1' },
+    ];
+    const api = createApi(planContextFixture);
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [{ roots: structuredClone(roots) }],
+    })) as Record<string, any>;
+    const calls = api.extended.loadExternalObjectGroupLayout.mock.calls as unknown as any[][];
+    expect(calls[calls.length - 1][0].posGroups[0].roots).toEqual(roots);
+    expect(result.corrections).toBeUndefined();
+  });
+});
+
 describe('place-group', () => {
   // a calculated group as getExternalObjectGroups returns it (raw), next to
   // the shaped groups of the plan context

@@ -241,16 +241,16 @@ describe('hi-mcp-server tool calls', () => {
     );
   });
 
-  it('carries the one-group principle and the docking examples', async () => {
+  it('carries the one-group principle and the relation examples', async () => {
     const client = await connectClient(createMockPlannerApi());
     const text = textOf(
       await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
     );
     expect(text).toContain('One kitchen is one group');
-    // docking to the left, spelled out as a payload snippet
-    expect(text).toContain(
-      '{ "ownDockingVector": "LeftBottom", "dockedRoots": [{ "id": "B", "dockingVector": "RightBottom"',
-    );
+    // a row, wall units beside a tall unit and the second leg of a corner kitchen
+    expect(text).toContain('{ "id": "u2", "articleId": "<articleId>", "rightOf": "u1" }');
+    expect(text).toContain('{ "id": "w1", "articleId": "<wall unit>", "rightOf": "t1" }');
+    expect(text).toContain('{ "id": "l1", "articleId": "<base unit>", "leftOf": "c1" }');
     // the complete L-shaped corner kitchen example, placed at the room corner point
     expect(text).toContain(
       '"placement": { "posGroup": [<corner x>, 0, <corner z>], "posRotationY": 270 }',
@@ -313,14 +313,14 @@ describe('hi-mcp-server tool calls', () => {
     expect(served).not.toMatch(/reject/i);
     expect(served).not.toMatch(/lists? the new root/);
     expect(rules).toContain(
-      'name the new root by its id under dockedRoots - the new root itself is an entry of roots like every other root',
+      'every root after the first names one neighbour of the same group by its id, with exactly one of these fields',
     );
     expect(rules).toContain(
       'Read corrections and notLoaded in a result: corrections lists what the server changed in your input',
     );
   });
 
-  it('docks a range hood like any unit and reads a position back in the frame of the placement', async () => {
+  it('hangs a range hood beside the wall units and reads a position back in the frame of the placement', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(
       await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
@@ -328,13 +328,34 @@ describe('hi-mcp-server tool calls', () => {
     const { tools } = await client.listTools();
     const served = [client.getInstructions() ?? '', rules, JSON.stringify(tools)].join('\n');
     expect(rules).toContain(
-      'range hood: it hangs between two wall units like a unit beside them - RightBottom of the wall unit left of the gap -> LeftBottom of the hood.',
+      'further wall units and the range hood continue rightOf or leftOf each other',
     );
     expect(served).not.toContain('cannot be docked');
     expect(served).not.toContain('posRotationY + 90');
     expect(JSON.stringify(tools)).toContain(
       "position with pos - the room point of the group's back left bottom corner, as a placement names it",
     );
+  });
+
+  it('teaches the relations for a new group instead of docking vectors', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    const { tools } = await client.listTools();
+    const create = tools.find((tool) => tool.name === 'create-or-replace-groups');
+    for (const relation of ['rightOf: "<id>"', 'leftOf: "<id>"', 'onTop: "<id>"', 'above: "<id>"', 'behind: "<id>"']) {
+      expect(rules).toContain(relation);
+    }
+    expect(rules).toContain('A wall unit rightOf or leftOf a tall unit hangs beside it with the tops flush');
+    expect(create?.description).toContain('rightOf, leftOf, onTop, above or behind');
+    // example 5 extends a group with merge-article-into-group, which names docking vectors
+    const creationRules = rules.slice(0, rules.indexOf('Example 5'));
+    for (const text of [creationRules, create?.description ?? '']) {
+      expect(text).not.toContain('"ownDockingVector"');
+      expect(text).not.toContain('<gap');
+      expect(text).not.toContain('the placed root names the new root');
+    }
   });
 
   it('never tells the agent how the server positions a group internally', async () => {

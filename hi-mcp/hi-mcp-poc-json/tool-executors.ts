@@ -1,27 +1,32 @@
 import {
+  IDENTITY_FRAME,
+  anchorFrameOfRoot,
   anchorRootOf,
+  anchorVariantKey,
   catalogArticleOf,
-  cornerFrameOfRoot,
-  cornerVariantKey,
   isCornerArticle,
+  positionInPlacementFrame,
   toRepositioningData,
 } from './group-placement';
-import type { CornerFrame } from './group-placement';
+import type { AnchorFrame } from './group-placement';
 import {
   adjoiningWall,
-  convexPolygonsTouch,
+  alignmentRunsParallel,
   footprintCornersInRoom,
   groupCornerGeometry,
   groupFootprint,
+  groupHeightRange,
   placeAgainstWall,
   placeCornerAtWalls,
   repositioningFromPlacement,
-  resolveWallAlignment,
-  rootFootprintInRoom,
+  spanAlongWall,
+  volumesOverlap,
+  wallSpanStart,
 } from './plan-space';
 import type {
   DerivedWall,
   GroupFootprint,
+  PlacedVolume,
   WallAlignment,
   WallSide,
 } from './plan-space';
@@ -33,6 +38,8 @@ export type ToolExecutor = (
 ) => Promise<unknown>;
 
 type PlanContextSection = 'masterData' | 'rooms' | 'articles' | 'groups';
+
+const PLAN_CONTEXT_SECTIONS: unknown[] = ['masterData', 'rooms', 'articles', 'groups'];
 
 const DEFAULT_SECTIONS: PlanContextSection[] = ['rooms', 'articles', 'groups'];
 
@@ -128,29 +135,114 @@ const isArticlePickOnly = (root: any): boolean =>
 // against the catalog so the agent gets a helpful error instead of a
 // half-calculated group.
 // With a libraryId, only the articles of that library are valid.
-const requireCatalogArticle = (articles: any[], root: any): void => {
-  if (!catalogArticleOf(articles, root)) {
-    const validIds = articles
-      .filter(
-        (candidate) => !root.libraryId || candidate.libraryId === root.libraryId,
-      )
-      .map((candidate) => candidate.articleId);
-    throw new Error(
-      `articleId '${root.articleId}' is not in the article catalog` +
-        (root.libraryId ? ` of library '${root.libraryId}'` : '') +
-        `. Valid article ids: ${validIds.slice(0, 100).join(', ')}`,
-    );
-  }
+const unknownArticleMessage = (articles: any[], root: any): string => {
+  const validIds = articles
+    .filter(
+      (candidate) => !root.libraryId || candidate.libraryId === root.libraryId,
+    )
+    .map((candidate) => candidate.articleId);
+  return (
+    `articleId '${root.articleId}' is not in the article catalog` +
+    (root.libraryId ? ` of library '${root.libraryId}'` : '') +
+    `. Valid article ids: ${validIds.slice(0, 100).join(', ')}`
+  );
 };
 
-const validateArticlePickIds = (articles: any[], posGroups: any[]): void => {
-  const articlePicks = posGroups.flatMap((group) =>
-    (group?.roots ?? []).filter(isArticlePickOnly),
+// The catalog's spelling of an article id that differs only in case or
+// surrounding whitespace, when exactly one article of the library matches.
+const catalogSpellingOf = (articles: any[], root: any): string | undefined => {
+  const wanted = String(root.articleId).trim().toLowerCase();
+  const matches = new Set(
+    articles
+      .filter(
+        (candidate) =>
+          (!root.libraryId || candidate.libraryId === root.libraryId) &&
+          String(candidate.articleId).trim().toLowerCase() === wanted,
+      )
+      .map((candidate) => candidate.articleId as string),
   );
-  for (const root of articlePicks) {
-    requireCatalogArticle(articles, root);
-  }
+  return matches.size === 1 ? [...matches][0] : undefined;
 };
+
+// The article id as the catalog spells it; an id the catalog does not have
+// fails with the valid ids.
+const catalogArticleId = (
+  articles: any[],
+  root: any,
+  label: string,
+  corrections: string[],
+): string => {
+  if (catalogArticleOf(articles, root)) {
+    return root.articleId;
+  }
+  const spelling = catalogSpellingOf(articles, root);
+  if (!spelling) {
+    throw new Error(unknownArticleMessage(articles, root));
+  }
+  corrections.push(`${label}: articleId '${root.articleId}' was read as '${spelling}'`);
+  return spelling;
+};
+
+const resolveArticleIds = (
+  articles: any[],
+  group: any,
+  prefix: string,
+  corrections: string[],
+): string[] =>
+  (group.roots as any[]).filter(isArticlePickOnly).flatMap((root) => {
+    const label = `${prefix} root '${root.id}'`;
+    try {
+      root.articleId = catalogArticleId(articles, root, label, corrections);
+      return [];
+    } catch (error) {
+      return [`${label}: ${(error as Error).message}`];
+    }
+  });
+
+// Where a new unit docks to a group as get-plan-context shows it: a side that
+// is taken moves to the free end of that row, and a docking vector the article
+// does not have becomes the partner of the root's vector. A side the planner
+// reports as taken although the row ends there stays as asked.
+const dockTarget = (
+  group: any,
+  article: any,
+  dockTo: any,
+  corrections: string[],
+): any => {
+  const roots = (group.roots ?? []) as any[];
+  const vector = dockTo.ownDockingVector;
+  const root = roots.find((candidate) => candidate.id === dockTo.rootId);
+  if (root && SIDE_VECTORS.includes(vector) && !(root.freeDockingVectors ?? []).includes(vector)) {
+    const end = rowEnd(sidePartnersOf(roots), root.id, vector);
+    const endRoot = roots.find((candidate) => candidate.id === end);
+    if (endRoot && end !== root.id && (endRoot.freeDockingVectors ?? []).includes(vector)) {
+      corrections.push(
+        `merge-article-into-group: the ${vector} of root '${root.id}' is taken - the unit was docked to the ` +
+          `${vector} of '${end}', the free end of that row`,
+      );
+      dockTo.rootId = end;
+    }
+  }
+  const vectors = articleDockingVectors(article);
+  const partner = PARTNER_VECTOR[vector];
+  if (
+    vectors &&
+    vectors.length > 0 &&
+    !vectors.includes(dockTo.dockingVector) &&
+    partner &&
+    vectors.includes(partner)
+  ) {
+    corrections.push(
+      `merge-article-into-group: article '${article.articleId}' has no docking vector '${dockTo.dockingVector}' - ` +
+        `its ${partner} meets the ${vector}`,
+    );
+    dockTo.dockingVector = partner;
+  }
+  return dockTo;
+};
+
+const withCorrections = (result: any, corrections: string[]) =>
+  corrections.length > 0 ? { ...result, corrections } : result;
 
 // A group by its id or a unique id prefix.
 const findGroup = (groups: any[], groupId: string): any => {
@@ -184,32 +276,34 @@ const agentFacingArticle = (article: any, articles: any[]) => {
 
 const PLACEMENT_FIELDS = ['posGroup', 'posRotationY', 'rootId'];
 
+// The planner takes a string or a boolean; a number is passed as its string.
+const attributeValue = (value: unknown): unknown =>
+  typeof value === 'number' ? String(value) : value;
+
 const WALL_PLACEMENT_FIELDS = ['wall', 'alignment', 'offsetMm'];
 
-const PROBE_ROOT_ID = 'corner-probe';
+const PROBE_ROOT_ID = 'anchor-probe';
 
-// Corner frames the server has learned by probing, per library, article and
+// Anchor frames the server has learned by probing, per library, article and
 // attribute overrides, for its lifetime.
-const knownCornerFrames = new Map<string, CornerFrame>();
+const knownAnchorFrames = new Map<string, AnchorFrame>();
 
-export const forgetCornerFrames = (): void => knownCornerFrames.clear();
+export const forgetAnchorFrames = (): void => knownAnchorFrames.clear();
 
-const NO_CORNER_FRAME: CornerFrame = { point: [0, 0, 0], turnY: 0 };
-
-// The corner frame of a corner article exists only as calculated geometry, and
-// its hand and corner point depend on the attributes. The planner calculates
-// the anchor once as authored - article and attribute overrides - in a
-// single-pick probe group; its docking vectors are read from the raw groups,
-// and every group the probe load added is removed again (the load result
-// carries runtime ids only, which removal does not take). An article calculated
-// without corner vectors gets no offset and no turn. Undefined when the planner
-// calculated nothing.
-const probeCornerFrame = async (
+// The frame of an anchor exists only as calculated geometry - the catalog has
+// no docking vector coordinates - and it depends on the attributes. The
+// planner calculates the anchor once as authored - article and attribute
+// overrides - in a single-pick probe group; its docking vectors are read from
+// the raw groups, and every group the probe load added is removed again (the
+// load result carries runtime ids only, which removal does not take). An
+// article calculated without docking vectors gets the identity. Undefined when
+// the planner calculated nothing.
+const probeAnchorFrame = async (
   roomDesignerApi: PlannerApi,
   anchor: any,
   libraryId: string | undefined,
   planGroupIds: Set<string>,
-): Promise<CornerFrame | undefined> => {
+): Promise<AnchorFrame | undefined> => {
   await roomDesignerApi.extended.loadExternalObjectGroupLayout(
     {
       posGroups: [
@@ -237,61 +331,80 @@ const probeCornerFrame = async (
   if (probes.length === 0) {
     return undefined;
   }
-  return (
-    probes
-      .flatMap((probe) => probe.roots ?? [])
-      .map(cornerFrameOfRoot)
-      .find(Boolean) ?? NO_CORNER_FRAME
-  );
+  const calculated = probes
+    .flatMap((probe) => probe.roots ?? [])
+    .find((root: any) => !root?.isGenerated && (root?.dockInfos?.length ?? 0) > 0);
+  return calculated ? anchorFrameOfRoot(calculated) : IDENTITY_FRAME;
 };
 
 const isPoint = (value: unknown): boolean =>
   Array.isArray(value) && value.length === 3 && value.every(Number.isFinite);
 
-// Each error continues the "posGroups[i]" prefix of its group.
-const placementErrors = (placement: any, rootIds: Set<string>): string[] => {
-  if (
-    typeof placement !== 'object' ||
-    placement === null ||
-    Array.isArray(placement)
-  ) {
-    return [': placement must be { posGroup, posRotationY, rootId? }'];
+const isFloorPoint = (value: unknown): value is [number, number] =>
+  Array.isArray(value) && value.length === 2 && value.every(Number.isFinite);
+
+const PLACEMENT_NOT_USED =
+  'it was not used, so the planner positions the group (an existing group keeps its position)';
+
+// A placement as far as the server can use it. One it cannot use is dropped,
+// so no repositioning reaches the planner and the planner positions the group.
+const normalizePlacement = (
+  group: any,
+  rootIds: Set<string>,
+  prefix: string,
+  corrections: string[],
+): void => {
+  const { placement } = group;
+  if (typeof placement !== 'object' || placement === null || Array.isArray(placement)) {
+    delete group.placement;
+    corrections.push(
+      `${prefix}: the placement is not { posGroup, posRotationY } - ${PLACEMENT_NOT_USED}`,
+    );
+    return;
   }
-  const errors: string[] = [];
   const unknownFields = Object.keys(placement).filter(
     (field) => !PLACEMENT_FIELDS.includes(field),
   );
   if (unknownFields.length > 0) {
-    errors.push(
-      '.placement takes only posGroup, posRotationY and rootId - remove ' +
-        unknownFields.join(', ') +
+    for (const field of unknownFields) {
+      delete placement[field];
+    }
+    corrections.push(
+      `${prefix}: the placement takes only posGroup, posRotationY and rootId - ` +
+        `${unknownFields.join(', ')} dropped` +
         (unknownFields.some((field) => WALL_PLACEMENT_FIELDS.includes(field))
-          ? ' - to stand a group against a wall or into a corner by its side label, call place-group'
+          ? '; place-group stands a group against a wall or into a corner by its side label'
           : ''),
     );
   }
-  if (!isPoint(placement.posGroup)) {
-    errors.push('.placement: posGroup must be [x, y, z] in millimetres');
-  }
-  if (!Number.isFinite(placement.posRotationY)) {
-    errors.push(
-      '.placement: posRotationY must be a number of degrees - state 0 explicitly for no rotation',
+  if (isFloorPoint(placement.posGroup)) {
+    const [x, z] = placement.posGroup;
+    placement.posGroup = [x, 0, z];
+    corrections.push(
+      `${prefix}: the placement's posGroup [${x}, ${z}] was completed to [${x}, 0, ${z}] (y = 0 on the floor)`,
     );
+  }
+  if (!isPoint(placement.posGroup) || !Number.isFinite(placement.posRotationY)) {
+    delete group.placement;
+    corrections.push(
+      `${prefix}: the placement needs posGroup [x, y, z] in millimetres and posRotationY in degrees - ` +
+        PLACEMENT_NOT_USED,
+    );
+    return;
   }
   if (placement.rootId !== undefined && !rootIds.has(placement.rootId)) {
-    errors.push(
-      ".placement: rootId must be the id of one of the group's roots",
+    corrections.push(
+      `${prefix}: the placement's rootId '${placement.rootId}' is not a root of the group - ` +
+        'dropped, the server anchors the group itself',
     );
+    delete placement.rootId;
   }
-  return errors;
 };
 
-// The planner mirrors every docking entry and arranges the roots reachable
-// from the first root; a part the docking does not connect to it is arranged
-// on its own from the group origin, on top of the first root. An entry naming
-// a root outside the group connects nothing - a group keeps such an entry to
-// a root deleted from it. Each error continues the "posGroups[i]" prefix.
-const dockingErrors = (roots: any[]): string[] => {
+// Every docking entry links two roots in both directions, as the planner
+// mirrors it; an entry naming a root outside the group links nothing - a group
+// keeps such an entry to a root deleted from it.
+const dockingNeighbours = (roots: any[]): Map<string, Set<string>> => {
   const neighbours = new Map<string, Set<string>>();
   const link = (from: string, to: string) =>
     neighbours.set(from, (neighbours.get(from) ?? new Set()).add(to));
@@ -306,16 +419,30 @@ const dockingErrors = (roots: any[]): string[] => {
       }
     }
   }
-  const reached = new Set<string>([roots[0]?.id]);
-  const queue = [roots[0]?.id];
+  return neighbours;
+};
+
+// The roots the docking connects to the start roots.
+const reachedFrom = (roots: any[], startIds: string[]): Set<string> => {
+  const neighbours = dockingNeighbours(roots);
+  const reached = new Set<string>(startIds);
+  const queue = [...startIds];
   while (queue.length > 0) {
-    for (const next of neighbours.get(queue.shift()) ?? []) {
+    for (const next of neighbours.get(queue.shift()!) ?? []) {
       if (!reached.has(next)) {
         reached.add(next);
         queue.push(next);
       }
     }
   }
+  return reached;
+};
+
+// The planner arranges the roots reachable from the first root; a part the
+// docking does not connect to it is arranged on its own from the group origin,
+// on top of the first root. Each error continues the "posGroups[i]" prefix.
+const dockingErrors = (roots: any[]): string[] => {
+  const reached = reachedFrom(roots, [roots[0]?.id]);
   const quoted = (selected: any[]) =>
     selected.map((root) => `'${root?.id}'`).join(', ');
   const unreached = roots.filter((root) => !reached.has(root?.id));
@@ -327,7 +454,7 @@ const dockingErrors = (roots: any[]): string[] => {
     `: roots ${quoted(unreached)} are not docked to a placed root (${quoted(placed)} ` +
       `${placed.length === 1 ? 'is' : 'are'} placed - reached through the docking from the first root); ` +
       'roots docked only among themselves land on the group origin, on top of the first root. Dock every ' +
-      'additional root to a placed root by listing it on that root, e.g. to place root B directly right of root A: ' +
+      'additional root to a placed root by naming it on that root - root B itself is an entry of roots too -, e.g. to place root B directly right of root A: ' +
       '{ "id": "A", "articleId": "...", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom", ' +
       '"dockedRoots": [{ "id": "B", "dockingVector": "LeftBottom", "mode": "StartStart", ' +
       '"offset": [0, 0, 0] }] }] } }',
@@ -352,15 +479,15 @@ const dockingPlace = (dockedRoot: any, mirrored: boolean): string => {
   return JSON.stringify([mirrored ? (MIRRORED_MODE[mode] ?? mode) : mode, ...offset]);
 };
 
-// The planner arranges every root docked to a side vector against that edge,
-// so two of them with the same mode and offset take the same place; a
-// different mode or offset can separate them along the edge or beside it.
-// Read in both directions, as the planner mirrors every entry; a mirrored
+// Per root and side vector the partners with the place the entry gives them -
+// read in both directions, as the planner mirrors every entry. A mirrored
 // entry names the same partner again, and a root outside the group takes no
-// place. Each error continues the "posGroups[i]" prefix.
-const sideVectorErrors = (roots: any[]): string[] => {
+// place.
+type SidePartners = Map<string, Map<string, Map<string, string>>>;
+
+const sidePartnersOf = (roots: any[]): SidePartners => {
   const rootIds = new Set(roots.map((root) => root?.id));
-  const partnersOf = new Map<string, Map<string, Map<string, string>>>();
+  const partnersOf: SidePartners = new Map();
   const meet = (rootId: string, vector: string, partnerId: string, place: string) => {
     if (!SIDE_VECTORS.includes(vector)) {
       return;
@@ -384,33 +511,646 @@ const sideVectorErrors = (roots: any[]): string[] => {
       }
     }
   }
-  const errors: string[] = [];
-  for (const [rootId, vectors] of partnersOf) {
-    for (const [vector, partners] of vectors) {
+  return partnersOf;
+};
+
+const sideVectorFree = (partners: SidePartners, rootId: string, vector: string): boolean =>
+  (partners.get(rootId)?.get(vector)?.size ?? 0) === 0;
+
+interface SideVectorConflict {
+  rootId: string;
+  vector: string;
+  sharing: string[];
+}
+
+// The planner arranges every root docked to a side vector against that edge,
+// so two of them with the same mode and offset take the same place; a
+// different mode or offset can separate them along the edge or beside it.
+const sideVectorConflicts = (partners: SidePartners): SideVectorConflict[] => {
+  const conflicts: SideVectorConflict[] = [];
+  for (const [rootId, vectors] of partners) {
+    for (const [vector, vectorPartners] of vectors) {
       const atPlace = new Map<string, string[]>();
-      for (const [partnerId, place] of partners) {
+      for (const [partnerId, place] of vectorPartners) {
         atPlace.set(place, [...(atPlace.get(place) ?? []), partnerId]);
       }
       for (const sharing of atPlace.values()) {
         if (sharing.length > 1) {
-          errors.push(
-            `: roots ${sharing.map((id) => `'${id}'`).join(', ')} are docked to the ${vector} of root '${rootId}' ` +
-              'with the same mode and offset - they stand in the same place. A side vector (LeftBottom, RightBottom) ' +
-              'takes one neighbour there: continue a row from the free side vector of its last unit',
-          );
+          conflicts.push({ rootId, vector, sharing });
         }
       }
     }
   }
-  return errors;
+  return conflicts;
 };
 
-const invalidPosGroups = (errors: string[]): Error =>
+// From a root along one side vector, root by root, to the root of that row
+// whose same side vector is free.
+const rowEnd = (partners: SidePartners, rootId: string, vector: string): string | undefined => {
+  const visited = new Set([rootId]);
+  let current = rootId;
+  for (;;) {
+    const [next] = partners.get(current)?.get(vector)?.keys() ?? [];
+    if (next === undefined) {
+      return current;
+    }
+    if (visited.has(next)) {
+      return undefined;
+    }
+    visited.add(next);
+    current = next;
+  }
+};
+
+const SIDE_PARTNER: Record<string, string> = {
+  LeftBottom: 'RightBottom',
+  RightBottom: 'LeftBottom',
+};
+
+const addDocking = (
+  root: any,
+  ownDockingVector: string,
+  partnerId: string,
+  dockingVector: string,
+): void => {
+  root.contextData ??= { dockedRoots: [] };
+  root.contextData.dockedRoots ??= [];
+  let dockedContext = root.contextData.dockedRoots.find(
+    (candidate: any) => candidate.ownDockingVector === ownDockingVector,
+  );
+  if (!dockedContext) {
+    dockedContext = { ownDockingVector, dockedRoots: [] };
+    root.contextData.dockedRoots.push(dockedContext);
+  }
+  dockedContext.dockedRoots.push({
+    id: partnerId,
+    dockingVector,
+    mode: 'StartStart',
+    offset: [0, 0, 0],
+  });
+};
+
+// Removes the entries that put the partner on the root's side vector, written
+// on either of the two.
+const removeDocking = (roots: any[], rootId: string, vector: string, partnerId: string): void => {
+  for (const root of roots) {
+    if (root.id !== rootId && root.id !== partnerId) {
+      continue;
+    }
+    for (const dockedContext of root.contextData?.dockedRoots ?? []) {
+      dockedContext.dockedRoots = (dockedContext.dockedRoots ?? []).filter(
+        (dockedRoot: any) =>
+          !(
+            (root.id === rootId &&
+              dockedContext.ownDockingVector === vector &&
+              dockedRoot.id === partnerId) ||
+            (root.id === partnerId && dockedRoot.id === rootId && dockedRoot.dockingVector === vector)
+          ),
+      );
+    }
+    if (root.contextData?.dockedRoots) {
+      root.contextData.dockedRoots = root.contextData.dockedRoots.filter(
+        (dockedContext: any) => dockedContext.dockedRoots.length > 0,
+      );
+    }
+  }
+};
+
+const WALL_UNIT = /\bwall units?\b/i;
+
+// The docking vector names of an article; undefined when the catalog does not
+// tell them. The catalog takes them from the template or from a calculated
+// root of the article in the plan, so an article not in the plan has none.
+const articleDockingVectors = (article: any): string[] | undefined => {
+  const names = ((article?.rootModules ?? []) as any[]).flatMap(
+    (rootModule) => rootModule?.dockingVectors ?? [],
+  );
+  return names.length > 0 ? names : undefined;
+};
+
+const quotedIds = (ids: string[]): string => ids.map((id) => `'${id}'`).join(', ');
+
+// Two roots on one side vector at the same place: the later one goes to the
+// free end of that row.
+const separateSideVectorPartners = (
+  roots: any[],
+  prefix: string,
+  corrections: string[],
+): string[] => {
+  for (let round = 0; round <= roots.length * 2; round++) {
+    const [conflict] = sideVectorConflicts(sidePartnersOf(roots));
+    if (!conflict) {
+      return [];
+    }
+    const { rootId, vector, sharing } = conflict;
+    const [kept, moved] = sharing;
+    removeDocking(roots, rootId, vector, moved);
+    const end = rowEnd(sidePartnersOf(roots), rootId, vector);
+    if (end === moved) {
+      corrections.push(
+        `${prefix}: roots ${quotedIds([kept, moved])} were docked to the ${vector} of root '${rootId}' at the ` +
+          `same place - '${moved}' already follows in that row, so its second docking was dropped`,
+      );
+      continue;
+    }
+    const endRoot = roots.find((root) => root.id === end);
+    if (!endRoot) {
+      break;
+    }
+    addDocking(endRoot, vector, moved, SIDE_PARTNER[vector]);
+    corrections.push(
+      `${prefix}: roots ${quotedIds([kept, moved])} were docked to the ${vector} of root '${rootId}' at the ` +
+        `same place - '${moved}' was docked to the ${vector} of '${end}', the free end of that row`,
+    );
+  }
+  return [
+    `${prefix}: roots on one side vector of a root stand in the same place, and the server could not move ` +
+      'them apart - a side vector (LeftBottom, RightBottom) takes one neighbour: continue a row from the free ' +
+      'side vector of its last unit',
+  ];
+};
+
+// A part the docking does not connect to the first root is docked to the free
+// end of a row of the same kind - floor units or wall units.
+const connectUnreachedRoots = (
+  roots: any[],
+  articles: any[],
+  prefix: string,
+  corrections: string[],
+): string[] => {
+  const isWallUnit = (root: any) =>
+    WALL_UNIT.test(String(catalogArticleOf(articles, root)?.category ?? ''));
+  const hasVector = (root: any, vector: string) => {
+    const article = catalogArticleOf(articles, root);
+    const vectors = articleDockingVectors(article);
+    return !vectors || vectors.includes(vector);
+  };
+  for (let round = 0; round < roots.length; round++) {
+    const reached = reachedFrom(roots, [roots[0].id]);
+    const unreached = roots.filter((root) => !reached.has(root.id));
+    if (unreached.length === 0) {
+      return [];
+    }
+    const part = reachedFrom(
+      unreached,
+      [unreached[0].id],
+    );
+    const partRoots = unreached.filter((root) => part.has(root.id));
+    const kind = isWallUnit(partRoots[0]);
+    const partners = sidePartnersOf(roots);
+    const connection = [
+      ['RightBottom', 'LeftBottom'],
+      ['LeftBottom', 'RightBottom'],
+    ]
+      .map(([targetVector, leadVector]) => ({
+        targetVector,
+        leadVector,
+        target: roots.find(
+          (root) =>
+            reached.has(root.id) &&
+            isWallUnit(root) === kind &&
+            sideVectorFree(partners, root.id, targetVector) &&
+            hasVector(root, targetVector),
+        ),
+        lead: partRoots.find(
+          (root) => sideVectorFree(partners, root.id, leadVector) && hasVector(root, leadVector),
+        ),
+      }))
+      .find(({ target, lead }) => target && lead);
+    if (!connection) {
+      return dockingErrors(roots).map((error) => `${prefix}${error}`);
+    }
+    const { target, targetVector, lead, leadVector } = connection;
+    addDocking(target, targetVector, lead.id, leadVector);
+    corrections.push(
+      `${prefix}: roots ${quotedIds(partRoots.map((root) => root.id))} were not docked to the placed roots - ` +
+        `'${lead.id}' was docked to the ${targetVector} of '${target.id}', the free end of that row ` +
+        '(mode StartStart, offset [0, 0, 0])',
+    );
+  }
+  return dockingErrors(roots).map((error) => `${prefix}${error}`);
+};
+
+const reportUnsentRoots = (group: any, prefix: string, corrections: string[]): void => {
+  const rootIds = new Set((group.roots as any[]).map((root) => root.id));
+  const unsent = new Set<string>();
+  for (const root of group.roots as any[]) {
+    for (const context of root.contextData?.dockedRoots ?? []) {
+      context.dockedRoots = (context.dockedRoots ?? []).filter((entry: any) => {
+        if (rootIds.has(entry?.id)) {
+          return true;
+        }
+        unsent.add(String(entry?.id));
+        return false;
+      });
+    }
+    if (root.contextData?.dockedRoots) {
+      root.contextData.dockedRoots = root.contextData.dockedRoots.filter(
+        (context: any) => context.dockedRoots.length > 0,
+      );
+    }
+  }
+  if (unsent.size > 0) {
+    corrections.push(
+      `${prefix}: roots ${quotedIds([...unsent])} are named in the docking but were never sent - nothing ` +
+        'was built for them; send each as a root { id, articleId } of the group',
+    );
+  }
+};
+
+// The docking of a group as far as the server can complete it.
+const completeDocking = (
+  group: any,
+  articles: any[],
+  prefix: string,
+  corrections: string[],
+): string[] => {
+  const errors = separateSideVectorPartners(group.roots, prefix, corrections);
+  return errors.length > 0
+    ? errors
+    : connectUnreachedRoots(group.roots, articles, prefix, corrections);
+};
+
+interface CallGroup {
+  group: any;
+  index: number;
+}
+
+interface NotLoadedGroup {
+  index: number;
+  id?: string;
+  errors: string[];
+}
+
+// A group with errors is reported instead of cancelling the other groups of
+// the call; the groups without errors go on.
+const keepBuildable = (
+  callGroups: CallGroup[],
+  notLoaded: NotLoadedGroup[],
+  errorsOf: (callGroup: CallGroup) => string[],
+): CallGroup[] =>
+  callGroups.filter((callGroup) => {
+    let errors: string[];
+    try {
+      errors = errorsOf(callGroup);
+    } catch (error) {
+      errors = [
+        `posGroups[${callGroup.index}]: could not be read - ${error instanceof Error ? error.message : String(error)}`,
+      ];
+    }
+    if (errors.length > 0) {
+      const id = callGroup.group?.id;
+      notLoaded.push({
+        index: callGroup.index,
+        ...(typeof id === 'string' && { id }),
+        errors,
+      });
+    }
+    return errors.length === 0;
+  });
+
+const nothingLoaded = (notLoaded: NotLoadedGroup[]): Error =>
   new Error(
     'Invalid pos groups - nothing was loaded:\n' +
-      errors.join('\n') +
+      notLoaded.flatMap((entry) => entry.errors).join('\n') +
       '\nFetch the payload format with the get-authoring-rules tool.',
   );
+
+const nextFreeId = (taken: Set<string>, base: string, first = 2): string => {
+  let suffix = first;
+  while (taken.has(`${base}-${suffix}`)) {
+    suffix += 1;
+  }
+  return `${base}-${suffix}`;
+};
+
+const dockedRootIds = (roots: any[]): Set<string> =>
+  new Set(
+    roots.flatMap((root) =>
+      (root?.contextData?.dockedRoots ?? []).flatMap((dockedContext: any) =>
+        (dockedContext?.dockedRoots ?? []).map((dockedRoot: any) => dockedRoot?.id),
+      ),
+    ),
+  );
+
+// The fields a pos group and its roots are built from. A group from
+// get-plan-context also carries read-only fields; everything else would be
+// lost, so it is reported.
+const GROUP_FIELDS = ['id', 'libraryId', 'roots', 'placement', 'repositioningData', 'attributes', 'pos', 'rotationY'];
+
+const READ_ONLY_GROUP_FIELDS = ['position', 'logMessages'];
+
+const ROOT_FIELDS = ['id', 'articleId', 'libraryId', 'attributes', 'contextData', 'articlePos', 'rotationY'];
+
+const READ_ONLY_ROOT_FIELDS = [
+  'articleName',
+  'desc',
+  'category',
+  'imageUrl',
+  'isGenerated',
+  'dockingVectors',
+  'freeDockingVectors',
+  'subModules',
+  'logMessages',
+];
+
+const DOCKING_ENTRY_FIELDS = ['id', 'dockingVector', 'mode', 'offset', 'dockingVectorIndex'];
+
+const dockingEntriesOf = (root: any): { context: any; entry: any }[] =>
+  (root?.contextData?.dockedRoots ?? []).flatMap((context: any) =>
+    (context?.dockedRoots ?? []).map((entry: any) => ({ context, entry })),
+  );
+
+const isObject = (value: unknown): boolean =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+// The docking as lists of contexts and entries. A part in another shape
+// cannot be read and is dropped; its root is docked like any undocked root.
+const dropMalformedDocking = (roots: any[], prefix: string, corrections: string[]): void => {
+  const dropped: string[] = [];
+  for (const root of roots) {
+    if (root?.contextData === undefined) {
+      continue;
+    }
+    if (!isObject(root.contextData) || !Array.isArray(root.contextData.dockedRoots ?? [])) {
+      dropped.push(`the contextData of root '${root?.id}'`);
+      delete root.contextData;
+      continue;
+    }
+    const contexts = (root.contextData.dockedRoots ?? []) as any[];
+    root.contextData.dockedRoots = contexts.filter((context, index) => {
+      const readable = isObject(context) && Array.isArray(context.dockedRoots ?? []);
+      if (!readable) {
+        dropped.push(`docking context ${index} of root '${root.id}'`);
+        return false;
+      }
+      context.dockedRoots = ((context.dockedRoots ?? []) as any[]).filter((entry, entryIndex) => {
+        if (!isObject(entry)) {
+          dropped.push(`docking entry ${entryIndex} of context ${index} of root '${root.id}'`);
+          return false;
+        }
+        return true;
+      });
+      return true;
+    });
+  }
+  if (dropped.length > 0) {
+    corrections.push(
+      `${prefix}: ${dropped.join(', ')} could not be read and were dropped - contextData is ` +
+        '{ dockedRoots: [{ ownDockingVector, dockedRoots: [{ id, dockingVector, mode?, offset? }] }] }',
+    );
+  }
+};
+
+// A unit written inside a docking entry - with its articleId - is a root of
+// the group; the entry keeps the docking link to it.
+const liftNestedRoots = (group: any, prefix: string, corrections: string[]): void => {
+  const ids = new Set<string>(group.roots.map((root: any) => root?.id));
+  const lifted: string[] = [];
+  const pending = [...group.roots];
+  while (pending.length > 0) {
+    const root = pending.shift();
+    for (const context of root?.contextData?.dockedRoots ?? []) {
+      if (!Array.isArray(context?.dockedRoots)) {
+        continue;
+      }
+      context.dockedRoots = context.dockedRoots.map((entry: any) => {
+        if (typeof entry?.articleId !== 'string' || ids.has(entry.id)) {
+          return entry;
+        }
+        const { dockingVector, mode, offset, dockingVectorIndex: _index, ...unit } = entry;
+        if (typeof unit.id !== 'string' || unit.id.length === 0) {
+          unit.id = nextFreeId(ids, 'root', 1);
+        }
+        ids.add(unit.id);
+        group.roots.push(unit);
+        pending.push(unit);
+        lifted.push(unit.id);
+        return {
+          id: unit.id,
+          ...(dockingVector !== undefined && { dockingVector }),
+          ...(mode !== undefined && { mode }),
+          ...(offset !== undefined && { offset }),
+        };
+      });
+    }
+  }
+  if (lifted.length > 0) {
+    corrections.push(
+      `${prefix}: roots ${quotedIds(lifted)} were written inside the docking - they are roots of the ` +
+        'group now, linked by their docking entries',
+    );
+  }
+};
+
+// Docking entries completed where the intent is clear: the id from rootId,
+// and the vector of the new root from the vector of the root it docks to. An
+// entry without the root's own vector cannot be placed and is dropped.
+const completeDockingEntries = (roots: any[], prefix: string, corrections: string[]): void => {
+  const completed: string[] = [];
+  const dropped: string[] = [];
+  for (const root of roots) {
+    const contexts = root?.contextData?.dockedRoots;
+    if (!Array.isArray(contexts)) {
+      continue;
+    }
+    root.contextData.dockedRoots = contexts.filter((context: any) => {
+      const entries = (context?.dockedRoots ?? []) as any[];
+      for (const entry of entries) {
+        if (entry && entry.id === undefined && typeof entry.rootId === 'string') {
+          entry.id = entry.rootId;
+          delete entry.rootId;
+        }
+      }
+      if (typeof context?.ownDockingVector !== 'string') {
+        dropped.push(...entries.map((entry) => `'${root.id}' -> '${entry?.id}'`));
+        return false;
+      }
+      const partner = PARTNER_VECTOR[context.ownDockingVector];
+      for (const entry of entries) {
+        if (entry && typeof entry.dockingVector !== 'string' && partner) {
+          entry.dockingVector = partner;
+          completed.push(`'${entry.id}' meets the ${context.ownDockingVector} of '${root.id}' with its ${partner}`);
+        }
+      }
+      return true;
+    });
+  }
+  if (completed.length > 0) {
+    corrections.push(`${prefix}: docking entries without dockingVector were completed - ${completed.join(', ')}`);
+  }
+  if (dropped.length > 0) {
+    corrections.push(
+      `${prefix}: docking entries without ownDockingVector were dropped - ${dropped.join(', ')}`,
+    );
+  }
+};
+
+// Attribute overrides as [{ id, value }]: an object of ids and values and an
+// attributeId instead of id are read as such; an entry without an id is lost.
+const normalizedAttributes = (
+  attributes: unknown,
+  label: string,
+  corrections: string[],
+): { id: string; value: unknown }[] | undefined => {
+  if (attributes === undefined || attributes === null) {
+    return undefined;
+  }
+  if (!Array.isArray(attributes)) {
+    if (typeof attributes === 'object') {
+      corrections.push(`${label}: attributes were given as an object - read as [{ id, value }]`);
+      return Object.entries(attributes).map(([id, value]) => ({ id, value }));
+    }
+    corrections.push(`${label}: attributes must be [{ id, value }] - ignored`);
+    return undefined;
+  }
+  const withoutId: number[] = [];
+  const result = attributes.flatMap((attribute: any, index: number) => {
+    const id = typeof attribute?.id === 'string' ? attribute.id : attribute?.attributeId;
+    if (typeof id !== 'string' || id.length === 0) {
+      withoutId.push(index);
+      return [];
+    }
+    return [{ id, value: attribute.value }];
+  });
+  if (withoutId.length > 0) {
+    corrections.push(`${label}: attribute entries ${withoutId.join(', ')} have no id - ignored`);
+  }
+  return result;
+};
+
+const unusedFields = (object: any, used: string[]): string[] =>
+  object && typeof object === 'object' && !Array.isArray(object)
+    ? Object.keys(object).filter((field) => !used.includes(field))
+    : [];
+
+// Fields the server does not use would vanish without a trace; they are
+// reported.
+const reportUnusedFields = (group: any, prefix: string, corrections: string[]): void => {
+  const notes: string[] = [];
+  const groupFields = unusedFields(group, [...GROUP_FIELDS, ...READ_ONLY_GROUP_FIELDS]);
+  if (groupFields.length > 0) {
+    notes.push(`the group's ${groupFields.join(', ')}`);
+  }
+  for (const root of group.roots as any[]) {
+    const rootFields = unusedFields(root, [...ROOT_FIELDS, ...READ_ONLY_ROOT_FIELDS]);
+    if (rootFields.length > 0) {
+      notes.push(`${rootFields.join(', ')} of root '${root.id}'`);
+    }
+    for (const { entry } of dockingEntriesOf(root)) {
+      const entryFields = unusedFields(entry, DOCKING_ENTRY_FIELDS);
+      if (entryFields.length > 0) {
+        notes.push(`${entryFields.join(', ')} of the docking entry '${root.id}' -> '${entry.id}'`);
+      }
+    }
+  }
+  if (notes.length > 0) {
+    corrections.push(`${prefix}: the server does not use ${notes.join('; ')} - ignored`);
+  }
+};
+
+// One pos group before anything is fetched: corrected where the intent is
+// clear, each correction reported. The errors name what cannot be built.
+const prepareGroup = (
+  group: any,
+  prefix: string,
+  corrections: string[],
+): string[] => {
+  if (!Array.isArray(group?.roots) || group.roots.length === 0) {
+    return [`${prefix}: needs a non-empty roots array`];
+  }
+  // the library regenerates its generated roots (worktop, toe kick)
+  group.roots = group.roots.filter((root: any) => !isGeneratedRoot(root));
+  if (group.roots.length === 0) {
+    return [`${prefix}: needs at least one article root (generated roots are dropped)`];
+  }
+  dropMalformedDocking(group.roots, prefix, corrections);
+  liftNestedRoots(group, prefix, corrections);
+  completeDockingEntries(group.roots, prefix, corrections);
+  reportUnusedFields(group, prefix, corrections);
+  group.attributes = normalizedAttributes(group.attributes, `${prefix} group`, corrections);
+  for (const root of group.roots as any[]) {
+    root.attributes = normalizedAttributes(root?.attributes, `${prefix} root '${root?.id}'`, corrections);
+  }
+  if (group.pos !== undefined || group.rotationY !== undefined) {
+    delete group.pos;
+    delete group.rotationY;
+    corrections.push(
+      `${prefix}: pos/rotationY on a group were dropped - a new group is positioned with placement`,
+    );
+  }
+  if (group.repositioningData !== undefined) {
+    const { posGroup, posRotationY, rootId } = group.repositioningData ?? {};
+    if (group.placement === undefined) {
+      group.placement = {
+        posGroup,
+        posRotationY,
+        ...(rootId !== undefined && { rootId }),
+      };
+      corrections.push(`${prefix}: repositioningData was taken as the placement`);
+    } else {
+      corrections.push(`${prefix}: repositioningData was dropped - the placement is used`);
+    }
+    delete group.repositioningData;
+  }
+  const errors: string[] = [];
+  const positionedRootIds: string[] = [];
+  group.roots.forEach((root: any, rootIndex: number) => {
+    if (typeof root?.articleId !== 'string' || root.articleId.length === 0) {
+      errors.push(
+        `${prefix}.roots[${rootIndex}]: articleId must be a non-empty string (an article id from the catalog)`,
+      );
+      return;
+    }
+    if (root.articlePos !== undefined || root.rotationY !== undefined) {
+      delete root.articlePos;
+      delete root.rotationY;
+      positionedRootIds.push(root.id ?? `roots[${rootIndex}]`);
+    }
+  });
+  if (errors.length > 0) {
+    return errors;
+  }
+  if (positionedRootIds.length > 0) {
+    corrections.push(
+      `${prefix}: articlePos/rotationY of roots ${positionedRootIds.map((id) => `'${id}'`).join(', ')} ` +
+        'were dropped - root positions come from the docking',
+    );
+  }
+  const taken = new Set<string>(
+    group.roots
+      .map((root: any) => root.id)
+      .filter((id: unknown) => typeof id === 'string' && id.length > 0),
+  );
+  const referenced = dockedRootIds(group.roots);
+  const rootIds = new Set<string>();
+  group.roots.forEach((root: any, rootIndex: number) => {
+    if (typeof root.id !== 'string' || root.id.length === 0) {
+      root.id = nextFreeId(taken, 'root', 1);
+      taken.add(root.id);
+      corrections.push(`${prefix}.roots[${rootIndex}]: the root had no id - it is '${root.id}'`);
+    } else if (rootIds.has(root.id)) {
+      if (referenced.has(root.id)) {
+        errors.push(
+          `${prefix}.roots[${rootIndex}]: duplicate root id '${root.id}' named in the docking - ` +
+            'every root id must be unique within its group',
+        );
+        return;
+      }
+      const renamed = nextFreeId(taken, root.id);
+      corrections.push(
+        `${prefix}.roots[${rootIndex}]: the duplicate root id '${root.id}' was renamed to '${renamed}'`,
+      );
+      root.id = renamed;
+      taken.add(renamed);
+    }
+    rootIds.add(root.id);
+  });
+  if (errors.length === 0 && group.placement !== undefined) {
+    normalizePlacement(group, rootIds, prefix, corrections);
+  }
+  return errors;
+};
 
 const PARTNER_VECTOR: Record<string, string> = {
   LeftBottom: 'RightBottom',
@@ -421,82 +1161,37 @@ const PARTNER_VECTOR: Record<string, string> = {
   BackTop: 'BackBottom',
 };
 
-const CONTACT_TOLERANCE_MM = 5;
+const OVERLAP_TOLERANCE_MM = 5;
 
-interface GroupContact {
-  group: any;
-  root: any;
+const volumeOf = (
+  footprint: GroupFootprint,
+  heights: [number, number] | undefined,
+  placement: { pos?: number[]; rotationY?: number },
+): PlacedVolume => {
+  const y = placement.pos?.[1] ?? 0;
+  return {
+    corners: footprintCornersInRoom(footprint, placement),
+    ...(heights && { heights: [heights[0] + y, heights[1] + y] }),
+  };
+};
+
+interface PlacedGroupVolume {
+  id: string;
+  volume: PlacedVolume;
 }
 
-// The existing group whose footprint the placed footprint touches or
-// overlaps, with the root of that group nearest to the placed footprint.
-const findGroupContact = (
-  placedCorners: [number, number][],
-  groups: any[],
-  excludedGroupIds: Set<string>,
-): GroupContact | undefined => {
-  const center: [number, number] = [
-    placedCorners.reduce((sum, [x]) => sum + x, 0) / placedCorners.length,
-    placedCorners.reduce((sum, [, z]) => sum + z, 0) / placedCorners.length,
-  ];
-  for (const group of groups) {
-    if (excludedGroupIds.has(group.id)) {
-      continue;
-    }
-    const footprint = groupFootprint(group);
-    if (
-      !footprint ||
-      !convexPolygonsTouch(
-        placedCorners,
-        footprintCornersInRoom(footprint, group),
-        CONTACT_TOLERANCE_MM,
-      )
-    ) {
-      continue;
-    }
-    let nearestRoot: any;
-    let nearestDistance = Number.POSITIVE_INFINITY;
-    for (const root of group.roots ?? []) {
-      if (isGeneratedRoot(root)) {
-        continue;
-      }
-      for (const [x, z] of rootFootprintInRoom(group, root)) {
-        const distance = Math.hypot(x - center[0], z - center[1]);
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestRoot = root;
-        }
-      }
-    }
-    return { group, root: nearestRoot ?? group.roots?.[0] };
-  }
-  return undefined;
-};
+const placedGroupVolumes = (groups: any[], excludedGroupId: string): PlacedGroupVolume[] =>
+  groups.flatMap((group) => {
+    const footprint = group.id === excludedGroupId ? undefined : groupFootprint(group);
+    return footprint
+      ? [{ id: group.id, volume: volumeOf(footprint, groupHeightRange(group), group) }]
+      : [];
+  });
 
-// The free docking vectors are the ones get-plan-context shows for that root.
-const contactError = (
-  what: string,
-  contact: GroupContact,
-  shapedGroups: any[],
-): string => {
-  const free: string[] =
-    shapedGroups
-      .find((group) => group.id === contact.group.id)
-      ?.roots?.find((root: any) => root.id === contact.root.id)
-      ?.freeDockingVectors ?? [];
-  const sideVector = free.find(
-    (name) => name.endsWith('Bottom') && !name.includes('Back'),
-  );
-  const example = sideVector
-    ? ` - e.g. on root '${contact.root.id}': { "ownDockingVector": "${sideVector}", "dockedRoots": [{ "id": "<new root>", "dockingVector": "${PARTNER_VECTOR[sideVector]}", "mode": "StartStart", "offset": [0, 0, 0] }] }`
-    : '';
-  return (
-    `${what} would meet group '${contact.group.id}' (root '${contact.root.id}', article ${contact.root.articleId}; ` +
-    `free docking vectors: ${free.join(', ') || 'none'}). Units next to an existing group are roots of that group: ` +
-    `take group '${contact.group.id}' from get-plan-context, add the new roots docked to a free vector of the root they ` +
-    `continue${example}, and resubmit it with its id. A new group with a placement is only for a free stretch of wall.`
-  );
-};
+const overlappedGroupIds = (volume: PlacedVolume, others: PlacedGroupVolume[]): string[] =>
+  others
+    .filter((other) => volumesOverlap(volume, other.volume, OVERLAP_TOLERANCE_MM))
+    .map((other) => other.id);
 
 const WALL_SIDES = ['left', 'right', 'top', 'bottom'];
 
@@ -516,8 +1211,15 @@ interface GroupPlacement {
   pos: [number, number, number];
   rotationY: number;
   footprint: GroupFootprint;
+  heights?: [number, number];
   placedIn: 'corner' | 'wall';
 }
+
+// back and front name the top and the bottom wall of the top-view image
+const SIDE_SYNONYMS: Record<string, WallSide> = { back: 'top', front: 'bottom' };
+
+const sideLabel = <T>(value: T): T | WallSide =>
+  typeof value === 'string' && value in SIDE_SYNONYMS ? SIDE_SYNONYMS[value] : value;
 
 const isWallSide = (
   alignment: WallAlignment | undefined,
@@ -553,8 +1255,6 @@ const resolveWall = (rooms: any[], spec: WallPlacementSpec): ResolvedWall => {
         JSON.stringify(walls),
     );
   }
-  // fails early on an alignment that runs parallel to the wall
-  resolveWallAlignment(wall, spec.alignment ?? 'center');
   return { wall, walls };
 };
 
@@ -576,6 +1276,7 @@ const placeGroupAtWall = (
   const alignment = spec.alignment ?? 'center';
   const offsetMm = spec.offsetMm ?? 0;
   const height = group.pos?.[1] ?? 0;
+  const heights = groupHeightRange(group);
   if (isWallSide(alignment)) {
     const corner = groupCornerGeometry(group);
     const adjoining = adjoiningWall(walls, wall, alignment);
@@ -587,6 +1288,7 @@ const placeGroupAtWall = (
           pos: [x, height, z],
           rotationY: placement.rotationY,
           footprint,
+          ...(heights && { heights }),
           placedIn: 'corner',
         };
       }
@@ -596,14 +1298,55 @@ const placeGroupAtWall = (
     pos: [x, , z],
     rotationY,
   } = placeAgainstWall(wall, footprint, alignment, offsetMm);
-  return { pos: [x, height, z], rotationY, footprint, placedIn: 'wall' };
+  return {
+    pos: [x, height, z],
+    rotationY,
+    footprint,
+    ...(heights && { heights }),
+    placedIn: 'wall',
+  };
+};
+
+// The nearest position along the same wall where the group overlaps no other
+// group: next to one of them, or where it was asked to stand.
+const freePlacementAlongWall = (
+  placement: GroupPlacement,
+  wall: DerivedWall,
+  spec: WallPlacementSpec,
+  others: PlacedGroupVolume[],
+): GroupPlacement | undefined => {
+  const { footprint } = placement;
+  const width = footprint.widthMm;
+  const asked = wallSpanStart(wall, footprint, spec.alignment ?? 'center', spec.offsetMm ?? 0);
+  const candidates = others
+    .flatMap(({ volume }) => {
+      const [from, to] = spanAlongWall(wall, volume.corners);
+      return [to, from - width];
+    })
+    .filter((spanStart) => spanStart > -0.5 && spanStart + width < wall.lengthMm + 0.5)
+    .sort((a, b) => Math.abs(a - asked) - Math.abs(b - asked));
+  for (const spanStart of candidates) {
+    const {
+      pos: [x, , z],
+      rotationY,
+    } = placeAgainstWall(wall, footprint, 'start', spanStart);
+    const candidate: GroupPlacement = { ...placement, pos: [x, placement.pos[1], z], rotationY };
+    if (
+      overlappedGroupIds(volumeOf(footprint, placement.heights, candidate), others).length === 0
+    ) {
+      return candidate;
+    }
+  }
+  return undefined;
 };
 
 // The page runs every planner call it receives at once, so the tool calls that
-// change the plan run one after another: the corner probe tells the groups it
+// change the plan run one after another: the anchor probe tells the groups it
 // loaded by comparing the plan's groups before and after its load, and the
 // groups a concurrent call loads or splits meanwhile would count as its own
-// and be removed.
+// and be removed. get-plan-context waits as well: it reads the plan twice -
+// the plan context and the calculated groups its positions come from - and a
+// plan change between the two would mix two states of a group.
 let planChanges: Promise<unknown> = Promise.resolve();
 
 const oneAtATime =
@@ -614,16 +1357,51 @@ const oneAtATime =
     return run;
   };
 
+// The agent reads a group's position in the frame it places a group with: pos
+// is the room point of the group's back left bottom corner, rotationY the
+// rotation of the placement - wherever the planner keeps the group origin. The
+// planner's raw groups carry the geometry; the server's own geometry reads the
+// planner's values.
+const inPlacementFrame =
+  (executor: ToolExecutor): ToolExecutor =>
+  async (roomDesignerApi, args) => {
+    const result: any = await executor(roomDesignerApi, args);
+    const positioned = (group: any) => group?.position?.pos !== undefined;
+    if (
+      !(Array.isArray(result?.groups) && result.groups.some(positioned)) &&
+      !positioned(result?.group)
+    ) {
+      return result;
+    }
+    const rawGroups = ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
+      []) as any[];
+    const inFrame = (group: any) => {
+      const rawGroup = positioned(group)
+        ? rawGroups.find((candidate) => candidate.id === group.id)
+        : undefined;
+      const position =
+        rawGroup && positionInPlacementFrame(rawGroup, group.position.footprint);
+      return position ? { ...group, position } : group;
+    };
+    return {
+      ...result,
+      ...(Array.isArray(result.groups) && { groups: result.groups.map(inFrame) }),
+      ...(result.group && { group: inFrame(result.group) }),
+    };
+  };
+
 export const toolExecutors: Record<string, ToolExecutor> = {
   // The plan context arrives agent-ready from the planner API (compacted
 // sections, 3D room contours with derived walls); the executor passes it
 // through with the articles' cornerArticle flag completed and without their
 // corner points, which only the server uses.
-  'get-plan-context': async (roomDesignerApi, args) => {
-    const requested =
-      Array.isArray(args.include) && args.include.length > 0
-        ? (args.include as PlanContextSection[])
-        : DEFAULT_SECTIONS;
+  'get-plan-context': oneAtATime(inPlacementFrame(async (roomDesignerApi, args) => {
+    // an unknown section is ignored
+    const known = (Array.isArray(args.include) ? args.include : []).filter(
+      (section): section is PlanContextSection =>
+        PLAN_CONTEXT_SECTIONS.includes(section),
+    );
+    const requested = known.length > 0 ? known : DEFAULT_SECTIONS;
     const context =
       await roomDesignerApi.extended.getExternalObjectPlanContext(requested);
     if (!Array.isArray(context?.articles)) {
@@ -634,7 +1412,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       ...context,
       articles: articles.map((article) => agentFacingArticle(article, articles)),
     };
-  },
+  })),
 
   'find-attributes': async (roomDesignerApi, args) => {
     const needle = String(args.text ?? '')
@@ -681,159 +1459,121 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     };
   },
 
-  'create-or-replace-groups': oneAtATime(async (roomDesignerApi, args) => {
-    const posGroups = args.posGroups as any[];
-    const validationErrors: string[] = [];
-    posGroups.forEach((group, groupIndex) => {
-      if (!Array.isArray(group?.roots) || group.roots.length === 0) {
-        validationErrors.push(
-          `posGroups[${groupIndex}]: needs a non-empty roots array`,
-        );
-        return;
+  'create-or-replace-groups': oneAtATime(inPlacementFrame(async (roomDesignerApi, args) => {
+    const corrections: string[] = [];
+    const notLoaded: NotLoadedGroup[] = [];
+    let callGroups = keepBuildable(
+      (args.posGroups as any[]).map((group, index) => ({ group, index })),
+      notLoaded,
+      ({ group, index }) => prepareGroup(group, `posGroups[${index}]`, corrections),
+    );
+    const failIfNothingLeft = () => {
+      if (callGroups.length === 0) {
+        throw nothingLoaded(notLoaded);
       }
-      // the library regenerates its generated roots (worktop, toe kick)
-      group.roots = group.roots.filter((root: any) => !isGeneratedRoot(root));
-      if (group.roots.length === 0) {
-        validationErrors.push(
-          `posGroups[${groupIndex}]: needs at least one article root (generated roots are dropped)`,
-        );
-        return;
-      }
-      if (group.pos !== undefined || group.rotationY !== undefined) {
-        validationErrors.push(
-          `posGroups[${groupIndex}]: do not set pos/rotationY on a group - position a new group with placement`,
-        );
-      }
-      const rootIds = new Set<string>();
-      group.roots.forEach((root: any, rootIndex: number) => {
-        for (const field of ['id', 'articleId']) {
-          const value = root?.[field];
-          if (typeof value !== 'string' || value.length === 0) {
-            validationErrors.push(
-              `posGroups[${groupIndex}].roots[${rootIndex}]: ${field} must be a non-empty string` +
-                (field === 'articleId'
-                  ? ' (an article id from the catalog)'
-                  : ''),
-            );
-          }
-        }
-        if (root?.articlePos !== undefined || root?.rotationY !== undefined) {
-          validationErrors.push(
-            `posGroups[${groupIndex}].roots[${rootIndex}]: a root module carries no articlePos/rotationY - ` +
-              'root positions come from the docking (contextData) only, the group position from placement',
-          );
-        }
-        const rootId = root?.id;
-        if (typeof rootId === 'string' && rootId.length > 0) {
-          if (rootIds.has(rootId)) {
-            validationErrors.push(
-              `posGroups[${groupIndex}].roots[${rootIndex}]: duplicate root id '${rootId}' - every root id must be unique within its group`,
-            );
-          }
-          rootIds.add(rootId);
-        }
-      });
-      validationErrors.push(
-        ...[...dockingErrors(group.roots), ...sideVectorErrors(group.roots)].map(
-          (error) => `posGroups[${groupIndex}]${error}`,
-        ),
-      );
-      if (group.repositioningData !== undefined) {
-        validationErrors.push(
-          `posGroups[${groupIndex}]: repositioningData is not supported - position the group with ` +
-            'placement { posGroup, posRotationY }',
-        );
-      }
-      if (group.placement !== undefined) {
-        validationErrors.push(
-          ...placementErrors(group.placement, rootIds).map(
-            (error) => `posGroups[${groupIndex}]${error}`,
-          ),
-        );
-      }
-    });
-    if (validationErrors.length > 0) {
-      throw invalidPosGroups(validationErrors);
-    }
-    for (const group of posGroups) {
+    };
+    failIfNothingLeft();
+    for (const { group } of callGroups) {
       group.roots = group.roots.map(toArticlePick);
     }
     const catalog =
       await roomDesignerApi.extended.getExternalObjectPlanContext(['articles']);
     const articles = (catalog.articles ?? []) as any[];
-    validateArticlePickIds(articles, posGroups);
+    callGroups = keepBuildable(callGroups, notLoaded, ({ group, index }) =>
+      resolveArticleIds(articles, group, `posGroups[${index}]`, corrections),
+    );
+    failIfNothingLeft();
 
     const preContext =
       await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']);
     const beforeGroupIds = new Set(
       ((preContext.groups ?? []) as any[]).map((group) => group.id),
     );
-    // a placement on a group in the plan would move it on the replace
-    const existingGroupErrors = posGroups.flatMap((group, groupIndex) =>
-      group.placement !== undefined && beforeGroupIds.has(group.id)
-        ? [
-            `posGroups[${groupIndex}]: placement positions a new group only - group '${group.id}' is ` +
-              'already in the plan; resubmit it without placement to keep its position, or move it ' +
-              'with place-group',
-          ]
-        : [],
-    );
-    if (existingGroupErrors.length > 0) {
-      throw invalidPosGroups(existingGroupErrors);
-    }
-    // The corner frame of a corner anchor - its corner point and hand - comes
-    // from the docking vectors of the anchor calculated as authored: learned
-    // earlier, or calculated by a probe.
-    const cornerAnchors = posGroups.flatMap((group, groupIndex) => {
-      if (
-        group.placement === undefined ||
-        !group.roots.some((root: any) => isCornerArticle(articles, root))
-      ) {
-        return [];
+    // In a new group, a root named in the docking but never sent cannot be
+    // built; a replaced group keeps its entries to roots deleted from it.
+    for (const { group, index } of callGroups) {
+      if (!beforeGroupIds.has(group.id)) {
+        reportUnsentRoots(group, `posGroups[${index}]`, corrections);
       }
-      const anchor = anchorRootOf(group.roots, group.placement, articles);
-      return isCornerArticle(articles, anchor)
-        ? [{ anchor, libraryId: group.libraryId as string | undefined, groupIndex }]
-        : [];
-    });
-    const unknownCornerAnchors = cornerAnchors.filter(
-      ({ anchor, libraryId }) => !knownCornerFrames.has(cornerVariantKey(anchor, libraryId)),
+    }
+    callGroups = keepBuildable(callGroups, notLoaded, ({ group, index }) =>
+      completeDocking(group, articles, `posGroups[${index}]`, corrections),
     );
-    if (unknownCornerAnchors.length > 0) {
+    failIfNothingLeft();
+    // A placement on a group in the plan would move it on the replace. Without
+    // repositioning the planner keeps the group where it is.
+    for (const { group, index } of callGroups) {
+      if (group.placement !== undefined && beforeGroupIds.has(group.id)) {
+        delete group.placement;
+        corrections.push(
+          `posGroups[${index}]: group '${group.id}' is already in the plan - its placement was not ` +
+            'used and the group keeps its position; place-group moves it',
+        );
+      }
+    }
+    // The frame of an anchor - its docking corner and the turn of a corner
+    // article - comes from the docking vectors of the anchor calculated as
+    // authored: learned earlier, or calculated by a probe.
+    const placedAnchors = callGroups.flatMap(({ group, index }) =>
+      group.placement === undefined
+        ? []
+        : [
+            {
+              anchor: anchorRootOf(group.roots, group.placement, articles),
+              libraryId: group.libraryId as string | undefined,
+              index,
+            },
+          ],
+    );
+    const unknownAnchors = placedAnchors.filter(
+      ({ anchor, libraryId }) => !knownAnchorFrames.has(anchorVariantKey(anchor, libraryId)),
+    );
+    const uncalculatedKeys = new Set<string>();
+    if (unknownAnchors.length > 0) {
       const planGroups = ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
         []) as any[];
       const planGroupIds = new Set(planGroups.map((group) => group.id));
-      for (const { anchor, libraryId, groupIndex } of unknownCornerAnchors) {
-        const key = cornerVariantKey(anchor, libraryId);
-        if (knownCornerFrames.has(key)) {
+      for (const { anchor, libraryId } of unknownAnchors) {
+        const key = anchorVariantKey(anchor, libraryId);
+        if (knownAnchorFrames.has(key) || uncalculatedKeys.has(key)) {
           continue;
         }
-        // a corner group without its corner geometry would stand off the corner
-        const frame = await probeCornerFrame(roomDesignerApi, anchor, libraryId, planGroupIds);
-        if (!frame) {
-          throw new Error(
-            `Nothing was loaded: the corner article '${anchor.articleId}' of posGroups[${groupIndex}] ` +
-              'could not be calculated to position the group - check its articleId, libraryId and attributes.',
-          );
+        const frame = await probeAnchorFrame(roomDesignerApi, anchor, libraryId, planGroupIds);
+        if (frame) {
+          knownAnchorFrames.set(key, frame);
+        } else {
+          uncalculatedKeys.add(key);
         }
-        knownCornerFrames.set(key, frame);
+      }
+    }
+    for (const { anchor, libraryId, index } of placedAnchors) {
+      if (uncalculatedKeys.has(anchorVariantKey(anchor, libraryId))) {
+        corrections.push(
+          `posGroups[${index}]: root '${anchor.id}' ('${anchor.articleId}') could not be calculated before ` +
+            "loading - the group was placed by the unit's origin and may stand off posGroup; place-group " +
+            'puts it against a wall or into a room corner',
+        );
       }
     }
     // Only article picks and the repositioning derived from the placement
     // reach the planner.
+    const posGroups = callGroups.map(({ group }) => group);
     for (const group of posGroups) {
       if (group.placement !== undefined) {
         group.repositioningData = toRepositioningData(
           group.roots,
           group.placement,
           articles,
-          knownCornerFrames,
+          knownAnchorFrames,
           group.libraryId,
         );
       }
+      if (!group.attributes?.length) {
+        delete group.attributes;
+      }
       for (const field of Object.keys(group)) {
         if (
-          !['id', 'libraryId', 'roots', 'repositioningData'].includes(field)
+          !['id', 'libraryId', 'roots', 'repositioningData', 'attributes'].includes(field)
         ) {
           delete group[field];
         }
@@ -851,7 +1591,11 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       throw new Error(
         'No groups were created or replaced. Check that each root module name is a master-data ' +
           'module id and the articleId comes from the article catalog (see get-plan-context), ' +
-          'and that the payload follows the rules returned by get-authoring-rules.',
+          'and that the payload follows the rules returned by get-authoring-rules.' +
+          notLoaded
+            .flatMap((entry) => entry.errors)
+            .map((error) => `\n${error}`)
+            .join(''),
       );
     }
     const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
@@ -880,14 +1624,17 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           'A group gets its position from the placement ({ posGroup, posRotationY }) it is created ' +
           'with (see get-authoring-rules), or place-group moves it against a wall or into a room corner.',
       }),
+      ...(corrections.length > 0 && { corrections }),
+      ...(notLoaded.length > 0 && { notLoaded }),
     };
-  }),
+  })),
 
-  'place-group': oneAtATime(async (roomDesignerApi, args) => {
+  'place-group': oneAtATime(inPlacementFrame(async (roomDesignerApi, args) => {
+    const corrections: string[] = [];
     const groupId = args.groupId as string;
     const spec: WallPlacementSpec = {
-      wall: args.wall as string | number,
-      alignment: (args.alignment as WallAlignment | undefined) ?? 'center',
+      wall: sideLabel(args.wall as string | number),
+      alignment: sideLabel((args.alignment as WallAlignment | undefined) ?? 'center'),
       offsetMm: (args.offsetMm as number | undefined) ?? 0,
       roomIndex: (args.roomIndex as number | undefined) ?? 0,
     };
@@ -898,6 +1645,13 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     const group = findGroup(groups, groupId);
     const rooms = ((context.rooms as any)?.rooms ?? []) as any[];
     const resolved = resolveWall(rooms, spec);
+    if (isWallSide(spec.alignment) && alignmentRunsParallel(resolved.wall, spec.alignment)) {
+      corrections.push(
+        `The alignment '${spec.alignment}' runs parallel to the ${resolved.wall.side} wall - ` +
+          'the group was centred on the wall instead',
+      );
+      spec.alignment = 'center';
+    }
     // the placement math needs the calculated group with its geometry; the
     // plan context returns the groups compacted
     const rawGroups =
@@ -906,21 +1660,34 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     if (!rawGroup) {
       throw new Error(`Group '${groupId}' has no calculated geometry to place.`);
     }
-    const placement = placeGroupAtWall(rawGroup, resolved, spec);
-    const contact = findGroupContact(
-      footprintCornersInRoom(placement.footprint, placement),
-      rawGroups,
-      new Set([group.id]),
+    let placement = placeGroupAtWall(rawGroup, resolved, spec);
+    const others = placedGroupVolumes(rawGroups, group.id);
+    const overlapped = overlappedGroupIds(
+      volumeOf(placement.footprint, placement.heights, placement),
+      others,
     );
-    if (contact) {
-      throw new Error(
-        'Placement rejected - the group was not moved: ' +
-          contactError(
-            `Group '${group.id}' placed at the ${resolved.wall.side} wall`,
-            contact,
-            groups,
-          ),
-      );
+    if (overlapped.length > 0) {
+      const named = overlapped.map((id) => `'${id}'`).join(', ');
+      const free =
+        placement.placedIn === 'wall'
+          ? freePlacementAlongWall(placement, resolved.wall, spec, others)
+          : undefined;
+      if (free) {
+        const movedMm = Math.round(
+          Math.hypot(free.pos[0] - placement.pos[0], free.pos[2] - placement.pos[2]),
+        );
+        corrections.push(
+          `Group '${group.id}' would overlap group ${named} at the ${resolved.wall.side} wall - it was moved ` +
+            `${movedMm} mm along the wall to stand beside it. If the units belong together, join the ` +
+            'groups with merge-groups',
+        );
+        placement = free;
+      } else {
+        corrections.push(
+          `Group '${group.id}' overlaps group ${named} - there is no free position on the ` +
+            `${resolved.wall.side} wall for it, so it stands where it was asked to`,
+        );
+      }
     }
     const loaded = await roomDesignerApi.extended.loadExternalObjectGroupLayout(
       { posGroups: [repositionedGroup(rawGroup, placement)] },
@@ -935,42 +1702,45 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     const after = await roomDesignerApi.extended.getExternalObjectPlanContext([
       'groups',
     ]);
-    return {
-      placedIn: placement.placedIn,
-      wall: resolved.wall,
-      group: ((after.groups ?? []) as any[]).find(
-        (candidate) => candidate.id === group.id,
-      ),
-    };
-  }),
+    return withCorrections(
+      {
+        placedIn: placement.placedIn,
+        wall: resolved.wall,
+        group: ((after.groups ?? []) as any[]).find(
+          (candidate) => candidate.id === group.id,
+        ),
+      },
+      corrections,
+    );
+  })),
 
   // The group commands run in the planner (externalObjectGroupOperation); the
   // executors resolve group id prefixes and check article ids against the
   // catalog first, so the agent gets the lists of valid ids on a mistake.
-  'change-module-attribute': oneAtATime(async (roomDesignerApi, args) =>
+  'change-module-attribute': oneAtATime(inPlacementFrame(async (roomDesignerApi, args) =>
     roomDesignerApi.extended.externalObjectGroupOperation(
       'change-module-attribute',
       {
         rootModuleId: args.rootModuleId,
         moduleId: args.moduleId ?? null,
         attributeId: args.attributeId,
-        value: args.value,
+        value: attributeValue(args.value),
       },
     ),
-  ),
+  )),
 
-  'change-group-attribute': oneAtATime(async (roomDesignerApi, args) => {
+  'change-group-attribute': oneAtATime(inPlacementFrame(async (roomDesignerApi, args) => {
     const group = findGroup(
       await planGroups(roomDesignerApi),
       args.groupId as string,
     );
     return roomDesignerApi.extended.externalObjectGroupOperation(
       'change-group-attribute',
-      { groupId: group.id, attributeId: args.attributeId, value: args.value },
+      { groupId: group.id, attributeId: args.attributeId, value: attributeValue(args.value) },
     );
-  }),
+  })),
 
-  'delete-group': oneAtATime(async (roomDesignerApi, args) => {
+  'delete-group': oneAtATime(inPlacementFrame(async (roomDesignerApi, args) => {
     const group = findGroup(
       await planGroups(roomDesignerApi),
       args.groupId as string,
@@ -979,55 +1749,74 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       'delete-group',
       { groupId: group.id },
     );
-  }),
+  })),
 
-  'delete-root-module': oneAtATime(async (roomDesignerApi, args) =>
+  'delete-root-module': oneAtATime(inPlacementFrame(async (roomDesignerApi, args) =>
     roomDesignerApi.extended.externalObjectGroupOperation(
       'delete-root-module',
       { rootModuleId: args.rootModuleId },
     ),
-  ),
+  )),
 
-  'merge-article-into-group': oneAtATime(async (roomDesignerApi, args) => {
+  'merge-article-into-group': oneAtATime(inPlacementFrame(async (roomDesignerApi, args) => {
+    const corrections: string[] = [];
     const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
       ['groups', 'articles'],
     );
     const group = findGroup(context.groups ?? [], args.groupId as string);
-    requireCatalogArticle(context.articles ?? [], {
-      articleId: args.articleId,
-      libraryId: group.libraryId,
-    });
-    return roomDesignerApi.extended.externalObjectGroupOperation(
+    const articles = (context.articles ?? []) as any[];
+    const articleId = catalogArticleId(
+      articles,
+      { articleId: args.articleId, libraryId: group.libraryId },
       'merge-article-into-group',
-      {
-        groupId: group.id,
-        articleId: args.articleId,
-        ...(args.attributes !== undefined && { attributes: args.attributes }),
-        dockTo: args.dockTo,
-      },
+      corrections,
     );
-  }),
+    const dockTo = dockTarget(
+      group,
+      catalogArticleOf(articles, { articleId, libraryId: group.libraryId }),
+      { ...(args.dockTo as any) },
+      corrections,
+    );
+    return withCorrections(
+      await roomDesignerApi.extended.externalObjectGroupOperation(
+        'merge-article-into-group',
+        {
+          groupId: group.id,
+          articleId,
+          ...(args.attributes !== undefined && { attributes: args.attributes }),
+          dockTo,
+        },
+      ),
+      corrections,
+    );
+  })),
 
-  'exchange-root-module': oneAtATime(async (roomDesignerApi, args) => {
+  'exchange-root-module': oneAtATime(inPlacementFrame(async (roomDesignerApi, args) => {
+    const corrections: string[] = [];
     const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
       ['groups', 'articles'],
     );
     const group = findGroup(context.groups ?? [], args.groupId as string);
-    requireCatalogArticle(context.articles ?? [], {
-      articleId: args.articleId,
-      libraryId: group.libraryId,
-    });
-    return roomDesignerApi.extended.externalObjectGroupOperation(
+    const articleId = catalogArticleId(
+      context.articles ?? [],
+      { articleId: args.articleId, libraryId: group.libraryId },
       'exchange-root-module',
-      {
-        groupId: group.id,
-        rootModuleId: args.rootModuleId,
-        articleId: args.articleId,
-      },
+      corrections,
     );
-  }),
+    return withCorrections(
+      await roomDesignerApi.extended.externalObjectGroupOperation(
+        'exchange-root-module',
+        {
+          groupId: group.id,
+          rootModuleId: args.rootModuleId,
+          articleId,
+        },
+      ),
+      corrections,
+    );
+  })),
 
-  'merge-groups': oneAtATime(async (roomDesignerApi, args) => {
+  'merge-groups': oneAtATime(inPlacementFrame(async (roomDesignerApi, args) => {
     const groups = await planGroups(roomDesignerApi);
     return roomDesignerApi.extended.externalObjectGroupOperation(
       'merge-groups',
@@ -1038,7 +1827,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         ),
       },
     );
-  }),
+  })),
 
   'get-price': async (roomDesignerApi) => {
     return roomDesignerApi.extended.fetchPrice();

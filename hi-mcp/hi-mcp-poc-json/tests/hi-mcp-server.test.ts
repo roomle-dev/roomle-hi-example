@@ -108,6 +108,89 @@ describe('hi-mcp-server tool calls', () => {
     },
   );
 
+  it('logs what the agent sent to a plan-changing tool before the server corrects it', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const client = await connectClient(createMockPlannerApi());
+    const posGroups = [
+      { roots: [{ id: 'c1', articleId: 'a', contextData: { dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'r1', articleId: 'b' }] }] } }] },
+    ];
+    // the in-memory transport hands the server this very object, which it corrects
+    const sent = JSON.stringify({ posGroups });
+    await client.callTool({ name: 'create-or-replace-groups', arguments: { posGroups } });
+    await client.callTool({ name: 'get-price', arguments: {} });
+
+    const lines = log.mock.calls.map(([line]) => String(line));
+    log.mockRestore();
+    expect(lines).toContain(`[hi-mcp] tool create-or-replace-groups args ${sent}`);
+    expect(lines.some((line) => line.startsWith('[hi-mcp] tool get-price args'))).toBe(false);
+  });
+
+  it('logs the feedback and the errors of a tool as one JSON line', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const plannerApi = createMockPlannerApi({
+      getExternalObjectPlanContext: vi.fn(async () => ({
+        groups: [{ id: 'g1', libraryId: 'lib-1', roots: [] }],
+        articles: [{ articleId: 'article-1', libraryId: 'lib-1' }],
+      })),
+    });
+    const client = await connectClient(plannerApi);
+
+    await client.callTool({
+      name: 'exchange-root-module',
+      arguments: { groupId: 'g1', rootModuleId: 'r1', articleId: 'ARTICLE-1' },
+    });
+    await client.callTool({
+      name: 'create-or-replace-groups',
+      arguments: { posGroups: [{ roots: [] }] },
+    });
+
+    const lines = log.mock.calls.map(([line]) => String(line));
+    log.mockRestore();
+    expect(lines).toContain(
+      `[hi-mcp] tool exchange-root-module feedback ${JSON.stringify({
+        corrections: ["exchange-root-module: articleId 'ARTICLE-1' was read as 'article-1'"],
+      })}`,
+    );
+    const errorLine = lines.find((line) =>
+      line.startsWith('[hi-mcp] tool create-or-replace-groups error '),
+    );
+    expect(JSON.parse(errorLine!.slice('[hi-mcp] tool create-or-replace-groups error '.length))).toEqual({
+      message: expect.stringMatching(
+        /^Invalid pos groups - nothing was loaded:\nposGroups\[0\]: needs a non-empty roots array/,
+      ),
+      args: { posGroups: [{ roots: [] }] },
+    });
+  });
+
+  it('ends every call of a tool that changes the plan with one feedback line, also without feedback', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const client = await connectClient(createMockPlannerApi());
+
+    await client.callTool({ name: 'delete-root-module', arguments: { rootModuleId: 'r1' } });
+    await client.callTool({ name: 'get-price', arguments: {} });
+
+    const lines = log.mock.calls.map(([line]) => String(line));
+    log.mockRestore();
+    expect(lines).toContain('[hi-mcp] tool delete-root-module feedback {}');
+    expect(lines.some((line) => line.startsWith('[hi-mcp] tool get-price feedback'))).toBe(false);
+  });
+
+  it('accepts a number as an attribute value and passes it on as its string', async () => {
+    const plannerApi = createMockPlannerApi();
+    const client = await connectClient(plannerApi);
+
+    const result = await client.callTool({
+      name: 'change-module-attribute',
+      arguments: { rootModuleId: 'r1', attributeId: 'mod_Width', value: 900 },
+    });
+
+    expect((result as { isError?: boolean }).isError).toBeFalsy();
+    expect(plannerApi.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+      'change-module-attribute',
+      { rootModuleId: 'r1', moduleId: null, attributeId: 'mod_Width', value: '900' },
+    );
+  });
+
   it('runs a command tool against the planner API and returns its result', async () => {
     const operationResult = {
       command: 'delete-root-module',
@@ -218,6 +301,40 @@ describe('hi-mcp-server tool calls', () => {
       expect(text).not.toContain('any other picture');
       expect(text).not.toContain('any image');
     }
+  });
+
+  it('describes how to succeed instead of what is rejected, and where the corrections are', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    const { tools } = await client.listTools();
+    const served = [client.getInstructions() ?? '', rules, JSON.stringify(tools)].join('\n');
+    expect(served).not.toMatch(/reject/i);
+    expect(served).not.toMatch(/lists? the new root/);
+    expect(rules).toContain(
+      'name the new root by its id under dockedRoots - the new root itself is an entry of roots like every other root',
+    );
+    expect(rules).toContain(
+      'Read corrections and notLoaded in a result: corrections lists what the server changed in your input',
+    );
+  });
+
+  it('docks a range hood like any unit and reads a position back in the frame of the placement', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} }),
+    );
+    const { tools } = await client.listTools();
+    const served = [client.getInstructions() ?? '', rules, JSON.stringify(tools)].join('\n');
+    expect(rules).toContain(
+      'range hood: it hangs between two wall units like a unit beside them - RightBottom of the wall unit left of the gap -> LeftBottom of the hood.',
+    );
+    expect(served).not.toContain('cannot be docked');
+    expect(served).not.toContain('posRotationY + 90');
+    expect(JSON.stringify(tools)).toContain(
+      "position with pos - the room point of the group's back left bottom corner, as a placement names it",
+    );
   });
 
   it('never tells the agent how the server positions a group internally', async () => {
@@ -342,20 +459,47 @@ describe('hi-mcp-server through the page bridge', () => {
   it('runs create-or-replace-groups as planner calls the page executes', async () => {
     const bridge = new PageBridge();
     const socket = attachPage(bridge);
+    // a range hood, whose origin is its centre: 299 mm right of its left edge
+    const hoodVectors = [
+      { id: 'LeftBottom', start: [-299, 0, 0], end: [-299, 0, 501] },
+      { id: 'RightBottom', start: [299, 0, 0], end: [299, 0, 501] },
+    ];
+    let rawGroups: object[] = [];
     let loaded = false;
     socket.respond = (method, args) => {
       if (method === 'loadExternalObjectGroupLayout') {
+        const [layout] = args as [any];
+        if (layout.posGroups[0].roots[0].id === 'anchor-probe') {
+          rawGroups = [{ id: 'probe', roots: [{ id: 'p1', articleId: 'DU', dockInfos: hoodVectors }] }];
+          return [{ id: 'probe' }];
+        }
+        // the planner keeps the group origin at the hood's centre
+        rawGroups = [
+          {
+            id: 'g1',
+            pos: [299, 0, 0],
+            rotationY: 0,
+            roots: [{ id: 'u1', articleId: 'DU', articlePos: [0, 0, 0], rotationY: 0, dockInfos: hoodVectors }],
+          },
+        ];
         loaded = true;
         return [{ id: 'g1' }];
       }
+      if (method === 'getExternalObjectGroups') {
+        return rawGroups;
+      }
+      if (method === 'removeExternalObject') {
+        rawGroups = [];
+        return undefined;
+      }
       const [include] = args as [string[]];
       if (include.includes('articles')) {
-        return { articles: [{ articleId: 'a1' }] };
+        return { articles: [{ articleId: 'DU' }] };
       }
-      return { groups: loaded ? [{ id: 'g1', position: { pos: [0, 0, 0] } }] : [] };
+      return { groups: loaded ? [{ id: 'g1', position: { pos: [299, 0, 0], rotationY: 0 } }] : [] };
     };
     const client = await connectClient(createPlannerApi(bridge));
-    const roots = [{ id: 'u1', articleId: 'a1' }];
+    const roots = [{ id: 'u1', articleId: 'DU' }];
     const posGroups = [
       { roots, placement: { posGroup: [0, 0, 0], posRotationY: 0 } },
     ];
@@ -369,24 +513,38 @@ describe('hi-mcp-server through the page bridge', () => {
     expect(calls.map((call) => call.method)).toEqual([
       'getExternalObjectPlanContext',
       'getExternalObjectPlanContext',
+      // the probe learns the hood's frame
+      'getExternalObjectGroups',
+      'loadExternalObjectGroupLayout',
+      'getExternalObjectGroups',
+      'removeExternalObject',
       'loadExternalObjectGroupLayout',
       'getExternalObjectPlanContext',
+      // the position read back in the placement frame
+      'getExternalObjectGroups',
     ]);
-    expect(calls[2].args).toEqual([
+    expect(calls[6].args).toEqual([
       {
         posGroups: [
           {
             roots,
-            repositioningData: { posGroup: [0, 0, 0], posRotationY: 0, rootId: 'u1' },
+            repositioningData: {
+              posGroup: [0, 0, 0],
+              posRotationY: 0,
+              rootId: 'u1',
+              rootRelPos: [299, 0, 0],
+              rootRelRotationY: 0,
+            },
           },
         ],
       },
       'posGroups',
       { reason: 'adjusted' },
     ]);
+    // the agent reads back the point it placed the hood's left edge at
     expect(JSON.parse(textOf(result))).toEqual({
       loaded: [{ id: 'g1' }],
-      groups: [{ id: 'g1', position: { pos: [0, 0, 0] } }],
+      groups: [{ id: 'g1', position: { pos: [0, 0, 0], rotationY: 0 } }],
     });
   });
 
@@ -418,7 +576,7 @@ describe('hi-mcp-server through the page bridge', () => {
     let loaded = false;
     socket.respond = (method) => {
       if (method === 'getExternalObjectGroups') {
-        return [calculatedGroup];
+        return [loaded ? { ...calculatedGroup, pos: [4000, 0, -3000], rotationY: 270 } : calculatedGroup];
       }
       if (method === 'loadExternalObjectGroupLayout') {
         loaded = true;
@@ -442,6 +600,7 @@ describe('hi-mcp-server through the page bridge', () => {
       'getExternalObjectGroups',
       'loadExternalObjectGroupLayout',
       'getExternalObjectPlanContext',
+      'getExternalObjectGroups',
     ]);
     expect(calls[0].args).toEqual([['rooms', 'groups']]);
     expect(calls[2].args).toEqual([
@@ -461,7 +620,7 @@ describe('hi-mcp-server through the page bridge', () => {
     expect(JSON.parse(textOf(result))).toEqual({
       placedIn: 'wall',
       wall: rightWall,
-      group: { id: 'g1', position: { pos: [4000, 0, -3000] } },
+      group: { id: 'g1', position: { pos: [4000, 0, -3000], rotationY: 270 } },
     });
   });
 });

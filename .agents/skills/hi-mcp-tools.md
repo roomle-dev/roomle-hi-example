@@ -2,6 +2,9 @@
 
 **Load this skill when the task involves:** MCP tool definitions, tool parameters, usage patterns, error handling for specific tools.
 
+The behaviour reference — every guard, correction and feedback message, and the decisions behind
+them — is [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behaviour.md).
+
 ## Tool Overview
 
 ### Core Tools
@@ -54,7 +57,10 @@ no agent can open, three quarters of the tokens)
 name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels
 `mod_UprightDepth`, `mod_UprightHeight`; the range hood `DU` and the TV `SM_TV` have none). A root
 in `groups` carries the same ids among its `attributes`; a group's `position.footprint` gives
-`widthMm`/`depthMm` of the whole group. A unit is resized with `change-module-attribute` and the
+`widthMm`/`depthMm` of the whole group. A group's `position.pos` and `rotationY` are what a
+placement would name for it: the room point of its back left bottom corner and the rotation of the
+placement, whatever origin the planner keeps the group at — the agent reads back what it placed. A
+group with two corner articles also carries `position.rootId`, the corner article `pos` belongs to. A unit is resized with `change-module-attribute` and the
 attribute id, never its name.
 
 **Trusted descriptions**: every `desc` (article, root, module, attribute, attribute value) is
@@ -77,7 +83,7 @@ const context = await getPlanContext({ include: 'rooms,articles' });
 { posGroups: PosGroup[] }
 ```
 
-**Returns**: Created/updated groups, deleted IDs, log messages, and a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with)
+**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, errors }]` — the groups it could not build, each error naming what to send instead; the other groups load)
 
 **Usage**:
 ```javascript
@@ -91,11 +97,14 @@ one that goes into the corner `posGroup` names. One kitchen is one group: dock e
 instead of positioning it. Against a wall: `posRotationY` = the wall's `facingRotationY`,
 `posGroup` = the wall's `end` (flush into that corner) or a point from `end` towards `start`; in a
 corner: the corner point and the `facingRotationY` of the wall that ends there (for a right-handed
-corner article the server adds 90°, see the table in the authoring rules). See the
+corner article the server adds 90° itself, see the table in the authoring rules). `posGroup` is the
+back left bottom corner for every article — the server places the anchor by the back left bottom
+corner of its docking vectors, also for a range hood whose origin is its centre. See the
 [authoring rules skill](./hi-authoring-rules.md#positioning-a-group).
 
 **Existing groups**: a group resubmitted with its id and without placement keeps its position; a
-placement on a group that is already in the plan is rejected — move it with `place-group`.
+placement on a group that is already in the plan is not used (the group keeps its position, and
+`corrections` says so) — move it with `place-group`.
 
 ### place-group
 
@@ -106,8 +115,8 @@ position
 ```typescript
 {
   groupId: string,                       // a unique prefix is accepted
-  wall: 'left' | 'right' | 'top' | 'bottom' | number, // side label or wall index
-  alignment?: 'start' | 'center' | 'end' | 'left' | 'right' | 'top' | 'bottom', // default 'center'
+  wall: 'left' | 'right' | 'top' | 'bottom' | 'back' | 'front' | number, // side label or wall index
+  alignment?: 'start' | 'center' | 'end' | 'left' | 'right' | 'top' | 'bottom' | 'back' | 'front', // default 'center'
   offsetMm?: number,                     // along the wall, default 0
   roomIndex?: number,                    // default 0
 }
@@ -115,10 +124,14 @@ position
 
 A side label as alignment means flush into the corner with that adjoining wall (`wall: 'right'`,
 `alignment: 'top'` is the back right corner); a group with a corner article goes into that corner.
-A target that meets another group is rejected and the group is not moved.
+`back` and `front` name the `top` and `bottom` wall. Groups may touch. A target that overlaps
+another group (footprints and height ranges overlap by more than 5 mm) is moved along the same wall
+to the nearest free position; into a corner, or without a free position on the wall, the group is
+placed as asked. An alignment parallel to the target wall centres the group.
 
 **Returns**: `placedIn` (`'corner'` or `'wall'`), the wall, and the resulting group with its
-`position`
+`position`, plus `corrections` when the server corrected the request (an overlap, a parallel
+alignment)
 
 **Usage**:
 ```javascript
@@ -133,8 +146,8 @@ own group features; the group keeps its position
 
 **Parameters**:
 ```typescript
-'change-module-attribute': { rootModuleId: string, moduleId?: string, attributeId: string, value: string | boolean }
-'change-group-attribute':  { groupId: string, attributeId: string, value: string | boolean }
+'change-module-attribute': { rootModuleId: string, moduleId?: string, attributeId: string, value: string | number | boolean }
+'change-group-attribute':  { groupId: string, attributeId: string, value: string | number | boolean }
 'delete-group':            { groupId: string }
 'delete-root-module':      { rootModuleId: string }
 'merge-article-into-group': {
@@ -149,18 +162,23 @@ own group features; the group keeps its position
 Group ids accept a unique prefix; ids are the ones `get-plan-context` shows (a sub module by its
 id in `subModules`). `value` numbers are passed as strings. `dockTo.ownDockingVector` is one of
 the root's `freeDockingVectors`; the pairs are the docking pairs of the
-[authoring rules](./hi-authoring-rules.md#valid-docking-pairs).
+[authoring rules](./hi-authoring-rules.md#valid-docking-pairs). An `articleId` in another spelling
+(case, whitespace) is read in the catalog's spelling. `merge-article-into-group` docks a unit sent
+to a taken side vector to the root at the free end of that row, and a `dockingVector` the article
+does not have becomes the partner of `ownDockingVector`.
 
 **Returns**: `{ command, groups, removedGroupIds, changedModuleIds? }` once the planner has loaded
 the result — the affected groups in the `get-plan-context` shape; `changedModuleIds` for
-`change-group-attribute`
+`change-group-attribute`; `corrections` when the server corrected the input before forwarding
+(`merge-article-into-group`, `exchange-root-module`)
 
 - `delete-root-module`: units no longer docked together become separate groups where they stand;
   removing the only unit removes the group; generated roots (worktop, toe kick) cannot be removed
 - `exchange-root-module`: the article has one root module; the new unit keeps the position and
   the docking of the replaced one
 - `merge-groups`: the groups are merged into the target where they stand, like the planner's merge
-  action — nothing is moved and no docking is added; groups of different libraries are rejected
+  action — nothing is moved and no docking is added; groups of different libraries cannot be merged
+  (the planner's message is passed on)
 
 **Usage**:
 ```javascript
@@ -236,21 +254,25 @@ try {
 | Error | Cause | Solution |
 |---|---|---|
 | No page connected | Page not loaded with ?mcp=true | Open browser page |
-| Invalid articleId | Article not in catalog | Use valid articleId from context |
-| roots '…' are not docked to a placed root | A root or a chain the docking does not connect to the first root of the group | Dock it to a placed root (the error names the placed roots) |
-| roots '…' are docked to the RightBottom of root '…' with the same mode and offset | Two roots on one side vector at the same place | Continue the row from the free side vector of its last unit |
-| repositioningData is not supported | Payload with a `repositioningData` field | Use `placement` |
-| placement takes only posGroup, posRotationY and rootId | A stale field (`wall`, `alignment`, …) in the placement | Give `posGroup` and `posRotationY` from a wall, or create the group and call `place-group` |
-| placement: rootId must be the id of one of the group's roots | `rootId` names no root of the group | Name a root of the group, or leave `rootId` out |
-| placement positions a new group only | A placement on a group that is already in the plan | Resubmit the group without placement, or move it with `place-group` |
-| Placement rejected - the group was not moved | `place-group` target meets another group | Dock the units to that group instead (the error names its free docking vectors) |
-| Alignment '…' runs parallel to this '…' wall | `place-group` alignment names a wall parallel to the target wall | Use `start`, `center`, `end` or the side label of an adjoining wall |
-| Root module '…' has no free docking vector '…' | `merge-article-into-group` names an occupied vector | Use one of the root's `freeDockingVectors` (the error lists them) |
+| Invalid pos groups - nothing was loaded | No group of the `create-or-replace-groups` call can be built | Fix the listed errors — each names what to send instead |
+| articleId '…' is not in the article catalog | Article not in catalog (another spelling of a catalog id is read in the catalog's spelling and reported in `corrections`) | Use a valid articleId from context (the message lists them). In `create-or-replace-groups` the group is in `notLoaded`; a command tool fails |
+| roots '…' are not docked to a placed root (in `notLoaded`) | A part the docking does not connect to the first root, which the server cannot dock to the free end of a row: no free row end, a wall unit without a wall-unit row | Dock it to a placed root (the error names the placed roots and the entry to send) |
+| duplicate root id '…' named in the docking (in `notLoaded`) | Two roots of a group share an id that a docking entry names | Give every root a unique id |
+| Root module '…' has no free docking vector '…' | `merge-article-into-group` on a side the planner reports as taken although the row ends there (a stale docking entry after a deletion); a taken side with a free row end is moved there and reported in `corrections` | Use one of the root's `freeDockingVectors` (the error lists them) |
 | Module '…' has no attribute '…' | `change-module-attribute` with an attribute the module's master data does not assign (planners with roomle-ui `fix/hi-attribute-commands-RML-18004`; older builds report success and change nothing) | Look the attribute up with `find-attributes` — its `rootModules` name the modules that have it |
 | Root module '…' is generated by the library | `delete-root-module` on a worktop or toe kick | Remove the article root instead; the library regenerates the rest |
 | Article '…' has n root modules | `exchange-root-module` with an article of several root modules | Pick an article of one root module, or rebuild with `create-or-replace-groups` |
 | Groups of different libraries cannot be merged | `merge-groups` across libraries | Merge groups of one library only |
 | Another operation on group '…' is still in progress | A delete or merge of the group has not finished | Wait for the first call's result |
+
+**Corrections are no errors.** Most input mistakes are corrected and listed in `corrections` of the
+result: positions on groups and roots dropped, `repositioningData` taken as the placement, a
+placement the server cannot use or one on a group already in the plan not used (the planner
+positions the group, an existing group keeps its position), unconnected roots docked to the free
+end of a row, a unit on a taken side moved to the free end of the row, an article id read in the
+catalog's spelling, a `place-group` target moved off an overlap or centred on a parallel alignment.
+Every guard and correction:
+[hi-mcp-behaviour.md §8](../../hi-mcp/docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
 
 ## Timeouts
 

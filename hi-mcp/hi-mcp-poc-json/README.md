@@ -57,7 +57,7 @@ and all tool logic.
 | `hi-mcp-server.ts` | `McpServer` setup: server instructions + tool registrations with zod schemas; the handlers run the tool executors |
 | `tool-executors.ts` | The tool logic: payload validation, planner call composition, response shaping, agent hints |
 | `group-placement.ts` | The placement of a new group: finds the root it is anchored at by following the docking and derives the planner's repositioning |
-| `plan-space.ts` | The geometry of `place-group`: footprint and corner geometry of a calculated group, wall and corner placement, the contact test between groups |
+| `plan-space.ts` | The geometry of `place-group`: footprint and corner geometry of a calculated group, wall and corner placement, the overlap test between groups |
 | `planner-api.ts` | The planner methods the tools call, forwarded to the page with per-method timeouts |
 | `page-bridge.ts` | Connected-page registry, call correlation, timeouts, protocol check, "no page connected" error |
 | `types.ts` | WebSocket message protocol, `BRIDGE_PROTOCOL` (the page side carries its own copy) |
@@ -273,6 +273,9 @@ authoring rules, and the docking semantics (see [Authoring pos groups](#authorin
 
 ## Tool reference
 
+The behaviour reference — guidelines, decisions, every guard, correction and feedback message, and
+the information the server provides — is [../docs/hi-mcp-behaviour.md](../docs/hi-mcp-behaviour.md).
+
 The tools run in this server, but every planner call they make executes in the store page, so a
 tool is only as fast as the page. The timeout applies per planner call: 30 s by default, 120 s for
 `loadExternalObjectGroupLayout` (`create-or-replace-groups`, `place-group`),
@@ -306,7 +309,9 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   `cornerArticle` is `true` for an article made for a room corner (it carries `LeftBack`/`RightBack`
   docking vectors)
 - `groups` — the groups currently in the plan: a read-only `position` (`pos`, `rotationY`,
-  `footprint`) and per root the article pick (`id`, `articleId`, input `attributes`,
+  `footprint`) as a placement names it — `pos` the room point of the group's back left bottom
+  corner, `rotationY` the rotation of the placement, the footprint measured from `pos`, and with two
+  corner articles `rootId`, the one `pos` belongs to — and per root the article pick (`id`, `articleId`, input `attributes`,
   `contextData` with vector names only) plus read-only facts (`articleName`, `desc`,
   `category`, `dockingVectors`, `freeDockingVectors` — the vectors no docking entry uses, where a
   new root can dock — `subModules` with their id, `isGenerated`). No root positions, no
@@ -355,20 +360,23 @@ A new group is positioned with `placement: { posGroup, posRotationY, rootId? }` 
 [Positioning a group](#positioning-a-group). It is applied once, during the load that creates the
 group, so the group never appears at the origin first.
 
-Invalid payloads are rejected with per-group validation errors before anything is loaded: missing
-`roots`, missing pick fields (`id`, `articleId`), an unknown `articleId` (the error lists the
-catalog), `articlePos`/`rotationY` on any root or `pos`/`rotationY` on a group, roots the docking does not connect
-to the first root of a multi-root group, two roots on one side docking vector with the same mode and offset,
-an invalid `placement` (`posGroup` not three numbers, `posRotationY` missing or not a number —
-state 0 explicitly, `rootId` not a root of the group, any other field), and a `placement` on a
-group that is already in the plan.
+The server corrects what it can and reports each correction in `corrections`: it drops
+`articlePos`/`rotationY` on roots and `pos`/`rotationY` on groups, completes the docking of roots it
+does not connect, and does not use a placement it cannot read or one on a group that is already in
+the plan (the planner positions the group, an existing group keeps its position). A group it cannot
+build — no roots, an unknown `articleId`, roots it cannot dock — is reported in `notLoaded` with
+what to send instead, and the other groups of the call load. The call fails only when no group can
+be built. Every guard and correction:
+[hi-mcp-behaviour.md §8](../docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `posGroups` | `object[]` (min 1) | yes | Pos groups following the [authoring rules](#authoring-pos-groups) |
 
 Returns the loaded runtime ids and the resulting groups (with their final ids, `pos`,
-`rotationY`, `footprint`), plus a hint when a group of this call is still unpositioned.
+`rotationY`, `footprint`), plus a hint when a group of this call is still unpositioned,
+`corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, errors }]`,
+the groups it could not build).
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm room, from the back
 right corner, one call. `posGroup` is the right wall's `end` (`[4000, 0, -3000]`), `270` its
@@ -463,20 +471,23 @@ reads the rooms and the groups, takes the calculated group from the planner
 (`getExternalObjectGroups`), computes the position from the wall, the alignment and the group's
 footprint — a group with a corner article goes into the corner when the alignment names the
 adjoining wall — and reloads the group there, once. The roots and their docking stay as they are.
-A target that touches or overlaps another group is rejected and the group is not moved; the error
-names the group, its nearest root and the free docking vectors to dock to instead. No page
-change: the planner methods it calls are on every page's allow-list.
+Groups may touch. A target that overlaps another group — footprints and height ranges overlap by
+more than 5 mm — is moved along the same wall to the nearest free position, and `corrections`
+names the group and the distance and suggests `merge-groups` if the units belong together; into a
+corner, or without a free position on the wall, the group is placed as asked and the overlap
+reported. No page change: the planner methods it calls are on every page's allow-list.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `groupId` | `string` | yes | Id of the group (a unique prefix is accepted) |
-| `wall` | `'left' \| 'right' \| 'top' \| 'bottom' \| number` | yes | Side label (the longest wall of type `wall` on that side) or wall index |
-| `alignment` | `'start' \| 'center' \| 'end' \| side label` | no | Position along the wall; the side label of an adjoining wall means flush into that corner (`wall: "right"` + `alignment: "top"` is the back right corner). Default `center` |
+| `wall` | `'left' \| 'right' \| 'top' \| 'bottom' \| 'back' \| 'front' \| number` | yes | Side label (the longest wall of type `wall` on that side; `back` is `top`, `front` is `bottom`) or wall index |
+| `alignment` | `'start' \| 'center' \| 'end' \| side label` | no | Position along the wall; the side label of an adjoining wall means flush into that corner (`wall: "right"` + `alignment: "top"` is the back right corner); one parallel to the wall centres the group. Default `center` |
 | `offsetMm` | `number` | no | Extra distance along the wall. Default 0 |
 | `roomIndex` | `number` | no | Room in the `rooms` array. Default 0 |
 
-Returns `placedIn` (`corner` or `wall`), the wall, and the resulting group with its `position`.
-The group keeps its height, so a group of wall units only stays at its mounting height.
+Returns `placedIn` (`corner` or `wall`), the wall, and the resulting group with its `position`,
+plus `corrections` when the server corrected the request. The group keeps its height, so a group
+of wall units only stays at its mounting height.
 
 Example: `{ "groupId": "a1b2c3", "wall": "right", "alignment": "top" }`
 
@@ -487,10 +498,15 @@ the planner's group command API (`externalObjectGroupOperation`, roomle-ui),
 which performs the edit with the planner's own group features and answers once
 the planner has loaded the result. Every command keeps the group's position and
 returns `{ command, groups, removedGroupIds }`: the affected groups in the
-`get-plan-context` shape and the ids of removed groups. An unknown id, an
-occupied docking vector or groups of different libraries are rejected before
-anything changes. Group ids accept a unique prefix; article ids are checked
-against the catalog, and the error lists the valid ones.
+`get-plan-context` shape and the ids of removed groups. An unknown group or
+article id fails before anything changes, and the error lists the valid ones;
+an article id in another spelling is read in the catalog's spelling.
+`merge-article-into-group` docks a unit sent to a taken side vector to the
+root at the free end of that row, and a `dockingVector` the article does not
+have becomes the partner of `ownDockingVector`. The result reports these in
+`corrections`. The planner's own checks (e.g. groups of different libraries
+in `merge-groups`) are unchanged, and their message is passed on as the error.
+Group ids accept a unique prefix.
 
 | Tool | Parameters | Effect |
 | ---- | ---------- | ------ |
@@ -502,9 +518,9 @@ against the catalog, and the error lists the valid ones.
 | `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | Replaces a unit with an article of one root module; the new unit keeps the position and the docking |
 | `merge-groups` | `targetGroupId`, `groupIds` | Merges the groups into the target group where they stand, like the planner's merge action; nothing is moved and no docking is added |
 
-`value` is a string or a boolean; numbers are passed as strings. Attribute ids
-and allowed values come from the `masterData` section of `get-plan-context` or
-from `find-attributes`.
+`value` is a string, a number (passed on as its string) or a boolean. Attribute
+ids and allowed values come from the `masterData` section of `get-plan-context`
+or from `find-attributes`.
 
 Examples:
 
@@ -537,8 +553,8 @@ calculates every root position.
   matches an existing group replaces that group and keeps its position; without a matching `id` a
   new group is created at its `placement`.
 - A root module is an **article pick and nothing else**: `{ id, articleId, attributes?, contextData? }`.
-  The server rejects a root that carries `articlePos` or `rotationY` and a group that carries `pos`
-  or `rotationY`, ignores every other field, and drops roots marked `isGenerated` (worktop, toe
+  The server drops `articlePos`/`rotationY` on a root and `pos`/`rotationY` on a group (reported
+  in `corrections`), ignores every other field, and drops roots marked `isGenerated` (worktop, toe
   kick — the library regenerates them). Every root position comes from the docking; the position
   of a new group comes from its `placement`. `id` is a
   temporary unique id of your choice for new roots (regenerated by the planner, docking and
@@ -551,7 +567,7 @@ calculates every root position.
   are `[{ id, value }]` overrides; attribute ids and allowed values come from the `masterData`
   section (requested explicitly) or from `find-attributes`.
 - **Never author a position**: no `articlePos`/`rotationY` on a root, no `pos`/`rotationY` on a
-  group — the payload is rejected. Roots are positioned by docking only; a new group is
+  group — the server drops them. Roots are positioned by docking only; a new group is
   positioned with `placement` only — see [Positioning a group](#positioning-a-group).
 - **Extending a kitchen**: units next to an existing group are roots of that group, never a new
   group. Dock each new unit to a free docking vector of the root it continues (`freeDockingVectors`
@@ -563,13 +579,18 @@ calculates every root position.
   change attributes, join groups — are command tools too.
 - Docking (`contextData`) relates the root modules of a group to each other and is **required**:
   in a group with several roots, every additional root must be docked, directly or through a
-  chain, to the first root of the group. A root the docking does not connect to the first root is
-  rejected — roots docked only among themselves would land on the group origin, on top of the
-  first root. The check reads every entry in both directions, as the planner does; an entry that
-  names a root outside the group (a group keeps one to a root deleted from it) connects nothing.
-  A side vector (`LeftBottom`, `RightBottom`) takes one neighbour per place: two roots docked to it with the same mode and offset would stand in the same place and are rejected (a different mode or offset can put them at the back and the front of the edge, or apart); Top vectors (the neighbour's top edge and a unit above) and `BackBottom` (two units back to back with a wide one) may carry several.
+  chain, to the first root of the group. A part the docking does not connect to the first root is
+  docked by the server to the free end of a row of its kind — floor units or wall units, `mode`
+  `StartStart`, `offset` `[0, 0, 0]` — and reported in `corrections`, which may not be where the
+  agent meant it; a part it cannot dock (no free row end, a wall unit without a wall-unit row)
+  leaves the group in `notLoaded`. An article the catalog lists without docking vectors counts as
+  having them: their names are unknown on an empty plan, not missing, so a range hood is docked like
+  any other unit. The server reads every entry
+  in both directions, as the planner does; an entry that names a root outside the group (a group
+  keeps one to a root deleted from it) connects nothing.
+  A side vector (`LeftBottom`, `RightBottom`) takes one neighbour per place: two roots docked to it with the same mode and offset would stand in the same place, so the server docks the later one to the free end of that row and reports it (a different mode or offset can put them at the back and the front of the edge, or apart); Top vectors (the neighbour's top edge and a unit above) and `BackBottom` (two units back to back with a wide one) may carry several.
   The docking entry
-  is written on the placed root (the anchor) and lists the new root under `dockedRoots`; the
+  is written on the placed root (the anchor) and names the new root by its id under `dockedRoots` — the new root itself is an entry of `roots` like every other root; the
   anchor's `ownDockingVector` meets the new root's `dockingVector`. Docking vector *names*
   suffice; the indices are resolved automatically. An `offset` only takes effect in this
   direction — an entry written on the new root loses it.
@@ -582,7 +603,7 @@ calculates every root position.
   (to the right), `LeftBottom → RightBottom` (to the left); on top — `LeftTop → LeftBottom`,
   `RightTop → RightBottom`, `BackTop → BackBottom` (the new root may be narrower); back to back —
   `BackBottom → BackBottom`, `BackTop → BackTop` (the new root is turned by 180°, omit `mode`).
-  A root without docking vectors (a hood, for example) cannot be docked and gets its own group.
+  A range hood hangs between two wall units like a unit beside them: `RightBottom` of the wall unit left of the gap → `LeftBottom` of the hood.
 - `mode` selects which endpoints coincide: `StartStart` (default) the start points — the backs
   for side vectors, the left edges for back vectors; `EndEnd` the end points; `StartEnd` and
   `EndStart` mix them. `offset` is a translation `[x, y, z]` in millimetres added to the new root
@@ -642,15 +663,15 @@ or anywhere in the room.
 
   The table holds for both hands of corner article: the server turns one whose corner point lies
   on its right (`mod_CarcaseDirection` Right, e.g. `UELTB90`) by 90° more itself, so its rows run
-  as listed and the returned `rotationY` is `posRotationY` + 90.
+  as listed. The group is read back with the `posGroup` and `posRotationY` it was placed with.
 
 - **Two corner articles** (a U-shaped kitchen): set `rootId` to the corner article that goes into
   the corner `posGroup` names.
 - **Anywhere else** (an island, the middle of the room, next to a door): any free floor point as
   `posGroup`, any `posRotationY`.
 - **New groups only**: the placement is applied once, when the group is created. A placement on a
-  group that is already in the plan is rejected; a group resubmitted without placement keeps its
-  position.
+  group that is already in the plan is not used — the group keeps its position, and `corrections`
+  says so; a group resubmitted without placement keeps its position.
 - **Moving a group**: [place-group](#place-group) moves an existing group against a wall or into a
   room corner by the wall's side label, an alignment and an offset — the server computes the
   position.

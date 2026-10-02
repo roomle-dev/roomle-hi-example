@@ -64,7 +64,7 @@ Per run, read:
 | File | Look at |
 |---|---|
 | `top-image.png`, `perspective-image.png` | where the group stands, what it consists of |
-| `run.json` | per turn the answer and the tools; `errors`; `planSnapshotId` |
+| `run.json` | per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId` |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
 | `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) and the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) |
 | `planner-calls.json` | what the MCP server sent to the planner: `loadExternalObjectGroupLayout` — `args[0].posGroups[]` with the roots, their docking (`contextData.dockedRoots`) and attributes, and `repositioningData` (the placement); `externalObjectGroupOperation` — `args` = the command and its payload; `ok: false` with the page's `error` |
@@ -73,7 +73,7 @@ Per run, read:
 The evidence at a glance (`R` = the run directory):
 
 ```bash
-jq '{planSnapshotId, errors, turns: [.turns[] | {prompt, answer: (.answer | .[0:500]), tools}]}' "$R/run.json"
+jq '{planSnapshotId, errors, turns: [.turns[] | {prompt, answer: (.answer | .[0:500]), tools, toolCalls}]}' "$R/run.json"
 jq -c '.groups[]? | {group: .id[0:8], pos: .position.pos, rotationY: .position.rotationY, sizeMm: [.position.footprint.widthMm, .position.footprint.depthMm], roots: [.roots[]? | .desc]}' "$R/plan-context.json"
 jq -c '.[] | select(.method != "getExternalObjectPlanContext") | {method, ok, error, placement: [.args[0] | objects | .posGroups[]?.repositioningData | select(.)], firstArg: ([.args[0] | strings][0]), command: (if .method == "externalObjectGroupOperation" then .args else null end)}' "$R/planner-calls.json"
 jq -c '[.[] | select(.method == "loadExternalObjectGroupLayout")][-1].args[0].posGroups[].roots[] | {id, articleId, attributes: [.attributes[]? | "\(.id)=\(.value)"], docks: [.contextData.dockedRoots[]? | "\(.ownDockingVector)->" + ([.dockedRoots[].id] | join(","))]}' "$R/planner-calls.json"
@@ -91,9 +91,14 @@ Check:
 - the answer matches the plan (models claim materials, connections and corners they did not
   author).
 
-Tool results are not in the chat stream: a `create-or-replace-groups` the server rejects shows only
-as more `create-or-replace-groups` in `tools` than `loadExternalObjectGroupLayout` calls (a corner
-kitchen adds one probe load and its `removeExternalObject`).
+Tool results are not in the chat stream; `toolCalls` of `run.json`, read from the MCP server's log,
+holds per call of a plan-changing tool what the model sent (`args`, copied before the server
+corrected it) and what it got back: the corrections, the groups not built, the error. A schema
+error ("Input validation error") is not in it — it shows only as a tool call without planner calls.
+
+Before calling a result a model finding, compare the model's `args` with what reached the planner
+(`planner-calls.json`). Content the model sent that is missing in the planner call without a
+correction reporting it is a **bug** of the MCP server, not a model finding.
 
 #### Verdict
 
@@ -114,17 +119,27 @@ A result is a bug when the system, not the model, is at fault:
 | the chat fails on the system's own data, e.g. a tool result larger than the model's context | **bug** — chat backend / MCP server |
 | the placement the server sent is right (`repositioningData.posGroup` at the wall's `end` or the corner point, `posRotationY` the wall's `facingRotationY`), but the group stands elsewhere; or valid input yields impossible geometry (outside the room, through a wall, overlapping another group) | **bug** — MCP server placement or planner |
 | the plan contradicts what the tools reported (success, but the group is missing or unchanged) | **bug** |
-| the server accepts input its served rules say it rejects (e.g. a group whose docking graph falls into unconnected parts — "undocked roots are rejected") | **bug** — MCP server validation |
-| the model's own input is wrong: another wall or point (a wall's `start` instead of its `end`), other articles, missing items, a broken docking graph the rules do not promise to reject, stopped early, no tool call | **model finding**, no bug |
+| a correction of the server is wrong for the request, or the server changed the input without reporting it in `corrections` | **bug** — MCP server correction |
+| the server dropped content the model sent (its `args` in `toolCalls`) without reporting it | **bug** — MCP server |
+| a material, colour or attribute the prompt asks for is missing in the plan or reaches only part of it (one walnut front of a walnut kitchen, a worktop colour set on a base unit) although the model sent it, and no correction says so | **bug** — MCP server: the instructions or the tool API let the model's input fall short |
+| a unit stands at a height it cannot have in a kitchen — a wall cabinet on the worktop or on the floor instead of hanging on the wall — and no correction says so | **bug** — MCP server: the instructions or the tool API leave the height to the model |
+| the model's own input is wrong: another wall or point (a wall's `start` instead of its `end`), other articles, missing items, input the server had to correct (`toolCalls`), stopped early, no tool call | **model finding**, no bug |
 | provider errors: authorization, quota, rate limit | **environment**, no bug |
 
-A model finding the server could have caught — a wall unit as the placement anchor — is also a
-**hardening candidate**: the report lists these separately, with how often they occurred. A group
-placed outside the room is a model finding only, never a hardening candidate: the user may ask for
-a placement outside the room, so the server must not refuse it.
+A model finding the server could have caught — a wall unit as the placement anchor — and a
+correction that recurs across runs are also **hardening candidates**: the report lists these separately, with how often they occurred, and
+names the rule sentence, tool description or part of the tool API that led the model there.
+Hardening follows [Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort): clarify
+the instruction or simplify the tool API first, correct the input in the server second, and reject
+it only as a last resort. A group placed outside the room is a model finding only, never a
+hardening candidate: the user may ask for a placement outside the room, so the server must not
+refuse it.
 
-For a corner article the server adds the corner point offset to `posGroup` itself — compare the
-corner, not the raw point. State the evidence (file and value) behind every bug verdict.
+The server sends `posGroup` and `posRotationY` as the model gave them; for an anchor whose docking
+corner is not its origin (a corner article, a range hood) it adds the offset as `rootRelPos` and
+`rootRelRotationY`. `plan-context.json` reports a group's `position.pos` and `rotationY` in the same
+frame — the back left bottom corner and the rotation of the placement — so compare them with the
+placement directly. State the evidence (file and value) behind every bug verdict.
 
 ### 6. Report
 
@@ -149,7 +164,11 @@ Write `$SESSION/report.md`:
 
 ## Hardening candidates
 
-- <what the server accepted> — <n> runs ([02](#02-<slug>), …)
+- <what the server accepted or had to correct> — <the instruction or tool API part that led the model there> — <n> runs ([02](#02-<slug>), …)
+
+## Corrections
+
+- <what the server corrected, from `toolCalls`> — <n> runs ([02](#02-<slug>), …)
 
 ## Environment
 
@@ -163,6 +182,7 @@ Setup turns: <none, or the turns before the prompt>
 
 - **Plan snapshot**: `ps_…`
 - **Tools**: <per turn, in order>
+- **Corrections**: <per tool, the corrections, groups not loaded and errors of `toolCalls`, or none>
 - **Answer**: <the model's final answer, shortened>
 
 | Perspective | Top |
@@ -177,6 +197,17 @@ Setup turns: <none, or the turns before the prompt>
 
 - <title> — needs a reference image
 ````
+
+### 7. Open issues
+
+Update [mcp-test-open-issues.md](../backlog/mcp-test-open-issues.md) — what is to be done after
+the test analyses, nothing that was done:
+
+- add every bug and hardening candidate of the report that is not listed yet, with the problem, the
+  run that shows it, the cause in the code, the to-do and its test;
+- give a listed issue the latest run that shows it;
+- remove an issue only when its fix is in the code — a run that happens not to show it is no fix;
+- keep the backlog index ([README](../backlog/README.md)) in step.
 
 Then tell the user the report's path, the verdicts and the bugs.
 
@@ -216,7 +247,7 @@ The script:
 
 | File | Content |
 |---|---|
-| `run.json` | provider; `turns` (per turn the prompt, the model's answer, the tools in order, errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
+| `run.json` | provider; `turns` (per turn the prompt, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` — errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
 | `plan-context.json` | `get-plan-context` with rooms and groups after the chat — the walls and where the groups stand |
 | `planner-calls.json` | every planner call during the chat: method, full arguments, `ok`, and the page's `error` |
 | `snapshot.json` | the return value of `getExternalObjectSnapshot()`, unchanged |

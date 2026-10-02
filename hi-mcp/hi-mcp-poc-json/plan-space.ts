@@ -210,6 +210,58 @@ export const groupFootprint = (
   };
 };
 
+const rootHeights = (
+  root: FootprintRoot,
+  partMatricesAreGroupSpace: boolean,
+): number[] => {
+  const parts: FootprintPart[] = [];
+  collectParts(root, parts);
+  const heights: number[] = [];
+  for (const part of parts) {
+    for (const corner of boxCorners(part.relPos!, part.dim!)) {
+      let point = transformPointByMatrix(part.fullMatrix!, corner);
+      if (!partMatricesAreGroupSpace) {
+        point = transformPointByRoot(root, point);
+      }
+      heights.push(point[1]);
+    }
+  }
+  if (heights.length > 0) {
+    return heights;
+  }
+  for (const dockInfo of root.dockInfos ?? []) {
+    for (const dockPoint of [dockInfo.start, dockInfo.end]) {
+      if ((dockPoint?.length ?? 0) >= 3) {
+        heights.push(
+          transformPointByRoot(root, [dockPoint![0], dockPoint![1], dockPoint![2]])[1],
+        );
+      }
+    }
+  }
+  const height = dimensionAttribute(root, 'h');
+  if (height !== undefined) {
+    const bottom = root.articlePos?.[1] ?? 0;
+    heights.push(bottom, bottom + height);
+  }
+  return heights;
+};
+
+// The vertical extent of a group in group space; undefined without height data.
+export const groupHeightRange = (
+  group: FootprintGroup,
+): [number, number] | undefined => {
+  const partMatricesAreGroupSpace = (group.ver ?? 0) > 0;
+  const heights = (group.roots ?? []).flatMap((root) =>
+    rootHeights(root, partMatricesAreGroupSpace),
+  );
+  if (heights.length === 0) {
+    return undefined;
+  }
+  const bottom = Math.min(...heights);
+  const top = Math.max(...heights);
+  return top - bottom < 1 ? undefined : [round2(bottom), round2(top)];
+};
+
 const POINT_EPSILON_MM = 1;
 
 const samePoint = (a: [number, number], b: [number, number]): boolean =>
@@ -466,6 +518,39 @@ export const convexPolygonsTouch = (
   return true;
 };
 
+export interface PlacedVolume {
+  corners: [number, number][];
+  heights?: [number, number];
+}
+
+// Two placed groups overlap when their footprints and their height ranges
+// overlap by more than the tolerance; touching is no overlap, and a group
+// without height data overlaps nothing.
+export const volumesOverlap = (
+  a: PlacedVolume,
+  b: PlacedVolume,
+  toleranceMm: number,
+): boolean =>
+  a.heights !== undefined &&
+  b.heights !== undefined &&
+  a.heights[1] > b.heights[0] + toleranceMm &&
+  b.heights[1] > a.heights[0] + toleranceMm &&
+  convexPolygonsTouch(a.corners, b.corners, -toleranceMm);
+
+// The extent of room points along a wall, measured from the wall's start.
+export const spanAlongWall = (
+  wall: DerivedWall,
+  points: [number, number][],
+): [number, number] => {
+  const [[startX, startZ], [endX, endZ]] = wallFloorPoints(wall);
+  const length = Math.hypot(endX - startX, endZ - startZ);
+  const along: [number, number] = [(endX - startX) / length, (endZ - startZ) / length];
+  return projectOntoAxis(
+    points.map(([x, z]) => [x - startX, z - startZ]),
+    along,
+  );
+};
+
 // The group placement expressed as the room transform of one root module, so
 // the planner derives the group position from its own arrangement and no root
 // position has to travel in the payload.
@@ -490,6 +575,20 @@ export const repositioningFromPlacement = (
   };
 };
 
+const alignmentAxis = (alignment: WallSide): 0 | 1 =>
+  alignment === 'left' || alignment === 'right' ? 0 : 1;
+
+// A side label names a corner of this wall only when the wall runs towards
+// that side.
+export const alignmentRunsParallel = (
+  wall: DerivedWall,
+  alignment: WallSide,
+): boolean => {
+  const axis = alignmentAxis(alignment);
+  const [start, end] = wallFloorPoints(wall);
+  return Math.abs(start[axis] - end[axis]) < 1e-6;
+};
+
 // A side label as alignment means: flush into the corner this wall shares
 // with the wall on that side of the room.
 export const resolveWallAlignment = (
@@ -499,11 +598,11 @@ export const resolveWallAlignment = (
   if (alignment === 'start' || alignment === 'center' || alignment === 'end') {
     return alignment;
   }
-  const axis = alignment === 'left' || alignment === 'right' ? 0 : 1;
+  const axis = alignmentAxis(alignment);
   const [start, end] = wallFloorPoints(wall);
   const startCoordinate = start[axis];
   const endCoordinate = end[axis];
-  if (Math.abs(startCoordinate - endCoordinate) < 1e-6) {
+  if (alignmentRunsParallel(wall, alignment)) {
     throw new Error(
       `Alignment '${alignment}' runs parallel to this '${wall.side}' wall - ` +
         "use 'start', 'center', 'end' or the side of an adjoining wall.",
@@ -516,26 +615,38 @@ export const resolveWallAlignment = (
   return startIsCloser ? 'start' : 'end';
 };
 
+// Where the group's span along the wall starts, measured from the wall's start.
+export const wallSpanStart = (
+  wall: DerivedWall,
+  footprint: GroupFootprint,
+  alignment: WallAlignment,
+  offsetMm: number,
+): number => {
+  const resolvedAlignment = resolveWallAlignment(wall, alignment);
+  const [[startX, startZ], [endX, endZ]] = wallFloorPoints(wall);
+  const length = Math.hypot(endX - startX, endZ - startZ);
+  const width = footprint.widthMm;
+  if (resolvedAlignment === 'start') {
+    return offsetMm;
+  }
+  if (resolvedAlignment === 'end') {
+    return length - width - offsetMm;
+  }
+  return (length - width) / 2 + offsetMm;
+};
+
 export const placeAgainstWall = (
   wall: DerivedWall,
   footprint: GroupFootprint,
   alignment: WallAlignment,
   offsetMm: number,
 ): { pos: [number, number, number]; rotationY: number } => {
-  const resolvedAlignment = resolveWallAlignment(wall, alignment);
   const [[startX, startZ], [endX, endZ]] = wallFloorPoints(wall);
   const length = Math.hypot(endX - startX, endZ - startZ);
   const alongX = (endX - startX) / length;
   const alongZ = (endZ - startZ) / length;
   const width = footprint.widthMm;
-  let spanStart: number;
-  if (resolvedAlignment === 'start') {
-    spanStart = offsetMm;
-  } else if (resolvedAlignment === 'end') {
-    spanStart = length - width - offsetMm;
-  } else {
-    spanStart = (length - width) / 2 + offsetMm;
-  }
+  const spanStart = wallSpanStart(wall, footprint, alignment, offsetMm);
   // The group's local x axis runs against the wall direction, so the group
   // origin corner sits at the far end of the occupied span.
   const anchorX = startX + alongX * (spanStart + width);

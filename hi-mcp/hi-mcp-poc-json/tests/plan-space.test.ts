@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
   adjoiningWall,
+  alignmentRunsParallel,
   convexPolygonsTouch,
   groupCornerGeometry,
   groupFootprint,
+  groupHeightRange,
   placeAgainstWall,
   placeCornerAtWalls,
   repositioningFromPlacement,
   resolveWallAlignment,
+  spanAlongWall,
+  volumesOverlap,
+  wallSpanStart,
   type DerivedWall,
   type GroupFootprint,
 } from '../plan-space';
@@ -122,6 +127,94 @@ describe('groupFootprint', () => {
   it('returns undefined for a group without geometry', () => {
     expect(groupFootprint({})).toBeUndefined();
     expect(groupFootprint({ roots: [{ id: 'r1' }] })).toBeUndefined();
+  });
+});
+
+describe('groupHeightRange', () => {
+  it('derives the height from part boxes', () => {
+    const group = {
+      roots: [
+        {
+          articlePos: [0, 100, 0],
+          parts: [{ relPos: [0, 0, 0], dim: [600, 720, 560], fullMatrix: IDENTITY_MATRIX }],
+        },
+      ],
+    };
+    expect(groupHeightRange(group)).toEqual([100, 820]);
+  });
+
+  it('falls back to docking vector points and the height attribute', () => {
+    expect(
+      groupHeightRange({
+        roots: [{ dockInfos: [{ start: [0, 0, 0], end: [0, 720, 0] }] }],
+      }),
+    ).toEqual([0, 720]);
+    expect(
+      groupHeightRange({
+        roots: [{ articlePos: [0, 1400, 0], attributes: [{ id: 'h', value: 700 }] }],
+      }),
+    ).toEqual([1400, 2100]);
+  });
+
+  it('returns undefined without height data', () => {
+    expect(groupHeightRange({ roots: [{ attributes: [{ id: 'b', value: 600 }] }] })).toBeUndefined();
+    expect(
+      groupHeightRange({ roots: [{ dockInfos: [{ start: [0, 0, 0], end: [0, 0, 600] }] }] }),
+    ).toBeUndefined();
+  });
+});
+
+describe('volumesOverlap', () => {
+  const square = (x: number): [number, number][] => [
+    [x, 0],
+    [x + 600, 0],
+    [x + 600, 600],
+    [x, 600],
+  ];
+
+  it('counts footprints and heights that overlap', () => {
+    expect(
+      volumesOverlap(
+        { corners: square(0), heights: [0, 900] },
+        { corners: square(300), heights: [0, 2000] },
+        5,
+      ),
+    ).toBe(true);
+  });
+
+  it('does not count touching groups, groups above each other or groups without height data', () => {
+    expect(
+      volumesOverlap({ corners: square(0), heights: [0, 900] }, { corners: square(600), heights: [0, 900] }, 5),
+    ).toBe(false);
+    expect(
+      volumesOverlap({ corners: square(0), heights: [0, 900] }, { corners: square(0), heights: [1400, 2100] }, 5),
+    ).toBe(false);
+    expect(volumesOverlap({ corners: square(0) }, { corners: square(0), heights: [0, 900] }, 5)).toBe(false);
+  });
+});
+
+describe('spanAlongWall and wallSpanStart', () => {
+  it('measures room points along the wall from its start', () => {
+    expect(
+      spanAlongWall(WALL_RIGHT, [
+        [3400, -1100],
+        [4000, -1900],
+      ]),
+    ).toEqual([1100, 1900]);
+  });
+
+  it('starts the span where the alignment puts the group', () => {
+    expect(wallSpanStart(WALL_RIGHT, FOOTPRINT, 'center', 0)).toBe(1100);
+    expect(wallSpanStart(WALL_RIGHT, FOOTPRINT, 'start', 200)).toBe(200);
+    expect(wallSpanStart(WALL_RIGHT, FOOTPRINT, 'end', 0)).toBe(2200);
+  });
+});
+
+describe('alignmentRunsParallel', () => {
+  it('tells an alignment that names no corner of the wall', () => {
+    expect(alignmentRunsParallel(WALL_RIGHT, 'right')).toBe(true);
+    expect(alignmentRunsParallel(WALL_RIGHT, 'left')).toBe(true);
+    expect(alignmentRunsParallel(WALL_RIGHT, 'top')).toBe(false);
   });
 });
 

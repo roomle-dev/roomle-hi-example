@@ -55,6 +55,7 @@ ADRs document why the code is shaped the way it is. This folder is initially emp
 
 Living reference documentation for end users and developers is maintained in the `docs/` folder:
 
+- [hi-mcp-behaviour.md](../hi-mcp/docs/hi-mcp-behaviour.md) — How the MCP server behaves towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback
 - [hi-mcp-server.md](../minimal-hi-example/docs/hi-mcp-server.md) — Complete MCP server documentation
 - [hi-mcp-poc-presentation.md](../minimal-hi-example/docs/hi-mcp-poc-presentation.md) — Proof of concept presentation
 
@@ -92,6 +93,9 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [create-or-replace-groups loads a new group outside the room](bug-analysis/new-group-outside-the-room-accepted.md) | Rejected | 2026-10-01 |
 | [create-or-replace-groups accepts two roots on one side docking vector](bug-analysis/two-roots-on-one-side-vector-accepted.md) | Fixed | 2026-10-01 |
 | [The deploy workflow misses the Linux rollup binary](bug-analysis/deploy-workflow-misses-linux-rollup-binary.md) | Fixed | 2026-10-01 |
+| [create-or-replace-groups drops the units the agent writes inside the docking](bug-analysis/units-inside-docking-entries-dropped.md) | Fixed | 2026-10-02 |
+| [The range hood lands half its width off and takes the agent several attempts](bug-analysis/range-hood-placed-half-a-width-off.md) | Fixed | 2026-10-02 |
+| [RML-18033: HI MCP validation and client contract findings](bug-analysis/rml-18033-hi-mcp-validation.md) | Open (revalidated on 3e68df4) | 2026-10-02 |
 
 ### Feature Analyses
 
@@ -131,6 +135,8 @@ done. The analysis and the report are the same document — the report is append
 | [Group placement via repositioningData](refactoring-analysis/group-placement-via-repositioning-data.md) | Open | 2026-09-29 |
 | [HI MCP tool logic in every client page](refactoring-analysis/hi-mcp-tool-logic-in-client-pages.md) | Done | 2026-09-29 |
 | [Parts (PosPartData) and log messages in the groups of the plan context](refactoring-analysis/hi-plan-context-without-parts.md) | Done | 2026-10-01 |
+| [Guards in the HI MCP server: what they reject, prevent and discard, and the refactoring plan (RML-18033)](refactoring-analysis/guards-in-the-hi-mcp-server.md) | Done | 2026-10-02 |
+| [One anchor frame for articles with docking vector offsets (corner articles, range hood)](refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md) | Done | 2026-10-02 |
 
 ### Benchmarks & Performance Analyses
 
@@ -149,6 +155,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 |---|---|
 | [Backlog](backlog/README.md) — make group positioning easier for the agent | 2026-09-30 |
 | [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — deferred roomle-ui alternative to the server's corner probe | 2026-09-30 |
+| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — what is to be done after the analyses of "test the mcp": MCP server bugs in the corrections, hardening of the server, the rules and the chat, one roomle-ui defect | 2026-10-02 |
 
 ---
 

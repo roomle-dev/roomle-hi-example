@@ -8,7 +8,7 @@
 
 **One kitchen is one group.** Every unit standing beside, above or back to back with another unit is a docked root of the same group; the group carries one placement. Never split a kitchen into several positioned groups.
 
-Direct coordinate properties like `articlePos`, `rotationY`, `pos`, or `rotationY` will be **rejected**.
+Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rotationY` on a root — are **ignored**: the server drops them and reports it in `corrections`.
 
 ## Group Structure
 
@@ -69,6 +69,7 @@ Access via `get-plan-context` with `include: 'articles'`:
 | Left | LeftBottom | RightBottom | StartStart | 0 |
 | Above | LeftTop/RightTop/BackTop | LeftBottom/RightBottom/BackBottom | StartStart | ~600 |
 | Behind | BackBottom | BackBottom | (none) | 0 |
+| Range hood in a gap between wall units | RightBottom of the wall unit left of the gap | LeftBottom of the hood | StartStart | 0 |
 
 ### Mode Options
 
@@ -124,7 +125,11 @@ placement: {
 ```
 
 - **Point**: `posGroup` is the room point of the group's back left bottom corner; for a group of
-  wall units only, its y is their mounting height. In a room corner it is the corner point.
+  wall units only, its y is their mounting height. In a room corner it is the corner point. It
+  holds for every article: the server places the anchor by the back left bottom corner of its
+  docking vectors, also where its origin lies elsewhere (the centre of a range hood, the arm of a
+  corner article). A returned group's `position.pos` and `rotationY` are read the same way; with two
+  corner articles, `position.rootId` names the one `pos` belongs to.
 - **Rotation sense**: positive `posRotationY` turns the group counter-clockwise as seen from above
   (in the top-view image) — the `rotationY` convention of the kernel (RoomleCore) and the glue logic.
   The right wall is **270**, the left wall **90**.
@@ -135,7 +140,8 @@ placement: {
   the corner at the wall's `start`.
 - **Corner**: `posGroup` = the corner point, `posRotationY` = the `facingRotationY` of the wall that
   ends in that corner; a corner kitchen starts with a corner article. For a right-handed corner
-  article (`mod_CarcaseDirection` Right) the server adds 90° itself; the returned `rotationY` shows it.
+  article (`mod_CarcaseDirection` Right) the server adds 90° itself; the group is read back with
+  the `posRotationY` it was placed with.
 
 | Rectangular room (back = top in the top view) | `posRotationY` | Corner: `RightBottom` row along | Corner: `LeftBottom` row along |
 |---|---|---|---|
@@ -148,7 +154,8 @@ placement: {
   the corner `posGroup` names.
 - **Anywhere else** (island, middle of the room, next to a door): any free floor point, any rotation.
 - **New groups only**: the placement is applied once, when the group is created. A placement on a
-  group already in the plan is rejected; a group resubmitted without placement keeps its position.
+  group already in the plan is not used — the group keeps its position, and `corrections` says so;
+  a group resubmitted without placement keeps its position.
 
 ### Moving a group
 
@@ -157,9 +164,11 @@ index, `alignment` `start`, `center` (default) or `end` along it, or the side la
 adjoining wall to sit flush in that corner (`wall: 'right'`, `alignment: 'top'` is the back right
 corner), and `offsetMm` along the wall. The server computes the position from the group's
 calculated footprint; a group with a corner article goes into the corner the alignment names. The
-roots and their docking stay as they are, and the group keeps its height. A target that meets
-another group is rejected and the group is not moved — units that belong together are docked into
-one group.
+roots and their docking stay as they are, and the group keeps its height. Groups may touch. A
+target that overlaps another group (footprint and height range) is moved along the same wall to the
+nearest free position; into a corner, or without a free position, the group is placed as asked.
+`corrections` reports either — units that belong together are joined with `merge-groups` or docked
+into one group.
 
 ### Editing a group
 
@@ -176,16 +185,25 @@ docking. Every command keeps the group's position. Resubmitting the group with
 
 ## Validation Rules
 
-### Will be rejected:
-- Groups with `pos` or `rotationY`
-- Roots with `articlePos` or `rotationY`
-- `repositioningData` on a group (use `placement`)
-- Invalid `placement` (`posGroup` not `[x, y, z]`, `posRotationY` missing or not a number — state 0 explicitly, `rootId` not a root of the group, any other field)
-- A `placement` on a group that is already in the plan
-- Invalid articleId
-- Roots the docking does not connect to the first root (two chains that never meet, a root with no docking)
-- Two roots on one side docking vector (`LeftBottom`, `RightBottom`) with the same mode and offset — they would stand in the same place; Top vectors and `BackBottom` may carry several
-- Invalid docking vectors
+The server corrects what it can and builds every group it can; only a call in which no group can be
+built is an error. Every guard and correction:
+[hi-mcp-behaviour.md §8](../../hi-mcp/docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
+
+### Corrected and reported in `corrections` (the group is loaded):
+- `pos`/`rotationY` on a group, `articlePos`/`rotationY` on a root — dropped
+- `repositioningData` on a group — taken as the placement
+- `placement`: other fields dropped, `posGroup` `[x, z]` completed to `[x, 0, z]`, a `rootId` that names no root dropped; a placement the server cannot use (`posGroup` not a point, no numeric `posRotationY`) and a placement on a group that is already in the plan are not used — the planner positions the group, an existing group keeps its position
+- A root without `id` gets `root-1`, `root-2`, …; a duplicate root id no docking entry names is renamed (`u1` → `u1-2`)
+- Roots the docking does not connect to the first root — docked to the free end of a row of their kind (floor units or wall units), `mode` `StartStart`, `offset` `[0, 0, 0]`
+- Two roots on one side docking vector (`LeftBottom`, `RightBottom`) at the same place — the later one is docked to the free end of that row; Top vectors and `BackBottom` may carry several
+- An `articleId` in another spelling (case, whitespace) — read in the catalog's spelling
+- A placed group whose anchor the server cannot calculate beforehand — placed by the unit's origin; `place-group` puts it against a wall or into a corner
+
+### Not built, reported in `notLoaded` (the other groups of the call load):
+- A group without roots, or with generated roots only
+- A root without `articleId`, or an `articleId` the catalog does not have
+- A duplicate root id that a docking entry names
+- Roots the server cannot dock: no free row end, a wall unit without a wall-unit row to continue
 
 ### Returned as a hint (the group is loaded):
 - A group of the call that is still unpositioned — it sits at the plan origin; a group gets its position from the placement it is created with, or `place-group` moves it against a wall or into a corner
@@ -254,9 +272,9 @@ docking. Every command keeps the group's position. Resubmitting the group with
 ## Common Mistakes
 
 1. **Direct coordinates**: Never use `articlePos`, `rotationY`, `pos`, `rotationY`
-2. **Unconnected roots**: Every root must be reachable through the docking from the first root; roots docked only among themselves land on top of the first root
+2. **Unconnected roots**: Every root must be reachable through the docking from the first root; the server docks an unconnected root to the free end of a row of its kind, which may not be where you meant it
 3. **Wrong vector pairs**: Use compatible pairs (RightBottom → LeftBottom, etc.)
-4. **Docking to non-existent root**: An entry naming an id outside the group connects nothing; a root docked only that way is rejected
+4. **Docking to non-existent root**: An entry naming an id outside the group connects nothing; a root docked only that way is treated as unconnected — docked to the free end of a row (reported in `corrections`), or the group is not built when that is impossible (`notLoaded`)
 5. **Circular docking**: A root cannot dock to itself directly or indirectly
 
 ## Workflow

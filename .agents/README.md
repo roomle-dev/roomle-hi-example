@@ -45,7 +45,7 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [hi-mcp-tools.md](./skills/hi-mcp-tools.md) | Complete MCP tool reference with parameters, examples, error handling | Using MCP tools, tool implementation, error diagnosis |
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
 | [vercel-ai-sdk-chat.md](./skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: provider selection, server-side auth, @ai-sdk/mcp, streamText route | Implementing the AI chat window (RML-17984), Vercel AI SDK, MCP client integration |
-| [hi-mcp-testing.md](./skills/hi-mcp-testing.md) | "Test the MCP": every prompt of `docs/testing-prompts.md` without an image through the chat, one session directory in `.temp/result/`, `report.md` with plan snapshot ids, images, evaluation and bug verdicts; the script `run-hi-mcp-prompt.js` (prompts as chat turns in headless Chromium, snapshot, plan snapshot id, planner calls) | The user asks to "test the mcp"; testing prompts or models against the real planner |
+| [hi-mcp-testing.md](./skills/hi-mcp-testing.md) | "Test the MCP": a temporary subset of `docs/test-prompts.json` (default every test, `gpt-5-mini`) run by `run-hi-mcp-tests.js` into `.temp/result/<session>/<model>/`, `report.md` with plan snapshot ids, images, evaluation and bug verdicts; the run script `run-hi-mcp-prompt.js` (a plan, operations, prompts and an image in headless Chromium, snapshot, plan snapshot id, planner calls) | The user asks to "test the mcp"; testing prompts or models against the real planner |
 
 ### Decisions (Architecture Decision Records)
 

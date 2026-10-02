@@ -16,9 +16,9 @@ Add images to the chat window ("Planning Assistant") of the HI example
 4. The image is part of the context for the agent.
 5. With an image and no text, the text is "Plan a kitchen like the one in the image."
 
-Why: [`docs/testing-prompts.md`](../../docs/testing-prompts.md) already has two image prompts
-("Image-Based Kitchen Creation", with `docs/images/kitchen-right-wall-reference.png` and
-`kitchen-back-right-corner-reference.png`) that no chat can run today. Every "test the mcp" report
+Why: [`docs/test-prompts.md`](../../docs/test-prompts.md) already has two image prompts
+("Image-Based Kitchen Creation", with `docs/images/kitchen-1.png` and
+`kitchen-2.png`) that no chat can run today. Every "test the mcp" report
 lists them as "2 skipped (image)". In a sales configurator, a customer who brings a photo of a
 kitchen they like is the natural use of this.
 
@@ -226,7 +226,7 @@ quality 0.9. The aspect ratio is kept, and the background is white so transparen
 black. A smaller image keeps its size and is never enlarged.
 
 - A phone photo of 4032×3024 px becomes 1568×1176 px.
-- The reference image `kitchen-right-wall-reference.png` (1858×1512 px) becomes 1568×1276 px.
+- The reference image `kitchen-1.png` (1858×1512 px) becomes 1568×1276 px.
 - If the browser cannot decode a file (HEIC in Chrome), a note appears and nothing is attached.
 
 Why 1568 px: this is the size Claude reads natively. It is more than Mistral reads (about
@@ -341,7 +341,7 @@ Follow-ups, not part of this feature:
 1. `npm test` and the typecheck of the `hi-mcp` workspace pass, including the new and changed
    tests.
 2. Live, headless (Playwright, as in the earlier live checks), `npm start mistral <key>`:
-   - a synthetic `drop` of `docs/images/kitchen-right-wall-reference.png` (1858×1512, 1.9 MB) on
+   - a synthetic `drop` of `docs/images/kitchen-1.png` (1858×1512, 1.9 MB) on
      the overlay's message area shows the preview, and the request carries a 1568×1276 px JPEG
      (its size is noted);
    - sending with an empty input shows the image and "Plan a kitchen like the one in the image."
@@ -503,7 +503,7 @@ Prerequisites:
 1. `node minimal-hi-example/start.mjs mistral <key> --no-open`. The banner shows `Images: yes`. In Playwright (Chromium,
    SwiftShader):
    - a synthetic `dragenter`/`dragover`/`drop` with a `DataTransfer` holding
-     `docs/images/kitchen-right-wall-reference.png`, dispatched on `#chat-messages`, shows the
+     `docs/images/kitchen-1.png`, dispatched on `#chat-messages`, shows the
      preview;
    - send with an empty input;
    - the captured `POST /chat` body carries one `image/jpeg` data URL. Its decoded size is
@@ -582,7 +582,7 @@ Implemented as planned on `feat/chat-image-input`, with three differences:
   clean.
 
 Live, headless Chromium (page :3001, MCP :3110, chat :3201, the deployed planner), with
-`docs/images/kitchen-right-wall-reference.png` (1858×1512 PNG, 1.9 MB) as a synthetic drop on the
+`docs/images/kitchen-1.png` (1858×1512 PNG, 1.9 MB) as a synthetic drop on the
 chat messages, then sent with an empty input:
 
 | Model | Page | Request | Image turn | Plan |

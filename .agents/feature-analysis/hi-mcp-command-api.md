@@ -259,7 +259,7 @@ parameters and one example per command), `packages/web-sdk/packages/index.ts` ty
   allow-list paragraph, demo walkthrough, example prompts), `.agents/skills/hi-mcp-tools.md`,
   `.agents/skills/hi-mcp-server.md` (adding a tool no longer needs a page change for a command),
   `.agents/skills/hi-authoring-rules.md` and `roomle-hi-concepts.md` (modifying a group),
-  `AGENTS.md` tool list, `docs/testing-prompts.md` (prompts for the seven edits)
+  `AGENTS.md` tool list, `docs/test-prompts.md` (prompts for the seven edits)
 
 ### Tool contracts (agent-facing)
 
@@ -355,7 +355,7 @@ come from `get-plan-context`; article ids from its catalog (validated in the ser
 - tests: `tests/tool-executors.test.ts`, `tests/hi-mcp-server.test.ts`, `tests/planner-api.test.ts`
 - `minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`,
   `.agents/skills/hi-mcp-server.md`, `.agents/skills/hi-authoring-rules.md`,
-  `.agents/skills/roomle-hi-concepts.md`, `AGENTS.md`, `docs/testing-prompts.md`
+  `.agents/skills/roomle-hi-concepts.md`, `AGENTS.md`, `docs/test-prompts.md`
 
 **ligna-store**
 
@@ -368,7 +368,7 @@ come from `get-plan-context`; article ids from its catalog (validated in the ser
 2. hi-mcp: `npm test` and `npm run typecheck` at the `hi-mcp` root → verify: the tool list, the
    forwarded commands and the allow-list parity tests pass
 3. Live: `npm run dev` against a local UI dev server with the roomle-ui branch, one prompt per
-   command from `docs/testing-prompts.md`, the result checked with `get-plan-context` and
+   command from `docs/test-prompts.md`, the result checked with `get-plan-context` and
    `get-plan-images` → verify: each command changes the plan as the flying menu would
 
 ---
@@ -608,12 +608,12 @@ Step → verify:
     `.agents/skills/hi-mcp-tools.md` (overview and reference); `.agents/skills/hi-mcp-server.md`
     ("Adding New Tools": a command tool needs no page change); `.agents/skills/hi-authoring-rules.md`
     and `roomle-hi-concepts.md` (modifying a group: the command tools vs. the replace);
-    `AGENTS.md` (tool list, the adding-tools steps); `docs/testing-prompts.md` (a "Group editing"
+    `AGENTS.md` (tool list, the adding-tools steps); `docs/test-prompts.md` (a "Group editing"
     section with one prompt per command); this analysis closed out as Implemented
     → verify: every tool name of `EXPECTED_TOOLS` appears in `hi-mcp-server.md` and `hi-mcp-tools.md`
 
 15. **Live verification** — `npm run dev` with the roomle-ui branch served locally, one prompt per
-    command from `docs/testing-prompts.md`, the result checked with `get-plan-context` and
+    command from `docs/test-prompts.md`, the result checked with `get-plan-context` and
     `get-plan-images` → verify: each command changes the plan as the flying menu or the group panel
     would; a merge of two groups standing apart keeps the gap; deleting the middle unit of a row
     of three yields two groups

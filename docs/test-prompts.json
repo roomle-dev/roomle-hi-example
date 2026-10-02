@@ -1,0 +1,137 @@
+{
+  "models": [
+    { "provider": "gpt-5-mini", "apiKeyEnv": "AZURE_GPT_KEY" },
+    { "provider": "gpt-5.4-mini", "apiKeyEnv": "AZURE_GPT_KEY" },
+    { "provider": "gpt-6-astra", "apiKeyEnv": "AZURE_GPT_KEY" }
+  ],
+  "plans": {
+    "default-room": "ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv",
+    "living-room": "ps_nwzhfk8bjc2gu02gsyocsdragi0rxey",
+    "closets": "ps_n9zrz89zsyy46l34mkf5pd52cx2ea2y",
+    "utility-room": "ps_mq3m2wuhq6w23ry742eh50nb2vub5ej",
+    "room-and-attic": "ps_qn012p0tjux6dabt6oym0bzngmqex70u",
+    "three-tall-units": "ps_qply732i7knwtkfjm1z86sa8vrt00ms"
+  },
+  "tests": [
+    {
+      "id": "three-tall-units-right-wall",
+      "title": "Three tall units, right wall",
+      "plan": "default-room",
+      "prompt": "add a group of three tall units to the wall on the right"
+    },
+    {
+      "id": "four-cabinets-back-wall",
+      "title": "Four cabinets, back wall",
+      "plan": "default-room",
+      "prompt": "add a group of 4 cabinets to the wall in the back"
+    },
+    {
+      "id": "kitchen-back-right-corner",
+      "title": "Kitchen in the back right corner",
+      "plan": "default-room",
+      "prompt": "plan a kitchen in the back right corner of the room"
+    },
+    {
+      "id": "kitchen-oven-hood-sink-fridge-corner",
+      "title": "Oven, range hood, sink, fridge in the corner",
+      "plan": "default-room",
+      "prompt": "plan a kitchen with an oven, a range hood, a sink and a fridge in the back right corner of the room"
+    },
+    {
+      "id": "kitchen-oven-fridge-sink-corner",
+      "title": "Oven, fridge, sink in the corner",
+      "plan": "default-room",
+      "prompt": "create a kitchen with an oven, a fridge and a sink in the back right corner of the room"
+    },
+    {
+      "id": "image-kitchen-left-wall",
+      "title": "Image: kitchen on the left-hand wall",
+      "plan": "default-room",
+      "prompt": "create a kitchen like the one in the image on the left-hand wall of the room",
+      "image": "docs/images/kitchen-1.png"
+    },
+    {
+      "id": "image-kitchen-back-right-corner",
+      "title": "Image: kitchen in the back right corner",
+      "plan": "default-room",
+      "prompt": "create a kitchen like the one shown in the image, in the back right corner of the room",
+      "image": "docs/images/kitchen-2.png"
+    },
+    {
+      "id": "image-planning-right-wall",
+      "title": "Image: planning on the right-hand wall",
+      "plan": "default-room",
+      "prompt": "create a planning as to the one shown in the picture on the right-hand wall of the room.",
+      "image": "docs/images/kitchen-3.jpeg"
+    },
+    {
+      "id": "image-only-no-text",
+      "title": "Image only, no text",
+      "plan": "default-room",
+      "image": "docs/images/kitchen-4.png",
+      "expect": "the model decides what to plan; the chat sends the image with its default text \"Plan a kitchen like the one in the image.\""
+    },
+    {
+      "id": "full-kitchen-walnut-marble-corner",
+      "title": "Full kitchen, walnut, dark marble, around the corner",
+      "plan": "default-room",
+      "prompt": "create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room. Arrange the kitchen around the corner. The front of the kitchen should be made of walnut and the worktop should be made of dark marble",
+      "expect": "appliances: oven, hob, cooker hood, fridge, sink; storage: cabinet with drawers, wall cabinets; placement: back right corner, around the corner; materials: walnut front, dark marble worktop"
+    },
+    {
+      "id": "edit-add-one-unit",
+      "title": "Add one unit",
+      "plan": "three-tall-units",
+      "prompt": "add a cabinet with drawers to the right of the kitchen",
+      "expect": "merge-article-into-group: a drawer cabinet at the front end of the row"
+    },
+    {
+      "id": "edit-replace-unit",
+      "title": "Replace a unit",
+      "plan": "three-tall-units",
+      "prompt": "replace the middle unit with a cabinet with drawers",
+      "expect": "exchange-root-module: the middle unit becomes a drawer cabinet, the row stays"
+    },
+    {
+      "id": "edit-remove-unit",
+      "title": "Remove a unit",
+      "plan": "three-tall-units",
+      "prompt": "remove the middle unit",
+      "expect": "delete-root-module: the kitchen splits into two groups that keep their places"
+    },
+    {
+      "id": "edit-change-one-unit",
+      "title": "Change one unit",
+      "plan": "three-tall-units",
+      "prompt": "make the first unit 900 mm wide",
+      "expect": "change-module-attribute: mod_Width 900 on the first unit"
+    },
+    {
+      "id": "edit-change-whole-kitchen",
+      "title": "Change the whole kitchen",
+      "plan": "three-tall-units",
+      "prompt": "make the fronts of the whole kitchen white",
+      "expect": "change-group-attribute: a white mod_FrontColor on every unit"
+    },
+    {
+      "id": "edit-join-groups",
+      "title": "Join groups",
+      "plan": "three-tall-units",
+      "operations": [
+        {
+          "tool": "delete-root-module",
+          "arguments": { "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa" }
+        }
+      ],
+      "prompt": "join the two groups on the right wall",
+      "expect": "merge-groups: one group with both units"
+    },
+    {
+      "id": "edit-delete-group",
+      "title": "Delete a group",
+      "plan": "three-tall-units",
+      "prompt": "delete the kitchen",
+      "expect": "delete-group: the plan has no groups"
+    }
+  ]
+}

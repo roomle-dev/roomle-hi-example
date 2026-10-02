@@ -33,7 +33,7 @@ skill file only.
 
 Why: every prompt test is manual today — start the launcher, type the prompt into the chat window,
 look at the plan, press "Get snapshot" to download the result. The prompts in
-[`docs/testing-prompts.md`](../../docs/testing-prompts.md) and the model comparison in
+[`docs/test-prompts.md`](../../docs/test-prompts.md) and the model comparison in
 [AI model selection for kitchen planning](ai-model-selection-for-kitchen-planning.md) need runs that
 can be repeated per prompt and per model, starting from the same plan, and that leave a result on
 disk an agent can inspect.
@@ -102,7 +102,7 @@ The object fields are only produced when the plan contains HI groups.
 
 ### Existing test aids
 
-- `docs/testing-prompts.md` — the prompt collection and a manual test procedure.
+- `docs/test-prompts.md` — the prompt collection and a manual test procedure.
 - Root `package.json` — `plan:mistral`, `plan:gpt5`, `plan:gpt5.4` start the chat with the key from
   an environment variable.
 - The live check of RML-18004 ([close-out](hi-mcp-command-api.md#verification-1)) ran the example in
@@ -200,7 +200,7 @@ run command, the content of a result directory and how to inspect it (the top im
 groups in `orderData`), and what to check when a run fails (busy ports, the launcher's typecheck,
 `[error]` lines in `run.json`). The skill grows with the next steps. It is registered in the skill
 tables of `AGENTS.md`, `.agents/README.md` and `.github/copilot-instructions.md`, and the testing
-guidelines in `docs/testing-prompts.md` point to it.
+guidelines in `docs/test-prompts.md` point to it.
 
 ## Alternatives considered and rejected
 
@@ -241,7 +241,7 @@ guidelines in `docs/testing-prompts.md` point to it.
 | `.agents/skills/hi-mcp-testing.md` | new — the skill, first version |
 | `AGENTS.md`, `.agents/README.md`, `.github/copilot-instructions.md` | register the skill; `.agents/README.md` also lists this analysis |
 | `.agents/feature-analysis/README.md` | list this analysis |
-| `docs/testing-prompts.md` | the testing guidelines point to the skill |
+| `docs/test-prompts.md` | the testing guidelines point to the skill |
 | `minimal-hi-example/index.html`, `start.mjs`, `hi-mcp/*` | unchanged |
 
 ## Verification
@@ -251,7 +251,7 @@ of real processes. Verified by running it:
 
 | Check | Expected |
 |---|---|
-| A prompt from `docs/testing-prompts.md` ("add a group of three tall units to the wall on the right") with a real key | exit 0; the result directory holds `snapshot.json` with the new group in `orderData`, `run.json` with the tool names; the top image shows the group on the right wall |
+| A prompt from `docs/test-prompts.md` ("add a group of three tall units to the wall on the right") with a real key | exit 0; the result directory holds `snapshot.json` with the new group in `orderData`, `run.json` with the tool names; the top image shows the group on the right wall |
 | An unknown provider | the launcher's message, exit 1, no result directory |
 | An invalid API key | `[error]` in `run.json`, exit 1, the snapshot of the unchanged plan is stored |
 | Ctrl+C during a run | browser closed, ports 3000, 3110 and 3200 free |
@@ -267,7 +267,7 @@ Written ahead so the review can cover it; it assumes the recommendations above.
    without a download.
 2. Write `run-hi-mcp-prompt.js` along the flow above
    → verify: the checks in [Verification](#verification), one run each.
-3. Write `.agents/skills/hi-mcp-testing.md` and register it; point `docs/testing-prompts.md` to it
+3. Write `.agents/skills/hi-mcp-testing.md` and register it; point `docs/test-prompts.md` to it
    → verify: every link resolves.
 4. Close out this analysis with the results → commit on `feat/hi-mcp-testing-skill`; push and pull
    request wait for the review.
@@ -281,7 +281,7 @@ Written ahead so the review can cover it; it assumes the recommendations above.
 - `.agents/scripts/package.json` — `playwright` 1.55.0; the cached Chromium 1187 is used without a
   download.
 - `.agents/skills/hi-mcp-testing.md` — the skill, first version, registered in `AGENTS.md`,
-  `.agents/README.md` and `.github/copilot-instructions.md`; `docs/testing-prompts.md` points to it.
+  `.agents/README.md` and `.github/copilot-instructions.md`; `docs/test-prompts.md` points to it.
 - `minimal-hi-example/index.html`, `start.mjs` and `hi-mcp/*` are unchanged.
 
 ### Decisions taken during the implementation

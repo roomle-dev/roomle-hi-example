@@ -5,7 +5,7 @@
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-10-01_10-23-00/report.md` (gpt-5-mini, planner `bo-test`), runs 09 and 12; the same numbers in run 12 of the Mistral suite (09:10) and the gpt-6-astra suite (09:44)
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Open — [RML-18040](https://roomle.atlassian.net/browse/RML-18040) (RoomleCore merge report)
 > **Branch**: — (not fixed, see [Status of the fix](#status-of-the-fix))
 
 ---
@@ -58,3 +58,22 @@ deletions the library cannot calculate"); a change to them here would collide wi
 the cause is not pinned down. Next step: reproduce in the planner UI without the MCP (three tall
 units, delete the middle one, merge) on the local planner, log the kernel's merged group, and
 decide there whether the stale docking and the shared toe kick of the split are the cause.
+
+## Result (2026-10-02)
+
+The question was whether the HOMAG library is at fault or the update logic. The library is not:
+`calculateGroup` gets a wrong origin and a wrong surrounding contour from the kernel's merge report.
+
+Checked live on the Three Tall Units plan with `getExternalObjectGroups()`, in the group frame:
+
+| State | Origin | Units / toe kick | Floor contour |
+|---|---|---|---|
+| before the delete | `[4815, 0, -3765]` | x 0 / 600 / 1200, toe kick 0 | right wall along y 0, back wall at x 0 — correct |
+| after the merge | `[4815, 0, -3885]` (120 mm inside the back wall) | x 120 / 1320, toe kick 0 | walls at y 0 only from x 120 to 1020, a diagonal to (0, −120), walls along y −120 inside the right wall; no back wall at x 120 |
+
+- The glue (`mergeGroups` → `_updateGroupGeometry` → `_setGroupPosition`, `_setGroupContour`)
+  passes the position and contours of the kernel's report to `calculateGroup` unchanged.
+- The report comes from RoomleCore: `sendMergeGroups`, and `createSurroundings(object, {},
+  changedGroup, mergedObjects)` in `createGroupChangeData`.
+
+Follow-up: [RML-18040](https://roomle.atlassian.net/browse/RML-18040). No MCP server change.

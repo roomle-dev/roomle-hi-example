@@ -6,17 +6,19 @@ running a prompt through the chat, checking the plan a prompt produces, comparin
 
 ## Test the MCP
 
-Runs every prompt of [testing-prompts.md](../../docs/testing-prompts.md) that needs no image through
-the chat, stores every result under one session directory and ends with `report.md`: per prompt the
-plan snapshot id, the perspective and the top image, an evaluation and a bug verdict.
+Runs the tests of [test-prompts.json](../../docs/test-prompts.json) with the runner
+`run-hi-mcp-tests.js` — each from its plan, with its operations, prompt and image — stores every
+result under one session directory and ends with `report.md`: per test the plan snapshot id, the
+perspective and the top image, an evaluation and a bug verdict.
 
 ### 1. Model
 
-`gpt-5.4-mini` with `$AZURE_GPT_KEY`, unless the user names another model — then that provider
-name (see [ai-chat.md](../../minimal-hi-example/docs/ai-chat.md)) with its key: `mistral*` →
-`$MISTRAL_API_KEY`, `gpt-5*` / `gpt-6*` → `$AZURE_GPT_KEY`. When the key variable is empty, stop and ask the
-user for the key. Never write a key into a file. "with the local planner" / "with --dev" adds
-`--dev` to every run (the roomle-ui dev server must run on :5173).
+`gpt-5-mini` with `$AZURE_GPT_KEY`, unless the user names other models — the `models` of
+`docs/test-prompts.json`, or another provider name (see
+[ai-chat.md](../../minimal-hi-example/docs/ai-chat.md)) with its key variable: `mistral*` →
+`MISTRAL_API_KEY`, `gpt-5*` / `gpt-6*` → `AZURE_GPT_KEY`. When the key variable is empty, stop and
+ask the user for the key. Never write a key into a file. "with the local planner" / "with --dev"
+adds `--dev` to the runner (the roomle-ui dev server must run on :5173).
 
 ### 2. Session directory
 
@@ -25,52 +27,68 @@ SESSION=".temp/result/mcp-test-$(date +%Y-%m-%d_%H-%M-%S)"
 mkdir -p "$SESSION"
 ```
 
-### 3. Prompts
+### 3. Tests
 
-Read `docs/testing-prompts.md` at run time — it is the only prompt list:
+Write the temporary test file `$SESSION/tests.json`: `docs/test-prompts.json` with only the chosen
+models — by default every test and the `gpt-5-mini` model:
 
-- every fenced block without a language tag is one prompt, in document order (the `bash` block
-  under "Testing Guidelines" is not);
-- skip the prompts that need an image (a `*Reference: …png*` line, or the prompt refers to "the
-  image") — the report lists them as skipped;
-- a prompt under "Group Editing" starts from the plan the section names: its setup turn
-  `add a group of three tall units to the wall on the right` comes first, and a step its title
-  names comes second ("after removing the middle unit" → `remove the middle unit`);
-- name each run `<NN>-<slug>`: two digits in document order, a short kebab-case slug of the
-  prompt's title, e.g. `01-three-tall-units-right-wall`.
+```bash
+jq '.models = [{ "provider": "gpt-5-mini", "apiKeyEnv": "AZURE_GPT_KEY" }]' docs/test-prompts.json > "$SESSION/tests.json"
+```
+
+- A subset of the tests the user names: filter `.tests` by `id` the same way.
+- Tests with an `image` stay only for models that read images. The chat backend decides that for
+  the model the provider name resolves to: `readsImages(resolveChatModel(<provider>))` in
+  [chat-config.ts](../../hi-mcp/hi-mcp-chat/chat-config.ts).
+  - Every alias of the launcher reads images: `claude`, `anthropic`, `gemini`, `google`, `mistral`,
+    `mistral-large`, `mistral-medium`, `azure`, `openai`, and the deployments `gpt-5-mini`,
+    `gpt-5.4-mini`, `gpt-6-astra`.
+  - A full `mistral-*` id, or an Azure deployment named by `HI_CHAT_MODEL`, reads images only if it
+    is in `IMAGE_INPUT_MODELS`.
+  - The launcher prints `Images: yes` or `no` at its start.
+  - For a model without images, leave the image tests out of the file and list them in the report
+    as skipped.
 
 ### 4. Run
 
-One prompt after another — the ports are fixed. Start **each run as its own background command**
-and evaluate the previous result while it runs. Not one loop over all prompts: a background
-command has a time limit (a loop over the 13 prompts was stopped in the 11th run — the script ends
-cleanly on the SIGTERM, but that run has to be repeated):
+One command runs every test for every model of the file, one after another:
 
 ```bash
-mkdir -p "$SESSION/<NN>-<slug>"
-node .agents/scripts/run-hi-mcp-prompt.js gpt-5.4-mini "$AZURE_GPT_KEY" ["<setup turn>" ...] "<prompt>" \
-  --out "$SESSION/<NN>-<slug>" > "$SESSION/<NN>-<slug>/console.log" 2>&1
+node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" > "$SESSION/runner.log" 2>&1
 ```
 
-Create the run directory first — without it the shell cannot open `console.log` and the script
-never starts. Exit code 1 is a result like any other (the model or the chat reported an error) — go
-on with the next prompt. A run without `run.json` (the launcher or the page did not come up) is retried once;
-if it fails again, the report lists it as not run with the last lines of its `console.log`.
+- Start it as **one background command** with a timeout of about 2 minutes per test and model (at
+  most 2 hours).
+- Evaluate each test while the runner goes on. `runner.log` gets one line per finished run, and
+  `$SESSION/results.json` lists them: per run `model`, `test`, `dir`, `exitCode`, `planSnapshotId`,
+  `errors`.
+- If the time limit stops it, start the same command again: it skips every test whose directory
+  holds `run.json`.
+- Exit code 1 of a run is a result like any other (an operation, the model or the chat reported an
+  error).
+- The runner repeats a run without `run.json` (the launcher or the page did not come up) once. A run
+  that still has none is in `results.json` with "no run.json"; the report lists it as not run, with
+  the last lines of its `console.log`.
+
+A run's directory is `$SESSION/<model>/<NN>-<test id>/`: `<model>` is the provider name, `<NN>` the
+test's position in the file.
 
 ### 5. Evaluate
 
-Per run, read:
+Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json` (`plan`,
+`operations`, `prompt`, `image`, `expect`) and:
 
 | File | Look at |
 |---|---|
 | `top-image.png`, `perspective-image.png` | where the group stands, what it consists of |
-| `run.json` | per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId` |
+| `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
+| `run.json` | `plan` and `operations` (the tool calls before the prompt, with their `result` or `error`); per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId` |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
 | `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) and the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) |
-| `planner-calls.json` | what the MCP server sent to the planner: `loadExternalObjectGroupLayout` — `args[0].posGroups[]` with the roots, their docking (`contextData.dockedRoots`) and attributes, and `repositioningData` (the placement); `externalObjectGroupOperation` — `args` = the command and its payload; `ok: false` with the page's `error` |
+| `planner-calls.json` | what the MCP server sent to the planner during the chat (the operations' calls are not in it): `loadExternalObjectGroupLayout` — `args[0].posGroups[]` with the roots, their docking (`contextData.dockedRoots`) and attributes, and `repositioningData` (the placement); `externalObjectGroupOperation` — `args` = the command and its payload; `ok: false` with the page's `error` |
 | `console.log` | `[hi-mcp]` and `[hi-chat]` errors |
 
-The evidence at a glance (`R` = the run directory):
+The evidence at a glance:
 
 ```bash
 jq '{planSnapshotId, errors, turns: [.turns[] | {prompt, answer: (.answer | .[0:500]), tools, toolCalls}]}' "$R/run.json"
@@ -83,7 +101,10 @@ Check:
 
 - the request is fulfilled — the units, appliances, count and materials asked for (materials are
   root `attributes` in the layout; none there means none applied); for an edit, the edit is
-  applied and nothing else changed;
+  applied to the test's plan (see [test-prompts.md](../../docs/test-prompts.md#plans)) and nothing
+  else changed; for an image prompt, the plan follows the image — its layout
+  (one wall, around a corner), the kinds of units and appliances it shows and the colours of fronts
+  and worktop, as far as the catalog has them; without a wall in the prompt, any wall that fits;
 - the group stands where asked — on that wall or in that corner, back against the wall, inside the
   room, not through a wall, window or door, not overlapping another group;
 - the docking graph is sound — every root reachable from the placed root, at most one root per
@@ -143,32 +164,34 @@ placement directly. State the evidence (file and value) behind every bug verdict
 
 ### 6. Report
 
-Write `$SESSION/report.md`:
+Write `$SESSION/report.md`. With more than one model: one header row and one summary table per
+model, and the run sections grouped by model (`## <model> — 01 <title>`); the image paths start with
+the model's directory.
 
 ````markdown
 # HI MCP test — <YYYY-MM-DD HH:MM>
 
-| Model | Planner | Prompts | Pass | Partial | Fail | Bugs |
+| Model | Planner | Tests | Pass | Partial | Fail | Bugs |
 |---|---|---|---|---|---|---|
-| gpt-5.4-mini | bo-test | 13 run, 2 skipped (image) | … | … | … | … |
+| gpt-5-mini | bo-test | 17 run, 0 skipped | … | … | … | … |
 
 ## Summary
 
-| # | Prompt | Verdict | Bug | Plan snapshot |
+| # | Test | Verdict | Bug | Plan snapshot |
 |---|---|---|---|---|
-| 01 | [<title>](#01-<slug>) | pass | no | `ps_…` |
+| 01 | [<title>](#01-<title-slug>) | pass | no | `ps_…` |
 
 ## Bugs
 
-- **<component>** — <one sentence> ([01](#01-<slug>))
+- **<component>** — <one sentence> ([01](#01-<title-slug>))
 
 ## Hardening candidates
 
-- <what the server accepted or had to correct> — <the instruction or tool API part that led the model there> — <n> runs ([02](#02-<slug>), …)
+- <what the server accepted or had to correct> — <the instruction or tool API part that led the model there> — <n> runs ([02](#02-<title-slug>), …)
 
 ## Corrections
 
-- <what the server corrected, from `toolCalls`> — <n> runs ([02](#02-<slug>), …)
+- <what the server corrected, from `toolCalls`> — <n> runs ([02](#02-<title-slug>), …)
 
 ## Environment
 
@@ -178,7 +201,7 @@ Write `$SESSION/report.md`:
 
 > <prompt>
 
-Setup turns: <none, or the turns before the prompt>
+Plan: <plan name>; operations: <none, or the tool calls before the prompt>
 
 - **Plan snapshot**: `ps_…`
 - **Tools**: <per turn, in order>
@@ -187,15 +210,28 @@ Setup turns: <none, or the turns before the prompt>
 
 | Perspective | Top |
 |---|---|
-| <img src="01-<slug>/perspective-image.png" width="420"> | <img src="01-<slug>/top-image.png" width="420"> |
+| <img src="gpt-5-mini/01-<test id>/perspective-image.png" width="420"> | <img src="gpt-5-mini/01-<test id>/top-image.png" width="420"> |
 
 **Evaluation — <verdict>**: <what is in the plan against what was asked, with the evidence>
 
 **Bug — <yes: component / no: model finding / no: environment>**: <why>
 
+## 09 <title of an image test>
+
+> <prompt, or "(empty)">
+
+- **Image**: `docs/images/<file>`
+- …
+
+| Image | Perspective | Top |
+|---|---|---|
+| <img src="gpt-5-mini/09-<test id>/prompt-image.jpg" width="280"> | <img src="gpt-5-mini/09-<test id>/perspective-image.png" width="280"> | <img src="gpt-5-mini/09-<test id>/top-image.png" width="280"> |
+
+…
+
 ## Skipped
 
-- <title> — needs a reference image
+- <title> — the model reads no images
 ````
 
 ### 7. Open issues
@@ -211,17 +247,47 @@ the test analyses, nothing that was done:
 
 Then tell the user the report's path, the verdicts and the bugs.
 
+## Run the tests (the runner)
+
+```bash
+node .agents/scripts/run-hi-mcp-tests.js [<tests.json>] [--out <dir>] [--dev]
+```
+
+| Argument | Meaning |
+|---|---|
+| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKeyEnv }`), `plans` (name → plan snapshot id), `tests` (`{ id, title, plan, prompt?, image?, operations?, expect? }`); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
+| `--out <dir>` | the session directory, default `.temp/result/mcp-test-<local time>/`; an existing one is continued |
+| `--dev` | passed to every run |
+
+The runner:
+
+1. checks the file before the first run — the key variable of every model is set, every test has a
+   unique kebab-case `id`, a `plan` of `plans`, a prompt or an image, an existing image file and
+   well-formed `operations` — and names every problem;
+2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider> "$<apiKeyEnv>"
+   "<prompt>" --plan <id> [--operations <json>] [--image <file>] --out <out>/<provider>/<NN>-<id>`,
+   with its output in that directory's `console.log`. It runs one at a time (the ports are fixed),
+   each with a fresh launcher and browser;
+3. skips a test whose directory holds `run.json`, and repeats a run that ends without one once;
+4. rewrites `<out>/results.json` after each run and prints one line per run;
+5. passes Ctrl+C (SIGINT/SIGTERM) on to the running run, which stops its servers, and ends.
+
+Every model and test of `docs/test-prompts.json` take about an hour.
+
 ## Run a prompt (the script)
 
 ```bash
-node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--out <dir>] [--dev] [--headed]
+node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--operations <json>] [--image <file>] [--out <dir>] [--dev] [--headed]
 ```
 
 | Argument | Meaning |
 |---|---|
 | `<provider>` | a chat provider of the launcher, passed through unchanged (`gpt-5.4-mini`, `mistral`, `claude`, … — see [ai-chat.md](../../minimal-hi-example/docs/ai-chat.md)) |
 | `<api-key>` | the provider's API key, e.g. `"$AZURE_GPT_KEY"` |
-| `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it |
+| `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it. `""` with `--image` sends the image alone — the chat backend gives it the text "Plan a kitchen like the one in the image." |
+| `--plan <id>` | the plan snapshot the page starts from (`plan_id` of the example URL), its HI groups included; without it, the page's default plan |
+| `--operations <json>` | MCP tool calls `[{ "tool": "…", "arguments": { … } }]` made one after another once the page is ready, before the first prompt. A call answered "… not found" is repeated for up to 30 s: the groups of a loaded plan reach the HI library a moment after the page is ready, and until the library has calculated them the planner finds none of their modules. The first call that fails ends them, and the run sends no prompt |
+| `--image <file>` | an image (PNG, JPEG, WebP, GIF) that goes along with the last prompt, as an image dropped into the chat window: redrawn as JPEG with a long side of at most 1568 px. A model that reads no images answers `HTTP 400: The model … does not read images` |
 | `--out <dir>` | the result directory (default `.temp/result/<UTC timestamp>-<provider>/`) |
 | `--dev` | the planner from the local Rubens UI dev server (`npm run dev` in roomle-ui, :5173) |
 | `--headed` | shows the browser window |
@@ -231,14 +297,15 @@ The script:
 1. starts the launcher (`minimal-hi-example/start.mjs <provider> <api-key> --no-open`) with the MCP
    server on port **3110**, not 3100 — example tabs of an interactive session reconnect to 3100 and
    would take the bridge away from the run's page;
-2. opens the example URL the launcher prints in Playwright Chromium, a fresh browser each run, so
-   every run starts from the preset plan (no IndexedDB state);
+2. opens the example URL the launcher prints, with `plan_id` of `--plan`, in Playwright Chromium, a
+   fresh browser each run, so every run starts from its plan (no IndexedDB state);
 3. waits until the MCP tool `get-plan-context` lists articles (server up, page connected, HI library
-   loaded);
+   loaded), then calls the tools of `--operations`;
 4. sends the prompts to the chat backend (`POST /chat`, the chat window's system prompt and tools),
    each until the end of its stream, and records every planner call the MCP server sends to the
    page (from the bridge's WebSocket frames — the server's log cuts the arguments short);
-5. reads the rooms and groups (`get-plan-context`), then `getExternalObjectSnapshot()`, then saves
+5. reads the rooms and groups (`get-plan-context`), then `getExternalObjectSnapshot()` with every
+   field it stores and without the object GLB (the GLB is not generated), then saves
    the plan with `saveExternalObjectSnapshot()` for its plan snapshot id — **every run saves one
    plan snapshot in the Roomle backend**, as the example's "Save snapshot" button does;
 6. stops the browser and every server process, also after an error or Ctrl+C.
@@ -247,17 +314,16 @@ The script:
 
 | File | Content |
 |---|---|
-| `run.json` | provider; `turns` (per turn the prompt, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` — errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
+| `run.json` | provider; `plan`; `operations` (per tool call the `arguments` and the `result` or `error`); `turns` (per turn the prompt, the `image` file it carried, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` — errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
 | `plan-context.json` | `get-plan-context` with rooms and groups after the chat — the walls and where the groups stand |
-| `planner-calls.json` | every planner call during the chat: method, full arguments, `ok`, and the page's `error` |
-| `snapshot.json` | the return value of `getExternalObjectSnapshot()`, unchanged |
+| `planner-calls.json` | every planner call during the chat — not those of the operations: method, full arguments, `ok`, and the page's `error` |
+| `prompt-image.jpg` | with `--image` only: the image as the model got it |
 | `order-data.json` | `orderData` of the snapshot — the groups with their articles and attributes |
 | `top-image.png`, `perspective-image.png` | the whole plan rendered |
 | `top-object-image.png`, `perspective-object-image.png` | the HI objects only (missing when the plan has no groups) |
-| `object.glb` | the HI objects as GLB (missing when the plan has no groups) |
 | `plan.xml` | the plan XML |
 
-Exit code 0 when neither the chat nor the snapshot reported an error; 1 when one did, or when no
+Exit code 0 when no operation, the chat and the snapshot reported an error; 1 when one did, or when no
 snapshot or no plan snapshot id came back (the reason is in `errors`) — the result
 directory is written in both cases, after an error the snapshot shows the plan as the model left
 it. A failed planner call the model reports in its answer is not an error of the run: it is in
@@ -273,7 +339,8 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 - Node 20+
 - `npm install` in `.agents/scripts` (Playwright 1.55.0 — the version roomle-ui uses, so its cached
   Chromium is reused; on a machine without it: `npx playwright install chromium` in `.agents/scripts`)
-- ports 3000, 3110 and 3200 free — stop an interactive `npm start` first; one run at a time
+- ports 3000, 3110 and 3200 free — stop an interactive `npm start` first; one run (and one runner)
+  at a time
 - to stop a run, press Ctrl+C in its terminal. With Volta, `node` is a shim that does not pass
   signals on: a `kill -INT <pid>` from another shell reaches the shim, not the script — send it to
   the real Node process (started via `$(node -p process.execPath)`) instead
@@ -288,11 +355,15 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 | `errors` in `run.json` with the provider's message | invalid key or a provider failure; the snapshot is still stored |
 | `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context — a **bug**. Fixed causes: the images of `get-plan-images` reached Mistral as base64 text ([analysis](../bug-analysis/plan-images-sent-as-text-to-mistral.md)); the image URLs and the pretty-printing of the tool results ([analysis](../bug-analysis/tool-results-exceed-mistral-context.md)) |
 | `api.extended[message.method] is not a function` in `planner-calls.json` | the planner build lacks the method (see the bug rules above) |
-| `chat request failed: … aborted` | a turn took longer than 10 minutes |
+| `chat request failed: aborted after 600s` | a turn took longer than 10 minutes — the turn keeps the tools and the text the chat streamed before. `gpt-5-mini` went silent this long after `get-authoring-rules` on the large kitchens (2026-10-02); the chat streams nothing while a model reasons |
+| `operation <tool> failed: …` in `errors` | an operation of the test did not apply to its plan — e.g. a root id that is not in the plan (still "not found" after 30 s); check the test against [test-prompts.md](../../docs/test-prompts.md#plans) |
+| the runner names problems of the test file and runs nothing | an empty key variable, an unknown plan name, a missing image, a duplicate id — fix the file or the environment |
 
 ## See also
 
 - [hi-mcp-tools.md](./hi-mcp-tools.md) — the tools the model calls
 - [ai-chat.md](../../minimal-hi-example/docs/ai-chat.md) — the chat backend and its providers
 - Feature analyses: [the script](../feature-analysis/hi-mcp-prompt-run-script.md),
-  ["test the mcp"](../feature-analysis/hi-mcp-test-the-mcp-skill.md)
+  ["test the mcp"](../feature-analysis/hi-mcp-test-the-mcp-skill.md),
+  [image prompts](../feature-analysis/hi-mcp-test-image-prompts.md),
+  [the runner](../feature-analysis/hi-mcp-test-suite-script.md)

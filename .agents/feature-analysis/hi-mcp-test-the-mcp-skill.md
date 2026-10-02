@@ -1,8 +1,8 @@
 # Feature Analysis: "test the mcp" — the prompt suite of the HI MCP testing skill
 
 > **Type**: Feature Analysis
-> **Domain**: agent tooling — `.agents/skills/hi-mcp-testing.md`, `.agents/scripts/run-hi-mcp-prompt.js`; the prompts of `docs/testing-prompts.md`
-> **Trigger**: Request of 2026-09-30: "implement a skill that uses the script — executed when asked 'test the mcp'", running the example prompts of `docs/testing-prompts.md` that need no image, storing every result in a new dated subdirectory of `.temp/result`, and ending with a markdown document that shows per prompt the plan snapshot id, the perspective and top image, an evaluation and whether the result is a bug; default model `gpt-5.4-mini` with `$AZURE_GPT_KEY`
+> **Domain**: agent tooling — `.agents/skills/hi-mcp-testing.md`, `.agents/scripts/run-hi-mcp-prompt.js`; the prompts of `docs/test-prompts.md`
+> **Trigger**: Request of 2026-09-30: "implement a skill that uses the script — executed when asked 'test the mcp'", running the example prompts of `docs/test-prompts.md` that need no image, storing every result in a new dated subdirectory of `.temp/result`, and ending with a markdown document that shows per prompt the plan snapshot id, the perspective and top image, an evaluation and whether the result is a bug; default model `gpt-5.4-mini` with `$AZURE_GPT_KEY`
 > **Date**: 2026-09-30
 > **Author**: AI Assistant
 > **Status**: Implemented
@@ -19,7 +19,7 @@
 
 ## What was asked and why
 
-"test the mcp" runs the prompt collection of `docs/testing-prompts.md` against the real chat and
+"test the mcp" runs the prompt collection of `docs/test-prompts.md` against the real chat and
 planner and ends with one report: per prompt the plan snapshot id, the perspective and the top
 image, an evaluation and a bug verdict. Default model `gpt-5.4-mini` with `$AZURE_GPT_KEY`, another
 one when the user names it. Prompts that need a reference image are left out.
@@ -34,7 +34,7 @@ one when the user names it. Prompts that need a reference image are left out.
   plan snapshot in the Roomle backend, exactly what the page's "Save snapshot" button does
   (`roomle-planner.ts:1812-1851`, `index.html:972-996`). A plan snapshot id opens the plan again as
   the example's `plan_id` parameter (`index.html:587`).
-- `docs/testing-prompts.md` has 15 prompts: 2 group placements, 3 kitchen plans, 2 with a reference
+- `docs/test-prompts.md` has 15 prompts: 2 group placements, 3 kitchen plans, 2 with a reference
   image, 1 detailed kitchen, 7 group edits. The group edits say "start from a plan with a kitchen
   group, e.g. the three tall units on the right wall above"; "join the two groups" runs "after
   removing the middle unit".
@@ -75,7 +75,7 @@ Loaded when the user asks to "test the mcp" (registered in `AGENTS.md`, `.agents
 
 1. picks the model: `gpt-5.4-mini` with `$AZURE_GPT_KEY`, unless the user names another;
 2. creates `.temp/result/mcp-test-<YYYY-MM-DD_HH-MM-SS>/` (local time);
-3. reads the prompts from `docs/testing-prompts.md` at run time — the fenced prompts of every
+3. reads the prompts from `docs/test-prompts.md` at run time — the fenced prompts of every
    section except "Image-Based Kitchen Creation"; a group edit gets the setup turns the document
    names (the three tall units on the right wall; "remove the middle unit" before "join the two
    groups");
@@ -107,7 +107,7 @@ failures (auth, quota, rate limit) are **environment**.
 | A setup prompt as a separate script run | Each run starts from a fresh browser; the setup's plan would be gone |
 | Plan snapshot links instead of local images in the report | The links need the backend; the local PNGs are already in the result |
 | A script that writes the report | The evaluation is judgement on images and plans; the agent writes it following the skill's template |
-| Keeping the prompt list in the skill | A second copy that drifts from `docs/testing-prompts.md` |
+| Keeping the prompt list in the skill | A second copy that drifts from `docs/test-prompts.md` |
 | Saving the plan snapshot behind a flag | The id is useful for every run (it reopens the plan); one flag less |
 | A Claude Code skill folder (`.claude/skills`) | Not a convention of this repository; `CLAUDE.md` loads `AGENTS.md`, whose skill table carries the trigger |
 
@@ -118,7 +118,7 @@ failures (auth, quota, rate limit) are **environment**.
 | `.agents/scripts/run-hi-mcp-prompt.js` | several prompts, `--out`, plan snapshot id, `planner-calls.json`, `parseArgs` |
 | `.agents/skills/hi-mcp-testing.md` | the "Test the MCP" procedure, the report template, the bug rules; the script reference updated |
 | `AGENTS.md`, `.agents/README.md`, `.github/copilot-instructions.md` | the trigger "test the mcp" in the skill tables |
-| `docs/testing-prompts.md` | the pointer to the skill names the suite |
+| `docs/test-prompts.md` | the pointer to the skill names the suite |
 | `.agents/feature-analysis/README.md`, `.agents/README.md` | list this analysis |
 
 ## Verification
@@ -140,7 +140,7 @@ failures (auth, quota, rate limit) are **environment**.
   prompt selection with the setup turns, runs, evaluation (files, JSON paths, `jq` commands for the
   evidence, checks, verdict and bug rules), report template; the script reference updated.
 - The trigger "test the mcp" in the skill tables of `AGENTS.md`, `.agents/README.md` and
-  `.github/copilot-instructions.md`; `docs/testing-prompts.md` points to it.
+  `.github/copilot-instructions.md`; `docs/test-prompts.md` points to it.
 
 ### Decisions taken during the implementation
 

@@ -16,7 +16,7 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | # | Issue | Kind | Test prompt | Priority |
 |---|---|---|---|---|
 | 1 | [A taken side is re-targeted to the far end of the row](#1-a-taken-side-is-re-targeted-to-the-far-end-of-the-row) | bug, MCP server | add one unit; image: kitchen in the back right corner | high — a unit behind the wall, a row through the wall |
-| 2 | [An on-top docking is counted as a side neighbour](#2-an-on-top-docking-is-counted-as-a-side-neighbour) | bug, MCP server | full kitchen around the corner | high — a wall cabinet on the floor |
+| 2 | [An on-top docking is counted as a side neighbour](#2-an-on-top-docking-is-counted-as-a-side-neighbour) | bug, MCP server | full kitchen around the corner; image: kitchen in the back right corner | high — a wall cabinet on the floor |
 | 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | four cabinets on the back wall; oven, fridge, sink in the corner | high — a row through the wall |
 | 4 | [The side correction walks through a corner article](#4-the-side-correction-walks-through-a-corner-article) | hardening | kitchen in the back right corner | medium |
 | 5 | [A range hood without wall units has no docking recipe](#5-a-range-hood-without-wall-units-has-no-docking-recipe) | bug, rules | oven, range hood, sink, fridge; full kitchen around the corner | high — a hood on the floor or on the worktop |
@@ -24,11 +24,14 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 7 | [Docking to a vector the article does not have](#7-docking-to-a-vector-the-article-does-not-have) | hardening | oven, fridge, sink in the corner | medium |
 | 8 | [Root module ids are passed on unresolved](#8-root-module-ids-are-passed-on-unresolved) | hardening | change one unit | medium |
 | 9 | [Answers claim what the plan does not have](#9-answers-claim-what-the-plan-does-not-have) | hardening, chat | most prompts with a wrong result (8 of 17 runs on 2026-10-02 12:45) | medium |
-| 10 | [A wall unit stands on the worktop instead of hanging on the wall](#10-a-wall-unit-stands-on-the-worktop-instead-of-hanging-on-the-wall) | bug, MCP server | full kitchen around the corner | high — a wall cabinet on the worktop |
+| 10 | [A wall unit stands on the worktop instead of hanging on the wall](#10-a-wall-unit-stands-on-the-worktop-instead-of-hanging-on-the-wall) | bug, MCP server | full kitchen around the corner | high — a wall cabinet on the worktop or on the floor |
 | 11 | [A merged group reaches into the back wall](#11-a-merged-group-reaches-into-the-back-wall) | bug, roomle-ui | join groups | — |
 | 12 | [The door opening is listed as a wall](#12-the-door-opening-is-listed-as-a-wall) | hardening | image: planning on the right-hand wall | medium |
 | 13 | [Undocked wall units reject the whole group](#13-undocked-wall-units-reject-the-whole-group) | hardening | full kitchen around the corner | medium — the retry loses content |
 | 14 | [A floor unit is docked onto a top vector](#14-a-floor-unit-is-docked-onto-a-top-vector) | hardening | image: kitchen on the left-hand wall | medium |
+| 15 | [A G7 correction docks a part by a wall unit at floor level](#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | bug, MCP server | image: kitchen in the back right corner | high — a wall unit on the floor carrying the kitchen |
+| 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui | image only, no text | — |
+| 17 | [A chat turn without an answer for 10 minutes](#17-a-chat-turn-without-an-answer-for-10-minutes) | hardening, chat | image: kitchen on the left-hand wall; full kitchen around the corner | medium |
 
 Issues 1–3 are wrong results of the server's own corrections or placement; issues 5, 6 and 10 are
 requests the tool API makes the agent get wrong. They come first.
@@ -83,6 +86,9 @@ docked beside `wall1` on its `LeftBottom`. The side vector correction reports tw
 
 **Test.** A wall unit on a base unit with a second wall unit beside the first loads unchanged with
 no correction. Two wall units beside each other on one side vector are still separated.
+
+**Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-5.4-mini 07. `backRun1.LeftTop → backWall1` (a wall unit on a base
+unit) was counted on `backWall1`'s `LeftBottom`, and `leftTall` was moved to the end of another row.
 
 ## 3. A docking ring anchors the wrong root
 
@@ -153,6 +159,13 @@ skill, so the kind is now "bug, rules". Also look at G7 in
 [the behaviour reference](../../hi-mcp/docs/hi-mcp-behaviour.md): it sends an undocked range hood
 to the floor row on purpose.
 
+**Latest runs** (`mcp-test-2026-10-02_13-47-02`).
+- gpt-5.4-mini 04: the hood on the sink unit's `RightBottom` stands on the floor.
+- gpt-5.4-mini 10: on a base unit's `LeftTop` without an offset, it stands on the worktop.
+- Hoods that hang: gpt-5-mini 04 docked the hood on the oven base's `LeftTop` with
+  `offset [0, 600, 0]`, and gpt-6-astra 03/04 hung it between two wall cabinets (offset 650/700).
+  The recipe the to-do asks for works.
+
 ## 6. A material for the whole kitchen is not applied
 
 **Problem.** "The front of the kitchen should be made of walnut and the worktop should be made of
@@ -205,6 +218,12 @@ dark marble" — the plan has one walnut front, and the worktop keeps its colour
   `mod_CountertopColor` was never sent.
 - 06 (image): the sage fronts of the picture (`mod_FrontColor` 160) reached the tall and wall
   units; the base units kept the default front.
+
+**Latest runs** (`mcp-test-2026-10-02_13-47-02`).
+- gpt-5.4-mini 10: walnut on the corner unit only.
+- gpt-5.4-mini 06: the image's sage on four of six units.
+- gpt-5-mini 07 and every gpt-6-astra run set the materials with `change-group-attribute` and got
+  the whole kitchen. The API change of the to-do matches what the stronger models do on their own.
 
 ## 7. Docking to a vector the article does not have
 
@@ -280,6 +299,8 @@ MCP server, which the chat's model reads only through `get-authoring-rules`.
 "aligned to the back wall" for a row outside the room, a sink that is not there, "walnut and dark
 marble" for one walnut front and a white worktop.
 
+**Latest runs** (`mcp-test-2026-10-02_13-47-02`): gpt-5.4-mini 01, 02, 04, 10, 14.
+
 ## 10. A wall unit stands on the worktop instead of hanging on the wall
 
 **Problem.** A wall cabinet docked on top of a base unit (`LeftTop → LeftBottom`) without a `y`
@@ -336,6 +357,14 @@ The library never hangs a wall unit by itself; only the docking does.
   separating them.
 - The separation of two roots on one vector covers side vectors only — check `*Top` too.
 
+**Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-5.4-mini 10.
+- Two `OTB60` were docked to the side vectors of floor units (`corner.LeftBottom`,
+  `sink.RightBottom`). They stand on the floor, unreported.
+- A wall unit on a floor unit's side vector needs the same correction as one on its top without an
+  offset.
+- gpt-6-astra hung its wall units with offsets 650/700. The height the server should derive is still
+  the open decision.
+
 ## 11. A merged group reaches into the back wall
 
 **Problem.** After `delete-root-module` and `merge-groups`, the merged group's toe kick reaches
@@ -346,6 +375,10 @@ The library never hangs a wall unit by itself; only the docking does.
 No MCP server change.
 
 **Latest run** (`mcp-test-2026-10-02_12-45-24`): 16 — footprint 1920 mm for two units spanning 1800 mm.
+
+**Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-5-mini 16 (1920 mm). Not in gpt-6-astra 16: the model moved the second
+group next to the first with `place-group` before merging. The toe kick reaches into the wall only
+when the merged units stand apart.
 
 ## 12. The door opening is listed as a wall
 
@@ -390,6 +423,12 @@ floor row, and the correction names them.
 
 **Latest run** (`mcp-test-2026-10-02_12-45-24`): 10.
 
+**Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-5.4-mini 10.
+- The first call was refused for the undocked `wallcab1`, `wallcab2`, `hood`.
+- The second was refused for an empty group (`posGroups[1]: needs a non-empty roots array`) and two
+  roots on one side vector the server could not move apart.
+- The third call loaded, with walnut on one unit.
+
 ## 14. A floor unit is docked onto a top vector
 
 **Problem.** The model docked the sink base unit `SUT60` on `U2TB90.LeftTop` with
@@ -406,3 +445,73 @@ puts a floor unit (category not "Wall Units") on a `*Top` vector passes unchange
 **Test.** A sink base unit on a base unit's `LeftTop` is docked beside it, with the correction.
 
 **Latest run** (`mcp-test-2026-10-02_12-45-24`): 06.
+
+## 15. A G7 correction docks a part by a wall unit at floor level
+
+**Problem.** The first root of a group is not connected to the rest. G7 docks the unconnected part to
+the free end of the first root's row, but it may pick a wall unit of the part as the lead:
+- in gpt-5.4-mini 07, `upperLeft`, an `OFKB90`, was docked to the fridge's `RightBottom`;
+- the wall unit then stands at floor level, and the 24 other roots hang off it.
+
+**Cause.** `connectUnreachedRoots` (`tool-executors.ts`) takes `kind = isWallUnit(partRoots[0])` and
+filters the target by that kind. The lead is `partRoots.find(…)`, any root of the part with a free
+side vector, whatever its kind.
+
+**To do.**
+- Filter the lead by the same kind as the target: a floor part is docked by a floor unit, a
+  wall-unit part by a wall unit.
+- If the part has no lead of its kind with a free side vector, it is not built (G7, second row),
+  with the docking entry to send.
+
+**Test.** A group whose first root stands alone and whose other roots form a floor row with a wall
+unit as the first root of the part with a free `LeftBottom`: the part is docked by its floor unit,
+and the wall unit stays on its carrier.
+
+**Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-5.4-mini 07.
+
+## 16. `change-module-attribute` fails with "checkAttributes.get is not a function"
+
+**Problem.** `change-module-attribute` with `mod_HeightPosInsertion` 1420 on a root of a group the
+model had created, changed and recreated in the same session fails in the page with "iframe:
+checkAttributes.get is not a function" — a TypeError, not a validation message.
+
+**Cause** (probable, not verified). A module's `checkAttributes` is a `Map`
+(`homag-intelligence/src/model/oc-scripts-domain.model.ts`). roomle-ui's `deepCopy` is
+`JSON.parse(JSON.stringify(…))` (`common-core/src/utils/common-utils.ts`), so a copied or restored
+group carries `checkAttributes` as a plain object. The glue logic copies groups in several places
+(`_storeCalculatedGroup`, `_discardCalculation`, the article maps). The `.get` call is not in
+roomle-ui's sources, so it is in the HOMAG library code that receives the module.
+
+**To do.** roomle-ui:
+- reproduce with the call sequence of the run (create, change, recreate, change a module attribute);
+- copy groups so that a `Map` survives (`structuredClone`, or rebuild `checkAttributes` after the
+  copy).
+
+**Test.** A glue-logic test: a group restored from its last calculation still answers
+`checkAttributes.get`, and `change-module-attribute` on it succeeds.
+
+**Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-6-astra 09 (the model recovered by deleting and rebuilding the groups).
+
+## 17. A chat turn without an answer for 10 minutes
+
+**Problem.** gpt-5-mini went silent after `get-authoring-rules` on the two largest prompts — the
+kitchen of image 1 (twice) and the full walnut kitchen — and built nothing within 10 minutes. In the
+chat window the user sees "assistant is working…" with no end.
+
+**Cause.** The chat backend (`hi-mcp/hi-mcp-chat/chat-server.ts`):
+- sets no reasoning effort for the Foundry deployments (provider default);
+- has no turn timeout;
+- streams nothing while the model reasons or writes a large tool call.
+
+What the model did in those minutes is not logged.
+
+**To do.**
+- Log per step what the model produced (reasoning tokens, the size of the tool input) to find out
+  where the time goes.
+- Then set a reasoning effort for `gpt-5-mini` that keeps a large kitchen within a few minutes.
+- End a turn after a time limit with a message to the user.
+
+**Test.** A chat handler test for the turn limit. In "test the mcp", gpt-5-mini answers the image-1
+kitchen and the full kitchen within 10 minutes.
+
+**Latest runs** (`mcp-test-2026-10-02_13-47-02`): gpt-5-mini 06 (twice), 10.

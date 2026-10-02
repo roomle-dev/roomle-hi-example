@@ -168,6 +168,10 @@ Write `$SESSION/report.md`. With more than one model: one header row and one sum
 model, and the run sections grouped by model (`## <model> — 01 <title>`); the image paths start with
 the model's directory.
 
+A session has **exactly one report file**, `report.md`. Never write a report per model or a partial
+report file beside it — not even when the evaluation is split, e.g. one subagent per model: their
+sections go straight into `report.md`.
+
 ````markdown
 # HI MCP test — <YYYY-MM-DD HH:MM>
 

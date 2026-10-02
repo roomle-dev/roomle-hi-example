@@ -790,7 +790,14 @@ const keepBuildable = (
   errorsOf: (callGroup: CallGroup) => string[],
 ): CallGroup[] =>
   callGroups.filter((callGroup) => {
-    const errors = errorsOf(callGroup);
+    let errors: string[];
+    try {
+      errors = errorsOf(callGroup);
+    } catch (error) {
+      errors = [
+        `posGroups[${callGroup.index}]: could not be read - ${error instanceof Error ? error.message : String(error)}`,
+      ];
+    }
     if (errors.length > 0) {
       const id = callGroup.group?.id;
       notLoaded.push({
@@ -853,6 +860,47 @@ const dockingEntriesOf = (root: any): { context: any; entry: any }[] =>
   (root?.contextData?.dockedRoots ?? []).flatMap((context: any) =>
     (context?.dockedRoots ?? []).map((entry: any) => ({ context, entry })),
   );
+
+const isObject = (value: unknown): boolean =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+// The docking as lists of contexts and entries. A part in another shape
+// cannot be read and is dropped; its root is docked like any undocked root.
+const dropMalformedDocking = (roots: any[], prefix: string, corrections: string[]): void => {
+  const dropped: string[] = [];
+  for (const root of roots) {
+    if (root?.contextData === undefined) {
+      continue;
+    }
+    if (!isObject(root.contextData) || !Array.isArray(root.contextData.dockedRoots ?? [])) {
+      dropped.push(`the contextData of root '${root?.id}'`);
+      delete root.contextData;
+      continue;
+    }
+    const contexts = (root.contextData.dockedRoots ?? []) as any[];
+    root.contextData.dockedRoots = contexts.filter((context, index) => {
+      const readable = isObject(context) && Array.isArray(context.dockedRoots ?? []);
+      if (!readable) {
+        dropped.push(`docking context ${index} of root '${root.id}'`);
+        return false;
+      }
+      context.dockedRoots = ((context.dockedRoots ?? []) as any[]).filter((entry, entryIndex) => {
+        if (!isObject(entry)) {
+          dropped.push(`docking entry ${entryIndex} of context ${index} of root '${root.id}'`);
+          return false;
+        }
+        return true;
+      });
+      return true;
+    });
+  }
+  if (dropped.length > 0) {
+    corrections.push(
+      `${prefix}: ${dropped.join(', ')} could not be read and were dropped - contextData is ` +
+        '{ dockedRoots: [{ ownDockingVector, dockedRoots: [{ id, dockingVector, mode?, offset? }] }] }',
+    );
+  }
+};
 
 // A unit written inside a docking entry - with its articleId - is a root of
 // the group; the entry keeps the docking link to it.
@@ -1016,6 +1064,7 @@ const prepareGroup = (
   if (group.roots.length === 0) {
     return [`${prefix}: needs at least one article root (generated roots are dropped)`];
   }
+  dropMalformedDocking(group.roots, prefix, corrections);
   liftNestedRoots(group, prefix, corrections);
   completeDockingEntries(group.roots, prefix, corrections);
   reportUnusedFields(group, prefix, corrections);

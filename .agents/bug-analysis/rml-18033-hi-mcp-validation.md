@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-02
 - **Author:** AI-generated validation report.
-- **Status:** Open findings, revalidated after the rebase; documentation and invalid-attribute handling findings resolved. No production fixes made by this review.
+- **Status:** Partly fixed on `refactor/one-anchor-frame` — see [Resolution](#resolution); the open findings are in the [backlog](../backlog/README.md). The review itself made no production fixes.
 - **Ticket:** [RML-18033](https://roomle.atlassian.net/browse/RML-18033)
 - **Branch:** `review/rml-18033-hi-mcp-validation`, originally based on `d13794bb188f4b9b82d214cba421e0aef87fa995`, now rebased onto `docs/guards-as-last-resort` at `3e68df4c9842e5c1df8b2d8b249228dd3d16ae13` (review HEAD `58e7a54`).
 - **Scope:** example MCP server, correction/guard behaviour, and a static MCP/client contract review of ligna-store at `51d82988f03506e2ad365f946d9c3a156c18e09f`. No ligna-store runtime testing or changes. Live example runs used the deployed `bo-test` planner, not a local roomle-ui/Core build.
@@ -79,3 +79,20 @@ These are **upstream-reported live findings**, not independently reproduced in t
 - A downstream planner issue was reproduced: after delete-middle then merge, the group starts at z `-3885` while the back wall is at `-3765`, a 120 mm overhang; width is 1920 mm. Snapshot `ps_qoro9fdy7uw9vnasc3aza96ci8r2iia` matches the [existing open analysis](merged-group-toe-kick-reaches-into-the-wall.md). The MCP forwarded the merge command; this is not attributed to the new server corrections.
 - One preliminary GPT run had two chat requests on shared ports and produced duplicate groups. It was excluded, repeated on isolated ports, and not classified as a product defect. Port 3000's existing service was left untouched. All isolated validation services are stopped.
 - Detailed run inventory and local evidence: [report.md](../../.temp/result/rml-18033-validation/report.md). The live suite is incomplete for Mistral and is not a production/deployment certification.
+
+## Resolution
+
+On `refactor/one-anchor-frame`, after the merge of this branch (2026-10-02):
+
+| Finding | Status | Where |
+|---|---|---|
+| 1. Malformed docking cancels valid sibling groups | **Fixed.** Docking that cannot be read is dropped and reported, its root is docked like any undocked root, and the group loads (G29). Input that still fails a group's preparation sends that group to `notLoaded`, and the other groups load (G30) | `dropMalformedDocking`, `keepBuildable` in `tool-executors.ts`; tests "drops malformed docking data …" and "reports a group it cannot read …" |
+| 2. A JSON null frame escapes the socket listener | **Fixed.** A frame that is not a JSON object is ignored | `page-bridge.ts`; the probe is a regular test now |
+| 3. Replies are not bound to the active planner socket | **Fixed.** A result counts only from the active page. Every call goes there, and a newer page rejects the calls of the old one | `page-bridge.ts`; the probe is a regular test now |
+| 4. Planner partial results have no per-input feedback | Open — needs per-input outcomes from the planner | [backlog](../backlog/README.md); the probe stays an expected failure |
+| Numeric attribute overrides | **No defect.** The layout's `PosModuleAttribute.value` and the article pick's `HiPlanRootAttribute.value` are `number \| string \| boolean` (roomle-ui `model/oc-scripts-domain.model.ts`, `hi-plan-context.ts`). Only the attribute commands take strings, and the server converts those (C11) | the probe asserts that numbers pass on unchanged |
+| Docking ring, on-top neighbour, occupied-side retargeting | Open | [open issues 1–3](../backlog/mcp-test-open-issues.md) |
+| ligna-store: Mistral image adapter, final tool-free step, session routing | Open — ligna-store | [backlog](../backlog/README.md) |
+| Merged group reaches into the back wall | Open — roomle-ui | [open issue 11](../backlog/mcp-test-open-issues.md#11-a-merged-group-reaches-into-the-back-wall) |
+
+The line references of the findings above point at `3e68df4`.

@@ -104,13 +104,13 @@ describe('PageBridge.call', () => {
 });
 
 describe('PageBridge page lifecycle', () => {
-  it.fails('RML-18033: ignores a JSON null frame instead of throwing from the socket listener', () => {
+  it('RML-18033: ignores a JSON null frame instead of throwing from the socket listener', () => {
     const bridge = new PageBridge();
     const socket = attachPage(bridge);
     expect(() => socket.receive(null)).not.toThrow();
   });
 
-  it.fails('RML-18033: accepts results only from the active planner socket', async () => {
+  it('RML-18033: accepts results only from the active planner socket', async () => {
     const bridge = new PageBridge();
     const active = attachPage(bridge);
     const other = new FakePageSocket();

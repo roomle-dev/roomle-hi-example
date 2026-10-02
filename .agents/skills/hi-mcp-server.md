@@ -57,6 +57,7 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 - `GET ws://…/bridge` (WebSocket upgrade, origin-checked) connects the page
 - The page sends `{kind:'hello', example, url, protocol: 2}`; the server relays planner method calls `{kind:'call', id, method, args: [...]}` and the page answers `{kind:'result', id, ok, result|error}` (`types.ts`, `BRIDGE_PROTOCOL`)
 - A page whose hello carries no `protocol: 2` (an outdated, tool-level bridge) stays connected, but every call fails with an "update the page bridge" error
+- The server takes a result only from the active page — every call goes there, and a newer page rejects the calls of the old one — and ignores a frame that is not a JSON object, so a stray socket cannot answer a call or end the server
 - The server correlates calls by id, with per-method timeouts (`planner-api.ts`: 120 s for `loadExternalObjectGroupLayout`, `externalObjectGroupOperation` and `getExternalObjectSnapshot`, 30 s otherwise) and a single-page policy: a newer connection replaces the previous one
 
 #### 4. Tool logic (`tool-executors.ts`, `planner-api.ts`)

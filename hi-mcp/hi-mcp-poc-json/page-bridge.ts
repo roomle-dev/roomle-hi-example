@@ -26,6 +26,9 @@ export class PageBridge {
       } catch {
         return;
       }
+      if (typeof message !== 'object' || message === null) {
+        return;
+      }
       if (message.kind === 'hello') {
         if (this._page && this._page !== socket) {
           this._rejectPendingCalls('The demo page was replaced by a newer one');
@@ -37,7 +40,8 @@ export class PageBridge {
         console.log(`[hi-mcp] page connected: ${message.url}`);
         return;
       }
-      if (message.kind === 'result') {
+      // every call goes to the active page, so only the active page answers
+      if (message.kind === 'result' && socket === this._page) {
         const pendingCall = this._pendingCalls.get(message.id);
         if (!pendingCall) {
           return;

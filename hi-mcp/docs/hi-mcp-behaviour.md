@@ -161,7 +161,8 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
   container.
 - **Page bridge**: the page connects to the WebSocket `/bridge` (origins in `HI_MCP_PAGE_ORIGINS`),
   announces bridge protocol 2, and executes the planner methods the tools send on
-  `roomDesignerApi.extended`.
+  `roomDesignerApi.extended`. The server answers a call only with a result from the active page,
+  the one the call went to; a frame that is not a JSON object is ignored.
 - **Planner methods** (`planner-api.ts`), with the timeout per call:
 
   | Method | Used by | Timeout |
@@ -305,8 +306,8 @@ references are remapped.
 
 The server runs these steps:
 
-1. It drops generated roots (C1) and prepares each group: it takes units written inside the docking
-   as roots (G23), completes the docking entries (G24, G25), reports the fields it does not use
+1. It drops generated roots (C1) and prepares each group: it drops docking it cannot read (G29),
+   takes units written inside the docking as roots (G23), completes the docking entries (G24, G25), reports the fields it does not use
    (G27), reads the attribute overrides (G28), and corrects positions, root ids, repositioning data
    and the placement (G1–G14).
 2. It reduces the roots to article picks and strips the docking indices (C2, C3).
@@ -444,7 +445,7 @@ it corrects anything — and the feedback, one JSON line each (`[hi-mcp] tool <n
 | C8 | In a resubmitted group, a docking entry that names a root outside the group connects nothing and is kept, so a group whose unit was deleted still loads. In a new group it is reported (G26) | `dockingNeighbours`, `reportUnsentRoots` |
 | C9 | `place-group` defaults: alignment `center`, offset 0, room 0; the group keeps its height | `place-group` |
 | C10 | `back` and `front` name the `top` and the `bottom` wall (`place-group` `wall` and `alignment`) | `sideLabel` |
-| C11 | A number as an attribute value is passed on as its string | `attributeValue` |
+| C11 | A number as the value of `change-module-attribute` or `change-group-attribute` is passed on as its string — the planner's attribute commands take a string or a boolean. Attribute overrides of `create-or-replace-groups` and `merge-article-into-group` keep their numbers: the layout and the article pick take a number, a string or a boolean | `attributeValue` |
 | C12 | An unknown `get-plan-context` section is ignored; none left means the default sections | `get-plan-context` |
 | C13 | A docking entry with `rootId` instead of `id` is read by its `rootId` | `completeDockingEntries` |
 | C14 | The position of a returned group is reported in the frame of a placement: `pos` the back left bottom corner, `rotationY` the rotation of the placement, the footprint from there (D33) | `positionInPlacementFrame`; `inPlacementFrame` |
@@ -481,6 +482,8 @@ it corrects anything — and the feedback, one JSON line each (`[hi-mcp] tool <n
 | G26 | in a new group, a root named in the docking but never sent — no `articleId` | drops the entry; nothing can be built for it | correction: "roots '…' are named in the docking but were never sent - nothing was built for them; send each as a root { id, articleId }" |
 | G27 | a group, root or docking entry field the server does not use and `get-plan-context` does not return | ignores it | correction naming the fields |
 | G28 | attribute overrides as an object `{ id: value }`, or with `attributeId` instead of `id` | reads them as `[{ id, value }]` | correction; an entry without any id is ignored and reported |
+| G29 | docking in a shape that cannot be read — `contextData` or a `dockedRoots` that is not a list, a docking context or entry that is not an object | drops that part; the root is docked like any undocked root (G7), and the group loads | correction: "… could not be read and were dropped - contextData is { dockedRoots: [{ ownDockingVector, dockedRoots: [{ id, dockingVector, mode?, offset? }] }] }" |
+| G30 | any other input that fails the preparation of a group | does not build that group; the other groups of the call load (D30) | `notLoaded`: "posGroups[i]: could not be read - …" |
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |
 | — | the planner loads nothing | — | error result: "No groups were created or replaced …" |
 | — | a group of the call has no position after the load | — | `hint` |

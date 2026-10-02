@@ -25,12 +25,12 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 8 | [Root module ids are passed on unresolved](#8-root-module-ids-are-passed-on-unresolved) | hardening | change one unit | medium |
 | 9 | [Answers claim what the plan does not have](#9-answers-claim-what-the-plan-does-not-have) | hardening, chat | most prompts with a wrong result (8 of 17 runs on 2026-10-02 12:45) | medium |
 | 10 | [A wall unit stands on the worktop instead of hanging on the wall](#10-a-wall-unit-stands-on-the-worktop-instead-of-hanging-on-the-wall) | bug, MCP server | full kitchen around the corner | high — a wall cabinet on the worktop or on the floor |
-| 11 | [A merged group reaches into the back wall](#11-a-merged-group-reaches-into-the-back-wall) | bug, roomle-ui | join groups | — |
+| 11 | [A merged group reaches into the back wall](#11-a-merged-group-reaches-into-the-back-wall) | bug, RoomleCore — [RML-18040](https://roomle.atlassian.net/browse/RML-18040) | join groups | — |
 | 12 | [The door opening is listed as a wall](#12-the-door-opening-is-listed-as-a-wall) | hardening | image: planning on the right-hand wall | medium |
 | 13 | [Undocked wall units reject the whole group](#13-undocked-wall-units-reject-the-whole-group) | hardening | full kitchen around the corner | medium — the retry loses content |
 | 14 | [A floor unit is docked onto a top vector](#14-a-floor-unit-is-docked-onto-a-top-vector) | hardening | image: kitchen on the left-hand wall | medium |
 | 15 | [A G7 correction docks a part by a wall unit at floor level](#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | bug, MCP server | image: kitchen in the back right corner | high — a wall unit on the floor carrying the kitchen |
-| 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui | image only, no text | — |
+| 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) | image only, no text | critical — an attribute edit fails |
 | 17 | [A chat turn without an answer for 10 minutes](#17-a-chat-turn-without-an-answer-for-10-minutes) | hardening, chat | image: kitchen on the left-hand wall; full kitchen around the corner | medium |
 
 Issues 1–3 are wrong results of the server's own corrections or placement; issues 5, 6 and 10 are
@@ -370,9 +370,11 @@ The library never hangs a wall unit by itself; only the docking does.
 **Problem.** After `delete-root-module` and `merge-groups`, the merged group's toe kick reaches
 120 mm into the back wall: the group's footprint starts at x −120 before the unit in the corner.
 
-**Cause and to-do.** roomle-ui:
-[merged-group-toe-kick-reaches-into-the-wall.md](../bug-analysis/merged-group-toe-kick-reaches-into-the-wall.md).
-No MCP server change.
+**Cause and to-do.** Not the HOMAG library: the kernel's merge report gives the merged group an
+origin 120 mm inside the wall and a wrong surrounding contour, and `calculateGroup` uses both
+([analysis](../bug-analysis/merged-group-toe-kick-reaches-into-the-wall.md#result-2026-10-02)).
+Follow-up in RoomleCore: [RML-18040](https://roomle.atlassian.net/browse/RML-18040). No MCP server
+change.
 
 **Latest run** (`mcp-test-2026-10-02_12-45-24`): 16 — footprint 1920 mm for two units spanning 1800 mm.
 
@@ -475,7 +477,10 @@ and the wall unit stays on its carrier.
 model had created, changed and recreated in the same session fails in the page with "iframe:
 checkAttributes.get is not a function" — a TypeError, not a validation message.
 
-**Cause** (probable, not verified). A module's `checkAttributes` is a `Map`
+**Cause** (reproduced — [analysis](../bug-analysis/check-attributes-lost-after-a-discarded-calculation.md),
+follow-up [RML-18039](https://roomle.atlassian.net/browse/RML-18039)). The trigger is a replace the
+library cannot calculate: the glue discards it and restores the last calculated group from a JSON
+copy. A module's `checkAttributes` is a `Map`
 (`homag-intelligence/src/model/oc-scripts-domain.model.ts`). roomle-ui's `deepCopy` is
 `JSON.parse(JSON.stringify(…))` (`common-core/src/utils/common-utils.ts`), so a copied or restored
 group carries `checkAttributes` as a plain object. The glue logic copies groups in several places

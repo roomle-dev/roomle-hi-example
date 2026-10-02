@@ -148,7 +148,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'name, desc, category, and per root module its master-data module, dimensions (the size attributes - ' +
         'e.g. Width, Depth, Height - with their values in millimetres), main attribute values, ' +
         'docking vector names, insert levels and sub-modules, plus cornerArticle ' +
-        "for articles made for a room corner) and groups (the groups currently in the plan: position with pos - the room point of the group's back left bottom corner, as a placement names it - rotationY and footprint, and " +
+        "for articles made for a room corner) and groups (the groups currently in the plan: position with pos - the room point of the group's back left bottom corner, as a placement names it - rotationY, rootId (only with two corner articles: the one pos belongs to) and footprint, and " +
         'per root the article pick with input attributes, docking, docking vector names and the free docking vectors ' +
         'a new root can dock to, plus its desc - no root positions, ' +
         'no geometry; a returned group is a valid create-or-replace-groups payload). masterData (per library the root ' +

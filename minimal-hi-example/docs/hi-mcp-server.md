@@ -300,7 +300,8 @@ coordinate system throughout (3D, right-handed, Y up).
 - `groups` — the groups currently in the plan: a read-only `position`
   (`pos`, `rotationY`, `footprint`) as a placement names it — `pos` the room
   point of the group's back left bottom corner, `rotationY` the rotation of the
-  placement, the footprint measured from `pos` — and per root the article pick (`id`,
+  placement, the footprint measured from `pos`, and with two corner articles
+  `rootId`, the one `pos` belongs to — and per root the article pick (`id`,
   `articleId`, input `attributes`, `contextData` with vector names only) plus
   read-only facts (`articleName`, `desc`, `category`,
   `dockingVectors`, `freeDockingVectors` — the vectors no docking entry uses,

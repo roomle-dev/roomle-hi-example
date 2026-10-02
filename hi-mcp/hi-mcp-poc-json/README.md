@@ -310,7 +310,8 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   docking vectors)
 - `groups` — the groups currently in the plan: a read-only `position` (`pos`, `rotationY`,
   `footprint`) as a placement names it — `pos` the room point of the group's back left bottom
-  corner, `rotationY` the rotation of the placement, the footprint measured from `pos` — and per root the article pick (`id`, `articleId`, input `attributes`,
+  corner, `rotationY` the rotation of the placement, the footprint measured from `pos`, and with two
+  corner articles `rootId`, the one `pos` belongs to — and per root the article pick (`id`, `articleId`, input `attributes`,
   `contextData` with vector names only) plus read-only facts (`articleName`, `desc`,
   `category`, `dockingVectors`, `freeDockingVectors` — the vectors no docking entry uses, where a
   new root can dock — `subModules` with their id, `isGenerated`). No root positions, no

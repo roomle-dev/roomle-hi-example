@@ -292,6 +292,7 @@ export const toRepositioningData = (
 export interface GroupPosition {
   pos?: number[];
   rotationY?: number;
+  rootId?: string;
   footprint?: GroupFootprint;
 }
 
@@ -320,7 +321,10 @@ const footprintInFrame = (
  * The position of a calculated group as a placement names it: pos is the room
  * point of its anchor root's docking corner, rotationY the rotation of the
  * placement, and the footprint is measured from there - wherever the planner
- * keeps the group origin. Undefined for a group without a position.
+ * keeps the group origin. With two corner articles, rootId names the one pos
+ * belongs to, as a placement does: the planner regenerates root ids, so the
+ * corner a placement named cannot be told after the load. Undefined for a
+ * group without a position.
  */
 export const positionInPlacementFrame = (
   rawGroup: any,
@@ -347,6 +351,7 @@ export const positionInPlacementFrame = (
   return {
     pos: roundedPoint(pos),
     rotationY: normalizeDegrees(groupRotationY + frameRotationY),
+    ...(roots.filter(hasCornerVectors).length > 1 && { rootId: anchor.id }),
     ...(footprint && {
       footprint: footprintInFrame(footprint, corner, frameRotationY),
     }),

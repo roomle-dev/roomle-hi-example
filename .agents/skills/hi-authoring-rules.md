@@ -128,7 +128,8 @@ placement: {
   wall units only, its y is their mounting height. In a room corner it is the corner point. It
   holds for every article: the server places the anchor by the back left bottom corner of its
   docking vectors, also where its origin lies elsewhere (the centre of a range hood, the arm of a
-  corner article). A returned group's `position.pos` and `rotationY` are read the same way.
+  corner article). A returned group's `position.pos` and `rotationY` are read the same way; with two
+  corner articles, `position.rootId` names the one `pos` belongs to.
 - **Rotation sense**: positive `posRotationY` turns the group counter-clockwise as seen from above
   (in the top-view image) — the `rotationY` convention of the kernel (RoomleCore) and the glue logic.
   The right wall is **270**, the left wall **90**.

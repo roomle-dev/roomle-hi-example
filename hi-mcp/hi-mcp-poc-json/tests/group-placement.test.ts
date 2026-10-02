@@ -541,6 +541,18 @@ describe('positionInPlacementFrame', () => {
     });
   });
 
+  it('names the corner article pos belongs to in a group with two of them, as a placement does', () => {
+    // a U: c1 (left-handed) at the origin, b1 on its LeftBottom, c2 on b1's LeftBottom
+    const c1 = { ...calculated(LEFT_HANDED_ROOT), id: 'c1', contextData: { dockedRoots: [toTheLeft('b1')] } };
+    const b1 = { ...calculated(CABINET_ROOT, [-261, 0, 661], { rotationY: 270 }), id: 'b1', contextData: { dockedRoots: [toTheLeft('c2')] } };
+    const c2 = { ...calculated(LEFT_HANDED_ROOT, [-261, 0, 1261], { rotationY: 270 }), id: 'c2' };
+    const position = positionInPlacementFrame({ pos: [4815, 0, -3765], rotationY: 270, roots: [c1, b1, c2] });
+    // c1's corner point lies 261 mm off its origin, which the group origin is at
+    expect(position).toMatchObject({ pos: [4815, 0, -4026], rotationY: 270, rootId: 'c1' });
+    // one corner article: no rootId, as a placement needs none
+    expect(positionInPlacementFrame({ pos: [0, 0, 0], rotationY: 0, roots: [calculated(LEFT_HANDED_ROOT)] })).not.toHaveProperty('rootId');
+  });
+
   it('has no position for a group the planner has not positioned', () => {
     expect(positionInPlacementFrame({ roots: [calculated(CABINET_ROOT)] })).toBeUndefined();
     expect(positionInPlacementFrame({ pos: [0, 0, 0], roots: [] })).toBeUndefined();

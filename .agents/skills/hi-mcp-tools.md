@@ -59,7 +59,8 @@ name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_H
 in `groups` carries the same ids among its `attributes`; a group's `position.footprint` gives
 `widthMm`/`depthMm` of the whole group. A group's `position.pos` and `rotationY` are what a
 placement would name for it: the room point of its back left bottom corner and the rotation of the
-placement, whatever origin the planner keeps the group at — the agent reads back what it placed. A unit is resized with `change-module-attribute` and the
+placement, whatever origin the planner keeps the group at — the agent reads back what it placed. A
+group with two corner articles also carries `position.rootId`, the corner article `pos` belongs to. A unit is resized with `change-module-attribute` and the
 attribute id, never its name.
 
 **Trusted descriptions**: every `desc` (article, root, module, attribute, attribute value) is

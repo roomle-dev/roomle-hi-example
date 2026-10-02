@@ -68,7 +68,9 @@ relation; the server compiles the docking (`contextData`) from it
 | `above` | a wall unit hanging above that floor unit; `gapMm` sets the gap | `LeftTop → LeftBottom` with the gap that puts its top at the top of the tall units (D35: tall − wall − base `mod_Height`, Furniture_Smith 660) |
 | `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom` |
 
-- Wall units and the range hood continue `rightOf` / `leftOf` each other.
+- Wall units and the range hood continue `rightOf` / `leftOf` each other; a hood without wall units
+  hangs `above` the hob unit. A hood beside a tall unit is hung `above` the floor unit on that side,
+  and a floor unit beside a wall unit continues the floor row (corrections G40, G41).
 - A corner kitchen starts with a corner article and continues one row `rightOf` it and the other
   `leftOf` it.
 - A root without a relation continues the row of its kind (floor units, wall units); the first

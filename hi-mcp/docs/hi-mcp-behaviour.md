@@ -318,7 +318,7 @@ The server runs these steps:
    and the placement (G1–G14).
 2. It reduces the roots to article picks and strips the docking indices (C2, C3).
 3. It reads the article ids in the catalog's spelling (G15), compiles the relations into docking
-   entries (D34, C15, C16, G31–G39), reports the roots a new group names in its docking but never
+   entries (D34, C15, C16, G31–G41), reports the roots a new group names in its docking but never
    sends (G26), completes the docking (G7, G8), and drops a placement on a group that is already in
    the plan (G16).
 4. For every placed group, it learns the frame of the anchor — its docking corner and, for a corner
@@ -464,7 +464,7 @@ them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twi
 ### 8.3 `create-or-replace-groups`
 
 G23–G25 and G29 concern docking written as `contextData`; a payload with relations (D34) has its own
-corrections, G31–G39.
+corrections, G31–G41.
 
 | ID | Input | What the server does | Feedback |
 |---|---|---|---|
@@ -505,6 +505,8 @@ corrections, G31–G39.
 | G36 | `behind` a corner article, or a corner article `behind` a unit | ignores it; the default (G31) | correction |
 | G37 | `gapMm` on `rightOf`, `leftOf` or `behind`, `gapMm` that is not a number, an `align` other than left, right or back, `align` or `gapMm` without a relation | ignores it (`align` left) | correction |
 | G38 | two relation fields on one root | uses the first of `rightOf`, `leftOf`, `onTop`, `above`, `behind` | correction |
+| G40 | a floor unit `rightOf` / `leftOf` a wall unit | puts it into the floor row — the default of G31 | correction |
+| G41 | a range hood `rightOf` / `leftOf` a tall unit — its Top vector is its chimney top | hangs it `above` the floor unit on that side of the tall unit; without one it stays beside the tall unit by its top edge. A hood without a relation hangs `above` a base unit, never beside or on a tall unit | correction |
 | G39 | `above` a floor unit where the catalog gives no tall unit height | the wall unit stands on the floor unit | correction naming `gapMm` |
 | G30 | any other input that fails the preparation of a group | does not build that group; the other groups of the call load (D30) | `notLoaded`: "posGroups[i]: could not be read - …" |
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |

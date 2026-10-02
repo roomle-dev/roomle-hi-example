@@ -48,8 +48,10 @@ const numberOf = (value: unknown): number | undefined => {
 const moduleIdsOf = (article: any): string[] =>
   ((article?.rootModules ?? []) as any[]).map((rootModule) => String(rootModule?.module?.id ?? ''));
 
+const isHoodArticle = (article: any): boolean => moduleIdsOf(article).some((id) => HOOD.test(id));
+
 const isWallUnitArticle = (article: any): boolean =>
-  WALL_UNIT.test(String(article?.category ?? '')) || moduleIdsOf(article).some((id) => HOOD.test(id));
+  WALL_UNIT.test(String(article?.category ?? '')) || isHoodArticle(article);
 
 const isTallUnitArticle = (article: any): boolean => TALL_UNIT.test(String(article?.category ?? ''));
 
@@ -99,6 +101,7 @@ export const relationsToDocking = (
   const articleOf = (root: any) => catalogArticleOf(articles, root);
   const isWall = (root: any) => isWallUnitArticle(articleOf(root));
   const isTall = (root: any) => isTallUnitArticle(articleOf(root));
+  const isHood = (root: any) => isHoodArticle(articleOf(root));
   const libraryId = group.libraryId ?? roots.find((root) => root.libraryId)?.libraryId;
   const heightOf = (root: any) =>
     numberOf(((root?.attributes ?? []) as any[]).find((attribute) => attribute?.id === HEIGHT)?.value) ??
@@ -156,6 +159,9 @@ export const relationsToDocking = (
     } else if ((relation === 'rightOf' || relation === 'leftOf') && isWall(root) && !isWall(target) && !isTall(target)) {
       notes.push(`wall unit ${quoted(root.id)} hangs above the floor unit ${quoted(target.id)} instead of ${relation} it`);
       relation = 'above';
+    } else if ((relation === 'rightOf' || relation === 'leftOf') && !isWall(root) && isWall(target)) {
+      notes.push(`floor unit ${quoted(root.id)} cannot stand ${relation} the wall unit ${quoted(target.id)} - it continues the floor row`);
+      continue;
     } else if (relation === 'behind' && (isCornerArticle(articles, target) || isCornerArticle(articles, root))) {
       notes.push(`root ${quoted(root.id)}: a corner article has no back to dock behind - ignored`);
       continue;
@@ -165,6 +171,33 @@ export const relationsToDocking = (
       gapMm = undefined;
     }
     links.push({ unit: root, target, relation, align: STACKING_VECTORS[align] ? align : 'left', gapMm });
+  }
+
+  // A hood docked by its Top vector hangs by its chimney top: beside a tall
+  // unit it hangs above the floor unit on that side instead.
+  const floorBeside = (tall: any, relation: Relation): any =>
+    links.find((link) => link.target === tall && link.relation === relation && !isWall(link.unit))?.unit ??
+    links.find(
+      (link) =>
+        link.unit === tall &&
+        link.relation === (relation === 'rightOf' ? 'leftOf' : 'rightOf') &&
+        !isWall(link.target),
+    )?.target;
+  for (const link of links) {
+    if (!isHood(link.unit) || !isTall(link.target) || (link.relation !== 'rightOf' && link.relation !== 'leftOf')) {
+      continue;
+    }
+    const carrier = floorBeside(link.target, link.relation);
+    if (carrier) {
+      notes.push(
+        `range hood ${quoted(link.unit.id)} hangs above ${quoted(carrier.id)}, ${link.relation} the tall unit ${quoted(link.target.id)}`,
+      );
+      Object.assign(link, { relation: 'above', target: carrier, align: 'left' });
+    } else {
+      notes.push(
+        `range hood ${quoted(link.unit.id)} hangs ${link.relation} the tall unit ${quoted(link.target.id)} by its top edge - put it above the floor unit below it`,
+      );
+    }
   }
 
   // Connected so far - by the relations and by docking written as contextData.
@@ -232,11 +265,13 @@ export const relationsToDocking = (
     if (wallBefore) {
       return { unit: root, target: wallBefore, relation: 'rightOf', align: 'left' };
     }
-    const tall = main.find(isTall);
+    const tall = isHood(root) ? undefined : main.find(isTall);
     if (tall) {
       return { unit: root, target: tall, relation: sideOfTall(tall), align: 'left' };
     }
-    const floor = main.filter((candidate) => !isWall(candidate));
+    const floorUnits = main.filter((candidate) => !isWall(candidate));
+    const baseUnits = floorUnits.filter((candidate) => !isTall(candidate));
+    const floor = baseUnits.length > 0 ? baseUnits : floorUnits;
     const wallIndex = roots.filter(isWall).indexOf(root);
     const carrier = floor[Math.min(wallIndex, floor.length - 1)];
     return carrier

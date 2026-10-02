@@ -328,6 +328,64 @@ describe('relationsToDocking', () => {
     expect(entriesOf(group)).toContain('b2.RightBottom -> b3.LeftBottom StartStart [0,0,0]');
   });
 
+  it('puts a floor unit that names a wall unit into the floor row', () => {
+    // gpt-5.4-mini, image kitchen 06: one chain from the tall unit over the wall units to the base units
+    const { group, corrections } = compile([
+      root('t1', 'H2TB60'),
+      root('w1', 'OTB60', { rightOf: 't1' }),
+      root('w2', 'OTB60', { rightOf: 'w1' }),
+      root('b1', 'UTB60', { rightOf: 'w2' }),
+      root('b2', 'UTB60', { rightOf: 'b1' }),
+    ]);
+    expect(entriesOf(group)).toEqual(
+      expect.arrayContaining([
+        't1.RightTop -> w1.LeftTop StartStart [0,0,0]',
+        'w1.RightBottom -> w2.LeftBottom StartStart [0,0,0]',
+        't1.RightBottom -> b1.LeftBottom StartStart [0,0,0]',
+        'b1.RightBottom -> b2.LeftBottom StartStart [0,0,0]',
+      ]),
+    );
+    expect(entriesOf(group)).not.toContain('w2.RightBottom -> b1.LeftBottom StartStart [0,0,0]');
+    expect(corrections).toEqual([
+      "posGroups[0]: floor unit 'b1' cannot stand rightOf the wall unit 'w2' - it continues the floor row",
+      "posGroups[0]: root 'b1' names no neighbour - it was put rightOf 't1'",
+    ]);
+  });
+
+  it('hangs a range hood beside a tall unit above the floor unit on that side', () => {
+    // gpt-6-astra, image kitchen 07: the hood's Top vector is its chimney top
+    const { group, corrections } = compile([
+      root('t1', 'H2TB60'),
+      root('h1', 'DU', { rightOf: 't1' }),
+      root('w1', 'OTB60', { rightOf: 'h1' }),
+      root('b1', 'UTB60', { rightOf: 't1' }),
+    ]);
+    expect(entriesOf(group)).toEqual(
+      expect.arrayContaining([
+        'b1.LeftTop -> h1.LeftBottom StartStart [0,660,0]',
+        'h1.RightBottom -> w1.LeftBottom StartStart [0,0,0]',
+      ]),
+    );
+    expect(entriesOf(group).join()).not.toContain('h1.LeftTop');
+    expect(corrections).toEqual(["posGroups[0]: range hood 'h1' hangs above 'b1', rightOf the tall unit 't1'"]);
+
+    const alone = compile([root('t1', 'H2TB60'), root('h1', 'DU', { leftOf: 't1' })]);
+    expect(entriesOf(alone.group)).toEqual(['t1.LeftTop -> h1.RightTop StartStart [0,0,0]']);
+    expect(alone.corrections).toEqual([
+      "posGroups[0]: range hood 'h1' hangs leftOf the tall unit 't1' by its top edge - put it above the floor unit below it",
+    ]);
+  });
+
+  it('hangs a range hood without a relation above a base unit, not beside or on the tall unit', () => {
+    const { group, corrections } = compile([
+      root('t1', 'H2TB60'),
+      root('b1', 'UTB60', { rightOf: 't1' }),
+      root('h1', 'DU'),
+    ]);
+    expect(entriesOf(group)).toContain('b1.LeftTop -> h1.LeftBottom StartStart [0,660,0]');
+    expect(corrections).toEqual(["posGroups[0]: root 'h1' names no neighbour - it was put above 'b1'"]);
+  });
+
   it('counts the Living wall units as wall units', () => {
     const { group } = compile([root('b1', 'UTB60'), root('l1', 'LWU', { rightOf: 'b1' })]);
     expect(entriesOf(group)).toEqual(['b1.LeftTop -> l1.LeftBottom StartStart [0,980,0]']);

@@ -5,9 +5,33 @@
 > **Trigger**: RML-18027, request of 2026-10-02: running the tests becomes a script that uses `.agents/scripts/fetch-hi-library-data.js`; the prompts move to `test-prompts.json` with the models (key variables) and the test cases (plan, prompt, image); a plan for Group Editing; results per model; no `object.glb`, and no `snapshot.json` if the analysis does not need it; the skill writes a temporary subset JSON, runs the script and evaluates as now; default model `gpt-5-mini`
 > **Date**: 2026-10-02
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Implemented
 > **Branch**: `feat/tests-and-plans` (roomle-hi-example)
 > **Builds on**: [test the mcp](hi-mcp-test-the-mcp-skill.md), [image prompts](hi-mcp-test-image-prompts.md)
+
+> **Close-out (2026-10-02)**: implemented with the review decisions below — every test starts from a
+> plan, with optional operations (MCP tool calls) before the prompt; one Group Editing plan; the
+> runner loops over `run-hi-mcp-prompt.js`. See the [close-out report](#close-out-report-2026-10-02).
+> The living references are `.agents/skills/hi-mcp-testing.md` and `docs/test-prompts.md`. The
+> analysis below is kept as written.
+
+## Review Decisions (2026-10-02)
+
+| Topic | Decision |
+|---|---|
+| R1, `fetch-hi-library-data.js` | A slip: meant was `run-hi-mcp-prompt.js` in the loop that runs all tests. The runner runs it as a child process per test; the library fetch is not part of the runner |
+| Open question 2, "join groups" | Every test has a plan to start from (with or without groups), a prompt and/or an image, and optional **operations** that are executed in advance. The operations are MCP tool calls `{ tool, arguments }`, the same for every model. "Join groups" starts from the Three Tall Units plan with the operation `delete-root-module` of its middle unit. One Group Editing plan instead of two |
+| Open question 3, the prompt list | As most feasible: the JSON is the only list. `docs/test-prompts.md` keeps the plans, the format of the JSON and the guidelines |
+| Open question 4, the model directory | As most feasible: the provider name as written in the JSON |
+| The temporary test file of the skill | Goes into the session directory: `$SESSION/tests.json` |
+
+Checked before implementing (headless, 2026-10-02):
+- "Default Room" (`ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv`) has exactly the walls of the page's
+  default plan.
+- The Three Tall Units plan (`ps_qply732i7knwtkfjm1z86sa8vrt00ms`, built from the payload in
+  `docs/test-prompts.md`) keeps its group id and root ids across two reloads.
+- `delete-root-module` of its middle root (`a7271f1b-…`) splits it into two groups at z −3765 and
+  −2565. An operation with a fixed root id is therefore deterministic.
 
 ## What was asked and why
 
@@ -280,3 +304,42 @@ The prompt parsing, the setup-turn rules and the 17 single background commands l
 2. A missing key variable or image stops the runner before the first run.
 3. A stopped session continues with the same `--out` and skips the finished tests.
 4. "test the mcp" end to end with `gpt-5-mini`: the temporary JSON, one runner command, the report.
+
+## Close-out report (2026-10-02)
+
+**Implemented.**
+- **`docs/test-prompts.json`**: the three models (`AZURE_GPT_KEY`), six plans and 17 tests. Every
+  test has a plan; "image only" has no prompt; "join groups" has the operation `delete-root-module`
+  of the middle unit.
+- **`run-hi-mcp-prompt.js`**:
+  - `--plan` and `--operations`;
+  - the snapshot request without the object GLB; no `snapshot.json` and no `object.glb`;
+  - `run.json` gains `plan` and `operations`;
+  - `planner-calls.json` holds only the chat's calls.
+- **`run-hi-mcp-tests.js`**, the runner:
+  - checks the file and the key variables before the first run;
+  - writes `<out>/<provider>/<NN>-<id>/` and `results.json`;
+  - repeats a run without `run.json` once and skips finished tests;
+  - passes Ctrl+C on to the running run.
+- **The Three Tall Units plan** `ps_qply732i7knwtkfjm1z86sa8vrt00ms` and its image, with its payload
+  and ids in `docs/test-prompts.md`, which also documents the JSON format.
+- **The skill**: `$SESSION/tests.json` (default every test with `gpt-5-mini`), one runner command,
+  per-model paths in the report.
+
+**Found while verifying.** The first run of "join groups" failed: `delete-root-module` reported
+"Root module 'a7271f1b-…' not found". The groups of a loaded plan reach the HI library's group map
+(`_groupMap`, roomle-ui `glue-logic.ts`) only once the library has recalculated them, a moment after
+the page reports ready. The plan context already lists them before that. An operation answered
+"not found" is now repeated for up to 30 s.
+
+**Verified** (`gpt-5-mini`, three tests: a default-room prompt, the image without text, the join):
+
+| Check | Result |
+|---|---|
+| validation with an empty key variable, an unknown plan, a missing image, a bad id | all six problems named, exit 1, no run |
+| layout | `<out>/gpt-5-mini/01-…`, `02-…`, `03-…`, `results.json` |
+| run size | 2.4–2.9 MB (49 MB before); no `snapshot.json`, no `object.glb` |
+| `--plan` | `run.json` `plan` and `plan_id` in the page URL |
+| join groups | the operation split the plan into two groups (z −3765, −2565); the model merged them with `merge-groups`; `planner-calls.json` has the merge only |
+| resume | the same `--out` again: tests 1 and 2 "done before", test 3 run |
+| stop | SIGTERM during a run: runner exit 130, no `run.json`, ports 3000/3110/3200 free, no launcher left |

@@ -162,7 +162,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | [`.agents/skills/hi-mcp-tools.md`](./.agents/skills/hi-mcp-tools.md) | MCP tool reference, get-plan-context, create-or-replace-groups |
 | [`.agents/skills/roomle-hi-concepts.md`](./.agents/skills/roomle-hi-concepts.md) | HI concepts: rooms, walls, articles, groups, docking vectors, positioning |
 | [`.agents/skills/vercel-ai-sdk-chat.md`](./.agents/skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: providers, server-side auth, @ai-sdk/mcp, streamText |
-| [`.agents/skills/hi-mcp-testing.md`](./.agents/skills/hi-mcp-testing.md) | The user asks to **"test the mcp"** (runs the prompt suite of `docs/test-prompts.md`, writes an evaluated report); testing the HI MCP end to end: running a prompt through the chat with a real model and planner, the stored snapshot result |
+| [`.agents/skills/hi-mcp-testing.md`](./.agents/skills/hi-mcp-testing.md) | The user asks to **"test the mcp"** (runs the tests of `docs/test-prompts.json` with `run-hi-mcp-tests.js`, writes an evaluated report); testing the HI MCP end to end: running a prompt through the chat with a real model and planner, the stored snapshot result |
 | [`.github/skills/roomle-pr-resolution.md`](./.github/skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads. Never merge the PR |
 
 ## Key Architecture Patterns

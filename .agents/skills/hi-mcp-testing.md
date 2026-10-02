@@ -172,6 +172,19 @@ A session has **exactly one report file**, `report.md`. Never write a report per
 report file beside it — not even when the evaluation is split, e.g. one subagent per model: their
 sections go straight into `report.md`.
 
+The session folder is shared as it is, e.g. zipped: `report.md` links only files inside it.
+
+- Copy the source image of every image test into `$SESSION/images/`:
+
+  ```bash
+  mkdir -p "$SESSION/images"
+  jq -r '[.tests[].image | select(.)] | unique[]' "$SESSION/tests.json" | xargs -I{} cp {} "$SESSION/images/"
+  ```
+
+- Link a source image as `[images/<file>](images/<file>)`, never as `docs/images/<file>`.
+- The run images stay in the run directories (`<model>/<NN>-<test id>/…`), the image the model got
+  included (`prompt-image.jpg`).
+
 ````markdown
 # HI MCP test — <YYYY-MM-DD HH:MM>
 
@@ -224,7 +237,7 @@ Plan: <plan name>; operations: <none, or the tool calls before the prompt>
 
 > <prompt, or "(empty)">
 
-- **Image**: `docs/images/<file>`
+- **Image**: [images/<file>](images/<file>)
 - …
 
 | Image | Perspective | Top |

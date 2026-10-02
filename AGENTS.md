@@ -184,10 +184,10 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 
 ### Authoring Rules
 
-- Never author root positions — roots are positioned by docking only
+- Never author root positions — roots are positioned by their relation only
 - New groups are positioned with a `placement` only (`posRotationY` counter-clockwise as seen from above: right wall 270, left wall 90)
-- Roots within a group must be docked to already-placed roots
-- Docking uses vector pairs: ownDockingVector -> dockingVector with mode and offset
+- Every root after the first names one neighbour with one relation: `rightOf`, `leftOf`, `onTop`, `above` or `behind`
+- The server builds the docking from the relations — vector pairs ownDockingVector -> dockingVector with mode and offset (`group-layout.ts`); groups from `get-plan-context` carry it as `contextData`
 - Free docking vectors indicate where new modules can be added
 
 ## Hard Rules

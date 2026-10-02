@@ -47,10 +47,11 @@ Two parts have different responsibilities:
 
 ### 2.1 The agent declares what and where, the planner arranges
 
-The agent picks articles, sets their attributes, docks them to each other, and gives a new group
-one point and one rotation. The planner calculates every root position. The server completes
-everything else: the article template, the docking indices, the anchor root, and the anchor's frame
-— where its back left bottom corner lies (D33).
+The agent picks articles, sets their attributes, names for every unit one neighbour with one
+relation (D34), and gives a new group one point and one rotation. The planner calculates every root
+position. The server completes everything else: the docking from the relations, the article
+template, the docking indices, the anchor root, and the anchor's frame — where its back left bottom
+corner lies (D33).
 
 ### 2.2 Guards are a last resort
 
@@ -152,6 +153,8 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D30 | **A call loads every group that can be built** and reports the others with what to send instead | user decision 5 | in effect — `keepBuildable`, `tool-executors.ts` |
 | D31 | Guards are a last resort; the server corrects and informs, and gives feedback where it cannot correct | user guideline | in effect — §8 |
 | D33 | **One anchor frame for every article.** A placement puts the docking corner of the anchor root — the back left bottom corner of its docking vectors — at `posGroup`, whatever article it is: the origin of a cabinet, the left edge of a range hood, the corner point of a corner article, which is also turned so that its corner lies back left. The groups the tools return report their position in the same frame: `pos` is the back left bottom corner, `rotationY` the rotation of the placement. An anchor the probe cannot calculate no longer fails its group (G17) | user, 2026-10-02 ([analysis](../../.agents/refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md)) | in effect — `anchorFrameOfRoot`, `toRepositioningData`, `positionInPlacementFrame`, `group-placement.ts`; `inPlacementFrame`, `tool-executors.ts` |
+| D34 | **A unit names its neighbour, the server builds the docking.** Every root after the first names one neighbour with one relation — `rightOf`, `leftOf`, `onTop` (`align`, `gapMm`), `above` (`gapMm`), `behind` — and the server compiles the docking entries (`contextData`) from it: the vectors, the mode, the offset, and the root the entry goes on. A wall unit `rightOf` / `leftOf` a tall unit docks by the Top vectors. `contextData` stays accepted and is no longer taught; a group without any relation field is not touched | user, 2026-10-02 ([analysis](../../.agents/refactoring-analysis/simple-docking-for-the-agent.md), RML-18038) | in effect — `relationsToDocking`, `group-layout.ts` |
+| D35 | **The hang height of a wall unit `above` a floor unit** is the height of the tall units — a tall unit of the group, else the usual tall unit of the library — minus the heights of the wall unit and the floor unit (`mod_Height`); base and tall units stand on the same plinth. Furniture_Smith: 2100 − 720 − 720 = 660. `gapMm` overrides it | proposed in the analysis (Decision 1), 2026-10-02 | in effect — `hangGap`, `group-layout.ts`; to be confirmed |
 | D32 | **Nothing the agent sends is dropped without a report.** What the server can build it builds — a unit written inside the docking becomes a root — and every field it cannot use is named in `corrections`. Only the read-only fields of a group from `get-plan-context` are ignored silently | user, 2026-10-02 ([bug analysis](../../.agents/bug-analysis/units-inside-docking-entries-dropped.md)) | in effect — `prepareGroup`, `tool-executors.ts` |
 
 ## 4. How a tool call runs
@@ -212,15 +215,17 @@ tool. It covers:
   contains (`subModules`), plus `cornerArticle`.
 - **Trusted descriptions** (D8), **one kitchen is one group** (D14), **never author a position**
   (D15).
-- **Docking**: the entry is written on the placed root; the valid pairs (beside, on top, back to
-  back); `mode` and `offset`; one neighbour per place on a side vector; recipes for a row, a wall
-  unit above a base unit, an island and a room corner.
+- **Relations**: every root after the first names one neighbour — `rightOf`, `leftOf`, `onTop`
+  (`align`, `gapMm`), `above` (`gapMm`), `behind`; wall units beside a tall unit, corner kitchens,
+  and the default for a root without a relation (D34).
+- **Docking vectors**: how to read the `contextData` of a group from `get-plan-context`, and the
+  vectors `merge-article-into-group` names in `dockTo`.
 - **Placement**: the point and the rotation taken from the walls array, the table of room corners,
   and the right-handed corner article.
 - **Extending**, moving with `place-group`, editing with the command tools, and verifying results
   numerically.
-- **Five examples**: a row along a wall, wall units above base units, an L-shaped corner kitchen, a
-  row centred on a wall, adding a unit with `merge-article-into-group`.
+- **Five examples**: a row along a wall, wall units beside a tall unit and above base units, an
+  L-shaped corner kitchen, a row centred on a wall, adding a unit with `merge-article-into-group`.
 
 ### 5.3 Result format
 
@@ -312,9 +317,10 @@ The server runs these steps:
    (G27), reads the attribute overrides (G28), and corrects positions, root ids, repositioning data
    and the placement (G1–G14).
 2. It reduces the roots to article picks and strips the docking indices (C2, C3).
-3. It reads the article ids in the catalog's spelling (G15), reports the roots a new group names in
-   its docking but never sends (G26), completes the docking (G7, G8), and drops a placement on a
-   group that is already in the plan (G16).
+3. It reads the article ids in the catalog's spelling (G15), compiles the relations into docking
+   entries (D34, C15, C16, G31–G41), reports the roots a new group names in its docking but never
+   sends (G26), completes the docking (G7, G8), and drops a placement on a group that is already in
+   the plan (G16).
 4. For every placed group, it learns the frame of the anchor — its docking corner and, for a corner
    article, its turn — by a probe load, once per library, article and attribute set (C6, G17).
 5. It turns the placement into the planner's repositioning of the anchor root (C5, C6). The group
@@ -452,8 +458,13 @@ them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twi
 | C12 | An unknown `get-plan-context` section is ignored; none left means the default sections | `get-plan-context` |
 | C13 | A docking entry with `rootId` instead of `id` is read by its `rootId` | `completeDockingEntries` |
 | C14 | The position of a returned group is reported in the frame of a placement: `pos` the back left bottom corner, `rotationY` the rotation of the placement, the footprint from there, and with two corner articles `rootId`, the one `pos` belongs to (D33) | `positionInPlacementFrame`; `inPlacementFrame` |
+| C15 | A group with relations whose list starts with a wall unit starts with its first floor unit, so the placement anchors on the floor | `relationsToDocking` |
+| C16 | A relation is written as a docking entry on the root the planner reaches first — breadth-first from the first root —, mirrored with the offset negated when its target comes later; the planner applies an offset only in the direction of the entry | `relationsToDocking` |
 
 ### 8.3 `create-or-replace-groups`
+
+G23–G25 and G29 concern docking written as `contextData`; a payload with relations (D34) has its own
+corrections, G31–G41.
 
 | ID | Input | What the server does | Feedback |
 |---|---|---|---|
@@ -467,7 +478,7 @@ them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twi
 | G6 | a duplicate root id a docking entry names | does not build the group — the entry is ambiguous | `notLoaded`: "duplicate root id '…' named in the docking" |
 | G7 | roots the docking does not connect to the first root | adds a docking entry (`dockingVector`, `mode` `StartStart`, `offset` `[0, 0, 0]`) that docks the part to the free end of a row of its kind — floor units or wall units (catalog category "Wall Units") | correction naming the roots and the entry |
 | G7 | a part that cannot be docked: no free end, a wall unit without a reached wall-unit row. An article the catalog lists without docking vectors counts as having them — unknown, not undockable; a range hood, whose category does not say "Wall Units", joins the floor row | does not build the group | `notLoaded` with the docking entry to send |
-| G8 | two roots on one side vector at the same place (mode and offset) | docks the later one to the free end of that row | correction |
+| G8 | two roots on one side vector at the same place (mode and offset); a unit on top of another is no side neighbour (open issue 2, fixed 2026-10-02) | docks the later one to the free end of that row | correction |
 | G8 | the same, where the later root already follows in that row (a chain plus an extra entry on the first root) | drops the extra entry | correction |
 | G9 | `repositioningData` | takes it as the placement, or drops it beside a placement | correction |
 | G10 | a placement that is not an object | does not use it: no `repositioningData`, the planner positions the group | correction |
@@ -486,6 +497,17 @@ them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twi
 | G27 | a group, root or docking entry field the server does not use and `get-plan-context` does not return | ignores it | correction naming the fields |
 | G28 | attribute overrides as an object `{ id: value }`, or with `attributeId` instead of `id` | reads them as `[{ id, value }]` | correction; an entry without any id is ignored and reported |
 | G29 | docking in a shape that cannot be read — `contextData` or a `dockedRoots` that is not a list, a docking context or entry that is not an object | drops that part; the root is docked like any undocked root (G7), and the group loads | correction: "… could not be read and were dropped - contextData is { dockedRoots: [{ ownDockingVector, dockedRoots: [{ id, dockingVector, mode?, offset? }] }] }" |
+| G31 | in a group with relations, a root without a relation that nothing connects | puts it `rightOf` the previous unit of its kind in the list (floor units, wall units); the first wall unit beside a tall unit of the group, else `above` the floor unit at its list position | correction |
+| G32 | a relation that names no other root of the group, or the root itself | ignores it; the root gets the default (G31) | correction |
+| G33 | a relation that closes a ring of relations | drops it | correction |
+| G34 | a floor unit `above` a unit | puts it `rightOf` that unit | correction |
+| G35 | a wall unit `rightOf` / `leftOf` a base unit | hangs it `above` that unit (D35) | correction |
+| G36 | `behind` a corner article, or a corner article `behind` a unit | ignores it; the default (G31) | correction |
+| G37 | `gapMm` on `rightOf`, `leftOf` or `behind`, `gapMm` that is not a number, an `align` other than left, right or back, `align` or `gapMm` without a relation | ignores it (`align` left) | correction |
+| G38 | two relation fields on one root | uses the first of `rightOf`, `leftOf`, `onTop`, `above`, `behind` | correction |
+| G40 | a floor unit `rightOf` / `leftOf` a wall unit | puts it into the floor row — the default of G31 | correction |
+| G41 | a range hood `rightOf` / `leftOf` a tall unit — its Top vector is its chimney top | hangs it `above` the floor unit on that side of the tall unit; without one it stays beside the tall unit by its top edge. A hood without a relation hangs `above` a base unit, never beside or on a tall unit | correction |
+| G39 | `above` a floor unit where the catalog gives no tall unit height | the wall unit stands on the floor unit | correction naming `gapMm` |
 | G30 | any other input that fails the preparation of a group | does not build that group; the other groups of the call load (D30) | `notLoaded`: "posGroups[i]: could not be read - …" |
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |
 | — | the planner loads nothing | — | error result: "No groups were created or replaced …" |

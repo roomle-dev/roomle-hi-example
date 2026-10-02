@@ -6,7 +6,7 @@ running a prompt through the chat, checking the plan a prompt produces, comparin
 
 ## Test the MCP
 
-Runs every prompt of [testing-prompts.md](../../docs/testing-prompts.md) that needs no image through
+Runs every prompt of [test-prompts.md](../../docs/test-prompts.md) that needs no image through
 the chat, stores every result under one session directory and ends with `report.md`: per prompt the
 plan snapshot id, the perspective and the top image, an evaluation and a bug verdict.
 
@@ -27,7 +27,7 @@ mkdir -p "$SESSION"
 
 ### 3. Prompts
 
-Read `docs/testing-prompts.md` at run time — it is the only prompt list:
+Read `docs/test-prompts.md` at run time — it is the only prompt list:
 
 - every fenced block without a language tag is one prompt, in document order (the `bash` block
   under "Testing Guidelines" is not);

@@ -16,7 +16,7 @@ Add images to the chat window ("Planning Assistant") of the HI example
 4. The image is part of the context for the agent.
 5. With an image and no text, the text is "Plan a kitchen like the one in the image."
 
-Why: [`docs/testing-prompts.md`](../../docs/testing-prompts.md) already has two image prompts
+Why: [`docs/test-prompts.md`](../../docs/test-prompts.md) already has two image prompts
 ("Image-Based Kitchen Creation", with `docs/images/kitchen-1.png` and
 `kitchen-2.png`) that no chat can run today. Every "test the mcp" report
 lists them as "2 skipped (image)". In a sales configurator, a customer who brings a photo of a

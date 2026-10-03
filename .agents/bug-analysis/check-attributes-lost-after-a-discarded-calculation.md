@@ -1,7 +1,7 @@
 # `change-module-attribute` fails with "checkAttributes.get is not a function"
 
 > **Type**: Bug Analysis
-> **Domain**: roomle-ui `homag-intelligence` — `glue-logic.ts` (`_storeCalculatedGroup`, `_discardCalculation`), `common-core` `deepCopy`
+> **Domain**: roomle-ui `homag-intelligence` — `glue-logic.ts` (`_storeCalculatedGroup`, `_addGroupToMap`, `_discardCalculation`), `common-core` `deepCopy`
 > **Trigger**: "test the mcp" session `mcp-test-2026-10-02_13-47-02`, gpt-6-astra, test 09 "image only, no text"
 > **Date**: 2026-10-02
 > **Author**: AI Assistant
@@ -27,6 +27,19 @@ The tool calls of the run, replayed on a fresh page (Default Room) with the ids 
 The replace makes the library fail two root modules. The page logs "The library could not calculate
 root module …, the modification of group … was discarded."
 
+Reproduced again on 2026-10-03, headless on the deployed planner: the planner calls 11 (create), 27
+(replace) and 30 (change) of the run's `planner-calls.json` on the Default Room plan. The load takes
+today's arguments `'posGroups', { reason: 'adjusted' }`; the value is passed as the string `'1420'`.
+The stack of the TypeError:
+
+```text
+TypeError: checkAttributes.get is not a function
+  at ChecksLogic.calculateConflictingChange          (HOMAG library)
+  at solveModuleAttributeConflict                    (HOMAG library)
+  at GlueLogicImplementation._modifyAttributeOfModules  (glue-logic.ts)
+  at GlueLogicImplementation.updateAttribute         (glue-logic.ts)
+```
+
 ## Cause
 
 - The glue keeps the last calculated group as `lastCalculatedPosDataJson = deepCopy(group)`, and
@@ -36,12 +49,49 @@ root module …, the modification of group … was discarded."
 - After a discard, the group's modules carry `checkAttributes: {}`. That value passes the glue's
   `if (!module.checkAttributes)` checks, and the library calls `checkAttributes.get()` and throws.
 - RML-18019 saw the same class of error ("checkAttributes.has is not a function") as a side
-  finding.
+  finding. The attribute drop-downs pass the same module to `getAttributesDropDownValues`, which
+  calls `checkAttributes.has`.
+- The library's `calculateGroup` gives every module a new `checkAttributes` `Map` (`_articleId`,
+  `_moduleId` and the module's attributes, all primitives) on every calculation. A group stored
+  from a calculation always has it. `_discardCalculation` is the only place that stores a group
+  without a calculation: the JSON copy. `_modifyAttributeOfModules` calls
+  `solveModuleAttributeConflict` before it calculates, so every attribute change of the group fails
+  until a calculation stores the group again.
 
 Not the MCP server: the server sends no `checkAttributes`. The `{}` that `place-group` reloads (the
 group read through the bridge) is harmless; the replays show it.
 
 ## Fix
 
-In roomle-ui — see RML-18039: copy groups so that a `Map` survives (`structuredClone`), or rebuild
-`checkAttributes` after the copy. No change in the MCP server.
+In roomle-ui — see RML-18039. No change in the MCP server.
+
+`glue-logic.ts` copies the restorable group with `structuredClone` instead of `deepCopy`, so the
+`Map` survives:
+
+- `_storeCalculatedGroup`: `lastCalculatedPosDataJson = structuredClone(group)`
+- `_addGroupToMap`: `lastCalculatedPosDataJson: structuredClone(posDataJson)`
+- `_discardCalculation`: `restoredGroup = structuredClone(restorableGroup)`
+
+The other `deepCopy` calls stay: their copies go through `calculateGroup` before they are stored.
+Rebuilding `checkAttributes` after a JSON copy is rejected: the copy has lost the entries, and
+rebuilding them would repeat library logic in the glue. Switching `common-core`'s `deepCopy` to
+`structuredClone` is rejected too: it is used far beyond this bug, and `structuredClone` throws on
+functions that the JSON copy drops.
+
+**Unit test** — `glue-logic-test.ts`, `group operations › changeModuleAttribute`: "changes an
+attribute after the library could not calculate the previous change". The library mock behaves
+like the library: `calculateGroup` gives every root a `checkAttributes` `Map`, and
+`solveModuleAttributeConflict` reads it with `get`. The first change fails in the library and is
+discarded; the restored root still has its `Map`. The second change succeeds.
+
+**Verified 2026-10-03** in a roomle-ui worktree of master:
+
+- The test fails without the fix (`expected {} to be an instance of Map`; without that assertion
+  `TypeError: module.checkAttributes.get is not a function`) and passes with it. The
+  homag-intelligence suite (475 tests) and `lint:types:sdk` pass.
+- Live, with the fixed glue on the dev server and the replay above: the replace is discarded as
+  before, `change-module-attribute` succeeds, and the kernel holds `mod_HeightPosInsertion` 1420 —
+  the same as the control run without the replace. `structuredClone` accepts the real groups.
+
+Side finding, not part of this bug: the `change-module-attribute` result reports the unit's
+`mod_HeightPosInsertion` as 0 while the kernel holds 1420. The control run shows the same.

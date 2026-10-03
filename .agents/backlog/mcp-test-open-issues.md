@@ -389,11 +389,14 @@ and a wall unit `rightOf` / `leftOf` a base unit is hung `above` it (G35). The s
 **Problem.** After `delete-root-module` and `merge-groups`, the merged group's toe kick reaches
 120 mm into the back wall: the group's footprint starts at x −120 before the unit in the corner.
 
-**Cause and to-do.** Not the HOMAG library: the kernel's merge report gives the merged group an
-origin 120 mm inside the wall and a wrong surrounding contour, and `calculateGroup` uses both
-([analysis](../bug-analysis/merged-group-toe-kick-reaches-into-the-wall.md#result-2026-10-02)).
-Follow-up in RoomleCore: [RML-18040](https://roomle.atlassian.net/browse/RML-18040). No MCP server
-change.
+**Cause and to-do.** Neither the HOMAG library nor the glue. The kernel traces the merged-in
+unit's surroundings around the wall body, so the merge report's contour has a wall at the corner,
+120 mm behind the units. The library ends the toe kick there, and the kernel's next `plan_changed`
+moves the origin onto the toe kick
+([analysis](../bug-analysis/merged-group-toe-kick-reaches-into-the-wall.md#result-2026-10-03)).
+The fix is planned in RoomleCore (`ObjectSurroundings::findClosestOutlineIndices`, branch
+`fix/merged-group-surroundings-RML-18040`, with a reproduction test):
+[RML-18040](https://roomle.atlassian.net/browse/RML-18040). No MCP server change.
 
 **Latest run** (`mcp-test-2026-10-02_12-45-24`): 16 — footprint 1920 mm for two units spanning 1800 mm.
 
@@ -519,13 +522,13 @@ group carries `checkAttributes` as a plain object. The glue logic copies groups 
 (`_storeCalculatedGroup`, `_discardCalculation`, the article maps). The `.get` call is not in
 roomle-ui's sources, so it is in the HOMAG library code that receives the module.
 
-**To do.** roomle-ui:
-- reproduce with the call sequence of the run (create, change, recreate, change a module attribute);
-- copy groups so that a `Map` survives (`structuredClone`, or rebuild `checkAttributes` after the
-  copy).
+**To do.** roomle-ui: copy the restorable group with `structuredClone` instead of `deepCopy` in
+`_storeCalculatedGroup`, `_addGroupToMap` and `_discardCalculation` (reproduced and verified
+2026-10-03 — see the analysis).
 
-**Test.** A glue-logic test: a group restored from its last calculation still answers
-`checkAttributes.get`, and `change-module-attribute` on it succeeds.
+**Test.** `glue-logic-test.ts`, `changeModuleAttribute`: "changes an attribute after the library
+could not calculate the previous change" — the restored root keeps its `checkAttributes` `Map`, and
+the next change succeeds.
 
 **Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-6-astra 09 (the model recovered by deleting and rebuilding the groups).
 

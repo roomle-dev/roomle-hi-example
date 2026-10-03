@@ -13,6 +13,12 @@ plan snapshot id: `ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv`
 
 ![Default Room](./images/default-room.png)
 
+### Furnished Room
+
+plan snapshot id: `ps_902x2gyn4lpwb5ixxhl5x1f5klkocx5`
+
+![Furnished Room](./images/furnished-room.png)
+
 ### Living Room
 
 plan snapshot id: `ps_nwzhfk8bjc2gu02gsyocsdragi0rxey`
@@ -36,6 +42,12 @@ plan snapshot id: `ps_mq3m2wuhq6w23ry742eh50nb2vub5ej`
 plan snapshot id: `ps_qn012p0tjux6dabt6oym0bzngmqex70u`
 
 ![Rooms and Attic](./images/room-and-attic.png)
+
+### Complex Room with Attic
+
+plan snapshot id: `ps_qqukcsmwk16q8crynogzctsv1hgbhy6`
+
+![Complex Room with Attic](./images/complex-room-with-attic.png)
 
 ### Three Tall Units
 

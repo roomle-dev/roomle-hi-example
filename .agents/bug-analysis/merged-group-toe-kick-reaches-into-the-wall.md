@@ -5,7 +5,7 @@
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-10-01_10-23-00/report.md` (gpt-5-mini, planner `bo-test`), runs 09 and 12; the same numbers in run 12 of the Mistral suite (09:10) and the gpt-6-astra suite (09:44)
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
-> **Status**: Open — [RML-18040](https://roomle.atlassian.net/browse/RML-18040) (RoomleCore merge report)
+> **Status**: Open — [RML-18040](https://roomle.atlassian.net/browse/RML-18040); cause in RoomleCore `ObjectSurroundings::findClosestOutlineIndices`, fix planned there (see [Result (2026-10-03)](#result-2026-10-03))
 > **Branch**: — (not fixed, see [Status of the fix](#status-of-the-fix))
 
 ---
@@ -77,3 +77,26 @@ Checked live on the Three Tall Units plan with `getExternalObjectGroups()`, in t
   changedGroup, mergedObjects)` in `createGroupChangeData`.
 
 Follow-up: [RML-18040](https://roomle.atlassian.net/browse/RML-18040). No MCP server change.
+
+## Result (2026-10-03)
+
+Reproduced live on roomle-ui `master` (the kernel callbacks and the glue's reloads recorded) and in
+a RoomleCore unit test. The result of 2026-10-02 was half right: the merge report's **origin is
+correct** (`[4815, 0, -3765]`, the units at x 0 and 1200). Only its contour is wrong.
+
+- The kernel traces the surroundings of each cluster outline (one per unit, because of the gap) from
+  the vertex closest to the **target object's center**. For the merged-in unit that vertex is the
+  walls' inner corner, and the trace runs around the wall body: inner face, mitred corner, outer
+  face (`L(900,0) wall L(0,0) wall L(-120,-120) wall L(900,-120) …`).
+- The library ends the toe kick at the wall it finds there: its front piece starts at x −120 and is
+  720 mm long.
+- The reload makes the toe kick part of the object. The kernel's next `plan_changed` puts the
+  origin at the object's new rectangle (`-3885`) and moves the units to x 120 and 1320. That is
+  the origin of the first result.
+
+The fix belongs in RoomleCore: trace from the center of the outline being examined. The plan, the
+reproduction test and a prototype (all kernel tests pass) are in RoomleCore
+`documentation/bug-analysis/merged-group-surroundings-traced-around-the-wall.md`, branch
+`fix/merged-group-surroundings-RML-18040`. There is no change in roomle-ui, the library or the MCP
+server. The stale docking and the shared toe-kick id after the split (see
+[Investigation so far](#investigation-so-far)) are real, but they do not cause the 120 mm.

@@ -519,13 +519,13 @@ group carries `checkAttributes` as a plain object. The glue logic copies groups 
 (`_storeCalculatedGroup`, `_discardCalculation`, the article maps). The `.get` call is not in
 roomle-ui's sources, so it is in the HOMAG library code that receives the module.
 
-**To do.** roomle-ui:
-- reproduce with the call sequence of the run (create, change, recreate, change a module attribute);
-- copy groups so that a `Map` survives (`structuredClone`, or rebuild `checkAttributes` after the
-  copy).
+**To do.** roomle-ui: copy the restorable group with `structuredClone` instead of `deepCopy` in
+`_storeCalculatedGroup`, `_addGroupToMap` and `_discardCalculation` (reproduced and verified
+2026-10-03 — see the analysis).
 
-**Test.** A glue-logic test: a group restored from its last calculation still answers
-`checkAttributes.get`, and `change-module-attribute` on it succeeds.
+**Test.** `glue-logic-test.ts`, `changeModuleAttribute`: "changes an attribute after the library
+could not calculate the previous change" — the restored root keeps its `checkAttributes` `Map`, and
+the next change succeeds.
 
 **Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-6-astra 09 (the model recovered by deleting and rebuilding the groups).
 

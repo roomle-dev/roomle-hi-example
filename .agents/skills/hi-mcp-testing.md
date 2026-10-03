@@ -9,7 +9,7 @@ running a prompt through the chat, checking the plan a prompt produces, comparin
 Runs the tests of [test-prompts.json](../../docs/test-prompts.json) with the runner
 `run-hi-mcp-tests.js` — each from its plan, with its operations, prompt and image — stores every
 result under one session directory and ends with `report.md`: per test the plan snapshot id, the
-perspective and the top image, an evaluation and a bug verdict.
+perspective, the perspective object and the top image, an evaluation and a bug verdict.
 
 ### 1. Model
 
@@ -81,6 +81,7 @@ Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json`
 | File | Look at |
 |---|---|
 | `top-image.png`, `perspective-image.png` | where the group stands, what it consists of |
+| `perspective-object-image.png` | the group alone — its fronts, appliances and materials, without the room |
 | `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
 | `run.json` | `plan` and `operations` (the tool calls before the prompt, with their `result` or `error`); per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId` |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
@@ -225,9 +226,9 @@ Plan: <plan name>; operations: <none, or the tool calls before the prompt>
 - **Corrections**: <per tool, the corrections, groups not loaded and errors of `toolCalls`, or none>
 - **Answer**: <the model's final answer, shortened>
 
-| Perspective | Top |
-|---|---|
-| <img src="gpt-5-mini/01-<test id>/perspective-image.png" width="420"> | <img src="gpt-5-mini/01-<test id>/top-image.png" width="420"> |
+| Perspective | Perspective object | Top |
+|---|---|---|
+| <img src="gpt-5-mini/01-<test id>/perspective-image.png" width="280"> | <img src="gpt-5-mini/01-<test id>/perspective-object-image.png" width="280"> | <img src="gpt-5-mini/01-<test id>/top-image.png" width="280"> |
 
 **Evaluation — <verdict>**: <what is in the plan against what was asked, with the evidence>
 
@@ -240,9 +241,9 @@ Plan: <plan name>; operations: <none, or the tool calls before the prompt>
 - **Image**: [images/<file>](images/<file>)
 - …
 
-| Image | Perspective | Top |
-|---|---|---|
-| <img src="gpt-5-mini/09-<test id>/prompt-image.jpg" width="280"> | <img src="gpt-5-mini/09-<test id>/perspective-image.png" width="280"> | <img src="gpt-5-mini/09-<test id>/top-image.png" width="280"> |
+| Image | Perspective | Perspective object | Top |
+|---|---|---|---|
+| <img src="gpt-5-mini/09-<test id>/prompt-image.jpg" width="210"> | <img src="gpt-5-mini/09-<test id>/perspective-image.png" width="210"> | <img src="gpt-5-mini/09-<test id>/perspective-object-image.png" width="210"> | <img src="gpt-5-mini/09-<test id>/top-image.png" width="210"> |
 
 …
 

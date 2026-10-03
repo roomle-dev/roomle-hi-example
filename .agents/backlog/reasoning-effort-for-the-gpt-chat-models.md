@@ -8,6 +8,10 @@
 
 ---
 
+**Increasing the reasoning effort must be considered and investigated** before gpt-5.4-mini is
+judged as the weaker planner, and before the chat's model is chosen. Until then, the comparison of
+the two models is not a fair one: they did not run at the same reasoning effort. See [To do](#to-do).
+
 ## The problem
 
 gpt-5.4-mini plans clearly worse than gpt-5-mini, although it is the newer model. In

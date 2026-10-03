@@ -389,11 +389,14 @@ and a wall unit `rightOf` / `leftOf` a base unit is hung `above` it (G35). The s
 **Problem.** After `delete-root-module` and `merge-groups`, the merged group's toe kick reaches
 120 mm into the back wall: the group's footprint starts at x −120 before the unit in the corner.
 
-**Cause and to-do.** Not the HOMAG library: the kernel's merge report gives the merged group an
-origin 120 mm inside the wall and a wrong surrounding contour, and `calculateGroup` uses both
-([analysis](../bug-analysis/merged-group-toe-kick-reaches-into-the-wall.md#result-2026-10-02)).
-Follow-up in RoomleCore: [RML-18040](https://roomle.atlassian.net/browse/RML-18040). No MCP server
-change.
+**Cause and to-do.** Neither the HOMAG library nor the glue. The kernel traces the merged-in
+unit's surroundings around the wall body, so the merge report's contour has a wall at the corner,
+120 mm behind the units. The library ends the toe kick there, and the kernel's next `plan_changed`
+moves the origin onto the toe kick
+([analysis](../bug-analysis/merged-group-toe-kick-reaches-into-the-wall.md#result-2026-10-03)).
+The fix is planned in RoomleCore (`ObjectSurroundings::findClosestOutlineIndices`, branch
+`fix/merged-group-surroundings-RML-18040`, with a reproduction test):
+[RML-18040](https://roomle.atlassian.net/browse/RML-18040). No MCP server change.
 
 **Latest run** (`mcp-test-2026-10-02_12-45-24`): 16 — footprint 1920 mm for two units spanning 1800 mm.
 

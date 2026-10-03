@@ -168,7 +168,8 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
   announces bridge protocol 2, and executes the planner methods the tools send on
   `roomDesignerApi.extended`. Its `hello` may carry a browser chat ID; the server sends `ready`
   only after accepting the page. A second page is closed with code 4409 without replacing the
-  active page. Each planner call from a page-bound chat rechecks the ID, so a request cannot jump
+  active OPEN page. If the owner socket is CLOSING, its pending calls are rejected before the new
+  page is accepted; the old socket's later close does not remove the new owner. Each planner call from a page-bound chat rechecks the ID, so a request cannot jump
   to a different page after a disconnect. The server answers a call only with a result from the
   active page, the one the call went to; a frame that is not a JSON object is ignored.
 - **Planner methods** (`planner-api.ts`), with the timeout per call:
@@ -190,7 +191,10 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 - **The HI chat** (`hi-mcp-chat`) is an MCP client of this server. It gives the model a
   three-sentence system prompt and **not** the server's instructions, so the model learns the rules
   only when it calls `get-authoring-rules`. A chat turn has 16 steps; the last one cannot call a
-  tool, so the turn always ends with an answer (`chat-steps.ts`).
+  tool, so the turn always ends with an answer (`chat-steps.ts`). The example page sends its
+  bridge `clientId` with every `/chat` request; the chat backend requires it and connects to
+  `/mcp?client=<clientId>` (retaining any `session` query). The example disables chat submission
+  until the bridge sends `ready`, and again when it closes or refuses the page.
 
 ## 5. Information the server provides
 
@@ -588,6 +592,7 @@ Infrastructure checks, kept. The page allow-list and the origin check are securi
 | "The demo page disconnected" | the page left during a call |
 | WebSocket close 4409, "Planner session in use" | another page already owns the planner; the newcomer must retry after the owner leaves |
 | HTTP 409, "This chat is not connected to its planner page" | the browser chat's `client` ID does not own the active page |
+| HTTP 400, "Chat request requires a page clientId" | the example chat request omitted its browser page identity |
 | the page's own error (e.g. a method not on its allow-list) | the planner call failed in the page |
 
 ## 9. Limits

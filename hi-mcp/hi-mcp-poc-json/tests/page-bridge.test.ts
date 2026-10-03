@@ -148,6 +148,23 @@ describe('PageBridge page lifecycle', () => {
     await expect(promise).resolves.toBeNull();
   });
 
+  it('accepts a replacement when the previous socket is closing', async () => {
+    const bridge = new PageBridge();
+    const first = attachPage(bridge, { clientId: 'first' });
+    const pending = bridge.call('fetchPrice', []);
+    first.readyState = WebSocket.CLOSING;
+
+    const second = attachPage(bridge, { clientId: 'second' });
+    await expect(pending).rejects.toThrow(/disconnected/);
+    expect(second.sent.map((message) => JSON.parse(message))).toEqual([{ kind: 'ready' }]);
+    expect(bridge.isClientActive('second')).toBe(true);
+
+    first.close();
+    const next = bridge.call('fetchPrice', [], undefined, 'second');
+    second.receive({ kind: 'result', id: 2, ok: true, result: 42 });
+    await expect(next).resolves.toBe(42);
+  });
+
   it('only lets the matching browser chat call its planner', async () => {
     const bridge = new PageBridge();
     const socket = attachPage(bridge, { clientId: 'first' });

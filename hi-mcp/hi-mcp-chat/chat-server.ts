@@ -53,11 +53,13 @@ const getLanguageModel = (config: ChatConfig) => {
 // status area while the tool call runs and keeps them out of the reply.
 const TOOL_STATUS_PREFIX = '[tool] ';
 
-const streamChat: StreamChat = async (messages) => {
+const streamChat: StreamChat = async (messages, clientId) => {
   const startedAt = Date.now();
   console.log(`[hi-chat] chat request: ${messages.length} messages`);
+  const mcpUrl = new URL(config.mcpUrl);
+  mcpUrl.searchParams.set('client', clientId);
   const mcpClient = await createMCPClient({
-    transport: new StreamableHTTPClientTransport(new URL(config.mcpUrl)),
+    transport: new StreamableHTTPClientTransport(mcpUrl),
   });
   let mcpClientClosed = false;
   const closeMcpClient = async () => {

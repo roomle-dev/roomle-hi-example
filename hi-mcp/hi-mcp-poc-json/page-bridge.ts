@@ -32,8 +32,11 @@ export class PageBridge {
       }
       if (message.kind === 'hello') {
         if (this._page && this._page !== socket) {
-          socket.close(4409, 'Planner session in use');
-          return;
+          if (this._page.readyState === WebSocket.OPEN) {
+            socket.close(4409, 'Planner session in use');
+            return;
+          }
+          this._rejectPendingCalls('The demo page disconnected');
         }
         this._page = socket;
         this._pageUrl = message.url;

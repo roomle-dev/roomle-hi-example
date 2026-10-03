@@ -436,8 +436,9 @@
               rows="3"
               placeholder="Ask the assistant..."
               title="Enter to send, Shift+Enter for a new line"
+              disabled
             ></textarea>
-            <button type="submit" title="Send the message to the AI assistant" aria-label="Send message">
+            <button type="submit" title="Send the message to the AI assistant" aria-label="Send message" disabled>
               <svg viewBox="0 0 16 16" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
                 <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                   <path d="M5.65679676,3.43135935 L5.368,4.868 L3.93120084,5.1568285 C3.59095749,5.22487714 3.32487714,5.49095749 3.25679676,5.83135935 L3.24221259,5.93844293 C3.21109098,6.36461324 3.50149324,6.75723001 3.93135935,6.84320324 L5.368,7.13 L5.65682055,8.56875946 C5.72487714,8.90904251 5.99095749,9.17512286 6.33135935,9.24320324 L6.43844293,9.25778741 C6.86461324,9.28890902 7.25723001,8.99850676 7.34320324,8.56864065 L7.63,7.13 L9.06856139,6.84321908 C9.40904251,6.77512286 9.67512286,6.50904251 9.74320324,6.16864065 L9.75778741,6.06155707 C9.78890902,5.63538676 9.49850676,5.24276999 9.06864065,5.15679676 L7.63,4.868 L7.34321117,3.43139901 C7.27512286,3.09095749 7.00904251,2.82487714 6.66864065,2.75679676 C6.20295236,2.66365911 5.74993442,2.96567106 5.65679676,3.43135935 Z M6.53135935,3.44320324 C6.59465834,3.45586303 6.64413697,3.50534166 6.65679676,3.56864065 L7.03551112,5.46335099 L8.93124054,5.84317945 C9.01795581,5.86052253 9.07411606,5.94476289 9.05679676,6.03135935 C9.04413697,6.09465834 8.99465834,6.14413697 8.93135935,6.15679676 L7.03551111,6.53551111 L6.65678092,8.43143861 C6.63947747,8.51795581 6.55523711,8.57411606 6.46864065,8.55679676 C6.40534166,8.54413697 6.35586303,8.49465834 6.34320324,8.43135935 L5.96335099,6.53551112 L4.06860099,6.15678883 C3.98204419,6.13947747 3.92588394,6.05523711 3.94320324,5.96864065 C3.95586303,5.90534166 4.00534166,5.85586303 4.06864065,5.84320324 L5.963351,5.463351 L6.3431715,3.56879916 C6.35705232,3.49939518 6.41374232,3.44957183 6.48020047,3.44128613 L6.53135935,3.44320324 Z" fill="currentColor" fill-rule="nonzero"/>
@@ -1210,6 +1211,17 @@
       // sends the results back. The tool logic itself runs in the server.
 
       const MCP_BRIDGE_PROTOCOL = 2;
+      const mcpClientId = crypto.randomUUID();
+      let mcpPageAccepted = false;
+      let mcpConnectionMessage = getQueryParam('mcp') === 'true'
+        ? 'Connecting to the planner...'
+        : 'Planner connection unavailable. Open this page with ?mcp=true.';
+      let onMcpConnectionChange = () => {};
+      const setMcpConnection = (accepted, message) => {
+        mcpPageAccepted = accepted;
+        mcpConnectionMessage = message;
+        onMcpConnectionChange();
+      };
 
       // The planner methods the MCP server may call on this page - nothing
       // else (no orders, no plan overwrites) is reachable from the server.
@@ -1252,6 +1264,7 @@
                 example: 'minimal-hi-example',
                 url: window.location.href,
                 protocol: MCP_BRIDGE_PROTOCOL,
+                clientId: mcpClientId,
               }),
             );
           };
@@ -1264,6 +1277,7 @@
             }
             if (message.kind === 'ready') {
               accepted = true;
+              setMcpConnection(true, '');
               logMessage('MCP', 'connected to the MCP server');
               return;
             }
@@ -1300,9 +1314,11 @@
           };
           socket.onclose = (event) => {
             if (event.code === 4409) {
+              setMcpConnection(false, 'This server already has a planner connected. Close that page and reload to retry.');
               logMessage('MCP', 'this server already has a planner connected');
               return;
             }
+            setMcpConnection(false, 'Planner disconnected. Reconnecting...');
             setTimeout(connect, 3000);
           };
         };
@@ -1330,6 +1346,7 @@
         const messagesArea = document.getElementById('chat-messages');
         const status = document.getElementById('chat-status');
         const input = document.getElementById('chat-input');
+        const submitButton = document.querySelector('#chat-form button[type="submit"]');
         const TOOL_STATUS_PREFIX = '[tool] ';
         // The image sent to the model: long side at most IMAGE_MAX_SIDE px,
         // the size Claude reads natively - enough detail for every chat model.
@@ -1345,6 +1362,17 @@
         let latestDrop = 0;
         let imagePreparation = Promise.resolve();
         let noteTimer;
+
+        onMcpConnectionChange = () => {
+          input.disabled = !mcpPageAccepted;
+          submitButton.disabled = !mcpPageAccepted;
+          if (!busy) {
+            clearTimeout(noteTimer);
+            status.textContent = mcpConnectionMessage;
+            status.classList.toggle('hidden', mcpPageAccepted);
+          }
+        };
+        onMcpConnectionChange();
 
         const addMessage = (role, text, image) => {
           const entry = document.createElement('div');
@@ -1399,7 +1427,7 @@
           status.textContent = note;
           status.classList.remove('hidden');
           noteTimer = setTimeout(() => {
-            if (!busy) {
+            if (!busy && mcpPageAccepted) {
               status.classList.add('hidden');
             }
           }, 4000);
@@ -1433,12 +1461,17 @@
         };
 
         const send = async () => {
-          if (busy) {
+          if (busy || !mcpPageAccepted) {
             return;
           }
           busy = true;
           // An image dropped just before sending goes along with this message.
           await imagePreparation;
+          if (!mcpPageAccepted) {
+            busy = false;
+            onMcpConnectionChange();
+            return;
+          }
           const image = attachedImage;
           const text = input.value.trim();
           if (!text && !image) {
@@ -1463,7 +1496,7 @@
             const response = await fetch(chatUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ messages: conversation }),
+              body: JSON.stringify({ messages: conversation, clientId: mcpClientId }),
             });
             if (!response.ok || !response.body) {
               const errorText = await response.text().catch(() => '');
@@ -1505,7 +1538,7 @@
             assistantEntry.innerText = `Chat failed: ${error.message}`;
           } finally {
             busy = false;
-            status.classList.add('hidden');
+            onMcpConnectionChange();
           }
         };
 

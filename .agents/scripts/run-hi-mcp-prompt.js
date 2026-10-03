@@ -351,6 +351,10 @@ const parseFrame = (payload) => {
 // WebSocket frames: the server's own log cuts the arguments short.
 const recordPlannerCalls = (page) => {
   const calls = [];
+  let resolveClientId;
+  const clientId = new Promise((resolve) => {
+    resolveClientId = resolve;
+  });
   page.on('websocket', (socket) => {
     socket.on('framereceived', ({ payload }) => {
       const message = parseFrame(payload);
@@ -360,6 +364,9 @@ const recordPlannerCalls = (page) => {
     });
     socket.on('framesent', ({ payload }) => {
       const message = parseFrame(payload);
+      if (message?.kind === 'hello' && message.clientId) {
+        resolveClientId(message.clientId);
+      }
       const call =
         message?.kind === 'result' && calls.find(({ id }) => id === message.id);
       if (call) {
@@ -370,7 +377,7 @@ const recordPlannerCalls = (page) => {
       }
     });
   });
-  return calls;
+  return { calls, clientId };
 };
 
 const splitChatStream = (text) => {
@@ -392,9 +399,9 @@ const splitChatStream = (text) => {
 // node:http, not fetch: fetch ends a response after 300 s without data, and
 // a model may think that long before the chat streams its next line. What
 // came before a failure is kept.
-const postChat = (messages) =>
+const postChat = (messages, clientId) =>
   new Promise((resolve) => {
-    const body = JSON.stringify({ messages });
+    const body = JSON.stringify({ messages, clientId });
     const chunks = [];
     let status;
     const settle = (error) => {
@@ -425,8 +432,8 @@ const postChat = (messages) =>
     chatRequest.end(body);
   });
 
-const sendChat = async (messages) => {
-  const { status, text, error } = await postChat(messages);
+const sendChat = async (messages, clientId) => {
+  const { status, text, error } = await postChat(messages, clientId);
   if (status !== undefined && status >= 300) {
     return { answer: '', tools: [], errors: [`HTTP ${status}: ${text}`] };
   }
@@ -464,7 +471,7 @@ const prepareImage = (page, bytes) =>
 // The prompts are the turns of one conversation, as in the chat window: the
 // history goes along with every turn. A turn with an error ends it. The image
 // goes along with the last prompt.
-const runConversation = async (prompts, image) => {
+const runConversation = async (prompts, image, clientId) => {
   const messages = [];
   const turns = [];
   for (const [index, prompt] of prompts.entries()) {
@@ -479,7 +486,7 @@ const runConversation = async (prompts, image) => {
     );
     const startedAt = Date.now();
     toolCalls.turn = index;
-    const turn = await sendChat(messages);
+    const turn = await sendChat(messages, clientId);
     turns.push({
       prompt,
       ...(turnImage && { image: turnImage.file }),
@@ -550,13 +557,14 @@ const runSession = async (options, launcher, browser) => {
     ? `${exampleUrl}&plan_id=${encodeURIComponent(options.plan)}`
     : exampleUrl;
   const page = await browser.newPage();
-  const plannerCalls = recordPlannerCalls(page);
+  const { calls: plannerCalls, clientId: pageClientId } = recordPlannerCalls(page);
   await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
   await pollUntil(
     planContextHasArticles,
     PAGE_READY_TIMEOUT_MS,
     'the page and the HI library',
   );
+  const clientId = await withTimeout(pageClientId, PAGE_READY_TIMEOUT_MS, 'the page client ID');
   const operations = await runOperations(options.operations);
   const failedOperation = operations.find((operation) => operation.error);
   plannerCalls.length = 0;
@@ -569,6 +577,7 @@ const runSession = async (options, launcher, browser) => {
     : await runConversation(
         options.prompts,
         promptImage && { file: options.image, dataUrl: promptImage },
+        clientId,
       );
   toolCalls.turn = undefined;
   const chatPlannerCalls = plannerCalls.slice();

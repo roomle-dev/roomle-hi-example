@@ -356,6 +356,10 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 - Node 20+
 - `npm install` in `.agents/scripts` (Playwright 1.55.0 — the version roomle-ui uses, so its cached
   Chromium is reused; on a machine without it: `npx playwright install chromium` in `.agents/scripts`)
+- a GPU — the run script starts headless Chromium with `--enable-gpu`: under SwiftShader, the
+  software GL headless Chromium falls back to without it, the planner's object-only perspective
+  render draws an empty frame and every run's `perspective-object-image.png` is empty. Why:
+  [mcp-test-infrastructure-issues.md](../backlog/mcp-test-infrastructure-issues.md), issue 1
 - ports 3000, 3110 and 3200 free — stop an interactive `npm start` first; one run (and one runner)
   at a time
 - to stop a run, press Ctrl+C in its terminal. With Volta, `node` is a shim that does not pass
@@ -369,6 +373,7 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 |---|---|
 | `the launcher exited with code 1` right after the start | unknown provider, a missing key, a busy port or a failed typecheck — the launcher's message is printed above |
 | `timed out … waiting for the page and the HI library` | the page did not connect or the HI library did not load — run with `--headed` and look at the page |
+| every `perspective-object-image.png` is fully transparent, the other images render | no GPU: headless Chromium fell back to SwiftShader, under which the planner's object-only perspective render draws an empty frame — the run script passes `--enable-gpu` for this; on a machine without a GPU the image stays empty until the planner defect is fixed ([backlog](../backlog/mcp-test-infrastructure-issues.md), issue 1) |
 | `errors` in `run.json` with the provider's message | invalid key or a provider failure; the snapshot is still stored |
 | `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context — a **bug**. Fixed causes: the images of `get-plan-images` reached Mistral as base64 text ([analysis](../bug-analysis/plan-images-sent-as-text-to-mistral.md)); the image URLs and the pretty-printing of the tool results ([analysis](../bug-analysis/tool-results-exceed-mistral-context.md)) |
 | `api.extended[message.method] is not a function` in `planner-calls.json` | the planner build lacks the method (see the bug rules above) |

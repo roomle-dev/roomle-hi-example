@@ -96,6 +96,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [create-or-replace-groups drops the units the agent writes inside the docking](bug-analysis/units-inside-docking-entries-dropped.md) | Fixed | 2026-10-02 |
 | [The range hood lands half its width off and takes the agent several attempts](bug-analysis/range-hood-placed-half-a-width-off.md) | Fixed | 2026-10-02 |
 | [RML-18033: HI MCP validation and client contract findings](bug-analysis/rml-18033-hi-mcp-validation.md) | Open (revalidated on 3e68df4) | 2026-10-02 |
+| [The perspective object image of every test run is empty](bug-analysis/empty-perspective-object-image-in-test-runs.md) | Fixed | 2026-10-03 |
 
 ### Feature Analyses
 

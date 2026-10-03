@@ -58,11 +58,11 @@ const TOOL_PREFIX = '[tool] ';
 // JSON line each.
 const TOOL_CALL_LINE = /^\[hi-mcp\] tool (\S+) (args|feedback|error) (.+)$/;
 const ERROR_PREFIX = '[error] ';
-const CHROMIUM_ARGS = [
-  '--use-angle=swiftshader',
-  '--enable-unsafe-swiftshader',
-  '--ignore-gpu-blocklist',
-];
+// Headless Chromium falls back to SwiftShader (software GL) without this -
+// and the planner's object-only perspective render (the HI objects of the
+// snapshot) comes back empty under SwiftShader. --enable-gpu makes headless
+// use the real GPU; a machine without one falls back to software as before.
+const CHROMIUM_ARGS = ['--enable-gpu'];
 // As the chat window sends a dropped image (prepareImage in
 // minimal-hi-example/index.html).
 const IMAGE_MAX_SIDE = 1568;

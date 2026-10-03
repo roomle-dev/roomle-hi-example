@@ -1244,8 +1244,8 @@
         const reply = (socket, result) => socket.send(JSON.stringify(result));
         const connect = () => {
           const socket = new WebSocket(bridgeUrl);
+          let accepted = false;
           socket.onopen = () => {
-            logMessage('MCP', 'connected to the MCP server');
             socket.send(
               JSON.stringify({
                 kind: 'hello',
@@ -1262,7 +1262,15 @@
             } catch {
               return;
             }
+            if (message.kind === 'ready') {
+              accepted = true;
+              logMessage('MCP', 'connected to the MCP server');
+              return;
+            }
             if (message.kind !== 'call') {
+              return;
+            }
+            if (!accepted) {
               return;
             }
             if (!MCP_PLANNER_METHODS.includes(message.method)) {
@@ -1290,7 +1298,11 @@
               });
             }
           };
-          socket.onclose = () => {
+          socket.onclose = (event) => {
+            if (event.code === 4409) {
+              logMessage('MCP', 'this server already has a planner connected');
+              return;
+            }
             setTimeout(connect, 3000);
           };
         };

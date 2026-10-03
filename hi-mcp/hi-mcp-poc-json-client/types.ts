@@ -12,6 +12,11 @@ export interface McpBridgeHello {
   example: string;
   url: string;
   protocol?: number;
+  clientId?: string;
+}
+
+export interface McpBridgeReady {
+  kind: 'ready';
 }
 
 export interface McpBridgeCall {
@@ -29,4 +34,4 @@ export interface McpBridgeResult {
   error?: string;
 }
 
-export type McpBridgeMessage = McpBridgeHello | McpBridgeCall | McpBridgeResult;
+export type McpBridgeMessage = McpBridgeHello | McpBridgeReady | McpBridgeCall | McpBridgeResult;

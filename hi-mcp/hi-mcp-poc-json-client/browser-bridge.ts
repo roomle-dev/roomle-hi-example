@@ -32,7 +32,13 @@ export interface BrowserBridgeOptions {
    * users do not interfere; every other setup ignores it.
    */
   sessionId?: string;
+  clientId?: string;
+  onStatusChange?: (status: BridgeStatus) => void;
 }
+
+export type BridgeStatus =
+  | { state: 'connecting' | 'connected'; message: string }
+  | { state: 'occupied' | 'unavailable'; message: string };
 
 // An explicit server URL (mcp_server query param) is normalized to the
 // matching websocket scheme; http(s) input is accepted as well as ws(s).
@@ -81,17 +87,22 @@ const pageUrlWithoutApiKey = (): string => {
 export const startMcpBrowserBridge = (
   roomDesignerApi: RoomDesignerApiType,
   options: BrowserBridgeOptions = {},
-): void => {
+): (() => void) => {
   const bridgeUrls = resolveBridgeUrls(
       options.serverUrl,
       options.sessionId,
     );
   let candidate = 0;
+  let connecting = false;
+  let reconnectTimer: ReturnType<typeof setTimeout>;
 
   const connect = () => {
     const bridgeUrl = bridgeUrls[candidate % bridgeUrls.length];
     const socket = new WebSocket(bridgeUrl);
     let opened = false;
+    let accepted = false;
+    connecting = true;
+    options.onStatusChange?.({ state: 'connecting', message: 'Connecting to the MCP server...' });
 
     socket.onerror = () => {
       console.warn(
@@ -113,6 +124,7 @@ export const startMcpBrowserBridge = (
           example: 'ligna-store',
           url: pageUrlWithoutApiKey(),
           protocol: BRIDGE_PROTOCOL,
+          clientId: options.clientId,
         }),
       );
     };
@@ -124,7 +136,15 @@ export const startMcpBrowserBridge = (
       } catch {
         return;
       }
+      if (message.kind === 'ready') {
+        accepted = true;
+        options.onStatusChange?.({ state: 'connected', message: '' });
+        return;
+      }
       if (message.kind !== 'call') {
+        return;
+      }
+      if (!accepted) {
         return;
       }
       if (!PLANNER_METHODS.includes(message.method)) {
@@ -153,13 +173,30 @@ export const startMcpBrowserBridge = (
       }
     };
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
+      connecting = false;
+      if (event.code === 4409) {
+        options.onStatusChange?.({ state: 'occupied', message: 'This MCP server already has a planner connected. Close the other page to use this chat.' });
+        return;
+      }
       if (!opened) {
         candidate += 1;
       }
-      setTimeout(connect, RECONNECT_DELAY_MS);
+      options.onStatusChange?.({
+        state: 'unavailable',
+        message: accepted
+          ? 'Connection to the MCP server lost. Reconnecting...'
+          : `Cannot connect to the MCP server at ${options.serverUrl ?? `localhost:${HI_MCP_PORT}`}. Check the MCP port (normally 3100), server, and browser permissions.`,
+      });
+      reconnectTimer = setTimeout(connect, RECONNECT_DELAY_MS);
     };
   };
 
   connect();
+  return () => {
+    if (!connecting) {
+      clearTimeout(reconnectTimer);
+      connect();
+    }
+  };
 };

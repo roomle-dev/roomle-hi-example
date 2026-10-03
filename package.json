@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "start": "npm start --workspace minimal-hi-example",
+    "mcp-server": "npm start --workspace hi-mcp-poc-json",
     "dev": "npm run dev --workspace minimal-hi-example",
     "start:cf": "npm run start:cf --workspace minimal-hi-example",
     "plan:mistral": "npm start mistral $MISTRAL_API_KEY",

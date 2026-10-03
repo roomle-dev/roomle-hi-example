@@ -145,17 +145,19 @@ https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<w
 
 ## The handout for colleagues (parallel use, per session)
 
-Each user picks a **session name** (any short word, e.g. their first name) and appends it to
-**both** URLs — every session id gets its own container, so users plan in parallel without
-interfering; each agent drives exactly the kitchen in its user's own browser tab.
+The store chat generates a fresh session ID per page automatically. Two tabs opened with the same
+store URL, without `mcp_session`, get separate containers and independent planners. At most five
+containers can run at once; when capacity is exhausted, the chat stays disabled and reports that
+it cannot connect. An external MCP client that must share a page's planner still needs a known
+session name: supply `mcp_session=<name>` on that store page and use the same name in the client URL.
 
 | Link | Where |
 | ---- | ----- |
 | Store page (browser, keep open) | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<name>` |
 | MCP server (for their client's connector) | `https://<worker>.<subdomain>.workers.dev/mcp?session=<name>` |
 
-Without a session name, everyone shares one container (`default`) — the previous
-one-planning-session-at-a-time behavior. The store page's bridge reconnects on its own after the
+Without a session name, an external MCP client still connects to `default`, but a store chat page
+does not. The store page's bridge reconnects on its own after the
 container slept; the first request after a sleep takes ~10 s (container boot — one boot per
 session). Which setup needs which URL parameters — local server, deployed store, cloud server,
 parallel sessions — is covered by the **setup matrix** in the

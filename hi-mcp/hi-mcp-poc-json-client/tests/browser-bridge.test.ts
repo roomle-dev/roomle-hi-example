@@ -11,7 +11,7 @@ class FakeWebSocket {
   public onopen: (() => void) | null = null;
   public onmessage: ((event: { data: string }) => Promise<void>) | null = null;
   public onerror: (() => void) | null = null;
-  public onclose: (() => void) | null = null;
+  public onclose: ((event: { code: number }) => void) | null = null;
 
   constructor(public url: string) {
     FakeWebSocket.instances.push(this);
@@ -74,6 +74,7 @@ describe('startMcpBrowserBridge', () => {
   it('executes an exposed planner method with its positional arguments', async () => {
     const getExternalObjectPlanContext = vi.fn(async () => ({ articles: [] }));
     const socket = startBridge({ getExternalObjectPlanContext });
+    await receive(socket, { kind: 'ready' });
     await receive(socket, {
       kind: 'call',
       id: 7,
@@ -89,6 +90,7 @@ describe('startMcpBrowserBridge', () => {
   it('rejects a method that is not exposed without touching the planner', async () => {
     const placeOrder = vi.fn(async () => undefined);
     const socket = startBridge({ placeOrder });
+    await receive(socket, { kind: 'ready' });
     await receive(socket, { kind: 'call', id: 1, method: 'placeOrder', args: [] });
     expect(placeOrder).not.toHaveBeenCalled();
     expect(repliesOf(socket)).toEqual([
@@ -107,10 +109,57 @@ describe('startMcpBrowserBridge', () => {
       throw new Error('price service down');
     });
     const socket = startBridge({ fetchPrice });
+    await receive(socket, { kind: 'ready' });
     await receive(socket, { kind: 'call', id: 3, method: 'fetchPrice', args: [] });
     expect(repliesOf(socket)).toEqual([
       { kind: 'result', id: 3, ok: false, error: 'price service down' },
     ]);
+  });
+
+  it('requires acceptance before forwarding calls and stops reconnecting on occupation', async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchPrice = vi.fn(async () => null);
+      const onStatusChange = vi.fn();
+      FakeWebSocket.instances = [];
+      vi.stubGlobal('WebSocket', FakeWebSocket);
+      vi.stubGlobal('window', { location: { href: PAGE_URL, protocol: 'http:' } });
+      const retry = startMcpBrowserBridge({ extended: { fetchPrice } }, { clientId: 'tab-1', onStatusChange });
+      const socket = FakeWebSocket.instances[0];
+      socket.onopen?.();
+      expect(JSON.parse(socket.sent[0]).clientId).toBe('tab-1');
+      await receive(socket, { kind: 'call', id: 1, method: 'fetchPrice', args: [] });
+      expect(fetchPrice).not.toHaveBeenCalled();
+      socket.onclose?.({ code: 4409 });
+      expect(onStatusChange).toHaveBeenLastCalledWith(expect.objectContaining({ state: 'occupied' }));
+      vi.advanceTimersByTime(3000);
+      expect(FakeWebSocket.instances).toHaveLength(1);
+      retry();
+      expect(FakeWebSocket.instances).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('notifies on acceptance and disables the chat on connection loss', async () => {
+    vi.useFakeTimers();
+    try {
+      const onStatusChange = vi.fn();
+      FakeWebSocket.instances = [];
+      vi.stubGlobal('WebSocket', FakeWebSocket);
+      vi.stubGlobal('window', { location: { href: PAGE_URL, protocol: 'http:' } });
+      startMcpBrowserBridge({ extended: {} }, { onStatusChange });
+      const socket = FakeWebSocket.instances[0];
+      socket.onopen?.();
+      await receive(socket, { kind: 'ready' });
+      expect(onStatusChange).toHaveBeenLastCalledWith({ state: 'connected', message: '' });
+      socket.onclose?.({ code: 1006 });
+      expect(onStatusChange).toHaveBeenLastCalledWith(expect.objectContaining({ state: 'unavailable' }));
+      vi.advanceTimersByTime(3000);
+      expect(FakeWebSocket.instances).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('ignores malformed messages and messages that are not calls', async () => {

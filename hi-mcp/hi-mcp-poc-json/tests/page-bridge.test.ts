@@ -32,8 +32,8 @@ describe('PageBridge.call', () => {
     const socket = attachPage(bridge);
 
     const promise = bridge.call('getExternalObjectPlanContext', [['articles']]);
-    expect(socket.sent).toHaveLength(1);
-    expect(JSON.parse(socket.sent[0])).toEqual({
+    expect(JSON.parse(socket.sent[0])).toEqual({ kind: 'ready' });
+    expect(JSON.parse(socket.sent[1])).toEqual({
       kind: 'call',
       id: 1,
       method: 'getExternalObjectPlanContext',
@@ -50,7 +50,7 @@ describe('PageBridge.call', () => {
     await expect(bridge.call('fetchPrice', [])).rejects.toThrow(
       /outdated HI MCP page bridge.*protocol 2.*reload the page/s,
     );
-    expect(socket.sent).toHaveLength(0);
+    expect(socket.sent).toHaveLength(1);
   });
 
   it('rejects on an error result and correlates ids', async () => {
@@ -123,7 +123,7 @@ describe('PageBridge page lifecycle', () => {
     await expect(pending).resolves.toEqual({ price: 42 });
   });
 
-  it('a newer page replaces the current one and rejects its pending calls', async () => {
+  it('rejects a second page without disrupting the active planner call', async () => {
     const bridge = new PageBridge();
     const first = attachPage(bridge);
     const pending = bridge.call('getExternalObjectPlanContext', [['rooms']]);
@@ -137,14 +137,31 @@ describe('PageBridge page lifecycle', () => {
       protocol: BRIDGE_PROTOCOL,
     });
 
-    await expect(pending).rejects.toThrow(
-      /The demo page was replaced by a newer one/,
-    );
-    expect(first.readyState).toBe(WebSocket.CLOSED);
+    expect(second.readyState).toBe(WebSocket.CLOSED);
+    expect(second.sent).toHaveLength(0);
+    expect(first.readyState).toBe(WebSocket.OPEN);
+    first.receive({ kind: 'result', id: 1, ok: true, result: { rooms: [] } });
+    await expect(pending).resolves.toEqual({ rooms: [] });
 
     const promise = bridge.call('fetchPrice', []);
-    second.receive({ kind: 'result', id: 2, ok: true, result: null });
+    first.receive({ kind: 'result', id: 2, ok: true, result: null });
     await expect(promise).resolves.toBeNull();
+  });
+
+  it('only lets the matching browser chat call its planner', async () => {
+    const bridge = new PageBridge();
+    const socket = attachPage(bridge, { clientId: 'first' });
+    expect(bridge.isClientActive('first')).toBe(true);
+    expect(bridge.isClientActive('second')).toBe(false);
+    await expect(bridge.call('fetchPrice', [], undefined, 'second')).rejects.toThrow(
+      /not connected to its planner page/,
+    );
+    expect(socket.sent).toHaveLength(1);
+    const pending = bridge.call('fetchPrice', [], undefined, 'first');
+    socket.receive({ kind: 'result', id: 1, ok: true, result: 42 });
+    await expect(pending).resolves.toBe(42);
+    socket.close();
+    expect(bridge.isClientActive('first')).toBe(false);
   });
 
   it('rejects pending calls when the page disconnects', async () => {

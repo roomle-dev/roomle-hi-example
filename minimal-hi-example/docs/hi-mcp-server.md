@@ -90,6 +90,11 @@ allow-list (`getExternalObjectPlanContext`, `loadExternalObjectGroupLayout`,
 for the corner point of a corner article, see the server skill) — nothing else of the planner API, such as
 placing an order, is reachable from the server.
 
+To start only the MCP server from the repository root, run `npm run mcp-server`.
+It serves `/mcp` and `/bridge` on port 3100 without starting the example page
+or the chat backend. A second page trying to join an occupied server is refused
+without disconnecting the first; the example page reports this in its MCP log.
+
 | File | Responsibility |
 | ---- | -------------- |
 | `start.mjs` | The launcher: build gate (`npm install` + typecheck of the `hi-mcp` workspace), static file server for this directory on :3000, spawns the MCP server with `HI_MCP_STORE_URL` set, opens the browser |

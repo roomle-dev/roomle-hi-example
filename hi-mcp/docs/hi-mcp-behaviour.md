@@ -161,11 +161,16 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 
 - **MCP endpoint**: `POST /mcp` — Streamable HTTP, JSON response mode, stateless (a new transport per
   request), port 3100 (`HI_MCP_PORT` or `PORT`). On Cloudflare, `?session=` routes to a per-session
-  container.
+  container. Browser chats include `?client=<page ID>`; requests with an ID other than the active
+  page's are refused with HTTP 409, including `tools/list`. External MCP clients without a page ID
+  can still call tools against the currently connected page.
 - **Page bridge**: the page connects to the WebSocket `/bridge` (origins in `HI_MCP_PAGE_ORIGINS`),
   announces bridge protocol 2, and executes the planner methods the tools send on
-  `roomDesignerApi.extended`. The server answers a call only with a result from the active page,
-  the one the call went to; a frame that is not a JSON object is ignored.
+  `roomDesignerApi.extended`. Its `hello` may carry a browser chat ID; the server sends `ready`
+  only after accepting the page. A second page is closed with code 4409 without replacing the
+  active page. Each planner call from a page-bound chat rechecks the ID, so a request cannot jump
+  to a different page after a disconnect. The server answers a call only with a result from the
+  active page, the one the call went to; a frame that is not a JSON object is ignored.
 - **Planner methods** (`planner-api.ts`), with the timeout per call:
 
   | Method | Used by | Timeout |
@@ -580,7 +585,9 @@ Infrastructure checks, kept. The page allow-list and the origin check are securi
 | "No HI page connected. Have the user open the ligna-store in their browser at … and start planning there …" | no page on the bridge |
 | "The connected page (…) runs an outdated HI MCP page bridge that expects tool calls. Have the user update the page bridge to protocol 2 … and reload the page." | a page with an old bridge |
 | "Planner call '…' timed out after …ms" | a planner call exceeded its timeout (§4) |
-| "The demo page disconnected" / "The demo page was replaced by a newer one" | the page left during a call |
+| "The demo page disconnected" | the page left during a call |
+| WebSocket close 4409, "Planner session in use" | another page already owns the planner; the newcomer must retry after the owner leaves |
+| HTTP 409, "This chat is not connected to its planner page" | the browser chat's `client` ID does not own the active page |
 | the page's own error (e.g. a method not on its allow-list) | the planner call failed in the page |
 
 ## 9. Limits

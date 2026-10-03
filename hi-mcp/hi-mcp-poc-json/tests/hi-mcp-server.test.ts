@@ -530,7 +530,7 @@ describe('hi-mcp-server through the page bridge', () => {
       arguments: { posGroups },
     });
 
-    const calls = socket.sent.map((data) => JSON.parse(data));
+    const calls = socket.sent.map((data) => JSON.parse(data)).filter((message) => message.kind === 'call');
     expect(calls.map((call) => call.method)).toEqual([
       'getExternalObjectPlanContext',
       'getExternalObjectPlanContext',
@@ -615,7 +615,7 @@ describe('hi-mcp-server through the page bridge', () => {
       arguments: { groupId: 'g1', wall: 'right', alignment: 'top' },
     });
 
-    const calls = socket.sent.map((data) => JSON.parse(data));
+    const calls = socket.sent.map((data) => JSON.parse(data)).filter((message) => message.kind === 'call');
     expect(calls.map((call) => call.method)).toEqual([
       'getExternalObjectPlanContext',
       'getExternalObjectGroups',

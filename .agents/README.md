@@ -121,6 +121,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [Start the HI example with the Cloudflare-hosted MCP server](feature-analysis/start-example-with-cloudflare-mcp.md) | Implemented | 2026-10-01 |
 | [Deploy hi-mcp to Cloudflare on a push to release/cloudflare](feature-analysis/deploy-hi-mcp-on-push-to-release-cloudflare.md) | Implemented (first run pending setup) | 2026-10-01 |
 | [Images in the Planning Assistant chat](feature-analysis/chat-image-input.md) | Implemented | 2026-10-01 |
+| [Multiple HI MCP connections and occupied sessions](feature-analysis/multiple-hi-mcp-connections.md) | Implemented (local ownership verified; cloud deployment not yet verified) | 2026-10-03 |
 
 ### Refactoring Analyses
 

@@ -87,18 +87,21 @@ const pageUrlWithoutApiKey = (): string => {
 export const startMcpBrowserBridge = (
   roomDesignerApi: RoomDesignerApiType,
   options: BrowserBridgeOptions = {},
-): (() => void) => {
+): { retry: () => void; dispose: () => void } => {
   const bridgeUrls = resolveBridgeUrls(
       options.serverUrl,
       options.sessionId,
     );
   let candidate = 0;
   let connecting = false;
+  let disposed = false;
+  let activeSocket: WebSocket | undefined;
   let reconnectTimer: ReturnType<typeof setTimeout>;
 
   const connect = () => {
     const bridgeUrl = bridgeUrls[candidate % bridgeUrls.length];
     const socket = new WebSocket(bridgeUrl);
+    activeSocket = socket;
     let opened = false;
     let accepted = false;
     connecting = true;
@@ -112,10 +115,15 @@ export const startMcpBrowserBridge = (
     };
 
     const reply = (result: McpBridgeResult) => {
-      socket.send(JSON.stringify(result));
+      if (!disposed) {
+        socket.send(JSON.stringify(result));
+      }
     };
 
     socket.onopen = () => {
+      if (disposed) {
+        return;
+      }
       opened = true;
       console.log('[hi-mcp] connected to the MCP server');
       socket.send(
@@ -130,6 +138,9 @@ export const startMcpBrowserBridge = (
     };
 
     socket.onmessage = async (event) => {
+      if (disposed) {
+        return;
+      }
       let message: McpBridgeMessage;
       try {
         message = JSON.parse(event.data);
@@ -174,6 +185,9 @@ export const startMcpBrowserBridge = (
     };
 
     socket.onclose = (event) => {
+      if (disposed) {
+        return;
+      }
       connecting = false;
       if (event.code === 4409) {
         options.onStatusChange?.({ state: 'occupied', message: 'This MCP server already has a planner connected. Close the other page to use this chat.' });
@@ -193,10 +207,17 @@ export const startMcpBrowserBridge = (
   };
 
   connect();
-  return () => {
-    if (!connecting) {
+  return {
+    retry: () => {
+      if (!disposed && !connecting) {
+        clearTimeout(reconnectTimer);
+        connect();
+      }
+    },
+    dispose: () => {
+      disposed = true;
       clearTimeout(reconnectTimer);
-      connect();
-    }
+      activeSocket?.close();
+    },
   };
 };

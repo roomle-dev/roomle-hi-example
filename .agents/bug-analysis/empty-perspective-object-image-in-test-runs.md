@@ -146,5 +146,8 @@ The one-test run of the skill (`gpt-5-mini`, `three-tall-units-right-wall`, sess
 | the other three images | fine | fine | fine |
 | run exit code / plan snapshot | 0 / `ps_qtqqw1r…` | 0 / `ps_qtykuf…` | 0 / `ps_qtzgvxj…` |
 
-The report images of every future session render the group; the evaluation can rely on
-`perspective-object-image.png` again.
+The report images of the GPU-backed runs render the group; the evaluation can rely on
+`perspective-object-image.png` there. On a machine without a GPU, headless Chromium falls back
+to SwiftShader and the image stays empty until the planner defect is fixed
+([mcp-test-infrastructure-issues.md](../backlog/mcp-test-infrastructure-issues.md), issue 1) —
+the skill names a GPU as a prerequisite for this reason.

@@ -79,8 +79,7 @@ Two processes — the MCP server and the store:
 
 ```bash
 # 1. roomle-hi-example
-cd hi-mcp
-npm start                                   # MCP server on :3100
+npm run mcp-server                          # MCP server only on :3100
 ```
 
 ```bash
@@ -111,25 +110,27 @@ The page connects to the MCP server; the server terminal logs `page connected`.
 | `store.stage=INT` | Required for this PoC: selects the `bo-test` UI + `HI_PRE_Roomle_Milestone_2` HI backend and activates the store-side bridge |
 | `id=<plan id>` | Loads a plan / plan snapshot into the planner (a `ps_…` id from the INT environment) |
 | `mcp_server=<url>` | Points the bridge at a remote MCP server (e.g. the Azure or Cloudflare deployment), e.g. `mcp_server=https://hi-mcp-poc.example.com` — `http(s)` or `ws(s)` both accepted. Without it the bridge connects to the local server on the page's own protocol |
-| `mcp_session=<name>` | Session name for parallel use on a per-session deployment (Cloudflare): routes the page's bridge to a container of its own (`?session=` on the bridge URL). Without a remote server it is ignored — harmless everywhere else |
+| `mcp_session=<name>` | Optional shared session for an external MCP client on Cloudflare; a store chat without it generates a fresh session per page. Local servers ignore the session for routing. |
 
 ### The setup matrix (which setup needs which URL parameters)
 
-Every combination below works; the parameters are purely additive — nothing breaks when they
-are left out, and a local server simply ignores `mcp_session`.
+For a store chat, both the browser bridge and MCP requests carry the same session. Local servers
+ignore `mcp_session` for routing but accept only one planner page and refuse a second page with a
+visible chat error. A store page with no chat parameters does not connect its bridge.
 
 | Store page | `mcp_server` | `mcp_session` | Bridge connects to | Parallel users |
 | ---------- | ------------ | -------------- | ------------------ | ------------- |
-| local (`http://localhost:3000`) | — | — | `ws://localhost:3100/bridge` | n/a — one local session |
-| deployed (`https://www.roomle.com/…`) | — | — | `ws://localhost:3100/bridge` (loopback), `wss://localhost:3100/bridge` as browser fallback — the **local server on the user's machine** | n/a — one local session per machine |
-| deployed | Cloudflare Worker URL | — | the Worker's shared `default` container | one shared session (newest tab wins) |
-| deployed | Cloudflare Worker URL | a session name | the Worker's container for `?session=<name>` | **each user plans in their own container — no interference** |
-| any | any (also none) | a session name | the session rides along on the bridge URL; local servers ignore it | harmless |
+| local (`http://localhost:3000`) | local server URL | — | `ws://localhost:3100/bridge` | one local page; second sees an occupied error |
+| deployed (`https://www.roomle.com/…`) | local server URL | — | `ws://localhost:3100/bridge` (loopback), `wss://localhost:3100/bridge` as browser fallback — the **local server on the user's machine** | one local page per machine; second sees an occupied error |
+| deployed | Cloudflare Worker URL | — | a fresh container for the page's generated `?session=` | each page gets an independent planner |
+| deployed | Cloudflare Worker URL | a session name | the Worker's container for `?session=<name>` | shared with an external client using the same name; a second page is refused |
 | HI example (`npm run start:cf`, `http://localhost:3000`) | Cloudflare Worker URL (set by the launcher) | the OS user name (set by the launcher) | the Worker's container for `?session=<user name>` | one container per OS user name; two machines with the same user name share it |
 
-MCP clients connect to `http://localhost:3100/mcp` for the local setups and to
-`https://<server>/mcp` (Cloudflare: plus `?session=<name>`, the same name as the store page's
-`mcp_session`) for the cloud setups.
+External MCP clients connect to `http://localhost:3100/mcp` for local setups and to
+`https://<server>/mcp` for cloud setups. To reach a specific store page's Cloudflare container,
+give the page an explicit `mcp_session=<name>` and use `?session=<name>` in the client URL.
+Browser chat requests additionally carry a private `client` ID; requests whose page is no longer
+active get HTTP 409 instead of changing another planner.
 
 ### Server configuration (environment variables, all optional)
 

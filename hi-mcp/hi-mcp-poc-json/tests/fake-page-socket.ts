@@ -23,6 +23,9 @@ export class FakePageSocket {
     const respond = this.respond;
     if (respond) {
       const call = JSON.parse(data) as McpBridgeCall;
+      if (call.kind !== 'call') {
+        return;
+      }
       queueMicrotask(() =>
         this.receive({
           kind: 'result',

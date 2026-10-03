@@ -22,6 +22,7 @@ npm start openai <api-key>
 | Invocation | What you get |
 | ---------- | ------------ |
 | `npm start` | Example page on :3000, MCP server on :3100, browser opens |
+| `npm run mcp-server` | MCP server only on :3100; no page or chat backend |
 | `npm start --no-open` | Same, without opening the browser |
 | `npm start gpt-5-mini <api-key>` | Plus chat with the `gpt-5-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-5.4-mini <api-key>` | Plus chat with the `gpt-5.4-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |

@@ -16,3 +16,7 @@ is no automatic sync, so copy them over after every change here. The message pro
 `types.ts` must match the server. `PLANNER_METHODS` must list exactly the methods of
 `../hi-mcp-poc-json/planner-api.ts` — `tests/planner-api.test.ts` in the server fails otherwise.
 It changes only when a tool needs a new planner method.
+
+`startMcpBrowserBridge` returns `retry` for a user-triggered reconnect and `dispose` for page
+teardown. Call `dispose` when the owning planner unmounts to close its socket and cancel pending
+reconnects, so a replacement page can claim the server.

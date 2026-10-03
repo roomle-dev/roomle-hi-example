@@ -58,7 +58,7 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 - The page sends `{kind:'hello', example, url, protocol: 2}`; the server relays planner method calls `{kind:'call', id, method, args: [...]}` and the page answers `{kind:'result', id, ok, result|error}` (`types.ts`, `BRIDGE_PROTOCOL`)
 - A page whose hello carries no `protocol: 2` (an outdated, tool-level bridge) stays connected, but every call fails with an "update the page bridge" error
 - The server takes a result only from the active page — every call goes there, and a newer page rejects the calls of the old one — and ignores a frame that is not a JSON object, so a stray socket cannot answer a call or end the server
-- The server correlates calls by id, with per-method timeouts (`planner-api.ts`: 120 s for `loadExternalObjectGroupLayout`, `externalObjectGroupOperation` and `getExternalObjectSnapshot`, 30 s otherwise) and a single-page policy: a newer connection replaces the previous one
+- The server correlates calls by id, with per-method timeouts (`planner-api.ts`: 120 s for `loadExternalObjectGroupLayout`, `externalObjectGroupOperation` and `getExternalObjectSnapshot`, 30 s otherwise) and a single-page policy: an OPEN owner rejects a new page; a CLOSING owner gives way after its pending calls are rejected
 
 #### 4. Tool logic (`tool-executors.ts`, `planner-api.ts`)
 - The tool handlers in `hi-mcp-server.ts` run the executors in `tool-executors.ts`: payload validation, planner call composition, response shaping, agent hints
@@ -82,6 +82,7 @@ Internal to the server: not part of the tool interface and never mentioned to th
 
 - Active only with the `mcp=true` query parameter
 - Connects a `WebSocket` to `ws://localhost:3100/bridge`, reconnects every 3 s on close
+- Sends a per-page `clientId` in hello; the example chat sends the same ID to `/chat` and can submit only after the bridge acknowledges ownership with `ready`
 - Executes the planner methods on its allow-list (`MCP_PLANNER_METHODS`) against `roomDesignerApi.extended`, rejects every other method, sends results back over the socket — no tool logic in the page
 
 The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (browser-bridge with `PLANNER_METHODS`, types) — no automatic sync, copy after changes. The allow-lists change only when a tool needs a new planner method; `tests/planner-api.test.ts` fails when the server's planner methods and the client allow-list diverge.

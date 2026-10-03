@@ -10,7 +10,6 @@ import { createPlannerApi } from './planner-api';
 import { HI_MCP_PORT } from './types';
 
 const bridge = new PageBridge();
-const plannerApi = createPlannerApi(bridge);
 
 // Azure App Service injects PORT and expects HOST=0.0.0.0; locally the
 // defaults keep the single-user setup: port 3100, all interfaces, the local
@@ -57,8 +56,14 @@ const requestHandler = async (
     response.end();
     return;
   }
+  const clientId = new URL(request.url, 'http://localhost').searchParams.get('client');
+  if (clientId && !bridge.isClientActive(clientId)) {
+    response.writeHead(409, { 'Content-Type': 'text/plain' });
+    response.end('This chat is not connected to its planner page');
+    return;
+  }
   try {
-    const mcpServer = createHiMcpServer(plannerApi);
+    const mcpServer = createHiMcpServer(createPlannerApi(bridge, clientId ?? undefined));
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,

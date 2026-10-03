@@ -168,7 +168,7 @@ const startExampleServer = () =>
 const startMcpServer = () => {
   const childEnv = { ...process.env, HI_MCP_STORE_URL: EXAMPLE_URL };
   if (!childEnv.HI_MCP_PAGE_ORIGINS) {
-    childEnv.HI_MCP_PAGE_ORIGINS = `http://localhost:${STATIC_PORT},http://127.0.0.1:${STATIC_PORT}`;
+    childEnv.HI_MCP_PAGE_ORIGINS = `http://localhost:${STATIC_PORT},http://127.0.0.1:${STATIC_PORT},https://www.roomle.com`;
   }
   const mcpServer = spawn(npmCommand, ['start', '--workspace', 'hi-mcp-poc-json'], {
     cwd: HI_MCP_DIR,

@@ -95,7 +95,11 @@ Without `chat=true` there is no chat overlay: checked shows the debug panel,
 unchecked hides it.
 
 The conversation is held in the page and sent whole with every turn (the
-backend is stateless). Assistant replies are rendered as **markdown** (bold,
+backend is stateless). The page sends the same per-page `clientId` in its
+WebSocket hello and each chat request. The input is disabled until the bridge
+acknowledges this page, and on disconnect or when another page owns the planner.
+The chat backend requires that ID and uses `/mcp?client=<clientId>`, so a tab
+that does not own the planner cannot use the chat to change its plan. Assistant replies are rendered as **markdown** (bold,
 lists, headings, code) with [marked](https://marked.js.org) and sanitized with
 [DOMPurify](https://github.com/cure53/DOMPurify), both loaded from unpkg —
 like the embedding lib, the page has no build step. Replies stream as plain
@@ -170,13 +174,13 @@ that reads no images is answered with `400`.
 
 ```
 [Browser: index.html]
-  ├── Chat UI (POST /chat with the message history)
-  └── MCP browser bridge (unchanged, ?mcp=true)
+  ├── Chat UI (POST /chat with the message history and clientId)
+  └── MCP browser bridge (?mcp=true, same clientId in hello)
             │ ws://localhost:3100/bridge
             ▼
 [Chat backend: hi-mcp/hi-mcp-chat on :3200]
   ├── Mistral / Anthropic / Google / Azure via the @ai-sdk provider packages (key from HI_CHAT_TOKEN)
-  ├── MCP client via @ai-sdk/mcp → http://localhost:3100/mcp
+  ├── MCP client via @ai-sdk/mcp → http://localhost:3100/mcp?client=<clientId>
   └── streamText(tools) → plain text stream
             │ Streamable HTTP /mcp
             ▼
@@ -213,9 +217,10 @@ them there (about 1.3k tokens per image).
 Endpoints: `GET /health` (used for smoke tests), `GET /capabilities`
 (`{ "imageInput": true }` when the model reads images — see
 [Images in the chat](#images-in-the-chat)) and `POST /chat`
-(`{ "messages": [{ "role": "user", "content": "..." }] }` → plain text
-stream). Errors are relayed as plain text with a matching status code: `503`
-without a configured token, `400` for invalid bodies, `403` for disallowed
+(`{ "messages": [{ "role": "user", "content": "..." }], "clientId": "<page ID>" }`
+→ plain text stream). The prompt runner reads the page ID from the bridge hello
+before posting to chat. Errors are relayed as plain text with a matching status code: `503`
+without a configured token, `400` for invalid bodies or a missing `clientId`, `403` for disallowed
 origins, `500` when the MCP server or Mistral call fails.
 
 ### Environment variables
@@ -238,13 +243,15 @@ origins, `500` when the MCP server or Mistral call fails.
   for a local dev example. `HI_CHAT_TOKEN` works as an alternative without
   that exposure.
 - CORS is restricted to the example page origins; requests without an origin
-  (curl) are allowed for local debugging.
+  (curl) are allowed for local debugging, but must include the connected page's `clientId`.
 
 ## Troubleshooting
 
 | Symptom | Cause and fix |
 | ------- | ------------- |
 | `No API token configured` (503) | Chat backend started without a key — start with `npm start <provider> <api-key>` |
+| Chat disabled: server already has a planner connected | Close the other planner page, then reload this one |
+| `Chat request requires a page clientId` (400) | Include the browser page's bridge `clientId` in the chat request |
 | `AZURE_RESOURCE_NAME is required` | The `azure` provider needs the resource name env var and the deployment name in `HI_CHAT_MODEL` |
 | Reply says the tool failed with "no page connected" | The example page is not open (or not with `?mcp=true`) — the browser bridge is required for tool calls |
 | `port 3200 is already in use` | A previous chat backend is still running — `lsof -ti tcp:3200 \| xargs kill`, or pick another port with `HI_CHAT_PORT` |

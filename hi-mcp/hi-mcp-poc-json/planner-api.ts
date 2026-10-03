@@ -23,31 +23,37 @@ export interface PlannerApi {
   };
 }
 
-export const createPlannerApi = (bridge: PageBridge): PlannerApi => ({
-  extended: {
+export const createPlannerApi = (bridge: PageBridge, clientId?: string): PlannerApi => {
+  const call = (method: string, args: unknown[], timeoutMs?: number) =>
+    clientId
+      ? bridge.call(method, args, timeoutMs, clientId)
+      : timeoutMs === undefined
+        ? bridge.call(method, args)
+        : bridge.call(method, args, timeoutMs);
+  return { extended: {
     getExternalObjectPlanContext: (include) =>
-      bridge.call('getExternalObjectPlanContext', [include]),
+      call('getExternalObjectPlanContext', [include]),
     loadExternalObjectGroupLayout: (layout, layoutType, options) =>
-      bridge.call(
+      call(
         'loadExternalObjectGroupLayout',
         [layout, layoutType, options],
         SNAPSHOT_CALL_TIMEOUT_MS,
       ),
     externalObjectGroupOperation: (command, payload) =>
-      bridge.call(
+      call(
         'externalObjectGroupOperation',
         [command, payload],
         SNAPSHOT_CALL_TIMEOUT_MS,
       ),
-    fetchPrice: () => bridge.call('fetchPrice', []),
+    fetchPrice: () => call('fetchPrice', []),
     getExternalObjectSnapshot: (options) =>
-      bridge.call(
+      call(
         'getExternalObjectSnapshot',
         [options],
         SNAPSHOT_CALL_TIMEOUT_MS,
       ),
-    getExternalObjectGroups: () => bridge.call('getExternalObjectGroups', []),
+    getExternalObjectGroups: () => call('getExternalObjectGroups', []),
     removeExternalObject: (groupOrRootModuleId) =>
-      bridge.call('removeExternalObject', [groupOrRootModuleId]),
-  },
-});
+      call('removeExternalObject', [groupOrRootModuleId]),
+  } };
+};

@@ -67,4 +67,10 @@ describe('createPlannerApi', () => {
     const { extended } = createPlannerApi(createMockBridge());
     expect(Object.keys(extended).sort()).toEqual([...PLANNER_METHODS].sort());
   });
+
+  it('passes the browser identity to planner calls', async () => {
+    const bridge = createMockBridge();
+    await createPlannerApi(bridge, 'this-page').extended.fetchPrice();
+    expect(bridge.call).toHaveBeenCalledWith('fetchPrice', [], undefined, 'this-page');
+  });
 });

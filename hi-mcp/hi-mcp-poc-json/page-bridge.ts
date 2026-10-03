@@ -15,6 +15,7 @@ export class PageBridge {
   private _page: WebSocket | null = null;
   private _pageUrl = '';
   private _pageProtocol: number | undefined;
+  private _clientId: string | undefined;
   private _nextCallId = 1;
   private _pendingCalls = new Map<number, PendingCall>();
 
@@ -31,12 +32,17 @@ export class PageBridge {
       }
       if (message.kind === 'hello') {
         if (this._page && this._page !== socket) {
-          this._rejectPendingCalls('The demo page was replaced by a newer one');
-          this._page.close();
+          if (this._page.readyState === WebSocket.OPEN) {
+            socket.close(4409, 'Planner session in use');
+            return;
+          }
+          this._rejectPendingCalls('The demo page disconnected');
         }
         this._page = socket;
         this._pageUrl = message.url;
         this._pageProtocol = message.protocol;
+        this._clientId = message.clientId;
+        socket.send(JSON.stringify({ kind: 'ready' }));
         console.log(`[hi-mcp] page connected: ${message.url}`);
         return;
       }
@@ -59,6 +65,7 @@ export class PageBridge {
       if (this._page === socket) {
         console.log(`[hi-mcp] page disconnected: ${this._pageUrl}`);
         this._page = null;
+        this._clientId = undefined;
         this._rejectPendingCalls('The demo page disconnected');
       }
     });
@@ -72,11 +79,19 @@ export class PageBridge {
     this._pendingCalls.clear();
   }
 
+  public isClientActive(clientId: string): boolean {
+    return this._page?.readyState === WebSocket.OPEN && this._clientId === clientId;
+  }
+
   public async call(
     method: string,
     args: unknown[],
     timeoutMs: number = DEFAULT_CALL_TIMEOUT_MS,
+    clientId?: string,
   ): Promise<unknown> {
+    if (clientId && !this.isClientActive(clientId)) {
+      throw new Error('This chat is not connected to its planner page');
+    }
     const page = this._page;
     if (!page || page.readyState !== WebSocket.OPEN) {
       throw new Error(

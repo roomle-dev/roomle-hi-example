@@ -379,13 +379,29 @@ describe('chat request handler', () => {
     });
   });
 
+  it('requires a page client ID before starting a chat', async () => {
+    const streamChat = vi.fn();
+    await withServer({ HI_CHAT_TOKEN: 'secret' }, streamChat, async (url) => {
+      for (const clientId of [undefined, '', 42]) {
+        const response = await fetch(`${url}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }], clientId }),
+        });
+        expect(response.status).toBe(400);
+        expect(await response.text()).toMatch(/clientId/);
+      }
+      expect(streamChat).not.toHaveBeenCalled();
+    });
+  });
+
   it('streams the assistant answer with CORS headers', async () => {
     const streamChat = vi.fn(async () => new Response('hello there'));
     await withServer({ HI_CHAT_TOKEN: 'secret' }, streamChat, async (url) => {
       const response = await fetch(`${url}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Origin: PAGE_ORIGIN },
-        body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }),
+        body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }], clientId: 'page-one' }),
       });
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('hello there');
@@ -394,7 +410,7 @@ describe('chat request handler', () => {
       );
       expect(streamChat).toHaveBeenCalledWith([
         { role: 'user', content: 'hi' },
-      ]);
+      ], 'page-one');
     });
   });
 
@@ -406,6 +422,7 @@ describe('chat request handler', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [{ role: 'user', content: 'like this', images: [IMAGE] }],
+          clientId: 'page-one',
         }),
       });
       expect(response.status).toBe(200);
@@ -417,7 +434,7 @@ describe('chat request handler', () => {
             { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
           ],
         },
-      ]);
+        ], 'page-one');
     });
   });
 
@@ -432,6 +449,7 @@ describe('chat request handler', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [{ role: 'user', content: 'like this', images: [IMAGE] }],
+            clientId: 'page-one',
           }),
         });
         expect(response.status).toBe(400);
@@ -451,7 +469,7 @@ describe('chat request handler', () => {
       const response = await fetch(`${url}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }),
+        body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }], clientId: 'page-one' }),
       });
       expect(response.status).toBe(500);
       expect(await response.text()).toMatch(/MCP server unreachable/);

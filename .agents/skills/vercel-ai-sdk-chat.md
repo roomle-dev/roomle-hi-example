@@ -86,7 +86,7 @@ AZURE_RESOURCE_NAME=your_azure_resource_name
 ANTHROPIC_API_KEY=your_anthropic_api_key
 
 # Mistral AI Credentials
-MISTRAL_API_KEY=your_mistral_api_key
+MI_API_USAGE_KEY=your_MI_API_USAGE_KEY
 ```
 
 ### Keyless Authentication (Azure Entra ID / Managed Identity)

@@ -16,7 +16,7 @@ perspective and the top image, an evaluation and a bug verdict.
 `gpt-5-mini` with `$AZURE_GPT_KEY`, unless the user names other models — the `models` of
 `docs/test-prompts.json`, or another provider name (see
 [ai-chat.md](../../minimal-hi-example/docs/ai-chat.md)) with its key variable: `mistral*` →
-`MISTRAL_API_KEY`, `gpt-5*` / `gpt-6*` → `AZURE_GPT_KEY`. When the key variable is empty, stop and
+`MI_API_USAGE_KEY`, `gpt-5*` / `gpt-6*` → `AZURE_GPT_KEY`. When the key variable is empty, stop and
 ask the user for the key. Never write a key into a file. "with the local planner" / "with --dev"
 adds `--dev` to the runner (the roomle-ui dev server must run on :5173).
 

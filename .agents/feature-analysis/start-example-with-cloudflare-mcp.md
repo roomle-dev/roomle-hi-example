@@ -184,7 +184,7 @@ The launcher always uses a session, and its name is the OS user name:
 | Allow more origins in the container (`HI_MCP_PAGE_ORIGINS` in `container.ts`) so other ports work | Needs a deploy and widens the origin list for everyone, only for a non-default port. Refusing the port is enough for now |
 | The launcher passes a ready `wss://…/bridge?session=` URL in its own parameter | That would be a second parameter vocabulary next to the store's. Using the same parameters keeps the setup matrix to one table |
 | A separate launcher (`start-cf.mjs`) | It would duplicate the whole launcher to change a few lines |
-| Extra root scripts per model (`plan:cf:mistral`, …) | `npm run start:cf mistral $MISTRAL_API_KEY` already works. They can be added if the command is used often |
+| Extra root scripts per model (`plan:cf:mistral`, …) | `npm run start:cf mistral $MI_API_USAGE_KEY` already works. They can be added if the command is used often |
 
 ## Code and Documents the Work Would Touch
 
@@ -257,7 +257,7 @@ Verified live on 2026-10-01 against `https://hi-mcp-poc.hi-orchestrator.workers.
 | - | ----- | ------ |
 | 1 | `node minimal-hi-example/start.mjs --cf --no-open` | URL with `mcp_server=https%3A%2F%2Fhi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=gernotsteinegger`, MCP line `…/mcp?session=gernotsteinegger`, nothing on :3100 |
 | 2 | headless Chromium on that URL + MCP SDK client on the cloud URL | the page opened `wss://hi-mcp-poc.hi-orchestrator.workers.dev/bridge?session=gernotsteinegger`; `get-plan-context` returned 111 articles from the `bo-test` planner after 10 s |
-| 3 | `npm run start:cf mistral $MISTRAL_API_KEY` from the root (with a no-op `open` on the PATH, so no browser tab opened) | npm ran `node start.mjs --cf mistral <key>`; the chat backend printed the cloud MCP URL and connected with 15 tools; one chat turn called `get-plan-context` (1.9 s) and answered (Mistral miscounted the articles as 120, which is the model, not the bridge) |
+| 3 | `npm run start:cf mistral $MI_API_USAGE_KEY` from the root (with a no-op `open` on the PATH, so no browser tab opened) | npm ran `node start.mjs --cf mistral <key>`; the chat backend printed the cloud MCP URL and connected with 15 tools; one chat turn called `get-plan-context` (1.9 s) and answered (Mistral miscounted the articles as 120, which is the model, not the bridge) |
 | 4 | `EXAMPLE_PORT=3001 node minimal-hi-example/start.mjs --cf` | exits with code 1 and the port message, before the build gate |
 | 5 | regression: `node minimal-hi-example/start.mjs --no-open` | URL without `mcp_server`, local server on :3100, the page opened `ws://localhost:3100/bridge`, `get-plan-context` returned 111 articles |
 | 6 | `npm test` in `hi-mcp` | 10 test files and 209 tests pass. `cf/tests/worker.test.ts` fails to load `@cloudflare/containers` in exactly the same way with this change stashed, so it was already failing and is unrelated |

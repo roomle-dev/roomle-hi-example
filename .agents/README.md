@@ -158,6 +158,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [Backlog](backlog/README.md) — make group positioning easier for the agent | 2026-09-30 |
 | [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — deferred roomle-ui alternative to the server's corner probe | 2026-09-30 |
 | [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — what is to be done after the analyses of "test the mcp": MCP server bugs in the corrections, hardening of the server, the rules and the chat, one roomle-ui defect | 2026-10-02 |
+| [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — gpt-5.4-mini runs at its default `none`, gpt-5-mini at `medium`; measure, set and compare | 2026-10-03 |
 
 ---
 

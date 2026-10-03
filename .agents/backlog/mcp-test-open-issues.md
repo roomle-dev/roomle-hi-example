@@ -573,7 +573,8 @@ What the model did in those minutes is not logged.
 **To do.**
 - Log per step what the model produced (reasoning tokens, the size of the tool input) to find out
   where the time goes.
-- Then set a reasoning effort for `gpt-5-mini` that keeps a large kitchen within a few minutes.
+- Then set a reasoning effort for `gpt-5-mini` that keeps a large kitchen within a few minutes
+  (planned with gpt-5.4-mini in [reasoning-effort-for-the-gpt-chat-models.md](reasoning-effort-for-the-gpt-chat-models.md)).
 - End a turn after a time limit with a message to the user.
 
 **Test.** A chat handler test for the turn limit. In "test the mcp", gpt-5-mini answers the image-1

@@ -61,6 +61,15 @@ Azure AI Foundry resource and are called through its OpenAI v1 endpoint
 API key. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
 left in the shell from an `azure` run cannot redirect them.
 
+**Reasoning effort.** The chat sends no reasoning effort, so each GPT deployment runs at
+its default. The defaults differ: gpt-5-mini reasons at `medium`, but gpt-5.4-mini
+defaults to `none`, so it does not reason at all. This is the likely reason why
+gpt-5-mini plans clearly better in "test the mcp" (`mcp-test-2026-10-02_17-25-40`:
+12 / 5 / 0 against 9 / 3 / 5 pass / partial / fail) while gpt-5.4-mini answers 2 to 4
+times faster. Both models read images and have a 400k context window. The reasoning
+effort is set by the chat client, not by the MCP server. Setting it is open:
+[backlog](../../.agents/backlog/reasoning-effort-for-the-gpt-chat-models.md).
+
 The launcher then:
 
 1. Runs the build gate (install + typecheck of the `hi-mcp` workspace, which

@@ -149,7 +149,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D26 | **A conflicting placement creates no `repositioningData`.** For a placement on a group that is already in the plan, or a placement the server cannot use, the server sends no `repositioningData`, and the planner (roomle-ui, RoomleCore) positions the group — an existing group keeps its position. The result says that the placement was not used | user decision 1 | in effect — `normalizePlacement`, `tool-executors.ts` |
 | D27 | **Intersecting groups are allowed** (`place-group`). When the target overlaps another group, the server corrects the position along the wall and informs the agent; it never rejects. Touching is not an overlap | user decision 2 | in effect — `freePlacementAlongWall`, `tool-executors.ts` |
 | D28 | **Unconnected roots are connected automatically.** The server adds a docking entry (`PosDockedContextRoot`: `dockingVector`, `mode`, `offset`) that docks them to the free end of the row. The guard stays for roots that cannot be connected | user decision 3 | in effect — `connectUnreachedRoots`, `tool-executors.ts` |
-| D29 | **A unit docked to an occupied side goes to the free end of that row** (`merge-article-into-group`, and two roots on one side vector in `create-or-replace-groups`) | user decision 4 | in effect — `separateSideVectorPartners`, `dockTarget`, `tool-executors.ts` |
+| D29 | **A unit docked to an occupied side goes to the free end of that row** (`merge-article-into-group`, and two roots on one side vector in `create-or-replace-groups`). Refined 2026-10-04 ([RML-18041](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md)): a row has two ends — in `merge-article-into-group` the named root's own free side comes first, since the agent named that root; and a corner article ends a row, so a walk that meets one turns to the free end of the leg in the other direction | user decision 4 | in effect — `separateSideVectorPartners`, `dockTarget`, `rowWalk`, `tool-executors.ts` |
 | D30 | **A call loads every group that can be built** and reports the others with what to send instead | user decision 5 | in effect — `keepBuildable`, `tool-executors.ts` |
 | D31 | Guards are a last resort; the server corrects and informs, and gives feedback where it cannot correct | user guideline | in effect — §8 |
 | D33 | **One anchor frame for every article.** A placement puts the docking corner of the anchor root — the back left bottom corner of its docking vectors — at `posGroup`, whatever article it is: the origin of a cabinet, the left edge of a range hood, the corner point of a corner article, which is also turned so that its corner lies back left. The groups the tools return report their position in the same frame: `pos` is the back left bottom corner, `rotationY` the rotation of the placement. An anchor the probe cannot calculate no longer fails its group (G17) | user, 2026-10-02 ([analysis](../../.agents/refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md)) | in effect — `anchorFrameOfRoot`, `toRepositioningData`, `positionInPlacementFrame`, `group-placement.ts`; `inPlacementFrame`, `tool-executors.ts` |
@@ -364,7 +364,8 @@ type `wall` on that side. It reads the calculated group (G21) and computes the p
 - **against the wall** — otherwise, by its footprint
 
 The group keeps its height. The server checks the target against the other groups (G22) and reloads
-the group once, with its roots and docking unchanged.
+the group once, with its roots — the generated ones included — and docking unchanged. A group that
+already stands where asked is not reloaded.
 
 **Result**: `placedIn` (`corner` or `wall`), the `wall`, the resulting `group`, and `corrections`
 when the server corrected the request — an overlap moves the group along the wall (D27), an
@@ -453,7 +454,7 @@ them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twi
 
 | ID | Correction | Where |
 |---|---|---|
-| C1 | Roots marked `isGenerated` (worktop, toe kick) are dropped; the library regenerates them | `prepareGroup` |
+| C1 | Roots marked `isGenerated` (worktop, toe kick) are dropped from a `create-or-replace-groups` payload; the library regenerates them. `place-group` keeps them in its reload, so they keep their attributes — the worktop colour — over the move | `prepareGroup`; `repositionedGroup` |
 | C2 | The read-only fields of a group from `get-plan-context` are ignored: per root `articleName`, `desc`, `category`, `imageUrl`, `isGenerated`, `dockingVectors`, `freeDockingVectors`, `subModules`, `logMessages`; per group `position`, `logMessages`. Every other field the server does not use is reported (G27). The group `attributes` reach the planner | `prepareGroup`; the field strip of `create-or-replace-groups` |
 | C3 | Docking vector indices are stripped and resolved from the names | `stripDockingIndices` |
 | C4 | A unique prefix of a group id is accepted | `findGroup` |
@@ -487,7 +488,7 @@ corrections, G31–G45.
 | G6 | a duplicate root id a docking entry names | does not build the group — the entry is ambiguous | `notLoaded`: "duplicate root id '…' named in the docking" |
 | G7 | roots the docking does not connect to the first root | adds a docking entry (`dockingVector`, `mode` `StartStart`, `offset` `[0, 0, 0]`) that docks the part to the free end of a row of its kind — floor units or wall units (catalog category "Wall Units") | correction naming the roots and the entry |
 | G7 | a part that cannot be docked: no free end, a wall unit without a reached wall-unit row. An article the catalog lists without docking vectors counts as having them — unknown, not undockable; a range hood, whose category does not say "Wall Units", joins the floor row | does not build the group | `notLoaded` with the docking entry to send |
-| G8 | two roots on one side vector at the same place (mode and offset); a unit on top of another is no side neighbour (open issue 2, fixed 2026-10-02) | docks the later one to the free end of that row | correction |
+| G8 | two roots on one side vector at the same place (mode and offset); a unit on top of another is no side neighbour (open issue 2, fixed 2026-10-02) | docks the later one to the free end of that row; when the row ends at a corner article, to the free end of the leg in the other direction | correction |
 | G8 | the same, where the later root already follows in that row (a chain plus an extra entry on the first root) | drops the extra entry | correction |
 | G9 | `repositioningData` | takes it as the placement, or drops it beside a placement | correction |
 | G10 | a placement that is not an object | does not use it: no `repositioningData`, the planner positions the group | correction |
@@ -524,6 +525,7 @@ corrections, G31–G45.
 | G30 | any other input that fails the preparation of a group | does not build that group; the other groups of the call load (D30) | `notLoaded`: "posGroups[i]: could not be read - …" |
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |
 | — | the planner loads nothing | — | error result: "No groups were created or replaced …" |
+| — | a replaced group that still holds its previous articles instead of the ones sent — the planner could not calculate the new layout and restored the group (roomle-ui `_discardCalculation`) | — | correction: "the planner could not calculate the new layout of group '…' and kept its previous content - …; send the layout again with another article" |
 | — | a group of the call has no position after the load | — | `hint` |
 
 ### 8.4 `place-group`
@@ -536,6 +538,7 @@ corrections, G31–G45.
 | G21 | a group without calculated geometry | nothing | error: "Group '…' has no calculated geometry to place." |
 | G22 | a target that overlaps another group — footprints and height ranges overlap by more than 5 mm | moves the group along the same wall to the nearest position free of overlap. Touching is no overlap, and wall units above another group's base units do not overlap them | correction naming the group and the distance, suggesting `merge-groups` if the units belong together |
 | G22 | the same, placed into a corner or without a free position on the wall | places the group as asked | correction: "… overlaps group '…' - there is no free position …" |
+| — | a group that already stands where asked (origin within 5 mm, same rotation) | no reload | correction: "Group '…' already stands at the … wall as asked - nothing was reloaded" |
 | — | the reload fails | — | error: "Group '…' could not be reloaded at the new position." |
 
 ### 8.5 Command tools
@@ -547,7 +550,7 @@ corrections, G31–G45.
 | G18 | an unknown group id | nothing | error with the groups in the plan |
 | G15 | an article id in another spelling (`merge-article-into-group`, `exchange-root-module`) | reads it in the catalog's spelling | correction |
 | G15 | an article id the catalog does not have | nothing | error with the valid article ids |
-| D29 | `merge-article-into-group` on a taken side vector | docks the unit to the root at the free end of that row | correction |
+| D29 | `merge-article-into-group` on a taken side vector | docks the unit to the named root's free other side when it has one; else to the root at the free end of that row; when that row ends at a corner article, to the free end of the leg in the other direction | correction |
 | P7 | a `dockingVector` the new article does not have (by the catalog) | uses the partner of `ownDockingVector` when the article has it | correction |
 
 **In the planner** (roomle-ui `glue-logic.ts`, `hi-plan-context.ts`). These checks protect the

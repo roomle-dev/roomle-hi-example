@@ -19,9 +19,7 @@ intent is clear, report what was corrected, and never drop the agent's content s
 
 | # | Issue | Kind | Test prompt | Priority |
 |---|---|---|---|---|
-| 1 | [A taken side is re-targeted to the far end of the row](#1-a-taken-side-is-re-targeted-to-the-far-end-of-the-row) | bug, MCP server | add one unit; image: kitchen in the back right corner | high — a unit behind the wall, a row through the wall |
 | 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | four cabinets on the back wall; oven, fridge, sink in the corner | low — docking written as `contextData` only |
-| 4 | [The side correction walks through a corner article](#4-the-side-correction-walks-through-a-corner-article) | hardening | kitchen in the back right corner | medium |
 | 5 | [A range hood without wall units has no docking recipe](#5-a-range-hood-without-wall-units-has-no-docking-recipe) | bug, rules | oven, range hood, sink, fridge; full kitchen around the corner | low — with relations the hood hangs `above` the hob |
 | 6 | [A material for the whole kitchen is not applied](#6-a-material-for-the-whole-kitchen-is-not-applied) | bug, MCP server | full kitchen around the corner; image: kitchen on the left-hand wall | high — the requested material is missing |
 | 7 | [Docking to a vector the article does not have](#7-docking-to-a-vector-the-article-does-not-have) | hardening | oven, fridge, sink in the corner | medium |
@@ -41,19 +39,17 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 25 | [`dockTo` written on the roots of `create-or-replace-groups`](#25-dockto-written-on-the-roots-of-create-or-replace-groups) | hardening | four cabinets on the back wall | low — corrected right by G7 |
 | 26 | [One unknown article id rejects the whole group](#26-one-unknown-article-id-rejects-the-whole-group) | hardening | full kitchen around the corner | medium — a retry step |
 | 27 | [A new group without a placement, moved with `place-group` right after](#27-a-new-group-without-a-placement-moved-with-place-group-right-after) | hardening | three tall units; four cabinets; image only | medium — a second call and a reload |
-| 28 | [`place-group` on a group that already stands where asked reloads it](#28-place-group-on-a-group-that-already-stands-where-asked-reloads-it) | hardening | image: kitchen in the back right corner; full kitchen around the corner | low |
 | 30 | [The front right point is taken for the back right corner](#30-the-front-right-point-is-taken-for-the-back-right-corner) | hardening | three tall units; four cabinets; image: planning on the right-hand wall | high — the wrong wall, a group outside the room |
 | 31 | [A wall-unit row over a corner article runs through the side wall](#31-a-wall-unit-row-over-a-corner-article-runs-through-the-side-wall) | hardening | images: kitchen in the back right corner, image only; corner kitchens | high — wall units outside the room |
 | 33 | [Wall units beside a tall unit at the end of the row hang over empty floor](#33-wall-units-beside-a-tall-unit-at-the-end-of-the-row-hang-over-empty-floor) | hardening | image: kitchen on the left-hand wall | medium |
-| 34 | [A replace the library cannot calculate is reverted without a word in the tool result](#34-a-replace-the-library-cannot-calculate-is-reverted-without-a-word-in-the-tool-result) | hardening, MCP server; roomle-ui contract | image only, no text | medium — the agent plans on with a layout the plan does not hold |
 
 Since RML-18038 the agent writes relations (`rightOf`, `leftOf`, `onTop`, `above`, `behind`) and the
 server compiles the docking (`group-layout.ts`). In the test with all three models
 (`mcp-test-2026-10-02_17-25-40`) no relation needed a correction. What comes first:
 
 - **Gaps of the compile**: 18, 19, 20, 21, 29 and 32 are fixed (G40–G45).
-- **Wrong results of the server's own corrections or placement**: 1, and 22 (`place-group` resets the
-  worktop colour).
+- **Wrong results of the server's own corrections or placement**: 22 (a replace resets the worktop
+  colour; `place-group` keeps it since 2026-10-04).
 - **Requests the tool API makes the agent get wrong**: 6 (a material for the whole kitchen).
 - **Instructions the model gets wrong**: 30 (back and front), 31 (wall units in a corner kitchen), 33 (wall units beside a tall unit at the end of the row).
 - **Planner defects**: 23 (a worktop colour change drops hanging wall units), 16 (RML-18039).
@@ -61,35 +57,6 @@ server compiles the docking (`group-layout.ts`). In the test with all three mode
 Issue 2 (an on-top docking counted as a side neighbour) is fixed: `sidePartnersOf` counts side pairs
 only. Issues 3, 13, 14 and 15 no longer occur with relations; they stay for docking written as
 `contextData`, which the server still accepts.
-
-## 1. A taken side is re-targeted to the far end of the row
-
-**Problem.** `merge-article-into-group` on the rightmost unit of a row, with its `LeftBottom`,
-which the neighbour already takes. The unit's own `RightBottom` is free: it is itself the free end
-of the row. The server walks along `LeftBottom` to the far end of the row and docks the new unit
-there. In a row flush into a corner, the new unit stands behind the wall.
-
-**Cause.** `dockTarget` (`tool-executors.ts`) knows one direction only: `rowEnd` walks in the
-direction of the taken vector. Decision D29 says "the free end of that row", and the row has two
-ends.
-
-**To do.**
-- When the named root's opposite side vector is free, the root is itself an end of the row. Dock
-  there, and report "the LeftBottom of root … is taken - the unit was docked to its free
-  RightBottom".
-- Otherwise walk in the named direction.
-- Apply the same rule in `separateSideVectorPartners`.
-
-**Test.** A row of three, `merge-article-into-group` on the last root's taken `LeftBottom`, docks
-to that root's `RightBottom`. A middle root with both sides taken still goes to the end in the
-named direction.
-
-**Latest runs** (`mcp-test-2026-10-02_12-45-24`).
-- 11 (add one unit): the taken `LeftBottom` of the front end unit sent the drawer cabinet to the
-  first unit, behind the back wall (group `pos` z −4365, the wall at −3765).
-- 07 (image: kitchen in the back right corner): two roots on the corner unit's `RightBottom`. The
-  later one went to the end of the tall row, not to the corner unit's free `LeftBottom`. The result
-  is a straight 6271 mm row through the front wall instead of the image's L shape.
 
 ## 3. A docking ring anchors the wrong root
 
@@ -117,23 +84,6 @@ left end (cab1); the correction is reported.
 **Relation payloads** (RML-18038): fixed — one relation per unit cannot form a ring that the server
 does not see; a relation that closes one is dropped and reported (G33). Open for docking written as
 `contextData`.
-
-## 4. The side correction walks through a corner article
-
-**Problem.** `b1` stands on a corner article's left leg (the back wall); the model docks `b2` to
-`b1`'s `RightBottom`, which faces the corner and is taken by the corner article. The correction walks
-along `RightBottom` through the corner article onto the other leg and docks `b2` at the end of the
-right wall. The model meant the back wall: `b1`'s `LeftBottom` was free.
-
-**Cause.** `rowEnd` follows the same vector name through a corner article. A corner article ends a
-leg: its `LeftBottom` and `RightBottom` arms run along different walls.
-
-**To do.** The walk stops at a corner article. If the named direction runs into one, the unit goes
-to the free end of the root's own leg, the other direction. This applies to both
-`separateSideVectorPartners` and `dockTarget`. Issue 1's rule — the named root's own free side first
-— covers most cases.
-
-**Test.** The corner shape above docks `b2` to `b1`'s `LeftBottom`, on the back wall.
 
 ## 5. A range hood without wall units has no docking recipe
 
@@ -684,17 +634,6 @@ offset. `placement { wall, alignment, offsetMm }` is deferred (D23).
 
 **Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-6-astra 01, 02, 09.
 
-## 28. `place-group` on a group that already stands where asked reloads it
-
-**Problem.** After resubmitting a corner group, the model called `place-group` for the same corner;
-the server reloaded the group anyway (and reset the worktop colour, issue 22).
-
-**To do.** Skip the reload when the computed position equals the group's position, and say so.
-
-**Test.** `place-group` to the group's own position makes no load call.
-
-**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-6-astra 07, 10.
-
 ## 30. The front right point is taken for the back right corner
 
 **Problem.** The model calls `[4815,0,1235]` the "back right corner": the front right corner of the
@@ -768,28 +707,3 @@ units go to. Nothing says the wall units go on the side of the floor units.
 tall unit, above the base units, with the correction.
 
 **Latest run** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 06.
-
-## 34. A replace the library cannot calculate is reverted without a word in the tool result
-
-**Problem.** When `create-or-replace-groups` replaces a group with a layout the library cannot
-calculate for a root new to the group, roomle-ui discards the whole replace and restores the previous
-group (RML-17848; `_createOrReplacePosGroupsFromLayout` → `_discardCalculation`). The planner API
-returns the id of the restored group as for a success, and only the page console names the failed
-roots. The tool result lists the old roots in `groups` and says nothing, so the agent believes the new
-layout is in the plan.
-
-**Cause.** The planner's load result carries no per-group outcome (see "A group the planner leaves
-out is not reported" in the [backlog README](README.md)), and the server does not compare the roots
-of the result groups with the roots it sent.
-
-**To do.** Hardening of the server: after a replace, compare the result group with the sent roots;
-when it still holds the previous content, report that the planner could not calculate the new layout
-of the group and kept its previous content. Better: roomle-ui reports the discard in the load result
-(roomle-ui contract).
-
-**Test.** The replay of RML-18039 (create, then replace with two roots the library cannot calculate):
-the result names the discarded replace.
-
-**Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-6-astra 09 — found while analysing
-[RML-18039](https://roomle.atlassian.net/browse/RML-18039), see the
-[analysis](../bug-analysis/check-attributes-lost-after-a-discarded-calculation.md).

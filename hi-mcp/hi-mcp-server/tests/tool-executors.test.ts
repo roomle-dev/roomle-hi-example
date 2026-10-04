@@ -1325,6 +1325,62 @@ describe('create-or-replace-groups validation', () => {
       ]);
     }
   });
+
+  it('moves the later of two roots on one side vector to the free end of the leg, not through the corner article', async () => {
+    // issue 4: b1 stands on the corner's left leg; b2 is docked to b1's
+    // RightBottom, which the corner article takes
+    const cornerArticle = {
+      ...articleFixture,
+      articleId: 'corner-1',
+      cornerArticle: true,
+    };
+    const { loadedGroup, result } = await loadedWith(
+      [
+        {
+          roots: [
+            {
+              id: 'c',
+              articleId: 'corner-1',
+              contextData: {
+                dockedRoots: [
+                  {
+                    ownDockingVector: 'LeftBottom',
+                    dockedRoots: [entry('b1', 'RightBottom')],
+                  },
+                ],
+              },
+            },
+            {
+              id: 'b1',
+              articleId: 'article-1',
+              contextData: {
+                dockedRoots: [
+                  {
+                    ownDockingVector: 'RightBottom',
+                    dockedRoots: [entry('b2', 'LeftBottom')],
+                  },
+                ],
+              },
+            },
+            { id: 'b2', articleId: 'article-1' },
+          ],
+        },
+      ],
+      { ...planContextFixture, articles: [articleFixture, cornerArticle] }
+    );
+    const [, b1] = loadedGroup.roots;
+    expect(b1.contextData).toEqual({
+      dockedRoots: [
+        {
+          ownDockingVector: 'LeftBottom',
+          dockedRoots: [entry('b2', 'RightBottom')],
+        },
+      ],
+    });
+    expect(result.corrections).toEqual([
+      "posGroups[0]: roots 'c', 'b2' were docked to the RightBottom of root 'b1' at the same place - 'b2' was docked to the LeftBottom of 'b1', the free end of its leg (the RightBottom row ends at the corner article 'c')",
+    ]);
+  });
 });
 
 describe('create-or-replace-groups loading', () => {
@@ -2069,6 +2125,27 @@ describe('create-or-replace-groups loading', () => {
       'posGroups',
       { reason: 'adjusted' }
     );
+  });
+
+  it('reports a replace the planner reverted to the previous content', async () => {
+    // issue 34: the plan context after the load still holds the one root of g1
+    const api = createApi(planContextFixture);
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          id: 'g1',
+          libraryId: 'lib-1',
+          roots: [
+            { id: 'r1', articleId: 'article-1' },
+            { id: 'u2', articleId: 'article-1', rightOf: 'r1' },
+          ],
+        },
+      ],
+    })) as Record<string, any>;
+    expect(result.loaded).toEqual([{ id: 'loaded-1' }]);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: the planner could not calculate the new layout of group 'g1' and kept its previous content - the page console names the module that failed; send the layout again with another article",
+    ]);
   });
 
   it('accepts a root docked by an entry written on the new root', async () => {
@@ -2938,19 +3015,57 @@ describe('place-group', () => {
     ]);
   });
 
-  it('reloads the article roots only and anchors the first of them', async () => {
+  it('reloads the group with its generated roots and anchors the first article root', async () => {
+    // issue 22: the worktop keeps its colour only when it travels with the group
     const api = createPlaceApi(
       [makeShapedGroup()],
       [
         makeGroup({
-          roots: [makeRoot({ id: 'w1', isGenerated: true }), makeRoot()],
+          roots: [
+            makeRoot({
+              id: 'w1',
+              isGenerated: true,
+              attributes: [{ id: 'mod_CountertopColor', value: '224' }],
+            }),
+            makeRoot({ articlePos: [0, 0, 0], rotationY: 0 }),
+          ],
         }),
       ]
     );
     await toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' });
     const reloaded = reloadedGroup(api);
-    expect(reloaded.roots.map((root: any) => root.id)).toEqual(['r1']);
+    expect(reloaded.roots.map((root: any) => root.id)).toEqual(['w1', 'r1']);
+    expect(reloaded.roots[0].attributes).toEqual([
+      { id: 'mod_CountertopColor', value: '224' },
+    ]);
+    expect(reloaded.roots.some((root: any) => 'articlePos' in root)).toBe(
+      false
+    );
     expect(reloaded.repositioningData.rootId).toBe('r1');
+  });
+
+  it('does not reload a group that already stands where asked', async () => {
+    // issue 28: centred on the right wall, where the group stands already
+    for (const rotationY of [270, -90]) {
+      const standing = makeGroup({ pos: [4000, 0, -1900], rotationY });
+      const api = createPlaceApi([makeShapedGroup()], [standing]);
+      const result = (await toolExecutors['place-group'](api, {
+        groupId: 'g1',
+        wall: 'right',
+      })) as Record<string, any>;
+      expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        placedIn: 'wall',
+        wall: room.walls[1],
+        // the position as the placement frame reports it for the raw group
+        group: makeShapedGroup({
+          position: { pos: [4000, 0, -1900], rotationY: 270 },
+        }),
+        corrections: [
+          "Group 'g1' already stands at the right wall as asked - nothing was reloaded",
+        ],
+      });
+    }
   });
 
   it('rejects an unknown room or wall before reading the calculated groups', async () => {
@@ -3410,11 +3525,101 @@ describe('group command tools', () => {
       return { result: result as Record<string, any>, dockTo: payload.dockTo };
     };
 
-    it('docks a unit on a taken side to the free end of that row', async () => {
-      const { result, dockTo: sent } = await merge(row(), dockTo);
+    it('docks a unit on a taken side of a root with both sides taken to the free end of that row', async () => {
+      const { result, dockTo: sent } = await merge(row(), {
+        ...dockTo,
+        rootId: 'r2',
+      });
       expect(sent).toEqual({ ...dockTo, rootId: 'r3' });
       expect(result.corrections).toEqual([
-        "merge-article-into-group: the RightBottom of root 'r1' is taken - the unit was docked to the RightBottom of 'r3', the free end of that row",
+        "merge-article-into-group: the RightBottom of root 'r2' is taken - the unit was docked to the RightBottom of 'r3', the free end of that row",
+      ]);
+    });
+
+    it("docks a unit sent to the taken side of a row end to that root's free side", async () => {
+      // issue 1: the named root is itself the end of the row
+      const atStart = await merge(row(), dockTo);
+      expect(atStart.dockTo).toEqual({
+        rootId: 'r1',
+        ownDockingVector: 'LeftBottom',
+        dockingVector: 'RightBottom',
+      });
+      expect(atStart.result.corrections).toEqual([
+        "merge-article-into-group: the RightBottom of root 'r1' is taken - the unit was docked to its free LeftBottom",
+      ]);
+      const atEnd = await merge(row(), {
+        rootId: 'r3',
+        ownDockingVector: 'LeftBottom',
+        dockingVector: 'RightBottom',
+      });
+      expect(atEnd.dockTo).toEqual({ ...dockTo, rootId: 'r3' });
+    });
+
+    it('stops the walk at a corner article and docks to the free end of the leg', async () => {
+      // b0 -> b1 -> c along RightBottom: b1 stands on the corner's left leg
+      const cornerArticle = {
+        ...articleFixture,
+        articleId: 'corner-1',
+        cornerArticle: true,
+      };
+      const leg = makeShapedGroup({
+        id: 'kitchen-1',
+        roots: [
+          makeShapedRoot({
+            id: 'c',
+            articleId: 'corner-1',
+            freeDockingVectors: ['RightBottom'],
+            contextData: {
+              dockedRoots: [
+                {
+                  ownDockingVector: 'LeftBottom',
+                  dockedRoots: [{ id: 'b1', dockingVector: 'RightBottom' }],
+                },
+              ],
+            },
+          }),
+          makeShapedRoot({
+            id: 'b1',
+            freeDockingVectors: [],
+            contextData: {
+              dockedRoots: [
+                {
+                  ownDockingVector: 'RightBottom',
+                  dockedRoots: [{ id: 'c', dockingVector: 'LeftBottom' }],
+                },
+                {
+                  ownDockingVector: 'LeftBottom',
+                  dockedRoots: [{ id: 'b0', dockingVector: 'RightBottom' }],
+                },
+              ],
+            },
+          }),
+          makeShapedRoot({
+            id: 'b0',
+            freeDockingVectors: ['LeftBottom'],
+            contextData: {
+              dockedRoots: [
+                {
+                  ownDockingVector: 'RightBottom',
+                  dockedRoots: [{ id: 'b1', dockingVector: 'LeftBottom' }],
+                },
+              ],
+            },
+          }),
+        ],
+      });
+      const { result, dockTo: sent } = await merge(
+        leg,
+        { ...dockTo, rootId: 'b1' },
+        [articleFixture, cornerArticle]
+      );
+      expect(sent).toEqual({
+        rootId: 'b0',
+        ownDockingVector: 'LeftBottom',
+        dockingVector: 'RightBottom',
+      });
+      expect(result.corrections).toEqual([
+        "merge-article-into-group: the RightBottom of root 'b1' is taken and its row ends at the corner article 'c' - the unit was docked to the LeftBottom of 'b0', the free end of its leg",
       ]);
     });
 
@@ -3426,8 +3631,9 @@ describe('group command tools', () => {
           dockedRoots: [{ id: 'deleted', dockingVector: 'LeftBottom' }],
         },
       ]);
-      const { result, dockTo: sent } = await merge(stale, dockTo);
-      expect(sent).toEqual(dockTo);
+      const fromMiddle = { ...dockTo, rootId: 'r2' };
+      const { result, dockTo: sent } = await merge(stale, fromMiddle);
+      expect(sent).toEqual(fromMiddle);
       expect(result).not.toHaveProperty('corrections');
     });
 

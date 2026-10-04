@@ -106,13 +106,12 @@ const withoutPositions = (root: any) => {
 };
 
 // A calculated group sent back with a new placement: the placement becomes
-// repositioningData of the first article root, the library regenerates the
-// generated roots (worktop, toe kick), and no root carries a position.
+// repositioningData of the first article root, and no root carries a
+// position. The generated roots (worktop, toe kick) travel with the group, so
+// they keep their attributes - the colours - over the reload.
 const repositionedGroup = (resultGroup: any, placement: GroupPlacement) => {
-  const roots = (resultGroup.roots ?? []).filter(
-    (root: any) => !isGeneratedRoot(root)
-  );
-  const anchor = roots[0];
+  const roots = (resultGroup.roots ?? []) as any[];
+  const anchor = roots.find((root) => !isGeneratedRoot(root));
   if (!anchor) {
     throw new Error(`Group '${resultGroup.id}' has no article root to place.`);
   }
@@ -218,14 +217,17 @@ const resolveArticleIds = (
   });
 
 // Where a new unit docks to a group as get-plan-context shows it: a side that
-// is taken moves to the free end of that row, and a docking vector the article
-// does not have becomes the partner of the root's vector. A side the planner
-// reports as taken although the row ends there stays as asked.
+// is taken moves to the named root's own free side, else to the free end of
+// that row - a corner article ends a row, so a walk that meets one turns to
+// the other end -, and a docking vector the article does not have becomes the
+// partner of the root's vector. A side the planner reports as taken although
+// the row ends there stays as asked.
 const dockTarget = (
   group: any,
   article: any,
   dockTo: any,
-  corrections: string[]
+  corrections: string[],
+  articles: any[]
 ): any => {
   const roots = (group.roots ?? []) as any[];
   const vector = dockTo.ownDockingVector;
@@ -235,18 +237,49 @@ const dockTarget = (
     SIDE_VECTORS.includes(vector) &&
     !(root.freeDockingVectors ?? []).includes(vector)
   ) {
-    const end = rowEnd(sidePartnersOf(roots), root.id, vector);
-    const endRoot = roots.find((candidate) => candidate.id === end);
-    if (
-      endRoot &&
-      end !== root.id &&
-      (endRoot.freeDockingVectors ?? []).includes(vector)
-    ) {
+    const opposite = SIDE_PARTNER[vector];
+    const partnerOf = (own: string) =>
+      dockTo.dockingVector === PARTNER_VECTOR[vector]
+        ? PARTNER_VECTOR[own]
+        : dockTo.dockingVector;
+    if ((root.freeDockingVectors ?? []).includes(opposite)) {
       corrections.push(
-        `merge-article-into-group: the ${vector} of root '${root.id}' is taken - the unit was docked to the ` +
-          `${vector} of '${end}', the free end of that row`
+        `merge-article-into-group: the ${vector} of root '${root.id}' is taken - the unit was docked to its free ${opposite}`
       );
-      dockTo.rootId = end;
+      dockTo.dockingVector = partnerOf(opposite);
+      dockTo.ownDockingVector = opposite;
+    } else {
+      const partners = sidePartnersOf(roots);
+      const isCorner = cornerPredicate(roots, articles);
+      const walk = rowWalk(partners, root.id, vector, isCorner);
+      const freeEnd = (along: string, end: string | undefined) => {
+        const endRoot = roots.find((candidate) => candidate.id === end);
+        return endRoot &&
+          end !== root.id &&
+          (endRoot.freeDockingVectors ?? []).includes(along)
+          ? end
+          : undefined;
+      };
+      const end = freeEnd(vector, walk.end);
+      if (end !== undefined) {
+        corrections.push(
+          `merge-article-into-group: the ${vector} of root '${root.id}' is taken - the unit was docked to the ` +
+            `${vector} of '${end}', the free end of that row`
+        );
+        dockTo.rootId = end;
+      } else if (walk.corner !== undefined) {
+        const back = rowWalk(partners, root.id, opposite, isCorner);
+        const legEnd = freeEnd(opposite, back.end);
+        if (legEnd !== undefined) {
+          corrections.push(
+            `merge-article-into-group: the ${vector} of root '${root.id}' is taken and its row ends at the corner ` +
+              `article '${walk.corner}' - the unit was docked to the ${opposite} of '${legEnd}', the free end of its leg`
+          );
+          dockTo.dockingVector = partnerOf(opposite);
+          dockTo.ownDockingVector = opposite;
+          dockTo.rootId = legEnd;
+        }
+      }
     }
   }
   const vectors = articleDockingVectors(article);
@@ -616,27 +649,44 @@ const sideVectorConflicts = (partners: SidePartners): SideVectorConflict[] => {
   return conflicts;
 };
 
+interface RowWalk {
+  end?: string;
+  corner?: string;
+}
+
 // From a root along one side vector, root by root, to the root of that row
-// whose same side vector is free.
-const rowEnd = (
+// whose same side vector is free. A corner article ends the row: the walk
+// stops in front of it and names it. A ring has no end.
+const rowWalk = (
   partners: SidePartners,
   rootId: string,
-  vector: string
-): string | undefined => {
+  vector: string,
+  isCorner: (rootId: string) => boolean = () => false
+): RowWalk => {
   const visited = new Set([rootId]);
   let current = rootId;
   for (;;) {
     const [next] = partners.get(current)?.get(vector)?.keys() ?? [];
     if (next === undefined) {
-      return current;
+      return { end: current };
     }
     if (visited.has(next)) {
-      return undefined;
+      return {};
+    }
+    if (isCorner(next)) {
+      return { corner: next };
     }
     visited.add(next);
     current = next;
   }
 };
+
+const cornerPredicate =
+  (roots: any[], articles: any[]) =>
+  (rootId: string): boolean => {
+    const root = roots.find((candidate) => candidate.id === rootId);
+    return root !== undefined && isCornerArticle(articles, root);
+  };
 
 const SIDE_PARTNER: Record<string, string> = {
   LeftBottom: 'RightBottom',
@@ -713,12 +763,15 @@ const quotedIds = (ids: string[]): string =>
   ids.map((id) => `'${id}'`).join(', ');
 
 // Two roots on one side vector at the same place: the later one goes to the
-// free end of that row.
+// free end of that row - or, when the row ends at a corner article, to the
+// free end of the leg in the other direction.
 const separateSideVectorPartners = (
   roots: any[],
+  articles: any[],
   prefix: string,
   corrections: string[]
 ): string[] => {
+  const isCorner = cornerPredicate(roots, articles);
   for (let round = 0; round <= roots.length * 2; round++) {
     const [conflict] = sideVectorConflicts(sidePartnersOf(roots));
     if (!conflict) {
@@ -727,22 +780,32 @@ const separateSideVectorPartners = (
     const { rootId, vector, sharing } = conflict;
     const [kept, moved] = sharing;
     removeDocking(roots, rootId, vector, moved);
-    const end = rowEnd(sidePartnersOf(roots), rootId, vector);
-    if (end === moved) {
+    const partners = sidePartnersOf(roots);
+    const walk = rowWalk(partners, rootId, vector, isCorner);
+    if (walk.end === moved) {
       corrections.push(
         `${prefix}: roots ${quotedIds([kept, moved])} were docked to the ${vector} of root '${rootId}' at the ` +
           `same place - '${moved}' already follows in that row, so its second docking was dropped`
       );
       continue;
     }
+    const along =
+      walk.corner !== undefined && walk.end === undefined
+        ? SIDE_PARTNER[vector]
+        : vector;
+    const end =
+      along === vector ? walk.end : rowWalk(partners, rootId, along).end;
     const endRoot = roots.find((root) => root.id === end);
     if (!endRoot) {
       break;
     }
-    addDocking(endRoot, vector, moved, SIDE_PARTNER[vector]);
+    addDocking(endRoot, along, moved, SIDE_PARTNER[along]);
     corrections.push(
       `${prefix}: roots ${quotedIds([kept, moved])} were docked to the ${vector} of root '${rootId}' at the ` +
-        `same place - '${moved}' was docked to the ${vector} of '${end}', the free end of that row`
+        `same place - '${moved}' was docked to the ${along} of '${end}', the free end of ` +
+        (along === vector
+          ? 'that row'
+          : `its leg (the ${vector} row ends at the corner article '${walk.corner}')`)
     );
   }
   return [
@@ -850,7 +913,12 @@ const completeDocking = (
   prefix: string,
   corrections: string[]
 ): string[] => {
-  const errors = separateSideVectorPartners(group.roots, prefix, corrections);
+  const errors = separateSideVectorPartners(
+    group.roots,
+    articles,
+    prefix,
+    corrections
+  );
   return errors.length > 0
     ? errors
     : connectUnreachedRoots(group.roots, articles, prefix, corrections);
@@ -860,6 +928,40 @@ interface CallGroup {
   group: any;
   index: number;
 }
+
+const articlePicksOf = (roots: any[]): string =>
+  roots
+    .filter((root) => !isGeneratedRoot(root))
+    .map((root) => String(root?.articleId))
+    .sort()
+    .join(',');
+
+// The planner's load result does not say whether a replace took: when the
+// library cannot calculate the new layout, the planner restores the previous
+// group and answers as for a success. A replaced group that still holds its
+// previous articles instead of the ones sent is reported.
+const reportRevertedReplaces = (
+  callGroups: CallGroup[],
+  before: any[],
+  after: any[],
+  corrections: string[]
+): void => {
+  for (const { group, index } of callGroups) {
+    const previous = before.find((candidate) => candidate.id === group.id);
+    const result = after.find((candidate) => candidate.id === group.id);
+    if (!previous || !result) {
+      continue;
+    }
+    const sent = articlePicksOf(group.roots ?? []);
+    const got = articlePicksOf(result.roots ?? []);
+    if (got !== sent && got === articlePicksOf(previous.roots ?? [])) {
+      corrections.push(
+        `posGroups[${index}]: the planner could not calculate the new layout of group '${group.id}' and kept ` +
+          'its previous content - the page console names the module that failed; send the layout again with another article'
+      );
+    }
+  }
+};
 
 interface NotLoadedGroup {
   index: number;
@@ -1514,6 +1616,25 @@ const placeGroupAtWall = (
   };
 };
 
+// A calculated group already stands at a placement when its origin lies
+// within the overlap tolerance of the placement's and it is turned the same
+// way (the planner reports 270 as -90).
+const standsAt = (rawGroup: any, placement: GroupPlacement): boolean => {
+  const pos = rawGroup.pos as number[] | undefined;
+  if (!Array.isArray(pos) || pos.length < 3) {
+    return false;
+  }
+  const turn =
+    ((((rawGroup.rotationY ?? 0) - placement.rotationY) % 360) + 360) % 360;
+  return (
+    Math.hypot(
+      pos[0] - placement.pos[0],
+      pos[1] - placement.pos[1],
+      pos[2] - placement.pos[2]
+    ) <= OVERLAP_TOLERANCE_MM && Math.min(turn, 360 - turn) < 0.01
+  );
+};
+
 // The nearest position along the same wall where the group overlaps no other
 // group: next to one of them, or where it was asked to stand.
 const freePlacementAlongWall = (
@@ -1858,6 +1979,12 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           .map((group) => group.id)
           .filter((id) => id && beforeGroupIds.has(id))
       );
+      reportRevertedReplaces(
+        callGroups,
+        (preContext.groups ?? []) as any[],
+        (groups ?? []) as any[],
+        corrections
+      );
       const unpositionedGroupIds = (groups ?? [])
         .filter(
           (group: any) =>
@@ -1953,6 +2080,15 @@ export const toolExecutors: Record<string, ToolExecutor> = {
               `${resolved.wall.side} wall for it, so it stands where it was asked to`
           );
         }
+      }
+      if (standsAt(rawGroup, placement)) {
+        corrections.push(
+          `Group '${group.id}' already stands at the ${resolved.wall.side} wall as asked - nothing was reloaded`
+        );
+        return withCorrections(
+          { placedIn: placement.placedIn, wall: resolved.wall, group },
+          corrections
+        );
       }
       const loaded =
         await roomDesignerApi.extended.loadExternalObjectGroupLayout(
@@ -2057,7 +2193,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         group,
         catalogArticleOf(articles, { articleId, libraryId: group.libraryId }),
         { ...(args.dockTo as any) },
-        corrections
+        corrections,
+        articles
       );
       return withCorrections(
         await roomDesignerApi.extended.externalObjectGroupOperation(

@@ -134,11 +134,13 @@ A side label as alignment means flush into the corner with that adjoining wall (
 `back` and `front` name the `top` and `bottom` wall. Groups may touch. A target that overlaps
 another group (footprints and height ranges overlap by more than 5 mm) is moved along the same wall
 to the nearest free position; into a corner, or without a free position on the wall, the group is
-placed as asked. An alignment parallel to the target wall centres the group.
+placed as asked. An alignment parallel to the target wall centres the group. The reload carries
+the generated roots (worktop, toe kick) with the group, so their colours stay; a group that already
+stands where asked is not reloaded.
 
 **Returns**: `placedIn` (`'corner'` or `'wall'`), the wall, and the resulting group with its
 `position`, plus `corrections` when the server corrected the request (an overlap, a parallel
-alignment)
+alignment, a group that already stands there)
 
 **Usage**:
 ```javascript
@@ -171,8 +173,10 @@ id in `subModules`). `value` numbers are passed as strings. `dockTo.ownDockingVe
 the root's `freeDockingVectors`; the pairs are the docking pairs of the
 [authoring rules](./hi-authoring-rules.md#valid-docking-pairs). An `articleId` in another spelling
 (case, whitespace) is read in the catalog's spelling. `merge-article-into-group` docks a unit sent
-to a taken side vector to the root at the free end of that row, and a `dockingVector` the article
-does not have becomes the partner of `ownDockingVector`.
+to a taken side vector to the named root's free other side, else to the root at the free end of
+that row (a corner article ends a row: the unit then goes to the free end of the leg in the other
+direction), and a `dockingVector` the article does not have becomes the partner of
+`ownDockingVector`.
 
 **Returns**: `{ command, groups, removedGroupIds, changedModuleIds? }` once the planner has loaded
 the result — the affected groups in the `get-plan-context` shape; `changedModuleIds` for

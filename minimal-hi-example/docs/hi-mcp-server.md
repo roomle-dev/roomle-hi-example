@@ -439,7 +439,9 @@ the server: it reads the rooms and the groups, takes the calculated group from
 the planner (`getExternalObjectGroups`), computes the position from the wall,
 the alignment and the group's footprint — a group with a corner article goes
 into the corner when the alignment names the adjoining wall — and reloads the
-group there, once. The roots and their docking stay as they are. Groups may
+group there, once. The roots and their docking stay as they are, the generated
+roots (worktop, toe kick) travel with the group and keep their colours, and a
+group that already stands where asked is not reloaded. Groups may
 touch. A target that overlaps another group — footprints and height ranges
 overlap by more than 5 mm — is moved along the same wall to the nearest free
 position, and `corrections` names the group and the distance and suggests
@@ -473,8 +475,9 @@ returns `{ command, groups, removedGroupIds }`: the affected groups in the
 article id fails before anything changes, and the error lists the valid ones;
 an article id in another spelling is read in the catalog's spelling.
 `merge-article-into-group` docks a unit sent to a taken side vector to the
-root at the free end of that row, and a `dockingVector` the article does not
-have becomes the partner of `ownDockingVector`. The result reports these in
+named root's free other side, else to the root at the free end of that row (or
+of its leg, when the row ends at a corner article), and a `dockingVector` the
+article does not have becomes the partner of `ownDockingVector`. The result reports these in
 `corrections`. The planner's own checks (e.g. groups of different libraries
 in `merge-groups`) are unchanged, and their message is passed on as the error.
 Group ids accept a unique prefix.
@@ -604,7 +607,8 @@ group one point and one rotation; the planner calculates every root position.
   names them in `dockTo`. A payload may still carry `contextData`; the server
   then reads every entry in both directions, docks a part the docking does not
   connect to the free end of a row of its kind, and moves the later of two roots
-  on one side vector at the same place to the free end of that row.
+  on one side vector at the same place to the free end of that row, or of its
+  leg when the row ends at a corner article.
 - Verify results numerically: the returned groups carry `position` (`pos`,
   `rotationY`, `footprint`) and per root the `dockingVectors`, the input
   attributes and the docking.

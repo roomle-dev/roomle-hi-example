@@ -415,7 +415,7 @@ constant moves to `chat-config.ts` so that `tests/chat-handler.test.ts` can asse
 
 ### #17 A chat turn without an answer for 10 minutes — cause confirmed
 
-`streamText` (`chat-server.ts:112-120`) sets no `providerOptions` (reasoning effort) and no
+`streamText` (`chat-server.ts:113-120`) sets no `providerOptions` (reasoning effort) and no
 `abortSignal`; the stream loop (`:125-150`) emits only text deltas and tool status lines, nothing
 while the model reasons; no step logs its usage. Not seen since the relations (gpt-5-mini answered
 06 in 68 s and 10 in 54 s), but the turn still has no limit.

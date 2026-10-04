@@ -7,18 +7,23 @@ import { createMistral } from '@ai-sdk/mistral';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { streamText, wrapLanguageModel } from 'ai';
 import type { ChatConfig } from './chat-config';
-import { getChatConfig } from './chat-config';
+import { CHAT_SYSTEM_PROMPT, getChatConfig } from './chat-config';
 import { createChatRequestHandler, type StreamChat } from './chat-handler';
-import { chatSteps } from './chat-steps';
+import {
+  chatSteps,
+  isTurnTimeout,
+  logStepUsage,
+  turnTimeoutMessage,
+} from './chat-steps';
 import { toolResultFilesAsUserMessages } from './tool-result-images';
 
-const CHAT_SYSTEM_PROMPT = [
-  'You are a planning assistant for a HOMAG Intelligence (HI) kitchen in a Roomle planner.',
-  'Use the provided tools to read the plan context and to create, modify, or position object groups.',
-  'Call tools instead of describing what you would do, then summarize what you changed.',
-].join(' ');
-
 const config = getChatConfig(process.env);
+
+// The reasoning effort reaches the GPT deployments as a provider option.
+const providerOptions = (config: ChatConfig) =>
+  config.reasoningEffort && config.provider === 'azure'
+    ? { azure: { reasoningEffort: config.reasoningEffort } }
+    : undefined;
 
 const getLanguageModel = (config: ChatConfig) => {
   const apiKey = config.apiToken;
@@ -117,12 +122,25 @@ const streamChat: StreamChat = async (messages, clientId) => {
       // never executed and never sent back to the model, so tool-driving
       // prompts produce an empty answer.
       ...chatSteps,
+      // A turn that does not answer in time ends with a message instead of
+      // "assistant is working…" without end.
+      abortSignal: AbortSignal.timeout(config.turnTimeoutMs),
+      onStepEnd: logStepUsage(),
+      ...(providerOptions(config) && {
+        providerOptions: providerOptions(config),
+      }),
     });
     // Mid-stream failures (Mistral auth, tool relay) surface as [error] parts
     // in the stream - the response has already started by then.
     const encoder = new TextEncoder();
     const errorText = (error: unknown) =>
-      `\n[error] ${error instanceof Error ? error.message : String(error)}`;
+      `\n[error] ${
+        isTurnTimeout(error)
+          ? turnTimeoutMessage(config.turnTimeoutMs)
+          : error instanceof Error
+            ? error.message
+            : String(error)
+      }`;
     const body = new ReadableStream<Uint8Array>({
       async start(controller) {
         emit = (text: string) => controller.enqueue(encoder.encode(text));
@@ -134,6 +152,15 @@ const streamChat: StreamChat = async (messages, clientId) => {
             if (part.type === 'error') {
               console.error('[hi-chat] stream error', part.error);
               controller.enqueue(encoder.encode(errorText(part.error)));
+            }
+            // the turn timeout ends the stream with an abort part
+            if (part.type === 'abort') {
+              console.error('[hi-chat] turn aborted', part);
+              controller.enqueue(
+                encoder.encode(
+                  `\n[error] ${turnTimeoutMessage(config.turnTimeoutMs)}`
+                )
+              );
             }
           }
         } catch (error) {

@@ -190,9 +190,15 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
   would disturb that. `get-plan-context` waits with them: it reads the plan context and the calculated
   groups its positions come from, and both reads see the same plan.
 - **The HI chat** (`hi-mcp-chat`) is an MCP client of this server. It gives the model a
-  three-sentence system prompt and **not** the server's instructions, so the model learns the rules
-  only when it calls `get-authoring-rules`. A chat turn has 16 steps; the last one cannot call a
-  tool, so the turn always ends with an answer (`chat-steps.ts`). The example page sends its
+  four-sentence system prompt (`CHAT_SYSTEM_PROMPT`, `chat-config.ts`) — the last sentence asks it
+  to answer only with what the last tool results show and to name what was asked but is not in the
+  plan — and **not** the server's instructions, so the model learns the rules only when it calls
+  `get-authoring-rules`. A chat turn has 16 steps; the last one cannot call a tool, so the turn
+  always ends with an answer (`chat-steps.ts`). A turn that has not answered after
+  `HI_CHAT_TURN_TIMEOUT_MS` (5 minutes) is aborted and ends with "[error] the turn took longer than
+  … minutes and was ended - the plan holds what the tools changed so far"; every step logs its
+  tokens (in, out, reasoning), its tool calls and its duration; `HI_CHAT_REASONING_EFFORT` sets the
+  reasoning effort of the GPT deployments ([RML-18041](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md), issues 9 and 17). The example page sends its
   bridge `clientId` with every `/chat` request; the chat backend requires it and connects to
   `/mcp?client=<clientId>` (retaining any `session` query). The example disables chat submission
   until the bridge sends `ready`, and again when it closes or refuses the page.

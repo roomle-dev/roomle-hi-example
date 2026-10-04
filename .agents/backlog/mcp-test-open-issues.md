@@ -21,13 +21,11 @@ intent is clear, report what was corrected, and never drop the agent's content s
 |---|---|---|---|---|
 | 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | four cabinets on the back wall; oven, fridge, sink in the corner | low — docking written as `contextData` only |
 | 7 | [Docking to a vector the article does not have](#7-docking-to-a-vector-the-article-does-not-have) | hardening | oven, fridge, sink in the corner | medium |
-| 9 | [Answers claim what the plan does not have](#9-answers-claim-what-the-plan-does-not-have) | hardening, chat | most prompts with a wrong result (8 of 17 runs on 2026-10-02 12:45) | medium |
 | 11 | [A merged group reaches into the back wall](#11-a-merged-group-reaches-into-the-back-wall) | bug, RoomleCore — [RML-18040](https://roomle.atlassian.net/browse/RML-18040) | join groups | — |
 | 13 | [Undocked wall units reject the whole group](#13-undocked-wall-units-reject-the-whole-group) | hardening | full kitchen around the corner | low — docking written as `contextData` only |
 | 14 | [A floor unit is docked onto a top vector](#14-a-floor-unit-is-docked-onto-a-top-vector) | hardening | image: kitchen on the left-hand wall | low — docking written as `contextData` only |
 | 15 | [A G7 correction docks a part by a wall unit at floor level](#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | bug, MCP server | image: kitchen in the back right corner | low — docking written as `contextData` only |
 | 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) | image only, no text | critical — an attribute edit fails |
-| 17 | [A chat turn without an answer for 10 minutes](#17-a-chat-turn-without-an-answer-for-10-minutes) | hardening, chat | image: kitchen on the left-hand wall; full kitchen around the corner | medium |
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui | full kitchen around the corner | high — wall cabinets on the worktop |
 | 27 | [A new group without a placement, moved with `place-group` right after](#27-a-new-group-without-a-placement-moved-with-place-group-right-after) | hardening | three tall units; four cabinets; image only | medium — a second call and a reload |
 
@@ -93,42 +91,6 @@ and the sink is docked to a free row end, not inside the corner.
 
 **Relation payloads** (RML-18038): the server picks the vectors of the relation; `behind` a corner
 article is ignored and reported (G36). Open for docking written as `contextData`.
-
-## 9. Answers claim what the plan does not have
-
-**Problem.** The model's final answer lists units, materials or edits the plan does not have:
-- a hood and a sink that were never built;
-- walnut fronts and a marble worktop that were not applied;
-- a unit "placed" that was not added;
-- a 900 mm unit that is 600 mm wide.
-
-The tool results show the truth: `corrections`, the groups with their roots, the attributes.
-
-**Cause.** The chat's system prompt (`hi-mcp/hi-mcp-chat`, three sentences) does not ask the model
-to check its answer against the tool results. The rule "Verify results numerically" is served by the
-MCP server, which the chat's model reads only through `get-authoring-rules`.
-
-**To do.**
-- Add one sentence to the chat's system prompt: answer only with what the last tool results show,
-  and name what was asked but is not in the plan.
-- Check in "test the mcp" whether the answers of the corner kitchens and the edits match the plan.
-
-**Test.** The chat handler's test asserts the sentence in the system prompt.
-
-**Latest runs** (`mcp-test-2026-10-02_12-45-24`): 02, 04, 05, 06, 08, 09, 10, 11. Examples:
-"aligned to the back wall" for a row outside the room, a sink that is not there, "walnut and dark
-marble" for one walnut front and a white worktop.
-
-**Latest runs** (`mcp-test-2026-10-02_13-47-02`): gpt-5.4-mini 01, 02, 04, 10, 14.
-
-**Latest runs** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 06; gpt-5.4-mini 05, 07, 09, 10, 14.
-
-**Latest runs** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 01, 02, 03, 04, 05, 06, 10, 16.
-Examples:
-- "back right corner" for a group at the front right corner;
-- "light green" fronts that were never sent;
-- in 10, "dark marble was used for the fronts" beside the walnut it set;
-- "side by side, 1200 mm" for two units 600 mm apart.
 
 ## 11. A merged group reaches into the back wall
 
@@ -257,33 +219,6 @@ could not calculate the previous change" — the restored root keeps its `checkA
 the next change succeeds.
 
 **Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-6-astra 09 (the model recovered by deleting and rebuilding the groups).
-
-## 17. A chat turn without an answer for 10 minutes
-
-**Problem.** gpt-5-mini went silent after `get-authoring-rules` on the two largest prompts — the
-kitchen of image 1 (twice) and the full walnut kitchen — and built nothing within 10 minutes. In the
-chat window the user sees "assistant is working…" with no end.
-
-**Cause.** The chat backend (`hi-mcp/hi-mcp-chat/chat-server.ts`):
-- sets no reasoning effort for the Foundry deployments (provider default);
-- has no turn timeout;
-- streams nothing while the model reasons or writes a large tool call.
-
-What the model did in those minutes is not logged.
-
-**To do.**
-- Log per step what the model produced (reasoning tokens, the size of the tool input) to find out
-  where the time goes.
-- Then set a reasoning effort for `gpt-5-mini` that keeps a large kitchen within a few minutes
-  (planned with gpt-5.4-mini in [reasoning-effort-for-the-gpt-chat-models.md](reasoning-effort-for-the-gpt-chat-models.md)).
-- End a turn after a time limit with a message to the user.
-
-**Test.** A chat handler test for the turn limit. In "test the mcp", gpt-5-mini answers the image-1
-kitchen and the full kitchen within 10 minutes.
-
-**Latest runs** (`mcp-test-2026-10-02_13-47-02`): gpt-5-mini 06 (twice), 10.
-
-**Latest runs** (`mcp-test-2026-10-02_17-25-40`): not shown — with the relations (RML-18038) gpt-5-mini answered 06 in 68 s and 10 in 54 s. The chat still has no turn limit and no progress, so the issue stays.
 
 ## 23. A worktop colour change drops hanging wall units onto the worktop
 

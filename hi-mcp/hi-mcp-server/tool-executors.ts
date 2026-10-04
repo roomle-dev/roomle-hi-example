@@ -13,6 +13,9 @@ import {
   RELATIONS,
   RELATION_FIELDS,
   WALL_UNIT,
+  hangGapOf,
+  isTallUnitArticle,
+  isWallUnitArticle,
   relationsToDocking,
 } from './group-layout';
 import {
@@ -25,8 +28,10 @@ import {
   placeAgainstWall,
   placeCornerAtWalls,
   repositioningFromPlacement,
+  roomCorners,
   spanAlongWall,
   volumesOverlap,
+  wallName,
   wallSpanStart,
 } from './plan-space';
 import type {
@@ -409,6 +414,38 @@ const dockTarget = (
     );
     dockTo.dockingVector = partner;
   }
+  // A wall unit or a range hood docked on top of a floor unit hangs at the
+  // height of the wall units (D35) unless the agent sets the gap itself.
+  const carrier = roots.find((candidate) => candidate.id === dockTo.rootId);
+  const carrierArticle = carrier && catalogArticleOf(articles, carrier);
+  if (
+    article &&
+    carrierArticle &&
+    isWallUnitArticle(article) &&
+    !isWallUnitArticle(carrierArticle) &&
+    !isTallUnitArticle(carrierArticle) &&
+    /Top$/.test(String(dockTo.ownDockingVector)) &&
+    /Bottom$/.test(String(dockTo.dockingVector)) &&
+    !(Number(dockTo.offset?.[1]) > 0)
+  ) {
+    const gap = hangGapOf(
+      articles,
+      group.libraryId,
+      roots,
+      { articleId: article.articleId, libraryId: group.libraryId },
+      carrier
+    );
+    if (gap) {
+      dockTo.offset = [
+        Number(dockTo.offset?.[0] ?? 0) || 0,
+        gap,
+        Number(dockTo.offset?.[2] ?? 0) || 0,
+      ];
+      corrections.push(
+        `merge-article-into-group: '${article.articleId}' hangs ${gap} mm above '${carrier.id}', at the height of the wall units`
+      );
+    }
+  }
   return dockTo;
 };
 
@@ -446,6 +483,28 @@ const agentFacingArticle = (article: any, articles: any[]) => {
   };
   delete compact.cornerPoint;
   return compact;
+};
+
+// The walls in the words of the user: a name per wall, an opening named as
+// such (the contour gives it no type), and the room corners with their point
+// and the rotation of a corner kitchen there.
+const agentFacingRooms = (rooms: any) => {
+  if (!Array.isArray(rooms?.rooms)) {
+    return rooms;
+  }
+  return {
+    ...rooms,
+    rooms: rooms.rooms.map((room: any) => {
+      const walls = ((room?.walls ?? []) as any[]).map((wall) => ({
+        ...wall,
+        ...(wall?.type === null || wall?.type === undefined
+          ? { type: 'opening' }
+          : {}),
+        name: wallName(wall?.side),
+      }));
+      return { ...room, walls, corners: roomCorners(walls) };
+    }),
+  };
 };
 
 const PLACEMENT_FIELDS = ['posGroup', 'posRotationY', 'rootId'];
@@ -2169,16 +2228,20 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       const requested = known.length > 0 ? known : DEFAULT_SECTIONS;
       const context =
         await roomDesignerApi.extended.getExternalObjectPlanContext(requested);
-      if (!Array.isArray(context?.articles)) {
+      if (!isObject(context)) {
         return context;
       }
-      const articles = context.articles as any[];
-      return {
-        ...context,
-        articles: articles.map((article) =>
+      const result = { ...context };
+      if (result.rooms !== undefined) {
+        result.rooms = agentFacingRooms(result.rooms);
+      }
+      if (Array.isArray(result.articles)) {
+        const articles = result.articles as any[];
+        result.articles = articles.map((article) =>
           agentFacingArticle(article, articles)
-        ),
-      };
+        );
+      }
+      return result;
     })
   ),
 

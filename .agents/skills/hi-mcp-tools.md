@@ -51,7 +51,10 @@ them — is [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behavio
 
 **Returns**: Rooms, articles, groups, masterData (if requested). Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
-no agent can open, three quarters of the tokens)
+no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
+(back wall, front wall, left wall, right wall) beside its `side`, a door opening the `type`
+`opening`, and every room a `corners` list — per corner its `name` (back left, …), `point` and the
+`posRotationY` of a corner kitchen there — so a corner placement is a lookup
 
 **Article size**: per root module of an article, `dimensions` lists the size attributes with id,
 name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels

@@ -61,6 +61,24 @@ const room = {
   ],
 };
 
+// the room as get-plan-context returns it: the walls named, the corners listed
+const WALL_NAMES: Record<string, string> = {
+  top: 'back wall',
+  bottom: 'front wall',
+  left: 'left wall',
+  right: 'right wall',
+};
+const namedRoom = {
+  ...room,
+  walls: room.walls.map((wall) => ({ ...wall, name: WALL_NAMES[wall.side] })),
+  corners: [
+    { name: 'front right', point: [4000, 0, 0], posRotationY: 180 },
+    { name: 'back right', point: [4000, 0, -3000], posRotationY: 270 },
+    { name: 'back left', point: [0, 0, -3000], posRotationY: 0 },
+    { name: 'front left', point: [0, 0, 0], posRotationY: 90 },
+  ],
+};
+
 const FOOTPRINT = { x: [0, 800], z: [0, 600], widthMm: 800, depthMm: 600 };
 
 // a group as the plan context returns it (shaped)
@@ -269,12 +287,73 @@ describe('get-plan-context', () => {
       'articles',
       'groups',
     ]);
-    // the plan context arrives agent-ready from the planner API; only the
-    // articles' cornerArticle flag is completed
+    // the plan context arrives agent-ready from the planner API; the server
+    // completes the articles' cornerArticle flag, names the walls and lists
+    // the room corners
     expect(result).toEqual({
       ...planContextFixture,
+      rooms: { rooms: [namedRoom] },
       articles: [{ ...articleFixture, cornerArticle: false }],
     });
+  });
+
+  it('names the walls, marks the openings and lists the room corners', async () => {
+    // issues 12 and 30: the right wall of the default room is a stub, the
+    // door opening and the long wall
+    const splitRight = [
+      {
+        index: 1,
+        side: 'right',
+        start: [4000, 0, 0],
+        end: [4000, 0, -100],
+        lengthMm: 100,
+        type: 'wall',
+        facingRotationY: 270,
+      },
+      {
+        index: 2,
+        side: 'right',
+        start: [4000, 0, -100],
+        end: [4000, 0, -1000],
+        lengthMm: 900,
+        type: null,
+        facingRotationY: 270,
+      },
+      {
+        index: 3,
+        side: 'right',
+        start: [4000, 0, -1000],
+        end: [4000, 0, -3000],
+        lengthMm: 2000,
+        type: 'wall',
+        facingRotationY: 270,
+      },
+    ];
+    const walls = [
+      room.walls[0],
+      ...splitRight,
+      { ...room.walls[2], index: 4 },
+      { ...room.walls[3], index: 5 },
+    ];
+    const api = createApi({ rooms: { rooms: [{ ...room, walls }] } });
+    const result = (await toolExecutors['get-plan-context'](api, {
+      include: ['rooms'],
+    })) as Record<string, any>;
+    const [shaped] = result.rooms.rooms;
+    expect(shaped.walls.map((wall: any) => [wall.name, wall.type])).toEqual([
+      ['front wall', 'wall'],
+      ['right wall', 'wall'],
+      ['right wall', 'opening'],
+      ['right wall', 'wall'],
+      ['back wall', 'wall'],
+      ['left wall', 'wall'],
+    ]);
+    expect(shaped.corners).toEqual([
+      { name: 'front right', point: [4000, 0, 0], posRotationY: 180 },
+      { name: 'back right', point: [4000, 0, -3000], posRotationY: 270 },
+      { name: 'back left', point: [0, 0, -3000], posRotationY: 0 },
+      { name: 'front left', point: [0, 0, 0], posRotationY: 90 },
+    ]);
   });
 
   it('passes only the explicitly requested sections through', async () => {
@@ -3949,6 +4028,91 @@ describe('group command tools', () => {
       expect(result.corrections).toEqual([
         "merge-article-into-group: the RightBottom of root 'b1' is taken and its row ends at the corner article 'c' - the unit was docked to the LeftBottom of 'b0', the free end of its leg",
       ]);
+    });
+
+    // issue 10: a wall unit merged on top of a floor unit hangs at the height
+    // of the wall units; the catalog gives the heights
+    const wallUnitArticle = {
+      ...articleFixture,
+      articleId: 'wall-1',
+      category: 'Kitchen | Wall Units | Storage',
+      rootModules: [
+        {
+          module: { id: 'mr_Wall' },
+          dimensions: [{ id: 'mod_Height', name: 'Height', value: 720 }],
+        },
+      ],
+    };
+    const tallUnitArticle = {
+      ...articleFixture,
+      articleId: 'tall-1',
+      category: 'Kitchen | Tall Units | Storage',
+      rootModules: [
+        {
+          module: { id: 'mr_Tall' },
+          dimensions: [{ id: 'mod_Height', name: 'Height', value: 2100 }],
+        },
+      ],
+    };
+    const mergeWallUnit = async (
+      carrier: Record<string, unknown>,
+      dockTo: Record<string, unknown>
+    ) => {
+      const api = createApi({
+        ...planContextFixture,
+        articles: [articleFixture, wallUnitArticle, tallUnitArticle],
+        groups: [
+          makeShapedGroup({
+            id: 'kitchen-1',
+            roots: [makeShapedRoot(carrier)],
+          }),
+        ],
+      });
+      const result = (await toolExecutors['merge-article-into-group'](api, {
+        groupId: 'kitchen-1',
+        articleId: 'wall-1',
+        dockTo,
+      })) as Record<string, any>;
+      const [, payload] = (
+        api.extended.externalObjectGroupOperation.mock
+          .calls as unknown as any[][]
+      )[0];
+      return { result, dockTo: payload.dockTo };
+    };
+    const onTop = {
+      rootId: 'r1',
+      ownDockingVector: 'LeftTop',
+      dockingVector: 'LeftBottom',
+    };
+    const baseUnit = {
+      attributes: [{ id: 'mod_Height', value: 720 }],
+      freeDockingVectors: ['LeftTop'],
+    };
+
+    it("hangs a wall unit merged on a floor unit's top vector at the height of the wall units", async () => {
+      const { result, dockTo: sent } = await mergeWallUnit(baseUnit, onTop);
+      expect(sent).toEqual({ ...onTop, offset: [0, 660, 0] });
+      expect(result.corrections).toEqual([
+        "merge-article-into-group: 'wall-1' hangs 660 mm above 'r1', at the height of the wall units",
+      ]);
+    });
+
+    it('keeps an explicit offset of a wall unit above a floor unit', async () => {
+      const { result, dockTo: sent } = await mergeWallUnit(baseUnit, {
+        ...onTop,
+        offset: [0, 500, 0],
+      });
+      expect(sent).toEqual({ ...onTop, offset: [0, 500, 0] });
+      expect(result).not.toHaveProperty('corrections');
+    });
+
+    it('adds no gap on top of a tall unit', async () => {
+      const { result, dockTo: sent } = await mergeWallUnit(
+        { ...baseUnit, articleId: 'tall-1' },
+        onTop
+      );
+      expect(sent).toEqual(onTop);
+      expect(result).not.toHaveProperty('corrections');
     });
 
     it('forwards a side the planner reports as taken although the row ends there', async () => {

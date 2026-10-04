@@ -122,7 +122,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D9 | The groups of the plan context carry no parts and no log messages | 2026-10-01 | [plan context without parts](../../.agents/refactoring-analysis/hi-plan-context-without-parts.md) | in effect (roomle-ui) |
 | D10 | The agent is never told how the server positions a group internally; the articles' `cornerPoint` is removed from the plan context | 2026-09-30 | [group placement](../../.agents/feature-analysis/group-placement-computed-in-the-mcp-server.md) P3 | in effect — `agentFacingArticle`, `tool-executors.ts:177-183` |
 | D11 | A group returned by `get-plan-context` is a valid `create-or-replace-groups` payload as it is | 2026-09-16 | rules `hi-mcp-server.ts:7` | in effect |
-| D12 | Walls are named by their side in the top-view image — `left`, `right`, `top`, `bottom`; the text maps back = top, front = bottom | 2026-09-02 | [repositioning data](../../.agents/refactoring-analysis/group-placement-via-repositioning-data.md) D7 | in effect |
+| D12 | Walls are named by their side in the top-view image — `left`, `right`, `top`, `bottom`; the text maps back = top, front = bottom. Since 2026-10-04 every wall also carries its `name` in the user's words (back wall, front wall, …), an opening its `type`, and every room its `corners` with their names and rotations ([RML-18041](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md), issues 12 and 30) | 2026-09-02 | [repositioning data](../../.agents/refactoring-analysis/group-placement-via-repositioning-data.md) D7 | in effect — `agentFacingRooms`, `roomCorners` |
 | D13 | Rotations are counter-clockwise as seen from above; a group against the right wall has 270, against the left wall 90 | 2026-09-29 | repositioning data D1 | in effect |
 
 ### Authoring and positioning
@@ -256,7 +256,7 @@ One coordinate system throughout: 3D, right-handed, Y up, millimetres. A contour
 
 | Section | Content |
 |---|---|
-| `rooms` | `{ rooms: [{ levels, walls }] }`. `levels`: the contour per level, segments with `cmd`, `pos`, `type` (e.g. `wall`, or none for an opening), `height`, `thickness`. `walls`, derived per room: `index`, `side` (as seen in the top view), `start`/`end` (`[x, 0, z]` on the floor), `lengthMm`, `type`, `heightMm`, `thicknessMm`, `facingRotationY` — the rotation of a group with its back against that wall |
+| `rooms` | `{ rooms: [{ levels, walls }] }`. `levels`: the contour per level, segments with `cmd`, `pos`, `type` (e.g. `wall`, or none for an opening), `height`, `thickness`. `walls`, derived per room: `index`, `side` (as seen in the top view), `name` (back wall, front wall, left wall, right wall), `start`/`end` (`[x, 0, z]` on the floor), `lengthMm`, `type` (`wall`, or `opening` for a door — the contour gives it no type), `heightMm`, `thicknessMm`, `facingRotationY` — the rotation of a group with its back against that wall. `corners`, per room: `name` (back left, back right, front left, front right), `point` and `posRotationY` — the rotation of a corner kitchen in that corner. The server adds the names, the opening type and the corners (C18) |
 | `articles` | The catalog: `articleId`, `articleName`, `desc`, `category`, `libraryId`, `catalog`, `cornerArticle`. Per root module: `module` (id, name, desc), `dimensions` (size attributes with id, name and value in mm), `mainAttributes`, `dockingVectors` (names), `insertLevels`, `subModules` (id, name, desc). The server sets `cornerArticle` also on an empty plan (from the category or the module name) and removes `cornerPoint` (D10) |
 | `groups` | Per group: `id`, `libraryId`, `attributes`, read-only `position` (`pos`, `rotationY`, `footprint` with `x`, `z`, `widthMm`, `depthMm`), and `roots`. `pos` and `rotationY` are what a placement would name for the group where it stands: `pos` the room point of its back left bottom corner — the docking corner of its anchor root — and `rotationY` the rotation of the placement; the footprint is measured from `pos`. A group with two corner articles also carries `rootId`, the corner article `pos` belongs to, as in a placement (D17): the planner regenerates root ids, so the corner a placement named cannot be told after the load. The server derives them from the planner's calculated groups, wherever the planner keeps the group origin (D33); a group the planner has not positioned keeps the planner's `position`. Per root: the article pick (`id`, `articleId`, input `attributes`, `contextData` with vector names only) and read-only facts (`articleName`, `desc`, `category`, `isGenerated`, `dockingVectors`, `freeDockingVectors`, `subModules` with their id). No root positions, no geometry |
 | `masterData` | Only when requested. Per library id: the root modules (`id`, `name`, `desc`, assigned attribute ids) and the customer-facing attributes (`id`, `name`, `desc`, `type`, `group`, `selections` with value, name and desc) |
@@ -389,7 +389,7 @@ position.
 | `change-group-attribute` | `groupId`, `attributeId`, `value` | resolves the group id (G18) | sets it on every module that has it (D20, P3) |
 | `delete-group` | `groupId` | resolves the group id | removes the group |
 | `delete-root-module` | `rootModuleId` | resolves the root id (C17) | removes the unit; units no longer docked together become separate groups where they stand (P4) |
-| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo { rootId, ownDockingVector, dockingVector, mode?, offset? }` | resolves the group id and `dockTo.rootId` (C17), reads the article id in the catalog's spelling (G15), moves an occupied side to the free end of the row (D29) and derives a missing partner vector (P7) | docks the new unit (P5–P8) |
+| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo { rootId, ownDockingVector, dockingVector, mode?, offset? }` | resolves the group id and `dockTo.rootId` (C17), reads the article id in the catalog's spelling (G15), moves an occupied side to the free end of the row (D29), derives a missing partner vector (P7) and the hang gap of a wall unit on a floor unit (D35) | docks the new unit (P5–P8) |
 | `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | resolves the group id and the root id (C17), checks the article (G15) | replaces the unit, which keeps its docking (P9) |
 | `merge-groups` | `targetGroupId`, `groupIds` | resolves every group id | merges where they stand: nothing is moved, no docking is added (P10) |
 
@@ -414,8 +414,9 @@ shape — plus `corrections` when the server corrected the input before forwardi
 - **Against a wall**: `posRotationY` is the wall's `facingRotationY`. `posGroup` is the wall's
   `end` (flush into that corner) or `end + d · (start − end) / lengthMm`. The group runs from
   `posGroup` towards `start`.
-- **In a room corner**, a corner kitchen starts with a corner article. `posGroup` is the corner
-  point, with the rotation of the corner (rectangular room, back = top):
+- **In a room corner**, a corner kitchen starts with a corner article. `posGroup` and `posRotationY`
+  are the `point` and the `posRotationY` of the corner in the room's `corners` list (§5.4) — the
+  `facingRotationY` of the wall that ends in the corner. For a rectangular room (back = top):
 
   | Corner | `posRotationY` | `RightBottom` row runs along | `LeftBottom` row runs along |
   |---|---|---|---|
@@ -475,6 +476,7 @@ them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twi
 | C13 | A docking entry with `rootId` instead of `id` is read by its `rootId` | `completeDockingEntries` |
 | C14 | The position of a returned group is reported in the frame of a placement: `pos` the back left bottom corner, `rotationY` the rotation of the placement, the footprint from there, and with two corner articles `rootId`, the one `pos` belongs to (D33) | `positionInPlacementFrame`; `inPlacementFrame` |
 | C15 | A group with relations whose list starts with a wall unit starts with its first floor unit, so the placement anchors on the floor | `relationsToDocking` |
+| C18 | Every wall of the plan context gets its `name` (back wall, front wall, left wall, right wall), a wall entry without a type — a door opening — the type `opening`, and every room its `corners` (`name`, `point`, `posRotationY`) | `agentFacingRooms`; `wallName`, `roomCorners`, `plan-space.ts` |
 | C16 | A relation is written as a docking entry on the root the planner reaches first — breadth-first from the first root —, mirrored with the offset negated when its target comes later; the planner applies an offset only in the direction of the entry | `relationsToDocking` |
 
 ### 8.3 `create-or-replace-groups`
@@ -535,6 +537,7 @@ corrections, G31–G45.
 | G48 | the input attributes of the generated roots C1 drops from a resubmitted group (the worktop colour) | sets them on the group again after the load (G46) | correction |
 | G49 | `dockTo { rootId, ownDockingVector, dockingVector }` on a root — the field of `merge-article-into-group` | reads it as the relation it describes: `RightBottom -> LeftBottom` = `rightOf`, the mirror = `leftOf`, a Top → Bottom pair = `above`, `BackBottom -> BackBottom` = `behind`; a pair it cannot read, or a root that names a relation already, drops it | correction |
 | G50 | a group id the agent gave an earlier group of this session, which the planner renamed | reads it as that group — a replace; G16 drops the placement | correction: "group id 'kitchen1' names the group '…' created earlier - it was replaced" |
+| G51 | a wall unit `rightOf` / `leftOf` a tall unit on a side without a floor unit, while the other side has one — it would hang over empty floor | moves it to the side of the floor units, with the wall units chained to it | correction: "wall units '…' go leftOf the tall unit '…', on the side of the base units" |
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |
 | — | the planner loads nothing | — | error result: "No groups were created or replaced …" |
 | — | a replaced group that still holds its previous articles instead of the ones sent — the planner could not calculate the new layout and restored the group (roomle-ui `_discardCalculation`) | — | correction: "the planner could not calculate the new layout of group '…' and kept its previous content - …; send the layout again with another article" |
@@ -567,6 +570,7 @@ corrections, G31–G45.
 | G15 | an article id the catalog does not have | nothing | error with the valid article ids |
 | D29 | `merge-article-into-group` on a taken side vector | docks the unit to the named root's free other side when it has one; else to the root at the free end of that row; when that row ends at a corner article, to the free end of the leg in the other direction | correction |
 | P7 | a `dockingVector` the new article does not have (by the catalog) | uses the partner of `ownDockingVector` when the article has it | correction |
+| D35 | a wall unit or a range hood docked `*Top -> *Bottom` on a floor unit without a y offset | sets the y offset to the hang gap of the wall units (`hangGapOf`) | correction: "'OTB60' hangs 660 mm above '…', at the height of the wall units" |
 
 **In the planner** (roomle-ui `glue-logic.ts`, `hi-plan-context.ts`). These checks protect the
 planner and stay as they are (D5); the server passes their message on as an error result.

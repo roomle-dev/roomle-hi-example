@@ -549,6 +549,39 @@ describe('relationsToDocking', () => {
     ]);
   });
 
+  it('moves wall units beside a tall unit to the side of the floor units', () => {
+    // issue 33: the base units first and the tall unit last, the wall units
+    // continued rightOf the tall unit would hang over empty floor
+    const { group, corrections } = compile([
+      root('b1', 'UTB60'),
+      root('b2', 'UTB60', { rightOf: 'b1' }),
+      root('t1', 'H2TB60', { rightOf: 'b2' }),
+      root('w1', 'OTB60', { rightOf: 't1' }),
+      root('w2', 'OTB60', { rightOf: 'w1' }),
+    ]);
+    expect(entriesOf(group)).toEqual(
+      expect.arrayContaining([
+        't1.LeftTop -> w1.RightTop StartStart [0,0,0]',
+        'w1.LeftBottom -> w2.RightBottom StartStart [0,0,0]',
+      ])
+    );
+    expect(corrections).toEqual([
+      "posGroups[0]: wall units 'w1', 'w2' go leftOf the tall unit 't1', on the side of the base units",
+    ]);
+
+    // floor units on both sides: nothing moves
+    const bothSides = compile([
+      root('b1', 'UTB60'),
+      root('t1', 'H2TB60', { rightOf: 'b1' }),
+      root('b2', 'UTB60', { rightOf: 't1' }),
+      root('w1', 'OTB60', { rightOf: 't1' }),
+    ]);
+    expect(entriesOf(bothSides.group)).toContain(
+      't1.RightTop -> w1.LeftTop StartStart [0,0,0]'
+    );
+    expect(bothSides.corrections).toEqual([]);
+  });
+
   it('counts the Living wall units as wall units', () => {
     const { group } = compile([
       root('b1', 'UTB60'),

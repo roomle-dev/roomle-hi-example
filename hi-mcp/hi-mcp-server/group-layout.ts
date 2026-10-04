@@ -368,26 +368,26 @@ export const relationsToDocking = (
     roots.unshift(...roots.splice(firstFloorIndex, 1));
   }
   const inMain = (root: any) => find(root.id) === find(roots[0].id);
+  // On which sides of a tall unit a floor unit stands next to it.
+  const floorSidesOf = (tall: any) => {
+    const floorOn = (relation: Relation, mirrored: Relation) =>
+      kept.some(
+        (link) =>
+          (link.target === tall &&
+            link.relation === relation &&
+            !isWall(link.unit)) ||
+          (link.unit === tall &&
+            link.relation === mirrored &&
+            !isWall(link.target))
+      );
+    return {
+      right: floorOn('rightOf', 'leftOf'),
+      left: floorOn('leftOf', 'rightOf'),
+    };
+  };
   const sideOfTall = (tall: any): Relation => {
-    const floorRight = kept.some(
-      (link) =>
-        (link.target === tall &&
-          link.relation === 'rightOf' &&
-          !isWall(link.unit)) ||
-        (link.unit === tall &&
-          link.relation === 'leftOf' &&
-          !isWall(link.target))
-    );
-    const floorLeft = kept.some(
-      (link) =>
-        (link.target === tall &&
-          link.relation === 'leftOf' &&
-          !isWall(link.unit)) ||
-        (link.unit === tall &&
-          link.relation === 'rightOf' &&
-          !isWall(link.target))
-    );
-    return floorLeft && !floorRight ? 'leftOf' : 'rightOf';
+    const sides = floorSidesOf(tall);
+    return sides.left && !sides.right ? 'leftOf' : 'rightOf';
   };
   const defaultLink = (root: any, index: number): Link | undefined => {
     const before = roots.slice(0, index).filter(inMain);
@@ -447,6 +447,48 @@ export const relationsToDocking = (
       `root ${quoted(root.id)} names no neighbour - it was put ${fallback.relation} ${quoted(fallback.target.id)}`
     );
   });
+
+  // Wall units beside a tall unit hang over the base units, not over empty
+  // floor: a wall unit on the side of the tall unit that has no floor unit,
+  // while the other side has one, goes to that side - with the wall units
+  // chained to it.
+  const mirrored = (relation: Relation): Relation =>
+    relation === 'rightOf' ? 'leftOf' : 'rightOf';
+  for (const link of kept) {
+    if (
+      !isWall(link.unit) ||
+      isHood(link.unit) ||
+      !isTall(link.target) ||
+      (link.relation !== 'rightOf' && link.relation !== 'leftOf')
+    ) {
+      continue;
+    }
+    const sides = floorSidesOf(link.target);
+    const here = link.relation === 'rightOf' ? 'right' : 'left';
+    const there = here === 'right' ? 'left' : 'right';
+    if (sides[here] || !sides[there]) {
+      continue;
+    }
+    const flipped = [link];
+    link.relation = mirrored(link.relation);
+    for (let at = 0; at < flipped.length; at++) {
+      for (const chained of kept) {
+        if (
+          !flipped.includes(chained) &&
+          isWall(chained.unit) &&
+          chained.target === flipped[at].unit &&
+          (chained.relation === 'rightOf' || chained.relation === 'leftOf')
+        ) {
+          chained.relation = mirrored(chained.relation);
+          flipped.push(chained);
+        }
+      }
+    }
+    const ids = flipped.map((entry) => quoted(entry.unit.id)).join(', ');
+    notes.push(
+      `wall unit${flipped.length > 1 ? 's' : ''} ${ids} ${flipped.length > 1 ? 'go' : 'goes'} ${link.relation} the tall unit ${quoted(link.target.id)}, on the side of the base units`
+    );
+  }
 
   // Two units above one floor unit on the same edge would take the same
   // place: the later one continues the wall-unit row rightOf the earlier one.

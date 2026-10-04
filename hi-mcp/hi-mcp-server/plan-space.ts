@@ -379,6 +379,63 @@ export const adjoiningWall = (
       sharedCorner(wall, candidate) !== undefined
   );
 
+const WALL_NAMES: Record<WallSide, string> = {
+  top: 'back wall',
+  bottom: 'front wall',
+  left: 'left wall',
+  right: 'right wall',
+};
+
+// The name of a wall in the words of the user: back and front for the top and
+// the bottom of the top-view image.
+export const wallName = (side: WallSide): string =>
+  WALL_NAMES[side] ?? `${side} wall`;
+
+export interface RoomCorner {
+  name: string;
+  point: [number, number, number];
+  posRotationY: number;
+}
+
+// The corners of a room: where a wall ends and another wall starts at an
+// angle (the contour runs counter-clockwise; collinear walls split by a door
+// form no corner). The name is back/front plus left/right, and posRotationY is
+// the facingRotationY of the wall that ends in the corner - the rotation of a
+// corner kitchen there, for both hands of corner article (D13, D33).
+export const roomCorners = (walls: DerivedWall[]): RoomCorner[] => {
+  const real = walls.filter((wall) => wall.type === 'wall');
+  const corners: RoomCorner[] = [];
+  for (const ending of real) {
+    const [endingStart, endPoint] = wallFloorPoints(ending);
+    const along = unitDirection(endingStart, endPoint);
+    for (const starting of real) {
+      const [startPoint, startingEnd] = wallFloorPoints(starting);
+      const next = unitDirection(startPoint, startingEnd);
+      if (
+        starting === ending ||
+        !samePoint(endPoint, startPoint) ||
+        !along ||
+        !next ||
+        Math.abs(along[0] * next[0] + along[1] * next[1]) > 0.999
+      ) {
+        continue;
+      }
+      const sides = [ending.side, starting.side];
+      const depth = sides.find((side) => side === 'top' || side === 'bottom');
+      const hand = sides.find((side) => side === 'left' || side === 'right');
+      if (!depth || !hand) {
+        continue;
+      }
+      corners.push({
+        name: `${depth === 'top' ? 'back' : 'front'} ${hand}`,
+        point: [endPoint[0], 0, endPoint[1]],
+        posRotationY: ending.facingRotationY,
+      });
+    }
+  }
+  return corners;
+};
+
 // Puts the corner point of a corner article into the corner the two walls
 // share and turns the group so that its two back edges run along the walls.
 // Undefined when the article's back edges cannot be matched to both walls.

@@ -10,8 +10,10 @@ import {
   placeCornerAtWalls,
   repositioningFromPlacement,
   resolveWallAlignment,
+  roomCorners,
   spanAlongWall,
   volumesOverlap,
+  wallName,
   wallSpanStart,
   type DerivedWall,
   type GroupFootprint,
@@ -466,6 +468,72 @@ const WALL_LEFT: DerivedWall = {
 };
 
 const ROOM_WALLS = [WALL_BOTTOM, WALL_RIGHT, WALL_TOP, WALL_LEFT];
+
+describe('roomCorners', () => {
+  // the 4000 x 3000 room, counter-clockwise: front, right, back, left
+  const wall = (
+    index: number,
+    side: DerivedWall['side'],
+    start: [number, number, number],
+    end: [number, number, number],
+    facingRotationY: number,
+    type: string | null = 'wall'
+  ): DerivedWall => ({
+    index,
+    side,
+    start,
+    end,
+    lengthMm: Math.hypot(end[0] - start[0], end[2] - start[2]),
+    type: type as string | undefined,
+    facingRotationY,
+  });
+  const rectangle = [
+    wall(0, 'bottom', [0, 0, 0], [4000, 0, 0], 180),
+    wall(1, 'right', [4000, 0, 0], [4000, 0, -3000], 270),
+    wall(2, 'top', [4000, 0, -3000], [0, 0, -3000], 0),
+    wall(3, 'left', [0, 0, -3000], [0, 0, 0], 90),
+  ];
+
+  it('lists the four corners of a rectangular room with their names and rotations', () => {
+    expect(roomCorners(rectangle)).toEqual([
+      { name: 'front right', point: [4000, 0, 0], posRotationY: 180 },
+      { name: 'back right', point: [4000, 0, -3000], posRotationY: 270 },
+      { name: 'back left', point: [0, 0, -3000], posRotationY: 0 },
+      { name: 'front left', point: [0, 0, 0], posRotationY: 90 },
+    ]);
+  });
+
+  it('still lists four corners when a door splits a wall, and none between collinear walls', () => {
+    const withDoor = [
+      rectangle[0],
+      wall(1, 'right', [4000, 0, 0], [4000, 0, -100], 270),
+      wall(2, 'right', [4000, 0, -100], [4000, 0, -1000], 270, null),
+      wall(3, 'right', [4000, 0, -1000], [4000, 0, -3000], 270),
+      { ...rectangle[2], index: 4 },
+      { ...rectangle[3], index: 5 },
+    ];
+    expect(roomCorners(withDoor).map((corner) => corner.name)).toEqual([
+      'front right',
+      'back right',
+      'back left',
+      'front left',
+    ]);
+    const split = [
+      rectangle[0],
+      wall(1, 'right', [4000, 0, 0], [4000, 0, -1000], 270),
+      wall(2, 'right', [4000, 0, -1000], [4000, 0, -3000], 270),
+      { ...rectangle[2], index: 3 },
+      { ...rectangle[3], index: 4 },
+    ];
+    expect(roomCorners(split)).toHaveLength(4);
+  });
+
+  it('names the walls in the words of the top view', () => {
+    expect((['top', 'bottom', 'left', 'right'] as const).map(wallName)).toEqual(
+      ['back wall', 'front wall', 'left wall', 'right wall']
+    );
+  });
+});
 
 describe('adjoiningWall', () => {
   it('finds the wall on that side sharing a corner with the wall', () => {

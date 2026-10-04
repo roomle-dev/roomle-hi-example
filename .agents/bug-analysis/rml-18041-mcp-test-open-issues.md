@@ -10,6 +10,8 @@
 > **Author**: AI Assistant
 > **Status**: Open
 > **Branch**: `fix/mcp-test-open-issues-RML-18041` (from `master` `3a263d1`)
+> **Plan**: [rml-18041-implementation-plan.md](rml-18041-implementation-plan.md) — the fixes and
+> their unit tests, in seven pull requests
 
 ---
 

@@ -924,10 +924,167 @@ const completeDocking = (
     : connectUnreachedRoots(group.roots, articles, prefix, corrections);
 };
 
+interface KitchenWideAttribute {
+  id: string;
+  value: unknown;
+}
+
 interface CallGroup {
   group: any;
   index: number;
+  // attributes the server sets on the whole group after the load
+  kitchenWide: KitchenWideAttribute[];
 }
+
+// The input attributes of the generated roots (the worktop's colour) a group
+// from get-plan-context carries: C1 drops the roots, the attributes are set
+// again after the load.
+const generatedRootAttributes = (group: any): KitchenWideAttribute[] =>
+  Array.isArray(group?.roots)
+    ? group.roots
+        .filter(isGeneratedRoot)
+        .flatMap(
+          (root: any) => normalizedAttributes(root?.attributes, '', []) ?? []
+        )
+    : [];
+
+// The master data of the loaded libraries, read once and remembered for the
+// server's lifetime, like the anchor frames.
+let knownMasterData: Record<string, any> | undefined;
+
+export const forgetMasterData = (): void => {
+  knownMasterData = undefined;
+};
+
+const masterDataOf = async (
+  roomDesignerApi: PlannerApi
+): Promise<Record<string, any>> => {
+  knownMasterData ??= ((
+    await roomDesignerApi.extended.getExternalObjectPlanContext(['masterData'])
+  )?.masterData ?? {}) as Record<string, any>;
+  return knownMasterData;
+};
+
+const moduleIdsOf = (article: any): string[] =>
+  ((article?.rootModules ?? []) as any[])
+    .map((rootModule) => rootModule?.module?.id)
+    .filter((id) => typeof id === 'string');
+
+// An override of an attribute the unit's own module does not carry but a
+// generated root module does - the worktop colour on a base unit - is meant
+// for the kitchen: it leaves the root and is set on the group after the load.
+// The generated modules are the master data's root modules no catalog article
+// has.
+const moveGeneratedRootOverrides = async (
+  roomDesignerApi: PlannerApi,
+  callGroups: CallGroup[],
+  articles: any[],
+  corrections: string[]
+): Promise<void> => {
+  const withOverrides = callGroups.flatMap((callGroup) =>
+    (callGroup.group.roots as any[])
+      .filter((root) => root.attributes?.length)
+      .map((root) => ({ callGroup, root }))
+  );
+  if (withOverrides.length === 0) {
+    return;
+  }
+  const masterData = await masterDataOf(roomDesignerApi);
+  const articleModuleIds = new Set(articles.flatMap(moduleIdsOf));
+  for (const { callGroup, root } of withOverrides) {
+    const article = catalogArticleOf(articles, root);
+    const libraryId =
+      root.libraryId ?? callGroup.group.libraryId ?? article?.libraryId;
+    const modules = (masterData[libraryId]?.modules ?? []) as any[];
+    const ownModules = modules.filter((module) =>
+      moduleIdsOf(article).includes(module?.id)
+    );
+    if (ownModules.length === 0) {
+      continue;
+    }
+    const ownAttributeIds = new Set(
+      ownModules.flatMap((module) => module.attributes ?? [])
+    );
+    const generatedAttributeIds = new Set(
+      modules
+        .filter((module) => !articleModuleIds.has(module?.id))
+        .flatMap((module) => module.attributes ?? [])
+    );
+    const moved = (root.attributes as KitchenWideAttribute[]).filter(
+      (attribute) =>
+        !ownAttributeIds.has(attribute.id) &&
+        generatedAttributeIds.has(attribute.id)
+    );
+    if (moved.length === 0) {
+      continue;
+    }
+    root.attributes = root.attributes.filter(
+      (attribute: KitchenWideAttribute) => !moved.includes(attribute)
+    );
+    if (root.attributes.length === 0) {
+      delete root.attributes;
+    }
+    callGroup.kitchenWide.push(...moved);
+    corrections.push(
+      `posGroups[${callGroup.index}] root '${root.id}': a '${root.articleId}' has no attribute ` +
+        `${quotedIds(moved.map((attribute) => attribute.id))} - the generated roots of the group carry it, so it is set on the whole group`
+    );
+  }
+};
+
+// The group attributes that are not the library's group settings, the
+// overrides moved off the roots and the colours of the dropped generated roots
+// are set on every unit of the group with the planner's change-group-attribute
+// command. True when a command ran.
+const applyKitchenWideAttributes = async (
+  roomDesignerApi: PlannerApi,
+  callGroups: CallGroup[],
+  beforeGroupIds: Set<string>,
+  groups: any[],
+  corrections: string[]
+): Promise<boolean> => {
+  const newGroups = groups.filter((group) => !beforeGroupIds.has(group.id));
+  let nextNew = 0;
+  let applied = false;
+  for (const { group, index, kitchenWide } of callGroups) {
+    const result = beforeGroupIds.has(group.id)
+      ? groups.find((candidate) => candidate.id === group.id)
+      : newGroups[nextNew++];
+    if (!result) {
+      continue;
+    }
+    const settingIds = new Set(
+      ((result.attributes ?? []) as any[]).map((attribute) => attribute?.id)
+    );
+    const toApply = new Map<string, unknown>();
+    for (const attribute of [
+      ...((group.attributes ?? []) as KitchenWideAttribute[]).filter(
+        (attribute) => !settingIds.has(attribute.id)
+      ),
+      ...kitchenWide,
+    ]) {
+      toApply.set(attribute.id, attribute.value);
+    }
+    for (const [attributeId, value] of toApply) {
+      applied = true;
+      try {
+        await roomDesignerApi.extended.externalObjectGroupOperation(
+          'change-group-attribute',
+          { groupId: result.id, attributeId, value: attributeValue(value) }
+        );
+        corrections.push(
+          `posGroups[${index}]: ${attributeId} ${JSON.stringify(value)} was set on every unit of group '${result.id}'`
+        );
+      } catch (error) {
+        corrections.push(
+          `posGroups[${index}]: ${attributeId} could not be set on group '${result.id}' - ` +
+            (error instanceof Error ? error.message : String(error))
+        );
+      }
+    }
+  }
+  return applied;
+};
 
 const articlePicksOf = (roots: any[]): string =>
   roots
@@ -1814,7 +1971,11 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       const corrections: string[] = [];
       const notLoaded: NotLoadedGroup[] = [];
       let callGroups = keepBuildable(
-        (args.posGroups as any[]).map((group, index) => ({ group, index })),
+        (args.posGroups as any[]).map((group, index) => ({
+          group,
+          index,
+          kitchenWide: generatedRootAttributes(group),
+        })),
         notLoaded,
         ({ group, index }) =>
           prepareGroup(group, `posGroups[${index}]`, corrections)
@@ -1841,6 +2002,12 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         relationsToDocking(group, articles, `posGroups[${index}]`, corrections)
       );
       failIfNothingLeft();
+      await moveGeneratedRootOverrides(
+        roomDesignerApi,
+        callGroups,
+        articles,
+        corrections
+      );
 
       const preContext =
         await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']);
@@ -1973,7 +2140,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       const context =
         await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']);
 
-      const groups = context.groups;
+      let groups = context.groups;
       const replacedInputIds = new Set(
         posGroups
           .map((group) => group.id)
@@ -1985,6 +2152,21 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         (groups ?? []) as any[],
         corrections
       );
+      if (
+        await applyKitchenWideAttributes(
+          roomDesignerApi,
+          callGroups,
+          beforeGroupIds,
+          (groups ?? []) as any[],
+          corrections
+        )
+      ) {
+        groups = (
+          await roomDesignerApi.extended.getExternalObjectPlanContext([
+            'groups',
+          ])
+        ).groups;
+      }
       const unpositionedGroupIds = (groups ?? [])
         .filter(
           (group: any) =>

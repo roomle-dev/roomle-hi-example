@@ -27,7 +27,7 @@ Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rot
 {
   id: string,              // Unique within group
   articleId: string,       // From catalog (required)
-  attributes: Attribute[],  // Optional: attribute overrides
+  attributes: Attribute[],  // Optional: overrides of that unit; a material for the whole kitchen goes into the group's attributes
   // one relation to a root of the same group (every root after the first):
   rightOf | leftOf | onTop | above | behind: string,
   align: 'left' | 'right' | 'back',  // Optional, onTop and above

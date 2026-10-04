@@ -417,6 +417,12 @@ describe('hi-mcp-server tool calls', () => {
       'A wall unit rightOf or leftOf a tall unit hangs beside it with the tops flush'
     );
     expect(rules).toContain('stacking on a tall unit or a wall unit');
+    expect(rules).toContain(
+      "a material for the whole kitchen - the fronts, the worktop, the carcase - goes into the group's attributes"
+    );
+    expect(create?.description).toContain(
+      "a material for the whole kitchen goes into the group's attributes"
+    );
     expect(create?.description).toContain(
       'rightOf, leftOf, onTop, above or behind'
     );

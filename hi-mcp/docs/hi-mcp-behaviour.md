@@ -155,6 +155,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D33 | **One anchor frame for every article.** A placement puts the docking corner of the anchor root — the back left bottom corner of its docking vectors — at `posGroup`, whatever article it is: the origin of a cabinet, the left edge of a range hood, the corner point of a corner article, which is also turned so that its corner lies back left. The groups the tools return report their position in the same frame: `pos` is the back left bottom corner, `rotationY` the rotation of the placement. An anchor the probe cannot calculate no longer fails its group (G17) | user, 2026-10-02 ([analysis](../../.agents/refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md)) | in effect — `anchorFrameOfRoot`, `toRepositioningData`, `positionInPlacementFrame`, `group-placement.ts`; `inPlacementFrame`, `tool-executors.ts` |
 | D34 | **A unit names its neighbour, the server builds the docking.** Every root after the first names one neighbour with one relation — `rightOf`, `leftOf`, `onTop` (`align`, `gapMm`), `above` (`gapMm`), `behind` — and the server compiles the docking entries (`contextData`) from it: the vectors, the mode, the offset, and the root the entry goes on. A wall unit `rightOf` / `leftOf` a tall unit docks by the Top vectors. `contextData` stays accepted and is no longer taught; a group without any relation field is not touched | user, 2026-10-02 ([analysis](../../.agents/refactoring-analysis/simple-docking-for-the-agent.md), RML-18038) | in effect — `relationsToDocking`, `group-layout.ts` |
 | D35 | **The hang height of a wall unit `above` a floor unit** is the height of the tall units — a tall unit of the group, else the usual tall unit of the library — minus the heights of the wall unit and the floor unit (`mod_Height`); base and tall units stand on the same plinth. Furniture_Smith: 2100 − 720 − 720 = 660. `gapMm` overrides it | proposed in the analysis (Decision 1), 2026-10-02; confirmed live 2026-10-04 ([RML-18041](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md)): bottom 1480, top 2200, flush with the tall units | in effect — `hangGapOf`, `group-layout.ts` |
+| D36 | **A material for the whole kitchen goes into the group's `attributes`.** A root's `attributes` are overrides of that unit. A group attribute that is not one of the library's group settings is set on every unit and generated root of the group after the load (`change-group-attribute`, D20); an override only a generated root carries (the worktop colour on a base unit) is moved to the group; the colours of the generated roots a replace drops (C1) are set again. A unit attribute on some roots stays per unit — it may be an accent | 2026-10-04 ([RML-18041](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md), issue 6) | in effect — `applyKitchenWideAttributes`, `moveGeneratedRootOverrides`, `tool-executors.ts` |
 | D32 | **Nothing the agent sends is dropped without a report.** What the server can build it builds — a unit written inside the docking becomes a root — and every field it cannot use is named in `corrections`. Only the read-only fields of a group from `get-plan-context` are ignored silently | user, 2026-10-02 ([bug analysis](../../.agents/bug-analysis/units-inside-docking-entries-dropped.md)) | in effect — `prepareGroup`, `tool-executors.ts` |
 
 ## 4. How a tool call runs
@@ -218,7 +219,8 @@ Not every client passes these instructions to the model; the HI chat does not (�
 `AUTHORING_RULES` (`hi-mcp-server.ts:6-63`) is plain text. It is served at initialize and by the
 tool. It covers:
 
-- **The payload**: a group is `{ id?, libraryId?, placement?, roots }`, and a root is
+- **The payload**: a group is `{ id?, libraryId?, placement?, attributes?, roots }` — `attributes`
+  take the library's group settings and a material for the whole kitchen (D36) —, and a root is
   `{ id, articleId, attributes?, contextData? }`. Which catalog fields say what an article is
   (`desc`, `category`), how big it is (`dimensions`), how it docks (`dockingVectors`), and what it
   contains (`subModules`), plus `cornerArticle`.
@@ -336,6 +338,10 @@ The server runs these steps:
    reaches the planner with `id`, `libraryId`, `roots`, `attributes` and the repositioning.
 6. It loads the groups that can be built in one call with `reason: 'adjusted'`, reads the groups,
    and adds a hint for a group of the call that has no position.
+7. It sets the kitchen-wide attributes (D36) — the group attributes that are not among the loaded
+   group's settings, the overrides moved off the roots (G47) and the colours of the generated roots
+   it dropped (G48) — on every unit of the group with the planner's `change-group-attribute` command
+   (G46), and reads the groups again.
 
 A group that cannot be built at one of these steps leaves the call and goes to `notLoaded`; the
 others go on.
@@ -454,7 +460,7 @@ them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twi
 
 | ID | Correction | Where |
 |---|---|---|
-| C1 | Roots marked `isGenerated` (worktop, toe kick) are dropped from a `create-or-replace-groups` payload; the library regenerates them. `place-group` keeps them in its reload, so they keep their attributes — the worktop colour — over the move | `prepareGroup`; `repositionedGroup` |
+| C1 | Roots marked `isGenerated` (worktop, toe kick) are dropped from a `create-or-replace-groups` payload; the library regenerates them, and their input attributes are set again after the load (G48). `place-group` keeps them in its reload, so they keep their attributes — the worktop colour — over the move | `prepareGroup`; `repositionedGroup` |
 | C2 | The read-only fields of a group from `get-plan-context` are ignored: per root `articleName`, `desc`, `category`, `imageUrl`, `isGenerated`, `dockingVectors`, `freeDockingVectors`, `subModules`, `logMessages`; per group `position`, `logMessages`. Every other field the server does not use is reported (G27). The group `attributes` reach the planner | `prepareGroup`; the field strip of `create-or-replace-groups` |
 | C3 | Docking vector indices are stripped and resolved from the names | `stripDockingIndices` |
 | C4 | A unique prefix of a group id is accepted | `findGroup` |
@@ -523,6 +529,9 @@ corrections, G31–G45.
 | G45 | `above` a tall unit — nothing hangs above a tall unit | hangs it `above` the floor unit beside the tall unit when the relations name one (either side); else beside the tall unit with the tops flush (`rightOf`, Top vectors) | correction |
 | G39 | `above` a floor unit where the catalog gives no tall unit height | the wall unit stands on the floor unit | correction naming `gapMm` |
 | G30 | any other input that fails the preparation of a group | does not build that group; the other groups of the call load (D30) | `notLoaded`: "posGroups[i]: could not be read - …" |
+| G46 | a group attribute that is not one of the library's group settings (D36) | sets it on every unit and generated root of the loaded group with `change-group-attribute` | correction: "mod_FrontColor \"215\" was set on every unit of group '…'"; the planner's answer when it cannot — P3, no module has it — as the correction "… could not be set on group '…' - …" |
+| G47 | a root override of an attribute the unit's own module does not carry but a generated root module does — the master data's root modules no catalog article has (`mod_CountertopColor` on a base unit) | moves it off the root and sets it on the whole group (G46) | correction |
+| G48 | the input attributes of the generated roots C1 drops from a resubmitted group (the worktop colour) | sets them on the group again after the load (G46) | correction |
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |
 | — | the planner loads nothing | — | error result: "No groups were created or replaced …" |
 | — | a replaced group that still holds its previous articles instead of the ones sent — the planner could not calculate the new layout and restored the group (roomle-ui `_discardCalculation`) | — | correction: "the planner could not calculate the new layout of group '…' and kept its previous content - …; send the layout again with another article" |

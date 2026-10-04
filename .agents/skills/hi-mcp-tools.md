@@ -90,6 +90,12 @@ gap of a wall unit above a floor unit — see the
 [authoring rules skill](./hi-authoring-rules.md#relations). `contextData` is still accepted; a group
 from `get-plan-context` carries it.
 
+**Materials**: a root's `attributes` are overrides of that unit. A material for the whole kitchen
+(fronts, worktop, carcase) goes into the group's `attributes`; the server sets every group attribute
+that is not one of the library's group settings on every unit and generated root after the load and
+reports it. An override only a generated root carries (the worktop colour on a base unit) is moved
+to the group, and the colours of the generated roots a resubmitted group carries are set again.
+
 **Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, errors }]` — the groups it could not build, each error naming what to send instead; the other groups load)
 
 **Usage**:

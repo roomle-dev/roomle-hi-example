@@ -21,7 +21,6 @@ intent is clear, report what was corrected, and never drop the agent's content s
 |---|---|---|---|---|
 | 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | four cabinets on the back wall; oven, fridge, sink in the corner | low — docking written as `contextData` only |
 | 5 | [A range hood without wall units has no docking recipe](#5-a-range-hood-without-wall-units-has-no-docking-recipe) | bug, rules | oven, range hood, sink, fridge; full kitchen around the corner | low — with relations the hood hangs `above` the hob |
-| 6 | [A material for the whole kitchen is not applied](#6-a-material-for-the-whole-kitchen-is-not-applied) | bug, MCP server | full kitchen around the corner; image: kitchen on the left-hand wall | high — the requested material is missing |
 | 7 | [Docking to a vector the article does not have](#7-docking-to-a-vector-the-article-does-not-have) | hardening | oven, fridge, sink in the corner | medium |
 | 8 | [Root module ids are passed on unresolved](#8-root-module-ids-are-passed-on-unresolved) | hardening | change one unit | medium |
 | 9 | [Answers claim what the plan does not have](#9-answers-claim-what-the-plan-does-not-have) | hardening, chat | most prompts with a wrong result (8 of 17 runs on 2026-10-02 12:45) | medium |
@@ -33,7 +32,6 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 15 | [A G7 correction docks a part by a wall unit at floor level](#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | bug, MCP server | image: kitchen in the back right corner | low — docking written as `contextData` only |
 | 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) | image only, no text | critical — an attribute edit fails |
 | 17 | [A chat turn without an answer for 10 minutes](#17-a-chat-turn-without-an-answer-for-10-minutes) | hardening, chat | image: kitchen on the left-hand wall; full kitchen around the corner | medium |
-| 22 | [`place-group` resets the worktop and toe kick colours](#22-place-group-resets-the-worktop-and-toe-kick-colours) | bug, MCP server | image: kitchen on the left-hand wall | medium — the requested worktop colour is lost |
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui | full kitchen around the corner | high — wall cabinets on the worktop |
 | 24 | [A second create with the agent's own group id builds a duplicate group](#24-a-second-create-with-the-agents-own-group-id-builds-a-duplicate-group) | hardening | full kitchen around the corner | medium — two kitchens on one spot |
 | 25 | [`dockTo` written on the roots of `create-or-replace-groups`](#25-dockto-written-on-the-roots-of-create-or-replace-groups) | hardening | four cabinets on the back wall | low — corrected right by G7 |
@@ -48,9 +46,6 @@ server compiles the docking (`group-layout.ts`). In the test with all three mode
 (`mcp-test-2026-10-02_17-25-40`) no relation needed a correction. What comes first:
 
 - **Gaps of the compile**: 18, 19, 20, 21, 29 and 32 are fixed (G40–G45).
-- **Wrong results of the server's own corrections or placement**: 22 (a replace resets the worktop
-  colour; `place-group` keeps it since 2026-10-04).
-- **Requests the tool API makes the agent get wrong**: 6 (a material for the whole kitchen).
 - **Instructions the model gets wrong**: 30 (back and front), 31 (wall units in a corner kitchen), 33 (wall units beside a tall unit at the end of the row).
 - **Planner defects**: 23 (a worktop colour change drops hanging wall units), 16 (RML-18039).
 
@@ -127,72 +122,6 @@ the wall units, or hangs `above` the hob with the gap of the wall units (D35). N
 **Latest runs** (`mcp-test-2026-10-02_17-25-40`): with relations the hood hangs `above` the hob —
 gpt-5-mini 04 (`[0, 660, 0]`, y 1480), gpt-6-astra 03 and 04 (`gapMm` 750). What stays: the served rules
 name the hood only beside wall units, and a hood `above` a tall unit stands on it (issue 19).
-
-## 6. A material for the whole kitchen is not applied
-
-**Problem.** "The front of the kitchen should be made of walnut and the worktop should be made of
-dark marble" — the plan has one walnut front, and the worktop keeps its colour.
-- The model sent the materials as attribute overrides of a single root: `mod_FrontColor` 215 and
-  `mod_CountertopColor` 324 on the corner root.
-- An override changes one unit only, so only the corner's front is walnut.
-- `mod_CountertopColor` belongs to the generated worktop root (`mr_Countertop`), not to a base unit,
-  so it has no effect ([worktop colour analysis](../bug-analysis/worktop-colour-not-discoverable.md)).
-- Nothing reports either.
-
-**Cause.** The tool API cannot express a kitchen-wide material when it creates a kitchen:
-- the `attributes` of a root are overrides of that unit (rules, `hi-mcp-server.ts`: "attributes is
-  an optional list of { id, value } overrides");
-- the `attributes` of a group are the library's group settings (`mod_GroupHeight`,
-  `mod_GroupGenerationLogic`, …), not materials;
-- `change-group-attribute` sets an attribute on every root and sub module that carries it, the
-  generated worktop included (D20). But it works on a group that already exists, and the rules
-  present it for editing only ("change-group-attribute (attributes, e.g. the front colour of the
-  whole kitchen)"). One prompt therefore needs two calls, and the rules do not say so.
-- `create-or-replace-groups` passes the overrides on unchecked. The library ignores an attribute the
-  module does not carry, and nothing reports an override that reaches one unit of a kitchen.
-
-**To do** — simplify the tool API first ([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort)):
-- `create-or-replace-groups` takes kitchen-wide attributes with the group: `{ id, value }` entries
-  of the group's `attributes` that are not group settings. After the load the server applies them
-  with `change-group-attribute` — every unit and generated root that carries the attribute — and
-  reports what it applied.
-- The rules say it in one sentence: a material for the whole kitchen (fronts, worktop, carcase) goes
-  into the group's `attributes`, a material for one unit into that root's `attributes`.
-- Correction for the input of this run: an override that roots of a new group carry but only some
-  of them set — the walnut on the corner root — is applied to the whole group and reported. An
-  override of an attribute only a generated root carries (`mod_CountertopColor` on a base unit) is
-  applied to the group the same way and reported.
-- An override no root and no generated root of the group carries is reported.
-- Needs a decision: whether an override on some roots is always meant for the whole kitchen, or only
-  when the request names the kitchen. The server cannot read the request, so the first is the
-  simpler rule.
-
-**Test.**
-- A new group with `mod_FrontColor` and `mod_CountertopColor` in its `attributes`: after the load,
-  `change-group-attribute` runs for both, and the result reports them.
-- The overrides of this run: both reach the whole group and are reported.
-- An override nobody carries is reported.
-- In "test the mcp", the full kitchen has walnut fronts on every unit and a dark marble worktop.
-
-**Latest runs** (`mcp-test-2026-10-02_12-45-24`).
-- 10: the first call had walnut on every unit and was rejected (issue 13). The retry set
-  `mod_FrontColor` 215 on the corner unit only, so the plan has one walnut front.
-  `mod_CountertopColor` was never sent.
-- 06 (image): the sage fronts of the picture (`mod_FrontColor` 160) reached the tall and wall
-  units; the base units kept the default front.
-
-**Latest runs** (`mcp-test-2026-10-02_13-47-02`).
-- gpt-5.4-mini 10: walnut on the corner unit only.
-- gpt-5.4-mini 06: the image's sage on four of six units.
-- gpt-5-mini 07 and every gpt-6-astra run set the materials with `change-group-attribute` and got
-  the whole kitchen. The API change of the to-do matches what the stronger models do on their own.
-
-**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5.4-mini 10 — dark marble on the fridge root only; the worktop keeps 380.
-
-**Latest run** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 10 — `mod_FrontColor` 215 on
-every root, so the fronts are walnut. The model did not find the worktop attribute with
-`find-attributes` (the bo-test planner lacks the roomle-ui fix of the worktop colour), and the
-worktop stays white marble.
 
 ## 7. Docking to a vector the article does not have
 
@@ -532,22 +461,6 @@ kitchen and the full kitchen within 10 minutes.
 **Latest runs** (`mcp-test-2026-10-02_13-47-02`): gpt-5-mini 06 (twice), 10.
 
 **Latest runs** (`mcp-test-2026-10-02_17-25-40`): not shown — with the relations (RML-18038) gpt-5-mini answered 06 in 68 s and 10 in 54 s. The chat still has no turn limit and no progress, so the issue stays.
-
-## 22. `place-group` resets the worktop and toe kick colours
-
-**Problem.** After `mod_CountertopColor` 224 and `mod_ToekickColor` 224, `place-group` reloaded the
-group; the worktop ends with 380 and the toe kick with 326 (`order-data.json`). Nothing reports it.
-In 07–10 the model set the colour again after each reload.
-
-**Cause.** `repositionedGroup` (`tool-executors.ts`) reloads the group without its generated roots
-(C1), and the library regenerates them with the default colours.
-
-**To do.** Keep the attributes of the generated roots over the reload — read them before and set
-them again after it, or keep the generated roots in the reload — and say so.
-
-**Test.** `place-group` on a group whose worktop carries `mod_CountertopColor` keeps the colour.
-
-**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-6-astra 06.
 
 ## 23. A worktop colour change drops hanging wall units onto the worktop
 

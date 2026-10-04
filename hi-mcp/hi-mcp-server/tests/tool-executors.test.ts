@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { forgetAnchorFrames, toolExecutors } from '../tool-executors';
+import {
+  forgetAnchorFrames,
+  forgetMasterData,
+  toolExecutors,
+} from '../tool-executors';
 
 // rectangular room 4000 x 3000 mm as the plan context returns it: contour
 // in 3D pos space and the derived walls
@@ -107,9 +111,24 @@ const masterDataFixture = {
         desc: 'A sub module',
         imageUrl: 'https://example.com/sub-1.png',
       },
+      // a generated root module: no catalog article has it
+      {
+        id: 'mr_Countertop',
+        name: 'Worktop',
+        desc: 'The generated worktop',
+        attributes: ['countertop'],
+      },
     ],
     // the attributes as the compacted master data returns them
     attributes: [
+      {
+        id: 'countertop',
+        name: 'Worktop colour',
+        desc: 'the colour of the worktop',
+        type: 'Simple',
+        group: 'worktop',
+        selections: [],
+      },
       {
         id: 'b',
         name: 'Width',
@@ -155,6 +174,7 @@ const articleFixture = {
   category: 'storage',
   libraryId: 'lib-1',
   catalog: {},
+  rootModules: [{ module: { id: 'module-1' } }],
   roots: [
     {
       name: 'module-1',
@@ -227,8 +247,11 @@ const createApi = (
   };
 };
 
-// every test learns its anchor frames itself
-beforeEach(() => forgetAnchorFrames());
+// every test learns its anchor frames and reads its master data itself
+beforeEach(() => {
+  forgetAnchorFrames();
+  forgetMasterData();
+});
 
 const pick = () => ({ id: 'u1', articleId: 'article-1' });
 
@@ -2590,6 +2613,185 @@ describe('create-or-replace-groups relations', () => {
       .calls as unknown as any[][];
     expect(calls[calls.length - 1][0].posGroups[0].roots).toEqual(roots);
     expect(result.corrections).toBeUndefined();
+  });
+});
+
+describe('create-or-replace-groups materials', () => {
+  // the groups before the load, then the groups after it
+  const createMaterialsApi = (
+    groupsBefore: any[],
+    groupsAfter: any[],
+    overrides: Record<string, unknown> = {}
+  ) => {
+    let groupReads = 0;
+    return createApi(planContextFixture, {
+      getExternalObjectPlanContext: vi.fn(async (sections: string[]) =>
+        sections.includes('groups')
+          ? { groups: groupReads++ === 0 ? groupsBefore : groupsAfter }
+          : planContextFixture
+      ),
+      ...overrides,
+    });
+  };
+  const commandsOf = (api: ReturnType<typeof createApi>) =>
+    api.extended.externalObjectGroupOperation.mock.calls;
+  const loadedRoots = (api: ReturnType<typeof createApi>) => {
+    const calls = api.extended.loadExternalObjectGroupLayout.mock
+      .calls as unknown as any[][];
+    return calls[calls.length - 1][0].posGroups[0].roots;
+  };
+
+  it('applies the group attributes that are not group settings to every unit after the load', async () => {
+    const created = makeShapedGroup({
+      id: 'g-new',
+      attributes: [{ id: 'mod_GroupHeight', value: 1500 }],
+    });
+    const api = createMaterialsApi([], [created]);
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          attributes: [
+            { id: 'front', value: 'white' },
+            { id: 'mod_GroupHeight', value: 1500 },
+          ],
+          roots: [pick()],
+        },
+      ],
+    })) as Record<string, any>;
+    expect(commandsOf(api)).toEqual([
+      [
+        'change-group-attribute',
+        { groupId: 'g-new', attributeId: 'front', value: 'white' },
+      ],
+    ]);
+    expect(result.corrections).toEqual([
+      'posGroups[0]: front "white" was set on every unit of group \'g-new\'',
+    ]);
+    // the groups are read again after the command
+    expect(api.extended.getExternalObjectPlanContext).toHaveBeenLastCalledWith([
+      'groups',
+    ]);
+    expect(result.groups).toEqual([created]);
+  });
+
+  it('moves an override only a generated root carries to the group', async () => {
+    const created = makeShapedGroup({ id: 'g-new' });
+    const api = createMaterialsApi([], [created]);
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          roots: [
+            {
+              id: 'u1',
+              articleId: 'article-1',
+              attributes: [
+                { id: 'countertop', value: '224' },
+                { id: 'front', value: 'white' },
+              ],
+            },
+          ],
+        },
+      ],
+    })) as Record<string, any>;
+    expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+      'masterData',
+    ]);
+    expect(loadedRoots(api)).toEqual([
+      {
+        id: 'u1',
+        articleId: 'article-1',
+        attributes: [{ id: 'front', value: 'white' }],
+      },
+    ]);
+    expect(commandsOf(api)).toEqual([
+      [
+        'change-group-attribute',
+        { groupId: 'g-new', attributeId: 'countertop', value: '224' },
+      ],
+    ]);
+    expect(result.corrections).toEqual([
+      "posGroups[0] root 'u1': a 'article-1' has no attribute 'countertop' - the generated roots of the group carry it, so it is set on the whole group",
+      'posGroups[0]: countertop "224" was set on every unit of group \'g-new\'',
+    ]);
+  });
+
+  it("leaves an override the unit's own module carries on the root", async () => {
+    const api = createMaterialsApi([], [makeShapedGroup({ id: 'g-new' })]);
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          roots: [
+            {
+              id: 'u1',
+              articleId: 'article-1',
+              attributes: [{ id: 'front', value: 'white' }],
+            },
+          ],
+        },
+      ],
+    })) as Record<string, any>;
+    expect(loadedRoots(api)[0].attributes).toEqual([
+      { id: 'front', value: 'white' },
+    ]);
+    expect(commandsOf(api)).toEqual([]);
+    expect(result.corrections).toBeUndefined();
+  });
+
+  it("passes the planner's answer on as a correction and keeps the load", async () => {
+    const api = createMaterialsApi([], [makeShapedGroup({ id: 'g-new' })], {
+      externalObjectGroupOperation: vi.fn(async () => {
+        throw new Error("No module of group 'g-new' has the attribute 'nope'.");
+      }),
+    });
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          attributes: [{ id: 'nope', value: 'x' }],
+          roots: [pick()],
+        },
+      ],
+    })) as Record<string, any>;
+    expect(result.loaded).toEqual([{ id: 'loaded-1' }]);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: nope could not be set on group 'g-new' - No module of group 'g-new' has the attribute 'nope'.",
+    ]);
+  });
+
+  it('sets the colours of the generated roots again after a replace', async () => {
+    // issue 22: the plan-context group carries the worktop with its colour,
+    // C1 drops the worktop, the colour is set again after the load
+    const api = createMaterialsApi([makeShapedGroup()], [makeShapedGroup()]);
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          id: 'g1',
+          libraryId: 'lib-1',
+          roots: [
+            { id: 'r1', articleId: 'article-1' },
+            {
+              id: 'wt',
+              articleId: 'mr_Countertop',
+              isGenerated: true,
+              attributes: [{ id: 'countertop', value: '224' }],
+            },
+          ],
+        },
+      ],
+    })) as Record<string, any>;
+    expect(loadedRoots(api)).toEqual([{ id: 'r1', articleId: 'article-1' }]);
+    expect(commandsOf(api)).toEqual([
+      [
+        'change-group-attribute',
+        { groupId: 'g1', attributeId: 'countertop', value: '224' },
+      ],
+    ]);
+    expect(result.corrections).toEqual([
+      'posGroups[0]: countertop "224" was set on every unit of group \'g1\'',
+    ]);
   });
 });
 

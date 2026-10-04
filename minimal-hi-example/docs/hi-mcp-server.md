@@ -360,7 +360,12 @@ attributes? }`), and every root after the first names its neighbour with one rel
 `leftOf`, `onTop`, `above` or `behind` — from which the server builds the docking (`contextData`).
 The glue logic completes the picks from the article template, and the planner arranges the root
 modules. The agent never authors root positions. Docking written as `contextData` — a group from
-`get-plan-context` carries it — is still accepted.
+`get-plan-context` carries it — is still accepted. A root's `attributes` are
+overrides of that unit; a material for the whole kitchen goes into the group's
+`attributes`, and the server sets it on every unit and on the worktop after the
+load (`corrections` says so). An override only the generated worktop carries is
+moved to the group, and a resubmitted group keeps the colours of its worktop and
+toe kick.
 
 A new group is positioned with `placement: { posGroup, posRotationY,
 rootId? }` — see [Positioning a group](#positioning-a-group). It is applied

@@ -69,7 +69,7 @@
       "title": "Image only, no text",
       "plan": "default-room",
       "image": "docs/images/kitchen-4.png",
-      "expect": "the model decides what to plan; the chat sends the image with its default text \"Plan a kitchen like the one in the image.\""
+      "expect": "the model decides what to plan; the chat sends the image with its default text \"Identify the furniture in the image (for example a kitchen, wardrobe, media unit, lowboard, sideboard, cabinet or utility room) and create a planning as close to it as possible.\""
     },
     {
       "id": "full-kitchen-walnut-marble-corner",

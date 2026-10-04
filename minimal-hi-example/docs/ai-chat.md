@@ -170,9 +170,10 @@ A user message carries its images in `images`, an array of base64 data URLs
 ```
 
 A user message with images and an empty (or blank) `content` gets the text
-"Plan a kitchen like the one in the image." (`DEFAULT_IMAGE_PROMPT` in
-`chat-config.ts`). The backend adds it for every client, the page, the test
-script and curl alike.
+"Identify the furniture in the image (for example a kitchen, wardrobe, media
+unit, lowboard, sideboard, cabinet or utility room) and create a planning as
+close to it as possible." (`DEFAULT_IMAGE_PROMPT` in `chat-config.ts`). The
+backend adds it for every client, the page, the test script and curl alike.
 
 The backend accepts no image URL, because the AI SDK would download it in the
 backend. It passes the images to the model as file parts of the user message

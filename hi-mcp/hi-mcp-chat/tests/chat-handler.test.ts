@@ -243,7 +243,12 @@ describe('toModelMessages', () => {
         {
           role: 'user',
           content: [
-            { type: 'text', text: 'Plan a kitchen like the one in the image.' },
+            {
+              type: 'text',
+              text:
+                'Identify the furniture in the image (for example a kitchen, wardrobe, media unit, ' +
+                'lowboard, sideboard, cabinet or utility room) and create a planning as close to it as possible.',
+            },
             { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
           ],
         },

@@ -1,7 +1,7 @@
 # Right-handed corner article placed outside the room
 
 > **Type**: Bug Analysis
-> **Domain**: hi-mcp — placement of a new corner group in `create-or-replace-groups` (`hi-mcp/hi-mcp-poc-json/group-placement.ts`, `tool-executors.ts`); evidence from two "test the mcp" runs and from the live planner (bo-test, Furniture_Smith)
+> **Domain**: hi-mcp — placement of a new corner group in `create-or-replace-groups` (`hi-mcp/hi-mcp-server/group-placement.ts`, `tool-executors.ts`); evidence from two "test the mcp" runs and from the live planner (bo-test, Furniture_Smith)
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-09-30_17-48-25/report.md`, prompt 04 — the only result classified as a bug; the same defect also hit prompt 04 of the run before (`mcp-test-2026-09-30_16-04-31`), hidden behind the docking bug fixed in [unconnected-docking-graph-accepted.md](unconnected-docking-graph-accepted.md)
 > **Date**: 2026-09-30
 > **Author**: AI Assistant
@@ -120,14 +120,14 @@ Proposed before the work and implemented as written (see [Implementation](#imple
 
 ## Tests
 
-`hi-mcp/hi-mcp-poc-json/tests/group-placement.test.ts`:
+`hi-mcp/hi-mcp-server/tests/group-placement.test.ts`:
 - the frame of a left-handed and of a right-handed root (the live vectors above): point and turn
   0 / 270; one vector only; no corner vectors;
 - `toRepositioningData` with a right-handed frame at 270: `posRotationY 0`,
   `posGroup [4815 − 1161, 0, -3765]`, corner point in the corner — for all four rotations;
 - a left-handed frame keeps the current results (the existing offset tests, now fed with frames).
 
-`hi-mcp/hi-mcp-poc-json/tests/tool-executors.test.ts` (corner probe):
+`hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` (corner probe):
 - the probe carries the anchor's attributes;
 - `UERTB90` with `mod_CarcaseDirection = Right` and the bare `UERTB90` are probed separately and
   placed differently (the run 16:04 case);
@@ -194,5 +194,5 @@ have (04), a new group overlapping an existing one (07), a wall cabinet through 
 
 Durable knowledge promoted: the corner frame and the variant probe in
 `.agents/skills/hi-mcp-server.md`; the hand note under the corner table in
-`minimal-hi-example/docs/hi-mcp-server.md`, `hi-mcp/hi-mcp-poc-json/README.md`,
+`minimal-hi-example/docs/hi-mcp-server.md`, `hi-mcp/hi-mcp-server/README.md`,
 `.agents/skills/hi-authoring-rules.md`, `.agents/skills/hi-mcp-tools.md` and the served rules.

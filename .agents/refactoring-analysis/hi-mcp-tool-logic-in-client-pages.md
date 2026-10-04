@@ -78,7 +78,7 @@ reference client in this repository.
 AI agent (Claude Code, Claude Desktop, hi-mcp-chat, ...)
   │  POST /mcp    tools/call create-or-replace-groups { posGroups }
   ▼
-MCP server  hi-mcp/hi-mcp-poc-json          ← CONTRACT: name, description, zod schema, rules
+MCP server  hi-mcp/hi-mcp-server          ← CONTRACT: name, description, zod schema, rules
   │  bridge.call('create-or-replace-groups', { posGroups })
   │  WebSocket /bridge   { kind: 'call', id, tool, args }
   ▼
@@ -97,7 +97,7 @@ Rubens UI iframe   RoomlePlanner → HI glue logic → kernel
 
 Every tool handler on the server is a single forward,
 `textResult(await bridge.call('<tool>', args))`. See
-[`hi-mcp-server.ts`](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts): lines 118–119, 142–143, 191–198,
+[`hi-mcp-server.ts`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts): lines 118–119, 142–143, 191–198,
 221–229, 239 and 249–252. Two tools are exceptions:
 
 - `get-authoring-rules` returns static text (lines 156–158).
@@ -110,7 +110,7 @@ server accepts any object. All of the actual payload validation happens in the p
 
 | Copy | Location | Size | Tested | Runs in |
 |---|---|---|---|---|
-| Reference client | [`hi-mcp/hi-mcp-poc-json-client/`](../../hi-mcp/hi-mcp-poc-json-client/): `tool-executors.ts`, `browser-bridge.ts`, `types.ts` | 381 + 144 + 28 lines, TS | 23 unit tests in `tests/tool-executors.test.ts` | Nowhere. It is the copy source only. |
+| Reference client | [`hi-mcp/hi-mcp-client/`](../../hi-mcp/hi-mcp-client/): `tool-executors.ts`, `browser-bridge.ts`, `types.ts` | 381 + 144 + 28 lines, TS | 23 unit tests in `tests/tool-executors.test.ts` | Nowhere. It is the copy source only. |
 | Example page | [`minimal-hi-example/index.html`](../../minimal-hi-example/index.html), lines 1045–1482 | about 440 lines of inline JS | No | The local example (`npm start`) |
 | ligna-store | `ligna-store/hi-mcp/`: `tool-executors.ts`, `browser-bridge.ts`, `types.ts` | 381 + 144 + 28 lines, TS | No. Also excluded from lint (`ligna-store/.eslintignore:9`). | The INT-stage store and the Cloudflare try-out |
 
@@ -173,7 +173,7 @@ Commit `c52aeca` (2026-09-29, "require posRotationY") made `posRotationY` mandat
 - The server's authoring rules now say *"posRotationY is required, state 0 explicitly for no
   rotation"* (`AUTHORING_RULES` in `hi-mcp-server.ts`).
 - The reference client and the example page reject a missing value
-  ([`tool-executors.ts:257-261`](../../hi-mcp/hi-mcp-poc-json-client/tool-executors.ts#L257-L261),
+  ([`tool-executors.ts:257-261`](../../hi-mcp/hi-mcp-client/tool-executors.ts#L257-L261),
   [`index.html:1297-1301`](../../minimal-hi-example/index.html#L1297-L1301)).
 - `ligna-store/hi-mcp/tool-executors.ts:257` still accepts a missing value.
 
@@ -194,12 +194,12 @@ The server is deployed on its own (locally, Azure, Cloudflare), and the store is
 own. This causes two kinds of failure:
 
 - **A new tool reaches an older page** and fails with `Unknown tool: …`
-  ([`browser-bridge.ts:110-118`](../../hi-mcp/hi-mcp-poc-json-client/browser-bridge.ts#L110-L118)).
+  ([`browser-bridge.ts:110-118`](../../hi-mcp/hi-mcp-client/browser-bridge.ts#L110-L118)).
 - **A changed rule reaches an older page** and the page silently enforces the old rule, as in 2.1.
 
 ### 2.4 The tests cover the copy that runs nowhere
 
-The 23 executor tests run against `hi-mcp-poc-json-client`. The two copies that actually run, the
+The 23 executor tests run against `hi-mcp-client`. The two copies that actually run, the
 example page and the ligna-store, have no tests.
 
 ### 2.5 The most-changed code has the slowest release path
@@ -306,7 +306,7 @@ component: the MCP server, or the Rubens planner itself.
 | Layer | Owns | Changes when |
 |---|---|---|
 | **Planner API** (roomle-ui HI glue logic) | The HI data contract. Agent-ready plan context (already done). Validation of the `loadExternalObjectGroupLayout` payload, with structured errors. | The HI domain changes |
-| **MCP server** (`hi-mcp-poc-json`) | Everything agent-facing: tool names, descriptions, schemas, authoring rules, the composition of planner calls, agent hints, error wording | The agent's behaviour is tuned. This is the most frequent change. |
+| **MCP server** (`hi-mcp-server`) | Everything agent-facing: tool names, descriptions, schemas, authoring rules, the composition of planner calls, agent hints, error wording | The agent's behaviour is tuned. This is the most frequent change. |
 | **Page bridge** (one per host, ideally none: see C) | Transport, and the allow-list of planner methods a remote server may call | Almost never |
 
 The test for any piece of logic: *would a non-AI caller of the planner want it?* If yes, it
@@ -536,12 +536,12 @@ historical record.
 
 | Location | Change |
 |---|---|
-| [`hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts`](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts) | Handlers call the executors with the bridge-backed planner API instead of `bridge.call('<tool>')`; `create-or-replace-groups` keeps its schema |
-| `hi-mcp/hi-mcp-poc-json/tool-executors.ts` (new, moved) | Moved from `hi-mcp-poc-json-client/tool-executors.ts`, code unchanged |
-| `hi-mcp/hi-mcp-poc-json/planner-api.ts` (new) | Typed `extended` with the five methods, per-method timeouts |
-| [`hi-mcp/hi-mcp-poc-json/page-bridge.ts`](../../hi-mcp/hi-mcp-poc-json/page-bridge.ts) | `call(method, args[], timeoutMs)`; log lines name the method |
-| [`hi-mcp/hi-mcp-poc-json/types.ts`](../../hi-mcp/hi-mcp-poc-json/types.ts) and `hi-mcp-poc-json-client/types.ts` | `McpBridgeCall` carries `method` and `args: unknown[]`; `hello` carries `protocol` |
-| [`hi-mcp/hi-mcp-poc-json-client/`](../../hi-mcp/hi-mcp-poc-json-client/) | `tool-executors.ts` removed; `browser-bridge.ts` becomes the generic relay with the allow-list; README updated |
+| [`hi-mcp/hi-mcp-server/hi-mcp-server.ts`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts) | Handlers call the executors with the bridge-backed planner API instead of `bridge.call('<tool>')`; `create-or-replace-groups` keeps its schema |
+| `hi-mcp/hi-mcp-server/tool-executors.ts` (new, moved) | Moved from `hi-mcp-client/tool-executors.ts`, code unchanged |
+| `hi-mcp/hi-mcp-server/planner-api.ts` (new) | Typed `extended` with the five methods, per-method timeouts |
+| [`hi-mcp/hi-mcp-server/page-bridge.ts`](../../hi-mcp/hi-mcp-server/page-bridge.ts) | `call(method, args[], timeoutMs)`; log lines name the method |
+| [`hi-mcp/hi-mcp-server/types.ts`](../../hi-mcp/hi-mcp-server/types.ts) and `hi-mcp-client/types.ts` | `McpBridgeCall` carries `method` and `args: unknown[]`; `hello` carries `protocol` |
+| [`hi-mcp/hi-mcp-client/`](../../hi-mcp/hi-mcp-client/) | `tool-executors.ts` removed; `browser-bridge.ts` becomes the generic relay with the allow-list; README updated |
 | [`minimal-hi-example/index.html:1045-1482`](../../minimal-hi-example/index.html#L1045-L1482) | Executors removed; the inline bridge becomes the generic relay |
 | `ligna-store/hi-mcp/` | `tool-executors.ts` removed; `browser-bridge.ts` and `types.ts` synced one last time; README updated |
 | Docs | [`minimal-hi-example/docs/hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md), [`.agents/skills/hi-mcp-server.md`](../skills/hi-mcp-server.md) (bridge protocol, *Adding New Tools*), [`.agents/skills/hi-mcp-tools.md`](../skills/hi-mcp-tools.md), *Adding New Tools* in [`AGENTS.md`](../../AGENTS.md) |
@@ -555,10 +555,10 @@ Cloudflare worker, and `hi-mcp-chat`, which remains a plain MCP client.
 
 | Test | Today | After A |
 |---|---|---|
-| `hi-mcp-poc-json-client/tests/tool-executors.test.ts` (23 tests) | Executors against a mocked `roomDesignerApi.extended` | Moves to `hi-mcp-poc-json/tests/` unchanged; the mock shape stays |
-| `hi-mcp-poc-json-client/tests/browser-bridge.test.ts` | URL resolution | Extended: allowed method is executed, disallowed method is rejected, errors are relayed |
-| `hi-mcp-poc-json/tests/page-bridge.test.ts` | Call correlation, timeouts, page replacement | Adapted to `call(method, args[])` |
-| `hi-mcp-poc-json/tests/hi-mcp-server.test.ts` | Tool forwards via a mocked bridge | Tools run the executors against a mocked bridge, end to end through the planner API |
+| `hi-mcp-client/tests/tool-executors.test.ts` (23 tests) | Executors against a mocked `roomDesignerApi.extended` | Moves to `hi-mcp-server/tests/` unchanged; the mock shape stays |
+| `hi-mcp-client/tests/browser-bridge.test.ts` | URL resolution | Extended: allowed method is executed, disallowed method is rejected, errors are relayed |
+| `hi-mcp-server/tests/page-bridge.test.ts` | Call correlation, timeouts, page replacement | Adapted to `call(method, args[])` |
+| `hi-mcp-server/tests/hi-mcp-server.test.ts` | Tool forwards via a mocked bridge | Tools run the executors against a mocked bridge, end to end through the planner API |
 
 Verify with `npm test` and `npm run typecheck` at the `hi-mcp` root. Then do one live round trip
 with the example page (`npm start`) and one with the INT-stage store.
@@ -625,17 +625,17 @@ texts and hints are unchanged. The one visible change in error text: a timeout n
 
 | Repository | Files |
 |---|---|
-| roomle-hi-example: server | `hi-mcp-poc-json/tool-executors.ts` (moved), `planner-api.ts` (new), `hi-mcp-server.ts`, `server.ts`, `page-bridge.ts`, `types.ts` |
-| roomle-hi-example: page side | `hi-mcp-poc-json-client/browser-bridge.ts`, `types.ts`; `minimal-hi-example/index.html` (executor block removed: +21 / −388 lines) |
-| roomle-hi-example: tests | `hi-mcp-poc-json/tests/tool-executors.test.ts` (moved, unchanged), `planner-api.test.ts` (new), `fake-page-socket.ts` (new helper, extracted from `page-bridge.test.ts`), `hi-mcp-server.test.ts`, `page-bridge.test.ts`; `hi-mcp-poc-json-client/tests/browser-bridge.test.ts` |
-| roomle-hi-example: docs | `AGENTS.md`, `.github/copilot-instructions.md`, `.agents/skills/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`, `.agents/decisions/0001-hi-mcp-tool-logic-in-the-server.md` (new), `.agents/README.md`, `minimal-hi-example/docs/hi-mcp-server.md`, `ai-chat.md`, `hi-mcp-poc-presentation.md`, `hi-mcp/README.md`, `hi-mcp/docs/*` (five setup guides: "the server is only a relay" wording), `hi-mcp-poc-json/README.md`, `QUICKSTART.md`, `hi-mcp-poc-json-client/README.md` |
+| roomle-hi-example: server | `hi-mcp-server/tool-executors.ts` (moved), `planner-api.ts` (new), `hi-mcp-server.ts`, `server.ts`, `page-bridge.ts`, `types.ts` |
+| roomle-hi-example: page side | `hi-mcp-client/browser-bridge.ts`, `types.ts`; `minimal-hi-example/index.html` (executor block removed: +21 / −388 lines) |
+| roomle-hi-example: tests | `hi-mcp-server/tests/tool-executors.test.ts` (moved, unchanged), `planner-api.test.ts` (new), `fake-page-socket.ts` (new helper, extracted from `page-bridge.test.ts`), `hi-mcp-server.test.ts`, `page-bridge.test.ts`; `hi-mcp-client/tests/browser-bridge.test.ts` |
+| roomle-hi-example: docs | `AGENTS.md`, `.github/copilot-instructions.md`, `.agents/skills/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`, `.agents/decisions/0001-hi-mcp-tool-logic-in-the-server.md` (new), `.agents/README.md`, `minimal-hi-example/docs/hi-mcp-server.md`, `ai-chat.md`, `hi-mcp-poc-presentation.md`, `hi-mcp/README.md`, `hi-mcp/docs/*` (five setup guides: "the server is only a relay" wording), `hi-mcp-server/README.md`, `QUICKSTART.md`, `hi-mcp-client/README.md` |
 | ligna-store | `hi-mcp/tool-executors.ts` (deleted, −381 lines), `hi-mcp/browser-bridge.ts` and `hi-mcp/types.ts` (identical to the reference client), `hi-mcp/README.md`; `components/blocks/Planner.vue` unchanged |
 
 ### Before and after
 
 | | Before | After |
 |---|---|---|
-| Tool logic | 3 copies: reference client, `index.html`, ligna-store | 1: `hi-mcp-poc-json/tool-executors.ts` |
+| Tool logic | 3 copies: reference client, `index.html`, ligna-store | 1: `hi-mcp-server/tool-executors.ts` |
 | Page-side code per client | about 550 lines (ligna-store), about 440 lines inline (`index.html`) | bridge only: 187 lines with `types.ts` (ligna-store, with URL resolution and reconnect), 80 lines inline (`index.html`, including comments and the `mcp=true` gate) |
 | Bridge protocol | tool-level `{ tool, args: {} }` | method-level `{ method, args: [] }`, versioned hello |
 | What the server can make the page do | any tool the page implements | the five allow-listed planner methods |
@@ -646,11 +646,11 @@ texts and hints are unchanged. The one visible change in error text: a timeout n
 
 | File | Before → after |
 |---|---|
-| `hi-mcp-poc-json/tests/tool-executors.test.ts` | 23 → 23 (moved; the `createApi` mock already matched `PlannerApi`, no cast needed) |
-| `hi-mcp-poc-json/tests/planner-api.test.ts` | 0 → 3 (forwarding with positional args, per-method timeouts, contract with `PLANNER_METHODS`) |
-| `hi-mcp-poc-json/tests/hi-mcp-server.test.ts` | 9 → 10 (mock planner API instead of the bridge; new: invalid payload rejected in the server without a load; new: end-to-end wiring through a real `PageBridge`; the snapshot-timeout test moved to `planner-api`) |
-| `hi-mcp-poc-json/tests/page-bridge.test.ts` | 9 → 10 (method-level calls; new: outdated page bridge rejected) |
-| `hi-mcp-poc-json-client/tests/browser-bridge.test.ts` | 5 → 10 (new: hello protocol, allowed method executed, `placeOrder` rejected, planner error relayed, non-call messages ignored) |
+| `hi-mcp-server/tests/tool-executors.test.ts` | 23 → 23 (moved; the `createApi` mock already matched `PlannerApi`, no cast needed) |
+| `hi-mcp-server/tests/planner-api.test.ts` | 0 → 3 (forwarding with positional args, per-method timeouts, contract with `PLANNER_METHODS`) |
+| `hi-mcp-server/tests/hi-mcp-server.test.ts` | 9 → 10 (mock planner API instead of the bridge; new: invalid payload rejected in the server without a load; new: end-to-end wiring through a real `PageBridge`; the snapshot-timeout test moved to `planner-api`) |
+| `hi-mcp-server/tests/page-bridge.test.ts` | 9 → 10 (method-level calls; new: outdated page bridge rejected) |
+| `hi-mcp-client/tests/browser-bridge.test.ts` | 5 → 10 (new: hello protocol, allowed method executed, `placeOrder` rejected, planner error relayed, non-call messages ignored) |
 
 The whole workspace went from 61 to 71 passing tests. `cf/tests/worker.test.ts` still fails to
 load `@cloudflare/containers`, as it did before.

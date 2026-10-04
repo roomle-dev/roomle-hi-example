@@ -1,7 +1,7 @@
 # change-module-attribute reports success for an attribute the module does not have
 
 > **Type**: Bug Analysis
-> **Domain**: roomle-ui `homag-intelligence` — the group command `change-module-attribute` (`src/glue-logic.ts`, `changeModuleAttribute`), forwarded by the MCP tool of the same name (`hi-mcp/hi-mcp-poc-json/tool-executors.ts:879-889`)
+> **Domain**: roomle-ui `homag-intelligence` — the group command `change-module-attribute` (`src/glue-logic.ts`, `changeModuleAttribute`), forwarded by the MCP tool of the same name (`hi-mcp/hi-mcp-server/tool-executors.ts:879-889`)
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-10-01_10-23-00/report.md` (gpt-5-mini, planner `bo-test`), run 06
 > **Date**: 2026-10-01
 > **Author**: AI Assistant

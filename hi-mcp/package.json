@@ -4,14 +4,14 @@
   "private": true,
   "description": "MCP server proof of concepts workspace for orchestrating HI object groups",
   "workspaces": [
-    "hi-mcp-poc-json",
+    "hi-mcp-server",
     "hi-mcp-chat",
     "cf"
   ],
   "scripts": {
-    "start": "npm start --workspace hi-mcp-poc-json",
+    "start": "npm start --workspace hi-mcp-server",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit --project hi-mcp-poc-json/tsconfig.json && tsc --noEmit --project hi-mcp-poc-json-client/tsconfig.json && tsc --noEmit --project hi-mcp-chat/tsconfig.json"
+    "typecheck": "tsc --noEmit --project hi-mcp-server/tsconfig.json && tsc --noEmit --project hi-mcp-client/tsconfig.json && tsc --noEmit --project hi-mcp-chat/tsconfig.json"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

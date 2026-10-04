@@ -150,10 +150,10 @@ Three causes add up. The decisive one is the second.
 
 ## Code and documents a fix touches
 
-- `hi-mcp/hi-mcp-poc-json/group-placement.ts`: the anchor frame in `toRepositioningData`, the
+- `hi-mcp/hi-mcp-server/group-placement.ts`: the anchor frame in `toRepositioningData`, the
   frame type
-- `hi-mcp/hi-mcp-poc-json/tool-executors.ts`: `probeCornerFrame` → anchor frames; `isUndockable`
-- `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts`: the docking bullet and the recipes
+- `hi-mcp/hi-mcp-server/tool-executors.ts`: `probeCornerFrame` → anchor frames; `isUndockable`
+- `hi-mcp/hi-mcp-server/hi-mcp-server.ts`: the docking bullet and the recipes
 - tests: placement of a centred anchor; a hood docked beside a wall cabinet; an unconnected hood
   docked to a row end
 - `hi-mcp/docs/hi-mcp-behaviour.md` (C6, G7, the rules), `.agents/skills/hi-authoring-rules.md`,

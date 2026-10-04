@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The hi-mcp server (`hi-mcp/hi-mcp-poc-json`) is to be **hosted on Cloudflare** — actually running
+The hi-mcp server (`hi-mcp/hi-mcp-server`) is to be **hosted on Cloudflare** — actually running
 there, not tunneled from a laptop — so that anyone in the company can try the PoC with nothing but
 two URLs: the deployed ligna-store page and the public MCP endpoint.
 
@@ -296,7 +296,7 @@ or automate later with an `open-store-page` tool (roadmap).
 | `hi-mcp/cf/tests/` | Worker routing tests |
 | `hi-mcp/docs/cloudflare-mcp-server.md` | new — the colleague-facing setup guide (sibling of the Azure guide) |
 | `ligna-store/hi-mcp/browser-bridge.ts`, `ligna-store/components/blocks/Planner.vue` | phase 2 only: `mcp_session` passthrough + `sessionId` in `hello` (kept in sync with the roomle-hi-example copy) |
-| `hi-mcp/hi-mcp-poc-json/types.ts` | phase 2 only: optional `sessionId` in the wire protocol |
+| `hi-mcp/hi-mcp-server/types.ts` | phase 2 only: optional `sessionId` in the wire protocol |
 
 ---
 

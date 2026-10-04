@@ -380,7 +380,7 @@ A script in the scratchpad works through the MCP server, like `frame-check.mjs`:
   - the probe in the table of planner calls.
 - `.agents/skills/hi-mcp-tools.md`, `.agents/skills/hi-authoring-rules.md`,
   `.agents/skills/hi-mcp-server.md`, `minimal-hi-example/docs/hi-mcp-server.md` and
-  `hi-mcp/hi-mcp-poc-json/README.md`: the "+ 90" sentence, `position`, the hood.
+  `hi-mcp/hi-mcp-server/README.md`: the "+ 90" sentence, `position`, the hood.
 - Close-out:
   - this analysis → Done, with its report;
   - [the hood bug analysis](../bug-analysis/range-hood-placed-half-a-width-off.md) → Fixed;

@@ -1,7 +1,7 @@
 # Feature Analysis: HI MCP command API (RML-18004)
 
 > **Type**: Feature Analysis
-> **Domain**: hi-mcp — MCP server tools and executors (`hi-mcp/hi-mcp-poc-json`), the page bridges; roomle-ui `homag-intelligence` (`glue-logic.ts`, `hi-plan-context.ts`, `external-object-api.ts`) and `planner-core` (`roomle-planner.ts`)
+> **Domain**: hi-mcp — MCP server tools and executors (`hi-mcp/hi-mcp-server`), the page bridges; roomle-ui `homag-intelligence` (`glue-logic.ts`, `hi-plan-context.ts`, `external-object-api.ts`) and `planner-core` (`roomle-planner.ts`)
 > **Trigger**: Jira [RML-18004](https://roomle.atlassian.net/browse/RML-18004) "hi mcp command api" — a new planner API `externalObjectGroupOperation(command, payload)` in roomle-ui that delegates to the glue logic, the operations implemented in `hi-plan-context.ts` on top of existing glue-logic features, and one MCP tool per command; designed so that new commands are easy to add
 > **Date**: 2026-09-30
 > **Author**: AI Assistant
@@ -54,11 +54,11 @@ The design goal named in the ticket: adding a command later must be easy.
 Since [ADR 0001](../decisions/0001-hi-mcp-tool-logic-in-the-server.md) the tool logic runs in the
 server (`tool-executors.ts`), and every planner call travels over the WebSocket bridge as a method
 call the page executes on `roomDesignerApi.extended`
-(`hi-mcp/hi-mcp-poc-json/planner-api.ts:24-43`, `page-bridge.ts:73-108`). The page executes only
+(`hi-mcp/hi-mcp-server/planner-api.ts:24-43`, `page-bridge.ts:73-108`). The page executes only
 the methods on its allow-list — the page's security boundary:
 
 - `minimal-hi-example/index.html:1050-1058` (`MCP_PLANNER_METHODS`)
-- `hi-mcp/hi-mcp-poc-json-client/browser-bridge.ts:12-20` (`PLANNER_METHODS`)
+- `hi-mcp/hi-mcp-client/browser-bridge.ts:12-20` (`PLANNER_METHODS`)
 - the ligna-store copy `ligna-store/hi-mcp/browser-bridge.ts` (identical today, copied by hand)
 
 `tests/planner-api.test.ts:61-66` fails when the server's `PlannerApi` and the reference
@@ -350,8 +350,8 @@ come from `get-plan-context`; article ids from its catalog (validated in the ser
 
 **roomle-hi-example**
 
-- `hi-mcp/hi-mcp-poc-json/planner-api.ts`, `tool-executors.ts`, `hi-mcp-server.ts`
-- `hi-mcp/hi-mcp-poc-json-client/browser-bridge.ts`, `minimal-hi-example/index.html`
+- `hi-mcp/hi-mcp-server/planner-api.ts`, `tool-executors.ts`, `hi-mcp-server.ts`
+- `hi-mcp/hi-mcp-client/browser-bridge.ts`, `minimal-hi-example/index.html`
 - tests: `tests/tool-executors.test.ts`, `tests/hi-mcp-server.test.ts`, `tests/planner-api.test.ts`
 - `minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`,
   `.agents/skills/hi-mcp-server.md`, `.agents/skills/hi-authoring-rules.md`,

@@ -1,6 +1,6 @@
 # HI MCP server — behaviour
 
-> **Living reference.** It describes how the HI MCP server (`hi-mcp/hi-mcp-poc-json`) behaves towards an
+> **Living reference.** It describes how the HI MCP server (`hi-mcp/hi-mcp-server`) behaves towards an
 > agent: the guidelines and decisions it follows, its tools, the information it provides, and every
 > guard, automatic correction and feedback message. Every change to a tool, a served rule, a guard, a
 > correction or a result updates this document in the same change.
@@ -11,7 +11,7 @@
 >
 > **Not covered here**: setup, clients and deployment. See
 > [hi-mcp-server.md](../../minimal-hi-example/docs/hi-mcp-server.md) (the example page and MCP
-> clients), [hi-mcp-poc-json/README.md](../hi-mcp-poc-json/README.md) (server setups and environment
+> clients), [hi-mcp-server/README.md](../hi-mcp-server/README.md) (server setups and environment
 > variables) and [cloudflare-mcp-server.md](cloudflare-mcp-server.md).
 
 ## Contents

@@ -3,14 +3,14 @@
 The complete documentation of this directory: the standalone HI presets
 example ([`index.html`](../index.html)) and the start launcher
 ([`start.mjs`](../start.mjs)) that serves it and starts the repository's single
-MCP server implementation, [`hi-mcp/hi-mcp-poc-json`](../../../hi-mcp/hi-mcp-poc-json/),
+MCP server implementation, [`hi-mcp/hi-mcp-server`](../../../hi-mcp/hi-mcp-server/),
 so an AI agent can orchestrate HOMAG Intelligence (HI) object groups in a live
 planning session. The agent retrieves the plan context (master data, rooms,
 articles, existing groups) and creates or modifies HI object groups — without
 computing root-module positions itself.
 
 The MCP server is the TypeScript implementation from
-`hi-mcp/hi-mcp-poc-json` (the copy of the roomle-ui PoC
+`hi-mcp/hi-mcp-server` (the copy of the roomle-ui PoC
 [RML-17693](https://roomle.atlassian.net/browse/RML-17693)): the MCP protocol
 layer is `@modelcontextprotocol/sdk` with zod tool schemas, and the page bridge
 is a WebSocket. It is used as-is; the launcher only wires environment
@@ -66,7 +66,7 @@ demo; it must not be reused as a production credential.
 
 ```text
 AI agent (any MCP client) --Streamable HTTP--> http://localhost:3100/mcp
-                                               hi-mcp/hi-mcp-poc-json server.ts (vite-node)
+                                               hi-mcp/hi-mcp-server/server.ts (vite-node)
                                                runs the tools (validation, composition, hints)
                                                |  WebSocket /bridge: planner method calls
                                                v
@@ -75,7 +75,7 @@ AI agent (any MCP client) --Streamable HTTP--> http://localhost:3100/mcp
 ```
 
 Two processes started by one launcher: `start.mjs` serves `index.html` on
-port 3000 and spawns the MCP server (`hi-mcp/hi-mcp-poc-json/server.ts`) on
+port 3000 and spawns the MCP server (`hi-mcp/hi-mcp-server/server.ts`) on
 port 3100, pointing its "no page connected" error at the example URL
 (`HI_MCP_STORE_URL`). Port 3000 is the server's default WebSocket origin
 allow-list entry, so no extra configuration is needed. The page cannot listen
@@ -98,7 +98,7 @@ without disconnecting the first; the example page reports this in its MCP log.
 | File | Responsibility |
 | ---- | -------------- |
 | `start.mjs` | The launcher: build gate (`npm install` + typecheck of the `hi-mcp` workspace), static file server for this directory on :3000, spawns the MCP server with `HI_MCP_STORE_URL` set, opens the browser |
-| `hi-mcp/hi-mcp-poc-json/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), tool definitions with zod schemas, the tool logic (`tool-executors.ts`: payload validation, planner call composition, hints), the planner methods it calls (`planner-api.ts`), the WebSocket page bridge with call correlation and timeouts, server instructions and authoring rules — unchanged, shared with the ligna-store client and the cloud deployments |
+| `hi-mcp/hi-mcp-server/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), tool definitions with zod schemas, the tool logic (`tool-executors.ts`: payload validation, planner call composition, hints), the planner methods it calls (`planner-api.ts`), the WebSocket page bridge with call correlation and timeouts, server instructions and authoring rules — unchanged, shared with the ligna-store client and the cloud deployments |
 | `index.html` | The example itself, plus the MCP section at the end: the WebSocket browser bridge that executes the allow-listed planner methods |
 | `package.json` | The `start` script that runs the launcher, `dev` which adds `server_url=http://localhost:5173/`, and `start:cf` which uses the MCP server deployed on Cloudflare |
 

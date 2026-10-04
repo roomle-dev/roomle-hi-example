@@ -62,4 +62,4 @@ The tools work on the planning session of an open Roomle ligna-store tab — the
 
 - MCP Server Endpoint: https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp
 - Store Page: https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev
-- See also: [QUICKSTART.md](../hi-mcp-poc-json/QUICKSTART.md) for additional setup details
+- See also: [QUICKSTART.md](../hi-mcp-server/QUICKSTART.md) for additional setup details

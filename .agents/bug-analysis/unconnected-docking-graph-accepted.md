@@ -1,7 +1,7 @@
 # Unconnected docking graph accepted by create-or-replace-groups
 
 > **Type**: Bug Analysis
-> **Domain**: hi-mcp — `create-or-replace-groups` validation and placement (`hi-mcp/hi-mcp-poc-json/tool-executors.ts`, `group-placement.ts`); the planner's root arrangement (roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-root-module-arrangement.ts`); evidence from the saved plans of the test run
+> **Domain**: hi-mcp — `create-or-replace-groups` validation and placement (`hi-mcp/hi-mcp-server/tool-executors.ts`, `group-placement.ts`); the planner's root arrangement (roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-root-module-arrangement.ts`); evidence from the saved plans of the test run
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-09-30_16-04-31/report.md` (gpt-5.4-mini, planner `bo-test`): 3 of 13 prompts failed — 04 through a server bug, 02 and 06 through the model's input that the server let through
 > **Date**: 2026-09-30
 > **Author**: AI Assistant
@@ -100,7 +100,7 @@ The model's answer claims "one connected group".
 > placed (undocked roots are rejected).
 
 The living docs say the same (`minimal-hi-example/docs/hi-mcp-server.md:339`, `:560`;
-`hi-mcp/hi-mcp-poc-json/README.md:356`, `:561`; `.agents/skills/hi-authoring-rules.md:107`,
+`hi-mcp/hi-mcp-server/README.md:356`, `:561`; `.agents/skills/hi-authoring-rules.md:107`,
 `:185`, `:255`; `.agents/skills/hi-mcp-tools.md:219`).
 
 ### Investigation
@@ -195,7 +195,7 @@ The rule sentence in `hi-mcp-server.ts:10` and the docs listed above say "must b
 that is already placed"; at fix time add the words the check now enforces ("reachable through the
 docking from the first root") to the rule and to the error table of `hi-mcp-tools.md`.
 
-**Tests** (`hi-mcp/hi-mcp-poc-json/tests/tool-executors.test.ts`, `expectRejectedBeforeLoad`):
+**Tests** (`hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`, `expectRejectedBeforeLoad`):
 
 - two chains that never meet (the shape of run 04: `c -> f`, `s -> o`) are rejected, the error
   names `s` and `o` and none of the reached roots;
@@ -296,11 +296,11 @@ finding.
 
 | Item | File |
 |---|---|
-| The validation block | `hi-mcp/hi-mcp-poc-json/tool-executors.ts:602-629` |
-| Tests | `hi-mcp/hi-mcp-poc-json/tests/tool-executors.test.ts` (`create-or-replace-groups validation`) |
-| The rule sentence | `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts:10` |
-| Living docs | `minimal-hi-example/docs/hi-mcp-server.md:336-342`, `:558-562`; `hi-mcp/hi-mcp-poc-json/README.md:354-360`, `:559-563`; `.agents/skills/hi-authoring-rules.md:104-112`, `:178-186`, `:252-258`; `.agents/skills/hi-mcp-tools.md:213-219` |
-| Hardening H1–H3, if taken up | the same validation block and the post-load hint (`tool-executors.ts:750-777`); `plan-space.ts` for the room contour; the reverted code of PR #24 (`git show 1e979da -- hi-mcp/hi-mcp-poc-json/tool-executors.ts`) as the starting point |
+| The validation block | `hi-mcp/hi-mcp-server/tool-executors.ts:602-629` |
+| Tests | `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` (`create-or-replace-groups validation`) |
+| The rule sentence | `hi-mcp/hi-mcp-server/hi-mcp-server.ts:10` |
+| Living docs | `minimal-hi-example/docs/hi-mcp-server.md:336-342`, `:558-562`; `hi-mcp/hi-mcp-server/README.md:354-360`, `:559-563`; `.agents/skills/hi-authoring-rules.md:104-112`, `:178-186`, `:252-258`; `.agents/skills/hi-mcp-tools.md:213-219` |
+| Hardening H1–H3, if taken up | the same validation block and the post-load hint (`tool-executors.ts:750-777`); `plan-space.ts` for the room contour; the reverted code of PR #24 (`git show 1e979da -- hi-mcp/hi-mcp-server/tool-executors.ts`) as the starting point |
 
 ## Open points
 
@@ -328,7 +328,7 @@ H1–H3 are not part of this plan; they wait for the decision of the review.
 5. `npm run typecheck` and `npm test` in `hi-mcp` pass; the live check below shows no loaded
    group with two roots at the same `articlePos`.
 
-### Step 1 — the check (`hi-mcp/hi-mcp-poc-json/tool-executors.ts`)
+### Step 1 — the check (`hi-mcp/hi-mcp-server/tool-executors.ts`)
 
 Replace the block `if (group.roots.length > 1) { … }` (`:602-629`) by a call to a module-level
 helper, shaped like `placementErrors` (`:252`): it returns messages without the
@@ -362,7 +362,7 @@ names, never whether the payload passes. The helper runs for every group, also w
 the reachability part is then trivially satisfied and the unknown-id check still applies. The
 `undockedLimit` special case goes away.
 
-### Step 2 — the served rule (`hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts:10`)
+### Step 2 — the served rule (`hi-mcp/hi-mcp-server/hi-mcp-server.ts:10`)
 
 Replace "in a group with several roots, every additional root must be docked to a root that is
 already placed (undocked roots are rejected)" by "in a group with several roots, every additional
@@ -371,7 +371,7 @@ docking does not connect to the first root is rejected, and so is a docking that
 outside the group (roots docked only among themselves would land on the group origin)". The rest
 of the bullet (where to write the entry, the mirrored entry, chains) stays.
 
-### Step 3 — unit tests (`hi-mcp/hi-mcp-poc-json/tests/tool-executors.test.ts`)
+### Step 3 — unit tests (`hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`)
 
 In `describe('create-or-replace-groups validation')`, with `expectRejectedBeforeLoad` (it also
 asserts that `loadExternalObjectGroupLayout` was not called):
@@ -398,8 +398,8 @@ reaches `u1`), `positions a new corner kitchen by the corner article in one load
 
 | File | Change |
 |---|---|
-| `minimal-hi-example/docs/hi-mcp-server.md:339`, `hi-mcp/hi-mcp-poc-json/README.md:356` | "undocked roots in a multi-root group" → "roots the docking does not connect to the first root, a docking that names a root outside the group" |
-| `minimal-hi-example/docs/hi-mcp-server.md:558-562`, `hi-mcp/hi-mcp-poc-json/README.md:559-563` | the docking bullet mirrors the rule text of step 2 |
+| `minimal-hi-example/docs/hi-mcp-server.md:339`, `hi-mcp/hi-mcp-server/README.md:356` | "undocked roots in a multi-root group" → "roots the docking does not connect to the first root, a docking that names a root outside the group" |
+| `minimal-hi-example/docs/hi-mcp-server.md:558-562`, `hi-mcp/hi-mcp-server/README.md:559-563` | the docking bullet mirrors the rule text of step 2 |
 | `.agents/skills/hi-authoring-rules.md:107`, `:185`, `:255` | "No undocked roots (except first)" → "Every root connected to the first root through the docking (either direction)"; the rejected list gains "a docking that names a root outside the group" |
 | `.agents/skills/hi-mcp-tools.md:219` | the error row: `roots … are not docked to a placed root` — cause: a root or chain the docking does not connect to the first root — fix: dock it to a placed root; a new row for `names '…', which is not a root of this group` |
 | this document | close-out: status `Fixed`, sections in past tense, fix summary and validation results |

@@ -1,7 +1,7 @@
 # Refactoring Analysis: Guards in the HI MCP server
 
 > **Type**: Refactoring Analysis
-> **Domain**: hi-mcp — the input checks of the tools (`hi-mcp/hi-mcp-poc-json/tool-executors.ts`, `plan-space.ts`), the zod schemas and the served rules (`hi-mcp-server.ts`); the planner-side checks of the command tools (roomle-ui `homag-intelligence/src/glue-logic.ts`, `hi-plan-context.ts`)
+> **Domain**: hi-mcp — the input checks of the tools (`hi-mcp/hi-mcp-server/tool-executors.ts`, `plan-space.ts`), the zod schemas and the served rules (`hi-mcp-server.ts`); the planner-side checks of the command tools (roomle-ui `homag-intelligence/src/glue-logic.ts`, `hi-plan-context.ts`)
 > **Trigger**: "Guards fight symptoms, but do not fix the root cause … when an agent creates wrong content, the root cause is that the MCP instructions are not good enough or misleading. Guards should always be treated as a last resort … analyse which guards are implemented and what they do. What do they prevent or discard?"
 > **Date**: 2026-10-02
 > **Author**: AI Assistant
@@ -192,7 +192,7 @@ refusal of a deletion (`glue-logic.ts:1266`), and the non-blocking hint for an u
 
 **Infrastructure checks** — out of scope, kept: the page allow-lists of planner methods
 (`MCP_PLANNER_METHODS`, `minimal-hi-example/index.html:1216`; `PLANNER_METHODS`,
-`hi-mcp-poc-json-client/browser-bridge.ts:12`), the bridge's origin check (`server.ts:96-104`),
+`hi-mcp-client/browser-bridge.ts:12`), the bridge's origin check (`server.ts:96-104`),
 "No HI page connected" and the outdated bridge protocol (`page-bridge.ts:76-91`), the call
 timeouts (`page-bridge.ts:98-105`), and the chat request validation (`hi-mcp-chat/chat-config.ts`).
 The chat's step limit (`chat-steps.ts`) is not a content guard, but every rejection draws on it.
@@ -296,7 +296,7 @@ as **Planned** entries.
 
 ## Tests covering the guards
 
-`hi-mcp/hi-mcp-poc-json/tests/tool-executors.test.ts`:
+`hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`:
 
 - `create-or-replace-groups`:
   - `rejects a group without roots` (`:383`), `rejects a group of only generated roots` (`:387`)
@@ -317,7 +317,7 @@ as **Planned** entries.
 - command tools: `passes the reason of a refused command through` (`:1742`), `runs the next plan change after one that fails` (`:1786`)
 - `find-attributes`: `restricts the search to one library and rejects empty text` (`:325`)
 
-`hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts`: `rejects an invalid payload in the server
+`hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`: `rejects an invalid payload in the server
 without loading anything` (`:291`), `rejects an unknown wall label of place-group without a planner
 call` (`:304`).
 
@@ -330,11 +330,11 @@ lose their rejection sentences.
 
 ## Code and documents a change would touch
 
-- `hi-mcp/hi-mcp-poc-json/tool-executors.ts`, `hi-mcp-server.ts`, `plan-space.ts`,
+- `hi-mcp/hi-mcp-server/tool-executors.ts`, `hi-mcp-server.ts`, `plan-space.ts`,
   `group-placement.ts` and their tests — no roomle-ui change
 - `hi-mcp/docs/hi-mcp-behaviour.md` — each **Planned** entry becomes current when its step lands
 - the validation lists of `minimal-hi-example/docs/hi-mcp-server.md` (`:356-362`, `:469`,
-  `:496-498`, `:551`, `:582`, `:598-602`, `:696`), `hi-mcp/hi-mcp-poc-json/README.md`,
+  `:496-498`, `:551`, `:582`, `:598-602`, `:696`), `hi-mcp/hi-mcp-server/README.md`,
   `.agents/skills/hi-authoring-rules.md` and `.agents/skills/hi-mcp-server.md` (`:75-76`) — they
   point to the behaviour document instead of repeating the guards
 - the Common Errors table of `.agents/skills/hi-mcp-tools.md` (`:234-253`)
@@ -506,11 +506,11 @@ None — the decisions of 2026-10-02 answer the questions of this analysis.
 
 ### Changed files
 
-- `hi-mcp/hi-mcp-poc-json/tool-executors.ts`, `plan-space.ts`, `hi-mcp-server.ts` and their tests
+- `hi-mcp/hi-mcp-server/tool-executors.ts`, `plan-space.ts`, `hi-mcp-server.ts` and their tests
 - `.agents/scripts/run-hi-mcp-prompt.js`
 - `hi-mcp/docs/hi-mcp-behaviour.md`, `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`,
   `hi-mcp-server.md`, `hi-mcp-testing.md`, `minimal-hi-example/docs/hi-mcp-server.md`,
-  `hi-mcp/hi-mcp-poc-json/README.md`, `AGENTS.md`, `.github/copilot-instructions.md`
+  `hi-mcp/hi-mcp-server/README.md`, `AGENTS.md`, `.github/copilot-instructions.md`
 - No roomle-ui change.
 
 ### Before and after

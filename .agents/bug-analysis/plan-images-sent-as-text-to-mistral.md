@@ -1,7 +1,7 @@
 # get-plan-images reaches Mistral as base64 text
 
 > **Type**: Bug Analysis
-> **Domain**: hi-mcp-chat — the chat backend's Mistral model (`hi-mcp/hi-mcp-chat/chat-server.ts`); the tool-result conversion of `@ai-sdk/mistral`; the `get-plan-images` tool (`hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts`)
+> **Domain**: hi-mcp-chat — the chat backend's Mistral model (`hi-mcp/hi-mcp-chat/chat-server.ts`); the tool-result conversion of `@ai-sdk/mistral`; the `get-plan-images` tool (`hi-mcp/hi-mcp-server/hi-mcp-server.ts`)
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-09-30_18-52-26/report.md` (mistral-large-latest, planner `bo-test`): 4 of 13 runs ended with `Prompt … > 262144 maximum context length` right after `get-plan-images`
 > **Date**: 2026-10-01
 > **Author**: AI Assistant

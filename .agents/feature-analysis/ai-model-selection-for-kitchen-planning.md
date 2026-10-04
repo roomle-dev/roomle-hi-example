@@ -139,7 +139,7 @@ Checked against the code on 2026-09-30:
   - *Catalog search:* `get-plan-context` returns the article catalog the model picks from.
   - *Never invent article IDs:* `create-or-replace-groups` rejects an `articleId` that is not in the catalog
     and answers with the valid ids
-    ([`hi-mcp/hi-mcp-poc-json/tool-executors.ts:84-99`](../../hi-mcp/hi-mcp-poc-json/tool-executors.ts#L84-L99)).
+    ([`hi-mcp/hi-mcp-server/tool-executors.ts:84-99`](../../hi-mcp/hi-mcp-server/tool-executors.ts#L84-L99)).
   - *Validate and repair:* the tool returns errors and hints, and `streamText` feeds them back to the model for
     up to 8 steps (`stopWhen: stepCountIs(8)`,
     [`hi-mcp/hi-mcp-chat/chat-server.ts:109`](../../hi-mcp/hi-mcp-chat/chat-server.ts#L109)).

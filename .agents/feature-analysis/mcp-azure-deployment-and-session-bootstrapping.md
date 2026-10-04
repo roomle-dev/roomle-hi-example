@@ -53,7 +53,7 @@ session isolation; fire-and-forget task queues.
 ### 2.1 One rule in the page bridge
 
 `ligna-store/hi-mcp/browser-bridge.ts` (kept verbatim in sync with
-`hi-mcp/hi-mcp-poc-json/browser-bridge.ts`):
+`hi-mcp/hi-mcp-server/browser-bridge.ts`):
 
 ```ts
 resolveBridgeUrl(serverUrl?) =
@@ -71,7 +71,7 @@ resolveBridgeUrl(serverUrl?) =
 
 ### 2.2 Server configuration (environment variables, all optional)
 
-`hi-mcp/hi-mcp-poc-json/server.ts`:
+`hi-mcp/hi-mcp-server/server.ts`:
 
 | Variable | Default | Purpose |
 | -------- | ------- | ------- |

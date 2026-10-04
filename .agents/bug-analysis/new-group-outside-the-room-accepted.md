@@ -1,7 +1,7 @@
 # create-or-replace-groups loads a new group outside the room
 
 > **Type**: Bug Analysis
-> **Domain**: hi-mcp — `create-or-replace-groups` after the load (`hi-mcp/hi-mcp-poc-json/tool-executors.ts`), the room geometry helpers (`plan-space.ts`), the served rules (`hi-mcp-server.ts`)
+> **Domain**: hi-mcp — `create-or-replace-groups` after the load (`hi-mcp/hi-mcp-server/tool-executors.ts`), the room geometry helpers (`plan-space.ts`), the served rules (`hi-mcp-server.ts`)
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-10-01_11-35-00/report.md` (Mistral Large, planner `bo-test`): 2 of 4 fails, runs 02 and 12
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
@@ -137,7 +137,7 @@ check that runs on the final load only and adds no corner rule.
    flush group with a 10 mm overhang (loaded), and a group already in the plan (not checked).
    The existing test of the plan-context calls expects `['rooms', 'groups']`.
 5. **Living docs**: `minimal-hi-example/docs/hi-mcp-server.md`,
-   `hi-mcp/hi-mcp-poc-json/README.md`, `.agents/skills/hi-mcp-tools.md` (common errors),
+   `hi-mcp/hi-mcp-server/README.md`, `.agents/skills/hi-mcp-tools.md` (common errors),
    `.agents/skills/hi-authoring-rules.md` (validation rules), `.agents/skills/hi-mcp-testing.md`
    (the footprint outside the room is no longer a hardening example).
 
@@ -152,7 +152,7 @@ Not covered, by design:
 
 ## Validation
 
-- `npm test` (hi-mcp, `hi-mcp-poc-json`): 193 tests pass, `npm run typecheck` is clean.
+- `npm test` (hi-mcp, `hi-mcp-server`): 193 tests pass, `npm run typecheck` is clean.
   `cf/tests/worker.test.ts` fails before and after the change: `@cloudflare/containers` is not
   installed in this checkout.
 - **Live, bo-test, before the suite** (MCP tool calls straight to the server, headless page):

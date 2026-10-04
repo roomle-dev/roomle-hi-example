@@ -129,21 +129,21 @@ Two things follow from this table:
 
 ### The server rule on images
 
-[hi-mcp-server.ts:8](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts#L8) (`AUTHORING_RULES`): "Every
+[hi-mcp-server.ts:8](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L8) (`AUTHORING_RULES`): "Every
 desc … is authoritative … Evaluate an image (a rendering of get-plan-images or any other picture)
 only for what no desc and no dimension states - never take the kind or the size of an article from
 an image." The same rule appears in shorter form in the `get-plan-context` description ("trust
-them over any image", [120](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts#L120)) and in the
+them over any image", [120](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L120)) and in the
 `get-plan-images` description ("evaluate the images only for what those do not state",
-[462](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts#L462)).
-[tests/hi-mcp-server.test.ts:191-202](../../hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts#L191-L202)
+[462](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L462)).
+[tests/hi-mcp-server.test.ts:191-202](../../hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts#L191-L202)
 pins all three statements.
 
 The original request was narrower ([article-size-and-trusted-descriptions.md](article-size-and-trusted-descriptions.md),
 "What was asked": "trust the description of an article rather than evaluate the **catalog
 images**"). That analysis widened the rule to renders and user pictures. Its reason was that the
 catalog images never reach the agent: `withoutImageUrls`
-([hi-mcp-server.ts:77](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts#L77)) strips every `imageUrl`
+([hi-mcp-server.ts:77](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L77)) strips every `imageUrl`
 of an article, module and attribute value (e.g.
 [master-data.json:2644](../../docs/library-information/master-data.json#L2644)) from every tool
 result. As worded now, "any other picture" covers the user's photo. A model following the rule
@@ -267,11 +267,11 @@ The rule keeps `desc` and `dimensions` authoritative over the catalog images of 
 
 | Where | Today | Proposed |
 | ----- | ----- | -------- |
-| `AUTHORING_RULES` ([hi-mcp-server.ts:8](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts#L8)) | "… trust dimensions for how big an article is. Evaluate an image (a rendering of get-plan-images or any other picture) only for what no desc and no dimension states - never take the kind or the size of an article from an image." | "… trust dimensions for how big an article is. Both are authoritative over the catalog images of the master data (imageUrl): never take the kind or the size of an article from a catalog image." |
-| `get-plan-context` description ([120](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts#L120)) | "Every desc is authoritative and dimensions give the size - trust them over any image." | "Every desc is authoritative and dimensions give the size - trust them over the catalog images (imageUrl)." |
-| `get-plan-images` description ([460-462](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts#L460-L462)) | "The images show how the plan looks: what an article is and how big it is come from the desc and dimensions of get-plan-context - evaluate the images only for what those do not state." | sentence removed (a render is not a catalog image) |
+| `AUTHORING_RULES` ([hi-mcp-server.ts:8](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L8)) | "… trust dimensions for how big an article is. Evaluate an image (a rendering of get-plan-images or any other picture) only for what no desc and no dimension states - never take the kind or the size of an article from an image." | "… trust dimensions for how big an article is. Both are authoritative over the catalog images of the master data (imageUrl): never take the kind or the size of an article from a catalog image." |
+| `get-plan-context` description ([120](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L120)) | "Every desc is authoritative and dimensions give the size - trust them over any image." | "Every desc is authoritative and dimensions give the size - trust them over the catalog images (imageUrl)." |
+| `get-plan-images` description ([460-462](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L460-L462)) | "The images show how the plan looks: what an article is and how big it is come from the desc and dimensions of get-plan-context - evaluate the images only for what those do not state." | sentence removed (a render is not a catalog image) |
 
-- The tests at [tests/hi-mcp-server.test.ts:191-202](../../hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts#L191-L202)
+- The tests at [tests/hi-mcp-server.test.ts:191-202](../../hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts#L191-L202)
   pin the new wording instead. A new assertion checks that no served text contains "any other
   picture" or "any image".
 - `withoutImageUrls` stays. Today no `imageUrl` reaches the agent, so the rule takes effect only
@@ -320,8 +320,8 @@ middleware and the ligna-store chat.
 | `hi-mcp/hi-mcp-chat/chat-server.ts` | Converted messages into `streamText`; `Images:` line in the banner |
 | `hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts` | `imageInput` per alias, pass-through id and `HI_CHAT_MODEL` override; `images` validation (data URL accepted; http URL, non-image media type, images on an assistant message rejected); `toModelMessages`; `/capabilities`; the `400` path |
 | `minimal-hi-example/index.html` | CSS for the drop mark and the preview; preview markup in `#chat-form`; in `startChat`: capability fetch, drop handling on `#chat-overlay`, image preparation (JPEG, long side at most 1568 px), send with images, image in the user bubble |
-| `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` | The three statements of [§4](#4-the-server-rule-counts-only-for-the-catalog-images) |
-| `hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts` | Pins the new wording; no "any other picture" / "any image" |
+| `hi-mcp/hi-mcp-server/hi-mcp-server.ts` | The three statements of [§4](#4-the-server-rule-counts-only-for-the-catalog-images) |
+| `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` | Pins the new wording; no "any other picture" / "any image" |
 | `minimal-hi-example/docs/ai-chat.md` | New section "Images in the chat": which models, `/capabilities`, the `images` field, the 1568 px rule, the overlay as drop target |
 | `minimal-hi-example/docs/hi-mcp-server.md` (566-576) | "Every `desc` is authoritative": over the catalog images only |
 | `.agents/skills/hi-mcp-tools.md` (60-63) | "Trusted descriptions": over the catalog images only |
@@ -428,19 +428,19 @@ It is false for `mistral-large-2411`, `gpt-5.4-mini` and `azure` + `HI_CHAT_MODE
 
 → verify: `npm run typecheck`, and the banner in the live run.
 
-### Step 5. The server rule (`hi-mcp-poc-json/hi-mcp-server.ts`)
+### Step 5. The server rule (`hi-mcp-server/hi-mcp-server.ts`)
 
 - The three texts of [§4](#4-the-server-rule-counts-only-for-the-catalog-images): `AUTHORING_RULES`
   (line 8), the `get-plan-context` description (120), and the `get-plan-images` description
   (460-462, where the sentence is removed).
-- [tests/hi-mcp-server.test.ts:178-202](../../hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts#L178-L202):
+- [tests/hi-mcp-server.test.ts:178-202](../../hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts#L178-L202):
   - the assertions pin the new wording: "authoritative over the catalog images of the master data
     (imageUrl)" and "trust them over the catalog images (imageUrl)";
   - `get-plan-images` no longer contains "evaluate the images only";
   - a new assertion checks that neither the server instructions, nor the rules, nor any tool
     description contains "any other picture" or "any image".
 
-→ verify: `npx vitest run hi-mcp-poc-json/tests/hi-mcp-server.test.ts`.
+→ verify: `npx vitest run hi-mcp-server/tests/hi-mcp-server.test.ts`.
 
 ### Step 6. The page (`minimal-hi-example/index.html`)
 

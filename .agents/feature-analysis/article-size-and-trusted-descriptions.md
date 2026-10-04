@@ -43,7 +43,7 @@ Two notes on what the HI MCP gives the agent about an article:
   (`.temp/result/mcp-test-2026-10-01_12-08-07/01-three-tall-units-right-wall/plan-context.json`).
 - `shapeGroup` gives every group `position.footprint` with `widthMm` and `depthMm`.
 - The MCP server serializes every tool result with `withoutImageUrls`
-  ([`hi-mcp-server.ts:76`](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts#L76), since `1ec4e16`):
+  ([`hi-mcp-server.ts:76`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L76), since `1ec4e16`):
   no `imageUrl` of an article, module or attribute value reaches the agent. The only images an
   agent sees are the renderings of `get-plan-images` and images the user attaches to a prompt.
 
@@ -108,7 +108,7 @@ What is missing:
 
 ## Proposed change
 
-Text only, in [`hi-mcp-server.ts`](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts), in the places the
+Text only, in [`hi-mcp-server.ts`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts), in the places the
 model actually reads (tool descriptions and `AUTHORING_RULES`):
 
 1. **`AUTHORING_RULES`, article choice**: `dimensions` give the size — per size attribute its id,
@@ -124,7 +124,7 @@ model actually reads (tool descriptions and `AUTHORING_RULES`):
 4. **`get-plan-images` description**: the images show how the plan looks; what an article is and its
    size come from `desc` and `dimensions` — the images only for what those do not state.
 
-Unit tests in [`tests/hi-mcp-server.test.ts`](../../hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts)
+Unit tests in [`tests/hi-mcp-server.test.ts`](../../hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts)
 pin the new statements in the served texts.
 
 The attribute names are not hard-coded as ids (`mod_Width`): the server stays library-agnostic, and
@@ -159,9 +159,9 @@ never worked around in the agent's instructions.
 
 ## Code and documents the work touches
 
-- [`hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts`](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts) —
+- [`hi-mcp/hi-mcp-server/hi-mcp-server.ts`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts) —
   `AUTHORING_RULES`, the `get-plan-context` and `get-plan-images` descriptions
-- [`hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts`](../../hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts)
+- [`hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`](../../hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts)
 - [`minimal-hi-example/docs/hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md) —
   `articles` section, `get-plan-images`, authoring pos groups
 - [`.agents/skills/hi-mcp-tools.md`](../skills/hi-mcp-tools.md) — `get-plan-context`,

@@ -1,7 +1,7 @@
 # create-or-replace-groups accepts two roots on one side docking vector
 
 > **Type**: Bug Analysis
-> **Domain**: hi-mcp — `create-or-replace-groups` validation (`hi-mcp/hi-mcp-poc-json/tool-executors.ts`), the served rules (`hi-mcp-server.ts`)
+> **Domain**: hi-mcp — `create-or-replace-groups` validation (`hi-mcp/hi-mcp-server/tool-executors.ts`), the served rules (`hi-mcp-server.ts`)
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-10-01_11-35-00/report.md` (Mistral Large, planner `bo-test`), run 05
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
@@ -114,12 +114,12 @@ counts the side Bottom vectors only.
    tall unit (y offset); and a shallow unit at the back, one at the front and one 600 mm along the
    row on one `RightBottom`.
 4. **Living docs**: the validation lists of `minimal-hi-example/docs/hi-mcp-server.md`,
-   `hi-mcp/hi-mcp-poc-json/README.md` and `.agents/skills/hi-authoring-rules.md`; the error table
+   `hi-mcp/hi-mcp-server/README.md` and `.agents/skills/hi-authoring-rules.md`; the error table
    of `.agents/skills/hi-mcp-tools.md`.
 
 ## Validation
 
-- `npm test` (hi-mcp, `hi-mcp-poc-json`): 187 tests pass, `npm run typecheck` is clean.
+- `npm test` (hi-mcp, `hi-mcp-server`): 187 tests pass, `npm run typecheck` is clean.
 - **Live, bo-test** (MCP tool calls straight to the server, with the first, height-only form of
   the check): the run-05 docking (`UELTB90`, `ESUB2A90`, `HOTS2AB60`, `HK260`) was rejected
   with no load; the narrowed check rejects it the same way (unit test). The group

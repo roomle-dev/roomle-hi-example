@@ -6,14 +6,14 @@
   "description": "HI example projects including minimal standalone example and MCP server PoCs",
   "workspaces": [
     "hi-mcp",
-    "hi-mcp/hi-mcp-poc-json",
+    "hi-mcp/hi-mcp-server",
     "hi-mcp/hi-mcp-chat",
     "hi-mcp/cf",
     "minimal-hi-example"
   ],
   "scripts": {
     "start": "npm start --workspace minimal-hi-example",
-    "mcp-server": "npm start --workspace hi-mcp-poc-json",
+    "mcp-server": "npm start --workspace hi-mcp-server",
     "dev": "npm run dev --workspace minimal-hi-example",
     "start:cf": "npm run start:cf --workspace minimal-hi-example",
     "plan:mistral": "npm start mistral $MISTRAL_API_KEY",

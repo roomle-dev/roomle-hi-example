@@ -1,7 +1,7 @@
 # Cloudflare MCP Server — Setup Instructions
 
 This documents the **Cloudflare** deployment of the `hi-mcp` workspace MCP server
-(`hi-mcp-poc-json`): running as a **Cloudflare Container** behind a small Worker — in contrast
+(`hi-mcp-server`): running as a **Cloudflare Container** behind a small Worker — in contrast
 to the [local server](./local-mcp-server.md) and the [Azure App Service variant](./azure-mcp-server.md).
 After this setup, anyone with the two URLs can use the PoC — no repository access, no install,
 no tunnel. **Deployed and verified live (2026-09-26)**: the page's WebSocket passes through the
@@ -161,7 +161,7 @@ does not. The store page's bridge reconnects on its own after the
 container slept; the first request after a sleep takes ~10 s (container boot — one boot per
 session). Which setup needs which URL parameters — local server, deployed store, cloud server,
 parallel sessions — is covered by the **setup matrix** in the
-[PoC README](../hi-mcp-poc-json/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
+[PoC README](../hi-mcp-server/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
 
 ## Browser clients (CORS)
 
@@ -234,9 +234,9 @@ root workspace, starting from the current file so that unchanged pins stay the s
 
 ```bash
 cd hi-mcp
-T=$(mktemp -d) && mkdir -p $T/hi-mcp-poc-json $T/hi-mcp-chat $T/cf
+T=$(mktemp -d) && mkdir -p $T/hi-mcp-server $T/hi-mcp-chat $T/cf
 cp package.json package-lock.json $T/
-for w in hi-mcp-poc-json hi-mcp-chat cf; do cp $w/package.json $T/$w/; done
+for w in hi-mcp-server hi-mcp-chat cf; do cp $w/package.json $T/$w/; done
 (cd $T && npm install --package-lock-only --ignore-scripts) && cp $T/package-lock.json .
 ```
 

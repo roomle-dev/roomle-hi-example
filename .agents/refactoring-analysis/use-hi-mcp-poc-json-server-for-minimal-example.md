@@ -1,6 +1,6 @@
 > **Type**: Refactoring Analysis
 > **Domain**: HI MCP Server, minimal-hi-example, hi-mcp workspace
-> **Trigger**: "Refactor minimal-hi-example so that it no longer has its own MCP server implementation; the start script should start the example and the MCP server, with the implementation of hi-mcp/hi-mcp-poc-json used instead. index.html should not be completely changed — only adapt if absolutely necessary, and it stays a single HTML file with inline JavaScript. The poc-json server is to be used as-is, not modified."
+> **Trigger**: "Refactor minimal-hi-example so that it no longer has its own MCP server implementation; the start script should start the example and the MCP server, with the implementation of hi-mcp/hi-mcp-server used instead. index.html should not be completely changed — only adapt if absolutely necessary, and it stays a single HTML file with inline JavaScript. The poc-json server is to be used as-is, not modified."
 > **Date**: 2026-09-27
 > **Author**: AI Assistant
 > **Status**: Done
@@ -11,14 +11,14 @@
 
 `minimal-hi-example` currently contains a complete, self-written MCP server
 (`hi-mcp-server.js`, 618 lines) that parallels — and duplicates — the TypeScript server in
-`hi-mcp/hi-mcp-poc-json` (the maintained line: SDK-based protocol handling, zod tool schemas,
+`hi-mcp/hi-mcp-server` (the maintained line: SDK-based protocol handling, zod tool schemas,
 unit tests, Azure/Cloudflare deployments). The refactoring removes the separate implementation:
-the `hi-mcp-poc-json` server becomes the only MCP server, **used as-is, without any change**,
+the `hi-mcp-server` server becomes the only MCP server, **used as-is, without any change**,
 and the start script in `minimal-hi-example` starts the example page and that server together,
 making sure the server is built locally (dependencies installed, types checked) before it
 starts.
 
-The `hi-mcp-poc-json` server does not serve static files — by design, it expects the client
+The `hi-mcp-server` server does not serve static files — by design, it expects the client
 page to bring its own host, like the ligna-store does. The start launcher in
 `minimal-hi-example` therefore serves the example page itself, on port 3000 — the port the
 server's **default origin allow-list already contains** (`server.ts:19–27`) — and spawns the
@@ -37,7 +37,7 @@ the inline tool executors and geometry, the `?mcp=true` gate — stays as it is.
 
 ### 1.1 The two parallel MCP server implementations
 
-| | `minimal-hi-example/hi-mcp-server.js` | `hi-mcp/hi-mcp-poc-json/` |
+| | `minimal-hi-example/hi-mcp-server.js` | `hi-mcp/hi-mcp-server/` |
 |---|---|---|
 | Protocol layer | hand-rolled JSON-RPC over HTTP (`handleJsonRpcRequest`, lines 263–303) | `@modelcontextprotocol/sdk` 1.30.0 `McpServer` + `StreamableHTTPServerTransport` (`hi-mcp-server.ts`, `server.ts:33–49`) |
 | Tool schemas | plain JSON objects in a `TOOLS` array (lines 81–261) | zod schemas via `registerTool` (`hi-mcp-server.ts:78–319`) |
@@ -51,7 +51,7 @@ the inline tool executors and geometry, the `?mcp=true` gate — stays as it is.
 Both expose the same 9 tools with the same descriptions and the same MCP endpoint
 (`POST /mcp`, port 3100, JSON responses). The tool *logic* also exists twice on the page
 side: inline in `index.html` (`mcpToolExecutors`, lines 1925–2424) and as TypeScript in
-`hi-mcp/hi-mcp-poc-json-client/` (`tool-executors.ts`, `plan-space.ts`) — the copy the
+`hi-mcp/hi-mcp-client/` (`tool-executors.ts`, `plan-space.ts`) — the copy the
 ligna-store runs.
 
 The duplication is the problem: two protocol layers, two bridge protocols, two copies of
@@ -65,7 +65,7 @@ now actively blocks the consolidation.
 - Root `package.json`: `"start": "node minimal-hi-example/hi-mcp-server.js"` — starts the
   old server, which also serves and opens the example page.
 - `minimal-hi-example/package.json`: `"start": "node hi-mcp-server.js"`.
-- `hi-mcp/package.json`: `"start": "npm start --workspace hi-mcp-poc-json"` → `vite-node
+- `hi-mcp/package.json`: `"start": "npm start --workspace hi-mcp-server"` → `vite-node
   server.ts` — starts only the MCP server, waits for the ligna-store page (which is not
   running in this setup).
 
@@ -76,7 +76,7 @@ now actively blocks the consolidation.
 `/bridge?url=…` receives `{kind:'call', id, tool, args}` messages, the inline
 `mcpToolExecutors` run them against `roomDesignerApi.extended`, and results are POSTed to
 `/bridge/result` as `{kind:'result', id, ok, result|error}`. The message shapes are the same
-as the WebSocket protocol in `hi-mcp-poc-json/types.ts` (`McpBridgeCall` / `McpBridgeResult`) —
+as the WebSocket protocol in `hi-mcp-server/types.ts` (`McpBridgeCall` / `McpBridgeResult`) —
 only the transport differs (and the `hello` handshake, which the SSE variant replaces with the
 `url` query parameter).
 
@@ -90,8 +90,8 @@ only the transport differs (and the `hello` handshake, which the SSE variant rep
 | `minimal-hi-example/start.mjs` (new, plain Node JS) | the launcher: build gate, static file server for the example (port 3000), spawn of the poc-json server, browser open. Static serving plus process wiring — not an MCP implementation |
 | `minimal-hi-example/package.json` | `start` script rewritten to run the launcher |
 | `package.json` (root) | `start` script rewritten to delegate to the `minimal-hi-example` workspace |
-| `hi-mcp/hi-mcp-poc-json/` (all files) | **not changed** — used as-is; the existing env vars (`HI_MCP_PAGE_ORIGINS`, `HI_MCP_STORE_URL`, `HI_MCP_PORT`) are the integration surface |
-| `hi-mcp/hi-mcp-poc-json-client/` | **not in scope** — it stays the page-side copy for the ligna-store; the example keeps its inline executors (see [5.3](#53-not-done-and-why)) |
+| `hi-mcp/hi-mcp-server/` (all files) | **not changed** — used as-is; the existing env vars (`HI_MCP_PAGE_ORIGINS`, `HI_MCP_STORE_URL`, `HI_MCP_PORT`) are the integration surface |
+| `hi-mcp/hi-mcp-client/` | **not in scope** — it stays the page-side copy for the ligna-store; the example keeps its inline executors (see [5.3](#53-not-done-and-why)) |
 | `minimal-hi-example/index.html` | one change: `startMcpBrowserBridge` (lines 2426–2482) switches from SSE+fetch to WebSocket; the comment block at lines 921–923 is updated to match. Everything else stays |
 | Docs: `minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-server.md`, `AGENTS.md`, root + `minimal-hi-example` READMEs | living references updated: no more zero-dependency server, WebSocket bridge, new start flow |
 
@@ -106,7 +106,7 @@ only the transport differs (and the `hello` handshake, which the SSE variant rep
 3. After the refactoring a **start script still starts the MCP server** — `npm start` starts
    the example and the server.
 4. **No separate MCP server implementation**: the implementation used is
-   `hi-mcp/hi-mcp-poc-json`'s — **used as-is, not modified** (requester's review of the first
+   `hi-mcp/hi-mcp-server`'s — **used as-is, not modified** (requester's review of the first
    proposal).
 5. The start script must **make sure the server is locally built** before starting it.
 
@@ -146,7 +146,7 @@ wiring, not an MCP implementation):
 2. **Serve the example**: a static file server for `minimal-hi-example/` on port 3000
    (configurable), with the path-traversal guard and content types the old server had
    (`hi-mcp-server.js:431–451` is the reference; that code is deleted with it).
-3. **Start the MCP server**: spawn `vite-node hi-mcp/hi-mcp-poc-json/server.ts` with
+3. **Start the MCP server**: spawn `vite-node hi-mcp/hi-mcp-server/server.ts` with
    `HI_MCP_STORE_URL=http://localhost:3000/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`
    so the "no page connected" error names the example URL.
 4. **Open the browser** at the example URL (the `openInBrowser` logic from
@@ -171,11 +171,11 @@ necessary edit, kept as small as the SSE block it replaces:
 - `startMcpBrowserBridge` (lines 2426–2482): replace `EventSource` + `fetch('/bridge/result')`
   with a `WebSocket` to `ws://localhost:3100/bridge` (the bridge port differs from the page
   origin, so the URL is a constant; the multi-URL fallback logic of
-  `hi-mcp-poc-json-client/browser-bridge.ts:54–72` is not needed here). Send the `hello`
+  `hi-mcp-client/browser-bridge.ts:54–72` is not needed here). Send the `hello`
   message on open (the protocol of `types.ts`), keep replying `{kind:'result', id, ok, …}`
   over the socket, keep the 3-second reconnect on close. Roughly the same line count as the
   SSE version; the file stays a single HTML with inline JS.
-- Update the bridge comment (lines 921–923) to name the `hi-mcp-poc-json` server.
+- Update the bridge comment (lines 921–923) to name the `hi-mcp-server` server.
 - Nothing else: `mcpToolExecutors` and all geometry (including `placeCornerAtWalls`,
   `deriveWalls`, the placement math) stay untouched; the `?mcp=true` gate (line 2484) stays;
   the message shapes already match `types.ts`.
@@ -200,7 +200,7 @@ is — the server ignores it (`page-bridge.ts:22–31` uses only `message.url`).
 | New start flow, WebSocket bridge, launcher on port 3000 | `minimal-hi-example/docs/hi-mcp-server.md` (living reference) |
 | Skill for the (now single) server | `.agents/skills/hi-mcp-server.md` — zero-dependency architecture sections replaced |
 | AGENTS.md | structure tree (no more standalone server), MCP server rules (drop the zero-dependency hard rule, keep it scoped where it still applies), start commands |
-| READMEs | root `README.md`, `minimal-hi-example/README.md`, `hi-mcp/hi-mcp-poc-json/README.md` (document the example-page client and its launcher) |
+| READMEs | root `README.md`, `minimal-hi-example/README.md`, `hi-mcp/hi-mcp-server/README.md` (document the example-page client and its launcher) |
 | This analysis | closed out (status → Done) with the report after the work |
 
 ---
@@ -208,7 +208,7 @@ is — the server ignores it (`page-bridge.ts:22–31` uses only `message.url`).
 ## 5. Tests Covering the Affected Behaviour
 
 Existing: `npm test` / `npm run typecheck` at the `hi-mcp` root (70 unit tests across the
-PoC server and client, `hi-mcp-poc-json/tests/`, `hi-mcp-poc-json-client/tests/`). The
+PoC server and client, `hi-mcp-server/tests/`, `hi-mcp-client/tests/`). The
 refactoring does not touch a single line under `hi-mcp/` — they must stay green unchanged.
 
 | Behaviour | Verification |
@@ -231,7 +231,7 @@ refactoring does not touch a single line under `hi-mcp/` — they must stay gree
 ### 5.2 Not done, and why (continued)
 
 - **No unification of the page-side executors** — `index.html` keeps its inline
-  `mcpToolExecutors`; the `hi-mcp-poc-json-client` copy keeps serving the ligna-store.
+  `mcpToolExecutors`; the `hi-mcp-client` copy keeps serving the ligna-store.
   Unifying would require bundling TypeScript into the HTML, violating constraint 1. The
   third copy is a known trade-off (see [7.4](#74-known-trade-off-three-copies-of-the-page-side-executors)).
 - **No change to ports of the MCP endpoint, tool set, tool descriptions, endpoint URL** — MCP
@@ -291,16 +291,16 @@ example-specific code. The requester explicitly welcomed the example URL moving 
 ### 7.4 Known trade-off: three copies of the page-side executors
 
 After the refactoring the tool executors exist in `index.html` (inline), in
-`hi-mcp-poc-json-client/` (TypeScript, tested) and in the ligna-store's `hi-mcp/` copy. A
+`hi-mcp-client/` (TypeScript, tested) and in the ligna-store's `hi-mcp/` copy. A
 tool-behaviour fix must be applied in up to three places. Accepted per constraint 1 (the
 example stays a single HTML file); the two TS copies already document their sync duty
-(`hi-mcp-poc-json-client/README.md`).
+(`hi-mcp-client/README.md`).
 
 ### 7.5 Open question: fate of the zero-dependency constraint
 
 AGENTS.md's "No external dependencies — the server must remain zero-dependency" is specific
 to the deleted standalone server and must be removed with it. The refactoring should state
-in AGENTS.md that the single MCP server is the `hi-mcp-poc-json` workspace package (with its
+in AGENTS.md that the single MCP server is the `hi-mcp-server` workspace package (with its
 own locked dependencies), so the constraint does not resurface as a review objection.
 
 ### 7.6 Risk: Node version
@@ -323,7 +323,7 @@ is configurable — in which case `HI_MCP_PAGE_ORIGINS` must name the chosen ori
 
 | # | Step | Verify |
 |---|---|---|
-| 1 | `minimal-hi-example/start.mjs` launcher: build gate (install + typecheck) → static file server on :3000 → spawn `vite-node hi-mcp/hi-mcp-poc-json/server.ts` with `HI_MCP_STORE_URL` → open browser (`--no-open` flag); rewrite `minimal-hi-example/package.json` and root `package.json` start scripts | clean-checkout first run serves the page on :3000 and MCP on :3100; `git diff hi-mcp/` empty |
+| 1 | `minimal-hi-example/start.mjs` launcher: build gate (install + typecheck) → static file server on :3000 → spawn `vite-node hi-mcp/hi-mcp-server/server.ts` with `HI_MCP_STORE_URL` → open browser (`--no-open` flag); rewrite `minimal-hi-example/package.json` and root `package.json` start scripts | clean-checkout first run serves the page on :3000 and MCP on :3100; `git diff hi-mcp/` empty |
 | 2 | `index.html`: swap the inline bridge transport to WebSocket, update the bridge comment | page connects (`page connected` in the server log); file still single HTML, inline JS |
 | 3 | Delete `hi-mcp-server.js` | only historical references remain; `grep` check |
 | 4 | Documentation: `minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-server.md`, `AGENTS.md`, READMEs | docs cross-checked against the new flow |
@@ -357,7 +357,7 @@ is configurable — in which case `HI_MCP_PAGE_ORIGINS` must name the chosen ori
   before the guard, and the guard catches the rest); SIGTERM shuts down launcher and server,
   both ports free.
 - Not verified end-to-end: the in-browser WebSocket leg (needs the real planner page in a
-  browser). The page's message protocol is identical to `hi-mcp-poc-json-client`'s tested
+  browser). The page's message protocol is identical to `hi-mcp-client`'s tested
   bridge; the `page connected` log line with a real tab is the remaining manual check.
 
 ### 9.3 Deviation from the plan

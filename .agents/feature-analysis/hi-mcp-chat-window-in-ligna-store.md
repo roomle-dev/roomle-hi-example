@@ -2,7 +2,7 @@
 
 **Status**: Implemented
 
-Implemented differently from the design below, as decided in review: the Vercel AI SDK runs in the store page (`ligna-store/hi-mcp/chat.ts`, `chat-window.ts`, `chat-options.ts`), calling Mistral and the Foundry endpoint directly (both allow browser CORS) and the tools at `<mcp_server>/mcp`. The only server change is CORS for `/mcp` (`hi-mcp-poc-json/server.ts`). Found in the live check: the bridge hello announced the page URL with `api_key` (now stripped), the layout focus guard took focus from the chat input (now exempted), and `@ai-sdk/mcp` needs a bound `fetch` in the browser. Verified live with `mistral-large-latest` and `gpt-5-mini` against a local MCP server. Deployed to Cloudflare from the branch on 2026-09-30 (`npx wrangler deploy`, version `cbd49da3`): the live `/mcp` answers the preflight with `204` and the page origin, and the store chat with `gpt-5.4-mini` against `https://hi-mcp-poc.hi-orchestrator.workers.dev` answered from `get-plan-context`. A browser that had the page from before the deploy kept failing with "Failed to fetch" until its cache was cleared.
+Implemented differently from the design below, as decided in review: the Vercel AI SDK runs in the store page (`ligna-store/hi-mcp/chat.ts`, `chat-window.ts`, `chat-options.ts`), calling Mistral and the Foundry endpoint directly (both allow browser CORS) and the tools at `<mcp_server>/mcp`. The only server change is CORS for `/mcp` (`hi-mcp-server/server.ts`). Found in the live check: the bridge hello announced the page URL with `api_key` (now stripped), the layout focus guard took focus from the chat input (now exempted), and `@ai-sdk/mcp` needs a bound `fetch` in the browser. Verified live with `mistral-large-latest` and `gpt-5-mini` against a local MCP server. Deployed to Cloudflare from the branch on 2026-09-30 (`npx wrangler deploy`, version `cbd49da3`): the live `/mcp` answers the preflight with `204` and the page origin, and the store chat with `gpt-5.4-mini` against `https://hi-mcp-poc.hi-orchestrator.workers.dev` answered from `get-plan-context`. A browser that had the page from before the deploy kept failing with "Failed to fetch" until its cache was cleared.
 
 **Date**: 2026-09-30
 
@@ -79,20 +79,20 @@ so the window meant is the one in `minimal-hi-example/index.html` of this reposi
   `mcp_session` routes to a Cloudflare container of its own. `params` comes from
   `getQueryParams()` (`utils/init-data.ts`), which turns dotted keys into objects:
   `store.stage` becomes `params.store.stage`.
-- `ligna-store/hi-mcp/` holds a verbatim copy of `hi-mcp-poc-json-client/browser-bridge.ts` and
-  `types.ts`, synced by hand ([`hi-mcp-poc-json-client/README.md`](../../hi-mcp/hi-mcp-poc-json-client/README.md)).
+- `ligna-store/hi-mcp/` holds a verbatim copy of `hi-mcp-client/browser-bridge.ts` and
+  `types.ts`, synced by hand ([`hi-mcp-client/README.md`](../../hi-mcp/hi-mcp-client/README.md)).
 - The planner is `#rml-planner` (`Planner.vue:418-433`): absolute, `z-[1000]`, white background.
   A white price bar, 370 × 73 px, sits at its bottom left.
 
 ### The MCP server and its Cloudflare deployment
 
-- [`hi-mcp-poc-json/server.ts`](../../hi-mcp/hi-mcp-poc-json/server.ts) answers only `/mcp`
+- [`hi-mcp-server/server.ts`](../../hi-mcp/hi-mcp-server/server.ts) answers only `/mcp`
   (HTTP) and `/bridge` (WebSocket upgrade, origin-checked against `pageOrigins`, which already
   include `https://www.roomle.com`). Every other path gets a 404.
 - [`cf/src/worker.ts`](../../hi-mcp/cf/src/worker.ts) forwards only `/mcp` and `/bridge` to the
   container of `?session=` (default: `default`). The container
   ([`cf/Dockerfile`](../../hi-mcp/cf/Dockerfile)) installs and runs only the
-  `hi-mcp-poc-json` workspace.
+  `hi-mcp-server` workspace.
 
 ## The gap
 
@@ -120,7 +120,7 @@ so the window meant is the one in `minimal-hi-example/index.html` of this reposi
                 │
 [Cloudflare Worker] ── /mcp, /bridge, /chat → container of ?session=
                 │
-[container: hi-mcp-poc-json server.ts]
+[container: hi-mcp-server/server.ts]
   ├── /bridge  → PageBridge
   ├── /mcp     → HI MCP tools
   └── /chat    → hi-mcp-chat handler: streamText(model from the request, key from the header)
@@ -156,9 +156,9 @@ Changes in `hi-mcp-chat`:
     `Authorization` header.
   - The key is never logged. Today's logs contain only counts, tool names and durations. Keep it
     that way, and cover it with a test.
-- **`server.ts`** (hi-mcp-poc-json) routes `pathname === '/chat'` to that handler. Today it
+- **`server.ts`** (hi-mcp-server) routes `pathname === '/chat'` to that handler. Today it
   checks `request.url?.startsWith('/mcp')`; `/chat?session=…` is added the same way. The loopback
-  MCP URL comes from `serverPort`, over `https` when TLS is configured. `hi-mcp-poc-json` gains
+  MCP URL comes from `serverPort`, over `https` when TLS is configured. `hi-mcp-server` gains
   the workspace dependency on `hi-mcp-chat` and, with it, the AI SDK packages. Those packages
   are already locked in the workspace.
 
@@ -167,7 +167,7 @@ Changes in `hi-mcp-chat`:
 - **`cf/src/worker.ts`** forwards `/chat` to the container of `?session=`, the same as `/mcp`.
   Extend `cf/tests/worker.test.ts` to cover it.
 - **`cf/Dockerfile`** also copies `hi-mcp-chat/package.json` and the `hi-mcp-chat` sources, and
-  installs `--workspace hi-mcp-poc-json --workspace hi-mcp-chat`.
+  installs `--workspace hi-mcp-server --workspace hi-mcp-chat`.
 - **Streaming**: the chat stream must pass through the Worker and the Durable Object without
   being buffered. Check this in the live test: the tool status lines must appear while the tools
   run, not at the end. The existing `/mcp` responses are JSON (`enableJsonResponse`), so nothing
@@ -176,7 +176,7 @@ Changes in `hi-mcp-chat`:
 ### 3. The chat window as a page module (hi-mcp)
 
 This is a new folder, `hi-mcp/hi-mcp-chat-client/`, the page side of the chat. It mirrors
-`hi-mcp-poc-json-client/`:
+`hi-mcp-client/`:
 
 | File | Responsibility |
 | ---- | -------------- |
@@ -329,7 +329,7 @@ per model.
 - roomle-hi-example:
   - `hi-mcp/hi-mcp-chat/`: `chat-config.ts`, `chat-handler.ts`, `chat-server.ts`, new
     `chat-stream.ts`, `package.json`, `tests/`
-  - `hi-mcp/hi-mcp-poc-json/`: `server.ts`, `package.json`
+  - `hi-mcp/hi-mcp-server/`: `server.ts`, `package.json`
   - `hi-mcp/hi-mcp-chat-client/` (new)
   - `hi-mcp/cf/`: `src/worker.ts`, `tests/worker.test.ts`, `Dockerfile`
   - `hi-mcp/package.json`, `hi-mcp/package-lock.json`, `hi-mcp/vitest.config.ts`

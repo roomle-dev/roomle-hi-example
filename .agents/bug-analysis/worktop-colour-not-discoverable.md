@@ -47,7 +47,7 @@ is not a `RootModule`, so `mod_CountertopColor` is dropped — and with it the c
 kick, the finger grip and the backsplash. `mod_PaneltopColor` survives only because root modules
 carry it too.
 
-**The tools.** `find-attributes` (`hi-mcp/hi-mcp-poc-json/tool-executors.ts:568-609`) searches the
+**The tools.** `find-attributes` (`hi-mcp/hi-mcp-server/tool-executors.ts:568-609`) searches the
 compacted master data; `get-plan-context` shows the countertop root with `attributes: []`. Neither
 names `mod_CountertopColor`.
 

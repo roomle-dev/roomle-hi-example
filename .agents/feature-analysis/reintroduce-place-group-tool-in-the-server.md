@@ -1,7 +1,7 @@
 # Feature Analysis: Reintroduce the place-group tool in the MCP server (RML-18007, Task 2)
 
 > **Type**: Feature Analysis
-> **Domain**: hi-mcp — MCP server tools and executors (`hi-mcp/hi-mcp-poc-json`); the removed page-side implementation read from git (`a4df7f5^`); verified against the compact plan context of roomle-ui `homag-intelligence`
+> **Domain**: hi-mcp — MCP server tools and executors (`hi-mcp/hi-mcp-server`); the removed page-side implementation read from git (`a4df7f5^`); verified against the compact plan context of roomle-ui `homag-intelligence`
 > **Trigger**: Jira [RML-18007](https://roomle.atlassian.net/browse/RML-18007), Task 2 — the `place-group` tool (`placeGroupAtWall` etc.), removed in "refactor: position groups with repositioning data only" (`a4df7f5`, PR #21), worked very well and must be reintroduced more or less as it was, implemented in the MCP server instead of the client; its documentation must be recovered
 > **Date**: 2026-09-30
 > **Author**: AI Assistant
@@ -33,7 +33,7 @@ ADR 0001.
 
 ### The tool
 
-Registration (`a4df7f5^:hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts:180-234`):
+Registration (`a4df7f5^:hi-mcp/hi-mcp-server/hi-mcp-server.ts:180-234`):
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -44,7 +44,7 @@ Registration (`a4df7f5^:hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts:180-234`):
 | `offsetMm?` | `number` | extra distance along the wall, default 0 |
 
 The server forwarded the call to the page (`bridge.call('place-group', …)`), where the executor
-ran (`a4df7f5^:hi-mcp/hi-mcp-poc-json-client/tool-executors.ts:699-782`):
+ran (`a4df7f5^:hi-mcp/hi-mcp-client/tool-executors.ts:699-782`):
 
 1. `getExternalObjectPlanContext(['rooms', 'groups'])`; the group by id or unique prefix; the
    wall by side label or index (`resolveWall`, `:280-304`), the alignment checked early
@@ -62,7 +62,7 @@ ran (`a4df7f5^:hi-mcp/hi-mcp-poc-json-client/tool-executors.ts:699-782`):
 5. Reload of the group with the placement expressed as `repositioningData` of its first root
    (`repositioningFromPlacement`), then `{ pos, rotationY, footprint, placedBy, cornerRootId?, wall, group }`.
 
-### The geometry (`a4df7f5^:hi-mcp/hi-mcp-poc-json-client/plan-space.ts`, 558 lines)
+### The geometry (`a4df7f5^:hi-mcp/hi-mcp-client/plan-space.ts`, 558 lines)
 
 `groupFootprint` (part boxes → `dockInfos` → `b`/`t` attributes), `rootCornerGeometry` /
 `groupCornerGeometry` (corner point and back-edge directions from the `LeftBack*`/`RightBack*`
@@ -83,7 +83,7 @@ timeout line (`:90`).
 
 ## What the server has today
 
-- Planner methods ([planner-api.ts](../../hi-mcp/hi-mcp-poc-json/planner-api.ts)):
+- Planner methods ([planner-api.ts](../../hi-mcp/hi-mcp-server/planner-api.ts)):
   `getExternalObjectPlanContext`, `loadExternalObjectGroupLayout`,
   `updateExternalObjectGroupAttribute`, `fetchPrice`, `getExternalObjectSnapshot` — the same five
   names in every page allow-list (`MCP_PLANNER_METHODS` in `index.html:1050`, `PLANNER_METHODS` in
@@ -161,7 +161,7 @@ from `plan-space.ts`):
 
 ### Documentation to recover (adapted to the server)
 
-- `minimal-hi-example/docs/hi-mcp-server.md` and `hi-mcp/hi-mcp-poc-json/README.md`: the
+- `minimal-hi-example/docs/hi-mcp-server.md` and `hi-mcp/hi-mcp-server/README.md`: the
   `### place-group` section from `aa86ee3^:399-422` (parameter table, example), minus the raw
   geometry sentence and minus "reloads the group with that placement as `repositioningData` of
   its first root" and "placed by the article's corner point" (hard rule, point 7 above), plus
@@ -172,7 +172,7 @@ from `plan-space.ts`):
 - `.agents/skills/hi-mcp-tools.md`: overview row and the `### place-group` entry
   (`aa86ee3^:61-72`), "Moving" paragraph; `.agents/skills/hi-mcp-server.md` timeout line;
   `hi-authoring-rules.md` / `roomle-hi-concepts.md` "Moving a group".
-- `AGENTS.md:157,316`, `.github/copilot-instructions.md:81,94-95,103-104`, `hi-mcp-poc-json/QUICKSTART.md`.
+- `AGENTS.md:157,316`, `.github/copilot-instructions.md:81,94-95,103-104`, `hi-mcp-server/QUICKSTART.md`.
 
 ### Tests
 
@@ -224,10 +224,10 @@ from `plan-space.ts`):
 
 | File | Change |
 |---|---|
-| `hi-mcp/hi-mcp-poc-json/wall-placement.ts` | New: `resolveWall`, `resolveWallAlignment`, `sharedCorner`, `adjoiningWall`, the along-wall and corner arithmetic → `{ posGroup, posRotationY }`; `footprintCornersInRoom`, `convexPolygonsTouch` (D1) |
-| `hi-mcp/hi-mcp-poc-json/tool-executors.ts` | `place-group` executor; the unpositioned-group hint |
-| `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` | `place-group` registration (zod schema as before), `INSTRUCTIONS` step 3 |
-| `hi-mcp/hi-mcp-poc-json/tests/` | `wall-placement.test.ts` (new), `tool-executors.test.ts` (`describe('place-group')`), `hi-mcp-server.test.ts` (nine tools, timeout class) |
+| `hi-mcp/hi-mcp-server/wall-placement.ts` | New: `resolveWall`, `resolveWallAlignment`, `sharedCorner`, `adjoiningWall`, the along-wall and corner arithmetic → `{ posGroup, posRotationY }`; `footprintCornersInRoom`, `convexPolygonsTouch` (D1) |
+| `hi-mcp/hi-mcp-server/tool-executors.ts` | `place-group` executor; the unpositioned-group hint |
+| `hi-mcp/hi-mcp-server/hi-mcp-server.ts` | `place-group` registration (zod schema as before), `INSTRUCTIONS` step 3 |
+| `hi-mcp/hi-mcp-server/tests/` | `wall-placement.test.ts` (new), `tool-executors.test.ts` (`describe('place-group')`), `hi-mcp-server.test.ts` (nine tools, timeout class) |
 | Docs and skills | See [Documentation to recover](#documentation-to-recover-adapted-to-the-server) |
 | Not touched | Pages and bridges (no new planner method), roomle-ui, RoomleCore |
 
@@ -284,9 +284,9 @@ Moving therefore does not reuse `toRepositioningData`. That function exists beca
 group has no geometry before its one load. An existing group has geometry, and the exact
 conversion needs neither the anchor walk nor the corner offset.
 
-### 1. Recovered module `hi-mcp/hi-mcp-poc-json/plan-space.ts`
+### 1. Recovered module `hi-mcp/hi-mcp-server/plan-space.ts`
 
-`a4df7f5^:hi-mcp/hi-mcp-poc-json-client/plan-space.ts` restored in the server, unchanged except
+`a4df7f5^:hi-mcp/hi-mcp-client/plan-space.ts` restored in the server, unchanged except
 that `RepositioningData` is imported from `group-placement.ts` instead of being declared a second
 time. It keeps its old name because it is recovered whole, not reduced to the `wall-placement.ts`
 the analysis sketched.
@@ -299,7 +299,7 @@ Every export is used by the executor: `groupFootprint` (part boxes → docking v
 
 ### 2. Executor `place-group` (`tool-executors.ts`)
 
-Recovered from `a4df7f5^:hi-mcp/hi-mcp-poc-json-client/tool-executors.ts` — the executor
+Recovered from `a4df7f5^:hi-mcp/hi-mcp-client/tool-executors.ts` — the executor
 (`:699-782`), `resolveWall` and `placeGroupAtWall` (`:272-338`), `findGroupContact` and
 `contactError` (`:58-126`), `withoutPositions` and `repositionedGroup` (`:157-190`):
 
@@ -366,7 +366,7 @@ Deliberate deviations from the old code:
 ### 4. Unit tests
 
 **`tests/plan-space.test.ts`** — recovered from
-`a4df7f5^:hi-mcp/hi-mcp-poc-json-client/tests/plan-space.test.ts`, 22 tests, only the import path
+`a4df7f5^:hi-mcp/hi-mcp-client/tests/plan-space.test.ts`, 22 tests, only the import path
 changes:
 
 | describe | Cases |
@@ -428,7 +428,7 @@ Expected: about 150 tests (113 + 26 recovered + about 13 new), all green; typech
 Agent-facing, recovered from `aa86ee3^` and adapted to the hard rule (no `repositioningData`,
 no corner point, no "first root"):
 
-- `minimal-hi-example/docs/hi-mcp-server.md` and `hi-mcp/hi-mcp-poc-json/README.md`:
+- `minimal-hi-example/docs/hi-mcp-server.md` and `hi-mcp/hi-mcp-server/README.md`:
   `### place-group` after `create-or-replace-groups` (`aa86ee3^:399-422`: description, parameter
   table, example `{ "groupId": "a1b2c3", "wall": "right", "alignment": "top" }`), "runs in the
   server, no page change", result `placedIn`/`wall`/`group`; the tool list and the timeout line;
@@ -440,8 +440,8 @@ no corner point, no "first root"):
 - `.agents/skills/hi-authoring-rules.md`, `roomle-hi-concepts.md`: a "Moving a group" paragraph
   (place-group, wall + alignment + offsetMm, corner by the adjoining wall's side label, contact
   rejection).
-- Tool lists: `AGENTS.md:317` (and the `hi-mcp-poc-json` file tree: `plan-space.ts`),
-  `.github/copilot-instructions.md`, `hi-mcp/hi-mcp-poc-json/QUICKSTART.md`,
+- Tool lists: `AGENTS.md:317` (and the `hi-mcp-server` file tree: `plan-space.ts`),
+  `.github/copilot-instructions.md`, `hi-mcp/hi-mcp-server/QUICKSTART.md`,
   `minimal-hi-example/docs/hi-mcp-poc-presentation.md:74`, `minimal-hi-example/docs/ai-chat.md:122`.
 
 Internal, for server development only (decision P3 of Task 1):

@@ -1,7 +1,7 @@
 # Azure MCP Server — Setup Instructions
 
 This documents the **Azure** deployment of the `hi-mcp` workspace MCP server
-(`hi-mcp-poc-json`): running as an Azure App Service with a public HTTPS endpoint — in contrast
+(`hi-mcp-server`): running as an Azure App Service with a public HTTPS endpoint — in contrast
 to the [local server](./local-mcp-server.md). After this setup, any browser can hold the ligna-store
 session and any MCP client (on any machine) can drive it:
 
@@ -95,7 +95,7 @@ Portal equivalent: App → **Settings → Configuration → General settings →
 ### 6. Package and deploy the server
 
 The deployment unit is the **`hi-mcp` workspace folder** (root `package.json` with the
-`workspaces` field plus the `hi-mcp-poc-json/` folder) — not the repository root: App Service
+`workspaces` field plus the `hi-mcp-server/` folder) — not the repository root: App Service
 expects the app's `package.json` at the root of the package.
 
 ```bash

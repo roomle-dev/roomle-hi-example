@@ -65,8 +65,14 @@ export const isHoodArticle = (article: any): boolean =>
 export const isWallUnitArticle = (article: any): boolean =>
   WALL_UNIT.test(String(article?.category ?? '')) || isHoodArticle(article);
 
+// A tall unit by its category, or by its height: Furniture_Smith lists the
+// 2100 mm modular carcases (H60M) under "Modular", not "Tall Units".
+const TALL_HEIGHT_MM = 1500;
+
 export const isTallUnitArticle = (article: any): boolean =>
-  TALL_UNIT.test(String(article?.category ?? ''));
+  TALL_UNIT.test(String(article?.category ?? '')) ||
+  (!WALL_UNIT.test(String(article?.category ?? '')) &&
+    (articleHeight(article) ?? 0) >= TALL_HEIGHT_MM);
 
 export const isBaseUnitArticle = (article: any): boolean =>
   BASE_UNIT.test(String(article?.category ?? '')) &&
@@ -503,12 +509,16 @@ export const relationsToDocking = (
       aboveAt.set(key, link);
       continue;
     }
+    // a range hood keeps its place above the hob unit; the wall unit moves
+    const [stays, moves] =
+      isHood(link.unit) && !isHood(first.unit) ? [link, first] : [first, link];
+    aboveAt.set(key, stays);
     notes.push(
-      `${quoted(first.unit.id)} and ${quoted(link.unit.id)} both hang above ${quoted(link.target.id)} - ${quoted(link.unit.id)} was put rightOf ${quoted(first.unit.id)}`
+      `${quoted(stays.unit.id)} and ${quoted(moves.unit.id)} both hang above ${quoted(link.target.id)} - ${quoted(moves.unit.id)} was put rightOf ${quoted(stays.unit.id)}`
     );
-    Object.assign(link, {
+    Object.assign(moves, {
       relation: 'rightOf',
-      target: first.unit,
+      target: stays.unit,
       align: 'left',
       gapMm: undefined,
     });

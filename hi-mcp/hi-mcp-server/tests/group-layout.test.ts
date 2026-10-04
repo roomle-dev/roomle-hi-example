@@ -507,19 +507,49 @@ describe('relationsToDocking', () => {
     ]);
   });
 
-  it('puts the second unit above one floor unit rightOf the first', () => {
+  it('puts the second unit above one floor unit rightOf the first, the range hood keeping its place', () => {
+    const wallUnits = compile([
+      root('b1', 'UTB60'),
+      root('w1', 'OTB60', { above: 'b1' }),
+      root('w2', 'O2TB90', { above: 'b1' }),
+    ]);
+    expect(entriesOf(wallUnits.group)).toEqual([
+      'b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]',
+      'w1.RightBottom -> w2.LeftBottom StartStart [0,0,0]',
+    ]);
+    expect(wallUnits.corrections).toEqual([
+      "posGroups[0]: 'w1' and 'w2' both hang above 'b1' - 'w2' was put rightOf 'w1'",
+    ]);
+
+    // the hood stays above the hob unit, the wall unit moves
     const { group, corrections } = compile([
       root('b1', 'UHS60'),
       root('w1', 'OTB60', { above: 'b1' }),
       root('h1', 'DU', { above: 'b1' }),
     ]);
     expect(entriesOf(group)).toEqual([
-      'b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]',
-      'w1.RightBottom -> h1.LeftBottom StartStart [0,0,0]',
+      'b1.LeftTop -> h1.LeftBottom StartStart [0,660,0]',
+      'h1.RightBottom -> w1.LeftBottom StartStart [0,0,0]',
     ]);
     expect(corrections).toEqual([
-      "posGroups[0]: 'w1' and 'h1' both hang above 'b1' - 'h1' was put rightOf 'w1'",
+      "posGroups[0]: 'h1' and 'w1' both hang above 'b1' - 'w1' was put rightOf 'h1'",
     ]);
+  });
+
+  it('counts a 2100 mm carcase without the tall category as a tall unit', () => {
+    // Furniture_Smith lists H60M under "Modular"
+    const { group, corrections } = compile(
+      [
+        root('t1', 'H60M'),
+        root('b1', 'UTB60', { rightOf: 't1' }),
+        root('w1', 'OTB60', { rightOf: 't1' }),
+      ],
+      [...ARTICLES, article('H60M', 'Kitchen | Modular', 2100)]
+    );
+    expect(entriesOf(group)).toEqual(
+      expect.arrayContaining(['t1.RightTop -> w1.LeftTop StartStart [0,0,0]'])
+    );
+    expect(corrections).toEqual([]);
   });
 
   it('hangs a unit above a tall unit above the floor unit beside it, or beside it with the tops flush', () => {

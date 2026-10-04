@@ -526,7 +526,7 @@ corrections, G31–G45.
 | G32 | a relation that names no other root of the group, or the root itself | ignores it; the root gets the default (G31) | correction |
 | G33 | a relation that closes a ring of relations | drops it | correction |
 | G34 | a floor unit `above` a unit | puts it `rightOf` that unit | correction |
-| G35 | a wall unit `rightOf` / `leftOf` a base unit | hangs it `above` that unit (D35) | correction |
+| G35 | a wall unit `rightOf` / `leftOf` a base unit | hangs it `above` that unit (D35). A tall unit is one by category ("Tall Units") or by height (≥ 1500 mm, e.g. the modular carcase `H60M` under "Modular") | correction |
 | G36 | `behind` a corner article, or a corner article `behind` a unit | ignores it; the default (G31) | correction |
 | G37 | `gapMm` on `rightOf`, `leftOf` or `behind`, `gapMm` that is not a number, an `align` other than left, right or back, `align` or `gapMm` without a relation | ignores it (`align` left) | correction |
 | G38 | two relation fields on one root | uses the first of `rightOf`, `leftOf`, `onTop`, `above`, `behind` | correction |
@@ -534,7 +534,7 @@ corrections, G31–G45.
 | G41 | a range hood `rightOf` / `leftOf` a tall unit — its Top vector is its chimney top | hangs it `above` the floor unit on that side of the tall unit; without one it stays beside the tall unit by its top edge. A hood without a relation hangs `above` a base unit, never beside or on a tall unit | correction |
 | G42 | a wall unit (or a range hood) `onTop` a kitchen base unit (category "Base Units") — nothing stands on a worktop | hangs it `above` that unit (D35); a `gapMm` meant as a stacking lift is dropped. `onTop` a tall unit or a wall unit stays a stacking | correction |
 | G43 | a floor unit `onTop` a kitchen base unit | puts it `rightOf` that unit — it continues the floor row | correction |
-| G44 | a second unit `above` a floor unit on the same edge (`align`) — both would take the same place | puts it `rightOf` the first unit above that floor unit | correction |
+| G44 | a second unit `above` a floor unit on the same edge (`align`) — both would take the same place | puts it `rightOf` the first unit above that floor unit; a range hood keeps the place above the hob unit, the wall unit moves | correction |
 | G45 | `above` a tall unit — nothing hangs above a tall unit | hangs it `above` the floor unit beside the tall unit when the relations name one (either side); else beside the tall unit with the tops flush (`rightOf`, Top vectors) | correction |
 | G39 | `above` a floor unit where the catalog gives no tall unit height | the wall unit stands on the floor unit | correction naming `gapMm` |
 | G30 | any other input that fails the preparation of a group | does not build that group; the other groups of the call load (D30) | `notLoaded`: "posGroups[i]: could not be read - …" |

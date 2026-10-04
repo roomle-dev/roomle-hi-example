@@ -1514,6 +1514,76 @@ describe('create-or-replace-groups validation', () => {
     }
   });
 
+  it('does not walk through a second corner article when both ends of a leg are corners', async () => {
+    // review of PR 62: a U-shaped kitchen - the leg c1 -> b1 -> c2 is full,
+    // and the other leg of c1 ends at the corner article c3 as well
+    const cornerArticle = {
+      ...articleFixture,
+      articleId: 'corner-1',
+      cornerArticle: true,
+    };
+    const corner = (id: string, contexts: unknown[]) => ({
+      id,
+      articleId: 'corner-1',
+      contextData: { dockedRoots: contexts },
+    });
+    const api = createApi({
+      ...planContextFixture,
+      articles: [articleFixture, cornerArticle],
+    });
+    await expect(
+      toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [
+          {
+            roots: [
+              corner('c1', [
+                {
+                  ownDockingVector: 'RightBottom',
+                  dockedRoots: [
+                    entry('b1', 'LeftBottom'),
+                    entry('x', 'LeftBottom'),
+                  ],
+                },
+                {
+                  ownDockingVector: 'LeftBottom',
+                  dockedRoots: [entry('l1', 'RightBottom')],
+                },
+              ]),
+              {
+                id: 'b1',
+                articleId: 'article-1',
+                contextData: {
+                  dockedRoots: [
+                    {
+                      ownDockingVector: 'RightBottom',
+                      dockedRoots: [entry('c2', 'LeftBottom')],
+                    },
+                  ],
+                },
+              },
+              corner('c2', []),
+              {
+                id: 'l1',
+                articleId: 'article-1',
+                contextData: {
+                  dockedRoots: [
+                    {
+                      ownDockingVector: 'LeftBottom',
+                      dockedRoots: [entry('c3', 'RightBottom')],
+                    },
+                  ],
+                },
+              },
+              corner('c3', []),
+              { id: 'x', articleId: 'article-1' },
+            ],
+          },
+        ],
+      })
+    ).rejects.toThrow(/could not move them apart/);
+    expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
+  });
+
   it('moves the later of two roots on one side vector to the free end of the leg, not through the corner article', async () => {
     // issue 4: b1 stands on the corner's left leg; b2 is docked to b1's
     // RightBottom, which the corner article takes
@@ -4013,6 +4083,54 @@ describe('group command tools', () => {
       expect(towardsTheFront.dockTo).toEqual({ ...dockTo, rootId: 'r3' });
     });
 
+    it('tests the row end against the room the group stands in', async () => {
+      // review of PR 62: a second room 10 m to the right; the row stands in
+      // it, and the far end of the row is inside that room only
+      const roomB = {
+        ...room,
+        walls: room.walls.map((wall) => ({
+          ...wall,
+          start: [wall.start[0] + 10000, 0, wall.start[2]],
+          end: [wall.end[0] + 10000, 0, wall.end[2]],
+        })),
+      };
+      const rawRow = {
+        id: 'kitchen-1',
+        pos: [14000, 0, -3000],
+        rotationY: 270,
+        roots: ['r1', 'r2', 'r3'].map((id, index) => ({
+          id,
+          articlePos: [index * 600, 0, 0],
+          rotationY: 0,
+          attributes: [
+            { id: 'b', value: 600 },
+            { id: 't', value: 600 },
+          ],
+        })),
+      };
+      const api = createApi(
+        {
+          ...planContextFixture,
+          rooms: { rooms: [room, roomB] },
+          groups: [row()],
+        },
+        { getExternalObjectGroups: vi.fn(async () => [rawRow]) }
+      );
+      const result = (await toolExecutors['merge-article-into-group'](api, {
+        groupId: 'kitchen-1',
+        articleId: 'article-1',
+        dockTo,
+      })) as Record<string, any>;
+      const [, payload] = (
+        api.extended.externalObjectGroupOperation.mock
+          .calls as unknown as any[][]
+      )[0];
+      expect(payload.dockTo).toEqual({ ...dockTo, rootId: 'r3' });
+      expect(result.corrections).toEqual([
+        "merge-article-into-group: the RightBottom of root 'r1' is taken - the unit was docked to the RightBottom of 'r3', the free end of that row",
+      ]);
+    });
+
     it('stops the walk at a corner article and docks to the free end of the leg', async () => {
       // b0 -> b1 -> c along RightBottom: b1 stands on the corner's left leg
       const cornerArticle = {
@@ -4267,6 +4385,23 @@ describe('group command tools', () => {
       expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
         'delete-root-module',
         { rootModuleId: 'x' }
+      );
+    });
+
+    it('forwards an empty root id as sent instead of taking it as a prefix', async () => {
+      // review of PR 62: '' is a prefix of every id, so a plan with one root
+      // would have resolved a delete-root-module with an empty id to it
+      const api = createApi(uuidPlan, {
+        externalObjectGroupOperation: vi.fn(async () => {
+          throw new Error("Root module '' not found.");
+        }),
+      });
+      await expect(
+        toolExecutors['delete-root-module'](api, { rootModuleId: '' })
+      ).rejects.toThrow("Root module '' not found. Roots in the plan:");
+      expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+        'delete-root-module',
+        { rootModuleId: '' }
       );
     });
 

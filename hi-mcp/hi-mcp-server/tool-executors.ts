@@ -27,8 +27,10 @@ import {
   groupHeightRange,
   placeAgainstWall,
   placeCornerAtWalls,
+  pointInsideRoom,
   repositioningFromPlacement,
   roomCorners,
+  roomOfPoint,
   rootFootprintInRoom,
   rotateDirection,
   spanAlongWall,
@@ -284,7 +286,8 @@ const resolveRootId = (
   corrections: string[]
 ): string => {
   const ids = roots.map((root) => String(root?.id));
-  if (ids.includes(rootId)) {
+  // an empty id is no prefix of anything; the planner answers it
+  if (rootId.length === 0 || ids.includes(rootId)) {
     return rootId;
   }
   const unique = (candidates: string[]): string | undefined =>
@@ -364,8 +367,7 @@ const unitStaysInRoom = (
   const rawRoot = ((geometry.rawGroup?.roots ?? []) as any[]).find(
     (candidate) => candidate.id === rootId
   );
-  const wallPoints = geometry.walls.flatMap((wall) => [wall.start, wall.end]);
-  if (!rawRoot || wallPoints.length === 0) {
+  if (!rawRoot || geometry.walls.length < 3) {
     return undefined;
   }
   const footprint = rootFootprintInRoom(geometry.rawGroup, rawRoot);
@@ -381,16 +383,11 @@ const unitStaysInRoom = (
   const edge = footprint.reduce((best, point) =>
     along(point) > along(best) ? point : best
   );
-  const far = [edge[0] + dx * widthMm, edge[1] + dz * widthMm];
-  const xs = wallPoints.map((point) => point[0]);
-  const zs = wallPoints.map((point) => point[2]);
-  const tolerance = OVERLAP_TOLERANCE_MM;
-  return (
-    far[0] >= Math.min(...xs) - tolerance &&
-    far[0] <= Math.max(...xs) + tolerance &&
-    far[1] >= Math.min(...zs) - tolerance &&
-    far[1] <= Math.max(...zs) + tolerance
-  );
+  const far: [number, number] = [
+    edge[0] + dx * widthMm,
+    edge[1] + dz * widthMm,
+  ];
+  return pointInsideRoom(far, geometry.walls, OVERLAP_TOLERANCE_MM);
 };
 
 // Where a new unit docks to a group as get-plan-context shows it. A side that
@@ -1070,7 +1067,9 @@ const separateSideVectorPartners = (
         ? SIDE_PARTNER[vector]
         : vector;
     const end =
-      along === vector ? walk.end : rowWalk(partners, rootId, along).end;
+      along === vector
+        ? walk.end
+        : rowWalk(partners, rootId, along, isCorner).end;
     const endRoot = roots.find((root) => root.id === end);
     if (!endRoot) {
       break;
@@ -2859,9 +2858,19 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       const rawGroups =
         ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
           []) as any[];
+      const rawGroup = rawGroups.find((candidate) => candidate.id === group.id);
+      const rooms = ((context.rooms as any)?.rooms ?? []) as any[];
+      const room =
+        (isPoint(rawGroup?.pos) &&
+          roomOfPoint(
+            rooms,
+            [rawGroup.pos[0], rawGroup.pos[2]],
+            OVERLAP_TOLERANCE_MM
+          )) ||
+        rooms[0];
       const geometry: RowGeometry = {
-        rawGroup: rawGroups.find((candidate) => candidate.id === group.id),
-        walls: ((context.rooms as any)?.rooms?.[0]?.walls ?? []) as any[],
+        rawGroup,
+        walls: (room?.walls ?? []) as any[],
       };
       const sentDockTo = { ...(args.dockTo as any) };
       if (typeof sentDockTo.rootId === 'string') {

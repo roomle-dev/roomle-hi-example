@@ -374,7 +374,7 @@ Issues 9, 17.
   fourth sentence "Answer only with what the last tool results show - the groups, their roots and
   attributes, corrections and notLoaded - and name what was asked but is not in the plan."
   `getChatConfig` reads `HI_CHAT_TURN_TIMEOUT_MS` (default 300 000) and `HI_CHAT_REASONING_EFFORT`
-  (optional; passed as `providerOptions.openai.reasoningEffort` for the Foundry deployments — the
+  (optional; passed as `providerOptions.azure.reasoningEffort` for the Foundry deployments, the key of `@ai-sdk/azure` — the
   measurement the [backlog note](../backlog/reasoning-effort-for-the-gpt-chat-models.md) asks for
   becomes a setting).
 - `chat-steps.ts`: `logStepUsage` (`onStepFinish`: input, output and reasoning tokens, the size of

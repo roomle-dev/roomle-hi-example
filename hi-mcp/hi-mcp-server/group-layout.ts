@@ -498,30 +498,42 @@ export const relationsToDocking = (
 
   // Two units above one floor unit on the same edge would take the same
   // place: the later one continues the wall-unit row rightOf the earlier one.
-  const aboveAt = new Map<string, Link>();
+  // Per carrier and edge: the unit that hangs there (the anchor) and the last
+  // unit of the wall-unit row that grew from it (the tail).
+  const aboveAt = new Map<string, { anchor: Link; tail: any }>();
+  const moveRightOf = (moved: Link, target: any) =>
+    Object.assign(moved, {
+      relation: 'rightOf',
+      target,
+      align: 'left',
+      gapMm: undefined,
+    });
   for (const link of kept) {
     if (link.relation !== 'above') {
       continue;
     }
     const key = `${link.target.id}:${link.align}`;
-    const first = aboveAt.get(key);
-    if (!first) {
-      aboveAt.set(key, link);
+    const slot = aboveAt.get(key);
+    if (!slot) {
+      aboveAt.set(key, { anchor: link, tail: link.unit });
       continue;
     }
-    // a range hood keeps its place above the hob unit; the wall unit moves
-    const [stays, moves] =
-      isHood(link.unit) && !isHood(first.unit) ? [link, first] : [first, link];
-    aboveAt.set(key, stays);
+    if (isHood(link.unit) && !isHood(slot.anchor.unit)) {
+      // the range hood takes the place above the hob unit; the former anchor
+      // moves rightOf it and keeps the row that grew from it
+      const former = slot.anchor;
+      notes.push(
+        `${quoted(link.unit.id)} and ${quoted(former.unit.id)} both hang above ${quoted(link.target.id)} - ${quoted(former.unit.id)} was put rightOf ${quoted(link.unit.id)}`
+      );
+      moveRightOf(former, link.unit);
+      slot.anchor = link;
+      continue;
+    }
     notes.push(
-      `${quoted(stays.unit.id)} and ${quoted(moves.unit.id)} both hang above ${quoted(link.target.id)} - ${quoted(moves.unit.id)} was put rightOf ${quoted(stays.unit.id)}`
+      `${quoted(slot.anchor.unit.id)} and ${quoted(link.unit.id)} both hang above ${quoted(link.target.id)} - ${quoted(link.unit.id)} was put rightOf ${quoted(slot.tail.id)}`
     );
-    Object.assign(moves, {
-      relation: 'rightOf',
-      target: stays.unit,
-      align: 'left',
-      gapMm: undefined,
-    });
+    moveRightOf(link, slot.tail);
+    slot.tail = link.unit;
   }
 
   const pairOf = (link: Link): Pair => {

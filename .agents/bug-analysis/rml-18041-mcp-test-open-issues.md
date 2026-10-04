@@ -8,7 +8,7 @@
 > the MCP test backlog, [mcp-test-open-issues.md](../backlog/mcp-test-open-issues.md)
 > **Date**: 2026-10-04
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Fixed — on `fix/mcp-test-open-issues-RML-18041`, 2026-10-04, see [Fix summary and validation](#fix-summary-and-validation)
 > **Branch**: `fix/mcp-test-open-issues-RML-18041` (from `master` `3a263d1`)
 > **Plan**: [rml-18041-implementation-plan.md](rml-18041-implementation-plan.md) — the fixes and
 > their unit tests, in seven pull requests
@@ -461,3 +461,49 @@ none of the fixed issues.
   height.
 - #12's cause is in roomle-ui's wall derivation, but the server can name an opening without a
   roomle-ui change; only the windows need roomle-ui.
+
+## Fix summary and validation
+
+Implemented on 2026-10-04 along the [implementation plan](rml-18041-implementation-plan.md), one
+commit per pull request of the plan:
+
+| Commit | Issues | What changed |
+|---|---|---|
+| `e200cd0` fix: compile onTop and above where a unit cannot stand | 29, 32, 21, 19; D35 | `relationsToDocking`: a wall unit `onTop` a kitchen base unit hangs `above` it (G42), a floor unit `onTop` a base unit continues the row (G43), a second unit `above` one carrier goes `rightOf` the first (G44), a unit `above` a tall unit hangs above the floor unit beside it or beside the tall unit with the tops flush (G45). The `onTop` corrections are limited to kitchen base units (category "Base Units"), so stacking stays possible in libraries whose floor units carry no worktop. D35 confirmed live |
+| `ed856f2` fix: dock to the near end of the row and keep the generated roots on a reload | 1, 4, 22 (`place-group`), 28, 34 | `dockTarget` docks to the named root's free side first, the row walk stops at a corner article (both corrections); `place-group` keeps the generated roots in its reload and skips the reload when the group already stands there; a reverted replace is reported |
+| `1bf3b63` feat: apply a kitchen-wide material from the group attributes | 6, 22 (replace) | group attributes that are not group settings are set on every unit after the load (G46), an override only a generated root carries moves to the group (G47), the colours of the generated roots a resubmitted group carries are set again (G48); D36; the rules say where a kitchen-wide material goes |
+| `9b064e7` feat: build what can be built and resolve what the agent means | 26, 24, 8, 25 | one unknown article drops the root and names it in `notLoaded` (`rootIds`), the agent's own group id is remembered (G50) and a new group at the place of another gets a hint, root ids are resolved (C17), `dockTo` on a root is read as its relation (G49) |
+| `c01d758` + `fae8575` feat: name the walls, the openings and the room corners in the plan context | 12, 30, 31, 33, 10 (merge), 5 (description) | `name`, `type: opening` and `corners` in the plan context (C18), the corner rule as a lookup, the wall-unit rules of a corner kitchen and beside a tall unit, G51 moves wall units to the side of the base units, `merge-article-into-group` derives the hang gap (D35) |
+| `3df8f22` feat: ground the chat answer and limit a turn | 9, 17 | the fourth sentence of the system prompt, `HI_CHAT_TURN_TIMEOUT_MS` (5 minutes) with an `[error]` line, per-step usage logging, `HI_CHAT_REASONING_EFFORT` |
+
+Not implemented: issue 27 (D23, awaiting the decision); issues 3, 7, 13, 14 and 15 stay in the
+backlog at low priority (docking written as `contextData`); 11, 16 and 23 are planner tickets.
+
+**Unit tests**: 366 pass (331 before), `npm run typecheck`, `npm run lint` and
+`npm run format:check` are clean.
+
+**"test the mcp"** (gpt-5-mini, gpt-5.4-mini, gpt-6-astra, all 18 tests, local planner, 2026-10-04
+13:00–13:36; report `.temp/result/mcp-test-2026-10-04_13-00-37/report.md`, local):
+
+| Model | Pass | Partial | Fail | Bug runs |
+|---|---|---|---|---|
+| gpt-5-mini | 13 | 5 | 0 | 3 |
+| gpt-5.4-mini | 9 | 4 | 5 | 2 |
+| gpt-6-astra | 17 | 0 | 1 | 0 |
+
+None of the fixed issues shows: walnut fronts and the dark marble worktop reach the whole kitchen
+(6), `place-group` keeps the worktop colour (22), the hood hangs above the hob and the wall units of a
+corner kitchen above their leg (19, 29, 31), an unknown article no longer rejects the group (26), the
+chat summarises and names what is missing (9). The run itself asked for five follow-up commits,
+each tested by the runs after it: `deae1f3` (the grounding sentence reworded — gpt-5-mini repeated
+the tool results), `308050c` (a tall unit by its height — the 2100 mm `H60M` is listed under
+"Modular"; the hood keeps its place above the hob), `e724417` (a Top-to-Top merge of a wall unit),
+`e25e813` (a relation named inside `dockTo`), `b4786d8` (the room decides between the two ends of a
+row — the near-side rule of issue 1 chose the wall side for gpt-5.4-mini 12).
+
+Open after the run: roomle-ui issue 23 (the hood hung above a base or hob unit drops onto the
+worktop after a `change-group-attribute` command — now triggered by the server's kitchen-wide
+materials; gpt-5-mini 06, 09, 11, gpt-5.4-mini 11; not deterministic), the new issue 35 (the
+handleless right corner unit `EUERTB90` as the first root with two legs stands 239 mm in the wall),
+the hardening candidates 36 and 37, and the decision D23 (issue 27).
+

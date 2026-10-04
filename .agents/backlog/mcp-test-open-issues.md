@@ -28,17 +28,20 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) | image only, no text | critical — an attribute edit fails |
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui | full kitchen around the corner | high — wall cabinets on the worktop |
 | 27 | [A new group without a placement, moved with `place-group` right after](#27-a-new-group-without-a-placement-moved-with-place-group-right-after) | hardening | three tall units; four cabinets; image only | medium — a second call and a reload |
+| 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner | full kitchen around the corner | high — the kitchen stands in the wall |
+| 36 | [A wall-unit row runs into a unit hung above a base unit](#36-a-wall-unit-row-runs-into-a-unit-hung-above-a-base-unit) | hardening | image: kitchen in the back right corner | medium — two wall units in one place |
+| 37 | [A first call with an empty roots array](#37-a-first-call-with-an-empty-roots-array) | hardening, instructions | corner kitchens, image only | low — one lost step |
 
-Since RML-18038 the agent writes relations (`rightOf`, `leftOf`, `onTop`, `above`, `behind`) and the
-server compiles the docking (`group-layout.ts`). In the test with all three models
-(`mcp-test-2026-10-02_17-25-40`) no relation needed a correction. What comes first:
+What stays open, by priority:
 
-- **Gaps of the compile**: 18, 19, 20, 21, 29 and 32 are fixed (G40–G45).
-- **Planner defects**: 23 (a worktop colour change drops hanging wall units), 16 (RML-18039).
-
-Issue 2 (an on-top docking counted as a side neighbour) is fixed: `sidePartnersOf` counts side pairs
-only. Issues 3, 13, 14 and 15 no longer occur with relations; they stay for docking written as
-`contextData`, which the server still accepts.
+- **Planner defects**: 23 (a worktop colour change drops hanging wall units, roomle-ui, needs its
+  own ticket), 16 ([RML-18039](https://roomle.atlassian.net/browse/RML-18039), roomle-ui, fixed on
+  a branch), 11 ([RML-18040](https://roomle.atlassian.net/browse/RML-18040), RoomleCore).
+- **A decision**: 27 — D23, `placement { wall, alignment, offsetMm }` in `create-or-replace-groups`.
+- **Found by the test run of 2026-10-04** (`mcp-test-2026-10-04_13-00-37`, the fixes of RML-18041): 35 (a
+  corner kitchen in the wall), 36 and 37.
+- **Docking written as `contextData`**: 3, 7, 13, 14 and 15 do not occur with relations and stay
+  for the `contextData` form the server still accepts.
 
 ## 3. A docking ring anchors the wrong root
 
@@ -63,8 +66,8 @@ docked to both ends of a corner kitchen's legs closes the same kind of ring.
 **Test.** The ring of four loads as one row with the ring entry dropped; the anchor is the row's
 left end (cab1); the correction is reported.
 
-**Relation payloads** (RML-18038): fixed — one relation per unit cannot form a ring that the server
-does not see; a relation that closes one is dropped and reported (G33). Open for docking written as
+**Scope.** Not with relations: one relation per unit cannot form a ring that the server does not
+see, and a relation that closes one is dropped and reported (G33). Open for docking written as
 `contextData`.
 
 ## 7. Docking to a vector the article does not have
@@ -89,7 +92,7 @@ the anchor's docking vectors, but the server keeps only its frame.
 **Test.** The shape above with the corner's vectors known: the sink entry is dropped and reported,
 and the sink is docked to a free row end, not inside the corner.
 
-**Relation payloads** (RML-18038): the server picks the vectors of the relation; `behind` a corner
+**Scope.** Not with relations: the server picks the vectors of the relation, and `behind` a corner
 article is ignored and reported (G36). Open for docking written as `contextData`.
 
 ## 11. A merged group reaches into the back wall
@@ -144,8 +147,8 @@ floor row, and the correction names them.
   roots on one side vector the server could not move apart.
 - The third call loaded, with walnut on one unit.
 
-**Relation payloads** (RML-18038): fixed — a wall unit without a relation hangs beside a tall unit or
-above a floor unit (G31). Open for docking written as `contextData`.
+**Scope.** Not with relations: a wall unit without a relation hangs beside a tall unit or above a
+floor unit (G31). Open for docking written as `contextData`.
 
 ## 14. A floor unit is docked onto a top vector
 
@@ -164,8 +167,8 @@ puts a floor unit (category not "Wall Units") on a `*Top` vector passes unchange
 
 **Latest run** (`mcp-test-2026-10-02_12-45-24`): 06.
 
-**Relation payloads** (RML-18038): fixed — a floor unit `above` a unit is put `rightOf` it (G34). Open
-for docking written as `contextData`.
+**Scope.** Not with relations: a floor unit `above` a unit is put `rightOf` it (G34). Open for docking
+written as `contextData`.
 
 ## 15. A G7 correction docks a part by a wall unit at floor level
 
@@ -190,8 +193,8 @@ and the wall unit stays on its carrier.
 
 **Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-5.4-mini 07.
 
-**Relation payloads** (RML-18038): fixed — a root without a relation continues the row of its kind
-in list order (G31); G7 does not run for them. Open for docking written as `contextData`.
+**Scope.** Not with relations: a root without a relation continues the row of its kind in list
+order (G31), so G7 does not run for them. Open for docking written as `contextData`.
 
 ## 16. `change-module-attribute` fails with "checkAttributes.get is not a function"
 
@@ -240,6 +243,13 @@ worktop colour change.
 
 **Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 10, gpt-6-astra 10.
 
+**Latest runs** (`mcp-test-2026-10-04_13-00-37`, local planner): gpt-5-mini 06, 09, 11; gpt-5.4-mini 11 —
+the hood hung `above` a base or hob unit with offset `[0, 660, 0]` stands at y 820 after the
+`change-group-attribute` commands the server now runs for the kitchen-wide materials (D36); the wall
+units with the same offset keep 1480. Not deterministic: gpt-6-astra 07 kept the hood at 1480 through
+eleven commands (the hood carried a `mod_HoodId` override). Since the server sets the materials
+itself, every kitchen with a hood and a material shows it — the ticket for roomle-ui is urgent.
+
 ## 27. A new group without a placement, moved with `place-group` right after
 
 **Problem.** For a centred or offset row the model sent no placement and called `place-group`
@@ -253,3 +263,64 @@ offset. `placement { wall, alignment, offsetMm }` is deferred (D23).
 **Test.** A centred row is placed in one call.
 
 **Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-6-astra 01, 02, 09.
+
+**Latest runs** (`mcp-test-2026-10-04_13-00-37`): gpt-6-astra 02 and 06 (create at the wall's end, then
+`place-group … center`); gpt-5.4-mini 02, 09 and 10 placed a group with a point and a rotation that do
+not belong together (the wall's `start` with the back wall's rotation, a corner point with another
+wall's rotation) and gpt-5.4-mini 06 sent no placement at all — all three groups stand outside the
+room or free in it. A placement by wall and alignment would make these lookups.
+
+## 35. The handleless right corner unit as the first root with two legs stands 239 mm in the wall
+
+**Problem.** `EUERTB90` (the handleless right-handed corner unit) as the first root, with units
+`rightOf` and `leftOf` it, placed at the back right corner `[4815, 0, -3765]` / 270: the group stands
+with its back 239 mm in the right wall (`order-data.json` group pos `[5054, 0, -3765]`, footprint x
+2944–5054). The same article as the anchor with one leg (gpt-5.4-mini 04) and as the second root
+(07), and the `UERTB90` with two legs (gpt-6-astra 07), stand inside the room.
+
+**Cause.** Not analysed yet. The server sent the corner point with the anchor frame
+`rootRelPos [261, 0, 0]`, `rootRelRotationY 0` (`planner-calls.json`); the planner arranged the corner
+unit at `[261, 0, 239]` in group space, so the left leg's back line lies 239 mm behind the corner
+unit's. Either the frame of the handleless right corner (`anchorFrameOfRoot`, `group-placement.ts`)
+misses the article's back offset, or the planner's arrangement of the left leg does.
+
+**To do.** Reproduce with the payload of gpt-5.4-mini 11 (`run.json`), compare the probe's
+`dockInfos` of `EUERTB90` with those of `UERTB90`, and fix the frame or report the planner defect.
+
+**Test.** The payload of gpt-5.4-mini 11 loads with the corner unit's back edges on both walls.
+
+**Latest run** (`mcp-test-2026-10-04_13-00-37`): gpt-5.4-mini 11.
+
+## 36. A wall-unit row runs into a unit hung above a base unit
+
+**Problem.** `wall1 above base1`, `wall2 rightOf wall1`, `wall3 rightOf wall2` and `wall4 above
+base3`: the row ends exactly where `wall4` hangs, so a 300 mm shelf and a 600 mm wall unit share the
+place (`order-data.json`: both at z 2361). Nothing reports it.
+
+**Cause.** The compile separates two units `above` one carrier (G44) and two roots on one side
+vector (G8); a row that reaches a unit hung `above` another carrier is not checked — the server
+knows no widths while compiling.
+
+**To do.** With the unit widths of the catalog (`mod_Width`), a unit `above` a floor unit whose
+place the wall-unit row already covers goes `rightOf` the row's last unit, reported.
+
+**Test.** The shape above compiles `wall4` `rightOf` `wall3` with the correction.
+
+**Latest run** (`mcp-test-2026-10-04_13-00-37`): gpt-5.4-mini 07.
+
+## 37. A first call with an empty roots array
+
+**Problem.** gpt-5.4-mini sends `create-or-replace-groups` with `roots: []` first (an id, a placement,
+attributes, no units), gets G1 ("needs a non-empty roots array … fetch the payload format with the
+get-authoring-rules tool"), fetches the rules and sends the kitchen — one lost step per run.
+
+**Cause.** The tool description names the roots as article picks but not as required before anything
+else; the model seems to open the group first and add the units later.
+
+**To do.** One clause in the `create-or-replace-groups` description: a group is created with all its
+units in one call — `roots` holds at least one article pick; there is no empty group to fill later.
+
+**Test.** `hi-mcp-server.test.ts` asserts the clause.
+
+**Latest runs** (`mcp-test-2026-10-04_13-00-37`): gpt-5.4-mini 03, 04, 09.
+

@@ -191,7 +191,7 @@ The session folder is shared as it is, e.g. zipped: `report.md` links only files
 
 | Model | Planner | Tests | Pass | Partial | Fail | Bugs |
 |---|---|---|---|---|---|---|
-| gpt-5-mini | bo-test | 17 run, 0 skipped | … | … | … | … |
+| gpt-5-mini | bo-test | 18 run, 0 skipped | … | … | … | … |
 
 ## Summary
 
@@ -290,7 +290,11 @@ The runner:
 4. rewrites `<out>/results.json` after each run and prints one line per run;
 5. passes Ctrl+C (SIGINT/SIGTERM) on to the running run, which stops its servers, and ends.
 
-Every model and test of `docs/test-prompts.json` take about an hour.
+All 18 tests for the three GPT models take about 40 minutes on a machine with a GPU against the local
+planner (2026-10-04: 36 minutes) — about 40 s per run for the launcher, the page and the snapshot,
+plus the model's chat time (gpt-5.4-mini 5–15 s, gpt-5-mini 30–60 s, gpt-6-astra up to 150 s per
+turn). A fix committed while the runner goes on takes effect from the next run, because every run
+starts a fresh server and chat; the report then says which runs ran with which build.
 
 ## Run a prompt (the script)
 

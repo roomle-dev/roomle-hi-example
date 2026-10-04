@@ -232,7 +232,7 @@ built is an error. Every guard and correction:
 - `placement`: other fields dropped, `posGroup` `[x, z]` completed to `[x, 0, z]`, a `rootId` that names no root dropped; a placement the server cannot use (`posGroup` not a point, no numeric `posRotationY`) and a placement on a group that is already in the plan are not used — the planner positions the group, an existing group keeps its position
 - A root without `id` gets `root-1`, `root-2`, …; a duplicate root id no docking entry names is renamed (`u1` → `u1-2`)
 - Roots the docking does not connect to the first root — docked to the free end of a row of their kind (floor units or wall units), `mode` `StartStart`, `offset` `[0, 0, 0]`
-- Two roots on one side docking vector (`LeftBottom`, `RightBottom`) at the same place — the later one is docked to the free end of that row; Top vectors and `BackBottom` may carry several
+- Two roots on one side docking vector (`LeftBottom`, `RightBottom`) at the same place — the later one is docked to the free end of that row, or of its leg when the row ends at a corner article; Top vectors and `BackBottom` may carry several
 - An `articleId` in another spelling (case, whitespace) — read in the catalog's spelling
 - A placed group whose anchor the server cannot calculate beforehand — placed by the unit's origin; `place-group` puts it against a wall or into a corner
 

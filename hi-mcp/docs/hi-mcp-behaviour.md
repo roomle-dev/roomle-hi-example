@@ -5,9 +5,11 @@
 > guard, automatic correction and feedback message. Every change to a tool, a served rule, a guard, a
 > correction or a result updates this document in the same change.
 >
-> **State**: the code of 2026-10-02, after the refactoring of the guards
-> ([analysis and plan](../../.agents/refactoring-analysis/guards-in-the-hi-mcp-server.md)). A decision
-> that is not implemented yet would be marked **Planned**; none is.
+> **State**: the code of 2026-10-04, after the fixes of the MCP test backlog
+> ([RML-18041 analysis](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md) and
+> [plan](../../.agents/bug-analysis/rml-18041-implementation-plan.md)), which built on the refactoring of
+> the guards ([analysis and plan](../../.agents/refactoring-analysis/guards-in-the-hi-mcp-server.md)).
+> A decision that is not implemented yet is marked **deferred** (D23); every other one is in effect.
 >
 > **Not covered here**: setup, clients and deployment. See
 > [hi-mcp-server.md](../../minimal-hi-example/docs/hi-mcp-server.md) (the example page and MCP

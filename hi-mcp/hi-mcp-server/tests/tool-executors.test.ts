@@ -81,7 +81,7 @@ const makeShapedGroup = (overrides: Record<string, unknown> = {}) => {
       pos: [0, 0, 0],
       rotationY: 0,
       footprint: FOOTPRINT,
-      ...(position ?? {}),
+      ...position,
     },
     roots: [makeShapedRoot()],
     ...rest,

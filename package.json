@@ -22,9 +22,12 @@
     "plan:gpt6": "npm start gpt-6-astra $AZURE_GPT_KEY",
     "deploy:cf": "cd hi-mcp/cf && npx wrangler deploy",
     "format": "prettier . --write",
-    "format:check": "prettier . --check"
+    "format:check": "prettier . --check",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix"
   },
   "devDependencies": {
+    "oxlint": "1.86.0",
     "prettier": "3.8.3"
   }
 }

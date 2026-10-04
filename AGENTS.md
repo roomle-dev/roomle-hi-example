@@ -195,6 +195,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 ### Code Style
 
 - **Prettier** — Format with `npm run format` before committing; `npm run format:check` checks it. The settings are in `.prettierrc.json`, the excluded paths in `.prettierignore` (Markdown and the generated `docs/library-information` are not formatted)
+- **Oxlint** — `npm run lint` checks the JavaScript and TypeScript files for correctness errors, `npm run lint:fix` fixes what it can. The settings are in `.oxlintrc.json`; the inline script of `minimal-hi-example/index.html` is not linted
 - **ES Modules** — Use `import/export` syntax, not CommonJS `require`
 - **TypeScript Types** — Use JSDoc comments for type annotations when needed
 - **Async/Await** — Prefer async/await over Promise chains

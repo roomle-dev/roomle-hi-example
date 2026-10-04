@@ -63,7 +63,6 @@ async function extractDominantColor(imageBuffer) {
   // We'll use a grid pattern to get representative samples
   const sampleStep = Math.max(1, Math.floor(100 / 20)); // ~20x20 = 400 samples
   const colorCounts = {};
-  const tolerance = 20; // Color similarity tolerance (0-255)
 
   for (let y = 0; y < 100; y += sampleStep) {
     for (let x = 0; x < 100; x += sampleStep) {
@@ -182,7 +181,7 @@ function getExpiryDate(materials) {
             return seParam.split('T')[0];
           }
           return null;
-        } catch (e) {
+        } catch {
           return null;
         }
       })
@@ -195,7 +194,7 @@ function getExpiryDate(materials) {
     // Sort dates and return the earliest
     expiryDates.sort();
     return expiryDates[0];
-  } catch (e) {
+  } catch {
     return 'unknown';
   }
 }

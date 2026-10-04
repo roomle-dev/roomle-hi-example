@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'node:http';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   getChatConfig,
   parseChatMessages,

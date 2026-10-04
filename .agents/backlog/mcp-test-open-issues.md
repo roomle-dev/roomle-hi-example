@@ -46,6 +46,7 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 31 | [A wall-unit row over a corner article runs through the side wall](#31-a-wall-unit-row-over-a-corner-article-runs-through-the-side-wall) | hardening | images: kitchen in the back right corner, image only; corner kitchens | high — wall units outside the room |
 | 32 | [A floor unit `onTop` a base unit stands on the worktop](#32-a-floor-unit-ontop-a-base-unit-stands-on-the-worktop) | hardening | kitchen in the back right corner | medium |
 | 33 | [Wall units beside a tall unit at the end of the row hang over empty floor](#33-wall-units-beside-a-tall-unit-at-the-end-of-the-row-hang-over-empty-floor) | hardening | image: kitchen on the left-hand wall | medium |
+| 34 | [A replace the library cannot calculate is reverted without a word in the tool result](#34-a-replace-the-library-cannot-calculate-is-reverted-without-a-word-in-the-tool-result) | hardening, MCP server; roomle-ui contract | image only, no text | medium — the agent plans on with a layout the plan does not hold |
 
 Since RML-18038 the agent writes relations (`rightOf`, `leftOf`, `onTop`, `above`, `behind`) and the
 server compiles the docking (`group-layout.ts`). In the test with all three models
@@ -547,9 +548,10 @@ group carries `checkAttributes` as a plain object. The glue logic copies groups 
 (`_storeCalculatedGroup`, `_discardCalculation`, the article maps). The `.get` call is not in
 roomle-ui's sources, so it is in the HOMAG library code that receives the module.
 
-**To do.** roomle-ui: copy the restorable group with `structuredClone` instead of `deepCopy` in
-`_storeCalculatedGroup`, `_addGroupToMap` and `_discardCalculation` (reproduced and verified
-2026-10-03 — see the analysis).
+**To do.** roomle-ui: review and merge [roomle-ui#3074](https://github.com/roomle-dev/roomle-ui/pull/3074) — `structuredClone` instead of `deepCopy` in
+`_storeCalculatedGroup`, `_addGroupToMap` and `_discardCalculation`, implemented and verified on the
+branch `fix/hi-keep-check-attributes-on-discard-RML-18039` (2026-10-04 — see the analysis). The
+entry leaves the backlog when the fix is merged and deployed.
 
 **Test.** `glue-logic-test.ts`, `changeModuleAttribute`: "changes an attribute after the library
 could not calculate the previous change" — the restored root keeps its `checkAttributes` `Map`, and
@@ -849,3 +851,28 @@ units go to. Nothing says the wall units go on the side of the floor units.
 tall unit, above the base units, with the correction.
 
 **Latest run** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 06.
+
+## 34. A replace the library cannot calculate is reverted without a word in the tool result
+
+**Problem.** When `create-or-replace-groups` replaces a group with a layout the library cannot
+calculate for a root new to the group, roomle-ui discards the whole replace and restores the previous
+group (RML-17848; `_createOrReplacePosGroupsFromLayout` → `_discardCalculation`). The planner API
+returns the id of the restored group as for a success, and only the page console names the failed
+roots. The tool result lists the old roots in `groups` and says nothing, so the agent believes the new
+layout is in the plan.
+
+**Cause.** The planner's load result carries no per-group outcome (see "A group the planner leaves
+out is not reported" in the [backlog README](README.md)), and the server does not compare the roots
+of the result groups with the roots it sent.
+
+**To do.** Hardening of the server: after a replace, compare the result group with the sent roots;
+when it still holds the previous content, report that the planner could not calculate the new layout
+of the group and kept its previous content. Better: roomle-ui reports the discard in the load result
+(roomle-ui contract).
+
+**Test.** The replay of RML-18039 (create, then replace with two roots the library cannot calculate):
+the result names the discarded replace.
+
+**Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-6-astra 09 — found while analysing
+[RML-18039](https://roomle.atlassian.net/browse/RML-18039), see the
+[analysis](../bug-analysis/check-attributes-lost-after-a-discarded-calculation.md).

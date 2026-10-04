@@ -1,0 +1,6 @@
+node_modules
+.temp
+.wrangler
+*.md
+package-lock.json
+docs/library-information

@@ -186,9 +186,11 @@ in the coordinate system of the plan context (3D, right-handed, Y up, millimetre
    returns none, and the tool works as today.
 2. `hi-mcp-server.ts`: the `get-plan-context` description and the `include` description name the
    section; `INSTRUCTIONS` step 1 lists it; the placement rules say where "a free stretch of wall"
-   comes from — check `obstacles`: a door, a window below the top of the units, another object or
-   another group's outline is not free — and the verify rule (`:26`) points to the groups' room-space
-   outlines. Shorter sentences, not more of them.
+   comes from — check `obstacles`: a unit is blocked where an obstacle or another group overlaps it
+   both in the floor outline and in the height range (`bottomMm` to `topMm`), the test of
+   `volumesOverlap` (`plan-space.ts:658-666`); wall units above a window or above another group's base
+   units are free — and the verify rule (`:26`) points to the groups' room-space outlines. Shorter
+   sentences, not more of them.
 3. `hi-mcp/docs/hi-mcp-behaviour.md`: the row in §5.4, §5.5 (root geometry is withheld in `groups`;
    the read-only root outlines of `obstacles` are the exception), the `include` type in §6 and a
    decision D37 recording the section, the dropped walls, the read-only root outlines and the default.

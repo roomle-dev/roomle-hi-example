@@ -1,7 +1,13 @@
 import { jsonSchema, streamText, tool } from 'ai';
 import { convertArrayToReadableStream, MockLanguageModelV3 } from 'ai/test';
-import { describe, expect, it } from 'vitest';
-import { chatSteps, MAX_CHAT_STEPS } from '../chat-steps';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  chatSteps,
+  isTurnTimeout,
+  logStepUsage,
+  MAX_CHAT_STEPS,
+  turnTimeoutMessage,
+} from '../chat-steps';
 
 type StreamPart =
   Awaited<
@@ -71,5 +77,64 @@ describe('chatSteps', () => {
     expect(
       model.doStreamCalls.map((call) => call.toolChoice?.type === 'none')
     ).toEqual([...Array(MAX_CHAT_STEPS - 1).fill(false), true]);
+  });
+
+  it('logs the usage of every step', async () => {
+    // issue 17: what the model did in a long turn was not logged
+    const log = vi.fn();
+    const result = streamText({
+      model: modelThatAlwaysCallsATool(),
+      messages: [{ role: 'user', content: 'plan a kitchen' }],
+      tools,
+      ...chatSteps,
+      onStepEnd: logStepUsage(log),
+    });
+    await result.text;
+    expect(log).toHaveBeenCalledTimes(MAX_CHAT_STEPS);
+    expect(log.mock.calls[0][0]).toMatch(
+      /^\[hi-chat\] step 1: 1 in, 1 out, 0 reasoning tokens; tools: get-plan-context \(2 chars\); tool-calls; \d+ ms$/
+    );
+    expect(log.mock.calls[MAX_CHAT_STEPS - 1][0]).toMatch(
+      /^\[hi-chat\] step 16: 1 in, 1 out, 0 reasoning tokens; no tool; stop; \d+ ms$/
+    );
+  });
+
+  it('ends a turn that never answers after the turn timeout', async () => {
+    // a model that answers only when the turn is aborted
+    const model = new MockLanguageModelV3({
+      doStream: ({ abortSignal }) =>
+        new Promise((_, reject) => {
+          abortSignal?.addEventListener('abort', () =>
+            reject(abortSignal.reason)
+          );
+        }),
+    });
+    const result = streamText({
+      model,
+      messages: [{ role: 'user', content: 'plan a kitchen' }],
+      tools,
+      ...chatSteps,
+      abortSignal: AbortSignal.timeout(50),
+    });
+    // the SDK ends the stream with an abort part, without an error
+    const types: string[] = [];
+    for await (const part of result.stream) {
+      types.push(part.type);
+    }
+    expect(types).toEqual(['start', 'abort']);
+    expect(isTurnTimeout(new DOMException('timed out', 'TimeoutError'))).toBe(
+      true
+    );
+    expect(
+      isTurnTimeout(
+        new Error('wrapped', {
+          cause: new DOMException('aborted', 'AbortError'),
+        })
+      )
+    ).toBe(true);
+    expect(isTurnTimeout(new Error('refused'))).toBe(false);
+    expect(turnTimeoutMessage(5 * 60_000)).toBe(
+      'the turn took longer than 5 minutes and was ended - the plan holds what the tools changed so far'
+    );
   });
 });

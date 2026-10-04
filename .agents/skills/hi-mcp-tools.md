@@ -51,7 +51,10 @@ them — is [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behavio
 
 **Returns**: Rooms, articles, groups, masterData (if requested). Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
-no agent can open, three quarters of the tokens)
+no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
+(back wall, front wall, left wall, right wall) beside its `side`, a door opening the `type`
+`opening`, and every room a `corners` list — per corner its `name` (back left, …), `point` and the
+`posRotationY` of a corner kitchen there — so a corner placement is a lookup
 
 **Article size**: per root module of an article, `dimensions` lists the size attributes with id,
 name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels
@@ -90,7 +93,13 @@ gap of a wall unit above a floor unit — see the
 [authoring rules skill](./hi-authoring-rules.md#relations). `contextData` is still accepted; a group
 from `get-plan-context` carries it.
 
-**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, errors }]` — the groups it could not build, each error naming what to send instead; the other groups load)
+**Materials**: a root's `attributes` are overrides of that unit. A material for the whole kitchen
+(fronts, worktop, carcase) goes into the group's `attributes`; the server sets every group attribute
+that is not one of the library's group settings on every unit and generated root after the load and
+reports it. An override only a generated root carries (the worktop colour on a base unit) is moved
+to the group, and the colours of the generated roots a resubmitted group carries are set again.
+
+**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a new group at the place of another gets a `hint`; `dockTo` on a root is read as its relation
 
 **Usage**:
 ```javascript
@@ -134,11 +143,13 @@ A side label as alignment means flush into the corner with that adjoining wall (
 `back` and `front` name the `top` and `bottom` wall. Groups may touch. A target that overlaps
 another group (footprints and height ranges overlap by more than 5 mm) is moved along the same wall
 to the nearest free position; into a corner, or without a free position on the wall, the group is
-placed as asked. An alignment parallel to the target wall centres the group.
+placed as asked. An alignment parallel to the target wall centres the group. The reload carries
+the generated roots (worktop, toe kick) with the group, so their colours stay; a group that already
+stands where asked is not reloaded.
 
 **Returns**: `placedIn` (`'corner'` or `'wall'`), the wall, and the resulting group with its
 `position`, plus `corrections` when the server corrected the request (an overlap, a parallel
-alignment)
+alignment, a group that already stands there)
 
 **Usage**:
 ```javascript
@@ -167,12 +178,17 @@ own group features; the group keeps its position
 ```
 
 Group ids accept a unique prefix; ids are the ones `get-plan-context` shows (a sub module by its
-id in `subModules`). `value` numbers are passed as strings. `dockTo.ownDockingVector` is one of
+id in `subModules`). A root module id that is a unique prefix, differs only in its first UUID
+segment or in one character is read as that root and reported; one that matches nothing is
+forwarded, and the planner's "not found" comes back with the roots of the plan. `value` numbers are passed as strings. `dockTo.ownDockingVector` is one of
 the root's `freeDockingVectors`; the pairs are the docking pairs of the
 [authoring rules](./hi-authoring-rules.md#valid-docking-pairs). An `articleId` in another spelling
 (case, whitespace) is read in the catalog's spelling. `merge-article-into-group` docks a unit sent
-to a taken side vector to the root at the free end of that row, and a `dockingVector` the article
-does not have becomes the partner of `ownDockingVector`.
+to a taken side vector to the named root's free other side, else to the root at the free end of
+that row (a corner article ends a row: the unit then goes to the free end of the leg in the other
+direction), and a `dockingVector` the article does not have becomes the partner of `ownDockingVector`. A wall
+unit or a range hood merged `*Top -> *Bottom` on a floor unit without a y offset gets the hang gap
+of the wall units (D35), reported.
 
 **Returns**: `{ command, groups, removedGroupIds, changedModuleIds? }` once the planner has loaded
 the result — the affected groups in the `get-plan-context` shape; `changedModuleIds` for

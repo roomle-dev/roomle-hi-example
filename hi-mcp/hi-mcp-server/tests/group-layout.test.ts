@@ -45,6 +45,7 @@ const ARTICLES = [
   },
   article('DU', 'Kitchen | Appliances', undefined, 'mr_Hood'),
   article('LWU', 'Living | Wallunits', 400),
+  article('LLB', 'Living | Lowboards', 400),
 ];
 
 const compile = (roots: any[], articles: any[] = ARTICLES) => {
@@ -146,13 +147,14 @@ describe('relationsToDocking', () => {
   });
 
   it('stacks a chain of units and puts several units on one back vector', () => {
+    // Living lowboards carry no worktop, so units stack on them
     const { group, corrections } = compile([
-      root('s1', 'UTB60'),
-      root('s2', 'UTB60', { onTop: 's1' }),
-      root('s3', 'UTB60', { onTop: 's2' }),
-      root('b1', 'UTB60', { rightOf: 's1' }),
-      root('p1', 'OTB60', { onTop: 'b1', align: 'back' }),
-      root('p2', 'OTB60', { onTop: 'b1', align: 'back' }),
+      root('s1', 'LLB'),
+      root('s2', 'LLB', { onTop: 's1' }),
+      root('s3', 'LLB', { onTop: 's2' }),
+      root('b1', 'LLB', { rightOf: 's1' }),
+      root('p1', 'LWU', { onTop: 'b1', align: 'back' }),
+      root('p2', 'LWU', { onTop: 'b1', align: 'back' }),
     ]);
     expect(entriesOf(group)).toEqual(
       expect.arrayContaining([
@@ -191,12 +193,13 @@ describe('relationsToDocking', () => {
       'b1.LeftTop -> w1.LeftBottom StartStart [0,500,0]',
     ]);
 
+    // nothing hangs above a tall unit: beside it with the tops flush
     const onTall = compile([
       root('t1', 'H2TB60'),
       root('w1', 'OTB60', { above: 't1' }),
     ]);
     expect(entriesOf(onTall.group)).toEqual([
-      't1.LeftTop -> w1.LeftBottom StartStart [0,0,0]',
+      't1.RightTop -> w1.LeftTop StartStart [0,0,0]',
     ]);
   });
 
@@ -215,7 +218,7 @@ describe('relationsToDocking', () => {
       root('b1', 'UTB60', { rightOf: 'b2' }),
       root('b2', 'UTB60'),
       root('a1', 'UTB60', { onTop: 'b3', gapMm: 50 }),
-      root('b3', 'UTB60', { rightOf: 'b1' }),
+      root('b3', 'H2TB60', { rightOf: 'b1' }),
     ]);
     expect(entriesOf(group)).toEqual(
       expect.arrayContaining([
@@ -226,7 +229,7 @@ describe('relationsToDocking', () => {
     );
     const mirrored = compile([
       root('a1', 'UTB60', { onTop: 'b1', gapMm: 50 }),
-      root('b1', 'UTB60'),
+      root('b1', 'H2TB60'),
     ]);
     expect(entriesOf(mirrored.group)).toEqual([
       'a1.LeftBottom -> b1.LeftTop StartStart [0,-50,0]',
@@ -464,6 +467,185 @@ describe('relationsToDocking', () => {
     expect(corrections).toEqual([
       "posGroups[0]: root 'h1' names no neighbour - it was put above 'b1'",
     ]);
+  });
+
+  it('hangs a wall unit onTop a base unit above it, and keeps a stacking on a tall unit or a wall unit', () => {
+    const { group, corrections } = compile([
+      root('c', 'UERTB90'),
+      root('w', 'OTB60', { onTop: 'c', gapMm: 20 }),
+      root('t1', 'H2TB60', { rightOf: 'c' }),
+      root('a1', 'OTB60', { onTop: 't1' }),
+      root('a2', 'OTB60', { onTop: 'a1' }),
+    ]);
+    expect(entriesOf(group)).toEqual(
+      expect.arrayContaining([
+        'c.LeftTop -> w.LeftBottom StartStart [0,660,0]',
+        't1.LeftTop -> a1.LeftBottom StartStart [0,0,0]',
+        'a1.LeftTop -> a2.LeftBottom StartStart [0,0,0]',
+      ])
+    );
+    expect(corrections).toEqual([
+      "posGroups[0]: wall unit 'w' hangs above the base unit 'c' instead of onTop it",
+    ]);
+  });
+
+  it('continues the floor row for a floor unit onTop a base unit', () => {
+    const { group, corrections } = compile([
+      root('c', 'UERTB90'),
+      root('x', 'UTB60', { onTop: 'c' }),
+      root('t1', 'H2TB60', { rightOf: 'x' }),
+      root('top', 'UTB60', { onTop: 't1' }),
+    ]);
+    expect(entriesOf(group)).toEqual(
+      expect.arrayContaining([
+        'c.RightBottom -> x.LeftBottom StartStart [0,0,0]',
+        't1.LeftTop -> top.LeftBottom StartStart [0,0,0]',
+      ])
+    );
+    expect(corrections).toEqual([
+      "posGroups[0]: floor unit 'x' cannot stand on the base unit 'c' - it continues the floor row",
+    ]);
+  });
+
+  it('puts the second unit above one floor unit rightOf the first, the range hood keeping its place', () => {
+    const wallUnits = compile([
+      root('b1', 'UTB60'),
+      root('w1', 'OTB60', { above: 'b1' }),
+      root('w2', 'O2TB90', { above: 'b1' }),
+    ]);
+    expect(entriesOf(wallUnits.group)).toEqual([
+      'b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]',
+      'w1.RightBottom -> w2.LeftBottom StartStart [0,0,0]',
+    ]);
+    expect(wallUnits.corrections).toEqual([
+      "posGroups[0]: 'w1' and 'w2' both hang above 'b1' - 'w2' was put rightOf 'w1'",
+    ]);
+
+    // the hood stays above the hob unit, the wall unit moves
+    const { group, corrections } = compile([
+      root('b1', 'UHS60'),
+      root('w1', 'OTB60', { above: 'b1' }),
+      root('h1', 'DU', { above: 'b1' }),
+    ]);
+    expect(entriesOf(group)).toEqual([
+      'b1.LeftTop -> h1.LeftBottom StartStart [0,660,0]',
+      'h1.RightBottom -> w1.LeftBottom StartStart [0,0,0]',
+    ]);
+    expect(corrections).toEqual([
+      "posGroups[0]: 'h1' and 'w1' both hang above 'b1' - 'w1' was put rightOf 'h1'",
+    ]);
+  });
+
+  it('chains three units above one floor unit and keeps the chain when the hood takes the place', () => {
+    // review of PR 62: every later unit went rightOf the first and overlapped
+    const three = compile([
+      root('b1', 'UTB60'),
+      root('w1', 'OTB60', { above: 'b1' }),
+      root('w2', 'OTB60', { above: 'b1' }),
+      root('w3', 'O2TB90', { above: 'b1' }),
+    ]);
+    expect(entriesOf(three.group)).toEqual([
+      'b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]',
+      'w1.RightBottom -> w2.LeftBottom StartStart [0,0,0]',
+      'w2.RightBottom -> w3.LeftBottom StartStart [0,0,0]',
+    ]);
+    expect(three.corrections).toEqual([
+      "posGroups[0]: 'w1' and 'w2' both hang above 'b1' - 'w2' was put rightOf 'w1'",
+      "posGroups[0]: 'w1' and 'w3' both hang above 'b1' - 'w3' was put rightOf 'w2'",
+    ]);
+
+    // the hood takes the place; the former anchor and its row move behind it
+    const hoodLast = compile([
+      root('b1', 'UHS60'),
+      root('w1', 'OTB60', { above: 'b1' }),
+      root('w2', 'OTB60', { above: 'b1' }),
+      root('h1', 'DU', { above: 'b1' }),
+    ]);
+    expect(entriesOf(hoodLast.group)).toEqual([
+      'b1.LeftTop -> h1.LeftBottom StartStart [0,660,0]',
+      'w1.RightBottom -> w2.LeftBottom StartStart [0,0,0]',
+      'h1.RightBottom -> w1.LeftBottom StartStart [0,0,0]',
+    ]);
+    expect(hoodLast.corrections).toEqual([
+      "posGroups[0]: 'w1' and 'w2' both hang above 'b1' - 'w2' was put rightOf 'w1'",
+      "posGroups[0]: 'h1' and 'w1' both hang above 'b1' - 'w1' was put rightOf 'h1'",
+    ]);
+  });
+
+  it('counts a 2100 mm carcase without the tall category as a tall unit', () => {
+    // Furniture_Smith lists H60M under "Modular"
+    const { group, corrections } = compile(
+      [
+        root('t1', 'H60M'),
+        root('b1', 'UTB60', { rightOf: 't1' }),
+        root('w1', 'OTB60', { rightOf: 't1' }),
+      ],
+      [...ARTICLES, article('H60M', 'Kitchen | Modular', 2100)]
+    );
+    expect(entriesOf(group)).toEqual(
+      expect.arrayContaining(['t1.RightTop -> w1.LeftTop StartStart [0,0,0]'])
+    );
+    expect(corrections).toEqual([]);
+  });
+
+  it('hangs a unit above a tall unit above the floor unit beside it, or beside it with the tops flush', () => {
+    const beside = compile([
+      root('b1', 'UTB60'),
+      root('t1', 'HK60', { rightOf: 'b1' }),
+      root('h1', 'DU', { above: 't1' }),
+    ]);
+    expect(entriesOf(beside.group)).toEqual(
+      expect.arrayContaining([
+        'b1.LeftTop -> h1.LeftBottom StartStart [0,660,0]',
+      ])
+    );
+    expect(beside.corrections).toEqual([
+      "posGroups[0]: 'h1' cannot hang above the tall unit 't1' - it hangs above 'b1' beside it",
+    ]);
+
+    const alone = compile([
+      root('t1', 'HK60'),
+      root('h1', 'DU', { above: 't1' }),
+    ]);
+    expect(entriesOf(alone.group)).toEqual([
+      't1.RightTop -> h1.LeftTop StartStart [0,0,0]',
+    ]);
+    expect(alone.corrections).toEqual([
+      "posGroups[0]: 'h1' cannot hang above the tall unit 't1' - it hangs beside it with the tops flush; put it above the floor unit below it",
+    ]);
+  });
+
+  it('moves wall units beside a tall unit to the side of the floor units', () => {
+    // issue 33: the base units first and the tall unit last, the wall units
+    // continued rightOf the tall unit would hang over empty floor
+    const { group, corrections } = compile([
+      root('b1', 'UTB60'),
+      root('b2', 'UTB60', { rightOf: 'b1' }),
+      root('t1', 'H2TB60', { rightOf: 'b2' }),
+      root('w1', 'OTB60', { rightOf: 't1' }),
+      root('w2', 'OTB60', { rightOf: 'w1' }),
+    ]);
+    expect(entriesOf(group)).toEqual(
+      expect.arrayContaining([
+        't1.LeftTop -> w1.RightTop StartStart [0,0,0]',
+        'w1.LeftBottom -> w2.RightBottom StartStart [0,0,0]',
+      ])
+    );
+    expect(corrections).toEqual([
+      "posGroups[0]: wall units 'w1', 'w2' go leftOf the tall unit 't1', on the side of the base units",
+    ]);
+
+    // floor units on both sides: nothing moves
+    const bothSides = compile([
+      root('b1', 'UTB60'),
+      root('t1', 'H2TB60', { rightOf: 'b1' }),
+      root('b2', 'UTB60', { rightOf: 't1' }),
+      root('w1', 'OTB60', { rightOf: 't1' }),
+    ]);
+    expect(entriesOf(bothSides.group)).toContain(
+      't1.RightTop -> w1.LeftTop StartStart [0,0,0]'
+    );
+    expect(bothSides.corrections).toEqual([]);
   });
 
   it('counts the Living wall units as wall units', () => {

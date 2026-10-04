@@ -61,8 +61,10 @@ Azure AI Foundry resource and are called through its OpenAI v1 endpoint
 API key. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
 left in the shell from an `azure` run cannot redirect them.
 
-**Reasoning effort.** The chat sends no reasoning effort, so each GPT deployment runs at
-its default. OpenAI documents different defaults: `medium` for gpt-5-mini, `none` (no
+**Reasoning effort.** The chat sends the reasoning effort of `HI_CHAT_REASONING_EFFORT`
+(`providerOptions.azure.reasoningEffort`) to the GPT deployments; unset, each deployment runs at
+its default. Every step logs its tokens in, out and spent on reasoning, its tool calls and its
+duration (`[hi-chat] step n: …`), so the effective effort shows in the chat backend's log. OpenAI documents different defaults: `medium` for gpt-5-mini, `none` (no
 reasoning) for gpt-5.4-mini. Whether the Foundry deployments use the same defaults is not
 verified. In "test the mcp" (`mcp-test-2026-10-02_17-25-40`) gpt-5-mini planned clearly
 better (12 / 5 / 0 against 9 / 3 / 5 pass / partial / fail), and gpt-5.4-mini answered 2
@@ -245,6 +247,8 @@ origins, `500` when the MCP server or Mistral call fails.
 | `AZURE_RESOURCE_NAME` | — | Required for `azure`/`openai`: the Azure OpenAI resource name (ignored for `gpt-5-mini`/`gpt-5.4-mini`/`gpt-6-astra`) |
 | `HI_MCP_URL` | `http://localhost:3100/mcp` | The MCP server the chat backend connects to |
 | `HI_CHAT_PAGE_ORIGINS` | `http://localhost:3000`, `http://127.0.0.1:3000` | Allowed CORS origins (the launcher sets it to match `EXAMPLE_PORT`) |
+| `HI_CHAT_TURN_TIMEOUT_MS` | `300000` | A turn that has not answered within this time is aborted and ends with an `[error]` line naming the limit; the plan keeps what the tools changed |
+| `HI_CHAT_REASONING_EFFORT` | — | The reasoning effort sent to the GPT deployments (`gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`), e.g. `medium`; unset, the deployment's default |
 
 ## Security notes
 

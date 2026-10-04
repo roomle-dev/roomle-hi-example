@@ -73,6 +73,11 @@ MCP?") gave three reasons. The checked facts in this document replace them:
 
 ## To do
 
+> **State 2026-10-04**: steps 1 and 3 are in the code (RML-18041): every step logs its tokens
+> (`logStepUsage`, `hi-mcp-chat/chat-steps.ts`), and `HI_CHAT_REASONING_EFFORT` sets the effort
+> for the Foundry deployments (`providerOptions.azure.reasoningEffort`). The measurement and the
+> choice of a shared value (step 2) are open.
+
 1. **Measure first.** Log the reasoning tokens of every step
    (`usage.outputTokenDetails.reasoningTokens` in the `onStepFinish` of `streamText`) and write
    them into `run.json` of the test runner. This shows the effective default on Foundry, tests

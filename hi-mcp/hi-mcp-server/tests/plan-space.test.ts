@@ -8,10 +8,14 @@ import {
   groupHeightRange,
   placeAgainstWall,
   placeCornerAtWalls,
+  pointInsideRoom,
   repositioningFromPlacement,
   resolveWallAlignment,
+  roomCorners,
+  roomOfPoint,
   spanAlongWall,
   volumesOverlap,
+  wallName,
   wallSpanStart,
   type DerivedWall,
   type GroupFootprint,
@@ -466,6 +470,139 @@ const WALL_LEFT: DerivedWall = {
 };
 
 const ROOM_WALLS = [WALL_BOTTOM, WALL_RIGHT, WALL_TOP, WALL_LEFT];
+
+describe('roomCorners', () => {
+  // the 4000 x 3000 room, counter-clockwise: front, right, back, left
+  const wall = (
+    index: number,
+    side: DerivedWall['side'],
+    start: [number, number, number],
+    end: [number, number, number],
+    facingRotationY: number,
+    type: string | null = 'wall'
+  ): DerivedWall => ({
+    index,
+    side,
+    start,
+    end,
+    lengthMm: Math.hypot(end[0] - start[0], end[2] - start[2]),
+    type: type as string | undefined,
+    facingRotationY,
+  });
+  const rectangle = [
+    wall(0, 'bottom', [0, 0, 0], [4000, 0, 0], 180),
+    wall(1, 'right', [4000, 0, 0], [4000, 0, -3000], 270),
+    wall(2, 'top', [4000, 0, -3000], [0, 0, -3000], 0),
+    wall(3, 'left', [0, 0, -3000], [0, 0, 0], 90),
+  ];
+
+  it('lists the four corners of a rectangular room with their names and rotations', () => {
+    expect(roomCorners(rectangle)).toEqual([
+      { name: 'front right', point: [4000, 0, 0], posRotationY: 180 },
+      { name: 'back right', point: [4000, 0, -3000], posRotationY: 270 },
+      { name: 'back left', point: [0, 0, -3000], posRotationY: 0 },
+      { name: 'front left', point: [0, 0, 0], posRotationY: 90 },
+    ]);
+  });
+
+  it('still lists four corners when a door splits a wall, and none between collinear walls', () => {
+    const withDoor = [
+      rectangle[0],
+      wall(1, 'right', [4000, 0, 0], [4000, 0, -100], 270),
+      wall(2, 'right', [4000, 0, -100], [4000, 0, -1000], 270, null),
+      wall(3, 'right', [4000, 0, -1000], [4000, 0, -3000], 270),
+      { ...rectangle[2], index: 4 },
+      { ...rectangle[3], index: 5 },
+    ];
+    expect(roomCorners(withDoor).map((corner) => corner.name)).toEqual([
+      'front right',
+      'back right',
+      'back left',
+      'front left',
+    ]);
+    const split = [
+      rectangle[0],
+      wall(1, 'right', [4000, 0, 0], [4000, 0, -1000], 270),
+      wall(2, 'right', [4000, 0, -1000], [4000, 0, -3000], 270),
+      { ...rectangle[2], index: 3 },
+      { ...rectangle[3], index: 4 },
+    ];
+    expect(roomCorners(split)).toHaveLength(4);
+  });
+
+  it('names the walls in the words of the top view', () => {
+    expect((['top', 'bottom', 'left', 'right'] as const).map(wallName)).toEqual(
+      ['back wall', 'front wall', 'left wall', 'right wall']
+    );
+  });
+});
+
+describe('pointInsideRoom and roomOfPoint', () => {
+  const wall = (
+    index: number,
+    side: DerivedWall['side'],
+    start: [number, number, number],
+    end: [number, number, number],
+    facingRotationY: number
+  ): DerivedWall => ({
+    index,
+    side,
+    start,
+    end,
+    lengthMm: Math.hypot(end[0] - start[0], end[2] - start[2]),
+    type: 'wall',
+    facingRotationY,
+  });
+  const rectangle = [
+    wall(0, 'bottom', [0, 0, 0], [4000, 0, 0], 180),
+    wall(1, 'right', [4000, 0, 0], [4000, 0, -3000], 270),
+    wall(2, 'top', [4000, 0, -3000], [0, 0, -3000], 0),
+    wall(3, 'left', [0, 0, -3000], [0, 0, 0], 90),
+  ];
+  // an L-shaped room: the rectangle without its back right quarter
+  const lShaped = [
+    wall(0, 'bottom', [0, 0, 0], [4000, 0, 0], 180),
+    wall(1, 'right', [4000, 0, 0], [4000, 0, -1500], 270),
+    wall(2, 'top', [4000, 0, -1500], [2000, 0, -1500], 0),
+    wall(3, 'right', [2000, 0, -1500], [2000, 0, -3000], 270),
+    wall(4, 'top', [2000, 0, -3000], [0, 0, -3000], 0),
+    wall(5, 'left', [0, 0, -3000], [0, 0, 0], 90),
+  ];
+
+  it('tells a point inside the room from one outside, with a tolerance at the walls', () => {
+    expect(pointInsideRoom([2000, -1500], rectangle, 5)).toBe(true);
+    expect(pointInsideRoom([4003, -1500], rectangle, 5)).toBe(true);
+    expect(pointInsideRoom([4020, -1500], rectangle, 5)).toBe(false);
+    expect(pointInsideRoom([2000, -3600], rectangle, 5)).toBe(false);
+  });
+
+  it('knows the cut-out of an L-shaped room, which lies inside the bounding box of its walls', () => {
+    expect(pointInsideRoom([3000, -2500], lShaped, 5)).toBe(false);
+    expect(pointInsideRoom([1000, -2500], lShaped, 5)).toBe(true);
+    expect(pointInsideRoom([3000, -1000], lShaped, 5)).toBe(true);
+  });
+
+  it('finds the room whose floor holds a point', () => {
+    const rooms = [
+      { id: 'a', walls: rectangle },
+      {
+        id: 'b',
+        walls: rectangle.map((w) => ({
+          ...w,
+          start: [w.start[0] + 10000, 0, w.start[2]] as [
+            number,
+            number,
+            number,
+          ],
+          end: [w.end[0] + 10000, 0, w.end[2]] as [number, number, number],
+        })),
+      },
+    ];
+    expect(roomOfPoint(rooms, [12000, -1500], 5)?.id).toBe('b');
+    expect(roomOfPoint(rooms, [2000, -1500], 5)?.id).toBe('a');
+    expect(roomOfPoint(rooms, [7000, -1500], 5)).toBeUndefined();
+  });
+});
 
 describe('adjoiningWall', () => {
   it('finds the wall on that side sharing a corner with the wall', () => {

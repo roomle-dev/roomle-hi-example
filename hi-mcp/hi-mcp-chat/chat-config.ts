@@ -2,7 +2,19 @@ import type { ModelMessage } from 'ai';
 
 export const DEFAULT_CHAT_PORT = 3200;
 export const DEFAULT_MCP_URL = 'http://localhost:3100/mcp';
+// A turn ends with a message to the user when the model has not answered
+// within this time (gpt-5-mini went silent for 10 minutes on large kitchens).
+export const DEFAULT_TURN_TIMEOUT_MS = 5 * 60_000;
 const CHAT_ROLES = ['user', 'assistant'] as const;
+
+// The model learns the server's rules only through get-authoring-rules; the
+// system prompt tells it how to work and to answer from the tool results.
+export const CHAT_SYSTEM_PROMPT = [
+  'You are a planning assistant for a HOMAG Intelligence (HI) kitchen in a Roomle planner.',
+  'Use the provided tools to read the plan context and to create, modify, or position object groups.',
+  'Call tools instead of describing what you would do, then summarize what you changed.',
+  'Summarize what you changed in a few sentences from the last tool results only - the groups, their roots and attributes, corrections and notLoaded - never by repeating the results, and name what was asked but is not in the plan.',
+].join(' ');
 
 export class ChatRequestError extends Error {}
 
@@ -121,6 +133,9 @@ export interface ChatConfig {
   azureBaseUrl: string | undefined;
   mcpUrl: string;
   pageOrigins: string[];
+  turnTimeoutMs: number;
+  // the reasoning effort of the GPT deployments; the provider's default when unset
+  reasoningEffort: string | undefined;
 }
 
 export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
@@ -145,6 +160,9 @@ export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
           .map((origin) => origin.trim())
           .filter(Boolean)
       : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    turnTimeoutMs:
+      Number(env.HI_CHAT_TURN_TIMEOUT_MS) || DEFAULT_TURN_TIMEOUT_MS,
+    reasoningEffort: env.HI_CHAT_REASONING_EFFORT || undefined,
   };
 };
 

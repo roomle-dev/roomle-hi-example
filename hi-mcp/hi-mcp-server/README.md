@@ -297,10 +297,13 @@ Returns a snapshot of the HI planning session, shaped for the agent.
 
 - `rooms` — every room carries its contour `levels` with 3D segments (`pos: [x, level, -y]`,
   the same right-handed coordinate system as a group's `pos`, Y up) and a derived `walls` array —
-  per wall: a `side` label (`left`/`right`/`top`/`bottom` as seen in the top-view image),
-  `start`/`end` (`[x, 0, z]` in millimetres, the 3D contour points on the floor), `lengthMm`,
-  `type`, `heightMm`, `thicknessMm`, and `facingRotationY` — the `posRotationY` of a group standing
-  with its back against that wall (see [Positioning a group](#positioning-a-group))
+  per wall: a `side` label (`left`/`right`/`top`/`bottom` as seen in the top-view image) and a
+  `name` in the user's words (back wall, front wall, left wall, right wall), `start`/`end`
+  (`[x, 0, z]` in millimetres, the 3D contour points on the floor), `lengthMm`, `type` (`wall`, or
+  `opening` for a door), `heightMm`, `thicknessMm`, and `facingRotationY` — the `posRotationY` of a
+  group standing with its back against that wall (see [Positioning a group](#positioning-a-group))
+  — and a `corners` list: per room corner its `name` (back left, back right, front left, front
+  right), `point` and the `posRotationY` of a corner kitchen there
 - `articles` — compact catalog: `articleId`, `articleName`, `desc`, `category`, and
   per root module its master-data `module` (id, name, desc), `dimensions` (the
   template's `Dim` attributes with name and value), `mainAttributes` (the values of the `isMain`
@@ -379,8 +382,11 @@ be built. Every guard and correction:
 
 Returns the loaded runtime ids and the resulting groups (with their final ids, `pos`,
 `rotationY`, `footprint`), plus a hint when a group of this call is still unpositioned,
-`corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, errors }]`,
-the groups it could not build).
+`corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, rootIds?,
+errors }]`, the groups it could not build and, with `rootIds`, the roots of a loaded group it could
+not build — one unknown article id drops that root, not the group). A group attribute that is not
+one of the library's group settings — a material for the whole kitchen — is set on every unit after
+the load and reported.
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm room, from the back
 right corner, one call. `posGroup` is the right wall's `end` (`[4000, 0, -3000]`), `270` its
@@ -464,8 +470,12 @@ returns `{ command, groups, removedGroupIds }`: the affected groups in the
 article id fails before anything changes, and the error lists the valid ones;
 an article id in another spelling is read in the catalog's spelling.
 `merge-article-into-group` docks a unit sent to a taken side vector to the
-root at the free end of that row, and a `dockingVector` the article does not
-have becomes the partner of `ownDockingVector`. The result reports these in
+root at the free end of that row in the named direction — to the named root's
+free other side when the unit would stand outside the room there —, a
+`dockingVector` the article does not have becomes the partner of
+`ownDockingVector`, and a wall unit docked on a floor unit's Top vector gets the
+hang gap of the wall units. Root ids are resolved by a unique prefix, their
+last UUID segments or one character. The result reports these in
 `corrections`. The planner's own checks (e.g. groups of different libraries
 in `merge-groups`) are unchanged, and their message is passed on as the error.
 Group ids accept a unique prefix.
@@ -515,7 +525,8 @@ calculates every root position.
   matches an existing group replaces that group and keeps its position; without a matching `id` a
   new group is created at its `placement`.
 - A root module is an **article pick and nothing else**: `{ id, articleId, attributes? }` plus one
-  relation that names its neighbour.
+  relation that names its neighbour. A root's `attributes` are overrides of that unit; a material
+  for the whole kitchen (fronts, worktop, carcase) goes into the group's `attributes`.
   The server drops `articlePos`/`rotationY` on a root and `pos`/`rotationY` on a group (reported
   in `corrections`), ignores every other field, and drops roots marked `isGenerated` (worktop, toe
   kick — the library regenerates them). Every root position comes from its relation; the position
@@ -547,13 +558,15 @@ calculates every root position.
   | Relation | Meaning | Docking the server builds |
   | --- | --- | --- |
   | `rightOf` / `leftOf` | right / left of that unit, as seen from the front | `RightBottom → LeftBottom` / `LeftBottom → RightBottom`; a wall unit beside a tall unit `RightTop → LeftTop` / `LeftTop → RightTop` — the tops are flush |
-  | `onTop` | stands on top of that unit (stacking, several levels); `align` `left` (default), `right`, `back`; `gapMm` lifts it | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
+  | `onTop` | stands on top of that unit (stacking on a tall unit or a wall unit, several levels); `align` `left` (default), `right`, `back`; `gapMm` lifts it. On a kitchen base unit nothing stands: a wall unit hangs `above` it, a floor unit continues the row (reported) | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
   | `above` | a wall unit hanging above that floor unit; `gapMm` sets the gap | `LeftTop → LeftBottom` with the gap that puts the wall unit's top at the top of the tall units (D35) |
   | `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom` |
 
-  Wall units and the range hood continue `rightOf` or `leftOf` each other. A corner kitchen starts
-  with a corner article and continues one row `rightOf` it and the other `leftOf` it. A root without
-  a relation continues the row of its kind, reported in `corrections`. The server writes each entry
+  Wall units and the range hood continue `rightOf` or `leftOf` each other; wall units beside a tall
+  unit go on the side of the base units. A corner kitchen starts with a corner article and continues
+  one row `rightOf` it and the other `leftOf` it; the wall units of each leg hang `above` the floor
+  units of that leg, never on the corner article. A root without a relation continues the row of
+  its kind, reported in `corrections`. The server writes each entry
   on the root the planner reaches first, so an offset always takes effect; vertical docking vectors
   are never used.
 - **Docking vectors** are the named edges behind the relations (`dockInfos`; the names per article
@@ -564,7 +577,8 @@ calculates every root position.
   `freeDockingVectors` are the vectors a new unit can dock to; `merge-article-into-group` names them
   in `dockTo`. A payload may still carry `contextData`; the server then docks a part the docking
   does not connect to the free end of a row of its kind, and moves the later of two roots on one
-  side vector at the same place to the free end of that row.
+  side vector at the same place to the free end of that row, or of its leg when the row ends at a
+  corner article.
 - Verify results numerically: the returned groups carry `position` (`pos`, `rotationY`,
   `footprint`) and per root the `dockingVectors`, the input attributes and the docking.
 
@@ -598,9 +612,10 @@ or anywhere in the room.
 
   The group width is the sum of the unit widths of the row (`dimensions` in the catalog;
   `position.footprint.widthMm` of a loaded group gives it).
-- **Rectangular room** (back = top, front = bottom in the top-view image). A corner takes the
-  corner point as `posGroup` and the `facingRotationY` of the wall that ends in that corner; a
-  corner kitchen starts with a corner article, and its rows run along both walls:
+- **Room corners**: every room carries a `corners` list with the `point` and the `posRotationY` of
+  each corner — the `facingRotationY` of the wall that ends there; a corner kitchen takes both from
+  it and starts with a corner article, and its rows run along both walls. For a rectangular room
+  (back = top, front = bottom in the top-view image):
 
   | Wall / corner | `posRotationY` | Corner: `RightBottom` row runs along | Corner: `LeftBottom` row runs along |
   | --- | --- | --- | --- |

@@ -288,9 +288,12 @@ coordinate system throughout (3D, right-handed, Y up).
   `pos`, Y up) and a derived `walls` array — per wall: a `side` label
   (`left`/`right`/`top`/`bottom` as seen in the top-view image), `start`/`end`
   (`[x, 0, z]` in millimetres, the 3D contour points on the floor),
-  `lengthMm`, `type`, `heightMm`, `thicknessMm`, and `facingRotationY` — the
-  `posRotationY` of a group standing with its back against that wall (see
-  [Positioning a group](#positioning-a-group))
+  `lengthMm`, `type` (`wall`, or `opening` for a door), `heightMm`, `thicknessMm`,
+  a `name` in the user's words (back wall, front wall, left wall, right wall) and
+  `facingRotationY` — the `posRotationY` of a group standing with its back
+  against that wall (see [Positioning a group](#positioning-a-group)) — and a
+  `corners` list: per room corner its `name` (back left, back right, front
+  left, front right), `point` and the `posRotationY` of a corner kitchen there
 - `articles` — compact catalog: `articleId`, `articleName`, `desc`,
   `category`, and per root module its master-data `module` (id, name,
   desc), `dimensions` (the template's `Dim` attributes with id,
@@ -360,7 +363,12 @@ attributes? }`), and every root after the first names its neighbour with one rel
 `leftOf`, `onTop`, `above` or `behind` — from which the server builds the docking (`contextData`).
 The glue logic completes the picks from the article template, and the planner arranges the root
 modules. The agent never authors root positions. Docking written as `contextData` — a group from
-`get-plan-context` carries it — is still accepted.
+`get-plan-context` carries it — is still accepted. A root's `attributes` are
+overrides of that unit; a material for the whole kitchen goes into the group's
+`attributes`, and the server sets it on every unit and on the worktop after the
+load (`corrections` says so). An override only the generated worktop carries is
+moved to the group, and a resubmitted group keeps the colours of its worktop and
+toe kick.
 
 A new group is positioned with `placement: { posGroup, posRotationY,
 rootId? }` — see [Positioning a group](#positioning-a-group). It is applied
@@ -385,7 +393,10 @@ correction:
 Returns the loaded runtime ids and the resulting groups (with their final
 ids, `pos`, `rotationY`, `footprint`), plus a hint when a group of this call
 is still unpositioned, `corrections` (what the server changed in the input)
-and `notLoaded` (`[{ index, id?, errors }]`, the groups it could not build).
+and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build and, with
+`rootIds`, the roots of a loaded group it could not build — one unknown article id drops that root,
+not the group). A group id you gave an earlier group of the session replaces that group, and a new
+group that stands at the place of another gets a `hint`.
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm
 room, from the back right corner, one call. `posGroup` is the right wall's
@@ -439,7 +450,9 @@ the server: it reads the rooms and the groups, takes the calculated group from
 the planner (`getExternalObjectGroups`), computes the position from the wall,
 the alignment and the group's footprint — a group with a corner article goes
 into the corner when the alignment names the adjoining wall — and reloads the
-group there, once. The roots and their docking stay as they are. Groups may
+group there, once. The roots and their docking stay as they are, the generated
+roots (worktop, toe kick) travel with the group and keep their colours, and a
+group that already stands where asked is not reloaded. Groups may
 touch. A target that overlaps another group — footprints and height ranges
 overlap by more than 5 mm — is moved along the same wall to the nearest free
 position, and `corrections` names the group and the distance and suggests
@@ -473,11 +486,15 @@ returns `{ command, groups, removedGroupIds }`: the affected groups in the
 article id fails before anything changes, and the error lists the valid ones;
 an article id in another spelling is read in the catalog's spelling.
 `merge-article-into-group` docks a unit sent to a taken side vector to the
-root at the free end of that row, and a `dockingVector` the article does not
-have becomes the partner of `ownDockingVector`. The result reports these in
+named root's free other side, else to the root at the free end of that row (or
+of its leg, when the row ends at a corner article), and a `dockingVector` the
+article does not have becomes the partner of `ownDockingVector`; a wall unit
+merged on top of a floor unit without a y offset gets the hang gap of the wall
+units. The result reports these in
 `corrections`. The planner's own checks (e.g. groups of different libraries
 in `merge-groups`) are unchanged, and their message is passed on as the error.
-Group ids accept a unique prefix.
+Group ids accept a unique prefix; a root module id that is a unique prefix, differs only in
+its first UUID segment or in one character is read as that root and reported.
 
 | Tool | Parameters | Effect |
 | ---- | ---------- | ------ |
@@ -582,7 +599,7 @@ group one point and one rotation; the planner calculates every root position.
   | Relation | Meaning | Docking the server builds |
   | --- | --- | --- |
   | `rightOf` / `leftOf` | right / left of that unit, as seen from the front | `RightBottom → LeftBottom` / `LeftBottom → RightBottom`; a wall unit beside a tall unit `RightTop → LeftTop` / `LeftTop → RightTop` — the tops are flush |
-  | `onTop` | stands on top of that unit (stacking, several levels); `align` `left` (default), `right`, `back`; `gapMm` lifts it | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
+  | `onTop` | stands on top of that unit (stacking on a tall unit or a wall unit, several levels); `align` `left` (default), `right`, `back`; `gapMm` lifts it. On a kitchen base unit nothing stands: a wall unit hangs `above` it, a floor unit continues the row (both reported) | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
   | `above` | a wall unit hanging above that floor unit; `gapMm` sets the gap | `LeftTop → LeftBottom` with the gap that puts the wall unit's top at the top of the tall units (D35) |
   | `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom` |
 
@@ -604,7 +621,8 @@ group one point and one rotation; the planner calculates every root position.
   names them in `dockTo`. A payload may still carry `contextData`; the server
   then reads every entry in both directions, docks a part the docking does not
   connect to the free end of a row of its kind, and moves the later of two roots
-  on one side vector at the same place to the free end of that row.
+  on one side vector at the same place to the free end of that row, or of its
+  leg when the row ends at a corner article.
 - Verify results numerically: the returned groups carry `position` (`pos`,
   `rotationY`, `footprint`) and per root the `dockingVectors`, the input
   attributes and the docking.
@@ -641,10 +659,11 @@ for a group at a wall, in a corner, or anywhere in the room.
 
   The group width is the sum of the unit widths of the row (`dimensions` in
   the catalog; `position.footprint.widthMm` of a loaded group gives it).
-- **Rectangular room** (back = top, front = bottom in the top-view image). A
-  corner takes the corner point as `posGroup` and the `facingRotationY` of the
-  wall that ends in that corner; a corner kitchen starts with a corner
-  article, and its rows run along both walls:
+- **Room corners**: every room carries a `corners` list with the `point` and
+  the `posRotationY` of each corner — the `facingRotationY` of the wall that
+  ends there; a corner kitchen takes both from it and starts with a corner
+  article, and its rows run along both walls. For a rectangular room (back =
+  top, front = bottom in the top-view image):
 
   | Wall / corner | `posRotationY` | Corner: `RightBottom` row runs along | Corner: `LeftBottom` row runs along |
   | --- | --- | --- | --- |

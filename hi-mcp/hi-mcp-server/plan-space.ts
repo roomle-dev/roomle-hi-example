@@ -281,7 +281,7 @@ const unitDirection = (
     : [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
 };
 
-const rotateDirection = (
+export const rotateDirection = (
   [x, z]: [number, number],
   degrees: number
 ): [number, number] => {
@@ -378,6 +378,131 @@ export const adjoiningWall = (
       candidate.type === 'wall' &&
       sharedCorner(wall, candidate) !== undefined
   );
+
+const WALL_NAMES: Record<WallSide, string> = {
+  top: 'back wall',
+  bottom: 'front wall',
+  left: 'left wall',
+  right: 'right wall',
+};
+
+// The name of a wall in the words of the user: back and front for the top and
+// the bottom of the top-view image.
+export const wallName = (side: WallSide): string =>
+  WALL_NAMES[side] ?? `${side} wall`;
+
+export interface RoomCorner {
+  name: string;
+  point: [number, number, number];
+  posRotationY: number;
+}
+
+// The corners of a room: where a wall ends and another wall starts at an
+// angle (the contour runs counter-clockwise; collinear walls split by a door
+// form no corner). The name is back/front plus left/right, and posRotationY is
+// the facingRotationY of the wall that ends in the corner - the rotation of a
+// corner kitchen there, for both hands of corner article (D13, D33).
+export const roomCorners = (walls: DerivedWall[]): RoomCorner[] => {
+  const real = walls.filter((wall) => wall.type === 'wall');
+  const corners: RoomCorner[] = [];
+  for (const ending of real) {
+    const [endingStart, endPoint] = wallFloorPoints(ending);
+    const along = unitDirection(endingStart, endPoint);
+    for (const starting of real) {
+      const [startPoint, startingEnd] = wallFloorPoints(starting);
+      const next = unitDirection(startPoint, startingEnd);
+      if (
+        starting === ending ||
+        !samePoint(endPoint, startPoint) ||
+        !along ||
+        !next ||
+        Math.abs(along[0] * next[0] + along[1] * next[1]) > 0.999
+      ) {
+        continue;
+      }
+      const sides = [ending.side, starting.side];
+      const depth = sides.find((side) => side === 'top' || side === 'bottom');
+      const hand = sides.find((side) => side === 'left' || side === 'right');
+      if (!depth || !hand) {
+        continue;
+      }
+      corners.push({
+        name: `${depth === 'top' ? 'back' : 'front'} ${hand}`,
+        point: [endPoint[0], 0, endPoint[1]],
+        posRotationY: ending.facingRotationY,
+      });
+    }
+  }
+  return corners;
+};
+
+// The floor polygon of a room: the start points of its walls in contour order
+// (openings included - they are contour segments too).
+const roomPolygon = (walls: DerivedWall[]): [number, number][] =>
+  walls.map((wall) => [wall.start[0], wall.start[2]]);
+
+const distanceToSegment = (
+  [px, pz]: [number, number],
+  [ax, az]: [number, number],
+  [bx, bz]: [number, number]
+): number => {
+  const lengthSquared = (bx - ax) ** 2 + (bz - az) ** 2;
+  const t =
+    lengthSquared < 1e-9
+      ? 0
+      : Math.max(
+          0,
+          Math.min(
+            1,
+            ((px - ax) * (bx - ax) + (pz - az) * (bz - az)) / lengthSquared
+          )
+        );
+  return Math.hypot(px - (ax + t * (bx - ax)), pz - (az + t * (bz - az)));
+};
+
+// Whether a floor point lies inside the room's contour or within the
+// tolerance of one of its walls - also for an L-shaped room, whose cut-out
+// lies inside the bounding box of its walls.
+export const pointInsideRoom = (
+  point: [number, number],
+  walls: DerivedWall[],
+  toleranceMm: number
+): boolean => {
+  const polygon = roomPolygon(walls);
+  if (polygon.length < 3) {
+    return false;
+  }
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, zi] = polygon[i];
+    const [xj, zj] = polygon[j];
+    if (
+      zi > point[1] !== zj > point[1] &&
+      point[0] < ((xj - xi) * (point[1] - zi)) / (zj - zi) + xi
+    ) {
+      inside = !inside;
+    }
+  }
+  return (
+    inside ||
+    polygon.some(
+      (corner, index) =>
+        distanceToSegment(
+          point,
+          corner,
+          polygon[(index + 1) % polygon.length]
+        ) <= toleranceMm
+    )
+  );
+};
+
+// The room of the plan whose floor holds the point; undefined when none does.
+export const roomOfPoint = <T extends { walls?: DerivedWall[] }>(
+  rooms: T[],
+  point: [number, number],
+  toleranceMm: number
+): T | undefined =>
+  rooms.find((room) => pointInsideRoom(point, room.walls ?? [], toleranceMm));
 
 // Puts the corner point of a corner article into the corner the two walls
 // share and turns the group so that its two back edges run along the walls.

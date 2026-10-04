@@ -1,6 +1,8 @@
 import { createServer, type Server } from 'node:http';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  CHAT_SYSTEM_PROMPT,
+  DEFAULT_TURN_TIMEOUT_MS,
   getChatConfig,
   parseChatMessages,
   resolveChatModel,
@@ -54,6 +56,9 @@ describe('getChatConfig', () => {
       'http://localhost:3000',
       'http://127.0.0.1:3000',
     ]);
+    expect(config.turnTimeoutMs).toBe(DEFAULT_TURN_TIMEOUT_MS);
+    expect(DEFAULT_TURN_TIMEOUT_MS).toBe(5 * 60_000);
+    expect(config.reasoningEffort).toBeUndefined();
   });
 
   it('reads the overrides from the environment', () => {
@@ -65,6 +70,8 @@ describe('getChatConfig', () => {
       AZURE_RESOURCE_NAME: 'my-resource',
       HI_MCP_URL: 'http://localhost:3101/mcp',
       HI_CHAT_PAGE_ORIGINS: 'http://localhost:3101, https://example.com',
+      HI_CHAT_TURN_TIMEOUT_MS: '60000',
+      HI_CHAT_REASONING_EFFORT: 'medium',
     });
     expect(config.port).toBe(3300);
     expect(config.apiToken).toBe('secret');
@@ -76,6 +83,16 @@ describe('getChatConfig', () => {
       'http://localhost:3101',
       'https://example.com',
     ]);
+    expect(config.turnTimeoutMs).toBe(60_000);
+    expect(config.reasoningEffort).toBe('medium');
+  });
+
+  it('asks the model to answer from the tool results', () => {
+    // issue 9: the answers claimed what the plan did not have
+    expect(CHAT_SYSTEM_PROMPT).toContain(
+      'Summarize what you changed in a few sentences from the last tool results only - the groups, their roots and attributes, corrections and notLoaded - never by repeating the results, and name what was asked but is not in the plan.'
+    );
+    expect(CHAT_SYSTEM_PROMPT.split('. ').length).toBe(4);
   });
 
   it('resolves providers, aliases, and full model ids', () => {

@@ -277,7 +277,11 @@ describe('hi-mcp-server tool calls', () => {
     );
     expect(text).toContain('counter-clockwise as seen from above');
     expect(text).toContain("posRotationY = the wall's facingRotationY");
-    expect(text).toContain('right back 270');
+    expect(text).toContain('back right 270');
+    expect(text).toContain(
+      'every room of get-plan-context carries a corners list'
+    );
+    expect(text).toContain('an entry of type opening is a door');
     expect(text).toContain(
       'To move an existing group against a wall or into a room corner, call place-group'
     );
@@ -372,6 +376,9 @@ describe('hi-mcp-server tool calls', () => {
     expect(rules).toContain(
       'Read corrections and notLoaded in a result: corrections lists what the server changed in your input'
     );
+    expect(rules).toContain(
+      'notLoaded lists the groups and the roots it could not build'
+    );
   });
 
   it('hangs a range hood beside the wall units and reads a position back in the frame of the placement', async () => {
@@ -414,7 +421,17 @@ describe('hi-mcp-server tool calls', () => {
       expect(rules).toContain(relation);
     }
     expect(rules).toContain(
-      'A wall unit rightOf or leftOf a tall unit hangs beside it with the tops flush'
+      'A wall unit rightOf or leftOf a tall unit hangs beside it with the tops flush, on the side of the base units'
+    );
+    expect(rules).toContain(
+      'The wall units of each leg hang above the floor units of that leg'
+    );
+    expect(rules).toContain('stacking on a tall unit or a wall unit');
+    expect(rules).toContain(
+      "a material for the whole kitchen - the fronts, the worktop, the carcase - goes into the group's attributes"
+    );
+    expect(create?.description).toContain(
+      "a material for the whole kitchen goes into the group's attributes"
     );
     expect(create?.description).toContain(
       'rightOf, leftOf, onTop, above or behind'
@@ -426,6 +443,13 @@ describe('hi-mcp-server tool calls', () => {
       expect(text).not.toContain('<gap');
       expect(text).not.toContain('the placed root names the new root');
     }
+    // the server derives the hang gap of a wall unit merged on a floor unit
+    const merge = JSON.stringify(
+      tools.find((tool) => tool.name === 'merge-article-into-group')
+    );
+    expect(merge).not.toContain('<gap');
+    expect(merge).not.toContain('600, 0');
+    expect(merge).toContain('at the height of the wall units');
   });
 
   it('never tells the agent how the server positions a group internally', async () => {

@@ -27,7 +27,7 @@ Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rot
 {
   id: string,              // Unique within group
   articleId: string,       // From catalog (required)
-  attributes: Attribute[],  // Optional: attribute overrides
+  attributes: Attribute[],  // Optional: overrides of that unit; a material for the whole kitchen goes into the group's attributes
   // one relation to a root of the same group (every root after the first):
   rightOf | leftOf | onTop | above | behind: string,
   align: 'left' | 'right' | 'back',  // Optional, onTop and above
@@ -64,7 +64,7 @@ relation; the server compiles the docking (`contextData`) from it
 | Relation | Meaning | Docking the server builds |
 |---|---|---|
 | `rightOf` / `leftOf` | right / left of that unit, as seen from the front | `RightBottom → LeftBottom` / `LeftBottom → RightBottom`; a wall unit beside a tall unit: `RightTop → LeftTop` / `LeftTop → RightTop`, tops flush |
-| `onTop` | stands on that unit, any depth; `align` `left` (default), `right`, `back`; `gapMm` lifts it | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
+| `onTop` | stands on that unit — a tall unit or a wall unit, any depth; `align` `left` (default), `right`, `back`; `gapMm` lifts it. On a kitchen base unit a wall unit hangs `above` it and a floor unit continues the row, reported | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
 | `above` | a wall unit hanging above that floor unit; `gapMm` sets the gap | `LeftTop → LeftBottom` with the gap that puts its top at the top of the tall units (D35: tall − wall − base `mod_Height`, Furniture_Smith 660) |
 | `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom` |
 
@@ -72,7 +72,9 @@ relation; the server compiles the docking (`contextData`) from it
   hangs `above` the hob unit. A hood beside a tall unit is hung `above` the floor unit on that side,
   and a floor unit beside a wall unit continues the floor row (corrections G40, G41).
 - A corner kitchen starts with a corner article and continues one row `rightOf` it and the other
-  `leftOf` it.
+  `leftOf` it; the wall units of each leg hang `above` the floor units of that leg, never on or
+  above the corner article. A wall unit beside a tall unit goes on the side of the base units
+  (correction G51).
 - A root without a relation continues the row of its kind (floor units, wall units); the first
   wall unit hangs beside a tall unit, else above a floor unit. `corrections` reports it.
 - The server writes each entry on the root the planner reaches first, so an offset takes effect,
@@ -169,8 +171,9 @@ placement: {
   it flush into the corner at the wall's end; `end + d · (start − end) / lengthMm` shifts it by d;
   d = (lengthMm − group width) / 2 centres it; d = lengthMm − group width puts its right end into
   the corner at the wall's `start`.
-- **Corner**: `posGroup` = the corner point, `posRotationY` = the `facingRotationY` of the wall that
-  ends in that corner; a corner kitchen starts with a corner article. For a right-handed corner
+- **Corner**: `posGroup` and `posRotationY` = the `point` and `posRotationY` of the corner in the
+  room's `corners` list of `get-plan-context` (the `facingRotationY` of the wall that ends in that
+  corner); a corner kitchen starts with a corner article. For a right-handed corner
   article (`mod_CarcaseDirection` Right) the server adds 90° itself; the group is read back with
   the `posRotationY` it was placed with.
 
@@ -229,7 +232,7 @@ built is an error. Every guard and correction:
 - `placement`: other fields dropped, `posGroup` `[x, z]` completed to `[x, 0, z]`, a `rootId` that names no root dropped; a placement the server cannot use (`posGroup` not a point, no numeric `posRotationY`) and a placement on a group that is already in the plan are not used — the planner positions the group, an existing group keeps its position
 - A root without `id` gets `root-1`, `root-2`, …; a duplicate root id no docking entry names is renamed (`u1` → `u1-2`)
 - Roots the docking does not connect to the first root — docked to the free end of a row of their kind (floor units or wall units), `mode` `StartStart`, `offset` `[0, 0, 0]`
-- Two roots on one side docking vector (`LeftBottom`, `RightBottom`) at the same place — the later one is docked to the free end of that row; Top vectors and `BackBottom` may carry several
+- Two roots on one side docking vector (`LeftBottom`, `RightBottom`) at the same place — the later one is docked to the free end of that row, or of its leg when the row ends at a corner article; Top vectors and `BackBottom` may carry several
 - An `articleId` in another spelling (case, whitespace) — read in the catalog's spelling
 - A placed group whose anchor the server cannot calculate beforehand — placed by the unit's origin; `place-group` puts it against a wall or into a corner
 

@@ -29,6 +29,8 @@ import {
   placeCornerAtWalls,
   repositioningFromPlacement,
   roomCorners,
+  rootFootprintInRoom,
+  rotateDirection,
   spanAlongWall,
   volumesOverlap,
   wallName,
@@ -333,18 +335,78 @@ const withPlanRoots = async <T>(
   }
 };
 
-// Where a new unit docks to a group as get-plan-context shows it: a side that
-// is taken moves to the named root's own free side, else to the free end of
-// that row - a corner article ends a row, so a walk that meets one turns to
-// the other end -, and a docking vector the article does not have becomes the
-// partner of the root's vector. A side the planner reports as taken although
-// the row ends there stays as asked.
+// The calculated group and the room, for the question whether a unit docked
+// to a row end would stand outside the room.
+interface RowGeometry {
+  rawGroup?: any;
+  walls: any[];
+}
+
+const ARTICLE_WIDTH = 'mod_Width';
+
+const articleWidth = (article: any): number => {
+  const width = Number(
+    ((article?.rootModules?.[0]?.dimensions ?? []) as any[]).find(
+      (dimension) => dimension?.id === ARTICLE_WIDTH
+    )?.value
+  );
+  return Number.isFinite(width) && width > 0 ? width : 600;
+};
+
+// Whether a unit of widthMm docked to the side vector of the given root stays
+// inside the room; undefined when the geometry is not known.
+const unitStaysInRoom = (
+  geometry: RowGeometry,
+  rootId: string,
+  vector: string,
+  widthMm: number
+): boolean | undefined => {
+  const rawRoot = ((geometry.rawGroup?.roots ?? []) as any[]).find(
+    (candidate) => candidate.id === rootId
+  );
+  const wallPoints = geometry.walls.flatMap((wall) => [wall.start, wall.end]);
+  if (!rawRoot || wallPoints.length === 0) {
+    return undefined;
+  }
+  const footprint = rootFootprintInRoom(geometry.rawGroup, rawRoot);
+  if (footprint.length === 0) {
+    return undefined;
+  }
+  // the row runs along the root's local x axis: +x for RightBottom, -x for LeftBottom
+  const [dx, dz] = rotateDirection(
+    [vector === 'RightBottom' ? 1 : -1, 0],
+    (rawRoot.rotationY ?? 0) + (geometry.rawGroup.rotationY ?? 0)
+  );
+  const along = ([x, z]: [number, number]) => x * dx + z * dz;
+  const edge = footprint.reduce((best, point) =>
+    along(point) > along(best) ? point : best
+  );
+  const far = [edge[0] + dx * widthMm, edge[1] + dz * widthMm];
+  const xs = wallPoints.map((point) => point[0]);
+  const zs = wallPoints.map((point) => point[2]);
+  const tolerance = OVERLAP_TOLERANCE_MM;
+  return (
+    far[0] >= Math.min(...xs) - tolerance &&
+    far[0] <= Math.max(...xs) + tolerance &&
+    far[1] >= Math.min(...zs) - tolerance &&
+    far[1] <= Math.max(...zs) + tolerance
+  );
+};
+
+// Where a new unit docks to a group as get-plan-context shows it. A side that
+// is taken moves to the free end of that row in the direction the agent named
+// - a corner article ends a row, so a walk that meets one turns to the other
+// end of the leg -; when the unit would stand outside the room there, it
+// takes the named root's own free side instead. A docking vector the article
+// does not have becomes the partner of the root's vector. A side the planner
+// reports as taken although the row ends there stays as asked.
 const dockTarget = (
   group: any,
   article: any,
   dockTo: any,
   corrections: string[],
-  articles: any[]
+  articles: any[],
+  geometry: RowGeometry = { walls: [] }
 ): any => {
   const roots = (group.roots ?? []) as any[];
   const vector = dockTo.ownDockingVector;
@@ -359,43 +421,69 @@ const dockTarget = (
       dockTo.dockingVector === PARTNER_VECTOR[vector]
         ? PARTNER_VECTOR[own]
         : dockTo.dockingVector;
-    if ((root.freeDockingVectors ?? []).includes(opposite)) {
-      corrections.push(
-        `merge-article-into-group: the ${vector} of root '${root.id}' is taken - the unit was docked to its free ${opposite}`
+    const partners = sidePartnersOf(roots);
+    const isCorner = cornerPredicate(roots, articles);
+    const freeEnd = (along: string, end: string | undefined) => {
+      const endRoot = roots.find((candidate) => candidate.id === end);
+      return endRoot &&
+        end !== root.id &&
+        (endRoot.freeDockingVectors ?? []).includes(along)
+        ? end
+        : undefined;
+    };
+    const candidates: { rootId: string; vector: string; note: string }[] = [];
+    const walk = rowWalk(partners, root.id, vector, isCorner);
+    const end = freeEnd(vector, walk.end);
+    if (end !== undefined) {
+      candidates.push({
+        rootId: end,
+        vector,
+        note: `the ${vector} of '${end}', the free end of that row`,
+      });
+    } else if (walk.corner !== undefined) {
+      const legEnd = freeEnd(
+        opposite,
+        rowWalk(partners, root.id, opposite, isCorner).end
       );
-      dockTo.dockingVector = partnerOf(opposite);
-      dockTo.ownDockingVector = opposite;
-    } else {
-      const partners = sidePartnersOf(roots);
-      const isCorner = cornerPredicate(roots, articles);
-      const walk = rowWalk(partners, root.id, vector, isCorner);
-      const freeEnd = (along: string, end: string | undefined) => {
-        const endRoot = roots.find((candidate) => candidate.id === end);
-        return endRoot &&
-          end !== root.id &&
-          (endRoot.freeDockingVectors ?? []).includes(along)
-          ? end
-          : undefined;
-      };
-      const end = freeEnd(vector, walk.end);
-      if (end !== undefined) {
-        corrections.push(
-          `merge-article-into-group: the ${vector} of root '${root.id}' is taken - the unit was docked to the ` +
-            `${vector} of '${end}', the free end of that row`
-        );
-        dockTo.rootId = end;
-      } else if (walk.corner !== undefined) {
-        const back = rowWalk(partners, root.id, opposite, isCorner);
-        const legEnd = freeEnd(opposite, back.end);
-        if (legEnd !== undefined) {
-          corrections.push(
-            `merge-article-into-group: the ${vector} of root '${root.id}' is taken and its row ends at the corner ` +
-              `article '${walk.corner}' - the unit was docked to the ${opposite} of '${legEnd}', the free end of its leg`
-          );
-          dockTo.dockingVector = partnerOf(opposite);
-          dockTo.ownDockingVector = opposite;
-          dockTo.rootId = legEnd;
-        }
+      if (legEnd !== undefined) {
+        candidates.push({
+          rootId: legEnd,
+          vector: opposite,
+          note: `the ${opposite} of '${legEnd}', the free end of its leg (the row ends at the corner article '${walk.corner}')`,
+        });
+      }
+    }
+    if ((root.freeDockingVectors ?? []).includes(opposite)) {
+      candidates.push({
+        rootId: root.id,
+        vector: opposite,
+        note: `its free ${opposite}`,
+      });
+    }
+    if (candidates.length > 0) {
+      const width = articleWidth(article);
+      const inside = candidates.map((candidate) =>
+        unitStaysInRoom(geometry, candidate.rootId, candidate.vector, width)
+      );
+      const chosenIndex = Math.max(
+        0,
+        inside.findIndex((stays) => stays !== false)
+      );
+      const chosen = candidates[chosenIndex];
+      const skipped = candidates
+        .slice(0, chosenIndex)
+        .map(
+          (candidate) =>
+            ` (a unit at ${candidate.note} would stand outside the room)`
+        )
+        .join('');
+      corrections.push(
+        `merge-article-into-group: the ${vector} of root '${root.id}' is taken - the unit was docked to ${chosen.note}${skipped}`
+      );
+      dockTo.rootId = chosen.rootId;
+      if (chosen.vector !== vector) {
+        dockTo.dockingVector = partnerOf(chosen.vector);
+        dockTo.ownDockingVector = chosen.vector;
       }
     }
   }
@@ -2757,6 +2845,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         await roomDesignerApi.extended.getExternalObjectPlanContext([
           'groups',
           'articles',
+          'rooms',
         ]);
       const group = findGroup(context.groups ?? [], args.groupId as string);
       const articles = (context.articles ?? []) as any[];
@@ -2766,6 +2855,14 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         'merge-article-into-group',
         corrections
       );
+      // the calculated group and the room decide between the two ends of a row
+      const rawGroups =
+        ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
+          []) as any[];
+      const geometry: RowGeometry = {
+        rawGroup: rawGroups.find((candidate) => candidate.id === group.id),
+        walls: ((context.rooms as any)?.rooms?.[0]?.walls ?? []) as any[],
+      };
       const sentDockTo = { ...(args.dockTo as any) };
       if (typeof sentDockTo.rootId === 'string') {
         sentDockTo.rootId = resolveRootId(
@@ -2780,7 +2877,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         catalogArticleOf(articles, { articleId, libraryId: group.libraryId }),
         sentDockTo,
         corrections,
-        articles
+        articles,
+        geometry
       );
       return withCorrections(
         await withPlanRoots(

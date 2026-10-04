@@ -3958,23 +3958,59 @@ describe('group command tools', () => {
       ]);
     });
 
-    it("docks a unit sent to the taken side of a row end to that root's free side", async () => {
-      // issue 1: the named root is itself the end of the row
+    it("docks a unit on the taken side of a row end to the far end, or to that root's free side when the far end leaves the room", async () => {
+      // without the calculated group, the direction the agent named wins
       const atStart = await merge(row(), dockTo);
-      expect(atStart.dockTo).toEqual({
-        rootId: 'r1',
-        ownDockingVector: 'LeftBottom',
-        dockingVector: 'RightBottom',
-      });
+      expect(atStart.dockTo).toEqual({ ...dockTo, rootId: 'r3' });
       expect(atStart.result.corrections).toEqual([
-        "merge-article-into-group: the RightBottom of root 'r1' is taken - the unit was docked to its free LeftBottom",
+        "merge-article-into-group: the RightBottom of root 'r1' is taken - the unit was docked to the RightBottom of 'r3', the free end of that row",
       ]);
-      const atEnd = await merge(row(), {
+
+      // issue 1: the row stands on the right wall from the back corner, so
+      // the far end of r3's LeftBottom - r1 - is at the back wall
+      const rawRow = {
+        id: 'kitchen-1',
+        pos: [4000, 0, -3000],
+        rotationY: 270,
+        roots: ['r1', 'r2', 'r3'].map((id, index) => ({
+          id,
+          articlePos: [index * 600, 0, 0],
+          rotationY: 0,
+          attributes: [
+            { id: 'b', value: 600 },
+            { id: 't', value: 600 },
+          ],
+        })),
+      };
+      const mergeOnTheWall = async (sent: Record<string, unknown>) => {
+        const api = createApi(
+          { ...planContextFixture, groups: [row()] },
+          { getExternalObjectGroups: vi.fn(async () => [rawRow]) }
+        );
+        const result = (await toolExecutors['merge-article-into-group'](api, {
+          groupId: 'kitchen-1',
+          articleId: 'article-1',
+          dockTo: sent,
+        })) as Record<string, any>;
+        const [, payload] = (
+          api.extended.externalObjectGroupOperation.mock
+            .calls as unknown as any[][]
+        )[0];
+        return { result, dockTo: payload.dockTo };
+      };
+      const atTheBackWall = await mergeOnTheWall({
         rootId: 'r3',
         ownDockingVector: 'LeftBottom',
         dockingVector: 'RightBottom',
       });
-      expect(atEnd.dockTo).toEqual({ ...dockTo, rootId: 'r3' });
+      expect(atTheBackWall.dockTo).toEqual({ ...dockTo, rootId: 'r3' });
+      expect(atTheBackWall.result.corrections).toEqual([
+        "merge-article-into-group: the LeftBottom of root 'r3' is taken - the unit was docked to its free RightBottom (a unit at the LeftBottom of 'r1', the free end of that row would stand outside the room)",
+      ]);
+      // gpt-5.4-mini 12 of 2026-10-04: the back unit's taken RightBottom
+      // means the front end, which stays inside the room
+      const towardsTheFront = await mergeOnTheWall(dockTo);
+      expect(towardsTheFront.dockTo).toEqual({ ...dockTo, rootId: 'r3' });
     });
 
     it('stops the walk at a corner article and docks to the free end of the leg', async () => {
@@ -4041,7 +4077,7 @@ describe('group command tools', () => {
         dockingVector: 'RightBottom',
       });
       expect(result.corrections).toEqual([
-        "merge-article-into-group: the RightBottom of root 'b1' is taken and its row ends at the corner article 'c' - the unit was docked to the LeftBottom of 'b0', the free end of its leg",
+        "merge-article-into-group: the RightBottom of root 'b1' is taken - the unit was docked to the LeftBottom of 'b0', the free end of its leg (the row ends at the corner article 'c')",
       ]);
     });
 

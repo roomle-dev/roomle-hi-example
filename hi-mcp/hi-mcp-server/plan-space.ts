@@ -281,7 +281,7 @@ const unitDirection = (
     : [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
 };
 
-const rotateDirection = (
+export const rotateDirection = (
   [x, z]: [number, number],
   degrees: number
 ): [number, number] => {

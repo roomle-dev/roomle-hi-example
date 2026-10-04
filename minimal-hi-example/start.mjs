@@ -1,8 +1,8 @@
-// Starts the HI example page and the hi-mcp-poc-json MCP server together:
+// Starts the HI example page and the hi-mcp-server MCP server together:
 //   - installs and typechecks the hi-mcp workspace before anything starts
 //   - serves this directory (the example page) on port 3000 - the port the
 //     MCP server's default origin allow-list already contains
-//   - spawns the MCP server (vite-node hi-mcp/hi-mcp-poc-json/server.ts) on
+//   - spawns the MCP server (vite-node hi-mcp/hi-mcp-server/server.ts) on
 //     port 3100 and points its "no page connected" error at the example URL
 //
 // Start it with:  npm start   (from the repository root or this directory)
@@ -170,7 +170,7 @@ const startMcpServer = () => {
   if (!childEnv.HI_MCP_PAGE_ORIGINS) {
     childEnv.HI_MCP_PAGE_ORIGINS = `http://localhost:${STATIC_PORT},http://127.0.0.1:${STATIC_PORT},https://www.roomle.com`;
   }
-  const mcpServer = spawn(npmCommand, ['start', '--workspace', 'hi-mcp-poc-json'], {
+  const mcpServer = spawn(npmCommand, ['start', '--workspace', 'hi-mcp-server'], {
     cwd: HI_MCP_DIR,
     stdio: 'inherit',
     env: childEnv,

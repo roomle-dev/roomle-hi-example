@@ -1,4 +1,4 @@
-# Quickstart — HI Group Orchestrator MCP Server (hi-mcp-poc-json)
+# Quickstart — HI Group Orchestrator MCP Server (hi-mcp-server)
 
 Shortest path to a working session. Every detail and alternative: [README.md](./README.md).
 
@@ -63,7 +63,7 @@ Move the group to the back right corner.
 The agent calls `place-group` with the right wall and the back wall's side
 label as alignment; the server computes the position and reloads the group.
 
-The unit tests live in `tests/` (server and tool logic) and `../hi-mcp-poc-json-client/tests/` (page bridge) —
+The unit tests live in `tests/` (server and tool logic) and `../hi-mcp-client/tests/` (page bridge) —
 `npm test` in the `hi-mcp/` folder runs them (vitest).
 
 More: [example prompts](./README.md#example-prompts) ·

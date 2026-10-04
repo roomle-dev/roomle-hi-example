@@ -6,9 +6,9 @@ npm workspace folder per PoC.
 
 | PoC | Description |
 | --- | ----------- |
-| [hi-mcp-poc-json](./hi-mcp-poc-json/) | HI object groups (kitchens) generated from a single JSON pos-group payload; client is the INT-stage ligna-store |
-| [hi-mcp-poc-json-client](./hi-mcp-poc-json-client/) | Page side of hi-mcp-poc-json: the browser bridge that executes the allow-listed planner methods, with its unit tests; the ligna-store runs a verbatim copy in `hi-mcp/` |
-| [cf](./cf/) | Cloudflare deployment of the hi-mcp-poc-json server: Worker + Container, one `wrangler deploy` |
+| [hi-mcp-server](./hi-mcp-server/) | HI object groups (kitchens) generated from a single JSON pos-group payload; client is the INT-stage ligna-store |
+| [hi-mcp-client](./hi-mcp-client/) | Page side of hi-mcp-server: the browser bridge that executes the allow-listed planner methods, with its unit tests; the ligna-store runs a verbatim copy in `hi-mcp/` |
+| [cf](./cf/) | Cloudflare deployment of the hi-mcp-server: Worker + Container, one `wrangler deploy` |
 
 ## Quick Access
 
@@ -33,7 +33,7 @@ adapted to the ligna-store client. See the
 
 ```bash
 npm install                     # once, installs all workspaces
-npm start                       # run the hi-mcp-poc-json MCP server on :3100
+npm start                       # run the hi-mcp-server MCP server on :3100
 npm test                        # unit tests (vitest) across all PoCs
 npm run typecheck               # tsc --noEmit
 ```

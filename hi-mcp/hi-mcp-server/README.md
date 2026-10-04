@@ -1,4 +1,4 @@
-# HI Group Orchestrator MCP Server (PoC) — hi-mcp-poc-json
+# HI Group Orchestrator MCP Server (PoC) — hi-mcp-server
 
 A proof-of-concept [MCP](https://modelcontextprotocol.io/) server that lets an AI agent orchestrate
 HOMAG Intelligence (HI) object groups in a live planning session of the **ligna-store**. The agent
@@ -42,7 +42,7 @@ from `RoomlePlanner.prototype`, so the web-sdk APIs (`getExternalObjectPlanConte
 `loadExternalObjectGroupLayout`, …) are reachable as-is). The page executes only the planner
 methods on its allow-list — the ones `planner-api.ts` calls. The page-side bridge lives in the
 store repository (`ligna-store/hi-mcp/`), its tested copy in
-[`../hi-mcp-poc-json-client/`](../hi-mcp-poc-json-client/); this folder contains the server side
+[`../hi-mcp-client/`](../hi-mcp-client/); this folder contains the server side
 and all tool logic.
 
 | Port | Process |
@@ -64,7 +64,7 @@ and all tool logic.
 | `tests/` | Unit tests of the server and the tool logic (vitest, configured at the `hi-mcp/` workspace root) |
 
 The page side — the browser bridge with its planner method allow-list and its unit tests — is in
-[`../hi-mcp-poc-json-client/`](../hi-mcp-poc-json-client/).
+[`../hi-mcp-client/`](../hi-mcp-client/).
 
 ## Prerequisites
 
@@ -685,7 +685,7 @@ Ready-to-use prompts for the connected agent, from read-only to write operations
 The PoC is deliberately self-contained — its dependencies live in this folder's own
 `package.json`, installed through the `hi-mcp/` workspace root. To remove it, delete:
 
-- this folder (`hi-mcp/hi-mcp-poc-json/`) and its entry in the `workspaces` array of
+- this folder (`hi-mcp/hi-mcp-server/`) and its entry in the `workspaces` array of
   `hi-mcp/package.json`
 - the `hi-mcp/` folder with the page-side bridge in the ligna-store repository
 - the INT-stage hook in `ligna-store/components/blocks/Planner.vue`

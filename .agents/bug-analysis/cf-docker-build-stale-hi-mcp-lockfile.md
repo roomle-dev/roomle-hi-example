@@ -12,7 +12,7 @@
 `npx wrangler deploy` (wrangler 4.143.0) in `hi-mcp/cf` stopped at the image build step:
 
 ```text
-ERROR [6/8] RUN npm ci --workspace hi-mcp-poc-json
+ERROR [6/8] RUN npm ci --workspace hi-mcp-server
 npm error `npm ci` can only install packages when your package.json and package-lock.json
           or npm-shrinkwrap.json are in sync.
 npm error Invalid: lock file's zod@4.5.4 does not satisfy zod@4.6.5
@@ -32,16 +32,16 @@ Node 20) are only warnings. They were present before and did not cause the failu
 - `hi-mcp/cf/wrangler.jsonc` builds the image with `"image_build_context": ".."`, which is the
   `hi-mcp/` folder.
 - `hi-mcp/cf/Dockerfile:9` copies `package.json` and `package-lock.json` from that folder, and
-  `hi-mcp/cf/Dockerfile:13` runs `npm ci --workspace hi-mcp-poc-json`. The image reads
+  `hi-mcp/cf/Dockerfile:13` runs `npm ci --workspace hi-mcp-server`. The image reads
   `hi-mcp/package-lock.json`, not the repository-root lockfile.
 - The repository has two lockfiles:
   - `package-lock.json` at the repository root. It belongs to the root workspace, which lists
-    `hi-mcp`, `hi-mcp/hi-mcp-poc-json`, `hi-mcp/hi-mcp-chat`, `hi-mcp/cf` and
+    `hi-mcp`, `hi-mcp/hi-mcp-server`, `hi-mcp/hi-mcp-chat`, `hi-mcp/cf` and
     `minimal-hi-example`.
   - `hi-mcp/package-lock.json`. It belongs to the `hi-mcp` workspace root, which lists
-    `hi-mcp-poc-json`, `hi-mcp-chat` and `cf`.
+    `hi-mcp-server`, `hi-mcp-chat` and `cf`.
 - Commit `9cec6cb` (*feat: add mistral ai chat to the hi example*) raised zod in
-  `hi-mcp/hi-mcp-poc-json/package.json` from 4.5.4 to 4.6.5 and added the `hi-mcp-chat` workspace.
+  `hi-mcp/hi-mcp-server/package.json` from 4.5.4 to 4.6.5 and added the `hi-mcp-chat` workspace.
   It refreshed only the root `package-lock.json`. `hi-mcp/package-lock.json:39` still pinned
   `"zod": "4.5.4"`, and the file had no `hi-mcp-chat` entry.
 
@@ -60,7 +60,7 @@ exactly, so the first dependency change after the last refresh broke the build.
   an isolated copy, outside the root workspace, starting from the existing lockfile so that every
   unchanged dependency kept its pinned version. The diff sets zod to 4.6.5 and adds the
   `hi-mcp-chat` workspace with its dependencies. Nothing else changed.
-- The Dockerfile did not change. `npm ci --workspace hi-mcp-poc-json` accepts a lockfile that
+- The Dockerfile did not change. `npm ci --workspace hi-mcp-server` accepts a lockfile that
   lists a workspace whose manifest is not in the image.
 - The regeneration command is documented in the troubleshooting of
   [hi-mcp/docs/cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md) and in the
@@ -72,7 +72,7 @@ The trap stays: the next dependency change in a `hi-mcp` workspace makes `hi-mcp
 stale again. The structural fix would remove `hi-mcp/package-lock.json` and build the image from
 the repository-root lockfile. That needs the build context moved to the repository root, all
 workspace manifests copied into the image, a `.dockerignore` for the root, and the start command
-changed to `npm start --workspace hi-mcp/hi-mcp-poc-json`, because npm handles workspaces nested
+changed to `npm start --workspace hi-mcp/hi-mcp-server`, because npm handles workspaces nested
 in workspaces poorly. It is a larger change than this fix and is left as a separate decision.
 
 ## Validation

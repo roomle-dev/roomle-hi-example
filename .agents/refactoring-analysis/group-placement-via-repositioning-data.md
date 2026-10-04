@@ -80,7 +80,7 @@ Reading notes:
 
 ### Two placement flows on the page side
 
-Line numbers are for `hi-mcp/hi-mcp-poc-json-client/tool-executors.ts`. The ligna-store copy has
+Line numbers are for `hi-mcp/hi-mcp-client/tool-executors.ts`. The ligna-store copy has
 the same structure: `place-group` at `:692`, `placeGroupAtWall` at `:308`.
 
 1. **`create-or-replace-groups` with `placement`**
@@ -237,14 +237,14 @@ the opposite wall.
 
 | File | Change |
 |---|---|
-| `hi-mcp/hi-mcp-poc-json-client/plan-space.ts` | Delete (whole module becomes unused) |
-| `hi-mcp/hi-mcp-poc-json-client/tests/plan-space.test.ts` | Delete |
-| `hi-mcp/hi-mcp-poc-json-client/tool-executors.ts` | Remove: imports `:2-19`; `dockingVectorNames`, `freeDockingVectors`, `PARTNER_VECTOR`, `CONTACT_TOLERANCE_MM`, `findGroupContact`, `contactError` (`:32-125`, which were used only by the contact error); `withoutPositions`, `repositionedGroup` (`:157-186`); `WALL_SIDES` … `placeGroupAtWall` (`:244-338`); placement validation (`:477-503`), `'placement'` in the field whitelist (`:521`), wall resolution (`:531-558`), post-load placement (`:578-671`); `place-group` (`:699-782`, D2). Reword the messages `:417`, `:436` and the hint `:686-696`. Add the `repositioningData` checks (D4) and the `placement` rejection (D5). Keep `isGeneratedRoot`, `stripDockingIndices`, `toArticlePick`, `validateArticlePickIds` |
-| `hi-mcp/hi-mcp-poc-json-client/tests/tool-executors.test.ts` | See [Tests](#tests) |
-| `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` | `AUTHORING_RULES` (`:6-46`): replace the placement lines `:7-11`, `:19`, `:27-28` and the examples `:31-46` with the positioning section drafted below. `INSTRUCTIONS` (`:48-56`): steps 2-3. Descriptions: `get-authoring-rules` (`:133-137`, "the placement options"), `create-or-replace-groups` (`:148-160`), `get-plan-context` (`:76-92`, link `facingRotationY` to `posRotationY`). Remove the `place-group` registration (`:180-234`, D2) |
-| `hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts` | Tool list (`:9-17`) and count (`:49`), snapshot-timeout test (`:79-112`) |
+| `hi-mcp/hi-mcp-client/plan-space.ts` | Delete (whole module becomes unused) |
+| `hi-mcp/hi-mcp-client/tests/plan-space.test.ts` | Delete |
+| `hi-mcp/hi-mcp-client/tool-executors.ts` | Remove: imports `:2-19`; `dockingVectorNames`, `freeDockingVectors`, `PARTNER_VECTOR`, `CONTACT_TOLERANCE_MM`, `findGroupContact`, `contactError` (`:32-125`, which were used only by the contact error); `withoutPositions`, `repositionedGroup` (`:157-186`); `WALL_SIDES` … `placeGroupAtWall` (`:244-338`); placement validation (`:477-503`), `'placement'` in the field whitelist (`:521`), wall resolution (`:531-558`), post-load placement (`:578-671`); `place-group` (`:699-782`, D2). Reword the messages `:417`, `:436` and the hint `:686-696`. Add the `repositioningData` checks (D4) and the `placement` rejection (D5). Keep `isGeneratedRoot`, `stripDockingIndices`, `toArticlePick`, `validateArticlePickIds` |
+| `hi-mcp/hi-mcp-client/tests/tool-executors.test.ts` | See [Tests](#tests) |
+| `hi-mcp/hi-mcp-server/hi-mcp-server.ts` | `AUTHORING_RULES` (`:6-46`): replace the placement lines `:7-11`, `:19`, `:27-28` and the examples `:31-46` with the positioning section drafted below. `INSTRUCTIONS` (`:48-56`): steps 2-3. Descriptions: `get-authoring-rules` (`:133-137`, "the placement options"), `create-or-replace-groups` (`:148-160`), `get-plan-context` (`:76-92`, link `facingRotationY` to `posRotationY`). Remove the `place-group` registration (`:180-234`, D2) |
+| `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` | Tool list (`:9-17`) and count (`:49`), snapshot-timeout test (`:79-112`) |
 | `minimal-hi-example/index.html` | Same removals in the inline copy: geometry block `:926-1351`; `:1357-1442`, `:1478-1531`, `:1586-1659`; placement parts of `create-or-replace-groups` `:1799-1828`, `:1846`, `:1856-1880`, `:1901-1995`; hint `:2013-2019`; `place-group` `:2022-2106`. Keep `removeExternalObject` at `:672` (page UI) |
-| Living docs | `minimal-hi-example/docs/hi-mcp-server.md` (tool reference, authoring section, demo walkthrough, example prompts, architecture table "placement geometry"); `hi-mcp/hi-mcp-poc-json/README.md`, `QUICKSTART.md`; `minimal-hi-example/README.md:53`; `hi-mcp/hi-mcp-poc-json-client/README.md:11`; `minimal-hi-example/docs/hi-mcp-poc-presentation.md:76-77`; `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md` (placement sections), `hi-mcp-server.md:90`; `AGENTS.md:119,155-156,174,178-179,314`; `.github/copilot-instructions.md:82,95,102-104` |
+| Living docs | `minimal-hi-example/docs/hi-mcp-server.md` (tool reference, authoring section, demo walkthrough, example prompts, architecture table "placement geometry"); `hi-mcp/hi-mcp-server/README.md`, `QUICKSTART.md`; `minimal-hi-example/README.md:53`; `hi-mcp/hi-mcp-client/README.md:11`; `minimal-hi-example/docs/hi-mcp-poc-presentation.md:76-77`; `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md` (placement sections), `hi-mcp-server.md:90`; `AGENTS.md:119,155-156,174,178-179,314`; `.github/copilot-instructions.md:82,95,102-104` |
 | Not touched | Historical records in `.agents/feature-analysis/` and `.agents/refactoring-analysis/`; `hi-mcp/cf/` (no placement code) |
 
 ### ligna-store

@@ -1,7 +1,7 @@
 # roomle-hi-example
 
 Standalone HI presets example (one `minimal-hi-example/index.html`) with the
-HI MCP server (`hi-mcp/hi-mcp-poc-json`): an AI agent plans HOMAG Intelligence
+HI MCP server (`hi-mcp/hi-mcp-server`): an AI agent plans HOMAG Intelligence
 object groups in a live Roomle room-planner session.
 
 ## Usage

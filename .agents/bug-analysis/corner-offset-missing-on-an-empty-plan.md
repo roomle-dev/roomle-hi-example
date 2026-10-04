@@ -1,7 +1,7 @@
 # Corner article offset missing on an empty plan
 
 > **Type**: Bug Analysis
-> **Domain**: hi-mcp — `create-or-replace-groups` (`hi-mcp/hi-mcp-poc-json/tool-executors.ts`, `group-placement.ts`); data verified live against the running server and the deployed UI, and against plan snapshots (RoomleCore `npm run rapi:plan`)
+> **Domain**: hi-mcp — `create-or-replace-groups` (`hi-mcp/hi-mcp-server/tool-executors.ts`, `group-placement.ts`); data verified live against the running server and the deployed UI, and against plan snapshots (RoomleCore `npm run rapi:plan`)
 > **Trigger**: Jira [RML-18007](https://roomle.atlassian.net/browse/RML-18007), Task 1 — "plan a kitchen in the back right corner of the room" on branch `refactor/hi-mcp-group-positioning-RML-18007` at `ef50fc4`: the L stands in the right corner with the right rotation, but its corner point is 261 mm inside the back wall
 > **Date**: 2026-09-30
 > **Author**: AI Assistant

@@ -1,7 +1,7 @@
 # Feature Analysis: Group placement computed in the MCP server (RML-18007, Task 1)
 
 > **Type**: Feature Analysis
-> **Domain**: hi-mcp — the MCP server's agent-facing text and the `create-or-replace-groups` / `get-plan-context` executors (`hi-mcp/hi-mcp-poc-json`); verified against the arrangement and plan-context code of roomle-ui `homag-intelligence`
+> **Domain**: hi-mcp — the MCP server's agent-facing text and the `create-or-replace-groups` / `get-plan-context` executors (`hi-mcp/hi-mcp-server`); verified against the arrangement and plan-context code of roomle-ui `homag-intelligence`
 > **Trigger**: Jira [RML-18007](https://roomle.atlassian.net/browse/RML-18007), Task 1 — the agent must neither set nor know `repositioningData`; it sets the group's placement (`posGroup`, `posRotationY`, optionally a root to start from), the MCP server finds the anchor root by following the docking and applies the corner article's corner point offset itself
 > **Date**: 2026-09-30
 > **Author**: AI Assistant
@@ -45,10 +45,10 @@ Task 1 asks for:
 ### The agent authors `repositioningData`
 
 - `create-or-replace-groups` validates `repositioningData { posGroup, posRotationY, rootId, rootRelPos? }`
-  ([tool-executors.ts:245-279](../../hi-mcp/hi-mcp-poc-json/tool-executors.ts)), keeps it in the
+  ([tool-executors.ts:245-279](../../hi-mcp/hi-mcp-server/tool-executors.ts)), keeps it in the
   payload whitelist (`:293`) and hints at it for an unpositioned group (`:342-345`). A stale
   `placement` is rejected with a pointer to `repositioningData` (`:239-243`).
-- The authoring rules ([hi-mcp-server.ts:6-59](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts))
+- The authoring rules ([hi-mcp-server.ts:6-59](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts))
   teach it in five rules and three examples: the `repositioningData` rule (`:26`, anchor =
   "the root the docking starts from, listed first; in a row its leftmost unit"), the corner article
   rule (`:27`, `rootRelPos` = the negated catalog `cornerPoint`, plus "verify the first load and
@@ -83,7 +83,7 @@ Task 1 asks for:
 
 ### What the agent reads back
 
-- `get-plan-context` is a pass-through ([tool-executors.ts:106-112](../../hi-mcp/hi-mcp-poc-json/tool-executors.ts)):
+- `get-plan-context` is a pass-through ([tool-executors.ts:106-112](../../hi-mcp/hi-mcp-server/tool-executors.ts)):
   articles with `cornerArticle` and `cornerPoint`, groups with `position { pos, rotationY, footprint }`
   and roots without positions (`shapeGroup`, `hi-plan-context.ts:643`).
 - Whether `position.pos` of a returned group is the seed root's origin or the corner of the
@@ -125,7 +125,7 @@ root-local correction.
 explain both for walls and corners, and that text is kept with `placement` in place of
 `repositioningData`:
 
-| Existing text ([hi-mcp-server.ts](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts)) | Kept as |
+| Existing text ([hi-mcp-server.ts](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts)) | Kept as |
 |---|---|
 | The wall rule (`:28`): walls of type `wall`, `posRotationY` = the wall's `facingRotationY`, `posGroup` = `end` flush into the corner at the wall's end, `end + d · (start − end) / lengthMm` along the wall, centred and right-end variants, the group width from the catalog dimensions, "a room corner is the point two walls share", free points anywhere else | The explanation of `posGroup`/`posRotationY` for walls, unchanged |
 | The corner table (`:29`): left back 0, left front 90, right front 180, right back 270 with the `RightBottom`/`LeftBottom` rows along the two walls; straight walls back 0, left 90, front 180, right 270 | The explanation of the rotation in corners, unchanged (it describes the group, not the anchor) |
@@ -295,15 +295,15 @@ rule for the served text; the docs are checked by a grep at close-out.
 
 | File | Change |
 |---|---|
-| `hi-mcp/hi-mcp-poc-json/group-placement.ts` | New: `toRepositioningData` (start root, step down, row walk, corner article rule, corner offset) |
-| `hi-mcp/hi-mcp-poc-json/tool-executors.ts` | `create-or-replace-groups`: validate `placement`, reject `repositioningData`, `placement.wall` and a placement on an existing group, derive `repositioningData` before the one load, hint text; `get-plan-context`: strip `cornerPoint` from the articles |
-| `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` | `AUTHORING_RULES`, `INSTRUCTIONS`, descriptions of `create-or-replace-groups` and `get-plan-context` |
-| `hi-mcp/hi-mcp-poc-json/tests/` | `group-placement.test.ts` (new), `tool-executors.test.ts`, `hi-mcp-server.test.ts` |
-| `minimal-hi-example/docs/hi-mcp-server.md`, `hi-mcp/hi-mcp-poc-json/README.md`, `QUICKSTART.md:55` | Tool reference, "Authoring pos groups", "Positioning a group", demo walkthrough, example prompts — `placement` instead of `repositioningData`, no corner offset arithmetic |
+| `hi-mcp/hi-mcp-server/group-placement.ts` | New: `toRepositioningData` (start root, step down, row walk, corner article rule, corner offset) |
+| `hi-mcp/hi-mcp-server/tool-executors.ts` | `create-or-replace-groups`: validate `placement`, reject `repositioningData`, `placement.wall` and a placement on an existing group, derive `repositioningData` before the one load, hint text; `get-plan-context`: strip `cornerPoint` from the articles |
+| `hi-mcp/hi-mcp-server/hi-mcp-server.ts` | `AUTHORING_RULES`, `INSTRUCTIONS`, descriptions of `create-or-replace-groups` and `get-plan-context` |
+| `hi-mcp/hi-mcp-server/tests/` | `group-placement.test.ts` (new), `tool-executors.test.ts`, `hi-mcp-server.test.ts` |
+| `minimal-hi-example/docs/hi-mcp-server.md`, `hi-mcp/hi-mcp-server/README.md`, `QUICKSTART.md:55` | Tool reference, "Authoring pos groups", "Positioning a group", demo walkthrough, example prompts — `placement` instead of `repositioningData`, no corner offset arithmetic |
 | `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md`, `hi-mcp-server.md` | Same |
 | `AGENTS.md:177,182`, `.github/copilot-instructions.md:36,81,93,100-101`, `minimal-hi-example/docs/hi-mcp-poc-presentation.md:76` | Same |
 | `.agents/backlog/README.md` | The entry leaves the backlog at close-out |
-| Not touched | Pages and bridges (`minimal-hi-example/index.html`, `hi-mcp-poc-json-client/`, ligna-store), roomle-ui, RoomleCore |
+| Not touched | Pages and bridges (`minimal-hi-example/index.html`, `hi-mcp-client/`, ligna-store), roomle-ui, RoomleCore |
 
 ---
 
@@ -361,7 +361,7 @@ The corner data on an empty plan — see
 soon as the catalog carries `cornerArticle` and `cornerPoint`; on an empty plan without them the
 first corner kitchen is anchored at the wrong unit. Not part of this plan until decided.
 
-### 1. New module `hi-mcp/hi-mcp-poc-json/group-placement.ts`
+### 1. New module `hi-mcp/hi-mcp-server/group-placement.ts`
 
 Pure functions, no planner calls:
 
@@ -530,7 +530,7 @@ Expected: 72 + about 20 tests, all green; typecheck clean.
 - Agent-facing, `placement` for new groups only, no offset, no moving: `minimal-hi-example/docs/hi-mcp-server.md`
   (tool reference, "Authoring pos groups", "Positioning a group" without the "Anchor", "Corner
   offset" and "Moving a group" bullets, demo walkthrough without the move step, example prompts
-  without "Move the group to the back right corner"), `hi-mcp/hi-mcp-poc-json/README.md`,
+  without "Move the group to the back right corner"), `hi-mcp/hi-mcp-server/README.md`,
   `QUICKSTART.md:55`, `minimal-hi-example/docs/ai-chat.md:125`, `hi-mcp-poc-presentation.md:76`,
   `.agents/skills/hi-mcp-tools.md` (without the "Moving" paragraph), `hi-authoring-rules.md`,
   `roomle-hi-concepts.md`, `AGENTS.md:177,182`, `.github/copilot-instructions.md:36,81,93,100-101`,

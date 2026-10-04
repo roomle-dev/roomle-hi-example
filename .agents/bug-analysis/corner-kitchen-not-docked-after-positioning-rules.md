@@ -1,5 +1,5 @@
 > **Type**: Bug Analysis
-> **Domain**: hi-mcp — agent instructions of the MCP server (`hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts`)
+> **Domain**: hi-mcp — agent instructions of the MCP server (`hi-mcp/hi-mcp-server/hi-mcp-server.ts`)
 > **Trigger**: Jira [RML-17966](https://roomle.atlassian.net/browse/RML-17966) — after the group placement refactoring ([group-placement-via-repositioning-data.md](../refactoring-analysis/group-placement-via-repositioning-data.md), commit `45e3b6b`) the agent no longer plans a kitchen in a corner
 > **Date**: 2026-09-29
 > **Author**: AI Assistant
@@ -79,7 +79,7 @@ anchor root and compute the position.
 ## Proposed Fix
 
 Instructions only (`AUTHORING_RULES`, `INSTRUCTIONS`, `create-or-replace-groups` description in
-`hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts`), mirrored into the living docs:
+`hi-mcp/hi-mcp-server/hi-mcp-server.ts`), mirrored into the living docs:
 
 1. **Docking first, positioning second**, and state the principle: *a kitchen is one group — one
    anchor root carries the position, every other unit is docked; never position a second group to

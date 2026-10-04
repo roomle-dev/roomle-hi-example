@@ -1,12 +1,12 @@
 # HI MCP Server Skill
 
-**Load this skill when the task involves:** MCP server architecture, HTTP handling, the WebSocket bridge, Model Context Protocol implementation, tool registration, or server-side logic in `minimal-hi-example` / `hi-mcp/hi-mcp-poc-json`.
+**Load this skill when the task involves:** MCP server architecture, HTTP handling, the WebSocket bridge, Model Context Protocol implementation, tool registration, or server-side logic in `minimal-hi-example` / `hi-mcp/hi-mcp-server`.
 
 ## Overview
 
-The HI MCP Server lets AI agents orchestrate HOMAG Intelligence (HI) object groups in live Roomle room-planner sessions. There is **one MCP server implementation** in this repository: the TypeScript server in `hi-mcp/hi-mcp-poc-json` (`@modelcontextprotocol/sdk` + `ws` + zod, run via `vite-node`). The former zero-dependency variant in `minimal-hi-example` was removed; its start UX lives on in the launcher `minimal-hi-example/start.mjs`.
+The HI MCP Server lets AI agents orchestrate HOMAG Intelligence (HI) object groups in live Roomle room-planner sessions. There is **one MCP server implementation** in this repository: the TypeScript server in `hi-mcp/hi-mcp-server` (`@modelcontextprotocol/sdk` + `ws` + zod, run via `vite-node`). The former zero-dependency variant in `minimal-hi-example` was removed; its start UX lives on in the launcher `minimal-hi-example/start.mjs`.
 
-Clients of the same server: the standalone HI presets example (`minimal-hi-example/index.html`, started by the launcher) and the INT-stage ligna-store (its page-side bridge is `hi-mcp/hi-mcp-poc-json-client/`).
+Clients of the same server: the standalone HI presets example (`minimal-hi-example/index.html`, started by the launcher) and the INT-stage ligna-store (its page-side bridge is `hi-mcp/hi-mcp-client/`).
 
 ### Architecture
 
@@ -20,7 +20,7 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
                          │ spawn
                          ▼
 ┌─────────────────────────────────────────────────────────┐
-│        hi-mcp/hi-mcp-poc-json server.ts (port 3100)       │
+│        hi-mcp/hi-mcp-server/server.ts (port 3100)         │
 │                                                          │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐  │
 │  │  HTTP Server │    │   MCP Layer  │    │  WS Bridge  │  │
@@ -41,11 +41,11 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 #### 1. Launcher (`minimal-hi-example/start.mjs`)
 - **Build gate**: installs the `hi-mcp` workspace when `node_modules` is missing and runs the typecheck (`npm run typecheck` at the `hi-mcp` root) before anything starts.
 - **Static serving**: serves `minimal-hi-example/` on port 3000 (configurable via `EXAMPLE_PORT`) — the port in the server's default WebSocket origin allow-list, so no extra configuration is needed.
-- **Server spawn**: `npm start --workspace hi-mcp-poc-json` in the `hi-mcp` root, with `HI_MCP_STORE_URL` pointing the "no page connected" error at the example URL.
+- **Server spawn**: `npm start --workspace hi-mcp-server` in the `hi-mcp` root, with `HI_MCP_STORE_URL` pointing the "no page connected" error at the example URL.
 - **Browser auto-open**, skipped with `--no-open`.
 - Exits when the MCP server exits; SIGINT/SIGTERM kill the child and exit.
 
-#### 2. MCP server (`hi-mcp/hi-mcp-poc-json/server.ts`)
+#### 2. MCP server (`hi-mcp/hi-mcp-server/server.ts`)
 - **Port**: 3100 (`HI_MCP_PORT` / `PORT` env)
 - **Routes**: `POST /mcp` (Streamable HTTP, JSON response mode, stateless — a new `McpServer` + transport per request); everything else is 404
 - **Protocol**: `@modelcontextprotocol/sdk`, tools registered with zod schemas in `hi-mcp-server.ts`
@@ -85,7 +85,7 @@ Internal to the server: not part of the tool interface and never mentioned to th
 - Sends a per-page `clientId` in hello; the example chat sends the same ID to `/chat` and can submit only after the bridge acknowledges ownership with `ready`
 - Executes the planner methods on its allow-list (`MCP_PLANNER_METHODS`) against `roomDesignerApi.extended`, rejects every other method, sends results back over the socket — no tool logic in the page
 
-The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (browser-bridge with `PLANNER_METHODS`, types) — no automatic sync, copy after changes. The allow-lists change only when a tool needs a new planner method; `tests/planner-api.test.ts` fails when the server's planner methods and the client allow-list diverge.
+The ligna-store runs the same protocol via `hi-mcp/hi-mcp-client/` (browser-bridge with `PLANNER_METHODS`, types) — no automatic sync, copy after changes. The allow-lists change only when a tool needs a new planner method; `tests/planner-api.test.ts` fails when the server's planner methods and the client allow-list diverge.
 
 ## Server Lifecycle
 
@@ -114,12 +114,12 @@ The ligna-store runs the same protocol via `hi-mcp/hi-mcp-poc-json-client/` (bro
 
 ## Adding New Tools
 
-1. Register the tool in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` (zod schema, handler via `runTool`)
-2. Implement the executor in `hi-mcp/hi-mcp-poc-json/tool-executors.ts` — no page changes
+1. Register the tool in `hi-mcp/hi-mcp-server/hi-mcp-server.ts` (zod schema, handler via `runTool`)
+2. Implement the executor in `hi-mcp/hi-mcp-server/tool-executors.ts` — no page changes
 3. An edit of existing groups is a command: add it in roomle-ui (`HI_GROUP_OPERATION`, a payload type and a handler in `hi-plan-context.ts`, an operation on the glue logic) and forward it here through `externalObjectGroupOperation` — no page change
-4. Only if the tool needs a planner method not exposed yet: add it to `planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-poc-json-client/browser-bridge.ts`, then copy to the ligna-store). Keep methods that place orders or overwrite the plan out unless explicitly decided
+4. Only if the tool needs a planner method not exposed yet: add it to `planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts`, then copy to the ligna-store). Keep methods that place orders or overwrite the plan out unless explicitly decided
 5. Update documentation (`minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`)
-6. Add/extend unit tests in `hi-mcp/hi-mcp-poc-json/tests/`
+6. Add/extend unit tests in `hi-mcp/hi-mcp-server/tests/`
 7. `npm test` + `npm run typecheck` at the `hi-mcp` root
 
 ## Modifying Existing Tools

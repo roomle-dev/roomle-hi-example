@@ -2,7 +2,7 @@
 
 > **Type**: Backlog — what is to be done after the analyses of "test the mcp"
 > **Domain**: hi-mcp — `create-or-replace-groups`, `merge-article-into-group`, the command tools
-> (`hi-mcp/hi-mcp-poc-json/tool-executors.ts`, `group-layout.ts`, `group-placement.ts`), the served
+> (`hi-mcp/hi-mcp-server/tool-executors.ts`, `group-layout.ts`, `group-placement.ts`), the served
 > rules (`hi-mcp-server.ts`), the chat (`hi-mcp/hi-mcp-chat`); two roomle-ui defects and one
 > RoomleCore defect
 > **Maintained by**: step 7 of [the testing skill](../skills/hi-mcp-testing.md#7-open-issues)

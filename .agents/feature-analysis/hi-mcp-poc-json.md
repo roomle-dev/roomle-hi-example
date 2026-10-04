@@ -10,7 +10,7 @@
 ## Executive Summary
 
 Establish `hi-mcp/` in roomle-hi-example as a Node.js TypeScript project that will host **multiple MCP
-server proof of concepts**, starting with `hi-mcp/hi-mcp-poc-json/`. The first PoC is a copy of the
+server proof of concepts**, starting with `hi-mcp/hi-mcp-server/`. The first PoC is a copy of the
 roomle-ui repository's `packages/embedding-lib/examples/hi-mcp-server/` (RML-17693) — the
 `@modelcontextprotocol/sdk`-based server whose `create-or-replace-groups` tool generates HI object
 groups (kitchens) **from a single JSON pos-group payload** — adapted so that its client is no longer
@@ -50,7 +50,7 @@ APIs — this has to be verified first (see [7.1](#71-risk-getexternalobjectplan
 
 1. **New subproject**: `hi-mcp/` in roomle-hi-example — a Node.js **TypeScript** project that will
    contain **multiple MCP server proof of concepts** over time.
-2. **First PoC**: `hi-mcp/hi-mcp-poc-json/`. The "json" in the name refers to the fact that HI object
+2. **First PoC**: `hi-mcp/hi-mcp-poc-json/` (since renamed to `hi-mcp/hi-mcp-server/`). The "json" in the name refers to the fact that HI object
    groups (kitchens) are generated **from a single JSON** with this attempt: the agent submits one
    `posGroups` JSON payload (article picks + docking + placement) and `create-or-replace-groups`
    creates, docks and positions the whole group in one call. The agent never authors coordinates.
@@ -193,9 +193,9 @@ Nuxt 3 app (`nuxt dev`, default port **3000**), `@roomle/embedding-lib` 7.0.0 +
 ```text
 hi-mcp/
 ├── README.md                     # what this folder is, list of PoCs
-├── package.json                   # npm workspace root: "workspaces": ["hi-mcp-poc-json"]
+├── package.json                   # npm workspace root: "workspaces": ["hi-mcp-server"]
 ├── tsconfig.base.json             # shared compiler options for all PoCs (module NodeNext / strict)
-└── hi-mcp-poc-json/               # PoC 1: copy of roomle-ui hi-mcp-server, adapted
+└── hi-mcp-server/                 # PoC 1: copy of roomle-ui hi-mcp-server, adapted
     ├── package.json               # self-contained deps: @modelcontextprotocol/sdk, ws, zod, vite-node
     ├── tsconfig.json              # extends ../tsconfig.base.json
     ├── server.ts
@@ -214,7 +214,7 @@ deliberately kept out of the host repository root). The existing zero-dependency
 `minimal-hi-example/hi-mcp-server.js` remains untouched — the two are parallel approaches, and
 this is the successor line.
 
-### 4.2 Changes to the copied server (hi-mcp-poc-json)
+### 4.2 Changes to the copied server (hi-mcp-server)
 
 | Source element | Change |
 | -------------- | ------ |
@@ -222,7 +222,7 @@ this is the successor line.
 | `server.ts` `ALLOWED_PAGE_ORIGINS` | unchanged — ligna-store dev server is also `localhost:3000` |
 | `page-bridge.ts:66` "No HI demo page connected" error | point to the ligna-store URL |
 | `browser-bridge.ts` hello `example` field | `'ligna-store'`; the `example` field can be generalized to `client` or kept as-is to avoid a protocol change (recommendation: keep the wire protocol identical, only change the value) |
-| `package.json` name | `hi-mcp-poc-json` |
+| `package.json` name | `hi-mcp-server` |
 | `package.json` runner | `vite-node` pinned to 3.2.4 with `vite` 6.4.3 (deviation from the source: roomle-ui runs `vite-node` 6, which requires `vite` 8 / rolldown and Node ≥ 20.19 — the local environment runs Node 20.10) |
 | `tsconfig.json` | extends `../tsconfig.base.json` instead of roomle-ui's `tsconfig.lint.json` |
 | Tool set, authoring rules, instructions, geometry (`plan-space.ts`), bridge protocol | **unchanged** — they are client-agnostic by design |
@@ -269,7 +269,7 @@ if (params.store?.stage === 'INT') {
 ```bash
 # 1. roomle-hi-example
 cd hi-mcp && npm install
-npm start --workspace hi-mcp-poc-json        # MCP server + WebSocket bridge on :3100
+npm start --workspace hi-mcp-server        # MCP server + WebSocket bridge on :3100
 
 # 2. ligna-store
 npm run dev                                 # Nuxt dev server on :3000
@@ -295,7 +295,7 @@ Differences from the roomle-ui runbook that the adapted README/QUICKSTART must r
 
 | What | Where |
 | ---- | ----- |
-| PoC runbook, tool reference, authoring rules, client registration | adapted `hi-mcp/hi-mcp-poc-json/README.md` + `QUICKSTART.md` (source: roomle-ui) |
+| PoC runbook, tool reference, authoring rules, client registration | adapted `hi-mcp/hi-mcp-server/README.md` + `QUICKSTART.md` (source: roomle-ui) |
 | Overview of the `hi-mcp/` project and its PoCs | new `hi-mcp/README.md`; link from root `README.md` |
 | Living reference for the new server | new `minimal-hi-example/docs/hi-mcp-poc-presentation.md` (companion to `minimal-hi-example/docs/hi-mcp-server.md`), indexed in `.agents/README.md` |
 | Store-side bridge provenance | `ligna-store/hi-mcp/README.md` (states the copy origin; the roomle-ui original will be deleted, ongoing sync applies only between this repository and the store) |
@@ -338,7 +338,7 @@ Differences from the roomle-ui runbook that the adapted README/QUICKSTART must r
 | Path | Action |
 | ---- | ------ |
 | `hi-mcp/package.json`, `hi-mcp/tsconfig.base.json`, `hi-mcp/README.md` | create (workspace root) |
-| `hi-mcp/hi-mcp-poc-json/*` | create — copy of roomle-ui `hi-mcp-server` (9 files per [2.2](#22-the-roomle-ui-source-what-gets-copied)), adapted per [4.2](#42-changes-to-the-copied-server-hi-mcp-poc-json) |
+| `hi-mcp/hi-mcp-server/*` | create — copy of roomle-ui `hi-mcp-server` (9 files per [2.2](#22-the-roomle-ui-source-what-gets-copied)), adapted per [4.2](#42-changes-to-the-copied-server-hi-mcp-server) |
 | `minimal-hi-example/docs/hi-mcp-poc-json.md` | create (living reference) |
 | `AGENTS.md`, root `README.md`, `.agents/README.md` | update structure/index links |
 
@@ -370,7 +370,7 @@ else; if absent, the PoC is blocked on a web-sdk deployment to `bo-test`.
 The roomle-ui original (`packages/embedding-lib/examples/hi-mcp-server`, RML-17693) is the **copy
 source only** — it **will be deleted later**, so there is no sync with roomle-ui in the future. After
 the copy, the page-side files (`browser-bridge/tool-executors/plan-space/types`) exist in two places:
-this repository's `hi-mcp-poc-json` and the ligna-store's `hi-mcp/`. That pair has no automatic sync
+this repository's `hi-mcp-server` and the ligna-store's `hi-mcp/`. That pair has no automatic sync
 either — changes are applied manually, and both copies' READMEs state the provenance. A decision for
 later is whether the store copy should be generated from this repository.
 
@@ -407,8 +407,8 @@ bridge copy is unit-tested here).
 | # | Step | Verify |
 | - | ---- | ------ |
 | 1 | Scaffold `hi-mcp/` workspace root: `package.json` (npm workspaces, devDependencies `vitest`, `typescript`, `@types/node`; scripts `test`, `typecheck`), `tsconfig.base.json`, `vitest.config.ts`, `README.md` | `npm install` succeeds |
-| 2 | Copy the 9 source files from roomle-ui into `hi-mcp/hi-mcp-poc-json/`, adapt per [4.2](#42-changes-to-the-copied-server-hi-mcp-poc-json); local `RoomDesignerApiType` in `types.ts` replaces the roomle-ui examples import | `tsc --noEmit` passes; `npm start` serves `/mcp` |
-| 3 | Unit tests per [8.1](#81-unit-test-plan) in `hi-mcp-poc-json/tests/`, vitest configured at `hi-mcp/` root | `npm test` green |
+| 2 | Copy the 9 source files from roomle-ui into `hi-mcp/hi-mcp-server/`, adapt per [4.2](#42-changes-to-the-copied-server-hi-mcp-server); local `RoomDesignerApiType` in `types.ts` replaces the roomle-ui examples import | `tsc --noEmit` passes; `npm start` serves `/mcp` |
+| 3 | Unit tests per [8.1](#81-unit-test-plan) in `hi-mcp-server/tests/`, vitest configured at `hi-mcp/` root | `npm test` green |
 | 4 | ligna-store: `hi-mcp/` page-side copy (`browser-bridge`, `tool-executors`, `plan-space`, `types`, provenance README) + `Planner.vue` INT-stage hook per [4.3](#43-ligna-store-changes) | manual: INT-stage store connects (server logs "page connected"), MCP client `get-plan-context` succeeds — also resolves [7.1](#71-risk-getexternalobjectplancontext-availability) |
 | 5 | Documentation: adapt PoC `README.md`/`QUICKSTART.md` (done with step 2), update `AGENTS.md` structure tree (step 2), `minimal-hi-example/docs/hi-mcp-poc-json.md` living reference at close-out, close out this analysis (status → Implemented) | docs indexed in `.agents/README.md` |
 
@@ -426,7 +426,7 @@ with the MCP server running (`page connected` in the server log, then `get-plan-
 ### 8.1 Unit test plan
 
 vitest (configured at `hi-mcp/` root, `npm test` runs across all workspaces). Test files live in
-`hi-mcp-poc-json/tests/` next to the units they cover. No browser, no network, no store — every
+`hi-mcp-server/tests/` next to the units they cover. No browser, no network, no store — every
 external edge is a mock: the `PageBridge` is tested against a fake WebSocket, the tool registrations
 against a mock bridge, and the tool executors against a fake `roomDesignerApi.extended` with plan
 fixtures.

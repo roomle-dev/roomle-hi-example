@@ -43,7 +43,7 @@ Recommendation: no code change for parts. If the goal is a smaller groups sectio
 | roomle-ui `homag-intelligence/src/hi-plan-context.ts:160-191` | `HiPlanRoot` / `HiPlanGroup`: the types have no parts field |
 | roomle-ui `homag-intelligence/__tests__/hi-plan-context-test.ts:459` | the input root carries parts (`:478`), the shaped root is asserted with `toEqual` on an exact object (`:514`): a part in the output fails this test today |
 | roomle-ui RML-18004 branches (`feat/hi-mcp-command-api-RML-18004`, `fix/hi-attribute-commands-RML-18004`, unmerged) | the group commands return `HiGroupOperationResult.groups: HiPlanGroup[]`, also through `shapeGroup` |
-| `hi-mcp/hi-mcp-poc-json/tool-executors.ts` | `get-plan-context` passes the context through; `create-or-replace-groups` returns `loaded` (`LoadExternalObjectGroupResult` is `{ id: number }`) and the shaped groups; `place-group` returns the shaped group |
+| `hi-mcp/hi-mcp-server/tool-executors.ts` | `get-plan-context` passes the context through; `create-or-replace-groups` returns `loaded` (`LoadExternalObjectGroupResult` is `{ id: number }`) and the shaped groups; `place-group` returns the shaped group |
 | ligna-store `hi-mcp/` | bridge and chat only: no shaping, no executors of its own |
 
 ### In a live result
@@ -154,9 +154,9 @@ mention them. Parts stay as they were.
 |---|---|---|
 | roomle-ui | `homag-intelligence/src/hi-plan-context.ts` | `logMessages` removed from `HiPlanRoot`, `HiPlanGroup`, `shapeRoot`, `shapeGroup`; the `PosErrorMsg` import dropped |
 | roomle-ui | `homag-intelligence/__tests__/hi-plan-context-test.ts` | the `shapeGroup` test gives the root an `Error` and the group an `Info` message and asserts that neither survives |
-| roomle-hi-example | `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` | the instruction "logMessages entries with category Error mean the input is wrong" and "any Error logMessages" in the `create-or-replace-groups` description removed |
-| roomle-hi-example | `hi-mcp/hi-mcp-poc-json/tests/tool-executors.test.ts` | the shaped-group fixture loses `logMessages` (the raw-group fixture keeps it) |
-| roomle-hi-example | `minimal-hi-example/docs/hi-mcp-server.md`, `hi-mcp/hi-mcp-poc-json/README.md`, `.agents/skills/hi-mcp-tools.md` | the same instruction removed from the docs |
+| roomle-hi-example | `hi-mcp/hi-mcp-server/hi-mcp-server.ts` | the instruction "logMessages entries with category Error mean the input is wrong" and "any Error logMessages" in the `create-or-replace-groups` description removed |
+| roomle-hi-example | `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` | the shaped-group fixture loses `logMessages` (the raw-group fixture keeps it) |
+| roomle-hi-example | `minimal-hi-example/docs/hi-mcp-server.md`, `hi-mcp/hi-mcp-server/README.md`, `.agents/skills/hi-mcp-tools.md` | the same instruction removed from the docs |
 
 The group commands of the unmerged RML-18004 branches return their groups through `shapeGroup`, so
 they lose the log messages too once both are merged.

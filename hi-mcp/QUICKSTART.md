@@ -18,4 +18,4 @@ The HI MCP server is deployed at Cloudflare. No local setup required.
 
 ## Local Development
 
-For local development, see [hi-mcp-poc-json/README.md](./hi-mcp-poc-json/README.md) for detailed setup instructions.
+For local development, see [hi-mcp-server/README.md](./hi-mcp-server/README.md) for detailed setup instructions.

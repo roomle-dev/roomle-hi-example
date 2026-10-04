@@ -26,7 +26,7 @@ run.
   `mcp=true`, the backend and library, and `mcp_port` only when `HI_MCP_PORT` is set. It has no
   parameter for a remote server.
 - [start.mjs:152-168](../../minimal-hi-example/start.mjs#L152-L168) always spawns
-  `hi-mcp-poc-json` on :3100; [start.mjs:219](../../minimal-hi-example/start.mjs#L219) calls it
+  `hi-mcp-server` on :3100; [start.mjs:219](../../minimal-hi-example/start.mjs#L219) calls it
   unconditionally.
 - [start.mjs:170-176](../../minimal-hi-example/start.mjs#L170-L176) points the chat backend at
   `HI_MCP_URL=http://localhost:${MCP_PORT}/mcp`. The chat backend takes any URL
@@ -40,10 +40,10 @@ run.
   `bridgeUrl = ws://localhost:${mcp_port ?? 3100}/bridge`. The page reads neither
   `mcp_server` nor `mcp_session`.
 - The ligna-store's page bridge already supports both (reference copy
-  [browser-bridge.ts:37-70](../../hi-mcp/hi-mcp-poc-json-client/browser-bridge.ts#L37-L70)):
+  [browser-bridge.ts:37-70](../../hi-mcp/hi-mcp-client/browser-bridge.ts#L37-L70)):
   `mcp_server` is mapped from `https://` to `wss://` and gets `/bridge` appended, and
   `mcp_session` adds `?session=<name>`. The
-  [setup matrix](../../hi-mcp/hi-mcp-poc-json/README.md#the-setup-matrix-which-setup-needs-which-url-parameters)
+  [setup matrix](../../hi-mcp/hi-mcp-server/README.md#the-setup-matrix-which-setup-needs-which-url-parameters)
   documents these parameters.
 
 ### The Cloudflare deployment
@@ -53,11 +53,11 @@ run.
   missing. [wrangler.jsonc:13](../../hi-mcp/cf/wrangler.jsonc#L13) allows `max_instances: 5`, and
   a container sleeps after 15 minutes without requests.
 - The container does not set `HI_MCP_PAGE_ORIGINS`, so the server uses its default list
-  ([server.ts:19-28](../../hi-mcp/hi-mcp-poc-json/server.ts#L19-L28)): `http://localhost:3000`,
+  ([server.ts:19-28](../../hi-mcp/hi-mcp-server/server.ts#L19-L28)): `http://localhost:3000`,
   `http://127.0.0.1:3000` and `https://www.roomle.com`. The `/bridge` upgrade from any other
-  origin is rejected ([server.ts:96-104](../../hi-mcp/hi-mcp-poc-json/server.ts#L96-L104)).
+  origin is rejected ([server.ts:96-104](../../hi-mcp/hi-mcp-server/server.ts#L96-L104)).
 - A new page `hello` closes the page that was connected before
-  ([page-bridge.ts:29-36](../../hi-mcp/hi-mcp-poc-json/page-bridge.ts#L29-L36)). Both pages
+  ([page-bridge.ts:29-36](../../hi-mcp/hi-mcp-server/page-bridge.ts#L29-L36)). Both pages
   reconnect 3 s after a close ([index.html:1234-1235](../../minimal-hi-example/index.html#L1234-L1235)),
   so **two pages on one session take the connection from each other every few seconds**.
 - When no page is connected, the server tells the agent which URL to open: `HI_MCP_STORE_URL`. In
@@ -196,7 +196,7 @@ The launcher always uses a session, and its name is the OS user name:
 | `minimal-hi-example/index.html` | bridge URL from `mcp_server` / `mcp_session` |
 | `README.md` (root) | `npm run start:cf` row in the invocation table |
 | `minimal-hi-example/README.md`, `minimal-hi-example/docs/hi-mcp-server.md` | starting section: the Cloudflare variant |
-| `hi-mcp/hi-mcp-poc-json/README.md` | setup matrix: the local example with the Cloudflare server |
+| `hi-mcp/hi-mcp-server/README.md` | setup matrix: the local example with the Cloudflare server |
 | `hi-mcp/docs/cloudflare-mcp-server.md` | the example as a second client; `start:cf` as a quick check after a deploy |
 | `.agents/skills/hi-mcp-cloudflare-deployment.md` | verification step with `start:cf` |
 | `AGENTS.md` | Development Workflow → Starting the Server |

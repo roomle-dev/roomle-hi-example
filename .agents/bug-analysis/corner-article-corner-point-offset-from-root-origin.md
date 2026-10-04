@@ -1,5 +1,5 @@
 > **Type**: Bug Analysis
-> **Domain**: hi-mcp — agent instructions of the MCP server (`hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts`); article geometry facts verified against plan snapshot data (RoomleCore RAPI download)
+> **Domain**: hi-mcp — agent instructions of the MCP server (`hi-mcp/hi-mcp-server/hi-mcp-server.ts`); article geometry facts verified against plan snapshot data (RoomleCore RAPI download)
 > **Trigger**: Jira [RML-17966](https://roomle.atlassian.net/browse/RML-17966) — re-test after the docking fix ([corner-kitchen-not-docked-after-positioning-rules.md](corner-kitchen-not-docked-after-positioning-rules.md)): the corner kitchen now docks as one group, but stands 261 mm inside the back wall
 > **Date**: 2026-09-29
 > **Author**: AI Assistant

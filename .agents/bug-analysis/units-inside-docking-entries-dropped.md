@@ -1,7 +1,7 @@
 # create-or-replace-groups drops the units the agent writes inside the docking
 
 > **Type**: Bug Analysis
-> **Domain**: hi-mcp — `create-or-replace-groups` (`hi-mcp/hi-mcp-poc-json/tool-executors.ts`), the served rules (`hi-mcp-server.ts`), the test run script (`.agents/scripts/run-hi-mcp-prompt.js`)
+> **Domain**: hi-mcp — `create-or-replace-groups` (`hi-mcp/hi-mcp-server/tool-executors.ts`), the served rules (`hi-mcp-server.ts`), the test run script (`.agents/scripts/run-hi-mcp-prompt.js`)
 > **Trigger**: "test the mcp" `.temp/result/mcp-test-2026-10-02_07-09-23`, run 06 ("Full kitchen, walnut fronts, dark marble worktop, around the corner") — reported there as a model finding, which it is not
 > **Ticket**: [RML-18033](https://roomle.atlassian.net/browse/RML-18033)
 > **Date**: 2026-10-02

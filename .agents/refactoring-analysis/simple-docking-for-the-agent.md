@@ -310,7 +310,7 @@ defaults are reported in `corrections`:
 and a group may mix both: the server compiles the relations and then runs the existing preparation
 on the result.
 
-**Where the code changes.** A new module, `hi-mcp-poc-json/group-layout.ts`, holds
+**Where the code changes.** A new module, `hi-mcp-server/group-layout.ts`, holds
 `relationsToDocking(roots, articles)`. It runs in `prepareGroup` (`tool-executors.ts:1054`), before
 `dropMalformedDocking`. `findAnchorRoot` (`group-placement.ts:91`), the probe and the planner are
 unchanged: they see the same `contextData` as today.
@@ -328,11 +328,11 @@ unchanged: they see the same `contextData` as today.
 
 | File | Change |
 |---|---|
-| `hi-mcp/hi-mcp-poc-json/group-layout.ts` (new) | `relationsToDocking` and the defaults above |
-| `hi-mcp/hi-mcp-poc-json/tool-executors.ts` | the compile step in `create-or-replace-groups` after `resolveArticleIds` (`:1482-1485`); `ROOT_FIELDS` (`:843`) and `toArticlePick` (`:65-78`); `sidePartnersOf` (`:488-515`, open issue 2); `WALL_UNIT` (`:619`) |
-| `hi-mcp/hi-mcp-poc-json/group-placement.ts` | `dockingRelations` (`:50-81`): Top-Top side pairs for the anchor walk |
-| `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` | `AUTHORING_RULES`: the docking bullets, the recipes and examples 1–3 become the relation table. `INSTRUCTIONS` step 2. The `create-or-replace-groups` description (`:216-243`) |
-| `hi-mcp/hi-mcp-poc-json/tests/` | new `group-layout.test.ts`; `tool-executors.test.ts`; `hi-mcp-server.test.ts` (served text) |
+| `hi-mcp/hi-mcp-server/group-layout.ts` (new) | `relationsToDocking` and the defaults above |
+| `hi-mcp/hi-mcp-server/tool-executors.ts` | the compile step in `create-or-replace-groups` after `resolveArticleIds` (`:1482-1485`); `ROOT_FIELDS` (`:843`) and `toArticlePick` (`:65-78`); `sidePartnersOf` (`:488-515`, open issue 2); `WALL_UNIT` (`:619`) |
+| `hi-mcp/hi-mcp-server/group-placement.ts` | `dockingRelations` (`:50-81`): Top-Top side pairs for the anchor walk |
+| `hi-mcp/hi-mcp-server/hi-mcp-server.ts` | `AUTHORING_RULES`: the docking bullets, the recipes and examples 1–3 become the relation table. `INSTRUCTIONS` step 2. The `create-or-replace-groups` description (`:216-243`) |
+| `hi-mcp/hi-mcp-server/tests/` | new `group-layout.test.ts`; `tool-executors.test.ts`; `hi-mcp-server.test.ts` (served text) |
 | `hi-mcp/docs/hi-mcp-behaviour.md` | a new decision; §5.2, §6 `create-or-replace-groups`, §8.3 (the new defaults; G23–G25 and G29 apply to `contextData` only) |
 | `minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md` | the payload format |
 | `.agents/backlog/mcp-test-open-issues.md` | issues 2, 3, 7, 13, 14 and 15 are closed by the format; 5 and 10 depend on Decision 1 |

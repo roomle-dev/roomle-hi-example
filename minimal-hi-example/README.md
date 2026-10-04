@@ -2,7 +2,7 @@
 
 Shortest path to a working session: the standalone HI presets example in one
 [`index.html`](./index.html), started together with the MCP server from
-[`hi-mcp/hi-mcp-poc-json`](../hi-mcp/hi-mcp-poc-json/) — the single MCP server
+[`hi-mcp/hi-mcp-server`](../hi-mcp/hi-mcp-server/) — the single MCP server
 implementation of this repository — by the [`start.mjs`](./start.mjs) launcher.
 Every detail and alternative: [docs/hi-mcp-server.md](./docs/hi-mcp-server.md).
 

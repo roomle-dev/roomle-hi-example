@@ -80,7 +80,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 roomle-hi-example is a demonstration and development environment for:
 
 1. **HI Presets Example** — A standalone HTML page (`index.html`) that demonstrates HOMAG Intelligence (HI) room planning with preset configurations
-2. **MCP Server** — The TypeScript MCP server (`hi-mcp/hi-mcp-poc-json`) that provides Model Context Protocol (MCP) tools for AI agents to orchestrate HI object groups in live Roomle sessions, started together with the example page by the launcher `minimal-hi-example/start.mjs`
+2. **MCP Server** — The TypeScript MCP server (`hi-mcp/hi-mcp-server`) that provides Model Context Protocol (MCP) tools for AI agents to orchestrate HI object groups in live Roomle sessions, started together with the example page by the launcher `minimal-hi-example/start.mjs`
 
 The MCP server enables AI assistants (Claude, Copilot, etc.) to:
 - Query plan state (rooms, walls, articles, groups)
@@ -115,7 +115,7 @@ The start script (`npm start`) provides:
 │   ├── package.json              # Workspace root: test/typecheck/start scripts
 │   ├── tsconfig.base.json        # Shared compiler options for all PoCs
 │   ├── vitest.config.ts          # Unit tests across all PoCs
-│   └── hi-mcp-poc-json/          # PoC 1: HI groups from a single JSON pos-group payload
+│   └── hi-mcp-server/            # PoC 1: HI groups from a single JSON pos-group payload
 │       ├── server.ts             # Entry point: /mcp + WebSocket bridge on :3100
 │       ├── hi-mcp-server.ts      # McpServer setup + tool registrations (zod)
 │       ├── tool-executors.ts     # Tool logic: validation, planner call composition, hints
@@ -127,10 +127,10 @@ The start script (`npm start`) provides:
 │       ├── tests/                # Unit tests (tool-executors, group-placement, plan-space, planner-api, page-bridge, hi-mcp-server)
 │       ├── README.md             # Complete PoC documentation (clients: INT-stage ligna-store, HI presets example)
 │       └── QUICKSTART.md         # Shortest path to a first tool call
-│   ├── hi-mcp-poc-json-client/   # Page side of the server (reference copy; the store runs its own)
+│   ├── hi-mcp-client/            # Page side of the server (reference copy; the store runs its own)
 │       ├── browser-bridge.ts     # WebSocket client: executes allow-listed planner methods, replies
 │       └── tests/                # Unit tests (browser-bridge)
-│   ├── hi-mcp-chat/              # AI chat backend (Vercel AI SDK, Mistral): POST /chat on :3200, MCP client of hi-mcp-poc-json, started by the launcher with `npm start mistral <api-key>`
+│   ├── hi-mcp-chat/              # AI chat backend (Vercel AI SDK, Mistral): POST /chat on :3200, MCP client of hi-mcp-server, started by the launcher with `npm start mistral <api-key>`
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # Canonical AI assistant instructions (mirrored by this file)
@@ -179,7 +179,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 
 MCP (Model Context Protocol) is a standard protocol for AI agents to interact with tools and resources.
 
-1. **Single MCP Server Implementation** — The TypeScript server in `hi-mcp/hi-mcp-poc-json` (`@modelcontextprotocol/sdk`, `ws`, zod, run via `vite-node`) is the only MCP server; clients (example page, ligna-store) wire themselves to it via environment variables
+1. **Single MCP Server Implementation** — The TypeScript server in `hi-mcp/hi-mcp-server` (`@modelcontextprotocol/sdk`, `ws`, zod, run via `vite-node`) is the only MCP server; clients (example page, ligna-store) wire themselves to it via environment variables
 2. **Streamable HTTP** — MCP protocol handled by the MCP SDK, JSON response mode, stateless (a new transport per request)
 3. **WebSocket Bridge** — The `/bridge` WebSocket connects the MCP server to the browser page
 4. **Tool Logic in the Server, Planner Calls in the Page** — The tools run in the server (`tool-executors.ts`); the planner methods they call (`planner-api.ts`) are relayed to `roomDesignerApi.extended` in the page, which executes only the methods on its allow-list
@@ -423,7 +423,7 @@ npm start          # or: node minimal-hi-example/start.mjs
 This starts:
 - The build gate: `npm install` (first run) + typecheck of the `hi-mcp` workspace
 - Static file serving for minimal-hi-example/index.html on port 3000
-- The MCP server (hi-mcp/hi-mcp-poc-json) with its MCP endpoint at /mcp on port 3100
+- The MCP server (hi-mcp/hi-mcp-server) with its MCP endpoint at /mcp on port 3100
 - WebSocket bridge at /bridge
 - Opens browser to http://localhost:3000/?mcp=true
 
@@ -451,7 +451,7 @@ A push to `release/cloudflare` deploys the MCP server to Cloudflare
    - `get-order-data` — Get order information
    - `get-plan-images` — Render plan images (a perspective and a top view)
 
-All tools are defined in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` and documented in:
+All tools are defined in `hi-mcp/hi-mcp-server/hi-mcp-server.ts` and documented in:
 - [`.agents/skills/hi-mcp-tools.md`](../.agents/skills/hi-mcp-tools.md) — Complete tool reference
 - [`minimal-hi-example/docs/hi-mcp-server.md`](../minimal-hi-example/docs/hi-mcp-server.md) — User-facing documentation
 
@@ -473,9 +473,9 @@ All tools are defined in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` and documente
 
 ### Adding New Tools
 
-1. Register the tool in `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts` (zod schema + handler)
-2. Implement the executor in `hi-mcp/hi-mcp-poc-json/tool-executors.ts` — the pages stay untouched; an executor that changes the plan is wrapped in `oneAtATime`, so it never runs beside another plan change
-3. An edit of existing groups needs no new planner method: add the command in roomle-ui (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`) and forward it through `externalObjectGroupOperation`. Only if the tool needs a planner method the pages do not expose yet: add it to `hi-mcp/hi-mcp-poc-json/planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-poc-json-client/browser-bridge.ts`, then copy to the ligna-store)
+1. Register the tool in `hi-mcp/hi-mcp-server/hi-mcp-server.ts` (zod schema + handler)
+2. Implement the executor in `hi-mcp/hi-mcp-server/tool-executors.ts` — the pages stay untouched; an executor that changes the plan is wrapped in `oneAtATime`, so it never runs beside another plan change
+3. An edit of existing groups needs no new planner method: add the command in roomle-ui (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`) and forward it through `externalObjectGroupOperation`. Only if the tool needs a planner method the pages do not expose yet: add it to `hi-mcp/hi-mcp-server/planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts`, then copy to the ligna-store)
 4. Add or extend unit tests in the matching `tests/` folder
 5. Update `hi-mcp/docs/hi-mcp-behaviour.md`, the `minimal-hi-example/docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
 6. Test with MCP client

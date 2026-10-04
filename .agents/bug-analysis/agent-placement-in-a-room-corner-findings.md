@@ -1,7 +1,7 @@
 # Agent placement in a room corner: findings
 
 > **Type**: Bug Analysis (findings and conclusion — no proposed fix)
-> **Domain**: the chain from the chat prompt to the placed group — chat backend (`hi-mcp/hi-mcp-chat`), MCP server instructions and tools (`hi-mcp/hi-mcp-poc-json`), plan context and arrangement (roomle-ui `homag-intelligence`), verified against plan snapshots (RoomleCore `npm run rapi:plan`)
+> **Domain**: the chain from the chat prompt to the placed group — chat backend (`hi-mcp/hi-mcp-chat`), MCP server instructions and tools (`hi-mcp/hi-mcp-server`), plan context and arrangement (roomle-ui `homag-intelligence`), verified against plan snapshots (RoomleCore `npm run rapi:plan`)
 > **Trigger**: "plan a kitchen with an oven, a sink and a fridge in the back right corner of the room" places the second unit inside the back wall and the third on top of the first; later the same day "plan a kitchen in the back right corner of the room" placed the corner kitchen 261 mm inside the back wall
 > **Date**: 2026-09-29 / 2026-09-30
 > **Author**: AI Assistant

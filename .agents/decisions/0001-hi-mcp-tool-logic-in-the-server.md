@@ -15,7 +15,7 @@ client enforced an older rule than the one the server published.
 
 ## Decision
 
-- The tools run in `hi-mcp/hi-mcp-poc-json` (`tool-executors.ts`). They reach the planner through
+- The tools run in `hi-mcp/hi-mcp-server` (`tool-executors.ts`). They reach the planner through
   `planner-api.ts`, which forwards each planner method call over the bridge.
 - The bridge protocol is method-level (`BRIDGE_PROTOCOL` 2):
   `{ kind: 'call', id, method, args: [...] }`. The page announces the protocol in its `hello`. A

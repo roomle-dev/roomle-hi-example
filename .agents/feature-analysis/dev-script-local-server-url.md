@@ -18,7 +18,7 @@ instance — the page's web-sdk then contains the local (possibly newer) plan-co
 ## How the Area Works Today
 
 - `minimal-hi-example/start.mjs` is the launcher: build gate, static file server on
-  `EXAMPLE_PORT` (default 3000), spawns the hi-mcp-poc-json MCP server, opens the browser at
+  `EXAMPLE_PORT` (default 3000), spawns the hi-mcp-server MCP server, opens the browser at
   `EXAMPLE_URL` (`start.mjs:20`-`27`).
 - `EXAMPLE_URL` is built as
   `http://localhost:${STATIC_PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`

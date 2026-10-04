@@ -1,7 +1,7 @@
 # Feature Analysis: HI MCP testing skill — the prompt run script
 
 > **Type**: Feature Analysis
-> **Domain**: agent tooling (`.agents/scripts`, `.agents/skills`); uses the launcher `minimal-hi-example/start.mjs`, the chat backend `hi-mcp/hi-mcp-chat`, the MCP server `hi-mcp/hi-mcp-poc-json` and the example page `minimal-hi-example/index.html`
+> **Domain**: agent tooling (`.agents/scripts`, `.agents/skills`); uses the launcher `minimal-hi-example/start.mjs`, the chat backend `hi-mcp/hi-mcp-chat`, the MCP server `hi-mcp/hi-mcp-server` and the example page `minimal-hi-example/index.html`
 > **Trigger**: Request of 2026-09-30: "create a new skill for testing the hi mcp … the first thing you need to do is a script in .agents/scripts" — start the MCP with a provider and key given as parameters (like `npm start`), apply a prompt given as a parameter and wait for the result, read the result with `roomDesignerApi.extended.getExternalObjectSnapshot()` and store it in a new subdirectory of `.temp/result`
 > **Date**: 2026-09-30
 > **Author**: AI Assistant
@@ -81,7 +81,7 @@ script can call it directly.
 
 Stateless Streamable HTTP in JSON response mode: every `POST /mcp` gets a new server and transport,
 so a single `tools/call` request works without a preceding `initialize`
-(`hi-mcp-poc-json/server.ts:29-55`). A tool call before a page is connected fails with the
+(`hi-mcp-server/server.ts:29-55`). A tool call before a page is connected fails with the
 "No HI page connected" error. The bridge keeps one page: a newer connection replaces the current one
 and the replaced page is closed (`page-bridge.ts:29-38`).
 

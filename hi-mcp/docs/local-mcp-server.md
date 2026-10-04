@@ -1,6 +1,6 @@
 # Local MCP Server — Installation and Client Setup
 
-This documents the **local** MCP server of the `hi-mcp` workspace (`hi-mcp-poc-json`): running on
+This documents the **local** MCP server of the `hi-mcp` workspace (`hi-mcp-server`): running on
 your machine, with the MCP endpoint at `http://localhost:3100/mcp` — in contrast to the cloud
 variant ([Azure deployment](../../.agents/feature-analysis/mcp-azure-deployment-and-session-bootstrapping.md)).
 The server runs the tools of any connected AI agent and relays their planner calls into a connected
@@ -9,7 +9,7 @@ ligna-store page (local or deployed), where they execute against the planner.
 > Note: [`minimal-hi-example/docs/hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md) documents the standalone HI presets
 > example, which uses this same server (started by `minimal-hi-example/start.mjs`) as its client.
 > Tool reference and authoring rules live in the
-> [PoC README](../hi-mcp-poc-json/README.md).
+> [PoC README](../hi-mcp-server/README.md).
 
 ## Prerequisites
 
@@ -43,7 +43,7 @@ with the optional `HI_MCP_TLS_CERT`/`HI_MCP_TLS_KEY`). The server terminal logs 
 The server holds **one page at a time** — the most recently connected tab receives the tool calls.
 Which setup needs which URL parameters — local server, deployed store, cloud server, parallel
 sessions — is covered by the **setup matrix** in the
-[PoC README](../hi-mcp-poc-json/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
+[PoC README](../hi-mcp-server/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
 
 ### Configuration (environment variables, all optional)
 
@@ -153,7 +153,7 @@ Clients that only support the stdio transport can bridge via
 
 At initialize, the server delivers **instructions** to the agent: the workflow, the pos-group
 authoring rules, and the docking semantics (see the
-[PoC README](../hi-mcp-poc-json/README.md)).
+[PoC README](../hi-mcp-server/README.md)).
 
 ## Mistral (chat.mistral.ai)
 

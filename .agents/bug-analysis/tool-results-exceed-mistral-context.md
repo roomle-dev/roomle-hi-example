@@ -1,7 +1,7 @@
 # Tool results fill Mistral's context within one turn
 
 > **Type**: Bug Analysis
-> **Domain**: hi-mcp — the text results of the MCP tools (`hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts`); the agent-ready plan context they pass through (roomle-ui `homag-intelligence`, see [agent-ready plan context](../refactoring-analysis/agent-ready-plan-context-in-glue-logic.md))
+> **Domain**: hi-mcp — the text results of the MCP tools (`hi-mcp/hi-mcp-server/hi-mcp-server.ts`); the agent-ready plan context they pass through (roomle-ui `homag-intelligence`, see [agent-ready plan context](../refactoring-analysis/agent-ready-plan-context-in-glue-logic.md))
 > **Trigger**: "test the mcp" run `.temp/result/mcp-test-2026-09-30_18-52-26/report.md` (mistral-large-latest, planner `bo-test`): run 06 ended with `Prompt 262149 > 262144 maximum context length` after twelve tool calls without `get-plan-images`; gpt-5.4-mini's run 06 of 18:34 ended the same way
 > **Date**: 2026-10-01
 > **Author**: AI Assistant
@@ -88,9 +88,9 @@ stop announcing `imageUrl`.
 Expected sizes: `get-plan-context` 138k → about 30k tokens, the groups section of an 11-unit
 kitchen 29k → 16k; run 06's tool calls fit in about 110k tokens.
 
-- `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts`: `textResult`; descriptions of `get-plan-context`
+- `hi-mcp/hi-mcp-server/hi-mcp-server.ts`: `textResult`; descriptions of `get-plan-context`
   and `find-attributes`.
-- Unit test in `hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts`: a result with nested
+- Unit test in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`: a result with nested
   `imageUrl` fields comes back without them, as compact JSON.
 - Docs: `minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md` — the tool
   results carry no image URLs.
@@ -110,7 +110,7 @@ kitchen 29k → 16k; run 06's tool calls fit in about 110k tokens.
 ## Validation
 
 - Unit test `returns tool results as compact JSON without image URLs`
-  (`hi-mcp-poc-json/tests/hi-mcp-server.test.ts`) passes; the workspace typecheck passes.
+  (`hi-mcp-server/tests/hi-mcp-server.test.ts`) passes; the workspace typecheck passes.
 - Measured against the fixed server (same page, same tokenizer):
 
   | Text | Before | After |

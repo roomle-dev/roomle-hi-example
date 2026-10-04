@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { PLANNER_METHODS } from '../../hi-mcp-poc-json-client/browser-bridge';
+import { PLANNER_METHODS } from '../../hi-mcp-client/browser-bridge';
 import type { PageBridge } from '../page-bridge';
 import { SNAPSHOT_CALL_TIMEOUT_MS } from '../page-bridge';
 import { createPlannerApi } from '../planner-api';

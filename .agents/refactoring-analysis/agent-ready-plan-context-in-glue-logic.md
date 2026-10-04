@@ -25,7 +25,7 @@ before handing it to the agent:
 
 - `compactMasterData` (root modules + customer-facing attributes only) is **duplicated three
   times**: in `ligna-store/hi-mcp/tool-executors.ts:52`,
-  `roomle-hi-example/hi-mcp/hi-mcp-poc-json-client/tool-executors.ts:52`, and inline in
+  `roomle-hi-example/hi-mcp/hi-mcp-client/tool-executors.ts:52`, and inline in
   `roomle-hi-example/minimal-hi-example/index.html:1449`.
 - The room contour (`PosRoom` → `PosContour` → `PosContourSegment`) is a 2D SVG-path-like
   structure (`cmd`, `x`, `y`), while `PosGroup.pos` is 3D (right-handed, Y up). Each embedding
@@ -64,7 +64,7 @@ Three repositories are involved: **roomle-ui**, **ligna-store**, **roomle-hi-exa
 ### What the embedding systems do with it (the flaw)
 
 The `get-plan-context` tool executor (identical in `ligna-store/hi-mcp/tool-executors.ts:540`,
-`hi-mcp/hi-mcp-poc-json-client/tool-executors.ts:540`, and inline in
+`hi-mcp/hi-mcp-client/tool-executors.ts:540`, and inline in
 `minimal-hi-example/index.html:1926`) re-fetches more sections than requested (articles need
 masterData + groups for compaction) and then reshapes everything:
 
@@ -117,11 +117,11 @@ not by the API.
 | File | Change |
 |---|---|
 | `minimal-hi-example/index.html:1449, 1926-1975` | Remove inline `compactMasterData`, `compactAttribute` and the shaping in the `get-plan-context` executor. |
-| `hi-mcp/hi-mcp-poc-json-client/tool-executors.ts` | Same removals as in the store (this is the reference copy the store imports; keep the copy in sync per the hi-mcp-server skill). |
-| `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts:74-101` | Update the `get-plan-context` tool description: the compact sections and the 3D room contour (x, level, -y, Y up, with derived walls) are part of the API result now. |
-| `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts:103-111` | Update the `find-attributes` tool description: it no longer promises "the attributes the compact masterData section of get-plan-context leaves out" — it searches the compacted attribute vocabulary that `getPlanContext` returns. |
+| `hi-mcp/hi-mcp-client/tool-executors.ts` | Same removals as in the store (this is the reference copy the store imports; keep the copy in sync per the hi-mcp-server skill). |
+| `hi-mcp/hi-mcp-server/hi-mcp-server.ts:74-101` | Update the `get-plan-context` tool description: the compact sections and the 3D room contour (x, level, -y, Y up, with derived walls) are part of the API result now. |
+| `hi-mcp/hi-mcp-server/hi-mcp-server.ts:103-111` | Update the `find-attributes` tool description: it no longer promises "the attributes the compact masterData section of get-plan-context leaves out" — it searches the compacted attribute vocabulary that `getPlanContext` returns. |
 | `minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`, `.agents/skills/hi-mcp-server.md` | Update the tool reference and the data-shape documentation. |
-| `hi-mcp/hi-mcp-poc-json/tests/` | Adapt the executor/tool tests to the new context shape. |
+| `hi-mcp/hi-mcp-server/tests/` | Adapt the executor/tool tests to the new context shape. |
 
 ---
 
@@ -179,7 +179,7 @@ Key decisions:
   docking vectors), contour conversion to `pos: [x, level, -y]` with all other segment properties
   (`cmd`, `angle`, `type`, `height`, `thickness`) surviving, wall derivation, level handling,
   degenerate/empty contours, and `getPlanContext` returning the compacted sections.
-- **roomle-hi-example**: adapt `hi-mcp/hi-mcp-poc-json/tests/` (hi-mcp-server, tool-executors,
+- **roomle-hi-example**: adapt `hi-mcp/hi-mcp-server/tests/` (hi-mcp-server, tool-executors,
   plan-space) to the pass-through executors and the new context shape; `npm test` +
   `npm run typecheck` at the `hi-mcp` root.
 - **ligna-store**: the store's `hi-mcp` copy follows the reference client; run its checks.
@@ -235,7 +235,7 @@ New file `packages/web-sdk/packages/homag-intelligence/src/hi-plan-context.ts`:
 | `HiPlanGroup`, `HiPlanRoot` | `shapeGroup` / `shapeRoot` output (position with pos, rotationY, footprint; roots as article picks with docking, dockingVectors, freeDockingVectors, subModules, logMessages). |
 
 **Pure functions** (all testable without mocks; semantics identical to today's embedding-side
-implementations, ported from `hi-mcp/hi-mcp-poc-json-client/tool-executors.ts` and `plan-space.ts`):
+implementations, ported from `hi-mcp/hi-mcp-client/tool-executors.ts` and `plan-space.ts`):
 
 - master data: `compactAttribute`, `compactMasterData` (+ `isRootModule`,
   `isCustomerFacingAttribute`)
@@ -265,7 +265,7 @@ copies. Verify: `npx tsc` / the web-sdk type check passes.
 - `debug-logging.ts:399` passes the context through unchanged — only the logged shape changes;
   verify it still compiles and the debug output remains useful.
 
-### Step 3 — roomle-hi-example: reference client (`hi-mcp/hi-mcp-poc-json-client/`)
+### Step 3 — roomle-hi-example: reference client (`hi-mcp/hi-mcp-client/`)
 
 - `tool-executors.ts`:
   - `get-plan-context` becomes a pass-through of
@@ -302,7 +302,7 @@ copies. Verify: `npx tsc` / the web-sdk type check passes.
 
 ### Step 4 — roomle-hi-example: MCP server, example page, tests, docs
 
-- `hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts`: update the `get-plan-context` description (3D
+- `hi-mcp/hi-mcp-server/hi-mcp-server.ts`: update the `get-plan-context` description (3D
   contour `pos: [x, level, -y]`, derived walls, compact sections as the API returns them),
   the `find-attributes` description (compacted vocabulary, no `userRight`, no "attributes the
   compact masterData leaves out"), and the coordinate references in the intro prompt text
@@ -313,7 +313,7 @@ copies. Verify: `npx tsc` / the web-sdk type check passes.
   tool-executors to pass-through and new shapes) so `npm test` and `npm run typecheck` at the
   `hi-mcp` root stay green. No new unit tests here — the unit-test plan below is roomle-ui only.
 - Docs: `minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`,
-  `.agents/skills/hi-mcp-server.md`, `hi-mcp/hi-mcp-poc-json/README.md` / `QUICKSTART.md`
+  `.agents/skills/hi-mcp-server.md`, `hi-mcp/hi-mcp-server/README.md` / `QUICKSTART.md`
   response examples.
 
 ### Step 5 — ligna-store: client copy
@@ -402,7 +402,7 @@ shapes. Run via the web-sdk vitest setup (`packages/web-sdk`: `npm test`).
 - `roomle-ui/packages/web-sdk/packages/homag-intelligence/src/model/oc-scripts-domain.model.ts:207-227`
   — `PosContourSegment`, `PosContour`, `PosRoom`.
 - `ligna-store/hi-mcp/tool-executors.ts`, `hi-mcp/plan-space.ts` — embedder-side shaping.
-- `roomle-hi-example/hi-mcp/hi-mcp-poc-json-client/` — reference copy of the store client.
+- `roomle-hi-example/hi-mcp/hi-mcp-client/` — reference copy of the store client.
 - `roomle-hi-example/minimal-hi-example/index.html` — inline executors of the minimal example.
 
 ---
@@ -427,12 +427,12 @@ ticket demanded.
 | roomle-ui | `src/model/oc-scripts-domain.model.ts` | `PosContextData`, `PosDockedContext`, `PosDockedContextRoot` exported (needed for typed shaping). |
 | roomle-ui | `__tests__/hi-plan-context-test.ts` | **New.** 23 unit tests for the pure shaping functions. |
 | roomle-ui | `__tests__/glue-logic-test.ts` | getPlanContext block adapted to the agent-ready shapes + new fetch-sharing test; master data seeded per test (the shared mock stays untouched). |
-| roomle-hi-example | `hi-mcp-poc-json-client/tool-executors.ts` | get-plan-context is a pass-through; find-attributes searches the compacted vocabulary (userRight dropped); placement math reads `room.walls` and `getExternalObjectGroups()`. |
-| roomle-hi-example | `hi-mcp-poc-json-client/plan-space.ts` | Contour conversion and wall derivation removed (moved to roomle-ui); placement/geometry helpers kept. |
-| roomle-hi-example | `hi-mcp-poc-json-client/tests/*` | plan-space tests lose the deriveWalls cases; tool-executor tests rewritten around pass-through, shaped context fixtures, walls and raw groups. |
-| roomle-hi-example | `hi-mcp-poc-json/hi-mcp-server.ts` | get-plan-context and find-attributes tool descriptions updated (3D contour, compacted vocabulary). |
+| roomle-hi-example | `hi-mcp-client/tool-executors.ts` | get-plan-context is a pass-through; find-attributes searches the compacted vocabulary (userRight dropped); placement math reads `room.walls` and `getExternalObjectGroups()`. |
+| roomle-hi-example | `hi-mcp-client/plan-space.ts` | Contour conversion and wall derivation removed (moved to roomle-ui); placement/geometry helpers kept. |
+| roomle-hi-example | `hi-mcp-client/tests/*` | plan-space tests lose the deriveWalls cases; tool-executor tests rewritten around pass-through, shaped context fixtures, walls and raw groups. |
+| roomle-hi-example | `hi-mcp-server/hi-mcp-server.ts` | get-plan-context and find-attributes tool descriptions updated (3D contour, compacted vocabulary). |
 | roomle-hi-example | `minimal-hi-example/index.html` | Same executor changes inline (pass-through, walls from context, raw groups via getExternalObjectGroups). |
-| roomle-hi-example | `docs`, `hi-mcp-poc-json/README.md` | Rooms (3D contour + walls) and find-attributes (compacted vocabulary) documented. |
+| roomle-hi-example | `docs`, `hi-mcp-server/README.md` | Rooms (3D contour + walls) and find-attributes (compacted vocabulary) documented. |
 | ligna-store | `hi-mcp/tool-executors.ts`, `hi-mcp/plan-space.ts` | Synced from the reference client (were byte-identical to it before the change). |
 
 Commits: roomle-ui `04b4e24bb`, roomle-hi-example `ef51785`, ligna-store `ce4dd48` (all on

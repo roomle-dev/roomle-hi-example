@@ -13,7 +13,7 @@
 
 Implemented per the plan posted on the ticket, for local use with all three providers of the ticket comment: Mistral, Anthropic, and Azure OpenAI. Working tree: branch `feat/rml-17984-ai-chat-mistral`.
 
-- **Chat backend**: new workspace package `hi-mcp/hi-mcp-chat` (`chat-config.ts`, `chat-handler.ts`, `chat-server.ts`) with `POST /chat` — a plain text stream built from a custom ReadableStream over the `streamText` result (including `[tool]` status lines and `[error]` relaying) — plus `GET /health`, CORS for the example page origins, and loopback binding. The `hi-mcp-poc-json` server is untouched; the chat is just another MCP client of it.
+- **Chat backend**: new workspace package `hi-mcp/hi-mcp-chat` (`chat-config.ts`, `chat-handler.ts`, `chat-server.ts`) with `POST /chat` — a plain text stream built from a custom ReadableStream over the `streamText` result (including `[tool]` status lines and `[error]` relaying) — plus `GET /health`, CORS for the example page origins, and loopback binding. The `hi-mcp-server` server is untouched; the chat is just another MCP client of it.
 - **Invocation**: `npm start <provider> <api-key>` / `npm run dev <provider> <api-key>` (verified: npm forwards the args through both workspace script layers without `--`). `start.mjs` parses them, spawns the chat backend with `HI_CHAT_TOKEN` and `HI_CHAT_PROVIDER`, and appends `&chat=true` to the opened URL. Token never lands in URL, page, or logs.
 - **Providers**: Mistral (`mistral`, `mistral-medium`, `mistral-large`, any `mistral-*` id), Anthropic (`claude`/`anthropic`/`claude-*` ids), Azure OpenAI (`azure`/`openai` with `AZURE_RESOURCE_NAME` and the deployment name in `HI_CHAT_MODEL`).
 - **Page**: chat UI in `.left-section`, chat visible at startup with `chat=true`, "Show panel" switches between chat (unchecked) and debug panel (checked) — open question 1 resolved that way; without `chat=true` the old behavior is unchanged. Replies render as sanitized markdown (marked + DOMPurify, loaded lazily only when the chat is enabled); the chat layout is applied before planner init so the scene centers correctly.
@@ -22,7 +22,7 @@ Implemented per the plan posted on the ticket, for local use with all three prov
 
 Not carried into this iteration (still open): AI SDK data stream protocol for richer per-tool status than the `[tool]` lines (open question 4), conversation memory (open question 5), deployment use, keyless Azure Entra ID auth. Open question 2 was settled by the plan: separate `chat=true` page param plus env-based key delivery instead of a token in the URL. Open question 3 (provider scope) was resolved beyond the plan: all three providers are implemented.
 
-Side effect worth noting: installing the new package forced a workspace-wide zod alignment — `hi-mcp/hi-mcp-poc-json` now pins zod 4.6.5 (was 4.5.4) because the Vercel AI SDK packages require 4.6+ and two zod copies broke the poc-json typecheck. The root `package-lock.json` was refreshed (it was stale and did not include the `cf` workspace yet). The `cf` test suite fails to load `@cloudflare/containers` in vitest, but this failure reproduces identically on the commit before this feature — pre-existing, not caused by the chat work.
+Side effect worth noting: installing the new package forced a workspace-wide zod alignment — `hi-mcp/hi-mcp-server` now pins zod 4.6.5 (was 4.5.4) because the Vercel AI SDK packages require 4.6+ and two zod copies broke the poc-json typecheck. The root `package-lock.json` was refreshed (it was stale and did not include the `cf` workspace yet). The `cf` test suite fails to load `@cloudflare/containers` in vitest, but this failure reproduces identically on the commit before this feature — pre-existing, not caused by the chat work.
 
 ---
 
@@ -30,7 +30,7 @@ Side effect worth noting: installing the new package forced a workspace-wide zod
 
 RML-17984 asks for an AI chat window in the HI presets example, placed in the same spot as the debug panel in the left section, with the "Show panel" checkbox toggling between chat and debug panel. The chat is implemented with the Vercel AI SDK and activated via a URL parameter carrying the model provider and API token.
 
-The analysis concludes that the chat needs a **new backend route** (the page cannot hold provider keys, and the example page is plain HTML without a build step) that acts as an **MCP client of the existing hi-mcp-poc-json server**. The page only gains the chat UI and a streaming fetch consumer; the existing MCP bridge and tool executors stay untouched. Three design decisions need confirmation before implementation: the toggle semantics, the backend package location, and the client streaming protocol.
+The analysis concludes that the chat needs a **new backend route** (the page cannot hold provider keys, and the example page is plain HTML without a build step) that acts as an **MCP client of the existing hi-mcp-server**. The page only gains the chat UI and a streaming fetch consumer; the existing MCP bridge and tool executors stay untouched. Three design decisions need confirmation before implementation: the toggle semantics, the backend package location, and the client streaming protocol.
 
 This is the first concrete implementation step of the broader vision analyzed in [`sales-configurator-ai-integration.md`](sales-configurator-ai-integration.md) and stated as the repository purpose: a chat window where planning can be executed through natural language.
 
@@ -51,7 +51,7 @@ Why: the HI MCP server today requires an external MCP client (Claude Code, Copil
 - **Left section / debug panel**: `.left-section` (index.html:74, style `display: none` by default) contains `#tc-area` with the parameter UI, action buttons, and `#console-log` (index.html:173-190). The `#toggle-panel` checkbox (index.html:164-165) switches it between `flex` and `none` (index.html:780-786). Unchecked means the whole left section is hidden.
 - **Page setup**: single HTML file, no build step, ES module scripts, inline JS. The planner is embedded with `RoomleConfiguratorApi` from the embedding lib; `DEFAULT_SERVER_URL` (index.html:234) is the bo-test tenant the example loads — the chat feature does not touch the planner embed configuration.
 - **MCP activation**: the page only connects to the MCP server when `?mcp=true`. `startMcpBrowserBridge` (index.html:2141-2196) opens `ws://localhost:{mcp_port}/bridge` (default 3100), receives tool calls, and executes them via `mcpToolExecutors` (index.html:1661) against `roomDesignerApi.extended`.
-- **MCP server**: `hi-mcp/hi-mcp-poc-json/server.ts` (vite-node, TypeScript, `@modelcontextprotocol/sdk`) serves `POST /mcp` (Streamable HTTP) and the `/bridge` WebSocket. It is shared with the ligna-store client and the cloud deployments, and documented as "unchanged, shared".
+- **MCP server**: `hi-mcp/hi-mcp-server/server.ts` (vite-node, TypeScript, `@modelcontextprotocol/sdk`) serves `POST /mcp` (Streamable HTTP) and the `/bridge` WebSocket. It is shared with the ligna-store client and the cloud deployments, and documented as "unchanged, shared".
 - **Launcher**: `minimal-hi-example/start.mjs` serves the page on :3000 and spawns the MCP server on :3100, opening the browser at `http://localhost:3000/?mcp=true`.
 
 ## 3. Gap Analysis
@@ -81,7 +81,7 @@ Why: the HI MCP server today requires an external MCP client (Claude Code, Copil
   └── streamText({ model, messages, tools }) → streamed response
             │ Streamable HTTP /mcp (tools/call relayed over /bridge)
             ▼
-[hi-mcp/hi-mcp-poc-json] → page → roomDesignerApi.extended
+[hi-mcp/hi-mcp-server] → page → roomDesignerApi.extended
 ```
 
 The chain is deliberate: the LLM's tool calls go through the existing MCP server and browser bridge, so all existing HI tools (`get-plan-context`, `create-or-replace-groups`, ...) work in the chat without any change to the server or the executors.
@@ -114,7 +114,7 @@ The chain is deliberate: the LLM's tool calls go through the existing MCP server
 | Alternative | Why rejected |
 |---|---|
 | Chat entirely in the page (direct LLM calls from the browser) | Provider API keys would be exposed to the browser; the ticket comment explicitly requires server-side authentication |
-| Add the `/chat` route to `hi-mcp/hi-mcp-poc-json/server.ts` | That server is shared with the ligna-store client and cloud deployments and documented as unchanged; a chat route with its own deps would leak example-only concerns into it |
+| Add the `/chat` route to `hi-mcp/hi-mcp-server/server.ts` | That server is shared with the ligna-store client and cloud deployments and documented as unchanged; a chat route with its own deps would leak example-only concerns into it |
 | Implement the route in `start.mjs` directly | start.mjs is a plain-Node launcher without TypeScript/transpilation and with a no-new-dependencies rule; the Vercel AI SDK needs TS + npm deps, which belong in the workspace |
 | Use an external MCP client (status quo) | Defeats the purpose: the example should be self-contained and usable without Claude Code/Copilot |
 

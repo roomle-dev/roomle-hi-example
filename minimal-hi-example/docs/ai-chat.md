@@ -8,7 +8,7 @@ example into a self-contained demo — no Claude Code or Copilot needed.
 The chat uses the [Vercel AI SDK](https://sdk.vercel.ai) with **Mistral**,
 **Anthropic (Claude)**, **Google (Gemini)**, and **Azure OpenAI** as supported providers, and reuses
 the MCP server from
-[`hi-mcp/hi-mcp-poc-json`](../../hi-mcp/hi-mcp-poc-json/) unchanged.
+[`hi-mcp/hi-mcp-server`](../../hi-mcp/hi-mcp-server/) unchanged.
 
 ## Running it
 
@@ -195,7 +195,7 @@ that reads no images is answered with `400`.
   └── streamText(tools) → plain text stream
             │ Streamable HTTP /mcp
             ▼
-[hi-mcp/hi-mcp-poc-json] → page bridge → roomDesignerApi.extended
+[hi-mcp/hi-mcp-server] → page bridge → roomDesignerApi.extended
 ```
 
 The chain keeps the MCP server untouched: the chat backend is just another MCP

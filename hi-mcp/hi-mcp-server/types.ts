@@ -30,4 +30,8 @@ export interface McpBridgeResult {
   error?: string;
 }
 
-export type McpBridgeMessage = McpBridgeHello | McpBridgeReady | McpBridgeCall | McpBridgeResult;
+export type McpBridgeMessage =
+  | McpBridgeHello
+  | McpBridgeReady
+  | McpBridgeCall
+  | McpBridgeResult;

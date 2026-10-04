@@ -72,8 +72,13 @@ const problemsOf = ({ models, plans, tests }) => {
     problems.push('models: a non-empty list of { provider, apiKeyEnv }');
   }
   for (const model of Array.isArray(models) ? models : []) {
-    if (typeof model?.provider !== 'string' || typeof model?.apiKeyEnv !== 'string') {
-      problems.push(`model ${JSON.stringify(model)}: needs provider and apiKeyEnv`);
+    if (
+      typeof model?.provider !== 'string' ||
+      typeof model?.apiKeyEnv !== 'string'
+    ) {
+      problems.push(
+        `model ${JSON.stringify(model)}: needs provider and apiKeyEnv`
+      );
     } else if (!process.env[model.apiKeyEnv]) {
       problems.push(`model ${model.provider}: $${model.apiKeyEnv} is empty`);
     }
@@ -145,12 +150,14 @@ const main = async () => {
   const suite = JSON.parse(await readFile(options.tests, 'utf8'));
   const problems = problemsOf(suite);
   if (problems.length > 0) {
-    console.error(`[run-hi-mcp-tests] ${relative(process.cwd(), options.tests)}:`);
+    console.error(
+      `[run-hi-mcp-tests] ${relative(process.cwd(), options.tests)}:`
+    );
     problems.forEach((problem) => console.error(`  - ${problem}`));
     process.exit(1);
   }
   const outDir = resolvePath(
-    options.out ?? join(RESULT_DIR, `mcp-test-${localTimestamp(new Date())}`),
+    options.out ?? join(RESULT_DIR, `mcp-test-${localTimestamp(new Date())}`)
   );
   await mkdir(outDir, { recursive: true });
   const results = {
@@ -209,13 +216,15 @@ const main = async () => {
       console.log(
         `[run-hi-mcp-tests] ${results.runs.length}/${total} ${model.provider} ${number}-${test.id}: ` +
           `${exitCode === null ? 'done before' : `exit ${exitCode}`}, ` +
-          `${run?.planSnapshotId ?? 'no plan snapshot'}`,
+          `${run?.planSnapshotId ?? 'no plan snapshot'}`
       );
     }
   }
   results.finishedAt = new Date().toISOString();
   await writeResults();
-  console.log(`[run-hi-mcp-tests] ${relative(process.cwd(), join(outDir, 'results.json'))}`);
+  console.log(
+    `[run-hi-mcp-tests] ${relative(process.cwd(), join(outDir, 'results.json'))}`
+  );
   process.exitCode = stopped ? 130 : 0;
 };
 

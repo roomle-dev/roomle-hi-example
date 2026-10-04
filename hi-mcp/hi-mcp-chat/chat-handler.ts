@@ -2,9 +2,16 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Readable } from 'node:stream';
 import type { ModelMessage } from 'ai';
 import type { ChatConfig } from './chat-config';
-import { ChatRequestError, parseChatMessages, toModelMessages } from './chat-config';
+import {
+  ChatRequestError,
+  parseChatMessages,
+  toModelMessages,
+} from './chat-config';
 
-export type StreamChat = (messages: ModelMessage[], clientId: string) => Promise<Response>;
+export type StreamChat = (
+  messages: ModelMessage[],
+  clientId: string
+) => Promise<Response>;
 
 const corsHeaders = (origin: string | undefined, pageOrigins: string[]) =>
   origin && pageOrigins.includes(origin)
@@ -29,7 +36,10 @@ export const createChatRequestHandler =
   async (request: IncomingMessage, response: ServerResponse) => {
     const cors = corsHeaders(request.headers.origin, config.pageOrigins);
     const send = (status: number, text: string) => {
-      response.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8', ...cors });
+      response.writeHead(status, {
+        'Content-Type': 'text/plain; charset=utf-8',
+        ...cors,
+      });
       response.end(text);
     };
 
@@ -63,7 +73,7 @@ export const createChatRequestHandler =
     if (!config.apiToken) {
       send(
         503,
-        'No API token configured - start with: npm start mistral <api-key> (or set HI_CHAT_TOKEN)',
+        'No API token configured - start with: npm start mistral <api-key> (or set HI_CHAT_TOKEN)'
       );
       return;
     }
@@ -81,14 +91,14 @@ export const createChatRequestHandler =
       }
       if (!config.imageInput && messages.some((message) => message.images)) {
         throw new ChatRequestError(
-          `The model ${config.provider}:${config.modelId} does not read images`,
+          `The model ${config.provider}:${config.modelId} does not read images`
         );
       }
       const stream = await streamChat(toModelMessages(messages), clientId);
       const headers = Object.fromEntries(stream.headers);
       response.writeHead(stream.status, { ...headers, ...cors });
       const nodeStream = Readable.fromWeb(
-        stream.body as unknown as import('node:stream/web').ReadableStream,
+        stream.body as unknown as import('node:stream/web').ReadableStream
       );
       nodeStream.on('error', (error) => {
         console.error('[hi-chat] stream failed', error);
@@ -101,6 +111,9 @@ export const createChatRequestHandler =
         return;
       }
       console.error('[hi-chat] chat request failed', error);
-      send(500, `Chat failed: ${error instanceof Error ? error.message : String(error)}`);
+      send(
+        500,
+        `Chat failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   };

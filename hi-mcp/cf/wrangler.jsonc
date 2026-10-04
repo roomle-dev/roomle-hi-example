@@ -10,17 +10,17 @@
       "image": "./Dockerfile",
       "image_build_context": "..",
       "instance_type": "basic",
-      "max_instances": 5
-    }
+      "max_instances": 5,
+    },
   ],
   "durable_objects": {
-    "bindings": [{ "name": "HI_MCP", "class_name": "HiMcpContainer" }]
+    "bindings": [{ "name": "HI_MCP", "class_name": "HiMcpContainer" }],
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["HiMcpContainer"] }],
   "vars": {
     // The store URL the server names in its "no page connected" error -
     // the URL users open to connect a page to this deployment.
-    "HI_MCP_STORE_URL": "https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev"
+    "HI_MCP_STORE_URL": "https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev",
   },
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
 }

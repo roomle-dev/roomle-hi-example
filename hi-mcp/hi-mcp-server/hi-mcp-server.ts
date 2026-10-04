@@ -71,7 +71,10 @@ const withoutImageUrls = (key: string, value: unknown) =>
 
 const textResult = (result: unknown) => ({
   content: [
-    { type: 'text' as const, text: JSON.stringify(result ?? null, withoutImageUrls) },
+    {
+      type: 'text' as const,
+      text: JSON.stringify(result ?? null, withoutImageUrls),
+    },
   ],
 });
 
@@ -93,7 +96,7 @@ const stripDataUrlPrefix = (image: string): string =>
 export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
   const server = new McpServer(
     { name: 'hi-group-orchestrator', version: '0.1.0' },
-    { instructions: INSTRUCTIONS },
+    { instructions: INSTRUCTIONS }
   );
 
   // What the agent sent to a tool that changes the plan, and the feedback it
@@ -113,7 +116,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       const { corrections, notLoaded } = result ?? {};
       if (corrections || notLoaded || PLAN_CHANGING_TOOLS.includes(tool)) {
         console.log(
-          `[hi-mcp] tool ${tool} feedback ${JSON.stringify({ corrections, notLoaded })}`,
+          `[hi-mcp] tool ${tool} feedback ${JSON.stringify({ corrections, notLoaded })}`
         );
       }
       return result;
@@ -122,7 +125,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         `[hi-mcp] tool ${tool} error ${JSON.stringify({
           message: (error as Error)?.message ?? String(error),
           args: sent,
-        })}`,
+        })}`
       );
       throw error;
     }
@@ -156,12 +159,12 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .optional()
           .describe(
             'The sections to include: masterData, rooms, articles, groups. Default: rooms, articles and groups. ' +
-              'Add masterData for the attribute vocabulary.',
+              'Add masterData for the attribute vocabulary.'
           ),
       },
     },
     async ({ include }) =>
-      textResult(await runTool('get-plan-context', { include })),
+      textResult(await runTool('get-plan-context', { include }))
   );
 
   server.registerTool(
@@ -185,7 +188,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       },
     },
     async ({ text, libraryId }) =>
-      textResult(await runTool('find-attributes', { text, libraryId })),
+      textResult(await runTool('find-attributes', { text, libraryId }))
   );
 
   server.registerTool(
@@ -201,7 +204,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     },
     async () => ({
       content: [{ type: 'text' as const, text: AUTHORING_RULES }],
-    }),
+    })
   );
 
   server.registerTool(
@@ -227,12 +230,12 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .array(z.record(z.string(), z.unknown()))
           .min(1)
           .describe(
-            'The pos groups to create or replace, following the rules returned by get-authoring-rules.',
+            'The pos groups to create or replace, following the rules returned by get-authoring-rules.'
           ),
       },
     },
     async ({ posGroups }) =>
-      textResult(await runTool('create-or-replace-groups', { posGroups })),
+      textResult(await runTool('create-or-replace-groups', { posGroups }))
   );
 
   server.registerTool(
@@ -251,7 +254,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       inputSchema: {
         groupId: z
           .string()
-          .describe('The id of the group to move. A unique id prefix is accepted.'),
+          .describe(
+            'The id of the group to move. A unique id prefix is accepted.'
+          ),
         wall: z
           .union([
             z.enum(['left', 'right', 'top', 'bottom', 'back', 'front']),
@@ -260,7 +265,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .describe(
             "The target wall: a side label as seen in the top view ('right' places the group " +
               "against the longest wall on the right; 'back' is 'top', 'front' is 'bottom') or a wall " +
-              'index from the walls array of get-plan-context.',
+              'index from the walls array of get-plan-context.'
           ),
         roomIndex: z
           .number()
@@ -269,18 +274,28 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .optional()
           .describe('The index of the room in the rooms array. Defaults to 0.'),
         alignment: z
-          .enum(['start', 'center', 'end', 'left', 'right', 'top', 'bottom', 'back', 'front'])
+          .enum([
+            'start',
+            'center',
+            'end',
+            'left',
+            'right',
+            'top',
+            'bottom',
+            'back',
+            'front',
+          ])
           .optional()
           .describe(
             "Where the group sits along the wall: 'center' (default), 'start'/'end' (the wall's endpoints), " +
               'or the side label of an adjoining wall to sit flush in that corner (e.g. wall "right" + ' +
-              'alignment "top" is the back right corner in the top view).',
+              'alignment "top" is the back right corner in the top view).'
           ),
         offsetMm: z
           .number()
           .optional()
           .describe(
-            'Extra distance in millimetres along the wall from the chosen alignment. Defaults to 0.',
+            'Extra distance in millimetres along the wall from the chosen alignment. Defaults to 0.'
           ),
       },
     },
@@ -292,8 +307,8 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           roomIndex,
           alignment,
           offsetMm,
-        }),
-      ),
+        })
+      )
   );
 
   server.registerTool(
@@ -310,7 +325,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .string()
           .optional()
           .describe(
-            'The id of the sub module. Omit to change an attribute of the root module itself.',
+            'The id of the sub module. Omit to change an attribute of the root module itself.'
           ),
         attributeId: z.string().describe('The id of the attribute.'),
         value: z
@@ -318,7 +333,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .describe('The new value: a string, a number or a boolean.'),
       },
     },
-    async (args) => textResult(await runTool('change-module-attribute', args)),
+    async (args) => textResult(await runTool('change-module-attribute', args))
   );
 
   server.registerTool(
@@ -338,7 +353,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .describe('The new value: a string, a number or a boolean.'),
       },
     },
-    async (args) => textResult(await runTool('change-group-attribute', args)),
+    async (args) => textResult(await runTool('change-group-attribute', args))
   );
 
   server.registerTool(
@@ -352,7 +367,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .describe('The id of the group. A unique id prefix is accepted.'),
       },
     },
-    async (args) => textResult(await runTool('delete-group', args)),
+    async (args) => textResult(await runTool('delete-group', args))
   );
 
   server.registerTool(
@@ -367,7 +382,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         rootModuleId: z.string().describe('The id of the root module.'),
       },
     },
-    async (args) => textResult(await runTool('delete-root-module', args)),
+    async (args) => textResult(await runTool('delete-root-module', args))
   );
 
   server.registerTool(
@@ -376,7 +391,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       description:
         'Adds one unit to an existing group: docks a new root module of an article from the catalog to a ' +
         'free docking vector of a root of the group, the way the authoring rules describe docking. dockTo ' +
-        'names the root the unit continues, that root\'s free vector (one of its freeDockingVectors in ' +
+        "names the root the unit continues, that root's free vector (one of its freeDockingVectors in " +
         "get-plan-context) and the new unit's vector: RightBottom -> LeftBottom puts it to the right, " +
         'LeftBottom -> RightBottom to the left, LeftTop -> LeftBottom with offset [0, <gap>, 0] above. The ' +
         'group keeps its position. Returns the changed group.',
@@ -390,7 +405,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
             z.object({
               id: z.string(),
               value: z.union([z.string(), z.number(), z.boolean()]),
-            }),
+            })
           )
           .optional()
           .describe('Attribute overrides of the new unit: [{ id, value }].'),
@@ -398,28 +413,34 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .object({
             rootId: z
               .string()
-              .describe('The id of the root of the group the new unit docks to.'),
+              .describe(
+                'The id of the root of the group the new unit docks to.'
+              ),
             ownDockingVector: z
               .string()
               .describe("That root's free docking vector, e.g. RightBottom."),
             dockingVector: z
               .string()
-              .describe("The new unit's docking vector that meets it, e.g. LeftBottom."),
+              .describe(
+                "The new unit's docking vector that meets it, e.g. LeftBottom."
+              ),
             mode: z
               .enum(['StartStart', 'EndEnd', 'StartEnd', 'EndStart'])
               .optional()
-              .describe('Which endpoints of the two vectors coincide. Default StartStart.'),
+              .describe(
+                'Which endpoints of the two vectors coincide. Default StartStart.'
+              ),
             offset: z
               .tuple([z.number(), z.number(), z.number()])
               .optional()
               .describe(
-                '[x, y, z] in millimetres added after docking, e.g. [0, 600, 0] for a wall unit above. Default [0, 0, 0].',
+                '[x, y, z] in millimetres added after docking, e.g. [0, 600, 0] for a wall unit above. Default [0, 0, 0].'
               ),
           })
           .describe('Where the new unit docks.'),
       },
     },
-    async (args) => textResult(await runTool('merge-article-into-group', args)),
+    async (args) => textResult(await runTool('merge-article-into-group', args))
   );
 
   server.registerTool(
@@ -439,7 +460,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         articleId: z.string().describe('The article id from the catalog.'),
       },
     },
-    async (args) => textResult(await runTool('exchange-root-module', args)),
+    async (args) => textResult(await runTool('exchange-root-module', args))
   );
 
   server.registerTool(
@@ -454,14 +475,16 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       inputSchema: {
         targetGroupId: z
           .string()
-          .describe('The id of the group the others are merged into. A unique id prefix is accepted.'),
+          .describe(
+            'The id of the group the others are merged into. A unique id prefix is accepted.'
+          ),
         groupIds: z
           .array(z.string())
           .min(1)
           .describe('The ids of the groups to merge into the target group.'),
       },
     },
-    async (args) => textResult(await runTool('merge-groups', args)),
+    async (args) => textResult(await runTool('merge-groups', args))
   );
 
   server.registerTool(
@@ -471,7 +494,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'Calculates and returns the price/order data of the current planning situation.',
       inputSchema: {},
     },
-    async () => textResult(await runTool('get-price', {})),
+    async () => textResult(await runTool('get-price', {}))
   );
 
   server.registerTool(
@@ -481,7 +504,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'Returns the order data of the current planning situation without placing an order.',
       inputSchema: {},
     },
-    async () => textResult(await runTool('get-order-data', {})),
+    async () => textResult(await runTool('get-order-data', {}))
   );
 
   server.registerTool(
@@ -512,7 +535,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         return textResult({ error: 'No images available' });
       }
       return { content };
-    },
+    }
   );
 
   return server;

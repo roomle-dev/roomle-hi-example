@@ -25,15 +25,28 @@ const userTurn: Prompt[number] = {
 const toolCalls: Prompt[number] = {
   role: 'assistant',
   content: [
-    { type: 'tool-call', toolCallId: 'call-images', toolName: 'get-plan-images', input: {} },
-    { type: 'tool-call', toolCallId: 'call-price', toolName: 'get-price', input: {} },
+    {
+      type: 'tool-call',
+      toolCallId: 'call-images',
+      toolName: 'get-plan-images',
+      input: {},
+    },
+    {
+      type: 'tool-call',
+      toolCallId: 'call-price',
+      toolName: 'get-price',
+      input: {},
+    },
   ],
 };
 const priceResult = {
   type: 'tool-result' as const,
   toolCallId: 'call-price',
   toolName: 'get-price',
-  output: { type: 'content' as const, value: [{ type: 'text' as const, text: '{"total":1200}' }] },
+  output: {
+    type: 'content' as const,
+    value: [{ type: 'text' as const, text: '{"total":1200}' }],
+  },
 };
 
 describe('moveToolResultFilesToUserMessages', () => {
@@ -64,7 +77,10 @@ describe('moveToolResultFilesToUserMessages', () => {
             type: 'tool-result',
             toolCallId: 'call-images',
             toolName: 'get-plan-images',
-            output: { type: 'content', value: [{ type: 'text', text: IMAGES_FOLLOW_NOTE }] },
+            output: {
+              type: 'content',
+              value: [{ type: 'text', text: IMAGES_FOLLOW_NOTE }],
+            },
           },
           priceResult,
         ],
@@ -116,7 +132,10 @@ describe('moveToolResultFilesToUserMessages', () => {
       userTurn,
       toolCalls,
       { role: 'tool', content: [priceResult] },
-      { role: 'assistant', content: [{ type: 'text', text: 'The kitchen costs 1200.' }] },
+      {
+        role: 'assistant',
+        content: [{ type: 'text', text: 'The kitchen costs 1200.' }],
+      },
     ];
     const moved = moveToolResultFilesToUserMessages(prompt);
     expect(moved).toEqual(prompt);
@@ -148,6 +167,9 @@ describe('toolResultFilesAsUserMessages', () => {
       model: {} as never,
     });
     expect(transformed.maxOutputTokens).toBe(1000);
-    expect(transformed.prompt.map(({ role }) => role)).toEqual(['tool', 'user']);
+    expect(transformed.prompt.map(({ role }) => role)).toEqual([
+      'tool',
+      'user',
+    ]);
   });
 });

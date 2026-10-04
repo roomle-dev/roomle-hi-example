@@ -62,7 +62,7 @@ const normalizeBridgeUrl = (serverUrl: string): string => {
 // ?session=… so the server can route the page to its own container.
 export const resolveBridgeUrls = (
   serverUrl?: string,
-  sessionId?: string,
+  sessionId?: string
 ): string[] => {
   const withSession = (url: string) =>
     sessionId ? `${url}?session=${encodeURIComponent(sessionId)}` : url;
@@ -86,12 +86,9 @@ const pageUrlWithoutApiKey = (): string => {
 
 export const startMcpBrowserBridge = (
   roomDesignerApi: RoomDesignerApiType,
-  options: BrowserBridgeOptions = {},
+  options: BrowserBridgeOptions = {}
 ): { retry: () => void; dispose: () => void } => {
-  const bridgeUrls = resolveBridgeUrls(
-      options.serverUrl,
-      options.sessionId,
-    );
+  const bridgeUrls = resolveBridgeUrls(options.serverUrl, options.sessionId);
   let candidate = 0;
   let connecting = false;
   let disposed = false;
@@ -105,13 +102,13 @@ export const startMcpBrowserBridge = (
     let opened = false;
     let accepted = false;
     connecting = true;
-    options.onStatusChange?.({ state: 'connecting', message: 'Connecting to the MCP server...' });
+    options.onStatusChange?.({
+      state: 'connecting',
+      message: 'Connecting to the MCP server...',
+    });
 
     socket.onerror = () => {
-      console.warn(
-        '[hi-mcp] cannot connect to the MCP server at',
-        bridgeUrl,
-      );
+      console.warn('[hi-mcp] cannot connect to the MCP server at', bridgeUrl);
     };
 
     const reply = (result: McpBridgeResult) => {
@@ -133,7 +130,7 @@ export const startMcpBrowserBridge = (
           url: pageUrlWithoutApiKey(),
           protocol: BRIDGE_PROTOCOL,
           clientId: options.clientId,
-        }),
+        })
       );
     };
 
@@ -170,7 +167,7 @@ export const startMcpBrowserBridge = (
       console.log('[hi-mcp] executing', message.method, message.args);
       try {
         const result = await roomDesignerApi.extended[message.method](
-          ...message.args,
+          ...message.args
         );
         reply({ kind: 'result', id: message.id, ok: true, result });
       } catch (error) {
@@ -190,7 +187,11 @@ export const startMcpBrowserBridge = (
       }
       connecting = false;
       if (event.code === 4409) {
-        options.onStatusChange?.({ state: 'occupied', message: 'This MCP server already has a planner connected. Close the other page to use this chat.' });
+        options.onStatusChange?.({
+          state: 'occupied',
+          message:
+            'This MCP server already has a planner connected. Close the other page to use this chat.',
+        });
         return;
       }
       if (!opened) {

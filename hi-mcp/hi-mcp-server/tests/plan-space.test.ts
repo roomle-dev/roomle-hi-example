@@ -17,14 +17,7 @@ import {
   type GroupFootprint,
 } from '../plan-space';
 
-
-
-const IDENTITY_MATRIX = [
-  1, 0, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 1, 0,
-  0, 0, 0, 1,
-];
+const IDENTITY_MATRIX = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 
 const WALL_RIGHT: DerivedWall = {
   index: 1,
@@ -60,7 +53,11 @@ describe('groupFootprint', () => {
       articlePos: [100, 0, 200],
       rotationY: 0,
       parts: [
-        { relPos: [0, 0, 0], dim: [800, 720, 600], fullMatrix: IDENTITY_MATRIX },
+        {
+          relPos: [0, 0, 0],
+          dim: [800, 720, 600],
+          fullMatrix: IDENTITY_MATRIX,
+        },
       ],
     };
     expect(groupFootprint({ roots: [root] })).toEqual({
@@ -77,7 +74,11 @@ describe('groupFootprint', () => {
       articlePos: [100, 0, 200],
       rotationY: 0,
       parts: [
-        { relPos: [0, 0, 0], dim: [800, 720, 600], fullMatrix: IDENTITY_MATRIX },
+        {
+          relPos: [0, 0, 0],
+          dim: [800, 720, 600],
+          fullMatrix: IDENTITY_MATRIX,
+        },
       ],
     };
     expect(groupFootprint({ ver: 1, roots: [root] })).toEqual({
@@ -136,7 +137,13 @@ describe('groupHeightRange', () => {
       roots: [
         {
           articlePos: [0, 100, 0],
-          parts: [{ relPos: [0, 0, 0], dim: [600, 720, 560], fullMatrix: IDENTITY_MATRIX }],
+          parts: [
+            {
+              relPos: [0, 0, 0],
+              dim: [600, 720, 560],
+              fullMatrix: IDENTITY_MATRIX,
+            },
+          ],
         },
       ],
     };
@@ -147,19 +154,25 @@ describe('groupHeightRange', () => {
     expect(
       groupHeightRange({
         roots: [{ dockInfos: [{ start: [0, 0, 0], end: [0, 720, 0] }] }],
-      }),
+      })
     ).toEqual([0, 720]);
     expect(
       groupHeightRange({
-        roots: [{ articlePos: [0, 1400, 0], attributes: [{ id: 'h', value: 700 }] }],
-      }),
+        roots: [
+          { articlePos: [0, 1400, 0], attributes: [{ id: 'h', value: 700 }] },
+        ],
+      })
     ).toEqual([1400, 2100]);
   });
 
   it('returns undefined without height data', () => {
-    expect(groupHeightRange({ roots: [{ attributes: [{ id: 'b', value: 600 }] }] })).toBeUndefined();
     expect(
-      groupHeightRange({ roots: [{ dockInfos: [{ start: [0, 0, 0], end: [0, 0, 600] }] }] }),
+      groupHeightRange({ roots: [{ attributes: [{ id: 'b', value: 600 }] }] })
+    ).toBeUndefined();
+    expect(
+      groupHeightRange({
+        roots: [{ dockInfos: [{ start: [0, 0, 0], end: [0, 0, 600] }] }],
+      })
     ).toBeUndefined();
   });
 });
@@ -177,19 +190,33 @@ describe('volumesOverlap', () => {
       volumesOverlap(
         { corners: square(0), heights: [0, 900] },
         { corners: square(300), heights: [0, 2000] },
-        5,
-      ),
+        5
+      )
     ).toBe(true);
   });
 
   it('does not count touching groups, groups above each other or groups without height data', () => {
     expect(
-      volumesOverlap({ corners: square(0), heights: [0, 900] }, { corners: square(600), heights: [0, 900] }, 5),
+      volumesOverlap(
+        { corners: square(0), heights: [0, 900] },
+        { corners: square(600), heights: [0, 900] },
+        5
+      )
     ).toBe(false);
     expect(
-      volumesOverlap({ corners: square(0), heights: [0, 900] }, { corners: square(0), heights: [1400, 2100] }, 5),
+      volumesOverlap(
+        { corners: square(0), heights: [0, 900] },
+        { corners: square(0), heights: [1400, 2100] },
+        5
+      )
     ).toBe(false);
-    expect(volumesOverlap({ corners: square(0) }, { corners: square(0), heights: [0, 900] }, 5)).toBe(false);
+    expect(
+      volumesOverlap(
+        { corners: square(0) },
+        { corners: square(0), heights: [0, 900] },
+        5
+      )
+    ).toBe(false);
   });
 });
 
@@ -199,7 +226,7 @@ describe('spanAlongWall and wallSpanStart', () => {
       spanAlongWall(WALL_RIGHT, [
         [3400, -1100],
         [4000, -1900],
-      ]),
+      ])
     ).toEqual([1100, 1900]);
   });
 
@@ -267,7 +294,14 @@ describe('placeAgainstWall', () => {
 });
 
 describe('placeCornerAtWalls', () => {
-  const corner = { rootId: 'c1', point: [0, 0] as [number, number], directions: [[1, 0], [0, -1]] as [[number, number], [number, number]] };
+  const corner = {
+    rootId: 'c1',
+    point: [0, 0] as [number, number],
+    directions: [
+      [1, 0],
+      [0, -1],
+    ] as [[number, number], [number, number]],
+  };
 
   it('puts the corner point into the room corner with the back edges along both walls', () => {
     expect(placeCornerAtWalls(WALL_RIGHT, WALL_TOP, corner, 0)).toEqual({
@@ -334,7 +368,16 @@ describe('convexPolygonsTouch', () => {
   });
 
   it('returns false for degenerate polygons', () => {
-    expect(convexPolygonsTouch([[0, 0], [1, 1]], squareA, 5)).toBe(false);
+    expect(
+      convexPolygonsTouch(
+        [
+          [0, 0],
+          [1, 1],
+        ],
+        squareA,
+        5
+      )
+    ).toBe(false);
   });
 });
 
@@ -373,7 +416,10 @@ describe('groupCornerGeometry', () => {
 });
 
 describe('repositioningFromPlacement', () => {
-  const placement = { pos: [1000, 0, -2000] as [number, number, number], rotationY: 270 };
+  const placement = {
+    pos: [1000, 0, -2000] as [number, number, number],
+    rotationY: 270,
+  };
 
   it('transforms the anchor into the room and sums the rotations', () => {
     expect(
@@ -381,7 +427,7 @@ describe('repositioningFromPlacement', () => {
         id: 'r1',
         articlePos: [800, 0, 0],
         rotationY: 90,
-      }),
+      })
     ).toEqual({
       posGroup: [1000, 0, -1200],
       posRotationY: 0,
@@ -427,7 +473,7 @@ describe('adjoiningWall', () => {
     expect(adjoiningWall(ROOM_WALLS, WALL_RIGHT, 'bottom')).toBe(WALL_BOTTOM);
     expect(adjoiningWall(ROOM_WALLS, WALL_RIGHT, 'left')).toBeUndefined();
     expect(
-      adjoiningWall([{ ...WALL_TOP, type: 'window' }], WALL_RIGHT, 'top'),
+      adjoiningWall([{ ...WALL_TOP, type: 'window' }], WALL_RIGHT, 'top')
     ).toBeUndefined();
   });
 });
@@ -444,7 +490,13 @@ describe('the Furniture_Smith corner article in the room corners', () => {
       { id: 'RightBackBottom', start: [-261, 0, 0], end: [900, 0, 0] },
     ],
   };
-  const cornerPointInRoom = ({ pos, rotationY }: { pos: number[]; rotationY: number }) => {
+  const cornerPointInRoom = ({
+    pos,
+    rotationY,
+  }: {
+    pos: number[];
+    rotationY: number;
+  }) => {
     const theta = (rotationY * Math.PI) / 180;
     return [
       Math.round(pos[0] - 261 * Math.cos(theta)) + 0,
@@ -464,10 +516,10 @@ describe('the Furniture_Smith corner article in the room corners', () => {
         wall,
         adjoining,
         groupCornerGeometry({ roots: [cornerRoot] })!,
-        0,
+        0
       );
       expect(placement).toEqual({ pos, rotationY });
       expect(cornerPointInRoom(placement!)).toEqual(corner);
-    },
+    }
   );
 });

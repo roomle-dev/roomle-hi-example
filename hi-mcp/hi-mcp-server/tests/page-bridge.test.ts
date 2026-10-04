@@ -7,20 +7,24 @@ import { attachPage, FakePageSocket } from './fake-page-socket';
 describe('PageBridge.call', () => {
   it('rejects with the default store URL when no page is connected', async () => {
     const bridge = new PageBridge();
-    await expect(bridge.call('getExternalObjectPlanContext', [['rooms']])).rejects.toThrow(
-      /No HI page connected.*http:\/\/localhost:3000\/\?store\.stage=INT.*start planning/s,
+    await expect(
+      bridge.call('getExternalObjectPlanContext', [['rooms']])
+    ).rejects.toThrow(
+      /No HI page connected.*http:\/\/localhost:3000\/\?store\.stage=INT.*start planning/s
     );
   });
 
   it('names the configured store URL when HI_MCP_STORE_URL is set', async () => {
     vi.stubEnv(
       'HI_MCP_STORE_URL',
-      'https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://example.workers.dev',
+      'https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://example.workers.dev'
     );
     try {
       const bridge = new PageBridge();
-      await expect(bridge.call('getExternalObjectPlanContext', [['rooms']])).rejects.toThrow(
-        /www\.roomle\.com\/t\/ligna-store-test\/\?store\.stage=INT&mcp_server=https:\/\/example\.workers\.dev/s,
+      await expect(
+        bridge.call('getExternalObjectPlanContext', [['rooms']])
+      ).rejects.toThrow(
+        /www\.roomle\.com\/t\/ligna-store-test\/\?store\.stage=INT&mcp_server=https:\/\/example\.workers\.dev/s
       );
     } finally {
       vi.unstubAllEnvs();
@@ -40,7 +44,12 @@ describe('PageBridge.call', () => {
       args: [['articles']],
     });
 
-    socket.receive({ kind: 'result', id: 1, ok: true, result: { articles: [] } });
+    socket.receive({
+      kind: 'result',
+      id: 1,
+      ok: true,
+      result: { articles: [] },
+    });
     await expect(promise).resolves.toEqual({ articles: [] });
   });
 
@@ -48,7 +57,7 @@ describe('PageBridge.call', () => {
     const bridge = new PageBridge();
     const socket = attachPage(bridge, { protocol: undefined });
     await expect(bridge.call('fetchPrice', [])).rejects.toThrow(
-      /outdated HI MCP page bridge.*protocol 2.*reload the page/s,
+      /outdated HI MCP page bridge.*protocol 2.*reload the page/s
     );
     expect(socket.sent).toHaveLength(1);
   });
@@ -58,7 +67,9 @@ describe('PageBridge.call', () => {
     const socket = attachPage(bridge);
 
     const first = bridge.call('fetchPrice', []);
-    const second = bridge.call('getExternalObjectSnapshot', [{ orderData: true }]);
+    const second = bridge.call('getExternalObjectSnapshot', [
+      { orderData: true },
+    ]);
     socket.receive({ kind: 'result', id: 2, ok: false, error: 'boom' });
     await expect(second).rejects.toThrow('boom');
     socket.receive({ kind: 'result', id: 1, ok: true, result: { price: 42 } });
@@ -88,14 +99,14 @@ describe('PageBridge.call', () => {
       const settled = await Promise.race([
         promise.then(
           () => 'settled',
-          () => 'settled',
+          () => 'settled'
         ),
         Promise.resolve('pending'),
       ]);
       expect(settled).toBe('pending');
       vi.advanceTimersByTime(1);
       await expect(promise).rejects.toThrow(
-        new RegExp(`timed out after ${DEFAULT_CALL_TIMEOUT_MS}ms`),
+        new RegExp(`timed out after ${DEFAULT_CALL_TIMEOUT_MS}ms`)
       );
     } finally {
       vi.useRealTimers();
@@ -156,7 +167,9 @@ describe('PageBridge page lifecycle', () => {
 
     const second = attachPage(bridge, { clientId: 'second' });
     await expect(pending).rejects.toThrow(/disconnected/);
-    expect(second.sent.map((message) => JSON.parse(message))).toEqual([{ kind: 'ready' }]);
+    expect(second.sent.map((message) => JSON.parse(message))).toEqual([
+      { kind: 'ready' },
+    ]);
     expect(bridge.isClientActive('second')).toBe(true);
 
     first.close();
@@ -170,9 +183,9 @@ describe('PageBridge page lifecycle', () => {
     const socket = attachPage(bridge, { clientId: 'first' });
     expect(bridge.isClientActive('first')).toBe(true);
     expect(bridge.isClientActive('second')).toBe(false);
-    await expect(bridge.call('fetchPrice', [], undefined, 'second')).rejects.toThrow(
-      /not connected to its planner page/,
-    );
+    await expect(
+      bridge.call('fetchPrice', [], undefined, 'second')
+    ).rejects.toThrow(/not connected to its planner page/);
     expect(socket.sent).toHaveLength(1);
     const pending = bridge.call('fetchPrice', [], undefined, 'first');
     socket.receive({ kind: 'result', id: 1, ok: true, result: 42 });

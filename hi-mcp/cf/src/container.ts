@@ -13,10 +13,7 @@ export class HiMcpContainer extends Container {
   defaultPort = PORT;
   sleepAfter = SLEEP_AFTER;
 
-  constructor(
-    ctx: DurableObjectState<Cloudflare.Env>,
-    env: Cloudflare.Env,
-  ) {
+  constructor(ctx: DurableObjectState<Cloudflare.Env>, env: Cloudflare.Env) {
     super(ctx, env);
     this.envVars = {
       PORT: String(PORT),

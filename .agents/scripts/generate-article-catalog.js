@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 const LIBRARY_INFORMATION_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
-  '../../docs/library-information',
+  '../../docs/library-information'
 );
 const INPUT_PATH = join(LIBRARY_INFORMATION_DIR, 'article.json');
 const OUTPUT_PATH = join(LIBRARY_INFORMATION_DIR, 'articles.md');
@@ -124,9 +124,11 @@ const suggestDescription = (articleId, desc, category, dimensions) => {
     suggested = suggested[0].toUpperCase() + suggested.slice(1);
   }
   const categoryLower = category.toLowerCase();
-  if (!TYPE_MARKERS.some((marker) => suggested.toLowerCase().includes(marker))) {
+  if (
+    !TYPE_MARKERS.some((marker) => suggested.toLowerCase().includes(marker))
+  ) {
     const type = TYPE_BY_CATEGORY.find(([marker]) =>
-      categoryLower.includes(marker),
+      categoryLower.includes(marker)
     )?.[1];
     if (type) {
       suggested = `${type}, ${suggested}`;
@@ -142,7 +144,8 @@ const suggestDescription = (articleId, desc, category, dimensions) => {
     }
   }
   if (
-    (categoryLower.includes('corner') || desc.toLowerCase().includes('corner')) &&
+    (categoryLower.includes('corner') ||
+      desc.toLowerCase().includes('corner')) &&
     !suggestedLower.includes('corner')
   ) {
     suggested = `${suggested}, corner`;
@@ -152,7 +155,7 @@ const suggestDescription = (articleId, desc, category, dimensions) => {
 
 const articleRow = (article) => {
   const dimensions = Object.fromEntries(
-    (article.roots?.[0]?.attributes ?? []).map(({ id, value }) => [id, value]),
+    (article.roots?.[0]?.attributes ?? []).map(({ id, value }) => [id, value])
   );
   const dimensionsText = `L ${dimensions.mod_Depth ?? '?'} mm W ${dimensions.mod_Width ?? '?'} mm H ${dimensions.mod_Height ?? '?'} mm`;
   const category = (article.category ?? '').replaceAll('|', '/');
@@ -161,13 +164,16 @@ const articleRow = (article) => {
     article.articleId,
     desc,
     category,
-    dimensions,
+    dimensions
   );
   return `| ${article.articleId} | ${category} | ${article.articleName} | ${dimensionsText} | ![](${article.imageUrl ?? ''}) | ${desc} | ${suggested} |`;
 };
 
 const { articles } = JSON.parse(await readFile(INPUT_PATH, 'utf8'));
-await writeFile(OUTPUT_PATH, `${HEADER}${articles.map(articleRow).join('\n')}\n`);
+await writeFile(
+  OUTPUT_PATH,
+  `${HEADER}${articles.map(articleRow).join('\n')}\n`
+);
 console.log(
-  `Generated ${relative(process.cwd(), OUTPUT_PATH)} with ${articles.length} articles`,
+  `Generated ${relative(process.cwd(), OUTPUT_PATH)} with ${articles.length} articles`
 );

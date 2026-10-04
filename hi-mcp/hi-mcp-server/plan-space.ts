@@ -128,17 +128,17 @@ const boxCorners = (minimum: number[], size: number[]): Point3[] => {
 
 const dimensionAttribute = (
   root: FootprintRoot,
-  attributeId: string,
+  attributeId: string
 ): number | undefined => {
   const value = Number(
-    root.attributes?.find((attribute) => attribute.id === attributeId)?.value,
+    root.attributes?.find((attribute) => attribute.id === attributeId)?.value
   );
   return Number.isFinite(value) && value > 0 ? value : undefined;
 };
 
 const rootFootprintPoints = (
   root: FootprintRoot,
-  partMatricesAreGroupSpace: boolean,
+  partMatricesAreGroupSpace: boolean
 ): [number, number][] => {
   const parts: FootprintPart[] = [];
   collectParts(root, parts);
@@ -182,7 +182,7 @@ const rootFootprintPoints = (
 };
 
 export const groupFootprint = (
-  group: FootprintGroup,
+  group: FootprintGroup
 ): GroupFootprint | undefined => {
   const partMatricesAreGroupSpace = (group.ver ?? 0) > 0;
   const points: [number, number][] = [];
@@ -212,7 +212,7 @@ export const groupFootprint = (
 
 const rootHeights = (
   root: FootprintRoot,
-  partMatricesAreGroupSpace: boolean,
+  partMatricesAreGroupSpace: boolean
 ): number[] => {
   const parts: FootprintPart[] = [];
   collectParts(root, parts);
@@ -233,7 +233,11 @@ const rootHeights = (
     for (const dockPoint of [dockInfo.start, dockInfo.end]) {
       if ((dockPoint?.length ?? 0) >= 3) {
         heights.push(
-          transformPointByRoot(root, [dockPoint![0], dockPoint![1], dockPoint![2]])[1],
+          transformPointByRoot(root, [
+            dockPoint![0],
+            dockPoint![1],
+            dockPoint![2],
+          ])[1]
         );
       }
     }
@@ -248,11 +252,11 @@ const rootHeights = (
 
 // The vertical extent of a group in group space; undefined without height data.
 export const groupHeightRange = (
-  group: FootprintGroup,
+  group: FootprintGroup
 ): [number, number] | undefined => {
   const partMatricesAreGroupSpace = (group.ver ?? 0) > 0;
   const heights = (group.roots ?? []).flatMap((root) =>
-    rootHeights(root, partMatricesAreGroupSpace),
+    rootHeights(root, partMatricesAreGroupSpace)
   );
   if (heights.length === 0) {
     return undefined;
@@ -269,7 +273,7 @@ const samePoint = (a: [number, number], b: [number, number]): boolean =>
 
 const unitDirection = (
   from: [number, number],
-  to: [number, number],
+  to: [number, number]
 ): [number, number] | undefined => {
   const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
   return length < 1e-6
@@ -279,7 +283,7 @@ const unitDirection = (
 
 const rotateDirection = (
   [x, z]: [number, number],
-  degrees: number,
+  degrees: number
 ): [number, number] => {
   const theta = toRadians(degrees);
   return [
@@ -292,12 +296,12 @@ const sameDirection = (a: [number, number], b: [number, number]): boolean =>
   a[0] * b[0] + a[1] * b[1] > 0.999;
 
 const rootCornerGeometry = (
-  root: FootprintRoot,
+  root: FootprintRoot
 ): CornerGeometry | undefined => {
   const vectorPair = (row: 'Bottom' | 'Top') => ({
     left: root.dockInfos?.find((dockInfo) => dockInfo.id === `LeftBack${row}`),
     right: root.dockInfos?.find(
-      (dockInfo) => dockInfo.id === `RightBack${row}`,
+      (dockInfo) => dockInfo.id === `RightBack${row}`
     ),
   });
   const bottom = vectorPair('Bottom');
@@ -321,7 +325,7 @@ const rootCornerGeometry = (
     !rightDirection ||
     Math.abs(
       leftDirection[0] * rightDirection[0] +
-        leftDirection[1] * rightDirection[1],
+        leftDirection[1] * rightDirection[1]
     ) > 0.01
   ) {
     return undefined;
@@ -334,7 +338,7 @@ const rootCornerGeometry = (
 };
 
 export const groupCornerGeometry = (
-  group: FootprintGroup,
+  group: FootprintGroup
 ): CornerGeometry | undefined => {
   for (const root of group.roots ?? []) {
     const geometry = rootCornerGeometry(root);
@@ -355,24 +359,24 @@ const wallFloorPoints = ({
 
 export const sharedCorner = (
   wall: DerivedWall,
-  other: DerivedWall,
+  other: DerivedWall
 ): [number, number] | undefined =>
   wallFloorPoints(wall).find((point) =>
-    wallFloorPoints(other).some((candidate) => samePoint(point, candidate)),
+    wallFloorPoints(other).some((candidate) => samePoint(point, candidate))
   );
 
 // The wall on the given side of the room that meets this wall in a corner.
 export const adjoiningWall = (
   walls: DerivedWall[],
   wall: DerivedWall,
-  side: WallSide,
+  side: WallSide
 ): DerivedWall | undefined =>
   walls.find(
     (candidate) =>
       candidate.index !== wall.index &&
       candidate.side === side &&
       candidate.type === 'wall' &&
-      sharedCorner(wall, candidate) !== undefined,
+      sharedCorner(wall, candidate) !== undefined
   );
 
 // Puts the corner point of a corner article into the corner the two walls
@@ -382,7 +386,7 @@ export const placeCornerAtWalls = (
   wall: DerivedWall,
   adjoining: DerivedWall,
   corner: CornerGeometry,
-  offsetMm: number,
+  offsetMm: number
 ): { pos: [number, number, number]; rotationY: number } | undefined => {
   const cornerPoint = sharedCorner(wall, adjoining);
   if (!cornerPoint) {
@@ -405,7 +409,7 @@ export const placeCornerAtWalls = (
   for (const [leftTarget, rightTarget] of assignments) {
     const angle = toDegrees(
       Math.atan2(leftDirection[1], leftDirection[0]) -
-        Math.atan2(leftTarget[1], leftTarget[0]),
+        Math.atan2(leftTarget[1], leftTarget[0])
     );
     for (const rotationY of [angle, -angle]) {
       if (
@@ -439,18 +443,18 @@ interface PlacedGroup {
 
 const groupPointToRoom = (
   group: PlacedGroup,
-  [x, z]: [number, number],
+  [x, z]: [number, number]
 ): [number, number] => {
   const [roomX, , roomZ] = transformPointByRoot(
     { articlePos: group.pos, rotationY: group.rotationY },
-    [x, 0, z],
+    [x, 0, z]
   );
   return [roomX, roomZ];
 };
 
 export const footprintCornersInRoom = (
   footprint: GroupFootprint,
-  group: PlacedGroup,
+  group: PlacedGroup
 ): [number, number][] => {
   const [minX, maxX] = footprint.x;
   const [minZ, maxZ] = footprint.z;
@@ -465,10 +469,10 @@ export const footprintCornersInRoom = (
 
 export const rootFootprintInRoom = (
   group: FootprintGroup & PlacedGroup,
-  root: FootprintRoot,
+  root: FootprintRoot
 ): [number, number][] =>
   rootFootprintPoints(root, (group.ver ?? 0) > 0).map((point) =>
-    groupPointToRoom(group, point),
+    groupPointToRoom(group, point)
   );
 
 const edgeNormals = (polygon: [number, number][]): [number, number][] => {
@@ -486,7 +490,7 @@ const edgeNormals = (polygon: [number, number][]): [number, number][] => {
 
 const projectOntoAxis = (
   polygon: [number, number][],
-  [axisX, axisZ]: [number, number],
+  [axisX, axisZ]: [number, number]
 ): [number, number] => {
   let minimum = Number.POSITIVE_INFINITY;
   let maximum = Number.NEGATIVE_INFINITY;
@@ -503,7 +507,7 @@ const projectOntoAxis = (
 export const convexPolygonsTouch = (
   a: [number, number][],
   b: [number, number][],
-  toleranceMm: number,
+  toleranceMm: number
 ): boolean => {
   if (a.length < 3 || b.length < 3) {
     return false;
@@ -529,7 +533,7 @@ export interface PlacedVolume {
 export const volumesOverlap = (
   a: PlacedVolume,
   b: PlacedVolume,
-  toleranceMm: number,
+  toleranceMm: number
 ): boolean =>
   a.heights !== undefined &&
   b.heights !== undefined &&
@@ -540,14 +544,17 @@ export const volumesOverlap = (
 // The extent of room points along a wall, measured from the wall's start.
 export const spanAlongWall = (
   wall: DerivedWall,
-  points: [number, number][],
+  points: [number, number][]
 ): [number, number] => {
   const [[startX, startZ], [endX, endZ]] = wallFloorPoints(wall);
   const length = Math.hypot(endX - startX, endZ - startZ);
-  const along: [number, number] = [(endX - startX) / length, (endZ - startZ) / length];
+  const along: [number, number] = [
+    (endX - startX) / length,
+    (endZ - startZ) / length,
+  ];
   return projectOntoAxis(
     points.map(([x, z]) => [x - startX, z - startZ]),
-    along,
+    along
   );
 };
 
@@ -556,7 +563,7 @@ export const spanAlongWall = (
 // position has to travel in the payload.
 export const repositioningFromPlacement = (
   placement: GroupPlacementTransform,
-  anchor: { id: string; articlePos?: number[]; rotationY?: number },
+  anchor: { id: string; articlePos?: number[]; rotationY?: number }
 ): RepositioningData => {
   const [x, y, z] = transformPointByRoot(
     { articlePos: placement.pos, rotationY: placement.rotationY },
@@ -564,12 +571,12 @@ export const repositioningFromPlacement = (
       anchor.articlePos?.[0] ?? 0,
       anchor.articlePos?.[1] ?? 0,
       anchor.articlePos?.[2] ?? 0,
-    ],
+    ]
   );
   return {
     posGroup: [round2(x), round2(y), round2(z)],
     posRotationY: round2(
-      normalizeDegrees(placement.rotationY + (anchor.rotationY ?? 0)),
+      normalizeDegrees(placement.rotationY + (anchor.rotationY ?? 0))
     ),
     rootId: anchor.id,
   };
@@ -582,7 +589,7 @@ const alignmentAxis = (alignment: WallSide): 0 | 1 =>
 // that side.
 export const alignmentRunsParallel = (
   wall: DerivedWall,
-  alignment: WallSide,
+  alignment: WallSide
 ): boolean => {
   const axis = alignmentAxis(alignment);
   const [start, end] = wallFloorPoints(wall);
@@ -593,7 +600,7 @@ export const alignmentRunsParallel = (
 // with the wall on that side of the room.
 export const resolveWallAlignment = (
   wall: DerivedWall,
-  alignment: WallAlignment,
+  alignment: WallAlignment
 ): 'start' | 'center' | 'end' => {
   if (alignment === 'start' || alignment === 'center' || alignment === 'end') {
     return alignment;
@@ -605,7 +612,7 @@ export const resolveWallAlignment = (
   if (alignmentRunsParallel(wall, alignment)) {
     throw new Error(
       `Alignment '${alignment}' runs parallel to this '${wall.side}' wall - ` +
-        "use 'start', 'center', 'end' or the side of an adjoining wall.",
+        "use 'start', 'center', 'end' or the side of an adjoining wall."
     );
   }
   const smallerIsCloser = alignment === 'left' || alignment === 'top';
@@ -620,7 +627,7 @@ export const wallSpanStart = (
   wall: DerivedWall,
   footprint: GroupFootprint,
   alignment: WallAlignment,
-  offsetMm: number,
+  offsetMm: number
 ): number => {
   const resolvedAlignment = resolveWallAlignment(wall, alignment);
   const [[startX, startZ], [endX, endZ]] = wallFloorPoints(wall);
@@ -639,7 +646,7 @@ export const placeAgainstWall = (
   wall: DerivedWall,
   footprint: GroupFootprint,
   alignment: WallAlignment,
-  offsetMm: number,
+  offsetMm: number
 ): { pos: [number, number, number]; rotationY: number } => {
   const [[startX, startZ], [endX, endZ]] = wallFloorPoints(wall);
   const length = Math.hypot(endX - startX, endZ - startZ);

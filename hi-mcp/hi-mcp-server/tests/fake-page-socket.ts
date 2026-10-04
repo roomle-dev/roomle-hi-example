@@ -32,7 +32,7 @@ export class FakePageSocket {
           id: call.id,
           ok: true,
           result: respond(call.method, call.args),
-        }),
+        })
       );
     }
   }
@@ -49,7 +49,7 @@ export class FakePageSocket {
 
 export const attachPage = (
   bridge: PageBridge,
-  hello: Record<string, unknown> = {},
+  hello: Record<string, unknown> = {}
 ): FakePageSocket => {
   const socket = new FakePageSocket();
   bridge.attachPage(socket as unknown as WebSocket);

@@ -4,7 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { chatSteps, MAX_CHAT_STEPS } from '../chat-steps';
 
 type StreamPart =
-  Awaited<ReturnType<MockLanguageModelV3['doStream']>>['stream'] extends ReadableStream<infer Part>
+  Awaited<
+    ReturnType<MockLanguageModelV3['doStream']>
+  >['stream'] extends ReadableStream<infer Part>
     ? Part
     : never;
 
@@ -15,14 +17,22 @@ const usage = {
 
 const answer: StreamPart[] = [
   { type: 'text-start', id: 'answer' },
-  { type: 'text-delta', id: 'answer', delta: 'Done - the fridge is still missing.' },
+  {
+    type: 'text-delta',
+    id: 'answer',
+    delta: 'Done - the fridge is still missing.',
+  },
   { type: 'text-end', id: 'answer' },
   { type: 'finish', usage, finishReason: { unified: 'stop', raw: 'stop' } },
 ];
 
 const toolCall = (toolCallId: string): StreamPart[] => [
   { type: 'tool-call', toolCallId, toolName: 'get-plan-context', input: '{}' },
-  { type: 'finish', usage, finishReason: { unified: 'tool-calls', raw: 'tool_calls' } },
+  {
+    type: 'finish',
+    usage,
+    finishReason: { unified: 'tool-calls', raw: 'tool_calls' },
+  },
 ];
 
 // gpt-5-mini makes one tool call per step and keeps calling tools as long as
@@ -32,7 +42,7 @@ const modelThatAlwaysCallsATool = () => {
   return new MockLanguageModelV3({
     doStream: async ({ toolChoice }) => ({
       stream: convertArrayToReadableStream(
-        toolChoice?.type === 'none' ? answer : toolCall(`call-${++calls}`),
+        toolChoice?.type === 'none' ? answer : toolCall(`call-${++calls}`)
       ),
     }),
   });
@@ -59,7 +69,7 @@ describe('chatSteps', () => {
     expect(await result.text).toBe('Done - the fridge is still missing.');
     expect(model.doStreamCalls).toHaveLength(MAX_CHAT_STEPS);
     expect(
-      model.doStreamCalls.map((call) => call.toolChoice?.type === 'none'),
+      model.doStreamCalls.map((call) => call.toolChoice?.type === 'none')
     ).toEqual([...Array(MAX_CHAT_STEPS - 1).fill(false), true]);
   });
 });

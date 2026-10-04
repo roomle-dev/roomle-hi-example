@@ -5,7 +5,7 @@ const article = (
   articleId: string,
   category: string,
   height?: number,
-  moduleId = 'mr_StorageunitSingle',
+  moduleId = 'mr_StorageunitSingle'
 ) => ({
   articleId,
   category,
@@ -14,7 +14,10 @@ const article = (
   rootModules: [
     {
       module: { id: moduleId },
-      dimensions: height === undefined ? [] : [{ id: 'mod_Height', name: 'Height', value: height }],
+      dimensions:
+        height === undefined
+          ? []
+          : [{ id: 'mod_Height', name: 'Height', value: height }],
       mainAttributes: [],
       dockingVectors: [],
       subModules: [],
@@ -31,7 +34,15 @@ const ARTICLES = [
   article('HK60', 'Kitchen | Tall Units | Appliance', 2100),
   article('OTB60', 'Kitchen | Wall Units | Storage', 720),
   article('O2TB90', 'Kitchen | Wall Units | Storage', 720),
-  { ...article('UERTB90', 'Kitchen | Base Units | Corner', 720, 'mr_CornerunitStraight'), cornerArticle: true },
+  {
+    ...article(
+      'UERTB90',
+      'Kitchen | Base Units | Corner',
+      720,
+      'mr_CornerunitStraight'
+    ),
+    cornerArticle: true,
+  },
   article('DU', 'Kitchen | Appliances', undefined, 'mr_Hood'),
   article('LWU', 'Living | Wallunits', 400),
 ];
@@ -39,7 +50,12 @@ const ARTICLES = [
 const compile = (roots: any[], articles: any[] = ARTICLES) => {
   const group = { libraryId: 'Furniture_Smith', roots };
   const corrections: string[] = [];
-  const errors = relationsToDocking(group, articles, 'posGroups[0]', corrections);
+  const errors = relationsToDocking(
+    group,
+    articles,
+    'posGroups[0]',
+    corrections
+  );
   return { group, corrections, errors };
 };
 
@@ -50,12 +66,16 @@ const entriesOf = (group: any): string[] =>
       context.dockedRoots.map(
         (entry: any) =>
           `${root.id}.${context.ownDockingVector} -> ${entry.id}.${entry.dockingVector}` +
-          `${entry.mode ? ` ${entry.mode}` : ''} ${JSON.stringify(entry.offset)}`,
-      ),
-    ),
+          `${entry.mode ? ` ${entry.mode}` : ''} ${JSON.stringify(entry.offset)}`
+      )
+    )
   );
 
-const root = (id: string, articleId: string, relation: Record<string, unknown> = {}) => ({
+const root = (
+  id: string,
+  articleId: string,
+  relation: Record<string, unknown> = {}
+) => ({
   id,
   articleId,
   ...relation,
@@ -72,7 +92,11 @@ describe('relationsToDocking', () => {
       'b1.RightBottom -> b2.LeftBottom StartStart [0,0,0]',
       'b1.LeftBottom -> b0.RightBottom StartStart [0,0,0]',
     ]);
-    expect(group.roots.some((candidate: any) => 'rightOf' in candidate || 'leftOf' in candidate)).toBe(false);
+    expect(
+      group.roots.some(
+        (candidate: any) => 'rightOf' in candidate || 'leftOf' in candidate
+      )
+    ).toBe(false);
     expect(corrections).toEqual([]);
   });
 
@@ -95,8 +119,12 @@ describe('relationsToDocking', () => {
       root('h1', 'DU', { rightOf: 'w1' }),
       root('w2', 'OTB60', { rightOf: 'h1' }),
     ]);
-    expect(entriesOf(group)).toContain('w1.RightBottom -> h1.LeftBottom StartStart [0,0,0]');
-    expect(entriesOf(group)).toContain('h1.RightBottom -> w2.LeftBottom StartStart [0,0,0]');
+    expect(entriesOf(group)).toContain(
+      'w1.RightBottom -> h1.LeftBottom StartStart [0,0,0]'
+    );
+    expect(entriesOf(group)).toContain(
+      'h1.RightBottom -> w2.LeftBottom StartStart [0,0,0]'
+    );
   });
 
   it('stacks onTop by the Top vector of the aligned side, lifted by gapMm', () => {
@@ -113,7 +141,7 @@ describe('relationsToDocking', () => {
         't1.LeftTop -> a1.LeftBottom StartStart [0,0,0]',
         't2.RightTop -> a2.RightBottom StartStart [0,20,0]',
         't3.BackTop -> a3.BackBottom StartStart [0,0,0]',
-      ]),
+      ])
     );
   });
 
@@ -132,7 +160,7 @@ describe('relationsToDocking', () => {
         's2.LeftTop -> s3.LeftBottom StartStart [0,0,0]',
         'b1.BackTop -> p1.BackBottom StartStart [0,0,0]',
         'b1.BackTop -> p2.BackBottom StartStart [0,0,0]',
-      ]),
+      ])
     );
     expect(corrections).toEqual([]);
   });
@@ -143,21 +171,43 @@ describe('relationsToDocking', () => {
       root('b1', 'UTB60', { rightOf: 't1' }),
       root('w1', 'OTB60', { above: 'b1' }),
     ]);
-    expect(entriesOf(withTall.group)).toContain('b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]');
+    expect(entriesOf(withTall.group)).toContain(
+      'b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]'
+    );
 
-    const withoutTall = compile([root('b1', 'UTB60'), root('w1', 'OTB60', { above: 'b1' })]);
-    expect(entriesOf(withoutTall.group)).toEqual(['b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]']);
+    const withoutTall = compile([
+      root('b1', 'UTB60'),
+      root('w1', 'OTB60', { above: 'b1' }),
+    ]);
+    expect(entriesOf(withoutTall.group)).toEqual([
+      'b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]',
+    ]);
 
-    const withGap = compile([root('b1', 'UTB60'), root('w1', 'OTB60', { above: 'b1', gapMm: 500 })]);
-    expect(entriesOf(withGap.group)).toEqual(['b1.LeftTop -> w1.LeftBottom StartStart [0,500,0]']);
+    const withGap = compile([
+      root('b1', 'UTB60'),
+      root('w1', 'OTB60', { above: 'b1', gapMm: 500 }),
+    ]);
+    expect(entriesOf(withGap.group)).toEqual([
+      'b1.LeftTop -> w1.LeftBottom StartStart [0,500,0]',
+    ]);
 
-    const onTall = compile([root('t1', 'H2TB60'), root('w1', 'OTB60', { above: 't1' })]);
-    expect(entriesOf(onTall.group)).toEqual(['t1.LeftTop -> w1.LeftBottom StartStart [0,0,0]']);
+    const onTall = compile([
+      root('t1', 'H2TB60'),
+      root('w1', 'OTB60', { above: 't1' }),
+    ]);
+    expect(entriesOf(onTall.group)).toEqual([
+      't1.LeftTop -> w1.LeftBottom StartStart [0,0,0]',
+    ]);
   });
 
   it('docks behind by the back vectors, without a mode', () => {
-    const { group } = compile([root('f1', 'UTB60'), root('k1', 'UTB60', { behind: 'f1' })]);
-    expect(entriesOf(group)).toEqual(['f1.BackBottom -> k1.BackBottom [0,0,0]']);
+    const { group } = compile([
+      root('f1', 'UTB60'),
+      root('k1', 'UTB60', { behind: 'f1' }),
+    ]);
+    expect(entriesOf(group)).toEqual([
+      'f1.BackBottom -> k1.BackBottom [0,0,0]',
+    ]);
   });
 
   it('writes the entry on the root the planner reaches first, mirrored with the offset negated', () => {
@@ -172,10 +222,15 @@ describe('relationsToDocking', () => {
         'b1.LeftBottom -> b2.RightBottom StartStart [0,0,0]',
         'b1.RightBottom -> b3.LeftBottom StartStart [0,0,0]',
         'b3.LeftTop -> a1.LeftBottom StartStart [0,50,0]',
-      ]),
+      ])
     );
-    const mirrored = compile([root('a1', 'UTB60', { onTop: 'b1', gapMm: 50 }), root('b1', 'UTB60')]);
-    expect(entriesOf(mirrored.group)).toEqual(['a1.LeftBottom -> b1.LeftTop StartStart [0,-50,0]']);
+    const mirrored = compile([
+      root('a1', 'UTB60', { onTop: 'b1', gapMm: 50 }),
+      root('b1', 'UTB60'),
+    ]);
+    expect(entriesOf(mirrored.group)).toEqual([
+      'a1.LeftBottom -> b1.LeftTop StartStart [0,-50,0]',
+    ]);
   });
 
   it('builds an L-shaped and a U-shaped kitchen from corner articles', () => {
@@ -232,7 +287,7 @@ describe('relationsToDocking', () => {
         'd.LeftTop -> w4.LeftBottom StartStart [0,660,0]',
         'w1.RightBottom -> h.LeftBottom StartStart [0,0,0]',
         'h.RightBottom -> w2.LeftBottom StartStart [0,0,0]',
-      ].sort(),
+      ].sort()
     );
     expect(corrections).toEqual([]);
   });
@@ -248,7 +303,7 @@ describe('relationsToDocking', () => {
       expect.arrayContaining([
         'b1.RightBottom -> b2.LeftBottom StartStart [0,0,0]',
         'w1.RightBottom -> w2.LeftBottom StartStart [0,0,0]',
-      ]),
+      ])
     );
     expect(corrections).toEqual([
       "posGroups[0]: root 'b2' names no neighbour - it was put rightOf 'b1'",
@@ -262,10 +317,20 @@ describe('relationsToDocking', () => {
       root('b1', 'UTB60', { rightOf: 't1' }),
       root('w1', 'OTB60'),
     ]);
-    expect(entriesOf(beside.group)).toContain('t1.RightTop -> w1.LeftTop StartStart [0,0,0]');
-    const above = compile([root('b1', 'UTB60'), root('b2', 'UTB60', { rightOf: 'b1' }), root('w1', 'OTB60')]);
-    expect(entriesOf(above.group)).toContain('b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]');
-    expect(above.corrections).toEqual(["posGroups[0]: root 'w1' names no neighbour - it was put above 'b1'"]);
+    expect(entriesOf(beside.group)).toContain(
+      't1.RightTop -> w1.LeftTop StartStart [0,0,0]'
+    );
+    const above = compile([
+      root('b1', 'UTB60'),
+      root('b2', 'UTB60', { rightOf: 'b1' }),
+      root('w1', 'OTB60'),
+    ]);
+    expect(entriesOf(above.group)).toContain(
+      'b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]'
+    );
+    expect(above.corrections).toEqual([
+      "posGroups[0]: root 'w1' names no neighbour - it was put above 'b1'",
+    ]);
   });
 
   it('replaces a relation to an unknown root, to the root itself or one that closes a ring', () => {
@@ -282,7 +347,7 @@ describe('relationsToDocking', () => {
         `posGroups[0]: root 'b2': rightOf "nope" names no other root of the group - ignored`,
         `posGroups[0]: root 'b3': rightOf "b3" names no other root of the group - ignored`,
         "posGroups[0]: root 'b2' names no neighbour - it was put rightOf 'b1'",
-      ]),
+      ])
     );
     const ring = compile([
       root('a', 'UTB60', { leftOf: 'c' }),
@@ -325,7 +390,9 @@ describe('relationsToDocking', () => {
       "posGroups[0]: root 'b3' names rightOf and leftOf - only rightOf was used",
       "posGroups[0]: root 'b1' names no neighbour - it was put rightOf 'c1'",
     ]);
-    expect(entriesOf(group)).toContain('b2.RightBottom -> b3.LeftBottom StartStart [0,0,0]');
+    expect(entriesOf(group)).toContain(
+      'b2.RightBottom -> b3.LeftBottom StartStart [0,0,0]'
+    );
   });
 
   it('puts a floor unit that names a wall unit into the floor row', () => {
@@ -343,9 +410,11 @@ describe('relationsToDocking', () => {
         'w1.RightBottom -> w2.LeftBottom StartStart [0,0,0]',
         't1.RightBottom -> b1.LeftBottom StartStart [0,0,0]',
         'b1.RightBottom -> b2.LeftBottom StartStart [0,0,0]',
-      ]),
+      ])
     );
-    expect(entriesOf(group)).not.toContain('w2.RightBottom -> b1.LeftBottom StartStart [0,0,0]');
+    expect(entriesOf(group)).not.toContain(
+      'w2.RightBottom -> b1.LeftBottom StartStart [0,0,0]'
+    );
     expect(corrections).toEqual([
       "posGroups[0]: floor unit 'b1' cannot stand rightOf the wall unit 'w2' - it continues the floor row",
       "posGroups[0]: root 'b1' names no neighbour - it was put rightOf 't1'",
@@ -364,13 +433,20 @@ describe('relationsToDocking', () => {
       expect.arrayContaining([
         'b1.LeftTop -> h1.LeftBottom StartStart [0,660,0]',
         'h1.RightBottom -> w1.LeftBottom StartStart [0,0,0]',
-      ]),
+      ])
     );
     expect(entriesOf(group).join()).not.toContain('h1.LeftTop');
-    expect(corrections).toEqual(["posGroups[0]: range hood 'h1' hangs above 'b1', rightOf the tall unit 't1'"]);
+    expect(corrections).toEqual([
+      "posGroups[0]: range hood 'h1' hangs above 'b1', rightOf the tall unit 't1'",
+    ]);
 
-    const alone = compile([root('t1', 'H2TB60'), root('h1', 'DU', { leftOf: 't1' })]);
-    expect(entriesOf(alone.group)).toEqual(['t1.LeftTop -> h1.RightTop StartStart [0,0,0]']);
+    const alone = compile([
+      root('t1', 'H2TB60'),
+      root('h1', 'DU', { leftOf: 't1' }),
+    ]);
+    expect(entriesOf(alone.group)).toEqual([
+      't1.LeftTop -> h1.RightTop StartStart [0,0,0]',
+    ]);
     expect(alone.corrections).toEqual([
       "posGroups[0]: range hood 'h1' hangs leftOf the tall unit 't1' by its top edge - put it above the floor unit below it",
     ]);
@@ -382,19 +458,36 @@ describe('relationsToDocking', () => {
       root('b1', 'UTB60', { rightOf: 't1' }),
       root('h1', 'DU'),
     ]);
-    expect(entriesOf(group)).toContain('b1.LeftTop -> h1.LeftBottom StartStart [0,660,0]');
-    expect(corrections).toEqual(["posGroups[0]: root 'h1' names no neighbour - it was put above 'b1'"]);
+    expect(entriesOf(group)).toContain(
+      'b1.LeftTop -> h1.LeftBottom StartStart [0,660,0]'
+    );
+    expect(corrections).toEqual([
+      "posGroups[0]: root 'h1' names no neighbour - it was put above 'b1'",
+    ]);
   });
 
   it('counts the Living wall units as wall units', () => {
-    const { group } = compile([root('b1', 'UTB60'), root('l1', 'LWU', { rightOf: 'b1' })]);
-    expect(entriesOf(group)).toEqual(['b1.LeftTop -> l1.LeftBottom StartStart [0,980,0]']);
+    const { group } = compile([
+      root('b1', 'UTB60'),
+      root('l1', 'LWU', { rightOf: 'b1' }),
+    ]);
+    expect(entriesOf(group)).toEqual([
+      'b1.LeftTop -> l1.LeftBottom StartStart [0,980,0]',
+    ]);
   });
 
   it('starts with a floor unit when the list starts with a wall unit', () => {
-    const { group } = compile([root('w1', 'OTB60', { above: 'b1' }), root('b1', 'UTB60')]);
-    expect(group.roots.map((candidate: any) => candidate.id)).toEqual(['b1', 'w1']);
-    expect(entriesOf(group)).toEqual(['b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]']);
+    const { group } = compile([
+      root('w1', 'OTB60', { above: 'b1' }),
+      root('b1', 'UTB60'),
+    ]);
+    expect(group.roots.map((candidate: any) => candidate.id)).toEqual([
+      'b1',
+      'w1',
+    ]);
+    expect(entriesOf(group)).toEqual([
+      'b1.LeftTop -> w1.LeftBottom StartStart [0,660,0]',
+    ]);
   });
 
   it('leaves a group without relations as it is', () => {
@@ -402,7 +495,14 @@ describe('relationsToDocking', () => {
       {
         id: 'b1',
         articleId: 'UTB60',
-        contextData: { dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'b2', dockingVector: 'LeftBottom' }] }] },
+        contextData: {
+          dockedRoots: [
+            {
+              ownDockingVector: 'RightBottom',
+              dockedRoots: [{ id: 'b2', dockingVector: 'LeftBottom' }],
+            },
+          ],
+        },
       },
       { id: 'b2', articleId: 'UTB60' },
       { id: 'b3', articleId: 'UTB60' },
@@ -418,7 +518,14 @@ describe('relationsToDocking', () => {
       {
         id: 'b1',
         articleId: 'UTB60',
-        contextData: { dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'b2', dockingVector: 'LeftBottom' }] }] },
+        contextData: {
+          dockedRoots: [
+            {
+              ownDockingVector: 'RightBottom',
+              dockedRoots: [{ id: 'b2', dockingVector: 'LeftBottom' }],
+            },
+          ],
+        },
       },
       { id: 'b2', articleId: 'UTB60' },
       root('b3', 'UTB60', { rightOf: 'b2' }),

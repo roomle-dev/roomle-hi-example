@@ -33,7 +33,7 @@ const getLanguageModel = (config: ChatConfig) => {
     case 'azure':
       if (!config.azureBaseUrl && !config.azureResourceName) {
         throw new Error(
-          'AZURE_RESOURCE_NAME is required for the azure provider (the model id is the deployment name - set it with HI_CHAT_MODEL)',
+          'AZURE_RESOURCE_NAME is required for the azure provider (the model id is the deployment name - set it with HI_CHAT_MODEL)'
         );
       }
       return createAzure({
@@ -73,7 +73,7 @@ const streamChat: StreamChat = async (messages, clientId) => {
     const mcpTools = await mcpClient.tools();
     const toolNames = Object.keys(mcpTools);
     console.log(
-      `[hi-chat] MCP connected (${toolNames.length} tools: ${toolNames.join(', ')})`,
+      `[hi-chat] MCP connected (${toolNames.length} tools: ${toolNames.join(', ')})`
     );
     const tools = Object.fromEntries(
       Object.entries(mcpTools).map(([name, tool]) => {
@@ -92,20 +92,20 @@ const streamChat: StreamChat = async (messages, clientId) => {
               try {
                 const result = await execute(input, options);
                 console.log(
-                  `[hi-chat] tool done: ${name} (${Date.now() - toolStartedAt}ms)`,
+                  `[hi-chat] tool done: ${name} (${Date.now() - toolStartedAt}ms)`
                 );
                 return result;
               } catch (error) {
                 console.error(
                   `[hi-chat] tool failed: ${name} (${Date.now() - toolStartedAt}ms)`,
-                  error instanceof Error ? error.message : error,
+                  error instanceof Error ? error.message : error
                 );
                 throw error;
               }
             },
           },
         ];
-      }),
+      })
     );
     const model = getLanguageModel(config);
     const result = streamText({
@@ -159,7 +159,7 @@ const server = createServer(createChatRequestHandler(config, streamChat));
 server.on('error', (error: NodeJS.ErrnoException) => {
   if (error.code === 'EADDRINUSE') {
     console.error(
-      `[hi-chat] port ${config.port} is already in use - stop the previous instance or pick another with HI_CHAT_PORT.`,
+      `[hi-chat] port ${config.port} is already in use - stop the previous instance or pick another with HI_CHAT_PORT.`
     );
   } else {
     console.error('[hi-chat] server failed to start', error);
@@ -180,6 +180,8 @@ server.listen(config.port, '127.0.0.1', () => {
   console.log(`  \u279c  Images:  ${config.imageInput ? 'yes' : 'no'}`);
   console.log('');
   if (!config.apiToken) {
-    console.log('[hi-chat] no API token - POST /chat answers 503 until HI_CHAT_TOKEN is set');
+    console.log(
+      '[hi-chat] no API token - POST /chat answers 503 until HI_CHAT_TOKEN is set'
+    );
   }
 });

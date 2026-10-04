@@ -29,7 +29,10 @@ const PROXY_BASE_URL = 'https://dfscfgtest01-app.azurewebsites.net';
 const AUTH_DATA = `Basic ${Buffer.from('test:6mABjMDnEq4tvaN').toString('base64')}`;
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const LIBRARY_INFORMATION_DIR = join(SCRIPT_DIR, '../../docs/library-information');
+const LIBRARY_INFORMATION_DIR = join(
+  SCRIPT_DIR,
+  '../../docs/library-information'
+);
 const ARTICLES_PATH = join(LIBRARY_INFORMATION_DIR, 'article.json');
 const MASTER_DATA_PATH = join(LIBRARY_INFORMATION_DIR, 'master-data.json');
 
@@ -62,13 +65,13 @@ const main = async () => {
     fetchLibraryData('masterData'),
   ]);
   const articles = articleCatalog.articles.filter(
-    (article) => !article.isConfigDummy,
+    (article) => !article.isConfigDummy
   );
   delete masterData.materialProviders;
   await save(ARTICLES_PATH, { articles });
   await save(MASTER_DATA_PATH, masterData);
   console.log(
-    `${articles.length} articles (${articleCatalog.articles.length - articles.length} sub-articles filtered out)`,
+    `${articles.length} articles (${articleCatalog.articles.length - articles.length} sub-articles filtered out)`
   );
 };
 

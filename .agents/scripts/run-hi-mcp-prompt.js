@@ -77,7 +77,10 @@ const SNAPSHOT_FILES = [
 ];
 // Only the fields stored: the object GLB is not even generated.
 const SNAPSHOT_REQUEST = Object.fromEntries(
-  [...SNAPSHOT_FILES.map(([field]) => field), 'orderData'].map((field) => [field, true]),
+  [...SNAPSHOT_FILES.map(([field]) => field), 'orderData'].map((field) => [
+    field,
+    true,
+  ])
 );
 const USAGE =
   'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--operations <json>] [--image <file>] [--out <dir>] [--dev] [--headed]';
@@ -134,8 +137,11 @@ const withTimeout = (promise, ms, description) => {
   let timer;
   const timeout = new Promise((_, reject) => {
     timer = setTimeout(
-      () => reject(new Error(`timed out after ${ms / 1000}s waiting for ${description}`)),
-      ms,
+      () =>
+        reject(
+          new Error(`timed out after ${ms / 1000}s waiting for ${description}`)
+        ),
+      ms
     );
   });
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
@@ -154,7 +160,9 @@ const loadChromium = async () => {
   try {
     return (await import('playwright')).chromium;
   } catch {
-    throw new Error('Playwright is missing - run npm install in .agents/scripts');
+    throw new Error(
+      'Playwright is missing - run npm install in .agents/scripts'
+    );
   }
 };
 
@@ -178,13 +186,19 @@ const recordToolCall = (line) => {
     payload = json;
   }
   if (kind === 'args') {
-    toolCalls.entries.push({ turn: toolCalls.turn, tool, args: payload, open: true });
+    toolCalls.entries.push({
+      turn: toolCalls.turn,
+      tool,
+      args: payload,
+      open: true,
+    });
     return;
   }
   const feedback =
     kind === 'error' ? { error: payload?.message ?? payload } : payload;
   const call = toolCalls.entries.find(
-    (entry) => entry.turn === toolCalls.turn && entry.tool === tool && entry.open,
+    (entry) =>
+      entry.turn === toolCalls.turn && entry.tool === tool && entry.open
   );
   if (call) {
     Object.assign(call, feedback, { open: false });
@@ -192,7 +206,8 @@ const recordToolCall = (line) => {
     toolCalls.entries.push({
       turn: toolCalls.turn,
       tool,
-      ...(kind === 'error' && payload?.args !== undefined && { args: payload.args }),
+      ...(kind === 'error' &&
+        payload?.args !== undefined && { args: payload.args }),
       ...feedback,
       open: false,
     });
@@ -208,7 +223,7 @@ const startLauncher = ({ provider, apiKey, dev }) => {
       detached: true,
       stdio: ['ignore', 'pipe', 'inherit'],
       env: { ...process.env, HI_MCP_PORT: MCP_PORT, HI_CHAT_PORT: CHAT_PORT },
-    },
+    }
   );
   const exited = new Promise((resolve) => launcher.on('exit', resolve));
   let pendingLine = '';
@@ -263,11 +278,11 @@ const aborted = (launcher) =>
     const abort = (message, exitCode) =>
       reject(Object.assign(new Error(message), { exitCode }));
     launcher.exited.then((code) =>
-      abort(`the launcher exited with code ${code}`, code || 1),
+      abort(`the launcher exited with code ${code}`, code || 1)
     );
     for (const signal of ['SIGINT', 'SIGTERM']) {
       process.on(signal, () =>
-        abort(`stopped by ${signal}`, 128 + constants.signals[signal]),
+        abort(`stopped by ${signal}`, 128 + constants.signals[signal])
       );
     }
   });
@@ -323,9 +338,15 @@ const callOperation = async (tool, args) => {
 const runOperations = async (operations) => {
   const done = [];
   for (const { tool, arguments: args = {} } of operations) {
-    console.log(`[run-hi-mcp-prompt] operation ${tool} ${JSON.stringify(args)}`);
+    console.log(
+      `[run-hi-mcp-prompt] operation ${tool} ${JSON.stringify(args)}`
+    );
     try {
-      done.push({ tool, arguments: args, result: await callOperation(tool, args) });
+      done.push({
+        tool,
+        arguments: args,
+        result: await callOperation(tool, args),
+      });
     } catch (error) {
       done.push({ tool, arguments: args, error: error.message });
       break;
@@ -335,7 +356,9 @@ const runOperations = async (operations) => {
 };
 
 const planContextHasArticles = async () => {
-  const context = await callMcpTool('get-plan-context', { include: ['articles'] });
+  const context = await callMcpTool('get-plan-context', {
+    include: ['articles'],
+  });
   return context?.articles?.length > 0;
 };
 
@@ -359,7 +382,11 @@ const recordPlannerCalls = (page) => {
     socket.on('framereceived', ({ payload }) => {
       const message = parseFrame(payload);
       if (message?.kind === 'call') {
-        calls.push({ id: message.id, method: message.method, args: message.args });
+        calls.push({
+          id: message.id,
+          method: message.method,
+          args: message.args,
+        });
       }
     });
     socket.on('framesent', ({ payload }) => {
@@ -384,7 +411,10 @@ const splitChatStream = (text) => {
   const lines = text.split('\n');
   return {
     answer: lines
-      .filter((line) => !line.startsWith(TOOL_PREFIX) && !line.startsWith(ERROR_PREFIX))
+      .filter(
+        (line) =>
+          !line.startsWith(TOOL_PREFIX) && !line.startsWith(ERROR_PREFIX)
+      )
       .join('\n')
       .trim(),
     tools: lines
@@ -422,11 +452,14 @@ const postChat = (messages, clientId) =>
         response.on('data', (chunk) => chunks.push(chunk));
         response.on('end', () => settle());
         response.on('error', settle);
-      },
+      }
     );
     const timer = setTimeout(
-      () => chatRequest.destroy(new Error(`aborted after ${CHAT_TIMEOUT_MS / 1000}s`)),
-      CHAT_TIMEOUT_MS,
+      () =>
+        chatRequest.destroy(
+          new Error(`aborted after ${CHAT_TIMEOUT_MS / 1000}s`)
+        ),
+      CHAT_TIMEOUT_MS
     );
     chatRequest.on('error', settle);
     chatRequest.end(body);
@@ -453,7 +486,10 @@ const prepareImage = (page, bytes) =>
       const bitmap = await createImageBitmap(new Blob([data]), {
         imageOrientation: 'from-image',
       });
-      const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+      const scale = Math.min(
+        1,
+        maxSide / Math.max(bitmap.width, bitmap.height)
+      );
       const canvas = document.createElement('canvas');
       canvas.width = Math.round(bitmap.width * scale);
       canvas.height = Math.round(bitmap.height * scale);
@@ -465,7 +501,11 @@ const prepareImage = (page, bytes) =>
       bitmap.close();
       return canvas.toDataURL('image/jpeg', quality);
     },
-    { base64: bytes.toString('base64'), maxSide: IMAGE_MAX_SIDE, quality: IMAGE_QUALITY },
+    {
+      base64: bytes.toString('base64'),
+      maxSide: IMAGE_MAX_SIDE,
+      quality: IMAGE_QUALITY,
+    }
   );
 
 // The prompts are the turns of one conversation, as in the chat window: the
@@ -477,12 +517,12 @@ const runConversation = async (prompts, image, clientId) => {
   for (const [index, prompt] of prompts.entries()) {
     const turnImage = index === prompts.length - 1 ? image : undefined;
     console.log(
-      `[run-hi-mcp-prompt] turn ${index + 1}/${prompts.length}: ${prompt}${turnImage ? ` [image: ${turnImage.file}]` : ''}`,
+      `[run-hi-mcp-prompt] turn ${index + 1}/${prompts.length}: ${prompt}${turnImage ? ` [image: ${turnImage.file}]` : ''}`
     );
     messages.push(
       turnImage
         ? { role: 'user', content: prompt, images: [turnImage.dataUrl] }
-        : { role: 'user', content: prompt },
+        : { role: 'user', content: prompt }
     );
     const startedAt = Date.now();
     toolCalls.turn = index;
@@ -508,22 +548,25 @@ const evaluateInPage = (page, method, description, argument) =>
   withTimeout(
     page.evaluate(
       ([name, arg]) => window.instance.extended[name](arg),
-      [method, argument],
+      [method, argument]
     ),
     SNAPSHOT_TIMEOUT_MS,
-    description,
+    description
   );
 
 const storeResult = async (
   runDir,
-  { run, planContext, plannerCalls, promptImage, snapshot },
+  { run, planContext, plannerCalls, promptImage, snapshot }
 ) => {
   await mkdir(runDir, { recursive: true });
   const write = (file, content) => writeFile(join(runDir, file), content);
   await write('run.json', JSON.stringify(run, null, 2));
   await write('planner-calls.json', JSON.stringify(plannerCalls, null, 2));
   if (promptImage) {
-    await write(PROMPT_IMAGE_FILE, Buffer.from(promptImage.split(',')[1], 'base64'));
+    await write(
+      PROMPT_IMAGE_FILE,
+      Buffer.from(promptImage.split(',')[1], 'base64')
+    );
   }
   if (planContext !== undefined) {
     await write('plan-context.json', JSON.stringify(planContext, null, 2));
@@ -546,25 +589,30 @@ const runSession = async (options, launcher, browser) => {
   const exampleUrl = await withTimeout(
     launcher.exampleUrl,
     LAUNCHER_READY_TIMEOUT_MS,
-    'the launcher',
+    'the launcher'
   );
   await pollUntil(
     async () => (await fetch(`${CHAT_URL}/health`)).ok,
     LAUNCHER_READY_TIMEOUT_MS,
-    'the chat backend',
+    'the chat backend'
   );
   const pageUrl = options.plan
     ? `${exampleUrl}&plan_id=${encodeURIComponent(options.plan)}`
     : exampleUrl;
   const page = await browser.newPage();
-  const { calls: plannerCalls, clientId: pageClientId } = recordPlannerCalls(page);
+  const { calls: plannerCalls, clientId: pageClientId } =
+    recordPlannerCalls(page);
   await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
   await pollUntil(
     planContextHasArticles,
     PAGE_READY_TIMEOUT_MS,
-    'the page and the HI library',
+    'the page and the HI library'
   );
-  const clientId = await withTimeout(pageClientId, PAGE_READY_TIMEOUT_MS, 'the page client ID');
+  const clientId = await withTimeout(
+    pageClientId,
+    PAGE_READY_TIMEOUT_MS,
+    'the page client ID'
+  );
   const operations = await runOperations(options.operations);
   const failedOperation = operations.find((operation) => operation.error);
   plannerCalls.length = 0;
@@ -577,7 +625,7 @@ const runSession = async (options, launcher, browser) => {
     : await runConversation(
         options.prompts,
         promptImage && { file: options.image, dataUrl: promptImage },
-        clientId,
+        clientId
       );
   toolCalls.turn = undefined;
   const chatPlannerCalls = plannerCalls.slice();
@@ -591,7 +639,9 @@ const runSession = async (options, launcher, browser) => {
   console.log('[run-hi-mcp-prompt] chat done, reading and saving the snapshot');
   let planContext;
   try {
-    planContext = await callMcpTool('get-plan-context', { include: ['rooms', 'groups'] });
+    planContext = await callMcpTool('get-plan-context', {
+      include: ['rooms', 'groups'],
+    });
   } catch (error) {
     errors.push(`plan context failed: ${error.message}`);
   }
@@ -601,7 +651,7 @@ const runSession = async (options, launcher, browser) => {
       page,
       'getExternalObjectSnapshot',
       'the snapshot',
-      SNAPSHOT_REQUEST,
+      SNAPSHOT_REQUEST
     );
     if (!snapshot) {
       errors.push('getExternalObjectSnapshot returned no snapshot');
@@ -614,7 +664,7 @@ const runSession = async (options, launcher, browser) => {
     const saved = await evaluateInPage(
       page,
       'saveExternalObjectSnapshot',
-      'the saved snapshot',
+      'the saved snapshot'
     );
     planSnapshotId = saved?.planSnapshotId ?? null;
     if (!planSnapshotId) {
@@ -638,7 +688,13 @@ const runSession = async (options, launcher, browser) => {
       snapshot: Date.now() - chatDoneAt,
     },
   };
-  return { run, planContext, plannerCalls: chatPlannerCalls, promptImage, snapshot };
+  return {
+    run,
+    planContext,
+    plannerCalls: chatPlannerCalls,
+    promptImage,
+    snapshot,
+  };
 };
 
 const main = async () => {
@@ -663,7 +719,7 @@ const main = async () => {
       ? resolvePath(options.out)
       : join(
           RESULT_DIR,
-          `${run.startedAt.slice(0, 19).replaceAll(':', '-')}-${run.provider}`,
+          `${run.startedAt.slice(0, 19).replaceAll(':', '-')}-${run.provider}`
         );
     await storeResult(runDir, result);
     console.log('');

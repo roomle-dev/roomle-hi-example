@@ -6,7 +6,7 @@ export default defineConfig({
       // runtime-only Cloudflare module - stubbed for the worker tests
       'cloudflare:workers': new URL(
         './cf/tests/stubs/cloudflare-workers.ts',
-        import.meta.url,
+        import.meta.url
       ).pathname,
     },
   },

@@ -14,7 +14,7 @@ const IMAGE = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
 const startServer = (env: NodeJS.ProcessEnv, streamChat: StreamChat) =>
   new Promise<{ server: Server; url: string }>((resolve, reject) => {
     const server = createServer(
-      createChatRequestHandler(getChatConfig(env), streamChat),
+      createChatRequestHandler(getChatConfig(env), streamChat)
     );
     server.on('error', reject);
     server.listen(0, '127.0.0.1', () => {
@@ -30,7 +30,7 @@ const startServer = (env: NodeJS.ProcessEnv, streamChat: StreamChat) =>
 const withServer = async (
   env: NodeJS.ProcessEnv,
   streamChat: StreamChat,
-  run: (url: string) => Promise<void>,
+  run: (url: string) => Promise<void>
 ) => {
   const { server, url } = await startServer(env, streamChat);
   try {
@@ -118,16 +118,19 @@ describe('getChatConfig', () => {
     expect(() => resolveChatModel('gpt-4o')).toThrow(/Unknown chat provider/);
     expect(() => resolveChatModel('geminix')).toThrow(/Unknown chat provider/);
     expect(getChatConfig({ HI_CHAT_PROVIDER: 'claude' }).modelId).toBe(
-      'claude-sonnet-4-5',
+      'claude-sonnet-4-5'
     );
     expect(
-      getChatConfig({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'my-deployment' })
-        .modelId,
+      getChatConfig({
+        HI_CHAT_PROVIDER: 'azure',
+        HI_CHAT_MODEL: 'my-deployment',
+      }).modelId
     ).toBe('my-deployment');
   });
 
   it('resolves the Foundry deployments to the Foundry endpoint', () => {
-    const foundryBaseUrl = 'https://dfhifoundrysweden.services.ai.azure.com/openai/v1';
+    const foundryBaseUrl =
+      'https://dfhifoundrysweden.services.ai.azure.com/openai/v1';
     expect(resolveChatModel('gpt-5-mini')).toEqual({
       provider: 'azure',
       modelId: 'gpt-5-mini',
@@ -152,19 +155,27 @@ describe('getChatConfig', () => {
     expect(config.modelId).toBe('gpt-5.4-mini');
     expect(config.azureBaseUrl).toBe(foundryBaseUrl);
     expect(
-      getChatConfig({ HI_CHAT_PROVIDER: 'gpt-5-mini', HI_CHAT_MODEL: 'my-gpt4o-deployment' })
-        .modelId,
+      getChatConfig({
+        HI_CHAT_PROVIDER: 'gpt-5-mini',
+        HI_CHAT_MODEL: 'my-gpt4o-deployment',
+      }).modelId
     ).toBe('gpt-5-mini');
-    expect(getChatConfig({ HI_CHAT_PROVIDER: 'azure' }).azureBaseUrl).toBeUndefined();
+    expect(
+      getChatConfig({ HI_CHAT_PROVIDER: 'azure' }).azureBaseUrl
+    ).toBeUndefined();
   });
 
   it('knows which models read images', () => {
-    const imageInput = (env: NodeJS.ProcessEnv) => getChatConfig(env).imageInput;
+    const imageInput = (env: NodeJS.ProcessEnv) =>
+      getChatConfig(env).imageInput;
     expect(imageInput({})).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-medium' })).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'claude' })).toBe(true);
     expect(
-      imageInput({ HI_CHAT_PROVIDER: 'claude', HI_CHAT_MODEL: 'claude-haiku-4-5' }),
+      imageInput({
+        HI_CHAT_PROVIDER: 'claude',
+        HI_CHAT_MODEL: 'claude-haiku-4-5',
+      })
     ).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'gemini-flash' })).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'azure' })).toBe(true);
@@ -174,7 +185,7 @@ describe('getChatConfig', () => {
 
     expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-large-2411' })).toBe(false);
     expect(
-      imageInput({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'my-deployment' }),
+      imageInput({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'my-deployment' })
     ).toBe(false);
   });
 });
@@ -187,7 +198,7 @@ describe('parseChatMessages', () => {
           { role: 'user', content: 'hi' },
           { role: 'assistant', content: 'hello' },
         ],
-      }),
+      })
     ).toEqual([
       { role: 'user', content: 'hi' },
       { role: 'assistant', content: 'hello' },
@@ -200,13 +211,13 @@ describe('parseChatMessages', () => {
 
   it('rejects roles outside the user/assistant conversation', () => {
     expect(() =>
-      parseChatMessages({ messages: [{ role: 'system', content: 'nope' }] }),
+      parseChatMessages({ messages: [{ role: 'system', content: 'nope' }] })
     ).toThrow(/Invalid message role/);
   });
 
   it('rejects non-string content', () => {
     expect(() =>
-      parseChatMessages({ messages: [{ role: 'user', content: 42 }] }),
+      parseChatMessages({ messages: [{ role: 'user', content: 42 }] })
     ).toThrow(/content must be a string/);
   });
 
@@ -214,24 +225,30 @@ describe('parseChatMessages', () => {
     expect(
       parseChatMessages({
         messages: [{ role: 'user', content: 'like this', images: [IMAGE] }],
-      }),
+      })
     ).toEqual([{ role: 'user', content: 'like this', images: [IMAGE] }]);
     expect(
-      parseChatMessages({ messages: [{ role: 'user', content: 'hi', images: [] }] }),
+      parseChatMessages({
+        messages: [{ role: 'user', content: 'hi', images: [] }],
+      })
     ).toEqual([{ role: 'user', content: 'hi' }]);
   });
 
   it('accepts images as inline data URLs only', () => {
     const parseImages = (images: unknown) => () =>
       parseChatMessages({ messages: [{ role: 'user', content: 'x', images }] });
-    expect(parseImages(['https://example.com/kitchen.jpg'])).toThrow(/data URLs/);
+    expect(parseImages(['https://example.com/kitchen.jpg'])).toThrow(
+      /data URLs/
+    );
     expect(parseImages(['data:text/plain;base64,aGk='])).toThrow(/data URLs/);
-    expect(parseImages(['data:image/jpeg;base64,not base64!'])).toThrow(/data URLs/);
+    expect(parseImages(['data:image/jpeg;base64,not base64!'])).toThrow(
+      /data URLs/
+    );
     expect(parseImages(IMAGE)).toThrow(/data URLs/);
     expect(() =>
       parseChatMessages({
         messages: [{ role: 'assistant', content: 'x', images: [IMAGE] }],
-      }),
+      })
     ).toThrow(/Only user messages/);
   });
 });
@@ -239,7 +256,9 @@ describe('parseChatMessages', () => {
 describe('toModelMessages', () => {
   it('gives a user message with images but no text the default image prompt', () => {
     for (const content of ['', '  ']) {
-      expect(toModelMessages([{ role: 'user', content, images: [IMAGE] }])).toEqual([
+      expect(
+        toModelMessages([{ role: 'user', content, images: [IMAGE] }])
+      ).toEqual([
         {
           role: 'user',
           content: [
@@ -262,7 +281,7 @@ describe('toModelMessages', () => {
         { role: 'user', content: 'hi' },
         { role: 'assistant', content: 'hello' },
         { role: 'user', content: 'like this', images: [IMAGE] },
-      ]),
+      ])
     ).toEqual([
       { role: 'user', content: 'hi' },
       { role: 'assistant', content: 'hello' },
@@ -293,13 +312,19 @@ describe('chat request handler', () => {
       });
       expect(response.status).toBe(200);
       expect(response.headers.get('Content-Type')).toBe('application/json');
-      expect(response.headers.get('Access-Control-Allow-Origin')).toBe(PAGE_ORIGIN);
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe(
+        PAGE_ORIGIN
+      );
       expect(await response.json()).toEqual({ imageInput: true });
     });
-    await withServer({ HI_CHAT_PROVIDER: 'mistral-large-2411' }, vi.fn(), async (url) => {
-      const response = await fetch(`${url}/capabilities`);
-      expect(await response.json()).toEqual({ imageInput: false });
-    });
+    await withServer(
+      { HI_CHAT_PROVIDER: 'mistral-large-2411' },
+      vi.fn(),
+      async (url) => {
+        const response = await fetch(`${url}/capabilities`);
+        expect(await response.json()).toEqual({ imageInput: false });
+      }
+    );
   });
 
   it('rejects unknown paths', async () => {
@@ -329,7 +354,7 @@ describe('chat request handler', () => {
       });
       expect(allowed.status).toBe(204);
       expect(allowed.headers.get('Access-Control-Allow-Origin')).toBe(
-        PAGE_ORIGIN,
+        PAGE_ORIGIN
       );
 
       const rejected = await fetch(`${url}/chat`, {
@@ -345,7 +370,10 @@ describe('chat request handler', () => {
     await withServer({ HI_CHAT_TOKEN: 'secret' }, vi.fn(), async (url) => {
       const response = await fetch(`${url}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Origin: 'https://evil.example' },
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'https://evil.example',
+        },
         body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }),
       });
       expect(response.status).toBe(403);
@@ -391,7 +419,10 @@ describe('chat request handler', () => {
         const response = await fetch(`${url}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }], clientId }),
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: 'hi' }],
+            clientId,
+          }),
         });
         expect(response.status).toBe(400);
         expect(await response.text()).toMatch(/clientId/);
@@ -406,16 +437,20 @@ describe('chat request handler', () => {
       const response = await fetch(`${url}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Origin: PAGE_ORIGIN },
-        body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }], clientId: 'page-one' }),
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'hi' }],
+          clientId: 'page-one',
+        }),
       });
       expect(response.status).toBe(200);
       expect(await response.text()).toBe('hello there');
       expect(response.headers.get('Access-Control-Allow-Origin')).toBe(
-        PAGE_ORIGIN,
+        PAGE_ORIGIN
       );
-      expect(streamChat).toHaveBeenCalledWith([
-        { role: 'user', content: 'hi' },
-      ], 'page-one');
+      expect(streamChat).toHaveBeenCalledWith(
+        [{ role: 'user', content: 'hi' }],
+        'page-one'
+      );
     });
   });
 
@@ -431,15 +466,18 @@ describe('chat request handler', () => {
         }),
       });
       expect(response.status).toBe(200);
-      expect(streamChat).toHaveBeenCalledWith([
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: 'like this' },
-            { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
-          ],
-        },
-        ], 'page-one');
+      expect(streamChat).toHaveBeenCalledWith(
+        [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'like this' },
+              { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
+            ],
+          },
+        ],
+        'page-one'
+      );
     });
   });
 
@@ -459,10 +497,10 @@ describe('chat request handler', () => {
         });
         expect(response.status).toBe(400);
         expect(await response.text()).toBe(
-          'The model mistral:mistral-large-2411 does not read images',
+          'The model mistral:mistral-large-2411 does not read images'
         );
         expect(streamChat).not.toHaveBeenCalled();
-      },
+      }
     );
   });
 
@@ -474,7 +512,10 @@ describe('chat request handler', () => {
       const response = await fetch(`${url}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }], clientId: 'page-one' }),
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'hi' }],
+          clientId: 'page-one',
+        }),
       });
       expect(response.status).toBe(500);
       expect(await response.text()).toMatch(/MCP server unreachable/);

@@ -96,7 +96,7 @@ that is not one of the library's group settings on every unit and generated root
 reports it. An override only a generated root carries (the worktop colour on a base unit) is moved
 to the group, and the colours of the generated roots a resubmitted group carries are set again.
 
-**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, errors }]` — the groups it could not build, each error naming what to send instead; the other groups load)
+**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a new group at the place of another gets a `hint`; `dockTo` on a root is read as its relation
 
 **Usage**:
 ```javascript
@@ -175,7 +175,9 @@ own group features; the group keeps its position
 ```
 
 Group ids accept a unique prefix; ids are the ones `get-plan-context` shows (a sub module by its
-id in `subModules`). `value` numbers are passed as strings. `dockTo.ownDockingVector` is one of
+id in `subModules`). A root module id that is a unique prefix, differs only in its first UUID
+segment or in one character is read as that root and reported; one that matches nothing is
+forwarded, and the planner's "not found" comes back with the roots of the plan. `value` numbers are passed as strings. `dockTo.ownDockingVector` is one of
 the root's `freeDockingVectors`; the pairs are the docking pairs of the
 [authoring rules](./hi-authoring-rules.md#valid-docking-pairs). An `articleId` in another spelling
 (case, whitespace) is read in the catalog's spelling. `merge-article-into-group` docks a unit sent

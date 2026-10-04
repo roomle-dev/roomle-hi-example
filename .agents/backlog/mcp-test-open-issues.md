@@ -22,7 +22,6 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | four cabinets on the back wall; oven, fridge, sink in the corner | low — docking written as `contextData` only |
 | 5 | [A range hood without wall units has no docking recipe](#5-a-range-hood-without-wall-units-has-no-docking-recipe) | bug, rules | oven, range hood, sink, fridge; full kitchen around the corner | low — with relations the hood hangs `above` the hob |
 | 7 | [Docking to a vector the article does not have](#7-docking-to-a-vector-the-article-does-not-have) | hardening | oven, fridge, sink in the corner | medium |
-| 8 | [Root module ids are passed on unresolved](#8-root-module-ids-are-passed-on-unresolved) | hardening | change one unit | medium |
 | 9 | [Answers claim what the plan does not have](#9-answers-claim-what-the-plan-does-not-have) | hardening, chat | most prompts with a wrong result (8 of 17 runs on 2026-10-02 12:45) | medium |
 | 10 | [A wall unit stands on the worktop instead of hanging on the wall](#10-a-wall-unit-stands-on-the-worktop-instead-of-hanging-on-the-wall) | bug, MCP server | full kitchen around the corner | medium — `contextData` only; with relations the height is derived (D35, to confirm) |
 | 11 | [A merged group reaches into the back wall](#11-a-merged-group-reaches-into-the-back-wall) | bug, RoomleCore — [RML-18040](https://roomle.atlassian.net/browse/RML-18040) | join groups | — |
@@ -33,9 +32,6 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) | image only, no text | critical — an attribute edit fails |
 | 17 | [A chat turn without an answer for 10 minutes](#17-a-chat-turn-without-an-answer-for-10-minutes) | hardening, chat | image: kitchen on the left-hand wall; full kitchen around the corner | medium |
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui | full kitchen around the corner | high — wall cabinets on the worktop |
-| 24 | [A second create with the agent's own group id builds a duplicate group](#24-a-second-create-with-the-agents-own-group-id-builds-a-duplicate-group) | hardening | full kitchen around the corner | medium — two kitchens on one spot |
-| 25 | [`dockTo` written on the roots of `create-or-replace-groups`](#25-dockto-written-on-the-roots-of-create-or-replace-groups) | hardening | four cabinets on the back wall | low — corrected right by G7 |
-| 26 | [One unknown article id rejects the whole group](#26-one-unknown-article-id-rejects-the-whole-group) | hardening | full kitchen around the corner | medium — a retry step |
 | 27 | [A new group without a placement, moved with `place-group` right after](#27-a-new-group-without-a-placement-moved-with-place-group-right-after) | hardening | three tall units; four cabinets; image only | medium — a second call and a reload |
 | 30 | [The front right point is taken for the back right corner](#30-the-front-right-point-is-taken-for-the-back-right-corner) | hardening | three tall units; four cabinets; image: planning on the right-hand wall | high — the wrong wall, a group outside the room |
 | 31 | [A wall-unit row over a corner article runs through the side wall](#31-a-wall-unit-row-over-a-corner-article-runs-through-the-side-wall) | hardening | images: kitchen in the back right corner, image only; corner kitchens | high — wall units outside the room |
@@ -147,33 +143,6 @@ and the sink is docked to a free row end, not inside the corner.
 
 **Relation payloads** (RML-18038): the server picks the vectors of the relation; `behind` a corner
 article is ignored and reported (G36). Open for docking written as `contextData`.
-
-## 8. Root module ids are passed on unresolved
-
-**Problem.** The model chooses the right tool, `change-module-attribute` with `mod_Width`, but
-mistypes the root id: a segment of the group id mixed into the root's UUID. The planner answers "not
-found", and the model gives up.
-
-**Cause.** `findGroup` (`tool-executors.ts`) resolves group ids by a unique prefix (C4). The root ids
-of `change-module-attribute`, `delete-root-module`, `exchange-root-module` and `dockTo.rootId` of
-`merge-article-into-group` go to the planner as sent.
-
-**To do.**
-- Resolve root ids against the plan's roots: the exact id, else a unique prefix — the first UUID
-  segment is enough.
-- Report the resolution as a correction; an id that matches nothing or more than one root stays the
-  planner's error, with the root ids of the group added.
-
-**Test.** `change-module-attribute` with a root id whose first segment is right resolves to the root
-and reports it; an ambiguous prefix fails with the candidates.
-
-**Latest run** (`mcp-test-2026-10-02_12-45-24`): 14.
-- The model sent `378c6f4a-acee-4206-81c9-92b22c32e522`; the root is
-  `378c6f4e-acee-4206-81c9-92b22c32e522`.
-- The typo is in the first segment, so a unique prefix does not resolve it, but the other four
-  segments match exactly.
-- Extend the to-do: if no prefix matches, resolve a unique root whose id differs in one character
-  (or whose last four segments match), and report the resolution.
 
 ## 9. Answers claim what the plan does not have
 
@@ -481,57 +450,6 @@ planner stores the reciprocal of a docking entry without its offset
 worktop colour change.
 
 **Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 10, gpt-6-astra 10.
-
-## 24. A second create with the agent's own group id builds a duplicate group
-
-**Problem.** Both calls sent `"id": "kitchen1"` with a placement; the planner had regenerated the id,
-so the second call built a second kitchen on the same spot, unreported.
-
-**Cause.** The description says a group whose id matches an existing group replaces it; the model
-reused its own id, not the regenerated one.
-
-**To do.** Resolve an id the server regenerated earlier in the session to that group, or report a new
-group that stands on an existing one — report only, never refuse.
-
-**Test.** A second create with the same agent id reports the existing group.
-
-**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5.4-mini 10.
-
-**Latest run** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 11 ("add a cabinet with drawers").
-- The model sent the three existing units plus the new one as a new group, without the group id and
-  with the same placement.
-- Two groups now stand on the same spot (`064a7d91` and `4703f6f1`, both at `[4815,0,-3765]` / 270),
-  unreported.
-- The "report a new group that stands on an existing one" part of the to-do covers it.
-
-## 25. `dockTo` written on the roots of `create-or-replace-groups`
-
-**Problem.** The model skipped `get-authoring-rules` and docked each root with `dockTo` (the field of
-`merge-article-into-group`); the server ignored it (G27) and chained the roots (G7).
-
-**Cause.** The chat passes no server instructions; `dockTo` is the only typed docking field among the
-tools.
-
-**To do.** Read `dockTo` `RightBottom → LeftBottom` as `rightOf` (and the mirror as `leftOf`) and
-report it.
-
-**Test.** A root with `dockTo` compiles like the matching relation, reported.
-
-**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5.4-mini 02.
-
-## 26. One unknown article id rejects the whole group
-
-**Problem.** `w2` `OTB90` returned "Invalid pos groups - nothing was loaded"; the eight valid roots
-were not built either. The model fixed the id on its next call.
-
-**Cause.** G15 fails the whole group for one unknown article id.
-
-**To do.** Build the group without that root and report it in `notLoaded` with the valid ids
-([guideline step 4](../../AGENTS.md#guards-are-a-last-resort)).
-
-**Test.** A group with one unknown article loads the other roots and reports the unknown one.
-
-**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 10.
 
 ## 27. A new group without a placement, moved with `place-group` right after
 

@@ -200,21 +200,133 @@ const catalogArticleId = (
   return spelling;
 };
 
+// A root whose article the catalog does not have is not built; the other
+// roots of the group are. The dropped root is named in notLoaded, and what
+// named it - a relation, a docking entry - names nothing any more. A group
+// whose every root is unknown is not built.
 const resolveArticleIds = (
   articles: any[],
-  group: any,
+  { group, index }: CallGroup,
   prefix: string,
-  corrections: string[]
-): string[] =>
-  (group.roots as any[]).filter(isArticlePickOnly).flatMap((root) => {
+  corrections: string[],
+  notLoaded: NotLoadedGroup[]
+): string[] => {
+  const unknown: { root: any; message: string }[] = [];
+  for (const root of (group.roots as any[]).filter(isArticlePickOnly)) {
     const label = `${prefix} root '${root.id}'`;
     try {
       root.articleId = catalogArticleId(articles, root, label, corrections);
-      return [];
     } catch (error) {
-      return [`${label}: ${(error as Error).message}`];
+      unknown.push({ root, message: `${label}: ${(error as Error).message}` });
     }
+  }
+  if (unknown.length === 0) {
+    return [];
+  }
+  const remaining = (group.roots as any[]).filter(
+    (root) => !unknown.some((entry) => entry.root === root)
+  );
+  if (remaining.length === 0) {
+    return unknown.map((entry) => entry.message);
+  }
+  const droppedIds = unknown.map((entry) => String(entry.root.id));
+  group.roots = remaining;
+  removeReferencesTo(group.roots, new Set(droppedIds));
+  notLoaded.push({
+    index,
+    ...(typeof group.id === 'string' && { id: group.id }),
+    rootIds: droppedIds,
+    errors: unknown.map(
+      (entry) =>
+        `${entry.message} - the root was not built, the other roots were; send it with merge-article-into-group or a valid article id`
+    ),
   });
+  return [];
+};
+
+// Relations and docking entries that named a dropped root name nothing: the
+// root they are on gets the default of a root without a relation.
+const removeReferencesTo = (roots: any[], droppedIds: Set<string>): void => {
+  for (const root of roots) {
+    for (const relation of RELATIONS) {
+      if (droppedIds.has(root[relation])) {
+        delete root[relation];
+      }
+    }
+    for (const context of root.contextData?.dockedRoots ?? []) {
+      context.dockedRoots = (context.dockedRoots ?? []).filter(
+        (entry: any) => !droppedIds.has(entry?.id)
+      );
+    }
+    if (root.contextData?.dockedRoots) {
+      root.contextData.dockedRoots = root.contextData.dockedRoots.filter(
+        (context: any) => context.dockedRoots.length > 0
+      );
+    }
+  }
+};
+
+// A root module id as the plan knows it: the exact id, else a unique prefix,
+// else the unique root whose UUID differs only in its first segment, else the
+// unique root whose id differs in one character. An id that matches nothing
+// or more than one root is forwarded as sent.
+const resolveRootId = (
+  roots: any[],
+  rootId: string,
+  label: string,
+  corrections: string[]
+): string => {
+  const ids = roots.map((root) => String(root?.id));
+  if (ids.includes(rootId)) {
+    return rootId;
+  }
+  const unique = (candidates: string[]): string | undefined =>
+    candidates.length === 1 ? candidates[0] : undefined;
+  const withoutFirstSegment = (id: string) => id.split('-').slice(1).join('-');
+  const oneCharacterOff = (id: string) =>
+    id.length === rootId.length &&
+    [...id].filter((character, position) => character !== rootId[position])
+      .length === 1;
+  const resolved =
+    unique(ids.filter((id) => id.startsWith(rootId))) ??
+    unique(
+      ids.filter(
+        (id) =>
+          id.includes('-') &&
+          id.length === rootId.length &&
+          withoutFirstSegment(id) === withoutFirstSegment(rootId)
+      )
+    ) ??
+    unique(ids.filter(oneCharacterOff));
+  if (resolved === undefined) {
+    return rootId;
+  }
+  corrections.push(`${label}: root id '${rootId}' was read as '${resolved}'`);
+  return resolved;
+};
+
+const rootsOfGroups = (groups: any[]): any[] =>
+  groups.flatMap((group) => (group?.roots ?? []) as any[]);
+
+// The planner's "not found" for a root module, with the roots of the plan.
+const withPlanRoots = async <T>(
+  run: () => Promise<T>,
+  groups: any[]
+): Promise<T> => {
+  try {
+    return await run();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/root module .* not found/i.test(message)) {
+      throw new Error(
+        `${message} Roots in the plan: ${rootsOfGroups(groups)
+          .map((root) => root.id)
+          .join(', ')}`
+      );
+    }
+    throw error;
+  }
+};
 
 // Where a new unit docks to a group as get-plan-context shows it: a side that
 // is taken moves to the named root's own free side, else to the free end of
@@ -1032,6 +1144,110 @@ const moveGeneratedRootOverrides = async (
   }
 };
 
+// The group of the plan each group of the call became: a replaced group by its
+// id, a new group by its order among the groups the load added.
+const matchResultGroups = (
+  callGroups: CallGroup[],
+  beforeGroupIds: Set<string>,
+  groups: any[]
+): [CallGroup, any][] => {
+  const newGroups = groups.filter((group) => !beforeGroupIds.has(group.id));
+  let nextNew = 0;
+  return callGroups.flatMap((callGroup) => {
+    const result = beforeGroupIds.has(callGroup.group.id)
+      ? groups.find((candidate) => candidate.id === callGroup.group.id)
+      : newGroups[nextNew++];
+    return result ? [[callGroup, result]] : [];
+  });
+};
+
+// The planner regenerates the id of a new group. The id the agent gave it is
+// remembered, so that a later call with that id replaces the group instead of
+// building a second one.
+const agentGroupIds = new Map<string, string>();
+
+export const forgetAgentGroupIds = (): void => agentGroupIds.clear();
+
+const resolveAgentGroupIds = (
+  callGroups: CallGroup[],
+  beforeGroupIds: Set<string>,
+  corrections: string[]
+): void => {
+  for (const { group, index } of callGroups) {
+    if (typeof group.id !== 'string' || beforeGroupIds.has(group.id)) {
+      continue;
+    }
+    const remembered = agentGroupIds.get(group.id);
+    if (remembered === undefined) {
+      continue;
+    }
+    if (!beforeGroupIds.has(remembered)) {
+      agentGroupIds.delete(group.id);
+      continue;
+    }
+    corrections.push(
+      `posGroups[${index}]: group id '${group.id}' names the group '${remembered}' created earlier - it was replaced`
+    );
+    group.id = remembered;
+  }
+};
+
+const rememberAgentGroupIds = (
+  callGroups: CallGroup[],
+  beforeGroupIds: Set<string>,
+  groups: any[]
+): void => {
+  for (const [{ group }, result] of matchResultGroups(
+    callGroups,
+    beforeGroupIds,
+    groups
+  )) {
+    if (typeof group.id === 'string' && group.id !== result.id) {
+      agentGroupIds.set(group.id, result.id);
+    }
+  }
+};
+
+const sameRotation = (a: number, b: number): boolean => {
+  const turn = (((a - b) % 360) + 360) % 360;
+  return Math.min(turn, 360 - turn) < 0.01;
+};
+
+// A new group that stands where another group stands - the same point and
+// rotation - is most likely the same kitchen sent twice, or units that belong
+// to the other group; the agent is told, never refused (D22).
+const groupsAtTheSamePlace = (
+  callGroups: CallGroup[],
+  beforeGroupIds: Set<string>,
+  groups: any[]
+): string[] =>
+  matchResultGroups(callGroups, beforeGroupIds, groups).flatMap(
+    ([{ group }, result]) => {
+      if (beforeGroupIds.has(group.id) || !isPoint(result.position?.pos)) {
+        return [];
+      }
+      const other = groups.find(
+        (candidate) =>
+          candidate.id !== result.id &&
+          isPoint(candidate.position?.pos) &&
+          Math.hypot(
+            ...[0, 1, 2].map(
+              (axis) => candidate.position.pos[axis] - result.position.pos[axis]
+            )
+          ) <= OVERLAP_TOLERANCE_MM &&
+          sameRotation(
+            candidate.position.rotationY ?? 0,
+            result.position.rotationY ?? 0
+          )
+      );
+      return other
+        ? [
+            `Group '${result.id}' stands at the place of group '${other.id}' - if the units belong together, send them as one group or join them with merge-groups.`,
+          ]
+        : [];
+    }
+  );
+
 // The group attributes that are not the library's group settings, the
 // overrides moved off the roots and the colours of the dropped generated roots
 // are set on every unit of the group with the planner's change-group-attribute
@@ -1043,16 +1259,12 @@ const applyKitchenWideAttributes = async (
   groups: any[],
   corrections: string[]
 ): Promise<boolean> => {
-  const newGroups = groups.filter((group) => !beforeGroupIds.has(group.id));
-  let nextNew = 0;
   let applied = false;
-  for (const { group, index, kitchenWide } of callGroups) {
-    const result = beforeGroupIds.has(group.id)
-      ? groups.find((candidate) => candidate.id === group.id)
-      : newGroups[nextNew++];
-    if (!result) {
-      continue;
-    }
+  for (const [{ group, index, kitchenWide }, result] of matchResultGroups(
+    callGroups,
+    beforeGroupIds,
+    groups
+  )) {
     const settingIds = new Set(
       ((result.attributes ?? []) as any[]).map((attribute) => attribute?.id)
     );
@@ -1120,9 +1332,12 @@ const reportRevertedReplaces = (
   }
 };
 
+// A group the server could not build, or - with rootIds - a group it built
+// without those roots.
 interface NotLoadedGroup {
   index: number;
   id?: string;
+  rootIds?: string[];
   errors: string[];
 }
 
@@ -1474,6 +1689,51 @@ const reportUnusedFields = (
   }
 };
 
+// dockTo is the docking field of merge-article-into-group; written on a root
+// of create-or-replace-groups it describes the relation of that root.
+const DOCK_TO_RELATION: Record<string, string> = {
+  'RightBottom->LeftBottom': 'rightOf',
+  'LeftBottom->RightBottom': 'leftOf',
+  'BackBottom->BackBottom': 'behind',
+};
+
+const readDockToAsRelation = (
+  roots: any[],
+  prefix: string,
+  corrections: string[]
+): void => {
+  for (const root of roots) {
+    if (root?.dockTo === undefined) {
+      continue;
+    }
+    const { rootId, ownDockingVector, dockingVector } = isObject(root.dockTo)
+      ? root.dockTo
+      : {};
+    const own = String(ownDockingVector ?? '');
+    const theirs = String(dockingVector ?? '');
+    const relation =
+      DOCK_TO_RELATION[`${own}->${theirs}`] ??
+      (own.endsWith('Top') && theirs.endsWith('Bottom') ? 'above' : undefined);
+    delete root.dockTo;
+    if (typeof rootId !== 'string' || relation === undefined) {
+      corrections.push(
+        `${prefix} root '${root.id}': dockTo could not be read as a relation - ignored; name the neighbour with rightOf, leftOf, onTop, above or behind`
+      );
+      continue;
+    }
+    if (RELATIONS.some((candidate) => root[candidate] !== undefined)) {
+      corrections.push(
+        `${prefix} root '${root.id}': dockTo was dropped - the root names its neighbour with a relation already`
+      );
+      continue;
+    }
+    root[relation] = rootId;
+    corrections.push(
+      `${prefix} root '${root.id}': dockTo was read as ${relation} '${rootId}'`
+    );
+  }
+};
+
 // One pos group before anything is fetched: corrected where the intent is
 // clear, each correction reported. The errors name what cannot be built.
 const prepareGroup = (
@@ -1494,6 +1754,7 @@ const prepareGroup = (
   dropMalformedDocking(group.roots, prefix, corrections);
   liftNestedRoots(group, prefix, corrections);
   completeDockingEntries(group.roots, prefix, corrections);
+  readDockToAsRelation(group.roots, prefix, corrections);
   reportUnusedFields(group, prefix, corrections);
   group.attributes = normalizedAttributes(
     group.attributes,
@@ -1994,8 +2255,14 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           'articles',
         ]);
       const articles = (catalog.articles ?? []) as any[];
-      callGroups = keepBuildable(callGroups, notLoaded, ({ group, index }) =>
-        resolveArticleIds(articles, group, `posGroups[${index}]`, corrections)
+      callGroups = keepBuildable(callGroups, notLoaded, (callGroup) =>
+        resolveArticleIds(
+          articles,
+          callGroup,
+          `posGroups[${callGroup.index}]`,
+          corrections,
+          notLoaded
+        )
       );
       failIfNothingLeft();
       callGroups = keepBuildable(callGroups, notLoaded, ({ group, index }) =>
@@ -2014,6 +2281,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       const beforeGroupIds = new Set(
         ((preContext.groups ?? []) as any[]).map((group) => group.id)
       );
+      resolveAgentGroupIds(callGroups, beforeGroupIds, corrections);
       // In a new group, a root named in the docking but never sent cannot be
       // built; a replaced group keeps its entries to roots deleted from it.
       for (const { group, index } of callGroups) {
@@ -2167,6 +2435,11 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           ])
         ).groups;
       }
+      rememberAgentGroupIds(
+        callGroups,
+        beforeGroupIds,
+        (groups ?? []) as any[]
+      );
       const unpositionedGroupIds = (groups ?? [])
         .filter(
           (group: any) =>
@@ -2174,15 +2447,24 @@ export const toolExecutors: Record<string, ToolExecutor> = {
             (!beforeGroupIds.has(group.id) || replacedInputIds.has(group.id))
         )
         .map((group: any) => group.id);
+      const hints = [
+        ...(unpositionedGroupIds.length > 0
+          ? [
+              `Groups ${unpositionedGroupIds.join(', ')} are not positioned and sit at the plan origin. ` +
+                'A group gets its position from the placement ({ posGroup, posRotationY }) it is created ' +
+                'with (see get-authoring-rules), or place-group moves it against a wall or into a room corner.',
+            ]
+          : []),
+        ...groupsAtTheSamePlace(
+          callGroups,
+          beforeGroupIds,
+          (groups ?? []) as any[]
+        ),
+      ];
       return {
         loaded,
         groups,
-        ...(unpositionedGroupIds.length > 0 && {
-          hint:
-            `Groups ${unpositionedGroupIds.join(', ')} are not positioned and sit at the plan origin. ` +
-            'A group gets its position from the placement ({ posGroup, posRotationY }) it is created ' +
-            'with (see get-authoring-rules), or place-group moves it against a wall or into a room corner.',
-        }),
+        ...(hints.length > 0 && { hint: hints.join(' ') }),
         ...(corrections.length > 0 && { corrections }),
         ...(notLoaded.length > 0 && { notLoaded }),
       };
@@ -2303,17 +2585,32 @@ export const toolExecutors: Record<string, ToolExecutor> = {
   // executors resolve group id prefixes and check article ids against the
   // catalog first, so the agent gets the lists of valid ids on a mistake.
   'change-module-attribute': oneAtATime(
-    inPlacementFrame(async (roomDesignerApi, args) =>
-      roomDesignerApi.extended.externalObjectGroupOperation(
+    inPlacementFrame(async (roomDesignerApi, args) => {
+      const corrections: string[] = [];
+      const groups = await planGroups(roomDesignerApi);
+      const rootModuleId = resolveRootId(
+        rootsOfGroups(groups),
+        args.rootModuleId as string,
         'change-module-attribute',
-        {
-          rootModuleId: args.rootModuleId,
-          moduleId: args.moduleId ?? null,
-          attributeId: args.attributeId,
-          value: attributeValue(args.value),
-        }
-      )
-    )
+        corrections
+      );
+      return withCorrections(
+        await withPlanRoots(
+          () =>
+            roomDesignerApi.extended.externalObjectGroupOperation(
+              'change-module-attribute',
+              {
+                rootModuleId,
+                moduleId: args.moduleId ?? null,
+                attributeId: args.attributeId,
+                value: attributeValue(args.value),
+              }
+            ),
+          groups
+        ),
+        corrections
+      );
+    })
   ),
 
   'change-group-attribute': oneAtATime(
@@ -2347,12 +2644,27 @@ export const toolExecutors: Record<string, ToolExecutor> = {
   ),
 
   'delete-root-module': oneAtATime(
-    inPlacementFrame(async (roomDesignerApi, args) =>
-      roomDesignerApi.extended.externalObjectGroupOperation(
+    inPlacementFrame(async (roomDesignerApi, args) => {
+      const corrections: string[] = [];
+      const groups = await planGroups(roomDesignerApi);
+      const rootModuleId = resolveRootId(
+        rootsOfGroups(groups),
+        args.rootModuleId as string,
         'delete-root-module',
-        { rootModuleId: args.rootModuleId }
-      )
-    )
+        corrections
+      );
+      return withCorrections(
+        await withPlanRoots(
+          () =>
+            roomDesignerApi.extended.externalObjectGroupOperation(
+              'delete-root-module',
+              { rootModuleId }
+            ),
+          groups
+        ),
+        corrections
+      );
+    })
   ),
 
   'merge-article-into-group': oneAtATime(
@@ -2371,24 +2683,37 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         'merge-article-into-group',
         corrections
       );
+      const sentDockTo = { ...(args.dockTo as any) };
+      if (typeof sentDockTo.rootId === 'string') {
+        sentDockTo.rootId = resolveRootId(
+          group.roots ?? [],
+          sentDockTo.rootId,
+          'merge-article-into-group',
+          corrections
+        );
+      }
       const dockTo = dockTarget(
         group,
         catalogArticleOf(articles, { articleId, libraryId: group.libraryId }),
-        { ...(args.dockTo as any) },
+        sentDockTo,
         corrections,
         articles
       );
       return withCorrections(
-        await roomDesignerApi.extended.externalObjectGroupOperation(
-          'merge-article-into-group',
-          {
-            groupId: group.id,
-            articleId,
-            ...(args.attributes !== undefined && {
-              attributes: args.attributes,
-            }),
-            dockTo,
-          }
+        await withPlanRoots(
+          () =>
+            roomDesignerApi.extended.externalObjectGroupOperation(
+              'merge-article-into-group',
+              {
+                groupId: group.id,
+                articleId,
+                ...(args.attributes !== undefined && {
+                  attributes: args.attributes,
+                }),
+                dockTo,
+              }
+            ),
+          [group]
         ),
         corrections
       );
@@ -2410,14 +2735,24 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         'exchange-root-module',
         corrections
       );
+      const rootModuleId = resolveRootId(
+        group.roots ?? [],
+        args.rootModuleId as string,
+        'exchange-root-module',
+        corrections
+      );
       return withCorrections(
-        await roomDesignerApi.extended.externalObjectGroupOperation(
-          'exchange-root-module',
-          {
-            groupId: group.id,
-            rootModuleId: args.rootModuleId,
-            articleId,
-          }
+        await withPlanRoots(
+          () =>
+            roomDesignerApi.extended.externalObjectGroupOperation(
+              'exchange-root-module',
+              {
+                groupId: group.id,
+                rootModuleId,
+                articleId,
+              }
+            ),
+          [group]
         ),
         corrections
       );

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  forgetAgentGroupIds,
   forgetAnchorFrames,
   forgetMasterData,
   toolExecutors,
@@ -251,6 +252,7 @@ const createApi = (
 beforeEach(() => {
   forgetAnchorFrames();
   forgetMasterData();
+  forgetAgentGroupIds();
 });
 
 const pick = () => ({ id: 'u1', articleId: 'article-1' });
@@ -924,6 +926,45 @@ describe('create-or-replace-groups validation', () => {
     ]);
   });
 
+  it('reads dockTo on a root as its relation', async () => {
+    // issue 25: dockTo is the docking field of merge-article-into-group
+    const { loadedGroup, result } = await loadedWith([
+      {
+        roots: [
+          { id: 'cab1', articleId: 'article-1' },
+          {
+            id: 'cab2',
+            articleId: 'article-1',
+            dockTo: {
+              rootId: 'cab1',
+              ownDockingVector: 'RightBottom',
+              dockingVector: 'LeftBottom',
+            },
+          },
+          {
+            id: 'top',
+            articleId: 'article-1',
+            dockTo: { rootId: 'cab2', ownDockingVector: 'LeftTop' },
+          },
+        ],
+      },
+    ]);
+    expect(loadedGroup.roots[0].contextData).toEqual({
+      dockedRoots: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('cab2', 'LeftBottom')],
+        },
+      ],
+    });
+    expect(JSON.stringify(loadedGroup)).not.toContain('dockTo');
+    expect(result.corrections).toEqual([
+      "posGroups[0] root 'cab2': dockTo was read as rightOf 'cab1'",
+      "posGroups[0] root 'top': dockTo could not be read as a relation - ignored; name the neighbour with rightOf, leftOf, onTop, above or behind",
+      "posGroups[0]: root 'top' names no neighbour - it was put rightOf 'cab2'",
+    ]);
+  });
+
   it('reports the fields it does not use and keeps the attributes of a group', async () => {
     const { loadedGroup, result } = await loadedWith([
       {
@@ -1205,6 +1246,36 @@ describe('create-or-replace-groups validation', () => {
     expect(result.corrections).toEqual([
       "posGroups[0]: group 'g1' is already in the plan - its placement was not used and the group keeps its position; place-group moves it",
     ]);
+  });
+
+  it('loads a group without the root whose article the catalog does not have and names it', async () => {
+    // issue 26: one unknown article no longer rejects the whole group
+    const { loadedGroup, result } = await loadedWith([
+      {
+        roots: [
+          { id: 'u1', articleId: 'article-1' },
+          { id: 'u2', articleId: 'nope', rightOf: 'u1' },
+          { id: 'u3', articleId: 'article-1', rightOf: 'u2' },
+        ],
+      },
+    ]);
+    expect(loadedGroup.roots.map((root: any) => root.id)).toEqual(['u1', 'u3']);
+    expect(result.notLoaded).toEqual([
+      {
+        index: 0,
+        rootIds: ['u2'],
+        errors: [
+          expect.stringMatching(
+            /^posGroups\[0\] root 'u2': articleId 'nope' is not in the article catalog\. Valid article ids: article-1 - the root was not built, the other roots were; send it with merge-article-into-group or a valid article id$/
+          ),
+        ],
+      },
+    ]);
+    // u3 named the dropped root, so it continues the row after u1
+    expect(result.corrections).toHaveLength(1);
+    expect(result.corrections[0]).toMatch(
+      /'u3' was docked to the RightBottom of 'u1', the free end of that row/
+    );
   });
 
   it('reads an article id the catalog spells differently', async () => {
@@ -2148,6 +2219,61 @@ describe('create-or-replace-groups loading', () => {
       'posGroups',
       { reason: 'adjusted' }
     );
+  });
+
+  // the groups the plan context returns per read, the last entry for every
+  // further read
+  const createSequenceApi = (reads: any[][]) => {
+    let read = 0;
+    return createApi(planContextFixture, {
+      getExternalObjectPlanContext: vi.fn(async (sections: string[]) =>
+        sections.includes('groups')
+          ? { groups: reads[Math.min(read++, reads.length - 1)] }
+          : planContextFixture
+      ),
+    });
+  };
+
+  it("replaces the group created earlier under the agent's own id", async () => {
+    // issue 24: the planner regenerates the id; the second call must not
+    // build a second kitchen on the same spot
+    const created = makeShapedGroup({ id: 'g-new' });
+    const api = createSequenceApi([[], [created]]);
+    const kitchen = {
+      id: 'kitchen1',
+      libraryId: 'lib-1',
+      placement: { posGroup: [4000, 0, -3000], posRotationY: 270 },
+      roots: [pick()],
+    };
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [structuredClone(kitchen)],
+    });
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [structuredClone(kitchen)],
+    })) as Record<string, any>;
+    const calls = api.extended.loadExternalObjectGroupLayout.mock
+      .calls as unknown as any[][];
+    const second = calls[calls.length - 1][0].posGroups[0];
+    expect(second.id).toBe('g-new');
+    expect(second.repositioningData).toBeUndefined();
+    expect(result.corrections).toEqual([
+      "posGroups[0]: group id 'kitchen1' names the group 'g-new' created earlier - it was replaced",
+      "posGroups[0]: group 'g-new' is already in the plan - its placement was not used and the group keeps its position; place-group moves it",
+    ]);
+    expect(result.hint).toBeUndefined();
+  });
+
+  it('hints at a new group that stands at the place of another', async () => {
+    const existing = makeShapedGroup({ id: 'g1' });
+    const created = makeShapedGroup({ id: 'g-new' });
+    const api = createSequenceApi([[existing], [existing, created]]);
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [{ libraryId: 'lib-1', roots: [pick()] }],
+    })) as Record<string, any>;
+    expect(result.hint).toBe(
+      "Group 'g-new' stands at the place of group 'g1' - if the units belong together, send them as one group or join them with merge-groups."
+    );
+    expect(result.corrections).toBeUndefined();
   });
 
   it('reports a replace the planner reverted to the previous content', async () => {
@@ -3862,6 +3988,81 @@ describe('group command tools', () => {
     });
   });
 
+  describe('root module ids', () => {
+    // issue 8: the models mistype root ids
+    const first = 'aaaa1111-bbbb-cccc-dddd-eeee';
+    const second = 'ffff2222-9999-cccc-dddd-eeee';
+    const uuidPlan = {
+      ...planContextFixture,
+      groups: [
+        makeShapedGroup({
+          id: 'kitchen-1',
+          roots: [
+            makeShapedRoot({ id: first }),
+            makeShapedRoot({ id: second }),
+          ],
+        }),
+      ],
+    };
+
+    it.each([
+      ['a unique prefix', 'aaaa1111'],
+      ['its last segments', 'aaaa1119-bbbb-cccc-dddd-eeee'],
+      ['one character', 'aaaa1111-bbbb-cccc-dddd-eeef'],
+    ])('resolves a root id by %s and reports it', async (_, sent) => {
+      const api = createApi(uuidPlan);
+      const result = (await toolExecutors['change-module-attribute'](api, {
+        rootModuleId: sent,
+        attributeId: 'b',
+        value: '900',
+      })) as Record<string, any>;
+      expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+        'change-module-attribute',
+        { rootModuleId: first, moduleId: null, attributeId: 'b', value: '900' }
+      );
+      expect(result.corrections).toEqual([
+        `change-module-attribute: root id '${sent}' was read as '${first}'`,
+      ]);
+    });
+
+    it('forwards a root id that matches nothing and adds the roots of the plan to the answer', async () => {
+      const api = createApi(uuidPlan, {
+        externalObjectGroupOperation: vi.fn(async () => {
+          throw new Error("Root module 'x' not found.");
+        }),
+      });
+      await expect(
+        toolExecutors['delete-root-module'](api, { rootModuleId: 'x' })
+      ).rejects.toThrow(
+        `Root module 'x' not found. Roots in the plan: ${first}, ${second}`
+      );
+      expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+        'delete-root-module',
+        { rootModuleId: 'x' }
+      );
+    });
+
+    it('resolves the root of dockTo in merge-article-into-group', async () => {
+      const api = createApi({
+        ...planContextFixture,
+        groups: [makeShapedGroup({ id: 'kitchen-1' })],
+      });
+      const result = (await toolExecutors['merge-article-into-group'](api, {
+        groupId: 'kitchen-1',
+        articleId: 'article-1',
+        dockTo: { ...dockTo, rootId: 'r2' },
+      })) as Record<string, any>;
+      const [, payload] = (
+        api.extended.externalObjectGroupOperation.mock
+          .calls as unknown as any[][]
+      )[0];
+      expect(payload.dockTo).toEqual(dockTo);
+      expect(result.corrections).toEqual([
+        "merge-article-into-group: root id 'r2' was read as 'r1'",
+      ]);
+    });
+  });
+
   it('passes a number as an attribute value on as its string', async () => {
     const api = createApi(planWithGroups);
     await toolExecutors['change-group-attribute'](api, {
@@ -3942,7 +4143,9 @@ describe('plan changes', () => {
       toolExecutors['delete-root-module'](api, { rootModuleId: 'a' }),
       toolExecutors['get-plan-context'](api, { include: ['groups'] }),
     ]);
+    // the first read is the change's own: it resolves the root id first
     expect(events).toEqual([
+      'plan context',
       'start a',
       'end a',
       'plan context',

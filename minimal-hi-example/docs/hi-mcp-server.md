@@ -390,7 +390,10 @@ correction:
 Returns the loaded runtime ids and the resulting groups (with their final
 ids, `pos`, `rotationY`, `footprint`), plus a hint when a group of this call
 is still unpositioned, `corrections` (what the server changed in the input)
-and `notLoaded` (`[{ index, id?, errors }]`, the groups it could not build).
+and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build and, with
+`rootIds`, the roots of a loaded group it could not build — one unknown article id drops that root,
+not the group). A group id you gave an earlier group of the session replaces that group, and a new
+group that stands at the place of another gets a `hint`.
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm
 room, from the back right corner, one call. `posGroup` is the right wall's
@@ -485,7 +488,8 @@ of its leg, when the row ends at a corner article), and a `dockingVector` the
 article does not have becomes the partner of `ownDockingVector`. The result reports these in
 `corrections`. The planner's own checks (e.g. groups of different libraries
 in `merge-groups`) are unchanged, and their message is passed on as the error.
-Group ids accept a unique prefix.
+Group ids accept a unique prefix; a root module id that is a unique prefix, differs only in
+its first UUID segment or in one character is read as that root and reported.
 
 | Tool | Parameters | Effect |
 | ---- | ---------- | ------ |

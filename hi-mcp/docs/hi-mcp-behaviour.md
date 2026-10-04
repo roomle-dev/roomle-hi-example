@@ -78,7 +78,7 @@ Every result tells the agent what happened:
 
 - **what was built** — the resulting groups with their position
 - **what the server corrected** — a `corrections` list, one sentence per correction
-- **what was not built, and why** — a `notLoaded` list (`create-or-replace-groups`) that names what to send instead
+- **what was not built, and why** — a `notLoaded` list (`create-or-replace-groups`) that names what to send instead: a group, or with `rootIds` the roots of a group that loaded without them
 - **what to check** — a `hint` that stops nothing
 
 An error result (`isError`) is the answer only when nothing could be done. A message names the fix
@@ -348,8 +348,8 @@ others go on.
 
 **Result**: `loaded` (the planner's runtime ids), `groups` (**every** group in the plan, in the
 plan-context shape), `hint`, `corrections` (what the server changed in the input), and `notLoaded`
-— `[{ index, id?, errors }]` for the groups it could not build (D30). A conflicting placement is
-not sent (D26).
+— `[{ index, id?, rootIds?, errors }]` for the groups it could not build (D30) and, with `rootIds`,
+for the roots of a loaded group it could not build (G15). A conflicting placement is not sent (D26).
 
 ### place-group
 
@@ -385,12 +385,12 @@ position.
 
 | Tool | Parameters | Server before forwarding | Planner |
 |---|---|---|---|
-| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | — | sets the attribute of the root or of its sub module (P1, P2) |
+| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | resolves the root id (C17) | sets the attribute of the root or of its sub module (P1, P2) |
 | `change-group-attribute` | `groupId`, `attributeId`, `value` | resolves the group id (G18) | sets it on every module that has it (D20, P3) |
 | `delete-group` | `groupId` | resolves the group id | removes the group |
-| `delete-root-module` | `rootModuleId` | — | removes the unit; units no longer docked together become separate groups where they stand (P4) |
-| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo { rootId, ownDockingVector, dockingVector, mode?, offset? }` | resolves the group id, reads the article id in the catalog's spelling (G15), moves an occupied side to the free end of the row (D29) and derives a missing partner vector (P7) | docks the new unit (P5–P8) |
-| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | resolves the group id, checks the article (G15) | replaces the unit, which keeps its docking (P9) |
+| `delete-root-module` | `rootModuleId` | resolves the root id (C17) | removes the unit; units no longer docked together become separate groups where they stand (P4) |
+| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo { rootId, ownDockingVector, dockingVector, mode?, offset? }` | resolves the group id and `dockTo.rootId` (C17), reads the article id in the catalog's spelling (G15), moves an occupied side to the free end of the row (D29) and derives a missing partner vector (P7) | docks the new unit (P5–P8) |
+| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | resolves the group id and the root id (C17), checks the article (G15) | replaces the unit, which keeps its docking (P9) |
 | `merge-groups` | `targetGroupId`, `groupIds` | resolves every group id | merges where they stand: nothing is moved, no docking is added (P10) |
 
 `value` is a string, a number (passed on as its string) or a boolean. **Result**:
@@ -443,7 +443,7 @@ shape — plus `corrections` when the server corrected the input before forwardi
 | Channel | When | Content |
 |---|---|---|
 | `corrections` | the server changed the input | One sentence per correction: the group (input index and id) or the command, what was sent, and what the server did. In `create-or-replace-groups`, `place-group`, `merge-article-into-group` and `exchange-root-module` |
-| `notLoaded` | a group of `create-or-replace-groups` cannot be built | `[{ index, id?, errors }]`, each error naming what to send instead; the other groups load |
+| `notLoaded` | a group of `create-or-replace-groups` cannot be built, or a group loads without some of its roots | `[{ index, id?, rootIds?, errors }]`, each error naming what to send instead; the other groups and roots load |
 | `hint` | something to check; nothing stopped | an unpositioned group (`create-or-replace-groups`), more than 20 matches (`find-attributes`) |
 | Error result | nothing in the call can be done | `create-or-replace-groups`: no group can be built, or the planner loaded none; the other tools: a guard of §8.4–8.6, or the planner's message |
 
@@ -503,7 +503,8 @@ corrections, G31–G45.
 | G12, G13 | another `posGroup`, or no numeric `posRotationY` | does not use the placement, as G10 | correction |
 | G14 | a `rootId` that names no root | drops it; the server picks the anchor | correction |
 | G15 | an article id in another spelling (case, whitespace) | reads it in the catalog's spelling | correction |
-| G15 | an article id the catalog does not have | does not build the group | `notLoaded` with the valid article ids (the first 100) |
+| G15 | an article id the catalog does not have, beside roots it has | builds the group without that root; a relation or docking entry that named it names nothing, so its root gets the default (G31, G7) | `notLoaded` entry with `rootIds` and the valid article ids (the first 100): "… the root was not built, the other roots were; send it with merge-article-into-group or a valid article id" |
+| G15 | every article id of the group unknown | does not build the group | `notLoaded` with the valid article ids |
 | G16 | a placement on a group that is already in the plan | does not use it; the group keeps its position | correction |
 | G17 | an anchor the probe cannot calculate | loads the group without the frame, placed by the unit's origin (until 2026-10-02 the group was not built) | correction: "root '…' ('…') could not be calculated before loading - the group was placed by the unit's origin and may stand off posGroup; place-group puts it against a wall or into a room corner" |
 | G23 | a unit written inside a docking entry — with its `articleId`, attributes and own docking | takes it as a root of the group, also nested deeper; the entry keeps the docking link | correction |
@@ -532,10 +533,13 @@ corrections, G31–G45.
 | G46 | a group attribute that is not one of the library's group settings (D36) | sets it on every unit and generated root of the loaded group with `change-group-attribute` | correction: "mod_FrontColor \"215\" was set on every unit of group '…'"; the planner's answer when it cannot — P3, no module has it — as the correction "… could not be set on group '…' - …" |
 | G47 | a root override of an attribute the unit's own module does not carry but a generated root module does — the master data's root modules no catalog article has (`mod_CountertopColor` on a base unit) | moves it off the root and sets it on the whole group (G46) | correction |
 | G48 | the input attributes of the generated roots C1 drops from a resubmitted group (the worktop colour) | sets them on the group again after the load (G46) | correction |
+| G49 | `dockTo { rootId, ownDockingVector, dockingVector }` on a root — the field of `merge-article-into-group` | reads it as the relation it describes: `RightBottom -> LeftBottom` = `rightOf`, the mirror = `leftOf`, a Top → Bottom pair = `above`, `BackBottom -> BackBottom` = `behind`; a pair it cannot read, or a root that names a relation already, drops it | correction |
+| G50 | a group id the agent gave an earlier group of this session, which the planner renamed | reads it as that group — a replace; G16 drops the placement | correction: "group id 'kitchen1' names the group '…' created earlier - it was replaced" |
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |
 | — | the planner loads nothing | — | error result: "No groups were created or replaced …" |
 | — | a replaced group that still holds its previous articles instead of the ones sent — the planner could not calculate the new layout and restored the group (roomle-ui `_discardCalculation`) | — | correction: "the planner could not calculate the new layout of group '…' and kept its previous content - …; send the layout again with another article" |
 | — | a group of the call has no position after the load | — | `hint` |
+| — | a new group that stands at the place of another group — the same point within 5 mm and the same rotation (D22: never refused) | — | `hint`: "Group '…' stands at the place of group '…' - if the units belong together, send them as one group or join them with merge-groups" |
 
 ### 8.4 `place-group`
 
@@ -557,6 +561,8 @@ corrections, G31–G45.
 | ID | Input | What the server does | Feedback |
 |---|---|---|---|
 | G18 | an unknown group id | nothing | error with the groups in the plan |
+| C17 | a root module id that is a unique prefix of a root id, differs from one root id only in its first UUID segment, or differs from one in a single character (`change-module-attribute`, `delete-root-module`, `exchange-root-module`, `dockTo.rootId` of `merge-article-into-group`) | reads it as that root | correction: "root id '…' was read as '…'" |
+| C17 | a root module id that matches no root, or more than one | forwards it as sent | the planner's P11 with "Roots in the plan: …" appended |
 | G15 | an article id in another spelling (`merge-article-into-group`, `exchange-root-module`) | reads it in the catalog's spelling | correction |
 | G15 | an article id the catalog does not have | nothing | error with the valid article ids |
 | D29 | `merge-article-into-group` on a taken side vector | docks the unit to the named root's free other side when it has one; else to the root at the free end of that row; when that row ends at a corner article, to the free end of the leg in the other direction | correction |

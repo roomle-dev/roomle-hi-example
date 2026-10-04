@@ -372,6 +372,9 @@ describe('hi-mcp-server tool calls', () => {
     expect(rules).toContain(
       'Read corrections and notLoaded in a result: corrections lists what the server changed in your input'
     );
+    expect(rules).toContain(
+      'notLoaded lists the groups and the roots it could not build'
+    );
   });
 
   it('hangs a range hood beside the wall units and reads a position back in the frame of the placement', async () => {

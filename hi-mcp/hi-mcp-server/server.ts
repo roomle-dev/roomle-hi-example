@@ -14,7 +14,8 @@ const bridge = new PageBridge();
 // Azure App Service injects PORT and expects HOST=0.0.0.0; locally the
 // defaults keep the single-user setup: port 3100, all interfaces, the local
 // dev server plus the deployed store pages as allowed origins.
-const serverPort = Number(process.env.HI_MCP_PORT ?? process.env.PORT) || HI_MCP_PORT;
+const serverPort =
+  Number(process.env.HI_MCP_PORT ?? process.env.PORT) || HI_MCP_PORT;
 const pageOrigins = process.env.HI_MCP_PAGE_ORIGINS
   ? process.env.HI_MCP_PAGE_ORIGINS.split(',')
       .map((origin) => origin.trim())
@@ -31,12 +32,13 @@ const MCP_CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
   'Access-Control-Allow-Headers':
     'Content-Type, Accept, Authorization, Mcp-Session-Id, Mcp-Protocol-Version, Mcp-Method, Mcp-Name, Last-Event-ID',
-  'Access-Control-Expose-Headers': 'Mcp-Session-Id, Mcp-Protocol-Version, WWW-Authenticate',
+  'Access-Control-Expose-Headers':
+    'Mcp-Session-Id, Mcp-Protocol-Version, WWW-Authenticate',
 };
 
 const requestHandler = async (
   request: IncomingMessage,
-  response: ServerResponse,
+  response: ServerResponse
 ) => {
   if (!request.url?.startsWith('/mcp')) {
     response.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -56,14 +58,18 @@ const requestHandler = async (
     response.end();
     return;
   }
-  const clientId = new URL(request.url, 'http://localhost').searchParams.get('client');
+  const clientId = new URL(request.url, 'http://localhost').searchParams.get(
+    'client'
+  );
   if (clientId && !bridge.isClientActive(clientId)) {
     response.writeHead(409, { 'Content-Type': 'text/plain' });
     response.end('This chat is not connected to its planner page');
     return;
   }
   try {
-    const mcpServer = createHiMcpServer(createPlannerApi(bridge, clientId ?? undefined));
+    const mcpServer = createHiMcpServer(
+      createPlannerApi(bridge, clientId ?? undefined)
+    );
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
@@ -104,13 +110,13 @@ httpServer.on('upgrade', (request, socket, head) => {
   const { pathname } = new URL(request.url ?? '', 'http://localhost');
   if (pathname !== '/bridge' || (origin && !pageOrigins.includes(origin))) {
     console.error(
-      `[hi-mcp] rejected websocket upgrade (url: ${request.url}, origin: ${origin})`,
+      `[hi-mcp] rejected websocket upgrade (url: ${request.url}, origin: ${origin})`
     );
     socket.destroy();
     return;
   }
   webSocketServer.handleUpgrade(request, socket, head, (pageSocket) =>
-    bridge.attachPage(pageSocket),
+    bridge.attachPage(pageSocket)
   );
 });
 
@@ -137,10 +143,10 @@ try {
 httpServer.on('error', (error: NodeJS.ErrnoException) => {
   if (error.code === 'EADDRINUSE') {
     console.error(
-      `[hi-mcp] port ${serverPort} is already in use - a previous MCP server instance is still running.`,
+      `[hi-mcp] port ${serverPort} is already in use - a previous MCP server instance is still running.`
     );
     console.error(
-      `[hi-mcp] stop it first: lsof -ti tcp:${serverPort} | xargs kill`,
+      `[hi-mcp] stop it first: lsof -ti tcp:${serverPort} | xargs kill`
     );
   } else {
     console.error('[hi-mcp] server failed to start', error);
@@ -153,11 +159,11 @@ const startListening = () => {
   console.log('  HI group orchestrator MCP server ready');
   console.log('');
   console.log(
-    `  \u279c  Local:   http${tlsOptions ? 's' : ''}://localhost:${serverPort}/mcp`,
+    `  \u279c  Local:   http${tlsOptions ? 's' : ''}://localhost:${serverPort}/mcp`
   );
   console.log('');
   console.log(
-    '[hi-mcp] waiting for the ligna-store page (start it with npm run dev and open it with the store.stage=INT query parameter)',
+    '[hi-mcp] waiting for the ligna-store page (start it with npm run dev and open it with the store.stage=INT query parameter)'
   );
 };
 

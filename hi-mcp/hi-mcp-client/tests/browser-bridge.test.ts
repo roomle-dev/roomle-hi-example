@@ -25,7 +25,7 @@ class FakeWebSocket {
 
 const startBridge = (
   extended: Record<string, unknown>,
-  pageUrl = PAGE_URL,
+  pageUrl = PAGE_URL
 ): FakeWebSocket => {
   FakeWebSocket.instances = [];
   vi.stubGlobal('WebSocket', FakeWebSocket);
@@ -65,10 +65,12 @@ describe('startMcpBrowserBridge', () => {
   it('keeps the api_key of the chat window out of the announced page url', () => {
     const socket = startBridge(
       {},
-      `${PAGE_URL}&model=gpt-5-mini&api_key=secret-key&mcp_server=http://localhost:3100`,
+      `${PAGE_URL}&model=gpt-5-mini&api_key=secret-key&mcp_server=http://localhost:3100`
     );
     const { url } = JSON.parse(socket.sent[0]);
-    expect(url).toBe(`${PAGE_URL}&model=gpt-5-mini&mcp_server=http%3A%2F%2Flocalhost%3A3100`);
+    expect(url).toBe(
+      `${PAGE_URL}&model=gpt-5-mini&mcp_server=http%3A%2F%2Flocalhost%3A3100`
+    );
     expect(url).not.toContain('secret-key');
   });
 
@@ -92,7 +94,12 @@ describe('startMcpBrowserBridge', () => {
     const placeOrder = vi.fn(async () => undefined);
     const socket = startBridge({ placeOrder });
     await receive(socket, { kind: 'ready' });
-    await receive(socket, { kind: 'call', id: 1, method: 'placeOrder', args: [] });
+    await receive(socket, {
+      kind: 'call',
+      id: 1,
+      method: 'placeOrder',
+      args: [],
+    });
     expect(placeOrder).not.toHaveBeenCalled();
     expect(repliesOf(socket)).toEqual([
       {
@@ -111,7 +118,12 @@ describe('startMcpBrowserBridge', () => {
     });
     const socket = startBridge({ fetchPrice });
     await receive(socket, { kind: 'ready' });
-    await receive(socket, { kind: 'call', id: 3, method: 'fetchPrice', args: [] });
+    await receive(socket, {
+      kind: 'call',
+      id: 3,
+      method: 'fetchPrice',
+      args: [],
+    });
     expect(repliesOf(socket)).toEqual([
       { kind: 'result', id: 3, ok: false, error: 'price service down' },
     ]);
@@ -124,15 +136,27 @@ describe('startMcpBrowserBridge', () => {
       const onStatusChange = vi.fn();
       FakeWebSocket.instances = [];
       vi.stubGlobal('WebSocket', FakeWebSocket);
-      vi.stubGlobal('window', { location: { href: PAGE_URL, protocol: 'http:' } });
-      const { retry } = startMcpBrowserBridge({ extended: { fetchPrice } }, { clientId: 'tab-1', onStatusChange });
+      vi.stubGlobal('window', {
+        location: { href: PAGE_URL, protocol: 'http:' },
+      });
+      const { retry } = startMcpBrowserBridge(
+        { extended: { fetchPrice } },
+        { clientId: 'tab-1', onStatusChange }
+      );
       const socket = FakeWebSocket.instances[0];
       socket.onopen?.();
       expect(JSON.parse(socket.sent[0]).clientId).toBe('tab-1');
-      await receive(socket, { kind: 'call', id: 1, method: 'fetchPrice', args: [] });
+      await receive(socket, {
+        kind: 'call',
+        id: 1,
+        method: 'fetchPrice',
+        args: [],
+      });
       expect(fetchPrice).not.toHaveBeenCalled();
       socket.onclose?.({ code: 4409 });
-      expect(onStatusChange).toHaveBeenLastCalledWith(expect.objectContaining({ state: 'occupied' }));
+      expect(onStatusChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ state: 'occupied' })
+      );
       vi.advanceTimersByTime(3000);
       expect(FakeWebSocket.instances).toHaveLength(1);
       retry();
@@ -148,14 +172,21 @@ describe('startMcpBrowserBridge', () => {
       const onStatusChange = vi.fn();
       FakeWebSocket.instances = [];
       vi.stubGlobal('WebSocket', FakeWebSocket);
-      vi.stubGlobal('window', { location: { href: PAGE_URL, protocol: 'http:' } });
+      vi.stubGlobal('window', {
+        location: { href: PAGE_URL, protocol: 'http:' },
+      });
       startMcpBrowserBridge({ extended: {} }, { onStatusChange });
       const socket = FakeWebSocket.instances[0];
       socket.onopen?.();
       await receive(socket, { kind: 'ready' });
-      expect(onStatusChange).toHaveBeenLastCalledWith({ state: 'connected', message: '' });
+      expect(onStatusChange).toHaveBeenLastCalledWith({
+        state: 'connected',
+        message: '',
+      });
       socket.onclose?.({ code: 1006 });
-      expect(onStatusChange).toHaveBeenLastCalledWith(expect.objectContaining({ state: 'unavailable' }));
+      expect(onStatusChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ state: 'unavailable' })
+      );
       vi.advanceTimersByTime(3000);
       expect(FakeWebSocket.instances).toHaveLength(2);
     } finally {
@@ -169,8 +200,13 @@ describe('startMcpBrowserBridge', () => {
       const onStatusChange = vi.fn();
       FakeWebSocket.instances = [];
       vi.stubGlobal('WebSocket', FakeWebSocket);
-      vi.stubGlobal('window', { location: { href: PAGE_URL, protocol: 'http:' } });
-      const { retry, dispose } = startMcpBrowserBridge({ extended: {} }, { onStatusChange });
+      vi.stubGlobal('window', {
+        location: { href: PAGE_URL, protocol: 'http:' },
+      });
+      const { retry, dispose } = startMcpBrowserBridge(
+        { extended: {} },
+        { onStatusChange }
+      );
       const socket = FakeWebSocket.instances[0];
       socket.onopen?.();
       await receive(socket, { kind: 'ready' });
@@ -197,7 +233,9 @@ describe('startMcpBrowserBridge', () => {
     try {
       FakeWebSocket.instances = [];
       vi.stubGlobal('WebSocket', FakeWebSocket);
-      vi.stubGlobal('window', { location: { href: PAGE_URL, protocol: 'http:' } });
+      vi.stubGlobal('window', {
+        location: { href: PAGE_URL, protocol: 'http:' },
+      });
       const { dispose } = startMcpBrowserBridge({ extended: {} });
       const socket = FakeWebSocket.instances[0];
       socket.onclose?.({ code: 1006 });
@@ -218,17 +256,27 @@ describe('startMcpBrowserBridge', () => {
 
   it('does not send an in-flight planner result after disposal', async () => {
     let finishPrice!: (price: number) => void;
-    const fetchPrice = vi.fn(() => new Promise<number>((resolve) => {
-      finishPrice = resolve;
-    }));
+    const fetchPrice = vi.fn(
+      () =>
+        new Promise<number>((resolve) => {
+          finishPrice = resolve;
+        })
+    );
     FakeWebSocket.instances = [];
     vi.stubGlobal('WebSocket', FakeWebSocket);
-    vi.stubGlobal('window', { location: { href: PAGE_URL, protocol: 'http:' } });
+    vi.stubGlobal('window', {
+      location: { href: PAGE_URL, protocol: 'http:' },
+    });
     const { dispose } = startMcpBrowserBridge({ extended: { fetchPrice } });
     const socket = FakeWebSocket.instances[0];
     socket.onopen?.();
     await receive(socket, { kind: 'ready' });
-    const pending = receive(socket, { kind: 'call', id: 1, method: 'fetchPrice', args: [] });
+    const pending = receive(socket, {
+      kind: 'call',
+      id: 1,
+      method: 'fetchPrice',
+      args: [],
+    });
 
     dispose();
     finishPrice(42);
@@ -270,7 +318,7 @@ describe('resolveBridgeUrls', () => {
 
   it('appends the session id to the bridge url', () => {
     expect(
-      resolveBridgeUrls('https://hi-mcp-poc.example.com', 'alice'),
+      resolveBridgeUrls('https://hi-mcp-poc.example.com', 'alice')
     ).toEqual(['wss://hi-mcp-poc.example.com/bridge?session=alice']);
   });
 

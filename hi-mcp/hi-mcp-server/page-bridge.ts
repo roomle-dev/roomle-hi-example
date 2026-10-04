@@ -80,14 +80,16 @@ export class PageBridge {
   }
 
   public isClientActive(clientId: string): boolean {
-    return this._page?.readyState === WebSocket.OPEN && this._clientId === clientId;
+    return (
+      this._page?.readyState === WebSocket.OPEN && this._clientId === clientId
+    );
   }
 
   public async call(
     method: string,
     args: unknown[],
     timeoutMs: number = DEFAULT_CALL_TIMEOUT_MS,
-    clientId?: string,
+    clientId?: string
   ): Promise<unknown> {
     if (clientId && !this.isClientActive(clientId)) {
       throw new Error('This chat is not connected to its planner page');
@@ -99,26 +101,26 @@ export class PageBridge {
           (process.env.HI_MCP_STORE_URL ??
             'http://localhost:3000/?store.stage=INT') +
           ' and start planning there - the page connects to this server on its own, and the ' +
-          'tools work in that tab while it stays open.',
+          'tools work in that tab while it stays open.'
       );
     }
     if (this._pageProtocol !== BRIDGE_PROTOCOL) {
       throw new Error(
         `The connected page (${this._pageUrl}) runs an outdated HI MCP page bridge that expects tool calls. ` +
           `Have the user update the page bridge to protocol ${BRIDGE_PROTOCOL} (ligna-store hi-mcp/browser-bridge.ts, ` +
-          'minimal-hi-example/index.html) and reload the page.',
+          'minimal-hi-example/index.html) and reload the page.'
       );
     }
     const id = this._nextCallId++;
     console.log(
-      `[hi-mcp] call ${id}: ${method} ${JSON.stringify(args).slice(0, 400)}`,
+      `[hi-mcp] call ${id}: ${method} ${JSON.stringify(args).slice(0, 400)}`
     );
     const call: McpBridgeCall = { kind: 'call', id, method, args };
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this._pendingCalls.delete(id);
         reject(
-          new Error(`Planner call '${method}' timed out after ${timeoutMs}ms`),
+          new Error(`Planner call '${method}' timed out after ${timeoutMs}ms`)
         );
       }, timeoutMs);
       this._pendingCalls.set(id, { resolve, reject, timeout });

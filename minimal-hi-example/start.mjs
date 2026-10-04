@@ -44,7 +44,8 @@ const EXAMPLE_SERVER_URL =
   (process.argv.includes('--dev') ? DEV_SERVER_URL : undefined);
 // The deployed server accepts the page only from its default origins
 // (http://localhost:3000), and routes every session to its own container.
-const CLOUDFLARE_MCP_SERVER_URL = 'https://hi-mcp-poc.hi-orchestrator.workers.dev';
+const CLOUDFLARE_MCP_SERVER_URL =
+  'https://hi-mcp-poc.hi-orchestrator.workers.dev';
 const CLOUDFLARE_PAGE_PORT = 3000;
 const useCloudflareMcp = process.argv.includes('--cf');
 const MCP_SESSION = useCloudflareMcp ? userInfo().username : undefined;
@@ -87,14 +88,14 @@ const parseChatArgs = () => {
   if (!isChatProvider(provider)) {
     console.error(
       `[hi-example] unsupported chat provider "${provider}" - currently supported: ${CHAT_PROVIDERS.join(
-        ', ',
-      )} or any mistral-*/claude-*/gemini-* model id`,
+        ', '
+      )} or any mistral-*/claude-*/gemini-* model id`
     );
     process.exit(1);
   }
   if (!apiKey) {
     console.error(
-      `[hi-example] missing API key - start with: npm start <provider> <api-key>`,
+      `[hi-example] missing API key - start with: npm start <provider> <api-key>`
     );
     process.exit(1);
   }
@@ -107,7 +108,9 @@ const MCP_SERVER_PARAMS = useCloudflareMcp
     ? `&mcp_port=${MCP_PORT}`
     : '';
 const EXAMPLE_URL = `http://localhost:${STATIC_PORT}/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith${MCP_SERVER_PARAMS}${chat ? '&chat=true' : ''}${process.env.HI_CHAT_PORT ? `&chat_port=${CHAT_PORT}` : ''}${
-  EXAMPLE_SERVER_URL ? `&server_url=${encodeURIComponent(EXAMPLE_SERVER_URL)}` : ''
+  EXAMPLE_SERVER_URL
+    ? `&server_url=${encodeURIComponent(EXAMPLE_SERVER_URL)}`
+    : ''
 }`;
 const STATIC_CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -120,7 +123,10 @@ const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 let shuttingDown = false;
 
 const runNpm = (args) => {
-  const result = spawnSync(npmCommand, args, { cwd: HI_MCP_DIR, stdio: 'inherit' });
+  const result = spawnSync(npmCommand, args, {
+    cwd: HI_MCP_DIR,
+    stdio: 'inherit',
+  });
   if (result.status !== 0) {
     console.error(`[hi-example] npm ${args.join(' ')} failed`);
     process.exit(result.status ?? 1);
@@ -159,7 +165,10 @@ const serveStatic = (response, pathname) => {
 const startExampleServer = () =>
   new Promise((resolve, reject) => {
     const server = createServer((request, response) => {
-      serveStatic(response, new URL(request.url, `http://localhost:${STATIC_PORT}`).pathname);
+      serveStatic(
+        response,
+        new URL(request.url, `http://localhost:${STATIC_PORT}`).pathname
+      );
     });
     server.on('error', reject);
     server.listen(STATIC_PORT, () => resolve(server));
@@ -170,11 +179,15 @@ const startMcpServer = () => {
   if (!childEnv.HI_MCP_PAGE_ORIGINS) {
     childEnv.HI_MCP_PAGE_ORIGINS = `http://localhost:${STATIC_PORT},http://127.0.0.1:${STATIC_PORT},https://www.roomle.com`;
   }
-  const mcpServer = spawn(npmCommand, ['start', '--workspace', 'hi-mcp-server'], {
-    cwd: HI_MCP_DIR,
-    stdio: 'inherit',
-    env: childEnv,
-  });
+  const mcpServer = spawn(
+    npmCommand,
+    ['start', '--workspace', 'hi-mcp-server'],
+    {
+      cwd: HI_MCP_DIR,
+      stdio: 'inherit',
+      env: childEnv,
+    }
+  );
   mcpServer.on('exit', (code) => {
     if (!shuttingDown) {
       process.exit(code ?? 0);
@@ -193,11 +206,15 @@ const startChatServer = () => {
   if (!childEnv.HI_CHAT_PAGE_ORIGINS) {
     childEnv.HI_CHAT_PAGE_ORIGINS = `http://localhost:${STATIC_PORT},http://127.0.0.1:${STATIC_PORT}`;
   }
-  const chatServer = spawn(npmCommand, ['start', '--workspace', 'hi-mcp-chat'], {
-    cwd: HI_MCP_DIR,
-    stdio: 'inherit',
-    env: childEnv,
-  });
+  const chatServer = spawn(
+    npmCommand,
+    ['start', '--workspace', 'hi-mcp-chat'],
+    {
+      cwd: HI_MCP_DIR,
+      stdio: 'inherit',
+      env: childEnv,
+    }
+  );
   chatServer.on('exit', (code) => {
     if (!shuttingDown) {
       process.exit(code ?? 0);
@@ -222,7 +239,7 @@ const openInBrowser = (url) => {
 const main = async () => {
   if (useCloudflareMcp && STATIC_PORT !== CLOUDFLARE_PAGE_PORT) {
     console.error(
-      `[hi-example] --cf needs the example on port ${CLOUDFLARE_PAGE_PORT} - the Cloudflare MCP server accepts the page only from http://localhost:${CLOUDFLARE_PAGE_PORT}`,
+      `[hi-example] --cf needs the example on port ${CLOUDFLARE_PAGE_PORT} - the Cloudflare MCP server accepts the page only from http://localhost:${CLOUDFLARE_PAGE_PORT}`
     );
     process.exit(1);
   }
@@ -232,7 +249,9 @@ const main = async () => {
   } catch (error) {
     if (error.code === 'EADDRINUSE') {
       console.error(`[hi-example] port ${STATIC_PORT} is already in use.`);
-      console.error('[hi-example] pick another port: EXAMPLE_PORT=3101 npm start');
+      console.error(
+        '[hi-example] pick another port: EXAMPLE_PORT=3101 npm start'
+      );
     } else {
       console.error('[hi-example] the example server failed to start', error);
     }

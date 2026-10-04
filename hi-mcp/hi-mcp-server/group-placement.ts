@@ -24,7 +24,7 @@ export const catalogArticleOf = (articles: any[], root: any): any | undefined =>
   articles.find(
     (candidate) =>
       candidate.articleId === root.articleId &&
-      (!root.libraryId || candidate.libraryId === root.libraryId),
+      (!root.libraryId || candidate.libraryId === root.libraryId)
   );
 
 const CORNER = /corner/i;
@@ -40,7 +40,7 @@ export const isCornerArticle = (articles: any[], root: any): boolean => {
     (article.cornerArticle === true ||
       CORNER.test(String(article.category ?? '')) ||
       (article.rootModules ?? []).some((rootModule: any) =>
-        CORNER.test(String(rootModule?.module?.id ?? '')),
+        CORNER.test(String(rootModule?.module?.id ?? ''))
       ))
   );
 };
@@ -91,7 +91,7 @@ const dockingRelations = (roots: any[]): DockingRelations => {
 export const findAnchorRoot = (
   roots: any[],
   startRootId: string | undefined,
-  isCornerArticle: (root: any) => boolean,
+  isCornerArticle: (root: any) => boolean
 ): any => {
   const rootsById = new Map(roots.map((root) => [root.id, root]));
   const { carrierOf, leftOf, rightOf } = dockingRelations(roots);
@@ -172,8 +172,8 @@ const cornerVector = (root: any, side: 'Left' | 'Right'): any =>
         (dockInfo: any) =>
           dockInfo?.id === `${side}Back${row}` &&
           isPoint(dockInfo.start) &&
-          isPoint(dockInfo.end),
-      ),
+          isPoint(dockInfo.end)
+      )
     )
     .find(Boolean);
 
@@ -187,7 +187,7 @@ const degreesOf = (radians: number): number => (radians * 180) / Math.PI;
 // turns towards room -z, local +z towards room +x.
 const rotatedAboutY = (
   [x, y, z]: number[],
-  degrees: number,
+  degrees: number
 ): [number, number, number] => {
   const radians = (degrees * Math.PI) / 180;
   const cos = Math.cos(radians);
@@ -207,7 +207,7 @@ const cornerTurnOf = (root: any): number => {
   const dz = vector.end[2] - vector.start[2];
   // rotatedAboutY turns +x into [cos, -sin] and +z into [sin, cos] (x, z)
   return normalizeDegrees(
-    right ? degreesOf(Math.atan2(-dz, dx)) : degreesOf(Math.atan2(dx, dz)),
+    right ? degreesOf(Math.atan2(-dz, dx)) : degreesOf(Math.atan2(dx, dz))
   );
 };
 
@@ -223,7 +223,9 @@ export const anchorFrameOfRoot = (root: any): AnchorFrame => {
   const lowest = (axis: number) =>
     Math.min(...turnedPoints.map((point) => point[axis]));
   return {
-    point: roundedPoint(rotatedAboutY([lowest(0), lowest(1), lowest(2)], turnY)),
+    point: roundedPoint(
+      rotatedAboutY([lowest(0), lowest(1), lowest(2)], turnY)
+    ),
     turnY,
   };
 };
@@ -243,10 +245,10 @@ export const anchorVariantKey = (root: any, libraryId?: string): string =>
 export const anchorRootOf = (
   roots: any[],
   placement: Placement,
-  articles: any[],
+  articles: any[]
 ): any =>
   findAnchorRoot(roots, placement.rootId, (root) =>
-    isCornerArticle(articles, root),
+    isCornerArticle(articles, root)
   );
 
 const isIdentity = (frame: AnchorFrame): boolean =>
@@ -264,7 +266,7 @@ export const toRepositioningData = (
   placement: Placement,
   articles: any[],
   anchorFrames: Map<string, AnchorFrame> = new Map(),
-  libraryId?: string,
+  libraryId?: string
 ): RepositioningData => {
   const anchor = anchorRootOf(roots, placement, articles);
   const frame =
@@ -282,8 +284,8 @@ export const toRepositioningData = (
     rootRelPos: roundedPoint(
       rotatedAboutY(
         frame.point.map((component) => -component),
-        -frame.turnY,
-      ),
+        -frame.turnY
+      )
     ),
     rootRelRotationY: normalizeDegrees(-frame.turnY),
   };
@@ -301,12 +303,12 @@ export interface GroupPosition {
 const footprintInFrame = (
   footprint: GroupFootprint,
   corner: number[],
-  rotationY: number,
+  rotationY: number
 ): GroupFootprint => {
   const points = footprint.x.flatMap((x) =>
     footprint.z.map((z) =>
-      rotatedAboutY([x - corner[0], 0, z - corner[2]], -rotationY),
-    ),
+      rotatedAboutY([x - corner[0], 0, z - corner[2]], -rotationY)
+    )
   );
   const range = (axis: number): [number, number] => [
     round2(Math.min(...points.map((point) => point[axis]))),
@@ -328,10 +330,10 @@ const footprintInFrame = (
  */
 export const positionInPlacementFrame = (
   rawGroup: any,
-  footprint?: GroupFootprint,
+  footprint?: GroupFootprint
 ): GroupPosition | undefined => {
   const roots = ((rawGroup?.roots ?? []) as any[]).filter(
-    (root) => !root?.isGenerated,
+    (root) => !root?.isGenerated
   );
   if (!isPoint(rawGroup?.pos) || roots.length === 0) {
     return undefined;
@@ -341,11 +343,11 @@ export const positionInPlacementFrame = (
   const rootRotationY = anchor.rotationY ?? 0;
   const articlePos = isPoint(anchor.articlePos) ? anchor.articlePos : [0, 0, 0];
   const corner = rotatedAboutY(frame.point, rootRotationY).map(
-    (component, axis) => component + articlePos[axis],
+    (component, axis) => component + articlePos[axis]
   );
   const groupRotationY = rawGroup.rotationY ?? 0;
   const pos = rotatedAboutY(corner, groupRotationY).map(
-    (component, axis) => component + rawGroup.pos[axis],
+    (component, axis) => component + rawGroup.pos[axis]
   );
   const frameRotationY = rootRotationY + frame.turnY;
   return {

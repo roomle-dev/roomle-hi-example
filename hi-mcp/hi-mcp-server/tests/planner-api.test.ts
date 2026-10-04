@@ -13,7 +13,7 @@ describe('createPlannerApi', () => {
     const { extended } = createPlannerApi(bridge);
 
     await expect(
-      extended.getExternalObjectPlanContext(['articles']),
+      extended.getExternalObjectPlanContext(['articles'])
     ).resolves.toEqual({ from: 'page' });
     expect(bridge.call).toHaveBeenCalledWith('getExternalObjectPlanContext', [
       ['articles'],
@@ -33,13 +33,17 @@ describe('createPlannerApi', () => {
     const bridge = createMockBridge();
     const { extended } = createPlannerApi(bridge);
 
-    await extended.loadExternalObjectGroupLayout({ posGroups: [] }, 'posGroups', {
-      reason: 'adjusted',
-    });
+    await extended.loadExternalObjectGroupLayout(
+      { posGroups: [] },
+      'posGroups',
+      {
+        reason: 'adjusted',
+      }
+    );
     expect(bridge.call).toHaveBeenCalledWith(
       'loadExternalObjectGroupLayout',
       [{ posGroups: [] }, 'posGroups', { reason: 'adjusted' }],
-      SNAPSHOT_CALL_TIMEOUT_MS,
+      SNAPSHOT_CALL_TIMEOUT_MS
     );
 
     await extended.externalObjectGroupOperation('delete-group', {
@@ -48,14 +52,14 @@ describe('createPlannerApi', () => {
     expect(bridge.call).toHaveBeenCalledWith(
       'externalObjectGroupOperation',
       ['delete-group', { groupId: 'g1' }],
-      SNAPSHOT_CALL_TIMEOUT_MS,
+      SNAPSHOT_CALL_TIMEOUT_MS
     );
 
     await extended.getExternalObjectSnapshot({ orderData: true });
     expect(bridge.call).toHaveBeenCalledWith(
       'getExternalObjectSnapshot',
       [{ orderData: true }],
-      SNAPSHOT_CALL_TIMEOUT_MS,
+      SNAPSHOT_CALL_TIMEOUT_MS
     );
 
     // the default timeout applies when no timeout is passed
@@ -71,6 +75,11 @@ describe('createPlannerApi', () => {
   it('passes the browser identity to planner calls', async () => {
     const bridge = createMockBridge();
     await createPlannerApi(bridge, 'this-page').extended.fetchPrice();
-    expect(bridge.call).toHaveBeenCalledWith('fetchPrice', [], undefined, 'this-page');
+    expect(bridge.call).toHaveBeenCalledWith(
+      'fetchPrice',
+      [],
+      undefined,
+      'this-page'
+    );
   });
 });

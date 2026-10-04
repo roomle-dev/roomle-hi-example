@@ -18,7 +18,7 @@ export default {
       });
     }
     const container = env.HI_MCP.getByName(
-      searchParams.get('session') ?? DEFAULT_SESSION,
+      searchParams.get('session') ?? DEFAULT_SESSION
     );
     return container.fetch(request);
   },

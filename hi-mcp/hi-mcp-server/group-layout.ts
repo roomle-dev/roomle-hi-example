@@ -1,6 +1,12 @@
 import { catalogArticleOf, isCornerArticle } from './group-placement';
 
-export const RELATIONS = ['rightOf', 'leftOf', 'onTop', 'above', 'behind'] as const;
+export const RELATIONS = [
+  'rightOf',
+  'leftOf',
+  'onTop',
+  'above',
+  'behind',
+] as const;
 
 type Relation = (typeof RELATIONS)[number];
 
@@ -46,26 +52,31 @@ const numberOf = (value: unknown): number | undefined => {
 };
 
 const moduleIdsOf = (article: any): string[] =>
-  ((article?.rootModules ?? []) as any[]).map((rootModule) => String(rootModule?.module?.id ?? ''));
+  ((article?.rootModules ?? []) as any[]).map((rootModule) =>
+    String(rootModule?.module?.id ?? '')
+  );
 
-const isHoodArticle = (article: any): boolean => moduleIdsOf(article).some((id) => HOOD.test(id));
+const isHoodArticle = (article: any): boolean =>
+  moduleIdsOf(article).some((id) => HOOD.test(id));
 
 const isWallUnitArticle = (article: any): boolean =>
   WALL_UNIT.test(String(article?.category ?? '')) || isHoodArticle(article);
 
-const isTallUnitArticle = (article: any): boolean => TALL_UNIT.test(String(article?.category ?? ''));
+const isTallUnitArticle = (article: any): boolean =>
+  TALL_UNIT.test(String(article?.category ?? ''));
 
 const articleHeight = (article: any): number | undefined =>
   numberOf(
-    ((article?.rootModules?.[0]?.dimensions ?? []) as any[]).find((dimension) => dimension?.id === HEIGHT)
-      ?.value,
+    ((article?.rootModules?.[0]?.dimensions ?? []) as any[]).find(
+      (dimension) => dimension?.id === HEIGHT
+    )?.value
   );
 
 // The height most articles of a kind have in the library.
 const usualHeight = (
   articles: any[],
   libraryId: string | undefined,
-  isKind: (article: any) => boolean,
+  isKind: (article: any) => boolean
 ): number | undefined => {
   const counts = new Map<number, number>();
   for (const article of articles) {
@@ -90,10 +101,14 @@ export const relationsToDocking = (
   group: any,
   articles: any[],
   prefix: string,
-  corrections: string[],
+  corrections: string[]
 ): string[] => {
   const roots = group.roots as any[];
-  if (!roots.some((root) => RELATION_FIELDS.some((field) => root?.[field] !== undefined))) {
+  if (
+    !roots.some((root) =>
+      RELATION_FIELDS.some((field) => root?.[field] !== undefined)
+    )
+  ) {
     return [];
   }
   const notes: string[] = [];
@@ -102,106 +117,172 @@ export const relationsToDocking = (
   const isWall = (root: any) => isWallUnitArticle(articleOf(root));
   const isTall = (root: any) => isTallUnitArticle(articleOf(root));
   const isHood = (root: any) => isHoodArticle(articleOf(root));
-  const libraryId = group.libraryId ?? roots.find((root) => root.libraryId)?.libraryId;
+  const libraryId =
+    group.libraryId ?? roots.find((root) => root.libraryId)?.libraryId;
   const heightOf = (root: any) =>
-    numberOf(((root?.attributes ?? []) as any[]).find((attribute) => attribute?.id === HEIGHT)?.value) ??
-    articleHeight(articleOf(root));
+    numberOf(
+      ((root?.attributes ?? []) as any[]).find(
+        (attribute) => attribute?.id === HEIGHT
+      )?.value
+    ) ?? articleHeight(articleOf(root));
 
   // The wall units hang with their tops at the top of the tall units; base and
   // tall units stand on the same plinth, so the plinth cancels out.
   const hangGap = (unit: any, carrier: any): number | undefined => {
     const tallHeight =
-      roots.filter(isTall).map(heightOf).find((height) => height !== undefined) ??
+      roots
+        .filter(isTall)
+        .map(heightOf)
+        .find((height) => height !== undefined) ??
       usualHeight(articles, libraryId, isTallUnitArticle);
     if (tallHeight === undefined) {
       return undefined;
     }
     const unitHeight =
-      heightOf(unit) ?? usualHeight(articles, libraryId, (article) => WALL_UNIT.test(String(article?.category)));
-    return Math.max(0, tallHeight - (unitHeight ?? 0) - (heightOf(carrier) ?? 0));
+      heightOf(unit) ??
+      usualHeight(articles, libraryId, (article) =>
+        WALL_UNIT.test(String(article?.category))
+      );
+    return Math.max(
+      0,
+      tallHeight - (unitHeight ?? 0) - (heightOf(carrier) ?? 0)
+    );
   };
 
   const links: Link[] = [];
   for (const root of roots) {
-    const values = Object.fromEntries(RELATION_FIELDS.map((field) => [field, root[field]]));
+    const values = Object.fromEntries(
+      RELATION_FIELDS.map((field) => [field, root[field]])
+    );
     for (const field of RELATION_FIELDS) {
       delete root[field];
     }
-    const named = RELATIONS.filter((relation) => values[relation] !== undefined);
+    const named = RELATIONS.filter(
+      (relation) => values[relation] !== undefined
+    );
     if (named.length === 0) {
       if (values.align !== undefined || values.gapMm !== undefined) {
-        notes.push(`root ${quoted(root.id)} has align or gapMm but no relation - ignored`);
+        notes.push(
+          `root ${quoted(root.id)} has align or gapMm but no relation - ignored`
+        );
       }
       continue;
     }
     let [relation] = named;
     if (named.length > 1) {
-      notes.push(`root ${quoted(root.id)} names ${named.join(' and ')} - only ${relation} was used`);
+      notes.push(
+        `root ${quoted(root.id)} names ${named.join(' and ')} - only ${relation} was used`
+      );
     }
     const target = byId.get(values[relation]);
     if (!target || target === root) {
       notes.push(
-        `root ${quoted(root.id)}: ${relation} ${JSON.stringify(values[relation])} names no other root of the group - ignored`,
+        `root ${quoted(root.id)}: ${relation} ${JSON.stringify(values[relation])} names no other root of the group - ignored`
       );
       continue;
     }
     let gapMm = numberOf(values.gapMm);
     if (values.gapMm !== undefined && gapMm === undefined) {
-      notes.push(`root ${quoted(root.id)}: gapMm ${JSON.stringify(values.gapMm)} is not a number - ignored`);
+      notes.push(
+        `root ${quoted(root.id)}: gapMm ${JSON.stringify(values.gapMm)} is not a number - ignored`
+      );
     }
     const align = String(values.align ?? 'left');
     if (!STACKING_VECTORS[align]) {
-      notes.push(`root ${quoted(root.id)}: align ${JSON.stringify(values.align)} is not left, right or back - left was used`);
+      notes.push(
+        `root ${quoted(root.id)}: align ${JSON.stringify(values.align)} is not left, right or back - left was used`
+      );
     }
     if (relation === 'above' && !isWall(root)) {
-      notes.push(`root ${quoted(root.id)} is no wall unit - it stands rightOf ${quoted(target.id)} instead of above it`);
+      notes.push(
+        `root ${quoted(root.id)} is no wall unit - it stands rightOf ${quoted(target.id)} instead of above it`
+      );
       relation = 'rightOf';
-    } else if ((relation === 'rightOf' || relation === 'leftOf') && isWall(root) && !isWall(target) && !isTall(target)) {
-      notes.push(`wall unit ${quoted(root.id)} hangs above the floor unit ${quoted(target.id)} instead of ${relation} it`);
+    } else if (
+      (relation === 'rightOf' || relation === 'leftOf') &&
+      isWall(root) &&
+      !isWall(target) &&
+      !isTall(target)
+    ) {
+      notes.push(
+        `wall unit ${quoted(root.id)} hangs above the floor unit ${quoted(target.id)} instead of ${relation} it`
+      );
       relation = 'above';
-    } else if ((relation === 'rightOf' || relation === 'leftOf') && !isWall(root) && isWall(target)) {
-      notes.push(`floor unit ${quoted(root.id)} cannot stand ${relation} the wall unit ${quoted(target.id)} - it continues the floor row`);
+    } else if (
+      (relation === 'rightOf' || relation === 'leftOf') &&
+      !isWall(root) &&
+      isWall(target)
+    ) {
+      notes.push(
+        `floor unit ${quoted(root.id)} cannot stand ${relation} the wall unit ${quoted(target.id)} - it continues the floor row`
+      );
       continue;
-    } else if (relation === 'behind' && (isCornerArticle(articles, target) || isCornerArticle(articles, root))) {
-      notes.push(`root ${quoted(root.id)}: a corner article has no back to dock behind - ignored`);
+    } else if (
+      relation === 'behind' &&
+      (isCornerArticle(articles, target) || isCornerArticle(articles, root))
+    ) {
+      notes.push(
+        `root ${quoted(root.id)}: a corner article has no back to dock behind - ignored`
+      );
       continue;
     }
     if (gapMm !== undefined && relation !== 'onTop' && relation !== 'above') {
-      notes.push(`root ${quoted(root.id)}: gapMm only lifts a unit onTop or above - ignored`);
+      notes.push(
+        `root ${quoted(root.id)}: gapMm only lifts a unit onTop or above - ignored`
+      );
       gapMm = undefined;
     }
-    links.push({ unit: root, target, relation, align: STACKING_VECTORS[align] ? align : 'left', gapMm });
+    links.push({
+      unit: root,
+      target,
+      relation,
+      align: STACKING_VECTORS[align] ? align : 'left',
+      gapMm,
+    });
   }
 
   // A hood docked by its Top vector hangs by its chimney top: beside a tall
   // unit it hangs above the floor unit on that side instead.
   const floorBeside = (tall: any, relation: Relation): any =>
-    links.find((link) => link.target === tall && link.relation === relation && !isWall(link.unit))?.unit ??
+    links.find(
+      (link) =>
+        link.target === tall && link.relation === relation && !isWall(link.unit)
+    )?.unit ??
     links.find(
       (link) =>
         link.unit === tall &&
         link.relation === (relation === 'rightOf' ? 'leftOf' : 'rightOf') &&
-        !isWall(link.target),
+        !isWall(link.target)
     )?.target;
   for (const link of links) {
-    if (!isHood(link.unit) || !isTall(link.target) || (link.relation !== 'rightOf' && link.relation !== 'leftOf')) {
+    if (
+      !isHood(link.unit) ||
+      !isTall(link.target) ||
+      (link.relation !== 'rightOf' && link.relation !== 'leftOf')
+    ) {
       continue;
     }
     const carrier = floorBeside(link.target, link.relation);
     if (carrier) {
       notes.push(
-        `range hood ${quoted(link.unit.id)} hangs above ${quoted(carrier.id)}, ${link.relation} the tall unit ${quoted(link.target.id)}`,
+        `range hood ${quoted(link.unit.id)} hangs above ${quoted(carrier.id)}, ${link.relation} the tall unit ${quoted(link.target.id)}`
       );
-      Object.assign(link, { relation: 'above', target: carrier, align: 'left' });
+      Object.assign(link, {
+        relation: 'above',
+        target: carrier,
+        align: 'left',
+      });
     } else {
       notes.push(
-        `range hood ${quoted(link.unit.id)} hangs ${link.relation} the tall unit ${quoted(link.target.id)} by its top edge - put it above the floor unit below it`,
+        `range hood ${quoted(link.unit.id)} hangs ${link.relation} the tall unit ${quoted(link.target.id)} by its top edge - put it above the floor unit below it`
       );
     }
   }
 
   // Connected so far - by the relations and by docking written as contextData.
-  const parent = new Map<string, string>(roots.map((root) => [root.id, root.id]));
+  const parent = new Map<string, string>(
+    roots.map((root) => [root.id, root.id])
+  );
   const find = (id: string): string => {
     const up = parent.get(id) ?? id;
     if (up === id) {
@@ -224,7 +305,7 @@ export const relationsToDocking = (
   const kept = links.filter((link) => {
     if (find(link.unit.id) === find(link.target.id)) {
       notes.push(
-        `root ${quoted(link.unit.id)}: ${link.relation} ${quoted(link.target.id)} closes a ring of relations - dropped`,
+        `root ${quoted(link.unit.id)}: ${link.relation} ${quoted(link.target.id)} closes a ring of relations - dropped`
       );
       return false;
     }
@@ -241,13 +322,21 @@ export const relationsToDocking = (
   const sideOfTall = (tall: any): Relation => {
     const floorRight = kept.some(
       (link) =>
-        (link.target === tall && link.relation === 'rightOf' && !isWall(link.unit)) ||
-        (link.unit === tall && link.relation === 'leftOf' && !isWall(link.target)),
+        (link.target === tall &&
+          link.relation === 'rightOf' &&
+          !isWall(link.unit)) ||
+        (link.unit === tall &&
+          link.relation === 'leftOf' &&
+          !isWall(link.target))
     );
     const floorLeft = kept.some(
       (link) =>
-        (link.target === tall && link.relation === 'leftOf' && !isWall(link.unit)) ||
-        (link.unit === tall && link.relation === 'rightOf' && !isWall(link.target)),
+        (link.target === tall &&
+          link.relation === 'leftOf' &&
+          !isWall(link.unit)) ||
+        (link.unit === tall &&
+          link.relation === 'rightOf' &&
+          !isWall(link.target))
     );
     return floorLeft && !floorRight ? 'leftOf' : 'rightOf';
   };
@@ -259,15 +348,27 @@ export const relationsToDocking = (
         [...before].reverse().find((candidate) => !isWall(candidate)) ??
         main.find((candidate) => !isWall(candidate)) ??
         main[main.length - 1];
-      return target && { unit: root, target, relation: 'rightOf', align: 'left' };
+      return (
+        target && { unit: root, target, relation: 'rightOf', align: 'left' }
+      );
     }
     const wallBefore = [...before].reverse().find(isWall);
     if (wallBefore) {
-      return { unit: root, target: wallBefore, relation: 'rightOf', align: 'left' };
+      return {
+        unit: root,
+        target: wallBefore,
+        relation: 'rightOf',
+        align: 'left',
+      };
     }
     const tall = isHood(root) ? undefined : main.find(isTall);
     if (tall) {
-      return { unit: root, target: tall, relation: sideOfTall(tall), align: 'left' };
+      return {
+        unit: root,
+        target: tall,
+        relation: sideOfTall(tall),
+        align: 'left',
+      };
     }
     const floorUnits = main.filter((candidate) => !isWall(candidate));
     const baseUnits = floorUnits.filter((candidate) => !isTall(candidate));
@@ -276,7 +377,12 @@ export const relationsToDocking = (
     const carrier = floor[Math.min(wallIndex, floor.length - 1)];
     return carrier
       ? { unit: root, target: carrier, relation: 'above', align: 'left' }
-      : main[main.length - 1] && { unit: root, target: main[main.length - 1], relation: 'rightOf', align: 'left' };
+      : main[main.length - 1] && {
+          unit: root,
+          target: main[main.length - 1],
+          relation: 'rightOf',
+          align: 'left',
+        };
   };
   roots.forEach((root, index) => {
     if (inMain(root) || kept.some((link) => link.unit === root)) {
@@ -288,15 +394,23 @@ export const relationsToDocking = (
     }
     kept.push(fallback);
     union(root.id, fallback.target.id);
-    notes.push(`root ${quoted(root.id)} names no neighbour - it was put ${fallback.relation} ${quoted(fallback.target.id)}`);
+    notes.push(
+      `root ${quoted(root.id)} names no neighbour - it was put ${fallback.relation} ${quoted(fallback.target.id)}`
+    );
   });
 
   const pairOf = (link: Link): Pair => {
     const { unit, target, relation } = link;
     if (relation === 'rightOf' || relation === 'leftOf') {
-      const [near, far] = relation === 'rightOf' ? ['Right', 'Left'] : ['Left', 'Right'];
+      const [near, far] =
+        relation === 'rightOf' ? ['Right', 'Left'] : ['Left', 'Right'];
       const edge = isWall(unit) && isTall(target) ? 'Top' : 'Bottom';
-      return { own: `${near}${edge}`, other: `${far}${edge}`, mode: 'StartStart', offset: [0, 0, 0] };
+      return {
+        own: `${near}${edge}`,
+        other: `${far}${edge}`,
+        mode: 'StartStart',
+        offset: [0, 0, 0],
+      };
     }
     if (relation === 'behind') {
       return { own: 'BackBottom', other: 'BackBottom', offset: [0, 0, 0] };
@@ -307,7 +421,7 @@ export const relationsToDocking = (
       const derived = hangGap(unit, target);
       if (derived === undefined) {
         notes.push(
-          `wall unit ${quoted(unit.id)}: the height of the wall units is unknown - it stands on ${quoted(target.id)}; gapMm sets the gap`,
+          `wall unit ${quoted(unit.id)}: the height of the wall units is unknown - it stands on ${quoted(target.id)}; gapMm sets the gap`
         );
       }
       gap = derived ?? 0;
@@ -345,12 +459,13 @@ export const relationsToDocking = (
       }
     }
   }
-  const reachedAt = (root: any) => order.get(root.id) ?? Number.MAX_SAFE_INTEGER;
+  const reachedAt = (root: any) =>
+    order.get(root.id) ?? Number.MAX_SAFE_INTEGER;
   const addEntry = (root: any, ownDockingVector: string, entry: any) => {
     root.contextData ??= { dockedRoots: [] };
     root.contextData.dockedRoots ??= [];
     let context = root.contextData.dockedRoots.find(
-      (candidate: any) => candidate.ownDockingVector === ownDockingVector,
+      (candidate: any) => candidate.ownDockingVector === ownDockingVector
     );
     if (!context) {
       context = { ownDockingVector, dockedRoots: [] };
@@ -361,7 +476,12 @@ export const relationsToDocking = (
   for (const entryLink of kept) {
     const { own, other, mode, offset } = pairOf(entryLink);
     if (reachedAt(entryLink.target) <= reachedAt(entryLink.unit)) {
-      addEntry(entryLink.target, own, { id: entryLink.unit.id, dockingVector: other, ...(mode && { mode }), offset });
+      addEntry(entryLink.target, own, {
+        id: entryLink.unit.id,
+        dockingVector: other,
+        ...(mode && { mode }),
+        offset,
+      });
     } else {
       addEntry(entryLink.unit, other, {
         id: entryLink.target.id,

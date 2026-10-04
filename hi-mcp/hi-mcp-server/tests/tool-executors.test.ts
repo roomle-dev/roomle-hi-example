@@ -179,13 +179,14 @@ const planContextFixture = {
 };
 
 const isProbeLoad = (layout: any) =>
-  layout?.posGroups?.length === 1 && layout.posGroups[0].roots?.[0]?.id === 'anchor-probe';
+  layout?.posGroups?.length === 1 &&
+  layout.posGroups[0].roots?.[0]?.id === 'anchor-probe';
 
 // A planner that calculates a probe pick as a cabinet whose docking corner is
 // its origin, until the probe is removed.
 const createApi = (
   planContext: unknown,
-  overrides: Record<string, unknown> = {},
+  overrides: Record<string, unknown> = {}
 ) => {
   let probeGroups: any[] = [];
   return {
@@ -200,7 +201,9 @@ const createApi = (
                 {
                   id: 'p1',
                   articleId: layout.posGroups[0].roots[0].articleId,
-                  dockInfos: [{ id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, 561] }],
+                  dockInfos: [
+                    { id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, 561] },
+                  ],
                 },
               ],
             },
@@ -263,8 +266,12 @@ describe('get-plan-context', () => {
 
   it('ignores a section it does not know', async () => {
     const api = createApi(planContextFixture);
-    await toolExecutors['get-plan-context'](api, { include: ['articles', 'walls'] });
-    expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith(['articles']);
+    await toolExecutors['get-plan-context'](api, {
+      include: ['articles', 'walls'],
+    });
+    expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+      'articles',
+    ]);
     await toolExecutors['get-plan-context'](api, { include: ['walls'] });
     expect(api.extended.getExternalObjectPlanContext).toHaveBeenLastCalledWith([
       'rooms',
@@ -311,9 +318,9 @@ describe('get-plan-context', () => {
     const result = await toolExecutors['get-plan-context'](api, {
       include: ['masterData'],
     });
-    const front = (result as Record<string, any>).masterData['lib-1'].attributes.find(
-      (attribute: any) => attribute.id === 'front',
-    );
+    const front = (result as Record<string, any>).masterData[
+      'lib-1'
+    ].attributes.find((attribute: any) => attribute.id === 'front');
     expect(front.desc).toBe('the colour of the front');
     expect(front.imageUrl).toBe('https://example.com/front.png');
     expect(front.selections).toEqual([
@@ -371,7 +378,7 @@ describe('find-attributes', () => {
     })) as Record<string, any>;
     expect(result.total).toBe(0);
     await expect(
-      toolExecutors['find-attributes'](api, { text: '  ' }),
+      toolExecutors['find-attributes'](api, { text: '  ' })
     ).rejects.toThrow(/text must not be empty/);
   });
 
@@ -410,37 +417,46 @@ describe('find-attributes', () => {
 });
 
 describe('create-or-replace-groups validation', () => {
-  it.fails('RML-18033: reports a group omitted by the planner in notLoaded', async () => {
-    const api = createApi(planContextFixture);
-    api.extended.getExternalObjectPlanContext
-      .mockResolvedValueOnce(planContextFixture)
-      .mockResolvedValueOnce({ ...planContextFixture, groups: [] })
-      .mockResolvedValueOnce({
-        ...planContextFixture,
-        groups: [makeShapedGroup({ id: 'created-group' })],
-      });
-    const result = (await toolExecutors['create-or-replace-groups'](api, {
-      posGroups: [
-        { roots: [pick()] },
-        { roots: [{ ...pick(), id: 'other-root' }] },
-      ],
-    })) as Record<string, any>;
-    expect(result.notLoaded).toEqual([
-      { index: 1, errors: expect.any(Array) },
-    ]);
-  });
+  it.fails(
+    'RML-18033: reports a group omitted by the planner in notLoaded',
+    async () => {
+      const api = createApi(planContextFixture);
+      api.extended.getExternalObjectPlanContext
+        .mockResolvedValueOnce(planContextFixture)
+        .mockResolvedValueOnce({ ...planContextFixture, groups: [] })
+        .mockResolvedValueOnce({
+          ...planContextFixture,
+          groups: [makeShapedGroup({ id: 'created-group' })],
+        });
+      const result = (await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [
+          { roots: [pick()] },
+          { roots: [{ ...pick(), id: 'other-root' }] },
+        ],
+      })) as Record<string, any>;
+      expect(result.notLoaded).toEqual([
+        { index: 1, errors: expect.any(Array) },
+      ]);
+    }
+  );
 
   it('RML-18033: passes numeric article overrides on as numbers, which the layout takes', async () => {
     // PosModuleAttribute.value is number | string | boolean; only the
     // attribute commands take strings (C11)
     const api = createApi(planContextFixture);
     await toolExecutors['create-or-replace-groups'](api, {
-      posGroups: [{ roots: [{ ...pick(), attributes: [{ id: 'b', value: 900 }] }] }],
+      posGroups: [
+        { roots: [{ ...pick(), attributes: [{ id: 'b', value: 900 }] }] },
+      ],
     });
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
-      { posGroups: [{ roots: [{ ...pick(), attributes: [{ id: 'b', value: 900 }] }] }] },
+      {
+        posGroups: [
+          { roots: [{ ...pick(), attributes: [{ id: 'b', value: 900 }] }] },
+        ],
+      },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
   });
 
@@ -454,36 +470,64 @@ describe('create-or-replace-groups validation', () => {
     })) as Record<string, any>;
     expect(result).not.toHaveProperty('notLoaded');
     expect(result.corrections).toContainEqual(
-      expect.stringMatching(/attributes must be.*ignored/),
+      expect.stringMatching(/attributes must be.*ignored/)
     );
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
       { posGroups: [{ roots: [pick()] }, { roots: [pick()] }] },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
   });
 
   it.each([
     [{ contextData: { dockedRoots: {} } }, "the contextData of root 'u1'"],
     [{ contextData: 'docked' }, "the contextData of root 'u1'"],
-    [{ contextData: { dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: {} }] } }, "docking context 0 of root 'u1'"],
-    [{ contextData: { dockedRoots: [null] } }, "docking context 0 of root 'u1'"],
-    [{ contextData: { dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: ['u2'] }] } }, "docking entry 0 of context 0 of root 'u1'"],
-  ])('RML-18033: drops malformed docking data %j, reports it and loads every group', async (malformed, part) => {
-    const api = createApi(planContextFixture);
-    const result = (await toolExecutors['create-or-replace-groups'](api, {
-      posGroups: [
-        { roots: [{ ...pick(), ...malformed }] },
-        { roots: [pick()] },
-      ],
-    })) as Record<string, any>;
-    expect(result).not.toHaveProperty('notLoaded');
-    expect(result.corrections).toContainEqual(
-      expect.stringContaining(`posGroups[0]: ${part} could not be read and were dropped`),
-    );
-    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
-    expect(api.extended.loadExternalObjectGroupLayout.mock.calls[0][0].posGroups).toHaveLength(2);
-  });
+    [
+      {
+        contextData: {
+          dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: {} }],
+        },
+      },
+      "docking context 0 of root 'u1'",
+    ],
+    [
+      { contextData: { dockedRoots: [null] } },
+      "docking context 0 of root 'u1'",
+    ],
+    [
+      {
+        contextData: {
+          dockedRoots: [
+            { ownDockingVector: 'RightBottom', dockedRoots: ['u2'] },
+          ],
+        },
+      },
+      "docking entry 0 of context 0 of root 'u1'",
+    ],
+  ])(
+    'RML-18033: drops malformed docking data %j, reports it and loads every group',
+    async (malformed, part) => {
+      const api = createApi(planContextFixture);
+      const result = (await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [
+          { roots: [{ ...pick(), ...malformed }] },
+          { roots: [pick()] },
+        ],
+      })) as Record<string, any>;
+      expect(result).not.toHaveProperty('notLoaded');
+      expect(result.corrections).toContainEqual(
+        expect.stringContaining(
+          `posGroups[0]: ${part} could not be read and were dropped`
+        )
+      );
+      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(
+        1
+      );
+      expect(
+        api.extended.loadExternalObjectGroupLayout.mock.calls[0][0].posGroups
+      ).toHaveLength(2);
+    }
+  );
 
   it('RML-18033: reports a group it cannot read in notLoaded and loads the others', async () => {
     const api = createApi(planContextFixture);
@@ -491,22 +535,27 @@ describe('create-or-replace-groups validation', () => {
       posGroups: [{ roots: [null] }, { roots: [pick()] }],
     })) as Record<string, any>;
     expect(result.notLoaded).toEqual([
-      { index: 0, errors: [expect.stringMatching(/^posGroups\[0\]: could not be read - /)] },
+      {
+        index: 0,
+        errors: [
+          expect.stringMatching(/^posGroups\[0\]: could not be read - /),
+        ],
+      },
     ]);
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
       { posGroups: [{ roots: [pick()] }] },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
   });
 
   const expectRejectedBeforeLoad = async (
     posGroups: unknown[],
-    message: RegExp,
+    message: RegExp
   ) => {
     const api = createApi({ articles: [] });
     await expect(
-      toolExecutors['create-or-replace-groups'](api, { posGroups }),
+      toolExecutors['create-or-replace-groups'](api, { posGroups })
     ).rejects.toThrow(message);
     expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
   };
@@ -518,17 +567,25 @@ describe('create-or-replace-groups validation', () => {
   it('rejects a group of only generated roots', async () => {
     await expectRejectedBeforeLoad(
       [{ roots: [{ id: 'w', isGenerated: true }] }],
-      /needs at least one article root/,
+      /needs at least one article root/
     );
   });
 
-  const loadedWith = async (posGroups: unknown[], planContext: unknown = planContextFixture) => {
+  const loadedWith = async (
+    posGroups: unknown[],
+    planContext: unknown = planContextFixture
+  ) => {
     const api = createApi(planContext);
     const result = (await toolExecutors['create-or-replace-groups'](api, {
       posGroups,
     })) as Record<string, any>;
-    const calls = api.extended.loadExternalObjectGroupLayout.mock.calls as unknown as any[][];
-    return { api, result, loadedGroup: calls[calls.length - 1][0].posGroups[0] };
+    const calls = api.extended.loadExternalObjectGroupLayout.mock
+      .calls as unknown as any[][];
+    return {
+      api,
+      result,
+      loadedGroup: calls[calls.length - 1][0].posGroups[0],
+    };
   };
 
   it('drops a position on the group and reports it', async () => {
@@ -543,7 +600,16 @@ describe('create-or-replace-groups validation', () => {
 
   it('drops the positions of root modules and reports them', async () => {
     const { loadedGroup, result } = await loadedWith([
-      { roots: [{ id: 'u1', articleId: 'article-1', articlePos: [0, 0, 0], rotationY: 90 }] },
+      {
+        roots: [
+          {
+            id: 'u1',
+            articleId: 'article-1',
+            articlePos: [0, 0, 0],
+            rotationY: 90,
+          },
+        ],
+      },
     ]);
     expect(loadedGroup.roots).toEqual([pick()]);
     expect(result.corrections).toEqual([
@@ -554,29 +620,49 @@ describe('create-or-replace-groups validation', () => {
   it('rejects a root without articleId and names a root without id', async () => {
     await expectRejectedBeforeLoad(
       [{ roots: [{}] }],
-      /posGroups\[0\]\.roots\[0\]: articleId must be a non-empty string/,
+      /posGroups\[0\]\.roots\[0\]: articleId must be a non-empty string/
     );
-    const { loadedGroup, result } = await loadedWith([{ roots: [{ articleId: 'article-1' }] }]);
-    expect(loadedGroup.roots).toEqual([{ id: 'root-1', articleId: 'article-1' }]);
+    const { loadedGroup, result } = await loadedWith([
+      { roots: [{ articleId: 'article-1' }] },
+    ]);
+    expect(loadedGroup.roots).toEqual([
+      { id: 'root-1', articleId: 'article-1' },
+    ]);
     expect(result.corrections).toEqual([
       "posGroups[0].roots[0]: the root had no id - it is 'root-1'",
     ]);
   });
 
   it('renames a duplicate root id the docking does not name and rejects one it names', async () => {
-    const docked = (ownDockingVector: string, id: string, dockingVector: string) => ({
+    const docked = (
+      ownDockingVector: string,
+      id: string,
+      dockingVector: string
+    ) => ({
       dockedRoots: [{ ownDockingVector, dockedRoots: [{ id, dockingVector }] }],
     });
     const { loadedGroup, result } = await loadedWith([
       {
         roots: [
           { id: 'a', articleId: 'article-1' },
-          { id: 'u1', articleId: 'article-1', contextData: docked('LeftBottom', 'a', 'RightBottom') },
-          { id: 'u1', articleId: 'article-1', contextData: docked('RightBottom', 'a', 'LeftBottom') },
+          {
+            id: 'u1',
+            articleId: 'article-1',
+            contextData: docked('LeftBottom', 'a', 'RightBottom'),
+          },
+          {
+            id: 'u1',
+            articleId: 'article-1',
+            contextData: docked('RightBottom', 'a', 'LeftBottom'),
+          },
         ],
       },
     ]);
-    expect(loadedGroup.roots.map((root: any) => root.id)).toEqual(['a', 'u1', 'u1-2']);
+    expect(loadedGroup.roots.map((root: any) => root.id)).toEqual([
+      'a',
+      'u1',
+      'u1-2',
+    ]);
     expect(result.corrections).toEqual([
       "posGroups[0].roots[2]: the duplicate root id 'u1' was renamed to 'u1-2'",
     ]);
@@ -584,13 +670,17 @@ describe('create-or-replace-groups validation', () => {
       [
         {
           roots: [
-            { id: 'u1', articleId: 'article-1', contextData: docked('RightBottom', 'u2', 'LeftBottom') },
+            {
+              id: 'u1',
+              articleId: 'article-1',
+              contextData: docked('RightBottom', 'u2', 'LeftBottom'),
+            },
             { id: 'u2', articleId: 'article-1' },
             { id: 'u2', articleId: 'article-1' },
           ],
         },
       ],
-      /posGroups\[0\]\.roots\[2\]: duplicate root id 'u2' named in the docking/,
+      /posGroups\[0\]\.roots\[2\]: duplicate root id 'u2' named in the docking/
     );
   });
 
@@ -616,7 +706,12 @@ describe('create-or-replace-groups validation', () => {
       },
     ]);
     expect(loadedGroup.roots[0].contextData).toEqual({
-      dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [entry('u2', 'LeftBottom')] }],
+      dockedRoots: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('u2', 'LeftBottom')],
+        },
+      ],
     });
     expect(result.corrections).toEqual([
       "posGroups[0]: roots 'u2' were not docked to the placed roots - 'u2' was docked to the RightBottom of 'u1', the free end of that row (mode StartStart, offset [0, 0, 0])",
@@ -644,10 +739,17 @@ describe('create-or-replace-groups validation', () => {
     ]);
     // the row continues c, f, s, o
     expect(loadedGroup.roots[3].contextData).toEqual({
-      dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [entry('s', 'LeftBottom')] }],
+      dockedRoots: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('s', 'LeftBottom')],
+        },
+      ],
     });
     expect(result.corrections).toEqual([
-      expect.stringContaining("roots 's', 'o' were not docked to the placed roots - 's' was docked to the RightBottom of 'f'"),
+      expect.stringContaining(
+        "roots 's', 'o' were not docked to the placed roots - 's' was docked to the RightBottom of 'f'"
+      ),
     ]);
   });
 
@@ -661,13 +763,24 @@ describe('create-or-replace-groups validation', () => {
     const { loadedGroup, result } = await loadedWith([
       {
         roots: [
-          { id: 'u1', articleId: 'article-1', contextData: dockedTo('RightBottom', 'LeftBottom') },
-          { id: 'u2', articleId: 'article-1', contextData: dockedTo('LeftBottom', 'RightBottom') },
+          {
+            id: 'u1',
+            articleId: 'article-1',
+            contextData: dockedTo('RightBottom', 'LeftBottom'),
+          },
+          {
+            id: 'u2',
+            articleId: 'article-1',
+            contextData: dockedTo('LeftBottom', 'RightBottom'),
+          },
         ],
       },
     ]);
     expect(loadedGroup.roots[0].contextData.dockedRoots).toEqual([
-      { ownDockingVector: 'RightBottom', dockedRoots: [entry('u2', 'LeftBottom')] },
+      {
+        ownDockingVector: 'RightBottom',
+        dockedRoots: [entry('u2', 'LeftBottom')],
+      },
     ]);
     expect(result.corrections).toEqual([
       "posGroups[0]: roots 'deleted' are named in the docking but were never sent - nothing was built for them; send each as a root { id, articleId } of the group",
@@ -695,7 +808,9 @@ describe('create-or-replace-groups validation', () => {
                         dockedRoots: [
                           {
                             ownDockingVector: 'RightBottom',
-                            dockedRoots: [{ id: 'oven1', articleId: 'article-1' }],
+                            dockedRoots: [
+                              { id: 'oven1', articleId: 'article-1' },
+                            ],
                           },
                         ],
                       },
@@ -704,7 +819,13 @@ describe('create-or-replace-groups validation', () => {
                 },
                 {
                   ownDockingVector: 'LeftBottom',
-                  dockedRoots: [{ id: 'sink1', articleId: 'article-1', attributes: { front: 'white' } }],
+                  dockedRoots: [
+                    {
+                      id: 'sink1',
+                      articleId: 'article-1',
+                      attributes: { front: 'white' },
+                    },
+                  ],
                 },
               ],
             },
@@ -712,19 +833,35 @@ describe('create-or-replace-groups validation', () => {
         ],
       },
     ]);
-    expect(loadedGroup.roots.map((root: any) => root.id)).toEqual(['corner1', 'fridge1', 'sink1', 'oven1']);
+    expect(loadedGroup.roots.map((root: any) => root.id)).toEqual([
+      'corner1',
+      'fridge1',
+      'sink1',
+      'oven1',
+    ]);
     expect(loadedGroup.roots[0].contextData).toEqual({
       dockedRoots: [
-        { ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'fridge1', dockingVector: 'LeftBottom' }] },
-        { ownDockingVector: 'LeftBottom', dockedRoots: [{ id: 'sink1', dockingVector: 'RightBottom' }] },
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [{ id: 'fridge1', dockingVector: 'LeftBottom' }],
+        },
+        {
+          ownDockingVector: 'LeftBottom',
+          dockedRoots: [{ id: 'sink1', dockingVector: 'RightBottom' }],
+        },
       ],
     });
     expect(loadedGroup.roots[1].contextData).toEqual({
       dockedRoots: [
-        { ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'oven1', dockingVector: 'LeftBottom' }] },
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [{ id: 'oven1', dockingVector: 'LeftBottom' }],
+        },
       ],
     });
-    expect(loadedGroup.roots[2].attributes).toEqual([{ id: 'front', value: 'white' }]);
+    expect(loadedGroup.roots[2].attributes).toEqual([
+      { id: 'front', value: 'white' },
+    ]);
     expect(result.corrections).toEqual([
       "posGroups[0]: roots 'fridge1', 'sink1', 'oven1' were written inside the docking - they are roots of the group now, linked by their docking entries",
       "posGroups[0]: docking entries without dockingVector were completed - 'fridge1' meets the RightBottom of 'corner1' with its LeftBottom, 'sink1' meets the LeftBottom of 'corner1' with its RightBottom, 'oven1' meets the RightBottom of 'fridge1' with its LeftBottom",
@@ -732,7 +869,7 @@ describe('create-or-replace-groups validation', () => {
     ]);
   });
 
-  it('reads a docking entry by rootId and drops one without the root\'s own vector', async () => {
+  it("reads a docking entry by rootId and drops one without the root's own vector", async () => {
     const { loadedGroup, result } = await loadedWith([
       {
         roots: [
@@ -741,7 +878,10 @@ describe('create-or-replace-groups validation', () => {
             articleId: 'article-1',
             contextData: {
               dockedRoots: [
-                { ownDockingVector: 'RightBottom', dockedRoots: [{ rootId: 'u2', dockingVector: 'LeftBottom' }] },
+                {
+                  ownDockingVector: 'RightBottom',
+                  dockedRoots: [{ rootId: 'u2', dockingVector: 'LeftBottom' }],
+                },
                 { dockedRoots: [{ id: 'u3', dockingVector: 'LeftBottom' }] },
               ],
             },
@@ -767,13 +907,24 @@ describe('create-or-replace-groups validation', () => {
         name: 'kitchen',
         attributes: [{ id: 'mod_GroupHeight', value: 1500 }],
         roots: [
-          { id: 'u1', articleId: 'article-1', width: 900, attributes: [{ attributeId: 'b', value: '900' }, { value: 1 }] },
+          {
+            id: 'u1',
+            articleId: 'article-1',
+            width: 900,
+            attributes: [{ attributeId: 'b', value: '900' }, { value: 1 }],
+          },
         ],
       },
     ]);
     expect(loadedGroup).toEqual({
       attributes: [{ id: 'mod_GroupHeight', value: 1500 }],
-      roots: [{ id: 'u1', articleId: 'article-1', attributes: [{ id: 'b', value: '900' }] }],
+      roots: [
+        {
+          id: 'u1',
+          articleId: 'article-1',
+          attributes: [{ id: 'b', value: '900' }],
+        },
+      ],
     });
     expect(result.corrections).toEqual([
       "posGroups[0]: the server does not use the group's name; width of root 'u1' - ignored",
@@ -810,10 +961,15 @@ describe('create-or-replace-groups validation', () => {
           uncalculated('corner-1', 'Kitchen handleless | Base Units | Corner'),
           uncalculated('base-1', 'Kitchen | Base Units | Storage'),
         ],
-      },
+      }
     );
     expect(loadedGroup.roots[0].contextData).toEqual({
-      dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [entry('l1', 'LeftBottom')] }],
+      dockedRoots: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('l1', 'LeftBottom')],
+        },
+      ],
     });
     expect(result).not.toHaveProperty('notLoaded');
   });
@@ -828,7 +984,9 @@ describe('create-or-replace-groups validation', () => {
       dockedRoots: [
         {
           ownDockingVector: 'LeftTop',
-          dockedRoots: [{ id: 'w1', dockingVector: 'LeftBottom', offset: [0, 600, 0] }],
+          dockedRoots: [
+            { id: 'w1', dockingVector: 'LeftBottom', offset: [0, 600, 0] },
+          ],
         },
       ],
     };
@@ -842,10 +1000,15 @@ describe('create-or-replace-groups validation', () => {
           ],
         },
       ],
-      catalogWith(wallUnit),
+      catalogWith(wallUnit)
     );
     expect(loadedGroup.roots[1].contextData).toEqual({
-      dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [entry('w2', 'LeftBottom')] }],
+      dockedRoots: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('w2', 'LeftBottom')],
+        },
+      ],
     });
     expect(result.corrections).toEqual([
       expect.stringContaining("'w2' was docked to the RightBottom of 'w1'"),
@@ -853,22 +1016,33 @@ describe('create-or-replace-groups validation', () => {
   });
 
   it('reports a root it cannot dock and loads the other groups', async () => {
-    const wallUnit = { ...articleFixture, articleId: 'wall-1', category: 'Kitchen | Wall Units | Storage' };
+    const wallUnit = {
+      ...articleFixture,
+      articleId: 'wall-1',
+      category: 'Kitchen | Wall Units | Storage',
+    };
     const api = createApi(catalogWith(wallUnit));
     const result = (await toolExecutors['create-or-replace-groups'](api, {
       posGroups: [
-        { roots: [{ id: 'u1', articleId: 'article-1' }, { id: 'w1', articleId: 'wall-1' }] },
+        {
+          roots: [
+            { id: 'u1', articleId: 'article-1' },
+            { id: 'w1', articleId: 'wall-1' },
+          ],
+        },
         { roots: [pick()] },
       ],
     })) as Record<string, any>;
     expect(result.notLoaded.map((entry: any) => entry.index)).toEqual([0]);
     expect(result.notLoaded[0].errors).toEqual([
-      expect.stringMatching(/^posGroups\[0\]: roots 'w1' are not docked to a placed root \('u1' is placed/),
+      expect.stringMatching(
+        /^posGroups\[0\]: roots 'w1' are not docked to a placed root \('u1' is placed/
+      ),
     ]);
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
       { posGroups: [{ roots: [pick()] }] },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
   });
 
@@ -879,11 +1053,20 @@ describe('create-or-replace-groups validation', () => {
       ...articleFixture,
       articleId: 'hood-1',
       category: 'Kitchen | Appliances',
-      rootModules: [{ module: { id: 'mr_Hood' }, dimensions: [], dockingVectors: [] }],
+      rootModules: [
+        { module: { id: 'mr_Hood' }, dimensions: [], dockingVectors: [] },
+      ],
     };
     const api = createApi(catalogWith(hood));
     const result = (await toolExecutors['create-or-replace-groups'](api, {
-      posGroups: [{ roots: [{ id: 'u1', articleId: 'article-1' }, { id: 'h1', articleId: 'hood-1' }] }],
+      posGroups: [
+        {
+          roots: [
+            { id: 'u1', articleId: 'article-1' },
+            { id: 'h1', articleId: 'hood-1' },
+          ],
+        },
+      ],
     })) as Record<string, any>;
     expect(result.notLoaded).toBeUndefined();
     // the catalog does not name the hood a wall unit, so it joins the floor row
@@ -897,7 +1080,11 @@ describe('create-or-replace-groups validation', () => {
     const { loadedGroup, result } = await loadedWith([
       {
         roots: [pick()],
-        repositioningData: { posGroup: [4000, 0, -3000], posRotationY: 270, rootId: 'u1' },
+        repositioningData: {
+          posGroup: [4000, 0, -3000],
+          posRotationY: 270,
+          rootId: 'u1',
+        },
       },
     ]);
     expect(loadedGroup.repositioningData).toEqual({
@@ -905,7 +1092,9 @@ describe('create-or-replace-groups validation', () => {
       posRotationY: 270,
       rootId: 'u1',
     });
-    expect(result.corrections).toEqual(['posGroups[0]: repositioningData was taken as the placement']);
+    expect(result.corrections).toEqual([
+      'posGroups[0]: repositioningData was taken as the placement',
+    ]);
   });
 
   it('uses no placement it cannot use and lets the planner position the group', async () => {
@@ -915,20 +1104,26 @@ describe('create-or-replace-groups validation', () => {
       { posGroup: [0, 0, 0], posRotationY: '90' },
       { posGroup: [0, 0, 0] },
     ]) {
-      const { loadedGroup, result } = await loadedWith([{ roots: [pick()], placement }]);
+      const { loadedGroup, result } = await loadedWith([
+        { roots: [pick()], placement },
+      ]);
       expect(loadedGroup).toEqual({ roots: [pick()] });
       expect(result.corrections).toEqual([
         expect.stringMatching(
-          /^posGroups\[0\]: the placement (is not|needs).* - it was not used, so the planner positions the group \(an existing group keeps its position\)$/,
+          /^posGroups\[0\]: the placement (is not|needs).* - it was not used, so the planner positions the group \(an existing group keeps its position\)$/
         ),
       ]);
     }
   });
 
   it('completes a placement where the intent is clear', async () => {
-    const placed = async (placement: unknown) => loadedWith([{ roots: [pick()], placement }]);
+    const placed = async (placement: unknown) =>
+      loadedWith([{ roots: [pick()], placement }]);
 
-    let { loadedGroup, result } = await placed({ posGroup: [4000, -3000], posRotationY: 270 });
+    let { loadedGroup, result } = await placed({
+      posGroup: [4000, -3000],
+      posRotationY: 270,
+    });
     expect(loadedGroup.repositioningData).toEqual({
       posGroup: [4000, 0, -3000],
       posRotationY: 270,
@@ -938,29 +1133,49 @@ describe('create-or-replace-groups validation', () => {
       "posGroups[0]: the placement's posGroup [4000, -3000] was completed to [4000, 0, -3000] (y = 0 on the floor)",
     ]);
 
-    ({ loadedGroup, result } = await placed({ posGroup: [0, 0, 0], posRotationY: 0, rootId: 'u9' }));
+    ({ loadedGroup, result } = await placed({
+      posGroup: [0, 0, 0],
+      posRotationY: 0,
+      rootId: 'u9',
+    }));
     expect(loadedGroup.repositioningData.rootId).toBe('u1');
     expect(result.corrections).toEqual([
       "posGroups[0]: the placement's rootId 'u9' is not a root of the group - dropped, the server anchors the group itself",
     ]);
 
-    ({ loadedGroup, result } = await placed({ posGroup: [0, 0, 0], posRotationY: 0, scale: 2 }));
-    expect(loadedGroup.repositioningData).toEqual({ posGroup: [0, 0, 0], posRotationY: 0, rootId: 'u1' });
+    ({ loadedGroup, result } = await placed({
+      posGroup: [0, 0, 0],
+      posRotationY: 0,
+      scale: 2,
+    }));
+    expect(loadedGroup.repositioningData).toEqual({
+      posGroup: [0, 0, 0],
+      posRotationY: 0,
+      rootId: 'u1',
+    });
     expect(result.corrections).toEqual([
       'posGroups[0]: the placement takes only posGroup, posRotationY and rootId - scale dropped',
     ]);
 
-    ({ loadedGroup, result } = await placed({ wall: 'right', alignment: 'top' }));
+    ({ loadedGroup, result } = await placed({
+      wall: 'right',
+      alignment: 'top',
+    }));
     expect(loadedGroup).toEqual({ roots: [pick()] });
     expect(result.corrections).toEqual([
       'posGroups[0]: the placement takes only posGroup, posRotationY and rootId - wall, alignment dropped; place-group stands a group against a wall or into a corner by its side label',
-      expect.stringMatching(/the placement needs posGroup \[x, y, z\].* - it was not used/),
+      expect.stringMatching(
+        /the placement needs posGroup \[x, y, z\].* - it was not used/
+      ),
     ]);
   });
 
   it('uses no placement on a group that is already in the plan, which keeps its position', async () => {
     const { loadedGroup, result } = await loadedWith([
-      { ...makeShapedGroup(), placement: { posGroup: [0, 0, 0], posRotationY: 0 } },
+      {
+        ...makeShapedGroup(),
+        placement: { posGroup: [0, 0, 0], posRotationY: 0 },
+      },
     ]);
     expect(loadedGroup).not.toHaveProperty('repositioningData');
     expect(loadedGroup.id).toBe('g1');
@@ -984,7 +1199,7 @@ describe('create-or-replace-groups validation', () => {
     await expect(
       toolExecutors['create-or-replace-groups'](api, {
         posGroups: [{ roots: [{ id: 'u1', articleId: 'nope' }] }],
-      }),
+      })
     ).rejects.toThrow(/articleId 'nope' is not in the article catalog/);
     expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
   });
@@ -1014,7 +1229,10 @@ describe('create-or-replace-groups validation', () => {
             articleId: 'article-1',
             contextData: {
               dockedRoots: [
-                { ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'u3', dockingVector: 'LeftBottom' }] },
+                {
+                  ownDockingVector: 'RightBottom',
+                  dockedRoots: [{ id: 'u3', dockingVector: 'LeftBottom' }],
+                },
               ],
             },
           },
@@ -1023,7 +1241,12 @@ describe('create-or-replace-groups validation', () => {
       },
     ]);
     expect(loadedGroup.roots[0].contextData).toEqual({
-      dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'u2', dockingVector: 'LeftBottom' }] }],
+      dockedRoots: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [{ id: 'u2', dockingVector: 'LeftBottom' }],
+        },
+      ],
     });
     expect(result.corrections).toEqual([
       "posGroups[0]: roots 'u2', 'u3' were docked to the RightBottom of root 'u1' at the same place - 'u3' already follows in that row, so its second docking was dropped",
@@ -1044,7 +1267,11 @@ describe('create-or-replace-groups validation', () => {
                 {
                   ownDockingVector: 'LeftBottom',
                   dockedRoots: [
-                    { id: 'oven', dockingVector: 'RightBottom', ...(cornerMode && { mode: cornerMode }) },
+                    {
+                      id: 'oven',
+                      dockingVector: 'RightBottom',
+                      ...(cornerMode && { mode: cornerMode }),
+                    },
                   ],
                 },
                 {
@@ -1062,7 +1289,11 @@ describe('create-or-replace-groups validation', () => {
                 {
                   ownDockingVector: 'RightBottom',
                   dockedRoots: [
-                    { id: 'fridge', dockingVector: 'LeftBottom', ...(fridgeMode && { mode: fridgeMode }) },
+                    {
+                      id: 'fridge',
+                      dockingVector: 'LeftBottom',
+                      ...(fridgeMode && { mode: fridgeMode }),
+                    },
                   ],
                 },
               ],
@@ -1074,13 +1305,20 @@ describe('create-or-replace-groups validation', () => {
       },
     ];
     for (const [cornerMode, fridgeMode] of [[], ['EndStart', 'StartEnd']]) {
-      const { loadedGroup, result } = await loadedWith(kitchen(cornerMode, fridgeMode));
+      const { loadedGroup, result } = await loadedWith(
+        kitchen(cornerMode, fridgeMode)
+      );
       const [corner, oven, , sink] = loadedGroup.roots;
       // the fridge leaves the oven and continues the row after the sink
       expect(oven.contextData).toEqual({ dockedRoots: [] });
       expect(corner.contextData.dockedRoots).toHaveLength(2);
       expect(sink.contextData).toEqual({
-        dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [entry('fridge', 'LeftBottom')] }],
+        dockedRoots: [
+          {
+            ownDockingVector: 'RightBottom',
+            dockedRoots: [entry('fridge', 'LeftBottom')],
+          },
+        ],
       });
       expect(result.corrections).toEqual([
         "posGroups[0]: roots 'corner', 'fridge' were docked to the RightBottom of root 'oven' at the same place - 'fridge' was docked to the RightBottom of 'sink', the free end of that row",
@@ -1090,7 +1328,6 @@ describe('create-or-replace-groups validation', () => {
 });
 
 describe('create-or-replace-groups loading', () => {
-
   it('loads article picks only, with docking stripped to vector names', async () => {
     const api = createApi(planContextFixture);
     const result = await toolExecutors['create-or-replace-groups'](api, {
@@ -1155,7 +1392,7 @@ describe('create-or-replace-groups loading', () => {
         ],
       },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
     expect(result).toMatchObject({
       loaded: [{ id: 'loaded-1' }],
@@ -1195,7 +1432,7 @@ describe('create-or-replace-groups loading', () => {
         ],
       },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
   });
 
@@ -1209,16 +1446,37 @@ describe('create-or-replace-groups loading', () => {
     const api = createApi(
       { ...planContextFixture, articles: [articleFixture, cornerArticle] },
       {
-        loadExternalObjectGroupLayout: vi.fn(async () => [{ id: `loaded-${++loads}` }]),
+        loadExternalObjectGroupLayout: vi.fn(async () => [
+          { id: `loaded-${++loads}` },
+        ]),
         getExternalObjectGroups: vi.fn(async () =>
           loads === 1
-            ? [{ id: 'probe-group', roots: [{ id: 'p1', articleId: 'corner-1', dockInfos: [
-                { id: 'LeftBackBottom', start: [-261, 0, 0], end: [-261, 0, 661] },
-                { id: 'RightBackBottom', start: [-261, 0, 0], end: [900, 0, 0] },
-              ] }] }]
-            : [],
+            ? [
+                {
+                  id: 'probe-group',
+                  roots: [
+                    {
+                      id: 'p1',
+                      articleId: 'corner-1',
+                      dockInfos: [
+                        {
+                          id: 'LeftBackBottom',
+                          start: [-261, 0, 0],
+                          end: [-261, 0, 661],
+                        },
+                        {
+                          id: 'RightBackBottom',
+                          start: [-261, 0, 0],
+                          end: [900, 0, 0],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ]
+            : []
         ),
-      },
+      }
     );
     const lShape = [
       { id: 'r1', articleId: 'article-1' },
@@ -1268,12 +1526,11 @@ describe('create-or-replace-groups loading', () => {
         ],
       },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
   });
 
   describe('anchor probe', () => {
-
     const loadPayload = (api: any, call: number) =>
       api.extended.loadExternalObjectGroupLayout.mock.calls[call][0];
 
@@ -1319,23 +1576,46 @@ describe('create-or-replace-groups loading', () => {
     });
     const rightHandedArticle = { ...cornerArticle, articleId: 'UELTB90' };
     const placement = { posGroup: [4815, 0, -3765], posRotationY: 270 };
-    const leftHanded = { ...placement, rootId: 'c1', rootRelPos: [261, 0, 0], rootRelRotationY: 0 };
+    const leftHanded = {
+      ...placement,
+      rootId: 'c1',
+      rootRelPos: [261, 0, 0],
+      rootRelRotationY: 0,
+    };
     // the planner turns the group to 0 and its corner point lands at posGroup
-    const rightHanded = { ...placement, rootId: 'c1', rootRelPos: [0, 0, 1161], rootRelRotationY: 90 };
+    const rightHanded = {
+      ...placement,
+      rootId: 'c1',
+      rootRelPos: [0, 0, 1161],
+      rootRelRotationY: 90,
+    };
     const kitchen = (articleId: string, attributes?: object[]) => ({
       libraryId: 'lib-1',
       roots: [{ id: 'c1', articleId, ...(attributes && { attributes }) }],
       placement,
     });
     // every load before the probe's own read counts: the probe is the first load
-    const probingApi = (catalog: object[], probeGroups: (load: number) => object[], planGroups: object[] = []) => {
+    const probingApi = (
+      catalog: object[],
+      probeGroups: (load: number) => object[],
+      planGroups: object[] = []
+    ) => {
       let loads = 0;
       return createApi(
-        { ...planContextFixture, articles: [articleFixture, ...catalog], groups: [] },
         {
-          loadExternalObjectGroupLayout: vi.fn(async () => [{ id: `loaded-${++loads}` }]),
-          getExternalObjectGroups: vi.fn(async () => [...planGroups, ...probeGroups(loads)]),
+          ...planContextFixture,
+          articles: [articleFixture, ...catalog],
+          groups: [],
         },
+        {
+          loadExternalObjectGroupLayout: vi.fn(async () => [
+            { id: `loaded-${++loads}` },
+          ]),
+          getExternalObjectGroups: vi.fn(async () => [
+            ...planGroups,
+            ...probeGroups(loads),
+          ]),
+        }
       );
     };
 
@@ -1343,25 +1623,39 @@ describe('create-or-replace-groups loading', () => {
       // an empty plan: no calculated corner article anywhere
       let loads = 0;
       const api = createApi(
-        { ...planContextFixture, articles: [articleFixture, cornerArticle], groups: [] },
         {
-          loadExternalObjectGroupLayout: vi.fn(async () => [{ id: `loaded-${++loads}` }]),
-          getExternalObjectGroups: vi.fn(async () =>
-            loads === 1 ? [calculatedProbe('EUERTB90')] : [],
-          ),
+          ...planContextFixture,
+          articles: [articleFixture, cornerArticle],
+          groups: [],
         },
+        {
+          loadExternalObjectGroupLayout: vi.fn(async () => [
+            { id: `loaded-${++loads}` },
+          ]),
+          getExternalObjectGroups: vi.fn(async () =>
+            loads === 1 ? [calculatedProbe('EUERTB90')] : []
+          ),
+        }
       );
       const result = (await toolExecutors['create-or-replace-groups'](api, {
         posGroups: [kitchen('EUERTB90')],
       })) as Record<string, any>;
 
-      const { loadExternalObjectGroupLayout, removeExternalObject } = api.extended;
+      const { loadExternalObjectGroupLayout, removeExternalObject } =
+        api.extended;
       expect(loadExternalObjectGroupLayout).toHaveBeenCalledTimes(2);
       expect(loadExternalObjectGroupLayout).toHaveBeenNthCalledWith(
         1,
-        { posGroups: [{ libraryId: 'lib-1', roots: [{ id: 'anchor-probe', articleId: 'EUERTB90' }] }] },
+        {
+          posGroups: [
+            {
+              libraryId: 'lib-1',
+              roots: [{ id: 'anchor-probe', articleId: 'EUERTB90' }],
+            },
+          ],
+        },
         'posGroups',
-        { reason: 'adjusted' },
+        { reason: 'adjusted' }
       );
       expect(removeExternalObject).toHaveBeenCalledWith('probe-group');
       expect(loadExternalObjectGroupLayout).toHaveBeenNthCalledWith(
@@ -1376,7 +1670,7 @@ describe('create-or-replace-groups loading', () => {
           ],
         },
         'posGroups',
-        { reason: 'adjusted' },
+        { reason: 'adjusted' }
       );
       // the probe is removed before the group is loaded
       const order = [
@@ -1390,70 +1684,138 @@ describe('create-or-replace-groups loading', () => {
 
     it('turns a right-handed corner article by 90 degrees and puts its corner point into the corner', async () => {
       // "test the mcp" 17:48, prompt 04: UELTB90 at 270 stood behind the back wall
-      const api = probingApi([rightHandedArticle], (load) => (load === 1 ? [rightHandedProbe('UELTB90')] : []));
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('UELTB90')] });
-      expect(loadPayload(api, 1).posGroups[0].repositioningData).toEqual(rightHanded);
+      const api = probingApi([rightHandedArticle], (load) =>
+        load === 1 ? [rightHandedProbe('UELTB90')] : []
+      );
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [kitchen('UELTB90')],
+      });
+      expect(loadPayload(api, 1).posGroups[0].repositioningData).toEqual(
+        rightHanded
+      );
     });
 
     it('probes the anchor with its attributes and keeps one frame per attribute set', async () => {
       // "test the mcp" 16:04, prompt 04: UERTB90 with the carcase direction Right
       const right = [{ id: 'mod_CarcaseDirection', value: 'Right' }];
       const api = probingApi([otherCornerArticle], (load) =>
-        load === 1 ? [rightHandedProbe('UERTB90')] : load === 3 ? [calculatedProbe('UERTB90')] : [],
+        load === 1
+          ? [rightHandedProbe('UERTB90')]
+          : load === 3
+            ? [calculatedProbe('UERTB90')]
+            : []
       );
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('UERTB90', right)] });
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('UERTB90')] });
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('UERTB90', right)] });
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [kitchen('UERTB90', right)],
+      });
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [kitchen('UERTB90')],
+      });
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [kitchen('UERTB90', right)],
+      });
 
       expect(loadPayload(api, 0)).toEqual({
-        posGroups: [{ libraryId: 'lib-1', roots: [{ id: 'anchor-probe', articleId: 'UERTB90', attributes: right }] }],
+        posGroups: [
+          {
+            libraryId: 'lib-1',
+            roots: [
+              { id: 'anchor-probe', articleId: 'UERTB90', attributes: right },
+            ],
+          },
+        ],
       });
-      expect(loadPayload(api, 1).posGroups[0].repositioningData).toEqual(rightHanded);
+      expect(loadPayload(api, 1).posGroups[0].repositioningData).toEqual(
+        rightHanded
+      );
       expect(loadPayload(api, 2)).toEqual({
-        posGroups: [{ libraryId: 'lib-1', roots: [{ id: 'anchor-probe', articleId: 'UERTB90' }] }],
+        posGroups: [
+          {
+            libraryId: 'lib-1',
+            roots: [{ id: 'anchor-probe', articleId: 'UERTB90' }],
+          },
+        ],
       });
-      expect(loadPayload(api, 3).posGroups[0].repositioningData).toEqual(leftHanded);
+      expect(loadPayload(api, 3).posGroups[0].repositioningData).toEqual(
+        leftHanded
+      );
       // the third call reuses the frame of the first: no probe
-      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(5);
-      expect(loadPayload(api, 4).posGroups[0].repositioningData).toEqual(rightHanded);
+      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(
+        5
+      );
+      expect(loadPayload(api, 4).posGroups[0].repositioningData).toEqual(
+        rightHanded
+      );
     });
 
     it('probes another article of the same module again', async () => {
       const api = probingApi([cornerArticle, rightHandedArticle], (load) =>
-        load === 1 ? [calculatedProbe('EUERTB90')] : load === 3 ? [rightHandedProbe('UELTB90')] : [],
+        load === 1
+          ? [calculatedProbe('EUERTB90')]
+          : load === 3
+            ? [rightHandedProbe('UELTB90')]
+            : []
       );
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] });
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('UELTB90')] });
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [kitchen('EUERTB90')],
+      });
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [kitchen('UELTB90')],
+      });
 
       expect(api.extended.removeExternalObject).toHaveBeenCalledTimes(2);
-      expect(loadPayload(api, 1).posGroups[0].repositioningData).toEqual(leftHanded);
-      expect(loadPayload(api, 3).posGroups[0].repositioningData).toEqual(rightHanded);
+      expect(loadPayload(api, 1).posGroups[0].repositioningData).toEqual(
+        leftHanded
+      );
+      expect(loadPayload(api, 3).posGroups[0].repositioningData).toEqual(
+        rightHanded
+      );
     });
 
     it('probes although the plan has a calculated root of the same corner article', async () => {
       // its attributes may differ from the anchor's; the probe keeps the plan's groups
       const inPlan = { ...calculatedProbe('EUERTB90'), id: 'kitchen-1' };
-      const api = probingApi([cornerArticle], (load) => (load === 1 ? [calculatedProbe('EUERTB90')] : []), [inPlan]);
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] });
+      const api = probingApi(
+        [cornerArticle],
+        (load) => (load === 1 ? [calculatedProbe('EUERTB90')] : []),
+        [inPlan]
+      );
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [kitchen('EUERTB90')],
+      });
 
-      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(2);
+      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(
+        2
+      );
       expect(api.extended.removeExternalObject).toHaveBeenCalledTimes(1);
-      expect(api.extended.removeExternalObject).toHaveBeenCalledWith('probe-group');
+      expect(api.extended.removeExternalObject).toHaveBeenCalledWith(
+        'probe-group'
+      );
     });
 
     it('loads the group by the origin of its anchor and says so when the probe yields no calculated group', async () => {
       const api = createApi(
-        { ...planContextFixture, articles: [articleFixture, cornerArticle], groups: [] },
-        { getExternalObjectGroups: vi.fn(async () => []) },
+        {
+          ...planContextFixture,
+          articles: [articleFixture, cornerArticle],
+          groups: [],
+        },
+        { getExternalObjectGroups: vi.fn(async () => []) }
       );
       const result = (await toolExecutors['create-or-replace-groups'](api, {
         posGroups: [kitchen('EUERTB90'), { roots: [pick()] }],
       })) as Record<string, any>;
       // the probe, then both groups; the probe left nothing behind
-      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(2);
+      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(
+        2
+      );
       expect(api.extended.removeExternalObject).not.toHaveBeenCalled();
       expect(loadPayload(api, 1).posGroups).toEqual([
-        { libraryId: 'lib-1', roots: [{ id: 'c1', articleId: 'EUERTB90' }], repositioningData: { ...placement, rootId: 'c1' } },
+        {
+          libraryId: 'lib-1',
+          roots: [{ id: 'c1', articleId: 'EUERTB90' }],
+          repositioningData: { ...placement, rootId: 'c1' },
+        },
         { roots: [pick()] },
       ]);
       expect(result.corrections).toEqual([
@@ -1464,25 +1826,46 @@ describe('create-or-replace-groups loading', () => {
     });
 
     it('removes every group the probe load added, whatever its roots are called', async () => {
-      const inPlan = { id: 'kitchen-1', roots: [{ id: 'k1', articleId: 'article-1' }] };
+      const inPlan = {
+        id: 'kitchen-1',
+        roots: [{ id: 'k1', articleId: 'article-1' }],
+      };
       let loads = 0;
       const api = createApi(
-        { ...planContextFixture, articles: [articleFixture, cornerArticle], groups: [] },
         {
-          loadExternalObjectGroupLayout: vi.fn(async () => [{ id: `loaded-${++loads}` }]),
+          ...planContextFixture,
+          articles: [articleFixture, cornerArticle],
+          groups: [],
+        },
+        {
+          loadExternalObjectGroupLayout: vi.fn(async () => [
+            { id: `loaded-${++loads}` },
+          ]),
           getExternalObjectGroups: vi.fn(async () =>
             loads === 1
-              ? [inPlan, { ...calculatedProbe('regenerated-article-id'), id: 'probe-group' }]
-              : [inPlan],
+              ? [
+                  inPlan,
+                  {
+                    ...calculatedProbe('regenerated-article-id'),
+                    id: 'probe-group',
+                  },
+                ]
+              : [inPlan]
           ),
-        },
+        }
       );
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] });
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [kitchen('EUERTB90')],
+      });
 
       expect(api.extended.removeExternalObject).toHaveBeenCalledTimes(1);
-      expect(api.extended.removeExternalObject).toHaveBeenCalledWith('probe-group');
+      expect(api.extended.removeExternalObject).toHaveBeenCalledWith(
+        'probe-group'
+      );
       // the frame comes from the probe's roots all the same
-      expect(loadPayload(api, 1).posGroups[0].repositioningData).toEqual(leftHanded);
+      expect(loadPayload(api, 1).posGroups[0].repositioningData).toEqual(
+        leftHanded
+      );
     });
 
     it.each([
@@ -1493,54 +1876,109 @@ describe('create-or-replace-groups loading', () => {
           { id: 'RightBackBottom', start: [0, 0, 0], end: [900, 0, 0] },
         ],
       ],
-      ['it has no corner vectors', [{ id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, 600] }]],
-    ])('probes a corner article only once when %s and adds no offset', async (_case, dockInfos) => {
-      let loads = 0;
-      const api = createApi(
-        { ...planContextFixture, articles: [articleFixture, cornerArticle], groups: [] },
-        {
-          loadExternalObjectGroupLayout: vi.fn(async () => [{ id: `loaded-${++loads}` }]),
-          getExternalObjectGroups: vi.fn(async () =>
-            loads === 1
-              ? [{ id: 'probe-group', roots: [{ id: 'p1', articleId: 'EUERTB90', dockInfos }] }]
-              : [],
-          ),
-        },
-      );
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] });
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] });
+      [
+        'it has no corner vectors',
+        [{ id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, 600] }],
+      ],
+    ])(
+      'probes a corner article only once when %s and adds no offset',
+      async (_case, dockInfos) => {
+        let loads = 0;
+        const api = createApi(
+          {
+            ...planContextFixture,
+            articles: [articleFixture, cornerArticle],
+            groups: [],
+          },
+          {
+            loadExternalObjectGroupLayout: vi.fn(async () => [
+              { id: `loaded-${++loads}` },
+            ]),
+            getExternalObjectGroups: vi.fn(async () =>
+              loads === 1
+                ? [
+                    {
+                      id: 'probe-group',
+                      roots: [{ id: 'p1', articleId: 'EUERTB90', dockInfos }],
+                    },
+                  ]
+                : []
+            ),
+          }
+        );
+        await toolExecutors['create-or-replace-groups'](api, {
+          posGroups: [kitchen('EUERTB90')],
+        });
+        await toolExecutors['create-or-replace-groups'](api, {
+          posGroups: [kitchen('EUERTB90')],
+        });
 
-      expect(api.extended.removeExternalObject).toHaveBeenCalledTimes(1);
-      // probe + two real loads
-      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(3);
-      for (const call of [1, 2]) {
-        expect(loadPayload(api, call).posGroups[0].repositioningData.posGroup).toEqual([
-          4815, 0, -3765,
-        ]);
+        expect(api.extended.removeExternalObject).toHaveBeenCalledTimes(1);
+        // probe + two real loads
+        expect(
+          api.extended.loadExternalObjectGroupLayout
+        ).toHaveBeenCalledTimes(3);
+        for (const call of [1, 2]) {
+          expect(
+            loadPayload(api, call).posGroups[0].repositioningData.posGroup
+          ).toEqual([4815, 0, -3765]);
+        }
       }
-    });
+    );
 
     it('probes although the catalog has a corner point - it tells neither the hand nor the attributes', async () => {
-      const api = probingApi([{ ...cornerArticle, cornerPoint: [0, 0, 0] }], (load) =>
-        load === 1 ? [calculatedProbe('EUERTB90')] : [],
+      const api = probingApi(
+        [{ ...cornerArticle, cornerPoint: [0, 0, 0] }],
+        (load) => (load === 1 ? [calculatedProbe('EUERTB90')] : [])
       );
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('EUERTB90')] });
-      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(2);
-      expect(loadPayload(api, 1).posGroups[0].repositioningData).toEqual(leftHanded);
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [kitchen('EUERTB90')],
+      });
+      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(
+        2
+      );
+      expect(loadPayload(api, 1).posGroups[0].repositioningData).toEqual(
+        leftHanded
+      );
     });
 
     it('places a range hood by its left edge, not by its centre', async () => {
       // ps_qouy1f7diacd5ogftqoumxrpdkfu5bb: the hood's centre stood at posGroup
-      const hood = { ...articleFixture, articleId: 'DU', category: 'Kitchen | Appliances' };
+      const hood = {
+        ...articleFixture,
+        articleId: 'DU',
+        category: 'Kitchen | Appliances',
+      };
       const api = probingApi([hood], (load) =>
         load === 1
-          ? [{ id: 'probe-group', roots: [{ id: 'p1', articleId: 'DU', dockInfos: [
-              { id: 'LeftBottom', start: [-299, 0, 0], end: [-299, 0, 501] },
-              { id: 'RightBottom', start: [299, 0, 0], end: [299, 0, 501] },
-            ] }] }]
-          : [],
+          ? [
+              {
+                id: 'probe-group',
+                roots: [
+                  {
+                    id: 'p1',
+                    articleId: 'DU',
+                    dockInfos: [
+                      {
+                        id: 'LeftBottom',
+                        start: [-299, 0, 0],
+                        end: [-299, 0, 501],
+                      },
+                      {
+                        id: 'RightBottom',
+                        start: [299, 0, 0],
+                        end: [299, 0, 501],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ]
+          : []
       );
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [kitchen('DU')] });
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [kitchen('DU')],
+      });
       expect(loadPayload(api, 1).posGroups[0].repositioningData).toEqual({
         ...placement,
         rootId: 'c1',
@@ -1552,26 +1990,41 @@ describe('create-or-replace-groups loading', () => {
     it('probes a cabinet anchor once and adds nothing for its frame', async () => {
       const api = createApi(planContextFixture);
       const row = { roots: [pick()], placement };
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [row] });
-      await toolExecutors['create-or-replace-groups'](api, { posGroups: [structuredClone(row)] });
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [row],
+      });
+      await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [structuredClone(row)],
+      });
       // probe + two real loads
-      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(3);
-      expect(loadPayload(api, 0).posGroups[0].roots).toEqual([{ id: 'anchor-probe', articleId: 'article-1' }]);
-      expect(api.extended.removeExternalObject).toHaveBeenCalledWith('probe-group');
+      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(
+        3
+      );
+      expect(loadPayload(api, 0).posGroups[0].roots).toEqual([
+        { id: 'anchor-probe', articleId: 'article-1' },
+      ]);
+      expect(api.extended.removeExternalObject).toHaveBeenCalledWith(
+        'probe-group'
+      );
       for (const call of [1, 2]) {
-        expect(loadPayload(api, call).posGroups[0].repositioningData).toEqual({ ...placement, rootId: 'u1' });
+        expect(loadPayload(api, call).posGroups[0].repositioningData).toEqual({
+          ...placement,
+          rootId: 'u1',
+        });
       }
     });
   });
 
   it('does not probe a group without placement', async () => {
     const api = createApi(planContextFixture);
-    await toolExecutors['create-or-replace-groups'](api, { posGroups: [{ roots: [pick()] }] });
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [{ roots: [pick()] }],
+    });
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
       { posGroups: [{ roots: [pick()] }] },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
   });
 
@@ -1582,7 +2035,14 @@ describe('create-or-replace-groups loading', () => {
       posGroups: [
         makeShapedGroup({
           logMessages: [],
-          roots: [makeShapedRoot({ articleName: 'Tall unit', desc: 'A tall unit', category: 'storage', isGenerated: false })],
+          roots: [
+            makeShapedRoot({
+              articleName: 'Tall unit',
+              desc: 'A tall unit',
+              category: 'storage',
+              isGenerated: false,
+            }),
+          ],
         }),
       ],
     });
@@ -1607,7 +2067,7 @@ describe('create-or-replace-groups loading', () => {
         ],
       },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
   });
 
@@ -1634,7 +2094,7 @@ describe('create-or-replace-groups loading', () => {
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
       { posGroups: [{ libraryId: 'lib-1', roots }] },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
   });
 
@@ -1673,7 +2133,7 @@ describe('create-or-replace-groups loading', () => {
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
       { posGroups: [{ id: 'g1', libraryId: 'lib-1', roots }] },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
   });
 
@@ -1690,7 +2150,9 @@ describe('create-or-replace-groups loading', () => {
     });
     const { getExternalObjectPlanContext } = api.extended;
     expect(getExternalObjectPlanContext).toHaveBeenCalledTimes(3);
-    expect(getExternalObjectPlanContext).toHaveBeenNthCalledWith(1, ['articles']);
+    expect(getExternalObjectPlanContext).toHaveBeenNthCalledWith(1, [
+      'articles',
+    ]);
     expect(getExternalObjectPlanContext).toHaveBeenNthCalledWith(2, ['groups']);
     expect(getExternalObjectPlanContext).toHaveBeenNthCalledWith(3, ['groups']);
   });
@@ -1715,7 +2177,9 @@ describe('create-or-replace-groups loading', () => {
     })) as Record<string, any>;
     expect(result.hint).toMatch(/Groups g2 are not positioned/);
     expect(result.hint).toMatch(/placement/);
-    expect(result.hint).toMatch(/place-group moves it against a wall or into a room corner/);
+    expect(result.hint).toMatch(
+      /place-group moves it against a wall or into a room corner/
+    );
     expect(result.hint).not.toMatch(/repositioningData/);
   });
 
@@ -1731,10 +2195,14 @@ describe('create-or-replace-groups loading', () => {
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
       { posGroups: [{ roots: [pick()] }] },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
     expect(result.notLoaded).toEqual([
-      { index: 0, id: 'broken', errors: ['posGroups[0]: needs a non-empty roots array'] },
+      {
+        index: 0,
+        id: 'broken',
+        errors: ['posGroups[0]: needs a non-empty roots array'],
+      },
       {
         index: 2,
         errors: [
@@ -1759,8 +2227,11 @@ describe('create-or-replace-groups loading', () => {
       ownDockingVector: string,
       id: string,
       dockingVector: string,
-      offset?: number[],
-    ) => ({ ownDockingVector, dockedRoots: [{ id, dockingVector, ...(offset && { offset }) }] });
+      offset?: number[]
+    ) => ({
+      ownDockingVector,
+      dockedRoots: [{ id, dockingVector, ...(offset && { offset }) }],
+    });
     const api = createApi(planContextFixture);
     await toolExecutors['create-or-replace-groups'](api, {
       posGroups: [
@@ -1815,9 +2286,21 @@ describe('create-or-replace-groups loading', () => {
                   {
                     ownDockingVector: 'RightBottom',
                     dockedRoots: [
-                      { id: 'back', dockingVector: 'LeftBottom', mode: 'StartStart' },
-                      { id: 'front', dockingVector: 'LeftBottom', mode: 'EndEnd' },
-                      { id: 'gap', dockingVector: 'LeftBottom', offset: [600, 0, 0] },
+                      {
+                        id: 'back',
+                        dockingVector: 'LeftBottom',
+                        mode: 'StartStart',
+                      },
+                      {
+                        id: 'front',
+                        dockingVector: 'LeftBottom',
+                        mode: 'EndEnd',
+                      },
+                      {
+                        id: 'gap',
+                        dockingVector: 'LeftBottom',
+                        offset: [600, 0, 0],
+                      },
                     ],
                   },
                 ],
@@ -1835,7 +2318,11 @@ describe('create-or-replace-groups loading', () => {
 });
 
 describe('create-or-replace-groups relations', () => {
-  const kitchenArticle = (articleId: string, category: string, height: number) => ({
+  const kitchenArticle = (
+    articleId: string,
+    category: string,
+    height: number
+  ) => ({
     articleId,
     category,
     libraryId: 'lib-1',
@@ -1864,11 +2351,17 @@ describe('create-or-replace-groups relations', () => {
     const result = (await toolExecutors['create-or-replace-groups'](api, {
       posGroups,
     })) as Record<string, any>;
-    const calls = api.extended.loadExternalObjectGroupLayout.mock.calls as unknown as any[][];
+    const calls = api.extended.loadExternalObjectGroupLayout.mock
+      .calls as unknown as any[][];
     return { result, loadedGroup: calls[calls.length - 1][0].posGroups[0] };
   };
   const dockingOf = (group: any) =>
-    Object.fromEntries(group.roots.map((root: any) => [root.id, root.contextData?.dockedRoots ?? []]));
+    Object.fromEntries(
+      group.roots.map((root: any) => [
+        root.id,
+        root.contextData?.dockedRoots ?? [],
+      ])
+    );
   const entry = (id: string, dockingVector: string) => ({
     id,
     dockingVector,
@@ -1890,14 +2383,24 @@ describe('create-or-replace-groups relations', () => {
     ]);
     expect(dockingOf(loadedGroup)).toEqual({
       t1: [
-        { ownDockingVector: 'RightBottom', dockedRoots: [entry('b1', 'LeftBottom')] },
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('b1', 'LeftBottom')],
+        },
         { ownDockingVector: 'RightTop', dockedRoots: [entry('w1', 'LeftTop')] },
       ],
       b1: [],
-      w1: [{ ownDockingVector: 'RightBottom', dockedRoots: [entry('w2', 'LeftBottom')] }],
+      w1: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('w2', 'LeftBottom')],
+        },
+      ],
       w2: [],
     });
-    expect(JSON.stringify(loadedGroup)).not.toMatch(/rightOf|leftOf|onTop|"above"|behind/);
+    expect(JSON.stringify(loadedGroup)).not.toMatch(
+      /rightOf|leftOf|onTop|"above"|behind/
+    );
     expect(result.corrections).toBeUndefined();
   });
 
@@ -1911,16 +2414,28 @@ describe('create-or-replace-groups relations', () => {
         ],
       },
     ]);
-    expect(result.corrections).toEqual(["posGroups[0]: root 'b2' names no neighbour - it was put rightOf 'b1'"]);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: root 'b2' names no neighbour - it was put rightOf 'b1'",
+    ]);
     expect(dockingOf(loadedGroup).b1).toHaveLength(2);
     expect(dockingOf(loadedGroup).b1).toEqual(
       expect.arrayContaining([
-        { ownDockingVector: 'RightBottom', dockedRoots: [entry('b2', 'LeftBottom')] },
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('b2', 'LeftBottom')],
+        },
         {
           ownDockingVector: 'LeftTop',
-          dockedRoots: [{ id: 'w1', dockingVector: 'LeftBottom', mode: 'StartStart', offset: [0, 700, 0] }],
+          dockedRoots: [
+            {
+              id: 'w1',
+              dockingVector: 'LeftBottom',
+              mode: 'StartStart',
+              offset: [0, 700, 0],
+            },
+          ],
         },
-      ]),
+      ])
     );
   });
 
@@ -1951,7 +2466,10 @@ describe('create-or-replace-groups relations', () => {
       },
     ]);
     expect(dockingOf(loadedGroup).b2).toEqual([
-      { ownDockingVector: 'RightBottom', dockedRoots: [entry('b3', 'LeftBottom')] },
+      {
+        ownDockingVector: 'RightBottom',
+        dockedRoots: [entry('b3', 'LeftBottom')],
+      },
     ]);
     expect(result.corrections).toEqual([
       "posGroups[0]: roots 'b2', 'b3' were docked to the RightBottom of root 'b1' at the same place - 'b3' was docked to the RightBottom of 'b2', the free end of that row",
@@ -1965,14 +2483,24 @@ describe('create-or-replace-groups relations', () => {
         id: 'base',
         articleId: 'article-1',
         contextData: {
-          dockedRoots: [{ ownDockingVector: 'LeftTop', dockedRoots: [entry('top1', 'LeftBottom')] }],
+          dockedRoots: [
+            {
+              ownDockingVector: 'LeftTop',
+              dockedRoots: [entry('top1', 'LeftBottom')],
+            },
+          ],
         },
       },
       {
         id: 'top1',
         articleId: 'article-1',
         contextData: {
-          dockedRoots: [{ ownDockingVector: 'LeftBottom', dockedRoots: [entry('top2', 'RightBottom')] }],
+          dockedRoots: [
+            {
+              ownDockingVector: 'LeftBottom',
+              dockedRoots: [entry('top2', 'RightBottom')],
+            },
+          ],
         },
       },
       { id: 'top2', articleId: 'article-1' },
@@ -1981,7 +2509,8 @@ describe('create-or-replace-groups relations', () => {
     const result = (await toolExecutors['create-or-replace-groups'](api, {
       posGroups: [{ roots: structuredClone(roots) }],
     })) as Record<string, any>;
-    const calls = api.extended.loadExternalObjectGroupLayout.mock.calls as unknown as any[][];
+    const calls = api.extended.loadExternalObjectGroupLayout.mock
+      .calls as unknown as any[][];
     expect(calls[calls.length - 1][0].posGroups[0].roots).toEqual(roots);
     expect(result.corrections).toBeUndefined();
   });
@@ -2024,32 +2553,48 @@ describe('place-group', () => {
 
   // The planner moves a reloaded raw group so that its repositioning root
   // lands at posGroup (G = T(posGroup, posRotationY) · R_root⁻¹).
-  const repositioned = (group: any, { posGroup, posRotationY, rootId }: any) => {
-    const anchor = group.roots.find((root: any) => root.id === rootId) ?? { articlePos: [0, 0, 0], rotationY: 0 };
+  const repositioned = (
+    group: any,
+    { posGroup, posRotationY, rootId }: any
+  ) => {
+    const anchor = group.roots.find((root: any) => root.id === rootId) ?? {
+      articlePos: [0, 0, 0],
+      rotationY: 0,
+    };
     const rotationY = posRotationY - (anchor.rotationY ?? 0);
     const radians = (rotationY * Math.PI) / 180;
     const [x, y, z] = anchor.articlePos ?? [0, 0, 0];
-    const offset = [x * Math.cos(radians) + z * Math.sin(radians), y, -x * Math.sin(radians) + z * Math.cos(radians)];
-    return { ...group, pos: posGroup.map((value: number, axis: number) => value - offset[axis]), rotationY };
+    const offset = [
+      x * Math.cos(radians) + z * Math.sin(radians),
+      y,
+      -x * Math.sin(radians) + z * Math.cos(radians),
+    ];
+    return {
+      ...group,
+      pos: posGroup.map((value: number, axis: number) => value - offset[axis]),
+      rotationY,
+    };
   };
 
   const createPlaceApi = (
     shapedGroups: any[],
     rawGroups: any[],
-    afterShapedGroups: any[] = shapedGroups,
+    afterShapedGroups: any[] = shapedGroups
   ) => {
     let currentRawGroups = rawGroups;
     return createApi(undefined, {
       getExternalObjectPlanContext: vi.fn(async (sections: string[]) =>
         sections.includes('rooms')
           ? { rooms: { rooms: [room] }, groups: shapedGroups }
-          : { groups: afterShapedGroups },
+          : { groups: afterShapedGroups }
       ),
       getExternalObjectGroups: vi.fn(async () => currentRawGroups),
       loadExternalObjectGroupLayout: vi.fn(async (layout: any) => {
         const { id, repositioningData } = layout.posGroups[0];
         currentRawGroups = currentRawGroups.map((group) =>
-          group.id === id && repositioningData ? repositioned(group, repositioningData) : group,
+          group.id === id && repositioningData
+            ? repositioned(group, repositioningData)
+            : group
         );
         return [{ id: 'g1' }];
       }),
@@ -2066,7 +2611,7 @@ describe('place-group', () => {
   it('rejects an unknown group id', async () => {
     const api = createPlaceApi([makeShapedGroup({ id: 'g7' })], []);
     await expect(
-      toolExecutors['place-group'](api, { groupId: 'nope', wall: 'right' }),
+      toolExecutors['place-group'](api, { groupId: 'nope', wall: 'right' })
     ).rejects.toThrow(/Group 'nope' not found. Groups in the plan: g7/);
     expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
   });
@@ -2074,7 +2619,7 @@ describe('place-group', () => {
   it('accepts a unique id prefix and a wall index', async () => {
     const api = createPlaceApi(
       [makeShapedGroup({ id: 'group-abc' })],
-      [makeGroup({ id: 'group-abc' })],
+      [makeGroup({ id: 'group-abc' })]
     );
     await toolExecutors['place-group'](api, { groupId: 'group-a', wall: 1 });
     const reloaded = reloadedGroup(api);
@@ -2125,7 +2670,7 @@ describe('place-group', () => {
         ],
       },
       'posGroups',
-      { reason: 'adjusted' },
+      { reason: 'adjusted' }
     );
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(1);
     expect(result).toEqual({
@@ -2175,7 +2720,9 @@ describe('place-group', () => {
       groupId: 'g1',
       wall: 'right',
     })) as Record<string, any>;
-    expect(reloadedGroup(api).repositioningData.posGroup).toEqual([4000, 0, -2700]);
+    expect(reloadedGroup(api).repositioningData.posGroup).toEqual([
+      4000, 0, -2700,
+    ]);
     expect(result.corrections).toEqual([
       "Group 'g1' would overlap group 'g2' at the right wall - it was moved 800 mm along the wall to stand beside it. If the units belong together, join the groups with merge-groups",
     ]);
@@ -2190,18 +2737,24 @@ describe('place-group', () => {
       groupId: 'g1',
       wall: 'right',
     })) as Record<string, any>;
-    expect(reloadedGroup(api).repositioningData.posGroup).toEqual([4000, 0, -1900]);
+    expect(reloadedGroup(api).repositioningData.posGroup).toEqual([
+      4000, 0, -1900,
+    ]);
     expect(result).not.toHaveProperty('corrections');
   });
 
   it('does not count wall units above another group as an overlap', async () => {
     const wallUnits = makeGroup({
       pos: [0, 1400, 0],
-      roots: [tallRoot({ attributes: [
-        { id: 'b', value: 800, isInput: true },
-        { id: 't', value: 350, isInput: true },
-        { id: 'h', value: 700, isInput: true },
-      ] })],
+      roots: [
+        tallRoot({
+          attributes: [
+            { id: 'b', value: 800, isInput: true },
+            { id: 't', value: 350, isInput: true },
+            { id: 'h', value: 700, isInput: true },
+          ],
+        }),
+      ],
     });
     const baseUnits = neighbourOnTheRightWall([4000, 0, -1900]);
     baseUnits.roots[0].attributes[2] = { id: 'h', value: 900, isInput: true };
@@ -2210,7 +2763,9 @@ describe('place-group', () => {
       groupId: 'g1',
       wall: 'right',
     })) as Record<string, any>;
-    expect(reloadedGroup(api).repositioningData.posGroup).toEqual([4000, 1400, -1900]);
+    expect(reloadedGroup(api).repositioningData.posGroup).toEqual([
+      4000, 1400, -1900,
+    ]);
     expect(result).not.toHaveProperty('corrections');
   });
 
@@ -2223,7 +2778,9 @@ describe('place-group', () => {
       groupId: 'g1',
       wall: 'right',
     })) as Record<string, any>;
-    expect(reloadedGroup(api).repositioningData.posGroup).toEqual([4000, 0, -1900]);
+    expect(reloadedGroup(api).repositioningData.posGroup).toEqual([
+      4000, 0, -1900,
+    ]);
     expect(result.corrections).toEqual([
       "Group 'g1' overlaps group 'g2' - there is no free position on the right wall for it, so it stands where it was asked to",
     ]);
@@ -2232,7 +2789,11 @@ describe('place-group', () => {
   it('puts a group with a corner article into the corner the alignment names', async () => {
     const api = createPlaceApi(
       [makeShapedGroup({ roots: [makeShapedRoot({ id: 'c1' })] })],
-      [makeGroup({ roots: [makeRoot({ id: 'c1', dockInfos: cornerDockInfos })] })],
+      [
+        makeGroup({
+          roots: [makeRoot({ id: 'c1', dockInfos: cornerDockInfos })],
+        }),
+      ]
     );
     const result = (await toolExecutors['place-group'](api, {
       groupId: 'g1',
@@ -2247,7 +2808,7 @@ describe('place-group', () => {
     });
     expect(result.placedIn).toBe('corner');
     expect(JSON.stringify(result)).not.toMatch(
-      /repositioningData|rootRelPos|cornerPoint/,
+      /repositioningData|rootRelPos|cornerPoint/
     );
   });
 
@@ -2266,14 +2827,15 @@ describe('place-group', () => {
             }),
           ],
         }),
-      ],
+      ]
     );
     await toolExecutors['place-group'](api, {
       groupId: 'g1',
       wall: 'right',
       alignment: 'top',
     });
-    const { posGroup, posRotationY, rootId } = reloadedGroup(api).repositioningData;
+    const { posGroup, posRotationY, rootId } =
+      reloadedGroup(api).repositioningData;
     expect(rootId).toBe('r1');
     expect(posRotationY).toBe(270);
     // the planner puts r1 at posGroup; c1's corner point lies at x -1161 in
@@ -2286,7 +2848,7 @@ describe('place-group', () => {
   it('keeps the height of a group of wall units', async () => {
     const api = createPlaceApi(
       [makeShapedGroup()],
-      [makeGroup({ pos: [0, 1400, 0] })],
+      [makeGroup({ pos: [0, 1400, 0] })]
     );
     await toolExecutors['place-group'](api, {
       groupId: 'g1',
@@ -2301,7 +2863,11 @@ describe('place-group', () => {
   it('reloads the article roots only and anchors the first of them', async () => {
     const api = createPlaceApi(
       [makeShapedGroup()],
-      [makeGroup({ roots: [makeRoot({ id: 'w1', isGenerated: true }), makeRoot()] })],
+      [
+        makeGroup({
+          roots: [makeRoot({ id: 'w1', isGenerated: true }), makeRoot()],
+        }),
+      ]
     );
     await toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' });
     const reloaded = reloadedGroup(api);
@@ -2314,7 +2880,7 @@ describe('place-group', () => {
     const place = (args: Record<string, unknown>) =>
       toolExecutors['place-group'](api, { groupId: 'g1', ...args });
     await expect(place({ wall: 'right', roomIndex: 1 })).rejects.toThrow(
-      /Room index 1 not found - the plan has 1 room\(s\)/,
+      /Room index 1 not found - the plan has 1 room\(s\)/
     );
     await expect(place({ wall: 7 })).rejects.toThrow(/Wall '7' not found/);
     expect(api.extended.getExternalObjectGroups).not.toHaveBeenCalled();
@@ -2328,7 +2894,9 @@ describe('place-group', () => {
       wall: 'right',
       alignment: 'right',
     })) as Record<string, any>;
-    expect(reloadedGroup(api).repositioningData.posGroup).toEqual([4000, 0, -1900]);
+    expect(reloadedGroup(api).repositioningData.posGroup).toEqual([
+      4000, 0, -1900,
+    ]);
     expect(result.corrections).toEqual([
       "The alignment 'right' runs parallel to the right wall - the group was centred on the wall instead",
     ]);
@@ -2348,7 +2916,7 @@ describe('place-group', () => {
   it('rejects a group the planner has not calculated', async () => {
     const api = createPlaceApi([makeShapedGroup()], []);
     await expect(
-      toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' }),
+      toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' })
     ).rejects.toThrow(/Group 'g1' has no calculated geometry to place/);
     expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
   });
@@ -2393,9 +2961,11 @@ describe('positions in the placement frame', () => {
   it('reports a group of get-plan-context by its back left corner, as a placement names it', async () => {
     const api = createApi(
       { ...planContextFixture, groups: [hoodGroup] },
-      { getExternalObjectGroups: vi.fn(async () => [rawHoodGroup]) },
+      { getExternalObjectGroups: vi.fn(async () => [rawHoodGroup]) }
     );
-    const result = (await toolExecutors['get-plan-context'](api, { include: ['groups'] })) as Record<string, any>;
+    const result = (await toolExecutors['get-plan-context'](api, {
+      include: ['groups'],
+    })) as Record<string, any>;
     expect(result.groups[0]).toEqual({ ...hoodGroup, position: atLeftEdge });
     // the planner's own group stays as it is
     expect(hoodGroup.position.pos).toEqual([2299, 0, -2000]);
@@ -2417,7 +2987,7 @@ describe('positions in the placement frame', () => {
           groups: [hoodGroup],
           removedGroupIds: [],
         })),
-      },
+      }
     );
     const created = (await toolExecutors['create-or-replace-groups'](api, {
       posGroups: [{ roots: [pick()] }],
@@ -2432,12 +3002,18 @@ describe('positions in the placement frame', () => {
   });
 
   it('leaves a group as the planner reports it when there is no calculated group or no position', async () => {
-    const unpositioned = { ...hoodGroup, id: 'replaced', position: { footprint: hoodGroup.position.footprint } };
+    const unpositioned = {
+      ...hoodGroup,
+      id: 'replaced',
+      position: { footprint: hoodGroup.position.footprint },
+    };
     const api = createApi(
       { ...planContextFixture, groups: [hoodGroup, unpositioned] },
-      { getExternalObjectGroups: vi.fn(async () => []) },
+      { getExternalObjectGroups: vi.fn(async () => []) }
     );
-    const result = (await toolExecutors['get-plan-context'](api, { include: ['groups'] })) as Record<string, any>;
+    const result = (await toolExecutors['get-plan-context'](api, {
+      include: ['groups'],
+    })) as Record<string, any>;
     expect(result.groups).toEqual([hoodGroup, unpositioned]);
   });
 });
@@ -2457,7 +3033,7 @@ describe('remaining tools', () => {
         getExternalObjectSnapshot: vi.fn(async () => ({
           orderData: { orderId: 'o1' },
         })),
-      },
+      }
     );
     await expect(toolExecutors['get-order-data'](api, {})).resolves.toEqual({
       orderId: 'o1',
@@ -2467,9 +3043,11 @@ describe('remaining tools', () => {
     });
     const emptyApi = createApi(
       {},
-      { getExternalObjectSnapshot: vi.fn(async () => null) },
+      { getExternalObjectSnapshot: vi.fn(async () => null) }
     );
-    await expect(toolExecutors['get-order-data'](emptyApi, {})).resolves.toBeNull();
+    await expect(
+      toolExecutors['get-order-data'](emptyApi, {})
+    ).resolves.toBeNull();
   });
 
   it('returns the plan images of the external object snapshot', async () => {
@@ -2480,7 +3058,7 @@ describe('remaining tools', () => {
           perspectiveImage: 'data:image/png;base64,AAA=',
           topImage: 'data:image/png;base64,BBB=',
         })),
-      },
+      }
     );
     await expect(toolExecutors['get-plan-images'](api, {})).resolves.toEqual({
       perspectiveImage: 'data:image/png;base64,AAA=',
@@ -2492,7 +3070,6 @@ describe('remaining tools', () => {
     });
   });
 });
-
 
 describe('group command tools', () => {
   const planWithGroups = {
@@ -2514,12 +3091,27 @@ describe('group command tools', () => {
     [
       'change-module-attribute',
       { rootModuleId: 'r1', attributeId: 'front', value: 'white' },
-      { rootModuleId: 'r1', moduleId: null, attributeId: 'front', value: 'white' },
+      {
+        rootModuleId: 'r1',
+        moduleId: null,
+        attributeId: 'front',
+        value: 'white',
+      },
     ],
     [
       'change-module-attribute',
-      { rootModuleId: 'r1', moduleId: 'sub-1', attributeId: 'front', value: 'white' },
-      { rootModuleId: 'r1', moduleId: 'sub-1', attributeId: 'front', value: 'white' },
+      {
+        rootModuleId: 'r1',
+        moduleId: 'sub-1',
+        attributeId: 'front',
+        value: 'white',
+      },
+      {
+        rootModuleId: 'r1',
+        moduleId: 'sub-1',
+        attributeId: 'front',
+        value: 'white',
+      },
     ],
     [
       'change-group-attribute',
@@ -2568,15 +3160,24 @@ describe('group command tools', () => {
     });
     expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
       tool,
-      payload,
+      payload
     );
   });
 
   it.each([
-    ['change-group-attribute', { groupId: 'kitchen', attributeId: 'front', value: 'white' }],
+    [
+      'change-group-attribute',
+      { groupId: 'kitchen', attributeId: 'front', value: 'white' },
+    ],
     ['delete-group', { groupId: 'hall-1' }],
-    ['merge-article-into-group', { groupId: 'kitchen', articleId: 'article-1', dockTo }],
-    ['exchange-root-module', { groupId: 'hall', rootModuleId: 'r1', articleId: 'article-1' }],
+    [
+      'merge-article-into-group',
+      { groupId: 'kitchen', articleId: 'article-1', dockTo },
+    ],
+    [
+      'exchange-root-module',
+      { groupId: 'hall', rootModuleId: 'r1', articleId: 'article-1' },
+    ],
     ['merge-groups', { targetGroupId: 'kitchen-1', groupIds: ['kitchen'] }],
   ])(
     '%s rejects an unknown or ambiguous group id with the groups in the plan',
@@ -2584,10 +3185,10 @@ describe('group command tools', () => {
       const api = createApi(planWithGroups);
 
       await expect(toolExecutors[tool](api, args)).rejects.toThrow(
-        /Group '\w+(-\d)?' not found\. Groups in the plan: kitchen-1, kitchen-2, island-1\./,
+        /Group '\w+(-\d)?' not found\. Groups in the plan: kitchen-1, kitchen-2, island-1\./
       );
       expect(api.extended.externalObjectGroupOperation).not.toHaveBeenCalled();
-    },
+    }
   );
 
   it.each(['merge-article-into-group', 'exchange-root-module'])(
@@ -2601,12 +3202,12 @@ describe('group command tools', () => {
           rootModuleId: 'r1',
           articleId: 'article-9',
           dockTo,
-        }),
+        })
       ).rejects.toThrow(
-        "articleId 'article-9' is not in the article catalog of library 'lib-1'. Valid article ids: article-1",
+        "articleId 'article-9' is not in the article catalog of library 'lib-1'. Valid article ids: article-1"
       );
       expect(api.extended.externalObjectGroupOperation).not.toHaveBeenCalled();
-    },
+    }
   );
 
   it.each(['merge-article-into-group', 'exchange-root-module'])(
@@ -2626,12 +3227,12 @@ describe('group command tools', () => {
           rootModuleId: 'r1',
           articleId: 'article-2',
           dockTo,
-        }),
+        })
       ).rejects.toThrow(
-        "articleId 'article-2' is not in the article catalog of library 'lib-1'. Valid article ids: article-1",
+        "articleId 'article-2' is not in the article catalog of library 'lib-1'. Valid article ids: article-1"
       );
       expect(api.extended.externalObjectGroupOperation).not.toHaveBeenCalled();
-    },
+    }
   );
 
   it.each(['merge-article-into-group', 'exchange-root-module'])(
@@ -2647,7 +3248,7 @@ describe('group command tools', () => {
       });
       expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
         tool,
-        expect.objectContaining({ articleId: 'article-1' }),
+        expect.objectContaining({ articleId: 'article-1' })
       );
       expect(result).toEqual({
         command: tool,
@@ -2655,7 +3256,7 @@ describe('group command tools', () => {
         removedGroupIds: [],
         corrections: [`${tool}: articleId 'Article-1' was read as 'article-1'`],
       });
-    },
+    }
   );
 
   describe('merge-article-into-group docking', () => {
@@ -2668,35 +3269,66 @@ describe('group command tools', () => {
           makeShapedRoot({
             id: 'r1',
             freeDockingVectors: ['LeftBottom'],
-            contextData: { dockedRoots: [{ ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'r2', dockingVector: 'LeftBottom' }] }] },
+            contextData: {
+              dockedRoots: [
+                {
+                  ownDockingVector: 'RightBottom',
+                  dockedRoots: [{ id: 'r2', dockingVector: 'LeftBottom' }],
+                },
+              ],
+            },
           }),
           makeShapedRoot({
             id: 'r2',
             freeDockingVectors: [],
-            contextData: { dockedRoots: [
-              { ownDockingVector: 'LeftBottom', dockedRoots: [{ id: 'r1', dockingVector: 'RightBottom' }] },
-              { ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'r3', dockingVector: 'LeftBottom' }] },
-            ] },
+            contextData: {
+              dockedRoots: [
+                {
+                  ownDockingVector: 'LeftBottom',
+                  dockedRoots: [{ id: 'r1', dockingVector: 'RightBottom' }],
+                },
+                {
+                  ownDockingVector: 'RightBottom',
+                  dockedRoots: [{ id: 'r3', dockingVector: 'LeftBottom' }],
+                },
+              ],
+            },
           }),
           makeShapedRoot({
             id: 'r3',
             freeDockingVectors: r3Docking.length > 0 ? [] : ['RightBottom'],
-            contextData: { dockedRoots: [
-              { ownDockingVector: 'LeftBottom', dockedRoots: [{ id: 'r2', dockingVector: 'RightBottom' }] },
-              ...r3Docking,
-            ] },
+            contextData: {
+              dockedRoots: [
+                {
+                  ownDockingVector: 'LeftBottom',
+                  dockedRoots: [{ id: 'r2', dockingVector: 'RightBottom' }],
+                },
+                ...r3Docking,
+              ],
+            },
           }),
         ],
       });
 
-    const merge = async (group: unknown, dockTo: Record<string, unknown>, articles = [articleFixture]) => {
-      const api = createApi({ ...planContextFixture, articles, groups: [group] });
+    const merge = async (
+      group: unknown,
+      dockTo: Record<string, unknown>,
+      articles = [articleFixture]
+    ) => {
+      const api = createApi({
+        ...planContextFixture,
+        articles,
+        groups: [group],
+      });
       const result = await toolExecutors['merge-article-into-group'](api, {
         groupId: 'kitchen-1',
         articleId: 'article-1',
         dockTo,
       });
-      const [, payload] = (api.extended.externalObjectGroupOperation.mock.calls as unknown as any[][])[0];
+      const [, payload] = (
+        api.extended.externalObjectGroupOperation.mock
+          .calls as unknown as any[][]
+      )[0];
       return { result: result as Record<string, any>, dockTo: payload.dockTo };
     };
 
@@ -2710,7 +3342,12 @@ describe('group command tools', () => {
 
     it('forwards a side the planner reports as taken although the row ends there', async () => {
       // r3 still names a deleted unit on its RightBottom
-      const stale = row([{ ownDockingVector: 'RightBottom', dockedRoots: [{ id: 'deleted', dockingVector: 'LeftBottom' }] }]);
+      const stale = row([
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [{ id: 'deleted', dockingVector: 'LeftBottom' }],
+        },
+      ]);
       const { result, dockTo: sent } = await merge(stale, dockTo);
       expect(sent).toEqual(dockTo);
       expect(result).not.toHaveProperty('corrections');
@@ -2719,13 +3356,18 @@ describe('group command tools', () => {
     it("uses the partner of the root's vector when the article lacks the named one", async () => {
       const article = {
         ...articleFixture,
-        rootModules: [{ module: { id: 'module-1' }, dockingVectors: ['LeftBottom', 'RightBottom'] }],
+        rootModules: [
+          {
+            module: { id: 'module-1' },
+            dockingVectors: ['LeftBottom', 'RightBottom'],
+          },
+        ],
       };
       const group = makeShapedGroup({ id: 'kitchen-1' });
       const { result, dockTo: sent } = await merge(
         group,
         { ...dockTo, dockingVector: 'LeftTop' },
-        [article],
+        [article]
       );
       expect(sent).toEqual(dockTo);
       expect(result.corrections).toEqual([
@@ -2743,7 +3385,7 @@ describe('group command tools', () => {
     });
     expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
       'change-group-attribute',
-      { groupId: 'kitchen-1', attributeId: 'b', value: '900' },
+      { groupId: 'kitchen-1', attributeId: 'b', value: '900' }
     );
   });
 
@@ -2751,7 +3393,7 @@ describe('group command tools', () => {
     const api = createApi(planWithGroups, {
       externalObjectGroupOperation: vi.fn(async () => {
         throw new Error(
-          "Root module 'r1' has no free docking vector 'RightBottom' - its free docking vectors: LeftBottom.",
+          "Root module 'r1' has no free docking vector 'RightBottom' - its free docking vectors: LeftBottom."
         );
       }),
     });
@@ -2761,8 +3403,10 @@ describe('group command tools', () => {
         groupId: 'kitchen-1',
         articleId: 'article-1',
         dockTo,
-      }),
-    ).rejects.toThrow("Root module 'r1' has no free docking vector 'RightBottom'");
+      })
+    ).rejects.toThrow(
+      "Root module 'r1' has no free docking vector 'RightBottom'"
+    );
   });
 });
 
@@ -2770,15 +3414,17 @@ describe('plan changes', () => {
   // a planner command that takes a moment and records when it runs
   const recordingApi = (events: string[], failing: string[] = []) =>
     createApi(planContextFixture, {
-      externalObjectGroupOperation: vi.fn(async (command: string, payload: any) => {
-        events.push(`start ${payload.rootModuleId}`);
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        events.push(`end ${payload.rootModuleId}`);
-        if (failing.includes(payload.rootModuleId)) {
-          throw new Error(`refused ${payload.rootModuleId}`);
+      externalObjectGroupOperation: vi.fn(
+        async (command: string, payload: any) => {
+          events.push(`start ${payload.rootModuleId}`);
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          events.push(`end ${payload.rootModuleId}`);
+          if (failing.includes(payload.rootModuleId)) {
+            throw new Error(`refused ${payload.rootModuleId}`);
+          }
+          return { command, groups: [], removedGroupIds: [] };
         }
-        return { command, groups: [], removedGroupIds: [] };
-      }),
+      ),
     });
 
   it('runs tool calls that change the plan one after another', async () => {
@@ -2786,7 +3432,11 @@ describe('plan changes', () => {
     const api = recordingApi(events);
     await Promise.all([
       toolExecutors['delete-root-module'](api, { rootModuleId: 'a' }),
-      toolExecutors['change-module-attribute'](api, { rootModuleId: 'b', attributeId: 'b', value: '900' }),
+      toolExecutors['change-module-attribute'](api, {
+        rootModuleId: 'b',
+        attributeId: 'b',
+        value: '900',
+      }),
     ]);
     expect(events).toEqual(['start a', 'end a', 'start b', 'end b']);
   });
@@ -2806,17 +3456,25 @@ describe('plan changes', () => {
       toolExecutors['delete-root-module'](api, { rootModuleId: 'a' }),
       toolExecutors['get-plan-context'](api, { include: ['groups'] }),
     ]);
-    expect(events).toEqual(['start a', 'end a', 'plan context', 'calculated groups']);
+    expect(events).toEqual([
+      'start a',
+      'end a',
+      'plan context',
+      'calculated groups',
+    ]);
   });
 
-    it('runs the next plan change after one that fails', async () => {
+  it('runs the next plan change after one that fails', async () => {
     const events: string[] = [];
     const api = recordingApi(events, ['a']);
     const [first, second] = await Promise.allSettled([
       toolExecutors['delete-root-module'](api, { rootModuleId: 'a' }),
       toolExecutors['delete-root-module'](api, { rootModuleId: 'b' }),
     ]);
-    expect(first).toMatchObject({ status: 'rejected', reason: new Error('refused a') });
+    expect(first).toMatchObject({
+      status: 'rejected',
+      reason: new Error('refused a'),
+    });
     expect(second).toMatchObject({ status: 'fulfilled' });
     expect(events).toEqual(['start a', 'end a', 'start b', 'end b']);
   });

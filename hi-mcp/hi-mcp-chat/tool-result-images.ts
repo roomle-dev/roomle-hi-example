@@ -7,10 +7,11 @@ type ToolMessage = Extract<Prompt[number], { role: 'tool' }>;
 type UserMessage = Extract<Prompt[number], { role: 'user' }>;
 type FilePart = Extract<UserMessage['content'][number], { type: 'file' }>;
 
-export const IMAGES_FOLLOW_NOTE = 'The images of this result follow in the next message.';
+export const IMAGES_FOLLOW_NOTE =
+  'The images of this result follow in the next message.';
 
 const moveFilesOutOfToolMessage = (
-  message: ToolMessage,
+  message: ToolMessage
 ): { message: ToolMessage; files: FilePart[] } => {
   const files: FilePart[] = [];
   const content = message.content.map((part) => {
@@ -18,7 +19,7 @@ const moveFilesOutOfToolMessage = (
       return part;
     }
     const partFiles = part.output.value.filter(
-      (item): item is FilePart => item.type === 'file',
+      (item): item is FilePart => item.type === 'file'
     );
     if (partFiles.length === 0) {
       return part;
@@ -53,7 +54,10 @@ export const moveToolResultFilesToUserMessages = (prompt: Prompt): Prompt =>
     }
     const userMessage: UserMessage = {
       role: 'user',
-      content: [{ type: 'text', text: 'Images of the tool result above:' }, ...moved.files],
+      content: [
+        { type: 'text', text: 'Images of the tool result above:' },
+        ...moved.files,
+      ],
     };
     return [moved.message, userMessage];
   });

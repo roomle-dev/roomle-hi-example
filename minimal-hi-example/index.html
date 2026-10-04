@@ -153,7 +153,9 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        transition: max-height 0.3s ease, height 0.3s ease;
+        transition:
+          max-height 0.3s ease,
+          height 0.3s ease;
       }
       #chat-overlay.expanded {
         max-height: 600px;
@@ -311,7 +313,7 @@
         outline: none;
         border-color: #dd1818;
       }
-      #chat-form button[type="submit"] {
+      #chat-form button[type='submit'] {
         width: 55px;
         height: 55px;
         min-width: 55px;
@@ -326,10 +328,10 @@
         justify-content: center;
         flex-shrink: 0;
       }
-      #chat-form button[type="submit"]:hover {
+      #chat-form button[type='submit']:hover {
         background-color: #f0f0f0;
       }
-      #chat-form button[type="submit"] svg {
+      #chat-form button[type='submit'] svg {
         width: 35px;
         height: 35px;
         fill: #dd1818;
@@ -419,7 +421,15 @@
       <div id="chat-overlay" class="hidden">
         <div class="chat-overlay-header">
           <h3>Planning Assistant</h3>
-          <button id="chat-overlay-toggle" class="chat-overlay-toggle" aria-label="Toggle chat" aria-expanded="false" aria-controls="chat-overlay-content">−</button>
+          <button
+            id="chat-overlay-toggle"
+            class="chat-overlay-toggle"
+            aria-label="Toggle chat"
+            aria-expanded="false"
+            aria-controls="chat-overlay-content"
+          >
+            −
+          </button>
         </div>
         <div id="chat-overlay-content" class="chat-overlay-content">
           <div id="chat-messages" aria-live="polite"></div>
@@ -428,7 +438,13 @@
           </div>
           <div id="chat-attachment" class="hidden">
             <img alt="Attachment" />
-            <button type="button" aria-label="Remove image" title="Remove image">×</button>
+            <button
+              type="button"
+              aria-label="Remove image"
+              title="Remove image"
+            >
+              ×
+            </button>
           </div>
           <form id="chat-form">
             <textarea
@@ -438,11 +454,34 @@
               title="Enter to send, Shift+Enter for a new line"
               disabled
             ></textarea>
-            <button type="submit" title="Send the message to the AI assistant" aria-label="Send message" disabled>
-              <svg viewBox="0 0 16 16" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
-                <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                  <path d="M5.65679676,3.43135935 L5.368,4.868 L3.93120084,5.1568285 C3.59095749,5.22487714 3.32487714,5.49095749 3.25679676,5.83135935 L3.24221259,5.93844293 C3.21109098,6.36461324 3.50149324,6.75723001 3.93135935,6.84320324 L5.368,7.13 L5.65682055,8.56875946 C5.72487714,8.90904251 5.99095749,9.17512286 6.33135935,9.24320324 L6.43844293,9.25778741 C6.86461324,9.28890902 7.25723001,8.99850676 7.34320324,8.56864065 L7.63,7.13 L9.06856139,6.84321908 C9.40904251,6.77512286 9.67512286,6.50904251 9.74320324,6.16864065 L9.75778741,6.06155707 C9.78890902,5.63538676 9.49850676,5.24276999 9.06864065,5.15679676 L7.63,4.868 L7.34321117,3.43139901 C7.27512286,3.09095749 7.00904251,2.82487714 6.66864065,2.75679676 C6.20295236,2.66365911 5.74993442,2.96567106 5.65679676,3.43135935 Z M6.53135935,3.44320324 C6.59465834,3.45586303 6.64413697,3.50534166 6.65679676,3.56864065 L7.03551112,5.46335099 L8.93124054,5.84317945 C9.01795581,5.86052253 9.07411606,5.94476289 9.05679676,6.03135935 C9.04413697,6.09465834 8.99465834,6.14413697 8.93135935,6.15679676 L7.03551111,6.53551111 L6.65678092,8.43143861 C6.63947747,8.51795581 6.55523711,8.57411606 6.46864065,8.55679676 C6.40534166,8.54413697 6.35586303,8.49465834 6.34320324,8.43135935 L5.96335099,6.53551112 L4.06860099,6.15678883 C3.98204419,6.13947747 3.92588394,6.05523711 3.94320324,5.96864065 C3.95586303,5.90534166 4.00534166,5.85586303 4.06864065,5.84320324 L5.963351,5.463351 L6.3431715,3.56879916 C6.35705232,3.49939518 6.41374232,3.44957183 6.48020047,3.44128613 L6.53135935,3.44320324 Z" fill="currentColor" fill-rule="nonzero"/>
-                  <path d="M10.5137619,7.93319663 C10.0901802,7.92582628 9.71749557,8.23489033 9.6560303,8.66514719 L9.532,9.532 L8.66514719,9.6560303 C8.29004954,9.70961568 7.99532997,10.0043353 7.94174459,10.3794329 L7.93319663,10.4862381 C7.92582628,10.9098198 8.23489033,11.2825044 8.66514719,11.3439697 L9.532,11.467 L9.6560303,12.3348528 C9.70961568,12.7099505 10.0043353,13.00467 10.3794329,13.0582554 L10.4862381,13.0668034 C10.9098198,13.0741737 11.2825044,12.7651097 11.3439697,12.3348528 L11.468,11.467 L12.3348528,11.3439697 C12.7099505,11.2903843 13.00467,10.9956647 13.0582554,10.6205671 L13.0668034,10.5137619 C13.0741737,10.0901802 12.7651097,9.71749557 12.3348528,9.6560303 L11.467,9.531 L11.3439697,8.66514719 C11.2903843,8.29004954 10.9956647,7.99532997 10.6205671,7.94174459 L10.5137619,7.93319663 Z M10.5357143,8.53571429 C10.6468254,8.5515873 10.734127,8.63888889 10.75,8.75 L10.9191878,9.93431458 L10.9349764,10.064331 L11.0656854,10.0808122 L12.25,10.25 C12.3880712,10.2697245 12.4840102,10.3976431 12.4642857,10.5357143 C12.4484127,10.6468254 12.3611111,10.734127 12.25,10.75 L11.0656854,10.9191878 L10.935669,10.9349764 L10.9191878,11.0656854 L10.75,12.25 C10.7302755,12.3880712 10.6023569,12.4840102 10.4642857,12.4642857 C10.3531746,12.4484127 10.265873,12.3611111 10.25,12.25 L10.0808122,11.0656854 L10.0656054,10.9357326 L9.93431458,10.9191878 L8.75,10.75 C8.61192881,10.7302755 8.51598983,10.6023569 8.53571429,10.4642857 C8.5515873,10.3531746 8.63888889,10.265873 8.75,10.25 L9.93431458,10.0808122 L10.0642674,10.0656054 L10.0808122,9.93431458 L10.25,8.75 C10.2697245,8.61192881 10.3976431,8.51598983 10.5357143,8.53571429 Z" fill="currentColor" fill-rule="nonzero"/>
+            <button
+              type="submit"
+              title="Send the message to the AI assistant"
+              aria-label="Send message"
+              disabled
+            >
+              <svg
+                viewBox="0 0 16 16"
+                width="28"
+                height="28"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <g
+                  stroke="none"
+                  stroke-width="1"
+                  fill="none"
+                  fill-rule="evenodd"
+                >
+                  <path
+                    d="M5.65679676,3.43135935 L5.368,4.868 L3.93120084,5.1568285 C3.59095749,5.22487714 3.32487714,5.49095749 3.25679676,5.83135935 L3.24221259,5.93844293 C3.21109098,6.36461324 3.50149324,6.75723001 3.93135935,6.84320324 L5.368,7.13 L5.65682055,8.56875946 C5.72487714,8.90904251 5.99095749,9.17512286 6.33135935,9.24320324 L6.43844293,9.25778741 C6.86461324,9.28890902 7.25723001,8.99850676 7.34320324,8.56864065 L7.63,7.13 L9.06856139,6.84321908 C9.40904251,6.77512286 9.67512286,6.50904251 9.74320324,6.16864065 L9.75778741,6.06155707 C9.78890902,5.63538676 9.49850676,5.24276999 9.06864065,5.15679676 L7.63,4.868 L7.34321117,3.43139901 C7.27512286,3.09095749 7.00904251,2.82487714 6.66864065,2.75679676 C6.20295236,2.66365911 5.74993442,2.96567106 5.65679676,3.43135935 Z M6.53135935,3.44320324 C6.59465834,3.45586303 6.64413697,3.50534166 6.65679676,3.56864065 L7.03551112,5.46335099 L8.93124054,5.84317945 C9.01795581,5.86052253 9.07411606,5.94476289 9.05679676,6.03135935 C9.04413697,6.09465834 8.99465834,6.14413697 8.93135935,6.15679676 L7.03551111,6.53551111 L6.65678092,8.43143861 C6.63947747,8.51795581 6.55523711,8.57411606 6.46864065,8.55679676 C6.40534166,8.54413697 6.35586303,8.49465834 6.34320324,8.43135935 L5.96335099,6.53551112 L4.06860099,6.15678883 C3.98204419,6.13947747 3.92588394,6.05523711 3.94320324,5.96864065 C3.95586303,5.90534166 4.00534166,5.85586303 4.06864065,5.84320324 L5.963351,5.463351 L6.3431715,3.56879916 C6.35705232,3.49939518 6.41374232,3.44957183 6.48020047,3.44128613 L6.53135935,3.44320324 Z"
+                    fill="currentColor"
+                    fill-rule="nonzero"
+                  />
+                  <path
+                    d="M10.5137619,7.93319663 C10.0901802,7.92582628 9.71749557,8.23489033 9.6560303,8.66514719 L9.532,9.532 L8.66514719,9.6560303 C8.29004954,9.70961568 7.99532997,10.0043353 7.94174459,10.3794329 L7.93319663,10.4862381 C7.92582628,10.9098198 8.23489033,11.2825044 8.66514719,11.3439697 L9.532,11.467 L9.6560303,12.3348528 C9.70961568,12.7099505 10.0043353,13.00467 10.3794329,13.0582554 L10.4862381,13.0668034 C10.9098198,13.0741737 11.2825044,12.7651097 11.3439697,12.3348528 L11.468,11.467 L12.3348528,11.3439697 C12.7099505,11.2903843 13.00467,10.9956647 13.0582554,10.6205671 L13.0668034,10.5137619 C13.0741737,10.0901802 12.7651097,9.71749557 12.3348528,9.6560303 L11.467,9.531 L11.3439697,8.66514719 C11.2903843,8.29004954 10.9956647,7.99532997 10.6205671,7.94174459 L10.5137619,7.93319663 Z M10.5357143,8.53571429 C10.6468254,8.5515873 10.734127,8.63888889 10.75,8.75 L10.9191878,9.93431458 L10.9349764,10.064331 L11.0656854,10.0808122 L12.25,10.25 C12.3880712,10.2697245 12.4840102,10.3976431 12.4642857,10.5357143 C12.4484127,10.6468254 12.3611111,10.734127 12.25,10.75 L11.0656854,10.9191878 L10.935669,10.9349764 L10.9191878,11.0656854 L10.75,12.25 C10.7302755,12.3880712 10.6023569,12.4840102 10.4642857,12.4642857 C10.3531746,12.4484127 10.265873,12.3611111 10.25,12.25 L10.0808122,11.0656854 L10.0656054,10.9357326 L9.93431458,10.9191878 L8.75,10.75 C8.61192881,10.7302755 8.51598983,10.6023569 8.53571429,10.4642857 C8.5515873,10.3531746 8.63888889,10.265873 8.75,10.25 L9.93431458,10.0808122 L10.0642674,10.0656054 L10.0808122,9.93431458 L10.25,8.75 C10.2697245,8.61192881 10.3976431,8.51598983 10.5357143,8.53571429 Z"
+                    fill="currentColor"
+                    fill-rule="nonzero"
+                  />
                 </g>
               </svg>
             </button>
@@ -502,7 +541,7 @@
         target,
         property,
         mapValue = (value) => value,
-        defaultValue = undefined,
+        defaultValue = undefined
       ) => {
         const queryValue = getQueryParam(property);
         if (queryValue === null) {
@@ -555,7 +594,7 @@
           new Blob([JSON.stringify(data, null, 2)], {
             type: 'application/json',
           }),
-          filename,
+          filename
         );
       const downloadXmlFile = (xml, filename) =>
         downloadBlob(new Blob([xml], { type: 'application/xml' }), filename);
@@ -578,7 +617,7 @@
       };
       const sumRecursiveItemsInCents = (items) => {
         const total = items.find(
-          ({ type, priceType }) => type === 'Price' && priceType === 'Total',
+          ({ type, priceType }) => type === 'Price' && priceType === 'Total'
         );
         if (total) {
           return Math.round((total.totalPrice ?? 0) * 100);
@@ -598,7 +637,7 @@
             (structure?.items?.length
               ? sumRecursiveItemsInCents(structure.items)
               : 0) / 100
-          ).toFixed(2),
+          ).toFixed(2)
         );
       const createCoalescingTaskRunner = (task) => {
         let activeRun = null;
@@ -636,7 +675,7 @@
           throw new Error('the backend list is empty');
         }
         return Object.fromEntries(
-          backends.map((preset) => [preset.backendId, preset]),
+          backends.map((preset) => [preset.backendId, preset])
         );
       };
 
@@ -693,7 +732,7 @@
         reloadWithConfig(
           preset?.backendId ?? selectedBackendId,
           libraryIdInput.value,
-          preset?.planId,
+          preset?.planId
         );
       });
 
@@ -754,7 +793,7 @@
         options,
         'enableTwoLevelCatalog',
         queryParamBoolean,
-        true,
+        true
       );
       setOptionFromQueryParam(options, 'debugGeometry', queryParamBoolean);
       setOptionFromQueryParam(options, 'debugLines', queryParamBoolean);
@@ -763,46 +802,46 @@
         options,
         'envMapIntensity',
         queryParamNumber,
-        1.25,
+        1.25
       );
       setOptionFromQueryParam(
         options.featureFlags,
         'mergeOnInsert',
-        queryParamBoolean,
+        queryParamBoolean
       );
       setOptionFromQueryParam(
         options.featureFlags,
         'webGpu',
         queryParamBoolean,
-        true,
+        true
       );
       setOptionFromQueryParam(
         options.featureFlags,
         'interiorLights',
-        queryParamBoolean,
+        queryParamBoolean
       );
       setOptionFromQueryParam(
         options.featureFlags,
         'advancedHighlighting',
         queryParamBoolean,
-        true,
+        true
       );
       setOptionFromQueryParam(
         options.externalObjectSettings,
         'transparentHighlighting',
         queryParamBoolean,
-        true,
+        true
       );
       setOptionFromQueryParam(
         options.externalObjectSettings,
         'enableVerticalDocking',
-        queryParamBoolean,
+        queryParamBoolean
       );
       setOptionFromQueryParam(
         options.externalObjectSettings,
         'maximumCatalogLevel',
         queryParamNumber,
-        1,
+        1
       );
 
       let roomDesignerApi;
@@ -837,7 +876,7 @@
           button.appendChild(image);
         }
         button.appendChild(
-          document.createTextNode(thumbnailUrl ? id : `${name} ${id}`),
+          document.createTextNode(thumbnailUrl ? id : `${name} ${id}`)
         );
         button.addEventListener('click', clickEvent);
         uiContainer.appendChild(button);
@@ -856,9 +895,9 @@
                 roomDesignerApi.extended.selectExternalObject(
                   rootId,
                   submodule.id,
-                  'isolation',
-                ),
-            ),
+                  'isolation'
+                )
+            )
           );
           if (submodule.modules) {
             addSubmodules(submodule.modules, rootId, uiElements);
@@ -890,9 +929,9 @@
                   roomDesignerApi.extended.selectExternalObject(
                     root.id,
                     null,
-                    'isolation',
-                  ),
-              ),
+                    'isolation'
+                  )
+              )
             );
             if (!root.isGenerated && root.canBeDeleted) {
               uiElements.push(
@@ -901,8 +940,8 @@
                   '🗑',
                   thumbnailUrl ? `${name} 🗑` : name,
                   thumbnailUrl,
-                  () => roomDesignerApi.extended.removeExternalObject(root.id),
-                ),
+                  () => roomDesignerApi.extended.removeExternalObject(root.id)
+                )
               );
             }
             if (root.modules) {
@@ -933,7 +972,9 @@
       // debug panel is hidden. Checkbox toggles between them.
       const chatEnabled = getQueryParam('chat') === 'true';
       const chatOverlay = document.getElementById('chat-overlay');
-      const chatOverlayContent = document.getElementById('chat-overlay-content');
+      const chatOverlayContent = document.getElementById(
+        'chat-overlay-content'
+      );
       const chatOverlayToggle = document.getElementById('chat-overlay-toggle');
       const leftSection = document.querySelector('.left-section');
       const tcArea = document.getElementById('tc-area');
@@ -1002,7 +1043,7 @@
             hiOptions,
             { orderData },
             '/api/price/calculate',
-            requestHeader,
+            requestHeader
           );
           if (json.orderData) {
             logMessage('FETCH-PRICE', json.orderData.id);
@@ -1019,7 +1060,7 @@
             hiOptions,
             orderData,
             url,
-            requestHeader,
+            requestHeader
           );
           logMessage('ORDER-RESPONSE', JSON.stringify(json));
           if (!json.correlationId) {
@@ -1028,7 +1069,7 @@
           const responseOrder = await omGetRequest(
             hiOptions,
             `${url}/${json.correlationId}`,
-            requestHeader,
+            requestHeader
           );
           logMessage('IMPORT-STATUS', JSON.stringify(responseOrder));
           if (responseOrder.link) {
@@ -1045,7 +1086,7 @@
         EMBEDDING_ID,
         document.getElementById('designer-container'),
         options,
-        ['dragIn'],
+        ['dragIn']
       );
       window.instance = roomDesignerApi;
       requestPriceUpdate();
@@ -1110,7 +1151,7 @@
                 orderData: 'room',
               });
             const roomInformation = parseRoomInformation(
-              snapshot?.orderData?.roomInformation,
+              snapshot?.orderData?.roomInformation
             );
             if (roomInformation) {
               downloadJsonObject(roomInformation, 'roomContours.json');
@@ -1182,7 +1223,7 @@
           downloadOmData = false;
           try {
             await roomDesignerApi.extended.placeOrder(
-              document.getElementById('send-to-om-with-price').checked,
+              document.getElementById('send-to-om-with-price').checked
             );
           } finally {
             button.disabled = false;
@@ -1196,7 +1237,7 @@
           downloadOmData = true;
           try {
             await roomDesignerApi.extended.placeOrder(
-              document.getElementById('send-to-om-with-price').checked,
+              document.getElementById('send-to-om-with-price').checked
             );
           } finally {
             button.disabled = false;
@@ -1213,9 +1254,10 @@
       const MCP_BRIDGE_PROTOCOL = 2;
       const mcpClientId = crypto.randomUUID();
       let mcpPageAccepted = false;
-      let mcpConnectionMessage = getQueryParam('mcp') === 'true'
-        ? 'Connecting to the planner...'
-        : 'Planner connection unavailable. Open this page with ?mcp=true.';
+      let mcpConnectionMessage =
+        getQueryParam('mcp') === 'true'
+          ? 'Connecting to the planner...'
+          : 'Planner connection unavailable. Open this page with ?mcp=true.';
       let onMcpConnectionChange = () => {};
       const setMcpConnection = (accepted, message) => {
         mcpPageAccepted = accepted;
@@ -1265,7 +1307,7 @@
                 url: window.location.href,
                 protocol: MCP_BRIDGE_PROTOCOL,
                 clientId: mcpClientId,
-              }),
+              })
             );
           };
           socket.onmessage = async (event) => {
@@ -1299,11 +1341,20 @@
             logApiCall(`MCP ${message.method}`);
             try {
               const result = await api.extended[message.method](
-                ...message.args,
+                ...message.args
               );
-              reply(socket, { kind: 'result', id: message.id, ok: true, result });
+              reply(socket, {
+                kind: 'result',
+                id: message.id,
+                ok: true,
+                result,
+              });
             } catch (error) {
-              console.error('[hi-mcp] planner call failed', message.method, error);
+              console.error(
+                '[hi-mcp] planner call failed',
+                message.method,
+                error
+              );
               reply(socket, {
                 kind: 'result',
                 id: message.id,
@@ -1314,7 +1365,10 @@
           };
           socket.onclose = (event) => {
             if (event.code === 4409) {
-              setMcpConnection(false, 'This server already has a planner connected. Close that page and reload to retry.');
+              setMcpConnection(
+                false,
+                'This server already has a planner connected. Close that page and reload to retry.'
+              );
               logMessage('MCP', 'this server already has a planner connected');
               return;
             }
@@ -1346,7 +1400,9 @@
         const messagesArea = document.getElementById('chat-messages');
         const status = document.getElementById('chat-status');
         const input = document.getElementById('chat-input');
-        const submitButton = document.querySelector('#chat-form button[type="submit"]');
+        const submitButton = document.querySelector(
+          '#chat-form button[type="submit"]'
+        );
         const TOOL_STATUS_PREFIX = '[tool] ';
         // The image sent to the model: long side at most IMAGE_MAX_SIDE px,
         // the size Claude reads natively - enough detail for every chat model.
@@ -1394,7 +1450,7 @@
         const splitStreamText = (raw) => {
           const lines = raw.split('\n');
           const toolLines = lines.filter((line) =>
-            line.startsWith(TOOL_STATUS_PREFIX),
+            line.startsWith(TOOL_STATUS_PREFIX)
           );
           return {
             answer: lines
@@ -1441,7 +1497,7 @@
           });
           const scale = Math.min(
             1,
-            IMAGE_MAX_SIDE / Math.max(bitmap.width, bitmap.height),
+            IMAGE_MAX_SIDE / Math.max(bitmap.width, bitmap.height)
           );
           const canvas = document.createElement('canvas');
           canvas.width = Math.round(bitmap.width * scale);
@@ -1455,7 +1511,7 @@
           const image = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
           logMessage(
             'chat',
-            `image prepared: ${canvas.width}x${canvas.height}, ${Math.round((image.length * 3) / 4 / 1024)} KB`,
+            `image prepared: ${canvas.width}x${canvas.height}, ${Math.round((image.length * 3) / 4 / 1024)} KB`
           );
           return image;
         };
@@ -1483,7 +1539,7 @@
           conversation.push(
             image
               ? { role: 'user', content: text, images: [image] }
-              : { role: 'user', content: text },
+              : { role: 'user', content: text }
           );
           addMessage('user', text, image);
           const assistantEntry = addMessage('assistant', '');
@@ -1496,13 +1552,16 @@
             const response = await fetch(chatUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ messages: conversation, clientId: mcpClientId }),
+              body: JSON.stringify({
+                messages: conversation,
+                clientId: mcpClientId,
+              }),
             });
             if (!response.ok || !response.body) {
               const errorText = await response.text().catch(() => '');
               logMessage(
                 'chat',
-                `failed (HTTP ${response.status}): ${errorText || 'no details'}`,
+                `failed (HTTP ${response.status}): ${errorText || 'no details'}`
               );
               assistantEntry.innerText =
                 errorText || `Chat failed (HTTP ${response.status})`;
@@ -1520,7 +1579,7 @@
               raw += decoder.decode(value, { stream: true });
               const { answer, lastTool } = splitStreamText(raw);
               assistantEntry.innerHTML = DOMPurify.sanitize(
-                marked.parse(answer, { breaks: true }),
+                marked.parse(answer, { breaks: true })
               );
               status.textContent = lastTool
                 ? `assistant is working... ${lastTool}`
@@ -1531,7 +1590,7 @@
             conversation.push({ role: 'assistant', content: answer });
             logMessage(
               'chat',
-              `finished in ${Math.round(performance.now() - startedAt)}ms`,
+              `finished in ${Math.round(performance.now() - startedAt)}ms`
             );
           } catch (error) {
             logMessage('chat', `failed: ${error.message}`);
@@ -1562,14 +1621,21 @@
         // otherwise the chat stays text-only and drops behave as before.
         let imageInput = false;
         try {
-          const response = await fetch(`http://localhost:${chatPort}/capabilities`);
+          const response = await fetch(
+            `http://localhost:${chatPort}/capabilities`
+          );
           imageInput = (await response.json()).imageInput === true;
           logMessage(
             'chat',
-            imageInput ? 'images enabled' : 'images disabled - the model reads no images',
+            imageInput
+              ? 'images enabled'
+              : 'images disabled - the model reads no images'
           );
         } catch (error) {
-          logMessage('chat', `images disabled - no capabilities: ${error.message}`);
+          logMessage(
+            'chat',
+            `images disabled - no capabilities: ${error.message}`
+          );
         }
         if (!imageInput) {
           return;
@@ -1577,7 +1643,8 @@
 
         // The whole chat overlay catches file drops; text drags into the
         // input stay native.
-        const carriesFiles = (event) => event.dataTransfer?.types.includes('Files');
+        const carriesFiles = (event) =>
+          event.dataTransfer?.types.includes('Files');
         const markDropTarget = (event) => {
           if (!carriesFiles(event)) {
             return;
@@ -1600,7 +1667,7 @@
           event.preventDefault();
           chatOverlay.classList.remove('drop-target');
           const file = [...event.dataTransfer.files].find((candidate) =>
-            candidate.type.startsWith('image/'),
+            candidate.type.startsWith('image/')
           );
           if (!file) {
             showNote('Only images can be added.');
@@ -1621,7 +1688,7 @@
               if (drop === latestDrop) {
                 showNote('The image could not be read.');
               }
-            },
+            }
           );
         });
         attachment
@@ -1632,7 +1699,7 @@
 
       if (chatEnabled) {
         startChat().catch((error) =>
-          logMessage('chat', `failed to load: ${error.message}`),
+          logMessage('chat', `failed to load: ${error.message}`)
         );
       }
     </script>

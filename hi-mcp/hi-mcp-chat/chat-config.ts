@@ -16,13 +16,21 @@ export interface ChatModel {
 
 // Deployments on the HI Azure AI Foundry resource, reached through its OpenAI
 // v1 endpoint: the CLI name is the deployment name.
-export const FOUNDRY_BASE_URL = 'https://dfhifoundrysweden.services.ai.azure.com/openai/v1';
-export const FOUNDRY_DEPLOYMENTS = ['gpt-5-mini', 'gpt-5.4-mini', 'gpt-6-astra'];
+export const FOUNDRY_BASE_URL =
+  'https://dfhifoundrysweden.services.ai.azure.com/openai/v1';
+export const FOUNDRY_DEPLOYMENTS = [
+  'gpt-5-mini',
+  'gpt-5.4-mini',
+  'gpt-6-astra',
+];
 
 // CLI provider names (npm start <provider>) resolved to a provider and model.
 // Full model ids pass through: mistral-*, claude-* and gemini-* ids map to their
 // provider; azure deployments are user-named and come via HI_CHAT_MODEL.
-export const PROVIDER_MODEL_ALIASES: Record<ChatProvider, Record<string, string>> = {
+export const PROVIDER_MODEL_ALIASES: Record<
+  ChatProvider,
+  Record<string, string>
+> = {
   mistral: {
     mistral: 'mistral-large-latest',
     'mistral-large': 'mistral-large-latest',
@@ -51,7 +59,9 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
   if (FOUNDRY_DEPLOYMENTS.includes(name)) {
     return { provider: 'azure', modelId: name, baseUrl: FOUNDRY_BASE_URL };
   }
-  for (const provider of Object.keys(PROVIDER_MODEL_ALIASES) as ChatProvider[]) {
+  for (const provider of Object.keys(
+    PROVIDER_MODEL_ALIASES
+  ) as ChatProvider[]) {
     const modelId = PROVIDER_MODEL_ALIASES[provider][name];
     if (modelId) {
       return { provider, modelId };
@@ -67,7 +77,7 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
     return { provider: 'google', modelId: name };
   }
   throw new ChatRequestError(
-    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, gpt-6-astra, or a full mistral-*/claude-*/gemini-* model id`,
+    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, gpt-6-astra, or a full mistral-*/claude-*/gemini-* model id`
   );
 };
 
@@ -78,7 +88,8 @@ export interface ChatMessage {
 }
 
 // Inline image data only: the AI SDK downloads an image given as a URL itself.
-const IMAGE_DATA_URL = /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/;
+const IMAGE_DATA_URL =
+  /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/;
 // The text of a user message that carries images but no text.
 export const DEFAULT_IMAGE_PROMPT =
   'Identify the furniture in the image (for example a kitchen, wardrobe, media unit, lowboard, ' +
@@ -96,7 +107,9 @@ export const IMAGE_INPUT_MODELS = [
 ];
 
 export const readsImages = (provider: ChatProvider, modelId: string) =>
-  provider === 'anthropic' || provider === 'google' || IMAGE_INPUT_MODELS.includes(modelId);
+  provider === 'anthropic' ||
+  provider === 'google' ||
+  IMAGE_INPUT_MODELS.includes(modelId);
 
 export interface ChatConfig {
   port: number;
@@ -137,22 +150,31 @@ export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
 
 export const parseChatMessages = (body: unknown): ChatMessage[] => {
   if (typeof body !== 'object' || body === null) {
-    throw new ChatRequestError('Request body must be JSON with a messages array');
+    throw new ChatRequestError(
+      'Request body must be JSON with a messages array'
+    );
   }
   const { messages } = body as { messages?: unknown };
   if (!Array.isArray(messages)) {
-    throw new ChatRequestError('Request body must be JSON with a messages array');
+    throw new ChatRequestError(
+      'Request body must be JSON with a messages array'
+    );
   }
   return messages.map((message: unknown) => {
     if (typeof message !== 'object' || message === null) {
-      throw new ChatRequestError('Each message must be an object with role and content');
+      throw new ChatRequestError(
+        'Each message must be an object with role and content'
+      );
     }
     const { role, content, images } = message as {
       role?: unknown;
       content?: unknown;
       images?: unknown;
     };
-    if (typeof role !== 'string' || !CHAT_ROLES.includes(role as ChatMessage['role'])) {
+    if (
+      typeof role !== 'string' ||
+      !CHAT_ROLES.includes(role as ChatMessage['role'])
+    ) {
       throw new ChatRequestError(`Invalid message role: ${role}`);
     }
     if (typeof content !== 'string') {
@@ -163,10 +185,12 @@ export const parseChatMessages = (body: unknown): ChatMessage[] => {
     }
     if (
       !Array.isArray(images) ||
-      !images.every((image) => typeof image === 'string' && IMAGE_DATA_URL.test(image))
+      !images.every(
+        (image) => typeof image === 'string' && IMAGE_DATA_URL.test(image)
+      )
     ) {
       throw new ChatRequestError(
-        'Message images must be an array of base64 data URLs (image/jpeg, image/png, image/webp or image/gif)',
+        'Message images must be an array of base64 data URLs (image/jpeg, image/png, image/webp or image/gif)'
       );
     }
     if (images.length > 0 && role !== 'user') {
@@ -192,5 +216,5 @@ export const toModelMessages = (messages: ChatMessage[]): ModelMessage[] =>
             })),
           ],
         }
-      : { role, content },
+      : { role, content }
   );

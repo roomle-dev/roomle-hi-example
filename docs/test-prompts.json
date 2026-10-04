@@ -127,7 +127,9 @@
       "operations": [
         {
           "tool": "delete-root-module",
-          "arguments": { "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa" }
+          "arguments": {
+            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
+          }
         }
       ],
       "prompt": "join the two groups on the right wall",

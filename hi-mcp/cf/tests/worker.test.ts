@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import worker from '../src/worker';
 
 const containerFetch = vi.fn(
-  async (_request: Request) => new Response('from-container', { status: 200 }),
+  async (_request: Request) => new Response('from-container', { status: 200 })
 );
 const getByName = vi.fn(() => ({ fetch: containerFetch }));
 const env = { HI_MCP: { getByName } } as never;

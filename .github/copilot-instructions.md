@@ -212,6 +212,7 @@ HOMAG Intelligence (HI) is a system for kitchen cabinet management, price calcul
 
 ### Code Style
 
+- **Prettier** — Format with `npm run format` before committing; `npm run format:check` checks it. The settings are in `.prettierrc.json`, the excluded paths in `.prettierignore` (Markdown and the generated `docs/library-information` are not formatted)
 - **ES Modules** — Use `import/export` syntax, not CommonJS `require`
 - **TypeScript Types** — Use JSDoc comments for type annotations when needed
 - **Async/Await** — Prefer async/await over Promise chains

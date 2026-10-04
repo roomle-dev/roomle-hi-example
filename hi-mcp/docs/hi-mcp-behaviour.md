@@ -576,7 +576,7 @@ corrections, G31–G45.
 | G15 | an article id the catalog does not have | nothing | error with the valid article ids |
 | D29 | `merge-article-into-group` on a taken side vector | docks the unit to the named root's free other side when it has one; else to the root at the free end of that row; when that row ends at a corner article, to the free end of the leg in the other direction | correction |
 | P7 | a `dockingVector` the new article does not have (by the catalog) | uses the partner of `ownDockingVector` when the article has it | correction |
-| D35 | a wall unit or a range hood docked `*Top -> *Bottom` on a floor unit without a y offset | sets the y offset to the hang gap of the wall units (`hangGapOf`) | correction: "'OTB60' hangs 660 mm above '…', at the height of the wall units" |
+| D35 | a wall unit or a range hood docked on a Top vector of a floor unit — a Top-to-Top pair becomes Top-to-Bottom first — without a y offset | sets the y offset to the hang gap of the wall units (`hangGapOf`) | correction: "'OTB60' hangs 660 mm above '…', at the height of the wall units" |
 
 **In the planner** (roomle-ui `glue-logic.ts`, `hi-plan-context.ts`). These checks protect the
 planner and stay as they are (D5); the server passes their message on as an error result.

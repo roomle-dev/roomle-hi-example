@@ -4097,6 +4097,19 @@ describe('group command tools', () => {
       ]);
     });
 
+    it('reads a Top-to-Top pair of a wall unit on a floor unit as hanging above it', async () => {
+      // gpt-5-mini 08 of 2026-10-04: LeftTop -> RightTop put the wall unit at floor level
+      const { result, dockTo: sent } = await mergeWallUnit(baseUnit, {
+        ...onTop,
+        dockingVector: 'RightTop',
+      });
+      expect(sent).toEqual({ ...onTop, offset: [0, 660, 0] });
+      expect(result.corrections).toEqual([
+        "merge-article-into-group: a wall unit above 'r1' meets its LeftTop with its LeftBottom, not with its RightTop",
+        "merge-article-into-group: 'wall-1' hangs 660 mm above 'r1', at the height of the wall units",
+      ]);
+    });
+
     it('keeps an explicit offset of a wall unit above a floor unit', async () => {
       const { result, dockTo: sent } = await mergeWallUnit(baseUnit, {
         ...onTop,

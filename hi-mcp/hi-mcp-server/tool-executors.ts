@@ -414,17 +414,34 @@ const dockTarget = (
     );
     dockTo.dockingVector = partner;
   }
-  // A wall unit or a range hood docked on top of a floor unit hangs at the
-  // height of the wall units (D35) unless the agent sets the gap itself.
+  // A wall unit or a range hood docked on top of a floor unit meets the Top
+  // vector with its Bottom vector and hangs at the height of the wall units
+  // (D35) unless the agent sets the gap itself.
   const carrier = roots.find((candidate) => candidate.id === dockTo.rootId);
   const carrierArticle = carrier && catalogArticleOf(articles, carrier);
+  const own = String(dockTo.ownDockingVector);
   if (
     article &&
     carrierArticle &&
     isWallUnitArticle(article) &&
     !isWallUnitArticle(carrierArticle) &&
     !isTallUnitArticle(carrierArticle) &&
-    String(dockTo.ownDockingVector).endsWith('Top') &&
+    own.endsWith('Top') &&
+    String(dockTo.dockingVector).endsWith('Top') &&
+    PARTNER_VECTOR[own]
+  ) {
+    corrections.push(
+      `merge-article-into-group: a wall unit above '${carrier.id}' meets its ${own} with its ${PARTNER_VECTOR[own]}, not with its ${dockTo.dockingVector}`
+    );
+    dockTo.dockingVector = PARTNER_VECTOR[own];
+  }
+  if (
+    article &&
+    carrierArticle &&
+    isWallUnitArticle(article) &&
+    !isWallUnitArticle(carrierArticle) &&
+    !isTallUnitArticle(carrierArticle) &&
+    own.endsWith('Top') &&
     String(dockTo.dockingVector).endsWith('Bottom') &&
     !(Number(dockTo.offset?.[1]) > 0)
   ) {

@@ -7,6 +7,9 @@
 > **Author**: AI Assistant
 > **Status**: Open
 > **Branch**: `refactor/object-image-in-get-plan-images` (from `master`)
+>
+> **Decision (2026-10-04)**: the result carries a short text content naming each image — user
+> decision on alternative E of §3; the shape is in §5.
 
 ## Verdict
 
@@ -23,6 +26,8 @@ and the **top view of the whole plan**, instead of the plan perspective and the 
   a wall, a group outside the room. The pair *group view + plan top view* covers "what" and "where";
   the plan perspective adds nothing the agent acts on.
 - Same cost: two images per call, and the snapshot renders one perspective frame either way.
+- The result names its images in a short text content, so the agent knows which view it looks
+  at — and is told when the plan has no groups and therefore no group view (user decision, §5).
 - Four limits, none a blocker (§3): all HI groups share one frame and one front direction, the
   group view has a transparent background, it is empty under software GL (a known planner defect),
   and the planner API has no per-group render.
@@ -112,7 +117,7 @@ materials, without the room"). The plan perspective answers neither well.
 | B | Return all three images | + one image (~1.4k tokens) and one render per call for a 3D impression of the room the agent does not act on |
 | C | A parameter to choose the views | flexibility nobody asked for; the agent would have to learn what to request — the default is what matters |
 | D | Fall back to the plan perspective when the plan has no groups | needs a second snapshot call or three renders every time; the top view of an empty room is enough to plan into it |
-| E | A text content before each image naming it, and "no groups in the plan" when the group view is missing | ~20 tokens; the two views are visually unmistakable, so the description alone carries the order. Not recommended, but cheap — **decision for the review** |
+| E | A text content naming each image, and "no groups in the plan" when the group view is missing | ~30 tokens; the agent is told what it looks at in the result itself, not only in the description. **Decided: yes** (user, 2026-10-04) — as one text content before the images, see §5 |
 
 ## 4. Scope — every affected location
 
@@ -125,21 +130,21 @@ options; the ligna-store does not reference the tool's result):
 | File | Change |
 |---|---|
 | [`tool-executors.ts:1869-1878`](../../hi-mcp/hi-mcp-poc-json/tool-executors.ts#L1869-L1878) | request `perspectiveObjectImage` instead of `perspectiveImage`, return `{ perspectiveObjectImage, topImage }` |
-| [`hi-mcp-server.ts:487-516`](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts#L487-L516) | the description (§5), the result type, the content order (group view first, top view second) |
+| [`hi-mcp-server.ts:487-516`](../../hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts#L487-L516) | the description (§5), the result type, the result shape: one text content naming the images, then the group view, then the top view (§5) |
 
 **Tests:**
 
 | File | Change |
 |---|---|
 | [`tool-executors.test.ts:2475-2494`](../../hi-mcp/hi-mcp-poc-json/tests/tool-executors.test.ts#L2475-L2494) | the mock snapshot and the expected call `{ perspectiveObjectImage: true, topImage: true }` |
-| [`hi-mcp-server.test.ts:456-470`](../../hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts#L456-L470) | the mock snapshot keys; **new case**: a snapshot without `perspectiveObjectImage` (no groups) returns one image content |
-| [`hi-mcp-chat/tests/tool-result-images.test.ts`](../../hi-mcp/hi-mcp-chat/tests/tool-result-images.test.ts) | fixture names only — no change |
+| [`hi-mcp-server.test.ts:456-470`](../../hi-mcp/hi-mcp-poc-json/tests/hi-mcp-server.test.ts#L456-L470) | the mock snapshot keys and the expected content: the text naming the images, then the two images; **new case**: a snapshot without `perspectiveObjectImage` (no groups) returns the text saying so and one image |
+| [`hi-mcp-chat/tests/tool-result-images.test.ts`](../../hi-mcp/hi-mcp-chat/tests/tool-result-images.test.ts) | no change — a tool result with text beside images is already covered (lines 84-110): the text stays in the tool message, the images move to the next user message |
 
 **Documentation, in the same change:**
 
 | File | Change |
 |---|---|
-| [`hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behaviour.md) | §3 *Information for the agent*: new **D36** (§5); §5.3 result format (line 243); the §6 results table ("two images", line 285); §6 *get-price, get-order-data, get-plan-images* (line 398) |
+| [`hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behaviour.md) | §3 *Information for the agent*: new **D36** (§5); §5.3 result format (line 243: a text naming the images, then the images); the §6 results table ("two images", line 285); §6 *get-price, get-order-data, get-plan-images* (line 398) |
 | [`minimal-hi-example/docs/hi-mcp-server.md:512-520`](../../minimal-hi-example/docs/hi-mcp-server.md#L512-L520) | the tool reference entry |
 | [`hi-mcp-poc-json/README.md:501-506`](../../hi-mcp/hi-mcp-poc-json/README.md#L501-L506) | the tool reference entry |
 | [`.agents/skills/hi-mcp-tools.md:39, 220-226`](../skills/hi-mcp-tools.md) | the tool table and the reference block |
@@ -161,28 +166,51 @@ options; the ligna-store does not reference the tool's result):
 },
 ```
 
+The result: one text content that names the images in order, then the images.
+
+```json
+[
+  { "type": "text", "text": "Image 1: the HI groups alone, seen from their front, without the room. Image 2: the top view of the whole plan." },
+  { "type": "image", "data": "<group view>", "mimeType": "image/png" },
+  { "type": "image", "data": "<top view>", "mimeType": "image/png" }
+]
+```
+
+Without groups in the plan: `"The plan has no groups, so there is no group view. Image 1: the top
+view of the whole plan."` followed by the top view. Without any image, `{ "error": "No images
+available" }` as today.
+
+Why one text before the images and not one beside each: for Mistral the chat's middleware
+([`tool-result-images.ts`](../../hi-mcp/hi-mcp-chat/tool-result-images.ts)) keeps a tool result's
+text parts in the tool message and moves its images into the next user message, so a label placed
+between the images would lose its place. A text that numbers the images reads the same for every
+provider.
+
 The description, replacing the current one:
 
 > Renders two images of the current plan: first the HI groups alone, seen from their front without
 > the room, so every unit, appliance and front is visible and nothing covers it; second a top view of
 > the whole plan that shows where the groups stand. The top view's orientation matches the wall side
 > labels of get-plan-context: a wall with side 'right' is at the right edge of the top image, 'top'
-> at the upper edge. Without groups in the plan only the top view is returned.
+> at the upper edge. A text content names the images; without groups in the plan only the top view
+> is returned.
 
 The decision for `hi-mcp-behaviour.md` §3:
 
 > **D36** — `get-plan-images` shows the agent the HI groups alone, from their front, plus the top
-> view of the plan. The plan perspective is not returned: its camera stands at a fixed world angle,
-> so a group may be seen from the side or from behind, or be hidden by other objects; the top view
-> carries the room context. Source: user, 2026-10-04 (this analysis). State: planned.
+> view of the plan, and names the images in a text content of the result. The plan perspective is
+> not returned: its camera stands at a fixed world angle, so a group may be seen from the side or
+> from behind, or be hidden by other objects; the top view carries the room context. Source: user,
+> 2026-10-04 (this analysis). State: planned.
 
 ## 6. Tests and expected output changes
 
 - **Unit tests** (`npm test` at the `hi-mcp` root): the two adapted tests of §4 and the new
   no-groups case pass; everything else unchanged.
-- **Output change**: `content[0]` of `get-plan-images` is the group view (transparent PNG, the
-  groups framed from the front) instead of the plan perspective; `content[1]` the top view as
-  today. On a plan without HI groups the result has one image content.
+- **Output change**: `content[0]` of `get-plan-images` is the text naming the images;
+  `content[1]` the group view (transparent PNG, the groups framed from the front) instead of the
+  plan perspective; `content[2]` the top view. On a plan without HI groups the result is the text
+  saying so and the top view.
 - **Live check** (the headless MCP check of the memory notes, with `--enable-gpu` — without a GPU
   the group view is blank, §3): a kitchen on the `left` wall → the first image shows the kitchen
   from the front with every unit, where the plan perspective showed it from the side. An empty plan

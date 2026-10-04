@@ -90,7 +90,7 @@ describe('getChatConfig', () => {
   it('asks the model to answer from the tool results', () => {
     // issue 9: the answers claimed what the plan did not have
     expect(CHAT_SYSTEM_PROMPT).toContain(
-      'Answer only with what the last tool results show - the groups, their roots and attributes, corrections and notLoaded - and name what was asked but is not in the plan.'
+      'Summarize what you changed in a few sentences from the last tool results only - the groups, their roots and attributes, corrections and notLoaded - never by repeating the results, and name what was asked but is not in the plan.'
     );
     expect(CHAT_SYSTEM_PROMPT.split('. ').length).toBe(4);
   });

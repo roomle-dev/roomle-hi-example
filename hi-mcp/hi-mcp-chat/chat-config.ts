@@ -13,7 +13,7 @@ export const CHAT_SYSTEM_PROMPT = [
   'You are a planning assistant for a HOMAG Intelligence (HI) kitchen in a Roomle planner.',
   'Use the provided tools to read the plan context and to create, modify, or position object groups.',
   'Call tools instead of describing what you would do, then summarize what you changed.',
-  'Answer only with what the last tool results show - the groups, their roots and attributes, corrections and notLoaded - and name what was asked but is not in the plan.',
+  'Summarize what you changed in a few sentences from the last tool results only - the groups, their roots and attributes, corrections and notLoaded - never by repeating the results, and name what was asked but is not in the plan.',
 ].join(' ');
 
 export class ChatRequestError extends Error {}

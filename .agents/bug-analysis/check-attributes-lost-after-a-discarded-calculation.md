@@ -5,7 +5,7 @@
 > **Trigger**: "test the mcp" session `mcp-test-2026-10-02_13-47-02`, gpt-6-astra, test 09 "image only, no text"
 > **Date**: 2026-10-02
 > **Author**: AI Assistant
-> **Status**: Open — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) (roomle-ui); fixed on branch `fix/hi-keep-check-attributes-on-discard-RML-18039` (c6769157c), not pushed yet
+> **Status**: Open — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) (roomle-ui); fixed on branch `fix/hi-keep-check-attributes-on-discard-RML-18039` (c6769157c), in review as [roomle-ui#3074](https://github.com/roomle-dev/roomle-ui/pull/3074)
 
 ## Symptom
 

@@ -28,8 +28,8 @@ and the **top view of the whole plan**, instead of the plan perspective and the 
 - Same cost: two images per call, and the snapshot renders one perspective frame either way.
 - The result names its images in a short text content, so the agent knows which view it looks
   at — and is told when the plan has no groups and therefore no group view (user decision, §5).
-- Four limits, none a blocker (§3): all HI groups share one frame and one front direction, the
-  group view has a transparent background, it is empty under software GL (a known planner defect),
+- Four limits, none a blocker (§3): one camera for all HI objects (opposing fronts show one side
+  only, units can hide one another), the group view has a transparent background, it is empty under software GL (a known planner defect),
   and the planner API has no per-group render.
 
 ## 1. What the tool does today
@@ -102,7 +102,7 @@ materials, without the room"). The plan perspective answers neither well.
 
 | Limit | Effect | Handling |
 |---|---|---|
-| **All HI groups in one frame, one front direction.** The kernel sums the back normals of every HI object. Two groups on walls at a right angle give a diagonal view with both seen from the front-side; groups on opposite walls cancel to rotation 0 and one of them is seen from behind. The planner's request type has no per-group option ([`external-object-api.ts:181-189`](../../../roomle-ui/packages/web-sdk/packages/homag-intelligence/src/external-object-api.ts#L181-L189)) | fine for one kitchen — the normal case, the rules forbid splitting a kitchen into groups | accept; a per-group render is a roomle-ui feature (the scene manager has `preparePerspectiveImageOf(runtimeId)`, the external object API does not expose it) — open item, not part of this change |
+| **One camera for all HI objects, one front direction.** The kernel sums the back normals of every HI object. Fronts at a right angle — an L-shaped corner kitchen, two groups on neighbouring walls — give a diagonal view with both legs seen from the front-side. Opposing fronts cancel: units `behind` others (an island, back to back), a U-shaped kitchen, groups on opposite walls — the camera faces the remaining direction (rotation 0 when nothing remains) and one side is seen from behind. HI units can also hide one another in that view. The planner's request type has no per-group option ([`external-object-api.ts:181-189`](../../../roomle-ui/packages/web-sdk/packages/homag-intelligence/src/external-object-api.ts#L181-L189)) | a row or an L — the usual kitchen — is fully visible; a layout with opposing fronts shows one side only; the top view carries the whole layout | accept, and the description says so (§5): the view does not guarantee that every unit is visible, so the agent must not take an unseen unit for a missing one — `get-plan-context` lists the units. A per-group render (roomle-ui: the scene manager has `preparePerspectiveImageOf(runtimeId)`, the external object API does not expose it) would help for several groups only, not for opposing fronts within one group — open item, not part of this change |
 | **No room in the perspective.** A collision with a wall or a group outside the room is not visible in 3D | the top view shows it as footprint vs. walls | accept — this is why the top view stays |
 | **Transparent background.** A model's image pipeline composites the alpha onto black or white; dark fronts on black lose contrast | unknown until seen by a model; the test evaluation reads the same PNG without trouble | verify in the live check with Claude and Mistral (§6); `preserveSceneBackground` exists in the renderer options but is not exposed in the snapshot request — a roomle-ui change if ever needed |
 | **Empty under software GL.** Headless Chromium without a GPU renders a fully transparent frame for exactly this image ([bug analysis](../bug-analysis/empty-perspective-object-image-in-test-runs.md), [backlog issue 1](../backlog/mcp-test-infrastructure-issues.md)). A valid PNG — the server cannot tell it from a real one | interactive users render on a GPU; the test runs pass `--enable-gpu` | accept; a headless client without GPU gets a blank group view until the planner defect is fixed — say so in the docs |
@@ -188,12 +188,14 @@ provider.
 
 The description, replacing the current one:
 
-> Renders two images of the current plan: first the HI groups alone, seen from their front without
-> the room, so every unit, appliance and front is visible and nothing covers it; second a top view of
-> the whole plan that shows where the groups stand. The top view's orientation matches the wall side
-> labels of get-plan-context: a wall with side 'right' is at the right edge of the top image, 'top'
-> at the upper edge. A text content names the images; without groups in the plan only the top view
-> is returned.
+> Renders two images of the current plan: first the HI groups alone, seen from the front without
+> the room or other objects — one camera for all groups, so where fronts face opposite directions
+> (an island, a U-shaped kitchen) one side is seen from behind, and units can hide one another; a
+> unit not seen is not missing, get-plan-context lists the units. Second a top view of the whole
+> plan that shows where the groups stand. The top view's orientation matches the wall side labels
+> of get-plan-context: a wall with side 'right' is at the right edge of the top image, 'top' at the
+> upper edge. A text content names the images; without groups in the plan only the top view is
+> returned.
 
 The decision for `hi-mcp-behaviour.md` §3:
 
@@ -212,9 +214,10 @@ The decision for `hi-mcp-behaviour.md` §3:
   plan perspective; `content[2]` the top view. On a plan without HI groups the result is the text
   saying so and the top view.
 - **Live check** (the headless MCP check of the memory notes, with `--enable-gpu` — without a GPU
-  the group view is blank, §3): a kitchen on the `left` wall → the first image shows the kitchen
-  from the front with every unit, where the plan perspective showed it from the side. An empty plan
-  → one image.
+  the group view is blank, §3), three layouts: a row on the `left` wall → the group view shows the
+  kitchen from the front with every unit, where the plan perspective showed it from the side; an
+  L-shaped corner kitchen → both legs seen from the front-side; a unit `behind` another (an island)
+  → one side seen from behind, as the description says. An empty plan → the text and one image.
 - **Model check**: "call get-plan-images and describe in two sentences what you see in each image"
   through the chat with Claude and with Mistral Large (as in the
   [Mistral image analysis](../bug-analysis/plan-images-sent-as-text-to-mistral.md)) — confirms the
@@ -224,8 +227,10 @@ The decision for `hi-mcp-behaviour.md` §3:
 
 - The readability of the transparent group view for the models is the one unverified point — the
   model check of §6 answers it before the change is closed out.
-- Several HI groups on different walls share one frame and one front direction; a per-group render
-  needs the planner's external object API to expose it (roomle-ui). Note it as a follow-up if the
+- One camera for all HI objects: a layout with opposing fronts — units `behind` others, a U-shaped
+  kitchen, groups on opposite walls — shows one side from behind, and units can hide one another.
+  The description says so; the top view and `get-plan-context` remain the record of what the plan
+  contains. A per-group render (roomle-ui) would help for several groups only — a follow-up if the
   live check shows it matters.
 - The empty frame under software GL remains a planner defect (backlog issue 1); the docs name the
   GPU prerequisite for headless clients.

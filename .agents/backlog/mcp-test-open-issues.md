@@ -548,9 +548,10 @@ group carries `checkAttributes` as a plain object. The glue logic copies groups 
 (`_storeCalculatedGroup`, `_discardCalculation`, the article maps). The `.get` call is not in
 roomle-ui's sources, so it is in the HOMAG library code that receives the module.
 
-**To do.** roomle-ui: copy the restorable group with `structuredClone` instead of `deepCopy` in
-`_storeCalculatedGroup`, `_addGroupToMap` and `_discardCalculation` (reproduced and verified
-2026-10-03 — see the analysis).
+**To do.** roomle-ui: push and review the fix — `structuredClone` instead of `deepCopy` in
+`_storeCalculatedGroup`, `_addGroupToMap` and `_discardCalculation`, implemented and verified on the
+branch `fix/hi-keep-check-attributes-on-discard-RML-18039` (2026-10-04 — see the analysis). The
+entry leaves the backlog when the fix is merged and deployed.
 
 **Test.** `glue-logic-test.ts`, `changeModuleAttribute`: "changes an attribute after the library
 could not calculate the previous change" — the restored root keeps its `checkAttributes` `Map`, and

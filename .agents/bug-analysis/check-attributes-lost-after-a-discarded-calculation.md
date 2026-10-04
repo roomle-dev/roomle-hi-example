@@ -5,7 +5,7 @@
 > **Trigger**: "test the mcp" session `mcp-test-2026-10-02_13-47-02`, gpt-6-astra, test 09 "image only, no text"
 > **Date**: 2026-10-02
 > **Author**: AI Assistant
-> **Status**: Open — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) (roomle-ui); no branch or PR yet as of 2026-10-04
+> **Status**: Open — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) (roomle-ui); fixed on branch `fix/hi-keep-check-attributes-on-discard-RML-18039` (c6769157c), not pushed yet
 
 ## Symptom
 
@@ -92,8 +92,11 @@ the planner anyway.
 **Unit test** — `glue-logic-test.ts`, `group operations › changeModuleAttribute`: "changes an
 attribute after the library could not calculate the previous change". The library mock behaves
 like the library: `calculateGroup` gives every root a `checkAttributes` `Map`, and
-`solveModuleAttributeConflict` reads it with `get`. The first change fails in the library and is
-discarded; the restored root still has its `Map`. The second change succeeds.
+`solveModuleAttributeConflict` reads it with `get`. It follows the reported flow: a first change is
+calculated and stored (`_storeCalculatedGroup`), a second change fails in the library and is
+discarded (the root keeps the first value), and a third change succeeds. The `_addGroupToMap` copy
+has no test of its own; the first draft of the test arranged the group through it and so did not
+reach the `_storeCalculatedGroup` copy of the reported flow.
 
 **Verified 2026-10-03** in a roomle-ui worktree of master:
 
@@ -103,6 +106,17 @@ discarded; the restored root still has its `Map`. The second change succeeds.
 - Live, with the fixed glue on the dev server and the replay above: the replace is discarded as
   before, `change-module-attribute` succeeds, and the kernel holds `mod_HeightPosInsertion` 1420 —
   the same as the control run without the replace. `structuredClone` accepts the real groups.
+
+**Implemented 2026-10-04** on the roomle-ui branch `fix/hi-keep-check-attributes-on-discard-RML-18039`
+(commit c6769157c, plan in the RML-18039 comments):
+
+- The test fails without the fix (`TypeError: module.checkAttributes.get is not a function`) and
+  passes with it. The homag-intelligence suite (475 tests), `lint:types:sdk`, prettier and oxlint
+  pass.
+- Live, headless, against the branch's dev server: the run's create, replace and change replayed
+  with the ids mapped. The replace is discarded (two "could not calculate root module" errors),
+  `change-module-attribute` succeeds, and the kernel holds `mod_HeightPosInsertion` 1420 for the
+  changed OTB60.
 
 **Checked again 2026-10-04** against roomle-ui master `eb65594b3` (after PR #3066): the three copy
 sites, the call order and the guards are as described; the ticket description was corrected

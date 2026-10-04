@@ -2516,6 +2516,84 @@ describe('create-or-replace-groups relations', () => {
   });
 });
 
+describe('create-or-replace-groups compile corrections', () => {
+  it('reports a wall unit onTop a base unit as hanging above it', async () => {
+    const api = createApi({
+      ...planContextFixture,
+      articles: [
+        {
+          ...articleFixture,
+          articleId: 'base',
+          category: 'Kitchen | Base Units | Storage',
+          rootModules: [
+            {
+              module: { id: 'mr_StorageunitSingle' },
+              dimensions: [{ id: 'mod_Height', name: 'Height', value: 720 }],
+              dockingVectors: [],
+            },
+          ],
+        },
+        {
+          ...articleFixture,
+          articleId: 'wall',
+          category: 'Kitchen | Wall Units | Storage',
+          rootModules: [
+            {
+              module: { id: 'mr_StorageunitSingle' },
+              dimensions: [{ id: 'mod_Height', name: 'Height', value: 720 }],
+              dockingVectors: [],
+            },
+          ],
+        },
+        {
+          ...articleFixture,
+          articleId: 'tall',
+          category: 'Kitchen | Tall Units | Storage',
+          rootModules: [
+            {
+              module: { id: 'mr_StorageunitSingle' },
+              dimensions: [{ id: 'mod_Height', name: 'Height', value: 2100 }],
+              dockingVectors: [],
+            },
+          ],
+        },
+      ],
+    });
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          roots: [
+            { id: 'b1', articleId: 'base' },
+            { id: 'w1', articleId: 'wall', onTop: 'b1' },
+          ],
+        },
+      ],
+    })) as Record<string, any>;
+    const calls = api.extended.loadExternalObjectGroupLayout.mock
+      .calls as unknown as any[][];
+    expect(
+      calls[calls.length - 1][0].posGroups[0].roots[0].contextData
+    ).toEqual({
+      dockedRoots: [
+        {
+          ownDockingVector: 'LeftTop',
+          dockedRoots: [
+            {
+              id: 'w1',
+              dockingVector: 'LeftBottom',
+              mode: 'StartStart',
+              offset: [0, 660, 0],
+            },
+          ],
+        },
+      ],
+    });
+    expect(result.corrections).toEqual([
+      "posGroups[0]: wall unit 'w1' hangs above the base unit 'b1' instead of onTop it",
+    ]);
+  });
+});
+
 describe('place-group', () => {
   // a calculated group as getExternalObjectGroups returns it (raw), next to
   // the shaped groups of the plan context

@@ -154,7 +154,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D31 | Guards are a last resort; the server corrects and informs, and gives feedback where it cannot correct | user guideline | in effect — §8 |
 | D33 | **One anchor frame for every article.** A placement puts the docking corner of the anchor root — the back left bottom corner of its docking vectors — at `posGroup`, whatever article it is: the origin of a cabinet, the left edge of a range hood, the corner point of a corner article, which is also turned so that its corner lies back left. The groups the tools return report their position in the same frame: `pos` is the back left bottom corner, `rotationY` the rotation of the placement. An anchor the probe cannot calculate no longer fails its group (G17) | user, 2026-10-02 ([analysis](../../.agents/refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md)) | in effect — `anchorFrameOfRoot`, `toRepositioningData`, `positionInPlacementFrame`, `group-placement.ts`; `inPlacementFrame`, `tool-executors.ts` |
 | D34 | **A unit names its neighbour, the server builds the docking.** Every root after the first names one neighbour with one relation — `rightOf`, `leftOf`, `onTop` (`align`, `gapMm`), `above` (`gapMm`), `behind` — and the server compiles the docking entries (`contextData`) from it: the vectors, the mode, the offset, and the root the entry goes on. A wall unit `rightOf` / `leftOf` a tall unit docks by the Top vectors. `contextData` stays accepted and is no longer taught; a group without any relation field is not touched | user, 2026-10-02 ([analysis](../../.agents/refactoring-analysis/simple-docking-for-the-agent.md), RML-18038) | in effect — `relationsToDocking`, `group-layout.ts` |
-| D35 | **The hang height of a wall unit `above` a floor unit** is the height of the tall units — a tall unit of the group, else the usual tall unit of the library — minus the heights of the wall unit and the floor unit (`mod_Height`); base and tall units stand on the same plinth. Furniture_Smith: 2100 − 720 − 720 = 660. `gapMm` overrides it | proposed in the analysis (Decision 1), 2026-10-02 | in effect — `hangGap`, `group-layout.ts`; to be confirmed |
+| D35 | **The hang height of a wall unit `above` a floor unit** is the height of the tall units — a tall unit of the group, else the usual tall unit of the library — minus the heights of the wall unit and the floor unit (`mod_Height`); base and tall units stand on the same plinth. Furniture_Smith: 2100 − 720 − 720 = 660. `gapMm` overrides it | proposed in the analysis (Decision 1), 2026-10-02; confirmed live 2026-10-04 ([RML-18041](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md)): bottom 1480, top 2200, flush with the tall units | in effect — `hangGapOf`, `group-layout.ts` |
 | D32 | **Nothing the agent sends is dropped without a report.** What the server can build it builds — a unit written inside the docking becomes a root — and every field it cannot use is named in `corrections`. Only the read-only fields of a group from `get-plan-context` are ignored silently | user, 2026-10-02 ([bug analysis](../../.agents/bug-analysis/units-inside-docking-entries-dropped.md)) | in effect — `prepareGroup`, `tool-executors.ts` |
 
 ## 4. How a tool call runs
@@ -327,7 +327,7 @@ The server runs these steps:
    and the placement (G1–G14).
 2. It reduces the roots to article picks and strips the docking indices (C2, C3).
 3. It reads the article ids in the catalog's spelling (G15), compiles the relations into docking
-   entries (D34, C15, C16, G31–G41), reports the roots a new group names in its docking but never
+   entries (D34, C15, C16, G31–G45), reports the roots a new group names in its docking but never
    sends (G26), completes the docking (G7, G8), and drops a placement on a group that is already in
    the plan (G16).
 4. For every placed group, it learns the frame of the anchor — its docking corner and, for a corner
@@ -473,7 +473,7 @@ them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twi
 ### 8.3 `create-or-replace-groups`
 
 G23–G25 and G29 concern docking written as `contextData`; a payload with relations (D34) has its own
-corrections, G31–G41.
+corrections, G31–G45.
 
 | ID | Input | What the server does | Feedback |
 |---|---|---|---|
@@ -516,6 +516,10 @@ corrections, G31–G41.
 | G38 | two relation fields on one root | uses the first of `rightOf`, `leftOf`, `onTop`, `above`, `behind` | correction |
 | G40 | a floor unit `rightOf` / `leftOf` a wall unit | puts it into the floor row — the default of G31 | correction |
 | G41 | a range hood `rightOf` / `leftOf` a tall unit — its Top vector is its chimney top | hangs it `above` the floor unit on that side of the tall unit; without one it stays beside the tall unit by its top edge. A hood without a relation hangs `above` a base unit, never beside or on a tall unit | correction |
+| G42 | a wall unit (or a range hood) `onTop` a kitchen base unit (category "Base Units") — nothing stands on a worktop | hangs it `above` that unit (D35); a `gapMm` meant as a stacking lift is dropped. `onTop` a tall unit or a wall unit stays a stacking | correction |
+| G43 | a floor unit `onTop` a kitchen base unit | puts it `rightOf` that unit — it continues the floor row | correction |
+| G44 | a second unit `above` a floor unit on the same edge (`align`) — both would take the same place | puts it `rightOf` the first unit above that floor unit | correction |
+| G45 | `above` a tall unit — nothing hangs above a tall unit | hangs it `above` the floor unit beside the tall unit when the relations name one (either side); else beside the tall unit with the tops flush (`rightOf`, Top vectors) | correction |
 | G39 | `above` a floor unit where the catalog gives no tall unit height | the wall unit stands on the floor unit | correction naming `gapMm` |
 | G30 | any other input that fails the preparation of a group | does not build that group; the other groups of the call load (D30) | `notLoaded`: "posGroups[i]: could not be read - …" |
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |

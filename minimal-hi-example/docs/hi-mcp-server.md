@@ -582,7 +582,7 @@ group one point and one rotation; the planner calculates every root position.
   | Relation | Meaning | Docking the server builds |
   | --- | --- | --- |
   | `rightOf` / `leftOf` | right / left of that unit, as seen from the front | `RightBottom → LeftBottom` / `LeftBottom → RightBottom`; a wall unit beside a tall unit `RightTop → LeftTop` / `LeftTop → RightTop` — the tops are flush |
-  | `onTop` | stands on top of that unit (stacking, several levels); `align` `left` (default), `right`, `back`; `gapMm` lifts it | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
+  | `onTop` | stands on top of that unit (stacking on a tall unit or a wall unit, several levels); `align` `left` (default), `right`, `back`; `gapMm` lifts it. On a kitchen base unit nothing stands: a wall unit hangs `above` it, a floor unit continues the row (both reported) | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
   | `above` | a wall unit hanging above that floor unit; `gapMm` sets the gap | `LeftTop → LeftBottom` with the gap that puts the wall unit's top at the top of the tall units (D35) |
   | `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom` |
 

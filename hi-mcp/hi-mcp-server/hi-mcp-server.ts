@@ -10,7 +10,7 @@ const AUTHORING_RULES = `Authoring rules for pos groups:
 - Never author a position: roots are positioned by their relation only, a new group with placement only; a position on a root or a group is ignored.
 - Relations: every root after the first names one neighbour of the same group by its id, with exactly one of these fields - the server builds the docking from it:
   rightOf: "<id>" - the unit stands right of that unit; leftOf: "<id>" - left of it (right and left as seen from the front of the units). A row is each unit rightOf the one before.
-  onTop: "<id>" - the unit stands on top of that unit (stacking, also several levels); align: "left" (default), "right" or "back" says which edges line up, gapMm lifts it.
+  onTop: "<id>" - the unit stands on top of that unit (stacking on a tall unit or a wall unit, also several levels); align: "left" (default), "right" or "back" says which edges line up, gapMm lifts it.
   above: "<id>" - a wall unit hanging above that floor unit, at the height of the wall units; gapMm sets the gap below the wall unit instead.
   behind: "<id>" - back to back with that unit, turned by 180 degrees (an island).
   A wall unit rightOf or leftOf a tall unit hangs beside it with the tops flush; further wall units and the range hood continue rightOf or leftOf each other. Without a tall unit, the first wall unit hangs above a floor unit and the next ones continue rightOf or leftOf it; a range hood without wall units hangs above the hob unit.

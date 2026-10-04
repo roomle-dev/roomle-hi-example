@@ -416,6 +416,7 @@ describe('hi-mcp-server tool calls', () => {
     expect(rules).toContain(
       'A wall unit rightOf or leftOf a tall unit hangs beside it with the tops flush'
     );
+    expect(rules).toContain('stacking on a tall unit or a wall unit');
     expect(create?.description).toContain(
       'rightOf, leftOf, onTop, above or behind'
     );

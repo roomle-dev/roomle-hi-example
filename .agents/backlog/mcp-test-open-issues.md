@@ -35,8 +35,6 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 15 | [A G7 correction docks a part by a wall unit at floor level](#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | bug, MCP server | image: kitchen in the back right corner | low — docking written as `contextData` only |
 | 16 | [`change-module-attribute` fails with "checkAttributes.get is not a function"](#16-change-module-attribute-fails-with-checkattributesget-is-not-a-function) | bug, roomle-ui — [RML-18039](https://roomle.atlassian.net/browse/RML-18039) | image only, no text | critical — an attribute edit fails |
 | 17 | [A chat turn without an answer for 10 minutes](#17-a-chat-turn-without-an-answer-for-10-minutes) | hardening, chat | image: kitchen on the left-hand wall; full kitchen around the corner | medium |
-| 19 | [`above` a tall unit puts the unit on top of it, unreported](#19-above-a-tall-unit-puts-the-unit-on-top-of-it-unreported) | bug, MCP server | oven, range hood, sink, fridge in the corner | medium — a hood on the oven tower |
-| 21 | [Two units `above` one floor unit take the same place](#21-two-units-above-one-floor-unit-take-the-same-place) | hardening | image: kitchen on the left-hand wall; full kitchen around the corner | medium — the hood inside a wall unit |
 | 22 | [`place-group` resets the worktop and toe kick colours](#22-place-group-resets-the-worktop-and-toe-kick-colours) | bug, MCP server | image: kitchen on the left-hand wall | medium — the requested worktop colour is lost |
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui | full kitchen around the corner | high — wall cabinets on the worktop |
 | 24 | [A second create with the agent's own group id builds a duplicate group](#24-a-second-create-with-the-agents-own-group-id-builds-a-duplicate-group) | hardening | full kitchen around the corner | medium — two kitchens on one spot |
@@ -44,10 +42,8 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 26 | [One unknown article id rejects the whole group](#26-one-unknown-article-id-rejects-the-whole-group) | hardening | full kitchen around the corner | medium — a retry step |
 | 27 | [A new group without a placement, moved with `place-group` right after](#27-a-new-group-without-a-placement-moved-with-place-group-right-after) | hardening | three tall units; four cabinets; image only | medium — a second call and a reload |
 | 28 | [`place-group` on a group that already stands where asked reloads it](#28-place-group-on-a-group-that-already-stands-where-asked-reloads-it) | hardening | image: kitchen in the back right corner; full kitchen around the corner | low |
-| 29 | [A wall unit `onTop` a floor unit stands on the worktop](#29-a-wall-unit-ontop-a-floor-unit-stands-on-the-worktop) | bug, MCP server | oven, fridge, sink in the corner; full kitchen around the corner | high — wall cabinets on the worktop |
 | 30 | [The front right point is taken for the back right corner](#30-the-front-right-point-is-taken-for-the-back-right-corner) | hardening | three tall units; four cabinets; image: planning on the right-hand wall | high — the wrong wall, a group outside the room |
 | 31 | [A wall-unit row over a corner article runs through the side wall](#31-a-wall-unit-row-over-a-corner-article-runs-through-the-side-wall) | hardening | images: kitchen in the back right corner, image only; corner kitchens | high — wall units outside the room |
-| 32 | [A floor unit `onTop` a base unit stands on the worktop](#32-a-floor-unit-ontop-a-base-unit-stands-on-the-worktop) | hardening | kitchen in the back right corner | medium |
 | 33 | [Wall units beside a tall unit at the end of the row hang over empty floor](#33-wall-units-beside-a-tall-unit-at-the-end-of-the-row-hang-over-empty-floor) | hardening | image: kitchen on the left-hand wall | medium |
 | 34 | [A replace the library cannot calculate is reverted without a word in the tool result](#34-a-replace-the-library-cannot-calculate-is-reverted-without-a-word-in-the-tool-result) | hardening, MCP server; roomle-ui contract | image only, no text | medium — the agent plans on with a layout the plan does not hold |
 
@@ -55,12 +51,10 @@ Since RML-18038 the agent writes relations (`rightOf`, `leftOf`, `onTop`, `above
 server compiles the docking (`group-layout.ts`). In the test with all three models
 (`mcp-test-2026-10-02_17-25-40`) no relation needed a correction. What comes first:
 
-- **Gaps of the compile**: 19 and 21. 18 (a floor unit beside a wall unit) and 20 (a hood beside a
-  tall unit) are fixed by the review of PR #51 (G40, G41).
+- **Gaps of the compile**: 18, 19, 20, 21, 29 and 32 are fixed (G40–G45).
 - **Wrong results of the server's own corrections or placement**: 1, and 22 (`place-group` resets the
   worktop colour).
 - **Requests the tool API makes the agent get wrong**: 6 (a material for the whole kitchen).
-- **Gaps of the compile** found with Mistral Large (`mcp-test-2026-10-03_18-13-02`): 29 (a wall unit `onTop` a floor unit), 32 (a floor unit `onTop` a base unit).
 - **Instructions the model gets wrong**: 30 (back and front), 31 (wall units in a corner kitchen), 33 (wall units beside a tall unit at the end of the row).
 - **Planner defects**: 23 (a worktop colour change drops hanging wall units), 16 (RML-18039).
 
@@ -589,39 +583,6 @@ kitchen and the full kitchen within 10 minutes.
 
 **Latest runs** (`mcp-test-2026-10-02_17-25-40`): not shown — with the relations (RML-18038) gpt-5-mini answered 06 in 68 s and 10 in 54 s. The chat still has no turn limit and no progress, so the issue stays.
 
-## 19. `above` a tall unit puts the unit on top of it, unreported
-
-**Problem.** `hood above oven`, where the oven is the 2100 mm `HOTS2AB60` tower, became
-`oven.LeftTop → hood.LeftBottom offset [0, 0, 0]`: the hood stands on the tower. Nothing reports it.
-
-**Cause.** `hangGap` (`group-layout.ts`) is negative above a tall unit and is set to 0 silently.
-
-**To do.** Report it: "hood stands on the tall unit oven - above hangs a unit above a floor
-unit". A hood `above` a tall unit could instead hang `above` the next floor unit of the row — needs a
-decision.
-
-**Test.** `above` a tall unit is reported; `onTop` a tall unit is not.
-
-**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5.4-mini 04.
-
-**Latest run** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 04 — `hood1` `above` the
-`HOTS2AB60` oven tower reached the planner as `oven1.LeftTop → hood1.LeftBottom offset [0,0,0]`,
-and the hood stands on the tower.
-
-## 21. Two units `above` one floor unit take the same place
-
-**Problem.** A wall unit and the hood both `above` one base unit get the same entry on its `LeftTop`
-with the same offset: the hood stands inside the wall unit.
-
-**Cause.** The side correction (G8) separates units on side vectors only; the compile writes both
-`above` entries as asked.
-
-**To do.** The later unit `above` the same floor unit goes `rightOf` the earlier one, reported.
-
-**Test.** Two units `above` one base unit: the second is `rightOf` the first.
-
-**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 06, 10.
-
 ## 22. `place-group` resets the worktop and toe kick colours
 
 **Problem.** After `mod_CountertopColor` 224 and `mod_ToekickColor` 224, `place-group` reloaded the
@@ -734,32 +695,6 @@ the server reloaded the group anyway (and reset the worktop colour, issue 22).
 
 **Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-6-astra 07, 10.
 
-## 29. A wall unit `onTop` a floor unit stands on the worktop
-
-**Problem.** The model puts a wall cabinet `onTop` of the corner base unit (its "corner wall
-cabinet"). The server writes `cornerBase.LeftTop → wallCorner.LeftBottom offset [0,0,0]`, so the
-wall cabinet stands on the worktop. The wall units the model continues rightOf it follow it, and
-nothing reports it.
-
-**Cause.** `relationsToDocking` (`group-layout.ts:156-163`) corrects a wall unit `rightOf` / `leftOf`
-a floor unit into `above` (G35), and a floor unit `above` a unit into `rightOf` (G34). A wall unit
-`onTop` a floor unit that is not a tall unit stays a stacking, and gets no gap: only `above` derives
-the wall-unit height (`hangGap`). The served rule says `onTop` is stacking and `above` is "a wall
-unit hanging above that floor unit". The model reads "the corner wall cabinet stands on top of the
-corner base" as `onTop`.
-
-**To do.**
-- A wall unit (catalog category "Wall Units") `onTop` a floor unit that is not a tall unit hangs
-  `above` it with the derived gap. Report it: "wall unit 'wallCorner' hangs above the floor unit
-  'cornerBase' instead of onTop it".
-- A wall unit `onTop` a tall unit or another wall unit stays a stacking.
-
-**Test.** A group with a base unit and a wall unit `onTop` it compiles to `LeftTop → LeftBottom
-offset [0, 660, 0]` with the correction. A wall unit `onTop` a tall unit keeps offset 0.
-
-**Latest runs** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 05 (`OTB60` on `UELTB90`),
-10 (`O2TB90` on `UELTB90`).
-
 ## 30. The front right point is taken for the back right corner
 
 **Problem.** The model calls `[4815,0,1235]` the "back right corner": the front right corner of the
@@ -812,27 +747,6 @@ room, through the right wall. The floor rows turn at the corner article; the wal
 have no wall unit outside the room.
 
 **Latest runs** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 05, 07, 09, 10.
-
-## 32. A floor unit `onTop` a base unit stands on the worktop
-
-**Problem.** The model used `EUELTB90`, a base corner unit (category "Kitchen handleless | Base Units
-| Corner"), as its "corner wall unit" `onTop` the corner base unit. A base unit stands on the
-worktop, and the wall units hung `above` it by G35 hang near the ceiling. Nothing reports it.
-
-**Cause.** `onTop` is checked neither for the kind of the unit nor for the kind of the target
-(`group-layout.ts`). Stacking makes sense on a tall unit (a top unit) or a wall unit, not a floor
-unit on a base unit.
-
-**To do.**
-- A floor unit `onTop` a base unit (not a tall unit) continues the floor row `rightOf` it, as G34
-  does for `above`. Report it: "floor unit 'wallCorner' cannot stand on the base unit 'cornerBase' -
-  it continues the floor row".
-- Needs a decision on what counts as a top unit (a category or a height).
-
-**Test.** A base unit `onTop` a base unit compiles to `rightOf` with the correction. A top unit
-`onTop` a tall unit stays a stacking.
-
-**Latest run** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 03.
 
 ## 33. Wall units beside a tall unit at the end of the row hang over empty floor
 

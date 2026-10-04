@@ -1,6 +1,6 @@
 > **Type**: Feature Analysis
 > **Domain**: HI MCP Server, TypeScript project setup, ligna-store integration
-> **Trigger**: "Analyse the feature request for roomle-hi-example: hi-mcp TypeScript project with hi-mcp-server as first MCP server PoC, client is the INT-stage ligna-store"
+> **Trigger**: "Analyse the feature request for roomle-hi-example: hi-mcp TypeScript project with hi-mcp-poc-json as first MCP server PoC, client is the INT-stage ligna-store"
 > **Date**: 2026-09-26
 > **Author**: AI Assistant
 > **Status**: Open
@@ -50,7 +50,7 @@ APIs — this has to be verified first (see [7.1](#71-risk-getexternalobjectplan
 
 1. **New subproject**: `hi-mcp/` in roomle-hi-example — a Node.js **TypeScript** project that will
    contain **multiple MCP server proof of concepts** over time.
-2. **First PoC**: `hi-mcp/hi-mcp-server/`. The "json" in the name refers to the fact that HI object
+2. **First PoC**: `hi-mcp/hi-mcp-poc-json/` (since renamed to `hi-mcp/hi-mcp-server/`). The "json" in the name refers to the fact that HI object
    groups (kitchens) are generated **from a single JSON** with this attempt: the agent submits one
    `posGroups` JSON payload (article picks + docking + placement) and `create-or-replace-groups`
    creates, docks and positions the whole group in one call. The agent never authors coordinates.

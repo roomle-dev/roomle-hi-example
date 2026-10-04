@@ -33,7 +33,7 @@ ADR 0001.
 
 ### The tool
 
-Registration (`a4df7f5^:hi-mcp/hi-mcp-server/hi-mcp-server.ts:180-234`):
+Registration (`a4df7f5^:hi-mcp/hi-mcp-poc-json/hi-mcp-server.ts:180-234`):
 
 | Parameter | Type | Meaning |
 |---|---|---|
@@ -44,7 +44,7 @@ Registration (`a4df7f5^:hi-mcp/hi-mcp-server/hi-mcp-server.ts:180-234`):
 | `offsetMm?` | `number` | extra distance along the wall, default 0 |
 
 The server forwarded the call to the page (`bridge.call('place-group', …)`), where the executor
-ran (`a4df7f5^:hi-mcp/hi-mcp-client/tool-executors.ts:699-782`):
+ran (`a4df7f5^:hi-mcp/hi-mcp-poc-json-client/tool-executors.ts:699-782`):
 
 1. `getExternalObjectPlanContext(['rooms', 'groups'])`; the group by id or unique prefix; the
    wall by side label or index (`resolveWall`, `:280-304`), the alignment checked early
@@ -62,7 +62,7 @@ ran (`a4df7f5^:hi-mcp/hi-mcp-client/tool-executors.ts:699-782`):
 5. Reload of the group with the placement expressed as `repositioningData` of its first root
    (`repositioningFromPlacement`), then `{ pos, rotationY, footprint, placedBy, cornerRootId?, wall, group }`.
 
-### The geometry (`a4df7f5^:hi-mcp/hi-mcp-client/plan-space.ts`, 558 lines)
+### The geometry (`a4df7f5^:hi-mcp/hi-mcp-poc-json-client/plan-space.ts`, 558 lines)
 
 `groupFootprint` (part boxes → `dockInfos` → `b`/`t` attributes), `rootCornerGeometry` /
 `groupCornerGeometry` (corner point and back-edge directions from the `LeftBack*`/`RightBack*`
@@ -286,7 +286,7 @@ conversion needs neither the anchor walk nor the corner offset.
 
 ### 1. Recovered module `hi-mcp/hi-mcp-server/plan-space.ts`
 
-`a4df7f5^:hi-mcp/hi-mcp-client/plan-space.ts` restored in the server, unchanged except
+`a4df7f5^:hi-mcp/hi-mcp-poc-json-client/plan-space.ts` restored in the server, unchanged except
 that `RepositioningData` is imported from `group-placement.ts` instead of being declared a second
 time. It keeps its old name because it is recovered whole, not reduced to the `wall-placement.ts`
 the analysis sketched.
@@ -299,7 +299,7 @@ Every export is used by the executor: `groupFootprint` (part boxes → docking v
 
 ### 2. Executor `place-group` (`tool-executors.ts`)
 
-Recovered from `a4df7f5^:hi-mcp/hi-mcp-client/tool-executors.ts` — the executor
+Recovered from `a4df7f5^:hi-mcp/hi-mcp-poc-json-client/tool-executors.ts` — the executor
 (`:699-782`), `resolveWall` and `placeGroupAtWall` (`:272-338`), `findGroupContact` and
 `contactError` (`:58-126`), `withoutPositions` and `repositionedGroup` (`:157-190`):
 
@@ -366,7 +366,7 @@ Deliberate deviations from the old code:
 ### 4. Unit tests
 
 **`tests/plan-space.test.ts`** — recovered from
-`a4df7f5^:hi-mcp/hi-mcp-client/tests/plan-space.test.ts`, 22 tests, only the import path
+`a4df7f5^:hi-mcp/hi-mcp-poc-json-client/tests/plan-space.test.ts`, 22 tests, only the import path
 changes:
 
 | describe | Cases |

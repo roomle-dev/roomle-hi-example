@@ -300,7 +300,7 @@ finding.
 | Tests | `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` (`create-or-replace-groups validation`) |
 | The rule sentence | `hi-mcp/hi-mcp-server/hi-mcp-server.ts:10` |
 | Living docs | `minimal-hi-example/docs/hi-mcp-server.md:336-342`, `:558-562`; `hi-mcp/hi-mcp-server/README.md:354-360`, `:559-563`; `.agents/skills/hi-authoring-rules.md:104-112`, `:178-186`, `:252-258`; `.agents/skills/hi-mcp-tools.md:213-219` |
-| Hardening H1–H3, if taken up | the same validation block and the post-load hint (`tool-executors.ts:750-777`); `plan-space.ts` for the room contour; the reverted code of PR #24 (`git show 1e979da -- hi-mcp/hi-mcp-server/tool-executors.ts`) as the starting point |
+| Hardening H1–H3, if taken up | the same validation block and the post-load hint (`tool-executors.ts:750-777`); `plan-space.ts` for the room contour; the reverted code of PR #24 (`git show 1e979da -- hi-mcp/hi-mcp-poc-json/tool-executors.ts`) as the starting point |
 
 ## Open points
 

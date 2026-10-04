@@ -6,6 +6,7 @@
 > **Date**: 2026-10-04
 > **Author**: AI Assistant
 > **Status**: Open
+> **Branch**: `docs/obstacle-map-analysis-RML-18036` — [PR #63](https://github.com/roomle-dev/roomle-hi-example/pull/63)
 
 ---
 

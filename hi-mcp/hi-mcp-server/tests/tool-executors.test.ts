@@ -1025,6 +1025,12 @@ describe('create-or-replace-groups validation', () => {
             articleId: 'article-1',
             dockTo: { rootId: 'cab2', ownDockingVector: 'LeftTop' },
           },
+          // gpt-5.4-mini of 2026-10-04: the relation named inside dockTo
+          {
+            id: 'cab3',
+            articleId: 'article-1',
+            dockTo: { id: 'top', relation: 'rightOf' },
+          },
         ],
       },
     ]);
@@ -1036,10 +1042,19 @@ describe('create-or-replace-groups validation', () => {
         },
       ],
     });
+    expect(loadedGroup.roots[2].contextData).toEqual({
+      dockedRoots: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('cab3', 'LeftBottom')],
+        },
+      ],
+    });
     expect(JSON.stringify(loadedGroup)).not.toContain('dockTo');
     expect(result.corrections).toEqual([
       "posGroups[0] root 'cab2': dockTo was read as rightOf 'cab1'",
       "posGroups[0] root 'top': dockTo could not be read as a relation - ignored; name the neighbour with rightOf, leftOf, onTop, above or behind",
+      "posGroups[0] root 'cab3': dockTo was read as rightOf 'top'",
       "posGroups[0]: root 'top' names no neighbour - it was put rightOf 'cab2'",
     ]);
   });

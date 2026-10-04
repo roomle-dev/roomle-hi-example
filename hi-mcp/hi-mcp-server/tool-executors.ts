@@ -1782,14 +1782,17 @@ const readDockToAsRelation = (
     if (root?.dockTo === undefined) {
       continue;
     }
-    const { rootId, ownDockingVector, dockingVector } = isObject(root.dockTo)
-      ? root.dockTo
-      : {};
-    const own = String(ownDockingVector ?? '');
-    const theirs = String(dockingVector ?? '');
-    const relation =
-      DOCK_TO_RELATION[`${own}->${theirs}`] ??
-      (own.endsWith('Top') && theirs.endsWith('Bottom') ? 'above' : undefined);
+    const dockTo = isObject(root.dockTo) ? root.dockTo : {};
+    const rootId = dockTo.rootId ?? dockTo.id;
+    const own = String(dockTo.ownDockingVector ?? '');
+    const theirs = String(dockTo.dockingVector ?? '');
+    // the relation named inside dockTo, or the pair of vectors
+    const relation = RELATIONS.includes(dockTo.relation)
+      ? (dockTo.relation as string)
+      : (DOCK_TO_RELATION[`${own}->${theirs}`] ??
+        (own.endsWith('Top') && theirs.endsWith('Bottom')
+          ? 'above'
+          : undefined));
     delete root.dockTo;
     if (typeof rootId !== 'string' || relation === undefined) {
       corrections.push(

@@ -140,6 +140,7 @@ done. The analysis and the report are the same document — the report is append
 | [Guards in the HI MCP server: what they reject, prevent and discard, and the refactoring plan (RML-18033)](refactoring-analysis/guards-in-the-hi-mcp-server.md) | Done | 2026-10-02 |
 | [One anchor frame for articles with docking vector offsets (corner articles, range hood)](refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md) | Done | 2026-10-02 |
 | [Simplify the docking for the agent: one relation per unit instead of contextData (RML-18038)](refactoring-analysis/simple-docking-for-the-agent.md) | Open | 2026-10-02 |
+| [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-04 |
 
 ### Benchmarks & Performance Analyses
 

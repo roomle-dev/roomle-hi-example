@@ -6,6 +6,9 @@
 > rules (`hi-mcp-server.ts`), the chat (`hi-mcp/hi-mcp-chat`); two roomle-ui defects and one
 > RoomleCore defect
 > **Maintained by**: step 7 of [the testing skill](../skills/hi-mcp-testing.md#7-open-issues)
+> **Analysis**: the causes verified on `master` and the fixes proposed per issue, with the live
+> reproduction against the local planner, in
+> [rml-18041-mcp-test-open-issues.md](../bug-analysis/rml-18041-mcp-test-open-issues.md) (RML-18041)
 
 Each issue names the problem, the test prompt that shows it, the cause in the code, the to-do and
 its test. An issue leaves this list when its fix is in the code. The guideline for every server

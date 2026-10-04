@@ -72,7 +72,9 @@ relation; the server compiles the docking (`contextData`) from it
   hangs `above` the hob unit. A hood beside a tall unit is hung `above` the floor unit on that side,
   and a floor unit beside a wall unit continues the floor row (corrections G40, G41).
 - A corner kitchen starts with a corner article and continues one row `rightOf` it and the other
-  `leftOf` it.
+  `leftOf` it; the wall units of each leg hang `above` the floor units of that leg, never on or
+  above the corner article. A wall unit beside a tall unit goes on the side of the base units
+  (correction G51).
 - A root without a relation continues the row of its kind (floor units, wall units); the first
   wall unit hangs beside a tall unit, else above a floor unit. `corrections` reports it.
 - The server writes each entry on the root the planner reaches first, so an offset takes effect,
@@ -169,8 +171,9 @@ placement: {
   it flush into the corner at the wall's end; `end + d · (start − end) / lengthMm` shifts it by d;
   d = (lengthMm − group width) / 2 centres it; d = lengthMm − group width puts its right end into
   the corner at the wall's `start`.
-- **Corner**: `posGroup` = the corner point, `posRotationY` = the `facingRotationY` of the wall that
-  ends in that corner; a corner kitchen starts with a corner article. For a right-handed corner
+- **Corner**: `posGroup` and `posRotationY` = the `point` and `posRotationY` of the corner in the
+  room's `corners` list of `get-plan-context` (the `facingRotationY` of the wall that ends in that
+  corner); a corner kitchen starts with a corner article. For a right-handed corner
   article (`mod_CarcaseDirection` Right) the server adds 90° itself; the group is read back with
   the `posRotationY` it was placed with.
 

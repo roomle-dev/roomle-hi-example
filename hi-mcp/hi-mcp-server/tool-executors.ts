@@ -424,8 +424,8 @@ const dockTarget = (
     isWallUnitArticle(article) &&
     !isWallUnitArticle(carrierArticle) &&
     !isTallUnitArticle(carrierArticle) &&
-    /Top$/.test(String(dockTo.ownDockingVector)) &&
-    /Bottom$/.test(String(dockTo.dockingVector)) &&
+    String(dockTo.ownDockingVector).endsWith('Top') &&
+    String(dockTo.dockingVector).endsWith('Bottom') &&
     !(Number(dockTo.offset?.[1]) > 0)
   ) {
     const gap = hangGapOf(

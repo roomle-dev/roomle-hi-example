@@ -186,8 +186,9 @@ the root's `freeDockingVectors`; the pairs are the docking pairs of the
 (case, whitespace) is read in the catalog's spelling. `merge-article-into-group` docks a unit sent
 to a taken side vector to the named root's free other side, else to the root at the free end of
 that row (a corner article ends a row: the unit then goes to the free end of the leg in the other
-direction), and a `dockingVector` the article does not have becomes the partner of
-`ownDockingVector`.
+direction), and a `dockingVector` the article does not have becomes the partner of `ownDockingVector`. A wall
+unit or a range hood merged `*Top -> *Bottom` on a floor unit without a y offset gets the hang gap
+of the wall units (D35), reported.
 
 **Returns**: `{ command, groups, removedGroupIds, changedModuleIds? }` once the planner has loaded
 the result — the affected groups in the `get-plan-context` shape; `changedModuleIds` for

@@ -288,9 +288,12 @@ coordinate system throughout (3D, right-handed, Y up).
   `pos`, Y up) and a derived `walls` array — per wall: a `side` label
   (`left`/`right`/`top`/`bottom` as seen in the top-view image), `start`/`end`
   (`[x, 0, z]` in millimetres, the 3D contour points on the floor),
-  `lengthMm`, `type`, `heightMm`, `thicknessMm`, and `facingRotationY` — the
-  `posRotationY` of a group standing with its back against that wall (see
-  [Positioning a group](#positioning-a-group))
+  `lengthMm`, `type` (`wall`, or `opening` for a door), `heightMm`, `thicknessMm`,
+  a `name` in the user's words (back wall, front wall, left wall, right wall) and
+  `facingRotationY` — the `posRotationY` of a group standing with its back
+  against that wall (see [Positioning a group](#positioning-a-group)) — and a
+  `corners` list: per room corner its `name` (back left, back right, front
+  left, front right), `point` and the `posRotationY` of a corner kitchen there
 - `articles` — compact catalog: `articleId`, `articleName`, `desc`,
   `category`, and per root module its master-data `module` (id, name,
   desc), `dimensions` (the template's `Dim` attributes with id,
@@ -485,7 +488,9 @@ an article id in another spelling is read in the catalog's spelling.
 `merge-article-into-group` docks a unit sent to a taken side vector to the
 named root's free other side, else to the root at the free end of that row (or
 of its leg, when the row ends at a corner article), and a `dockingVector` the
-article does not have becomes the partner of `ownDockingVector`. The result reports these in
+article does not have becomes the partner of `ownDockingVector`; a wall unit
+merged on top of a floor unit without a y offset gets the hang gap of the wall
+units. The result reports these in
 `corrections`. The planner's own checks (e.g. groups of different libraries
 in `merge-groups`) are unchanged, and their message is passed on as the error.
 Group ids accept a unique prefix; a root module id that is a unique prefix, differs only in
@@ -654,10 +659,11 @@ for a group at a wall, in a corner, or anywhere in the room.
 
   The group width is the sum of the unit widths of the row (`dimensions` in
   the catalog; `position.footprint.widthMm` of a loaded group gives it).
-- **Rectangular room** (back = top, front = bottom in the top-view image). A
-  corner takes the corner point as `posGroup` and the `facingRotationY` of the
-  wall that ends in that corner; a corner kitchen starts with a corner
-  article, and its rows run along both walls:
+- **Room corners**: every room carries a `corners` list with the `point` and
+  the `posRotationY` of each corner — the `facingRotationY` of the wall that
+  ends there; a corner kitchen takes both from it and starts with a corner
+  article, and its rows run along both walls. For a rectangular room (back =
+  top, front = bottom in the top-view image):
 
   | Wall / corner | `posRotationY` | Corner: `RightBottom` row runs along | Corner: `LeftBottom` row runs along |
   | --- | --- | --- | --- |

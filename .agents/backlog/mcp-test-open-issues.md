@@ -20,12 +20,9 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | # | Issue | Kind | Test prompt | Priority |
 |---|---|---|---|---|
 | 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | four cabinets on the back wall; oven, fridge, sink in the corner | low — docking written as `contextData` only |
-| 5 | [A range hood without wall units has no docking recipe](#5-a-range-hood-without-wall-units-has-no-docking-recipe) | bug, rules | oven, range hood, sink, fridge; full kitchen around the corner | low — with relations the hood hangs `above` the hob |
 | 7 | [Docking to a vector the article does not have](#7-docking-to-a-vector-the-article-does-not-have) | hardening | oven, fridge, sink in the corner | medium |
 | 9 | [Answers claim what the plan does not have](#9-answers-claim-what-the-plan-does-not-have) | hardening, chat | most prompts with a wrong result (8 of 17 runs on 2026-10-02 12:45) | medium |
-| 10 | [A wall unit stands on the worktop instead of hanging on the wall](#10-a-wall-unit-stands-on-the-worktop-instead-of-hanging-on-the-wall) | bug, MCP server | full kitchen around the corner | medium — `contextData` only; with relations the height is derived (D35, to confirm) |
 | 11 | [A merged group reaches into the back wall](#11-a-merged-group-reaches-into-the-back-wall) | bug, RoomleCore — [RML-18040](https://roomle.atlassian.net/browse/RML-18040) | join groups | — |
-| 12 | [The door opening is listed as a wall](#12-the-door-opening-is-listed-as-a-wall) | hardening | image: planning on the right-hand wall | medium |
 | 13 | [Undocked wall units reject the whole group](#13-undocked-wall-units-reject-the-whole-group) | hardening | full kitchen around the corner | low — docking written as `contextData` only |
 | 14 | [A floor unit is docked onto a top vector](#14-a-floor-unit-is-docked-onto-a-top-vector) | hardening | image: kitchen on the left-hand wall | low — docking written as `contextData` only |
 | 15 | [A G7 correction docks a part by a wall unit at floor level](#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | bug, MCP server | image: kitchen in the back right corner | low — docking written as `contextData` only |
@@ -33,16 +30,12 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 17 | [A chat turn without an answer for 10 minutes](#17-a-chat-turn-without-an-answer-for-10-minutes) | hardening, chat | image: kitchen on the left-hand wall; full kitchen around the corner | medium |
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui | full kitchen around the corner | high — wall cabinets on the worktop |
 | 27 | [A new group without a placement, moved with `place-group` right after](#27-a-new-group-without-a-placement-moved-with-place-group-right-after) | hardening | three tall units; four cabinets; image only | medium — a second call and a reload |
-| 30 | [The front right point is taken for the back right corner](#30-the-front-right-point-is-taken-for-the-back-right-corner) | hardening | three tall units; four cabinets; image: planning on the right-hand wall | high — the wrong wall, a group outside the room |
-| 31 | [A wall-unit row over a corner article runs through the side wall](#31-a-wall-unit-row-over-a-corner-article-runs-through-the-side-wall) | hardening | images: kitchen in the back right corner, image only; corner kitchens | high — wall units outside the room |
-| 33 | [Wall units beside a tall unit at the end of the row hang over empty floor](#33-wall-units-beside-a-tall-unit-at-the-end-of-the-row-hang-over-empty-floor) | hardening | image: kitchen on the left-hand wall | medium |
 
 Since RML-18038 the agent writes relations (`rightOf`, `leftOf`, `onTop`, `above`, `behind`) and the
 server compiles the docking (`group-layout.ts`). In the test with all three models
 (`mcp-test-2026-10-02_17-25-40`) no relation needed a correction. What comes first:
 
 - **Gaps of the compile**: 18, 19, 20, 21, 29 and 32 are fixed (G40–G45).
-- **Instructions the model gets wrong**: 30 (back and front), 31 (wall units in a corner kitchen), 33 (wall units beside a tall unit at the end of the row).
 - **Planner defects**: 23 (a worktop colour change drops hanging wall units), 16 (RML-18039).
 
 Issue 2 (an on-top docking counted as a side neighbour) is fixed: `sidePartnersOf` counts side pairs
@@ -75,49 +68,6 @@ left end (cab1); the correction is reported.
 **Relation payloads** (RML-18038): fixed — one relation per unit cannot form a ring that the server
 does not see; a relation that closes one is dropped and reported (G33). Open for docking written as
 `contextData`.
-
-## 5. A range hood without wall units has no docking recipe
-
-**Problem.** The rules tell how a range hood hangs between two wall units. A kitchen without wall
-units, or with a single wall unit, has no recipe. The model then:
-- names the hood in the docking of a base unit's `RightTop` without sending it (the server reports
-  the unsent root);
-- or leaves the hood out, and answers that it was built.
-
-**Cause.** `hi-mcp-server.ts`, the docking pairs of the served rules: the only hood sentence is
-"range hood: it hangs between two wall units like a unit beside them".
-
-**To do.**
-- Verify in a live check how a hood docks above a hob unit without wall units: `LeftTop` of the hob
-  unit → `LeftBottom` of the hood with `offset [0, <gap>, 0]`. Measure where it hangs, and which gap
-  puts it at the height of the wall units.
-- Add the verified recipe to the docking pairs, beside the one between wall units.
-
-**Test.** `hi-mcp-server.test.ts` asserts the recipe. In "test the mcp", the two prompts with a
-hood carry a hood root, and it hangs above the hob, not on the floor or the worktop.
-
-**Latest runs** (`mcp-test-2026-10-02_12-45-24`).
-- 04: the model docked the hood to the sink unit's `RightBottom`; it stands on the floor.
-- 10: the hood was docked to the sink unit's `LeftTop` without an offset; it stands on the worktop.
-
-Neither run reported it. A hood at a height it cannot have is a bug by the rules of the testing
-skill, so the kind is now "bug, rules". Also look at G7 in
-[the behaviour reference](../../hi-mcp/docs/hi-mcp-behaviour.md): it sends an undocked range hood
-to the floor row on purpose.
-
-**Latest runs** (`mcp-test-2026-10-02_13-47-02`).
-- gpt-5.4-mini 04: the hood on the sink unit's `RightBottom` stands on the floor.
-- gpt-5.4-mini 10: on a base unit's `LeftTop` without an offset, it stands on the worktop.
-- Hoods that hang: gpt-5-mini 04 docked the hood on the oven base's `LeftTop` with
-  `offset [0, 600, 0]`, and gpt-6-astra 03/04 hung it between two wall cabinets (offset 650/700).
-  The recipe the to-do asks for works.
-
-**Relation payloads** (RML-18038): the hood counts as a wall unit — it continues `rightOf` / `leftOf`
-the wall units, or hangs `above` the hob with the gap of the wall units (D35). Not verified live yet.
-
-**Latest runs** (`mcp-test-2026-10-02_17-25-40`): with relations the hood hangs `above` the hob —
-gpt-5-mini 04 (`[0, 660, 0]`, y 1480), gpt-6-astra 03 and 04 (`gapMm` 750). What stays: the served rules
-name the hood only beside wall units, and a hood `above` a tall unit stands on it (issue 19).
 
 ## 7. Docking to a vector the article does not have
 
@@ -180,75 +130,6 @@ Examples:
 - in 10, "dark marble was used for the fronts" beside the walnut it set;
 - "side by side, 1200 mm" for two units 600 mm apart.
 
-## 10. A wall unit stands on the worktop instead of hanging on the wall
-
-**Problem.** A wall cabinet docked on top of a base unit (`LeftTop → LeftBottom`) without a `y`
-offset stands directly on the base unit, at y 820, on the worktop. A wall cabinet hangs on the wall
-above the worktop: in Furniture_Smith at y 1480, with its top at 2200, flush with the tall units.
-
-**What decides the height** (measured in the example page):
-
-| Wall unit `OTB60` | Its bottom |
-|---|---|
-| alone | 0 — on the floor |
-| on a base unit, no offset | 820 — the top of the base unit |
-| on a base unit, no offset, `mod_HeightPosInsertion` 1480 | 820 — the library computes the attribute and ignores the override |
-| on a base unit, `offset [0, 660, 0]` | 1480 |
-| top edges aligned to a tall unit (`HK260.RightTop → LeftTop`) | 1480 |
-
-The library never hangs a wall unit by itself; only the docking does.
-
-**Cause.**
-- The rules make the agent supply a height it cannot know: "wall unit W above base unit A: A -> W
-  LeftTop -> LeftBottom, offset [0, <gap between the top of A and the bottom of W>, 0]"
-  (`hi-mcp-server.ts`). Neither the rules nor the catalog give the gap. The description of
-  `merge-article-into-group` suggests `[0, 600, 0]` instead, which hangs the unit 60 mm too low.
-- `create-or-replace-groups` and `merge-article-into-group` pass a wall unit docked on a floor unit
-  without a `y` offset on as sent, unreported.
-
-**To do** — let the server derive what the agent cannot know
-([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort), step 2):
-- A wall unit (catalog category "Wall Units") docked with a `*Top → *Bottom` pairing on a floor unit
-  without a `y` offset gets the offset that hangs it at the library's wall-unit height. The server
-  reports it ("'wall1' hangs 660 mm above 'back1', at the height of the wall units").
-- The same in `dockTarget` for `merge-article-into-group`.
-- Decide the source of the height before implementing:
-  - the top of the tall units (`HK260`: 2200);
-  - the library's wall height lines (`mod_WallHeightLines` = `WallCabinetsPlinthArea`);
-  - a value per library.
-
-  The offset is then the top line minus the wall unit's height minus the top of its carrier
-  (2200 − 720 − 820 = 660).
-- The rules: the wall-unit pairing loses the `<gap>` placeholder — dock it on top, and the server
-  hangs it at the wall-unit height; an explicit `y` offset is kept. The `merge-article-into-group`
-  description drops `[0, 600, 0]`.
-
-**Test.**
-- A base unit with a wall unit on its `LeftTop` without an offset loads with `offset [0, 660, 0]`
-  and the correction.
-- An explicit `y` offset is kept.
-- A wall unit beside another wall unit gets no offset.
-- In "test the mcp", the wall cabinets of the full kitchen hang at y 1480.
-
-**Latest run** (`mcp-test-2026-10-02_12-45-24`): 10.
-- Both `OTB60` were docked on the same `LeftTop` of a base unit without a `y` offset.
-- They stand on the worktop, one inside the other; the server completed both entries without
-  separating them.
-- The separation of two roots on one vector covers side vectors only — check `*Top` too.
-
-**Latest run** (`mcp-test-2026-10-02_13-47-02`): gpt-5.4-mini 10.
-- Two `OTB60` were docked to the side vectors of floor units (`corner.LeftBottom`,
-  `sink.RightBottom`). They stand on the floor, unreported.
-- A wall unit on a floor unit's side vector needs the same correction as one on its top without an
-  offset.
-- gpt-6-astra hung its wall units with offsets 650/700. The height the server should derive is still
-  the open decision.
-
-**Relation payloads** (RML-18038): `above` hangs a wall unit with the derived gap (D35: tall − wall −
-base `mod_Height`, 660 in Furniture_Smith), a wall unit beside a tall unit docks by the Top vectors,
-and a wall unit `rightOf` / `leftOf` a base unit is hung `above` it (G35). The source of the height
-(D35) is still to be confirmed. Open for docking written as `contextData`.
-
 ## 11. A merged group reaches into the back wall
 
 **Problem.** After `delete-root-module` and `merge-groups`, the merged group's toe kick reaches
@@ -272,33 +153,6 @@ when the merged units stand apart.
 **Latest runs** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 16, gpt-5.4-mini 16 (1920 mm). Not in gpt-6-astra 16, which closed the gap with `place-group` first.
 
 **Latest run** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 16 (1920 mm).
-
-## 12. The door opening is listed as a wall
-
-**Problem.** The model placed a group at `[4815, 0, 280]` / 270: the `end` of the right wall's
-900 mm entry, which is the door opening. The corner unit stands in front of the door, and the run
-goes through the front wall.
-
-**Cause.** `get-plan-context` lists the opening among the walls (`side` "right", `type: null`,
-`start`, `end`, `facingRotationY`). The rule "use the walls of type wall" (`hi-mcp-server.ts`) asks
-the model to skip it, but `type: null` does not say that the entry is an opening.
-
-**To do.**
-- Name the type of an opening in the walls array (`door`, `opening`), or leave openings out of the
-  walls and list them separately.
-- Check whether the planner's plan context knows the opening kind (roomle-ui
-  `getExternalObjectPlanContext`).
-
-**Test.** A plan context with a door lists it with its type. In "test the mcp", the image prompt on
-the right-hand wall places the group at the end of the long right wall.
-
-**Latest run** (`mcp-test-2026-10-02_12-45-24`): 08.
-
-**Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-5-mini 09 — wall units hang in front of the back wall's window; the walls list no windows either.
-
-**Latest runs** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 01, 08. Both placed the group
-at `[4815,0,1235]`, the `start` of the 55 mm stub entry of the right wall in front of the door. The
-right wall is three entries (stub, door, long wall); see also issue 30.
 
 ## 13. Undocked wall units reject the whole group
 
@@ -464,77 +318,3 @@ offset. `placement { wall, alignment, offsetMm }` is deferred (D23).
 **Test.** A centred row is placed in one call.
 
 **Latest run** (`mcp-test-2026-10-02_17-25-40`): gpt-6-astra 01, 02, 09.
-
-## 30. The front right point is taken for the back right corner
-
-**Problem.** The model calls `[4815,0,1235]` the "back right corner": the front right corner of the
-default room, where the right wall starts with a 55 mm stub. It puts three tall units there (01), a
-living-room row (08), and the "back wall" row on the front wall (02, `end` and facing of the
-`bottom` wall).
-
-**Cause.**
-- The walls array labels sides `left` / `right` / `top` / `bottom` (`side`).
-- "back = top, front = bottom in the top-view image" is a phrase in the corner rules
-  (`hi-mcp-server.ts`), and it does not reach the wall entries the model takes the points from.
-- The model maps "back" to the larger z.
-- The right wall is three entries, and the first one starts at the front corner (issue 12).
-
-**To do** — clarify the plan context first
-([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort)):
-- Name the walls with the words of the user as well: `back` / `front` beside `top` / `bottom`. The
-  wall-side synonyms of `place-group` (`SIDE_SYNONYMS`, `tool-executors.ts`) already know them.
-- List the room corners with their names and points ("back right": `[4815, 0, -3765]`), so a corner
-  placement is a lookup, not a computation.
-- Never refuse a point: the user may want a group outside the room.
-
-**Test.** `get-plan-context` for the default room lists the back wall as `back` and the corner
-"back right" at `[4815, 0, -3765]`. In "test the mcp", 01, 02 and 08 stand on the asked wall.
-
-**Latest runs** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 01, 02, 08.
-
-## 31. A wall-unit row over a corner article runs through the side wall
-
-**Problem.** In an L kitchen the model continues the wall units rightOf the tall unit on the back
-wall (07, 09) or rightOf a wall unit on the corner article (05, 10). The row runs straight past the
-corner: three 600 mm wall units on a stretch of about 1150 mm, and the last one stands outside the
-room, through the right wall. The floor rows turn at the corner article; the wall units do not.
-
-**Cause.**
-- The corner rules (`hi-mcp-server.ts`) describe the floor rows rightOf / leftOf the corner article
-  only. Nothing says how the wall units follow the two legs, or that each leg's wall units hang above
-  the floor units of that leg.
-- The catalog has no corner wall unit that turns a wall-unit row.
-- The server does not know where a straight wall-unit row ends.
-
-**To do.**
-- Clarify the rules first: in a corner kitchen, the wall units of each leg hang `above` the floor
-  units of that leg — the first one above a floor unit of the leg, the next ones rightOf / leftOf
-  it. Never put a wall unit on the corner article.
-- Then decide whether the server can derive it: a wall unit related to a corner article, or a
-  wall-unit row longer than the leg it starts on, is moved onto the other leg and reported.
-
-**Test.** `hi-mcp-server.test.ts` asserts the rule sentence. In "test the mcp", the corner kitchens
-have no wall unit outside the room.
-
-**Latest runs** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 05, 07, 09, 10.
-
-## 33. Wall units beside a tall unit at the end of the row hang over empty floor
-
-**Problem.** The row is base units first and the oven tower last. The wall units continue rightOf the
-tower (`tall1.RightTop → wall1.LeftTop`), so they hang beyond the end of the row, over empty floor.
-The 5110 mm group reaches into the back wall. The image had the wall units above the base units.
-
-**Cause.** The rule "A wall unit rightOf or leftOf a tall unit hangs beside it with the tops flush"
-(`hi-mcp-server.ts`) and Example 2 put the tall unit first, with the base units on the side the wall
-units go to. Nothing says the wall units go on the side of the floor units.
-
-**To do.**
-- Clarify the rule: wall units beside a tall unit go on the side of the floor units (leftOf a tall
-  unit that ends the row).
-- Then consider a correction: a wall unit rightOf / leftOf a tall unit on a side with no floor unit
-  is moved to the side with the floor units, and reported.
-
-**Test.** A row with the tall unit last and a wall unit rightOf it puts the wall unit leftOf the
-tall unit, above the base units, with the correction.
-
-**Latest run** (`mcp-test-2026-10-03_18-13-02`): mistral-large-latest 06.

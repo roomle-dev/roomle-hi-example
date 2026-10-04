@@ -9,7 +9,7 @@
 > **Date**: 2026-10-04
 > **Author**: AI Assistant
 > **Status**: Fixed — on `fix/mcp-test-open-issues-RML-18041`, 2026-10-04, see [Fix summary and validation](#fix-summary-and-validation)
-> **Branch**: `fix/mcp-test-open-issues-RML-18041` (from `master` `3a263d1`)
+> **Branch**: `fix/mcp-test-open-issues-RML-18041` (from `master` `3a263d1`) — [PR #62](https://github.com/roomle-dev/roomle-hi-example/pull/62)
 > **Plan**: [rml-18041-implementation-plan.md](rml-18041-implementation-plan.md) — the fixes and
 > their unit tests, in seven pull requests
 

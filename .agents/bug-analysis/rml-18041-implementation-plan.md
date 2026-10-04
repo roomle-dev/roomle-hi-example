@@ -6,7 +6,7 @@
 > **Date**: 2026-10-04
 > **Author**: AI Assistant
 > **Status**: Implemented 2026-10-04 — PR 1 `e200cd0`, PR 2 `ed856f2`, PR 3 `1bf3b63`, PR 4 `9b064e7`, PR 5 `c01d758` + `fae8575`, PR 6 `3df8f22` on the branch; PR 7 awaits the D23 decision. Deviations: the `onTop` corrections of PR 1 apply to kitchen base units (category "Base Units") only, so stacking on other floor units stays possible; the near-side rule of PR 2 lives in `merge-article-into-group` only (see the assumption); the root entries of `notLoaded` carry `rootIds`
-> **Branch**: `fix/mcp-test-open-issues-RML-18041`
+> **Branch**: `fix/mcp-test-open-issues-RML-18041` — [PR #62](https://github.com/roomle-dev/roomle-hi-example/pull/62)
 
 ---
 

@@ -31,6 +31,7 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner | full kitchen around the corner | high — the kitchen stands in the wall |
 | 36 | [A wall-unit row runs into a unit hung above a base unit](#36-a-wall-unit-row-runs-into-a-unit-hung-above-a-base-unit) | hardening | image: kitchen in the back right corner | medium — two wall units in one place |
 | 37 | [A first call with an empty roots array](#37-a-first-call-with-an-empty-roots-array) | hardening, instructions | corner kitchens, image only | low — one lost step |
+| 38 | [A provider answer the AI SDK cannot process ends the turn without an answer](#38-a-provider-answer-the-ai-sdk-cannot-process-ends-the-turn-without-an-answer) | hardening, chat | image only, no text | low — once in 54 runs |
 
 What stays open, by priority:
 
@@ -323,4 +324,21 @@ units in one call — `roots` holds at least one article pick; there is no empty
 **Test.** `hi-mcp-server.test.ts` asserts the clause.
 
 **Latest runs** (`mcp-test-2026-10-04_13-00-37`): gpt-5.4-mini 03, 04, 09.
+
+## 38. A provider answer the AI SDK cannot process ends the turn without an answer
+
+**Problem.** gpt-6-astra's turn ended after its last tool call with the error "Failed to process
+successful response" from the chat's provider call: the stream carries the opening sentence, the
+`[error]` line, and no summary (`run.json` `errors`, exit 1). The plan holds what the tools changed.
+
+**Cause.** Not identified — the error is the AI SDK's for a provider response it cannot parse; the
+chat logs neither the response nor the step it belonged to.
+
+**To do.** Log the failing step with the provider's status and body in the chat backend
+(`onStepEnd` and the `error` part of the stream, `hi-mcp/hi-mcp-chat/chat-server.ts`), then decide
+whether a retry of the step is safe (the tool calls of the step are already carried out).
+
+**Test.** The chat handler test streams an `error` part and asserts the logged step.
+
+**Latest run** (`mcp-test-2026-10-04_13-00-37`): gpt-6-astra 09.
 

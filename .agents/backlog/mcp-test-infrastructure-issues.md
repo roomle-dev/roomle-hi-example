@@ -12,6 +12,7 @@ this list when its fix is in the code; the list holds only what is still to be d
 | # | Issue | Kind | Priority |
 |---|---|---|---|
 | 1 | [The object-only perspective render draws an empty frame under software GL](#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl) | defect in the planner the test drives, roomle-ui | low — the runs need a GPU meanwhile |
+| 2 | [The hint of a tool result is not recorded](#2-the-hint-of-a-tool-result-is-not-recorded) | gap in the run data, MCP server log + run script | medium — the evaluation cannot tell whether the model saw a hint |
 
 ## 1. The object-only perspective render draws an empty frame under software GL
 
@@ -34,3 +35,22 @@ frame is dropped, and make that render work under SwiftShader.
 
 **Test.** A headless page on software GL: `getExternalObjectSnapshot({ perspectiveObjectImage:
 true })` returns a non-empty image.
+
+## 2. The hint of a tool result is not recorded
+
+**Problem.** `run.json` holds per call of a plan-changing tool the `args` the model sent and the
+`corrections`, `notLoaded` or `error` it got back, but not the `hint` of the result — the hint for a
+group without a position ("… place-group moves it") or for a new group at the place of another.
+When a model creates a group without a placement and never calls `place-group`
+(`mcp-test-2026-10-04_13-00-37`, gpt-5.4-mini 06), the evaluation cannot tell whether the hint
+reached it.
+
+**Cause.** The server's feedback log line carries `corrections` and `notLoaded` only
+(`runTool`, `hi-mcp/hi-mcp-server/hi-mcp-server.ts`); the run script pairs those lines with the
+calls (`TOOL_CALL_LINE`, `.agents/scripts/run-hi-mcp-prompt.js`) and stores what they hold.
+
+**To do.** Log the `hint` in the feedback line and store it per tool call in `run.json`; the
+evaluation step of the skill lists it beside the corrections.
+
+**Test.** A run whose group loads without a placement shows the hint in `toolCalls`.
+

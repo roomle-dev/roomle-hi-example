@@ -17,12 +17,12 @@ const repoRoot = resolve(__dirname, '../..');
 
 /**
  * Generate a technically accurate, detailed suggested description for an attribute.
- * Uses the name, description, group, and imageUrl to create a comprehensive description.
+ * Uses the name, description and group to create a comprehensive description.
  * IMPORTANT: The original description is trusted and preserved EXACTLY as-is.
  * Only when missing or equal to name is a new description generated.
  */
 function generateSuggestedDescription(attr) {
-  const { id, name, desc, group, imageUrl } = attr;
+  const { id, name, desc, group } = attr;
 
   // Start with the description if it exists
   let suggested = desc || '';
@@ -53,8 +53,6 @@ function generateSuggestedDescription(attr) {
  * Extend a description that equals the name with group context for better clarity.
  */
 function extendDescriptionWithGroup(id, name, group, desc) {
-  const cleanId = id?.replace(/^mod_/, '') || '';
-
   // Split group by pipe for hierarchy
   const groupParts = group?.split('|') || [];
   const cleanGroupParts = groupParts.map((g) => g.trim()).filter((g) => g);

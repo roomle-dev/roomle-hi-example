@@ -88,6 +88,11 @@ group editing tests start from it. It was built with `create-or-replace-groups` 
 | `plans` | the plans above by name: `{ "<name>": "<plan snapshot id>" }` |
 | `tests` | `{ id, title, plan, prompt?, image?, operations?, expect? }` — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message; `operations` are MCP tool calls `{ tool, arguments }` made on the plan before the prompt (e.g. "join groups" deletes the middle unit first); `expect` says what the evaluation checks |
 
+The operations run through the MCP server, so its undo history holds them: the tests `undo-last-change`,
+`redo-last-change` and `undo-a-wrong-command` delete the middle unit of the Three Tall Units first —
+`redo-last-change` undoes it as well — and the prompt asks the agent to undo, redo or correct that
+change.
+
 ## Testing Guidelines
 
 When testing a prompt by hand with the MCP server:

@@ -22,6 +22,15 @@ export interface McpBridgeCall {
   args: unknown[];
 }
 
+// The page relays the planner's onHistoryChange callback: one event per
+// committed step, undo and redo of the planner's undo history.
+export interface McpBridgeEvent {
+  kind: 'event';
+  name: 'historyChange';
+  undo: boolean;
+  redo: boolean;
+}
+
 export interface McpBridgeResult {
   kind: 'result';
   id: number;
@@ -34,4 +43,5 @@ export type McpBridgeMessage =
   | McpBridgeHello
   | McpBridgeReady
   | McpBridgeCall
+  | McpBridgeEvent
   | McpBridgeResult;

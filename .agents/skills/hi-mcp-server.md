@@ -83,7 +83,8 @@ Internal to the server: not part of the tool interface and never mentioned to th
 - Active only with the `mcp=true` query parameter
 - Connects a `WebSocket` to `ws://localhost:3100/bridge`, reconnects every 3 s on close
 - Sends a per-page `clientId` in hello; the example chat sends the same ID to `/chat` and can submit only after the bridge acknowledges ownership with `ready`
-- Executes the planner methods on its allow-list (`MCP_PLANNER_METHODS`) against `roomDesignerApi.extended`, rejects every other method, sends results back over the socket — no tool logic in the page
+- Executes the planner methods on its allow-list (`MCP_PLANNER_METHODS`, including `undo` and `redo`, D37) against `roomDesignerApi.extended`, rejects every other method, sends results back over the socket — no tool logic in the page
+- Relays the planner's `extended.callbacks.onHistoryChange` as `{ kind: 'event', name: 'historyChange', undo, redo }` once accepted, calling a handler the host page set first; the server's `plan-history.ts` counts these events to tell its own planner steps from the user's changes
 
 The ligna-store runs the same protocol via `hi-mcp/hi-mcp-client/` (browser-bridge with `PLANNER_METHODS`, types) — no automatic sync, copy after changes. The allow-lists change only when a tool needs a new planner method; `tests/planner-api.test.ts` fails when the server's planner methods and the client allow-list diverge.
 

@@ -202,6 +202,48 @@ describe('PageBridge page lifecycle', () => {
     await expect(pending).rejects.toThrow(/The demo page disconnected/);
   });
 
+  it('relays the history events of the active page to its listeners', () => {
+    const bridge = new PageBridge();
+    const listener = vi.fn();
+    bridge.onHistoryChange(listener);
+    const socket = attachPage(bridge);
+    socket.receive({
+      kind: 'event',
+      name: 'historyChange',
+      undo: true,
+      redo: false,
+    });
+    expect(listener).toHaveBeenCalledWith(true, false);
+  });
+
+  it('ignores history events from another socket and events of another name', () => {
+    const bridge = new PageBridge();
+    const listener = vi.fn();
+    bridge.onHistoryChange(listener);
+    const active = attachPage(bridge);
+    const other = attachPage(bridge);
+    other.receive({
+      kind: 'event',
+      name: 'historyChange',
+      undo: true,
+      redo: false,
+    });
+    active.receive({ kind: 'event', name: 'selectionChange' });
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('tells its listeners when a page is accepted', () => {
+    const bridge = new PageBridge();
+    const listener = vi.fn();
+    bridge.onPageAccepted(listener);
+    const first = attachPage(bridge);
+    attachPage(bridge);
+    expect(listener).toHaveBeenCalledTimes(1);
+    first.close();
+    attachPage(bridge);
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+
   it('ignores results for unknown call ids', async () => {
     const bridge = new PageBridge();
     const socket = attachPage(bridge);

@@ -8,6 +8,15 @@ const createMockBridge = () =>
   ({ call: vi.fn(async () => ({ from: 'page' })) }) as unknown as PageBridge;
 
 describe('createPlannerApi', () => {
+  it('forwards undo and redo without arguments and with the default timeout', async () => {
+    const bridge = createMockBridge();
+    const { extended } = createPlannerApi(bridge);
+    await expect(extended.undo()).resolves.toBeUndefined();
+    expect(bridge.call).toHaveBeenCalledWith('undo', []);
+    await expect(extended.redo()).resolves.toBeUndefined();
+    expect(bridge.call).toHaveBeenCalledWith('redo', []);
+  });
+
   it('forwards each planner method with its positional arguments', async () => {
     const bridge = createMockBridge();
     const { extended } = createPlannerApi(bridge);

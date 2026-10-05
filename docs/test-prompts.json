@@ -141,6 +141,55 @@
       "plan": "three-tall-units",
       "prompt": "delete the kitchen",
       "expect": "delete-group: the plan has no groups"
+    },
+    {
+      "id": "undo-last-change",
+      "title": "Undo the last change",
+      "plan": "three-tall-units",
+      "operations": [
+        {
+          "tool": "delete-root-module",
+          "arguments": {
+            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
+          }
+        }
+      ],
+      "prompt": "undo the last change",
+      "expect": "undo: one group of three tall units again"
+    },
+    {
+      "id": "redo-last-change",
+      "title": "Redo the undone change",
+      "plan": "three-tall-units",
+      "operations": [
+        {
+          "tool": "delete-root-module",
+          "arguments": {
+            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
+          }
+        },
+        {
+          "tool": "undo",
+          "arguments": {}
+        }
+      ],
+      "prompt": "redo that",
+      "expect": "redo: the middle unit removed again, two groups"
+    },
+    {
+      "id": "undo-a-wrong-command",
+      "title": "Undo a wrong command",
+      "plan": "three-tall-units",
+      "operations": [
+        {
+          "tool": "delete-root-module",
+          "arguments": {
+            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
+          }
+        }
+      ],
+      "prompt": "that was the wrong unit - remove the last unit, not the middle one",
+      "expect": "undo, then delete-root-module on the last unit: one group of the first two units"
     }
   ]
 }

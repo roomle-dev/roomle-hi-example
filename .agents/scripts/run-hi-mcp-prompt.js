@@ -10,7 +10,8 @@
  * the MCP server on its own port, opens the example page in Playwright
  * Chromium (headless unless --headed; --dev is passed to the launcher) on
  * --plan, waits until get-plan-context lists articles, calls the MCP tools of
- * --operations ([{ tool, arguments }]) in order, then sends the prompts to the
+ * --operations ([{ tool, arguments }]) in order once the HI library has loaded
+ * the plan's groups, then sends the prompts to the
  * chat backend as consecutive turns of one conversation, each until the end of
  * its stream. --image goes along with the last prompt, prepared as the chat
  * window prepares a dropped image. Then it reads
@@ -333,6 +334,24 @@ const callOperation = async (tool, args) => {
   }
 };
 
+// The planner clears its undo history when the HI library has loaded the
+// plan's groups (the example page sets hiPosGroupsCompletelyLoaded then).
+// Operations made before would be gone from the history, and an undo in the
+// test would find nothing to revert.
+const waitForLoadedPlanGroups = async (page) => {
+  try {
+    await page.waitForFunction(
+      () => window.hiPosGroupsCompletelyLoaded === true,
+      null,
+      { timeout: PAGE_READY_TIMEOUT_MS }
+    );
+  } catch {
+    console.log(
+      '[run-hi-mcp-prompt] the HI library did not report the plan groups loaded - the operations run anyway'
+    );
+  }
+};
+
 // The plan a test starts from: MCP tool calls, one after another, before the
 // chat. The first that fails ends them.
 const runOperations = async (operations) => {
@@ -613,6 +632,9 @@ const runSession = async (options, launcher, browser) => {
     PAGE_READY_TIMEOUT_MS,
     'the page client ID'
   );
+  if (options.operations.length > 0) {
+    await waitForLoadedPlanGroups(page);
+  }
   const operations = await runOperations(options.operations);
   const failedOperation = operations.find((operation) => operation.error);
   plannerCalls.length = 0;

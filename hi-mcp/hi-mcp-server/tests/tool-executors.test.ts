@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { planHistory } from '../plan-history';
 import {
   forgetAgentGroupIds,
   forgetAnchorFrames,
@@ -261,6 +262,8 @@ const createApi = (
       removeExternalObject: vi.fn(async (id: string) => {
         probeGroups = probeGroups.filter((group) => group.id !== id);
       }),
+      undo: vi.fn(async () => undefined),
+      redo: vi.fn(async () => undefined),
       ...overrides,
     },
   };
@@ -4506,11 +4509,14 @@ describe('plan changes', () => {
       toolExecutors['delete-root-module'](api, { rootModuleId: 'a' }),
       toolExecutors['get-plan-context'](api, { include: ['groups'] }),
     ]);
-    // the first read is the change's own: it resolves the root id first
+    // the first reads are the change's own: it resolves the root id and
+    // reads the plan before and after its step, for undo
     expect(events).toEqual([
       'plan context',
+      'calculated groups',
       'start a',
       'end a',
+      'calculated groups',
       'plan context',
       'calculated groups',
     ]);
@@ -4529,5 +4535,506 @@ describe('plan changes', () => {
     });
     expect(second).toMatchObject({ status: 'fulfilled' });
     expect(events).toEqual(['start a', 'end a', 'start b', 'end b']);
+  });
+});
+
+describe('undo and redo', () => {
+  const initialGroup = {
+    id: 'g1',
+    libraryId: 'lib-1',
+    attributes: [],
+    roots: [{ id: 'r1', articleId: 'article-1' }],
+  };
+  const probeGroup = {
+    id: 'probe-group',
+    roots: [
+      {
+        id: 'p1',
+        articleId: 'article-1',
+        dockInfos: [{ id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, 561] }],
+      },
+    ],
+  };
+  // the plan context reports no position for these groups
+  const shaped = (group: any) => ({
+    id: group.id,
+    libraryId: group.libraryId,
+    attributes: group.attributes,
+    position: {},
+    roots: group.roots.map((root: any) => makeShapedRoot({ id: root.id })),
+  });
+
+  // A planner with an undo history, relaying its history events like the
+  // page: every load, command and removal is one step and one event; the
+  // follow-up of an attribute change is a second event that joins the step,
+  // right after the command resolves unless followUpDelayMs says otherwise;
+  // undo and redo fire one event, none when there is nothing to step.
+  const historyPlanner = (
+    options: {
+      followUpDelayMs?: number;
+      undoFails?: boolean;
+      editDuringCall?: boolean;
+      failRealLoad?: boolean;
+      loadDelayMs?: number;
+      order?: string[];
+    } = {}
+  ) => {
+    let raw: any[] = [initialGroup];
+    let past: any[][] = [];
+    let future: any[][] = [];
+    let created = 0;
+    const step = (next: any[]) => {
+      past.push(raw);
+      raw = next;
+      future = [];
+      planHistory.historyChanged();
+    };
+    const api = createApi(planContextFixture, {
+      getExternalObjectPlanContext: vi.fn(async () => ({
+        ...planContextFixture,
+        groups: raw.filter((group) => group !== probeGroup).map(shaped),
+      })),
+      getExternalObjectGroups: vi.fn(async () => raw),
+      loadExternalObjectGroupLayout: vi.fn(async (layout: any) => {
+        options.order?.push('load start');
+        if (options.loadDelayMs) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, options.loadDelayMs)
+          );
+        }
+        options.order?.push('load end');
+        if (isProbeLoad(layout)) {
+          step([...raw, probeGroup]);
+          return [{ id: 'probe' }];
+        }
+        if (options.failRealLoad) {
+          throw new Error('The planner could not load the group.');
+        }
+        const id = `new-${++created}`;
+        step([
+          ...raw,
+          {
+            id,
+            libraryId: 'lib-1',
+            attributes: [],
+            roots: layout.posGroups[0].roots,
+          },
+        ]);
+        return [{ id }];
+      }),
+      externalObjectGroupOperation: vi.fn(
+        async (command: string, payload: any) => {
+          if (command === 'change-module-attribute') {
+            throw new Error(
+              `Module 'r1' has no attribute '${payload.attributeId}'.`
+            );
+          }
+          if (command === 'delete-group') {
+            step(raw.filter((group) => group.id !== payload.groupId));
+            return { command, groups: [], removedGroupIds: [payload.groupId] };
+          }
+          step(
+            raw.map((group) =>
+              group.id === payload.groupId
+                ? {
+                    ...group,
+                    attributes: [
+                      { id: payload.attributeId, value: payload.value },
+                    ],
+                  }
+                : group
+            )
+          );
+          if (options.editDuringCall) {
+            step(raw.map((group) => ({ ...group, moved: true })));
+          }
+          {
+            setTimeout(() => {
+              raw = raw.map((group) =>
+                group.id === payload.groupId
+                  ? { ...group, pos: [0, 0, 10] }
+                  : group
+              );
+              planHistory.historyChanged();
+            }, options.followUpDelayMs ?? 0);
+          }
+          return { command, groups: raw.map(shaped), removedGroupIds: [] };
+        }
+      ),
+      removeExternalObject: vi.fn(async (id: string) => {
+        step(raw.filter((group) => group.id !== id));
+      }),
+      undo: vi.fn(async () => {
+        options.order?.push('undo');
+        if (options.undoFails) {
+          throw new Error('Planner method not exposed: undo');
+        }
+        const previous = past.pop();
+        if (!previous) {
+          return;
+        }
+        future.push(raw);
+        raw = previous;
+        planHistory.historyChanged();
+      }),
+      redo: vi.fn(async () => {
+        const next = future.pop();
+        if (!next) {
+          return;
+        }
+        past.push(raw);
+        raw = next;
+        planHistory.historyChanged();
+      }),
+    });
+    return {
+      api,
+      raw: () => raw,
+      future: () => future,
+      // the user changes the plan in the planner
+      editInPlanner: () =>
+        step(raw.map((group) => ({ ...group, moved: true }))),
+      // the plan changes without a history event
+      changeWithoutEvent: () => {
+        raw = raw.map((group) => ({ ...group, recalculated: true }));
+      },
+      // the planner starts a new history, e.g. a plan load
+      clearHistory: () => {
+        past = [];
+        future = [];
+      },
+    };
+  };
+  const changeFront = (
+    planner: ReturnType<typeof historyPlanner>,
+    value = 'black'
+  ) =>
+    toolExecutors['change-group-attribute'](planner.api, {
+      groupId: 'g1',
+      attributeId: 'front',
+      value,
+    });
+
+  beforeEach(() => {
+    planHistory.reset();
+  });
+
+  // a follow-up the fake planner scheduled must not reach the next test
+  afterEach(async () => {
+    vi.useRealTimers();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  });
+
+  it('reverts the last tool call with one planner undo and returns the groups as before', async () => {
+    const planner = historyPlanner();
+    await changeFront(planner);
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      undone: 'change-group-attribute',
+      groups: [shaped(initialGroup)],
+    });
+    expect(planner.raw()).toEqual([initialGroup]);
+  });
+
+  it('reverts a kitchen with a material in one call, one planner undo per step', async () => {
+    const planner = historyPlanner();
+    await toolExecutors['create-or-replace-groups'](planner.api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          attributes: [{ id: 'front', value: 'white' }],
+          roots: [{ id: 'u1', articleId: 'article-1' }],
+        },
+      ],
+    });
+    expect(
+      planner.api.extended.externalObjectGroupOperation
+    ).toHaveBeenCalledWith(
+      'change-group-attribute',
+      expect.objectContaining({ groupId: 'new-1', attributeId: 'front' })
+    );
+
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(2);
+    expect(result.undone).toBe('create-or-replace-groups');
+    expect(planner.raw()).toEqual([initialGroup]);
+  });
+
+  it('undoes the anchor probe instead of removing it', async () => {
+    const planner = historyPlanner();
+    await toolExecutors['create-or-replace-groups'](planner.api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          placement: { posGroup: [0, 0, 0], posRotationY: 0 },
+          roots: [{ id: 'u1', articleId: 'article-1' }],
+        },
+      ],
+    });
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(1);
+    expect(planner.api.extended.removeExternalObject).not.toHaveBeenCalled();
+    expect(planner.raw().map((group) => group.id)).toEqual(['g1', 'new-1']);
+    // the real load ended the probe's redo
+    expect(planner.future()).toEqual([]);
+    expect(planHistory.lastDone()?.steps).toBe(1);
+
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(result.undone).toBe('create-or-replace-groups');
+    expect(planner.raw()).toEqual([initialGroup]);
+  });
+
+  it('removes the probe group when the page cannot undo', async () => {
+    const planner = historyPlanner({ undoFails: true });
+    await toolExecutors['create-or-replace-groups'](planner.api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          placement: { posGroup: [0, 0, 0], posRotationY: 0 },
+          roots: [{ id: 'u1', articleId: 'article-1' }],
+        },
+      ],
+    });
+    expect(planner.api.extended.removeExternalObject).toHaveBeenCalledWith(
+      'probe-group'
+    );
+    expect(planner.raw().map((group) => group.id)).toEqual(['g1', 'new-1']);
+    // the probe load, its removal and the real load
+    expect(planHistory.lastDone()?.steps).toBe(3);
+  });
+
+  it('reverts two tool calls in reverse order, then has nothing to undo', async () => {
+    const planner = historyPlanner();
+    await changeFront(planner);
+    await toolExecutors['delete-group'](planner.api, { groupId: 'g1' });
+
+    const first = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(first.undone).toBe('delete-group');
+    expect(first.groups[0].attributes).toEqual([
+      { id: 'front', value: 'black' },
+    ]);
+    const second = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(second.undone).toBe('change-group-attribute');
+    expect(second.groups[0].attributes).toEqual([]);
+    const third = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(third.undone).toBeNull();
+    expect(third.hint).toMatch(/^Nothing to undo/);
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(2);
+  });
+
+  it('says when there is nothing to undo or redo', async () => {
+    const planner = historyPlanner();
+    const undone = (await toolExecutors.undo(planner.api, {})) as any;
+    const redone = (await toolExecutors.redo(planner.api, {})) as any;
+
+    expect(undone).toEqual({
+      undone: null,
+      groups: [shaped(initialGroup)],
+      hint: 'Nothing to undo: no tool call has changed the plan since the planner page connected.',
+    });
+    expect(redone.redone).toBeNull();
+    expect(redone.hint).toMatch(/^Nothing to redo/);
+    expect(planner.api.extended.undo).not.toHaveBeenCalled();
+    expect(planner.api.extended.redo).not.toHaveBeenCalled();
+  });
+
+  it('brings an undone call back and forgets it after a new change', async () => {
+    const planner = historyPlanner();
+    await changeFront(planner);
+    await toolExecutors.undo(planner.api, {});
+    const redone = (await toolExecutors.redo(planner.api, {})) as any;
+    expect(redone.redone).toBe('change-group-attribute');
+    expect(redone.groups[0].attributes).toEqual([
+      { id: 'front', value: 'black' },
+    ]);
+    expect(planner.api.extended.redo).toHaveBeenCalledTimes(1);
+
+    await toolExecutors.undo(planner.api, {});
+    await toolExecutors['delete-group'](planner.api, { groupId: 'g1' });
+    const after = (await toolExecutors.redo(planner.api, {})) as any;
+    expect(after.redone).toBeNull();
+    expect(planner.api.extended.redo).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not undo after a change in the planner', async () => {
+    const planner = historyPlanner();
+    await changeFront(planner);
+    planner.editInPlanner();
+    const afterEdit = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(afterEdit.undone).toBeNull();
+    expect(afterEdit.hint).toMatch(
+      /changed in the planner after the last tool call/
+    );
+
+    await changeFront(planner, 'white');
+    planner.changeWithoutEvent();
+    const afterChange = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(afterChange.undone).toBeNull();
+    expect(afterChange.hint).toMatch(/changed in the planner/);
+    expect(planner.api.extended.undo).not.toHaveBeenCalled();
+  });
+
+  it("stops when the planner's history no longer holds the change", async () => {
+    const planner = historyPlanner();
+    await changeFront(planner);
+    planner.clearHistory();
+    vi.useFakeTimers();
+    const pending = toolExecutors.undo(planner.api, {});
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = (await pending) as any;
+
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(1);
+    expect(result.undone).toBeNull();
+    expect(result.hint).toMatch(
+      /undo history no longer holds change-group-attribute/
+    );
+    const again = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(again.hint).toMatch(/^Nothing to undo/);
+  });
+
+  it('takes an undo back that does not give back the plan before the call - the planner was changed while the call ran', async () => {
+    const planner = historyPlanner({ editDuringCall: true });
+    await changeFront(planner);
+    const afterCall = planner.raw();
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(1);
+    expect(planner.api.extended.redo).toHaveBeenCalledTimes(1);
+    expect(result.undone).toBeNull();
+    expect(result.hint).toBe(
+      "Undo of change-group-attribute did not give back the plan before it - the plan was changed in the planner while the tool call ran. The undo was taken back and the plan is as it was; the planner's undo button reverts the changes made there."
+    );
+    expect(planner.raw()).toEqual(afterCall);
+    const again = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(again.hint).toMatch(/changed in the planner/);
+  });
+
+  it('withholds undo while the follow-up reload of the last call is outstanding', async () => {
+    vi.useFakeTimers();
+    const planner = historyPlanner({ followUpDelayMs: 10_000 });
+    const changing = changeFront(planner);
+    await vi.advanceTimersByTimeAsync(2000);
+    await changing;
+    const withholding = toolExecutors.undo(planner.api, {});
+    await vi.advanceTimersByTimeAsync(2000);
+    const withheld = (await withholding) as any;
+
+    expect(withheld.undone).toBeNull();
+    expect(withheld.hint).toBe(
+      'The planner has not finished the last change yet - its follow-up reload is still outstanding. Nothing was undone; call undo again in a moment.'
+    );
+    expect(planner.api.extended.undo).not.toHaveBeenCalled();
+
+    // the late reload is the call's own, not a change in the planner
+    await vi.advanceTimersByTimeAsync(6000);
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(result.undone).toBe('change-group-attribute');
+    expect(planner.raw()).toEqual([initialGroup]);
+  });
+
+  it('undoes a call once its late follow-up reload has landed', async () => {
+    vi.useFakeTimers();
+    const planner = historyPlanner({ followUpDelayMs: 3000 });
+    const changing = changeFront(planner);
+    await vi.advanceTimersByTimeAsync(2000);
+    await changing;
+    const undoing = toolExecutors.undo(planner.api, {});
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = (await undoing) as any;
+
+    expect(result.undone).toBe('change-group-attribute');
+    expect(planner.raw()).toEqual([initialGroup]);
+  });
+
+  it('ends redo with the first planner step of a call, also when the call leaves no step', async () => {
+    const planner = historyPlanner({ failRealLoad: true });
+    await changeFront(planner);
+    await toolExecutors.undo(planner.api, {});
+    await expect(
+      toolExecutors['create-or-replace-groups'](planner.api, {
+        posGroups: [
+          {
+            libraryId: 'lib-1',
+            placement: { posGroup: [0, 0, 0], posRotationY: 0 },
+            roots: [{ id: 'u1', articleId: 'article-1' }],
+          },
+        ],
+      })
+    ).rejects.toThrow('The planner could not load the group.');
+
+    const result = (await toolExecutors.redo(planner.api, {})) as any;
+    expect(result.redone).toBeNull();
+    expect(result.hint).toMatch(/^Nothing to redo/);
+    expect(planner.api.extended.redo).not.toHaveBeenCalled();
+  });
+
+  it('waits for the follow-up reload of an attribute change', async () => {
+    const planner = historyPlanner({ followUpDelayMs: 50 });
+    await changeFront(planner);
+    expect(planner.raw()[0].pos).toEqual([0, 0, 10]);
+    expect(planHistory.lastDone()?.groupsAfter).toContain('"pos":[0,0,10]');
+
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(result.undone).toBe('change-group-attribute');
+    expect(result.hint).toBeUndefined();
+  });
+
+  it('waits for a follow-up reload at most two seconds', async () => {
+    vi.useFakeTimers();
+    const planner = historyPlanner({ followUpDelayMs: 60_000 });
+    let settled = false;
+    const pending = changeFront(planner).then(() => {
+      settled = true;
+    });
+    await vi.advanceTimersByTimeAsync(1900);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(100);
+    await pending;
+    expect(settled).toBe(true);
+  });
+
+  it('does not wait after a command without a follow-up, nor on a page that relays no history', async () => {
+    const planner = historyPlanner();
+    const started = Date.now();
+    await toolExecutors['delete-group'](planner.api, { groupId: 'g1' });
+    await toolExecutors['change-group-attribute'](
+      createApi(planContextFixture),
+      { groupId: 'g1', attributeId: 'front', value: 'black' }
+    );
+    expect(Date.now() - started).toBeLessThan(500);
+  });
+
+  it('runs undo in the queue, never beside another plan change', async () => {
+    const order: string[] = [];
+    const planner = historyPlanner({ loadDelayMs: 20, order });
+    await changeFront(planner);
+    const [, result] = (await Promise.all([
+      toolExecutors['create-or-replace-groups'](planner.api, {
+        posGroups: [
+          { libraryId: 'lib-1', roots: [{ id: 'u1', articleId: 'article-1' }] },
+        ],
+      }),
+      toolExecutors.undo(planner.api, {}),
+    ])) as any[];
+
+    expect(order).toEqual(['load start', 'load end', 'undo']);
+    expect(result.undone).toBe('create-or-replace-groups');
+  });
+
+  it('records nothing for a call the planner refused', async () => {
+    const planner = historyPlanner();
+    await changeFront(planner);
+    await expect(
+      toolExecutors['change-module-attribute'](planner.api, {
+        rootModuleId: 'r1',
+        attributeId: 'colour',
+        value: 'red',
+      })
+    ).rejects.toThrow(/has no attribute/);
+
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(result.undone).toBe('change-group-attribute');
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(1);
   });
 });

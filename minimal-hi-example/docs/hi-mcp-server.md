@@ -516,6 +516,19 @@ Examples:
 - `change-group-attribute`: `{ "groupId": "a1b2c3", "attributeId": "front", "value": "white" }`
 - `merge-article-into-group`: `{ "groupId": "a1b2c3", "articleId": "<drawer unit>", "dockTo": { "rootId": "id0003", "ownDockingVector": "RightBottom", "dockingVector": "LeftBottom" } }`
 
+### undo and redo
+
+No parameters. `undo` reverts the plan change of the last tool call that
+changed the plan — the planner steps that one call made, e.g. a kitchen and its
+material — and `redo` brings it back. Call `undo` again to revert the call
+before. Both return the reverted tool (`undone` / `redone`) and every group of
+the plan. Nothing to undo or redo is a normal result with `undone: null` and a
+`hint`; so is a plan the user changed in the planner after the last tool call
+— the planner's own undo button reverts those changes. An undo that would not
+give back the plan before the call, because the user changed the plan while the
+call ran, is taken back and reported. A new change of the plan
+ends redo.
+
 ### get-price
 
 No parameters. Calculates and returns the price/order data of the current
@@ -626,6 +639,9 @@ group one point and one rotation; the planner calculates every root position.
 - Verify results numerically: the returned groups carry `position` (`pos`,
   `rotationY`, `footprint`) and per root the `dockingVectors`, the input
   attributes and the docking.
+- Undo a wrong result: when a result is not what was asked, call `undo` and
+  send the corrected call; one undo reverts one tool call. A group that only
+  needs a change is edited with the command tools.
 
 ## Positioning a group
 

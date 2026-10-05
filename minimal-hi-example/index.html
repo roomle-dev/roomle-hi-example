@@ -1077,6 +1077,11 @@
           }
         },
         onLogMessage: logInUi,
+        // the planner clears its undo history once the plan's groups are
+        // loaded; the test run script waits for this before its operations
+        onPosGroupsCompletelyLoaded: () => {
+          window.hiPosGroupsCompletelyLoaded = true;
+        },
         onPosGroupAdded: (posGroups) => updatePosGroups(posGroups, 'add'),
         onPosGroupChanged: (posGroups) => updatePosGroups(posGroups, 'change'),
         onPosGroupDeleted: (ids) => updatePosGroups(ids, 'delete'),

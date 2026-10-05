@@ -33,6 +33,7 @@ intent is clear, report what was corrected, and never drop the agent's content s
 | 37 | [A first call with an empty roots array](#37-a-first-call-with-an-empty-roots-array) | hardening, instructions | corner kitchens, image only | low — one lost step |
 | 38 | [A provider answer the AI SDK cannot process ends the turn without an answer](#38-a-provider-answer-the-ai-sdk-cannot-process-ends-the-turn-without-an-answer) | hardening, chat | image only, no text | low — once in 54 runs |
 | 39 | [A unit merged into a coloured kitchen keeps the default material](#39-a-unit-merged-into-a-coloured-kitchen-keeps-the-default-material) | hardening | image: planning on the right-hand wall | medium — a dark wall unit in a white kitchen |
+| 40 | [A unit colour after a kitchen-wide colour misses the doors](#40-a-unit-colour-after-a-kitchen-wide-colour-misses-the-doors) | bug, MCP server (command of the planner) | image: planning on the right-hand wall | high — the edit reports success, the fronts do not change |
 
 What stays open, by priority:
 
@@ -42,8 +43,8 @@ What stays open, by priority:
 - **A decision**: 27 — D23, `placement { wall, alignment, offsetMm }` in `create-or-replace-groups`.
 - **Found by the test run of 2026-10-04** (`mcp-test-2026-10-04_13-00-37`, the fixes of RML-18041): 35 (a
   corner kitchen in the wall), 36 and 37.
-- **Found by the test run of 2026-10-05** (`mcp-test-2026-10-05_14-20-34`, the undo and redo tools of
-  RML-18044, bo-test planner): 39.
+- **Found by the test runs of 2026-10-05** (`mcp-test-2026-10-05_14-20-34` and
+  `mcp-test-2026-10-05_15-31-08`, the undo and redo tools of RML-18044, bo-test planner): 39 and 40.
 - **Docking written as `contextData`**: 3, 7, 13, 14 and 15 do not occur with relations and stay
   for the `contextData` form the server still accepts.
 
@@ -373,3 +374,26 @@ same value) when the agent sent none, and report it as a correction; an attribut
 attributes forwards `mod_FrontColor` 192 with the correction; with `mod_FrontColor` 160 sent, 160.
 
 **Latest run** (`mcp-test-2026-10-05_14-20-34`): gpt-5-mini 08.
+
+## 40. A unit colour after a kitchen-wide colour misses the doors
+
+**Problem.** gpt-6-astra 08 of 2026-10-05 created a kitchen with the kitchen-wide `mod_FrontColor` 190
+(D36: set on every unit after the load) and then set two `O2TB90` wall units to a dark front with
+`change-module-attribute` (`mod_FrontColor` 240, no `moduleId`). The tool reported success and the
+plan context shows 240 on the roots, but the doors stay cream: in `order-data.json` the root carries
+`mod_FrontColor` 240 and its door `mf_Door` still 190.
+
+**Cause.** The kitchen-wide colour goes through the planner's `change-group-attribute`, which sets the
+attribute on every root and every sub module that carries it (D20) — the doors then hold their own
+value. `change-module-attribute` without `moduleId` sets the root only; the door keeps the value the
+group command gave it, and the front shows that one.
+
+**To do.** `change-module-attribute` without `moduleId` sets the attribute on the root and on its sub
+modules that carry it, in one calculation — the root-level counterpart of D20 (roomle-ui, the
+`change-module-attribute` command of `hi-plan-context.ts` / `glue-logic.ts`); the server's tool
+description says that a unit attribute reaches the unit's fronts.
+
+**Test.** A glue-logic test: after `change-group-attribute mod_FrontColor` on a group, a
+`change-module-attribute mod_FrontColor` on one root changes the front colour of that root's door.
+
+**Latest run** (`mcp-test-2026-10-05_15-31-08`): gpt-6-astra 08.

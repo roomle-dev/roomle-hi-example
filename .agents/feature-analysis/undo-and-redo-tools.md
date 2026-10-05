@@ -5,8 +5,8 @@
 > **Trigger**: Jira [RML-18044](https://roomle.atlassian.net/browse/RML-18044) — add an `undo` and a `redo` tool; the agent is told to undo a result that is not what was asked. Question of the analysis: the roomle-ui API exposes `undo` and `redo` — can the feature be built in roomle-hi-example alone?
 > **Date**: 2026-10-05
 > **Author**: AI Assistant
-> **Status**: Open
-> **Branch**: `docs/undo-redo-analysis-RML-18044`
+> **Status**: Implemented 2026-10-05 — see the [close-out](#close-out-2026-10-05)
+> **Branch**: `feat/undo-redo-tools-RML-18044` (built on `docs/undo-redo-analysis-RML-18044`); ligna-store `feat/hi-mcp-undo-redo-RML-18044`
 > **Plan**: [undo-and-redo-tools-implementation-plan.md](undo-and-redo-tools-implementation-plan.md); the step counts below were measured live on 2026-10-05 — see [Live verification](#live-verification-2026-10-05)
 
 ---
@@ -335,3 +335,21 @@ counts per call vary with roomle-ui internals and are no measure of steps.
 **A defect of today's behaviour**: after an agent call with a probe, the planner's undo button
 reaches the probe's two steps under the agent's steps and shows the probed article as a group at the
 plan origin for one step. The probe undo of the plan fixes it.
+
+## Close-out (2026-10-05)
+
+Implemented as designed, with the refinements of the
+[plan](undo-and-redo-tools-implementation-plan.md#close-out-2026-10-05). The living reference is
+[hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md) — D37, D38, `undo` and `redo` in §6,
+§8.8.
+
+- The design stands: `undo` and `redo` on the allow-lists, the history callback relayed as a bridge
+  event, the server's record of its tool calls with the planner steps they made, the probe undone,
+  an undo refused after a change in the planner.
+- What the analysis did not foresee: a client that does not pass the server's instructions on —
+  the HI chat — never shows the model the undo rule, so the description of `undo` itself says when
+  to use it; and the planner clears its undo history when the HI library has loaded a plan's groups,
+  so a change made before that cannot be undone (the server says so; the test run script now waits).
+- Verified with the tools in a live planner (bo-test) and in "test the mcp" with gpt-5-mini: the
+  three undo tests pass, and no other test called `undo` or `redo`
+  (`.temp/result/mcp-test-2026-10-05_14-20-34/report.md`).

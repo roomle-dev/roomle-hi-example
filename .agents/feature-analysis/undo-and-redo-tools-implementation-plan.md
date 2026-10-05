@@ -5,7 +5,7 @@
 > the live verification of 2026-10-05 that this plan rests on
 > **Date**: 2026-10-05
 > **Author**: AI Assistant
-> **Status**: Open — awaiting review
+> **Status**: Implemented 2026-10-05 — see the [close-out](#close-out-2026-10-05)
 > **Branch**: `feat/undo-redo-tools-RML-18044` (roomle-hi-example), `feat/hi-mcp-undo-redo-RML-18044` (ligna-store)
 
 ---
@@ -311,3 +311,47 @@ store's Prettier. `Planner.vue` needs no change: the store sets no
   `onCoreLoad` exist and are unused) — the server's follow-up wait then becomes a no-op.
 - A history-neutral calculation of an article for the anchor frame — or the article template
   geometry of the backlog — so that no probe load is needed at all.
+
+## Close-out (2026-10-05)
+
+### Commits
+
+| Repository | Commit | Content |
+|---|---|---|
+| roomle-hi-example | `5142f99` | commit 1 — the bridge event, `undo` and `redo` on `planner-api.ts` and the page allow-lists, `plan-history.ts` |
+| roomle-hi-example | `fa7e0ca` | commit 2 — the tools, the recording in the queue, the probe undo |
+| roomle-hi-example | `42d4623` | commit 3 — the undo rule in the served text |
+| roomle-hi-example | `5eba045` | commit 4 — the three MCP test prompts |
+| roomle-hi-example | `185d324` | the run script starts a test's operations after the plan groups are loaded |
+| roomle-hi-example | `cba4800` | the `undo` description says when to undo |
+| ligna-store | `b963587` | the store's copy of the page bridge (only the undo changes, in the store's formatting) |
+
+### Deviations from the plan
+
+1. **No wait on a page that relays no history.** The follow-up wait starts only when the command's
+   first history event has arrived, so a page without the relay — an old store build against the
+   deployed server — pays no 2 s per attribute command.
+2. **The probe also falls back to removal when `undo` fails** — a page without `undo` on its
+   allow-list — not only when the undo left the probe group in the plan.
+3. **The `undo` description says when to undo** (`cba4800`). The first attempt of the test
+   `undo-a-wrong-command` failed: the model never fetched the rules, and the HI chat does not pass the
+   server's instructions on, so the rule of commit 3 never reached it. The tool list does.
+4. **The run script waits for the plan groups** (`185d324`). The first attempt of
+   `redo-last-change` ran its operations before the HI library had loaded the plan's groups; the
+   planner then cleared its undo history, and the operation's undo correctly answered that the
+   history no longer held the delete. The example page sets `window.hiPosGroupsCompletelyLoaded` in
+   the HI callback `onPosGroupsCompletelyLoaded`, and the run script waits for it before a test's
+   operations.
+5. **30 new unit tests** (375 → 405) instead of the 20 named: some named tests became two.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm test`, typecheck, lint, format check in `hi-mcp` | 405 tests pass; all checks clean |
+| Live, headless, bo-test planner, through the tools | every tool that changes the plan: `undo` restored the raw groups exactly and `redo` brought the result back, no hints; two undos in a row reverted `delete-group` and `merge-groups`; after a removal made in the planner, `undo` refused with the planner hint; after a `create-or-replace-groups` with a probe and a material, the planner's own undo ran out after two steps — no ghost |
+| "test the mcp", gpt-5-mini, bo-test, 21 tests | 16 pass, 5 partial, 0 fail; the three undo tests pass (after the two fixes above); no other run called `undo` or `redo`; the five partials are the image and material tests that were partial in the last run too — [report](../../.temp/result/mcp-test-2026-10-05_14-20-34/report.md) (local), new backlog issue 39 |
+
+The acceptance criteria of the ticket hold, with one note: the order data after an undo was compared
+in the planner-level measurement of the analysis (equal for every tool), the tool-level live check
+compared the raw groups.

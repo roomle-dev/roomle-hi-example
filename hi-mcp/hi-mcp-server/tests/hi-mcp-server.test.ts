@@ -3,6 +3,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createHiMcpServer } from '../hi-mcp-server';
 import { PageBridge } from '../page-bridge';
+import { connectPlanHistory, planHistory } from '../plan-history';
 import type { PlannerApi } from '../planner-api';
 import { createPlannerApi } from '../planner-api';
 import { attachPage } from './fake-page-socket';
@@ -23,6 +24,8 @@ const EXPECTED_TOOLS = [
   'merge-article-into-group',
   'merge-groups',
   'place-group',
+  'redo',
+  'undo',
 ];
 
 const createMockPlannerApi = (
@@ -211,6 +214,35 @@ describe('hi-mcp-server tool calls', () => {
     expect(
       lines.some((line) => line.startsWith('[hi-mcp] tool get-price feedback'))
     ).toBe(false);
+  });
+
+  it('logs undo and redo like the other tools that change the plan', async () => {
+    planHistory.reset();
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const client = await connectClient(createMockPlannerApi());
+
+    await client.callTool({ name: 'undo', arguments: {} });
+    await client.callTool({ name: 'redo', arguments: {} });
+
+    const lines = log.mock.calls.map(([line]) => String(line));
+    log.mockRestore();
+    expect(lines).toContain('[hi-mcp] tool undo args {}');
+    expect(lines).toContain('[hi-mcp] tool undo feedback {}');
+    expect(lines).toContain('[hi-mcp] tool redo args {}');
+    expect(lines).toContain('[hi-mcp] tool redo feedback {}');
+  });
+
+  it('answers nothing to undo as a result, not an error', async () => {
+    planHistory.reset();
+    const client = await connectClient(createMockPlannerApi());
+    const result = await client.callTool({ name: 'undo', arguments: {} });
+
+    expect((result as { isError?: boolean }).isError).toBeFalsy();
+    expect(JSON.parse(textOf(result))).toEqual({
+      undone: null,
+      groups: [],
+      hint: 'Nothing to undo: no tool call has changed the plan since the planner page connected.',
+    });
   });
 
   it('accepts a number as an attribute value and passes it on as its string', async () => {
@@ -641,7 +673,7 @@ describe('hi-mcp-server through the page bridge', () => {
       if (method === 'getExternalObjectGroups') {
         return rawGroups;
       }
-      if (method === 'removeExternalObject') {
+      if (method === 'undo') {
         rawGroups = [];
         return undefined;
       }
@@ -672,17 +704,22 @@ describe('hi-mcp-server through the page bridge', () => {
     expect(calls.map((call) => call.method)).toEqual([
       'getExternalObjectPlanContext',
       'getExternalObjectPlanContext',
-      // the probe learns the hood's frame
       'getExternalObjectGroups',
+      // the plan before the first step, for undo
+      'getExternalObjectGroups',
+      // the probe learns the hood's frame and undoes its load
       'loadExternalObjectGroupLayout',
       'getExternalObjectGroups',
-      'removeExternalObject',
+      'undo',
+      'getExternalObjectGroups',
       'loadExternalObjectGroupLayout',
       'getExternalObjectPlanContext',
       // the position read back in the placement frame
       'getExternalObjectGroups',
+      // the plan after the call, for undo
+      'getExternalObjectGroups',
     ]);
-    expect(calls[6].args).toEqual([
+    expect(calls[8].args).toEqual([
       {
         posGroups: [
           {
@@ -704,6 +741,54 @@ describe('hi-mcp-server through the page bridge', () => {
     expect(JSON.parse(textOf(result))).toEqual({
       loaded: [{ id: 'g1' }],
       groups: [{ id: 'g1', position: { pos: [0, 0, 0], rotationY: 0 } }],
+    });
+  });
+
+  it('runs undo through the page bridge and counts the history events the page relays', async () => {
+    const bridge = new PageBridge();
+    connectPlanHistory(bridge, planHistory);
+    const socket = attachPage(bridge);
+    const eventsBefore = planHistory.events;
+    let rawGroups: any[] = [{ id: 'g1', roots: [] }];
+    const past: any[][] = [];
+    const historyEvent = (undo: boolean, redo: boolean) =>
+      socket.receive({ kind: 'event', name: 'historyChange', undo, redo });
+    socket.respond = (method) => {
+      if (method === 'externalObjectGroupOperation') {
+        past.push(rawGroups);
+        rawGroups = [];
+        historyEvent(true, false);
+        return { command: 'delete-group', groups: [], removedGroupIds: ['g1'] };
+      }
+      if (method === 'undo') {
+        rawGroups = past.pop() ?? rawGroups;
+        historyEvent(false, true);
+        return undefined;
+      }
+      if (method === 'getExternalObjectGroups') {
+        return rawGroups;
+      }
+      return {
+        groups: rawGroups.map((group) => ({ id: group.id, roots: [] })),
+      };
+    };
+    const client = await connectClient(createPlannerApi(bridge));
+
+    await client.callTool({
+      name: 'delete-group',
+      arguments: { groupId: 'g1' },
+    });
+    const result = await client.callTool({ name: 'undo', arguments: {} });
+
+    const methods = socket.sent
+      .map((data) => JSON.parse(data))
+      .filter((message) => message.kind === 'call')
+      .map((call) => call.method);
+    expect(methods.filter((method) => method === 'undo')).toHaveLength(1);
+    expect(planHistory.events - eventsBefore).toBe(2);
+    expect(JSON.parse(textOf(result))).toEqual({
+      undone: 'delete-group',
+      groups: [{ id: 'g1', roots: [] }],
     });
   });
 
@@ -774,12 +859,16 @@ describe('hi-mcp-server through the page bridge', () => {
     expect(calls.map((call) => call.method)).toEqual([
       'getExternalObjectPlanContext',
       'getExternalObjectGroups',
+      // the plan before the first step, for undo
+      'getExternalObjectGroups',
       'loadExternalObjectGroupLayout',
       'getExternalObjectPlanContext',
       'getExternalObjectGroups',
+      // the plan after the call, for undo
+      'getExternalObjectGroups',
     ]);
     expect(calls[0].args).toEqual([['rooms', 'groups']]);
-    expect(calls[2].args).toEqual([
+    expect(calls[3].args).toEqual([
       {
         posGroups: [
           {

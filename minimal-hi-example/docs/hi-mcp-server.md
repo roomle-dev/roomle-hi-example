@@ -516,6 +516,17 @@ Examples:
 - `change-group-attribute`: `{ "groupId": "a1b2c3", "attributeId": "front", "value": "white" }`
 - `merge-article-into-group`: `{ "groupId": "a1b2c3", "articleId": "<drawer unit>", "dockTo": { "rootId": "id0003", "ownDockingVector": "RightBottom", "dockingVector": "LeftBottom" } }`
 
+### undo and redo
+
+No parameters. `undo` reverts the plan change of the last tool call that
+changed the plan — the planner steps that one call made, e.g. a kitchen and its
+material — and `redo` brings it back. Call `undo` again to revert the call
+before. Both return the reverted tool (`undone` / `redone`) and every group of
+the plan. Nothing to undo or redo is a normal result with `undone: null` and a
+`hint`; so is a plan the user changed in the planner after the last tool call
+— the planner's own undo button reverts those changes. A new change of the plan
+ends redo.
+
 ### get-price
 
 No parameters. Calculates and returns the price/order data of the current

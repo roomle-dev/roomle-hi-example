@@ -5,7 +5,9 @@
 > guard, automatic correction and feedback message. Every change to a tool, a served rule, a guard, a
 > correction or a result updates this document in the same change.
 >
-> **State**: the code of 2026-10-04, after the fixes of the MCP test backlog
+> **State**: the code of 2026-10-05, with the undo and redo tools
+> ([RML-18044 analysis](../../.agents/feature-analysis/undo-and-redo-tools.md) and
+> [plan](../../.agents/feature-analysis/undo-and-redo-tools-implementation-plan.md)), after the fixes of the MCP test backlog
 > ([RML-18041 analysis](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md) and
 > [plan](../../.agents/bug-analysis/rml-18041-implementation-plan.md)), which built on the refactoring of
 > the guards ([analysis and plan](../../.agents/refactoring-analysis/guards-in-the-hi-mcp-server.md)).
@@ -114,6 +116,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D4 | Tools that change the plan run one after another, never side by side | 2026-09-30 | `oneAtATime`, `tool-executors.ts:602-615` | in effect |
 | D5 | The planner's checks protect the planner and are not changed for the agent. The server corrects input before forwarding it | 2026-10-02 | user decision | in effect |
 | D37 | `undo` and `redo` join the page allow-lists by explicit decision (D2): they step through the planner's own undo history, as its undo button does, and place or overwrite nothing beyond it. The page relays the planner's `onHistoryChange` as a bridge event, so the server can tell the planner steps of its tool calls from the changes the user makes in the planner | 2026-10-05 | [undo and redo tools](../../.agents/feature-analysis/undo-and-redo-tools.md), RML-18044 | in effect — `planner-api.ts`, `plan-history.ts`, `browser-bridge.ts`, `index.html` |
+| D38 | **The agent's undo reverts tool calls only.** The server records every tool call that changed the plan with the planner steps it made; `undo` reverts the last one while the plan is as that call left it. A history event while no tool call runs is a change in the planner: the server forgets its records, and `undo` says so — the planner's undo button serves the user's own changes | 2026-10-05 | [undo and redo tools](../../.agents/feature-analysis/undo-and-redo-tools.md), RML-18044 | in effect — `plan-history.ts`, `recorded`, `revertToolCall`, `tool-executors.ts` |
 | D6 | In the planner, merge, split, delete and move are always carried out, even if the result is incorrect; the errors of a previous operation never block the next one | 2026-10-01 | user rule (RML-18017, roomle-ui glue logic) | in effect (roomle-ui) |
 
 ### Information for the agent
@@ -187,15 +190,26 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
   | `getExternalObjectPlanContext(include)` | every tool that reads the plan | 30 s |
   | `loadExternalObjectGroupLayout(layout, 'posGroups', { reason: 'adjusted' })` | `create-or-replace-groups`, `place-group`, the anchor probe | 120 s |
   | `externalObjectGroupOperation(command, payload)` | the command tools | 120 s |
-  | `getExternalObjectGroups()` | `place-group`, the anchor probe, the position of every returned group (calculated geometry) | 30 s |
-  | `removeExternalObject(id)` | the anchor probe (removes its probe group) | 30 s |
+  | `getExternalObjectGroups()` | `place-group`, the anchor probe, the position of every returned group (calculated geometry), the plan before and after a tool call that changes it (D38) | 30 s |
+  | `undo()` | `undo`, the anchor probe (undoes its load) | 30 s |
+  | `redo()` | `redo` | 30 s |
+  | `removeExternalObject(id)` | the anchor probe, for a probe group its undo left in the plan (a page without `undo`) | 30 s |
   | `fetchPrice()` | `get-price` | 30 s |
   | `getExternalObjectSnapshot(options)` | `get-order-data`, `get-plan-images` | 120 s |
 
 - **One plan change at a time.** The tools that change the plan wait for each other (D4). The anchor
   probe tells its own groups by comparing the plan before and after its load, and a concurrent load
   would disturb that. `get-plan-context` waits with them: it reads the plan context and the calculated
-  groups its positions come from, and both reads see the same plan.
+  groups its positions come from, and both reads see the same plan. `undo` and `redo` wait with them
+  too: an undo never runs beside another plan change.
+- **Every tool call that changes the plan is recorded** (D38): a planner API that counts the steps
+  the call puts on the planner's undo history — one per load that loaded something, per group
+  command and per removal, minus one per undo — reads the raw groups before the first step and after
+  the call. After `change-module-attribute`, `change-group-attribute` and `exchange-root-module` —
+  also the kitchen-wide attributes of `create-or-replace-groups` — it waits until the command has
+  produced its second history event, the follow-up reload roomle-ui makes when the kernel answers
+  with the group's position, at most 2 s; a page that relays no history events gets no wait. The
+  history events while a call runs are its own; one while no call runs is a change in the planner.
 - **The HI chat** (`hi-mcp-chat`) is an MCP client of this server. It gives the model a
   four-sentence system prompt (`CHAT_SYSTEM_PROMPT`, `chat-config.ts`) — the last sentence asks it
   to summarise what it changed from the last tool results only, never by repeating them, and to
@@ -295,6 +309,7 @@ Default sections: `rooms`, `articles`, `groups`.
 | `create-or-replace-groups` | yes | `{ loaded, groups, hint? }` |
 | `place-group` | yes | `{ placedIn, wall, group }` |
 | `change-module-attribute`, `change-group-attribute`, `delete-group`, `delete-root-module`, `merge-article-into-group`, `exchange-root-module`, `merge-groups` | yes | `{ command, groups, removedGroupIds, changedModuleIds? }` |
+| `undo`, `redo` | yes | `{ undone \| redone, groups, hint? }` |
 | `get-price` | no | the planner's price result |
 | `get-order-data` | no | the order data, or `null` |
 | `get-plan-images` | no | two images |
@@ -410,6 +425,25 @@ position.
 `{ command, groups, removedGroupIds, changedModuleIds? }` — the affected groups in the plan-context
 shape — plus `corrections` when the server corrected the input before forwarding.
 
+### undo, redo
+
+No parameters. `undo` reverts the plan change of the last tool call that changed the plan; `redo`
+brings back the call the last `undo` reverted (D38).
+
+1. No record → the tool name is `null` and a `hint` says why: nothing to undo or redo, or the plan
+   was changed in the planner after the last tool call.
+2. The plan must be as the call left it — the raw groups compared to the tenth of a millimetre —,
+   else the records are forgotten and the result is the planner hint.
+3. One planner `undo()` or `redo()` per step of the call, each confirmed by its history event
+   within 1 s; a missing event — the planner's history was cleared, e.g. by a plan load — forgets
+   the records and says so.
+4. The call moves to the other list. The result names the tool and returns every group of the plan
+   in the plan-context shape, plus a `hint` naming the groups that differ from the plan before (for
+   `undo`) or after (for `redo`) the call.
+
+A new tool call that changes the plan ends redo, as in the planner. The records live in the
+server process and start over when a page is accepted.
+
 ### get-price, get-order-data, get-plan-images
 
 - **`get-price`** returns the planner's price calculation (`fetchPrice`).
@@ -458,7 +492,7 @@ shape — plus `corrections` when the server corrected the input before forwardi
 |---|---|---|
 | `corrections` | the server changed the input | One sentence per correction: the group (input index and id) or the command, what was sent, and what the server did. In `create-or-replace-groups`, `place-group`, `merge-article-into-group` and `exchange-root-module` |
 | `notLoaded` | a group of `create-or-replace-groups` cannot be built, or a group loads without some of its roots | `[{ index, id?, rootIds?, errors }]`, each error naming what to send instead; the other groups and roots load |
-| `hint` | something to check; nothing stopped | an unpositioned group (`create-or-replace-groups`), more than 20 matches (`find-attributes`) |
+| `hint` | something to check; nothing stopped | an unpositioned group (`create-or-replace-groups`), more than 20 matches (`find-attributes`), why `undo` or `redo` reverted nothing, groups that differ after an `undo` or `redo` (§8.8) |
 | Error result | nothing in the call can be done | `create-or-replace-groups`: no group can be built, or the planner loaded none; the other tools: a guard of §8.4–8.6, or the planner's message |
 
 A correction that the rules describe as normal is silent (§8.2). A correction of a mistake is
@@ -479,7 +513,7 @@ them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twi
 | C3 | Docking vector indices are stripped and resolved from the names | `stripDockingIndices` |
 | C4 | A unique prefix of a group id is accepted | `findGroup` |
 | C5 | The anchor is found by walking from the start root down to the floor unit carrying it, then left along its row, stopping at a corner article. A wall unit named as anchor leads to the base unit below it | `findAnchorRoot`, `group-placement.ts` |
-| C6 | The anchor is placed by its docking corner — the origin of a cabinet, the left edge of a range hood, the corner point of a corner article — and a right-handed corner article is turned by 90°. The frame is learned by a probe load and remembered per library, article and attributes, and reaches the planner as `rootRelPos` and `rootRelRotationY` | `anchorFrameOfRoot`, `toRepositioningData`; `probeAnchorFrame` |
+| C6 | The anchor is placed by its docking corner — the origin of a cabinet, the left edge of a range hood, the corner point of a corner article — and a right-handed corner article is turned by 90°. The frame is learned by a probe load and remembered per library, article and attributes, and reaches the planner as `rootRelPos` and `rootRelRotationY`. The probe load is undone, so it leaves no step on the planner's undo history (until 2026-10-05 it was removed, and the planner's undo button brought the probe group back after the agent's steps); a probe group the undo left in the plan is removed | `anchorFrameOfRoot`, `toRepositioningData`; `probeAnchorFrame`, `takeBackProbe` |
 | C7 | `cornerArticle` is set on an empty plan from the category or the module name; `cornerPoint` is removed | `isCornerArticle`; `agentFacingArticle` |
 | C8 | In a resubmitted group, a docking entry that names a root outside the group connects nothing and is kept, so a group whose unit was deleted still loads. In a new group it is reported (G26) | `dockingNeighbours`, `reportUnsentRoots` |
 | C9 | `place-group` defaults: alignment `center`, offset 0, room 0; the group keeps its height | `place-group` |
@@ -634,6 +668,18 @@ Infrastructure checks, kept. The page allow-list and the origin check are securi
 | HTTP 400, "Chat request requires a page clientId" | the example chat request omitted its browser page identity |
 | the page's own error (e.g. a method not on its allow-list) | the planner call failed in the page |
 
+### 8.8 `undo` and `redo`
+
+Nothing here is an error result: the tool answers with its name `null` and a `hint`.
+
+| Situation | What the server does | `hint` |
+|---|---|---|
+| no record | nothing | "Nothing to undo: no tool call has changed the plan since the planner page connected." / "Nothing to redo: redo brings back a tool call that undo reverted, and a new change of the plan ends redo." |
+| a history event while no tool call ran, or the plan differs from the state the call left | forgets the records | "The plan was changed in the planner after the last tool call, so no tool call was reverted - the planner's own undo button reverts the changes made there." |
+| a planner undo or redo without its history event | forgets the records | "The planner's undo history no longer holds … - the plan was loaded again, nothing was undone." / "… ended after n of m steps of … - check the plan with get-plan-context." |
+| groups that differ after the steps (`undone` / `redone` set) | — | "After undo of …, groups … differ from the plan before it - check them with get-plan-context." |
+| a page without `undo` on its allow-list | — | error result: the page's "Planner method not exposed: undo" (§8.7) |
+
 ## 9. Limits
 
 | Limit | Value | Where |
@@ -643,3 +689,6 @@ Infrastructure checks, kept. The page allow-list and the origin check are securi
 | `find-attributes` matches | 20 | `MAX_ATTRIBUTE_MATCHES` |
 | Valid article ids in G15's message | 100 | `requireCatalogArticle` |
 | Overlap tolerance of `place-group` | 5 mm | `OVERLAP_TOLERANCE_MM` |
+| Wait for the follow-up reload of an attribute change or exchange | 2 s | `FOLLOW_UP_WAIT_MS` |
+| Wait for the history event of a planner undo or redo | 1 s | `HISTORY_EVENT_WAIT_MS` |
+| Comparison of the plan before and after a tool call | 0.1 mm | `groupsKey` |

@@ -90,6 +90,8 @@ const PLAN_CHANGING_TOOLS = [
   'merge-article-into-group',
   'exchange-root-module',
   'merge-groups',
+  'undo',
+  'redo',
 ];
 
 const stripDataUrlPrefix = (image: string): string =>
@@ -488,6 +490,29 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       },
     },
     async (args) => textResult(await runTool('merge-groups', args))
+  );
+
+  server.registerTool(
+    'undo',
+    {
+      description:
+        "Reverts the plan change of the last tool call that changed the plan, as the planner's undo does. " +
+        'Call it again to revert the call before. Returns the reverted tool and every group of the plan now; ' +
+        'when there is nothing to undo, the result says so.',
+      inputSchema: {},
+    },
+    async () => textResult(await runTool('undo', {}))
+  );
+
+  server.registerTool(
+    'redo',
+    {
+      description:
+        'Brings back the tool call the last undo reverted. A new change of the plan ends redo. Returns the ' +
+        'restored tool and every group of the plan now; when there is nothing to redo, the result says so.',
+      inputSchema: {},
+    },
+    async () => textResult(await runTool('redo', {}))
   );
 
   server.registerTool(

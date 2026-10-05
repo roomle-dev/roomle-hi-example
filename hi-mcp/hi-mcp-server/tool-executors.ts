@@ -45,6 +45,7 @@ import type {
   WallAlignment,
   WallSide,
 } from './plan-space';
+import { planHistory } from './plan-history';
 import type { PlannerApi } from './planner-api';
 
 export type ToolExecutor = (
@@ -629,17 +630,42 @@ export const forgetAnchorFrames = (): void => knownAnchorFrames.clear();
 // no docking vector coordinates - and it depends on the attributes. The
 // planner calculates the anchor once as authored - article and attribute
 // overrides - in a single-pick probe group; its docking vectors are read from
-// the raw groups, and every group the probe load added is removed again (the
-// load result carries runtime ids only, which removal does not take). An
-// article calculated without docking vectors gets the identity. Undefined when
-// the planner calculated nothing.
+// the raw groups, and the probe load is undone, so it leaves no step on the
+// planner's undo history. An article calculated without docking vectors gets
+// the identity. Undefined when the planner calculated nothing.
+// The groups the probe load added and an undo left in the plan - on a page
+// without undo on its allow-list - are removed (the load result carries
+// runtime ids only, which removal does not take).
+const takeBackProbe = async (
+  roomDesignerApi: PlannerApi,
+  loaded: unknown,
+  probes: any[],
+  planGroupIds: Set<string>
+): Promise<void> => {
+  let left = probes;
+  if (Array.isArray(loaded) && loaded.length > 0) {
+    try {
+      await roomDesignerApi.extended.undo();
+      left = (
+        ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
+          []) as any[]
+      ).filter((group) => !planGroupIds.has(group.id));
+    } catch {
+      left = probes;
+    }
+  }
+  for (const probe of left) {
+    await roomDesignerApi.extended.removeExternalObject(probe.id);
+  }
+};
+
 const probeAnchorFrame = async (
   roomDesignerApi: PlannerApi,
   anchor: any,
   libraryId: string | undefined,
   planGroupIds: Set<string>
 ): Promise<AnchorFrame | undefined> => {
-  await roomDesignerApi.extended.loadExternalObjectGroupLayout(
+  const loaded = await roomDesignerApi.extended.loadExternalObjectGroupLayout(
     {
       posGroups: [
         {
@@ -662,9 +688,7 @@ const probeAnchorFrame = async (
   const probes = (
     ((await roomDesignerApi.extended.getExternalObjectGroups()) ?? []) as any[]
   ).filter((group) => !planGroupIds.has(group.id));
-  for (const probe of probes) {
-    await roomDesignerApi.extended.removeExternalObject(probe.id);
-  }
+  await takeBackProbe(roomDesignerApi, loaded, probes, planGroupIds);
   if (probes.length === 0) {
     return undefined;
   }
@@ -2283,6 +2307,228 @@ const oneAtATime =
     return run;
   };
 
+// The commands whose load the kernel answers with the group's position:
+// roomle-ui reloads the group once more, and that follow-up joins the
+// command's undo step as its second history event - usually before the
+// command resolves, sometimes after it (roomle-ui respondWithPositionInPlan
+// for the load reasons change_attribute and swap_module).
+const FOLLOW_UP_COMMANDS = new Set([
+  'change-module-attribute',
+  'change-group-attribute',
+  'exchange-root-module',
+]);
+const FOLLOW_UP_WAIT_MS = 2000;
+const HISTORY_EVENT_WAIT_MS = 1000;
+
+const roundedToTenthMm = (_key: string, value: unknown) =>
+  typeof value === 'number' ? Math.round(value * 10) / 10 : value;
+
+// The planner's raw groups as a comparison key, sorted by id - an undo
+// restores them to the tenth of a millimetre.
+const groupsKey = (groups: unknown): string =>
+  JSON.stringify(
+    [...((groups ?? []) as any[])].sort((a, b) =>
+      String(a?.id).localeCompare(String(b?.id))
+    ),
+    roundedToTenthMm
+  );
+
+const differingGroupIds = (expectedKey: string, actualKey: string) => {
+  const byId = (key: string) =>
+    new Map(
+      (JSON.parse(key) as any[]).map((group) => [
+        String(group?.id),
+        JSON.stringify(group),
+      ])
+    );
+  const expected = byId(expectedKey);
+  const actual = byId(actualKey);
+  return [...new Set([...expected.keys(), ...actual.keys()])].filter(
+    (id) => expected.get(id) !== actual.get(id)
+  );
+};
+
+const readGroupsKey = async (roomDesignerApi: PlannerApi) =>
+  groupsKey(await roomDesignerApi.extended.getExternalObjectGroups());
+
+// The planner API of a tool call that changes the plan. It counts the steps
+// the call puts on the planner's undo history - one per load that loaded
+// something, per group command and per removal, minus one per undo (the
+// anchor probe) - reads the plan before the first step, and waits for the
+// follow-up reload of a command that has one.
+const countingPlannerApi = (roomDesignerApi: PlannerApi) => {
+  const { extended } = roomDesignerApi;
+  const count = { steps: 0, groupsBefore: undefined as string | undefined };
+  const beforeStep = async () => {
+    count.groupsBefore ??= await readGroupsKey(roomDesignerApi);
+  };
+  const api: PlannerApi = {
+    extended: {
+      ...extended,
+      loadExternalObjectGroupLayout: async (layout, layoutType, options) => {
+        await beforeStep();
+        const loaded = await extended.loadExternalObjectGroupLayout(
+          layout,
+          layoutType,
+          options
+        );
+        if (Array.isArray(loaded) && loaded.length > 0) {
+          count.steps += 1;
+        }
+        return loaded;
+      },
+      externalObjectGroupOperation: async (command, payload) => {
+        await beforeStep();
+        const eventsBefore = planHistory.events;
+        const result = await extended.externalObjectGroupOperation(
+          command,
+          payload
+        );
+        count.steps += 1;
+        // a page that relays no history events gets no wait
+        if (
+          FOLLOW_UP_COMMANDS.has(command) &&
+          planHistory.events > eventsBefore
+        ) {
+          await planHistory.waitForEvents(eventsBefore + 2, FOLLOW_UP_WAIT_MS);
+        }
+        return result;
+      },
+      removeExternalObject: async (groupOrRootModuleId) => {
+        await beforeStep();
+        const result = await extended.removeExternalObject(groupOrRootModuleId);
+        count.steps += 1;
+        return result;
+      },
+      undo: async () => {
+        await extended.undo();
+        count.steps -= 1;
+      },
+    },
+  };
+  return { api, count };
+};
+
+// A tool call that changed the plan is recorded with its planner steps and
+// the plan before and after it, so that undo can revert it; the history
+// events while it runs are its own. A plan that cannot be read afterwards
+// leaves no record the undo could trust.
+const recorded =
+  (tool: string, executor: ToolExecutor): ToolExecutor =>
+  async (roomDesignerApi, args) => {
+    const { api, count } = countingPlannerApi(roomDesignerApi);
+    planHistory.begin();
+    try {
+      return await executor(api, args);
+    } finally {
+      if (count.steps > 0 && count.groupsBefore !== undefined) {
+        try {
+          planHistory.record({
+            tool,
+            steps: count.steps,
+            groupsBefore: count.groupsBefore,
+            groupsAfter: await readGroupsKey(roomDesignerApi),
+          });
+        } catch {
+          planHistory.forget();
+        }
+      }
+      planHistory.end();
+    }
+  };
+
+const planChange = (tool: string, executor: ToolExecutor): ToolExecutor =>
+  oneAtATime(recorded(tool, executor));
+
+type HistoryDirection = 'undo' | 'redo';
+
+// One planner undo or redo per step, each confirmed by its history event.
+// Returns the number of steps done: fewer when the planner's history ran out.
+const stepHistory = async (
+  roomDesignerApi: PlannerApi,
+  direction: HistoryDirection,
+  steps: number
+): Promise<number> => {
+  planHistory.begin();
+  try {
+    for (let step = 0; step < steps; step++) {
+      const eventsBefore = planHistory.events;
+      await roomDesignerApi.extended[direction]();
+      const confirmed = await planHistory.waitForEvents(
+        eventsBefore + 1,
+        HISTORY_EVENT_WAIT_MS
+      );
+      if (!confirmed) {
+        return step;
+      }
+    }
+    return steps;
+  } finally {
+    planHistory.end();
+  }
+};
+
+const NOTHING_TO_UNDO =
+  'Nothing to undo: no tool call has changed the plan since the planner page connected.';
+const NOTHING_TO_REDO =
+  'Nothing to redo: redo brings back a tool call that undo reverted, and a new change of the plan ends redo.';
+const CHANGED_IN_PLANNER =
+  "The plan was changed in the planner after the last tool call, so no tool call was reverted - the planner's own undo button reverts the changes made there.";
+
+// undo reverts the last tool call that changed the plan, redo brings back the
+// last one undo reverted - only while the plan is as that call left it.
+const revertToolCall =
+  (direction: HistoryDirection): ToolExecutor =>
+  async (roomDesignerApi) => {
+    const undo = direction === 'undo';
+    const call = undo ? planHistory.lastDone() : planHistory.lastUndone();
+    const answer = async (tool: string | null, hint?: string) => ({
+      [undo ? 'undone' : 'redone']: tool,
+      groups: await planGroups(roomDesignerApi),
+      ...(hint && { hint }),
+    });
+    if (!call) {
+      return answer(
+        null,
+        planHistory.changedInPlanner
+          ? CHANGED_IN_PLANNER
+          : undo
+            ? NOTHING_TO_UNDO
+            : NOTHING_TO_REDO
+      );
+    }
+    const [from, to] = undo
+      ? [call.groupsAfter, call.groupsBefore]
+      : [call.groupsBefore, call.groupsAfter];
+    if ((await readGroupsKey(roomDesignerApi)) !== from) {
+      planHistory.forget();
+      return answer(null, CHANGED_IN_PLANNER);
+    }
+    const done = await stepHistory(roomDesignerApi, direction, call.steps);
+    if (done < call.steps) {
+      planHistory.forget();
+      return answer(
+        null,
+        done === 0
+          ? `The planner's undo history no longer holds ${call.tool} - the plan was loaded again, nothing was ${undo ? 'undone' : 'redone'}.`
+          : `The planner's undo history ended after ${done} of ${call.steps} steps of ${call.tool} - check the plan with get-plan-context.`
+      );
+    }
+    if (undo) {
+      planHistory.markUndone();
+    } else {
+      planHistory.markRedone();
+    }
+    const now = await readGroupsKey(roomDesignerApi);
+    const differing = now === to ? [] : differingGroupIds(to, now);
+    return answer(
+      call.tool,
+      differing.length > 0
+        ? `After ${direction} of ${call.tool}, groups ${differing.join(', ')} differ from the plan ${undo ? 'before' : 'after'} it - check them with get-plan-context.`
+        : undefined
+    );
+  };
+
 // The agent reads a group's position in the frame it places a group with: pos
 // is the room point of the group's back left bottom corner, rotationY the
 // rotation of the placement - wherever the planner keeps the group origin. The
@@ -2397,7 +2643,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     };
   },
 
-  'create-or-replace-groups': oneAtATime(
+  'create-or-replace-groups': planChange(
+    'create-or-replace-groups',
     inPlacementFrame(async (roomDesignerApi, args) => {
       const corrections: string[] = [];
       const notLoaded: NotLoadedGroup[] = [];
@@ -2641,7 +2888,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     })
   ),
 
-  'place-group': oneAtATime(
+  'place-group': planChange(
+    'place-group',
     inPlacementFrame(async (roomDesignerApi, args) => {
       const corrections: string[] = [];
       const groupId = args.groupId as string;
@@ -2754,7 +3002,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
   // The group commands run in the planner (externalObjectGroupOperation); the
   // executors resolve group id prefixes and check article ids against the
   // catalog first, so the agent gets the lists of valid ids on a mistake.
-  'change-module-attribute': oneAtATime(
+  'change-module-attribute': planChange(
+    'change-module-attribute',
     inPlacementFrame(async (roomDesignerApi, args) => {
       const corrections: string[] = [];
       const groups = await planGroups(roomDesignerApi);
@@ -2783,7 +3032,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     })
   ),
 
-  'change-group-attribute': oneAtATime(
+  'change-group-attribute': planChange(
+    'change-group-attribute',
     inPlacementFrame(async (roomDesignerApi, args) => {
       const group = findGroup(
         await planGroups(roomDesignerApi),
@@ -2800,7 +3050,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     })
   ),
 
-  'delete-group': oneAtATime(
+  'delete-group': planChange(
+    'delete-group',
     inPlacementFrame(async (roomDesignerApi, args) => {
       const group = findGroup(
         await planGroups(roomDesignerApi),
@@ -2813,7 +3064,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     })
   ),
 
-  'delete-root-module': oneAtATime(
+  'delete-root-module': planChange(
+    'delete-root-module',
     inPlacementFrame(async (roomDesignerApi, args) => {
       const corrections: string[] = [];
       const groups = await planGroups(roomDesignerApi);
@@ -2837,7 +3089,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     })
   ),
 
-  'merge-article-into-group': oneAtATime(
+  'merge-article-into-group': planChange(
+    'merge-article-into-group',
     inPlacementFrame(async (roomDesignerApi, args) => {
       const corrections: string[] = [];
       const context =
@@ -2910,7 +3163,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     })
   ),
 
-  'exchange-root-module': oneAtATime(
+  'exchange-root-module': planChange(
+    'exchange-root-module',
     inPlacementFrame(async (roomDesignerApi, args) => {
       const corrections: string[] = [];
       const context =
@@ -2949,7 +3203,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     })
   ),
 
-  'merge-groups': oneAtATime(
+  'merge-groups': planChange(
+    'merge-groups',
     inPlacementFrame(async (roomDesignerApi, args) => {
       const groups = await planGroups(roomDesignerApi);
       return roomDesignerApi.extended.externalObjectGroupOperation(
@@ -2963,6 +3218,10 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       );
     })
   ),
+
+  undo: oneAtATime(inPlacementFrame(revertToolCall('undo'))),
+
+  redo: oneAtATime(inPlacementFrame(revertToolCall('redo'))),
 
   'get-price': async (roomDesignerApi) => {
     return roomDesignerApi.extended.fetchPrice();

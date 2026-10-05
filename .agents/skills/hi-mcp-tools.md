@@ -31,6 +31,12 @@ them — is [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behavio
 | `exchange-root-module` | Replace a unit with an article, keeping its docking |
 | `merge-groups` | Join groups where they stand |
 
+### History Tools
+| Tool | Purpose |
+|---|---|
+| `undo` | Revert the last tool call that changed the plan |
+| `redo` | Bring back the tool call the last undo reverted |
+
 ### Result Tools
 | Tool | Purpose |
 |---|---|
@@ -212,6 +218,23 @@ await mergeArticleIntoGroup({
 });
 await changeGroupAttribute({ groupId: 'group-1', attributeId: 'front', value: 'white' });
 ```
+
+### undo and redo
+
+**Purpose**: Revert the last tool call that changed the plan, or bring it back
+
+**Parameters**: none
+
+**How**: the server records every tool call that changed the plan with the planner steps it made
+(one per load, group command and removal; a kitchen with a material is two) and the raw groups
+before and after it. `undo` steps the planner's undo history back by that many steps, each confirmed
+by the history event the page relays (`onHistoryChange`), and compares the plan with the state
+before the call. Only tool calls are reverted: after a change in the planner the records are
+forgotten (D38). The anchor probe undoes its own load, so it leaves no step.
+
+**Returns**: `{ undone | redone: <tool> | null, groups, hint? }` — every group of the plan; `null` and a
+`hint` when there is nothing to undo or redo, the plan was changed in the planner, or the planner's
+history no longer holds the call; a `hint` naming the groups that differ after the steps
 
 ### find-attributes
 

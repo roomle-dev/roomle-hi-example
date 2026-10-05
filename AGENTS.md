@@ -382,6 +382,7 @@ A push to `release/cloudflare` deploys the MCP server to Cloudflare
    - `create-or-replace-groups` — Add, modify or extend groups; position new groups
    - `place-group` — Move an existing group against a wall or into a room corner
    - `merge-article-into-group`, `exchange-root-module`, `delete-root-module`, `delete-group`, `change-module-attribute`, `change-group-attribute`, `merge-groups` — Edit an existing group (commands the planner performs)
+   - `undo`, `redo` — Revert the last tool call that changed the plan, or bring it back
    - `get-price` — Calculate pricing
    - `get-order-data` — Get order information
    - `get-plan-images` — Render plan images

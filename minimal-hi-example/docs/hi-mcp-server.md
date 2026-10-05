@@ -637,6 +637,9 @@ group one point and one rotation; the planner calculates every root position.
 - Verify results numerically: the returned groups carry `position` (`pos`,
   `rotationY`, `footprint`) and per root the `dockingVectors`, the input
   attributes and the docking.
+- Undo a wrong result: when a result is not what was asked, call `undo` and
+  send the corrected call; one undo reverts one tool call. A group that only
+  needs a change is edited with the command tools.
 
 ## Positioning a group
 

@@ -415,6 +415,23 @@ describe('hi-mcp-server tool calls', () => {
     );
   });
 
+  it('tells the agent to undo a wrong result and send the corrected call', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    expect(rules).toContain(
+      'when a result is not what was asked - the wrong wall, a unit missing or replaced by mistake, a merge or a delete that went wrong - call undo and send the corrected call'
+    );
+    expect(rules).toContain('one undo reverts one tool call');
+    expect(rules).toContain(
+      'A group that only needs a change is edited with the command tools'
+    );
+    expect(client.getInstructions()).toContain(
+      'undo reverts the last tool call that changed the plan, redo brings it back.'
+    );
+  });
+
   it('hangs a range hood beside the wall units and reads a position back in the frame of the placement', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(
@@ -504,6 +521,8 @@ describe('hi-mcp-server tool calls', () => {
       'blind zone',
       '261',
       'externalObjectGroupOperation',
+      'probe',
+      'step',
     ]) {
       expect(served.join('\n')).not.toContain(internal);
     }

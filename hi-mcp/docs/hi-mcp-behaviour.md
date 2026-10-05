@@ -236,7 +236,8 @@ authoring rules:
 2. `create-or-replace-groups` — the whole kitchen as one group: article picks, docking, one
    placement. A matching id replaces a group and keeps its position. Units next to an existing
    group are added to it.
-3. The command tools to edit an existing group; `place-group` to move one.
+3. The command tools to edit an existing group; `place-group` to move one; `undo` reverts the last
+   tool call that changed the plan, `redo` brings it back.
 4. `get-price` / `get-order-data` to check, `get-plan-images` to inspect.
 
 Not every client passes these instructions to the model; the HI chat does not (§4).
@@ -260,8 +261,9 @@ tool. It covers:
   vectors `merge-article-into-group` names in `dockTo`.
 - **Placement**: the point and the rotation taken from the walls array, the table of room corners,
   and the right-handed corner article.
-- **Extending**, moving with `place-group`, editing with the command tools, and verifying results
-  numerically.
+- **Extending**, moving with `place-group`, editing with the command tools, verifying results
+  numerically, and **undoing a wrong result**: call `undo` and send the corrected call instead of
+  correcting the wrong plan piece by piece; a group that only needs a change is edited (D38).
 - **Five examples**: a row along a wall, wall units beside a tall unit and above base units, an
   L-shaped corner kitchen, a row centred on a wall, adding a unit with `merge-article-into-group`.
 

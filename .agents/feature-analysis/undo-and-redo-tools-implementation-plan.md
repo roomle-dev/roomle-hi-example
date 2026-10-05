@@ -6,7 +6,7 @@
 > **Date**: 2026-10-05
 > **Author**: AI Assistant
 > **Status**: Implemented 2026-10-05 — see the [close-out](#close-out-2026-10-05)
-> **Branch**: `feat/undo-redo-tools-RML-18044` (roomle-hi-example), `feat/hi-mcp-undo-redo-RML-18044` (ligna-store)
+> **Branch**: `feat/undo-redo-tools-RML-18044` (roomle-hi-example) — [PR #64](https://github.com/roomle-dev/roomle-hi-example/pull/64); `feat/hi-mcp-undo-redo-RML-18044` (ligna-store), merged into `feat/general-default-image-prompt` — [PR #74](https://github.com/roomle-dev/ligna-store/pull/74)
 
 ---
 

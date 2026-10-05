@@ -208,8 +208,12 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
   the call. After `change-module-attribute`, `change-group-attribute` and `exchange-root-module` —
   also the kitchen-wide attributes of `create-or-replace-groups` — it waits until the command has
   produced its second history event, the follow-up reload roomle-ui makes when the kernel answers
-  with the group's position, at most 2 s; a page that relays no history events gets no wait. The
-  history events while a call runs are its own; one while no call runs is a change in the planner.
+  with the group's position, at most 2 s; a page that relays no history events gets no wait. A call
+  whose follow-up has not arrived by then is recorded as unsettled, and its late reload, when it
+  arrives, is the call's own. The history events while a call runs are its own; any other one is a
+  change in the planner. The first planner step of a call ends redo, as the planner drops its redo
+  future with it — also when the call leaves no step in the end (a probe load undone, then a failed
+  load).
 - **The HI chat** (`hi-mcp-chat`) is an MCP client of this server. It gives the model a
   four-sentence system prompt (`CHAT_SYSTEM_PROMPT`, `chat-config.ts`) — the last sentence asks it
   to summarise what it changed from the last tool results only, never by repeating them, and to
@@ -436,16 +440,22 @@ instructions on, like the HI chat (§4), shows the model only the tool list.
 
 1. No record → the tool name is `null` and a `hint` says why: nothing to undo or redo, or the plan
    was changed in the planner after the last tool call.
-2. The plan must be as the call left it — the raw groups compared to the tenth of a millimetre —,
+2. `undo` of an unsettled call waits up to 2 s for its late follow-up reload; while it is still
+   outstanding, nothing is undone and the `hint` says so — an undo before the reload would make
+   the reload a step of its own. Once it has arrived, the plan then is the call's plan after.
+3. The plan must be as the call left it — the raw groups compared to the tenth of a millimetre —,
    else the records are forgotten and the result is the planner hint.
-3. One planner `undo()` or `redo()` per step of the call, each confirmed by its history event
+4. One planner `undo()` or `redo()` per step of the call, each confirmed by its history event
    within 1 s; a missing event — the planner's history was cleared, e.g. by a plan load — forgets
    the records and says so.
-4. The call moves to the other list. The result names the tool and returns every group of the plan
-   in the plan-context shape, plus a `hint` naming the groups that differ from the plan before (for
-   `undo`) or after (for `redo`) the call.
+5. The plan must now be the plan before (for `undo`) or after (for `redo`) the call. If it is not
+   — the user changed the plan in the planner while the call ran, so that change sits among the
+   call's steps —, the same number of steps is taken back in the other direction, the records are
+   forgotten, and the `hint` says so. A wrong revert is never left in place.
+6. The call moves to the other list. The result names the tool and returns every group of the plan
+   in the plan-context shape.
 
-A new tool call that changes the plan ends redo, as in the planner. The records live in the
+The first planner step of a new tool call ends redo, as in the planner. The records live in the
 server process and start over when a page is accepted.
 
 ### get-price, get-order-data, get-plan-images
@@ -681,7 +691,8 @@ Nothing here is an error result: the tool answers with its name `null` and a `hi
 | no record | nothing | "Nothing to undo: no tool call has changed the plan since the planner page connected." / "Nothing to redo: redo brings back a tool call that undo reverted, and a new change of the plan ends redo." |
 | a history event while no tool call ran, or the plan differs from the state the call left | forgets the records | "The plan was changed in the planner after the last tool call, so no tool call was reverted - the planner's own undo button reverts the changes made there." |
 | a planner undo or redo without its history event | forgets the records | "The planner's undo history no longer holds … - the plan was loaded again, nothing was undone." / "… ended after n of m steps of … - check the plan with get-plan-context." |
-| groups that differ after the steps (`undone` / `redone` set) | — | "After undo of …, groups … differ from the plan before it - check them with get-plan-context." |
+| `undo` of a call whose follow-up reload has not arrived within 2 s more | nothing; the records stay | "The planner has not finished the last change yet - its follow-up reload is still outstanding. Nothing was undone; call undo again in a moment." |
+| the plan after the steps is not the plan before (`undo`) or after (`redo`) the call | takes the steps back, forgets the records | "Undo of … did not give back the plan before it - the plan was changed in the planner while the tool call ran. The undo was taken back and the plan is as it was; the planner's undo button reverts the changes made there." / "… could not be taken back completely - check the plan with get-plan-context." |
 | a page without `undo` on its allow-list | — | error result: the page's "Planner method not exposed: undo" (§8.7) |
 
 ## 9. Limits
@@ -695,4 +706,5 @@ Nothing here is an error result: the tool answers with its name `null` and a `hi
 | Overlap tolerance of `place-group` | 5 mm | `OVERLAP_TOLERANCE_MM` |
 | Wait for the follow-up reload of an attribute change or exchange | 2 s | `FOLLOW_UP_WAIT_MS` |
 | Wait for the history event of a planner undo or redo | 1 s | `HISTORY_EVENT_WAIT_MS` |
+| Wait in `undo` for a late follow-up reload of the last call | 2 s | `FOLLOW_UP_WAIT_MS` |
 | Comparison of the plan before and after a tool call | 0.1 mm | `groupsKey` |

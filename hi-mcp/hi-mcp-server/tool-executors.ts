@@ -2333,21 +2333,6 @@ const groupsKey = (groups: unknown): string =>
     roundedToTenthMm
   );
 
-const differingGroupIds = (expectedKey: string, actualKey: string) => {
-  const byId = (key: string) =>
-    new Map(
-      (JSON.parse(key) as any[]).map((group) => [
-        String(group?.id),
-        JSON.stringify(group),
-      ])
-    );
-  const expected = byId(expectedKey);
-  const actual = byId(actualKey);
-  return [...new Set([...expected.keys(), ...actual.keys()])].filter(
-    (id) => expected.get(id) !== actual.get(id)
-  );
-};
-
 const readGroupsKey = async (roomDesignerApi: PlannerApi) =>
   groupsKey(await roomDesignerApi.extended.getExternalObjectGroups());
 
@@ -2355,12 +2340,22 @@ const readGroupsKey = async (roomDesignerApi: PlannerApi) =>
 // the call puts on the planner's undo history - one per load that loaded
 // something, per group command and per removal, minus one per undo (the
 // anchor probe) - reads the plan before the first step, and waits for the
-// follow-up reload of a command that has one.
+// follow-up reload of a command that has one. Every step ends redo at once:
+// the planner drops its redo future with the step, also when the call leaves
+// no step in the end (a probe load undone, then a failed load).
 const countingPlannerApi = (roomDesignerApi: PlannerApi) => {
   const { extended } = roomDesignerApi;
-  const count = { steps: 0, groupsBefore: undefined as string | undefined };
+  const count = {
+    steps: 0,
+    groupsBefore: undefined as string | undefined,
+    settled: true,
+  };
   const beforeStep = async () => {
     count.groupsBefore ??= await readGroupsKey(roomDesignerApi);
+  };
+  const stepped = () => {
+    count.steps += 1;
+    planHistory.endRedo();
   };
   const api: PlannerApi = {
     extended: {
@@ -2373,7 +2368,7 @@ const countingPlannerApi = (roomDesignerApi: PlannerApi) => {
           options
         );
         if (Array.isArray(loaded) && loaded.length > 0) {
-          count.steps += 1;
+          stepped();
         }
         return loaded;
       },
@@ -2384,20 +2379,25 @@ const countingPlannerApi = (roomDesignerApi: PlannerApi) => {
           command,
           payload
         );
-        count.steps += 1;
+        stepped();
         // a page that relays no history events gets no wait
         if (
           FOLLOW_UP_COMMANDS.has(command) &&
-          planHistory.events > eventsBefore
+          planHistory.events > eventsBefore &&
+          !(await planHistory.waitForEvents(
+            eventsBefore + 2,
+            FOLLOW_UP_WAIT_MS
+          ))
         ) {
-          await planHistory.waitForEvents(eventsBefore + 2, FOLLOW_UP_WAIT_MS);
+          count.settled = false;
+          planHistory.expectLateFollowUp();
         }
         return result;
       },
       removeExternalObject: async (groupOrRootModuleId) => {
         await beforeStep();
         const result = await extended.removeExternalObject(groupOrRootModuleId);
-        count.steps += 1;
+        stepped();
         return result;
       },
       undo: async () => {
@@ -2428,6 +2428,7 @@ const recorded =
             steps: count.steps,
             groupsBefore: count.groupsBefore,
             groupsAfter: await readGroupsKey(roomDesignerApi),
+            settled: count.settled,
           });
         } catch {
           planHistory.forget();
@@ -2474,9 +2475,15 @@ const NOTHING_TO_REDO =
   'Nothing to redo: redo brings back a tool call that undo reverted, and a new change of the plan ends redo.';
 const CHANGED_IN_PLANNER =
   "The plan was changed in the planner after the last tool call, so no tool call was reverted - the planner's own undo button reverts the changes made there.";
+const STILL_FINISHING =
+  'The planner has not finished the last change yet - its follow-up reload is still outstanding. Nothing was undone; call undo again in a moment.';
 
 // undo reverts the last tool call that changed the plan, redo brings back the
-// last one undo reverted - only while the plan is as that call left it.
+// last one undo reverted - only while the plan is as that call left it. The
+// server cannot keep the user from changing the plan in the planner while a
+// tool call runs, and such a change sits among the call's steps: an undo or
+// redo that does not give back the plan before or after the call is taken
+// back, so it never leaves a wrong revert in place.
 const revertToolCall =
   (direction: HistoryDirection): ToolExecutor =>
   async (roomDesignerApi) => {
@@ -2497,6 +2504,20 @@ const revertToolCall =
             : NOTHING_TO_REDO
       );
     }
+    // an undo never runs before the call's late follow-up reload has landed:
+    // a reload after the undo would become a step of its own and end redo
+    if (undo && !call.settled) {
+      if (planHistory.lateFollowUps > 0) {
+        await planHistory.waitForEvents(
+          planHistory.events + planHistory.lateFollowUps,
+          FOLLOW_UP_WAIT_MS
+        );
+      }
+      if (planHistory.lateFollowUps > 0) {
+        return answer(null, STILL_FINISHING);
+      }
+      planHistory.settleLastDone(await readGroupsKey(roomDesignerApi));
+    }
     const [from, to] = undo
       ? [call.groupsAfter, call.groupsBefore]
       : [call.groupsBefore, call.groupsAfter];
@@ -2514,19 +2535,29 @@ const revertToolCall =
           : `The planner's undo history ended after ${done} of ${call.steps} steps of ${call.tool} - check the plan with get-plan-context.`
       );
     }
+    if ((await readGroupsKey(roomDesignerApi)) !== to) {
+      const back = await stepHistory(
+        roomDesignerApi,
+        undo ? 'redo' : 'undo',
+        call.steps
+      );
+      const restored =
+        back === call.steps && (await readGroupsKey(roomDesignerApi)) === from;
+      planHistory.markChangedInPlanner();
+      const missed = `${undo ? 'Undo' : 'Redo'} of ${call.tool} did not give back the plan ${undo ? 'before' : 'after'} it - the plan was changed in the planner while the tool call ran.`;
+      return answer(
+        null,
+        restored
+          ? `${missed} The ${direction} was taken back and the plan is as it was; the planner's undo button reverts the changes made there.`
+          : `${missed} The ${direction} could not be taken back completely - check the plan with get-plan-context.`
+      );
+    }
     if (undo) {
       planHistory.markUndone();
     } else {
       planHistory.markRedone();
     }
-    const now = await readGroupsKey(roomDesignerApi);
-    const differing = now === to ? [] : differingGroupIds(to, now);
-    return answer(
-      call.tool,
-      differing.length > 0
-        ? `After ${direction} of ${call.tool}, groups ${differing.join(', ')} differ from the plan ${undo ? 'before' : 'after'} it - check them with get-plan-context.`
-        : undefined
-    );
+    return answer(call.tool);
   };
 
 // The agent reads a group's position in the frame it places a group with: pos

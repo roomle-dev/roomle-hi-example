@@ -524,7 +524,9 @@ material — and `redo` brings it back. Call `undo` again to revert the call
 before. Both return the reverted tool (`undone` / `redone`) and every group of
 the plan. Nothing to undo or redo is a normal result with `undone: null` and a
 `hint`; so is a plan the user changed in the planner after the last tool call
-— the planner's own undo button reverts those changes. A new change of the plan
+— the planner's own undo button reverts those changes. An undo that would not
+give back the plan before the call, because the user changed the plan while the
+call ran, is taken back and reported. A new change of the plan
 ends redo.
 
 ### get-price

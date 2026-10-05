@@ -8,6 +8,7 @@ const call = (tool = 'delete-group') => ({
   steps: 1,
   groupsBefore: '[]',
   groupsAfter: '[]',
+  settled: true,
 });
 
 describe('PlanHistory', () => {
@@ -59,6 +60,38 @@ describe('PlanHistory', () => {
     history.reset();
     expect(history.lastDone()).toBeUndefined();
     expect(history.changedInPlanner).toBe(false);
+  });
+
+  it("takes a late follow-up as the last call's own, and a change after it as a change in the planner", () => {
+    const history = new PlanHistory();
+    history.record({ ...call(), settled: false });
+    history.expectLateFollowUp();
+    history.historyChanged();
+    expect(history.lateFollowUps).toBe(0);
+    expect(history.lastDone()?.settled).toBe(false);
+    history.settleLastDone('[{"id":"g1"}]');
+    expect(history.lastDone()).toMatchObject({
+      groupsAfter: '[{"id":"g1"}]',
+      settled: true,
+    });
+
+    history.historyChanged();
+    expect(history.lastDone()).toBeUndefined();
+    expect(history.changedInPlanner).toBe(true);
+  });
+
+  it('ends redo with a planner step and forgets everything after a change found in the planner', () => {
+    const history = new PlanHistory();
+    history.record(call('delete-group'));
+    history.record(call('place-group'));
+    history.markUndone();
+    history.endRedo();
+    expect(history.lastUndone()).toBeUndefined();
+    expect(history.lastDone()?.tool).toBe('delete-group');
+
+    history.markChangedInPlanner();
+    expect(history.lastDone()).toBeUndefined();
+    expect(history.changedInPlanner).toBe(true);
   });
 
   it('wires itself to the page bridge', () => {

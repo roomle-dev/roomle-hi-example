@@ -4573,7 +4573,8 @@ describe('undo and redo', () => {
     options: {
       followUpDelayMs?: number;
       undoFails?: boolean;
-      undoDrifts?: boolean;
+      editDuringCall?: boolean;
+      failRealLoad?: boolean;
       loadDelayMs?: number;
       order?: string[];
     } = {}
@@ -4605,6 +4606,9 @@ describe('undo and redo', () => {
         if (isProbeLoad(layout)) {
           step([...raw, probeGroup]);
           return [{ id: 'probe' }];
+        }
+        if (options.failRealLoad) {
+          throw new Error('The planner could not load the group.');
         }
         const id = `new-${++created}`;
         step([
@@ -4641,6 +4645,9 @@ describe('undo and redo', () => {
                 : group
             )
           );
+          if (options.editDuringCall) {
+            step(raw.map((group) => ({ ...group, moved: true })));
+          }
           {
             setTimeout(() => {
               raw = raw.map((group) =>
@@ -4667,9 +4674,7 @@ describe('undo and redo', () => {
           return;
         }
         future.push(raw);
-        raw = options.undoDrifts
-          ? previous.map((group) => ({ ...group, pos: [5, 0, 0] }))
-          : previous;
+        raw = previous;
         planHistory.historyChanged();
       }),
       redo: vi.fn(async () => {
@@ -4714,8 +4719,10 @@ describe('undo and redo', () => {
     planHistory.reset();
   });
 
-  afterEach(() => {
+  // a follow-up the fake planner scheduled must not reach the next test
+  afterEach(async () => {
     vi.useRealTimers();
+    await new Promise((resolve) => setTimeout(resolve, 10));
   });
 
   it('reverts the last tool call with one planner undo and returns the groups as before', async () => {
@@ -4886,14 +4893,80 @@ describe('undo and redo', () => {
     expect(again.hint).toMatch(/^Nothing to undo/);
   });
 
-  it('hints at groups that differ from the state before', async () => {
-    const planner = historyPlanner({ undoDrifts: true });
+  it('takes an undo back that does not give back the plan before the call - the planner was changed while the call ran', async () => {
+    const planner = historyPlanner({ editDuringCall: true });
     await changeFront(planner);
+    const afterCall = planner.raw();
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(1);
+    expect(planner.api.extended.redo).toHaveBeenCalledTimes(1);
+    expect(result.undone).toBeNull();
+    expect(result.hint).toBe(
+      "Undo of change-group-attribute did not give back the plan before it - the plan was changed in the planner while the tool call ran. The undo was taken back and the plan is as it was; the planner's undo button reverts the changes made there."
+    );
+    expect(planner.raw()).toEqual(afterCall);
+    const again = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(again.hint).toMatch(/changed in the planner/);
+  });
+
+  it('withholds undo while the follow-up reload of the last call is outstanding', async () => {
+    vi.useFakeTimers();
+    const planner = historyPlanner({ followUpDelayMs: 10_000 });
+    const changing = changeFront(planner);
+    await vi.advanceTimersByTimeAsync(2000);
+    await changing;
+    const withholding = toolExecutors.undo(planner.api, {});
+    await vi.advanceTimersByTimeAsync(2000);
+    const withheld = (await withholding) as any;
+
+    expect(withheld.undone).toBeNull();
+    expect(withheld.hint).toBe(
+      'The planner has not finished the last change yet - its follow-up reload is still outstanding. Nothing was undone; call undo again in a moment.'
+    );
+    expect(planner.api.extended.undo).not.toHaveBeenCalled();
+
+    // the late reload is the call's own, not a change in the planner
+    await vi.advanceTimersByTimeAsync(6000);
     const result = (await toolExecutors.undo(planner.api, {})) as any;
     expect(result.undone).toBe('change-group-attribute');
-    expect(result.hint).toBe(
-      'After undo of change-group-attribute, groups g1 differ from the plan before it - check them with get-plan-context.'
-    );
+    expect(planner.raw()).toEqual([initialGroup]);
+  });
+
+  it('undoes a call once its late follow-up reload has landed', async () => {
+    vi.useFakeTimers();
+    const planner = historyPlanner({ followUpDelayMs: 3000 });
+    const changing = changeFront(planner);
+    await vi.advanceTimersByTimeAsync(2000);
+    await changing;
+    const undoing = toolExecutors.undo(planner.api, {});
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = (await undoing) as any;
+
+    expect(result.undone).toBe('change-group-attribute');
+    expect(planner.raw()).toEqual([initialGroup]);
+  });
+
+  it('ends redo with the first planner step of a call, also when the call leaves no step', async () => {
+    const planner = historyPlanner({ failRealLoad: true });
+    await changeFront(planner);
+    await toolExecutors.undo(planner.api, {});
+    await expect(
+      toolExecutors['create-or-replace-groups'](planner.api, {
+        posGroups: [
+          {
+            libraryId: 'lib-1',
+            placement: { posGroup: [0, 0, 0], posRotationY: 0 },
+            roots: [{ id: 'u1', articleId: 'article-1' }],
+          },
+        ],
+      })
+    ).rejects.toThrow('The planner could not load the group.');
+
+    const result = (await toolExecutors.redo(planner.api, {})) as any;
+    expect(result.redone).toBeNull();
+    expect(result.hint).toMatch(/^Nothing to redo/);
+    expect(planner.api.extended.redo).not.toHaveBeenCalled();
   });
 
   it('waits for the follow-up reload of an attribute change', async () => {

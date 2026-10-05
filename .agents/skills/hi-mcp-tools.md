@@ -234,7 +234,9 @@ forgotten (D38). The anchor probe undoes its own load, so it leaves no step.
 
 **Returns**: `{ undone | redone: <tool> | null, groups, hint? }` — every group of the plan; `null` and a
 `hint` when there is nothing to undo or redo, the plan was changed in the planner, or the planner's
-history no longer holds the call; a `hint` naming the groups that differ after the steps
+history no longer holds the call; an undo or redo that does not give back the plan before or after
+the call (the user changed the plan in the planner while the call ran) is taken back, with a `hint`;
+`undo` waits for a late follow-up reload of the last call and says when it is still outstanding
 
 ### find-attributes
 

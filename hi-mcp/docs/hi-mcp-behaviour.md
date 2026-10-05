@@ -430,7 +430,9 @@ shape — plus `corrections` when the server corrected the input before forwardi
 ### undo, redo
 
 No parameters. `undo` reverts the plan change of the last tool call that changed the plan; `redo`
-brings back the call the last `undo` reverted (D38).
+brings back the call the last `undo` reverted (D38). The description of `undo` says when to use it — a result that is not
+what was asked, then the corrected call — because a client that does not pass the server's
+instructions on, like the HI chat (§4), shows the model only the tool list.
 
 1. No record → the tool name is `null` and a `hint` says why: nothing to undo or redo, or the plan
    was changed in the planner after the last tool call.

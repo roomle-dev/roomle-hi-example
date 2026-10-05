@@ -430,6 +430,11 @@ describe('hi-mcp-server tool calls', () => {
     expect(client.getInstructions()).toContain(
       'undo reverts the last tool call that changed the plan, redo brings it back.'
     );
+    // a chat that does not pass the instructions on still sees the tool list
+    const { tools } = await client.listTools();
+    expect(tools.find((tool) => tool.name === 'undo')?.description).toContain(
+      'Use it when that result is not what was asked - the user says it was the wrong unit, wall or group'
+    );
   });
 
   it('hangs a range hood beside the wall units and reads a position back in the frame of the placement', async () => {

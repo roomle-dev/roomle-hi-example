@@ -498,8 +498,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     {
       description:
         "Reverts the plan change of the last tool call that changed the plan, as the planner's undo does. " +
-        'Call it again to revert the call before. Returns the reverted tool and every group of the plan now; ' +
-        'when there is nothing to undo, the result says so.',
+        'Use it when that result is not what was asked - the user says it was the wrong unit, wall or group, or a ' +
+        'merge or delete went wrong - and then send the corrected call; call it again to revert the call before. ' +
+        'Returns the reverted tool and every group of the plan now; when there is nothing to undo, the result says so.',
       inputSchema: {},
     },
     async () => textResult(await runTool('undo', {}))

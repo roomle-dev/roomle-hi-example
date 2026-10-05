@@ -7,6 +7,7 @@
 > **Author**: AI Assistant
 > **Status**: Open
 > **Branch**: `docs/undo-redo-analysis-RML-18044`
+> **Plan**: [undo-and-redo-tools-implementation-plan.md](undo-and-redo-tools-implementation-plan.md); the step counts below were measured live on 2026-10-05 — see [Live verification](#live-verification-2026-10-05)
 
 ---
 
@@ -74,8 +75,9 @@ ends the step. An HI load (`_interactionBeforeLoadingExternalObjectGroups`,
 (`manageExternalObjectLoadingStart` → `_hold(resume: false)`, which **commits any open or held
 step first**) and commits after the load (`manageExternalObjectLoadingEnd(true)`).
 
-The steps per planner call the server makes (`planner-api.ts`), traced in the code — not yet
-checked in a running planner:
+The steps per planner call the server makes (`planner-api.ts`), traced in the code. **The live
+check corrected two rows**: `delete-root-module` and `merge-groups` make one step, not two — see
+[Live verification](#live-verification-2026-10-05):
 
 | Planner call of the server | roomle-ui | Steps |
 |---|---|---|
@@ -92,8 +94,9 @@ Per tool: `create-or-replace-groups` = 1 (the load) + 2 per anchor the probe cal
 (`probeAnchorFrame`, `tool-executors.ts:636-676`) + 1 per kitchen-wide attribute set after the
 load (D36, `applyKitchenWideAttributes`, `:1420-1462`); `place-group` = 1, or 0 when the group
 already stands there; the command tools as in the table. A kitchen with a material and a probed
-corner article is five planner steps; the planner's own undo button then reverts the material
-first, the probe removal second — the same half-steps the agent would get.
+corner article is four planner steps; the planner's own undo button then reverts the material
+first, the load second, and its third undo brings the probe group back — the same half-steps the
+agent would get (measured live: four steps, the ghost on the third undo).
 
 ### The late follow-up reload
 
@@ -183,10 +186,10 @@ dropped when a page connects — the history does not survive a page reload (out
 - `groupsBefore`/`groupsAfter` are the raw groups (`getExternalObjectGroups()`, the kernel's
   serialized definitions — what an undo restores byte for byte), read before and after the
   executor. Two cheap planner calls per plan-changing tool call.
-- `steps` is the sum over the planner calls the executor made, by the table above: 1 per load,
-  removal and command, 2 for `delete-root-module` and `merge-groups`. The executors count their own
-  calls; nothing is inferred from the planner. **This table is roomle-ui behaviour** — the live
-  verification below confirms it, and the compare after an undo (next section) catches a change.
+- `steps` is the sum over the planner calls the executor made, by the table above as corrected by
+  the live check: 1 per load, removal and command. The executors count their own calls; nothing is
+  inferred from the planner. **This table is roomle-ui behaviour** — the live verification below
+  confirms it, and the compare after an undo (next section) catches a change.
 - Every history event is attributed to the tool call in flight, or counted as *outside* when no
   plan-changing call runs — the user edited the plan in the planner.
 
@@ -196,15 +199,17 @@ After the probe load and the read of the anchor's docking vectors, the server ca
 instead of `removeExternalObject(probe.id)`: the probe's load step disappears from the history,
 and the real load's `addAction` deletes the redo future it left. `create-or-replace-groups` is
 then 1 step plus its kitchen-wide attributes, and the user's undo button no longer stops at the
-probe. To verify live: the undo of the probe load removes the probe group from the plan and from the
-glue logic's map (the kernel reports the removal, or `getExternalObjectGroups` no longer lists it).
-Fallback: keep the removal and count 2.
+probe. Verified live: the undo of the probe load removes the probe group from the raw groups and from the
+plan context, and the next step deletes the redo future it left. Fallback: a probe group still in
+the plan is removed as today.
 
 ### Waiting for the follow-up
 
 After `change-module-attribute`, `change-group-attribute` and `exchange-root-module` — the
-commands whose load answers with the position — the executor returns only after one more history
-event has arrived after the command's result (the follow-up's re-commit), with a 2 s cap. The other
+commands whose load answers with the position — the executor returns only after the command has
+produced its second history event (the follow-up's re-commit), with a 2 s cap. (Refined after the
+live check: the first version waited for one more event *after the result*, but the follow-up
+usually lands before it.) The other
 tools return at once. An undo therefore never runs before the previous call's reloads have landed
 (acceptance criterion), and `groupsAfter` is read after them. **The list of three commands is
 roomle-ui behaviour** (`respondWithPositionInPlan`).
@@ -290,17 +295,43 @@ when not to, nothing about steps.
 | Documentation | `hi-mcp/docs/hi-mcp-behaviour.md` (D37, the tools in §6, the planner methods in §4, the instruction in §5), `minimal-hi-example/docs/hi-mcp-server.md` (tool reference), `.agents/skills/hi-mcp-tools.md`, `.agents/skills/hi-mcp-server.md` (the bridge event), this document |
 | Follow-up ticket (roomle-ui) | one step per tool call: `beginExternalObjectTransaction`/`endExternalObjectTransaction` on `RoomlePlanner`, HI loads resuming a held step in `plan-interaction-manager.ts`, `canUndo`/`canRedo` or a boolean from `undo()` |
 
-## To verify in a live planner before the plan is final
+## Live verification (2026-10-05)
 
-The acceptance criteria require a live check anyway; these are the claims the design rests on:
+A headless page (Playwright, the example on ports 3001/3110) on the deployed planner
+`roomle.com/t/bo-test` (Roomle Core 3.0.1-alpha.1) — the local dev servers were restarted during
+the session. The script set `extended.callbacks.onHistoryChange`, cleared the history with
+`extended.externalObjectsCompletelyLoaded()` before each tool call, ran the tool through the MCP
+server, undid with `extended.undo()` until the planner reported no step left, compared the raw
+groups (`getExternalObjectGroups`, numbers rounded to 0.1 mm), the plan context groups and the
+order data with the state before the call, and redid every step.
 
-1. The steps per planner call of the table — count the `onHistoryChange` events and the planner's
-   undo button after each tool.
-2. The undo of the probe load removes the probe group from the plan and the glue logic's map.
-3. After the undos of a call, `getExternalObjectGroups()` equals what it returned before the call
-   (the oracle of the compare), also for the two-step tools.
-4. The follow-up re-commit of `change-*-attribute` and `exchange-root-module` fires one event after
-   the result, and always.
-5. `undo()` with an empty history fires no event; a plan load clears the history silently.
-6. In configurator mode `undo()` goes to the configurator's history and fires no planner event —
-   the tool then reports nothing to undo (out of scope, but it must not misbehave).
+| Tool call | Steps | History events during the call | After the undos | After the redos |
+|---|---|---|---|---|
+| `create-or-replace-groups`, corner kitchen, new anchor, two kitchen-wide attributes | 5: probe load, probe removal, load, 2 attributes | 7 | equal to before after 3 undos; the 4th brings the probe group back (ghost), the 5th removes it | equal to after |
+| `create-or-replace-groups`, known anchor, one kitchen-wide attribute | 2 | 3 | equal | equal |
+| `create-or-replace-groups`, new row, known anchor / replace | 1 | 1 | equal | equal |
+| `change-group-attribute` | 1 | 2 (the follow-up 61 ms after the result once, 5 ms before it in 7 runs) | equal | equal |
+| `change-module-attribute`, `exchange-root-module` | 1 | 2 | equal | equal |
+| `merge-article-into-group`, `place-group`, `merge-groups` | 1 | 2 | equal | equal |
+| `delete-root-module` (split into two groups) | 1 | 5 | equal | equal |
+| `delete-group` | 1 | 1 | equal | equal |
+
+The plan context groups and the order data equalled the state before after every undo, and the
+state after after every redo.
+
+| Claim | Result |
+|---|---|
+| 1. the steps per planner call | one per load, command and removal; `delete-root-module` and `merge-groups` one, not two |
+| 2. the undo of the probe load removes the probe | yes, from the raw groups and the plan context; the next step deletes the redo future (its event reports redo false) |
+| 3. after the undos, the raw groups equal those before the call | yes, for every tool |
+| 4. the follow-up re-commit fires one event after the result | it fires the command's second event, in 15 of 15 cases, but usually before the result — the wait counts events per command instead |
+| 5. an empty history fires no event; a plan load clears it silently | an `undo()` on the empty history after the plan load fired no event and changed nothing |
+| 6. configurator mode | not checked (out of scope) |
+
+Other observations: an `undo()` call took up to 3 s to return (the restored groups are
+recalculated); every undo and redo fired exactly one event and no late reload; the history event
+counts per call vary with roomle-ui internals and are no measure of steps.
+
+**A defect of today's behaviour**: after an agent call with a probe, the planner's undo button
+reaches the probe's two steps under the agent's steps and shows the probed article as a group at the
+plan origin for one step. The probe undo of the plan fixes it.

@@ -1275,6 +1275,8 @@
         'getExternalObjectSnapshot',
         'getExternalObjectGroups',
         'removeExternalObject',
+        'undo',
+        'redo',
       ];
 
       const resolveBridgeUrl = () => {
@@ -1296,6 +1298,16 @@
       const startMcpBrowserBridge = (api) => {
         const bridgeUrl = resolveBridgeUrl();
         const reply = (socket, result) => socket.send(JSON.stringify(result));
+        // The planner's history events tell the server its own planner steps
+        // from the changes the user makes in the planner.
+        let acceptedSocket;
+        const hostHistoryChange = api.extended.callbacks.onHistoryChange;
+        api.extended.callbacks.onHistoryChange = (undo, redo) => {
+          hostHistoryChange?.call(api.extended.callbacks, undo, redo);
+          acceptedSocket?.send(
+            JSON.stringify({ kind: 'event', name: 'historyChange', undo, redo })
+          );
+        };
         const connect = () => {
           const socket = new WebSocket(bridgeUrl);
           let accepted = false;
@@ -1319,6 +1331,7 @@
             }
             if (message.kind === 'ready') {
               accepted = true;
+              acceptedSocket = socket;
               setMcpConnection(true, '');
               logMessage('MCP', 'connected to the MCP server');
               return;
@@ -1364,6 +1377,9 @@
             }
           };
           socket.onclose = (event) => {
+            if (acceptedSocket === socket) {
+              acceptedSocket = undefined;
+            }
             if (event.code === 4409) {
               setMcpConnection(
                 false,

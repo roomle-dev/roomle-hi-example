@@ -7,7 +7,7 @@ logic itself runs in the server (`../hi-mcp-server/tool-executors.ts`).
 
 | File | Responsibility |
 | ---- | -------------- |
-| `browser-bridge.ts` | WebSocket client: connects to the server, executes the planner methods on its allow-list (`PLANNER_METHODS`), rejects every other method, replies with results |
+| `browser-bridge.ts` | WebSocket client: connects to the server, executes the planner methods on its allow-list (`PLANNER_METHODS`), rejects every other method, replies with results; relays the planner's `onHistoryChange` as a `historyChange` event once accepted, after the host page's own handler, and puts that handler back on `dispose` |
 | `types.ts` | WebSocket message protocol, `BRIDGE_PROTOCOL` (the server carries its own copy) |
 | `tests/` | Unit tests (vitest, configured at the `hi-mcp/` workspace root) |
 

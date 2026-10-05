@@ -20,6 +20,8 @@ export interface PlannerApi {
     getExternalObjectSnapshot(options: Record<string, boolean>): Promise<any>;
     getExternalObjectGroups(): Promise<any>;
     removeExternalObject(groupOrRootModuleId: string): Promise<any>;
+    undo(): Promise<void>;
+    redo(): Promise<void>;
   };
 }
 
@@ -55,6 +57,12 @@ export const createPlannerApi = (
       getExternalObjectGroups: () => call('getExternalObjectGroups', []),
       removeExternalObject: (groupOrRootModuleId) =>
         call('removeExternalObject', [groupOrRootModuleId]),
+      undo: async () => {
+        await call('undo', []);
+      },
+      redo: async () => {
+        await call('redo', []);
+      },
     },
   };
 };

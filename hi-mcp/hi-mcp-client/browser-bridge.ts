@@ -8,7 +8,8 @@ import { BRIDGE_PROTOCOL, HI_MCP_PORT } from './types';
 const RECONNECT_DELAY_MS = 3000;
 
 // The planner methods the MCP server may call on this page - nothing else
-// (no orders, no plan overwrites) is reachable from the server.
+// (no orders, no plan overwrites) is reachable from the server. undo and redo
+// step through the planner's own undo history, as its undo button does.
 export const PLANNER_METHODS = [
   'getExternalObjectPlanContext',
   'loadExternalObjectGroupLayout',
@@ -17,6 +18,8 @@ export const PLANNER_METHODS = [
   'getExternalObjectSnapshot',
   'getExternalObjectGroups',
   'removeExternalObject',
+  'undo',
+  'redo',
 ];
 
 export interface BrowserBridgeOptions {
@@ -93,7 +96,24 @@ export const startMcpBrowserBridge = (
   let connecting = false;
   let disposed = false;
   let activeSocket: WebSocket | undefined;
+  let acceptedSocket: WebSocket | undefined;
   let reconnectTimer: ReturnType<typeof setTimeout>;
+
+  // The server tells the planner steps of its tool calls from the user's own
+  // changes by the planner's history events; the page's own handler keeps
+  // running.
+  const callbacks = roomDesignerApi.extended.callbacks;
+  const hostHistoryChange = callbacks?.onHistoryChange;
+  if (callbacks) {
+    callbacks.onHistoryChange = (undo: boolean, redo: boolean) => {
+      hostHistoryChange?.call(callbacks, undo, redo);
+      if (!disposed && acceptedSocket) {
+        acceptedSocket.send(
+          JSON.stringify({ kind: 'event', name: 'historyChange', undo, redo })
+        );
+      }
+    };
+  }
 
   const connect = () => {
     const bridgeUrl = bridgeUrls[candidate % bridgeUrls.length];
@@ -146,6 +166,7 @@ export const startMcpBrowserBridge = (
       }
       if (message.kind === 'ready') {
         accepted = true;
+        acceptedSocket = socket;
         options.onStatusChange?.({ state: 'connected', message: '' });
         return;
       }
@@ -182,6 +203,9 @@ export const startMcpBrowserBridge = (
     };
 
     socket.onclose = (event) => {
+      if (acceptedSocket === socket) {
+        acceptedSocket = undefined;
+      }
       if (disposed) {
         return;
       }
@@ -217,6 +241,9 @@ export const startMcpBrowserBridge = (
     },
     dispose: () => {
       disposed = true;
+      if (callbacks) {
+        callbacks.onHistoryChange = hostHistoryChange;
+      }
       clearTimeout(reconnectTimer);
       activeSocket?.close();
     },

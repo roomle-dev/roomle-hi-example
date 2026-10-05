@@ -36,6 +36,8 @@ const createMockPlannerApi = (
     getExternalObjectSnapshot: vi.fn(async () => ({})),
     getExternalObjectGroups: vi.fn(async () => []),
     removeExternalObject: vi.fn(async () => undefined),
+    undo: vi.fn(async () => undefined),
+    redo: vi.fn(async () => undefined),
     ...overrides,
   },
 });

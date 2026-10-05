@@ -36,6 +36,11 @@ const startBridge = (
   return socket;
 };
 
+const eventsOf = (socket: FakeWebSocket) =>
+  socket.sent
+    .map((data) => JSON.parse(data))
+    .filter((message) => message.kind === 'event');
+
 const receive = (socket: FakeWebSocket, message: unknown) =>
   socket.onmessage?.({
     data: typeof message === 'string' ? message : JSON.stringify(message),
@@ -88,6 +93,54 @@ describe('startMcpBrowserBridge', () => {
     expect(repliesOf(socket)).toEqual([
       { kind: 'result', id: 7, ok: true, result: { articles: [] } },
     ]);
+  });
+
+  it('executes undo and redo', async () => {
+    const undo = vi.fn(async () => undefined);
+    const redo = vi.fn(async () => undefined);
+    const socket = startBridge({ undo, redo });
+    await receive(socket, { kind: 'ready' });
+    await receive(socket, { kind: 'call', id: 1, method: 'undo', args: [] });
+    await receive(socket, { kind: 'call', id: 2, method: 'redo', args: [] });
+    expect(undo).toHaveBeenCalledTimes(1);
+    expect(redo).toHaveBeenCalledTimes(1);
+    expect(repliesOf(socket).map((reply) => reply.ok)).toEqual([true, true]);
+  });
+
+  it("relays the planner's history changes once accepted and keeps the host's handler", async () => {
+    const hostHandler = vi.fn();
+    const callbacks: Record<string, unknown> = { onHistoryChange: hostHandler };
+    const socket = startBridge({ callbacks });
+    const relay = callbacks.onHistoryChange as (u: boolean, r: boolean) => void;
+    relay(true, false);
+    expect(eventsOf(socket)).toEqual([]);
+    expect(hostHandler).toHaveBeenCalledWith(true, false);
+
+    await receive(socket, { kind: 'ready' });
+    relay(false, true);
+    expect(eventsOf(socket)).toEqual([
+      { kind: 'event', name: 'historyChange', undo: false, redo: true },
+    ]);
+    expect(hostHandler).toHaveBeenLastCalledWith(false, true);
+  });
+
+  it("puts the host's handler back on disposal", async () => {
+    const hostHandler = vi.fn();
+    const callbacks: Record<string, unknown> = { onHistoryChange: hostHandler };
+    FakeWebSocket.instances = [];
+    vi.stubGlobal('WebSocket', FakeWebSocket);
+    vi.stubGlobal('window', {
+      location: { href: PAGE_URL, protocol: 'http:' },
+    });
+    const bridge = startMcpBrowserBridge({ extended: { callbacks } });
+    const socket = FakeWebSocket.instances[0];
+    socket.onopen?.();
+    await receive(socket, { kind: 'ready' });
+    const relay = callbacks.onHistoryChange as (u: boolean, r: boolean) => void;
+    bridge.dispose();
+    relay(true, false);
+    expect(callbacks.onHistoryChange).toBe(hostHandler);
+    expect(eventsOf(socket)).toEqual([]);
   });
 
   it('rejects a method that is not exposed without touching the planner', async () => {

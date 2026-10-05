@@ -261,6 +261,8 @@ const createApi = (
       removeExternalObject: vi.fn(async (id: string) => {
         probeGroups = probeGroups.filter((group) => group.id !== id);
       }),
+      undo: vi.fn(async () => undefined),
+      redo: vi.fn(async () => undefined),
       ...overrides,
     },
   };

@@ -18,6 +18,16 @@ export class PageBridge {
   private _clientId: string | undefined;
   private _nextCallId = 1;
   private _pendingCalls = new Map<number, PendingCall>();
+  private _historyListeners: Array<(undo: boolean, redo: boolean) => void> = [];
+  private _pageListeners: Array<() => void> = [];
+
+  public onHistoryChange(listener: (undo: boolean, redo: boolean) => void) {
+    this._historyListeners.push(listener);
+  }
+
+  public onPageAccepted(listener: () => void) {
+    this._pageListeners.push(listener);
+  }
 
   public attachPage(socket: WebSocket): void {
     socket.on('message', (data) => {
@@ -44,6 +54,19 @@ export class PageBridge {
         this._clientId = message.clientId;
         socket.send(JSON.stringify({ kind: 'ready' }));
         console.log(`[hi-mcp] page connected: ${message.url}`);
+        for (const listener of this._pageListeners) {
+          listener();
+        }
+        return;
+      }
+      if (
+        message.kind === 'event' &&
+        message.name === 'historyChange' &&
+        socket === this._page
+      ) {
+        for (const listener of this._historyListeners) {
+          listener(message.undo === true, message.redo === true);
+        }
         return;
       }
       // every call goes to the active page, so only the active page answers

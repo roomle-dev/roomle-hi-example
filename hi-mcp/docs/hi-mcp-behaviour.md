@@ -113,6 +113,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D3 | Group edits are commands the planner performs with its own group features (`externalObjectGroupOperation`); `update-attribute` is retired | 2026-09-30 | [command API](../../.agents/feature-analysis/hi-mcp-command-api.md) Q1 | in effect |
 | D4 | Tools that change the plan run one after another, never side by side | 2026-09-30 | `oneAtATime`, `tool-executors.ts:602-615` | in effect |
 | D5 | The planner's checks protect the planner and are not changed for the agent. The server corrects input before forwarding it | 2026-10-02 | user decision | in effect |
+| D37 | `undo` and `redo` join the page allow-lists by explicit decision (D2): they step through the planner's own undo history, as its undo button does, and place or overwrite nothing beyond it. The page relays the planner's `onHistoryChange` as a bridge event, so the server can tell the planner steps of its tool calls from the changes the user makes in the planner | 2026-10-05 | [undo and redo tools](../../.agents/feature-analysis/undo-and-redo-tools.md), RML-18044 | in effect — `planner-api.ts`, `plan-history.ts`, `browser-bridge.ts`, `index.html` |
 | D6 | In the planner, merge, split, delete and move are always carried out, even if the result is incorrect; the errors of a previous operation never block the next one | 2026-10-01 | user rule (RML-18017, roomle-ui glue logic) | in effect (roomle-ui) |
 
 ### Information for the agent
@@ -174,7 +175,11 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
   active OPEN page. If the owner socket is CLOSING, its pending calls are rejected before the new
   page is accepted; the old socket's later close does not remove the new owner. Each planner call from a page-bound chat rechecks the ID, so a request cannot jump
   to a different page after a disconnect. The server answers a call only with a result from the
-  active page, the one the call went to; a frame that is not a JSON object is ignored.
+  active page, the one the call went to; a frame that is not a JSON object is ignored. The page
+  relays the planner's `onHistoryChange` callback — one call per committed step, undo and redo of
+  the planner's undo history — as `{ kind: 'event', name: 'historyChange', undo, redo }` once it
+  is accepted, and keeps a handler the host page set; the server counts the events of the active
+  page only (`plan-history.ts`, D37) and starts a new history when it accepts a page.
 - **Planner methods** (`planner-api.ts`), with the timeout per call:
 
   | Method | Used by | Timeout |

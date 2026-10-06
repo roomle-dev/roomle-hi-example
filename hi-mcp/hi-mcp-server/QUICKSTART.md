@@ -19,11 +19,12 @@ npm start
 npm run dev        # in the ligna-store repository
 ```
 
-**4. Open the store page with the INT stage and a plan id**, keep the tab open — the bridge
-starts automatically with the INT stage:
+**4. Open the store page with the chat parameters, the INT stage and a plan id**, keep the tab
+open — the store's bridge starts only together with its chat window (`model`, `api_key`,
+`mcp_server`; the models: [README](./README.md#notes-on-the-client-page)):
 
 ```text
-http://localhost:3000/?store.stage=INT&id=ps_bse5tc50687uh64hm8jul7j1kiuacyx
+http://localhost:3000/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=http://localhost:3100&id=ps_bse5tc50687uh64hm8jul7j1kiuacyx
 ```
 
 The server terminal logs `page connected`.
@@ -45,15 +46,15 @@ Copilot in the browser (github.com) cannot reach a localhost server. Other clien
 Get the plan context of the HI session and summarize it.
 ```
 
-The agent calls `get-plan-context` and summarizes the articles, rooms, and groups.
+The agent calls `get-plan-context` and summarizes the articles, rooms, groups and obstacles.
 Then try a write operation:
 
 ```text
 Add a group of three tall units to the wall on the right.
 ```
 
-The agent authors article picks with a docking chain and a `placement` taken
-from the right wall — one `create-or-replace-groups` call creates, docks, and
+The agent authors article picks, each after the first `rightOf` its neighbour, and a
+`placement` taken from the right wall — one `create-or-replace-groups` call creates, docks, and
 positions the group. Then move it:
 
 ```text
@@ -61,7 +62,8 @@ Move the group to the back right corner.
 ```
 
 The agent calls `place-group` with the right wall and the back wall's side
-label as alignment; the server computes the position and reloads the group.
+label as alignment; the server computes the position and reloads the group. `Undo that.`
+reverts the move.
 
 The unit tests live in `tests/` (server and tool logic) and `../hi-mcp-client/tests/` (page bridge) —
 `npm test` in the `hi-mcp/` folder runs them (vitest).

@@ -3,7 +3,7 @@
 The complete documentation of this directory: the standalone HI presets
 example ([`index.html`](../index.html)) and the start launcher
 ([`start.mjs`](../start.mjs)) that serves it and starts the repository's single
-MCP server implementation, [`hi-mcp/hi-mcp-server`](../../../hi-mcp/hi-mcp-server/),
+MCP server implementation, [`hi-mcp/hi-mcp-server`](../../hi-mcp/hi-mcp-server/),
 so an AI agent can orchestrate HOMAG Intelligence (HI) object groups in a live
 planning session. The agent retrieves the plan context (master data, rooms,
 articles, existing groups) and creates or modifies HI object groups — without
@@ -14,8 +14,10 @@ The MCP server is the TypeScript implementation from
 [RML-17693](https://roomle.atlassian.net/browse/RML-17693)): the MCP protocol
 layer is `@modelcontextprotocol/sdk` with zod tool schemas, and the page bridge
 is a WebSocket. It is used as-is; the launcher only wires environment
-variables. The same server also serves the INT-stage ligna-store as its client,
-and it is the one deployed to Azure and Cloudflare.
+variables ([ADR 0002](../../.agents/decisions/0002-one-mcp-server-configured-from-outside.md)).
+The same server also serves the ligna-store as its client — its chat window,
+opened with the `model`, `api_key` and `mcp_server` query parameters — and it is
+the one deployed to Azure and Cloudflare.
 
 The server is **agent-agnostic**: it contains no client-specific code. Any
 MCP client with Streamable HTTP transport support can connect (Claude Code,
@@ -45,6 +47,8 @@ parameters:
 | --------- | ------ |
 | `mcp=true` | Enables the MCP browser bridge (without it the example behaves as a plain demo) |
 | `mcp_port` | The MCP server port the bridge connects to (default 3100; the launcher appends it when `HI_MCP_PORT` is set) |
+| `mcp_server` | Base URL of a deployed MCP server; the bridge connects to its `/bridge` instead of `ws://localhost:<mcp_port>` (set by `npm run start:cf`) |
+| `mcp_session` | The session on that server — its container on Cloudflare (set by `npm run start:cf`) |
 | `backendId` | Selects the HI backend |
 | `library_id` | Overrides the preset's library |
 | `plan_id` | Selects the plan loaded at startup |
@@ -77,8 +81,9 @@ AI agent (any MCP client) --Streamable HTTP--> http://localhost:3100/mcp
 Two processes started by one launcher: `start.mjs` serves `index.html` on
 port 3000 and spawns the MCP server (`hi-mcp/hi-mcp-server/server.ts`) on
 port 3100, pointing its "no page connected" error at the example URL
-(`HI_MCP_STORE_URL`). Port 3000 is the server's default WebSocket origin
-allow-list entry, so no extra configuration is needed. The page cannot listen
+(`HI_MCP_STORE_URL`) and its WebSocket origin allow-list (`HI_MCP_PAGE_ORIGINS`)
+at the page's origin — another page port (`EXAMPLE_PORT`) needs no extra
+configuration. The page cannot listen
 on a port, so it connects **outward** to the server: it opens a WebSocket
 (`ws://localhost:3100/bridge`), receives planner method calls over it, and
 sends each result back over the same socket. The tools themselves run in the
@@ -86,14 +91,23 @@ server; each tool calls one or more planner methods, which the page executes
 against `roomDesignerApi.extended`. The page executes only the methods on its
 allow-list (`getExternalObjectPlanContext`, `loadExternalObjectGroupLayout`,
 `externalObjectGroupOperation` — the command tools, `fetchPrice`,
-`getExternalObjectSnapshot`, `getExternalObjectGroups`, `removeExternalObject` — the last two
-for the corner point of a corner article, see the server skill) — nothing else of the planner API, such as
-placing an order, is reachable from the server.
+`getExternalObjectSnapshot`, `getExternalObjectGroups` — the calculated groups
+for `place-group`, the positions, the row hints and the anchor probe,
+`removeExternalObject` — what an undo of the anchor probe left, `undo`, `redo`;
+see the server skill) — nothing else of the planner API, such as placing an
+order, is reachable from the server. The allow-list is `MCP_PLANNER_METHODS` in
+`index.html` and lists exactly the methods of `planner-api.ts`, as the
+reference client's `PLANNER_METHODS` does — guarded for that copy by
+`it('calls exactly the planner methods the page bridge exposes')` in
+`hi-mcp/hi-mcp-server/tests/planner-api.test.ts`; the inline copy is kept equal by hand.
 
 To start only the MCP server from the repository root, run `npm run mcp-server`.
 It serves `/mcp` and `/bridge` on port 3100 without starting the example page
 or the chat backend. A second page trying to join an occupied server is refused
-without disconnecting the first; the example page reports this in its MCP log.
+without disconnecting the first (WebSocket close 4409); the example page reports
+this in its MCP log and stops reconnecting. Guarded by
+`it('rejects a second page without disrupting the active planner call')` in
+`hi-mcp/hi-mcp-server/tests/page-bridge.test.ts`.
 
 | File | Responsibility |
 | ---- | -------------- |
@@ -116,7 +130,9 @@ To develop against a local Rubens UI dev server (start it first on
 <http://localhost:5173/>), run `npm run dev` instead — it passes
 `server_url=http://localhost:5173/` to the example, so the planner loads from
 the local UI instead of `https://www.roomle.com/t/bo-test/`. `--dev` implies
-that URL; override it with `EXAMPLE_SERVER_URL=<url> npm run dev`.
+that URL; override it with `EXAMPLE_SERVER_URL=<url> npm run dev`. The URL lives
+in `start.mjs` behind `--dev`, not as an inline variable of the npm script, so
+the script runs under Windows `cmd` as well.
 
 To use the MCP server deployed on Cloudflare instead of a local one, run
 `npm run start:cf` (`--cf`; it can be combined with the chat arguments and with
@@ -351,7 +367,8 @@ Searches the attribute vocabulary of the loaded libraries by text — attribute
 id, name, description, group or selection name — and returns the matching
 attributes with their `selections` and the root modules that carry them. The
 vocabulary is the compacted master data of `get-plan-context` (root modules
-and their customer-facing attributes). At most 20 matches are returned; narrow
+— the generated ones such as the worktop `mr_Countertop` included — and their
+customer-facing attributes). At most 20 matches are returned; narrow
 the text when the result carries a `hint`.
 
 | Parameter | Type | Required | Description |
@@ -678,8 +695,8 @@ for a group at a wall, in a corner, or anywhere in the room.
   only, their mounting height). In a room corner it is the corner point.
 - **Rotation**: `posRotationY` turns the group around `posGroup`, in degrees,
   **counter-clockwise as seen from above** (in the top-view image). This is
-  the `rotationY` convention of the kernel and the glue logic, verified in
-  [the refactoring analysis](../../.agents/refactoring-analysis/group-placement-via-repositioning-data.md#2-rotation-sense-of-posrotationy-d1).
+  the `rotationY` convention of the kernel and the glue logic, verified against
+  RoomleCore in [roomle-hi-concepts.md](../../.agents/skills/roomle-hi-concepts.md#rotation-sense).
 - **Walls**: every wall in `get-plan-context` has `start`/`end` (floor points
   in the coordinates of `posGroup`), `lengthMm`, `type` and
   `facingRotationY`. With `posRotationY` = the wall's `facingRotationY` the
@@ -772,7 +789,11 @@ operations:
 | "Move the group to the back right corner." | `get-plan-context`, `place-group` (`wall: "right"`, `alignment: "top"`) |
 | "Move the kitchen to the left wall, centred." | `get-plan-context`, `place-group` (`wall: "left"`) |
 | "Replace the middle cabinet with a drawer unit." | `get-plan-context`, `exchange-root-module` |
-| "Remove the middle cabinet." | `get-plan-context`, `delete-root-module` (the rest splits into two groups) |
+| "Insert a low cabinet between the high cabinets." | `get-plan-context`, `insert-article-into-group` |
+| "Swap the first and the last cabinet." | `get-plan-context`, `swap-root-modules` |
+| "Remove the middle cabinet." | `get-plan-context`, `remove-article-from-group` (the row closes the gap) |
+| "Delete the middle cabinet." | `get-plan-context`, `delete-root-module` (the gap stays, the rest splits into two groups) |
+| "Undo that." | `undo` |
 | "Join the two groups standing side by side." | `get-plan-context`, `merge-groups` |
 | "Delete the island." | `get-plan-context`, `delete-group` |
 | "What does the current plan cost?" | `get-price` |
@@ -785,7 +806,7 @@ operations:
 | Tool error `No HI page connected` | Open `http://localhost:3000/?mcp=true` (the URL the error names) and keep the tab open |
 | Tool error `... is not a function` | The page targets a Rubens UI whose web-sdk does not contain the plan-context APIs — override `server_url` to a deployment (or local UI dev server) that does |
 | Port 3100 already in use | The server names the fix itself (`lsof -ti tcp:3100 \| xargs kill`) |
-| Several example tabs open | The most recently connected tab receives the tool calls; close the others |
+| Several example tabs open | The first connected tab keeps the server; a further tab reports "This server already has a planner connected" and stops reconnecting — close the first tab and reload the other |
 | `get-price` / `get-order-data` fail | No preset selected in the top bar, or the HI test proxy rejected the credentials |
 | Page reloaded | The bridge reconnects automatically — no restart needed |
 | Empty `articles`/`masterData` | No library loaded yet — select a preset or enter a library id in the top bar |

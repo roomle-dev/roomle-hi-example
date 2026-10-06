@@ -33,6 +33,7 @@ never drop the agent's content silently.
 | 47 | [A root id sent as the group id is refused](#47-a-root-id-sent-as-the-group-id-is-refused) | MCP server correction | low — one lost step |
 | 38 | [A provider answer the AI SDK cannot process ends the turn without an answer](#38-a-provider-answer-the-ai-sdk-cannot-process-ends-the-turn-without-an-answer) | chat | low — rare |
 | 13 | [Undocked wall units reject the whole group](#13-undocked-wall-units-reject-the-whole-group) | MCP server correction | low — a group without relations only |
+| 50 | [Two units on one Top side vector take the same place](#50-two-units-on-one-top-side-vector-take-the-same-place) | MCP server correction | low — two units in one place |
 | 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | low — docking written as `contextData` only |
 | 7 | [Docking to a vector the article does not have](#7-docking-to-a-vector-the-article-does-not-have) | MCP server correction | low — docking written as `contextData` only |
 | 14 | [A floor unit is docked onto a top vector](#14-a-floor-unit-is-docked-onto-a-top-vector) | MCP server correction | low — docking written as `contextData` only |
@@ -153,8 +154,19 @@ the point computed by the server as `place-group` does. Until then, say in the
 `create-or-replace-groups` description which corner a wall's `end` is ("the corner on the left as seen
 from the room").
 
-**Test.** "add a group of 4 cabinets to the wall in the back" and a centred row with gpt-5.4-mini:
-one call, the group inside the room at the wall.
+**Constraints.** The footprint of a new group exists only once the planner has calculated it, so the
+server loads the group without `repositioningData` and then runs the `place-group` logic in the same
+call — `placeGroupAtWall` (`tool-executors.ts:2414`), the overlap check and the reload, moved out of
+the `place-group` executor so that both use it; the reload keeps the generated roots and their
+colours, as the reload of `place-group` does. `normalizePlacement` (`tool-executors.ts:946`) then
+accepts `{ wall, alignment?, offsetMm?, roomIndex? }` beside `{ posGroup, posRotationY, rootId? }`,
+and G11 no longer drops the wall fields. A width computed before the load from the catalog's
+`mod_Width` of the floor row breaks on corner articles and range hoods.
+
+**Test.** Unit: a new group placed by wall and alignment loads once without `repositioningData` and
+is reloaded once with the computed one; a corner kitchen goes into the corner the alignment names.
+"add a group of 4 cabinets to the wall in the back" and a centred row with gpt-5.4-mini: one call,
+the group inside the room at the wall.
 
 **Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5.4-mini 02 and 06 (the wall's start);
 `mcp-test-2026-10-04_13-00-37`: gpt-5.4-mini 02, 09 and 10 (point and rotation of different walls),
@@ -387,6 +399,26 @@ refusal that remains for a part that cannot be connected shows the relations, no
 floor row, and the correction names them.
 
 **Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5.4-mini 09 (first call).
+
+## 50. Two units on one Top side vector take the same place
+
+**Problem.** Two roots docked to one Top side vector of a root — `LeftTop` or `RightTop` — with the
+same mode and offset stand in the same place, and nothing is reported. Two wall units `rightOf` one
+tall unit both get the tall unit's `RightTop`; docking written as `contextData` can do the same.
+
+**Cause.** The side correction (G8, D29) counts `LeftBottom` and `RightBottom` only (`SIDE_VECTORS`,
+`sidePartnersOf`, `tool-executors.ts:1066-1135`), and the compile writes `RightTop → LeftTop` for
+every wall unit `rightOf` a tall unit (`pairOf`, `group-layout.ts:539-551`).
+
+**To do.** Count the Top side vectors in `sidePartnersOf` as sides of their own: the later of two
+partners on one Top side vector at the same place goes to the free end of that wall-unit row,
+reported as G8 does. A partner on the Top vector and one on the Bottom vector of the same side stay:
+a wall unit and a base unit beside a tall unit are both legitimate.
+
+**Test.** `t1` a tall unit, `w1 rightOf t1`, `w2 rightOf t1`: `w2` is docked to the `RightBottom` of
+`w1`, with the correction; a wall unit and a base unit both beside `t1` load unchanged.
+
+**Reproduce.** Not reproduced in a run; follows from the code above.
 
 ## 3. A docking ring anchors the wrong root
 

@@ -59,19 +59,21 @@ AZURE_RESOURCE_NAME=my-resource HI_CHAT_MODEL=my-gpt4o-deployment npm start azur
 Azure AI Foundry resource and are called through its OpenAI v1 endpoint
 `https://dfhifoundrysweden.services.ai.azure.com/openai/v1` with the resource's
 API key. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
-left in the shell from an `azure` run cannot redirect them.
+left in the shell from an `azure` run cannot redirect them. Other `gpt-*` names are
+not passed through: only these deployments exist on the resource, and an unknown
+name fails at the launcher instead of as a provider error in the chat. The chat
+sets no `temperature`: the GPT deployments are reasoning models and reject it.
+Guarded by `it('resolves the Foundry deployments to the Foundry endpoint')` in
+`hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`.
 
 **Reasoning effort.** The chat sends the reasoning effort of `HI_CHAT_REASONING_EFFORT`
 (`providerOptions.azure.reasoningEffort`) to the GPT deployments; unset, each deployment runs at
-its default. Every step logs its tokens in, out and spent on reasoning, its tool calls and its
-duration (`[hi-chat] step n: …`), so the effective effort shows in the chat backend's log. OpenAI documents different defaults: `medium` for gpt-5-mini, `none` (no
-reasoning) for gpt-5.4-mini. Whether the Foundry deployments use the same defaults is not
-verified. In "test the mcp" (`mcp-test-2026-10-02_17-25-40`) gpt-5-mini planned clearly
-better (12 / 5 / 0 against 9 / 3 / 5 pass / partial / fail), and gpt-5.4-mini answered 2
-to 4 times faster. A lower reasoning effort of gpt-5.4-mini is a hypothesis for both,
-not a confirmed cause. Both models read images and have a 400k context window. The
-reasoning effort is set by the chat client, not by the MCP server. Measuring and setting
-it is open: [backlog](../../.agents/backlog/reasoning-effort-for-the-gpt-chat-models.md).
+its default. OpenAI documents `medium` as the default of gpt-5-mini and `none` (no reasoning) for
+gpt-5.4-mini; the Foundry defaults are not verified. The step log ([a chat turn](#a-chat-turn))
+reads 0 reasoning tokens for the Foundry deployments, so it does not show the effective effort. gpt-5-mini and
+gpt-5.4-mini read images and have a 400k context window. The reasoning effort is set by the chat
+client, not by the MCP server. Measuring it and choosing the chat's model and effort are open:
+[backlog](../../.agents/backlog/reasoning-effort-for-the-gpt-chat-models.md).
 
 The launcher then:
 
@@ -124,6 +126,26 @@ MCP server, their planner calls in the page, and can take seconds to minutes
 is still working. The backend logs every request, MCP connection, tool call
 (with duration), stream error, and finish to its terminal.
 
+### A chat turn
+
+The backend gives the model the system prompt `CHAT_SYSTEM_PROMPT`
+(`chat-config.ts`, its sentences in the
+[behaviour reference](../../hi-mcp/docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs)),
+the conversation and the MCP tools, and runs `streamText` in steps
+(`chat-steps.ts`): a step is one model call and the tool calls it returns.
+
+- A turn has at most 16 steps (`MAX_CHAT_STEPS`). The last one runs with
+  `toolChoice: 'none'`, so a turn that uses every step still ends with the
+  model's answer instead of a tool result. Without `stopWhen` the SDK stops
+  after the first step and never runs the tools. Guarded by
+  `it('ends a turn that uses every step with the model answer')` in
+  `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`.
+- A turn that has not answered within `HI_CHAT_TURN_TIMEOUT_MS` is aborted
+  and ends with an `[error]` line naming the limit; the plan keeps what the
+  tools changed.
+- Every step logs its tokens (in, out, reasoning), its tool calls and its
+  duration (`[hi-chat] step n: …`).
+
 ## Images in the chat
 
 The chat takes an image only when the model reads images. The chat backend
@@ -132,9 +154,13 @@ decides this from the model id it resolved (`readsImages` in
 from the other providers the ids in `IMAGE_INPUT_MODELS`:
 `mistral-large-latest`, `mistral-medium-latest`, `gpt-4o`, `gpt-5-mini`,
 `gpt-5.4-mini` and `gpt-6-astra`. Any other id gets no image input. That includes a pass-through
-`mistral-*` id and an Azure deployment named with `HI_CHAT_MODEL`. The startup
+`mistral-*` id and an Azure deployment named with `HI_CHAT_MODEL`: an unknown
+model gets no image feature rather than a provider error halfway through a
+turn. The table lives in the backend, which resolves the model — not in the
+launcher, and not in a provider query (only Mistral reports vision). The startup
 banner shows the result (`Images: yes` or `no`), and `GET /capabilities` gives
-it to the page.
+it to the page. Guarded by `it('knows which models read images')` in
+`hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`.
 
 In the page (only when `/capabilities` answers `imageInput: true`):
 
@@ -159,7 +185,10 @@ In the page (only when `/capabilities` answers `imageInput: true`):
   shows only the image, and the chat backend gives the model the default text
   (see below).
 - The images stay in the conversation and go along with every turn, so a
-  follow-up can refer to the image.
+  follow-up can refer to the image. Every step of a turn sends them again (up
+  to 16 times), which is why the page scales them down: a larger image adds
+  little detail for any configured model, and Gemini allows 20 MB of inline
+  data per request.
 
 With images off, the chat is text-only and a dropped file behaves as in any
 page (the browser opens it).
@@ -210,10 +239,12 @@ Copilot. A new group is positioned by the `placement` it is created with.
 | File | Role |
 | ---- | ---- |
 | `chat-config.ts` | Environment parsing and request body validation |
-| `chat-handler.ts` | HTTP handler factory: CORS, `/health`, `POST /chat`, error relay |
+| `chat-handler.ts` | HTTP handler factory: CORS, `/health`, `/capabilities`, `POST /chat`, error relay |
 | `chat-server.ts` | Entry point: provider model (Mistral/Anthropic/Google/Azure) + `@ai-sdk/mcp` + `streamText`, listen on the chat port |
+| `chat-steps.ts` | The step loop of a turn (16 steps, the last without tools), the step log, the turn timeout message |
 | `tool-result-images.ts` | Mistral middleware: the images of a tool result go to the model as a user message |
 | `tests/chat-handler.test.ts` | Unit tests (config, validation, CORS, error relay, streaming) |
+| `tests/chat-steps.test.ts` | Unit tests of the step loop, the step log and the turn timeout (`MockLanguageModelV3`) |
 | `tests/tool-result-images.test.ts` | Unit tests of the Mistral middleware |
 
 ### Images in tool results
@@ -225,7 +256,18 @@ content as JSON text — two renders were 1.5 to 2.1 million tokens of base64
 against Mistral Large's 262k context. The Mistral model is therefore wrapped
 with a middleware (`tool-result-images.ts`) that moves the images of every
 tool result into a user message right after the tool message; Mistral reads
-them there (about 1.3k tokens per image).
+them there (about 1.3k tokens per image). The tool result keeps its text parts
+and a note that the images follow. Smaller renders would not help: base64 text
+costs about one token per character, and no model reads an image from it. Only
+the Mistral model is wrapped; the other providers keep their native image
+handling. Guarded by
+`it('moves the images of a tool result into a user message after the tool message')`
+in `hi-mcp/hi-mcp-chat/tests/tool-result-images.test.ts`.
+
+The MCP server keeps its results small for every client: compact JSON without
+the signed `imageUrl` of the master data
+([behaviour reference §5.3](../../hi-mcp/docs/hi-mcp-behaviour.md#53-result-format)).
+A plan context with them fills half of Mistral Large's context.
 
 Endpoints: `GET /health` (used for smoke tests), `GET /capabilities`
 (`{ "imageInput": true }` when the model reads images — see
@@ -234,7 +276,9 @@ Endpoints: `GET /health` (used for smoke tests), `GET /capabilities`
 → plain text stream). The prompt runner reads the page ID from the bridge hello
 before posting to chat. Errors are relayed as plain text with a matching status code: `503`
 without a configured token, `400` for invalid bodies or a missing `clientId`, `403` for disallowed
-origins, `500` when the MCP server or Mistral call fails.
+origins, `500` when the chat cannot start (the MCP server is unreachable, or the provider is not
+configured, e.g. `AZURE_RESOURCE_NAME`). A failure after the stream started — a provider error, the
+turn timeout — ends the stream with an `[error] …` line.
 
 ### Environment variables
 
@@ -259,6 +303,8 @@ origins, `500` when the MCP server or Mistral call fails.
   that exposure.
 - CORS is restricted to the example page origins; requests without an origin
   (curl) are allowed for local debugging, but must include the connected page's `clientId`.
+- The chat backend listens on loopback (`127.0.0.1`) only: it holds the key and
+  accepts requests without an origin, so no other device can reach it.
 
 ## Troubleshooting
 
@@ -274,7 +320,22 @@ origins, `500` when the MCP server or Mistral call fails.
 | A dropped image opens in the tab instead of being attached | Images are off: the banner shows `Images: no` (the model is not known to read images), or the chat backend was not up yet when the page loaded the chat — the debug log says `images disabled - no capabilities`; reload the page |
 | `The model … does not read images` (400) | An image was sent to a model without image input (curl, a script, or a page from an earlier backend) |
 
+## The chat in the ligna-store
+
+The ligna-store has a chat window of its own (ligna-store `hi-mcp/chat.ts`,
+`chat-window.ts`, `chat-options.ts`), opened with the store URL parameters
+`model`, `api_key` and `mcp_server`. It runs the Vercel AI SDK in the store
+page: the model is called directly with `api_key` (Mistral and the Foundry
+endpoint allow browser CORS), and the tools come from `<mcp_server>/mcp`, which
+answers the store origin (`HI_MCP_PAGE_ORIGINS`,
+[cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md#browser-clients-cors)).
+The store keeps `api_key` out of the page URL its bridge announces. Its
+reference is the ligna-store's `hi-mcp/README.md`; why neither chat is served
+by the MCP server, and why a key in the store URL is for a demo only:
+[ADR 0003](../../.agents/decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md).
+Where the store's chat differs from this one is open in the
+[backlog](../../.agents/backlog/README.md#ligna-store).
+
 ## Open follow-ups
 
-- AI SDK data stream protocol for per-tool status in the chat UI
-- Conversation memory on the backend
+The open work on the chat is in the [backlog](../../.agents/backlog/README.md#chat).

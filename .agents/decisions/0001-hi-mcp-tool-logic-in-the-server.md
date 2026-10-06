@@ -2,7 +2,7 @@
 
 > **Status**: Accepted
 > **Date**: 2026-09-29
-> **Analysis**: [hi-mcp-tool-logic-in-client-pages.md](../refactoring-analysis/hi-mcp-tool-logic-in-client-pages.md)
+> **Analysis**: the refactoring analysis of pull request [#23](https://github.com/roomle-dev/roomle-hi-example/pull/23) (git history, commit `20b20a0`)
 
 ## Context
 
@@ -24,6 +24,11 @@ client enforced an older rule than the one the server published.
   `loadExternalObjectGroupLayout`, `updateExternalObjectGroupAttribute`, `fetchPrice`,
   `getExternalObjectSnapshot`. The allow-list is the page's security boundary. A test keeps it
   identical to the server's `PlannerApi`.
+  The list changes only by explicit decision: `externalObjectGroupOperation` replaced
+  `updateExternalObjectGroupAttribute` (D3), `getExternalObjectGroups` and `removeExternalObject`
+  joined for the anchor probe and the calculated groups, and `undo` and `redo` for the undo tools
+  (D37). `PlannerApi` in `planner-api.ts` is the current list; its uses are in §4 of
+  [hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs).
 
 ## Consequences
 
@@ -34,13 +39,22 @@ client enforced an older rule than the one the server published.
 - `create-or-replace-groups` makes four page round trips instead of one.
 - Timeouts apply per planner call.
 - Each host still carries the thin bridge. Moving the bridge into embedding-lib or the Rubens UI
-  (alternative C of the analysis) remains the product direction. Moving payload validation into
-  the planner API (alternative B) remains open.
+  remains the product direction ([backlog](../backlog/one-page-bridge-for-every-host.md)). Moving
+  payload validation into the planner API, with structured errors per input, remains open.
 
 ## Rejected
 
 - Keeping the tool logic in every page.
-- Shipping executor code from the server into the page at runtime (remote code in the shop page).
-- A headless planner on the server (contradicts live editing in the user's session).
-
-See the analysis for the full comparison.
+- Publishing the page bridge together with the executors as an npm package: it removes the
+  copies, but a tool change still needs a package release and an upgrade in every client, and the
+  server and the page still drift apart.
+- Shipping executor code from the server into the page at runtime (remote code in the shop page:
+  the shop's CSP `script-src` would have to trust the MCP server, and the code could no longer be
+  reviewed or pinned with subresource integrity).
+- Client-side tools of the AI SDK for the in-page chat (tools without `execute`, run by the chat
+  UI): they remove the relay for the built-in chat only — external agents still need the remote
+  MCP endpoint — and put the tool logic back into the page.
+- A headless planner on the server, as the Planner MCP server of roomle-model-exporter runs one in
+  its container ([`docs/mcp-server.md`](https://github.com/roomle-dev/roomle-model-exporter/blob/feat/planner-mcp/docs/mcp-server.md),
+  branch `feat/planner-mcp`): it contradicts live editing in the user's session and would need the
+  plan synced back into that session.

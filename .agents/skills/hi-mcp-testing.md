@@ -40,9 +40,10 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
 - Tests with an `image` stay only for models that read images. The chat backend decides that for
   the model the provider name resolves to: `readsImages(resolveChatModel(<provider>))` in
   [chat-config.ts](../../hi-mcp/hi-mcp-chat/chat-config.ts).
-  - Every alias of the launcher reads images: `claude`, `anthropic`, `gemini`, `google`, `mistral`,
-    `mistral-large`, `mistral-medium`, `azure`, `openai`, and the deployments `gpt-5-mini`,
-    `gpt-5.4-mini`, `gpt-6-astra`.
+  - Every alias of the launcher reads images: `claude`, `anthropic`, `gemini`, `gemini-pro`,
+    `gemini-flash`, `google`, `mistral`, `mistral-large`, `mistral-medium`, `azure`, `openai`, and
+    the deployments `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`; so does every full `claude-*` and
+    `gemini-*` id.
   - A full `mistral-*` id, or an Azure deployment named by `HI_CHAT_MODEL`, reads images only if it
     is in `IMAGE_INPUT_MODELS`.
   - The launcher prints `Images: yes` or `no` at its start.
@@ -293,10 +294,10 @@ The runner:
 4. rewrites `<out>/results.json` after each run and prints one line per run;
 5. passes Ctrl+C (SIGINT/SIGTERM) on to the running run, which stops its servers, and ends.
 
-The 18 tests of 2026-10-04 for the three GPT models took 36 minutes on a machine with a GPU against the
-local planner; the file has 28 tests since the row edit tests of RML-18045, about 1 hour for three models — about 40 s per run for the launcher, the page and the snapshot,
-plus the model's chat time (gpt-5.4-mini 5–15 s, gpt-5-mini 30–60 s, gpt-6-astra up to 150 s per
-turn). A fix committed while the runner goes on takes effect from the next run, because every run
+A run takes about 40 s for the launcher, the page and the snapshot, plus the model's chat time
+(gpt-5.4-mini 5–15 s, gpt-5-mini 30–60 s, gpt-6-astra up to 150 s per turn): the 32 tests of the
+file take about an hour for the three GPT models on a machine with a GPU against the local planner.
+A fix committed while the runner goes on takes effect from the next run, because every run
 starts a fresh server and chat; the report then says which runs ran with which build.
 
 ## Run a prompt (the script)
@@ -325,7 +326,10 @@ The script:
 2. opens the example URL the launcher prints, with `plan_id` of `--plan`, in Playwright Chromium, a
    fresh browser each run, so every run starts from its plan (no IndexedDB state);
 3. waits until the MCP tool `get-plan-context` lists articles (server up, page connected, HI library
-   loaded), then calls the tools of `--operations`;
+   loaded) and until the HI library has loaded the plan's groups (`window.hiPosGroupsCompletelyLoaded`,
+   set by the example page in `onPosGroupsCompletelyLoaded`) — the planner clears its undo history
+   then, so an operation made before it could not be undone in the test —, then calls the tools of
+   `--operations`;
 4. sends the prompts to the chat backend (`POST /chat`, the chat window's system prompt and tools),
    each until the end of its stream, and records every planner call the MCP server sends to the
    page (from the bridge's WebSocket frames — the server's log cuts the arguments short);
@@ -383,9 +387,10 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 | `timed out … waiting for the page and the HI library` | the page did not connect or the HI library did not load — run with `--headed` and look at the page |
 | every `perspective-object-image.png` is fully transparent, the other images render | no GPU: headless Chromium fell back to SwiftShader, under which the planner's object-only perspective render draws an empty frame — the run script passes `--enable-gpu` for this; on a machine without a GPU the image stays empty until the planner defect is fixed ([backlog](../backlog/mcp-test-infrastructure-issues.md), issue 1) |
 | `errors` in `run.json` with the provider's message | invalid key or a provider failure; the snapshot is still stored |
-| `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context — a **bug**. Fixed causes: the images of `get-plan-images` reached Mistral as base64 text ([analysis](../bug-analysis/plan-images-sent-as-text-to-mistral.md)); the image URLs and the pretty-printing of the tool results ([analysis](../bug-analysis/tool-results-exceed-mistral-context.md)) |
+| `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context — a **bug**. The chat sends the images of a tool result to Mistral as a user message ([images in tool results](../../minimal-hi-example/docs/ai-chat.md#images-in-tool-results)), and the server returns compact JSON without `imageUrl` ([result format](../../hi-mcp/docs/hi-mcp-behaviour.md#53-result-format)); look for the result that is still large |
 | `api.extended[message.method] is not a function` in `planner-calls.json` | the planner build lacks the method (see the bug rules above) |
-| `chat request failed: aborted after 600s` | a turn took longer than 10 minutes — the turn keeps the tools and the text the chat streamed before. `gpt-5-mini` went silent this long after `get-authoring-rules` on the large kitchens (2026-10-02); the chat streams nothing while a model reasons |
+| `the turn took longer than 5 minutes and was ended …` in `errors` | the chat backend's turn timeout (`HI_CHAT_TURN_TIMEOUT_MS`): the model did not answer in time — the chat streams nothing while a model reasons; the plan keeps what the tools changed |
+| `chat request failed: aborted after 600s` | the run script's own chat timeout (10 minutes); reached only when `HI_CHAT_TURN_TIMEOUT_MS` is set above it — the turn keeps the tools and the text the chat streamed before |
 | `operation <tool> failed: …` in `errors` | an operation of the test did not apply to its plan — e.g. a root id that is not in the plan (still "not found" after 30 s); check the test against [test-prompts.md](../../docs/test-prompts.md#plans) |
 | the runner names problems of the test file and runs nothing | an empty key variable, an unknown plan name, a missing image, a duplicate id — fix the file or the environment |
 
@@ -393,7 +398,6 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 
 - [hi-mcp-tools.md](./hi-mcp-tools.md) — the tools the model calls
 - [ai-chat.md](../../minimal-hi-example/docs/ai-chat.md) — the chat backend and its providers
-- Feature analyses: [the script](../feature-analysis/hi-mcp-prompt-run-script.md),
-  ["test the mcp"](../feature-analysis/hi-mcp-test-the-mcp-skill.md),
-  [image prompts](../feature-analysis/hi-mcp-test-image-prompts.md),
-  [the runner](../feature-analysis/hi-mcp-test-suite-script.md)
+- [test-prompts.md](../../docs/test-prompts.md) — the plans and the format of the test file
+- [mcp-test-infrastructure-issues.md](../backlog/mcp-test-infrastructure-issues.md) — what is open
+  about running the tests

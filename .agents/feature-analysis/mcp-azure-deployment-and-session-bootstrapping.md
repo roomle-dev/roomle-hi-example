@@ -155,9 +155,9 @@ Kept for the later product discussion; none of it blocks the three cases:
 ## 7. Risks and Open Questions
 
 1. **Public endpoint security** — decision needed before the Azure app is shared (section 3.4).
-2. **`bo-test` HI APIs** — unchanged open item from [hi-mcp-poc-json.md](./hi-mcp-poc-json.md):
-   whether the `bo-test` UI ships `getExternalObjectPlanContext` shows at the first
-   `get-plan-context`; it is independent of all three connectivity cases.
+2. **`bo-test` HI APIs** — whether the `bo-test` UI ships `getExternalObjectPlanContext` shows at
+   the first `get-plan-context` (the HI MCP PoC, [RML-17693](https://roomle.atlassian.net/browse/RML-17693));
+   it is independent of all three connectivity cases.
 3. **Plan id availability** — `ps_bse5tc50687uh64hm8jul7j1kiuacyx` must exist in the INT
    environment for cases 2 and 3.
 4. **Session lifetime on Azure** — one page at a time; a second tab replaces the first (fine for

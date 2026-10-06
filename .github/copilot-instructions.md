@@ -125,7 +125,7 @@ The start script (`npm start`) provides:
 │       ├── page-bridge.ts        # Connected-page registry, call correlation
 │       ├── types.ts              # WebSocket message protocol
 │       ├── tests/                # Unit tests (tool-executors, group-placement, plan-space, planner-api, page-bridge, hi-mcp-server)
-│       ├── README.md             # Complete PoC documentation (clients: INT-stage ligna-store, HI presets example)
+│       ├── README.md             # Complete PoC documentation (clients: ligna-store chat window, HI presets example)
 │       └── QUICKSTART.md         # Shortest path to a first tool call
 │   ├── hi-mcp-client/            # Page side of the server (reference copy; the store runs its own)
 │       ├── browser-bridge.ts     # WebSocket client: executes allow-listed planner methods, replies
@@ -303,10 +303,9 @@ Rules:
 - A bug analysis of wrong content an agent created names the instruction or the part of the tool
   API that led the agent there. "The server accepted it" is not a root cause.
 
-Every guard, correction and feedback message of the server, and the decisions behind them, are in
-[`hi-mcp/docs/hi-mcp-behaviour.md`](../hi-mcp/docs/hi-mcp-behaviour.md); the analysis of the guards
-and the refactoring plan in
-[`.agents/refactoring-analysis/guards-in-the-hi-mcp-server.md`](../.agents/refactoring-analysis/guards-in-the-hi-mcp-server.md).
+Every guard, correction and feedback message of the server is in §8 of
+[`hi-mcp/docs/hi-mcp-behaviour.md`](../hi-mcp/docs/hi-mcp-behaviour.md), the decisions behind them in
+its §3.
 
 ## Where Documentation Goes
 

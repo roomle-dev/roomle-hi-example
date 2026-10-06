@@ -2,7 +2,7 @@
 
 This guide describes how to set up **Jan AI**, your **local Ollama models**, and your **Cloudflare MCP server** (`hi-orchestrator`).
 
-> **Note:** The Cloudflare MCP server uses a shared default session. For multi-user scenarios, each user should append a unique `?session=<name>` parameter to the MCP server URL and `&mcp_session=<name>` to the store page URL to avoid interference. Without these parameters, all users share the same container and the newest connected tab wins.
+> **Note:** Jan reaches your store tab only through a shared session name: `&mcp_session=<name>` in the store page URL and `?session=<name>` in the MCP server URL, each session in a container of its own. Without `mcp_session` the store page takes a session no client knows, and a client without `?session=` reaches the shared `default` container, where no store page connects.
 
 ## Prerequisites
 
@@ -33,9 +33,9 @@ Because Ollama exposes an OpenAI-compatible API locally, you can attach your exi
 
 The tools work on the planning session of an open Roomle ligna-store tab — the MCP server relays their planner calls into it. Before connecting Jan, open the store page in your browser and keep the tab open:
 
-1. Open this URL in your browser:
+1. Open this URL in your browser — the store connects to the MCP server only together with its own chat window, so it needs a chat `model` and its `api_key` (the models are listed in the ligna-store `hi-mcp/README.md`):
    ```text
-   https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev
+   https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>
    ```
 2. Start planning or open an existing plan in the store.
 3. Keep this tab open — it is the session the agent works in.
@@ -47,7 +47,7 @@ The tools work on the planning session of an open Roomle ligna-store tab — the
 3. Enter your Cloudflare server details:
    - **Name:** `hi-orchestrator`
    - **Transport:** `HTTP`
-   - **URL:** `https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp`
+   - **URL:** `https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=<name>` — the same `<name>` as in the store URL
 4. Click **Save** and verify the server toggle switch is set to **Active**.
 
 > **Why not SSE?** The Cloudflare deployment exposes Streamable HTTP on `/mcp` and does not provide an SSE transport. Selecting `SSE` will fail to connect.
@@ -60,6 +60,6 @@ The tools work on the planning session of an open Roomle ligna-store tab — the
 
 ## Related Resources
 
-- MCP Server Endpoint: https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp
-- Store Page: https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev
+- MCP Server Endpoint: `https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=<name>`
+- Store Page: `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>`
 - See also: [QUICKSTART.md](../hi-mcp-server/QUICKSTART.md) for additional setup details

@@ -2,8 +2,9 @@
 
 The test cases for the Roomle HI (HOMAG Intelligence) room planning live in
 [test-prompts.json](./test-prompts.json): each starts from one of the plans below, with a prompt, an
-image or both. They verify the MCP server tools that create, position and edit kitchen groups in
-Roomle sessions.
+image or both. They verify the MCP server tools that create, position and edit groups in
+Roomle sessions. Every test starts from a fixed plan, so an edit does not depend on what the model
+under test built before.
 
 ## Plans
 
@@ -126,9 +127,7 @@ high) against the right wall, 1200 mm from the back right corner, with a generat
 by hand in the planner (the RML-18045 issue of 2026-10-06); the ids survive a reload. The test
 `edit-insert-low-between-high` starts from it: "insert a low cabinet between the high cabinets"
 names the pair collectively, the group is no kitchen, and the article to insert is of another
-height than its neighbours — the case the
-[analysis](../.agents/bug-analysis/insert-between-not-chosen-for-a-wardrobe-group.md) found
-untested.
+height than its neighbours (D44 in the [behaviour reference](../hi-mcp/docs/hi-mcp-behaviour.md#words-2026-10-06)).
 
 | | id |
 |---|---|
@@ -173,7 +172,7 @@ When testing a prompt by hand with the MCP server:
 3. **Connect your MCP client** to http://localhost:3100/mcp
 4. **Use the tools** to execute the prompts:
    - `get-plan-context` - Retrieve current room and article information
-   - `create-or-replace-groups` - Create new kitchen groups with specified articles
+   - `create-or-replace-groups` - Create new groups with specified articles
    - `place-group` - Position groups against walls or in corners
    - the command tools - Edit an existing group (the tests on the Three Tall Units plan)
 
@@ -196,7 +195,7 @@ runs a single prompt the same way.
 
 ## Related Documentation
 
-- [HI MCP Server Documentation](./hi-mcp-server.md)
+- [HI MCP Server Documentation](../minimal-hi-example/docs/hi-mcp-server.md)
 - [HI MCP Tools Reference](../.agents/skills/hi-mcp-tools.md)
 - [Roomle HI Concepts](../.agents/skills/roomle-hi-concepts.md)
 - [Article Catalog](../.agents/skills/hi-authoring-rules.md)

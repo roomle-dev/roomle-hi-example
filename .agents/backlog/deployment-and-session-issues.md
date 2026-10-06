@@ -112,12 +112,12 @@ refreshed.
 **Problem.** The root scripts forward through a second npm (`package.json:15-18`:
 `npm start --workspace minimal-hi-example`, `npm run start:cf --workspace minimal-hi-example`). The
 inner npm takes `--no-open` as its own option, so `npm start -- --no-open` and
-`npm run start:cf -- --no-open` from the root still open the browser; the root
-[README](../../README.md) lists `npm start --no-open`. Positional arguments (`npm start mistral <key>`)
-pass. `node minimal-hi-example/start.mjs --no-open` works.
+`npm run start:cf -- --no-open` from the root still open the browser, although the launcher's usage
+comment (`minimal-hi-example/start.mjs:9`) names `npm start -- --no-open`. Positional arguments
+(`npm start mistral <key>`) pass. `node minimal-hi-example/start.mjs --no-open` works.
 
 **To do.** Let the root scripts run the launcher directly (`node minimal-hi-example/start.mjs`, with
-`--dev` and `--cf`), so `npm start -- --no-open` reaches it; correct the README row.
+`--dev` and `--cf`), so `npm start -- --no-open` reaches it.
 
 **Test.** `npm start -- --no-open` from the root starts the servers without opening a browser.
 

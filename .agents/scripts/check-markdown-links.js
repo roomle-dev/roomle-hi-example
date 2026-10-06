@@ -2,8 +2,10 @@
 /**
  * Checks the relative links of markdown files: the target file exists, a
  * heading anchor (#some-heading) exists in a markdown target, a line anchor
- * (#L42, #L42-L51) is within the target file. Links starting with http and
- * links in code blocks or inline code are skipped.
+ * (#L42, #L42-L51) is within the target file, and the target is inside the
+ * repository (the working directory) and outside .temp - a link only this
+ * machine resolves is reported as LOCAL. Links starting with http and links in
+ * code blocks or inline code are skipped.
  *
  *   node .agents/scripts/check-markdown-links.js <file.md> [<file.md> ...]
  *
@@ -12,7 +14,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, normalize } from 'node:path';
+import { dirname, join, normalize, relative } from 'node:path';
 
 const anchorsByFile = new Map();
 
@@ -73,7 +75,11 @@ for (const file of process.argv.slice(2)) {
     const path = hashAt < 0 ? link : link.slice(0, hashAt);
     const fragment = hashAt < 0 ? '' : link.slice(hashAt + 1);
     const target = path ? normalize(join(dirname(file), path)) : file;
-    if (!existsSync(target)) {
+    const fromRoot = relative(process.cwd(), target);
+    if (fromRoot.startsWith('..') || fromRoot.startsWith('.temp')) {
+      console.log(`${file}: LOCAL ${link}`);
+      bad++;
+    } else if (!existsSync(target)) {
       console.log(`${file}: MISSING ${link}`);
       bad++;
     } else if (/^L\d/.test(fragment)) {

@@ -30,9 +30,14 @@ function proseLines(file) {
   const lines = [];
   let openFence = null;
   for (const line of readFileSync(file, 'utf8').split('\n')) {
-    const fence = line.match(/^\s*(`{3,})/);
-    if (fence && !openFence) openFence = fence[1];
-    else if (fence && fence[1].length >= openFence.length) openFence = null;
+    const fence = line.match(/^\s*(`{3,}|~{3,})/)?.[1];
+    if (fence && !openFence) openFence = fence;
+    else if (
+      fence &&
+      fence[0] === openFence[0] &&
+      fence.length >= openFence.length
+    )
+      openFence = null;
     else if (!openFence) lines.push(line);
   }
   return lines;

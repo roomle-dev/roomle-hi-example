@@ -254,13 +254,16 @@ Plan: <plan name>; operations: <none, or the tool calls before the prompt>
 
 ### 7. Open issues
 
-Update [mcp-test-open-issues.md](../backlog/mcp-test-open-issues.md) — what is to be done after
-the test analyses, nothing that was done:
+Update [mcp-test-open-issues.md](../backlog/mcp-test-open-issues.md). The backlog is a to-do list,
+not an archive: it holds only what is still to be done — no history of runs, findings or fixes.
 
-- add every bug and hardening candidate of the report that is not listed yet, with the problem, the
-  run that shows it, the cause in the code, the to-do and its test;
-- give a listed issue the latest run that shows it;
-- remove an issue only when its fix is in the code — a run that happens not to show it is no fix;
+- add every bug and hardening candidate of the report that is not listed yet: the problem in the
+  present tense, the cause in the code, the to-do, its test, and a **Reproduce** line naming the run
+  whose payload reproduces it;
+- for a listed issue that showed again, replace its **Reproduce** line with the latest run — one line,
+  never a list of runs;
+- remove an issue, and its index row, when its fix is in the code — a run that happens not to show it
+  is no fix;
 - keep the backlog index ([README](../backlog/README.md)) in step.
 
 Then tell the user the report's path, the verdicts and the bugs.

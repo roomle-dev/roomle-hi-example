@@ -166,10 +166,11 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 
 | Document | Last touched |
 |---|---|
-| [Backlog](backlog/README.md) — make group positioning easier for the agent | 2026-09-30 |
-| [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — deferred roomle-ui alternative to the server's corner probe | 2026-09-30 |
-| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — what is to be done after the analyses of "test the mcp": MCP server bugs in the corrections, hardening of the server, the rules and the chat, one roomle-ui defect | 2026-10-02 |
-| [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — hypothesis: gpt-5.4-mini planned worse because it ran at its documented default `none` (gpt-5-mini: `medium`), unverified on Foundry; measure, set and compare | 2026-10-03 |
+| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the ligna-store | 2026-10-06 |
+| [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — measure, then let the plan context carry every article's docking vectors and corner point, and remove the server's probe | 2026-10-06 |
+| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner that "test the mcp" shows | 2026-10-06 |
+| [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — make the reasoning tokens measurable, run gpt-5.4-mini at the same effort as gpt-5-mini, decide the chat's model and effort | 2026-10-06 |
+| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the open gaps of running "test the mcp": the object-only render under software GL, the unrecorded hint, a run that loses its page | 2026-10-06 |
 
 ---
 

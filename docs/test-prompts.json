@@ -1,8 +1,17 @@
 {
   "models": [
-    { "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" },
-    { "provider": "gpt-5.4-mini", "apiKey": "$AZURE_GPT_KEY" },
-    { "provider": "gpt-6-astra", "apiKey": "$AZURE_GPT_KEY" }
+    {
+      "provider": "gpt-5-mini",
+      "apiKey": "$AZURE_GPT_KEY"
+    },
+    {
+      "provider": "gpt-5.4-mini",
+      "apiKey": "$AZURE_GPT_KEY"
+    },
+    {
+      "provider": "gpt-6-astra",
+      "apiKey": "$AZURE_GPT_KEY"
+    }
   ],
   "plans": {
     "default-room": "ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv",
@@ -10,7 +19,9 @@
     "closets": "ps_n9zrz89zsyy46l34mkf5pd52cx2ea2y",
     "utility-room": "ps_mq3m2wuhq6w23ry742eh50nb2vub5ej",
     "room-and-attic": "ps_qn012p0tjux6dabt6oym0bzngmqex70u",
-    "three-tall-units": "ps_qply732i7knwtkfjm1z86sa8vrt00ms"
+    "three-tall-units": "ps_qply732i7knwtkfjm1z86sa8vrt00ms",
+    "corner-kitchen-wall-units": "ps_r081k1nfl8nmtzget0sug199vhudbtd",
+    "two-wardrobes-right-wall": "ps_r22qpwv9ks87lz1gnrcz1ewv7q8uq3v"
   },
   "tests": [
     {
@@ -93,6 +104,13 @@
       "expect": "merge-article-into-group: a drawer cabinet at the front end of the row"
     },
     {
+      "id": "edit-insert-unit",
+      "title": "Insert a unit",
+      "plan": "three-tall-units",
+      "prompt": "insert a cabinet with drawers between the first and the second unit",
+      "expect": "insert-article-into-group between the first and the middle unit: one group of four, the back end stays at z -3765, the row grows to the front by the unit's width"
+    },
+    {
       "id": "edit-replace-unit",
       "title": "Replace a unit",
       "plan": "three-tall-units",
@@ -100,10 +118,24 @@
       "expect": "exchange-root-module: the middle unit becomes a drawer cabinet, the row stays"
     },
     {
+      "id": "edit-replace-unit-wider",
+      "title": "Replace a unit with a wider one",
+      "plan": "three-tall-units",
+      "prompt": "replace the middle unit with a 900 mm wide tall cabinet with drawers",
+      "expect": "one exchange-root-module with mod_Width 900 in its attributes: the row is 2100 mm, the back end stays at z -3765"
+    },
+    {
       "id": "edit-remove-unit",
       "title": "Remove a unit",
       "plan": "three-tall-units",
       "prompt": "remove the middle unit",
+      "expect": "remove-article-from-group: one group of two units without a gap, the back end stays at z -3765"
+    },
+    {
+      "id": "edit-delete-unit",
+      "title": "Delete a unit",
+      "plan": "three-tall-units",
+      "prompt": "delete the middle unit",
       "expect": "delete-root-module: the kitchen splits into two groups that keep their places"
     },
     {
@@ -141,6 +173,51 @@
       "plan": "three-tall-units",
       "prompt": "delete the kitchen",
       "expect": "delete-group: the plan has no groups"
+    },
+    {
+      "id": "edit-swap-units",
+      "title": "Swap two units",
+      "plan": "three-tall-units",
+      "operations": [
+        {
+          "tool": "change-module-attribute",
+          "arguments": {
+            "rootModuleId": "8774cac2-8b83-405d-b88c-f0e5cd2452fb",
+            "attributeId": "mod_Width",
+            "value": "900"
+          }
+        }
+      ],
+      "prompt": "swap the first and the last unit",
+      "expect": "swap-root-modules: the 900 mm unit stands in the back corner, the row stays 2100 mm and its back end at z -3765"
+    },
+    {
+      "id": "edit-insert-below-wall-units",
+      "title": "Insert a unit below wall units",
+      "plan": "corner-kitchen-wall-units",
+      "prompt": "insert a base unit with drawers between the hob unit and the sink unit",
+      "expect": "insert-article-into-group between the hob unit and the sink unit: the corner unit stays in the corner, the right leg grows to the front by 600 mm, the range hood stays above the hob unit, the wall unit above the sink moves with it; the answer names the moved wall unit"
+    },
+    {
+      "id": "edit-remove-next-to-corner",
+      "title": "Remove the unit next to the corner",
+      "plan": "corner-kitchen-wall-units",
+      "prompt": "remove the base unit next to the corner unit on the right wall",
+      "expect": "remove-article-from-group of the drawer unit next to the corner: the gap closes towards the corner, the corner unit stays, the hob unit moves into the gap with the range hood; the wall unit above the removed unit keeps its place and the answer says so"
+    },
+    {
+      "id": "edit-swap-hob-unit",
+      "title": "Swap the hob unit",
+      "plan": "corner-kitchen-wall-units",
+      "prompt": "swap the hob unit and the sink unit",
+      "expect": "swap-root-modules: the hob unit and the sink unit change places, the range hood stays above the hob unit and the wall unit above the sink moves with it"
+    },
+    {
+      "id": "edit-insert-low-between-high",
+      "title": "Insert a low cabinet between the high cabinets",
+      "plan": "two-wardrobes-right-wall",
+      "prompt": "insert a low cabinet between the high cabinets",
+      "expect": "one insert-article-into-group call between the two wardrobes with a base cabinet (e.g. UTB60): one group of three root modules, the wardrobes keep their article, no new group, no replace, no exchange; the group's pos stays [4815, 0, -2563.1]"
     },
     {
       "id": "undo-last-change",
@@ -189,7 +266,7 @@
         }
       ],
       "prompt": "that was the wrong unit - remove the last unit, not the middle one",
-      "expect": "undo, then delete-root-module on the last unit: one group of the first two units"
+      "expect": "undo, then remove-article-from-group or delete-root-module on the last unit: one group of the first two units"
     }
   ]
 }

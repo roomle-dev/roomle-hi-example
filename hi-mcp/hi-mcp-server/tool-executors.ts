@@ -24,6 +24,7 @@ import {
   footprintCornersInRoom,
   groupCornerGeometry,
   groupFootprint,
+  groupPointToRoom,
   groupHeightRange,
   placeAgainstWall,
   placeCornerAtWalls,
@@ -552,8 +553,204 @@ const dockTarget = (
   return dockTo;
 };
 
-const withCorrections = (result: any, corrections: string[]) =>
-  corrections.length > 0 ? { ...result, corrections } : result;
+// The server's corrections, then the planner's, each named by its tool.
+const withCorrections = (result: any, corrections: string[]) => {
+  const all = [
+    ...corrections,
+    ...((result?.corrections ?? []) as string[]).map(
+      (correction) => `${result.command}: ${correction}`
+    ),
+  ];
+  return all.length > 0 ? { ...result, corrections: all } : result;
+};
+
+// The root after `start` along a side vector, when the row reaches `target`
+// in that direction - past a corner article, which joins two legs.
+const neighbourTowards = (
+  partners: SidePartners,
+  start: string,
+  vector: string,
+  target: string
+): string | undefined => {
+  const [next] = partners.get(start)?.get(vector)?.keys() ?? [];
+  const visited = new Set([start]);
+  let current = next;
+  while (current !== undefined && !visited.has(current)) {
+    if (current === target) {
+      return next;
+    }
+    visited.add(current);
+    [current] = partners.get(current)?.get(vector)?.keys() ?? [];
+  }
+  return undefined;
+};
+
+const roundedPosition = (position: unknown): string =>
+  JSON.stringify(
+    ((position ?? []) as number[]).map((value) => Math.round(Number(value)))
+  );
+
+const volumeOfGroup = (
+  groups: any[],
+  groupId: string
+): PlacedVolume | undefined => {
+  const group = groups.find((candidate) => candidate.id === groupId);
+  const footprint = group && groupFootprint(group);
+  return footprint
+    ? volumeOf(footprint, groupHeightRange(group), group)
+    : undefined;
+};
+
+// What a row edit did to a row that stood inside the room and clear of the
+// other groups (D43). A group that stood outside before is the user's choice
+// and is never reported (D22).
+const rowReachHints = (
+  groupId: string,
+  before: any[],
+  after: any[],
+  walls: any[]
+): string[] => {
+  const volumeBefore = volumeOfGroup(before, groupId);
+  const volumeAfter = volumeOfGroup(after, groupId);
+  if (!volumeAfter) {
+    return [];
+  }
+  const hints: string[] = [];
+  const reachesOut = (volume: PlacedVolume | undefined) =>
+    volume !== undefined &&
+    volume.corners.some(
+      (corner) => !pointInsideRoom(corner, walls, OVERLAP_TOLERANCE_MM)
+    );
+  if (
+    walls.length >= 3 &&
+    volumeBefore &&
+    !reachesOut(volumeBefore) &&
+    reachesOut(volumeAfter)
+  ) {
+    hints.push(
+      'the row now reaches past a wall of the room - move it with place-group or edit the row if that is not what was asked'
+    );
+  }
+  const overlappedBefore = new Set(
+    volumeBefore
+      ? overlappedGroupIds(volumeBefore, placedGroupVolumes(before, groupId))
+      : []
+  );
+  // only the groups that stood beside the row: a group the edit split off
+  // was part of it
+  const stoodBefore = new Set(before.map((group) => group.id));
+  const overlapped = overlappedGroupIds(
+    volumeAfter,
+    placedGroupVolumes(after, groupId)
+  ).filter((id) => stoodBefore.has(id) && !overlappedBefore.has(id));
+  if (overlapped.length > 0) {
+    hints.push(
+      `the row now overlaps ${overlapped.map((id) => `group '${id}'`).join(', ')}`
+    );
+  }
+  return hints;
+};
+
+// The wall units and the range hood the edit moved: they go with the unit
+// below them (D42), and the kernel's docking no longer links them to it, so
+// the catalog and the positions tell.
+const movedUnitsAboveHint = (
+  groupId: string,
+  before: any[],
+  after: any[],
+  articles: any[]
+): string[] => {
+  const rawAfter = after.find((group) => group.id === groupId);
+  if (!rawAfter) {
+    return [];
+  }
+  // where a root stands in the room: the planner may move the group origin
+  const roomPosition = (group: any, root: any): string => {
+    const [x = 0, y = 0, z = 0] = (root.articlePos ?? []) as number[];
+    const [roomX, roomZ] = groupPointToRoom(group, [x, z]);
+    return roundedPosition([roomX, Number(group.pos?.[1] ?? 0) + y, roomZ]);
+  };
+  const positionBefore = new Map<string, string>(
+    before.flatMap((group) =>
+      ((group.roots ?? []) as any[]).map((root) => [
+        root.id,
+        roomPosition(group, root),
+      ])
+    )
+  );
+  const moved = ((rawAfter.roots ?? []) as any[])
+    .filter(
+      (root) =>
+        !root.isGenerated &&
+        positionBefore.has(root.id) &&
+        isWallUnitArticle(catalogArticleOf(articles, root)) &&
+        positionBefore.get(root.id) !== roomPosition(rawAfter, root)
+    )
+    .map((root) => `'${root.id}'`);
+  return moved.length > 0
+    ? [
+        `the wall units and the range hood above the moved units moved with them (${moved.join(', ')}) - edit the wall row the same way if it should line up with the floor units`,
+      ]
+    : [];
+};
+
+// A row edit with its hints: the plan before and after the edit decides.
+const withRowHints = async (
+  roomDesignerApi: PlannerApi,
+  groupId: string,
+  context: any,
+  edit: () => Promise<any>
+): Promise<any> => {
+  const rooms = (context?.rooms?.rooms ?? []) as any[];
+  const before = ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
+    []) as any[];
+  const result = await edit();
+  const after = ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
+    []) as any[];
+  const rawGroup = after.find((candidate) => candidate.id === groupId);
+  const room =
+    (isPoint(rawGroup?.pos) &&
+      roomOfPoint(
+        rooms,
+        [rawGroup.pos[0], rawGroup.pos[2]],
+        OVERLAP_TOLERANCE_MM
+      )) ||
+    rooms[0];
+  const hints = [
+    ...rowReachHints(groupId, before, after, room?.walls ?? []),
+    ...movedUnitsAboveHint(groupId, before, after, context?.articles ?? []),
+  ];
+  return hints.length > 0 ? { ...result, hint: hints.join('; ') } : result;
+};
+
+// The two neighbours a unit is inserted between. Two roots of one row that
+// are not neighbours name the first root and the direction: the unit goes
+// beside the first-named root, towards the second.
+const insertBetween = (
+  group: any,
+  [first, second]: [string, string],
+  corrections: string[]
+): [string, string] => {
+  const partners = sidePartnersOf(group.roots ?? []);
+  const neighbours = SIDE_VECTORS.flatMap((vector) => [
+    ...(partners.get(first)?.get(vector)?.keys() ?? []),
+  ]);
+  if (neighbours.includes(second)) {
+    return [first, second];
+  }
+  for (const vector of SIDE_VECTORS) {
+    const neighbour = neighbourTowards(partners, first, vector, second);
+    if (neighbour !== undefined) {
+      corrections.push(
+        `insert-article-into-group: '${first}' and '${second}' are not neighbours - the unit was inserted between '${first}' and '${neighbour}', the neighbour of '${first}' towards '${second}'`
+      );
+      return [first, neighbour];
+    }
+  }
+  throw new Error(
+    `insert-article-into-group: '${first}' and '${second}' are not in one row - send two neighbours of one row (the side neighbours of '${first}': ${neighbours.join(', ') || 'none'})`
+  );
+};
 
 // A group by its id or a unique id prefix.
 const findGroup = (groups: any[], groupId: string): any => {
@@ -2316,7 +2513,14 @@ const FOLLOW_UP_COMMANDS = new Set([
   'change-module-attribute',
   'change-group-attribute',
   'exchange-root-module',
+  'insert-article-into-group',
+  'swap-root-modules',
 ]);
+// A remove reloads the row only when it closed the gap; a unit at a row end
+// is deleted by the kernel, as delete-root-module does, without a follow-up.
+const hasFollowUp = (command: string, result: any): boolean =>
+  FOLLOW_UP_COMMANDS.has(command) ||
+  (command === 'remove-article-from-group' && result?.gapClosed === true);
 const FOLLOW_UP_WAIT_MS = 2000;
 const HISTORY_EVENT_WAIT_MS = 1000;
 
@@ -2348,7 +2552,9 @@ const countingPlannerApi = (roomDesignerApi: PlannerApi) => {
   const count = {
     steps: 0,
     groupsBefore: undefined as string | undefined,
-    settled: true,
+    // the event count the call's follow-up reloads bring, earlier ones that
+    // have not landed yet included
+    followUpEvents: 0,
   };
   const beforeStep = async () => {
     count.groupsBefore ??= await readGroupsKey(roomDesignerApi);
@@ -2381,16 +2587,13 @@ const countingPlannerApi = (roomDesignerApi: PlannerApi) => {
         );
         stepped();
         // a page that relays no history events gets no wait
-        if (
-          FOLLOW_UP_COMMANDS.has(command) &&
-          planHistory.events > eventsBefore &&
-          !(await planHistory.waitForEvents(
-            eventsBefore + 2,
+        if (hasFollowUp(command, result) && planHistory.events > eventsBefore) {
+          count.followUpEvents =
+            Math.max(count.followUpEvents, eventsBefore) + 2;
+          await planHistory.waitForEvents(
+            count.followUpEvents,
             FOLLOW_UP_WAIT_MS
-          ))
-        ) {
-          count.settled = false;
-          planHistory.expectLateFollowUp();
+          );
         }
         return result;
       },
@@ -2421,18 +2624,36 @@ const recorded =
     try {
       return await executor(api, args);
     } finally {
-      if (count.steps > 0 && count.groupsBefore !== undefined) {
+      const recordable = count.steps > 0 && count.groupsBefore !== undefined;
+      let groupsAfter: string | undefined;
+      if (recordable) {
         try {
-          planHistory.record({
-            tool,
-            steps: count.steps,
-            groupsBefore: count.groupsBefore,
-            groupsAfter: await readGroupsKey(roomDesignerApi),
-            settled: count.settled,
-          });
+          groupsAfter = await readGroupsKey(roomDesignerApi);
         } catch {
-          planHistory.forget();
+          groupsAfter = undefined;
         }
+      }
+      // From here on nothing awaits, so no history event comes between the
+      // check and the end of the call: a follow-up that landed after the wait
+      // gave up, while the call still ran, is the call's own.
+      const lateFollowUps = Math.max(
+        0,
+        count.followUpEvents - planHistory.events
+      );
+      for (let late = 0; late < lateFollowUps; late++) {
+        planHistory.expectLateFollowUp();
+      }
+      const settled = lateFollowUps === 0;
+      if (recordable && groupsAfter === undefined) {
+        planHistory.forget();
+      } else if (recordable) {
+        planHistory.record({
+          tool,
+          steps: count.steps,
+          groupsBefore: count.groupsBefore!,
+          groupsAfter: groupsAfter!,
+          settled,
+        });
       }
       planHistory.end();
     }
@@ -3120,6 +3341,39 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     })
   ),
 
+  'remove-article-from-group': planChange(
+    'remove-article-from-group',
+    inPlacementFrame(async (roomDesignerApi, args) => {
+      const corrections: string[] = [];
+      const context =
+        await roomDesignerApi.extended.getExternalObjectPlanContext([
+          'groups',
+          'articles',
+          'rooms',
+        ]);
+      const group = findGroup(context.groups ?? [], args.groupId as string);
+      const rootModuleId = resolveRootId(
+        group.roots ?? [],
+        args.rootModuleId as string,
+        'remove-article-from-group',
+        corrections
+      );
+      return withRowHints(roomDesignerApi, group.id, context, async () =>
+        withCorrections(
+          await withPlanRoots(
+            () =>
+              roomDesignerApi.extended.externalObjectGroupOperation(
+                'remove-article-from-group',
+                { groupId: group.id, rootModuleId }
+              ),
+            [group]
+          ),
+          corrections
+        )
+      );
+    })
+  ),
+
   'merge-article-into-group': planChange(
     'merge-article-into-group',
     inPlacementFrame(async (roomDesignerApi, args) => {
@@ -3202,6 +3456,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         await roomDesignerApi.extended.getExternalObjectPlanContext([
           'groups',
           'articles',
+          'rooms',
         ]);
       const group = findGroup(context.groups ?? [], args.groupId as string);
       const articleId = catalogArticleId(
@@ -3216,20 +3471,117 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         'exchange-root-module',
         corrections
       );
-      return withCorrections(
-        await withPlanRoots(
-          () =>
-            roomDesignerApi.extended.externalObjectGroupOperation(
-              'exchange-root-module',
-              {
-                groupId: group.id,
-                rootModuleId,
-                articleId,
-              }
-            ),
-          [group]
-        ),
+      return withRowHints(roomDesignerApi, group.id, context, async () =>
+        withCorrections(
+          await withPlanRoots(
+            () =>
+              roomDesignerApi.extended.externalObjectGroupOperation(
+                'exchange-root-module',
+                {
+                  groupId: group.id,
+                  rootModuleId,
+                  articleId,
+                  ...(args.attributes !== undefined && {
+                    attributes: args.attributes,
+                  }),
+                }
+              ),
+            [group]
+          ),
+          corrections
+        )
+      );
+    })
+  ),
+
+  'insert-article-into-group': planChange(
+    'insert-article-into-group',
+    inPlacementFrame(async (roomDesignerApi, args) => {
+      const corrections: string[] = [];
+      const context =
+        await roomDesignerApi.extended.getExternalObjectPlanContext([
+          'groups',
+          'articles',
+          'rooms',
+        ]);
+      const group = findGroup(context.groups ?? [], args.groupId as string);
+      const articleId = catalogArticleId(
+        context.articles ?? [],
+        { articleId: args.articleId, libraryId: group.libraryId },
+        'insert-article-into-group',
         corrections
+      );
+      const between = insertBetween(
+        group,
+        (args.between as [string, string]).map((rootId) =>
+          resolveRootId(
+            group.roots ?? [],
+            rootId,
+            'insert-article-into-group',
+            corrections
+          )
+        ) as [string, string],
+        corrections
+      );
+      return withRowHints(roomDesignerApi, group.id, context, async () =>
+        withCorrections(
+          await withPlanRoots(
+            () =>
+              roomDesignerApi.extended.externalObjectGroupOperation(
+                'insert-article-into-group',
+                {
+                  groupId: group.id,
+                  articleId,
+                  ...(args.attributes !== undefined && {
+                    attributes: args.attributes,
+                  }),
+                  between,
+                }
+              ),
+            [group]
+          ),
+          corrections
+        )
+      );
+    })
+  ),
+
+  'swap-root-modules': planChange(
+    'swap-root-modules',
+    inPlacementFrame(async (roomDesignerApi, args) => {
+      const corrections: string[] = [];
+      const context =
+        await roomDesignerApi.extended.getExternalObjectPlanContext([
+          'groups',
+          'articles',
+          'rooms',
+        ]);
+      const group = findGroup(context.groups ?? [], args.groupId as string);
+      const rootModuleIds = (args.rootModuleIds as string[]).map((rootId) =>
+        resolveRootId(
+          group.roots ?? [],
+          rootId,
+          'swap-root-modules',
+          corrections
+        )
+      );
+      if (rootModuleIds[0] === rootModuleIds[1]) {
+        throw new Error(
+          `swap-root-modules: both ids name the root '${rootModuleIds[0]}' - name the two units that change places`
+        );
+      }
+      return withRowHints(roomDesignerApi, group.id, context, async () =>
+        withCorrections(
+          await withPlanRoots(
+            () =>
+              roomDesignerApi.extended.externalObjectGroupOperation(
+                'swap-root-modules',
+                { groupId: group.id, rootModuleIds }
+              ),
+            [group]
+          ),
+          corrections
+        )
       );
     })
   ),

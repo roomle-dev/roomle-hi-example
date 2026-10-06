@@ -364,8 +364,8 @@ attributes? }`), and every root after the first names its neighbour with one rel
 The glue logic completes the picks from the article template, and the planner arranges the root
 modules. The agent never authors root positions. Docking written as `contextData` — a group from
 `get-plan-context` carries it — is still accepted. A root's `attributes` are
-overrides of that unit; a material for the whole kitchen goes into the group's
-`attributes`, and the server sets it on every unit and on the worktop after the
+overrides of that root module; a material for the whole group goes into the group's
+`attributes`, and the server sets it on every root module and on the worktop after the
 load (`corrections` says so). An override only the generated worktop carries is
 moved to the group, and a resubmitted group keeps the colours of its worktop and
 toe kick.
@@ -501,20 +501,31 @@ its first UUID segment or in one character is read as that root and reported.
 | `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | Sets an attribute of a root module, or of one of its sub modules (the id in `subModules`) |
 | `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it; the result lists the `changedModuleIds` |
 | `delete-group` | `groupId` | Removes the group |
-| `delete-root-module` | `rootModuleId` | Removes one unit; units no longer docked together become separate groups where they stand, and removing the only unit removes the group. Generated roots (worktop, toe kick) cannot be removed |
-| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }` | Docks a new unit of the article to a free docking vector of a root of the group (`mode` default `StartStart`, `offset` default `[0, 0, 0]`) |
-| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | Replaces a unit with an article of one root module; the new unit keeps the position and the docking |
+| `delete-root-module` | `rootModuleId` | Deletes one root module and leaves the gap; root modules no longer docked together become separate groups where they stand, and deleting the only root module deletes the group. Generated roots (worktop, toe kick) cannot be deleted |
+| `remove-article-from-group` | `groupId`, `rootModuleId` | Removes one root module and closes the gap: the neighbours are docked to each other, the root modules at a wall stay, a wall unit hung on it hangs on the root module that moves into the gap. A root module with a neighbour on one side only is removed and nothing else moves; a corner article between two legs or the only root module is deleted as `delete-root-module` does (`gapClosed: false`) |
+| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }` | Docks the article as a new root module to a free docking vector of a root module of the group (`mode` default `StartStart`, `offset` default `[0, 0, 0]`) |
+| `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between: [rootId, rootId]` | Inserts an article between two root modules that stand side by side, in either order, whatever the group and the article (a low cabinet between two wardrobes too); the root modules at a wall or in a corner keep their place and the others move by the article's width. Two root modules of one row that are no neighbours put the article beside the first-named, towards the second (reported) |
+| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | Replaces a root module with an article of one root module; the new root module keeps the position and the docking, `attributes` override attributes of the new root module (`mod_Width` for another width - the other root modules move by the difference), and a docking the new article cannot take is named in `corrections` |
+| `swap-root-modules` | `groupId`, `rootModuleIds: [rootId, rootId]` | Lets two root modules change places, neighbours or not; attributes and the wall units hanging from a root module go with it, the group keeps its length and the root modules at a wall keep their place |
 | `merge-groups` | `targetGroupId`, `groupIds` | Merges the groups into the target group where they stand, like the planner's merge action; nothing is moved and no docking is added |
 
 `value` is a string, a number (passed on as its string) or a boolean. Attribute
 ids and allowed values come from the `masterData` section of `get-plan-context`
 or from `find-attributes`.
 
+In a row edit — insert, remove, exchange, swap — the end of the row at a wall
+or in a corner keeps its place and the other end moves; wall units and the
+range hood move with the unit they hang from. The result's `hint` names those
+units and says when the row now reaches past a wall or into another group; the
+row is built anyway.
+
 Examples:
 
 - `change-module-attribute`: `{ "rootModuleId": "id0001", "attributeId": "b", "value": "900" }`
 - `change-group-attribute`: `{ "groupId": "a1b2c3", "attributeId": "front", "value": "white" }`
 - `merge-article-into-group`: `{ "groupId": "a1b2c3", "articleId": "<drawer unit>", "dockTo": { "rootId": "id0003", "ownDockingVector": "RightBottom", "dockingVector": "LeftBottom" } }`
+- `insert-article-into-group`: `{ "groupId": "a1b2c3", "articleId": "<drawer unit>", "between": ["id0001", "id0002"] }`
+- `swap-root-modules`: `{ "groupId": "a1b2c3", "rootModuleIds": ["id0001", "id0003"] }`
 
 ### undo and redo
 
@@ -594,9 +605,9 @@ group one point and one rotation; the planner calculates every root position.
   `pos`/`rotationY` on a group — the server drops them. Roots are
   positioned by their relation only; a new group is positioned with `placement`
   only — see [Positioning a group](#positioning-a-group).
-- **Extending a kitchen**: units next to an existing group are roots of that
-  group, never a new group. Dock each new unit to a free docking vector of the
-  root it continues (`freeDockingVectors` per root: a free `LeftBottom` takes
+- **Extending a group**: articles next to an existing group are root modules of
+  that group, never a new group. Dock each new article to a free docking vector of the
+  root module it continues (`freeDockingVectors` per root: a free `LeftBottom` takes
   the new root's `RightBottom`, a free `RightBottom` takes `LeftBottom`, a
   free `Top` vector takes the new root's `Bottom` vector) — one unit with
   [merge-article-into-group](#editing-a-group-the-command-tools), several at

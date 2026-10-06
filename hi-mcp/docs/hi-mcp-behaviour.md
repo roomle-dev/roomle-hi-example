@@ -5,7 +5,10 @@
 > guard, automatic correction and feedback message. Every change to a tool, a served rule, a guard, a
 > correction or a result updates this document in the same change.
 >
-> **State**: the code of 2026-10-05, with the undo and redo tools
+> **State**: the code of 2026-10-06 — the served text speaks of articles and root modules, not of kitchens
+> ([analysis](../../.agents/bug-analysis/insert-between-not-chosen-for-a-wardrobe-group.md), D44) —, with the row edit tools
+> ([RML-18045 analysis](../../.agents/feature-analysis/insert-remove-replace-swap-units-in-a-row.md) and
+> [plan](../../.agents/feature-analysis/insert-remove-replace-swap-units-implementation-plan.md)) and the undo and redo tools
 > ([RML-18044 analysis](../../.agents/feature-analysis/undo-and-redo-tools.md) and
 > [plan](../../.agents/feature-analysis/undo-and-redo-tools-implementation-plan.md)), after the fixes of the MCP test backlog
 > ([RML-18041 analysis](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md) and
@@ -135,7 +138,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 
 | # | Decision | Date | Source | State |
 |---|---|---|---|---|
-| D14 | One kitchen is one group: units beside, above or back to back are docked roots of the same group | 2026-09-29 | rules `hi-mcp-server.ts:9` | in effect (rule) |
+| D14 | One piece of furniture is one group ("one kitchen" until D44): articles beside, above or back to back are docked root modules of the same group | 2026-09-29 | rules `hi-mcp-server.ts:10` | in effect (rule) |
 | D15 | A root is an article pick; root positions come from the docking only | 2026-09-16 | rules `hi-mcp-server.ts:7`, `:10` | in effect |
 | D16 | A new group is positioned with `placement { posGroup, posRotationY, rootId? }`, applied once, when the group is created; the server anchors it | 2026-09-30 | group placement | in effect |
 | D17 | With two corner articles, `rootId` names the one that goes into the corner `posGroup` names | 2026-09-30 | group placement P1 | in effect |
@@ -161,8 +164,24 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D33 | **One anchor frame for every article.** A placement puts the docking corner of the anchor root — the back left bottom corner of its docking vectors — at `posGroup`, whatever article it is: the origin of a cabinet, the left edge of a range hood, the corner point of a corner article, which is also turned so that its corner lies back left. The groups the tools return report their position in the same frame: `pos` is the back left bottom corner, `rotationY` the rotation of the placement. An anchor the probe cannot calculate no longer fails its group (G17) | user, 2026-10-02 ([analysis](../../.agents/refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md)) | in effect — `anchorFrameOfRoot`, `toRepositioningData`, `positionInPlacementFrame`, `group-placement.ts`; `inPlacementFrame`, `tool-executors.ts` |
 | D34 | **A unit names its neighbour, the server builds the docking.** Every root after the first names one neighbour with one relation — `rightOf`, `leftOf`, `onTop` (`align`, `gapMm`), `above` (`gapMm`), `behind` — and the server compiles the docking entries (`contextData`) from it: the vectors, the mode, the offset, and the root the entry goes on. A wall unit `rightOf` / `leftOf` a tall unit docks by the Top vectors. `contextData` stays accepted and is no longer taught; a group without any relation field is not touched | user, 2026-10-02 ([analysis](../../.agents/refactoring-analysis/simple-docking-for-the-agent.md), RML-18038) | in effect — `relationsToDocking`, `group-layout.ts` |
 | D35 | **The hang height of a wall unit `above` a floor unit** is the height of the tall units — a tall unit of the group, else the usual tall unit of the library — minus the heights of the wall unit and the floor unit (`mod_Height`); base and tall units stand on the same plinth. Furniture_Smith: 2100 − 720 − 720 = 660. `gapMm` overrides it | proposed in the analysis (Decision 1), 2026-10-02; confirmed live 2026-10-04 ([RML-18041](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md)): bottom 1480, top 2200, flush with the tall units | in effect — `hangGapOf`, `group-layout.ts` |
-| D36 | **A material for the whole kitchen goes into the group's `attributes`.** A root's `attributes` are overrides of that unit. A group attribute that is not one of the library's group settings is set on every unit and generated root of the group after the load (`change-group-attribute`, D20); an override only a generated root carries (the worktop colour on a base unit) is moved to the group; the colours of the generated roots a replace drops (C1) are set again. A unit attribute on some roots stays per unit — it may be an accent | 2026-10-04 ([RML-18041](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md), issue 6) | in effect — `applyKitchenWideAttributes`, `moveGeneratedRootOverrides`, `tool-executors.ts` |
+| D36 | **A material for the whole group goes into the group's `attributes`.** A root's `attributes` are overrides of that root module. A group attribute that is not one of the library's group settings is set on every unit and generated root of the group after the load (`change-group-attribute`, D20); an override only a generated root carries (the worktop colour on a base unit) is moved to the group; the colours of the generated roots a replace drops (C1) are set again. A unit attribute on some roots stays per unit — it may be an accent | 2026-10-04 ([RML-18041](../../.agents/bug-analysis/rml-18041-mcp-test-open-issues.md), issue 6) | in effect — `applyKitchenWideAttributes`, `moveGeneratedRootOverrides`, `tool-executors.ts` |
 | D32 | **Nothing the agent sends is dropped without a report.** What the server can build it builds — a unit written inside the docking becomes a root — and every field it cannot use is named in `corrections`. Only the read-only fields of a group from `get-plan-context` are ignored silently | user, 2026-10-02 ([bug analysis](../../.agents/bug-analysis/units-inside-docking-entries-dropped.md)) | in effect — `prepareGroup`, `tool-executors.ts` |
+
+### Row edits (2026-10-05)
+
+| # | Decision | Source | State |
+|---|---|---|---|
+| D39 | **The row edits are planner commands.** `insert-article-into-group`, `remove-article-from-group` and `swap-root-modules` are roomle-ui commands that rewrite the docking of the row and let the root module arrangement move the units, against the group before the edit, in one reload (D3). The server resolves the ids, corrects what it can and forwards one command | [analysis](../../.agents/feature-analysis/insert-remove-replace-swap-units-in-a-row.md) Decision 1, RML-18045 | in effect — `insert-article-into-group`, `swap-root-modules`, `tool-executors.ts`; roomle-ui `glue-logic.ts` |
+| D40 | **Remove and delete are two edits, named by the user's word.** The rules and the two tool descriptions tell the agent to take the user's word: "remove" is `remove-article-from-group`, "delete" is `delete-root-module` (added after the MCP test of 2026-10-05, where gpt-5-mini closed the gap for "delete the middle unit"). `delete-root-module` deletes a unit and leaves the gap: units no longer docked together become separate groups where they stand. `remove-article-from-group` removes a unit and closes the gap: its two neighbours are docked to each other, and a unit hung on it hangs on the neighbour that moves into the gap. A unit at the end of a row leaves no gap: it is removed in the same reload and nothing else moves. A corner article between two legs, which cannot be docked to each other, and the only unit of a group are deleted as `delete-root-module` does, and the result says so (`gapClosed: false`); the kernel deletion splits by docking, so wall units no longer docked to their floor units become groups of their own | user, review of the plan, 2026-10-05 | in effect — `remove-article-from-group`, `tool-executors.ts`; roomle-ui `glue-logic.ts` |
+| D41 | **Which part of a row moves.** The end of the row at a wall or in a corner keeps its place, and the other end moves; a row without a wall on its axis keeps the end at the group origin — the left end as seen from the front, the corner article of a corner kitchen. A row that grows from wall to wall is built anyway | analysis Decision 3 | in effect (roomle-ui `keepWallDistances`) |
+| D42 | **Units above follow the unit they hang from.** A wall unit, a range hood or a unit on top moves with the unit below it — on an insert with the pushed unit, on a swap with its own unit, on a remove with the neighbour that takes the place of the removed unit. The planner finds the unit below by position: its docking context links only vectors that touch, so after a load a wall unit hanging with a gap is no longer docked to its floor unit (found live, 2026-10-05). Nothing edits the wall row automatically: the same tools edit it | analysis Decision 4 | in effect (roomle-ui) |
+| D43 | **A row edit says what it did to the row.** When an insert, a remove, an exchange or a swap makes a row that stood inside the room reach past a wall, or overlap a group it did not overlap before, the result's `hint` says so; the row is built anyway. This is no warning about a group outside the room (D22): a group that stood outside before the edit is never reported. The `hint` also names the units above that moved with the unit below them (D42) | plan, 2026-10-05 | in effect — `withRowHints`, `tool-executors.ts` |
+
+### Words (2026-10-06)
+
+| # | Decision | Source | State |
+|---|---|---|---|
+| D44 | **The served text speaks of articles and root modules, not of kitchens.** The catalog offers articles; a group is one piece of furniture made of articles — a kitchen, a wardrobe, a sideboard, a utility room —; an article placed in a group is a root module. Kitchens are named only where a rule is about them (the corner rules) and in the list of kinds; no tool description names one. `insert-article-into-group` inserts between two root modules that stand side by side, whatever the group and whatever the article — a low cabinet between two high cabinets or wardrobes too —, and a group of two root modules has one place to insert, no gap needed (the sentence that made gpt-5.4-mini reach the tool); the user decides what stands between what. An article named by its kind comes from the category of its neighbours where that category has one. The chat's system prompt names every kind of HI furniture and tells the model to take the closest article of the catalog when the request names a kind. Found with "insert a low cabinet between the high cabinets" on a wardrobe group: the agent looked for a kitchen run of high cabinets and found none | user, 2026-10-06 ([analysis](../../.agents/bug-analysis/insert-between-not-chosen-for-a-wardrobe-group.md), RML-18045) | in effect — `AUTHORING_RULES`, `INSTRUCTIONS`, the tool descriptions, `hi-mcp-server.ts`; `CHAT_SYSTEM_PROMPT`, `chat-config.ts` |
 
 ## 4. How a tool call runs
 
@@ -205,19 +224,24 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 - **Every tool call that changes the plan is recorded** (D38): a planner API that counts the steps
   the call puts on the planner's undo history — one per load that loaded something, per group
   command and per removal, minus one per undo — reads the raw groups before the first step and after
-  the call. After `change-module-attribute`, `change-group-attribute` and `exchange-root-module` —
+  the call. After `change-module-attribute`, `change-group-attribute`, `exchange-root-module`, `insert-article-into-group` and `swap-root-modules`, and after a
+  `remove-article-from-group` that closed the gap (`gapClosed`) —
   also the kitchen-wide attributes of `create-or-replace-groups` — it waits until the command has
   produced its second history event, the follow-up reload roomle-ui makes when the kernel answers
   with the group's position, at most 2 s; a page that relays no history events gets no wait. A call
-  whose follow-up has not arrived by then is recorded as unsettled, and its late reload, when it
-  arrives, is the call's own. The history events while a call runs are its own; any other one is a
+  whose follow-up has not arrived by the end of the call — a follow-up that lands after the wait,
+  while the call still reads the plan, counts as arrived ([bug analysis](../../.agents/bug-analysis/late-follow-up-during-the-call-blocks-undo.md)) —
+  is recorded as unsettled, and its late reloads, when they arrive, are the call's own — as many as are outstanding, so two kitchen-wide attributes of `create-or-replace-groups` whose reloads both land late count both. The history events while a call runs are its own; any other one is a
   change in the planner. The first planner step of a call ends redo, as the planner drops its redo
   future with it — also when the call leaves no step in the end (a probe load undone, then a failed
   load).
 - **The HI chat** (`hi-mcp-chat`) is an MCP client of this server. It gives the model a
-  four-sentence system prompt (`CHAT_SYSTEM_PROMPT`, `chat-config.ts`) — the last sentence asks it
+  five-sentence system prompt (`CHAT_SYSTEM_PROMPT`, `chat-config.ts`) — the first names what HI
+  plans, "kitchens, wardrobes, living room and utility furniture, all made of articles", not "a
+  kitchen", which made a wardrobe group look foreign to the model (D44); the fourth asks it
   to summarise what it changed from the last tool results only, never by repeating them, and to
-  name what was asked but is not in the plan — and **not** the server's instructions, so the model learns the rules only when it calls
+  name what was asked but is not in the plan; the fifth tells it to take the closest article of the
+  catalog when the request names a kind of article, and to say which one, instead of asking — and **not** the server's instructions, so the model learns the rules only when it calls
   `get-authoring-rules`. A chat turn has 16 steps; the last one cannot call a tool, so the turn
   always ends with an answer (`chat-steps.ts`). A turn that has not answered after
   `HI_CHAT_TURN_TIMEOUT_MS` (5 minutes) is aborted and ends with "[error] the turn took longer than
@@ -232,13 +256,15 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 
 ### 5.1 Server instructions (at initialize)
 
-`INSTRUCTIONS` (`hi-mcp-server.ts:65-73`) contains the typical workflow followed by the full
-authoring rules:
+`INSTRUCTIONS` (`hi-mcp-server.ts:63-71`) says first what everything is made of — the catalog
+offers articles, a group is one piece of furniture made of articles (a kitchen, a wardrobe, a
+sideboard, a utility room), an article placed in a group is a root module (D44) — and contains the
+typical workflow followed by the full authoring rules:
 
 1. `get-plan-context` — rooms with walls, the article catalog, the groups; `masterData` or
    `find-attributes` for attributes.
-2. `create-or-replace-groups` — the whole kitchen as one group: article picks, docking, one
-   placement. A matching id replaces a group and keeps its position. Units next to an existing
+2. `create-or-replace-groups` — the whole piece of furniture as one group: article picks, docking,
+   one placement. A matching id replaces a group and keeps its position. Units next to an existing
    group are added to it.
 3. The command tools to edit an existing group; `place-group` to move one; `undo` reverts the last
    tool call that changed the plan, `redo` brings it back.
@@ -248,16 +274,25 @@ Not every client passes these instructions to the model; the HI chat does not (�
 
 ### 5.2 Authoring rules (`get-authoring-rules`)
 
-`AUTHORING_RULES` (`hi-mcp-server.ts:6-63`) is plain text. It is served at initialize and by the
+`AUTHORING_RULES` (`hi-mcp-server.ts:6-61`) is plain text. It is served at initialize and by the
 tool. It covers:
 
-- **The payload**: a group is `{ id?, libraryId?, placement?, attributes?, roots }` — `attributes`
+- **Words** (D44): the catalog offers articles; a group is one piece of furniture made of
+  articles — a kitchen, a wardrobe, a sideboard, a utility room, a row of cabinets; an article
+  placed in a group is a root module, which the user may call a cabinet, a unit or a module; the
+  kind of an article follows the catalog's category and dimensions (a high or tall cabinet or a
+  wardrobe about 2000 mm high, a low cabinet or base cabinet 720 mm); the user decides which
+  articles stand next to each other; an article the user names by its kind comes from the category
+  of its neighbours where that category has one (a kitchen cabinet into a kitchen, a wardrobe into
+  a wardrobe), else from the closest kind of another category — added after the regression run of
+  2026-10-06, where gpt-5-mini put a wardrobe with drawers into a kitchen row.
+- **The payload**: a group is `{ id?, libraryId?, placement?, attributes?, roots }` (a unit of another size is the same article with its size attribute set, also in the `attributes` of the command tools — added after the MCP test of 2026-10-05, where gpt-5-mini asked back for "a 900 mm cabinet with drawers") — `attributes`
   take the library's group settings and a material for the whole kitchen (D36) —, and a root is
   `{ id, articleId, attributes?, contextData? }`. Which catalog fields say what an article is
   (`desc`, `category`), how big it is (`dimensions`), how it docks (`dockingVectors`), and what it
   contains (`subModules`), plus `cornerArticle`.
-- **Trusted descriptions** (D8), **one kitchen is one group** (D14), **never author a position**
-  (D15).
+- **Trusted descriptions** (D8) — a desc says what an article is, not where the user may put it —,
+  **one piece of furniture is one group** (D14), **never author a position** (D15).
 - **Relations**: every root after the first names one neighbour — `rightOf`, `leftOf`, `onTop`
   (`align`, `gapMm`), `above` (`gapMm`), `behind`; wall units beside a tall unit, corner kitchens,
   and the default for a root without a relation (D34).
@@ -265,11 +300,15 @@ tool. It covers:
   vectors `merge-article-into-group` names in `dockTo`.
 - **Placement**: the point and the rotation taken from the walls array, the table of room corners,
   and the right-handed corner article.
-- **Extending**, moving with `place-group`, editing with the command tools, verifying results
+- **Extending** — at the end of a row with `merge-article-into-group`, between two root modules
+  with `insert-article-into-group` —, moving with `place-group`, editing with the command tools and which
+  end of a row moves in a row edit (D41, D42), verifying results
   numerically, and **undoing a wrong result**: call `undo` and send the corrected call instead of
   correcting the wrong plan piece by piece; a group that only needs a change is edited (D38).
-- **Five examples**: a row along a wall, wall units beside a tall unit and above base units, an
-  L-shaped corner kitchen, a row centred on a wall, adding a unit with `merge-article-into-group`.
+- **Six examples**: a row along a wall, wall units beside a tall unit and above base units, an
+  L-shaped corner kitchen, a row centred on a wall, adding a cabinet with `merge-article-into-group`,
+  inserting a low cabinet between the high cabinets of any group — a wardrobe too — with
+  `insert-article-into-group`.
 
 ### 5.3 Result format
 
@@ -314,7 +353,7 @@ Default sections: `rooms`, `articles`, `groups`.
 | `get-authoring-rules` | no | the rules as text |
 | `create-or-replace-groups` | yes | `{ loaded, groups, hint? }` |
 | `place-group` | yes | `{ placedIn, wall, group }` |
-| `change-module-attribute`, `change-group-attribute`, `delete-group`, `delete-root-module`, `merge-article-into-group`, `exchange-root-module`, `merge-groups` | yes | `{ command, groups, removedGroupIds, changedModuleIds? }` |
+| `change-module-attribute`, `change-group-attribute`, `delete-group`, `delete-root-module`, `remove-article-from-group`, `merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`, `swap-root-modules`, `merge-groups` | yes | `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed?, corrections?, hint? }` |
 | `undo`, `redo` | yes | `{ undone \| redone, groups, hint? }` |
 | `get-price` | no | the planner's price result |
 | `get-order-data` | no | the order data, or `null` |
@@ -422,14 +461,17 @@ position.
 | `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | resolves the root id (C17) | sets the attribute of the root or of its sub module (P1, P2) |
 | `change-group-attribute` | `groupId`, `attributeId`, `value` | resolves the group id (G18) | sets it on every module that has it (D20, P3) |
 | `delete-group` | `groupId` | resolves the group id | removes the group |
-| `delete-root-module` | `rootModuleId` | resolves the root id (C17) | removes the unit; units no longer docked together become separate groups where they stand (P4) |
-| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo { rootId, ownDockingVector, dockingVector, mode?, offset? }` | resolves the group id and `dockTo.rootId` (C17), reads the article id in the catalog's spelling (G15), moves an occupied side to the free end of the row (D29), derives a missing partner vector (P7) and the hang gap of a wall unit on a floor unit (D35) | docks the new unit (P5–P8) |
-| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | resolves the group id and the root id (C17), checks the article (G15) | replaces the unit, which keeps its docking (P9) |
+| `delete-root-module` | `rootModuleId` | resolves the root id (C17) | deletes the root module and leaves the gap: root modules no longer docked together become separate groups where they stand (P4, D40) |
+| `remove-article-from-group` | `groupId`, `rootModuleId` | resolves the group id and the root id (C17) | removes the root module and closes the gap; a root module with a neighbour on one side only is removed and nothing else moves; a corner article between two legs or the only root module is deleted instead, reported with `gapClosed: false` (D40, P4) |
+| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo { rootId, ownDockingVector, dockingVector, mode?, offset? }` | resolves the group id and `dockTo.rootId` (C17), reads the article id in the catalog's spelling (G15), moves an occupied side to the free end of the row (D29), derives a missing partner vector (P7) and the hang gap of a wall unit on a floor unit (D35) | docks the article as a new root module (P5–P8) |
+| `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between [rootId, rootId]` | resolves the group id and the root ids (C17), reads the article id in the catalog's spelling (G15), inserts beside the first-named root when the two are no neighbours (C19, G52) | docks the new root module between the two, whatever the group and the article (D44); the root modules at a wall stay (D41, P14, P16) |
+| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | resolves the group id and the root id (C17), checks the article (G15) | replaces the root module, which keeps its docking; `attributes` override attributes of the new root module, e.g. another width, and the other root modules move by the difference; a docking the new article cannot take is named in `corrections` (P9, C20) |
+| `swap-root-modules` | `groupId`, `rootModuleIds [rootId, rootId]` | resolves the group id and the root ids (C17); one root twice is an error (G53) | the two root modules change places with their attributes and the wall units above them (D42, P15) |
 | `merge-groups` | `targetGroupId`, `groupIds` | resolves every group id | merges where they stand: nothing is moved, no docking is added (P10) |
 
 `value` is a string, a number (passed on as its string) or a boolean. **Result**:
-`{ command, groups, removedGroupIds, changedModuleIds? }` — the affected groups in the plan-context
-shape — plus `corrections` when the server corrected the input before forwarding.
+`{ command, groups, removedGroupIds, changedModuleIds?, gapClosed? }` — the affected groups in the plan-context
+shape, and for `remove-article-from-group` whether the gap was closed — plus `corrections` when the server corrected the input before forwarding, followed by the planner's corrections, each named by its tool (C20).
 
 ### undo, redo
 
@@ -440,7 +482,7 @@ instructions on, like the HI chat (§4), shows the model only the tool list.
 
 1. No record → the tool name is `null` and a `hint` says why: nothing to undo or redo, or the plan
    was changed in the planner after the last tool call.
-2. `undo` of an unsettled call waits up to 2 s for its late follow-up reload; while it is still
+2. `undo` of an unsettled call waits up to 2 s for its late follow-up reloads; while one is still
    outstanding, nothing is undone and the `hint` says so — an undo before the reload would make
    the reload a step of its own. Once it has arrived, the plan then is the call's plan after.
 3. The plan must be as the call left it — the raw groups compared to the tenth of a millimetre —,
@@ -625,9 +667,15 @@ corrections, G31–G45.
 | ID | Input | What the server does | Feedback |
 |---|---|---|---|
 | G18 | an unknown group id | nothing | error with the groups in the plan |
-| C17 | a root module id that is a unique prefix of a root id, differs from one root id only in its first UUID segment, or differs from one in a single character (`change-module-attribute`, `delete-root-module`, `exchange-root-module`, `dockTo.rootId` of `merge-article-into-group`) | reads it as that root | correction: "root id '…' was read as '…'" |
+| C17 | a root module id that is a unique prefix of a root id, differs from one root id only in its first UUID segment, or differs from one in a single character (`change-module-attribute`, `delete-root-module`, `remove-article-from-group`, `exchange-root-module`, `dockTo.rootId` of `merge-article-into-group`, `between` of `insert-article-into-group`, `rootModuleIds` of `swap-root-modules`) | reads it as that root | correction: "root id '…' was read as '…'" |
 | C17 | a root module id that matches no root, or more than one | forwards it as sent | the planner's P11 with "Roots in the plan: …" appended |
-| G15 | an article id in another spelling (`merge-article-into-group`, `exchange-root-module`) | reads it in the catalog's spelling | correction |
+| G15 | an article id in another spelling (`merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`) | reads it in the catalog's spelling | correction |
+| C19 | `insert-article-into-group` with two roots of one row that are no neighbours | inserts the unit beside the first-named root, towards the second — the walk passes a corner article | correction: "'r1' and 'r3' are not neighbours - the unit was inserted between 'r1' and 'r2', the neighbour of 'r1' towards 'r3'" |
+| G52 | `insert-article-into-group` with two roots that are in no row together | nothing: the server cannot tell where the unit goes | error naming the side neighbours of the first root and asking for two neighbours of one row |
+| G53 | `swap-root-modules` naming one root twice | nothing | error asking for the two units that change places |
+| C20 | a correction of the planner (a dropped docking, a hung unit moved to another carrier, a deletion instead of a remove) | passes it on after the server's own, named by the tool | correction |
+| D43 | an insert, a remove, an exchange or a swap that makes the row reach past a wall of the room, or overlap another group that stood beside it before (not a group the edit split off) | builds it | `hint`: "the row now reaches past a wall of the room - …" / "the row now overlaps group '…'" |
+| D42 | a row edit that moved wall units or the range hood of the group (by the catalog and the positions before and after) | — | `hint`: "the wall units and the range hood above the moved units moved with them ('w1', 'h1') - edit the wall row the same way if it should line up with the floor units" |
 | G15 | an article id the catalog does not have | nothing | error with the valid article ids |
 | D29 | `merge-article-into-group` on a taken side vector | docks the unit to the root at the free end of that row in the named direction — when that row ends at a corner article, to the free end of the leg in the other direction —, or to the named root's free other side when the unit would stand outside the room at that end (the calculated group and the contour of the room the group stands in decide, not the bounding box of its walls) | correction, naming the end it skipped |
 | P7 | a `dockingVector` the new article does not have (by the catalog) | uses the partner of `ownDockingVector` when the article has it | correction |
@@ -641,9 +689,9 @@ planner and stay as they are (D5); the server passes their message on as an erro
 | P1 | "Root module '…' has no sub-module '…'." |
 | P2 | "Module '…' has no attribute '…'." (`find-attributes` names the modules that have it) |
 | P3 | "No module of group '…' has the attribute '…'." |
-| P4 | "Root module '…' is generated by the library and cannot be deleted." |
+| P4 | "Root module '…' is generated by the library and cannot be deleted." (`remove-article-from-group`: "… cannot be removed.") |
 | P5 | "Root module '…' is not an article root of group '…'." |
-| P6 | "Root module '…' has no free docking vector '…' - its free docking vectors: …" — reached only when the planner reports a side as taken although the row ends there (a stale docking entry after a deletion) |
+| P6 | "Root module '…' has no free docking vector '…' - its free docking vectors: …" — reached only when the planner reports a side as taken although the row ends there; a deletion leaves no stale docking entry since roomle-ui RML-18045 |
 | P7 | "Article '…' has no / more than one docking vector '…' - its docking vectors: …" |
 | P8 | "Group '…' is still being calculated - try again once it is loaded." |
 | P9 | "Article '…' has n root modules - a root module is exchanged with an article of exactly one." |
@@ -651,6 +699,9 @@ planner and stay as they are (D5); the server passes their message on as an erro
 | P11 | "Root module '…' not found." / "Group '…' is not in the plan." / "Article '…' is not in the article catalog." |
 | P12 | "Another operation on group '…' is still in progress." (rare: D4) |
 | P13 | payload-shape messages — not reachable, the server builds these payloads |
+| P14 | "Root modules '…' and '…' are not docked side by side - the side neighbours of '…': …" — reached only when the plan context and the planner disagree, since the server corrects non-neighbours (C19) |
+| P15 | "A corner article and a straight unit cannot change places: '…' is a corner article." — no result keeps the corner |
+| P16 | "Article '…' has n root modules - an article of exactly one root module is inserted." |
 | — | "The planner did not delete …" (a refused deletion) |
 
 ### 8.6 Schema checks

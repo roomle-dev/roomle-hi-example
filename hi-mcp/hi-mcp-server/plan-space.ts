@@ -566,7 +566,7 @@ interface PlacedGroup {
   rotationY?: number;
 }
 
-const groupPointToRoom = (
+export const groupPointToRoom = (
   group: PlacedGroup,
   [x, z]: [number, number]
 ): [number, number] => {

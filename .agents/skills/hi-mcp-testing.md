@@ -290,8 +290,8 @@ The runner:
 4. rewrites `<out>/results.json` after each run and prints one line per run;
 5. passes Ctrl+C (SIGINT/SIGTERM) on to the running run, which stops its servers, and ends.
 
-All 18 tests for the three GPT models take about 40 minutes on a machine with a GPU against the local
-planner (2026-10-04: 36 minutes) — about 40 s per run for the launcher, the page and the snapshot,
+The 18 tests of 2026-10-04 for the three GPT models took 36 minutes on a machine with a GPU against the
+local planner; the file has 28 tests since the row edit tests of RML-18045, about 1 hour for three models — about 40 s per run for the launcher, the page and the snapshot,
 plus the model's chat time (gpt-5.4-mini 5–15 s, gpt-5-mini 30–60 s, gpt-6-astra up to 150 s per
 turn). A fix committed while the runner goes on takes effect from the next run, because every run
 starts a fresh server and chat; the report then says which runs ran with which build.

@@ -99,6 +99,8 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [The perspective object image of every test run is empty](bug-analysis/empty-perspective-object-image-in-test-runs.md) | Fixed | 2026-10-03 |
 | [RML-18041: the open issues of the MCP test — causes verified, fixes proposed](bug-analysis/rml-18041-mcp-test-open-issues.md) | Fixed | 2026-10-04 |
 | [RML-18041: implementation plan — the fixes and their unit tests](bug-analysis/rml-18041-implementation-plan.md) | Implemented (PR 7 pending D23) | 2026-10-04 |
+| [A follow-up reload that lands while its call still runs blocks the undo](bug-analysis/late-follow-up-during-the-call-blocks-undo.md) | Fixed | 2026-10-05 |
+| ["insert a low cabinet between the high cabinets" does not reach insert-article-into-group](bug-analysis/insert-between-not-chosen-for-a-wardrobe-group.md) | Fixed | 2026-10-06 |
 
 ### Feature Analyses
 

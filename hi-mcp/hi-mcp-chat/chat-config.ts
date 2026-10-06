@@ -8,11 +8,12 @@ export const DEFAULT_TURN_TIMEOUT_MS = 5 * 60_000;
 const CHAT_ROLES = ['user', 'assistant'] as const;
 
 // The model learns the server's rules only through get-authoring-rules; the
-// system prompt tells it how to work and to answer from the tool results.
+// system prompt tells it what HI plans, how to work and to answer from the tool results.
 export const CHAT_SYSTEM_PROMPT = [
-  'You are a planning assistant for a HOMAG Intelligence (HI) kitchen in a Roomle planner.',
+  'You are a planning assistant for HOMAG Intelligence (HI) furniture in a Roomle planner: kitchens, wardrobes, living room and utility furniture, all made of articles.',
   'Use the provided tools to read the plan context and to create, modify, or position object groups.',
   'Call tools instead of describing what you would do, then summarize what you changed.',
+  'When the request names a kind of article, not an article id, take the closest article of the catalog - from the category of its neighbours where that category has one - and say which one you chose instead of asking.',
   'Summarize what you changed in a few sentences from the last tool results only - the groups, their roots and attributes, corrections and notLoaded - never by repeating the results, and name what was asked but is not in the plan.',
 ].join(' ');
 

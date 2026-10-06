@@ -385,7 +385,7 @@ Returns the loaded runtime ids and the resulting groups (with their final ids, `
 `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, rootIds?,
 errors }]`, the groups it could not build and, with `rootIds`, the roots of a loaded group it could
 not build — one unknown article id drops that root, not the group). A group attribute that is not
-one of the library's group settings — a material for the whole kitchen — is set on every unit after
+one of the library's group settings — a material for the whole group — is set on every root module after
 the load and reported.
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm room, from the back
@@ -485,9 +485,9 @@ Group ids accept a unique prefix.
 | `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | Sets an attribute of a root module, or of one of its sub modules (the id in `subModules`) |
 | `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it; the result lists the `changedModuleIds` |
 | `delete-group` | `groupId` | Removes the group |
-| `delete-root-module` | `rootModuleId` | Removes one unit; units no longer docked together become separate groups where they stand, and removing the only unit removes the group. Generated roots (worktop, toe kick) cannot be removed |
-| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }` | Docks a new unit of the article to a free docking vector of a root of the group (`mode` default `StartStart`, `offset` default `[0, 0, 0]`) |
-| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | Replaces a unit with an article of one root module; the new unit keeps the position and the docking |
+| `delete-root-module` | `rootModuleId` | Removes one root module; root modules no longer docked together become separate groups where they stand, and removing the only root module removes the group. Generated roots (worktop, toe kick) cannot be removed |
+| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }` | Docks the article as a new root module to a free docking vector of a root module of the group (`mode` default `StartStart`, `offset` default `[0, 0, 0]`) |
+| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | Replaces a root module with an article of one root module; the new root module keeps the position and the docking |
 | `merge-groups` | `targetGroupId`, `groupIds` | Merges the groups into the target group where they stand, like the planner's merge action; nothing is moved and no docking is added |
 
 `value` is a string, a number (passed on as its string) or a boolean. Attribute
@@ -525,8 +525,8 @@ calculates every root position.
   matches an existing group replaces that group and keeps its position; without a matching `id` a
   new group is created at its `placement`.
 - A root module is an **article pick and nothing else**: `{ id, articleId, attributes? }` plus one
-  relation that names its neighbour. A root's `attributes` are overrides of that unit; a material
-  for the whole kitchen (fronts, worktop, carcase) goes into the group's `attributes`.
+  relation that names its neighbour. A root's `attributes` are overrides of that root module; a material
+  for the whole group (fronts, worktop, carcase) goes into the group's `attributes`.
   The server drops `articlePos`/`rotationY` on a root and `pos`/`rotationY` on a group (reported
   in `corrections`), ignores every other field, and drops roots marked `isGenerated` (worktop, toe
   kick — the library regenerates them). Every root position comes from its relation; the position
@@ -543,8 +543,8 @@ calculates every root position.
 - **Never author a position**: no `articlePos`/`rotationY` on a root, no `pos`/`rotationY` on a
   group — the server drops them. Roots are positioned by their relation only; a new group is
   positioned with `placement` only — see [Positioning a group](#positioning-a-group).
-- **Extending a kitchen**: units next to an existing group are roots of that group, never a new
-  group. Dock each new unit to a free docking vector of the root it continues (`freeDockingVectors`
+- **Extending a group**: articles next to an existing group are root modules of that group, never a new
+  group. Dock each new article to a free docking vector of the root module it continues (`freeDockingVectors`
   per root: a free `LeftBottom` takes the new root's `RightBottom`, a free `RightBottom` takes
   `LeftBottom`, a free `Top` vector takes the new root's `Bottom` vector) — one unit with
   `merge-article-into-group`, several at once by adding the picks, each with its relation, to the

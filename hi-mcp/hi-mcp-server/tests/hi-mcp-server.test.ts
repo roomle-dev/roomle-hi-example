@@ -21,10 +21,13 @@ const EXPECTED_TOOLS = [
   'get-plan-context',
   'get-plan-images',
   'get-price',
+  'insert-article-into-group',
   'merge-article-into-group',
   'merge-groups',
   'place-group',
   'redo',
+  'remove-article-from-group',
+  'swap-root-modules',
   'undo',
 ];
 
@@ -100,6 +103,9 @@ describe('hi-mcp-server tool calls', () => {
     ['merge-article-into-group', { groupId: 'g1', articleId: 'a1' }],
     ['exchange-root-module', { groupId: 'g1', rootModuleId: 'r1' }],
     ['merge-groups', { targetGroupId: 'g1', groupIds: [] }],
+    ['insert-article-into-group', { groupId: 'g1', articleId: 'a1' }],
+    ['swap-root-modules', { groupId: 'g1', rootModuleIds: ['r1'] }],
+    ['remove-article-from-group', { groupId: 'g1' }],
   ])(
     'rejects %s without a required argument before any planner call',
     async (name, args) => {
@@ -326,7 +332,7 @@ describe('hi-mcp-server tool calls', () => {
     const text = textOf(
       await client.callTool({ name: 'get-authoring-rules', arguments: {} })
     );
-    expect(text).toContain('One kitchen is one group');
+    expect(text).toContain('One piece of furniture is one group');
     // a row, wall units beside a tall unit and the second leg of a corner kitchen
     expect(text).toContain(
       '{ "id": "u2", "articleId": "<articleId>", "rightOf": "u1" }'
@@ -355,7 +361,7 @@ describe('hi-mcp-server tool calls', () => {
 
     expect(rules).toContain('its value in millimetres');
     expect(rules).toContain(
-      'change-module-attribute with that attribute id, never its name, changes the size of a unit'
+      'change-module-attribute with that attribute id, never its name, changes the size of a root module'
     );
     expect(rules).toContain('Every desc');
     expect(rules).toContain('is authoritative');
@@ -391,6 +397,78 @@ describe('hi-mcp-server tool calls', () => {
     }
   });
 
+  it('teaches the row edits and which end of a row keeps its place', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+
+    for (const sentence of [
+      'insert-article-into-group inserts an article between two root modules',
+      'remove-article-from-group removes a root module and closes the gap',
+      'delete-root-module deletes a root module and leaves the gap',
+      'swap-root-modules lets two root modules change places',
+      'an article of another size - "a 900 mm cabinet" - is the same article with that attribute set',
+      'Take the user\'s word: to "remove" an article is remove-article-from-group, to "delete" an article is delete-root-module',
+      'In an insert, a remove, an exchange or a swap the root modules at a wall or in a corner keep their place and the others move',
+      'an article between two root modules with insert-article-into-group',
+      'Example 6 - "insert a low cabinet between the high cabinets" is insert-article-into-group',
+    ]) {
+      expect(rules).toContain(sentence);
+    }
+    expect(client.getInstructions()).toContain(
+      'remove-article-from-group (remove a root module and close the gap)'
+    );
+  });
+
+  it('speaks of articles and root modules, not of kitchens, and inserts between any two root modules', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    const { tools } = await client.listTools();
+    const descriptionOf = (name: string) =>
+      tools.find((tool) => tool.name === name)?.description ?? '';
+    const served = [
+      client.getInstructions() ?? '',
+      rules,
+      JSON.stringify(tools),
+    ].join('\n');
+
+    for (const sentence of [
+      'the catalog offers articles - cabinets, wardrobes, appliances, panels',
+      'A group is one piece of furniture made of articles: a kitchen, a wardrobe, a sideboard, a utility room',
+      'An article placed in a group is a root module',
+      'a high or tall cabinet or a wardrobe is about 2000 mm high, a low cabinet or base cabinet about 720 mm high',
+      'The user decides which articles stand next to each other: a low cabinet between two high cabinets is an order like any other',
+      'A desc says what an article is, not where the user may put it',
+      'take the article of that kind from the category of its neighbours where that category has one (a kitchen cabinet into a kitchen, a wardrobe into a wardrobe), else the closest kind of another category',
+      'Two root modules that name each other with RightBottom -> LeftBottom stand side by side',
+    ]) {
+      expect(rules).toContain(sentence);
+    }
+    expect(client.getInstructions()).toContain(
+      'an article placed in a group is a root module'
+    );
+    for (const sentence of [
+      'between two root modules of an existing group that stand side by side',
+      'whatever the group is and whatever the article is: a low cabinet between two high cabinets or wardrobes too',
+      'the user decides what stands between what',
+      'a group of two root modules has one place to insert: between them. No gap is needed - the tool makes room',
+    ]) {
+      expect(descriptionOf('insert-article-into-group')).toContain(sentence);
+    }
+    expect(descriptionOf('merge-article-into-group')).toContain(
+      'To put an article between two root modules, use insert-article-into-group'
+    );
+    // kitchens are one kind of furniture: the rules name them in the list of kinds, in the corner rules and in the
+    // category example (a kitchen cabinet into a kitchen), the tool descriptions not at all
+    expect((rules.match(/kitchen/gi) ?? []).length).toBeLessThanOrEqual(7);
+    expect(JSON.stringify(tools)).not.toMatch(/kitchen/i);
+    expect(served).not.toMatch(/whole kitchen/);
+    expect(served).not.toMatch(/the unit\b/);
+  });
+
   it('describes how to succeed instead of what is rejected, and where the corrections are', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(
@@ -421,7 +499,7 @@ describe('hi-mcp-server tool calls', () => {
       await client.callTool({ name: 'get-authoring-rules', arguments: {} })
     );
     expect(rules).toContain(
-      'when a result is not what was asked - the wrong wall, a unit missing or replaced by mistake, a merge or a delete that went wrong - call undo and send the corrected call'
+      'when a result is not what was asked - the wrong wall, a root module missing or replaced by mistake, a merge or a delete that went wrong - call undo and send the corrected call'
     );
     expect(rules).toContain('one undo reverts one tool call');
     expect(rules).toContain(
@@ -433,8 +511,37 @@ describe('hi-mcp-server tool calls', () => {
     // a chat that does not pass the instructions on still sees the tool list
     const { tools } = await client.listTools();
     expect(tools.find((tool) => tool.name === 'undo')?.description).toContain(
-      'Use it when that result is not what was asked - the user says it was the wrong unit, wall or group'
+      'Use it when that result is not what was asked - the user says it was the wrong article, wall or group'
     );
+  });
+
+  it('tells the agent what stands in the room and to keep the span of a door or a window free', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    expect(rules).toContain(
+      'A root module cannot stand where an object or a root module of another group overlaps it both in the outline and in the height range.'
+    );
+    expect(rules).toContain(
+      "keep that span free from the floor for a door and from the window's bottomMm for a window - base units lower than bottomMm fit below a window, tall units and wall units do not."
+    );
+    expect(rules).toContain(
+      'any point on the floor that obstacles leaves free as posGroup'
+    );
+    expect(client.getInstructions()).toContain(
+      'the obstacles (doors, windows, other furniture and the root modules of the groups, where they stand)'
+    );
+    const { tools } = await client.listTools();
+    const planContext = tools.find((tool) => tool.name === 'get-plan-context');
+    expect(planContext?.description).toContain(
+      'obstacles (what stands in the room, in the coordinates of the walls'
+    );
+    expect(planContext?.description).toContain('roomIndex, wall and fromEndMm');
+    expect(
+      (planContext?.inputSchema.properties?.include as { description?: string })
+        ?.description
+    ).toContain('Default: rooms, articles, groups and obstacles.');
   });
 
   it('hangs a range hood beside the wall units and reads a position back in the frame of the placement', async () => {
@@ -484,10 +591,10 @@ describe('hi-mcp-server tool calls', () => {
     );
     expect(rules).toContain('stacking on a tall unit or a wall unit');
     expect(rules).toContain(
-      "a material for the whole kitchen - the fronts, the worktop, the carcase - goes into the group's attributes"
+      "a material for the whole group - the fronts, the worktop, the carcase - goes into the group's attributes"
     );
     expect(create?.description).toContain(
-      "a material for the whole kitchen goes into the group's attributes"
+      "a material for the whole group goes into the group's attributes"
     );
     expect(create?.description).toContain(
       'rightOf, leftOf, onTop, above or behind'

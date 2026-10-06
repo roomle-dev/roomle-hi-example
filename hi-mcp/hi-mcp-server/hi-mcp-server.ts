@@ -4,27 +4,29 @@ import type { PlannerApi } from './planner-api';
 import { toolExecutors } from './tool-executors';
 
 const AUTHORING_RULES = `Authoring rules for pos groups:
-- A group is { id?, libraryId?, placement?, roots: [...] }. A root module is an article pick and nothing else: { id, articleId, attributes? } plus one relation that names its neighbour (rightOf, leftOf, onTop, above or behind - see Relations below). The server ignores every other field - a position on a root or a group included - and drops roots marked isGenerated (worktop, toe kick - the library regenerates them). Every root position comes from its relation; the position of a new group comes from its placement. Groups returned by get-plan-context carry their docking as contextData instead - resubmit them as they are. Use a unique id of your choice for new roots (the planner regenerates it and remaps your docking references); keep the real ids of roots that already exist in a replaced group. Choose the articleId from the article catalog of get-plan-context: desc and category say what an article is and what it is for, dimensions give its size (per size attribute its id, its name - e.g. Width, Depth, Height - and its value in millimetres; a root in groups carries the same attribute ids among its attributes, and change-module-attribute with that attribute id, never its name, changes the size of a unit), dockingVectors the names of its docking vectors, subModules its fronts and appliances, cornerArticle true marks an article made for a room corner. Sub-modules come with the article - you author articles, their attributes and their relations, nothing else. attributes is an optional list of { id, value } overrides of that unit; a material for the whole kitchen - the fronts, the worktop, the carcase - goes into the group's attributes ({ id, value } entries beside roots), and the server sets it on every unit and on the worktop. Attribute ids and allowed values come from the masterData section (request it with include) or from find-attributes. Everything else the calculation needs is completed automatically from the article template.
-- Every desc - of an article, a root, a module, an attribute and an attribute value - is authoritative: trust it for what that article, module or value is, and trust dimensions for how big an article is. Both are authoritative over the catalog images of the master data (imageUrl): never take the kind or the size of an article from a catalog image.
-- One kitchen is one group. Every unit standing beside, above or back to back with another unit is a root of the SAME group, related to it; a new group carries one placement, and the planner derives every root position from the relations. Never create a second group to put units next to existing ones - units that belong together are related.
+- Words: the catalog offers articles - cabinets, wardrobes, appliances, panels. A group is one piece of furniture made of articles: a kitchen, a wardrobe, a sideboard, a utility room, a row of cabinets. An article placed in a group is a root module (root for short); the user may call it a cabinet, a unit or a module. The kind of an article follows the catalog's category and dimensions: a high or tall cabinet or a wardrobe is about 2000 mm high, a low cabinet or base cabinet about 720 mm high and stands on the floor, a wall cabinet hangs on the wall. The user decides which articles stand next to each other: a low cabinet between two high cabinets is an order like any other. When the user names a kind, not an article, take the article of that kind from the category of its neighbours where that category has one (a kitchen cabinet into a kitchen, a wardrobe into a wardrobe), else the closest kind of another category.
+- A group is { id?, libraryId?, placement?, roots: [...] }. A root module is an article pick and nothing else: { id, articleId, attributes? } plus one relation that names its neighbour (rightOf, leftOf, onTop, above or behind - see Relations below). The server ignores every other field - a position on a root or a group included - and drops roots marked isGenerated (worktop, toe kick - the library regenerates them). Every root position comes from its relation; the position of a new group comes from its placement. Groups returned by get-plan-context carry their docking as contextData instead - resubmit them as they are. Use a unique id of your choice for new roots (the planner regenerates it and remaps your docking references); keep the real ids of roots that already exist in a replaced group. Choose the articleId from the article catalog of get-plan-context: desc and category say what an article is and what it is for, dimensions give its size (per size attribute its id, its name - e.g. Width, Depth, Height - and its value in millimetres; a root in groups carries the same attribute ids among its attributes, and change-module-attribute with that attribute id, never its name, changes the size of a root module; an article of another size - "a 900 mm cabinet" - is the same article with that attribute set, which merge-article-into-group, insert-article-into-group and exchange-root-module take in their attributes), dockingVectors the names of its docking vectors, subModules its fronts and appliances, cornerArticle true marks an article made for a room corner. Sub-modules come with the article - you author articles, their attributes and their relations, nothing else. attributes is an optional list of { id, value } overrides of that root module; a material for the whole group - the fronts, the worktop, the carcase - goes into the group's attributes ({ id, value } entries beside roots), and the server sets it on every root module and on the worktop. Attribute ids and allowed values come from the masterData section (request it with include) or from find-attributes. Everything else the calculation needs is completed automatically from the article template.
+- Every desc - of an article, a root, a module, an attribute and an attribute value - is authoritative: trust it for what that article, module or value is, and trust dimensions for how big an article is. Both are authoritative over the catalog images of the master data (imageUrl): never take the kind or the size of an article from a catalog image. A desc says what an article is, not where the user may put it.
+- One piece of furniture is one group. Every article standing beside, above or back to back with another article is a root module of the SAME group, related to it; a new group carries one placement, and the planner derives every root position from the relations. Never create a second group to put articles next to existing ones - articles that belong together are related.
 - Never author a position: roots are positioned by their relation only, a new group with placement only; a position on a root or a group is ignored.
 - Relations: every root after the first names one neighbour of the same group by its id, with exactly one of these fields - the server builds the docking from it:
-  rightOf: "<id>" - the unit stands right of that unit; leftOf: "<id>" - left of it (right and left as seen from the front of the units). A row is each unit rightOf the one before.
-  onTop: "<id>" - the unit stands on top of that unit (stacking on a tall unit or a wall unit, also several levels); align: "left" (default), "right" or "back" says which edges line up, gapMm lifts it.
-  above: "<id>" - a wall unit hanging above that floor unit, at the height of the wall units; gapMm sets the gap below the wall unit instead.
-  behind: "<id>" - back to back with that unit, turned by 180 degrees (an island).
+  rightOf: "<id>" - the article stands right of that root module; leftOf: "<id>" - left of it (right and left as seen from the front). A row is each root module rightOf the one before.
+  onTop: "<id>" - the article stands on top of that root module (stacking on a tall unit or a wall unit, also several levels); align: "left" (default), "right" or "back" says which edges line up, gapMm lifts it.
+  above: "<id>" - a wall unit hanging above that floor-standing root module, at the height of the wall units; gapMm sets the gap below the wall unit instead.
+  behind: "<id>" - back to back with that root module, turned by 180 degrees (an island).
   A wall unit rightOf or leftOf a tall unit hangs beside it with the tops flush, on the side of the base units (leftOf a tall unit that ends the row on the right); further wall units and the range hood continue rightOf or leftOf each other. Without a tall unit, the first wall unit hangs above a floor unit and the next ones continue rightOf or leftOf it; a range hood without wall units hangs above the hob unit.
-  A room corner (an L-shaped kitchen, "in the corner"): start the group with a corner article (cornerArticle true in the catalog), give the group a placement with the room corner point and the posRotationY of that corner from the room's corners list, and continue one row rightOf the corner article and the other row leftOf it - the complete payload is example 3. The wall units of each leg hang above the floor units of that leg: the first one above a floor unit of the leg, the next ones rightOf or leftOf it; never put a wall unit on or above the corner article. Prefer a corner article over butting two straight units together in a corner; a U-shaped kitchen continues a row with a second corner article.
-  A root without a relation continues the row of its kind: right of the previous floor unit or wall unit in the list; corrections says so.
-- Docking vectors: groups from get-plan-context show their docking as contextData - per root its ownDockingVector and the dockingVector of each root it names. RightBottom -> LeftBottom puts that root to the right, LeftBottom -> RightBottom to the left, a Top vector -> a Bottom vector on top, BackBottom -> BackBottom back to back. freeDockingVectors are the vectors a new unit can dock to; merge-article-into-group names them in dockTo.
+  A room corner (an L-shaped kitchen, "in the corner"): start the group with a corner article (cornerArticle true in the catalog), give the group a placement with the room corner point and the posRotationY of that corner from the room's corners list, and continue one row rightOf the corner article and the other row leftOf it - the complete payload is example 3. The wall units of each leg hang above the floor units of that leg: the first one above a floor unit of the leg, the next ones rightOf or leftOf it; never put a wall unit on or above the corner article. Prefer a corner article over butting two straight articles together in a corner; a U-shaped kitchen continues a row with a second corner article.
+  A root without a relation continues the row of its kind: right of the previous floor-standing root module or wall unit in the list; corrections says so.
+- Docking vectors: groups from get-plan-context show their docking as contextData - per root its ownDockingVector and the dockingVector of each root it names. RightBottom -> LeftBottom puts that root to the right, LeftBottom -> RightBottom to the left, a Top vector -> a Bottom vector on top, BackBottom -> BackBottom back to back. Two root modules that name each other with RightBottom -> LeftBottom stand side by side. freeDockingVectors are the vectors a new root module can dock to; merge-article-into-group names them in dockTo.
 - placement: { posGroup: [x, y, z], posRotationY, rootId? } positions a new group. posGroup is the room point of the group's back left bottom corner, in millimetres (y up, y = 0 on the floor; for a group of wall units only, their mounting height) - against a wall the wall's end (flush into the corner at the wall's end) or a point from end towards start, in a room corner the corner point. posRotationY is the rotation of the group in degrees, counter-clockwise as seen from above (in the top-view image) - against a wall the wall's facingRotationY; posRotationY is required, state 0 explicitly for no rotation. rootId is optional: with two corner articles in the group, set it to the corner article that goes into the corner posGroup names. Applied exactly once, when the group is created; a placement on a group that is already in the plan is not used (move it with place-group), and groups returned by get-plan-context never carry this field.
-- Take posGroup and posRotationY from the walls instead of computing them. Every room of get-plan-context carries a walls array - per wall its name (back wall, front wall, left wall, right wall), start and end (points [x, 0, z] on the floor, in the coordinates of posGroup), lengthMm, type and facingRotationY; use the walls of type wall (an entry of type opening is a door). Against a wall: posRotationY = the wall's facingRotationY (the group's back faces the wall), and posGroup = end puts the group flush into the corner at the wall's end, the row running towards start. Along the wall: posGroup = end + d * (start - end) / lengthMm - centred: d = (lengthMm - group width) / 2; right end flush into the corner at the wall's start: d = lengthMm - group width; the group width is the sum of the unit widths of the row - dimensions in the catalog; position.footprint.widthMm of a loaded group gives it. A room corner is the point two walls share. Anywhere else (an island, the middle of the room, next to a door): any free point on the floor as posGroup, any posRotationY.
-- Room corners: every room of get-plan-context carries a corners list - per corner its name (back left, back right, front left, front right; back = top, front = bottom in the top-view image), its point and the posRotationY of a corner kitchen in it (back left 0, front left 90, front right 180, back right 270 in a rectangular room). Take posGroup and posRotationY from there, with the corner article in the corner: the units rightOf the corner article run along the wall that ends in that corner, the units leftOf it along the wall that starts there. This holds for both hands of corner article. Straight walls: back 0, left 90, front 180, right 270.
-- Extending a kitchen: units next to an existing group are roots of that group, never a new group. Dock each new unit to a free docking vector of the root it continues (freeDockingVectors per root: a free LeftBottom takes the new root's RightBottom, a free RightBottom takes LeftBottom, a free Top vector takes the new root's Bottom vector) - one unit with merge-article-into-group, several at once by adding the picks, each with its relation, to the group from get-plan-context and resubmitting it with its id. A new group is only for a free stretch of wall or a free spot in the room - never position a new group against an existing one.
+- Take posGroup and posRotationY from the walls instead of computing them. Every room of get-plan-context carries a walls array - per wall its name (back wall, front wall, left wall, right wall), start and end (points [x, 0, z] on the floor, in the coordinates of posGroup), lengthMm, type and facingRotationY; use the walls of type wall (an entry of type opening is a door). Against a wall: posRotationY = the wall's facingRotationY (the group's back faces the wall), and posGroup = end puts the group flush into the corner at the wall's end, the row running towards start. Along the wall: posGroup = end + d * (start - end) / lengthMm - centred: d = (lengthMm - group width) / 2; right end flush into the corner at the wall's start: d = lengthMm - group width; the group width is the sum of the article widths of the row - dimensions in the catalog; position.footprint.widthMm of a loaded group gives it. A room corner is the point two walls share. Anywhere else (an island, the middle of the room, next to a door): any point on the floor that obstacles leaves free as posGroup, any posRotationY.
+- Room corners: every room of get-plan-context carries a corners list - per corner its name (back left, back right, front left, front right; back = top, front = bottom in the top-view image), its point and the posRotationY of a corner kitchen in it (back left 0, front left 90, front right 180, back right 270 in a rectangular room). Take posGroup and posRotationY from there, with the corner article in the corner: the root modules rightOf the corner article run along the wall that ends in that corner, the root modules leftOf it along the wall that starts there. This holds for both hands of corner article. Straight walls: back 0, left 90, front 180, right 270.
+- Obstacles: the obstacles section of get-plan-context lists what stands in the room, in the coordinates of the walls - objects (doors, windows, other furniture) with kind, outline (floor points [x, 0, z]) and bottomMm to topMm, and per group its root modules with id, outline and bottomMm to topMm. A root module cannot stand where an object or a root module of another group overlaps it both in the outline and in the height range. A door or a window lies in a wall - roomIndex, wall (its index in the walls array) and fromEndMm, its span along the wall measured from the wall's end like d: keep that span free from the floor for a door and from the window's bottomMm for a window - base units lower than bottomMm fit below a window, tall units and wall units do not.
+- Extending a group: articles next to an existing group are root modules of that group, never a new group. Dock each new article to a free docking vector of the root module it continues (freeDockingVectors per root: a free LeftBottom takes the new root's RightBottom, a free RightBottom takes LeftBottom, a free Top vector takes the new root's Bottom vector) - one article with merge-article-into-group, several at once by adding the picks, each with its relation, to the group from get-plan-context and resubmitting it with its id; an article between two root modules with insert-article-into-group. A new group is only for a free stretch of wall or a free spot in the room (obstacles shows what is taken) - never position a new group against an existing one.
 - To move an existing group against a wall or into a room corner, call place-group: the wall by side label or index, alignment start, center or end, or the side label of the adjoining wall to sit flush in that corner (wall right + alignment top is the back right corner), offsetMm along the wall. The group keeps its roots and docking.
-- To change an existing group, use the command tools: merge-article-into-group docks one more unit to a free docking vector of a root, exchange-root-module replaces a unit and keeps its docking, delete-root-module removes a unit (units no longer docked together become separate groups where they stand), delete-group removes a group, change-module-attribute and change-group-attribute set attributes, merge-groups joins groups where they stand (nothing is moved, no docking is added). Every command keeps the group's position and returns the changed groups. To rebuild a group, take it from get-plan-context, change it, and resubmit it with its id and without placement via create-or-replace-groups - it keeps its position; keep the ids of the root modules you keep.
-- Verify results numerically: the returned groups carry position (pos, rotationY, footprint) and per root the dockingVectors, the input attributes and the docking. Do not judge a position from a rendering alone.
-- Undo a wrong result: when a result is not what was asked - the wrong wall, a unit missing or replaced by mistake, a merge or a delete that went wrong - call undo and send the corrected call, instead of correcting the wrong plan piece by piece; one undo reverts one tool call. A group that only needs a change is edited with the command tools. undo and redo also serve the user who asks for them.
+- To change an existing group, use the command tools: merge-article-into-group adds an article at a free end of a row, insert-article-into-group inserts an article between two root modules, remove-article-from-group removes a root module and closes the gap, delete-root-module deletes a root module and leaves the gap (root modules no longer docked together become separate groups where they stand), exchange-root-module replaces a root module - with attributes also by an article of another width -, swap-root-modules lets two root modules change places, delete-group removes a group, change-module-attribute and change-group-attribute set attributes, merge-groups joins groups where they stand (nothing is moved, no docking is added). Take the user's word: to "remove" an article is remove-article-from-group, to "delete" an article is delete-root-module. In an insert, a remove, an exchange or a swap the root modules at a wall or in a corner keep their place and the others move; wall units and the range hood move with the root module they hang from. Every command returns the changed groups. To rebuild a group, take it from get-plan-context, change it, and resubmit it with its id and without placement via create-or-replace-groups - it keeps its position; keep the ids of the root modules you keep.
+- Verify results numerically: the returned groups carry position (pos, rotationY, footprint) and per root the dockingVectors, the input attributes and the docking; the obstacles of get-plan-context give the outlines of their root modules in the coordinates of the walls. Do not judge a position from a rendering alone.
+- Undo a wrong result: when a result is not what was asked - the wrong wall, a root module missing or replaced by mistake, a merge or a delete that went wrong - call undo and send the corrected call, instead of correcting the wrong plan piece by piece; one undo reverts one tool call. A group that only needs a change is edited with the command tools. undo and redo also serve the user who asks for them.
 - Read corrections and notLoaded in a result: corrections lists what the server changed in your input and has already applied; notLoaded lists the groups and the roots it could not build, with what to send instead.
 
 Example 1 - "a row of three tall units along the right wall, from the back right corner" is ONE call, create-or-replace-groups. posGroup is the right wall's end point (the back right corner), posRotationY its facingRotationY (270 in a rectangular room):
@@ -42,7 +44,7 @@ Example 2 - "a tall unit and two base units with a wall unit above each" is the 
   { "id": "w2", "articleId": "<wall unit>", "rightOf": "w1" }
 Without the tall unit, the first wall unit hangs above a base unit: { "id": "w1", "articleId": "<wall unit>", "above": "b1" }.
 
-Example 3 - "an L-shaped kitchen in the back right corner" (back = top in the top view) is ONE group starting with the corner article c1: posGroup and posRotationY are the point and the posRotationY of the corner "back right" in the room's corners list (270); the units rightOf c1 run along the right wall, the units leftOf it along the back wall (see the corner rules above), and the wall units hang above the floor units of their leg:
+Example 3 - "an L-shaped kitchen in the back right corner" (back = top in the top view) is ONE group starting with the corner article c1: posGroup and posRotationY are the point and the posRotationY of the corner "back right" in the room's corners list (270); the root modules rightOf c1 run along the right wall, the root modules leftOf it along the back wall (see the corner rules above), and the wall units hang above the floor units of their leg:
 { "posGroups": [{ "libraryId": "<libraryId>", "placement": { "posGroup": [<corner x>, 0, <corner z>], "posRotationY": 270 }, "roots": [
   { "id": "c1", "articleId": "<corner article, cornerArticle true>" },
   { "id": "r1", "articleId": "<base unit>", "rightOf": "c1" },
@@ -55,14 +57,16 @@ Example 3 - "an L-shaped kitchen in the back right corner" (back = top in the to
 
 Example 4 - "the row centred on the back wall": posRotationY 0 (the facingRotationY of the back wall) and posGroup = end + d * (start - end) / lengthMm of the back wall, with d = (lengthMm - <group width>) / 2.
 
-Example 5 - "add a unit to the right of the existing cabinets" extends that group, never a new group: take the group from get-plan-context, find the root with a free RightBottom (freeDockingVectors) and call merge-article-into-group { "groupId": "<group id>", "articleId": "<unit>", "dockTo": { "rootId": "<that root>", "ownDockingVector": "RightBottom", "dockingVector": "LeftBottom" } } - the group keeps its position.`;
+Example 5 - "add a cabinet to the right of the existing cabinets" extends that group, never a new group: take the group from get-plan-context, find the root module with a free RightBottom (freeDockingVectors) and call merge-article-into-group { "groupId": "<group id>", "articleId": "<article>", "dockTo": { "rootId": "<that root module>", "ownDockingVector": "RightBottom", "dockingVector": "LeftBottom" } } - the group keeps its position.
 
-const INSTRUCTIONS = `This server orchestrates HOMAG Intelligence (HI) object groups in a live Roomle room-planner session (proof of concept).
+Example 6 - "insert a low cabinet between the high cabinets" is insert-article-into-group { "groupId": "<group id>", "articleId": "<a base cabinet from the catalog>", "between": ["<first root module>", "<second root module>"] }: the high cabinets are the two root modules of the group that stand side by side - whatever the group is, a wardrobe too -, the low cabinet an article about 720 mm high; the root modules on the side away from the wall move by the article's width, the ones at the wall keep their place.`;
+
+const INSTRUCTIONS = `This server orchestrates HOMAG Intelligence (HI) object groups in a live Roomle room-planner session (proof of concept). Everything is made of articles: the catalog offers articles (cabinets, wardrobes, appliances, panels), a group is one piece of furniture made of articles (a kitchen, a wardrobe, a sideboard, a utility room), and an article placed in a group is a root module.
 
 Typical workflow:
-1. get-plan-context: fetch the rooms (each with a derived walls array), the article catalog (desc, category, dimensions, docking vector names, sub-modules per article) and the groups currently in the plan. Add masterData to include for the attribute vocabulary, or look an attribute up with find-attributes.
-2. create-or-replace-groups: author the whole kitchen as ONE group - article picks, each unit after the first naming its neighbour with one relation (rightOf, leftOf, onTop, above or behind), a material for the whole kitchen in the group's attributes, plus one placement for the new group ({ posGroup, posRotationY }: the room point of the group's back left corner and its rotation, taken from the walls array - a wall's end point and facingRotationY, or a room corner point with the rotation from the corner rules; a plan into a room corner starts with a corner article, cornerArticle true in the catalog). One call creates, relates and positions the group; never author root positions and never split a kitchen into several groups. A group whose id matches an existing group in the plan completely replaces that group and keeps its position; all other groups are created. Units next to an existing group are added to that group, docked to a free docking vector of the root they continue - a new group is only for a free stretch of wall. The payload format, the relations, the corner rules and complete examples are returned by get-authoring-rules.
-3. Edit an existing group with the command tools: merge-article-into-group (dock one more unit), exchange-root-module (replace a unit), delete-root-module and delete-group, change-module-attribute and change-group-attribute (attributes, e.g. the front colour of the whole kitchen), merge-groups (join groups that stand next to each other); place-group moves a group to another wall or into a room corner. Resubmit a whole group with create-or-replace-groups only to rebuild it. undo reverts the last tool call that changed the plan, redo brings it back.
+1. get-plan-context: fetch the rooms (each with a derived walls array), the article catalog (desc, category, dimensions, docking vector names, sub-modules per article), the groups currently in the plan and the obstacles (doors, windows, other furniture and the root modules of the groups, where they stand). Add masterData to include for the attribute vocabulary, or look an attribute up with find-attributes.
+2. create-or-replace-groups: author the whole piece of furniture as ONE group - article picks, each article after the first naming its neighbour with one relation (rightOf, leftOf, onTop, above or behind), a material for the whole group in the group's attributes, plus one placement for the new group ({ posGroup, posRotationY }: the room point of the group's back left corner and its rotation, taken from the walls array - a wall's end point and facingRotationY, or a room corner point with the rotation from the corner rules; a plan into a room corner starts with a corner article, cornerArticle true in the catalog). One call creates, relates and positions the group; never author root positions and never split one piece of furniture into several groups. A group whose id matches an existing group in the plan completely replaces that group and keeps its position; all other groups are created. Articles next to an existing group are added to that group, docked to a free docking vector of the root module they continue - a new group is only for a free stretch of wall. The payload format, the relations, the corner rules and complete examples are returned by get-authoring-rules.
+3. Edit an existing group with the command tools: merge-article-into-group (dock one more article at the end of a row), insert-article-into-group (an article between two root modules), remove-article-from-group (remove a root module and close the gap), delete-root-module (delete a root module, the gap stays) and delete-group, exchange-root-module (replace a root module), swap-root-modules (two root modules change places), change-module-attribute and change-group-attribute (attributes, e.g. the front colour of the whole group), merge-groups (join groups that stand next to each other); place-group moves a group to another wall or into a room corner. Resubmit a whole group with create-or-replace-groups only to rebuild it. undo reverts the last tool call that changed the plan, redo brings it back.
 4. Check the result with get-price or get-order-data, and inspect it with get-plan-images.
 
 ${AUTHORING_RULES}`;
@@ -88,12 +92,22 @@ const PLAN_CHANGING_TOOLS = [
   'change-group-attribute',
   'delete-group',
   'delete-root-module',
+  'remove-article-from-group',
   'merge-article-into-group',
+  'insert-article-into-group',
   'exchange-root-module',
+  'swap-root-modules',
   'merge-groups',
   'undo',
   'redo',
 ];
+
+const ATTRIBUTE_OVERRIDES = z.array(
+  z.object({
+    id: z.string(),
+    value: z.union([z.string(), z.number(), z.boolean()]),
+  })
+);
 
 const stripDataUrlPrefix = (image: string): string =>
   image.replace(/^data:image\/\w+;base64,/, '');
@@ -149,10 +163,13 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'name, desc, category, and per root module its master-data module, dimensions (the size attributes - ' +
         'e.g. Width, Depth, Height - with their values in millimetres), main attribute values, ' +
         'docking vector names, insert levels and sub-modules, plus cornerArticle ' +
-        "for articles made for a room corner) and groups (the groups currently in the plan: position with pos - the room point of the group's back left bottom corner, as a placement names it - rotationY, rootId (only with two corner articles: the one pos belongs to) and footprint, and " +
+        "for articles made for a room corner), groups (the groups currently in the plan: position with pos - the room point of the group's back left bottom corner, as a placement names it - rotationY, rootId (only with two corner articles: the one pos belongs to) and footprint, and " +
         'per root the article pick with input attributes, docking, docking vector names and the free docking vectors ' +
         'a new root can dock to, plus its desc - no root positions, ' +
-        'no geometry; a returned group is a valid create-or-replace-groups payload). masterData (per library the root ' +
+        'no geometry; a returned group is a valid create-or-replace-groups payload) and obstacles (what stands in the ' +
+        'room, in the coordinates of the walls: objects - doors, windows, other furniture - with kind, outline ' +
+        "(floor points [x, 0, z]) and bottomMm/topMm, a door or a window also with roomIndex, wall and fromEndMm (its span along that wall from the wall's end); " +
+        'and per group its root modules with id, outline and bottomMm/topMm). masterData (per library the root ' +
         'modules and the customer-facing attributes with their allowed values; modules, attributes and values carry ' +
         'their desc) is returned only when included ' +
         'explicitly; the same compacted attribute vocabulary is searched by find-attributes. Every desc is ' +
@@ -163,7 +180,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .array(z.string())
           .optional()
           .describe(
-            'The sections to include: masterData, rooms, articles, groups. Default: rooms, articles and groups. ' +
+            'The sections to include: masterData, rooms, articles, groups, obstacles. Default: rooms, articles, groups and obstacles. ' +
               'Add masterData for the attribute vocabulary.'
           ),
       },
@@ -204,7 +221,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'module fields, how to position a new group with a placement and move an existing one with place-group, ' +
         'the relations a unit names its neighbour with (rightOf, leftOf, onTop, above, behind), the docking vector ' +
         'names of existing groups, and complete examples for a row against a wall, wall units beside a tall unit, ' +
-        'an L-shaped corner kitchen and extending a group. Fetch this before authoring pos groups.',
+        'a group around a room corner and extending a group. Fetch this before authoring pos groups.',
       inputSchema: {},
     },
     async () => ({
@@ -220,12 +237,12 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         '({ id, articleId, attributes? }) - the server completes them from the article template -, and every root ' +
         'after the first names its neighbour with one relation: rightOf, leftOf, onTop, above or behind with the ' +
         'id of the neighbour; the server builds the docking from it, and the planner arranges the root modules; never author root ' +
-        'positions. Author one kitchen as ONE group: units beside, above or back to back with each other are ' +
-        "related roots of the same group, never separately positioned groups; a material for the whole kitchen goes into the group's attributes. Position a new group in the same " +
+        'positions. Author one piece of furniture as ONE group: articles beside, above or back to back with each other are ' +
+        "related root modules of the same group, never separately positioned groups; a material for the whole group goes into the group's attributes. Position a new group in the same " +
         "call with placement ({ posGroup, posRotationY }: the room point of the group's back left corner and " +
         'its rotation; take them from a wall of get-plan-context: its end point and its facingRotationY put the ' +
         "group flush into the corner at the wall's end, a room corner point with the rotation from the corner " +
-        'rules puts a corner kitchen into that corner). A group whose id matches an existing group completely ' +
+        'rules puts a group that starts with a corner article into that corner). A group whose id matches an existing group completely ' +
         'replaces that group and keeps its position (root modules keep their ids when they already exist in ' +
         'the replaced group; a placement on it is not used); all other groups are created with regenerated ids. Returns the loaded object ids and the resulting groups - ' +
         'check their pos and footprint - plus corrections (what the server changed in the input) and notLoaded (the groups it ' +
@@ -346,7 +363,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     {
       description:
         'Sets one attribute on every module of a group that has it - the root modules and their sub ' +
-        'modules, e.g. the front colour of a whole kitchen - in one recalculation. Returns the changed ' +
+        'modules, e.g. the front colour of a whole group - in one recalculation. Returns the changed ' +
         'group and the ids of the changed modules.',
       inputSchema: {
         groupId: z
@@ -365,7 +382,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'delete-group',
     {
       description:
-        'Removes a group with all its units from the plan. Returns the id of the removed group.',
+        'Removes a group with all its root modules from the plan. Returns the id of the removed group.',
       inputSchema: {
         groupId: z
           .string()
@@ -379,10 +396,11 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'delete-root-module',
     {
       description:
-        'Removes one root module (one unit) from its group. Units that are no longer docked together ' +
-        'afterwards become separate groups where they stand; removing the only unit removes the group. ' +
-        'Generated roots (worktop, toe kick) cannot be removed - the library regenerates them. Returns the ' +
-        'remaining groups.',
+        'Deletes one root module from its group and leaves the gap - the tool when the user asks to ' +
+        'delete an article: root modules that are no longer ' +
+        'docked together afterwards become separate groups where they stand; deleting the only root module deletes ' +
+        'the group. To close the gap, use remove-article-from-group. Generated roots (worktop, toe kick) ' +
+        'cannot be deleted - the library regenerates them. Returns the remaining groups.',
       inputSchema: {
         rootModuleId: z.string().describe('The id of the root module.'),
       },
@@ -391,44 +409,62 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
   );
 
   server.registerTool(
+    'remove-article-from-group',
+    {
+      description:
+        'Removes one root module from its group and closes the gap - the tool when the user asks to remove an article: ' +
+        'the root modules beside it are docked together, and the ' +
+        'root modules at a wall or in a corner keep their place. A wall unit or a range hood that hung from the ' +
+        'removed root module hangs from the one that moves into the gap. A root module with a neighbour on one side only is removed and ' +
+        'nothing else moves. Removing a corner article between two legs deletes it as delete-root-module does: ' +
+        'root modules no longer docked together become separate groups. Removing the only root module removes the group. To ' +
+        'delete an article and leave the gap, use delete-root-module. Generated roots ' +
+        '(worktop, toe kick) cannot be removed - the library regenerates them. Returns the changed group.',
+      inputSchema: {
+        groupId: z
+          .string()
+          .describe('The id of the group. A unique id prefix is accepted.'),
+        rootModuleId: z.string().describe('The id of the root module.'),
+      },
+    },
+    async (args) => textResult(await runTool('remove-article-from-group', args))
+  );
+
+  server.registerTool(
     'merge-article-into-group',
     {
       description:
-        'Adds one unit to an existing group: docks a new root module of an article from the catalog to a ' +
-        'free docking vector of a root of the group, the way the authoring rules describe docking. dockTo ' +
-        "names the root the unit continues, that root's free vector (one of its freeDockingVectors in " +
-        "get-plan-context) and the new unit's vector: RightBottom -> LeftBottom puts it to the right, " +
+        'Adds one article to an existing group as a new root module: docks it to a ' +
+        'free docking vector of a root module of the group, the way the authoring rules describe docking. dockTo ' +
+        "names the root module the article continues, that root module's free vector (one of its freeDockingVectors in " +
+        "get-plan-context) and the new root module's vector: RightBottom -> LeftBottom puts it to the right, " +
         'LeftBottom -> RightBottom to the left, LeftTop -> LeftBottom hangs a wall unit or a range hood above ' +
-        'a floor unit at the height of the wall units (the server sets the gap). The ' +
-        'group keeps its position. Returns the changed group.',
+        'a floor-standing root module at the height of the wall units (the server sets the gap). To put an article between two root modules, use ' +
+        'insert-article-into-group. The group keeps its position. Returns the changed group.',
       inputSchema: {
         groupId: z
           .string()
           .describe('The id of the group. A unique id prefix is accepted.'),
         articleId: z.string().describe('The article id from the catalog.'),
-        attributes: z
-          .array(
-            z.object({
-              id: z.string(),
-              value: z.union([z.string(), z.number(), z.boolean()]),
-            })
-          )
-          .optional()
-          .describe('Attribute overrides of the new unit: [{ id, value }].'),
+        attributes: ATTRIBUTE_OVERRIDES.optional().describe(
+          'Attribute overrides of the new root module: [{ id, value }].'
+        ),
         dockTo: z
           .object({
             rootId: z
               .string()
               .describe(
-                'The id of the root of the group the new unit docks to.'
+                'The id of the root module of the group the new article docks to.'
               ),
             ownDockingVector: z
               .string()
-              .describe("That root's free docking vector, e.g. RightBottom."),
+              .describe(
+                "That root module's free docking vector, e.g. RightBottom."
+              ),
             dockingVector: z
               .string()
               .describe(
-                "The new unit's docking vector that meets it, e.g. LeftBottom."
+                "The new root module's docking vector that meets it, e.g. LeftBottom."
               ),
             mode: z
               .enum(['StartStart', 'EndEnd', 'StartEnd', 'EndStart'])
@@ -440,22 +476,53 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
               .tuple([z.number(), z.number(), z.number()])
               .optional()
               .describe(
-                '[x, y, z] in millimetres added after docking; a wall unit above a floor unit gets its hang gap from the server when y is 0. Default [0, 0, 0].'
+                '[x, y, z] in millimetres added after docking; a wall unit above a floor-standing root module gets its hang gap from the server when y is 0. Default [0, 0, 0].'
               ),
           })
-          .describe('Where the new unit docks.'),
+          .describe('Where the new root module docks.'),
       },
     },
     async (args) => textResult(await runTool('merge-article-into-group', args))
   );
 
   server.registerTool(
+    'insert-article-into-group',
+    {
+      description:
+        'Inserts one article from the catalog between two root modules of an existing group that stand side by side - ' +
+        'whatever the group is and whatever the article is: a low cabinet between two high cabinets or wardrobes too; the user ' +
+        'decides what stands between what. between names the two root modules, in either order; a group of two root modules ' +
+        'has one place to insert: between them. No gap is needed - the tool makes room. The new root module is docked to both; the root modules at a wall or in a ' +
+        "corner keep their place, the others move by the article's width. Wall units and the range hood move with the " +
+        'root module they hang from. To add an article beside the last root module of a row, use merge-article-into-group. ' +
+        'Returns the changed group.',
+      inputSchema: {
+        groupId: z
+          .string()
+          .describe('The id of the group. A unique id prefix is accepted.'),
+        articleId: z.string().describe('The article id from the catalog.'),
+        attributes: ATTRIBUTE_OVERRIDES.optional().describe(
+          'Attribute overrides of the new root module: [{ id, value }].'
+        ),
+        between: z
+          .tuple([z.string(), z.string()])
+          .describe(
+            'The ids of the two root modules that stand side by side and take the new article between them, in either order.'
+          ),
+      },
+    },
+    async (args) => textResult(await runTool('insert-article-into-group', args))
+  );
+
+  server.registerTool(
     'exchange-root-module',
     {
       description:
-        'Replaces one root module (one unit) of a group with an article from the catalog that has one root ' +
-        'module, e.g. a base unit with a drawer unit; the new unit takes over the position and the docking ' +
-        'of the replaced one. Returns the changed group.',
+        'Replaces one root module of a group with an article from the catalog that has one root ' +
+        'module, e.g. a base cabinet with a drawer cabinet; the new root module takes over the position and the docking ' +
+        'of the replaced one. attributes are overrides of the new root module, e.g. mod_Width 900 for an article of ' +
+        'another width: the other root modules move by the difference, and the ones at a wall keep their ' +
+        'place. A docking the new article cannot take is named in corrections. Returns the changed group.',
       inputSchema: {
         groupId: z
           .string()
@@ -464,9 +531,31 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .string()
           .describe('The id of the root module to replace.'),
         articleId: z.string().describe('The article id from the catalog.'),
+        attributes: ATTRIBUTE_OVERRIDES.optional().describe(
+          'Attribute overrides of the new root module: [{ id, value }].'
+        ),
       },
     },
     async (args) => textResult(await runTool('exchange-root-module', args))
+  );
+
+  server.registerTool(
+    'swap-root-modules',
+    {
+      description:
+        'Lets two root modules of a group change places, neighbours or not. Each keeps its attributes, and the ' +
+        'wall units and the range hood hanging from a root module move with it. The group keeps its length, and the root modules ' +
+        'at a wall keep their place. Returns the changed group.',
+      inputSchema: {
+        groupId: z
+          .string()
+          .describe('The id of the group. A unique id prefix is accepted.'),
+        rootModuleIds: z
+          .tuple([z.string(), z.string()])
+          .describe('The ids of the two root modules that change places.'),
+      },
+    },
+    async (args) => textResult(await runTool('swap-root-modules', args))
   );
 
   server.registerTool(
@@ -475,7 +564,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       description:
         'Joins groups into one: the groups in groupIds are merged into the target group where they stand, ' +
         'like the merge action of the planner - nothing is moved and no docking is added, so merge groups ' +
-        'that already stand next to each other. Groups of different libraries cannot be merged. To add a unit ' +
+        'that already stand next to each other. Groups of different libraries cannot be merged. To add an article ' +
         'next to a group, use merge-article-into-group instead. Returns the merged group and the ids of the ' +
         'groups merged into it.',
       inputSchema: {
@@ -498,7 +587,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     {
       description:
         "Reverts the plan change of the last tool call that changed the plan, as the planner's undo does. " +
-        'Use it when that result is not what was asked - the user says it was the wrong unit, wall or group, or a ' +
+        'Use it when that result is not what was asked - the user says it was the wrong article, wall or group, or a ' +
         'merge or delete went wrong - and then send the corrected call; call it again to revert the call before. ' +
         'Returns the reverted tool and every group of the plan now; when there is nothing to undo, the result says so.',
       inputSchema: {},

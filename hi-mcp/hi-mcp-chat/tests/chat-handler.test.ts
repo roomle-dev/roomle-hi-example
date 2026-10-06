@@ -92,7 +92,15 @@ describe('getChatConfig', () => {
     expect(CHAT_SYSTEM_PROMPT).toContain(
       'Summarize what you changed in a few sentences from the last tool results only - the groups, their roots and attributes, corrections and notLoaded - never by repeating the results, and name what was asked but is not in the plan.'
     );
-    expect(CHAT_SYSTEM_PROMPT.split('. ').length).toBe(4);
+    expect(CHAT_SYSTEM_PROMPT.split('. ').length).toBe(5);
+    // every kind of HI furniture, not a kitchen: the agent took a wardrobe group for "not a kitchen"
+    expect(CHAT_SYSTEM_PROMPT).toContain(
+      'HOMAG Intelligence (HI) furniture in a Roomle planner: kitchens, wardrobes, living room and utility furniture, all made of articles'
+    );
+    expect(CHAT_SYSTEM_PROMPT).not.toContain('(HI) kitchen');
+    expect(CHAT_SYSTEM_PROMPT).toContain(
+      'take the closest article of the catalog - from the category of its neighbours where that category has one - and say which one you chose instead of asking'
+    );
   });
 
   it('resolves providers, aliases, and full model ids', () => {

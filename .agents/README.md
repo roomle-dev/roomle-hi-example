@@ -99,6 +99,8 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [The perspective object image of every test run is empty](bug-analysis/empty-perspective-object-image-in-test-runs.md) | Fixed | 2026-10-03 |
 | [RML-18041: the open issues of the MCP test — causes verified, fixes proposed](bug-analysis/rml-18041-mcp-test-open-issues.md) | Fixed | 2026-10-04 |
 | [RML-18041: implementation plan — the fixes and their unit tests](bug-analysis/rml-18041-implementation-plan.md) | Implemented (PR 7 pending D23) | 2026-10-04 |
+| [A follow-up reload that lands while its call still runs blocks the undo](bug-analysis/late-follow-up-during-the-call-blocks-undo.md) | Fixed | 2026-10-05 |
+| ["insert a low cabinet between the high cabinets" does not reach insert-article-into-group](bug-analysis/insert-between-not-chosen-for-a-wardrobe-group.md) | Fixed | 2026-10-06 |
 
 ### Feature Analyses
 
@@ -125,9 +127,12 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [Deploy hi-mcp to Cloudflare on a push to release/cloudflare](feature-analysis/deploy-hi-mcp-on-push-to-release-cloudflare.md) | Implemented (first run pending setup) | 2026-10-01 |
 | [Images in the Planning Assistant chat](feature-analysis/chat-image-input.md) | Implemented | 2026-10-01 |
 | [Multiple HI MCP connections and occupied sessions](feature-analysis/multiple-hi-mcp-connections.md) | Implemented (local ownership verified; cloud deployment not yet verified) | 2026-10-03 |
-| [The obstacle map in the plan context (RML-18036)](feature-analysis/obstacle-map-in-the-plan-context.md) | Open | 2026-10-04 |
+| [The obstacle map in the plan context (RML-18036)](feature-analysis/obstacle-map-in-the-plan-context.md) | Implemented (locally) | 2026-10-04 |
+| [RML-18036: implementation plan — the obstacles section of the plan context and its unit tests](feature-analysis/obstacle-map-in-the-plan-context-implementation-plan.md) | Implemented (locally) | 2026-10-06 |
 | [Undo and redo tools for the HI MCP server (RML-18044)](feature-analysis/undo-and-redo-tools.md) | Implemented | 2026-10-05 |
 | [RML-18044: implementation plan — the undo and redo tools and their unit tests](feature-analysis/undo-and-redo-tools-implementation-plan.md) | Implemented | 2026-10-05 |
+| [Insert, remove, replace and swap units in a row of a group (RML-18045)](feature-analysis/insert-remove-replace-swap-units-in-a-row.md) | Implemented (locally) | 2026-10-05 |
+| [RML-18045: implementation plan — the row edit commands and tools and their unit tests](feature-analysis/insert-remove-replace-swap-units-implementation-plan.md) | Implemented (locally) | 2026-10-05 |
 
 ### Refactoring Analyses
 
@@ -162,10 +167,11 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 
 | Document | Last touched |
 |---|---|
-| [Backlog](backlog/README.md) — make group positioning easier for the agent | 2026-09-30 |
-| [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — deferred roomle-ui alternative to the server's corner probe | 2026-09-30 |
-| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — what is to be done after the analyses of "test the mcp": MCP server bugs in the corrections, hardening of the server, the rules and the chat, one roomle-ui defect | 2026-10-02 |
-| [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — hypothesis: gpt-5.4-mini planned worse because it ran at its documented default `none` (gpt-5-mini: `medium`), unverified on Foundry; measure, set and compare | 2026-10-03 |
+| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the ligna-store | 2026-10-06 |
+| [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — measure, then let the plan context carry every article's docking vectors and corner point, and remove the server's probe | 2026-10-06 |
+| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner that "test the mcp" shows | 2026-10-06 |
+| [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — make the reasoning tokens measurable, run gpt-5.4-mini at the same effort as gpt-5-mini, decide the chat's model and effort | 2026-10-06 |
+| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the open gaps of running "test the mcp": the object-only render under software GL, the unrecorded hint, a run that loses its page | 2026-10-06 |
 
 ---
 

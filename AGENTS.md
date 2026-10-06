@@ -378,10 +378,10 @@ A push to `release/cloudflare` deploys the MCP server to Cloudflare
 2. Open the page in browser
 3. Connect MCP client
 4. Call tools like:
-   - `get-plan-context` — Get current rooms, articles, groups
+   - `get-plan-context` — Get current rooms, articles, groups and obstacles
    - `create-or-replace-groups` — Add, modify or extend groups; position new groups
    - `place-group` — Move an existing group against a wall or into a room corner
-   - `merge-article-into-group`, `exchange-root-module`, `delete-root-module`, `delete-group`, `change-module-attribute`, `change-group-attribute`, `merge-groups` — Edit an existing group (commands the planner performs)
+   - `merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`, `swap-root-modules`, `remove-article-from-group`, `delete-root-module`, `delete-group`, `change-module-attribute`, `change-group-attribute`, `merge-groups` — Edit an existing group (commands the planner performs)
    - `undo`, `redo` — Revert the last tool call that changed the plan, or bring it back
    - `get-price` — Calculate pricing
    - `get-order-data` — Get order information

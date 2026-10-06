@@ -85,7 +85,7 @@ Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json`
 | `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
 | `run.json` | `plan` and `operations` (the tool calls before the prompt, with their `result` or `error`); per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId` |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
-| `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) and the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) |
+| `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) and what stands in the room (`obstacles.objects[]`: `kind`, `outline`, `bottomMm`/`topMm`, a door or window with `wall` and `fromEndMm`; `obstacles.groups[].roots[]`: the room-space outline and height range of every root module) |
 | `planner-calls.json` | what the MCP server sent to the planner during the chat (the operations' calls are not in it): `loadExternalObjectGroupLayout` — `args[0].posGroups[]` with the roots, their docking (`contextData.dockedRoots`) and attributes, and `repositioningData` (the placement); `externalObjectGroupOperation` — `args` = the command and its payload; `ok: false` with the page's `error` |
 | `console.log` | `[hi-mcp]` and `[hi-chat]` errors |
 
@@ -254,13 +254,16 @@ Plan: <plan name>; operations: <none, or the tool calls before the prompt>
 
 ### 7. Open issues
 
-Update [mcp-test-open-issues.md](../backlog/mcp-test-open-issues.md) — what is to be done after
-the test analyses, nothing that was done:
+Update [mcp-test-open-issues.md](../backlog/mcp-test-open-issues.md). The backlog is a to-do list,
+not an archive: it holds only what is still to be done — no history of runs, findings or fixes.
 
-- add every bug and hardening candidate of the report that is not listed yet, with the problem, the
-  run that shows it, the cause in the code, the to-do and its test;
-- give a listed issue the latest run that shows it;
-- remove an issue only when its fix is in the code — a run that happens not to show it is no fix;
+- add every bug and hardening candidate of the report that is not listed yet: the problem in the
+  present tense, the cause in the code, the to-do, its test, and a **Reproduce** line naming the run
+  whose payload reproduces it;
+- for a listed issue that showed again, replace its **Reproduce** line with the latest run — one line,
+  never a list of runs;
+- remove an issue, and its index row, when its fix is in the code — a run that happens not to show it
+  is no fix;
 - keep the backlog index ([README](../backlog/README.md)) in step.
 
 Then tell the user the report's path, the verdicts and the bugs.
@@ -290,8 +293,8 @@ The runner:
 4. rewrites `<out>/results.json` after each run and prints one line per run;
 5. passes Ctrl+C (SIGINT/SIGTERM) on to the running run, which stops its servers, and ends.
 
-All 18 tests for the three GPT models take about 40 minutes on a machine with a GPU against the local
-planner (2026-10-04: 36 minutes) — about 40 s per run for the launcher, the page and the snapshot,
+The 18 tests of 2026-10-04 for the three GPT models took 36 minutes on a machine with a GPU against the
+local planner; the file has 28 tests since the row edit tests of RML-18045, about 1 hour for three models — about 40 s per run for the launcher, the page and the snapshot,
 plus the model's chat time (gpt-5.4-mini 5–15 s, gpt-5-mini 30–60 s, gpt-6-astra up to 150 s per
 turn). A fix committed while the runner goes on takes effect from the next run, because every run
 starts a fresh server and chat; the report then says which runs ran with which build.
@@ -326,7 +329,7 @@ The script:
 4. sends the prompts to the chat backend (`POST /chat`, the chat window's system prompt and tools),
    each until the end of its stream, and records every planner call the MCP server sends to the
    page (from the bridge's WebSocket frames — the server's log cuts the arguments short);
-5. reads the rooms and groups (`get-plan-context`), then `getExternalObjectSnapshot()` with every
+5. reads the rooms, groups and obstacles (`get-plan-context`), then `getExternalObjectSnapshot()` with every
    field it stores and without the object GLB (the GLB is not generated), then saves
    the plan with `saveExternalObjectSnapshot()` for its plan snapshot id — **every run saves one
    plan snapshot in the Roomle backend**, as the example's "Save snapshot" button does;

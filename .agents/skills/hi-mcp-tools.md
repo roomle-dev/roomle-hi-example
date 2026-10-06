@@ -10,7 +10,7 @@ them — is [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behavio
 ### Core Tools
 | Tool | Purpose |
 |---|---|
-| `get-plan-context` | Get rooms, articles, groups, masterData |
+| `get-plan-context` | Get rooms, articles, groups, obstacles, masterData |
 | `create-or-replace-groups` | Create, modify and extend groups; position new groups |
 | `place-group` | Move an existing group against a wall or into a room corner |
 | `get-authoring-rules` | Get HI authoring rules |
@@ -26,9 +26,12 @@ them — is [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behavio
 | `change-module-attribute` | Set an attribute of a root module or sub module |
 | `change-group-attribute` | Set an attribute on every module of a group that has it |
 | `delete-group` | Remove a group |
-| `delete-root-module` | Remove one unit; the rest splits where it is no longer docked together |
-| `merge-article-into-group` | Dock one more unit to a free docking vector of a root |
-| `exchange-root-module` | Replace a unit with an article, keeping its docking |
+| `delete-root-module` | Delete one root module and leave the gap; the rest splits where it is no longer docked together |
+| `remove-article-from-group` | Remove one root module and close the gap |
+| `merge-article-into-group` | Dock one more article to a free docking vector of a root module |
+| `insert-article-into-group` | Insert an article between two root modules that stand side by side, whatever the group and the article; the root modules away from the wall move |
+| `exchange-root-module` | Replace a root module with an article, keeping its docking |
+| `swap-root-modules` | Let two root modules of a group change places |
 | `merge-groups` | Join groups where they stand |
 
 ### History Tools
@@ -52,15 +55,24 @@ them — is [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behavio
 
 **Parameters**:
 ```typescript
-{ include?: Array<'masterData' | 'rooms' | 'articles' | 'groups'> }
+{ include?: Array<'masterData' | 'rooms' | 'articles' | 'groups' | 'obstacles'> }
 ```
 
-**Returns**: Rooms, articles, groups, masterData (if requested). Like every JSON result of the
+**Returns**: Rooms, articles, groups, obstacles, masterData (if requested). Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
 (back wall, front wall, left wall, right wall) beside its `side`, a door opening the `type`
 `opening`, and every room a `corners` list — per corner its `name` (back left, …), `point` and the
 `posRotationY` of a corner kitchen there — so a corner placement is a lookup
+
+**Obstacles**: `obstacles.objects` lists every plan object that is not an HI group — `kind` (`door`,
+`window`, `object`), `outline` (floor points `[x, 0, z]` in the coordinates of the walls) and
+`bottomMm`/`topMm`; a door or a window also carries `roomIndex`, `wall` (its index in the walls
+array) and `fromEndMm`, its span along that wall measured from the wall's end. `obstacles.groups`
+gives per HI group the room-space `outline` and height range of every root module that is not
+generated, from the parts of the calculated group — the kernel's own outline of a group is not
+used, it was off by up to 250 mm (D45). No walls. Requested alone, `obstacles` makes the server
+fetch the rooms too
 
 **Article size**: per root module of an article, `dimensions` lists the size attributes with id,
 name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels
@@ -99,7 +111,7 @@ gap of a wall unit above a floor unit — see the
 [authoring rules skill](./hi-authoring-rules.md#relations). `contextData` is still accepted; a group
 from `get-plan-context` carries it.
 
-**Materials**: a root's `attributes` are overrides of that unit. A material for the whole kitchen
+**Materials**: a root's `attributes` are overrides of that root module. A material for the whole group
 (fronts, worktop, carcase) goes into the group's `attributes`; the server sets every group attribute
 that is not one of the library's group settings on every unit and generated root after the load and
 reports it. An override only a generated root carries (the worktop colour on a base unit) is moved
@@ -115,7 +127,7 @@ await createOrReplaceGroups({ posGroups: [group1, group2] });
 **Positioning**: a new group carries `placement: { posGroup, posRotationY, rootId? }` —
 `posGroup` the room point of the group's back left bottom corner, `posRotationY` the rotation in
 degrees, counter-clockwise as seen from above; `rootId` only with two corner articles, naming the
-one that goes into the corner `posGroup` names. One kitchen is one group: relate every further unit
+one that goes into the corner `posGroup` names. One piece of furniture is one group: relate every further article
 to its neighbour instead of positioning it. Against a wall: `posRotationY` = the wall's `facingRotationY`,
 `posGroup` = the wall's `end` (flush into that corner) or a point from `end` towards `start`; in a
 corner: the corner point and the `facingRotationY` of the wall that ends there (for a right-handed
@@ -174,12 +186,15 @@ own group features; the group keeps its position
 'change-group-attribute':  { groupId: string, attributeId: string, value: string | number | boolean }
 'delete-group':            { groupId: string }
 'delete-root-module':      { rootModuleId: string }
+'remove-article-from-group': { groupId: string, rootModuleId: string }
 'merge-article-into-group': {
   groupId: string, articleId: string, attributes?: { id, value }[],
   dockTo: { rootId: string, ownDockingVector: string, dockingVector: string,
             mode?: 'StartStart' | 'EndEnd' | 'StartEnd' | 'EndStart', offset?: [x, y, z] },
 }
-'exchange-root-module':    { groupId: string, rootModuleId: string, articleId: string }
+'insert-article-into-group': { groupId: string, articleId: string, attributes?: { id, value }[], between: [string, string] }
+'exchange-root-module':    { groupId: string, rootModuleId: string, articleId: string, attributes?: { id, value }[] }
+'swap-root-modules':       { groupId: string, rootModuleIds: [string, string] }
 'merge-groups':            { targetGroupId: string, groupIds: string[] }
 ```
 
@@ -196,15 +211,40 @@ direction), and a `dockingVector` the article does not have becomes the partner 
 unit or a range hood merged `*Top -> *Bottom` on a floor unit without a y offset gets the hang gap
 of the wall units (D35), reported.
 
-**Returns**: `{ command, groups, removedGroupIds, changedModuleIds? }` once the planner has loaded
-the result — the affected groups in the `get-plan-context` shape; `changedModuleIds` for
-`change-group-attribute`; `corrections` when the server corrected the input before forwarding
-(`merge-article-into-group`, `exchange-root-module`)
+**Returns**: `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed?, corrections?, hint? }` once the
+planner has loaded the result:
 
-- `delete-root-module`: units no longer docked together become separate groups where they stand;
-  removing the only unit removes the group; generated roots (worktop, toe kick) cannot be removed
+- `groups`: the affected groups in the `get-plan-context` shape
+- `changedModuleIds`: for `change-group-attribute`
+- `gapClosed`: for `remove-article-from-group` — `true` when the gap was closed, `false` when the
+  unit was deleted as `delete-root-module` does
+- `corrections`: what the server corrected before forwarding — the docking of
+  `merge-article-into-group`, two roots of `insert-article-into-group` that are no neighbours, a
+  root id read as the plan's id it abbreviates or misspells — and what the planner corrected or
+  could not keep, prefixed with the command: a docking the new unit of `exchange-root-module` or `swap-root-modules` cannot take,
+  a unit above that keeps its place or a deletion instead of a remove (`remove-article-from-group`)
+- `hint`: after a row edit (insert, remove, exchange, swap) — names the units above that moved with
+  the unit below them, and says when the row now reaches past a wall or into another group
+
+- `delete-root-module`: deletes the unit and leaves the gap: units no longer docked together become
+  separate groups where they stand; deleting the only unit deletes the group; generated roots
+  (worktop, toe kick) cannot be deleted
+- `remove-article-from-group`: removes the unit and closes the gap: its neighbours are docked to each
+  other, the end of the row at a wall stays, a unit hung on it hangs on the neighbour that moves into
+  the gap; a unit at a row end is removed and nothing else moves; a corner article between two legs
+  or the only unit is deleted as `delete-root-module` does, and the result says so
+  (`gapClosed: false`, `corrections`)
 - `exchange-root-module`: the article has one root module; the new unit keeps the position and
-  the docking of the replaced one
+  the docking of the replaced one; `attributes` override attributes of the new unit (`mod_Width` for
+  another width: the rest of the row moves by the difference, the end at a wall stays); a docking
+  the new article cannot take is named in `corrections`
+- `insert-article-into-group`: the new unit is docked to both roots of `between` (two neighbours in
+  either order); the end of the row at a wall or in a corner keeps its place and the rest of the row
+  moves by the unit's width; units hanging from a unit move with it. Two roots of one row that are no
+  neighbours put the unit beside the first-named root, towards the second, reported in `corrections`
+- `swap-root-modules`: two units change places, neighbours or not, with their attributes and the
+  units hanging from them; the row keeps its length and its end at a wall; a corner article and a
+  straight unit cannot change places
 - `merge-groups`: the groups are merged into the target where they stand, like the planner's merge
   action — nothing is moved and no docking is added; groups of different libraries cannot be merged
   (the planner's message is passed on)
@@ -306,7 +346,7 @@ try {
 | articleId '…' is not in the article catalog | Article not in catalog (another spelling of a catalog id is read in the catalog's spelling and reported in `corrections`) | Use a valid articleId from context (the message lists them). In `create-or-replace-groups` the group is in `notLoaded`; a command tool fails |
 | roots '…' are not docked to a placed root (in `notLoaded`) | A part the docking does not connect to the first root, which the server cannot dock to the free end of a row: no free row end, a wall unit without a wall-unit row | Dock it to a placed root (the error names the placed roots and the entry to send). Only for docking written as `contextData`: with relations, such a root continues the row of its kind |
 | duplicate root id '…' named in the docking (in `notLoaded`) | Two roots of a group share an id that a docking entry names | Give every root a unique id |
-| Root module '…' has no free docking vector '…' | `merge-article-into-group` on a side the planner reports as taken although the row ends there (a stale docking entry after a deletion); a taken side with a free row end is moved there and reported in `corrections` | Use one of the root's `freeDockingVectors` (the error lists them) |
+| Root module '…' has no free docking vector '…' | `merge-article-into-group` on a side the planner reports as taken although the row ends there (before roomle-ui RML-18045: a stale docking entry after a deletion); a taken side with a free row end is moved there and reported in `corrections` | Use one of the root's `freeDockingVectors` (the error lists them) |
 | Module '…' has no attribute '…' | `change-module-attribute` with an attribute the module's master data does not assign (planners with roomle-ui `fix/hi-attribute-commands-RML-18004`; older builds report success and change nothing) | Look the attribute up with `find-attributes` — its `rootModules` name the modules that have it |
 | Root module '…' is generated by the library | `delete-root-module` on a worktop or toe kick | Remove the article root instead; the library regenerates the rest |
 | Article '…' has n root modules | `exchange-root-module` with an article of several root modules | Pick an article of one root module, or rebuild with `create-or-replace-groups` |

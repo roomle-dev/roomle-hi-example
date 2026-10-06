@@ -289,7 +289,10 @@ describe('get-plan-context', () => {
       'rooms',
       'articles',
       'groups',
+      'obstacles',
     ]);
+    // a planner without the obstacles section (an older roomle-ui) returns
+    // none, and the context is the same
     // the plan context arrives agent-ready from the planner API; the server
     // completes the articles' cornerArticle flag, names the walls and lists
     // the room corners
@@ -384,7 +387,106 @@ describe('get-plan-context', () => {
       'rooms',
       'articles',
       'groups',
+      'obstacles',
     ]);
+  });
+
+  // the obstacles as roomle-ui returns them: a window behind the back wall, a
+  // door behind the right wall, a chair and the root outlines of a group
+  const obstaclesFixture = {
+    objects: [
+      {
+        kind: 'window',
+        outline: [
+          [2000, 0, -3120],
+          [1000, 0, -3120],
+          [1000, 0, -3000],
+          [2000, 0, -3000],
+        ],
+        bottomMm: 950,
+        topMm: 2170,
+      },
+      {
+        kind: 'door',
+        outline: [
+          [4100, 0, -1000],
+          [4100, 0, -100],
+          [4000, 0, -100],
+          [4000, 0, -1000],
+        ],
+        bottomMm: 0,
+        topMm: 2100,
+      },
+      {
+        kind: 'object',
+        outline: [
+          [1500, 0, -1500],
+          [2000, 0, -1500],
+          [2000, 0, -1000],
+          [1500, 0, -1000],
+        ],
+        bottomMm: 0,
+        topMm: 790,
+      },
+    ],
+    groups: [
+      {
+        id: 'g1',
+        roots: [
+          {
+            id: 'r1',
+            outline: [
+              [0, 0, 0],
+              [800, 0, 0],
+              [800, 0, -600],
+              [0, 0, -600],
+            ],
+            bottomMm: 0,
+            topMm: 720,
+          },
+        ],
+      },
+    ],
+  };
+
+  it('names the wall every door and window of the obstacles lies in', async () => {
+    const api = createApi({
+      rooms: { rooms: [room] },
+      obstacles: obstaclesFixture,
+    });
+    const result = (await toolExecutors['get-plan-context'](api, {
+      include: ['rooms', 'obstacles'],
+    })) as Record<string, any>;
+    expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+      'rooms',
+      'obstacles',
+    ]);
+    const [window, door, chair] = obstaclesFixture.objects;
+    expect(result.obstacles).toEqual({
+      objects: [
+        { ...window, roomIndex: 0, wall: 2, fromEndMm: [1000, 2000] },
+        { ...door, roomIndex: 0, wall: 1, fromEndMm: [2000, 2900] },
+        chair,
+      ],
+      groups: obstaclesFixture.groups,
+    });
+    expect(result.rooms.rooms[0].walls[2].name).toBe('back wall');
+  });
+
+  it('fetches the rooms for the obstacles alone and returns only the obstacles', async () => {
+    const api = createApi({
+      rooms: { rooms: [room] },
+      obstacles: obstaclesFixture,
+    });
+    const result = (await toolExecutors['get-plan-context'](api, {
+      include: ['obstacles'],
+    })) as Record<string, any>;
+    expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+      'obstacles',
+      'rooms',
+    ]);
+    expect(Object.keys(result)).toEqual(['obstacles']);
+    expect(result.obstacles.objects[0].wall).toBe(2);
   });
 
   it('keeps the corner point of the articles to the server', async () => {
@@ -3834,9 +3936,34 @@ describe('group command tools', () => {
       { groupId: 'kitchen-1', rootModuleId: 'r1', articleId: 'article-1' },
     ],
     [
+      'exchange-root-module',
+      {
+        groupId: 'kitchen-1',
+        rootModuleId: 'r1',
+        articleId: 'article-1',
+        attributes: [{ id: 'b', value: 900 }],
+      },
+      {
+        groupId: 'kitchen-1',
+        rootModuleId: 'r1',
+        articleId: 'article-1',
+        attributes: [{ id: 'b', value: 900 }],
+      },
+    ],
+    [
       'merge-groups',
       { targetGroupId: 'kitchen-1', groupIds: ['kitchen-2', 'island'] },
       { targetGroupId: 'kitchen-1', groupIds: ['kitchen-2', 'island-1'] },
+    ],
+    [
+      'remove-article-from-group',
+      { groupId: 'kitchen-2', rootModuleId: 'r1' },
+      { groupId: 'kitchen-2', rootModuleId: 'r1' },
+    ],
+    [
+      'swap-root-modules',
+      { groupId: 'island', rootModuleIds: ['r1', 'unit-2'] },
+      { groupId: 'island-1', rootModuleIds: ['r1', 'unit-2'] },
     ],
   ])('%s forwards its command to the planner', async (tool, args, payload) => {
     const api = createApi(planWithGroups);
@@ -3867,6 +3994,12 @@ describe('group command tools', () => {
       { groupId: 'hall', rootModuleId: 'r1', articleId: 'article-1' },
     ],
     ['merge-groups', { targetGroupId: 'kitchen-1', groupIds: ['kitchen'] }],
+    [
+      'insert-article-into-group',
+      { groupId: 'hall', articleId: 'article-1', between: ['r1', 'r2'] },
+    ],
+    ['swap-root-modules', { groupId: 'kitchen', rootModuleIds: ['r1', 'r2'] }],
+    ['remove-article-from-group', { groupId: 'hall', rootModuleId: 'r1' }],
   ])(
     '%s rejects an unknown or ambiguous group id with the groups in the plan',
     async (tool, args) => {
@@ -4463,6 +4596,358 @@ describe('group command tools', () => {
   });
 });
 
+describe('row edit tools', () => {
+  // r1 -> r2 -> r3 along RightBottom, with the reciprocal entries, and r9
+  // in the same group but docked to none of them
+  const side = (
+    ownDockingVector: string,
+    id: string,
+    dockingVector: string
+  ) => ({
+    ownDockingVector,
+    dockedRoots: [{ id, dockingVector }],
+  });
+  const rowGroup = makeShapedGroup({
+    id: 'kitchen-1',
+    roots: [
+      makeShapedRoot({
+        id: 'r1',
+        contextData: { dockedRoots: [side('RightBottom', 'r2', 'LeftBottom')] },
+      }),
+      makeShapedRoot({
+        id: 'r2',
+        contextData: {
+          dockedRoots: [
+            side('LeftBottom', 'r1', 'RightBottom'),
+            side('RightBottom', 'r3', 'LeftBottom'),
+          ],
+        },
+      }),
+      makeShapedRoot({
+        id: 'r3',
+        contextData: { dockedRoots: [side('LeftBottom', 'r2', 'RightBottom')] },
+      }),
+      makeShapedRoot({ id: 'r9' }),
+    ],
+  });
+
+  const insert = async (
+    between: string[],
+    extra: Record<string, unknown> = {}
+  ) => {
+    const api = createApi({ ...planContextFixture, groups: [rowGroup] }, extra);
+    const result = (await toolExecutors['insert-article-into-group'](api, {
+      groupId: 'kitchen',
+      articleId: 'article-1',
+      between,
+    })) as Record<string, any>;
+    return { api, result };
+  };
+
+  it('forwards two neighbours in either order', async () => {
+    const { api, result } = await insert(['r2', 'r1']);
+
+    expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+      'insert-article-into-group',
+      { groupId: 'kitchen-1', articleId: 'article-1', between: ['r2', 'r1'] }
+    );
+    expect(result.corrections).toBeUndefined();
+  });
+
+  it('inserts beside the first-named root, towards the second, when the two are no neighbours', async () => {
+    const { api, result } = await insert(['r1', 'r3']);
+
+    expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+      'insert-article-into-group',
+      expect.objectContaining({ between: ['r1', 'r2'] })
+    );
+    expect(result.corrections).toEqual([
+      "insert-article-into-group: 'r1' and 'r3' are not neighbours - the unit was inserted between 'r1' and 'r2', the neighbour of 'r1' towards 'r3'",
+    ]);
+  });
+
+  it('asks for two neighbours of one row when the two roots are in no row together', async () => {
+    const api = createApi({ ...planContextFixture, groups: [rowGroup] });
+
+    await expect(
+      toolExecutors['insert-article-into-group'](api, {
+        groupId: 'kitchen-1',
+        articleId: 'article-1',
+        between: ['r1', 'r9'],
+      })
+    ).rejects.toThrow(
+      "insert-article-into-group: 'r1' and 'r9' are not in one row - send two neighbours of one row (the side neighbours of 'r1': r2)"
+    );
+    expect(api.extended.externalObjectGroupOperation).not.toHaveBeenCalled();
+  });
+
+  it("passes on the planner's corrections after its own, each named by its tool", async () => {
+    const { result } = await insert(['R1', 'r2'], {
+      externalObjectGroupOperation: vi.fn(async (command: string) => ({
+        command,
+        groups: [],
+        removedGroupIds: [],
+        corrections: [
+          "the unit 'w1' that hung above 'r2' now hangs above 'r3'",
+        ],
+      })),
+    });
+
+    expect(result.corrections).toEqual([
+      "insert-article-into-group: root id 'R1' was read as 'r1'",
+      "insert-article-into-group: the unit 'w1' that hung above 'r2' now hangs above 'r3'",
+    ]);
+  });
+
+  it('passes on that a remove deleted a unit at the end of its row, with the reason', async () => {
+    const api = createApi(
+      { ...planContextFixture, groups: [rowGroup] },
+      {
+        externalObjectGroupOperation: vi.fn(async (command: string) => ({
+          command,
+          groups: [],
+          removedGroupIds: [],
+          gapClosed: false,
+          corrections: [
+            "'r3' was at the end of its row - it was deleted, nothing else moved",
+          ],
+        })),
+      }
+    );
+
+    const result = (await toolExecutors['remove-article-from-group'](api, {
+      groupId: 'kitchen-1',
+      rootModuleId: 'r3',
+    })) as Record<string, any>;
+
+    expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+      'remove-article-from-group',
+      { groupId: 'kitchen-1', rootModuleId: 'r3' }
+    );
+    expect(result.gapClosed).toBe(false);
+    expect(result.corrections).toEqual([
+      "remove-article-from-group: 'r3' was at the end of its row - it was deleted, nothing else moved",
+    ]);
+  });
+
+  it('passes on the docking an exchanged article cannot take', async () => {
+    const api = createApi(
+      { ...planContextFixture, groups: [rowGroup] },
+      {
+        externalObjectGroupOperation: vi.fn(async (command: string) => ({
+          command,
+          groups: [],
+          removedGroupIds: [],
+          corrections: [
+            "the new unit has no docking vector 'LeftTop' - its docking to 'w1' was dropped",
+          ],
+        })),
+      }
+    );
+
+    const result = (await toolExecutors['exchange-root-module'](api, {
+      groupId: 'kitchen-1',
+      rootModuleId: 'r2',
+      articleId: 'article-1',
+    })) as Record<string, any>;
+
+    expect(result.corrections).toEqual([
+      "exchange-root-module: the new unit has no docking vector 'LeftTop' - its docking to 'w1' was dropped",
+    ]);
+  });
+
+  describe('hints', () => {
+    // a cabinet of the calculated group: its side vectors give the footprint
+    // and the height
+    const rawCabinet = (id: string, x: number) => ({
+      id,
+      articlePos: [x, 0, 0],
+      rotationY: 0,
+      dockInfos: [
+        { id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, 600] },
+        { id: 'RightBottom', start: [600, 0, 0], end: [600, 0, 600] },
+        { id: 'LeftTop', start: [0, 720, 0], end: [0, 720, 600] },
+      ],
+    });
+    const rawRow = (id: string, x: number, count: number) => ({
+      id,
+      pos: [x, 0, -1500],
+      rotationY: 0,
+      roots: Array.from({ length: count }, (_, index) =>
+        rawCabinet(`${id}-${index + 1}`, index * 600)
+      ),
+    });
+
+    // the calculated groups before the edit, then after it
+    const editWithGroups = async (before: unknown[], after: unknown[]) => {
+      const api = createApi(
+        { ...planContextFixture, groups: [rowGroup] },
+        {
+          getExternalObjectGroups: vi
+            .fn()
+            .mockResolvedValueOnce(before)
+            .mockResolvedValue(after),
+        }
+      );
+      return (await toolExecutors['insert-article-into-group'](api, {
+        groupId: 'kitchen-1',
+        articleId: 'article-1',
+        between: ['r1', 'r2'],
+      })) as Record<string, any>;
+    };
+
+    it('tells when the edit makes the row reach past a wall', async () => {
+      const result = await editWithGroups(
+        [rawRow('kitchen-1', 100, 3)],
+        [rawRow('kitchen-1', 100, 7)]
+      );
+
+      expect(result.hint).toBe(
+        'the row now reaches past a wall of the room - move it with place-group or edit the row if that is not what was asked'
+      );
+    });
+
+    it('says nothing about a row that stood outside the room before', async () => {
+      const result = await editWithGroups(
+        [rawRow('kitchen-1', 100, 7)],
+        [rawRow('kitchen-1', 100, 8)]
+      );
+
+      expect(result.hint).toBeUndefined();
+    });
+
+    it('tells when the edit makes the row overlap another group', async () => {
+      const result = await editWithGroups(
+        [rawRow('kitchen-1', 0, 3), rawRow('island-1', 2400, 2)],
+        [rawRow('kitchen-1', 0, 5), rawRow('island-1', 2400, 2)]
+      );
+
+      expect(result.hint).toBe("the row now overlaps group 'island-1'");
+    });
+
+    it('says nothing about wall units that stand where they stood, when the planner moved the group origin', async () => {
+      const wallArticle = {
+        ...articleFixture,
+        articleId: 'wall-article',
+        category: 'Kitchen | Wall Units | Storage',
+      };
+      // the same room positions from another group origin
+      const raw = (originX: number) => [
+        {
+          id: 'kitchen-1',
+          pos: [originX, 0, -1500],
+          roots: [
+            {
+              id: 'r1',
+              articleId: 'article-1',
+              articlePos: [600 - originX, 0, 0],
+            },
+            {
+              id: 'w1',
+              articleId: 'wall-article',
+              articlePos: [600 - originX, 1380, 0],
+            },
+          ],
+        },
+      ];
+      const api = createApi(
+        {
+          ...planContextFixture,
+          articles: [articleFixture, wallArticle],
+          groups: [rowGroup],
+        },
+        {
+          getExternalObjectGroups: vi
+            .fn()
+            .mockResolvedValueOnce(raw(0))
+            .mockResolvedValue(raw(600)),
+        }
+      );
+
+      const result = (await toolExecutors['swap-root-modules'](api, {
+        groupId: 'kitchen-1',
+        rootModuleIds: ['r1', 'r3'],
+      })) as Record<string, any>;
+
+      expect(result.hint).toBeUndefined();
+    });
+
+    it('says nothing about a group the edit split off the row', async () => {
+      const result = await editWithGroups(
+        [rawRow('kitchen-1', 0, 3)],
+        [rawRow('kitchen-1', 0, 3), rawRow('split-off', 600, 1)]
+      );
+
+      expect(result.hint).toBeUndefined();
+    });
+
+    it('names the wall units and the range hood that moved with the unit below them', async () => {
+      const wallArticle = {
+        ...articleFixture,
+        articleId: 'wall-article',
+        category: 'Kitchen | Wall Units | Storage',
+      };
+      const raw = (r2x: number, w1x: number) => [
+        {
+          id: 'kitchen-1',
+          pos: [0, 0, -1500],
+          roots: [
+            { id: 'r1', articleId: 'article-1', articlePos: [0, 0, 0] },
+            { id: 'r2', articleId: 'article-1', articlePos: [r2x, 0, 0] },
+            { id: 'w1', articleId: 'wall-article', articlePos: [w1x, 1380, 0] },
+            { id: 'w2', articleId: 'wall-article', articlePos: [0, 1380, 0] },
+          ],
+        },
+      ];
+      const api = createApi(
+        {
+          ...planContextFixture,
+          articles: [articleFixture, wallArticle],
+          groups: [rowGroup],
+        },
+        {
+          getExternalObjectGroups: vi
+            .fn()
+            .mockResolvedValueOnce(raw(600, 600))
+            .mockResolvedValue(raw(1200, 1200)),
+        }
+      );
+
+      const result = (await toolExecutors['swap-root-modules'](api, {
+        groupId: 'kitchen-1',
+        rootModuleIds: ['r1', 'r3'],
+      })) as Record<string, any>;
+
+      expect(result.hint).toBe(
+        "the wall units and the range hood above the moved units moved with them ('w1') - edit the wall row the same way if it should line up with the floor units"
+      );
+    });
+  });
+
+  it('swaps two roots of the group and asks for two different ones', async () => {
+    const api = createApi({ ...planContextFixture, groups: [rowGroup] });
+
+    await toolExecutors['swap-root-modules'](api, {
+      groupId: 'kitchen',
+      rootModuleIds: ['r1', 'r3'],
+    });
+    expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+      'swap-root-modules',
+      { groupId: 'kitchen-1', rootModuleIds: ['r1', 'r3'] }
+    );
+
+    await expect(
+      toolExecutors['swap-root-modules'](api, {
+        groupId: 'kitchen-1',
+        rootModuleIds: ['r2', 'r2'],
+      })
+    ).rejects.toThrow(
+      "swap-root-modules: both ids name the root 'r2' - name the two units that change places"
+    );
+    expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('plan changes', () => {
   // a planner command that takes a moment and records when it runs
   const recordingApi = (events: string[], failing: string[] = []) =>
@@ -4576,6 +5061,8 @@ describe('undo and redo', () => {
       editDuringCall?: boolean;
       failRealLoad?: boolean;
       loadDelayMs?: number;
+      gapClosed?: boolean;
+      readDelayMs?: number;
       order?: string[];
     } = {}
   ) => {
@@ -4594,7 +5081,14 @@ describe('undo and redo', () => {
         ...planContextFixture,
         groups: raw.filter((group) => group !== probeGroup).map(shaped),
       })),
-      getExternalObjectGroups: vi.fn(async () => raw),
+      getExternalObjectGroups: vi.fn(async () => {
+        if (options.readDelayMs) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, options.readDelayMs)
+          );
+        }
+        return raw;
+      }),
       loadExternalObjectGroupLayout: vi.fn(async (layout: any) => {
         options.order?.push('load start');
         if (options.loadDelayMs) {
@@ -4648,6 +5142,16 @@ describe('undo and redo', () => {
           if (options.editDuringCall) {
             step(raw.map((group) => ({ ...group, moved: true })));
           }
+          // a remove that deleted the unit has no follow-up reload
+          const removed = command === 'remove-article-from-group';
+          if (removed && options.gapClosed === false) {
+            return {
+              command,
+              groups: raw.map(shaped),
+              removedGroupIds: [],
+              gapClosed: false,
+            };
+          }
           {
             setTimeout(() => {
               raw = raw.map((group) =>
@@ -4658,7 +5162,12 @@ describe('undo and redo', () => {
               planHistory.historyChanged();
             }, options.followUpDelayMs ?? 0);
           }
-          return { command, groups: raw.map(shaped), removedGroupIds: [] };
+          return {
+            command,
+            groups: raw.map(shaped),
+            removedGroupIds: [],
+            ...(removed && { gapClosed: true }),
+          };
         }
       ),
       removeExternalObject: vi.fn(async (id: string) => {
@@ -4967,6 +5476,87 @@ describe('undo and redo', () => {
     expect(result.redone).toBeNull();
     expect(result.hint).toMatch(/^Nothing to redo/);
     expect(planner.api.extended.redo).not.toHaveBeenCalled();
+  });
+
+  it('waits for the follow-up reload of a remove that closed the gap, and not after a deletion', async () => {
+    const closing = historyPlanner({ followUpDelayMs: 50 });
+    await toolExecutors['remove-article-from-group'](closing.api, {
+      groupId: 'g1',
+      rootModuleId: 'r1',
+    });
+    expect(planHistory.lastDone()?.groupsAfter).toContain('"pos":[0,0,10]');
+    expect(planHistory.lastDone()?.settled).toBe(true);
+
+    planHistory.reset();
+    const deleting = historyPlanner({ gapClosed: false });
+    const started = Date.now();
+    await toolExecutors['remove-article-from-group'](deleting.api, {
+      groupId: 'g1',
+      rootModuleId: 'r1',
+    });
+    expect(Date.now() - started).toBeLessThan(1000);
+    expect(planHistory.lastDone()?.settled).toBe(true);
+  });
+
+  it('waits for the follow-up reload of a swap', async () => {
+    const planner = historyPlanner({ followUpDelayMs: 50 });
+    await toolExecutors['swap-root-modules'](planner.api, {
+      groupId: 'g1',
+      rootModuleIds: ['r1', 'unit-2'],
+    });
+
+    expect(planner.raw()[0].pos).toEqual([0, 0, 10]);
+    expect(planHistory.lastDone()?.groupsAfter).toContain('"pos":[0,0,10]');
+  });
+
+  it("takes a follow-up that lands after the wait, while the call still reads the plan, as the call's own", async () => {
+    vi.useFakeTimers();
+    // the wait gives up at 2000 ms, the follow-up lands at 2100 ms, while the
+    // call reads the plan for its record (300 ms)
+    const planner = historyPlanner({ followUpDelayMs: 2100, readDelayMs: 300 });
+    const changing = changeFront(planner);
+    await vi.advanceTimersByTimeAsync(5000);
+    await changing;
+
+    expect(planHistory.lastDone()?.settled).toBe(true);
+    expect(planHistory.lastDone()?.groupsAfter).toContain('"pos":[0,0,10]');
+    expect(planHistory.lateFollowUps).toBe(0);
+
+    const undoing = toolExecutors.undo(planner.api, {});
+    await vi.advanceTimersByTimeAsync(3000);
+    const result = (await undoing) as any;
+    expect(result.undone).toBe('change-group-attribute');
+  });
+
+  it('expects every follow-up reload of a call that lands after the call', async () => {
+    vi.useFakeTimers();
+    // two kitchen-wide attributes: two group commands, both reloads late
+    const planner = historyPlanner({ followUpDelayMs: 2500 });
+    const creating = toolExecutors['create-or-replace-groups'](planner.api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          placement: { posGroup: [0, 0, 0], posRotationY: 0 },
+          attributes: [
+            { id: 'front', value: 'white' },
+            { id: 'handle', value: 'steel' },
+          ],
+          roots: [{ id: 'u1', articleId: 'article-1' }],
+        },
+      ],
+    });
+    await vi.advanceTimersByTimeAsync(4100);
+    await creating;
+    expect(planHistory.lastDone()?.settled).toBe(false);
+    expect(planHistory.lateFollowUps).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(planHistory.lateFollowUps).toBe(0);
+    const undoing = toolExecutors.undo(planner.api, {});
+    await vi.advanceTimersByTimeAsync(3000);
+    const result = (await undoing) as any;
+    expect(result.undone).toBe('create-or-replace-groups');
+    expect(planner.raw()).toEqual([initialGroup]);
   });
 
   it('waits for the follow-up reload of an attribute change', async () => {

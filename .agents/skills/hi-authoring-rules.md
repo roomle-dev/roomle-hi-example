@@ -6,7 +6,9 @@
 
 **Never author root positions.** Roots are positioned by their relation — each unit names its neighbour, and the server builds the docking; a new group is positioned by its `placement` — one point and one rotation taken from the walls.
 
-**One kitchen is one group.** Every unit standing beside, above or back to back with another unit is a related root of the same group; the group carries one placement. Never split a kitchen into several positioned groups.
+**Words.** The catalog offers articles; a group is one piece of furniture made of articles (a kitchen, a wardrobe, a sideboard, a utility room); an article placed in a group is a root module. A high or tall cabinet or a wardrobe is about 2000 mm high, a low cabinet or base cabinet 720 mm. The user decides which articles stand next to each other; an article named by its kind comes from the category of its neighbours where that category has one.
+
+**One piece of furniture is one group.** Every article standing beside, above or back to back with another article is a related root module of the same group; the group carries one placement. Never split one piece of furniture into several positioned groups.
 
 Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rotationY` on a root — are **ignored**: the server drops them and reports it in `corrections`.
 
@@ -27,7 +29,7 @@ Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rot
 {
   id: string,              // Unique within group
   articleId: string,       // From catalog (required)
-  attributes: Attribute[],  // Optional: overrides of that unit; a material for the whole kitchen goes into the group's attributes
+  attributes: Attribute[],  // Optional: overrides of that root module; a material for the whole group goes into the group's attributes
   // one relation to a root of the same group (every root after the first):
   rightOf | leftOf | onTop | above | behind: string,
   align: 'left' | 'right' | 'back',  // Optional, onTop and above
@@ -186,7 +188,14 @@ placement: {
 
 - **Two corner articles** (a U-shaped kitchen): set `rootId` to the corner article that goes into
   the corner `posGroup` names.
-- **Anywhere else** (island, middle of the room, next to a door): any free floor point, any rotation.
+- **Anywhere else** (island, middle of the room, next to a door): any floor point `obstacles` leaves
+  free, any rotation.
+- **Obstacles**: the `obstacles` section of `get-plan-context` lists what stands in the room — doors,
+  windows and other objects with `kind`, `outline` and `bottomMm`/`topMm`, and per group the outlines
+  of its root modules. A root module cannot stand where an object or another group's root module
+  overlaps it in outline and height range. A door or a window lies in a wall (`roomIndex`, `wall`,
+  `fromEndMm` — its span from the wall's end, like d): keep that span free from the floor for a door,
+  from the window's `bottomMm` for a window; base units lower than that fit below a window.
 - **New groups only**: the placement is applied once, when the group is created. A placement on a
   group already in the plan is not used — the group keeps its position, and `corrections` says so;
   a group resubmitted without placement keeps its position.
@@ -207,13 +216,18 @@ into one group.
 ### Editing a group
 
 An existing group is edited with the command tools, never by positioning new units:
-`merge-article-into-group` docks one more unit with the docking pairs above (`dockTo: { rootId,
-ownDockingVector, dockingVector, mode?, offset? }`, `ownDockingVector` one of the root's
-`freeDockingVectors`), `exchange-root-module` replaces a unit and keeps its docking,
-`delete-root-module` removes a unit (units no longer docked together become separate groups where
-they stand), `delete-group` removes a group, `change-module-attribute` and `change-group-attribute`
-set attributes, and `merge-groups` joins groups where they stand, without moving them or adding
-docking. Every command keeps the group's position. Resubmitting the group with
+`merge-article-into-group` docks one more unit at a free end of a row with the docking pairs above
+(`dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }`, `ownDockingVector` one of
+the root's `freeDockingVectors`), `insert-article-into-group` inserts a unit between two
+neighbouring units (`between`), `remove-article-from-group` removes a unit and closes the gap,
+`delete-root-module` deletes a unit and leaves the gap (units no longer docked together become
+separate groups where they stand), `exchange-root-module` replaces a unit and keeps its docking —
+with `attributes` also by one of another width —, `swap-root-modules` lets two units change places,
+`delete-group` removes a group, `change-module-attribute` and `change-group-attribute` set
+attributes, and `merge-groups` joins groups where they stand, without moving them or adding
+docking. In a row edit the end of the row at a wall or in a corner keeps its place and the other end
+moves; wall units and the range hood move with the unit they hang from, and the result's `hint`
+names them, and says when the row now reaches past a wall or into another group. Resubmitting the group with
 `create-or-replace-groups` is for a rebuild, e.g. several new units at once — see
 [hi-mcp-tools.md](./hi-mcp-tools.md#the-command-tools).
 
@@ -298,8 +312,8 @@ built is an error. Every guard and correction:
 
 ## Workflow
 
-1. Get context: `get-plan-context({ include: 'rooms,articles,groups' })`
-2. Review rooms, articles, existing groups
+1. Get context: `get-plan-context()` — the default sections rooms, articles, groups, obstacles
+2. Review rooms, articles, existing groups and what stands in the room
 3. Create the group with proper docking and a placement
 4. Submit: `create-or-replace-groups({ posGroups: [group] })`
 5. Verify with `get-plan-context` or `get-plan-images`

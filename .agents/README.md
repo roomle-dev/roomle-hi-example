@@ -128,6 +128,8 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [The obstacle map in the plan context (RML-18036)](feature-analysis/obstacle-map-in-the-plan-context.md) | Open | 2026-10-04 |
 | [Undo and redo tools for the HI MCP server (RML-18044)](feature-analysis/undo-and-redo-tools.md) | Implemented | 2026-10-05 |
 | [RML-18044: implementation plan — the undo and redo tools and their unit tests](feature-analysis/undo-and-redo-tools-implementation-plan.md) | Implemented | 2026-10-05 |
+| [Insert, remove, replace and swap units in a row of a group (RML-18045)](feature-analysis/insert-remove-replace-swap-units-in-a-row.md) | Implemented (locally) | 2026-10-05 |
+| [RML-18045: implementation plan — the row edit commands and tools and their unit tests](feature-analysis/insert-remove-replace-swap-units-implementation-plan.md) | Implemented (locally) | 2026-10-05 |
 
 ### Refactoring Analyses
 

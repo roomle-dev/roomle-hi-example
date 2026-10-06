@@ -128,6 +128,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [Images in the Planning Assistant chat](feature-analysis/chat-image-input.md) | Implemented | 2026-10-01 |
 | [Multiple HI MCP connections and occupied sessions](feature-analysis/multiple-hi-mcp-connections.md) | Implemented (local ownership verified; cloud deployment not yet verified) | 2026-10-03 |
 | [The obstacle map in the plan context (RML-18036)](feature-analysis/obstacle-map-in-the-plan-context.md) | Open | 2026-10-04 |
+| [RML-18036: implementation plan — the obstacles section of the plan context and its unit tests](feature-analysis/obstacle-map-in-the-plan-context-implementation-plan.md) | Open | 2026-10-06 |
 | [Undo and redo tools for the HI MCP server (RML-18044)](feature-analysis/undo-and-redo-tools.md) | Implemented | 2026-10-05 |
 | [RML-18044: implementation plan — the undo and redo tools and their unit tests](feature-analysis/undo-and-redo-tools-implementation-plan.md) | Implemented | 2026-10-05 |
 | [Insert, remove, replace and swap units in a row of a group (RML-18045)](feature-analysis/insert-remove-replace-swap-units-in-a-row.md) | Implemented (locally) | 2026-10-05 |

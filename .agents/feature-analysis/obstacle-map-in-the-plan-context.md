@@ -7,6 +7,7 @@
 > **Author**: AI Assistant
 > **Status**: Open
 > **Branch**: `docs/obstacle-map-analysis-RML-18036` — [PR #63](https://github.com/roomle-dev/roomle-hi-example/pull/63)
+> **Plan**: [obstacle-map-in-the-plan-context-implementation-plan.md](obstacle-map-in-the-plan-context-implementation-plan.md) — group outlines from the parts instead of the obstacle map, doors and windows with their wall (2026-10-06)
 
 ---
 

@@ -28,6 +28,10 @@ deliberately rejected. Read these before proposing a change to an area they cove
 | ADR | Status |
 |---|---|
 | [0001 — HI MCP tool logic runs in the MCP server, pages only execute planner methods](decisions/0001-hi-mcp-tool-logic-in-the-server.md) | Accepted |
+| [0002 — One MCP server for every client, configured from outside](decisions/0002-one-mcp-server-configured-from-outside.md) | Accepted |
+| [0003 — The AI chat is an MCP client beside the MCP server](decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) | Accepted |
+| [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](decisions/0004-hi-mcp-server-on-cloudflare-containers.md) | Accepted |
+| [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](decisions/0005-deploy-hi-mcp-from-release-cloudflare.md) | Accepted |
 
 ---
 
@@ -46,10 +50,12 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
 | [vercel-ai-sdk-chat.md](./skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: provider selection, server-side auth, @ai-sdk/mcp, streamText route | Implementing the AI chat window (RML-17984), Vercel AI SDK, MCP client integration |
 | [hi-mcp-testing.md](./skills/hi-mcp-testing.md) | "Test the MCP": a temporary subset of `docs/test-prompts.json` (default every test, `gpt-5-mini`) run by `run-hi-mcp-tests.js` into `.temp/result/<session>/<model>/`, `report.md` with plan snapshot ids, images, evaluation and bug verdicts; the run script `run-hi-mcp-prompt.js` (a plan, operations, prompts and an image in headless Chromium, snapshot, plan snapshot id, planner calls) | The user asks to "test the mcp"; testing prompts or models against the real planner |
+| [hi-analysis-cleanup.md](./skills/hi-analysis-cleanup.md) | "Cleanup analyses": verify every analysis, promote the durable outcome of the landed ones into the living reference, decisions, ADRs, backlog and skills, delete them, fix the links, rebuild this index | The user says "cleanup analyses"; reviewing or tidying the analysis folders |
+| [hi-backlog-cleanup.md](./skills/hi-backlog-cleanup.md) | "Cleanup backlog": the backlog as open todos only — verify every item against the code, remove what landed, strip history, refresh the code references | The user says "cleanup backlog"; reviewing or updating the backlog |
 
 ### Decisions (Architecture Decision Records)
 
-ADRs document why the code is shaped the way it is. This folder is initially empty. Create numbered ADR documents in `.agents/decisions/` as needed, following the [RoomleCore pattern](https://github.com/roomle-internal/RoomleCore/blob/master/documentation/decisions/README.md).
+ADRs document why the code is shaped the way it is; they are listed under [Decisions](#decisions). Create numbered ADR documents in `.agents/decisions/` as needed, following the [RoomleCore pattern](https://github.com/roomle-internal/RoomleCore/blob/master/documentation/decisions/README.md).
 
 ### User-Facing Documentation
 
@@ -73,34 +79,7 @@ status block where one is present.
 
 One document per bug: root-cause analysis written **before** the fix, closed out **after** it.
 
-*This folder is initially empty. Add bug analysis documents as needed.*
-
-| Document | Status | Last touched |
-|---|---|---|
-| [Corner kitchen not docked after the positioning rules](bug-analysis/corner-kitchen-not-docked-after-positioning-rules.md) | Open | 2026-09-29 |
-| [Corner article's corner point offset from its root origin](bug-analysis/corner-article-corner-point-offset-from-root-origin.md) | Open | 2026-09-29 |
-| [Cloudflare image build fails on the stale hi-mcp lockfile](bug-analysis/cf-docker-build-stale-hi-mcp-lockfile.md) | Fixed | 2026-09-29 |
-| [Agent placement in a room corner: findings](bug-analysis/agent-placement-in-a-room-corner-findings.md) | Open | 2026-09-30 |
-| [Corner article offset missing on an empty plan](bug-analysis/corner-offset-missing-on-an-empty-plan.md) | Open | 2026-09-30 |
-| [Unconnected docking graph accepted by create-or-replace-groups](bug-analysis/unconnected-docking-graph-accepted.md) | Open | 2026-09-30 |
-| [Right-handed corner article placed outside the room](bug-analysis/right-handed-corner-article-placed-outside-the-room.md) | Fixed | 2026-09-30 |
-| [get-plan-images reaches Mistral as base64 text](bug-analysis/plan-images-sent-as-text-to-mistral.md) | Fixed | 2026-10-01 |
-| [Tool results fill Mistral's context within one turn](bug-analysis/tool-results-exceed-mistral-context.md) | Fixed | 2026-10-01 |
-| [A chat turn that reaches the step limit ends without an answer](bug-analysis/chat-turn-ends-without-answer-at-step-limit.md) | Fixed | 2026-10-01 |
-| [The worktop colour is not discoverable](bug-analysis/worktop-colour-not-discoverable.md) | Fixed (roomle-ui branch, not deployed) | 2026-10-01 |
-| [change-module-attribute reports success for an attribute the module does not have](bug-analysis/change-module-attribute-accepts-a-missing-attribute.md) | Fixed (roomle-ui branch, not deployed) | 2026-10-01 |
-| [A merged group's toe kick reaches 120 mm into the back wall](bug-analysis/merged-group-toe-kick-reaches-into-the-wall.md) | Open | 2026-10-01 |
-| [create-or-replace-groups loads a new group outside the room](bug-analysis/new-group-outside-the-room-accepted.md) | Rejected | 2026-10-01 |
-| [create-or-replace-groups accepts two roots on one side docking vector](bug-analysis/two-roots-on-one-side-vector-accepted.md) | Fixed | 2026-10-01 |
-| [The deploy workflow misses the Linux rollup binary](bug-analysis/deploy-workflow-misses-linux-rollup-binary.md) | Fixed | 2026-10-01 |
-| [create-or-replace-groups drops the units the agent writes inside the docking](bug-analysis/units-inside-docking-entries-dropped.md) | Fixed | 2026-10-02 |
-| [The range hood lands half its width off and takes the agent several attempts](bug-analysis/range-hood-placed-half-a-width-off.md) | Fixed | 2026-10-02 |
-| [RML-18033: HI MCP validation and client contract findings](bug-analysis/rml-18033-hi-mcp-validation.md) | Open (revalidated on 3e68df4) | 2026-10-02 |
-| [The perspective object image of every test run is empty](bug-analysis/empty-perspective-object-image-in-test-runs.md) | Fixed | 2026-10-03 |
-| [RML-18041: the open issues of the MCP test — causes verified, fixes proposed](bug-analysis/rml-18041-mcp-test-open-issues.md) | Fixed | 2026-10-04 |
-| [RML-18041: implementation plan — the fixes and their unit tests](bug-analysis/rml-18041-implementation-plan.md) | Implemented (PR 7 pending D23) | 2026-10-04 |
-| [A follow-up reload that lands while its call still runs blocks the undo](bug-analysis/late-follow-up-during-the-call-blocks-undo.md) | Fixed | 2026-10-05 |
-| ["insert a low cabinet between the high cabinets" does not reach insert-article-into-group](bug-analysis/insert-between-not-chosen-for-a-wardrobe-group.md) | Fixed | 2026-10-06 |
+*No open bug analysis.*
 
 ### Feature Analyses
 
@@ -109,30 +88,8 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Planner MCP Server Analysis - roomle-model-exporter](feature-analysis/planner-mcp-server-analysis.md) | Implemented | 2026-09-25 |
-| [hi-mcp-poc-json](feature-analysis/hi-mcp-poc-json.md) | Open | 2026-09-26 |
-| [MCP Azure deployment and session bootstrapping](feature-analysis/mcp-azure-deployment-and-session-bootstrapping.md) | Open | 2026-09-26 |
-| [MCP Cloudflare Containers deployment](feature-analysis/mcp-cloudflare-containers-deployment.md) | Open | 2026-09-26 |
-| [`npm run dev` with local Rubens UI server](feature-analysis/dev-script-local-server-url.md) | Implemented | 2026-09-28 |
-| [Add AI chat to the HI MCP example](feature-analysis/add-ai-chat-to-hi-example.md) | Implemented | 2026-09-29 |
-| [AI model selection for kitchen planning](feature-analysis/ai-model-selection-for-kitchen-planning.md) | Open | 2026-09-30 |
-| [Group placement computed in the MCP server (RML-18007, Task 1)](feature-analysis/group-placement-computed-in-the-mcp-server.md) | Open | 2026-09-30 |
-| [Reintroduce the place-group tool in the MCP server (RML-18007, Task 2)](feature-analysis/reintroduce-place-group-tool-in-the-server.md) | Open | 2026-09-30 |
-| [HI MCP command API (RML-18004)](feature-analysis/hi-mcp-command-api.md) | Implemented | 2026-09-30 |
-| [HI MCP testing skill: the prompt run script](feature-analysis/hi-mcp-prompt-run-script.md) | Implemented | 2026-09-30 |
-| ["test the mcp": the prompt suite of the HI MCP testing skill](feature-analysis/hi-mcp-test-the-mcp-skill.md) | Implemented | 2026-09-30 |
-| [The AI chat window in the ligna-store](feature-analysis/hi-mcp-chat-window-in-ligna-store.md) | Implemented | 2026-09-30 |
-| [Article size and trusted descriptions](feature-analysis/article-size-and-trusted-descriptions.md) | Implemented | 2026-10-01 |
-| [Start the HI example with the Cloudflare-hosted MCP server](feature-analysis/start-example-with-cloudflare-mcp.md) | Implemented | 2026-10-01 |
-| [Deploy hi-mcp to Cloudflare on a push to release/cloudflare](feature-analysis/deploy-hi-mcp-on-push-to-release-cloudflare.md) | Implemented (first run pending setup) | 2026-10-01 |
-| [Images in the Planning Assistant chat](feature-analysis/chat-image-input.md) | Implemented | 2026-10-01 |
-| [Multiple HI MCP connections and occupied sessions](feature-analysis/multiple-hi-mcp-connections.md) | Implemented (local ownership verified; cloud deployment not yet verified) | 2026-10-03 |
-| [The obstacle map in the plan context (RML-18036)](feature-analysis/obstacle-map-in-the-plan-context.md) | Implemented (locally) | 2026-10-04 |
-| [RML-18036: implementation plan — the obstacles section of the plan context and its unit tests](feature-analysis/obstacle-map-in-the-plan-context-implementation-plan.md) | Implemented (locally) | 2026-10-06 |
-| [Undo and redo tools for the HI MCP server (RML-18044)](feature-analysis/undo-and-redo-tools.md) | Implemented | 2026-10-05 |
-| [RML-18044: implementation plan — the undo and redo tools and their unit tests](feature-analysis/undo-and-redo-tools-implementation-plan.md) | Implemented | 2026-10-05 |
-| [Insert, remove, replace and swap units in a row of a group (RML-18045)](feature-analysis/insert-remove-replace-swap-units-in-a-row.md) | Implemented (locally) | 2026-10-05 |
-| [RML-18045: implementation plan — the row edit commands and tools and their unit tests](feature-analysis/insert-remove-replace-swap-units-implementation-plan.md) | Implemented (locally) | 2026-10-05 |
+| [MCP Azure deployment and session bootstrapping](feature-analysis/mcp-azure-deployment-and-session-bootstrapping.md) | Open | 2026-10-06 |
+| [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open (product goal) | 2026-09-27 |
 
 ### Refactoring Analyses
 
@@ -143,14 +100,7 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Use hi-mcp-poc-json server for minimal-hi-example](refactoring-analysis/use-hi-mcp-poc-json-server-for-minimal-example.md) | Done | 2026-09-27 |
-| [Group placement via repositioningData](refactoring-analysis/group-placement-via-repositioning-data.md) | Open | 2026-09-29 |
-| [HI MCP tool logic in every client page](refactoring-analysis/hi-mcp-tool-logic-in-client-pages.md) | Done | 2026-09-29 |
-| [Parts (PosPartData) and log messages in the groups of the plan context](refactoring-analysis/hi-plan-context-without-parts.md) | Done | 2026-10-01 |
-| [Guards in the HI MCP server: what they reject, prevent and discard, and the refactoring plan (RML-18033)](refactoring-analysis/guards-in-the-hi-mcp-server.md) | Done | 2026-10-02 |
-| [One anchor frame for articles with docking vector offsets (corner articles, range hood)](refactoring-analysis/one-anchor-frame-for-docking-vector-offsets.md) | Done | 2026-10-02 |
-| [Simplify the docking for the agent: one relation per unit instead of contextData (RML-18038)](refactoring-analysis/simple-docking-for-the-agent.md) | Open | 2026-10-02 |
-| [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-04 |
+| [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-06 |
 
 ### Benchmarks & Performance Analyses
 
@@ -167,11 +117,19 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 
 | Document | Last touched |
 |---|---|
-| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the ligna-store | 2026-10-06 |
-| [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — measure, then let the plan context carry every article's docking vectors and corner point, and remove the server's probe | 2026-10-06 |
+| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-06 |
+| [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — measure, then let the plan context carry every article's docking vectors and corner point, and remove the server's probe where the default variant suffices | 2026-10-06 |
 | [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner that "test the mcp" shows | 2026-10-06 |
 | [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — make the reasoning tokens measurable, run gpt-5.4-mini at the same effort as gpt-5-mini, decide the chat's model and effort | 2026-10-06 |
-| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the open gaps of running "test the mcp": the object-only render under software GL, the unrecorded hint, a run that loses its page | 2026-10-06 |
+| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the open gaps of running "test the mcp": the object-only render under software GL, the unrecorded hint, a run that loses its page, tests only written by hand, the snapshot save with a local planner | 2026-10-06 |
+| [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — a store page that never connects for an external agent, the live isolation check, access control, the image's second lockfile, the root scripts' flags, SIGTERM | 2026-10-06 |
+| [The planner's load result per input group](backlog/planner-load-outcome-per-group.md) — roomle-ui names per input group what it built, so `create-or-replace-groups` reports a group left out in `notLoaded` | 2026-10-06 |
+| [A deletion makes the wall units groups of their own](backlog/delete-root-module-splits-off-wall-units.md) — `deleteRootModule` keeps the wall units with the floor units they hang above | 2026-10-06 |
+| [One planner undo step per tool call](backlog/one-undo-step-per-tool-call.md) — roomle-ui resolves a command after its follow-up reload and groups a tool call into one undo step; then the server drops its follow-up wait | 2026-10-06 |
+| [Open findings about the plan context](backlog/plan-context-open-findings.md) — wall sides, root outlines, calculation errors, the obstacle outline of a group, position heights | 2026-10-06 |
+| [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-06 |
+| [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-06 |
+| [The ligna-store chat as a client of the HI MCP server](backlog/ligna-store-chat-client.md) — the Mistral image adapter and a final answer step | 2026-10-06 |
 
 ---
 
@@ -190,7 +148,7 @@ The following phrases trigger the analysis workflow automatically:
 1. **Write analysis** — Before any code changes, write the complete analysis document
 2. **Do the work** — Implement the fix, feature, or refactoring
 3. **Close out** — Update the document with the results, set status, promote durable knowledge
-4. **Never delete** — Analysis documents are historical records
+4. **Delete once landed** — when the work is on `master`, ["cleanup analyses"](skills/hi-analysis-cleanup.md) promotes the durable outcome and deletes the document; git history, the Jira comment and the pull request keep the record
 
 ### Status Values
 
@@ -241,7 +199,7 @@ Every analysis document should include:
 | What you produced | Where it goes | Lifecycle |
 |---|---|---|
 | **Living reference** — how things work now | `.agents/skills/` or `docs/` | Updated when behaviour changes |
-| **Historical record** — analysis, benchmark, refactoring | `.agents/<analysis-type>/` | Never updated after close-out |
+| **Historical record** — analysis, benchmark, refactoring | `.agents/<analysis-type>/` | Never updated after close-out; deleted by ["cleanup analyses"](skills/hi-analysis-cleanup.md) once the work is on `master` |
 | **Decision** — why code is shaped this way | `.agents/decisions/` (create folder if needed) | Living reference |
 | **ADR** — architecture decision record | `.agents/decisions/` | Living reference |
 

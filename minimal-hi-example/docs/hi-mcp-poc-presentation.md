@@ -4,7 +4,7 @@ Migrated from the Confluence page
 [2026-09-01 Innovations day](https://roomle.atlassian.net/wiki/spaces/DT/pages/3987406850/2026-09-01+Innovations+day#HI-orchestrator-MCP),
 chapter *HI orchestrator MCP*. It presents the proof of concept that was shown
 on the innovations day; the setup described there is the roomle-ui PoC this
-repository's standalone variant is derived from. The examples below are current
+repository's MCP server is copied from. The examples below are current
 results of that proof of concept, not the ones shown on the day.
 
 This is a proof of concept for creating HI object groups in a scene using an
@@ -44,9 +44,9 @@ These results were generated using the Claude app and the Opus 5 model.
 The HI orchestrator MCP is a proof of concept that lets an AI agent plan with
 HOMAG Intelligence object groups. The agent connects to a local MCP server
 and drives a live planning session: it reads the plan context and creates,
-changes and positions HI object groups. The whole setup runs locally and is
-based on the existing hi-presets example of the embedding library; nothing of
-it is deployed anywhere.
+changes and positions HI object groups. The setup runs locally and is based
+on the existing hi-presets example of the embedding library; the same MCP
+server is also deployed on Cloudflare for the ligna-store.
 
 ### How it is implemented
 
@@ -85,17 +85,20 @@ The agent gets a small set of tools:
 
 The central design principle: the agent declares what, the system computes
 where. The agent never calculates coordinates or root-module positions. It
-picks articles, states how the units dock to each other (the same
-PosDockedContextRoot structure the HI calculation already uses), and names
-the target wall. The server completes each root module from the article
+picks articles, names for each unit the neighbour it stands beside, on or
+above (`rightOf`, `leftOf`, `onTop`, `above`, `behind`), and places the group
+by a point and a rotation taken from a wall. The server builds the docking
+from these relations (the PosDockedContextRoot structure the HI calculation
+already uses), the planner completes each root module from the article
 template, and the existing arrangement logic computes all positions — exactly
-as it does for interactively planned groups. Inputs that would bypass this
-(hand-written positions, undocked units) are rejected with error messages
-that explain the correct way, so the agent can self-correct within the
-session.
+as it does for interactively planned groups. The server corrects inputs that
+would bypass this — it drops hand-written positions and puts a unit without a
+relation into the row of its kind — and names each correction in the result,
+so the agent learns within the session.
 
 The server is agent-agnostic: any MCP client with Streamable HTTP support can
 connect (Claude Code, VS Code Copilot agent mode, Cursor, custom clients).
-Two small web-sdk extensions were added as productive code (a plan-context
-snapshot API and a new layout type for loading pos groups); the MCP server
-itself is demonstration code inside the embedding examples.
+Three web-sdk extensions were added as productive code (a plan-context
+snapshot API, a new layout type for loading pos groups and a group command
+API for the edits); the MCP server itself is demonstration code in this
+repository (`hi-mcp/hi-mcp-server`).

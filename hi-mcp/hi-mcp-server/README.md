@@ -56,6 +56,8 @@ and all tool logic.
 | `package.json` | Self-contained dependencies of the server (MCP SDK, ws, zod, vite-node) |
 | `hi-mcp-server.ts` | `McpServer` setup: server instructions + tool registrations with zod schemas; the handlers run the tool executors |
 | `tool-executors.ts` | The tool logic: payload validation, planner call composition, response shaping, agent hints |
+| `group-layout.ts` | The relations of `create-or-replace-groups` (`rightOf`, `above`, …) compiled into docking entries |
+| `plan-history.ts` | The record of the tool calls that changed the plan, with their planner steps, for `undo` and `redo` |
 | `group-placement.ts` | The placement of a new group: finds the root it is anchored at by following the docking and derives the planner's repositioning |
 | `plan-space.ts` | The geometry of `place-group`: footprint and corner geometry of a calculated group, wall and corner placement, the overlap test between groups |
 | `planner-api.ts` | The planner methods the tools call, forwarded to the page with per-method timeouts |
@@ -92,24 +94,27 @@ occupied port with the command to free it instead of a bare stack trace, and —
 through a wrapper script whose stdin it inherits — it shuts itself down when that script ends, so
 no orphaned instance keeps the port.
 
-Then open the store page **with the INT stage and a plan id** (keep the tab open):
+Then open the store page **with the chat parameters, the INT stage and a plan id** (keep the tab
+open):
 
 ```text
-http://localhost:3000/?store.stage=INT&id=ps_bse5tc50687uh64hm8jul7j1kiuacyx
+http://localhost:3000/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=http://localhost:3100&id=ps_bse5tc50687uh64hm8jul7j1kiuacyx
 ```
 
-The INT stage selects the `bo-test` UI server and the `HI_PRE_Roomle_Milestone_2` HI backend; the
-store resolves the HI credentials server-side via the backend id, so no credentials are needed
-here. The store-side bridge starts automatically when the stage is INT — no extra query parameter.
-The page connects to the MCP server; the server terminal logs `page connected`.
+The store-side bridge starts only together with the store's chat window — with `model`, `api_key`
+and `mcp_server`, on every stage. The INT stage selects the `bo-test` UI server and the
+`HI_PRE_Roomle_Milestone_2` HI backend the tools run against; the store resolves the HI credentials
+server-side via the backend id, so no HI credentials are needed here. The page connects to the MCP
+server; the server terminal logs `page connected`.
 
 ### Notes on the client page
 
 | Parameter | Effect |
 | --------- | ------ |
-| `store.stage=INT` | Required for this PoC: selects the `bo-test` UI + `HI_PRE_Roomle_Milestone_2` HI backend and activates the store-side bridge |
+| `store.stage=INT` | Selects the `bo-test` UI + `HI_PRE_Roomle_Milestone_2` HI backend the tools run against |
 | `id=<plan id>` | Loads a plan / plan snapshot into the planner (a `ps_…` id from the INT environment) |
-| `mcp_server=<url>` | Points the bridge at a remote MCP server (e.g. the Azure or Cloudflare deployment), e.g. `mcp_server=https://hi-mcp-poc.example.com` — `http(s)` or `ws(s)` both accepted. Without it the bridge connects to the local server on the page's own protocol |
+| `model=<model>`, `api_key=<key>` | Show the store's chat window; the store-side bridge starts only together with it. `model` is one of `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, `mistral-large-latest`, `mistral-medium-latest` |
+| `mcp_server=<url>` | The MCP server of the chat and the bridge: `http://localhost:3100` locally, or a deployment such as `https://hi-mcp-poc.hi-orchestrator.workers.dev` — `http(s)` or `ws(s)` both accepted. Required: without it the store starts no bridge |
 | `mcp_session=<name>` | Optional shared session for an external MCP client on Cloudflare; a store chat without it generates a fresh session per page. Local servers ignore the session for routing. |
 
 ### The setup matrix (which setup needs which URL parameters)
@@ -121,7 +126,7 @@ visible chat error. A store page with no chat parameters does not connect its br
 | Store page | `mcp_server` | `mcp_session` | Bridge connects to | Parallel users |
 | ---------- | ------------ | -------------- | ------------------ | ------------- |
 | local (`http://localhost:3000`) | local server URL | — | `ws://localhost:3100/bridge` | one local page; second sees an occupied error |
-| deployed (`https://www.roomle.com/…`) | local server URL | — | `ws://localhost:3100/bridge` (loopback), `wss://localhost:3100/bridge` as browser fallback — the **local server on the user's machine** | one local page per machine; second sees an occupied error |
+| deployed (`https://www.roomle.com/…`) | local server URL | — | `ws://localhost:3100/bridge` (loopback is not mixed content); `wss://localhost:3100/bridge` with `mcp_server=https://localhost:3100` and the TLS variant — the **local server on the user's machine** | one local page per machine; second sees an occupied error |
 | deployed | Cloudflare Worker URL | — | a fresh container for the page's generated `?session=` | each page gets an independent planner |
 | deployed | Cloudflare Worker URL | a session name | the Worker's container for `?session=<name>` | shared with an external client using the same name; a second page is refused |
 | HI example (`npm run start:cf`, `http://localhost:3000`) | Cloudflare Worker URL (set by the launcher) | the OS user name (set by the launcher) | the Worker's container for `?session=<user name>` | one container per OS user name; two machines with the same user name share it |
@@ -145,25 +150,25 @@ active get HTTP 409 instead of changing another planner.
 
 | Setup | Server | Store page | MCP client |
 | ----- | ------ | ---------- | ---------- |
-| local + local | `npm start` | `http://localhost:3000/?store.stage=INT&id=…` | `http://localhost:3100/mcp` |
-| local server + deployed store | `npm start` | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&id=…` | `http://localhost:3100/mcp` |
-| Azure server + deployed store | App Service, WebSockets enabled | `…&mcp_server=https://<app>.azurewebsites.net` appended | `https://<app>.azurewebsites.net/mcp` |
+| local + local | `npm start` | `http://localhost:3000/?store.stage=INT&model=…&api_key=…&mcp_server=http://localhost:3100&id=…` | `http://localhost:3100/mcp` |
+| local server + deployed store | `npm start` | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=…&api_key=…&mcp_server=http://localhost:3100&id=…` | `http://localhost:3100/mcp` |
+| Azure server + deployed store | App Service, WebSockets enabled | `…&model=…&api_key=…&mcp_server=https://<app>.azurewebsites.net&id=…` | `https://<app>.azurewebsites.net/mcp` |
 
-The bridge always tries `ws://localhost:3100` first — loopback connections are not mixed
-content, so this works from an http page (local store) and from an https page (deployed store)
-alike. On https pages it falls back to `wss://localhost:3100` for browsers that refuse the
-loopback exemption (the optional TLS variant below). The `mcp_server` parameter overrides host,
-port and scheme.
+The bridge connects to the `mcp_server` URL, with the scheme mapped to `ws`/`wss`.
+`ws://localhost:3100` is a loopback connection, which is not mixed content, so it works from an
+http page (local store) and from an https page (deployed store) alike; a browser that refuses it
+needs the optional TLS variant below and `mcp_server=https://localhost:3100`.
 
 ### Connecting the deployed store (test stage)
 
-Open `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&id=<plan id>` (the store
-deployment must contain the `feat/hi-mcp` branch: the `hi-mcp/` bridge and the hook in
-`Planner.vue`). The page connects to the local MCP server over `ws://localhost:3100/bridge` —
-no certificate needed. The server terminal logs `page connected`.
+Open `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=http://localhost:3100&id=<plan id>`
+(the store deployment must contain the `hi-mcp/` bridge and the hook in `Planner.vue`). The page
+connects to the local MCP server over `ws://localhost:3100/bridge` — no certificate needed; the
+browser may ask for permission to reach the local network. The server terminal logs
+`page connected`.
 
 Only if your browser refuses the loopback `ws` connection, run the server with a locally trusted
-certificate and the bridge's `wss` fallback picks it up:
+certificate and open the store with `mcp_server=https://localhost:3100`:
 
 ```bash
 mkcert -install && mkcert localhost    # once: a locally trusted certificate
@@ -328,7 +333,8 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   generated, from the parts of the calculated group. No walls. Requested alone, the server fetches
   the rooms too for the walls of the doors and windows
 - `masterData` — only when included explicitly: per library the root modules (id, name,
-  desc) with their relevant attribute ids, and the attributes a customer sees (`isMain` or
+  desc) with their relevant attribute ids — the roots the library generates (worktop
+  `mr_Countertop`, toe kick, finger grip, backsplash, …) included —, and the attributes a customer sees (`isMain` or
   `userRight` `Simple`) with desc, type, group and `selections` (value, name and desc). The same compacted attribute vocabulary is searched by
   [find-attributes](#find-attributes)
 
@@ -336,10 +342,13 @@ Example: `{ "include": ["articles", "groups"] }`
 
 ### get-authoring-rules
 
-No parameters. Returns the [authoring rules](#authoring-pos-groups) as text: the payload format of
-`create-or-replace-groups`, the root-module fields, how to position a new group
-with a `placement`, the docking vectors with their valid pairs, `mode` and `offset`, and the recipes for a row, a wall unit above a base unit, an
-island and a corner. Answered by the server itself — it works even without a connected page.
+No parameters. Returns the [authoring rules](#authoring-pos-groups) as text: the words (articles,
+root modules, groups), the payload format of `create-or-replace-groups`, the relations, how to read
+the docking of a returned group, how to position a new group with a `placement`, the obstacles, the
+command tools and `undo`, and six examples — a row along a wall, wall units beside a tall unit and
+above base units, an L-shaped corner kitchen, a row centred on a wall, an article added with
+`merge-article-into-group`, an article inserted with `insert-article-into-group`. Answered by the
+server itself — it works even without a connected page.
 Agents should fetch this before authoring pos groups (the same text is delivered as server
 instructions at initialize, but not every client surfaces those).
 
@@ -348,8 +357,10 @@ instructions at initialize, but not every client surfaces those).
 Searches the attribute vocabulary of the loaded libraries by text — attribute id, name,
 description, group or selection name — and returns the matching attributes with their
 `selections` and the root modules that carry them. The vocabulary is the compacted master data of
-`get-plan-context` (root modules and their customer-facing attributes). At most 20 matches are
-returned; narrow the text when the result carries a `hint`.
+`get-plan-context` (root modules and their customer-facing attributes): the worktop colour, for
+example, is `mod_CountertopColor` of the generated root `mr_Countertop`, set on the whole group with
+`change-group-attribute`. At most 20 matches are returned; narrow the text when the result carries a
+`hint`.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -471,9 +482,16 @@ Example: `{ "groupId": "a1b2c3", "wall": "right", "alignment": "top" }`
 The command tools change a group that is already in the plan. Each one calls
 the planner's group command API (`externalObjectGroupOperation`, roomle-ui),
 which performs the edit with the planner's own group features and answers once
-the planner has loaded the result. Every command keeps the group's position and
-returns `{ command, groups, removedGroupIds }`: the affected groups in the
-`get-plan-context` shape and the ids of removed groups. An unknown group or
+the planner has loaded the result. A new command needs no page change: it is a
+payload of the one planner method on the allow-lists. The group keeps its
+position; in a row edit (insert, remove, exchange with another width, swap) the
+end of the row at a wall or in a corner keeps its place and the other end moves,
+and the wall units and the range hood move with the root module they hang from.
+Every command returns `{ command, groups, removedGroupIds, changedModuleIds?,
+gapClosed?, corrections?, hint? }`: the affected groups in the
+`get-plan-context` shape, the ids of removed groups, and a `hint` after a row
+edit that names the units above that moved and says when the row now reaches
+past a wall or into another group. An unknown group or
 article id fails before anything changes, and the error lists the valid ones;
 an article id in another spelling is read in the catalog's spelling.
 `merge-article-into-group` docks a unit sent to a taken side vector to the
@@ -481,9 +499,13 @@ root at the free end of that row in the named direction — to the named root's
 free other side when the unit would stand outside the room there —, a
 `dockingVector` the article does not have becomes the partner of
 `ownDockingVector`, and a wall unit docked on a floor unit's Top vector gets the
-hang gap of the wall units. Root ids are resolved by a unique prefix, their
+hang gap of the wall units. Two root modules of one row that are no neighbours
+put the article of `insert-article-into-group` beside the first-named, towards
+the second. Root ids are resolved by a unique prefix, their
 last UUID segments or one character. The result reports these in
-`corrections`. The planner's own checks (e.g. groups of different libraries
+`corrections`, followed by the planner's own corrections (a docking the new
+article cannot take, a unit above that keeps its place, a deletion instead of a
+remove). The planner's own checks (e.g. groups of different libraries
 in `merge-groups`) are unchanged, and their message is passed on as the error.
 Group ids accept a unique prefix.
 
@@ -492,9 +514,12 @@ Group ids accept a unique prefix.
 | `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | Sets an attribute of a root module, or of one of its sub modules (the id in `subModules`) |
 | `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it; the result lists the `changedModuleIds` |
 | `delete-group` | `groupId` | Removes the group |
-| `delete-root-module` | `rootModuleId` | Removes one root module; root modules no longer docked together become separate groups where they stand, and removing the only root module removes the group. Generated roots (worktop, toe kick) cannot be removed |
+| `delete-root-module` | `rootModuleId` | Deletes one root module and leaves the gap — the tool for "delete": root modules no longer docked together become separate groups where they stand, and deleting the only root module deletes the group. Generated roots (worktop, toe kick) cannot be deleted |
+| `remove-article-from-group` | `groupId`, `rootModuleId` | Removes one root module and closes the gap — the tool for "remove": its neighbours are docked to each other, and a unit that hung on it hangs on the root module that moves into the gap. A root module at the end of a row is removed and nothing else moves; a corner article between two legs or the only root module is deleted as `delete-root-module` does (`gapClosed: false`) |
 | `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }` | Docks the article as a new root module to a free docking vector of a root module of the group (`mode` default `StartStart`, `offset` default `[0, 0, 0]`) |
-| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId` | Replaces a root module with an article of one root module; the new root module keeps the position and the docking |
+| `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between: [rootId, rootId]` | Inserts the article between two root modules that stand side by side, in either order, whatever the group and the article; the other root modules move by the article's width |
+| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | Replaces a root module with an article of one root module; the new root module keeps the position and the docking. `attributes` override attributes of the new root module — `mod_Width` 900 for another width, and the rest of the row moves by the difference |
+| `swap-root-modules` | `groupId`, `rootModuleIds: [rootId, rootId]` | Lets two root modules change places, neighbours or not, with their attributes and the units hanging from them; the row keeps its length. A corner article and a straight unit cannot change places |
 | `merge-groups` | `targetGroupId`, `groupIds` | Merges the groups into the target group where they stand, like the planner's merge action; nothing is moved and no docking is added |
 
 `value` is a string, a number (passed on as its string) or a boolean. Attribute
@@ -506,6 +531,22 @@ Examples:
 - `change-module-attribute`: `{ "rootModuleId": "id0001", "attributeId": "b", "value": "900" }`
 - `change-group-attribute`: `{ "groupId": "a1b2c3", "attributeId": "front", "value": "white" }`
 - `merge-article-into-group`: `{ "groupId": "a1b2c3", "articleId": "<drawer unit>", "dockTo": { "rootId": "id0003", "ownDockingVector": "RightBottom", "dockingVector": "LeftBottom" } }`
+- `insert-article-into-group`: `{ "groupId": "a1b2c3", "articleId": "<drawer unit>", "between": ["id0001", "id0002"] }`
+- `swap-root-modules`: `{ "groupId": "a1b2c3", "rootModuleIds": ["id0001", "id0003"] }`
+
+### undo, redo
+
+No parameters. `undo` reverts the plan change of the last tool call that changed the plan — a
+whole `create-or-replace-groups` call with its kitchen-wide material included — and `redo` brings
+it back; call `undo` again to revert the call before. The server records every tool call that
+changed the plan with the planner steps it made (`plan-history.ts`) and steps the planner's own undo
+history back by that many steps, each confirmed by the history event the page relays
+(`onHistoryChange`). Only tool calls are reverted: after a change made in the planner, `undo`
+reverts nothing and says that the planner's undo button reverts those changes.
+
+Returns `{ undone | redone, groups, hint? }` — the reverted tool and every group of the plan. Nothing
+to undo or redo is a normal result with the tool `null` and a `hint` that says why. The planner
+methods `undo` and `redo` are on every page's allow-list, and every page relays `onHistoryChange`.
 
 ### get-price
 
@@ -603,8 +644,8 @@ or anywhere in the room.
   it is the corner point.
 - **Rotation**: `posRotationY` turns the group around `posGroup`, in degrees, **counter-clockwise
   as seen from above** (in the top-view image). This is the `rotationY` convention of the kernel
-  and the glue logic, verified in
-  [the refactoring analysis](../../.agents/refactoring-analysis/group-placement-via-repositioning-data.md#2-rotation-sense-of-posrotationy-d1).
+  and the glue logic, verified against RoomleCore in
+  [roomle-hi-concepts.md](../../.agents/skills/roomle-hi-concepts.md#rotation-sense).
 - **Walls**: every wall in `get-plan-context` has `start`/`end` (floor points in the coordinates
   of `posGroup`), `lengthMm`, `type` and `facingRotationY`. With `posRotationY` = the wall's
   `facingRotationY` the group's back stands against the wall, and the group runs from `posGroup`
@@ -660,10 +701,12 @@ With a connected agent, this sequence exercises the whole PoC:
 4. `place-group` — move the group to another wall or into a corner (`wall: "left"`, or
    `wall: "right"` with `alignment: "top"` for the back right corner)
 5. `change-module-attribute` — change a dimension; the plan updates visibly.
-   `merge-article-into-group`, `exchange-root-module` and
-   `delete-root-module` add, replace and remove a unit
-6. `get-price` — returns the total
-7. `get-plan-images` — the agent sees the plan
+   `merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`,
+   `swap-root-modules`, `remove-article-from-group` and `delete-root-module` add, insert,
+   replace, swap, remove and delete a unit
+6. `undo` — the last change is reverted; `redo` brings it back
+7. `get-price` — returns the total
+8. `get-plan-images` — the agent sees the plan
 
 ## Example prompts
 
@@ -684,7 +727,11 @@ Ready-to-use prompts for the connected agent, from read-only to write operations
 | "Move the group to the back right corner." | `get-plan-context`, `place-group` (`wall: "right"`, `alignment: "top"`) |
 | "Move the kitchen to the left wall, centred." | `get-plan-context`, `place-group` (`wall: "left"`) |
 | "Replace the middle cabinet with a drawer unit." | `get-plan-context`, `exchange-root-module` |
-| "Remove the middle cabinet." | `get-plan-context`, `delete-root-module` (the rest splits into two groups) |
+| "Insert a low cabinet between the high cabinets." | `get-plan-context`, `insert-article-into-group` |
+| "Swap the first and the last cabinet." | `get-plan-context`, `swap-root-modules` |
+| "Remove the middle cabinet." | `get-plan-context`, `remove-article-from-group` (the row closes the gap) |
+| "Delete the middle cabinet." | `get-plan-context`, `delete-root-module` (the gap stays, the rest splits into two groups) |
+| "Undo that." | `undo` |
 | "Join the two groups standing side by side." | `get-plan-context`, `merge-groups` |
 | "Delete the island." | `get-plan-context`, `delete-group` |
 | "What does the current plan cost?" | `get-price` |
@@ -694,10 +741,10 @@ Ready-to-use prompts for the connected agent, from read-only to write operations
 
 | Symptom | Cause / fix |
 | ------- | ----------- |
-| Tool error `No HI page connected` | Start the store (`npm run dev`) and open `http://localhost:3000/?store.stage=INT&id=<plan id>` and keep the tab open — the bridge starts with the INT stage |
+| Tool error `No HI page connected` | Start the store (`npm run dev`) and open `http://localhost:3000/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=http://localhost:3100&id=<plan id>` and keep the tab open — the bridge starts only together with the store's chat window |
 | Tool error `... is not a function` | The UI served for the stage (`bo-test` at INT) does not contain the Part 1 HI APIs (`getExternalObjectPlanContext`, …) — the web-sdk deployment there has to catch up |
 | Port 3100 already in use | The server names the fix itself (`lsof -ti tcp:3100 \| xargs kill`); since the auto-shutdown guard this should only happen when a second instance is started deliberately |
-| Several store tabs open | The most recently connected tab receives the tool calls; close the others |
+| Several store tabs open | The first connected tab owns the planner and receives the tool calls; a second tab is refused (WebSocket close 4409, "Planner session in use") until the first one leaves |
 | `get-price` / `get-order-data` fail | Wrong stage (the HI backend is resolved from it — use `store.stage=INT`), or no HI backend reachable for the milestone backend id |
 | Page reloaded | The bridge reconnects automatically every 3 s — no restart needed |
 | Empty `articles`/`masterData` | No library loaded yet — open the store with an `id` query param that loads a plan of the HI library |
@@ -709,5 +756,5 @@ The PoC is deliberately self-contained — its dependencies live in this folder'
 
 - this folder (`hi-mcp/hi-mcp-server/`) and its entry in the `workspaces` array of
   `hi-mcp/package.json`
-- the `hi-mcp/` folder with the page-side bridge in the ligna-store repository
-- the INT-stage hook in `ligna-store/components/blocks/Planner.vue`
+- the `hi-mcp/` folder with the page-side bridge and the chat window in the ligna-store repository
+- the hook that starts the bridge and the chat window in `ligna-store/components/blocks/Planner.vue`

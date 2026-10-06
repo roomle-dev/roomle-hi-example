@@ -37,7 +37,7 @@ When the refactoring is complete, append the report to this same document with:
   - Performance measurements (if applicable)
 
 Mechanics: Follow the pattern from RoomleCore's refactoring close-out process.
-Never delete an analysis document.
+Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup.md) promotes the durable outcome and deletes this document.
 
 ## Current Documents
 

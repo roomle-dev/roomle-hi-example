@@ -48,23 +48,23 @@ perspective first:
 ### How the planner renders the two perspectives
 
 Both come from the same method of the planner (roomle-ui, `planner-core`):
-`getExternalObjectSnapshot` ([`roomle-planner.ts:1708-1818`](../../../roomle-ui/packages/web-sdk/packages/planner-core/src/roomle-planner.ts#L1708-L1818))
+`getExternalObjectSnapshot` ([`roomle-planner.ts:1708-1818`](https://github.com/roomle-dev/roomle-ui/blob/master/packages/web-sdk/packages/planner-core/src/roomle-planner.ts#L1708-L1818))
 renders the top view, the object top view, then the plan perspective, then the object perspective,
 each through `_preparePerspectiveImage` / `prepareTopImage` of the scene manager
-([`planner-scene-manager.ts:3256-3330`](../../../roomle-ui/packages/web-sdk/packages/planner-core/src/webgl/planner-scene-manager.ts#L3256-L3330)).
+([`planner-scene-manager.ts:3256-3330`](https://github.com/roomle-dev/roomle-ui/blob/master/packages/web-sdk/packages/planner-core/src/webgl/planner-scene-manager.ts#L3256-L3330)).
 
 | | `perspectiveImage` (today) | `perspectiveObjectImage` (proposed) |
 |---|---|---|
 | Camera target | bounding box of the **whole plan** (`getBounds()`) | bounding box of the **HI objects** (`getBoundingBoxFromRuntimeIds`) |
-| Yaw | fixed: −30° in world space (`angleY = -30 + rotationY`, `rotationY` 0; [`image-renderer.ts:234`](../../../roomle-ui/packages/web-sdk/packages/common-core/src/webgl/image-renderer.ts#L234)) | −30° **relative to the fronts**: `rotationY = plan.getRotationForFrontView(all HI runtime ids)` |
-| Pitch, distance, fov | 20° from above, 2 × the target's diagonal, fov 30 (`placeCameraForPerspectiveImage`, [`image-renderer.ts:319-337`](../../../roomle-ui/packages/web-sdk/packages/common-core/src/webgl/image-renderer.ts#L319-L337)) | the same |
-| Scene | the whole plan; the walls facing the camera and the ceiling are hidden (`hideWallsBasedOnCamera`) | `hideAllExceptRuntimeIds` ([`plan-view-model.ts:1165`](../../../roomle-ui/packages/web-sdk/packages/planner-core/src/view-model/plan-view-model.ts#L1165)): floor, ceiling, walls, construction, measurement lines and every non-HI object hidden |
+| Yaw | fixed: −30° in world space (`angleY = -30 + rotationY`, `rotationY` 0; [`image-renderer.ts:234`](https://github.com/roomle-dev/roomle-ui/blob/master/packages/web-sdk/packages/common-core/src/webgl/image-renderer.ts#L234)) | −30° **relative to the fronts**: `rotationY = plan.getRotationForFrontView(all HI runtime ids)` |
+| Pitch, distance, fov | 20° from above, 2 × the target's diagonal, fov 30 (`placeCameraForPerspectiveImage`, [`image-renderer.ts:319-337`](https://github.com/roomle-dev/roomle-ui/blob/master/packages/web-sdk/packages/common-core/src/webgl/image-renderer.ts#L319-L337)) | the same |
+| Scene | the whole plan; the walls facing the camera and the ceiling are hidden (`hideWallsBasedOnCamera`) | `hideAllExceptRuntimeIds` ([`plan-view-model.ts:1165`](https://github.com/roomle-dev/roomle-ui/blob/master/packages/web-sdk/packages/planner-core/src/view-model/plan-view-model.ts#L1165)): floor, ceiling, walls, construction, measurement lines and every non-HI object hidden |
 | Background | the scene background | transparent (`LAYER.BACKGROUND` disabled, nothing else drawn) |
-| Objects | everything in the plan | **all** HI groups of the plan (`_getExternalObjectGroupsInPlan` → `externalObjectRuntimeIds`, [`roomle-planner.ts:1871-1900`](../../../roomle-ui/packages/web-sdk/packages/planner-core/src/roomle-planner.ts#L1871-L1900)) |
+| Objects | everything in the plan | **all** HI groups of the plan (`_getExternalObjectGroupsInPlan` → `externalObjectRuntimeIds`, [`roomle-planner.ts:1871-1900`](https://github.com/roomle-dev/roomle-ui/blob/master/packages/web-sdk/packages/planner-core/src/roomle-planner.ts#L1871-L1900)) |
 | Without HI groups | rendered | not rendered (`validObjectExport` false → `undefined`) |
 
 The front direction comes from the kernel: `calculateRotationForFrontalViewFromDockingVectors`
-([RoomleCore `plan-geometry.cpp:2934-2960`](../../../RoomleCore/src/planner/geometry/plan-geometry.cpp#L2934-L2960))
+([RoomleCore `plan-geometry.cpp:2934-2960`](https://github.com/roomle-internal/RoomleCore/blob/master/src/planner/geometry/plan-geometry.cpp#L2934-L2960))
 sums the normals of the **back** docking vectors of all given objects and returns the angle of that
 sum — the direction the fronts face. The camera then looks at the fronts, still 30° off-axis and 20°
 from above, framed on the groups.
@@ -102,10 +102,10 @@ materials, without the room"). The plan perspective answers neither well.
 
 | Limit | Effect | Handling |
 |---|---|---|
-| **One camera for all HI objects, one front direction.** The kernel sums the back normals of every HI object. Fronts at a right angle — an L-shaped corner kitchen, two groups on neighbouring walls — give a diagonal view with both legs seen from the front-side. Opposing fronts cancel: units `behind` others (an island, back to back), a U-shaped kitchen, groups on opposite walls — the camera faces the remaining direction (rotation 0 when nothing remains) and one side is seen from behind. HI units can also hide one another in that view. The planner's request type has no per-group option ([`external-object-api.ts:181-189`](../../../roomle-ui/packages/web-sdk/packages/homag-intelligence/src/external-object-api.ts#L181-L189)) | a row or an L — the usual kitchen — is fully visible; a layout with opposing fronts shows one side only; the top view carries the whole layout | accept, and the description says so (§5): the view does not guarantee that every unit is visible, so the agent must not take an unseen unit for a missing one — `get-plan-context` lists the units. A per-group render (roomle-ui: the scene manager has `preparePerspectiveImageOf(runtimeId)`, the external object API does not expose it) would help for several groups only, not for opposing fronts within one group — open item, not part of this change |
+| **One camera for all HI objects, one front direction.** The kernel sums the back normals of every HI object. Fronts at a right angle — an L-shaped corner kitchen, two groups on neighbouring walls — give a diagonal view with both legs seen from the front-side. Opposing fronts cancel: units `behind` others (an island, back to back), a U-shaped kitchen, groups on opposite walls — the camera faces the remaining direction (rotation 0 when nothing remains) and one side is seen from behind. HI units can also hide one another in that view. The planner's request type has no per-group option ([`external-object-api.ts:181-189`](https://github.com/roomle-dev/roomle-ui/blob/master/packages/web-sdk/packages/homag-intelligence/src/external-object-api.ts#L181-L189)) | a row or an L — the usual kitchen — is fully visible; a layout with opposing fronts shows one side only; the top view carries the whole layout | accept, and the description says so (§5): the view does not guarantee that every unit is visible, so the agent must not take an unseen unit for a missing one — `get-plan-context` lists the units. A per-group render (roomle-ui: the scene manager has `preparePerspectiveImageOf(runtimeId)`, the external object API does not expose it) would help for several groups only, not for opposing fronts within one group — open item, not part of this change |
 | **No room in the perspective.** A collision with a wall or a group outside the room is not visible in 3D | the top view shows it as footprint vs. walls | accept — this is why the top view stays |
 | **Transparent background.** A model's image pipeline composites the alpha onto black or white; dark fronts on black lose contrast | unknown until seen by a model; the test evaluation reads the same PNG without trouble | verify in the live check with Claude and Mistral (§6); `preserveSceneBackground` exists in the renderer options but is not exposed in the snapshot request — a roomle-ui change if ever needed |
-| **Empty under software GL.** Headless Chromium without a GPU renders a fully transparent frame for exactly this image ([bug analysis](../bug-analysis/empty-perspective-object-image-in-test-runs.md), [backlog issue 1](../backlog/mcp-test-infrastructure-issues.md)). A valid PNG — the server cannot tell it from a real one | interactive users render on a GPU; the test runs pass `--enable-gpu` | accept; a headless client without GPU gets a blank group view until the planner defect is fixed — say so in the docs |
+| **Empty under software GL.** Headless Chromium without a GPU renders a fully transparent frame for exactly this image ([backlog issue 1](../backlog/mcp-test-infrastructure-issues.md#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl)). A valid PNG — the server cannot tell it from a real one | interactive users render on a GPU; the test runs pass `--enable-gpu` | accept; a headless client without GPU gets a blank group view until the planner defect is fixed — say so in the docs |
 | **No groups in the plan.** The planner skips the object render | the tool returns the top view alone (the content loop already skips a missing image) | the description says so |
 | **Cost.** Two images as today (~1.4k tokens each for Claude at 1024 × 1024, ~1.3k for Mistral); one perspective render per snapshot either way, plus the group lookup and the rotation call | unchanged | — |
 
@@ -144,7 +144,7 @@ options; the ligna-store does not reference the tool's result):
 
 | File | Change |
 |---|---|
-| [`hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behaviour.md) | §3 *Information for the agent*: new **D36** (§5); §5.3 result format (line 243: a text naming the images, then the images); the §6 results table ("two images", line 285); §6 *get-price, get-order-data, get-plan-images* (line 398) |
+| [`hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behaviour.md) | §3 *Information for the agent*: a new decision (§5); §5.3 result format (line 243: a text naming the images, then the images); the §6 results table ("two images", line 285); §6 *get-price, get-order-data, get-plan-images* (line 398) |
 | [`minimal-hi-example/docs/hi-mcp-server.md:512-520`](../../minimal-hi-example/docs/hi-mcp-server.md#L512-L520) | the tool reference entry |
 | [`hi-mcp-server/README.md:501-506`](../../hi-mcp/hi-mcp-server/README.md#L501-L506) | the tool reference entry |
 | [`.agents/skills/hi-mcp-tools.md:39, 220-226`](../skills/hi-mcp-tools.md) | the tool table and the reference block |
@@ -199,7 +199,7 @@ The description, replacing the current one:
 
 The decision for `hi-mcp-behaviour.md` §3:
 
-> **D36** — `get-plan-images` shows the agent the HI groups alone, from their front, plus the top
+> **A new decision** — `get-plan-images` shows the agent the HI groups alone, from their front, plus the top
 > view of the plan, and names the images in a text content of the result. The plan perspective is
 > not returned: its camera stands at a fixed world angle, so a group may be seen from the side or
 > from behind, or be hidden by other objects; the top view carries the room context. Source: user,
@@ -220,7 +220,7 @@ The decision for `hi-mcp-behaviour.md` §3:
   → one side seen from behind, as the description says. An empty plan → the text and one image.
 - **Model check**: "call get-plan-images and describe in two sentences what you see in each image"
   through the chat with Claude and with Mistral Large (as in the
-  [Mistral image analysis](../bug-analysis/plan-images-sent-as-text-to-mistral.md)) — confirms the
+  [Mistral image middleware](../../minimal-hi-example/docs/ai-chat.md#images-in-tool-results)) — confirms the
   models read the transparent PNG and the description's order.
 
 ## 7. Risks and open items

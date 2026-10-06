@@ -6,15 +6,16 @@ npm workspace folder per PoC.
 
 | PoC | Description |
 | --- | ----------- |
-| [hi-mcp-server](./hi-mcp-server/) | HI object groups (kitchens) generated from a single JSON pos-group payload; client is the INT-stage ligna-store |
-| [hi-mcp-client](./hi-mcp-client/) | Page side of hi-mcp-server: the browser bridge that executes the allow-listed planner methods, with its unit tests; the ligna-store runs a verbatim copy in `hi-mcp/` |
+| [hi-mcp-server](./hi-mcp-server/) | HI object groups (kitchens) generated from a single JSON pos-group payload; clients are the HI presets example (`minimal-hi-example`) and the ligna-store chat window |
+| [hi-mcp-client](./hi-mcp-client/) | Page side of hi-mcp-server: the browser bridge that executes the allow-listed planner methods, with its unit tests; the ligna-store runs a copy in `hi-mcp/` |
+| [hi-mcp-chat](./hi-mcp-chat/) | AI chat backend of the HI presets example (Vercel AI SDK): `POST /chat` on :3200, an MCP client of hi-mcp-server — see [ai-chat.md](../minimal-hi-example/docs/ai-chat.md) |
 | [cf](./cf/) | Cloudflare deployment of the hi-mcp-server: Worker + Container, one `wrangler deploy` |
 
 ## Quick Access
 
 The HI MCP server is deployed at Cloudflare:
-- **Store Page**: https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev
-- **MCP Server Endpoint**: https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp
+- **Store Page**: `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev` — the store connects its bridge only together with its chat window, so `model` and `api_key` are required; add `&mcp_session=<name>` for an external MCP client
+- **MCP Server Endpoint**: `https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=<name>` — the same `<name>` as the store page's `mcp_session`
 - **Cloudflare Dashboard**: https://dash.cloudflare.com/be70a3966e4c4ccfa9349004b9ccf948/
 
 Documentation:
@@ -25,9 +26,8 @@ Documentation:
 - [docs/cloudflare-mcp-server.md](./docs/cloudflare-mcp-server.md) — deploy the MCP server to Cloudflare Containers: the colleague handout links, verification, teardown
 - [docs/connect-agent-to-cloud-mcp.md](./docs/connect-agent-to-cloud-mcp.md) — connect any agent to the cloud MCP server, with the Mistral Le Chat worked example
 
-Source of the first PoC: roomle-ui `packages/embedding-lib/examples/hi-mcp-server` (RML-17693),
-adapted to the ligna-store client. See the
-[feature analysis](../.agents/feature-analysis/hi-mcp-poc-json.md) for the full context.
+Source of the first PoC: roomle-ui `packages/embedding-lib/examples/hi-mcp-server`
+([RML-17693](https://roomle.atlassian.net/browse/RML-17693)), adapted to the ligna-store client.
 
 ## Commands
 
@@ -39,4 +39,6 @@ npm run typecheck               # tsc --noEmit
 ```
 
 Each PoC keeps its own dependencies in its `package.json`, hoisted into this root — the
-repository root of roomle-hi-example stays dependency-free.
+repository root of roomle-hi-example carries only the formatter and the linter. The server runs
+through `vite-node` 3.2.4 with `vite` 6.4.3: a newer `vite-node` needs `vite` 8 and Node 20.19 or
+later.

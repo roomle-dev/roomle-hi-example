@@ -15,12 +15,17 @@ calculated roots of the article in the plan (`calculatedDockingVectorsByRoot`,
 `calculatedCornerPointsByRoot`) and has nothing for an article that is not in the plan. On an empty
 plan every article comes without docking vectors and without the corner flag.
 
-The hi-mcp server works around it: it reads the corner point from the planner's raw groups
-(`getExternalObjectGroups`) and, when the plan has no calculated corner article, loads a single-pick
-probe of the article, reads its docking vectors, removes it (`removeExternalObject`) and caches the
-point for the server's lifetime (`probeCornerPoint`, `knownCornerPoints` in `tool-executors.ts`).
-That costs an extra load per corner module and server start, needs two planner methods on every page
-allow-list, and leaves the catalog incomplete for every other consumer.
+The hi-mcp server works around it: for the anchor of every placed group it loads a single-pick probe
+of the article as authored, reads the probe's docking vectors from the planner's raw groups
+(`getExternalObjectGroups`), undoes the load (a page without `undo` removes the probe with
+`removeExternalObject`) and caches the anchor frame per library, article and attribute overrides for
+the server's lifetime (`probeAnchorFrame`, `takeBackProbe`, `knownAnchorFrames` in
+`tool-executors.ts`). That costs an extra load per anchor variant and server start, needs planner
+methods on every page allow-list, and leaves the catalog incomplete for every other consumer.
+
+The template calculation would also give a size to the two Furniture_Smith articles whose template
+has no `Dim` attribute — the range hood `DU` and the TV `SM_TV`: their `dimensions` are empty, so the
+agent cannot know their width.
 
 ## To do
 
@@ -41,8 +46,12 @@ allow-list, and leaves the catalog incomplete for every other consumer.
    4. Pass `[...calculatedGroups, ...calculatedTemplates]` to `calculatedDockingVectorsByRoot` and
       `calculatedCornerPointsByRoot`.
 4. **Remove the workaround in the server** once roomle-ui is deployed: the probe
-   (`probeCornerPoint`, `knownCornerPoints`), the `removeExternalObject` exposure on the page
-   allow-lists, and the server's completion of `cornerArticle` from the category.
+   (`probeAnchorFrame`, `takeBackProbe`, `knownAnchorFrames`), the `removeExternalObject` exposure on
+   the page allow-lists, and the server's completion of `cornerArticle` from the category.
+   Constraint: the anchor frame depends on the attribute overrides (`knownAnchorFrames` is keyed by
+   library, article and overrides), and a template calculated per `articleId` gives the default
+   variant only. An anchor with overrides (such as `mod_CarcaseDirection`) keeps the probe unless
+   the templates are calculated per override set.
 
 ## Test
 

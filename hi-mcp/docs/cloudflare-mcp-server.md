@@ -4,8 +4,7 @@ This documents the **Cloudflare** deployment of the `hi-mcp` workspace MCP serve
 (`hi-mcp-server`): running as a **Cloudflare Container** behind a small Worker — in contrast
 to the [local server](./local-mcp-server.md) and the [Azure App Service variant](./azure-mcp-server.md).
 After this setup, anyone with the two URLs can use the PoC — no repository access, no install,
-no tunnel. **Deployed and verified live (2026-09-26)**: the page's WebSocket passes through the
-Worker into the container, and Mistral Le Chat drives the visible store session end-to-end.
+no tunnel. The page's WebSocket passes through the Worker into the container.
 
 ```text
 MCP client (anyone) ──https──> https://<worker>.<subdomain>.workers.dev/mcp
@@ -18,9 +17,10 @@ store page (anyone's browser) ──wss──> …/bridge
 ```
 
 The container runs the tools and relays their planner calls into the connected ligna-store page
-(opened with the `mcp_server` parameter) — the planning session itself lives in that page. Modeled on roomle-model-exporter's `cf/` deployment
-(see the
-[Cloudflare feature analysis](../../.agents/feature-analysis/mcp-cloudflare-containers-deployment.md)).
+(opened with its chat parameters and `mcp_server`) — the planning session itself lives in that page.
+Modeled on roomle-model-exporter's `cf/` deployment. The decisions and the rejected alternatives:
+[ADR 0004 — the server on Cloudflare Containers](../../.agents/decisions/0004-hi-mcp-server-on-cloudflare-containers.md),
+[ADR 0005 — deploy from `release/cloudflare`](../../.agents/decisions/0005-deploy-hi-mcp-from-release-cloudflare.md).
 
 ## Prerequisites
 
@@ -42,7 +42,7 @@ every push to `release/cloudflare`:
 4. an `initialize` against the public URL, which must answer 200
 
 A failing test or image build deploys nothing. Only one deploy runs at a time; a second push
-waits for the first. A run takes about 3 minutes.
+waits for the first. A run takes about 1.5 minutes.
 
 To release `master`:
 
@@ -129,18 +129,19 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST https://<worker>.<subdomain>.wo
 2. Watch the server console: `npx wrangler tail` (in `hi-mcp/cf`) — the first request boots
    the container and must show `HI group orchestrator MCP server ready`.
 
-3. Open the store with the `mcp_server` parameter:
+3. Open the store with its chat parameters — the store starts its bridge only together with its
+   chat window, so it needs `model` and `api_key` besides `mcp_server` — and a session name:
 
 ```text
-https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<worker>.<subdomain>.workers.dev
+https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<name>
 ```
 
 4. `wrangler tail` shows `page connected` — the page's WebSocket reaches the container through
-   the Worker (verified live; if it ever fails again, the fallback design is in the
-   [feature analysis](../../.agents/feature-analysis/mcp-cloudflare-containers-deployment.md)).
+   the Worker (if it ever stops passing, the fallback is in the
+   [Cloudflare ADR](../../.agents/decisions/0004-hi-mcp-server-on-cloudflare-containers.md)).
 
-5. Point any MCP client at `https://<worker>.<subdomain>.workers.dev/mcp` and run
-   `get-plan-context` — the step-by-step for agents (with the Mistral example) is in
+5. Point any MCP client at `https://<worker>.<subdomain>.workers.dev/mcp?session=<name>` (the
+   session of step 3) and run `get-plan-context` — the step-by-step for agents (with the Mistral example) is in
    [connect-agent-to-cloud-mcp.md](./connect-agent-to-cloud-mcp.md).
 
 ## The handout for colleagues (parallel use, per session)
@@ -153,7 +154,7 @@ session name: supply `mcp_session=<name>` on that store page and use the same na
 
 | Link | Where |
 | ---- | ----- |
-| Store page (browser, keep open) | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<name>` |
+| Store page (browser, keep open) | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<name>` |
 | MCP server (for their client's connector) | `https://<worker>.<subdomain>.workers.dev/mcp?session=<name>` |
 
 Without a session name, an external MCP client still connects to `default`, but a store chat page
@@ -193,8 +194,10 @@ server starts. The page connects to `wss://<worker>.<subdomain>.workers.dev/brid
 and the launcher prints `https://<worker>.<subdomain>.workers.dev/mcp?session=<OS user name>` for
 external MCP clients. The example has to run on port 3000, because `http://localhost:3000` is the
 only local origin in the server's default `HI_MCP_PAGE_ORIGINS`, and the launcher refuses another
-`EXAMPLE_PORT`. The example always talks to the last deployed image, so deploy first to try server
-changes from a branch. The Worker URL is the constant `CLOUDFLARE_MCP_SERVER_URL` in
+`EXAMPLE_PORT`. The OS user name keeps the session the same across restarts and networks, so an
+external connector is set up once; two machines with the same user name share the container. The
+example always talks to the last deployed image, so deploy first to try server changes from a
+branch. The Worker URL is the constant `CLOUDFLARE_MCP_SERVER_URL` in
 `minimal-hi-example/start.mjs`, so a changed worker name needs it updated as well, together with
 the URL in the verify step of `.github/workflows/deploy-cloudflare.yml`.
 
@@ -228,8 +231,10 @@ docker rm -f hi-mcp-cf-test
 The image installs from `hi-mcp/package-lock.json`, not from the repository-root lockfile.
 `hi-mcp/` is a workspace of the repository root, so an `npm install` inside `hi-mcp/` writes only
 the root lockfile, and `hi-mcp/package-lock.json` goes stale after every dependency change in a
-`hi-mcp` workspace. The image build then fails with *"`npm ci` can only install packages when your
-package.json and package-lock.json … are in sync"*. To refresh the file, regenerate it outside the
+`hi-mcp` workspace. The image copies only the manifests of the `hi-mcp` root, `hi-mcp-server` and
+`cf` (`cf/Dockerfile`), so a stale `hi-mcp-chat` entry does no harm; a change in one of the three
+fails the image build with *"`npm ci` can only install packages when your package.json and
+package-lock.json … are in sync"*. To refresh the file, regenerate it outside the
 root workspace, starting from the current file so that unchanged pins stay the same:
 
 ```bash
@@ -263,13 +268,14 @@ npx wrangler containers delete <ID>  # stop and remove the container application
 | image build: `npm ci` … `Invalid: lock file's <pkg>@<a> does not satisfy <pkg>@<b>` | `hi-mcp/package-lock.json` is stale — see [Refreshing the image lockfile](#refreshing-the-image-lockfile) |
 | deploy uploads the Worker, then `Unauthorized` | **nothing to delete** — the container-app update step lost authorization (the Worker upload itself succeeded). In order: retry the deploy → fresh `wrangler logout && wrangler login` → check the container app state in the dashboard (Containers → `hi-mcp-poc-himcpcontainer`) → fall back to an API token: dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template, then `CLOUDFLARE_API_TOKEN=<token> npx wrangler deploy`. Until a deploy fully succeeds, the running container keeps the previous image |
 | GitHub deploy uploads the Worker, then `Unauthorized`/403 at the container step | the API token lacks **Account · Containers · Edit** — edit the token in Cloudflare, then "Re-run jobs" |
-| GitHub run, test step: `Cannot find module @rollup/rollup-linux-x64-gnu` (or another `…-linux-x64…` binary) | the root `package-lock.json` lost the Linux binaries ([npm/cli#4828](https://github.com/npm/cli/issues/4828): a lockfile written from a macOS `node_modules`). Re-resolve the package on Linux with `npm update <package> --package-lock-only --ignore-scripts` in `node:22` (`--platform linux/amd64`), then run the workflow's steps in the same container — see the [bug analysis](../../.agents/bug-analysis/deploy-workflow-misses-linux-rollup-binary.md) |
+| GitHub run, test step: `Cannot find module @rollup/rollup-linux-x64-gnu` (or another `…-linux-x64…` binary) | the root `package-lock.json` lost the Linux binaries ([npm/cli#4828](https://github.com/npm/cli/issues/4828): a lockfile written from a macOS `node_modules`). Re-resolve the package on Linux with `npm update <package> --package-lock-only --ignore-scripts` in `node:22` (`--platform linux/amd64`), then run the workflow's steps in the same container — see [Verifying a workflow or lockfile change on Linux](../../.agents/skills/hi-mcp-cloudflare-deployment.md#verifying-a-workflow-or-lockfile-change-on-linux) |
 | GitHub deploy step: `CLOUDFLARE_API_TOKEN` missing / not authenticated | the secrets are not set in the `cloudflare` environment, or the run is not on `release/cloudflare` — see [One-time setup](#one-time-setup-repository-admin) |
 | `Cannot resolve host` / client refuses the URL | URL built from the **account ID** instead of the account **subdomain** — take the URL from the deploy output |
 | deploy: "already an application … different durable object namespace" | orphaned container app from an earlier `wrangler delete` — `wrangler containers list` + `wrangler containers delete <ID>` |
 | deploy rejects the config | `instance_type` naming — use `standard-1`; or Containers require the Workers Paid plan |
 | First request is slow (~10 s) | the container boots on demand after sleeping — expected, not an error |
-| `page connected` never appears in `wrangler tail` | (a) the store URL lacks `&mcp_server=…`, (b) the deployed store build lacks the `feat/hi-mcp` branch, (c) report the tail output (fallback design exists) |
-| Tool error `No HI page connected` | the store tab is not open or lost the connection — reload it with the `mcp_server` parameter |
+| `page connected` never appears in `wrangler tail` | (a) the store URL lacks `model`, `api_key` or `mcp_server` — the store starts its bridge only with its chat window, (b) the page origin is not in `HI_MCP_PAGE_ORIGINS`, (c) the WebSocket upgrade no longer passes the Worker — the fallback is in the [Cloudflare ADR](../../.agents/decisions/0004-hi-mcp-server-on-cloudflare-containers.md) |
+| Tool error `No HI page connected` | no page is connected to this session — open the store with its chat parameters, and for an external client with `mcp_session=<name>` matching the client's `?session=<name>` |
+| The store chat reports the planner in use (WebSocket close 4409) | another page holds this session's planner (two pages with the same `mcp_session`) — the first page keeps it; close it or drop `mcp_session` |
 | Tool error `... is not a function` | the `bo-test` UI lacks the HI planner APIs — same as in every other setup |
 | `initialize` returns 406 | the client must accept `application/json, text/event-stream` — all MCP SDK clients do |

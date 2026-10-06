@@ -40,7 +40,9 @@ reasoning tokens do not reach the log — it cannot tell the effort.
    timeout is 5 minutes). `none` is rejected by gpt-5-mini, so it is no shared value.
 4. **Decide the chat's model and effort** from that run: gpt-5.4-mini replaces gpt-5-mini only if it
    plans at least as well at an effort that keeps a large kitchen within a minute or two. Record the
-   default in `minimal-hi-example/docs/ai-chat.md`.
+   default in `minimal-hi-example/docs/ai-chat.md`, and decide whether the chosen model replaces
+   `mistral`, the chat backend's default provider without `HI_CHAT_PROVIDER` (`resolveChatModel`,
+   `hi-mcp/hi-mcp-chat/chat-config.ts`).
 
 ## Test
 

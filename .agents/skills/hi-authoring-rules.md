@@ -39,23 +39,34 @@ Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rot
 
 ## Article Catalog
 
-Access via `get-plan-context` with `include: 'articles'`:
+Access via `get-plan-context` (a default section, or `include: ['articles']`):
 
 ```javascript
 {
   articles: [
     {
       articleId: string,
-      name: string,
+      articleName: string,
       desc: string,
-      category: string,           // base-unit, wall-unit, tall-unit, corner-unit, worktop, appliance
-      dimensions: { width, depth, height },  // millimeters
-      dockingVectors: string[],   // Available docking vector names
-      cornerArticle: boolean       // True for L-shaped corner articles
+      category: string,           // the library's path, e.g. 'Kitchen | Base Units | Corner'
+      libraryId: string,
+      catalog: string,
+      cornerArticle: boolean,     // true for an article made for a room corner
+      rootModules: [{
+        module: { id, name, desc },
+        dimensions: [{ id, name, value }],      // size attributes in millimetres (Width, Depth, Height)
+        mainAttributes: [{ id, name, value }],
+        dockingVectors: string[],               // docking vector names
+        subModules: [{ id, name, desc }]
+      }]
     }
   ]
 }
 ```
+
+On an empty plan the catalog can list an article without docking vectors and without size — the
+range hood `DU`, whose template has none: that means unknown, not undockable. The server docks such
+an article like any other (G7).
 
 ## Relations
 
@@ -139,7 +150,7 @@ Millimeters added after docking:
 
 ## Docking Rules
 
-1. Anchor must be placed first
+1. The first root starts the docking; the root that carries the placement is found by the server (the left end of the floor row, or the corner article)
 2. Every root connected to the first root through the docking, directly or through a chain (entries count in either direction)
 3. Chain docking allowed (A → B → C)
 4. Multiple dockings per anchor allowed
@@ -166,8 +177,9 @@ placement: {
   corner article). A returned group's `position.pos` and `rotationY` are read the same way; with two
   corner articles, `position.rootId` names the one `pos` belongs to.
 - **Rotation sense**: positive `posRotationY` turns the group counter-clockwise as seen from above
-  (in the top-view image) — the `rotationY` convention of the kernel (RoomleCore) and the glue logic.
-  The right wall is **270**, the left wall **90**.
+  (in the top-view image) — the `rotationY` convention of the kernel (RoomleCore) and the glue logic
+  ([rotation sense](./roomle-hi-concepts.md#rotation-sense)). The right wall is **270**, the left
+  wall **90**.
 - **Against a wall**: `posRotationY` = the wall's `facingRotationY`; the group's back stands against
   the wall and the group runs from `posGroup` towards the wall's `start`. `posGroup` = `end` puts
   it flush into the corner at the wall's end; `end + d · (start − end) / lengthMm` shifts it by d;
@@ -190,6 +202,8 @@ placement: {
   the corner `posGroup` names.
 - **Anywhere else** (island, middle of the room, next to a door): any floor point `obstacles` leaves
   free, any rotation.
+- **Outside the room** is allowed: the server never refuses, moves or warns about a group placed
+  outside the room — the user may ask for one ([D22](../../hi-mcp/docs/hi-mcp-behaviour.md#3-decisions)).
 - **Obstacles**: the `obstacles` section of `get-plan-context` lists what stands in the room — doors,
   windows and other objects with `kind`, `outline` and `bottomMm`/`topMm`, and per group the outlines
   of its root modules. A root module cannot stand where an object or another group's root module
@@ -258,6 +272,7 @@ built is an error. Every guard and correction:
 
 ### Returned as a hint (the group is loaded):
 - A group of the call that is still unpositioned — it sits at the plan origin; a group gets its position from the placement it is created with, or `place-group` moves it against a wall or into a corner
+- A new group at the place of another group (the same point within 5 mm and the same rotation) — units that belong together are sent as one group or joined with `merge-groups`
 
 ## Practical Patterns
 

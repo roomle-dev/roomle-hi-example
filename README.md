@@ -34,6 +34,22 @@ npm start openai <api-key>
 | `npm start azure <api-key>` | Plus chat with Azure OpenAI (also `openai`; needs `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL=<deployment-name>`) |
 | `npm run dev <same arguments>` | Same as the matching `npm start` variant, but the planner loads from the local Rubens UI dev server (:5173) |
 | `npm run start:cf <same arguments>` | Same as the matching `npm start` variant, but with the MCP server deployed on Cloudflare instead of a local one (session = your OS user name, page port 3000 only) |
+| `EXAMPLE_SERVER_URL=<url> npm start <same arguments>` | Same as the matching `npm start` variant, but the planner loads from `<url>` (passed to the page as `server_url`) |
+
+Start the example, the MCP server and the chat against any Rubens UI, e.g. the local
+dev server:
+
+```bash
+EXAMPLE_SERVER_URL=http://localhost:5173/ npm start gpt-5.4-mini "$AZURE_GPT_KEY"
+```
+
+A roomle-ui PR preview (`https://test.roomle.com/t/cp/<pr>/`) reads from the test
+database, where the example's plan does not exist. Add `customApiUrl` to point it at
+the production API:
+
+```bash
+EXAMPLE_SERVER_URL='https://test.roomle.com/t/cp/3087/?customApiUrl=https://www.roomle.com/api/v2' npm start gpt-5.4-mini "$AZURE_GPT_KEY"
+```
 
 Deploy the MCP server to Cloudflare: push to `release/cloudflare`; the GitHub workflow
 `.github/workflows/deploy-cloudflare.yml` tests and deploys it. By hand, for dry runs and

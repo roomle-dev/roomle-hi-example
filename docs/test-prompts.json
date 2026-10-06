@@ -1,8 +1,8 @@
 {
   "models": [
-    { "provider": "gpt-5-mini", "apiKeyEnv": "AZURE_GPT_KEY" },
-    { "provider": "gpt-5.4-mini", "apiKeyEnv": "AZURE_GPT_KEY" },
-    { "provider": "gpt-6-astra", "apiKeyEnv": "AZURE_GPT_KEY" }
+    { "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" },
+    { "provider": "gpt-5.4-mini", "apiKey": "$AZURE_GPT_KEY" },
+    { "provider": "gpt-6-astra", "apiKey": "$AZURE_GPT_KEY" }
   ],
   "plans": {
     "default-room": "ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv",

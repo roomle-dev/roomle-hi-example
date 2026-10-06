@@ -289,7 +289,10 @@ describe('get-plan-context', () => {
       'rooms',
       'articles',
       'groups',
+      'obstacles',
     ]);
+    // a planner without the obstacles section (an older roomle-ui) returns
+    // none, and the context is the same
     // the plan context arrives agent-ready from the planner API; the server
     // completes the articles' cornerArticle flag, names the walls and lists
     // the room corners
@@ -384,7 +387,106 @@ describe('get-plan-context', () => {
       'rooms',
       'articles',
       'groups',
+      'obstacles',
     ]);
+  });
+
+  // the obstacles as roomle-ui returns them: a window behind the back wall, a
+  // door behind the right wall, a chair and the root outlines of a group
+  const obstaclesFixture = {
+    objects: [
+      {
+        kind: 'window',
+        outline: [
+          [2000, 0, -3120],
+          [1000, 0, -3120],
+          [1000, 0, -3000],
+          [2000, 0, -3000],
+        ],
+        bottomMm: 950,
+        topMm: 2170,
+      },
+      {
+        kind: 'door',
+        outline: [
+          [4100, 0, -1000],
+          [4100, 0, -100],
+          [4000, 0, -100],
+          [4000, 0, -1000],
+        ],
+        bottomMm: 0,
+        topMm: 2100,
+      },
+      {
+        kind: 'object',
+        outline: [
+          [1500, 0, -1500],
+          [2000, 0, -1500],
+          [2000, 0, -1000],
+          [1500, 0, -1000],
+        ],
+        bottomMm: 0,
+        topMm: 790,
+      },
+    ],
+    groups: [
+      {
+        id: 'g1',
+        roots: [
+          {
+            id: 'r1',
+            outline: [
+              [0, 0, 0],
+              [800, 0, 0],
+              [800, 0, -600],
+              [0, 0, -600],
+            ],
+            bottomMm: 0,
+            topMm: 720,
+          },
+        ],
+      },
+    ],
+  };
+
+  it('names the wall every door and window of the obstacles lies in', async () => {
+    const api = createApi({
+      rooms: { rooms: [room] },
+      obstacles: obstaclesFixture,
+    });
+    const result = (await toolExecutors['get-plan-context'](api, {
+      include: ['rooms', 'obstacles'],
+    })) as Record<string, any>;
+    expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+      'rooms',
+      'obstacles',
+    ]);
+    const [window, door, chair] = obstaclesFixture.objects;
+    expect(result.obstacles).toEqual({
+      objects: [
+        { ...window, roomIndex: 0, wall: 2, fromEndMm: [1000, 2000] },
+        { ...door, roomIndex: 0, wall: 1, fromEndMm: [2000, 2900] },
+        chair,
+      ],
+      groups: obstaclesFixture.groups,
+    });
+    expect(result.rooms.rooms[0].walls[2].name).toBe('back wall');
+  });
+
+  it('fetches the rooms for the obstacles alone and returns only the obstacles', async () => {
+    const api = createApi({
+      rooms: { rooms: [room] },
+      obstacles: obstaclesFixture,
+    });
+    const result = (await toolExecutors['get-plan-context'](api, {
+      include: ['obstacles'],
+    })) as Record<string, any>;
+    expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+      'obstacles',
+      'rooms',
+    ]);
+    expect(Object.keys(result)).toEqual(['obstacles']);
+    expect(result.obstacles.objects[0].wall).toBe(2);
   });
 
   it('keeps the corner point of the articles to the server', async () => {

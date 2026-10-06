@@ -10,7 +10,7 @@ them — is [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behavio
 ### Core Tools
 | Tool | Purpose |
 |---|---|
-| `get-plan-context` | Get rooms, articles, groups, masterData |
+| `get-plan-context` | Get rooms, articles, groups, obstacles, masterData |
 | `create-or-replace-groups` | Create, modify and extend groups; position new groups |
 | `place-group` | Move an existing group against a wall or into a room corner |
 | `get-authoring-rules` | Get HI authoring rules |
@@ -55,15 +55,24 @@ them — is [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behavio
 
 **Parameters**:
 ```typescript
-{ include?: Array<'masterData' | 'rooms' | 'articles' | 'groups'> }
+{ include?: Array<'masterData' | 'rooms' | 'articles' | 'groups' | 'obstacles'> }
 ```
 
-**Returns**: Rooms, articles, groups, masterData (if requested). Like every JSON result of the
+**Returns**: Rooms, articles, groups, obstacles, masterData (if requested). Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
 (back wall, front wall, left wall, right wall) beside its `side`, a door opening the `type`
 `opening`, and every room a `corners` list — per corner its `name` (back left, …), `point` and the
 `posRotationY` of a corner kitchen there — so a corner placement is a lookup
+
+**Obstacles**: `obstacles.objects` lists every plan object that is not an HI group — `kind` (`door`,
+`window`, `object`), `outline` (floor points `[x, 0, z]` in the coordinates of the walls) and
+`bottomMm`/`topMm`; a door or a window also carries `roomIndex`, `wall` (its index in the walls
+array) and `fromEndMm`, its span along that wall measured from the wall's end. `obstacles.groups`
+gives per HI group the room-space `outline` and height range of every root module that is not
+generated, from the parts of the calculated group — the kernel's own outline of a group is not
+used, it was off by up to 250 mm (D45). No walls. Requested alone, `obstacles` makes the server
+fetch the rooms too
 
 **Article size**: per root module of an article, `dimensions` lists the size attributes with id,
 name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels

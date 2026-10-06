@@ -2,7 +2,7 @@
 
 A proof-of-concept [MCP](https://modelcontextprotocol.io/) server that lets an AI agent orchestrate
 HOMAG Intelligence (HI) object groups in a live planning session of the **ligna-store**. The agent
-retrieves the plan context (master data, rooms, articles, existing groups) and creates or modifies
+retrieves the plan context (master data, rooms, articles, existing groups, obstacles) and creates or modifies
 HI object groups from a single JSON pos-group payload — without computing root-module positions
 itself ("poc-json": the whole kitchen comes from one `posGroups` JSON).
 
@@ -293,7 +293,7 @@ Returns a snapshot of the HI planning session, shaped for the agent.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `include` | `('masterData' \| 'rooms' \| 'articles' \| 'groups')[]` | no | Sections to include; `rooms`, `articles` and `groups` when omitted |
+| `include` | `('masterData' \| 'rooms' \| 'articles' \| 'groups' \| 'obstacles')[]` | no | Sections to include; `rooms`, `articles`, `groups` and `obstacles` when omitted |
 
 - `rooms` — every room carries its contour `levels` with 3D segments (`pos: [x, level, -y]`,
   the same right-handed coordinate system as a group's `pos`, Y up) and a derived `walls` array —
@@ -320,6 +320,13 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   `category`, `dockingVectors`, `freeDockingVectors` — the vectors no docking entry uses, where a
   new root can dock — `subModules` with their id, `isGenerated`). No root positions, no
   geometry. A returned group is a valid `create-or-replace-groups` payload as it is
+- `obstacles` — what stands in the room, in the coordinates of the walls: `objects`, every plan
+  object that is not an HI group, with `kind` (`door`, `window`, `object`), `outline` (floor points
+  `[x, 0, z]`) and `bottomMm`/`topMm` — a door or a window also with `roomIndex`, `wall` (its index
+  in the walls array) and `fromEndMm`, its span along that wall measured from the wall's end —, and
+  `groups`, per HI group the `id`, `outline` and `bottomMm`/`topMm` of every root module that is not
+  generated, from the parts of the calculated group. No walls. Requested alone, the server fetches
+  the rooms too for the walls of the doors and windows
 - `masterData` — only when included explicitly: per library the root modules (id, name,
   desc) with their relevant attribute ids, and the attributes a customer sees (`isMain` or
   `userRight` `Simple`) with desc, type, group and `selections` (value, name and desc). The same compacted attribute vocabulary is searched by

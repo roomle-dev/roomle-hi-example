@@ -515,6 +515,35 @@ describe('hi-mcp-server tool calls', () => {
     );
   });
 
+  it('tells the agent what stands in the room and to keep the span of a door or a window free', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    expect(rules).toContain(
+      'A root module cannot stand where an object or a root module of another group overlaps it both in the outline and in the height range.'
+    );
+    expect(rules).toContain(
+      "keep that span free from the floor for a door and from the window's bottomMm for a window - base units lower than bottomMm fit below a window, tall units and wall units do not."
+    );
+    expect(rules).toContain(
+      'any point on the floor that obstacles leaves free as posGroup'
+    );
+    expect(client.getInstructions()).toContain(
+      'the obstacles (doors, windows, other furniture and the root modules of the groups, where they stand)'
+    );
+    const { tools } = await client.listTools();
+    const planContext = tools.find((tool) => tool.name === 'get-plan-context');
+    expect(planContext?.description).toContain(
+      'obstacles (what stands in the room, in the coordinates of the walls'
+    );
+    expect(planContext?.description).toContain('roomIndex, wall and fromEndMm');
+    expect(
+      (planContext?.inputSchema.properties?.include as { description?: string })
+        ?.description
+    ).toContain('Default: rooms, articles, groups and obstacles.');
+  });
+
   it('hangs a range hood beside the wall units and reads a position back in the frame of the placement', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(

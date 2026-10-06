@@ -37,6 +37,7 @@ import {
   spanAlongWall,
   volumesOverlap,
   wallName,
+  wallOfOpening,
   wallSpanStart,
 } from './plan-space';
 import type {
@@ -54,16 +55,27 @@ export type ToolExecutor = (
   args: Record<string, unknown>
 ) => Promise<unknown>;
 
-type PlanContextSection = 'masterData' | 'rooms' | 'articles' | 'groups';
+type PlanContextSection =
+  | 'masterData'
+  | 'rooms'
+  | 'articles'
+  | 'groups'
+  | 'obstacles';
 
 const PLAN_CONTEXT_SECTIONS: unknown[] = [
   'masterData',
   'rooms',
   'articles',
   'groups',
+  'obstacles',
 ];
 
-const DEFAULT_SECTIONS: PlanContextSection[] = ['rooms', 'articles', 'groups'];
+const DEFAULT_SECTIONS: PlanContextSection[] = [
+  'rooms',
+  'articles',
+  'groups',
+  'obstacles',
+];
 
 const MAX_ATTRIBUTE_MATCHES = 20;
 
@@ -803,6 +815,29 @@ const agentFacingRooms = (rooms: any) => {
         name: wallName(wall?.side),
       }));
       return { ...room, walls, corners: roomCorners(walls) };
+    }),
+  };
+};
+
+// A door or a window lies in a wall: the room, the wall and its span along the
+// wall, measured from the wall's end like the d of a placement.
+const agentFacingObstacles = (obstacles: any, rooms: any) => {
+  if (!Array.isArray(obstacles?.objects)) {
+    return obstacles;
+  }
+  return {
+    ...obstacles,
+    objects: obstacles.objects.map((object: any) => {
+      if (object?.kind !== 'door' && object?.kind !== 'window') {
+        return object;
+      }
+      const wall = wallOfOpening(
+        ((object.outline ?? []) as number[][]).map(
+          ([x, , z]): [number, number] => [x, z]
+        ),
+        rooms?.rooms ?? []
+      );
+      return wall ? { ...object, ...wall } : object;
     }),
   };
 };
@@ -2831,14 +2866,25 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           PLAN_CONTEXT_SECTIONS.includes(section)
       );
       const requested = known.length > 0 ? known : DEFAULT_SECTIONS;
+      // the walls name the doors and windows of the obstacles
+      const withRooms =
+        requested.includes('obstacles') && !requested.includes('rooms');
       const context =
-        await roomDesignerApi.extended.getExternalObjectPlanContext(requested);
+        await roomDesignerApi.extended.getExternalObjectPlanContext(
+          withRooms ? [...requested, 'rooms'] : requested
+        );
       if (!isObject(context)) {
         return context;
       }
       const result = { ...context };
       if (result.rooms !== undefined) {
         result.rooms = agentFacingRooms(result.rooms);
+      }
+      if (result.obstacles !== undefined) {
+        result.obstacles = agentFacingObstacles(result.obstacles, result.rooms);
+      }
+      if (withRooms) {
+        delete result.rooms;
       }
       if (Array.isArray(result.articles)) {
         const articles = result.articles as any[];

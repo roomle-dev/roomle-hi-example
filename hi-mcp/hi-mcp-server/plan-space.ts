@@ -683,6 +683,55 @@ export const spanAlongWall = (
   );
 };
 
+export interface WallOfOpening {
+  roomIndex: number;
+  wall: number;
+  fromEndMm: [number, number];
+}
+
+// The wall a door or a window lies in: the wall whose line its floor outline
+// touches - within the wall's thickness - over the longest stretch. The span
+// is measured from the wall's end, like the d of a placement.
+export const wallOfOpening = (
+  outline: [number, number][],
+  rooms: { walls?: DerivedWall[] }[]
+): WallOfOpening | undefined => {
+  let found: WallOfOpening | undefined;
+  let longestOverlap = POINT_EPSILON_MM;
+  rooms.forEach((room, roomIndex) => {
+    for (const wall of room.walls ?? []) {
+      const [[startX, startZ], [endX, endZ]] = wallFloorPoints(wall);
+      const along = unitDirection([startX, startZ], [endX, endZ]);
+      if (!along) {
+        continue;
+      }
+      const distanceToLine = Math.min(
+        ...outline.map(([x, z]) =>
+          Math.abs((x - startX) * along[1] - (z - startZ) * along[0])
+        )
+      );
+      if (distanceToLine > (wall.thicknessMm ?? 0) + POINT_EPSILON_MM) {
+        continue;
+      }
+      const length = Math.hypot(endX - startX, endZ - startZ);
+      const [from, to] = spanAlongWall(wall, outline);
+      const overlap = Math.min(to, length) - Math.max(from, 0);
+      if (overlap > longestOverlap) {
+        longestOverlap = overlap;
+        found = {
+          roomIndex,
+          wall: wall.index,
+          fromEndMm: [
+            round2(length - Math.min(to, length)),
+            round2(length - Math.max(from, 0)),
+          ],
+        };
+      }
+    }
+  });
+  return found;
+};
+
 // The group placement expressed as the room transform of one root module, so
 // the planner derives the group position from its own arrangement and no root
 // position has to travel in the payload.

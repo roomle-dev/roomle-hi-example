@@ -5,7 +5,7 @@
 ## When to Load This Skill
 
 Load this skill when working with:
-- HI data structures (rooms, walls, articles, groups)
+- HI data structures (rooms, walls, articles, groups, obstacles)
 - Docking vectors and docking relationships
 - Positioning new groups with a `placement`
 - Article catalog and module selection
@@ -194,6 +194,10 @@ anywhere in the room.
 - `posRotationY` is in degrees, counter-clockwise as seen from above. Against a wall it is the
   wall's `facingRotationY` (rectangular room: back 0, left 90, front 180, right 270), and
   `posGroup` lies on the wall, from its `end` towards its `start`.
+- Free space comes from the `obstacles` section of `get-plan-context`: doors, windows and other
+  objects as outlines with a height range, and the root module outlines of every group. A door or a
+  window names the wall it lies in and its span from the wall's end — see
+  [hi-authoring-rules.md](./hi-authoring-rules.md#positioning-a-group).
 - It is applied once, when the group is created. A placement on a group that is already in the
   plan is rejected; a group resubmitted without placement keeps its position.
 - An existing group is moved with `place-group`: a wall by side label or index, an alignment along

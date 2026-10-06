@@ -16,6 +16,7 @@ import {
   spanAlongWall,
   volumesOverlap,
   wallName,
+  wallOfOpening,
   wallSpanStart,
   type DerivedWall,
   type GroupFootprint,
@@ -238,6 +239,94 @@ describe('spanAlongWall and wallSpanStart', () => {
     expect(wallSpanStart(WALL_RIGHT, FOOTPRINT, 'center', 0)).toBe(1100);
     expect(wallSpanStart(WALL_RIGHT, FOOTPRINT, 'start', 200)).toBe(200);
     expect(wallSpanStart(WALL_RIGHT, FOOTPRINT, 'end', 0)).toBe(2200);
+  });
+});
+
+describe('wallOfOpening', () => {
+  // the right wall split at a door: a stub, the opening and the long wall
+  const splitRight: DerivedWall[] = [
+    { ...WALL_RIGHT, end: [4000, 0, -100], lengthMm: 100 },
+    {
+      ...WALL_RIGHT,
+      index: 2,
+      start: [4000, 0, -100],
+      end: [4000, 0, -1000],
+      lengthMm: 900,
+      type: 'opening',
+    },
+    {
+      ...WALL_RIGHT,
+      index: 3,
+      start: [4000, 0, -1000],
+      lengthMm: 2000,
+    },
+  ];
+
+  it('finds the wall a window lies in and measures its span from the end of the wall', () => {
+    // behind the back wall, x 1000 to 2000
+    const window: [number, number][] = [
+      [2000, -3120],
+      [1000, -3120],
+      [1000, -3000],
+      [2000, -3000],
+    ];
+    expect(wallOfOpening(window, [{ walls: [WALL_RIGHT, WALL_TOP] }])).toEqual({
+      roomIndex: 0,
+      wall: 2,
+      fromEndMm: [1000, 2000],
+    });
+  });
+
+  it('takes the wall entry the outline runs along the longest', () => {
+    // 100 mm along the opening, 500 mm along the wall after it
+    const window: [number, number][] = [
+      [4120, -900],
+      [4120, -1500],
+      [4000, -1500],
+      [4000, -900],
+    ];
+    expect(wallOfOpening(window, [{ walls: splitRight }])).toEqual({
+      roomIndex: 0,
+      wall: 3,
+      fromEndMm: [1500, 2000],
+    });
+  });
+
+  it('ignores a wall the outline only touches at its end', () => {
+    // a door in the right wall at the back right corner
+    const door: [number, number][] = [
+      [4100, -3000],
+      [4100, -2100],
+      [4000, -2100],
+      [4000, -3000],
+    ];
+    expect(wallOfOpening(door, [{ walls: [WALL_TOP, WALL_RIGHT] }])).toEqual({
+      roomIndex: 0,
+      wall: 1,
+      fromEndMm: [0, 900],
+    });
+  });
+
+  it('accepts an outline within the thickness of the wall and none away from every wall', () => {
+    const inTheWall: [number, number][] = [
+      [2000, -3100],
+      [1000, -3100],
+      [1000, -3220],
+      [2000, -3220],
+    ];
+    expect(wallOfOpening(inTheWall, [{ walls: [WALL_TOP] }])).toBeUndefined();
+    expect(
+      wallOfOpening(inTheWall, [{ walls: [{ ...WALL_TOP, thicknessMm: 120 }] }])
+    ).toEqual({ roomIndex: 0, wall: 2, fromEndMm: [1000, 2000] });
+    const chair: [number, number][] = [
+      [1500, -1500],
+      [2000, -1500],
+      [2000, -1000],
+      [1500, -1000],
+    ];
+    expect(
+      wallOfOpening(chair, [{ walls: [WALL_RIGHT, WALL_TOP] }])
+    ).toBeUndefined();
   });
 });
 

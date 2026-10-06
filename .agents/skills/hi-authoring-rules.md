@@ -188,7 +188,14 @@ placement: {
 
 - **Two corner articles** (a U-shaped kitchen): set `rootId` to the corner article that goes into
   the corner `posGroup` names.
-- **Anywhere else** (island, middle of the room, next to a door): any free floor point, any rotation.
+- **Anywhere else** (island, middle of the room, next to a door): any floor point `obstacles` leaves
+  free, any rotation.
+- **Obstacles**: the `obstacles` section of `get-plan-context` lists what stands in the room — doors,
+  windows and other objects with `kind`, `outline` and `bottomMm`/`topMm`, and per group the outlines
+  of its root modules. A root module cannot stand where an object or another group's root module
+  overlaps it in outline and height range. A door or a window lies in a wall (`roomIndex`, `wall`,
+  `fromEndMm` — its span from the wall's end, like d): keep that span free from the floor for a door,
+  from the window's `bottomMm` for a window; base units lower than that fit below a window.
 - **New groups only**: the placement is applied once, when the group is created. A placement on a
   group already in the plan is not used — the group keeps its position, and `corrections` says so;
   a group resubmitted without placement keeps its position.
@@ -305,8 +312,8 @@ built is an error. Every guard and correction:
 
 ## Workflow
 
-1. Get context: `get-plan-context({ include: 'rooms,articles,groups' })`
-2. Review rooms, articles, existing groups
+1. Get context: `get-plan-context()` — the default sections rooms, articles, groups, obstacles
+2. Review rooms, articles, existing groups and what stands in the room
 3. Create the group with proper docking and a placement
 4. Submit: `create-or-replace-groups({ posGroups: [group] })`
 5. Verify with `get-plan-context` or `get-plan-images`

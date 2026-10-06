@@ -5,8 +5,10 @@
 > guard, automatic correction and feedback message. Every change to a tool, a served rule, a guard, a
 > correction or a result updates this document in the same change.
 >
-> **State**: the code of 2026-10-06 — the served text speaks of articles and root modules, not of kitchens
-> ([analysis](../../.agents/bug-analysis/insert-between-not-chosen-for-a-wardrobe-group.md), D44) —, with the row edit tools
+> **State**: the code of 2026-10-06 — with the obstacles of the plan context
+> ([RML-18036 analysis](../../.agents/feature-analysis/obstacle-map-in-the-plan-context.md) and
+> [plan](../../.agents/feature-analysis/obstacle-map-in-the-plan-context-implementation-plan.md), D45) —, the served text speaks of articles and root modules, not of kitchens
+> ([analysis](../../.agents/bug-analysis/insert-between-not-chosen-for-a-wardrobe-group.md), D44), with the row edit tools
 > ([RML-18045 analysis](../../.agents/feature-analysis/insert-remove-replace-swap-units-in-a-row.md) and
 > [plan](../../.agents/feature-analysis/insert-remove-replace-swap-units-implementation-plan.md)) and the undo and redo tools
 > ([RML-18044 analysis](../../.agents/feature-analysis/undo-and-redo-tools.md) and
@@ -183,6 +185,12 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 |---|---|---|---|
 | D44 | **The served text speaks of articles and root modules, not of kitchens.** The catalog offers articles; a group is one piece of furniture made of articles — a kitchen, a wardrobe, a sideboard, a utility room —; an article placed in a group is a root module. Kitchens are named only where a rule is about them (the corner rules) and in the list of kinds; no tool description names one. `insert-article-into-group` inserts between two root modules that stand side by side, whatever the group and whatever the article — a low cabinet between two high cabinets or wardrobes too —, and a group of two root modules has one place to insert, no gap needed (the sentence that made gpt-5.4-mini reach the tool); the user decides what stands between what. An article named by its kind comes from the category of its neighbours where that category has one. The chat's system prompt names every kind of HI furniture and tells the model to take the closest article of the catalog when the request names a kind. Found with "insert a low cabinet between the high cabinets" on a wardrobe group: the agent looked for a kitchen run of high cabinets and found none | user, 2026-10-06 ([analysis](../../.agents/bug-analysis/insert-between-not-chosen-for-a-wardrobe-group.md), RML-18045) | in effect — `AUTHORING_RULES`, `INSTRUCTIONS`, the tool descriptions, `hi-mcp-server.ts`; `CHAT_SYSTEM_PROMPT`, `chat-config.ts` |
 
+### Obstacles (2026-10-06)
+
+| # | Decision | Source | State |
+|---|---|---|---|
+| D45 | **What stands in the room is a default section of its own.** `get-plan-context` returns `obstacles`: the doors, windows and other plan objects of the kernel's obstacle map as floor outlines with their height range — `kind` door, window or object, no names: an obstacle is an obstacle —, and per HI group the room-space outlines of its root modules. The group outlines come from the parts of the calculated groups, not from the obstacle map: the kernel's outline of an HI group was 50 to 250 mm off on the ticket's plan. The walls of the map are left out — the `rooms` section has them, named and per room. Doors and windows lie behind the room boundary and only touch it, so an overlap test never flags them; the server gives each its wall and its span from the wall's end (C21), the terms of a placement. Root geometry stays out of `groups` (D15); the outlines in `obstacles` are read-only. A planner without the section returns none, and the tool works as before | RML-18036 ([analysis](../../.agents/feature-analysis/obstacle-map-in-the-plan-context.md), [plan](../../.agents/feature-analysis/obstacle-map-in-the-plan-context-implementation-plan.md)) | in effect — `shapeObstacles` (roomle-ui `hi-plan-context.ts`), `agentFacingObstacles`, `wallOfOpening` |
+
 ## 4. How a tool call runs
 
 - **MCP endpoint**: `POST /mcp` — Streamable HTTP, JSON response mode, stateless (a new transport per
@@ -261,7 +269,7 @@ offers articles, a group is one piece of furniture made of articles (a kitchen, 
 sideboard, a utility room), an article placed in a group is a root module (D44) — and contains the
 typical workflow followed by the full authoring rules:
 
-1. `get-plan-context` — rooms with walls, the article catalog, the groups; `masterData` or
+1. `get-plan-context` — rooms with walls, the article catalog, the groups, the obstacles; `masterData` or
    `find-attributes` for attributes.
 2. `create-or-replace-groups` — the whole piece of furniture as one group: article picks, docking,
    one placement. A matching id replaces a group and keeps its position. Units next to an existing
@@ -300,6 +308,10 @@ tool. It covers:
   vectors `merge-article-into-group` names in `dockTo`.
 - **Placement**: the point and the rotation taken from the walls array, the table of room corners,
   and the right-handed corner article.
+- **Obstacles** (D45): what the `obstacles` section lists, that a root module cannot stand where an
+  object or another group's root module overlaps it in outline and height range, and that the span of
+  a door is kept free from the floor, the span of a window from its `bottomMm` — base units lower
+  than that fit below a window. Free spots and free stretches of wall are the ones `obstacles` leaves.
 - **Extending** — at the end of a row with `merge-article-into-group`, between two root modules
   with `insert-article-into-group` —, moving with `place-group`, editing with the command tools and which
   end of a row moves in a row edit (D41, D42), verifying results
@@ -332,15 +344,17 @@ One coordinate system throughout: 3D, right-handed, Y up, millimetres. A contour
 | `articles` | The catalog: `articleId`, `articleName`, `desc`, `category`, `libraryId`, `catalog`, `cornerArticle`. Per root module: `module` (id, name, desc), `dimensions` (size attributes with id, name and value in mm), `mainAttributes`, `dockingVectors` (names), `insertLevels`, `subModules` (id, name, desc). The server sets `cornerArticle` also on an empty plan (from the category or the module name) and removes `cornerPoint` (D10) |
 | `groups` | Per group: `id`, `libraryId`, `attributes`, read-only `position` (`pos`, `rotationY`, `footprint` with `x`, `z`, `widthMm`, `depthMm`), and `roots`. `pos` and `rotationY` are what a placement would name for the group where it stands: `pos` the room point of its back left bottom corner — the docking corner of its anchor root — and `rotationY` the rotation of the placement; the footprint is measured from `pos`. A group with two corner articles also carries `rootId`, the corner article `pos` belongs to, as in a placement (D17): the planner regenerates root ids, so the corner a placement named cannot be told after the load. The server derives them from the planner's calculated groups, wherever the planner keeps the group origin (D33); a group the planner has not positioned keeps the planner's `position`. Per root: the article pick (`id`, `articleId`, input `attributes`, `contextData` with vector names only) and read-only facts (`articleName`, `desc`, `category`, `isGenerated`, `dockingVectors`, `freeDockingVectors`, `subModules` with their id). No root positions, no geometry |
 | `masterData` | Only when requested. Per library id: the root modules (`id`, `name`, `desc`, assigned attribute ids) and the customer-facing attributes (`id`, `name`, `desc`, `type`, `group`, `selections` with value, name and desc) |
+| `obstacles` | `{ objects, groups }`. `objects`: every plan object that is not an HI group — `kind` (`door`, `window`, `object`), `outline` (floor points `[x, 0, z]`) and `bottomMm`/`topMm`; a door or a window also `roomIndex`, `wall` (its index in the walls array) and `fromEndMm`, its span along that wall measured from the wall's end (C21). `groups`: per HI group its `id` and per root module that is not generated its `id`, `outline` (four floor points in room space) and `bottomMm`/`topMm`, from the parts of the calculated group (D45). No walls |
 
-Default sections: `rooms`, `articles`, `groups`.
+Default sections: `rooms`, `articles`, `groups`, `obstacles`. Requested without `rooms`, `obstacles` makes the server fetch
+the rooms too, for the walls of the doors and windows, and return only `obstacles`.
 
 ### 5.5 What the agent is not given
 
 | Withheld | Why |
 |---|---|
 | `imageUrl` everywhere | The agent cannot open them, and they cost three quarters of the tokens (D7) |
-| Root positions and geometry | Root positions come from the docking (D15) |
+| Root positions and geometry in `groups` | Root positions come from the docking (D15); the read-only root outlines of `obstacles` are the exception (D45) |
 | Articles' `cornerPoint`, `repositioningData`, the anchor frame | Internal to the server's placement (D10) |
 | Parts and log messages of the groups | Not needed, and large (D9) |
 
@@ -363,10 +377,10 @@ Default sections: `rooms`, `articles`, `groups`.
 
 | Parameter | Type | Default |
 |---|---|---|
-| `include` | `('masterData' \| 'rooms' \| 'articles' \| 'groups')[]` | rooms, articles, groups |
+| `include` | `('masterData' \| 'rooms' \| 'articles' \| 'groups' \| 'obstacles')[]` | rooms, articles, groups, obstacles |
 
 The server passes the planner's plan context through. In the articles it sets `cornerArticle` and
-removes `cornerPoint` (C7).
+removes `cornerPoint` (C7); every door and window of the obstacles gets its wall (C21).
 
 ### find-attributes
 
@@ -580,6 +594,7 @@ them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twi
 | C14 | The position of a returned group is reported in the frame of a placement: `pos` the back left bottom corner, `rotationY` the rotation of the placement, the footprint from there, and with two corner articles `rootId`, the one `pos` belongs to (D33) | `positionInPlacementFrame`; `inPlacementFrame` |
 | C15 | A group with relations whose list starts with a wall unit starts with its first floor unit, so the placement anchors on the floor | `relationsToDocking` |
 | C18 | Every wall of the plan context gets its `name` (back wall, front wall, left wall, right wall), a wall entry without a type — a door opening — the type `opening`, and every room its `corners` (`name`, `point`, `posRotationY`) | `agentFacingRooms`; `wallName`, `roomCorners`, `plan-space.ts` |
+| C21 | Every door and window of the obstacles gets `roomIndex`, `wall` and `fromEndMm`: the wall whose line its outline touches — within the wall's thickness — over the longest stretch, and its span along that wall measured from the wall's end, like the `d` of a placement | `agentFacingObstacles`; `wallOfOpening`, `plan-space.ts` |
 | C16 | A relation is written as a docking entry on the root the planner reaches first — breadth-first from the first root —, mirrored with the offset negated when its target comes later; the planner applies an offset only in the direction of the entry | `relationsToDocking` |
 
 ### 8.3 `create-or-replace-groups`

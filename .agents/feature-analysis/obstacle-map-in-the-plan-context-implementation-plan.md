@@ -4,7 +4,7 @@
 > **Analysis**: [obstacle-map-in-the-plan-context.md](obstacle-map-in-the-plan-context.md) — the findings, the design and the alternatives this plan builds on
 > **Date**: 2026-10-06
 > **Author**: AI Assistant
-> **Status**: Open — waiting for the review (step 5)
+> **Status**: Implemented (locally, 2026-10-06) — on the feature branches of roomle-ui and roomle-hi-example, nothing pushed, merged or released; the smaller models do not apply the obstacles yet (open issue 49), see the [close-out](#close-out-2026-10-06)
 > **Branches**: `feat/hi-plan-obstacles-RML-18036` in roomle-ui (from `feat/hi-row-edit-commands-RML-18045`, `d5effc991`) and in roomle-hi-example (from `feat/hi-row-edit-tools-RML-18045`, `8e1fc2f`, carries the analysis and this plan); none in the ligna-store — it needs no change
 > **Scope**: the branches build on the RML-18045 branches, which are not released, so this work is verified locally the same way — the roomle-ui dev server of the branch, the example page with `server_url`. Nothing is pushed, merged or released until the user says so
 
@@ -288,3 +288,84 @@ store needs no check of its own.
   span, and the served text and the docs describe both. The tests pass, and the MCP test shows the
   agent keeping wall units off the window and the island off the furniture.
 - Nothing is pushed, merged or released.
+
+## Close-out (2026-10-06)
+
+Implemented locally on the two branches and verified against a roomle-ui dev server of the branch;
+nothing is pushed, merged or released.
+
+### What was built
+
+| Repository | Commits |
+|---|---|
+| roomle-ui `feat/hi-plan-obstacles-RML-18036` | `c6d274f6d` feat: read the obstacle map of the plan · `6e1f11f19` feat: add the obstacles section to the plan context |
+| roomle-hi-example `feat/hi-plan-obstacles-RML-18036` | `557911f` docs: plan the obstacles section of the plan context · `7f00c05` feat: obstacles in the plan context of the hi mcp · test: obstacles in the mcp test prompts (the test prompts, the runner's plan context, this close-out, open issue 49) |
+| ligna-store | none, as planned |
+
+Unit tests: roomle-ui homag-intelligence and planner-core 1181 pass (new: the planner's obstacle
+map, four `shapeObstacles` tests, the section in three `getPlanContext` tests); roomle-hi-example
+hi-mcp 438 → 445. Typecheck, lint and format pass in both. roomle-ui's `lint:docs:ui` and
+`lint:docs:sdk` fail on the base branch already — a type error in `node_modules/bun-webgpu` and 22
+typedoc warnings — and fail the same with the change.
+
+### What the implementation changed against the plan
+
+1. **The planner returns plain segments.** `_getExternalPlanObstacles` maps every segment to
+   `associatedObjectIds`, `p0`, `p1`, `bottom` and `top`; the kernel enum `type` stays in the
+   planner. A wall gets no kind, so `shapeObstacles` leaves the walls out by their missing kind.
+2. **`transformPointByRoot` takes a pick of `articlePos` and `rotationY`**, so the root outlines
+   turn into room space with the same function the footprint uses for a root.
+3. **The test plan is `open-plan-room`**, not `furnished-room`: `docs/test-prompts.md` already
+   names another plan Furnished Room. The ticket's plan holds 24 objects and 3 doors, not 26
+   objects.
+4. **The left-wall test became a back-wall test.** The left wall has no free stretch for tall
+   cabinets: the sofa, the storage unit and the table block it. The back wall is free between the
+   side table next to the sofa and the door (x -1021 to 590), room for two tall cabinets
+   (`obstacle-back-wall-beside-the-sofa`).
+5. **The test runner stores the obstacles** in `plan-context.json`
+   (`.agents/scripts/run-hi-mcp-prompt.js`, `.agents/skills/hi-mcp-testing.md`), so the evaluation
+   can check an outline against the window and the furniture.
+6. **§5.2 of the behaviour doc** summarizes the new obstacle rule as well.
+
+### Live verification (local planner, headless)
+
+The example page against the roomle-ui dev server of the branch, `get-plan-context` over the MCP
+client:
+
+- Default room: the window — outline x -450 to 1650 behind the back wall, 950 to 2170 mm — with
+  `roomIndex` 0, `wall` 5 (the back wall, 5500 mm) and `fromEndMm` [235, 2335]; the door — 0 to
+  2100 mm — with the wall entry of type `opening` on the right wall, `fromEndMm` [0, 900]. The
+  section is 346 characters.
+- The ticket's plan: 24 objects and 3 doors, each door with its `opening` entry; both groups with
+  10 and 4 root outlines in room space, flush with the right wall (x 3248) and starting in the
+  corner (z 2314), the wall units at 1480 to 2200 mm. The section is 5.8 kB beside the 202 kB of
+  the context. No walls and no kernel outline of a group.
+- `include: ['obstacles']` returns only the obstacles; the doors and windows still carry their wall.
+
+Two observations outside the ticket, not investigated: the ticket's plan has a contour that runs
+back along the front wall between its two doors, so one wall entry there (`opening`, 401 to
+-1749) is named back wall; and the root outline of the sink unit `SUBA60` reaches 996 mm along
+the row, into its neighbour — its parts are wider than the cabinet.
+
+### MCP test (local planner, three models)
+
+`.temp/result/mcp-test-2026-10-06_14-25-34`, the three new tests:
+
+| Test | gpt-5-mini | gpt-5.4-mini | gpt-6-astra |
+|---|---|---|---|
+| `obstacle-window-back-wall` | fail — row centred, two wall units across the window | fail — row at the wall's end, three wall units across the window | pass — row right of the window, flush into the corner |
+| `obstacle-back-wall-beside-the-sofa` | fail — in the back left corner, on the sofa | fail — moves the existing kitchen onto the sofa with `place-group`, then the cabinets into the corner on the sofa | pass — between the side table and the door |
+| `obstacle-island-free-spot` | fail — runs into the kitchen's base units | pass | pass — 1.3 m of aisle to the kitchen |
+
+The section is right in every run, and gpt-6-astra uses it in all three tests. The two smaller models
+do not apply the obstacle rule: they take the recipes of the walls rule — centred, flush into a
+corner, at the wall's end — and never test the outlines. The served text leaves that test to the
+agent, and no result tells it that a group covers a window or stands on the sofa. The definition of
+done is met for gpt-6-astra only. The next step is
+[open issue 49](../backlog/mcp-test-open-issues.md#49-a-new-group-stands-on-an-obstacle): a hint in the
+results of `create-or-replace-groups` and `place-group` that names the root modules on an obstacle
+and the free stretches of the wall — feedback, step 4 of
+[Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort).
+
+Saving the plan snapshot failed in every run (HTTP 400 from `api.roomle.com/v3/planSnapshots` with
+the planner of the local dev server); the evaluation reads `plan-context.json` and the images.

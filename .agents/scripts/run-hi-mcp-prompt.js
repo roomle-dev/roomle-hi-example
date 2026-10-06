@@ -662,7 +662,7 @@ const runSession = async (options, launcher, browser) => {
   let planContext;
   try {
     planContext = await callMcpTool('get-plan-context', {
-      include: ['rooms', 'groups'],
+      include: ['rooms', 'groups', 'obstacles'],
     });
   } catch (error) {
     errors.push(`plan context failed: ${error.message}`);

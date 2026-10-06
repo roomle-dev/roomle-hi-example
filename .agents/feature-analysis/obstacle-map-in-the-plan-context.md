@@ -5,7 +5,7 @@
 > **Trigger**: Jira [RML-18036](https://roomle.atlassian.net/browse/RML-18036) — add the obstacle map to the plan context for the HI MCP, in the coordinate system of the plan context, with the HI object groups as separate objects carrying their group id; question: can the individual root modules be encoded too?
 > **Date**: 2026-10-04
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Implemented (locally, 2026-10-06)
 > **Branch**: `docs/obstacle-map-analysis-RML-18036` — [PR #63](https://github.com/roomle-dev/roomle-hi-example/pull/63)
 > **Plan**: [obstacle-map-in-the-plan-context-implementation-plan.md](obstacle-map-in-the-plan-context-implementation-plan.md) — group outlines from the parts instead of the obstacle map, doors and windows with their wall (2026-10-06)
 

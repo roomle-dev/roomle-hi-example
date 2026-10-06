@@ -21,7 +21,8 @@
     "room-and-attic": "ps_qn012p0tjux6dabt6oym0bzngmqex70u",
     "three-tall-units": "ps_qply732i7knwtkfjm1z86sa8vrt00ms",
     "corner-kitchen-wall-units": "ps_r081k1nfl8nmtzget0sug199vhudbtd",
-    "two-wardrobes-right-wall": "ps_r22qpwv9ks87lz1gnrcz1ewv7q8uq3v"
+    "two-wardrobes-right-wall": "ps_r22qpwv9ks87lz1gnrcz1ewv7q8uq3v",
+    "open-plan-room": "ps_qwm5odi6tyflyqwpdcxz1la791ho633"
   },
   "tests": [
     {
@@ -218,6 +219,27 @@
       "plan": "two-wardrobes-right-wall",
       "prompt": "insert a low cabinet between the high cabinets",
       "expect": "one insert-article-into-group call between the two wardrobes with a base cabinet (e.g. UTB60): one group of three root modules, the wardrobes keep their article, no new group, no replace, no exchange; the group's pos stays [4815, 0, -2563.1]"
+    },
+    {
+      "id": "obstacle-window-back-wall",
+      "title": "Base and wall cabinets on the window wall",
+      "plan": "default-room",
+      "prompt": "add four base cabinets with wall cabinets above them on the back wall",
+      "expect": "one group against the back wall: the base cabinets may run below the window (bottomMm 950), no wall cabinet and no tall unit overlaps the window's span x -450 to 1650 (fromEndMm 235 to 2335 of the back wall); the answer names the window"
+    },
+    {
+      "id": "obstacle-back-wall-beside-the-sofa",
+      "title": "Tall cabinets on a furnished wall",
+      "plan": "open-plan-room",
+      "prompt": "add two tall cabinets on the back wall",
+      "expect": "one group of two tall units against the back wall in its free stretch between the side table next to the sofa and the door (x -1021 to 590): it overlaps neither the sofa, the side table nor the door opening"
+    },
+    {
+      "id": "obstacle-island-free-spot",
+      "title": "A kitchen island in a furnished room",
+      "plan": "open-plan-room",
+      "prompt": "add a kitchen island of three base cabinets in a free spot of the room",
+      "expect": "one new group of three base units away from the walls whose root modules overlap no object (dining table, chairs, rug, plant, sofa) and no other group"
     },
     {
       "id": "undo-last-change",

@@ -19,6 +19,7 @@ never drop the agent's content silently.
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui | high — wall cabinets on the worktop |
 | 40 | [A unit colour after a kitchen-wide colour misses the doors](#40-a-unit-colour-after-a-kitchen-wide-colour-misses-the-doors) | bug, roomle-ui command | high — success reported, fronts unchanged |
 | 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner | high — the kitchen stands in the wall |
+| 49 | [A new group stands on an obstacle](#49-a-new-group-stands-on-an-obstacle) | MCP server feedback, instructions | high — cabinets across a window and on furniture |
 | 27 | [A new group needs a point the model computes](#27-a-new-group-needs-a-point-the-model-computes) | decision D23, instructions | high — groups outside the room |
 | 43 | ["Delete" and "remove" are taken for each other](#43-delete-and-remove-are-taken-for-each-other) | instructions | high — the other edit than asked |
 | 45 | ["The middle unit" read from the docking](#45-the-middle-unit-read-from-the-docking) | plan context | medium — the wrong unit edited |
@@ -102,6 +103,36 @@ of `UERTB90`, and fix the frame or report the planner defect.
 **Test.** The payload below loads with the corner unit's back edges on both walls.
 
 **Reproduce.** `mcp-test-2026-10-04_13-00-37`: gpt-5.4-mini 11.
+
+## 49. A new group stands on an obstacle
+
+**Problem.** A new group is placed across a window, onto the sofa or into another group, and the
+result reports success. gpt-5-mini centres a row on the window wall and hangs two wall units across
+the window, puts two tall cabinets into the back left corner on the sofa, and runs an island into the
+kitchen's base units; gpt-5.4-mini puts a row flush at the wall's end with three wall units across
+the window.
+
+**Cause.** The obstacle rule (`AUTHORING_RULES`, `hi-mcp-server.ts`) leaves the overlap test to the
+model: it has to compare the outlines and height ranges of its root modules with every object, and a
+window's `fromEndMm` with its own d. The walls rule hands it recipes that ignore obstacles — centred,
+flush into a corner, at the wall's end — and the models take them. No result of
+`create-or-replace-groups` or `place-group` says that a group overlaps an object, a door's or a
+window's span or another group; D43 does that for row edits and other groups only.
+
+**To do.** A hint in the results of `create-or-replace-groups` and `place-group`, like D43's: per
+root module that overlaps an object or a root module of another group in outline and height range,
+or stands in a door's span or in a window's span above its `bottomMm`, its id, what it overlaps,
+and the free stretches of that wall as `fromEndMm` ranges. The group is built anyway — the user may
+want it so. Then shorten the obstacle rule to what the hint does not cover. Issue 41 can use the same
+test for a row edit.
+
+**Test.** tool-executors tests: a group created across a window, onto an object and into another
+group gets the hint with the free stretches; a group beside them gets none. The MCP tests
+`obstacle-window-back-wall`, `obstacle-back-wall-beside-the-sofa` and `obstacle-island-free-spot`
+with gpt-5-mini and gpt-5.4-mini: the group ends clear of the obstacles, after one correction at
+most.
+
+**Reproduce.** `mcp-test-2026-10-06_14-25-34`: gpt-5-mini 01, 02 and 03, gpt-5.4-mini 01 and 02.
 
 ## 27. A new group needs a point the model computes
 
@@ -286,7 +317,7 @@ gives none.
 ## 37. A first call with a guessed payload
 
 **Problem.** gpt-5.4-mini's first `create-or-replace-groups` call, before it reads the rules, sends an
-empty `roots` array, or the units under another field (`rootArticles`, `rootModules`) with `dockTo`.
+empty `roots` array, or the units under another field (`articles`, `rootArticles`, `rootModules`) with `dockTo`.
 The error asks for the payload format, the model fetches the rules and the second call loads — one
 lost step.
 
@@ -299,7 +330,7 @@ empty group to fill later.
 
 **Test.** `hi-mcp-server.test.ts` asserts the clause.
 
-**Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5.4-mini 01 and 03.
+**Reproduce.** `mcp-test-2026-10-06_14-25-34`: gpt-5.4-mini 02.
 
 ## 47. A root id sent as the group id is refused
 

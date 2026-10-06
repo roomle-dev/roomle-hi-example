@@ -85,7 +85,7 @@ Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json`
 | `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
 | `run.json` | `plan` and `operations` (the tool calls before the prompt, with their `result` or `error`); per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId` |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
-| `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) and the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) |
+| `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) and what stands in the room (`obstacles.objects[]`: `kind`, `outline`, `bottomMm`/`topMm`, a door or window with `wall` and `fromEndMm`; `obstacles.groups[].roots[]`: the room-space outline and height range of every root module) |
 | `planner-calls.json` | what the MCP server sent to the planner during the chat (the operations' calls are not in it): `loadExternalObjectGroupLayout` — `args[0].posGroups[]` with the roots, their docking (`contextData.dockedRoots`) and attributes, and `repositioningData` (the placement); `externalObjectGroupOperation` — `args` = the command and its payload; `ok: false` with the page's `error` |
 | `console.log` | `[hi-mcp]` and `[hi-chat]` errors |
 
@@ -329,7 +329,7 @@ The script:
 4. sends the prompts to the chat backend (`POST /chat`, the chat window's system prompt and tools),
    each until the end of its stream, and records every planner call the MCP server sends to the
    page (from the bridge's WebSocket frames — the server's log cuts the arguments short);
-5. reads the rooms and groups (`get-plan-context`), then `getExternalObjectSnapshot()` with every
+5. reads the rooms, groups and obstacles (`get-plan-context`), then `getExternalObjectSnapshot()` with every
    field it stores and without the object GLB (the GLB is not generated), then saves
    the plan with `saveExternalObjectSnapshot()` for its plan snapshot id — **every run saves one
    plan snapshot in the Roomle backend**, as the example's "Save snapshot" button does;

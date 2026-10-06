@@ -136,6 +136,19 @@ untested.
 | wardrobe towards the back wall | `65866076-3967-40a1-a9c1-217a13bc21a0` |
 | wardrobe towards the door | `3b4bdb6f-36b1-4324-9c79-1509dee9ec36` |
 
+### Open-Plan Room
+
+plan snapshot id: `ps_qwm5odi6tyflyqwpdcxz1la791ho633`
+
+![Open-Plan Room](./images/open-plan-room.png)
+
+The plan of RML-18036: a kitchen on the right wall and a row of sideboard units on the front wall
+(two HI groups), a sofa against the back wall with a side table beside it, a dining table with six
+chairs on a rug under pendant lamps, a storage unit with lamps and plants on the left wall, a
+trolley, plants and three doors. The obstacle tests start from it: the back wall is free only
+between the side table and the door (x -1021 to 590), and the free floor lies between the dining
+table and the kitchen.
+
 ## Test Cases
 
 [test-prompts.json](./test-prompts.json) holds:

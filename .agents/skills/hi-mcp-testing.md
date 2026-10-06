@@ -33,7 +33,7 @@ Write the temporary test file `$SESSION/tests.json`: `docs/test-prompts.json` wi
 models — by default every test and the `gpt-5-mini` model:
 
 ```bash
-jq '.models = [{ "provider": "gpt-5-mini", "apiKeyEnv": "AZURE_GPT_KEY" }]' docs/test-prompts.json > "$SESSION/tests.json"
+jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/test-prompts.json > "$SESSION/tests.json"
 ```
 
 - A subset of the tests the user names: filter `.tests` by `id` the same way.
@@ -273,16 +273,16 @@ node .agents/scripts/run-hi-mcp-tests.js [<tests.json>] [--out <dir>] [--dev]
 
 | Argument | Meaning |
 |---|---|
-| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKeyEnv }`), `plans` (name → plan snapshot id), `tests` (`{ id, title, plan, prompt?, image?, operations?, expect? }`); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
+| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `tests` (`{ id, title, plan, prompt?, image?, operations?, expect? }`); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
 | `--out <dir>` | the session directory, default `.temp/result/mcp-test-<local time>/`; an existing one is continued |
 | `--dev` | passed to every run |
 
 The runner:
 
-1. checks the file before the first run — the key variable of every model is set, every test has a
+1. checks the file before the first run — every model has a key (a `"$NAME"` variable is set), every test has a
    unique kebab-case `id`, a `plan` of `plans`, a prompt or an image, an existing image file and
    well-formed `operations` — and names every problem;
-2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider> "$<apiKeyEnv>"
+2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider> "<apiKey>"
    "<prompt>" --plan <id> [--operations <json>] [--image <file>] --out <out>/<provider>/<NN>-<id>`,
    with its output in that directory's `console.log`. It runs one at a time (the ports are fixed),
    each with a fresh launcher and browser;

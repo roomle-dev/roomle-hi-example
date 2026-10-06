@@ -84,7 +84,7 @@ group editing tests start from it. It was built with `create-or-replace-groups` 
 
 | Field | Content |
 |---|---|
-| `models` | the chat models to test, `{ provider, apiKeyEnv }`: a provider name of the launcher and the environment variable that holds its key — never the key |
+| `models` | the chat models to test, `{ provider, apiKey }`: a provider name of the launcher and its key — `"$NAME"` reads the key from the environment variable `NAME`, which keeps it out of the committed file |
 | `plans` | the plans above by name: `{ "<name>": "<plan snapshot id>" }` |
 | `tests` | `{ id, title, plan, prompt?, image?, operations?, expect? }` — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message; `operations` are MCP tool calls `{ tool, arguments }` made on the plan before the prompt (e.g. "join groups" deletes the middle unit first); `expect` says what the evaluation checks |
 

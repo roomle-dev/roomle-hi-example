@@ -6,9 +6,10 @@
  *   node .agents/scripts/run-hi-mcp-tests.js [<tests.json>] [--out <dir>] [--dev]
  *
  * The test file (default docs/test-prompts.json) holds models
- * ({ provider, apiKeyEnv }), plans ({ <name>: <plan snapshot id> }) and tests
+ * ({ provider, apiKey }; apiKey "$NAME" reads the environment variable NAME),
+ * plans ({ <name>: <plan snapshot id> }) and tests
  * ({ id, title, plan, prompt?, image?, operations?, expect? }). Before the
- * first run it checks the file, the images and the key variables. A run goes
+ * first run it checks the file, the images and the keys. A run goes
  * to <out>/<provider>/<NN>-<id>/ with its console.log; a run without run.json
  * (the launcher or the page did not come up) is repeated once, and a test
  * whose directory already holds run.json is skipped - a stopped session
@@ -58,6 +59,10 @@ const localTimestamp = (date) => {
   );
 };
 
+// The key itself, or $NAME for the key in the environment variable NAME.
+const resolveApiKey = (apiKey) =>
+  apiKey.startsWith('$') ? process.env[apiKey.slice(1)] : apiKey;
+
 // An MCP tool call: the tool name, and arguments that are an object if given.
 const isOperation = (operation) =>
   typeof operation?.tool === 'string' &&
@@ -69,18 +74,20 @@ const isOperation = (operation) =>
 const problemsOf = ({ models, plans, tests }) => {
   const problems = [];
   if (!Array.isArray(models) || models.length === 0) {
-    problems.push('models: a non-empty list of { provider, apiKeyEnv }');
+    problems.push('models: a non-empty list of { provider, apiKey }');
   }
   for (const model of Array.isArray(models) ? models : []) {
     if (
       typeof model?.provider !== 'string' ||
-      typeof model?.apiKeyEnv !== 'string'
+      typeof model?.apiKey !== 'string'
     ) {
       problems.push(
-        `model ${JSON.stringify(model)}: needs provider and apiKeyEnv`
+        `model ${JSON.stringify(model?.provider)}: needs provider and apiKey`
       );
-    } else if (!process.env[model.apiKeyEnv]) {
-      problems.push(`model ${model.provider}: $${model.apiKeyEnv} is empty`);
+    } else if (!resolveApiKey(model.apiKey)) {
+      problems.push(
+        `model ${model.provider}: ${model.apiKey || 'apiKey'} is empty`
+      );
     }
   }
   if (!Array.isArray(tests) || tests.length === 0) {
@@ -177,7 +184,7 @@ const main = async () => {
       const dir = join(outDir, model.provider, `${number}-${test.id}`);
       const args = [
         model.provider,
-        process.env[model.apiKeyEnv],
+        resolveApiKey(model.apiKey),
         test.prompt ?? '',
         '--plan',
         suite.plans[test.plan],

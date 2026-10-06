@@ -29,7 +29,7 @@ is promoted into the appropriate living-reference document, and this document is
 - Fix summary and validation results
 
 Mechanics: Follow the pattern from RoomleCore's analysis close-out process.
-Never delete an analysis document — it is the rationale for code that looks arbitrary without it.
+Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup.md) promotes the durable outcome and deletes this document.
 
 ## Current Documents
 

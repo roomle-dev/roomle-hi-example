@@ -192,7 +192,7 @@ The following phrases trigger the analysis workflow automatically:
 1. **Write analysis** — Before any code changes, write the complete analysis document
 2. **Do the work** — Implement the fix, feature, or refactoring
 3. **Close out** — Update the document with the results, set status, promote durable knowledge
-4. **Never delete** — Analysis documents are historical records
+4. **Delete once landed** — when the work is on `master`, ["cleanup analyses"](skills/hi-analysis-cleanup.md) promotes the durable outcome and deletes the document; git history, the Jira comment and the pull request keep the record
 
 ### Status Values
 
@@ -243,7 +243,7 @@ Every analysis document should include:
 | What you produced | Where it goes | Lifecycle |
 |---|---|---|
 | **Living reference** — how things work now | `.agents/skills/` or `docs/` | Updated when behaviour changes |
-| **Historical record** — analysis, benchmark, refactoring | `.agents/<analysis-type>/` | Never updated after close-out |
+| **Historical record** — analysis, benchmark, refactoring | `.agents/<analysis-type>/` | Never updated after close-out; deleted by ["cleanup analyses"](skills/hi-analysis-cleanup.md) once the work is on `master` |
 | **Decision** — why code is shaped this way | `.agents/decisions/` (create folder if needed) | Living reference |
 | **ADR** — architecture decision record | `.agents/decisions/` | Living reference |
 

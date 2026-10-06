@@ -33,7 +33,7 @@ appropriate living-reference document, and this document is set to `Implemented`
 When the approach is rejected, the reasoning is documented here and the document is set to `Rejected`.
 
 Mechanics: Update the relevant documentation, then close out this analysis.
-Never delete an analysis document.
+Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup.md) promotes the durable outcome and deletes this document.
 
 ## Current Documents
 

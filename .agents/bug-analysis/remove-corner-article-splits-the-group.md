@@ -13,7 +13,7 @@
   module and names the leg that turned; `moveUnitsAboveWithTheirCarriers` turns the units above a
   turned leg with it; one unit test in `glue-logic-test.ts`; the remove paragraph of
   `.agents/homag-intelligence.md`.
-- **roomle-hi-example** — this analysis; decisions D50 and D51; the description of
+- **roomle-hi-example** — this analysis; decisions D51 and D52; the description of
   `remove-article-from-group` (`hi-mcp-server.ts`); D40 and the tool tables in the docs; a remove
   test in `docs/test-prompts.json`.
 
@@ -60,10 +60,10 @@ groups: leg A, leg B, wall unit `4c722e3d` with range hood `a834858d`, and wall 
 
 **Decisions (Gernot, 2026-10-07)**, in `docs/hi-mcp-behaviour.md` §3:
 
-- **D50 — the tools do not restrict the agent, and they always say what happens.** The goal is not
+- **D51 — the tools do not restrict the agent, and they always say what happens.** The goal is not
   to restrict the agent but to be as flexible as possible. What happens has to be clearly specified
   at all times, in the tool description and in the result.
-- **D51 — removing a corner article closes the gap.** One leg turns by 90° and is docked to the
+- **D52 — removing a corner article closes the gap.** One leg turns by 90° and is docked to the
   other.
 
 **roomle-ui.**
@@ -84,7 +84,7 @@ groups: leg A, leg B, wall unit `4c722e3d` with range hood `a834858d`, and wall 
 **roomle-hi-example.** The description of `remove-article-from-group` says what happens: "Removing
 a corner article between two legs closes the gap as well: one leg turns by 90 degrees, with the
 units above it, and is docked to the other, so the legs form one straight row - the result names the
-leg that turned." D40, D51 and the tool tables say the same. The server needs no code change.
+leg that turned." D40, D52 and the tool tables say the same. The server needs no code change.
 
 ## Tests
 

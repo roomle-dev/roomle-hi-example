@@ -233,7 +233,7 @@ planner has loaded the result:
   other, the end of the row at a wall stays, a unit hung on it hangs on the neighbour that moves into
   the gap; a unit at a row end is removed and nothing else moves; a corner article between two legs
   is removed and the gap closed by turning one leg by 90° with the units above it, and the
-  `corrections` name the leg that turned (D51); the only unit is deleted with its group
+  `corrections` name the leg that turned (D52); the only unit is deleted with its group
   (`gapClosed: false`). A remove never splits a group
 - `exchange-root-module`: the article has one root module; the new unit keeps the position and
   the docking of the replaced one; `attributes` override attributes of the new unit (`mod_Width` for

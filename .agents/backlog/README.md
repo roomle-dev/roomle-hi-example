@@ -16,7 +16,7 @@ the document a row links.
 | [35 — The handleless right corner unit as the first root with two legs stands 239 mm in the wall](mcp-test-open-issues.md#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | Reproduce, compare the anchor frames of `EUERTB90` and `UERTB90`, fix the frame or report the planner defect | high |
 | [49 — A new group stands on an obstacle](mcp-test-open-issues.md#49-a-new-group-stands-on-an-obstacle) | A hint in the results of `create-or-replace-groups` and `place-group`: the root modules on an obstacle and the free stretches of the wall | high |
 | [27 — A new group needs a point the model computes](mcp-test-open-issues.md#27-a-new-group-needs-a-point-the-model-computes) | Decide D23 (`placement { wall, alignment, offsetMm }`); meanwhile say which corner a wall's `end` is | high |
-| [43 — "Delete" and "remove" are taken for each other](mcp-test-open-issues.md#43-delete-and-remove-are-taken-for-each-other) | Analyse the tool choice, make the user's verb open both descriptions in the same words | high |
+| [43 — "Delete" and "remove" are taken for each other](mcp-test-open-issues.md#43-delete-and-remove-are-taken-for-each-other) | Analyse the tool choice, change the sentence that leads the models to the other tool | high |
 | [45 — "The middle unit" read from the docking](mcp-test-open-issues.md#45-the-middle-unit-read-from-the-docking) | A row position per root in the plan context | medium |
 | [46 — A new group beside an existing one](mcp-test-open-issues.md#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | One clause in the `create-or-replace-groups` description: an article beside a group goes into it | medium |
 | [48 — A worktop colour sent as `mod_PaneltopColor`](mcp-test-open-issues.md#48-a-worktop-colour-sent-as-mod_paneltopcolor) | `find-attributes` returns `mod_CountertopColor` first for "worktop" | medium |
@@ -66,7 +66,7 @@ Details: [mcp-test-infrastructure-issues.md](mcp-test-infrastructure-issues.md).
 | [2 — The hint of a tool result is not recorded](mcp-test-infrastructure-issues.md#2-the-hint-of-a-tool-result-is-not-recorded) | Log the `hint` and store it per tool call in `run.json` | medium |
 | [3 — A run whose page navigates after the chat stores no snapshot](mcp-test-infrastructure-issues.md#3-a-run-whose-page-navigates-after-the-chat-stores-no-snapshot) | Log the page's navigations; repeat a run without a plan snapshot id once | low |
 | [4 — The suite runs only the tests written by hand](mcp-test-infrastructure-issues.md#4-the-suite-runs-only-the-tests-written-by-hand) | Generated and random tests in the temporary test file of "test the mcp" (RML-18027) | low |
-| [5 — Saving the plan snapshot fails](mcp-test-infrastructure-issues.md#5-saving-the-plan-snapshot-fails) | Log the response body of the failing request; compare it with a request that stored its snapshot | low |
+| [5 — Saving the plan snapshot fails](mcp-test-infrastructure-issues.md#5-saving-the-plan-snapshot-fails) | Log the response body; check whether the v3 `planSnapshots` `POST` needs a signed request (roomle-ui) | low |
 
 ## Deployment, launcher and page sessions
 

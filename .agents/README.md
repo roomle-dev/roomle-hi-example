@@ -119,18 +119,18 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 
 | Document | Last touched |
 |---|---|
-| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-06 |
-| [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — measure, then let the plan context carry every article's docking vectors and corner point, and remove the server's probe where the default variant suffices | 2026-10-06 |
-| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner that "test the mcp" shows | 2026-10-06 |
+| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-07 |
+| [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — measure, then let the plan context carry every article's docking vectors and corner point, and remove the server's probe where the default variant suffices | 2026-10-07 |
+| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner that "test the mcp" shows | 2026-10-07 |
 | [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — gpt-5.4-mini plans without reasoning: set an effort per Foundry deployment from the measured data and verify it; further measurement only on request | 2026-10-07 |
-| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the open gaps of running "test the mcp": the object-only render under software GL, the unrecorded hint, a run that loses its page, tests only written by hand, the snapshot save with a local planner | 2026-10-06 |
-| [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — a store page that never connects for an external agent, the live isolation check, access control, the image's second lockfile, the root scripts' flags, SIGTERM | 2026-10-06 |
-| [The planner's load result per input group](backlog/planner-load-outcome-per-group.md) — roomle-ui names per input group what it built, so `create-or-replace-groups` reports a group left out in `notLoaded` | 2026-10-06 |
-| [A deletion makes the wall units groups of their own](backlog/delete-root-module-splits-off-wall-units.md) — `deleteRootModule` keeps the wall units with the floor units they hang above | 2026-10-06 |
-| [One planner undo step per tool call](backlog/one-undo-step-per-tool-call.md) — roomle-ui resolves a command after its follow-up reload and groups a tool call into one undo step; then the server drops its follow-up wait | 2026-10-06 |
-| [Open findings about the plan context](backlog/plan-context-open-findings.md) — wall sides, root outlines, calculation errors, the obstacle outline of a group, position heights | 2026-10-06 |
-| [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-06 |
-| [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-06 |
+| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the open gaps of running "test the mcp": the object-only render under software GL, the unrecorded hint, a run that loses its page, tests only written by hand, the snapshot save with a local planner | 2026-10-07 |
+| [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — a store page that never connects for an external agent, the live isolation check, access control, the image's second lockfile, the root scripts' flags, SIGTERM | 2026-10-07 |
+| [The planner's load result per input group](backlog/planner-load-outcome-per-group.md) — roomle-ui names per input group what it built, so `create-or-replace-groups` reports a group left out in `notLoaded` | 2026-10-07 |
+| [A deletion makes the wall units groups of their own](backlog/delete-root-module-splits-off-wall-units.md) — `deleteRootModule` keeps the wall units with the floor units they hang above | 2026-10-07 |
+| [One planner undo step per tool call](backlog/one-undo-step-per-tool-call.md) — roomle-ui resolves a command after its follow-up reload and groups a tool call into one undo step; then the server drops its follow-up wait | 2026-10-07 |
+| [Open findings about the plan context](backlog/plan-context-open-findings.md) — wall sides, root outlines, calculation errors, the obstacle outline of a group, position heights | 2026-10-07 |
+| [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-07 |
+| [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-07 |
 | [The ligna-store chat as a client of the HI MCP server](backlog/ligna-store-chat-client.md) — the Mistral image adapter and a final answer step | 2026-10-06 |
 
 ---

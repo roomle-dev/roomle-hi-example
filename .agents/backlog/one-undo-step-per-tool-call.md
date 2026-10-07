@@ -2,7 +2,7 @@
 
 > **Type**: Backlog item (roomle-ui; removes a workaround in the MCP server)
 > **Domain**: roomle-ui `planner-core` — the undo step machinery (`plan-interaction-manager.ts`) and `externalObjectGroupOperation`; consumer: the hi-mcp `undo` and `redo` tools (D37, D38 in [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#architecture))
-> **Jira**: follow-up of [RML-18044](https://roomle.atlassian.net/browse/RML-18044); no ticket of its own yet
+> **Jira**: follow-up of [RML-18044](https://roomle.atlassian.net/browse/RML-18044)
 
 ## Problem
 

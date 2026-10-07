@@ -21,7 +21,7 @@ its fix is in the code.
 ## 1. A store page opened for an external agent never connects
 
 **Problem.** The ligna-store starts its page bridge only together with its chat window: `Planner.vue:263`
-(`if (chatOptions)`) and `resolveChatOptions` (`hi-mcp/chat-options.ts:61-77`) need `model`,
+(`if (chatOptions)`) and `resolveChatOptions` (`hi-mcp/chat-options.ts:60-91`) need `model`,
 `api_key` and `mcp_server` (ligna-store `origin/master`). The deployment's `HI_MCP_STORE_URL`
 (`hi-mcp/cf/wrangler.jsonc:23`) is `…/ligna-store-test/?store.stage=INT&mcp_server=…` without them,
 and the "No HI page connected" error (`page-bridge.ts:123`) tells the agent to send the user there:
@@ -38,8 +38,8 @@ are set as well. Then drop the chat parameters from the store URLs of the agent 
 [jan-ai-setup.md](../../docs/setup/jan-ai-setup.md)), and `HI_MCP_STORE_URL` names a page that
 connects. Constraint: an INT page without `mcp_server` starts no bridge.
 
-**Test.** A ligna-store unit test of the option resolution: `mcp_server` alone yields bridge options
-and no chat options; neither parameter yields neither.
+**Test.** A test of the option resolution — the ligna-store has no test runner, so it needs one
+first: `mcp_server` alone yields bridge options and no chat options; neither parameter yields neither.
 
 **Reproduce.** Open `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=check`,
 then call `get-plan-context` on `https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=check`.
@@ -58,8 +58,9 @@ checked only by unit tests and a local probe. Not checked against
 - a sixth concurrent session (`max_instances: 5`, `hi-mcp/cf/wrangler.jsonc:13`): what the chat
   shows when no container is free.
 
-**To do.** Run the three checks in the deployed store; write what a sixth session shows into the
-handout section of [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md#the-handout-for-colleagues-parallel-use-per-session).
+**To do.** Run the three checks in the deployed store; check the handout's sentence on a sixth session
+("the chat stays disabled and reports that it cannot connect") against what the store shows, and
+correct it, in the handout section of [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md#the-handout-for-colleagues-parallel-use-per-session).
 
 **Test.** The unit level is guarded: `it('rejects a second page without disrupting the active planner call')`
 and `it('only lets the matching browser chat call its planner')` in

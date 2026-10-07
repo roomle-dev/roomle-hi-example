@@ -37,7 +37,8 @@ the room lies on, not from the segment direction alone.
 **Problem.** In `obstacles.groups` of the Open-Plan Room, the outline of the sink unit `SUBA60`
 reaches 996 mm along the row, into its neighbour: a root module seems to overlap the one beside it.
 
-**Cause.** `shapeObstacles` (`hi-plan-context.ts:897`) takes a root's outline from the bounding box of
+**Cause.** `shapeObstacles` (`hi-plan-context.ts:897`; `rootOutline`, `:860`, from `rootPoints`, `:442`)
+takes a root's outline from the bounding box of
 its parts; one part of `SUBA60` is wider than the cabinet. Which part it is, is not known.
 
 **To do.** Find the part; decide whether the outline takes the carcase parts only or the library's

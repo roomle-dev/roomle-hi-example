@@ -21,9 +21,11 @@ The agent cannot write this:
 
 - The relations (D34) have no relation for a unit under another.
 - Written as `contextData`, an entry names vectors only: the server strips the indices (C3,
-  `stripDockingIndices`, `tool-executors.ts:84`), and roomle-ui resolves a name that matches two
-  vectors of the article to no index — "Cannot reproduce dockingVectorIndex …" — and does not
-  arrange the entry (`_completeDockingReference`, `hi-root-module-arrangement.ts:712-765`).
+  `stripDockingIndices`, `tool-executors.ts:84`), and roomle-ui resolves a name that matches several
+  vectors of the article to the outermost of them on that side (`dockingVectorIndexByName`,
+  `hi-root-module-arrangement.ts:549`) — the plate's inner `LeftBottom` cannot be named, and a name
+  without a single outermost vector resolves to no index and is not arranged
+  (`_completeDockingReference`, `:751`).
 
 ## To do
 

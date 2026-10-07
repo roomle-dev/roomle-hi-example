@@ -2,7 +2,6 @@
 
 > **Type**: Backlog item (architecture; roomle-hi-example, ligna-store, later roomle-ui embedding-lib)
 > **Domain**: the page side of the MCP server — `hi-mcp/hi-mcp-client/`, the inline bridge of `minimal-hi-example/index.html`, the ligna-store copy in `hi-mcp/`
-> **Status**: Open — the product direction of [ADR 0001](../decisions/0001-hi-mcp-tool-logic-in-the-server.md); not scheduled
 
 ---
 
@@ -19,8 +18,9 @@ reconnect:
 | HI presets example | `minimal-hi-example/index.html:1252-1405` (inline, `MCP_PLANNER_METHODS`) | no |
 | ligna-store | `hi-mcp/browser-bridge.ts`, `hi-mcp/types.ts`, started in `components/blocks/Planner.vue:263-264` | no |
 
-The copies are kept equal by hand. A protocol change (`BRIDGE_PROTOCOL`, `hi-mcp/hi-mcp-server/types.ts:4`)
-or a new planner method on the allow-list is a change in two repositories and three files, and a
+The copies are kept equal by hand. A new planner method on the allow-list is a change in two repositories and three files, a protocol
+change (`BRIDGE_PROTOCOL`, `hi-mcp/hi-mcp-server/types.ts:4`) one in four — both `types.ts`, the
+example page and the ligna-store's `types.ts` —, and a
 sales configurator that embeds the chat would need a fourth copy. Only the reference client's
 allow-list is checked against `planner-api.ts`.
 
@@ -56,7 +56,7 @@ allow-list is checked against `planner-api.ts`.
 `hi-mcp/hi-mcp-server/tests/planner-api.test.ts` checks the server's `PlannerApi` against the
 package's allow-list — then against the only copy.
 
-**Reproduce:** diff `hi-mcp/hi-mcp-client/browser-bridge.ts` against the ligna-store's
+**Reproduce.** diff `hi-mcp/hi-mcp-client/browser-bridge.ts` against the ligna-store's
 `hi-mcp/browser-bridge.ts` and against the inline bridge of `minimal-hi-example/index.html`.
 
 ## References

@@ -9,7 +9,8 @@
 
 ## Problem
 
-gpt-5.4-mini plans without reasoning: the chat sends no reasoning effort, and the deployment's
+gpt-5.4-mini plans without reasoning: the chat sends no reasoning effort unless
+`HI_CHAT_REASONING_EFFORT` is set (`chat-config.ts:166`), and the deployment's
 default on the HI Azure AI Foundry resource is no reasoning — 0 reasoning tokens in every step.
 Without reasoning it plans worse than at `low` (14 against 7 fails in the 32 tests of "test the
 mcp"). gpt-5-mini and gpt-6-astra reason by default, as at `medium`. The data:

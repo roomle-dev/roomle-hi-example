@@ -141,6 +141,7 @@ The start script (`npm start`) provides:
 │       └── roomle-hi-concepts.md  # Core HI concepts
 ├── docs/
 │   ├── hi-mcp-behaviour.md       # MCP server behaviour: guidelines, decisions, tools, information, guards, corrections, feedback
+│   ├── user-guide/README.md      # User guide: what the HI MCP does, the ways to use it, prompts, limits
 │   ├── setup/                    # Setup guides
 │   │   ├── local-mcp-server.md   # Install the local MCP server and connect the MCP clients
 │   │   ├── cloudflare-mcp-server.md # Deploy the MCP server to Cloudflare Containers

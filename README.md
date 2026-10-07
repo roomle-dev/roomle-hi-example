@@ -4,6 +4,9 @@ Standalone HI presets example (one `minimal-hi-example/index.html`) with the
 HI MCP server (`hi-mcp/hi-mcp-server`): an AI agent plans HOMAG Intelligence
 object groups in a live Roomle room-planner session.
 
+New to the HI MCP? The [user guide](./docs/user-guide/README.md) explains what it does, the three
+ways to use it, and how to talk to the assistant.
+
 ## Usage
 
 ```bash

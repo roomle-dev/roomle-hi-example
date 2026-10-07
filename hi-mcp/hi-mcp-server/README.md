@@ -511,7 +511,7 @@ Group ids accept a unique prefix.
 
 | Tool | Parameters | Effect |
 | ---- | ---------- | ------ |
-| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | Sets an attribute of a root module, or of one of its sub modules (the id in `subModules`) |
+| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | Sets an attribute of a root module and of its sub modules that carry it, or with `moduleId` of that one sub module (the id in `subModules`); without `moduleId` the result lists the `changedModuleIds` |
 | `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it; the result lists the `changedModuleIds` |
 | `delete-group` | `groupId` | Removes the group |
 | `delete-root-module` | `rootModuleId` | Deletes one root module and leaves the gap — the tool for "delete": root modules no longer docked together become separate groups where they stand, and deleting the only root module deletes the group. Generated roots (worktop, toe kick) cannot be deleted |

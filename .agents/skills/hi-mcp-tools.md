@@ -217,7 +217,8 @@ of the wall units (D35), reported.
 planner has loaded the result:
 
 - `groups`: the affected groups in the `get-plan-context` shape
-- `changedModuleIds`: for `change-group-attribute`
+- `changedModuleIds`: for `change-group-attribute`, and for `change-module-attribute` without `moduleId` —
+  the root module and the sub modules it set
 - `gapClosed`: for `remove-article-from-group` — `true` when the gap was closed, `false` when the
   unit was deleted as `delete-root-module` does
 - `corrections`: what the server corrected before forwarding — the docking of

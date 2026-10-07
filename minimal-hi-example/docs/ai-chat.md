@@ -130,7 +130,7 @@ is still working. The backend logs every request, MCP connection, tool call
 
 The backend gives the model the system prompt `CHAT_SYSTEM_PROMPT`
 (`chat-config.ts`, its sentences in the
-[behaviour reference](../../hi-mcp/docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs)),
+[behaviour reference](../../docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs)),
 the conversation and the MCP tools, and runs `streamText` in steps
 (`chat-steps.ts`): a step is one model call and the tool calls it returns.
 
@@ -268,7 +268,7 @@ in `hi-mcp/hi-mcp-chat/tests/tool-result-images.test.ts`.
 
 The MCP server keeps its results small for every client: compact JSON without
 the signed `imageUrl` of the master data
-([behaviour reference §5.3](../../hi-mcp/docs/hi-mcp-behaviour.md#53-result-format)).
+([behaviour reference §5.3](../../docs/hi-mcp-behaviour.md#53-result-format)).
 A plan context with them fills half of Mistral Large's context.
 
 Endpoints: `GET /health` (used for smoke tests), `GET /capabilities`
@@ -330,7 +330,7 @@ The ligna-store has a chat window of its own (ligna-store `hi-mcp/chat.ts`,
 page: the model is called directly with `api_key` (Mistral and the Foundry
 endpoint allow browser CORS), and the tools come from `<mcp_server>/mcp`, which
 answers the store origin (`HI_MCP_PAGE_ORIGINS`,
-[cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md#browser-clients-cors)).
+[cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md#browser-clients-cors)).
 The store keeps `api_key` out of the page URL its bridge announces. Its
 reference is the ligna-store's `hi-mcp/README.md`; why neither chat is served
 by the MCP server, and why a key in the store URL is for a demo only:

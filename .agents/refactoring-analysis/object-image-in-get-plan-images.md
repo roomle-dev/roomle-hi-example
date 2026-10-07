@@ -144,7 +144,7 @@ options; the ligna-store does not reference the tool's result):
 
 | File | Change |
 |---|---|
-| [`hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behaviour.md) | §3 *Information for the agent*: a new decision (§5); §5.3 result format (line 243: a text naming the images, then the images); the §6 results table ("two images", line 285); §6 *get-price, get-order-data, get-plan-images* (line 398) |
+| [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md) | §3 *Information for the agent*: a new decision (§5); §5.3 result format (line 243: a text naming the images, then the images); the §6 results table ("two images", line 285); §6 *get-price, get-order-data, get-plan-images* (line 398) |
 | [`minimal-hi-example/docs/hi-mcp-server.md:512-520`](../../minimal-hi-example/docs/hi-mcp-server.md#L512-L520) | the tool reference entry |
 | [`hi-mcp-server/README.md:501-506`](../../hi-mcp/hi-mcp-server/README.md#L501-L506) | the tool reference entry |
 | [`.agents/skills/hi-mcp-tools.md:39, 220-226`](../skills/hi-mcp-tools.md) | the tool table and the reference block |

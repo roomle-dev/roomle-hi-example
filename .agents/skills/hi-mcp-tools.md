@@ -3,7 +3,7 @@
 **Load this skill when the task involves:** MCP tool definitions, tool parameters, usage patterns, error handling for specific tools.
 
 The behaviour reference — every guard, correction and feedback message, and the decisions behind
-them — is [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behaviour.md).
+them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 
 ## Tool Overview
 
@@ -363,7 +363,7 @@ positions the group, an existing group keeps its position), unconnected roots do
 end of a row, a unit on a taken side moved to the free end of the row, an article id read in the
 catalog's spelling, a `place-group` target moved off an overlap or centred on a parallel alignment.
 Every guard and correction:
-[hi-mcp-behaviour.md §8](../../hi-mcp/docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
+[hi-mcp-behaviour.md §8](../../docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
 
 ## Timeouts
 

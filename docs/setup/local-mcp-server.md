@@ -9,7 +9,7 @@ ligna-store page (local or deployed), where they execute against the planner.
 > Note: [`minimal-hi-example/docs/hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md) documents the standalone HI presets
 > example, which uses this same server (started by `minimal-hi-example/start.mjs`) as its client.
 > Tool reference and authoring rules live in the
-> [PoC README](../hi-mcp-server/README.md).
+> [PoC README](../../hi-mcp/hi-mcp-server/README.md).
 
 ## Prerequisites
 
@@ -46,7 +46,7 @@ may also need the browser's permission for the local network. The server termina
 planner, and a second page is refused (WebSocket close 4409) until the first one leaves.
 Which setup needs which URL parameters — local server, deployed store, cloud server, parallel
 sessions — is covered by the **setup matrix** in the
-[PoC README](../hi-mcp-server/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
+[PoC README](../../hi-mcp/hi-mcp-server/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
 
 ### Configuration (environment variables, all optional)
 
@@ -156,7 +156,7 @@ Clients that only support the stdio transport can bridge via
 
 At initialize, the server delivers **instructions** to the agent: the workflow, the pos-group
 authoring rules, and the docking semantics (see the
-[PoC README](../hi-mcp-server/README.md)).
+[PoC README](../../hi-mcp/hi-mcp-server/README.md)).
 
 ## Mistral (chat.mistral.ai)
 

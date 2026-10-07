@@ -28,7 +28,7 @@ client enforced an older rule than the one the server published.
   `updateExternalObjectGroupAttribute` (D3), `getExternalObjectGroups` and `removeExternalObject`
   joined for the anchor probe and the calculated groups, and `undo` and `redo` for the undo tools
   (D37). `PlannerApi` in `planner-api.ts` is the current list; its uses are in §4 of
-  [hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs).
+  [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs).
 
 ## Consequences
 

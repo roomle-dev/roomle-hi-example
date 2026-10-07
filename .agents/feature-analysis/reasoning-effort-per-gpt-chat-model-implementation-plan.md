@@ -86,7 +86,7 @@ Verification: `npm run lint`, and one prompt in the local store with gpt-5.4-min
 - [ai-chat.md](../../minimal-hi-example/docs/ai-chat.md): the effort per deployment, the override,
   the summary left out; the environment table row of `HI_CHAT_REASONING_EFFORT`; the ligna-store
   section.
-- [hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md): decision **D50** (the chat sends
+- [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md): decision **D50** (the chat sends
   each Foundry deployment its effort; the MCP server cannot set it) and the HI chat bullet of §4.
 - The backlog item keeps only step 3.
 

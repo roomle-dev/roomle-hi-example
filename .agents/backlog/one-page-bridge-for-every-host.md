@@ -39,7 +39,7 @@ allow-list is checked against `planner-api.ts`.
 ## Constraints
 
 - The allow-list stays the page's security boundary (D1, D2 of
-  [hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md#3-decisions)): methods that place
+  [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)): methods that place
   orders or overwrite the plan stay out unless explicitly decided.
 - The server never ships code into the page (rejected in ADR 0001): the bridge is a reviewed,
   versioned package, not a script loaded from the MCP server.

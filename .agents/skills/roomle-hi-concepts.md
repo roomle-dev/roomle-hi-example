@@ -21,7 +21,7 @@ HOMAG Intelligence (HI) is Roomle's system for configuring, pricing and ordering
 from the articles of a library — kitchens, wardrobes, sideboards, utility rooms. It extends the
 Roomle planner with domain-specific concepts. The data below is what `get-plan-context` returns;
 the complete field list is §5.4 of
-[hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md#54-the-plan-context-get-plan-context).
+[hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#54-the-plan-context-get-plan-context).
 
 One coordinate system throughout: 3D, right-handed, Y up, millimetres. A floor point is
 `[x, 0, z]`; the back of a rectangular room (`top` in the top-view image) lies at the smallest z.
@@ -389,7 +389,7 @@ const group = {
 ## Error Handling
 
 The server corrects what it can and builds every group it can
-([hi-mcp-behaviour.md §8](../../hi-mcp/docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback)):
+([hi-mcp-behaviour.md §8](../../docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback)):
 
 1. **`corrections`** — what the server changed in the input and applied: a placement it cannot use
    (`posGroup` not a point, no numeric `posRotationY`) or one on a group already in the plan is not

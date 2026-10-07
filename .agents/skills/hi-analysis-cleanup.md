@@ -48,10 +48,10 @@ its home already states it; add it only where it does not.
 
 | What | Where it goes |
 |---|---|
-| How the MCP server behaves towards an agent — a tool, a served rule, a result, a guard, a correction, a feedback message | [`hi-mcp/docs/hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behaviour.md), in the section of that tool or rule |
+| How the MCP server behaves towards an agent — a tool, a served rule, a result, a guard, a correction, a feedback message | [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md), in the section of that tool or rule |
 | A decision about that behaviour, or a rejected approach someone could plausibly re-propose | a numbered decision `D<n>` in §3 of `hi-mcp-behaviour.md`, with its date, source and state |
 | An architecture decision — where the logic runs, the page bridge, the deployment | a numbered ADR in [`.agents/decisions/`](../decisions/) |
-| How a feature works — the server, the tools, the chat, the pages, a deployment | the living-reference document of the area: [`hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md), [`ai-chat.md`](../../minimal-hi-example/docs/ai-chat.md), [`hi-mcp/hi-mcp-server/README.md`](../../hi-mcp/hi-mcp-server/README.md), [`hi-mcp/docs/`](../../hi-mcp/docs/) — a new document for a new feature |
+| How a feature works — the server, the tools, the chat, the pages, a deployment | the living-reference document of the area: [`hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md), [`ai-chat.md`](../../minimal-hi-example/docs/ai-chat.md), [`hi-mcp/hi-mcp-server/README.md`](../../hi-mcp/hi-mcp-server/README.md), [`docs/`](../../docs/) — a new document for a new feature |
 | A tool's parameters and examples | [`hi-mcp-tools.md`](hi-mcp-tools.md) |
 | HI domain knowledge — rooms, walls, articles, docking, positioning | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), [`hi-authoring-rules.md`](hi-authoring-rules.md) |
 | The regression test | it exists; name it next to the invariant: guarded by `it('…')` in `hi-mcp/hi-mcp-server/tests/….test.ts`, or by the test `<id>` of `docs/test-prompts.json` |
@@ -107,9 +107,9 @@ A split along the living reference of this repository:
 
 | Group | Owns |
 |---|---|
-| MCP server behaviour — tools, placement, docking, guards, plan context, undo | `hi-mcp/docs/hi-mcp-behaviour.md`, `hi-mcp/hi-mcp-server/README.md`, `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md` |
+| MCP server behaviour — tools, placement, docking, guards, plan context, undo | `docs/hi-mcp-behaviour.md`, `hi-mcp/hi-mcp-server/README.md`, `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md` |
 | Chat, models and testing | `minimal-hi-example/docs/ai-chat.md`, `docs/test-prompts.md`, `.agents/skills/vercel-ai-sdk-chat.md`, `hi-mcp-testing.md` |
-| Architecture, pages and deployment | `minimal-hi-example/docs/hi-mcp-server.md`, the other documents of `hi-mcp/docs/`, the READMEs, `.agents/skills/hi-mcp-server.md`, `hi-mcp-cloudflare-deployment.md` |
+| Architecture, pages and deployment | `minimal-hi-example/docs/hi-mcp-server.md`, the other documents of `docs/`, the READMEs, `.agents/skills/hi-mcp-server.md`, `hi-mcp-cloudflare-deployment.md` |
 
 The coordinator keeps `.agents/README.md`, `.agents/decisions/` and the existing backlog documents.
 
@@ -137,7 +137,7 @@ While promoting, compare the living reference with the code and correct what the
   .agents/decisions/`), not from the local tree, and add each to the Decisions table of
   [`.agents/README.md`](../README.md).
 - Decisions: take the next free `D<n>` after the highest in `git show
-  origin/master:hi-mcp/docs/hi-mcp-behaviour.md`.
+  origin/master:docs/hi-mcp-behaviour.md`.
 
 Number the drafts in the documents and in the handoff files, and write a map from draft to number for
 the next step.

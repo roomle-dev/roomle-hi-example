@@ -147,7 +147,7 @@ has to run on port 3000, because `http://localhost:3000` is the only local origi
 the deployed server accepts, and the launcher refuses another `EXAMPLE_PORT`.
 The deployment runs the last deployed image, so server changes on a branch
 need a deploy first: a push to `release/cloudflare`, or `npm run deploy:cf`. Details:
-[cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md).
+[cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md).
 
 The launcher installs and typechecks the `hi-mcp` workspace (the build gate),
 serves the example, starts the MCP server, and opens the example in the
@@ -276,7 +276,7 @@ workflow, the pos-group authoring rules, and the docking semantics (see
 ## Tool reference
 
 The behaviour reference — guidelines, decisions, every guard, correction and feedback message, and
-the information the server provides — is [../../hi-mcp/docs/hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md).
+the information the server provides — is [../../docs/hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md).
 
 The tools run in the server, but every planner call they make executes in the
 example page, so a tool is only as fast as the page. The timeout applies per
@@ -411,7 +411,7 @@ cannot build — no roots, an unknown `articleId`, roots it cannot dock — is
 reported in `notLoaded` with what to send instead, and the other groups of the
 call load. The call fails only when no group can be built. Every guard and
 correction:
-[hi-mcp-behaviour.md §8](../../hi-mcp/docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
+[hi-mcp-behaviour.md §8](../../docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -645,7 +645,7 @@ group one point and one rotation; the planner calculates every root position.
 - **Relations**: every root after the first names one neighbour of the same
   group by its id, with exactly one of these fields; the server builds the
   docking from it (D34 in the
-  [behaviour reference](../../hi-mcp/docs/hi-mcp-behaviour.md#3-decisions)):
+  [behaviour reference](../../docs/hi-mcp-behaviour.md#3-decisions)):
 
   | Relation | Meaning | Docking the server builds |
   | --- | --- | --- |

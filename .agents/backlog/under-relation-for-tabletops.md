@@ -37,7 +37,7 @@ The agent cannot write this:
    `dockingVectorIndex`.
 3. **Keep the indices** of a compiled entry in `toArticlePick`; C3 strips every index today.
 4. The served rules name `under` beside the other relations; §5.2 and the relation corrections of
-   [hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md) describe it.
+   [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md) describe it.
 
 ## Test
 

@@ -23,7 +23,7 @@ a document of their own. Each item carries:
 - one **Reproduce** line naming the run whose payload reproduces it, replaced — never appended — when
   a newer run shows it;
 - references: Jira ticket, decision `D<n>` of
-  [`hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behaviour.md), ADR, living-reference section — an
+  [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md), ADR, living-reference section — an
   analysis only while that analysis is open work.
 
 It never carries: status history, "found while …", "found by …", "since RML-…", "latest run"
@@ -62,7 +62,7 @@ repository, each answering OPEN / DONE / PARTIAL per item with `file:line` evide
 | DONE | Remove the item: its section, its row in the document's overview and its row in the README. If its outcome is not yet in the living reference or a decision, promote it first ([where the outcome goes](hi-analysis-cleanup.md#where-the-outcome-goes)). Delete a document that has no item left. |
 | PARTIAL | Shrink the item to the part that is still open. |
 | OPEN | Keep it. Strip the history, refresh the `file:line` references, correct every claim the code contradicts, and keep one **Reproduce** line. |
-| Not a todo | Reference material belongs in the living reference (`hi-mcp/docs/hi-mcp-behaviour.md`, `.agents/skills/`, `docs/`); history already covered elsewhere is deleted. |
+| Not a todo | Reference material belongs in the living reference (`docs/hi-mcp-behaviour.md`, `.agents/skills/`, `docs/`); history already covered elsewhere is deleted. |
 
 Keep the file names and the issue numbers of open items stable: the README, the skills and other
 documents link to them. An issue's anchor is made from its number and title — when a title changes,

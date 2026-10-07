@@ -280,7 +280,7 @@ authoring rules, and the docking semantics (see [Authoring pos groups](#authorin
 ## Tool reference
 
 The behaviour reference — guidelines, decisions, every guard, correction and feedback message, and
-the information the server provides — is [../docs/hi-mcp-behaviour.md](../docs/hi-mcp-behaviour.md).
+the information the server provides — is [../../docs/hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md).
 
 The tools run in this server, but every planner call they make executes in the store page, so a
 tool is only as fast as the page. The timeout applies per planner call: 30 s by default, 120 s for
@@ -392,7 +392,7 @@ the plan (the planner positions the group, an existing group keeps its position)
 build — no roots, an unknown `articleId`, roots it cannot dock — is reported in `notLoaded` with
 what to send instead, and the other groups of the call load. The call fails only when no group can
 be built. Every guard and correction:
-[hi-mcp-behaviour.md §8](../docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
+[hi-mcp-behaviour.md §8](../../docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -601,7 +601,7 @@ calculates every root position.
   change attributes, join groups — are command tools too.
 - **Relations**: every root after the first names one neighbour of the same group by its id, with
   exactly one of these fields; the server builds the docking from it (`group-layout.ts`, D34 in the
-  [behaviour reference](../docs/hi-mcp-behaviour.md#3-decisions)):
+  [behaviour reference](../../docs/hi-mcp-behaviour.md#3-decisions)):
 
   | Relation | Meaning | Docking the server builds |
   | --- | --- | --- |

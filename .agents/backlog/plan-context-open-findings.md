@@ -1,7 +1,7 @@
 # Backlog: open findings about the plan context
 
 > **Type**: Backlog — findings about what `get-plan-context` shows, not investigated yet
-> **Domain**: roomle-ui `homag-intelligence` — `hi-plan-context.ts` (`deriveWalls`, `shapeObstacles`, `shapeRoot`), RoomleCore's obstacle map; consumer: `get-plan-context` (§5.4 of [hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md#54-the-plan-context-get-plan-context))
+> **Domain**: roomle-ui `homag-intelligence` — `hi-plan-context.ts` (`deriveWalls`, `shapeObstacles`, `shapeRoot`), RoomleCore's obstacle map; consumer: `get-plan-context` (§5.4 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#54-the-plan-context-get-plan-context))
 
 Each finding names the problem, its cause where it is known, the to-do and its test. A finding
 leaves this document when its fix is in the code or it is decided not to fix it.

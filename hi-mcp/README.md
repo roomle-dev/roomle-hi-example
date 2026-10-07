@@ -20,11 +20,11 @@ The HI MCP server is deployed at Cloudflare:
 
 Documentation:
 
-- [docs/hi-mcp-behaviour.md](./docs/hi-mcp-behaviour.md) — how the MCP server behaves towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback
-- [docs/local-mcp-server.md](./docs/local-mcp-server.md) — install the local MCP server and connect every MCP client to it, including Mistral Le Chat via a localhost.run tunnel
-- [docs/azure-mcp-server.md](./docs/azure-mcp-server.md) — deploy the MCP server to Azure App Service: access rights, the full setup runbook, verification, troubleshooting, teardown
-- [docs/cloudflare-mcp-server.md](./docs/cloudflare-mcp-server.md) — deploy the MCP server to Cloudflare Containers: the colleague handout links, verification, teardown
-- [docs/connect-agent-to-cloud-mcp.md](./docs/connect-agent-to-cloud-mcp.md) — connect any agent to the cloud MCP server, with the Mistral Le Chat worked example
+- [docs/hi-mcp-behaviour.md](../docs/hi-mcp-behaviour.md) — how the MCP server behaves towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback
+- [docs/setup/local-mcp-server.md](../docs/setup/local-mcp-server.md) — install the local MCP server and connect every MCP client to it, including Mistral Le Chat via a localhost.run tunnel
+- [docs/setup/azure-mcp-server.md](../docs/setup/azure-mcp-server.md) — deploy the MCP server to Azure App Service: access rights, the full setup runbook, verification, troubleshooting, teardown
+- [docs/setup/cloudflare-mcp-server.md](../docs/setup/cloudflare-mcp-server.md) — deploy the MCP server to Cloudflare Containers: the colleague handout links, verification, teardown
+- [docs/setup/connect-agent-to-cloud-mcp.md](../docs/setup/connect-agent-to-cloud-mcp.md) — connect any agent to the cloud MCP server, with the Mistral Le Chat worked example
 
 Source of the first PoC: roomle-ui `packages/embedding-lib/examples/hi-mcp-server`
 ([RML-17693](https://roomle.atlassian.net/browse/RML-17693)), adapted to the ligna-store client.

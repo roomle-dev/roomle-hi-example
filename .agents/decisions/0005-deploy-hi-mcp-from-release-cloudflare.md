@@ -2,7 +2,7 @@
 
 > **Status**: Accepted
 > **Date**: 2026-10-01
-> **Analysis**: the feature analysis of the deploy workflow (git history); guide [cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md#deploy-from-github-push-to-releasecloudflare)
+> **Analysis**: the feature analysis of the deploy workflow (git history); guide [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md#deploy-from-github-push-to-releasecloudflare)
 
 ## Context
 

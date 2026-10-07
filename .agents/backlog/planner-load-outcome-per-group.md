@@ -28,7 +28,7 @@ A replace the library cannot calculate is the same gap: roomle-ui restores the p
 (`_discardCalculation`, `glue-logic.ts:2836`) and returns it as loaded; the server tells it only by
 comparing the articles before and after (`reportRevertedReplaces`, `tool-executors.ts:1731`, the
 §8.3 row "kept its previous content" of
-[hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md#83-create-or-replace-groups)).
+[hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#83-create-or-replace-groups)).
 
 ## To do
 

@@ -2,7 +2,7 @@
 
 > **Type**: Backlog — what is still to be done about deploying the MCP server, starting the example and connecting pages to it
 > **Domain**: `hi-mcp/cf/` (image, Worker, wrangler config), `.github/workflows/deploy-cloudflare.yml`, `minimal-hi-example/start.mjs` and the root `package.json` scripts, the page sessions of `hi-mcp/hi-mcp-server/page-bridge.ts` and the ligna-store bridge
-> **Living reference**: [cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md), [hi-mcp-cloudflare-deployment.md](../skills/hi-mcp-cloudflare-deployment.md), [ADR 0004 — the server on Cloudflare Containers](../decisions/0004-hi-mcp-server-on-cloudflare-containers.md), [ADR 0005 — deploy from `release/cloudflare`](../decisions/0005-deploy-hi-mcp-from-release-cloudflare.md)
+> **Living reference**: [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md), [hi-mcp-cloudflare-deployment.md](../skills/hi-mcp-cloudflare-deployment.md), [ADR 0004 — the server on Cloudflare Containers](../decisions/0004-hi-mcp-server-on-cloudflare-containers.md), [ADR 0005 — deploy from `release/cloudflare`](../decisions/0005-deploy-hi-mcp-from-release-cloudflare.md)
 
 Each issue names the problem, the cause, the to-do and its test. An issue leaves this document when
 its fix is in the code.
@@ -34,8 +34,8 @@ Claude Code, Jan, Copilot) needs a store page with a chat model and a key it doe
 **To do.** ligna-store: start the bridge whenever `mcp_server` is a valid server URL, with the page
 session of `mcp_session` (or a generated one); show the chat window only when `model` and `api_key`
 are set as well. Then drop the chat parameters from the store URLs of the agent guides
-([connect-agent-to-cloud-mcp.md](../../hi-mcp/docs/connect-agent-to-cloud-mcp.md),
-[jan-ai-setup.md](../../hi-mcp/docs/jan-ai-setup.md)), and `HI_MCP_STORE_URL` names a page that
+([connect-agent-to-cloud-mcp.md](../../docs/setup/connect-agent-to-cloud-mcp.md),
+[jan-ai-setup.md](../../docs/setup/jan-ai-setup.md)), and `HI_MCP_STORE_URL` names a page that
 connects. Constraint: an INT page without `mcp_server` starts no bridge.
 
 **Test.** A ligna-store unit test of the option resolution: `mcp_server` alone yields bridge options
@@ -59,7 +59,7 @@ checked only by unit tests and a local probe. Not checked against
   shows when no container is free.
 
 **To do.** Run the three checks in the deployed store; write what a sixth session shows into the
-handout section of [cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md#the-handout-for-colleagues-parallel-use-per-session).
+handout section of [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md#the-handout-for-colleagues-parallel-use-per-session).
 
 **Test.** The unit level is guarded: `it('rejects a second page without disrupting the active planner call')`
 and `it('only lets the matching browser chat call its planner')` in
@@ -96,11 +96,11 @@ dependency change in one of those does, in the Deploy step of `deploy-cloudflare
 at the repository root, every workspace manifest copied, a `.dockerignore` at the root, the start
 command `npm start --workspace hi-mcp/hi-mcp-server`. Constraints: npm resolves workspaces nested in
 workspaces poorly, so the image names the nested workspace from the root; the `cf` tooling (wrangler)
-stays out of the image. Until then, [Refreshing the image lockfile](../../hi-mcp/docs/cloudflare-mcp-server.md#refreshing-the-image-lockfile)
+stays out of the image. Until then, [Refreshing the image lockfile](../../docs/setup/cloudflare-mcp-server.md#refreshing-the-image-lockfile)
 is the manual step.
 
 **Test.** `docker build` of the image (the Deploy step of `deploy-cloudflare.yml`, or locally as in
-[Testing the container locally](../../hi-mcp/docs/cloudflare-mcp-server.md#testing-the-container-locally-no-cloudflare-account-needed))
+[Testing the container locally](../../docs/setup/cloudflare-mcp-server.md#testing-the-container-locally-no-cloudflare-account-needed))
 passes after a version change in `hi-mcp/hi-mcp-server/package.json` with only the root lockfile
 refreshed.
 

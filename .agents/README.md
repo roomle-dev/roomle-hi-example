@@ -61,7 +61,7 @@ ADRs document why the code is shaped the way it is; they are listed under [Decis
 
 Living reference documentation for end users and developers is maintained in the `docs/` folder:
 
-- [hi-mcp-behaviour.md](../hi-mcp/docs/hi-mcp-behaviour.md) — How the MCP server behaves towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback
+- [hi-mcp-behaviour.md](../docs/hi-mcp-behaviour.md) — How the MCP server behaves towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback
 - [hi-mcp-server.md](../minimal-hi-example/docs/hi-mcp-server.md) — Complete MCP server documentation
 - [hi-mcp-poc-presentation.md](../minimal-hi-example/docs/hi-mcp-poc-presentation.md) — Proof of concept presentation
 

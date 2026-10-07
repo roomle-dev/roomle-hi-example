@@ -20,7 +20,7 @@ git fetch origin && git push origin origin/master:release/cloudflare   # fast-fo
 The credentials are the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets of the GitHub
 environment `cloudflare`, which only `release/cloudflare` may use. The token comes from the
 template "Edit Cloudflare Workers" plus **Account · Containers · Edit**. The one-time setup is in
-[cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md#one-time-setup-repository-admin).
+[cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md#one-time-setup-repository-admin).
 
 By hand (for dry runs and emergencies — the next push to `release/cloudflare` replaces a manual
 deploy again):
@@ -63,7 +63,7 @@ https://<worker name>.<account subdomain>.workers.dev/mcp
 ## Verification after every deploy
 
 1. `initialize` over the public URL → HTTP 200 (the exact curl command is in
-   [hi-mcp/docs/cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md))
+   [docs/setup/cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md))
 2. open the store with its chat parameters (`store.stage=INT&model=<model>&api_key=<key>&mcp_server=<the URL>`
    — the store starts its bridge only with its chat window) → `npx wrangler tail` shows
    `page connected`
@@ -116,7 +116,7 @@ npx wrangler containers delete <ID>        # stop and remove the container appli
 | Symptom | Fix |
 | ------- | --- |
 | wrangler refuses to start | Node < 22 on the PATH — use `~/.volta/bin` first |
-| image build: `npm ci` … `lock file's <pkg>@<a> does not satisfy <pkg>@<b>` | the image installs from `hi-mcp/package-lock.json`, which `npm install` never updates (`hi-mcp/` is a workspace of the repository root, so npm writes the root lockfile). Regenerate it outside the root workspace, as described in [Refreshing the image lockfile](../../hi-mcp/docs/cloudflare-mcp-server.md#refreshing-the-image-lockfile) |
+| image build: `npm ci` … `lock file's <pkg>@<a> does not satisfy <pkg>@<b>` | the image installs from `hi-mcp/package-lock.json`, which `npm install` never updates (`hi-mcp/` is a workspace of the repository root, so npm writes the root lockfile). Regenerate it outside the root workspace, as described in [Refreshing the image lockfile](../../docs/setup/cloudflare-mcp-server.md#refreshing-the-image-lockfile) |
 | `Cannot resolve host` / a client refuses the URL | URL built from the account ID instead of the account subdomain — take the URL from the deploy output |
 | deploy fails with "different durable object namespace" | orphaned container app from an earlier delete — `wrangler containers list` + `containers delete` |
 | deploy uploads the Worker, then `Unauthorized` | **nothing to delete** — the container-app update step lost authorization. In order: retry the deploy → fresh `wrangler logout && wrangler login` → check the container app state in the dashboard → fall back to an API token: dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template, then `CLOUDFLARE_API_TOKEN=<token> npx wrangler deploy` |
@@ -129,8 +129,8 @@ npx wrangler containers delete <ID>        # stop and remove the container appli
 
 ## Where the details live
 
-- Deploy/verify/teardown guide: [hi-mcp/docs/cloudflare-mcp-server.md](../../hi-mcp/docs/cloudflare-mcp-server.md)
-- Connecting an agent (Mistral example): [hi-mcp/docs/connect-agent-to-cloud-mcp.md](../../hi-mcp/docs/connect-agent-to-cloud-mcp.md)
+- Deploy/verify/teardown guide: [docs/setup/cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md)
+- Connecting an agent (Mistral example): [docs/setup/connect-agent-to-cloud-mcp.md](../../docs/setup/connect-agent-to-cloud-mcp.md)
 - Decisions: [ADR 0004 — the server on Cloudflare Containers](../decisions/0004-hi-mcp-server-on-cloudflare-containers.md),
   [ADR 0005 — deploy from `release/cloudflare`](../decisions/0005-deploy-hi-mcp-from-release-cloudflare.md)
 - Open issues: [deployment-and-session-issues.md](../backlog/deployment-and-session-issues.md)

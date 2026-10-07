@@ -51,8 +51,8 @@ from its parts (`rootOutline`, `:860`, from `rootPoints`, `:442`).
 
 **To do.**
 - Library: the article's description (`desc`) states that its geometry reaches past its width.
-  Check the live catalog first; this may already be done. The recorded description
-  (`docs/library-information/article.json`) does not mention it.
+  It does not yet: neither the live description (checked against the HI test backend on
+  2026-10-07) nor the recorded one (`docs/library-information/article.json`) mentions it.
 - MCP server: decide whether the obstacles text should say that an outline is the outline of the
   geometry and can reach past the docking vectors, over a neighbour. That text is in the
   instructions (`hi-mcp-server.ts:24`) and in the `get-plan-context` description (`:169`).

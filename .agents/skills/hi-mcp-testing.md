@@ -8,7 +8,7 @@ running a prompt through the chat, checking the plan a prompt produces, comparin
 
 Runs the tests of [test-prompts.json](../../docs/test-prompts.json) with the runner
 `run-hi-mcp-tests.js` — each from its plan, with its operations, prompt and image — stores every
-result under one session directory and ends with `report.md`: per test the plan snapshot id, the
+result under one session directory and ends with `report.md` and its PDF `report.pdf`: per test the plan snapshot id, the
 perspective, the perspective object and the top image, an evaluation and a bug verdict.
 
 ### 1. Model
@@ -170,7 +170,7 @@ Write `$SESSION/report.md`. With more than one model: one header row and one sum
 model, and the run sections grouped by model (`## <model> — 01 <title>`); the image paths start with
 the model's directory.
 
-A session has **exactly one report file**, `report.md`. Never write a report per model or a partial
+A session has **exactly one report**, `report.md`, and its PDF `report.pdf` ([below](#the-pdf)). Never write a report per model or a partial
 report file beside it — not even when the evaluation is split, e.g. one subagent per model: their
 sections go straight into `report.md`.
 
@@ -253,6 +253,19 @@ Plan: <plan name>; operations: <none, or the tool calls before the prompt>
 - <title> — the model reads no images
 ````
 
+#### The PDF
+
+The result of the session is the report and its PDF. Render the PDF once `report.md` is complete, and
+again whenever it changes:
+
+```bash
+node .agents/scripts/render-report-pdf.js "$SESSION/report.md"
+```
+
+It writes `$SESSION/report.pdf`: A4, every run section on a new page, the links of the summary
+jumping to the run sections, the images embedded at most 640 px wide (about 3 MB for 32 runs, against
+100 MB of renders) — the PDF can be shared on its own.
+
 ### 7. Open issues
 
 Update [mcp-test-open-issues.md](../backlog/mcp-test-open-issues.md). The backlog is a to-do list,
@@ -267,7 +280,7 @@ not an archive: it holds only what is still to be done — no history of runs, f
   is no fix;
 - keep the backlog index ([README](../backlog/README.md)) in step.
 
-Then tell the user the report's path, the verdicts and the bugs.
+Then tell the user the paths of `report.md` and `report.pdf`, the verdicts and the bugs.
 
 ## Run the tests (the runner)
 
@@ -367,7 +380,8 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 
 - Node 20+
 - `npm install` in `.agents/scripts` (Playwright 1.55.0 — the version roomle-ui uses, so its cached
-  Chromium is reused; on a machine without it: `npx playwright install chromium` in `.agents/scripts`)
+  Chromium is reused; on a machine without it: `npx playwright install chromium` in `.agents/scripts`;
+  marked and sharp for the PDF of the report)
 - a GPU — the run script starts headless Chromium with `--enable-gpu`: under SwiftShader, the
   software GL headless Chromium falls back to without it, the planner's object-only perspective
   render draws an empty frame and every run's `perspective-object-image.png` is empty. Why:

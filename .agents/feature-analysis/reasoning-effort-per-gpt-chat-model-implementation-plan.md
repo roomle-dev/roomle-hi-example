@@ -78,8 +78,8 @@ group. The planning quality at `low` is measured already (analysis 3.2).
 | `hi-mcp/README.md` | the efforts; "Provenance and sync" names the copy source |
 
 No unit tests in the store (it has no unit-test setup; the rule is tested in roomle-hi-example).
-Verified by `npm run lint` and one prompt in the local store with gpt-5.4-mini: its request to
-`…/openai/v1/responses` carries `reasoning.effort` `low`.
+Verification: `npm run lint`, and one prompt in the local store with gpt-5.4-mini whose request to
+`…/openai/v1/responses` must carry `reasoning.effort` `low`.
 
 ### Documentation
 

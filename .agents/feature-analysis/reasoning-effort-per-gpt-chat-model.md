@@ -143,8 +143,8 @@ tokens".
   `HI_CHAT_REASONING_EFFORT` overrides it; Mistral, Anthropic and Google models get none.
 - The chat does not ask for the reasoning summary (`reasoningSummary: null`): it never shows it.
 - The ligna-store chat gets the same table.
-- Verified by unit tests and one live run per deployment: the step log shows reasoning tokens for
-  gpt-5.4-mini, and the run creates its group.
+- Verification: unit tests, and one live run per deployment in which the step log must show
+  reasoning tokens for gpt-5.4-mini and the run must create its group.
 
 ### Step 3 — detailed measurement, only on request
 

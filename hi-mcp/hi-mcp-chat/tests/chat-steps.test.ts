@@ -99,6 +99,40 @@ describe('chatSteps', () => {
     );
   });
 
+  it('logs the reasoning tokens of a step', async () => {
+    // RML-18043: every step logged 0 reasoning tokens
+    const log = vi.fn();
+    const result = streamText({
+      model: new MockLanguageModelV3({
+        doStream: async () => ({
+          stream: convertArrayToReadableStream([
+            ...answer.slice(0, -1),
+            {
+              type: 'finish',
+              usage: {
+                inputTokens: {
+                  total: 100,
+                  noCache: 100,
+                  cacheRead: 0,
+                  cacheWrite: 0,
+                },
+                outputTokens: { total: 50, text: 10, reasoning: 40 },
+              },
+              finishReason: { unified: 'stop', raw: 'stop' },
+            },
+          ]),
+        }),
+      }),
+      messages: [{ role: 'user', content: 'plan a kitchen' }],
+      onStepEnd: logStepUsage(log),
+    });
+    await result.text;
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(log.mock.calls[0][0]).toMatch(
+      /^\[hi-chat\] step 1: 100 in, 50 out, 40 reasoning tokens; no tool; stop; \d+ ms$/
+    );
+  });
+
   it('ends a turn that never answers after the turn timeout', async () => {
     // a model that answers only when the turn is aborted
     const model = new MockLanguageModelV3({

@@ -41,6 +41,8 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 |---|---|---|
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open | Feature analysis for Sales Configurator AI integration kickoff proposal |
 | [mcp-azure-deployment-and-session-bootstrapping.md](mcp-azure-deployment-and-session-bootstrapping.md) | Open | The three PoC setups (local/deployed store, local/Azure MCP server): one bridge URL rule plus env-driven server config, all implemented; Azure App Service deployment mechanics and roadmap |
+| [reasoning-effort-per-gpt-chat-model.md](reasoning-effort-per-gpt-chat-model.md) | Open | RML-18043, step by step: (1) the step log read the wrong usage field — fixed; (2) an effort per Foundry deployment from the measured data — gpt-5.4-mini does not reason by default — verified by unit tests and one live run per deployment; (3) detailed measurement only on request, with its time and token cost |
+| [reasoning-effort-per-gpt-chat-model-implementation-plan.md](reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open | RML-18043 implementation plan, one verified step at a time: step 1 the log fix (done), step 2 `low` / `medium` / `medium` in the example chat and the ligna-store with four unit tests and a five-minute live check, step 3 only on request |
 
 Add feature analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `group-adjustment-to-wall-width.md`).

@@ -237,7 +237,8 @@ for the whole plan".
    before.
 2. **An opening that covers a whole wall piece** keeps that piece a wall, because neither split
    condition fires. It needs overlapping openings, for example a door across the short wall between
-   two others. It is not part of this fix.
+   two others. It is not part of this fix. The review added it to the fix after all; see
+   [Implementation](#implementation).
 3. **Two openings that touch.** The split conditions have no tolerance, so two openings that touch
    can leave a wall piece of a fraction of a millimetre between them. The fix leaves this as it is,
    as the ticket keeps the split unchanged.
@@ -245,8 +246,9 @@ for the whole plan".
 ## Implementation
 
 [RoomleCore PR #2565](https://github.com/roomle-internal/RoomleCore/pull/2565), branch
-`fix/second-opening-room-contour`, implements the plan without deviation in the fix. Two details
-of the tests differ from the plan:
+`fix/second-opening-room-contour`, implements the fix of the plan plus one addition from the review:
+a wall piece an opening covers completely becomes a gap, which closes open point 2 (see below). Two
+details of the tests differ from the plan:
 
 - On the walls of `simpleSquare6x6` the room side is the right face, not the left. The section for
   walls with objects therefore finds the wall by either face and derives the expected direction

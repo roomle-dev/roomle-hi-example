@@ -16,13 +16,13 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Priority |
 |---|---|---|---|
-| 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui | high — wall cabinets on the worktop |
-| 40 | [A unit colour after a kitchen-wide colour misses the doors](#40-a-unit-colour-after-a-kitchen-wide-colour-misses-the-doors) | bug, roomle-ui command | high — success reported, fronts unchanged |
-| 51 | [A replace drops the group's materials](#51-a-replace-drops-the-groups-materials) | bug, MCP server | high — materials lost without a correction |
-| 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner | high — the kitchen stands in the wall |
-| 49 | [A new group stands on an obstacle](#49-a-new-group-stands-on-an-obstacle) | MCP server feedback, instructions | high — cabinets across a window and on furniture |
-| 27 | [A new group needs a point the model computes](#27-a-new-group-needs-a-point-the-model-computes) | decision D23, instructions | high — groups outside the room |
-| 43 | ["Delete" and "remove" are taken for each other](#43-delete-and-remove-are-taken-for-each-other) | instructions | high — the other edit than asked |
+| 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui, [RML-18073](https://roomle.atlassian.net/browse/RML-18073) | high — wall cabinets on the worktop |
+| 40 | [A unit colour after a kitchen-wide colour misses the doors](#40-a-unit-colour-after-a-kitchen-wide-colour-misses-the-doors) | bug, roomle-ui command, [RML-18074](https://roomle.atlassian.net/browse/RML-18074) | high — success reported, fronts unchanged |
+| 51 | [A replace drops the group's materials](#51-a-replace-drops-the-groups-materials) | bug, MCP server, [RML-18075](https://roomle.atlassian.net/browse/RML-18075) | high — materials lost without a correction |
+| 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner, [RML-18076](https://roomle.atlassian.net/browse/RML-18076) | high — the kitchen stands in the wall |
+| 49 | [A new group stands on an obstacle](#49-a-new-group-stands-on-an-obstacle) | MCP server feedback, instructions, [RML-18077](https://roomle.atlassian.net/browse/RML-18077) | high — cabinets across a window and on furniture |
+| 27 | [A new group needs a point the model computes](#27-a-new-group-needs-a-point-the-model-computes) | decision D23, instructions, [RML-18078](https://roomle.atlassian.net/browse/RML-18078) | high — groups outside the room |
+| 43 | ["Delete" and "remove" are taken for each other](#43-delete-and-remove-are-taken-for-each-other) | instructions, [RML-18079](https://roomle.atlassian.net/browse/RML-18079) | high — the other edit than asked |
 | 45 | ["The middle unit" read from the docking](#45-the-middle-unit-read-from-the-docking) | plan context | medium — the wrong unit edited |
 | 46 | [A new group beside an existing one for "add a cabinet to the right of the kitchen"](#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | instructions | medium — a separate group |
 | 48 | [A worktop colour sent as `mod_PaneltopColor`](#48-a-worktop-colour-sent-as-mod_paneltopcolor) | `find-attributes` | medium — the worktop keeps its default |
@@ -47,6 +47,8 @@ the model sent; the directories are under `.temp/result/`.
 
 ## 23. A worktop colour change drops hanging wall units onto the worktop
 
+**Ticket.** [RML-18073](https://roomle.atlassian.net/browse/RML-18073)
+
 **Problem.** A wall unit or a range hood hung `above` a base unit stands at y 1480 after the load and
 at y 820 — on the worktop — after the `change-group-attribute` commands the server runs for the
 kitchen-wide materials (D36), typically after `mod_CountertopColor`. Units hung beside a tall unit or
@@ -58,7 +60,7 @@ a material is exposed, since the server sets the materials itself.
 suspected: the arrangement stores the reciprocal of a docking entry without its offset
 (`hi-root-module-arrangement.ts`, roomle-ui).
 
-**To do.** Open a roomle-ui ticket. Reproduce in roomle-ui with the payload below, find where the hang
+**To do.** Reproduce in roomle-ui with the payload below, find where the hang
 offset is lost, and fix it there.
 
 **Test.** A glue-logic test: a group with a wall unit hung by an offset above a base unit keeps its
@@ -66,6 +68,8 @@ height after `mod_FrontColor` and `mod_CountertopColor`.
 
 **Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 32 (the model set `mod_HeightPosInsertion` 1480 on the two wall units that had dropped).
 ## 40. A unit colour after a kitchen-wide colour misses the doors
+
+**Ticket.** [RML-18074](https://roomle.atlassian.net/browse/RML-18074)
 
 **Problem.** After a kitchen-wide `mod_FrontColor` (D36, set by `change-group-attribute`),
 `change-module-attribute mod_FrontColor` without `moduleId` on one unit reports success and the plan
@@ -86,6 +90,8 @@ the unit's fronts.
 
 **Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 29 (the two niche wall units).
 ## 51. A replace drops the group's materials
+
+**Ticket.** [RML-18075](https://roomle.atlassian.net/browse/RML-18075)
 
 **Problem.** `create-or-replace-groups` with the id of a group in the plan — a replace — loses the
 group's materials: the units fall back to the default toe kick, worktop, outside carcase and handle
@@ -108,6 +114,8 @@ runs `change-group-attribute mod_ToekickColor` after the load and reports it, as
 **Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 32 (the replace of both groups).
 ## 35. The handleless right corner unit as the first root with two legs stands 239 mm in the wall
 
+**Ticket.** [RML-18076](https://roomle.atlassian.net/browse/RML-18076)
+
 **Problem.** `EUERTB90` (the handleless right-handed corner unit) as the first root, with units
 `rightOf` and `leftOf` it, placed at the back right corner `[4815, 0, -3765]` / 270, can stand with
 its back 239 mm in the right wall (group pos `[5054, 0, -3765]`, footprint x 2944–5054). The same
@@ -127,6 +135,8 @@ of `UERTB90`, and fix the frame or report the planner defect.
 **Reproduce.** `mcp-test-2026-10-04_13-00-37`: gpt-5.4-mini 11.
 
 ## 49. A new group stands on an obstacle
+
+**Ticket.** [RML-18077](https://roomle.atlassian.net/browse/RML-18077)
 
 **Problem.** A new group is placed with wall units across a window, onto furniture or into another
 group, and the result reports success.
@@ -156,6 +166,8 @@ most.
 
 **Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 32 (the OTB30 in front of the window).
 ## 27. A new group needs a point the model computes
+
+**Ticket.** [RML-18078](https://roomle.atlassian.net/browse/RML-18078)
 
 **Problem.** A new group is positioned with `posGroup` and `posRotationY` the model takes from a wall:
 its `end` and its `facingRotationY`, or a point computed along it for a centred or offset row. Models
@@ -191,6 +203,8 @@ the group inside the room at the wall.
 **Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5.4-mini 02 and 06 (the wall's start).
 
 ## 43. "Delete" and "remove" are taken for each other
+
+**Ticket.** [RML-18079](https://roomle.atlassian.net/browse/RML-18079)
 
 **Problem.** For "delete the middle unit" gpt-5-mini calls `remove-article-from-group` and closes the
 gap; for "remove the middle unit" and "remove the base unit next to the corner unit" gpt-5.4-mini calls

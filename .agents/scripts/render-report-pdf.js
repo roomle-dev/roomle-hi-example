@@ -10,7 +10,9 @@
  * width - the run renders are 1536 px PNGs, about 100 MB for a session. Links
  * to other files of the session stay links. Headless Chromium (Playwright)
  * prints A4 pages, every run section on a new page, with page numbers in the
- * footer (default out: the report's path with .pdf).
+ * footer (default out: the report's path with .pdf). The page runs without
+ * JavaScript and loads nothing from the network: the report quotes prompts and
+ * model answers, and Marked keeps raw HTML.
  */
 
 import { existsSync } from 'node:fs';
@@ -64,6 +66,9 @@ const parseOptions = () => {
   }
 };
 
+const escapeHtml = (text) =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 const anchorOf = (text) =>
   text
     .trim()
@@ -112,7 +117,7 @@ const withEmbeddedImages = async (html, baseDir) => {
 const main = async () => {
   const { report, out } = parseOptions();
   const markdown = await readFile(report, 'utf8');
-  const title = markdown.match(/^# (.+)$/m)?.[1] ?? 'Report';
+  const title = escapeHtml(markdown.match(/^# (.+)$/m)?.[1] ?? 'Report');
   const { html, images } = await withEmbeddedImages(
     await marked.parse(markdown),
     dirname(report)
@@ -123,7 +128,9 @@ const main = async () => {
 
   const browser = await chromium.launch();
   try {
-    const tab = await browser.newPage();
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    await context.route('**/*', (route) => route.abort());
+    const tab = await context.newPage();
     await tab.setContent(page, { waitUntil: 'load' });
     await tab.pdf({
       path: out,

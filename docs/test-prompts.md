@@ -156,7 +156,7 @@ table and the kitchen.
 |---|---|
 | `models` | the chat models to test, `{ provider, apiKey }`: a provider name of the launcher and its key — `"$NAME"` reads the key from the environment variable `NAME`, which keeps it out of the committed file |
 | `plans` | the plans above by name: `{ "<name>": "<plan snapshot id>" }` |
-| `tests` | `{ id, title, plan, prompt?, image?, operations?, expect? }` — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message; `operations` are MCP tool calls `{ tool, arguments }` made on the plan before the prompt (e.g. "join groups" deletes the middle unit first); `expect` says what the evaluation checks |
+| `tests` | `{ id, title, plan, prompt?, image?, operations?, expect? }` — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message — a `prompt` list is sent as consecutive turns of one conversation, the image with the last turn; `operations` are MCP tool calls `{ tool, arguments }` made on the plan before the prompt (e.g. "join groups" deletes the middle unit first); `expect` says what the evaluation checks |
 
 The operations run through the MCP server, so its undo history holds them: the tests `undo-last-change`,
 `redo-last-change` and `undo-a-wrong-command` delete the middle unit of the Three Tall Units first —

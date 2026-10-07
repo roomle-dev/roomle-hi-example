@@ -8,8 +8,9 @@
  * The test file (default docs/test-prompts.json) holds models
  * ({ provider, apiKey }; apiKey "$NAME" reads the environment variable NAME),
  * plans ({ <name>: <plan snapshot id> }) and tests
- * ({ id, title, plan, prompt?, image?, operations?, expect? }). Before the
- * first run it checks the file, the images and the keys. A run goes
+ * ({ id, title, plan, prompt?, image?, operations?, expect? }; a prompt list
+ * is sent as consecutive turns of one chat). Before the first run it checks
+ * the file, the images and the keys. A run goes
  * to <out>/<provider>/<NN>-<id>/ with its console.log; a run without run.json
  * (the launcher or the page did not come up) is repeated once, and a test
  * whose directory already holds run.json is skipped - a stopped session
@@ -71,6 +72,13 @@ const isOperation = (operation) =>
       operation.arguments !== null &&
       !Array.isArray(operation.arguments)));
 
+// One chat message, or a list of them sent as consecutive turns of one chat.
+const isPrompt = (prompt) =>
+  typeof prompt === 'string' ||
+  (Array.isArray(prompt) &&
+    prompt.length > 0 &&
+    prompt.every((turn) => typeof turn === 'string' && turn !== ''));
+
 const problemsOf = ({ models, plans, tests }) => {
   const problems = [];
   if (!Array.isArray(models) || models.length === 0) {
@@ -105,6 +113,9 @@ const problemsOf = ({ models, plans, tests }) => {
     }
     if (!test?.prompt && !test?.image) {
       problems.push(`${name}: needs a prompt, an image or both`);
+    }
+    if (test?.prompt !== undefined && !isPrompt(test.prompt)) {
+      problems.push(`${name}: prompt must be a text or a list of texts`);
     }
     if (test?.image && !existsSync(join(REPO_DIR, test.image))) {
       problems.push(`${name}: image ${test.image} does not exist`);
@@ -185,7 +196,7 @@ const main = async () => {
       const args = [
         model.provider,
         resolveApiKey(model.apiKey),
-        test.prompt ?? '',
+        ...[test.prompt ?? ''].flat(),
         '--plan',
         suite.plans[test.plan],
         ...(test.operations?.length

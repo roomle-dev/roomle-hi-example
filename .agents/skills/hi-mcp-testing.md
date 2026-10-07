@@ -220,7 +220,7 @@ The session folder is shared as it is, e.g. zipped: `report.md` links only files
 
 ## 01 <title>
 
-> <prompt>
+> <prompt — one quote line per turn of a conversation>
 
 Plan: <plan name>; operations: <none, or the tool calls before the prompt>
 
@@ -302,7 +302,8 @@ The runner:
    unique kebab-case `id`, a `plan` of `plans`, a prompt or an image, an existing image file and
    well-formed `operations` — and names every problem;
 2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider> "<apiKey>"
-   "<prompt>" --plan <id> [--operations <json>] [--image <file>] --out <out>/<provider>/<NN>-<id>`,
+   "<prompt>" ["<prompt>" …] --plan <id> [--operations <json>] [--image <file>] --out <out>/<provider>/<NN>-<id>`
+   (one `"<prompt>"` per turn of a `prompt` list),
    with its output in that directory's `console.log`. It runs one at a time (the ports are fixed),
    each with a fresh launcher and browser;
 3. skips a test whose directory holds `run.json`, and repeats a run that ends without one once;
@@ -310,8 +311,9 @@ The runner:
 5. passes Ctrl+C (SIGINT/SIGTERM) on to the running run, which stops its servers, and ends.
 
 A run takes about 40 s for the launcher, the page and the snapshot, plus the model's chat time
-(gpt-5.4-mini 5–15 s, gpt-5-mini 30–60 s, gpt-6-astra up to 150 s per turn): the 32 tests of the
-file take about an hour for the three GPT models on a machine with a GPU against the local planner.
+(gpt-5.4-mini 5–15 s, gpt-5-mini 30–60 s, gpt-6-astra up to 150 s per turn): the 33 tests of the
+file (one of them a conversation of seven turns) take about an hour and a quarter for the three GPT
+models on a machine with a GPU against the local planner.
 A fix committed while the runner goes on takes effect from the next run, because every run
 starts a fresh server and chat; the report then says which runs ran with which build.
 

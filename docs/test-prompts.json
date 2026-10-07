@@ -157,16 +157,11 @@
       "id": "edit-join-groups",
       "title": "Join groups",
       "plan": "three-tall-units",
-      "operations": [
-        {
-          "tool": "delete-root-module",
-          "arguments": {
-            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
-          }
-        }
+      "prompt": [
+        "delete the middle unit",
+        "join the two groups on the right wall"
       ],
-      "prompt": "join the two groups on the right wall",
-      "expect": "merge-groups: one group with both units"
+      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: merge-groups: one group with both units"
     },
     {
       "id": "edit-delete-group",
@@ -179,18 +174,11 @@
       "id": "edit-swap-units",
       "title": "Swap two units",
       "plan": "three-tall-units",
-      "operations": [
-        {
-          "tool": "change-module-attribute",
-          "arguments": {
-            "rootModuleId": "8774cac2-8b83-405d-b88c-f0e5cd2452fb",
-            "attributeId": "mod_Width",
-            "value": "900"
-          }
-        }
+      "prompt": [
+        "make the last unit 900 mm wide",
+        "swap the first and the last unit"
       ],
-      "prompt": "swap the first and the last unit",
-      "expect": "swap-root-modules: the 900 mm unit stands in the back corner, the row stays 2100 mm and its back end at z -3765"
+      "expect": "turn 1: change-module-attribute: mod_Width 900 on the last unit; turn 2: swap-root-modules: the 900 mm unit stands in the back corner, the row stays 2100 mm and its back end at z -3765"
     },
     {
       "id": "edit-insert-below-wall-units",
@@ -245,50 +233,25 @@
       "id": "undo-last-change",
       "title": "Undo the last change",
       "plan": "three-tall-units",
-      "operations": [
-        {
-          "tool": "delete-root-module",
-          "arguments": {
-            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
-          }
-        }
-      ],
-      "prompt": "undo the last change",
-      "expect": "undo: one group of three tall units again"
+      "prompt": ["delete the middle unit", "undo the last change"],
+      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: undo: one group of three tall units again"
     },
     {
       "id": "redo-last-change",
       "title": "Redo the undone change",
       "plan": "three-tall-units",
-      "operations": [
-        {
-          "tool": "delete-root-module",
-          "arguments": {
-            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
-          }
-        },
-        {
-          "tool": "undo",
-          "arguments": {}
-        }
-      ],
-      "prompt": "redo that",
-      "expect": "redo: the middle unit removed again, two groups"
+      "prompt": ["delete the middle unit", "undo the last change", "redo that"],
+      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: undo: one group of three tall units again; turn 3: redo: the middle unit removed again, two groups"
     },
     {
       "id": "undo-a-wrong-command",
       "title": "Undo a wrong command",
       "plan": "three-tall-units",
-      "operations": [
-        {
-          "tool": "delete-root-module",
-          "arguments": {
-            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
-          }
-        }
+      "prompt": [
+        "delete the middle unit",
+        "that was the wrong unit - remove the last unit, not the middle one"
       ],
-      "prompt": "that was the wrong unit - remove the last unit, not the middle one",
-      "expect": "undo, then remove-article-from-group or delete-root-module on the last unit: one group of the first two units"
+      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: undo, then remove-article-from-group or delete-root-module on the last unit: one group of the first two units"
     },
     {
       "id": "kitchen-conversation",

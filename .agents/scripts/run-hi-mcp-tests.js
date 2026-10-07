@@ -8,8 +8,8 @@
  * The test file (default docs/test-prompts.json) holds models
  * ({ provider, apiKey }; apiKey "$NAME" reads the environment variable NAME),
  * plans ({ <name>: <plan snapshot id> }) and tests
- * ({ id, title, plan, prompt?, image?, operations?, expect? }; a prompt list
- * is sent as consecutive turns of one chat). Before the first run it checks
+ * ({ id, title, plan, prompt?, image?, expect? }; a prompt list is sent as
+ * consecutive turns of one chat). Before the first run it checks
  * the file, the images and the keys. A run goes
  * to <out>/<provider>/<NN>-<id>/ with its console.log; a run without run.json
  * (the launcher or the page did not come up) is repeated once, and a test
@@ -64,14 +64,6 @@ const localTimestamp = (date) => {
 const resolveApiKey = (apiKey) =>
   apiKey.startsWith('$') ? process.env[apiKey.slice(1)] : apiKey;
 
-// An MCP tool call: the tool name, and arguments that are an object if given.
-const isOperation = (operation) =>
-  typeof operation?.tool === 'string' &&
-  (operation.arguments === undefined ||
-    (typeof operation.arguments === 'object' &&
-      operation.arguments !== null &&
-      !Array.isArray(operation.arguments)));
-
 // One chat message, or a list of them sent as consecutive turns of one chat.
 const isPrompt = (prompt) =>
   typeof prompt === 'string' ||
@@ -119,12 +111,6 @@ const problemsOf = ({ models, plans, tests }) => {
     }
     if (test?.image && !existsSync(join(REPO_DIR, test.image))) {
       problems.push(`${name}: image ${test.image} does not exist`);
-    }
-    if (
-      test?.operations !== undefined &&
-      !(Array.isArray(test.operations) && test.operations.every(isOperation))
-    ) {
-      problems.push(`${name}: operations must be [{ tool, arguments }]`);
     }
   }
   return problems;
@@ -199,9 +185,6 @@ const main = async () => {
         ...[test.prompt ?? ''].flat(),
         '--plan',
         suite.plans[test.plan],
-        ...(test.operations?.length
-          ? ['--operations', JSON.stringify(test.operations)]
-          : []),
         ...(test.image ? ['--image', test.image] : []),
         ...(options.dev ? ['--dev'] : []),
         '--out',

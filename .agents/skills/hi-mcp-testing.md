@@ -7,9 +7,14 @@ running a prompt through the chat, checking the plan a prompt produces, comparin
 ## Test the MCP
 
 Runs the tests of [test-prompts.json](../../docs/test-prompts.json) with the runner
-`run-hi-mcp-tests.js` — each from its plan, with its operations, prompt and image — stores every
+`run-hi-mcp-tests.js` — each from its plan, with its prompt (or its turns) and image — stores every
 result under one session directory and ends with `report.md` and its PDF `report.pdf`: per test the plan snapshot id, the
 perspective, the perspective object and the top image, an evaluation and a bug verdict.
+
+The tests assess how well the agent understands the prompts and picks the right tools — not the tools
+themselves, which the unit tests in `hi-mcp/hi-mcp-server/tests` cover
+([ADR 0006](../decisions/0006-prompt-tests-assess-the-agent.md)). A test holds only prompts and
+images; a test that needs a changed plan asks for the change in an earlier turn.
 
 ### 1. Model
 
@@ -77,17 +82,17 @@ test's position in the file.
 ### 5. Evaluate
 
 Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json` (`plan`,
-`operations`, `prompt`, `image`, `expect`) and:
+`prompt`, `image`, `expect`) and:
 
 | File | Look at |
 |---|---|
 | `top-image.png`, `perspective-image.png` | where the group stands, what it consists of |
 | `perspective-object-image.png` | the group alone — its fronts, appliances and materials, without the room |
 | `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
-| `run.json` | `plan` and `operations` (the tool calls before the prompt, with their `result` or `error`); per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId` |
+| `run.json` | `plan`; per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId` |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
 | `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) and what stands in the room (`obstacles.objects[]`: `kind`, `outline`, `bottomMm`/`topMm`, a door or window with `wall` and `fromEndMm`; `obstacles.groups[].roots[]`: the room-space outline and height range of every root module) |
-| `planner-calls.json` | what the MCP server sent to the planner during the chat (the operations' calls are not in it): `loadExternalObjectGroupLayout` — `args[0].posGroups[]` with the roots, their docking (`contextData.dockedRoots`) and attributes, and `repositioningData` (the placement); `externalObjectGroupOperation` — `args` = the command and its payload; `ok: false` with the page's `error` |
+| `planner-calls.json` | what the MCP server sent to the planner during the chat: `loadExternalObjectGroupLayout` — `args[0].posGroups[]` with the roots, their docking (`contextData.dockedRoots`) and attributes, and `repositioningData` (the placement); `externalObjectGroupOperation` — `args` = the command and its payload; `ok: false` with the page's `error` |
 | `console.log` | `[hi-mcp]` and `[hi-chat]` errors |
 
 The evidence at a glance:
@@ -101,6 +106,8 @@ jq -c '[.[] | select(.method == "loadExternalObjectGroupLayout")][-1].args[0].po
 
 Check:
 
+- every turn does what it asks — a test with a `prompt` list is a conversation, and `expect` says
+  per turn what to check; a later turn builds on what the earlier ones made;
 - the request is fulfilled — the units, appliances, count and materials asked for (materials are
   root `attributes` in the layout; none there means none applied); for an edit, the edit is
   applied to the test's plan (see [test-prompts.md](../../docs/test-prompts.md#plans)) and nothing
@@ -222,7 +229,7 @@ The session folder is shared as it is, e.g. zipped: `report.md` links only files
 
 > <prompt — one quote line per turn of a conversation>
 
-Plan: <plan name>; operations: <none, or the tool calls before the prompt>
+Plan: <plan name>
 
 - **Plan snapshot**: `ps_…`
 - **Tools**: <per turn, in order>
@@ -292,17 +299,17 @@ node .agents/scripts/run-hi-mcp-tests.js [<tests.json>] [--out <dir>] [--dev]
 
 | Argument | Meaning |
 |---|---|
-| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `tests` (`{ id, title, plan, prompt?, image?, operations?, expect? }`); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
+| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `tests` (`{ id, title, plan, prompt?, image?, expect? }`, `prompt` a text or a list of turns); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
 | `--out <dir>` | the session directory, default `.temp/result/mcp-test-<local time>/`; an existing one is continued |
 | `--dev` | passed to every run |
 
 The runner:
 
 1. checks the file before the first run — every model has a key (a `"$NAME"` variable is set), every test has a
-   unique kebab-case `id`, a `plan` of `plans`, a prompt or an image, an existing image file and
-   well-formed `operations` — and names every problem;
+   unique kebab-case `id`, a `plan` of `plans`, a prompt (a text or a list of texts) or an image and an existing
+   image file — and names every problem;
 2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider> "<apiKey>"
-   "<prompt>" ["<prompt>" …] --plan <id> [--operations <json>] [--image <file>] --out <out>/<provider>/<NN>-<id>`
+   "<prompt>" ["<prompt>" …] --plan <id> [--image <file>] --out <out>/<provider>/<NN>-<id>`
    (one `"<prompt>"` per turn of a `prompt` list),
    with its output in that directory's `console.log`. It runs one at a time (the ports are fixed),
    each with a fresh launcher and browser;
@@ -320,7 +327,7 @@ starts a fresh server and chat; the report then says which runs ran with which b
 ## Run a prompt (the script)
 
 ```bash
-node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--operations <json>] [--image <file>] [--out <dir>] [--dev] [--headed]
+node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]
 ```
 
 | Argument | Meaning |
@@ -329,7 +336,6 @@ node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<pro
 | `<api-key>` | the provider's API key, e.g. `"$AZURE_GPT_KEY"` |
 | `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it. `""` with `--image` sends the image alone — the chat backend gives it the text "Identify the furniture in the image (for example a kitchen, wardrobe, media unit, lowboard, sideboard, cabinet or utility room) and create a planning as close to it as possible." |
 | `--plan <id>` | the plan snapshot the page starts from (`plan_id` of the example URL), its HI groups included; without it, the page's default plan |
-| `--operations <json>` | MCP tool calls `[{ "tool": "…", "arguments": { … } }]` made one after another once the page is ready, before the first prompt. A call answered "… not found" is repeated for up to 30 s: the groups of a loaded plan reach the HI library a moment after the page is ready, and until the library has calculated them the planner finds none of their modules. The first call that fails ends them, and the run sends no prompt |
 | `--image <file>` | an image (PNG, JPEG, WebP, GIF) that goes along with the last prompt, as an image dropped into the chat window: redrawn as JPEG with a long side of at most 1568 px. A model that reads no images answers `HTTP 400: The model … does not read images` |
 | `--out <dir>` | the result directory (default `.temp/result/<UTC timestamp>-<provider>/`) |
 | `--dev` | the planner from the local Rubens UI dev server (`npm run dev` in roomle-ui, :5173) |
@@ -345,8 +351,7 @@ The script:
 3. waits until the MCP tool `get-plan-context` lists articles (server up, page connected, HI library
    loaded) and until the HI library has loaded the plan's groups (`window.hiPosGroupsCompletelyLoaded`,
    set by the example page in `onPosGroupsCompletelyLoaded`) — the planner clears its undo history
-   then, so an operation made before it could not be undone in the test —, then calls the tools of
-   `--operations`;
+   then, so a change of the chat made before it could not be undone in a later turn;
 4. sends the prompts to the chat backend (`POST /chat`, the chat window's system prompt and tools),
    each until the end of its stream, and records every planner call the MCP server sends to the
    page (from the bridge's WebSocket frames — the server's log cuts the arguments short);
@@ -360,9 +365,9 @@ The script:
 
 | File | Content |
 |---|---|
-| `run.json` | provider; `plan`; `operations` (per tool call the `arguments` and the `result` or `error`); `turns` (per turn the prompt, the `image` file it carried, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` — errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
+| `run.json` | provider; `plan`; `turns` (per turn the prompt, the `image` file it carried, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` — errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
 | `plan-context.json` | `get-plan-context` with rooms and groups after the chat — the walls and where the groups stand |
-| `planner-calls.json` | every planner call during the chat — not those of the operations: method, full arguments, `ok`, and the page's `error` |
+| `planner-calls.json` | every planner call during the chat: method, full arguments, `ok`, and the page's `error` |
 | `prompt-image.jpg` | with `--image` only: the image as the model got it |
 | `order-data.json` | `orderData` of the snapshot — the groups with their articles and attributes |
 | `top-image.png`, `perspective-image.png` | the whole plan rendered |
@@ -409,7 +414,6 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 | `api.extended[message.method] is not a function` in `planner-calls.json` | the planner build lacks the method (see the bug rules above) |
 | `the turn took longer than 5 minutes and was ended …` in `errors` | the chat backend's turn timeout (`HI_CHAT_TURN_TIMEOUT_MS`): the model did not answer in time — the chat streams nothing while a model reasons; the plan keeps what the tools changed |
 | `chat request failed: aborted after 600s` | the run script's own chat timeout (10 minutes); reached only when `HI_CHAT_TURN_TIMEOUT_MS` is set above it — the turn keeps the tools and the text the chat streamed before |
-| `operation <tool> failed: …` in `errors` | an operation of the test did not apply to its plan — e.g. a root id that is not in the plan (still "not found" after 30 s); check the test against [test-prompts.md](../../docs/test-prompts.md#plans) |
 | the runner names problems of the test file and runs nothing | an empty key variable, an unknown plan name, a missing image, a duplicate id — fix the file or the environment |
 
 ## See also

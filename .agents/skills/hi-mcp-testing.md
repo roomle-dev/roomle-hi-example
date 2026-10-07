@@ -168,7 +168,9 @@ placement directly. State the evidence (file and value) behind every bug verdict
 
 Write `$SESSION/report.md`. With more than one model: one header row and one summary table per
 model, and the run sections grouped by model (`## <model> — 01 <title>`); the image paths start with
-the model's directory.
+the model's directory, and every link to a run section names the model: `#<model>--01-<title-slug>`,
+the anchor GitHub and `render-report-pdf.js` make of that heading (a dot of the model is dropped:
+`gpt-5.4-mini` → `#gpt-54-mini--01-…`).
 
 A session has **exactly one report**, `report.md`, and its PDF `report.pdf` ([below](#the-pdf)). Never write a report per model or a partial
 report file beside it — not even when the evaluation is split, e.g. one subagent per model: their

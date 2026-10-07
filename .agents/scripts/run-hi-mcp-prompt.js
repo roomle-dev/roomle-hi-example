@@ -3,27 +3,24 @@
  * Runs prompts through the HI example chat and stores the resulting plan:
  *
  *   node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...]
- *     [--plan <plan snapshot id>] [--operations <json>] [--image <file>]
- *     [--out <dir>] [--dev] [--headed]
+ *     [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]
  *
  * Starts the launcher (minimal-hi-example/start.mjs <provider> <api-key>) with
  * the MCP server on its own port, opens the example page in Playwright
  * Chromium (headless unless --headed; --dev is passed to the launcher) on
- * --plan, waits until get-plan-context lists articles, calls the MCP tools of
- * --operations ([{ tool, arguments }]) in order once the HI library has loaded
- * the plan's groups, then sends the prompts to the
- * chat backend as consecutive turns of one conversation, each until the end of
- * its stream. --image goes along with the last prompt, prepared as the chat
+ * --plan, waits until get-plan-context lists articles and the HI library has
+ * loaded the plan's groups, then sends the prompts to the chat backend as
+ * consecutive turns of one conversation, each until the end of its stream. --image goes along with the last prompt, prepared as the chat
  * window prepares a dropped image. Then it reads
  * roomDesignerApi.extended.getExternalObjectSnapshot() without the object GLB,
  * saves the plan with saveExternalObjectSnapshot() for its plan snapshot id and
  * writes --out (default .temp/result/<UTC timestamp>-<provider>/): run.json
- * (with the operations and every call of a plan-changing MCP tool per turn:
+ * (with every call of a plan-changing MCP tool per turn:
  * what the model sent, and the corrections, groups not loaded or error it got
  * back), plan-context.json (rooms and groups after the chat),
  * planner-calls.json (the chat's), prompt-image.jpg (the image sent) and every
- * snapshot field as a file of its own. Exits 1 when an operation, the chat or
- * the snapshot reported an error or no snapshot or plan snapshot id came back;
+ * snapshot field as a file of its own. Exits 1 when the chat or the snapshot
+ * reported an error or no snapshot or plan snapshot id came back;
  * a stopped run (Ctrl+C) stops every server and stores nothing.
  *
  * Requires Playwright: npm install in .agents/scripts.
@@ -51,8 +48,6 @@ const PAGE_READY_TIMEOUT_MS = 2 * 60_000;
 const CHAT_TIMEOUT_MS = 10 * 60_000;
 const SNAPSHOT_TIMEOUT_MS = 2 * 60_000;
 const SHUTDOWN_TIMEOUT_MS = 10_000;
-const OPERATION_RETRY_TIMEOUT_MS = 30_000;
-const NOT_CALCULATED_YET = /not found/i;
 const POLL_INTERVAL_MS = 1000;
 const TOOL_PREFIX = '[tool] ';
 // The MCP server logs what a tool was sent and the feedback it gave as one
@@ -84,23 +79,7 @@ const SNAPSHOT_REQUEST = Object.fromEntries(
   ])
 );
 const USAGE =
-  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--operations <json>] [--image <file>] [--out <dir>] [--dev] [--headed]';
-
-// An MCP tool call: the tool name, and arguments that are an object if given.
-const isOperation = (operation) =>
-  typeof operation?.tool === 'string' &&
-  (operation.arguments === undefined ||
-    (typeof operation.arguments === 'object' &&
-      operation.arguments !== null &&
-      !Array.isArray(operation.arguments)));
-
-const parseOperations = (json) => {
-  const operations = JSON.parse(json ?? '[]');
-  if (!Array.isArray(operations) || !operations.every(isOperation)) {
-    throw new Error('operations must be [{ tool, arguments }]');
-  }
-  return operations;
-};
+  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]';
 
 const parseOptions = () => {
   try {
@@ -108,7 +87,6 @@ const parseOptions = () => {
       allowPositionals: true,
       options: {
         plan: { type: 'string' },
-        operations: { type: 'string' },
         image: { type: 'string' },
         out: { type: 'string' },
         dev: { type: 'boolean', default: false },
@@ -119,13 +97,7 @@ const parseOptions = () => {
     if (prompts.length === 0) {
       throw new Error('no prompt');
     }
-    return {
-      provider,
-      apiKey,
-      prompts,
-      ...values,
-      operations: parseOperations(values.operations),
-    };
+    return { provider, apiKey, prompts, ...values };
   } catch {
     console.error(USAGE);
     process.exit(1);
@@ -317,27 +289,10 @@ const callMcpTool = async (name, args) => {
   }
 };
 
-// A loaded plan's groups reach the HI library a moment after the page is
-// ready; until the library has calculated them, the planner finds none of
-// their modules.
-const callOperation = async (tool, args) => {
-  const deadline = Date.now() + OPERATION_RETRY_TIMEOUT_MS;
-  for (;;) {
-    try {
-      return await callMcpTool(tool, args);
-    } catch (error) {
-      if (!NOT_CALCULATED_YET.test(error.message) || Date.now() > deadline) {
-        throw error;
-      }
-      await sleep(POLL_INTERVAL_MS);
-    }
-  }
-};
-
 // The planner clears its undo history when the HI library has loaded the
 // plan's groups (the example page sets hiPosGroupsCompletelyLoaded then).
-// Operations made before would be gone from the history, and an undo in the
-// test would find nothing to revert.
+// Changes of the chat made before would be gone from the history, and an undo
+// turn would find nothing to revert.
 const waitForLoadedPlanGroups = async (page) => {
   try {
     await page.waitForFunction(
@@ -347,31 +302,9 @@ const waitForLoadedPlanGroups = async (page) => {
     );
   } catch {
     console.log(
-      '[run-hi-mcp-prompt] the HI library did not report the plan groups loaded - the operations run anyway'
+      '[run-hi-mcp-prompt] the HI library did not report the plan groups loaded - the chat starts anyway'
     );
   }
-};
-
-// The plan a test starts from: MCP tool calls, one after another, before the
-// chat. The first that fails ends them.
-const runOperations = async (operations) => {
-  const done = [];
-  for (const { tool, arguments: args = {} } of operations) {
-    console.log(
-      `[run-hi-mcp-prompt] operation ${tool} ${JSON.stringify(args)}`
-    );
-    try {
-      done.push({
-        tool,
-        arguments: args,
-        result: await callOperation(tool, args),
-      });
-    } catch (error) {
-      done.push({ tool, arguments: args, error: error.message });
-      break;
-    }
-  }
-  return done;
 };
 
 const planContextHasArticles = async () => {
@@ -632,31 +565,20 @@ const runSession = async (options, launcher, browser) => {
     PAGE_READY_TIMEOUT_MS,
     'the page client ID'
   );
-  if (options.operations.length > 0) {
-    await waitForLoadedPlanGroups(page);
-  }
-  const operations = await runOperations(options.operations);
-  const failedOperation = operations.find((operation) => operation.error);
+  await waitForLoadedPlanGroups(page);
   plannerCalls.length = 0;
   const readyAt = Date.now();
   console.log('[run-hi-mcp-prompt] page ready');
   const promptImage =
     options.imageBytes && (await prepareImage(page, options.imageBytes));
-  const turns = failedOperation
-    ? []
-    : await runConversation(
-        options.prompts,
-        promptImage && { file: options.image, dataUrl: promptImage },
-        clientId
-      );
+  const turns = await runConversation(
+    options.prompts,
+    promptImage && { file: options.image, dataUrl: promptImage },
+    clientId
+  );
   toolCalls.turn = undefined;
   const chatPlannerCalls = plannerCalls.slice();
-  const errors = [
-    ...(failedOperation
-      ? [`operation ${failedOperation.tool} failed: ${failedOperation.error}`]
-      : []),
-    ...turns.flatMap((turn) => turn.errors),
-  ];
+  const errors = turns.flatMap((turn) => turn.errors);
   const chatDoneAt = Date.now();
   console.log('[run-hi-mcp-prompt] chat done, reading and saving the snapshot');
   let planContext;
@@ -698,7 +620,6 @@ const runSession = async (options, launcher, browser) => {
   const run = {
     provider: options.provider,
     plan: options.plan ?? null,
-    operations,
     turns,
     errors,
     planSnapshotId,

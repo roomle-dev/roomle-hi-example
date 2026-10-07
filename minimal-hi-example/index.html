@@ -1078,7 +1078,7 @@
         },
         onLogMessage: logInUi,
         // the planner clears its undo history once the plan's groups are
-        // loaded; the test run script waits for this before its operations
+        // loaded; the test run script waits for this before the first prompt
         onPosGroupsCompletelyLoaded: () => {
           window.hiPosGroupsCompletelyLoaded = true;
         },

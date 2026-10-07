@@ -2,9 +2,9 @@
 
 The test cases for the Roomle HI (HOMAG Intelligence) room planning live in
 [test-prompts.json](./test-prompts.json): each starts from one of the plans below, with a prompt, an
-image or both. They verify the MCP server tools that create, position and edit groups in
-Roomle sessions. Every test starts from a fixed plan, so an edit does not depend on what the model
-under test built before.
+image or both. They assess how well an agent understands a prompt and picks the MCP server tools
+that create, position and edit groups in Roomle sessions. Every test starts from a fixed plan, so it
+does not depend on what the model built in another test.
 
 ## Plans
 
@@ -155,13 +155,17 @@ table and the kitchen.
 | Field | Content |
 |---|---|
 | `models` | the chat models to test, `{ provider, apiKey }`: a provider name of the launcher and its key — `"$NAME"` reads the key from the environment variable `NAME`, which keeps it out of the committed file |
+| `randomTests` | how many random tests the "test the mcp" skill adds to each session (default 3, 0 for none): the agent running it writes them for one of the plans drawn at random, marks them `"random": true` and appends them only to the end of the session's test file — the report shows them as random tests ([skill](../.agents/skills/hi-mcp-testing.md#random-tests)) |
 | `plans` | the plans above by name: `{ "<name>": "<plan snapshot id>" }` |
-| `tests` | `{ id, title, plan, prompt?, image?, operations?, expect? }` — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message; `operations` are MCP tool calls `{ tool, arguments }` made on the plan before the prompt (e.g. "join groups" deletes the middle unit first); `expect` says what the evaluation checks |
+| `tests` | `{ id, title, plan, prompt?, image?, expect? }`, in the order they run, from simple to complex: single groups, single edits, edits that need more understanding, edits over two or three turns, kitchens around a corner, obstacles, the image tests, and the kitchen conversation last — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message — a `prompt` list is sent as consecutive turns of one conversation, the image with the last turn; `expect` says what the evaluation checks, per turn for a list |
 
-The operations run through the MCP server, so its undo history holds them: the tests `undo-last-change`,
-`redo-last-change` and `undo-a-wrong-command` delete the middle unit of the Three Tall Units first —
-`redo-last-change` undoes it as well — and the prompt asks the agent to undo, redo or correct that
-change.
+**Decision** ([ADR 0006](../.agents/decisions/0006-prompt-tests-assess-the-agent.md)): the tests
+assess how well the agent understands the prompts and picks the right tools; they do not test the
+tools. A test never calls a tool itself — the tools are tested by the unit tests in
+[`hi-mcp/hi-mcp-server/tests`](../hi-mcp/hi-mcp-server/tests). A test that needs a changed plan
+asks for the change in an earlier turn — "join groups" first asks to delete the middle unit; `undo-last-change`, `redo-last-change` and `undo-a-wrong-command`
+first ask to delete the middle unit of the Three Tall Units — `redo-last-change` also to undo it —
+and the last turn asks the agent to undo, redo or correct that change. Every turn is evaluated.
 
 ## Testing Guidelines
 

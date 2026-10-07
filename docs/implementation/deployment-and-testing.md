@@ -96,7 +96,7 @@ server and a headless planner. They need Playwright (`npm install` in `.agents/s
 
 ```bash
 node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" …] \
-  [--plan <ps_id>] [--operations <json>] [--image <file>] [--out <dir>] [--dev] [--headed]
+  [--plan <ps_id>] [--image <file>] [--out <dir>] [--dev] [--headed]
 ```
 
 1. Starts the launcher with `--no-open`, the MCP server on 3110 (so open interactive tabs, which
@@ -104,8 +104,8 @@ node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<pro
    `[hi-mcp] tool <name> args|feedback|error` lines.
 2. Opens the example page in headless Chromium (`--enable-gpu`: the software renderer draws the
    object-only image empty) with the plan, and waits until `get-plan-context` returns articles.
-3. Runs the setup `operations` (tool calls) after the planner has loaded its groups
-   (`window.hiPosGroupsCompletelyLoaded`), takes the page's `clientId` from its `hello` frame.
+3. Waits until the planner has loaded the plan's groups (`window.hiPosGroupsCompletelyLoaded`; it
+   clears its undo history then), takes the page's `clientId` from its `hello` frame.
 4. Sends each prompt as one chat turn with the whole history (over `node:http`, because `fetch` ends a
    response after 300 s without data).
 5. Reads the plan context and takes a snapshot in the page (`window.instance.extended`): images,

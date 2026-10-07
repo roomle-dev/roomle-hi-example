@@ -30,6 +30,7 @@ never drop the agent's content silently.
 | 52 | [A group material overwrites a unit's own value](#52-a-group-material-overwrites-a-units-own-value) | bug, MCP server | medium — accents lost, the agent repairs them |
 | 36 | [A wall-unit row runs into a unit hung above a base unit](#36-a-wall-unit-row-runs-into-a-unit-hung-above-a-base-unit) | MCP server correction | medium — two wall units in one place |
 | 42 | [A wall unit that keeps its place overlaps the unit that moved in below it](#42-a-wall-unit-that-keeps-its-place-overlaps-the-unit-that-moved-in-below-it) | roomle-ui command, MCP server feedback | medium — two units above in one place |
+| 53 | [`place-group` reports an overlap with a group inside an L-shaped group](#53-place-group-reports-an-overlap-with-a-group-inside-an-l-shaped-group) | bug, MCP server | medium — a wrong note, or a group moved away |
 | 41 | [A row edit puts a unit in front of a door without a hint](#41-a-row-edit-puts-a-unit-in-front-of-a-door-without-a-hint) | MCP server feedback | low — the unit stands inside the room |
 | 37 | [A first call with a guessed payload](#37-a-first-call-with-a-guessed-payload) | instructions | low — one lost step |
 | 47 | [A root id sent as the group id is refused](#47-a-root-id-sent-as-the-group-id-is-refused) | MCP server correction | low — one lost step |
@@ -63,9 +64,7 @@ offset is lost, and fix it there.
 **Test.** A glue-logic test: a group with a wall unit hung by an offset above a base unit keeps its
 height after `mod_FrontColor` and `mod_CountertopColor`.
 
-**Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5-mini 11 (the wall unit above the sink) and
-gpt-6-astra 09 (the wall unit of the facing run, sent with `gapMm 660`).
-
+**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 32 (the model set `mod_HeightPosInsertion` 1480 on the two wall units that had dropped).
 ## 40. A unit colour after a kitchen-wide colour misses the doors
 
 **Problem.** After a kitchen-wide `mod_FrontColor` (D36, set by `change-group-attribute`),
@@ -85,8 +84,7 @@ the unit's fronts.
 **Test.** A glue-logic test: after `change-group-attribute mod_FrontColor` on a group, a
 `change-module-attribute mod_FrontColor` on one root changes the front colour of that root's door.
 
-**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 08.
-
+**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 29 (the two niche wall units).
 ## 51. A replace drops the group's materials
 
 **Problem.** `create-or-replace-groups` with the id of a group in the plan — a replace — loses the
@@ -107,8 +105,7 @@ as a create (D36), and reports each.
 **Test.** A tool-executors test: a replace of a group with `mod_ToekickColor` in its `attributes`
 runs `change-group-attribute mod_ToekickColor` after the load and reports it, as the create does.
 
-**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 06.
-
+**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 32 (the replace of both groups).
 ## 35. The handleless right corner unit as the first root with two legs stands 239 mm in the wall
 
 **Problem.** `EUERTB90` (the handleless right-handed corner unit) as the first root, with units
@@ -157,8 +154,7 @@ group gets the hint with the free stretches; a group beside them gets none. The 
 with gpt-5-mini and gpt-5.4-mini: the group ends clear of the obstacles, after one correction at
 most.
 
-**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 09.
-
+**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 32 (the OTB30 in front of the window).
 ## 27. A new group needs a point the model computes
 
 **Problem.** A new group is positioned with `posGroup` and `posRotationY` the model takes from a wall:
@@ -285,8 +281,7 @@ wins.
 **Test.** A group whose roots all carry `mod_FrontColor` 192: `merge-article-into-group` without
 attributes forwards `mod_FrontColor` 192 with the correction; with `mod_FrontColor` 160 sent, 160.
 
-**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 26.
-
+**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 12 (an insert).
 ## 52. A group material overwrites a unit's own value
 
 **Problem.** When the agent sends a material for the group and another value of it on single roots —
@@ -305,8 +300,7 @@ issue 40), and name those roots in the correction ("… set on every unit except
 `mod_FrontColor` 326 — after the load the two roots carry 326, the others 190, and the correction
 names the two roots.
 
-**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 08.
-
+**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 29 (the niche wall units).
 ## 36. A wall-unit row runs into a unit hung above a base unit
 
 **Problem.** `wall1 above base1`, `wall2 rightOf wall1`, `wall3 rightOf wall2` and `wall4 above
@@ -350,7 +344,29 @@ already')` (roomle-ui `glue-logic-test.ts`), whose kept unit already overlaps th
 the correction names the overlapped unit; a remove whose kept unit overlaps nothing gives the
 correction without it.
 
-**Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5-mini 24, gpt-6-astra 24.
+**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 14.
+## 53. `place-group` reports an overlap with a group inside an L-shaped group
+
+**Problem.** In a plan with an L-shaped kitchen along two walls and an island in front of it,
+`place-group` on the kitchen reports "Group … overlaps group … - there is no free position on the top
+wall for it, so it stands where it was asked to", although no root module of the kitchen overlaps
+the island. Had a free stretch existed, the server would have moved the kitchen along the wall away
+from an island it never touched.
+
+**Cause.** `placedGroupVolumes` and `overlappedGroupIds` (`tool-executors.ts`) build one volume per
+group from `groupFootprint` (`plan-space.ts`), the rectangle around all its root modules. The
+rectangle of an L-shaped group covers the floor inside the L. `freePlacementAlongWall` and the row
+edit hints of D43 (`rowReachHints`) use the same volumes.
+
+**To do.** Test overlaps per root module: one volume per root from `rootFootprintPoints`, two groups
+overlap when a root of one overlaps a root of the other. Keep the group rectangle only as a quick
+pre-test.
+
+**Test.** A tool-executors test: an L-shaped group and a small group inside its L. `place-group` on
+the L reports no overlap and does not move it; a group that does overlap a root module still gets the
+note.
+
+**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 33 (turn 7).
 
 ## 41. A row edit puts a unit in front of a door without a hint
 
@@ -371,8 +387,7 @@ wall and span (`wallOfOpening`, `plan-space.ts:695`). The row is built anyway; t
 reach into the door's span gives the hint; a row that stood in front of the door before the edit
 gives none.
 
-**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 23.
-
+**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 13.
 ## 37. A first call with a guessed payload
 
 **Problem.** gpt-5.4-mini's first `create-or-replace-groups` call, before it reads the rules, sends an
@@ -425,8 +440,7 @@ whether a retry of the step is safe (the tool calls of the step are already carr
 **Test.** The stream-part loop of `chat-server.ts` has no test: the logging moves into a tested
 module (e.g. `chat-steps.ts`), whose test feeds an `error` part and asserts the logged step.
 
-**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 24.
-
+**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 29.
 ## 13. Undocked wall units reject the whole group
 
 **Problem.** `create-or-replace-groups` with a group whose roots carry no relation and no docking —

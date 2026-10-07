@@ -1,4 +1,5 @@
 {
+  "randomTests": 3,
   "models": [
     {
       "provider": "gpt-5-mini",
@@ -38,64 +39,18 @@
       "prompt": "add a group of 4 cabinets to the wall in the back"
     },
     {
-      "id": "kitchen-back-right-corner",
-      "title": "Kitchen in the back right corner",
-      "plan": "default-room",
-      "prompt": "plan a kitchen in the back right corner of the room"
+      "id": "edit-change-one-unit",
+      "title": "Change one unit",
+      "plan": "three-tall-units",
+      "prompt": "make the first unit 900 mm wide",
+      "expect": "change-module-attribute: mod_Width 900 on the first unit"
     },
     {
-      "id": "kitchen-oven-hood-sink-fridge-corner",
-      "title": "Oven, range hood, sink, fridge in the corner",
-      "plan": "default-room",
-      "prompt": "plan a kitchen with an oven, a range hood, a sink and a fridge in the back right corner of the room"
-    },
-    {
-      "id": "kitchen-oven-fridge-sink-corner",
-      "title": "Oven, fridge, sink in the corner",
-      "plan": "default-room",
-      "prompt": "create a kitchen with an oven, a fridge and a sink in the back right corner of the room"
-    },
-    {
-      "id": "image-kitchen-left-wall",
-      "title": "Image: kitchen on the left-hand wall",
-      "plan": "default-room",
-      "prompt": "create a kitchen like the one in the image on the left-hand wall of the room",
-      "image": "docs/images/kitchen-1.png"
-    },
-    {
-      "id": "image-kitchen-back-right-corner",
-      "title": "Image: kitchen in the back right corner",
-      "plan": "default-room",
-      "prompt": "create a kitchen like the one shown in the image, in the back right corner of the room",
-      "image": "docs/images/kitchen-2.png"
-    },
-    {
-      "id": "image-planning-right-wall",
-      "title": "Image: planning on the right-hand wall",
-      "plan": "default-room",
-      "prompt": "create a planning as to the one shown in the picture on the right-hand wall of the room.",
-      "image": "docs/images/kitchen-3.jpeg"
-    },
-    {
-      "id": "image-only-no-text",
-      "title": "Image only, no text",
-      "plan": "default-room",
-      "image": "docs/images/kitchen-4.png",
-      "expect": "the model decides what to plan; the chat sends the image with its default text \"Identify the furniture in the image (for example a kitchen, wardrobe, media unit, lowboard, sideboard, cabinet or utility room) and create a planning as close to it as possible.\""
-    },
-    {
-      "id": "image-only-tall-units",
-      "title": "Image only, no text: tall units",
-      "plan": "default-room",
-      "image": "docs/images/three-tall-units.png",
-      "expect": "the model identifies the furniture as tall units (a wardrobe or cabinet), not a kitchen, and plans it as close to the image as possible: three tall units side by side; no sink, hob, oven, worktop or base units"
-    },
-    {
-      "id": "full-kitchen-walnut-marble-corner",
-      "title": "Full kitchen, walnut, dark marble, around the corner",
-      "plan": "default-room",
-      "prompt": "create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room. Arrange the kitchen around the corner. The front of the kitchen should be made of walnut and the worktop should be made of dark marble",
-      "expect": "appliances: oven, hob, cooker hood, fridge, sink; storage: cabinet with drawers, wall cabinets; placement: back right corner, around the corner; materials: walnut front, dark marble worktop"
+      "id": "edit-change-whole-kitchen",
+      "title": "Change the whole kitchen",
+      "plan": "three-tall-units",
+      "prompt": "make the fronts of the whole kitchen white",
+      "expect": "change-group-attribute: a white mod_FrontColor on every unit"
     },
     {
       "id": "edit-add-one-unit",
@@ -103,27 +58,6 @@
       "plan": "three-tall-units",
       "prompt": "add a cabinet with drawers to the right of the kitchen",
       "expect": "merge-article-into-group: a drawer cabinet at the front end of the row"
-    },
-    {
-      "id": "edit-insert-unit",
-      "title": "Insert a unit",
-      "plan": "three-tall-units",
-      "prompt": "insert a cabinet with drawers between the first and the second unit",
-      "expect": "insert-article-into-group between the first and the middle unit: one group of four, the back end stays at z -3765, the row grows to the front by the unit's width"
-    },
-    {
-      "id": "edit-replace-unit",
-      "title": "Replace a unit",
-      "plan": "three-tall-units",
-      "prompt": "replace the middle unit with a cabinet with drawers",
-      "expect": "exchange-root-module: the middle unit becomes a drawer cabinet, the row stays"
-    },
-    {
-      "id": "edit-replace-unit-wider",
-      "title": "Replace a unit with a wider one",
-      "plan": "three-tall-units",
-      "prompt": "replace the middle unit with a 900 mm wide tall cabinet with drawers",
-      "expect": "one exchange-root-module with mod_Width 900 in its attributes: the row is 2100 mm, the back end stays at z -3765"
     },
     {
       "id": "edit-remove-unit",
@@ -140,35 +74,6 @@
       "expect": "delete-root-module: the kitchen splits into two groups that keep their places"
     },
     {
-      "id": "edit-change-one-unit",
-      "title": "Change one unit",
-      "plan": "three-tall-units",
-      "prompt": "make the first unit 900 mm wide",
-      "expect": "change-module-attribute: mod_Width 900 on the first unit"
-    },
-    {
-      "id": "edit-change-whole-kitchen",
-      "title": "Change the whole kitchen",
-      "plan": "three-tall-units",
-      "prompt": "make the fronts of the whole kitchen white",
-      "expect": "change-group-attribute: a white mod_FrontColor on every unit"
-    },
-    {
-      "id": "edit-join-groups",
-      "title": "Join groups",
-      "plan": "three-tall-units",
-      "operations": [
-        {
-          "tool": "delete-root-module",
-          "arguments": {
-            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
-          }
-        }
-      ],
-      "prompt": "join the two groups on the right wall",
-      "expect": "merge-groups: one group with both units"
-    },
-    {
       "id": "edit-delete-group",
       "title": "Delete a group",
       "plan": "three-tall-units",
@@ -176,21 +81,32 @@
       "expect": "delete-group: the plan has no groups"
     },
     {
-      "id": "edit-swap-units",
-      "title": "Swap two units",
+      "id": "edit-replace-unit",
+      "title": "Replace a unit",
       "plan": "three-tall-units",
-      "operations": [
-        {
-          "tool": "change-module-attribute",
-          "arguments": {
-            "rootModuleId": "8774cac2-8b83-405d-b88c-f0e5cd2452fb",
-            "attributeId": "mod_Width",
-            "value": "900"
-          }
-        }
-      ],
-      "prompt": "swap the first and the last unit",
-      "expect": "swap-root-modules: the 900 mm unit stands in the back corner, the row stays 2100 mm and its back end at z -3765"
+      "prompt": "replace the middle unit with a cabinet with drawers",
+      "expect": "exchange-root-module: the middle unit becomes a drawer cabinet, the row stays"
+    },
+    {
+      "id": "edit-replace-unit-wider",
+      "title": "Replace a unit with a wider one",
+      "plan": "three-tall-units",
+      "prompt": "replace the middle unit with a 900 mm wide tall cabinet with drawers",
+      "expect": "one exchange-root-module with mod_Width 900 in its attributes: the row is 2100 mm, the back end stays at z -3765"
+    },
+    {
+      "id": "edit-insert-unit",
+      "title": "Insert a unit",
+      "plan": "three-tall-units",
+      "prompt": "insert a cabinet with drawers between the first and the second unit",
+      "expect": "insert-article-into-group between the first and the middle unit: one group of four, the back end stays at z -3765, the row grows to the front by the unit's width"
+    },
+    {
+      "id": "edit-insert-low-between-high",
+      "title": "Insert a low cabinet between the high cabinets",
+      "plan": "two-wardrobes-right-wall",
+      "prompt": "insert a low cabinet between the high cabinets",
+      "expect": "one insert-article-into-group call between the two wardrobes with a base cabinet (e.g. UTB60): one group of three root modules, the wardrobes keep their article, no new group, no replace, no exchange; the group's pos stays [4815, 0, -2563.1]"
     },
     {
       "id": "edit-insert-below-wall-units",
@@ -214,11 +130,73 @@
       "expect": "swap-root-modules: the hob unit and the sink unit change places, the range hood stays above the hob unit and the wall unit above the sink moves with it"
     },
     {
-      "id": "edit-insert-low-between-high",
-      "title": "Insert a low cabinet between the high cabinets",
-      "plan": "two-wardrobes-right-wall",
-      "prompt": "insert a low cabinet between the high cabinets",
-      "expect": "one insert-article-into-group call between the two wardrobes with a base cabinet (e.g. UTB60): one group of three root modules, the wardrobes keep their article, no new group, no replace, no exchange; the group's pos stays [4815, 0, -2563.1]"
+      "id": "edit-join-groups",
+      "title": "Join groups",
+      "plan": "three-tall-units",
+      "prompt": [
+        "delete the middle unit",
+        "join the two groups on the right wall"
+      ],
+      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: merge-groups: one group with both units"
+    },
+    {
+      "id": "edit-swap-units",
+      "title": "Swap two units",
+      "plan": "three-tall-units",
+      "prompt": [
+        "make the last unit 900 mm wide",
+        "swap the first and the last unit"
+      ],
+      "expect": "turn 1: change-module-attribute: mod_Width 900 on the last unit; turn 2: swap-root-modules: the 900 mm unit stands in the back corner, the row stays 2100 mm and its back end at z -3765"
+    },
+    {
+      "id": "undo-last-change",
+      "title": "Undo the last change",
+      "plan": "three-tall-units",
+      "prompt": ["delete the middle unit", "undo the last change"],
+      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: undo: one group of three tall units again"
+    },
+    {
+      "id": "redo-last-change",
+      "title": "Redo the undone change",
+      "plan": "three-tall-units",
+      "prompt": ["delete the middle unit", "undo the last change", "redo that"],
+      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: undo: one group of three tall units again; turn 3: redo: the middle unit removed again, two groups"
+    },
+    {
+      "id": "undo-a-wrong-command",
+      "title": "Undo a wrong command",
+      "plan": "three-tall-units",
+      "prompt": [
+        "delete the middle unit",
+        "that was the wrong unit - remove the last unit, not the middle one"
+      ],
+      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: undo, then remove-article-from-group or delete-root-module on the last unit: one group of the first two units"
+    },
+    {
+      "id": "kitchen-back-right-corner",
+      "title": "Kitchen in the back right corner",
+      "plan": "default-room",
+      "prompt": "plan a kitchen in the back right corner of the room"
+    },
+    {
+      "id": "kitchen-oven-fridge-sink-corner",
+      "title": "Oven, fridge, sink in the corner",
+      "plan": "default-room",
+      "prompt": "create a kitchen with an oven, a fridge and a sink in the back right corner of the room"
+    },
+    {
+      "id": "kitchen-oven-hood-sink-fridge-corner",
+      "title": "Oven, range hood, sink, fridge in the corner",
+      "plan": "default-room",
+      "prompt": "plan a kitchen with an oven, a range hood, a sink and a fridge in the back right corner of the room"
+    },
+    {
+      "id": "full-kitchen-walnut-marble-corner",
+      "title": "Full kitchen, walnut, dark marble, around the corner",
+      "plan": "default-room",
+      "prompt": "create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room. Arrange the kitchen around the corner. The front of the kitchen should be made of walnut and the worktop should be made of dark marble",
+      "expect": "appliances: oven, hob, cooker hood, fridge, sink; storage: cabinet with drawers, wall cabinets; placement: back right corner, around the corner; materials: walnut front, dark marble worktop"
     },
     {
       "id": "obstacle-window-back-wall",
@@ -242,53 +220,54 @@
       "expect": "one new group of three base units away from the walls whose root modules overlap no object (dining table, chairs, rug, plant, sofa) and no other group"
     },
     {
-      "id": "undo-last-change",
-      "title": "Undo the last change",
-      "plan": "three-tall-units",
-      "operations": [
-        {
-          "tool": "delete-root-module",
-          "arguments": {
-            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
-          }
-        }
-      ],
-      "prompt": "undo the last change",
-      "expect": "undo: one group of three tall units again"
+      "id": "image-kitchen-left-wall",
+      "title": "Image: kitchen on the left-hand wall",
+      "plan": "default-room",
+      "prompt": "create a kitchen like the one in the image on the left-hand wall of the room",
+      "image": "docs/images/kitchen-1.png"
     },
     {
-      "id": "redo-last-change",
-      "title": "Redo the undone change",
-      "plan": "three-tall-units",
-      "operations": [
-        {
-          "tool": "delete-root-module",
-          "arguments": {
-            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
-          }
-        },
-        {
-          "tool": "undo",
-          "arguments": {}
-        }
-      ],
-      "prompt": "redo that",
-      "expect": "redo: the middle unit removed again, two groups"
+      "id": "image-planning-right-wall",
+      "title": "Image: planning on the right-hand wall",
+      "plan": "default-room",
+      "prompt": "create a planning as to the one shown in the picture on the right-hand wall of the room.",
+      "image": "docs/images/kitchen-3.jpeg"
     },
     {
-      "id": "undo-a-wrong-command",
-      "title": "Undo a wrong command",
-      "plan": "three-tall-units",
-      "operations": [
-        {
-          "tool": "delete-root-module",
-          "arguments": {
-            "rootModuleId": "a7271f1b-50d5-4b50-97ca-7a5bf75f77fa"
-          }
-        }
+      "id": "image-kitchen-back-right-corner",
+      "title": "Image: kitchen in the back right corner",
+      "plan": "default-room",
+      "prompt": "create a kitchen like the one shown in the image, in the back right corner of the room",
+      "image": "docs/images/kitchen-2.png"
+    },
+    {
+      "id": "image-only-tall-units",
+      "title": "Image only, no text: tall units",
+      "plan": "default-room",
+      "image": "docs/images/three-tall-units.png",
+      "expect": "the model identifies the furniture as tall units (a wardrobe or cabinet), not a kitchen, and plans it as close to the image as possible: three tall units side by side; no sink, hob, oven, worktop or base units"
+    },
+    {
+      "id": "image-only-no-text",
+      "title": "Image only, no text",
+      "plan": "default-room",
+      "image": "docs/images/kitchen-4.png",
+      "expect": "the model decides what to plan; the chat sends the image with its default text \"Identify the furniture in the image (for example a kitchen, wardrobe, media unit, lowboard, sideboard, cabinet or utility room) and create a planning as close to it as possible.\""
+    },
+    {
+      "id": "kitchen-conversation",
+      "title": "Kitchen conversation: L-shaped kitchen, fronts, larder, island, sloping ceiling",
+      "plan": "default-room",
+      "prompt": [
+        "Plan a modern L-shaped kitchen for a family of four.",
+        "Replace all fronts with natural oak.",
+        "Add a pull-out larder unit on the left.",
+        "3.8 m wide wall, cooking island, country-house style, budget €15,000",
+        "Only handleless fronts and dark colors",
+        "I have a room with a sloping ceiling and need a lot of storage space",
+        "Add a pull-out larder unit"
       ],
-      "prompt": "that was the wrong unit - remove the last unit, not the middle one",
-      "expect": "undo, then remove-article-from-group or delete-root-module on the last unit: one group of the first two units"
+      "expect": "turn 1: one kitchen group around a corner, a leg on each of two walls, with sink, hob and range hood, oven, fridge, dishwasher and storage for four (drawer units, wall units, a tall unit), modern fronts; turn 2: change-group-attribute, an oak mod_FrontColor (Oak 222) on every unit; turn 3: merge-article-into-group, a tall unit with pull-outs (e.g. HT2AB60 or HTS2AB60) at the left end of the kitchen, overlapping neither the window nor the door; turn 4: a kitchen row of at most 3800 mm on one wall and a separate island group that carries the hob, country-house fronts (e.g. Oak), get-price is called and the answer compares the total with the €15,000 budget and says whether it replaced the L-shaped kitchen; turn 5: handleless units (the Kitchen handleless articles, e.g. US2A60 to EUS2A60, where a variant exists) and a dark mod_FrontColor on every unit; turn 6: the room has no sloping ceiling - the answer says so or asks where it is, and any storage it adds fits the walls; turn 7: one more tall unit with pull-outs at a free end of a row"
     }
   ]
 }

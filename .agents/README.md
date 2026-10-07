@@ -32,6 +32,7 @@ deliberately rejected. Read these before proposing a change to an area they cove
 | [0003 — The AI chat is an MCP client beside the MCP server](decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) | Accepted |
 | [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](decisions/0004-hi-mcp-server-on-cloudflare-containers.md) | Accepted |
 | [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](decisions/0005-deploy-hi-mcp-from-release-cloudflare.md) | Accepted |
+| [0006 — The prompt tests assess the agent, the unit tests the tools](decisions/0006-prompt-tests-assess-the-agent.md) | Accepted |
 
 ---
 

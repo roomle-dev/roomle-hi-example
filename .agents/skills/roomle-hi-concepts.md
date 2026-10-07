@@ -444,4 +444,4 @@ Fetch the payload format with the get-authoring-rules tool.
 
 - [AGENTS.md](../../AGENTS.md) — AI assistant instructions
 - [.agents/README.md](../README.md) — Digital brain index
-- [minimal-hi-example/docs/hi-mcp-server.md](../../minimal-hi-example/docs/hi-mcp-server.md) — User-facing MCP documentation
+- [docs/hi-mcp-server.md](../../docs/hi-mcp-server.md) — User-facing MCP documentation

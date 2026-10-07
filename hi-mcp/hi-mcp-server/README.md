@@ -13,7 +13,7 @@ VS Code Copilot agent mode, Gemini CLI, custom clients built with an MCP SDK).
 Besides the ligna-store, the standalone HI presets example of this repository is a client of
 the same server: `minimal-hi-example/start.mjs` serves it on port 3000, spawns this server,
 and its inline page bridge uses the same WebSocket protocol. See
-[`minimal-hi-example/docs/hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md).
+[`docs/hi-mcp-server.md`](../../docs/hi-mcp-server.md).
 
 Copied from the roomle-ui repository's
 `packages/embedding-lib/examples/hi-mcp-server`

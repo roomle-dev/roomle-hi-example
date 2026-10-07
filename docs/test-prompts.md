@@ -195,7 +195,7 @@ runs a single prompt the same way.
 
 ## Related Documentation
 
-- [HI MCP Server Documentation](../minimal-hi-example/docs/hi-mcp-server.md)
+- [HI MCP Server Documentation](hi-mcp-server.md)
 - [HI MCP Tools Reference](../.agents/skills/hi-mcp-tools.md)
 - [Roomle HI Concepts](../.agents/skills/roomle-hi-concepts.md)
 - [Article Catalog](../.agents/skills/hi-authoring-rules.md)

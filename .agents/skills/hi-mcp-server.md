@@ -119,7 +119,7 @@ The ligna-store runs the same protocol via `hi-mcp/hi-mcp-client/` (browser-brid
 2. Implement the executor in `hi-mcp/hi-mcp-server/tool-executors.ts` — no page changes
 3. An edit of existing groups is a command: add it in roomle-ui (`HI_GROUP_OPERATION`, a payload type and a handler in `hi-plan-context.ts`, an operation on the glue logic) and forward it here through `externalObjectGroupOperation` — no page change
 4. Only if the tool needs a planner method not exposed yet: add it to `planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts`, then copy to the ligna-store). Keep methods that place orders or overwrite the plan out unless explicitly decided
-5. Update documentation (`docs/hi-mcp-behaviour.md`, `minimal-hi-example/docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`)
+5. Update documentation (`docs/hi-mcp-behaviour.md`, `docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`)
 6. Add/extend unit tests in `hi-mcp/hi-mcp-server/tests/`
 7. `npm test` + `npm run typecheck` at the `hi-mcp` root
 

@@ -159,7 +159,7 @@ the lifetime of the process:
    `hi-mcp/hi-mcp-client/browser-bridge.ts`, and the ligna-store copy. `tests/planner-api.test.ts`
    checks that the client allow-list matches the planner API.
 5. Unit tests in the matching `tests/` folder; then the behaviour reference, the tool reference in
-   `minimal-hi-example/docs/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`.
+   `docs/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`.
 
 ### Contracts that are easy to break
 

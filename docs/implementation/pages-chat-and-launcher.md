@@ -2,7 +2,7 @@
 
 The page side of the bridge, the launcher that starts the example, and the chat backend. How the
 chat behaves for the user, with its models and the image feature, is described in
-[ai-chat.md](../../minimal-hi-example/docs/ai-chat.md); this page describes the code.
+[ai-chat.md](../ai-chat.md); this page describes the code.
 [Back to the overview](./README.md).
 
 ## The page side of the bridge

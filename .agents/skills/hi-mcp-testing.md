@@ -15,7 +15,7 @@ perspective, the perspective object and the top image, an evaluation and a bug v
 
 `gpt-5-mini` with `$AZURE_GPT_KEY`, unless the user names other models — the `models` of
 `docs/test-prompts.json`, or another provider name (see
-[ai-chat.md](../../minimal-hi-example/docs/ai-chat.md)) with its key variable: `mistral*` →
+[ai-chat.md](../../docs/ai-chat.md)) with its key variable: `mistral*` →
 `MI_API_USAGE_KEY`, `gpt-5*` / `gpt-6*` → `AZURE_GPT_KEY`. When the key variable is empty, stop and
 ask the user for the key. Never write a key into a file. "with the local planner" / "with --dev"
 adds `--dev` to the runner (the roomle-ui dev server must run on :5173).
@@ -308,7 +308,7 @@ node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<pro
 
 | Argument | Meaning |
 |---|---|
-| `<provider>` | a chat provider of the launcher, passed through unchanged (`gpt-5.4-mini`, `mistral`, `claude`, … — see [ai-chat.md](../../minimal-hi-example/docs/ai-chat.md)) |
+| `<provider>` | a chat provider of the launcher, passed through unchanged (`gpt-5.4-mini`, `mistral`, `claude`, … — see [ai-chat.md](../../docs/ai-chat.md)) |
 | `<api-key>` | the provider's API key, e.g. `"$AZURE_GPT_KEY"` |
 | `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it. `""` with `--image` sends the image alone — the chat backend gives it the text "Identify the furniture in the image (for example a kitchen, wardrobe, media unit, lowboard, sideboard, cabinet or utility room) and create a planning as close to it as possible." |
 | `--plan <id>` | the plan snapshot the page starts from (`plan_id` of the example URL), its HI groups included; without it, the page's default plan |
@@ -387,7 +387,7 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 | `timed out … waiting for the page and the HI library` | the page did not connect or the HI library did not load — run with `--headed` and look at the page |
 | every `perspective-object-image.png` is fully transparent, the other images render | no GPU: headless Chromium fell back to SwiftShader, under which the planner's object-only perspective render draws an empty frame — the run script passes `--enable-gpu` for this; on a machine without a GPU the image stays empty until the planner defect is fixed ([backlog](../backlog/mcp-test-infrastructure-issues.md), issue 1) |
 | `errors` in `run.json` with the provider's message | invalid key or a provider failure; the snapshot is still stored |
-| `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context — a **bug**. The chat sends the images of a tool result to Mistral as a user message ([images in tool results](../../minimal-hi-example/docs/ai-chat.md#images-in-tool-results)), and the server returns compact JSON without `imageUrl` ([result format](../../docs/hi-mcp-behaviour.md#53-result-format)); look for the result that is still large |
+| `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context — a **bug**. The chat sends the images of a tool result to Mistral as a user message ([images in tool results](../../docs/ai-chat.md#images-in-tool-results)), and the server returns compact JSON without `imageUrl` ([result format](../../docs/hi-mcp-behaviour.md#53-result-format)); look for the result that is still large |
 | `api.extended[message.method] is not a function` in `planner-calls.json` | the planner build lacks the method (see the bug rules above) |
 | `the turn took longer than 5 minutes and was ended …` in `errors` | the chat backend's turn timeout (`HI_CHAT_TURN_TIMEOUT_MS`): the model did not answer in time — the chat streams nothing while a model reasons; the plan keeps what the tools changed |
 | `chat request failed: aborted after 600s` | the run script's own chat timeout (10 minutes); reached only when `HI_CHAT_TURN_TIMEOUT_MS` is set above it — the turn keeps the tools and the text the chat streamed before |
@@ -397,7 +397,7 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 ## See also
 
 - [hi-mcp-tools.md](./hi-mcp-tools.md) — the tools the model calls
-- [ai-chat.md](../../minimal-hi-example/docs/ai-chat.md) — the chat backend and its providers
+- [ai-chat.md](../../docs/ai-chat.md) — the chat backend and its providers
 - [test-prompts.md](../../docs/test-prompts.md) — the plans and the format of the test file
 - [mcp-test-infrastructure-issues.md](../backlog/mcp-test-infrastructure-issues.md) — what is open
   about running the tests

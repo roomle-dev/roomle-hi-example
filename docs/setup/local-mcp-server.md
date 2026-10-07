@@ -6,7 +6,7 @@ variants ([Cloudflare](./cloudflare-mcp-server.md), [Azure App Service](./azure-
 The server runs the tools of any connected AI agent and relays their planner calls into a connected
 ligna-store page (local or deployed), where they execute against the planner.
 
-> Note: [`minimal-hi-example/docs/hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md) documents the standalone HI presets
+> Note: [`docs/hi-mcp-server.md`](../hi-mcp-server.md) documents the standalone HI presets
 > example, which uses this same server (started by `minimal-hi-example/start.mjs`) as its client.
 > Tool reference and authoring rules live in the
 > [PoC README](../../hi-mcp/hi-mcp-server/README.md).

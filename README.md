@@ -65,8 +65,8 @@ git push origin origin/master:release/cloudflare   # release master
 npm run deploy:cf                                  # by hand
 ```
 
-Details: [AI chat](./minimal-hi-example/docs/ai-chat.md) ·
-[example and MCP server reference](./minimal-hi-example/docs/hi-mcp-server.md) ·
+Details: [AI chat](./docs/ai-chat.md) ·
+[example and MCP server reference](./docs/hi-mcp-server.md) ·
 [hi-mcp PoCs](./hi-mcp/README.md)
 
 ## Ask the agent
@@ -81,5 +81,5 @@ Add a group of three tall units to the wall on the right.
 
 **External MCP clients** — Claude Code, Claude desktop app, GitHub Copilot,
 Cursor, … connect to `http://localhost:3100/mcp`:
-[connecting an MCP client](./minimal-hi-example/docs/hi-mcp-server.md#connecting-an-mcp-client) ·
-[example prompts](./minimal-hi-example/docs/hi-mcp-server.md#example-prompts)
+[connecting an MCP client](./docs/hi-mcp-server.md#connecting-an-mcp-client) ·
+[example prompts](./docs/hi-mcp-server.md#example-prompts)

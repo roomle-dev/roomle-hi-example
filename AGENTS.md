@@ -5,7 +5,7 @@
 ## Always Do This First
 
 1. **Load matching skills.** Check the [On-Demand Skills](#on-demand-skills) catalog and read every skill file whose domain matches the task *before* taking action. Multiple skills may apply to one task.
-2. **Read [`minimal-hi-example/docs/hi-mcp-server.md`](./minimal-hi-example/docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the comprehensive reference for the HI MCP server implementation and usage. **Read [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md)** before changing a tool, a served rule, a guard or a correction — the single reference for how the MCP server behaves towards an agent, with every decision, guard, correction and feedback message.
+2. **Read [`docs/hi-mcp-server.md`](./docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the comprehensive reference for the HI MCP server implementation and usage. **Read [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md)** before changing a tool, a served rule, a guard or a correction — the single reference for how the MCP server behaves towards an agent, with every decision, guard, correction and feedback message.
 3. **Read [`.agents/README.md`](./.agents/README.md)** for the complete digital brain index, separating living reference from historical records.
 4. **Treat documentation as part of the task, not a follow-up.** Every analysis produces a document, and every change to productive code updates one — see [Where Documentation Goes](#where-documentation-goes).
 5. **For GitHub Copilot users:** See [`.github/copilot-instructions.md`](./.github/copilot-instructions.md) for Copilot-specific guidance.
@@ -96,11 +96,7 @@ The start script (`npm start`) provides:
 .
 ├── minimal-hi-example/         # Minimal standalone HI example
 │   ├── index.html              # HI presets example page (single file, inline JS)
-│   ├── start.mjs               # Launcher: build gate, static serving (:3000), spawns the MCP server
-│   └── docs/                    # Documentation
-│       ├── hi-mcp-server.md    # Complete MCP server documentation
-│       ├── hi-mcp-poc-presentation.md # Proof of concept presentation
-│       └── images/             # Diagram and screenshot assets
+│   └── start.mjs               # Launcher: build gate, static serving (:3000), spawns the MCP server
 ├── hi-mcp/                       # TypeScript MCP server PoCs (npm workspaces, vitest)
 │   ├── README.md                 # Project overview and PoC list
 │   ├── package.json              # Workspace root: test/typecheck/start scripts
@@ -141,6 +137,9 @@ The start script (`npm start`) provides:
 │       └── roomle-hi-concepts.md  # Core HI concepts
 ├── docs/
 │   ├── hi-mcp-behaviour.md       # MCP server behaviour: guidelines, decisions, tools, information, guards, corrections, feedback
+│   ├── hi-mcp-server.md          # Reference: the example page, the MCP server, its tools and clients
+│   ├── ai-chat.md                # The AI chat of the example: providers, models, images
+│   ├── hi-mcp-poc-presentation.md # Proof of concept presentation
 │   ├── user-guide/README.md      # User guide: what the HI MCP does, the ways to use it, prompts, limits
 │   ├── implementation/           # Implementation: architecture, server, tool executors, layout and placement, pages and chat, deployment and tests
 │   ├── setup/                    # Setup guides
@@ -154,7 +153,7 @@ The start script (`npm start`) provides:
 │   ├── test-prompts.md           # The test plans and how the tests run
 │   ├── planning-results.md       # Planning results per test plan
 │   ├── library-information/      # Generated library data: articles, attributes, materials
-│   └── images/                   # Test plan screenshots
+│   └── images/                   # Test plan and example screenshots
 └── .github/
     ├── copilot-instructions.md   # GitHub Copilot specific instructions
     └── workflows/
@@ -220,7 +219,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 - **Variables**: camelCase (`planContext`, `dockingVector`)
 - **Constants**: UPPER_SNAKE_CASE (`PORT`, `DEFAULT_CALL_TIMEOUT_MS`)
 - **Functions**: camelCase (`getPlanContext`, `createOrReplaceGroups`)
-- **Files**: kebab-case (`minimal-hi-example/start.mjs`, `minimal-hi-example/docs/hi-mcp-server.md`)
+- **Files**: kebab-case (`minimal-hi-example/start.mjs`, `docs/hi-mcp-server.md`)
 
 ### Comments
 
@@ -337,7 +336,7 @@ Each analysis document follows the same lifecycle: written **before** the work, 
 | Bug analysis | new file in `.agents/bug-analysis/` with kebab-case slug |
 | Feature analysis | new file in `.agents/feature-analysis/` with kebab-case slug |
 | Refactoring analysis | new file in `.agents/refactoring-analysis/` with kebab-case slug |
-| New feature capability | Update `minimal-hi-example/docs/hi-mcp-server.md` or create new file in `minimal-hi-example/docs/` |
+| New feature capability | Update `docs/hi-mcp-server.md` or create new file in `docs/` |
 | MCP server behaviour — a tool, a served rule, a result, a guard, a correction, feedback, a decision | `docs/hi-mcp-behaviour.md`, in the same change |
 | MCP tool reference updates | `.agents/skills/hi-mcp-tools.md` |
 | Architecture decisions | Create ADR in `.agents/decisions/` (if needed) |
@@ -405,7 +404,7 @@ A push to `release/cloudflare` deploys the MCP server to Cloudflare
 2. Implement the executor in `hi-mcp/hi-mcp-server/tool-executors.ts` — the pages stay untouched; an executor that changes the plan is wrapped in `oneAtATime`, so it never runs beside another plan change
 3. An edit of existing groups needs no new planner method: add the command in roomle-ui (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`) and forward it through `externalObjectGroupOperation`. Only if the tool needs a planner method the pages do not expose yet: add it to `hi-mcp/hi-mcp-server/planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts`, then copy to the ligna-store)
 4. Add or extend unit tests in the matching `tests/` folder
-5. Update `docs/hi-mcp-behaviour.md`, the `minimal-hi-example/docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
+5. Update `docs/hi-mcp-behaviour.md`, the `docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
 6. Test with MCP client
 
 ## Suggested Change Workflow

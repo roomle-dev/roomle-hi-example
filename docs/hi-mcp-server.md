@@ -1,9 +1,9 @@
 # HI Presets Example & MCP Server — Reference
 
-The complete documentation of this directory: the standalone HI presets
-example ([`index.html`](../index.html)) and the start launcher
-([`start.mjs`](../start.mjs)) that serves it and starts the repository's single
-MCP server implementation, [`hi-mcp/hi-mcp-server`](../../hi-mcp/hi-mcp-server/),
+The complete documentation of `minimal-hi-example/`: the standalone HI presets
+example ([`index.html`](../minimal-hi-example/index.html)) and the start launcher
+([`start.mjs`](../minimal-hi-example/start.mjs)) that serves it and starts the repository's single
+MCP server implementation, [`hi-mcp/hi-mcp-server`](../hi-mcp/hi-mcp-server/),
 so an AI agent can orchestrate HOMAG Intelligence (HI) object groups in a live
 planning session. The agent retrieves the plan context (master data, rooms,
 articles, existing groups) and creates or modifies HI object groups — without
@@ -14,7 +14,7 @@ The MCP server is the TypeScript implementation from
 [RML-17693](https://roomle.atlassian.net/browse/RML-17693)): the MCP protocol
 layer is `@modelcontextprotocol/sdk` with zod tool schemas, and the page bridge
 is a WebSocket. It is used as-is; the launcher only wires environment
-variables ([ADR 0002](../../.agents/decisions/0002-one-mcp-server-configured-from-outside.md)).
+variables ([ADR 0002](../.agents/decisions/0002-one-mcp-server-configured-from-outside.md)).
 The same server also serves the ligna-store as its client — its chat window,
 opened with the `model`, `api_key` and `mcp_server` query parameters — and it is
 the one deployed to Azure and Cloudflare.
@@ -25,13 +25,13 @@ the Claude desktop app, Cursor, VS Code Copilot agent mode, Gemini CLI,
 custom clients built with an MCP SDK).
 
 For the shortest path to a first successful tool call, see the
-[README](../README.md) in this directory.
+[README](../minimal-hi-example/README.md) of `minimal-hi-example/`.
 
 ## The example
 
 A standalone, copy-paste version of the embedding-lib HI presets demo. It
 contains the complete interface and browser JavaScript in one
-[`index.html`](../index.html), requires no build step, and loads only
+[`index.html`](../minimal-hi-example/index.html), requires no build step, and loads only
 `@roomle/embedding-lib@7.1.0` from unpkg.
 
 The preset dropdown is filled from `GET <HI_SERVER_BASE_URL>/backends/list`,
@@ -111,7 +111,7 @@ this in its MCP log and stops reconnecting. Guarded by
 
 | File | Responsibility |
 | ---- | -------------- |
-| `start.mjs` | The launcher: build gate (`npm install` + typecheck of the `hi-mcp` workspace), static file server for this directory on :3000, spawns the MCP server with `HI_MCP_STORE_URL` set, opens the browser |
+| `start.mjs` | The launcher: build gate (`npm install` + typecheck of the `hi-mcp` workspace), static file server for `minimal-hi-example/` on :3000, spawns the MCP server with `HI_MCP_STORE_URL` set, opens the browser |
 | `hi-mcp/hi-mcp-server/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), tool definitions with zod schemas, the tool logic (`tool-executors.ts`: payload validation, planner call composition, hints), the planner methods it calls (`planner-api.ts`), the WebSocket page bridge with call correlation and timeouts, server instructions and authoring rules — unchanged, shared with the ligna-store client and the cloud deployments |
 | `index.html` | The example itself, plus the MCP section at the end: the WebSocket browser bridge that executes the allow-listed planner methods |
 | `package.json` | The `start` script that runs the launcher, `dev` which adds `server_url=http://localhost:5173/`, and `start:cf` which uses the MCP server deployed on Cloudflare |
@@ -147,7 +147,7 @@ has to run on port 3000, because `http://localhost:3000` is the only local origi
 the deployed server accepts, and the launcher refuses another `EXAMPLE_PORT`.
 The deployment runs the last deployed image, so server changes on a branch
 need a deploy first: a push to `release/cloudflare`, or `npm run deploy:cf`. Details:
-[cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md).
+[cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md).
 
 The launcher installs and typechecks the `hi-mcp` workspace (the build gate),
 serves the example, starts the MCP server, and opens the example in the
@@ -276,7 +276,7 @@ workflow, the pos-group authoring rules, and the docking semantics (see
 ## Tool reference
 
 The behaviour reference — guidelines, decisions, every guard, correction and feedback message, and
-the information the server provides — is [../../docs/hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md).
+the information the server provides — is [../../docs/hi-mcp-behaviour.md](hi-mcp-behaviour.md).
 
 The tools run in the server, but every planner call they make executes in the
 example page, so a tool is only as fast as the page. The timeout applies per
@@ -411,7 +411,7 @@ cannot build — no roots, an unknown `articleId`, roots it cannot dock — is
 reported in `notLoaded` with what to send instead, and the other groups of the
 call load. The call fails only when no group can be built. Every guard and
 correction:
-[hi-mcp-behaviour.md §8](../../docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
+[hi-mcp-behaviour.md §8](hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -645,7 +645,7 @@ group one point and one rotation; the planner calculates every root position.
 - **Relations**: every root after the first names one neighbour of the same
   group by its id, with exactly one of these fields; the server builds the
   docking from it (D34 in the
-  [behaviour reference](../../docs/hi-mcp-behaviour.md#3-decisions)):
+  [behaviour reference](hi-mcp-behaviour.md#3-decisions)):
 
   | Relation | Meaning | Docking the server builds |
   | --- | --- | --- |
@@ -697,7 +697,7 @@ for a group at a wall, in a corner, or anywhere in the room.
 - **Rotation**: `posRotationY` turns the group around `posGroup`, in degrees,
   **counter-clockwise as seen from above** (in the top-view image). This is
   the `rotationY` convention of the kernel and the glue logic, verified against
-  RoomleCore in [roomle-hi-concepts.md](../../.agents/skills/roomle-hi-concepts.md#rotation-sense).
+  RoomleCore in [roomle-hi-concepts.md](../.agents/skills/roomle-hi-concepts.md#rotation-sense).
 - **Walls**: every wall in `get-plan-context` has `start`/`end` (floor points
   in the coordinates of `posGroup`), `lengthMm`, `type` and
   `facingRotationY`. With `posRotationY` = the wall's `facingRotationY` the

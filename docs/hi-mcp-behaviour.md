@@ -15,7 +15,7 @@
 > A decision that is not implemented yet is marked **deferred** (D23); every other one is in effect.
 >
 > **Not covered here**: setup, clients and deployment. See
-> [hi-mcp-server.md](../minimal-hi-example/docs/hi-mcp-server.md) (the example page and MCP
+> [hi-mcp-server.md](hi-mcp-server.md) (the example page and MCP
 > clients), [hi-mcp-server/README.md](../hi-mcp/hi-mcp-server/README.md) (server setups and environment
 > variables) and [cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md).
 

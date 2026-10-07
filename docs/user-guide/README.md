@@ -45,7 +45,7 @@ This prompt planned the kitchen below:
 > room. Arrange the kitchen around the corner. The front of the kitchen should be made of walnut and
 > the worktop should be made of dark marble.**
 
-![An L-shaped kitchen in the back right corner of the room, with walnut fronts, a tall unit with an oven, a hob with a range hood above, a sink and wall cabinets](../../minimal-hi-example/docs/images/example-1-result.png)
+![An L-shaped kitchen in the back right corner of the room, with walnut fronts, a tall unit with an oven, a hob with a range hood above, a sink and wall cabinets](../images/example-1-result.png)
 
 ## How it works
 
@@ -177,9 +177,9 @@ Drop an image onto the chat window — a photo of a kitchen, a catalog page, a s
 example, *"Create a kitchen like this one in the back right corner."* All chat models of the store
 read images; in the example page the input field says "drop an image" when the model can read them.
 
-![A photo of a white L-shaped kitchen with a wooden worktop, given to the assistant as a reference](../../minimal-hi-example/docs/images/example-2-reference-kitchen.jpg)
+![A photo of a white L-shaped kitchen with a wooden worktop, given to the assistant as a reference](../images/example-2-reference-kitchen.jpg)
 
-![The kitchen the assistant planned from the photo: white fronts, a wooden worktop, tall units at both ends](../../minimal-hi-example/docs/images/example-2-result.png)
+![The kitchen the assistant planned from the photo: white fronts, a wooden worktop, tall units at both ends](../images/example-2-result.png)
 
 ## Example prompts
 
@@ -274,7 +274,7 @@ read images; in the example page the input field says "drop an image" when the m
 - [Connecting an agent to the cloud MCP server](../setup/connect-agent-to-cloud-mcp.md) — Le Chat
   step by step, Claude, Cursor, VS Code
 - [Local MCP server](../setup/local-mcp-server.md) — install it and connect every app to it
-- [AI chat in the example](../../minimal-hi-example/docs/ai-chat.md) — the chat window and its models
+- [AI chat in the example](../ai-chat.md) — the chat window and its models
   in detail
-- [Example and MCP server reference](../../minimal-hi-example/docs/hi-mcp-server.md) — for
+- [Example and MCP server reference](../hi-mcp-server.md) — for
   developers: the tools and how the server works

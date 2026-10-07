@@ -12,14 +12,16 @@ the document a row links.
 |---|---|---|
 | [23 — A worktop colour change drops hanging wall units onto the worktop](mcp-test-open-issues.md#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | roomle-ui: open a ticket, find where the hang offset is lost after the kitchen-wide colour commands, fix it | high |
 | [40 — A unit colour after a kitchen-wide colour misses the doors](mcp-test-open-issues.md#40-a-unit-colour-after-a-kitchen-wide-colour-misses-the-doors) | roomle-ui: `change-module-attribute` without `moduleId` sets the attribute on the root and its sub modules | high |
+| [51 — A replace drops the group's materials](mcp-test-open-issues.md#51-a-replace-drops-the-groups-materials) | Tell the library's group settings apart without the loaded group's list, so a replace sets the group materials on its units | high |
 | [35 — The handleless right corner unit as the first root with two legs stands 239 mm in the wall](mcp-test-open-issues.md#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | Reproduce, compare the anchor frames of `EUERTB90` and `UERTB90`, fix the frame or report the planner defect | high |
 | [49 — A new group stands on an obstacle](mcp-test-open-issues.md#49-a-new-group-stands-on-an-obstacle) | A hint in the results of `create-or-replace-groups` and `place-group`: the root modules on an obstacle and the free stretches of the wall | high |
 | [27 — A new group needs a point the model computes](mcp-test-open-issues.md#27-a-new-group-needs-a-point-the-model-computes) | Decide D23 (`placement { wall, alignment, offsetMm }`); meanwhile say which corner a wall's `end` is | high |
-| [43 — "Delete" and "remove" are taken for each other](mcp-test-open-issues.md#43-delete-and-remove-are-taken-for-each-other) | Analyse the tool choice, make the user's verb open both descriptions in the same words | high |
+| [43 — "Delete" and "remove" are taken for each other](mcp-test-open-issues.md#43-delete-and-remove-are-taken-for-each-other) | Analyse the tool choice, change the sentence that leads the models to the other tool | high |
 | [45 — "The middle unit" read from the docking](mcp-test-open-issues.md#45-the-middle-unit-read-from-the-docking) | A row position per root in the plan context | medium |
 | [46 — A new group beside an existing one](mcp-test-open-issues.md#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | One clause in the `create-or-replace-groups` description: an article beside a group goes into it | medium |
 | [48 — A worktop colour sent as `mod_PaneltopColor`](mcp-test-open-issues.md#48-a-worktop-colour-sent-as-mod_paneltopcolor) | `find-attributes` returns `mod_CountertopColor` first for "worktop" | medium |
-| [39 — A unit merged into a coloured kitchen keeps the default material](mcp-test-open-issues.md#39-a-unit-merged-into-a-coloured-kitchen-keeps-the-default-material) | `merge-article-into-group` gives the new unit the material its group shares, reported | medium |
+| [39 — A unit added to a coloured kitchen keeps the default material](mcp-test-open-issues.md#39-a-unit-added-to-a-coloured-kitchen-keeps-the-default-material) | `merge-article-into-group` and `insert-article-into-group` give the new unit the material its group shares, reported | medium |
+| [52 — A group material overwrites a unit's own value](mcp-test-open-issues.md#52-a-group-material-overwrites-a-units-own-value) | Set each root's own value again after a group attribute, named in the correction | medium |
 | [36 — A wall-unit row runs into a unit hung above a base unit](mcp-test-open-issues.md#36-a-wall-unit-row-runs-into-a-unit-hung-above-a-base-unit) | Check the place by the catalog widths when compiling, also for G44's own move | medium |
 | [42 — A wall unit that keeps its place overlaps the unit that moved in below it](mcp-test-open-issues.md#42-a-wall-unit-that-keeps-its-place-overlaps-the-unit-that-moved-in-below-it) | The remove's correction names the overlapped unit and what to do | medium |
 | [41 — A row edit puts a unit in front of a door without a hint](mcp-test-open-issues.md#41-a-row-edit-puts-a-unit-in-front-of-a-door-without-a-hint) | The D43 hint names an opening the row now stands in front of | low |
@@ -33,6 +35,7 @@ the document a row links.
 | [14 — A floor unit is docked onto a top vector](mcp-test-open-issues.md#14-a-floor-unit-is-docked-onto-a-top-vector) | Decide the exceptions, then dock it beside the unit, reported (`contextData` only) | low |
 | [15 — A G7 correction docks a part by a wall unit at floor level](mcp-test-open-issues.md#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | Filter G7's lead by the target's kind (`contextData` only) | low |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
+| [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
 
 ## Planner (roomle-ui, RoomleCore)
 
@@ -50,9 +53,9 @@ the document a row links.
 |---|---|---|
 | Reasoning effort for the GPT chat models | gpt-5.4-mini plans without reasoning: set an effort per Foundry deployment from the measured data and verify it; further measurement only on request | [reasoning-effort-for-the-gpt-chat-models.md](reasoning-effort-for-the-gpt-chat-models.md) |
 | Strict tool schemas for the GPT models | Measure how often a GPT model's tool call fails the schema ("Input validation error") in a "test the mcp" session; only if it costs runs, try strict function calling — the chat backend sets `strict` per tool (the Azure provider sends `strict: false` otherwise). The Azure strict subset needs every field required, `additionalProperties: false` on every object, at most five nesting levels and 100 properties, and no parallel tool calls: the MCP tool schemas with optional fields do not meet it, and a change there reaches every client | [Structured outputs on Azure](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/structured-outputs) |
-| Paste and pick an image in the chat window | An image reaches the chat only by drop, which the keyboard cannot reach. Add paste from the clipboard and a file picker button, both through `prepareImage` (`minimal-hi-example/index.html`) | [Images in the chat](../../minimal-hi-example/docs/ai-chat.md#images-in-the-chat) |
-| The example chat forgets its tool calls between turns | The page keeps only the text of a turn (`conversation`, `minimal-hi-example/index.html`), so a later turn does not see the tool calls and results before it — the ids of the groups it created. The ligna-store chat keeps them (`responseMessages`, ligna-store `hi-mcp/chat.ts`). Keep them in the example too, in the page or in the backend | [The chat window](../../minimal-hi-example/docs/ai-chat.md#the-chat-window) |
-| Per-tool status in the chat window | The backend streams plain text with `[tool] <name>` lines; the AI SDK's UI message stream would carry each tool call's input and result to the page, which then needs a parser (the page has no build step) | [The chat window](../../minimal-hi-example/docs/ai-chat.md#the-chat-window) |
+| Paste and pick an image in the chat window | An image reaches the chat only by drop, which the keyboard cannot reach. Add paste from the clipboard and a file picker button, both through `prepareImage` (`minimal-hi-example/index.html`) | [Images in the chat](../../docs/ai-chat.md#images-in-the-chat) |
+| The example chat forgets its tool calls between turns | The page keeps only the text of a turn (`conversation`, `minimal-hi-example/index.html`), so a later turn does not see the tool calls and results before it — the ids of the groups it created. The ligna-store chat keeps them (`responseMessages`, ligna-store `hi-mcp/chat.ts`). Keep them in the example too, in the page or in the backend | [The chat window](../../docs/ai-chat.md#the-chat-window) |
+| Per-tool status in the chat window | The backend streams plain text with `[tool] <name>` lines; the AI SDK's UI message stream would carry each tool call's input and result to the page, which then needs a parser (the page has no build step) | [The chat window](../../docs/ai-chat.md#the-chat-window) |
 
 ## Test infrastructure
 
@@ -64,7 +67,7 @@ Details: [mcp-test-infrastructure-issues.md](mcp-test-infrastructure-issues.md).
 | [2 — The hint of a tool result is not recorded](mcp-test-infrastructure-issues.md#2-the-hint-of-a-tool-result-is-not-recorded) | Log the `hint` and store it per tool call in `run.json` | medium |
 | [3 — A run whose page navigates after the chat stores no snapshot](mcp-test-infrastructure-issues.md#3-a-run-whose-page-navigates-after-the-chat-stores-no-snapshot) | Log the page's navigations; repeat a run without a plan snapshot id once | low |
 | [4 — The suite runs only the tests written by hand](mcp-test-infrastructure-issues.md#4-the-suite-runs-only-the-tests-written-by-hand) | Generated and random tests in the temporary test file of "test the mcp" (RML-18027) | low |
-| [5 — Saving the plan snapshot fails with the planner of a local dev server](mcp-test-infrastructure-issues.md#5-saving-the-plan-snapshot-fails-with-the-planner-of-a-local-dev-server) | Log the response body of the failing request; compare it with a request that stored its snapshot | low |
+| [5 — Saving the plan snapshot fails](mcp-test-infrastructure-issues.md#5-saving-the-plan-snapshot-fails) | Log the response body; check whether the v3 `planSnapshots` `POST` needs a signed request (roomle-ui) | low |
 
 ## Deployment, launcher and page sessions
 
@@ -84,11 +87,12 @@ Details: [deployment-and-session-issues.md](deployment-and-session-issues.md).
 | Item | To do | Details |
 |---|---|---|
 | One page bridge for every host | The page bridge exists three times (reference client, example page, ligna-store), synced by hand. Publish it as a package, then move it into embedding-lib or the Rubens UI as one planner option | [one-page-bridge-for-every-host.md](one-page-bridge-for-every-host.md) |
+| A backend-controlled agent loop with browser-executed scene tools | The scene tools stay in the browser; the agent loop, the tool authorization and the provider credentials move to the backend | [backend-agent-loop-with-browser-scene-tools.md](backend-agent-loop-with-browser-scene-tools.md) |
 
 ## ligna-store
 
 | Item | To do | Details |
 |---|---|---|
-| The chat prompt names only kitchens | `hi-mcp/chat.ts` opens with "a planning assistant for a HOMAG Intelligence (HI) kitchen". Take the two sentences of the example chat: every kind of HI furniture, and the closest article of the catalog instead of asking (D44) | D44 in [hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md#words-2026-10-06); the example's prompt: `CHAT_SYSTEM_PROMPT`, `hi-mcp/hi-mcp-chat/chat-config.ts` |
+| The chat prompt names only kitchens | `hi-mcp/chat.ts` opens with "a planning assistant for a HOMAG Intelligence (HI) kitchen". Take the two sentences of the example chat: every kind of HI furniture, and the closest article of the catalog instead of asking (D44) | D44 in [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#words-2026-10-06); the example's prompt: `CHAT_SYSTEM_PROMPT`, `hi-mcp/hi-mcp-chat/chat-config.ts` |
 | The chat lacks the Mistral image adapter | Wrap `createMistral` with `toolResultFilesAsUserMessages` (`hi-mcp-chat/tool-result-images.ts`), so the images of `get-plan-images` do not reach Mistral as base64 text | [ligna-store-chat-client.md, 1](ligna-store-chat-client.md#1-the-images-of-get-plan-images-reach-mistral-as-base64-text) |
 | The chat can end a turn without an answer | `stopWhen: stepCountIs(8)` has no final tool-free step; take the example's step policy (`hi-mcp-chat/chat-steps.ts`) | [ligna-store-chat-client.md, 2](ligna-store-chat-client.md#2-a-turn-can-end-without-an-answer) |

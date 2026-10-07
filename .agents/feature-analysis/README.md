@@ -23,7 +23,7 @@ Point-in-time, decision-driving write-ups. The document must cover:
 domain-specific documentation. Everything in this folder is historical/point-in-time records.
 
 For roomle-hi-example, living-reference feature descriptions should be in:
-- The main [`../../minimal-hi-example/docs/hi-mcp-server.md`](../../minimal-hi-example/docs/hi-mcp-server.md) document
+- The main [`../../docs/hi-mcp-server.md`](../../docs/hi-mcp-server.md) document
 - Tool-specific documentation in the skill files under `.agents/`
 
 ## Close-out

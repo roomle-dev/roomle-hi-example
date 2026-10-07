@@ -92,7 +92,7 @@ base unit except the dishwasher. The row edit tests (RML-18045) start from it. I
 `create-or-replace-groups` call against the local planner and saved with
 `saveExternalObjectSnapshot()`; the ids survive a reload. Every wall unit and the hood were placed
 `above` their floor unit; after the reload the kernel's docking no longer links them to it, which
-the row edits handle by position (D42 in the [behaviour reference](../hi-mcp/docs/hi-mcp-behaviour.md)).
+the row edits handle by position (D42 in the [behaviour reference](hi-mcp-behaviour.md)).
 
 group `031ee57a-65f1-4cac-837c-a19c769ddce7`
 
@@ -127,7 +127,7 @@ high) against the right wall, 1200 mm from the back right corner, with a generat
 by hand in the planner (the RML-18045 issue of 2026-10-06); the ids survive a reload. The test
 `edit-insert-low-between-high` starts from it: "insert a low cabinet between the high cabinets"
 names the pair collectively, the group is no kitchen, and the article to insert is of another
-height than its neighbours (D44 in the [behaviour reference](../hi-mcp/docs/hi-mcp-behaviour.md#words-2026-10-06)).
+height than its neighbours (D44 in the [behaviour reference](hi-mcp-behaviour.md#words-2026-10-06)).
 
 | | id |
 |---|---|
@@ -195,7 +195,7 @@ runs a single prompt the same way.
 
 ## Related Documentation
 
-- [HI MCP Server Documentation](../minimal-hi-example/docs/hi-mcp-server.md)
+- [HI MCP Server Documentation](hi-mcp-server.md)
 - [HI MCP Tools Reference](../.agents/skills/hi-mcp-tools.md)
 - [Roomle HI Concepts](../.agents/skills/roomle-hi-concepts.md)
 - [Article Catalog](../.agents/skills/hi-authoring-rules.md)

@@ -162,7 +162,7 @@ does not. The store page's bridge reconnects on its own after the
 container slept; the first request after a sleep takes ~10 s (container boot — one boot per
 session). Which setup needs which URL parameters — local server, deployed store, cloud server,
 parallel sessions — is covered by the **setup matrix** in the
-[PoC README](../hi-mcp-server/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
+[PoC README](../../hi-mcp/hi-mcp-server/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
 
 ## Browser clients (CORS)
 

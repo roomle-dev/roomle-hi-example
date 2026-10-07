@@ -1,8 +1,8 @@
 # Backlog: a deletion makes the wall units groups of their own
 
 > **Type**: Backlog item (roomle-ui)
-> **Domain**: roomle-ui `homag-intelligence` — the kernel deletion behind `delete-root-module` and the corner case of `remove-article-from-group`; consumer: the hi-mcp command tools (D40 in [hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md#row-edits-2026-10-05))
-> **Jira**: no ticket of its own yet; related: [RML-18045](https://roomle.atlassian.net/browse/RML-18045) (the row edit tools)
+> **Domain**: roomle-ui `homag-intelligence` — the kernel deletion behind `delete-root-module` and the corner case of `remove-article-from-group`; consumer: the hi-mcp command tools (D40 in [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#row-edits-2026-10-05))
+> **Jira**: [RML-18065](https://roomle.atlassian.net/browse/RML-18065); related: [RML-18045](https://roomle.atlassian.net/browse/RML-18045) (the row edit tools)
 
 ## Problem
 

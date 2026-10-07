@@ -144,12 +144,12 @@ options; the ligna-store does not reference the tool's result):
 
 | File | Change |
 |---|---|
-| [`hi-mcp-behaviour.md`](../../hi-mcp/docs/hi-mcp-behaviour.md) | §3 *Information for the agent*: a new decision (§5); §5.3 result format (line 243: a text naming the images, then the images); the §6 results table ("two images", line 285); §6 *get-price, get-order-data, get-plan-images* (line 398) |
-| [`minimal-hi-example/docs/hi-mcp-server.md:512-520`](../../minimal-hi-example/docs/hi-mcp-server.md#L512-L520) | the tool reference entry |
+| [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md) | §3 *Information for the agent*: a new decision (§5); §5.3 result format (line 243: a text naming the images, then the images); the §6 results table ("two images", line 285); §6 *get-price, get-order-data, get-plan-images* (line 398) |
+| [`docs/hi-mcp-server.md:512-520`](../../docs/hi-mcp-server.md#L512-L520) | the tool reference entry |
 | [`hi-mcp-server/README.md:501-506`](../../hi-mcp/hi-mcp-server/README.md#L501-L506) | the tool reference entry |
 | [`.agents/skills/hi-mcp-tools.md:39, 220-226`](../skills/hi-mcp-tools.md) | the tool table and the reference block |
 | [`.github/copilot-instructions.md:452`](../../.github/copilot-instructions.md#L452) | "(a perspective and a top view)" |
-| [`minimal-hi-example/docs/ai-chat.md:219`](../../minimal-hi-example/docs/ai-chat.md#L219), [`hi-mcp-testing.md`](../skills/hi-mcp-testing.md) | unchanged — "its two renders" stays true; the test runs store all four snapshot images themselves |
+| [`docs/ai-chat.md:219`](../../docs/ai-chat.md#L219), [`hi-mcp-testing.md`](../skills/hi-mcp-testing.md) | unchanged — "its two renders" stays true; the test runs store all four snapshot images themselves |
 
 ## 5. Target shape
 
@@ -220,7 +220,7 @@ The decision for `hi-mcp-behaviour.md` §3:
   → one side seen from behind, as the description says. An empty plan → the text and one image.
 - **Model check**: "call get-plan-images and describe in two sentences what you see in each image"
   through the chat with Claude and with Mistral Large (as in the
-  [Mistral image middleware](../../minimal-hi-example/docs/ai-chat.md#images-in-tool-results)) — confirms the
+  [Mistral image middleware](../../docs/ai-chat.md#images-in-tool-results)) — confirms the
   models read the transparent PNG and the description's order.
 
 ## 7. Risks and open items

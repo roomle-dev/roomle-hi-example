@@ -323,7 +323,12 @@ The color extraction script uses Node.js with the Sharp library for image proces
       markdown += `| ${name} | ${value} | ${thumbnail} | ${desc} | ${colorDisplay} | ${suggestedDesc} |\n`;
     } else {
       const colorDisplay = createMarkdownColorDisplay(color);
-      const suggestedDesc = desc ? `${desc} (${color})` : color;
+      const hasColorCode = /#[0-9a-f]{6}\b/i.test(desc);
+      const suggestedDesc = !desc
+        ? color
+        : hasColorCode
+          ? desc
+          : `${desc} (${color})`;
       markdown += `| ${name} | ${value} | ${thumbnail} | ${desc} | ${colorDisplay} | ${suggestedDesc} |\n`;
     }
   }

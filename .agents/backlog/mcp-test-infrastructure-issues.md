@@ -15,7 +15,7 @@ its fix is in the code.
 | 2 | [The hint of a tool result is not recorded](#2-the-hint-of-a-tool-result-is-not-recorded) | gap in the run data, MCP server log + run script | medium — the evaluation cannot tell whether the model saw a hint |
 | 3 | [A run whose page navigates after the chat stores no snapshot](#3-a-run-whose-page-navigates-after-the-chat-stores-no-snapshot) | gap in the run script | low — rare, rerun by hand |
 | 4 | [The suite runs only the tests written by hand](#4-the-suite-runs-only-the-tests-written-by-hand) | gap in the test suite | low — RML-18027 |
-| 5 | [Saving the plan snapshot fails with the planner of a local dev server](#5-saving-the-plan-snapshot-fails-with-the-planner-of-a-local-dev-server) | environment, run script | low — the evaluation reads `plan-context.json` and the images |
+| 5 | [Saving the plan snapshot fails](#5-saving-the-plan-snapshot-fails) | roomle-ui (Roomle API v3), run script | low — the evaluation reads `plan-context.json` and the images |
 
 ## 1. The object-only perspective render draws an empty frame under software GL
 
@@ -27,12 +27,11 @@ a GPU gets the image; a machine without one gets an empty `perspective-object-im
 **Cause.** Not identified in the planner. The render's inputs are correct (camera placed at the group,
 projection without NaN, layers covering the object's layers, meshes visible, synchronous draw); the
 frame is dropped inside the roomle scene renderer's per-call pipeline under SwiftShader, only on the
-isolation path (`_preparePerspectiveImage` with `runtimeIds` + `rotationY`). Ruled out — the frame
-stays empty with each of these neutralised in the headless page: the front-view rotation, the
-isolation (`hideAllExceptRuntimeIds`), both together, the ground shadow, `near` 0.01 / `far` 100000,
-and the camera pose of the full-scene perspective render, which draws at that pose moments before.
-Of the four renders of one snapshot call (top, object top, perspective, object perspective) only the
-last is empty.
+isolation path (`_preparePerspectiveImage` with `runtimeIds` + `rotationY`,
+roomle-ui `planner-scene-manager.ts:3263`). The front-view rotation, the isolation
+(`hideAllExceptRuntimeIds`), the ground shadow, the clipping planes and the camera pose do not cause
+it on their own. Of the four renders of one snapshot call (top, object top, perspective, object
+perspective) only the last is empty.
 
 **To do.** In roomle-ui (or the scene renderer package it wraps): instrument `_sceneRenderer.render`
 under a software-GL context, find why the object-only perspective frame is dropped, and make that
@@ -52,8 +51,8 @@ hint for a group without a position, or the row hints of D43 (a row past a wall,
 moved). The evaluation cannot tell whether a hint reached the model.
 
 **Cause.** The server's feedback log line carries `corrections` and `notLoaded` only (`runTool`,
-`hi-mcp/hi-mcp-server/hi-mcp-server.ts`); the run script pairs those lines with the calls
-(`TOOL_CALL_LINE`, `.agents/scripts/run-hi-mcp-prompt.js`) and stores what they hold.
+`hi-mcp/hi-mcp-server/hi-mcp-server.ts:127`); the run script pairs those lines with the calls
+(`TOOL_CALL_LINE`, `.agents/scripts/run-hi-mcp-prompt.js:60`) and stores what they hold.
 
 **To do.** Log the `hint` in the feedback line and store it per tool call in `run.json`; the
 evaluation step of the skill lists it beside the corrections.
@@ -65,7 +64,7 @@ evaluation step of the skill lists it beside the corrections.
 **Problem.** The headless page can leave the bridge right after the chat ("Execution context was
 destroyed, most likely because of a navigation"): the run reads no plan context, stores no images and
 no plan snapshot id, and ends with exit 1, although the model's tool calls loaded. The runner repeats
-only a run without `run.json`, so this run stays as it is and has to be rerun by hand, with
+only a run without `run.json` (`run-hi-mcp-tests.js:204`), so this run stays as it is and has to be rerun by hand, with
 `results.json` patched.
 
 **Cause.** Not identified; the roomle-ui dev server keeps running when it happens. The changed plan
@@ -85,7 +84,7 @@ agent generates and for a fixed number of random tests in every run.
 
 **Cause.** Not built. The hook exists: the skill writes the temporary test file `$SESSION/tests.json`
 before the run (`.agents/skills/hi-mcp-testing.md`, step 3), and the runner checks any test file
-before its first run (`problemsOf`, `.agents/scripts/run-hi-mcp-tests.js`).
+before its first run (`problemsOf`, `.agents/scripts/run-hi-mcp-tests.js:74`).
 
 **To do.** Decide how an agent generates standard tests and how the random tests are drawn; both go
 into `$SESSION/tests.json`, each with a plan of `plans`, so the runner checks and runs them like the
@@ -94,17 +93,21 @@ others.
 **Test.** A session with generated or random tests: the runner accepts the file, and the report
 lists them beside the fixed tests.
 
-## 5. Saving the plan snapshot fails with the planner of a local dev server
+## 5. Saving the plan snapshot fails
 
-**Problem.** In a `--dev` run against a roomle-ui dev server, saving the plan snapshot can fail in
-every run with `Http error "400"` from `https://api.roomle.com/v3/planSnapshots`: no run has a plan
-snapshot id, and a result cannot be opened again.
+**Problem.** Saving the plan snapshot fails in every run with `Http error "400"` from
+`/v3/planSnapshots` — with the `bo-test` planner (`https://www.roomle.com/api/v3/planSnapshots`) and
+with the planner of a local dev server (`https://api.roomle.com/v3/planSnapshots`) alike: no run has
+a plan snapshot id, and a result cannot be opened again.
 
-**Cause.** Not identified. Runs against another dev server of the same day stored their snapshots.
+**Cause.** Likely the move of the Roomle API from v2 to v3 in roomle-ui (PR #3048, `28fd7595f`;
+`VITE_RAPI_URL=https://api.roomle.com/v3` in `.env`). The same change keeps the GLB links of a
+snapshot on v2 because "v3 answers this endpoint only to signed requests" (`roomle-planner.ts:1872`);
+the `POST` of `planSnapshots` is not kept on v2.
 
-**To do.** Log the response body of the failing request; compare the request with one of a run that
-stored its snapshot.
+**To do.** Log the response body of the failing request (`run-hi-mcp-prompt.js:684`); check whether
+the v3 `planSnapshots` `POST` needs a signed request or another payload, and fix it in roomle-ui.
 
-**Test.** A `--dev` run stores a plan snapshot id in `run.json`.
+**Test.** A run stores a plan snapshot id in `run.json`.
 
-**Reproduce.** `mcp-test-2026-10-06_14-25-34` (dev server on :5175, the Open-Plan Room).
+**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra, every run (the `bo-test` planner).

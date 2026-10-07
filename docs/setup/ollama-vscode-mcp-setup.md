@@ -185,7 +185,7 @@ Then configure VS Code to use the local endpoint:
 
 ## Related Documentation
 
-- [HI MCP Server Documentation](../../minimal-hi-example/docs/hi-mcp-server.md) - Complete server reference
+- [HI MCP Server Documentation](../hi-mcp-server.md) - Complete server reference
 - [HI MCP Tools Reference](../../.agents/skills/hi-mcp-tools.md) - Available tool definitions
 - [Roomle HI Concepts](../../.agents/skills/roomle-hi-concepts.md) - Core HI data model
 - [Cloudflare MCP Server Setup](cloudflare-mcp-server.md) - Cloudflare deployment guide

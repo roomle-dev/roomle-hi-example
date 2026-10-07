@@ -187,5 +187,5 @@ an explicit go.
 | `hi-mcp/hi-mcp-chat/chat-steps.ts`, `tests/chat-steps.test.ts` | 1 |
 | `hi-mcp/hi-mcp-chat/chat-config.ts`, `chat-server.ts`, `tests/chat-handler.test.ts` | 2 |
 | ligna-store `hi-mcp/chat.ts`, `hi-mcp/README.md` | 2 |
-| `minimal-hi-example/docs/ai-chat.md`, `hi-mcp/docs/hi-mcp-behaviour.md` | 1, 2 |
+| `docs/ai-chat.md`, `docs/hi-mcp-behaviour.md` | 1, 2 |
 | `.agents/backlog/reasoning-effort-for-the-gpt-chat-models.md` and its index rows | 2 (step 3 stays as the open part) |

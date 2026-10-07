@@ -25,7 +25,7 @@
 |---|---|
 | `hi-mcp/hi-mcp-chat/chat-steps.ts` | the step usage is typed with the SDK's `LanguageModelUsage`, so a renamed field fails the typecheck instead of logging 0; the line reads `outputTokenDetails.reasoningTokens` |
 | `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts` | **logs the reasoning tokens of a step**: a step with 40 of 50 output tokens spent on reasoning logs "100 in, 50 out, 40 reasoning tokens"; it failed before the fix |
-| `minimal-hi-example/docs/ai-chat.md` | the step log shows the reasoning tokens; "out" counts them too |
+| `docs/ai-chat.md` | the step log shows the reasoning tokens; "out" counts them too |
 
 Verified: the unit tests, and live on 2026-10-07 — gpt-5-mini logged 64 to 1,408 reasoning tokens
 per step, gpt-5.4-mini 0 (analysis 3.1).
@@ -83,10 +83,10 @@ Verification: `npm run lint`, and one prompt in the local store with gpt-5.4-min
 
 ### Documentation
 
-- [ai-chat.md](../../minimal-hi-example/docs/ai-chat.md): the effort per deployment, the override,
+- [ai-chat.md](../../docs/ai-chat.md): the effort per deployment, the override,
   the summary left out; the environment table row of `HI_CHAT_REASONING_EFFORT`; the ligna-store
   section.
-- [hi-mcp-behaviour.md](../../hi-mcp/docs/hi-mcp-behaviour.md): decision **D50** (the chat sends
+- [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md): decision **D50** (the chat sends
   each Foundry deployment its effort; the MCP server cannot set it) and the HI chat bullet of §4.
 - The backlog item keeps only step 3.
 

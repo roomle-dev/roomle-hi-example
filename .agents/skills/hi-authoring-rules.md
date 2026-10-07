@@ -72,7 +72,7 @@ an article like any other (G7).
 
 Every root after the first names one neighbour of the same group by its id, with exactly one
 relation; the server compiles the docking (`contextData`) from it
-([behaviour reference D34](../../hi-mcp/docs/hi-mcp-behaviour.md#3-decisions)):
+([behaviour reference D34](../../docs/hi-mcp-behaviour.md#3-decisions)):
 
 | Relation | Meaning | Docking the server builds |
 |---|---|---|
@@ -203,7 +203,7 @@ placement: {
 - **Anywhere else** (island, middle of the room, next to a door): any floor point `obstacles` leaves
   free, any rotation.
 - **Outside the room** is allowed: the server never refuses, moves or warns about a group placed
-  outside the room — the user may ask for one ([D22](../../hi-mcp/docs/hi-mcp-behaviour.md#3-decisions)).
+  outside the room — the user may ask for one ([D22](../../docs/hi-mcp-behaviour.md#3-decisions)).
 - **Obstacles**: the `obstacles` section of `get-plan-context` lists what stands in the room — doors,
   windows and other objects with `kind`, `outline` and `bottomMm`/`topMm`, and per group the outlines
   of its root modules. A root module cannot stand where an object or another group's root module
@@ -249,7 +249,7 @@ names them, and says when the row now reaches past a wall or into another group.
 
 The server corrects what it can and builds every group it can; only a call in which no group can be
 built is an error. Every guard and correction:
-[hi-mcp-behaviour.md §8](../../hi-mcp/docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
+[hi-mcp-behaviour.md §8](../../docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
 
 ### Corrected and reported in `corrections` (the group is loaded):
 - A root without a relation (in a group with relations) — put into the row of its kind; a relation to an unknown root or to itself, or one that closes a ring — ignored or dropped

@@ -4,7 +4,7 @@ Shortest path to a working session: the standalone HI presets example in one
 [`index.html`](./index.html), started together with the MCP server from
 [`hi-mcp/hi-mcp-server`](../hi-mcp/hi-mcp-server/) — the single MCP server
 implementation of this repository — by the [`start.mjs`](./start.mjs) launcher.
-Every detail and alternative: [docs/hi-mcp-server.md](./docs/hi-mcp-server.md).
+Every detail and alternative: [docs/hi-mcp-server.md](../docs/hi-mcp-server.md).
 
 **1. Once:** install Node 20+. The first `npm start` installs the `hi-mcp`
 workspace and typechecks the server (the build gate) before anything starts.
@@ -38,8 +38,8 @@ Azure) and the agent prompts. External MCP clients (Claude Code, Copilot,
 Cursor, …) connect to `http://localhost:3100/mcp`.
 
 Port 3000 taken (e.g. by the ligna-store dev server)? Start with
-`EXAMPLE_PORT=3101 npm start`. More: [example prompts](./docs/hi-mcp-server.md#example-prompts) ·
-[configuring the example](./docs/hi-mcp-server.md#the-example) ·
-[tool reference](./docs/hi-mcp-server.md#tool-reference) ·
-[troubleshooting](./docs/hi-mcp-server.md#troubleshooting) ·
-[PoC presentation with demo results](./docs/hi-mcp-poc-presentation.md)
+`EXAMPLE_PORT=3101 npm start`. More: [example prompts](../docs/hi-mcp-server.md#example-prompts) ·
+[configuring the example](../docs/hi-mcp-server.md#the-example) ·
+[tool reference](../docs/hi-mcp-server.md#tool-reference) ·
+[troubleshooting](../docs/hi-mcp-server.md#troubleshooting) ·
+[PoC presentation with demo results](../docs/hi-mcp-poc-presentation.md)

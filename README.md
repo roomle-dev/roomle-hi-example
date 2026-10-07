@@ -83,3 +83,9 @@ Add a group of three tall units to the wall on the right.
 Cursor, … connect to `http://localhost:3100/mcp`:
 [connecting an MCP client](./docs/hi-mcp-server.md#connecting-an-mcp-client) ·
 [example prompts](./docs/hi-mcp-server.md#example-prompts)
+
+## Links
+
+- KI-Integration in (Wohnungs-) Planung — `KI-Integration in (Wohnungs-) Planung.pptx`
+- [Roomle milestone 2](https://tecconfig-preview.homag.cloud/#/e2fe8b3d-da31-4a20-92ab-ab6e3839300e)
+- [Rotpunkt Küchen und Prompt](<https://duerr.sharepoint.com/teams/HOMAGINTELLIGENCE/_layouts/15/Doc.aspx?sourcedoc={9a8c72a6-f29f-405f-b56e-1ec8eb297435}&action=edit&wd=target%28Target%20groups%2FHI%20-%20Cabinet%2FResearch.one%7Cf6b95f21-5261-4f5d-b4bf-c6deda56e8ba%2FRotpunkt%20K%C3%BCchen%20und%20Prompt%7C14e9a0cb-a5c0-4f9c-8194-6486c966b86c%2F%29&wdorigin=NavigationUrl>)

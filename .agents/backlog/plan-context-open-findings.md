@@ -50,6 +50,7 @@ article its special geometry. `shapeObstacles` (`hi-plan-context.ts:897`) takes 
 from its parts (`rootOutline`, `:860`, from `rootPoints`, `:442`).
 
 **To do.**
+
 - Library: the article's description (`desc`) states that its geometry reaches past its width.
   It does not yet: neither the live description (checked against the HI test backend on
   2026-10-07) nor the recorded one (`docs/library-information/article.json`) mentions it.

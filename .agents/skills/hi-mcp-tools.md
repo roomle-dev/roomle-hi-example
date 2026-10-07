@@ -232,8 +232,9 @@ planner has loaded the result:
 - `remove-article-from-group`: removes the unit and closes the gap: its neighbours are docked to each
   other, the end of the row at a wall stays, a unit hung on it hangs on the neighbour that moves into
   the gap; a unit at a row end is removed and nothing else moves; a corner article between two legs
-  or the only unit is deleted as `delete-root-module` does, and the result says so
-  (`gapClosed: false`, `corrections`)
+  is removed and the gap closed by turning one leg by 90° with the units above it, and the
+  `corrections` name the leg that turned (D51); the only unit is deleted with its group
+  (`gapClosed: false`). A remove never splits a group
 - `exchange-root-module`: the article has one root module; the new unit keeps the position and
   the docking of the replaced one; `attributes` override attributes of the new unit (`mod_Width` for
   another width: the rest of the row moves by the difference, the end at a wall stays); a docking

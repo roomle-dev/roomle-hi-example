@@ -351,6 +351,12 @@ Every change to productive code should be accompanied by analysis documents:
 
 Each analysis document follows the same lifecycle: written **before** the work, closed out **after** the work.
 
+**Every analysis names the affected repositories first.** A bug, feature or refactoring analysis
+starts, right after its header block, with a short list of the repositories the work changes, one
+line each saying what changes there (for example roomle-ui, roomle-hi-example, ligna-store,
+RoomleCore). A repository the work leaves unchanged is named only where a reader would expect a
+change.
+
 | What you produced | Where it goes |
 |---|---|
 | Bug analysis | new file in `.agents/bug-analysis/` with kebab-case slug |

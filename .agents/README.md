@@ -131,6 +131,8 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [Open findings about the plan context](backlog/plan-context-open-findings.md) — wall sides, root outlines, calculation errors, the obstacle outline of a group, position heights | 2026-10-07 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-07 |
 | [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-07 |
+| [A backend-controlled agent loop with browser-executed scene tools](backlog/backend-agent-loop-with-browser-scene-tools.md) — the scene tools in the browser, the agent loop and the credentials in the backend | 2026-10-07 |
+| [Analyse how Spec Kit can help with the prompting](backlog/speckit-for-the-prompting.md) — Spec Kit's prompt sections as inspiration for the served text and the chat prompt | 2026-10-07 |
 | [The ligna-store chat as a client of the HI MCP server](backlog/ligna-store-chat-client.md) — the Mistral image adapter and a final answer step | 2026-10-06 |
 
 ---

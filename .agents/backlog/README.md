@@ -35,6 +35,7 @@ the document a row links.
 | [14 — A floor unit is docked onto a top vector](mcp-test-open-issues.md#14-a-floor-unit-is-docked-onto-a-top-vector) | Decide the exceptions, then dock it beside the unit, reported (`contextData` only) | low |
 | [15 — A G7 correction docks a part by a wall unit at floor level](mcp-test-open-issues.md#15-a-g7-correction-docks-a-part-by-a-wall-unit-at-floor-level) | Filter G7's lead by the target's kind (`contextData` only) | low |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
+| [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
 
 ## Planner (roomle-ui, RoomleCore)
 
@@ -86,6 +87,7 @@ Details: [deployment-and-session-issues.md](deployment-and-session-issues.md).
 | Item | To do | Details |
 |---|---|---|
 | One page bridge for every host | The page bridge exists three times (reference client, example page, ligna-store), synced by hand. Publish it as a package, then move it into embedding-lib or the Rubens UI as one planner option | [one-page-bridge-for-every-host.md](one-page-bridge-for-every-host.md) |
+| A backend-controlled agent loop with browser-executed scene tools | The scene tools stay in the browser; the agent loop, the tool authorization and the provider credentials move to the backend | [backend-agent-loop-with-browser-scene-tools.md](backend-agent-loop-with-browser-scene-tools.md) |
 
 ## ligna-store
 

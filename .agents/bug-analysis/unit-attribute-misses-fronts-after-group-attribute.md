@@ -121,53 +121,118 @@ have to find first. The defect is the command's scope, and so is the fix.
 
 ## Fix
 
-**roomle-ui.** `changeModuleAttribute` (`glue-logic.ts:1281`), without `moduleId`:
+`change-module-attribute` without `moduleId` sets the attribute on the root module and on each of
+its sub modules whose master-data module assigns it, in one calculation. This is the root-level
+counterpart of D20, and it is what the planner already does when a root module is selected. With
+`moduleId` the command keeps setting that one sub module.
 
-- collects the root module and its sub modules whose master-data module assigns the attribute,
-  with `_collectModulesWithAttribute(rootModule, …)`, the same helper `changeGroupAttribute` uses;
-- sets them with one `modifyAttribute(group.id, moduleIdObjects, …)`: one calculation, one load,
-  one undo step;
-- returns `changedModuleIds` like `changeGroupAttribute`.
+## Decisions
 
-This is the root-level counterpart of D20, and it is what the planner already does when a root
-module is selected. With `moduleId`, the command keeps setting that one sub module.
-`updateAttribute` stays as it is.
+1. **A root module without the attribute whose sub modules carry it:** its sub modules get the
+   value. The command rejects the call (P2) only when neither the root module nor any of its sub
+   modules has the attribute. (Gernot, 2026-10-07.)
+2. **A sub module that has a value of its own** (a door set with `moduleId`, for example root
+   module 326 and its `mf_Door` 240, run `mcp-test-2026-10-07_09-46-08` gpt-6-astra 08) gets the
+   new value like every other sub module that carries the attribute, as in the planner's root
+   selection. `changedModuleIds` names it. An own value set with `moduleId` and the value
+   `change-group-attribute` set both hold `isInput: true`, so the command cannot tell them apart.
+   The fallback therefore follows the planner.
+3. **Size attributes.** The master data assigns `mod_Height` and `mod_Depth` to `mf_Dishwasher` and
+   `mf_BaseunitFridge` as well. In every test run their values equal the root module's (GSP: 720
+   and 561, inherited), so the fix writes the value they already have. The live check covers it.
+4. **Issue 52** (a group material overwrites a unit's own value) builds on this fix and stays a
+   ticket of its own.
 
-**roomle-hi-example.**
+## Implementation plan
 
-- The `change-module-attribute` description says that the attribute of a root module also reaches
-  its sub modules that carry it (the fronts with the front colour). With `moduleId` it changes
-  that one sub module only.
-- A new decision row next to D20 in `docs/hi-mcp-behaviour.md` §3, and the tool rows (§5) updated.
-- The server passes `changedModuleIds` through as it does for `change-group-attribute`. No server
-  code changes.
+### roomle-ui
 
-**Test.** A glue-logic test, next to the `changeModuleAttribute` tests in
-`__tests__/glue-logic-test.ts`:
+Branch `fix/unit-attribute-reaches-fronts-RML-18074` from `master`.
 
-- `changeGroupAttribute('group-1', 'color', 'white')` on a root module with a sub module that
-  carries `color`;
-- then `changeModuleAttribute('root-1', null, 'color', 'blue')`;
-- the root module and its sub module carry `blue`, the other root module keeps `white`;
-- `loadPosGroups` is called once, and the result names the changed modules.
+1. `glue-logic.ts`, a private helper `_attributeTargets(groupId, rootModule, attributeId,
+   masterData)`. It collects the root module and its sub modules that carry the attribute
+   (`_collectModulesWithAttribute`), and returns `moduleIdObjects` (the root module with
+   `subModuleId: null`, a sub module with its `id`) and `changedModuleIds` (the root module's id,
+   a sub module's master-data module name). This is the loop body `changeGroupAttribute` has
+   today (`glue-logic.ts:1323-1340`), which then calls the helper for each root module.
+2. `changeModuleAttribute` (`glue-logic.ts:1281`):
+   - **with `moduleId`:** unchanged — P1, P2, `updateAttribute` of that one sub module.
+   - **without `moduleId`:** `_attributeTargets` for the root module. If it returns no module,
+     the call fails with P2, the same message as today ("Module '<rootModuleId>' has no attribute
+     '<attributeId>'."). Otherwise one `modifyAttribute(group.id, moduleIdObjects, attributeId,
+     value)` sets them all (one calculation, one load, one undo step). The result is `groupIds`,
+     `removedGroupIds` and `changedModuleIds`.
 
-The live check of `.temp/result/issue-RML-18074/repro-18074.mjs` against the fixed planner then
-shows step 4 with the door at 240.
+   `modifyAttribute` with an empty list would set a group attribute instead; the P2 check rules
+   that out. `updateAttribute` stays as it is, because `updateExternalObjectGroupAttribute` uses it
+   for one named module.
+3. `external-object-api.ts:472`, the command's JSDoc: "sets an attribute of a root module and of
+   its sub modules that carry it, or with moduleId of that one sub module".
 
-## Open points
+### roomle-hi-example
 
-These are for Gernot to decide (D51: say what happens).
+On this branch.
 
-1. **A root module without the attribute whose sub modules carry it.** Today the command rejects
-   it (P2, "Module '…' has no attribute '…'"). The planner's root selection sets the sub modules
-   anyway. Should the command do the same?
-2. **A sub module that has a value of its own.** Example: a door set with `moduleId`, as in run
-   `mcp-test-2026-10-07_09-46-08` gpt-6-astra 08, where the root module is 326 and its `mf_Door`
-   240. A later unit-level change overwrites the door, as the planner's root selection does.
-   Should it keep its value instead?
-3. **Size attributes on sub modules.** The master data assigns `mod_Height` and `mod_Depth` to
-   `mf_Dishwasher` and `mf_BaseunitFridge` too. A root-level size change then reaches those sub
-   modules as well, as it already does in the planner and with `change-group-attribute`. This is
-   to be checked live before the merge.
-4. **Issue 52** (a group material overwrites a unit's own value) builds on this fix. Its to do
-   sets each root module's own value again "with its sub modules". It stays a ticket of its own.
+1. `hi-mcp-server.ts:340`, the `change-module-attribute` description:
+   - It sets one attribute of a root module and of its sub modules that carry it, so a unit's
+     front colour reaches its fronts.
+   - With `moduleId` it changes that one sub module only.
+   - It returns the changed group and the ids of the changed modules.
+
+   The `moduleId` parameter: "Omit to change the root module and its sub modules that carry the
+   attribute."
+2. `docs/hi-mcp-behaviour.md`:
+   - **D54** after D20, stating the Fix and Decisions 1 and 2.
+   - The `change-module-attribute` row of the command tools (§6).
+   - The P2 row (§8.5): "neither the root module nor its sub modules carry the attribute".
+3. `docs/hi-mcp-server.md:530` and `.agents/skills/hi-mcp-tools.md` (lines 26 and 355): the same
+   wording.
+4. `.agents/backlog/mcp-test-open-issues.md`: remove issue 40 and its overview row. In issue 52,
+   replace "with its sub modules, see issue 40" with D54.
+5. No server code changes. The server passes `changedModuleIds` through, as it does for
+   `change-group-attribute`.
+
+### Unit tests
+
+All in roomle-ui `__tests__/glue-logic-test.ts`, `describe('changeModuleAttribute')`, with the
+`dockedPairGroup` fixture and the `LibraryDataMock` master data (`module-1` to `module-3` carry
+`color`).
+
+1. **New: "sets the attribute on the root module and on its sub modules that carry it, in one
+   load".**
+   - Setup: `root-1` gets the sub modules `module-3` (carries `color`) and `module-without-color`.
+     `changeGroupAttribute('group-1', 'color', 'white')` runs first.
+   - Call: `changeModuleAttribute('root-1', null, 'color', 'blue')`.
+   - Expected: `root-1` and `module-3` are `blue` with `isInput: true`; `module-without-color` has
+     no `color`; `root-2` stays `white`. `loadPosGroups` is called once for the call, and the
+     result is `changedModuleIds: ['root-1', 'module-3']`.
+   - This is the bug: today `module-3` stays `white`.
+2. **New: "sets the sub modules of a root module that does not carry the attribute".**
+   - Setup: `root-1` is named `module-without-color` and has the sub module `module-3`.
+   - Call: `changeModuleAttribute('root-1', null, 'color', 'blue')`.
+   - Expected: `module-3` is `blue`, `root-1` has no `color`, and `changedModuleIds` is
+     `['module-3']`.
+3. **Unchanged:** "rejects an attribute the master data does not assign to the module without
+   loading". `width`, which neither the root module nor a sub module carries, keeps P2 and loads
+   nothing.
+4. **Adapted:** "sets the attribute and resolves once the planner has loaded the group" and
+   "changes an attribute after the library could not calculate the previous change". Their
+   expected results gain `changedModuleIds: ['root-1']`. The first one keeps its check that the
+   command settles only after the planner has loaded the group.
+5. **Unchanged:** "changes a sub-module named by its master-data module". With `moduleId`,
+   `module-3` turns `green` and the root module keeps no `color`.
+
+`hi-plan-context-test.ts` (the command dispatch) and the hi-mcp server tests stay as they are: the
+payload and the forwarding do not change.
+
+### Verification
+
+1. roomle-ui: `CI=true npm run test -- --run packages/homag-intelligence` in `packages/web-sdk`,
+   plus `npm run lint:code:sdk` and `npm run lint:types`. roomle-hi-example: `npm test` and
+   `npm run typecheck` in `hi-mcp`.
+2. **Live:** a roomle-ui worktree with the fix on `:5174`, and `EXAMPLE_SERVER_URL` set for
+   `.temp/result/issue-RML-18074/repro-18074.mjs`.
+   - Step 4: the door turns 240, with an own input value.
+   - Steps 5 and 6: unchanged.
+   - One extra call: `change-module-attribute mod_Height` on a GSP root module. Its
+     `mf_Dishwasher` gets the same height, and the group loads once (Decision 3).

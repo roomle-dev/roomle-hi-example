@@ -15,7 +15,7 @@ its fix is in the code.
 | 2 | [The hint of a tool result is not recorded](#2-the-hint-of-a-tool-result-is-not-recorded) | gap in the run data, MCP server log + run script | medium — the evaluation cannot tell whether the model saw a hint |
 | 3 | [A run whose page navigates after the chat stores no snapshot](#3-a-run-whose-page-navigates-after-the-chat-stores-no-snapshot) | gap in the run script | low — rare, rerun by hand |
 | 4 | [The suite runs only the tests written by hand](#4-the-suite-runs-only-the-tests-written-by-hand) | gap in the test suite | low — RML-18027 |
-| 5 | [Saving the plan snapshot fails with the planner of a local dev server](#5-saving-the-plan-snapshot-fails-with-the-planner-of-a-local-dev-server) | environment, run script | low — the evaluation reads `plan-context.json` and the images |
+| 5 | [Saving the plan snapshot fails](#5-saving-the-plan-snapshot-fails) | environment, run script | low — the evaluation reads `plan-context.json` and the images |
 
 ## 1. The object-only perspective render draws an empty frame under software GL
 
@@ -94,17 +94,19 @@ others.
 **Test.** A session with generated or random tests: the runner accepts the file, and the report
 lists them beside the fixed tests.
 
-## 5. Saving the plan snapshot fails with the planner of a local dev server
+## 5. Saving the plan snapshot fails
 
-**Problem.** In a `--dev` run against a roomle-ui dev server, saving the plan snapshot can fail in
-every run with `Http error "400"` from `https://api.roomle.com/v3/planSnapshots`: no run has a plan
-snapshot id, and a result cannot be opened again.
+**Problem.** Saving the plan snapshot fails in every run with `Http error "400"` from
+`/v3/planSnapshots` — with the `bo-test` planner (`https://www.roomle.com/api/v3/planSnapshots`) and
+with the planner of a local dev server (`https://api.roomle.com/v3/planSnapshots`) alike: no run has
+a plan snapshot id, and a result cannot be opened again.
 
-**Cause.** Not identified. Runs against another dev server of the same day stored their snapshots.
+**Cause.** Not identified. `mcp-test-2026-10-06_08-31-06` stored all 87 snapshots; every session since
+the afternoon of 2026-10-06 stores none.
 
 **To do.** Log the response body of the failing request; compare the request with one of a run that
 stored its snapshot.
 
-**Test.** A `--dev` run stores a plan snapshot id in `run.json`.
+**Test.** A run stores a plan snapshot id in `run.json`.
 
-**Reproduce.** `mcp-test-2026-10-06_14-25-34` (dev server on :5175, the Open-Plan Room).
+**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra, every run (the `bo-test` planner).

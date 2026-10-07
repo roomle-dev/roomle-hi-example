@@ -18,6 +18,7 @@ never drop the agent's content silently.
 |---|---|---|---|
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui | high — wall cabinets on the worktop |
 | 40 | [A unit colour after a kitchen-wide colour misses the doors](#40-a-unit-colour-after-a-kitchen-wide-colour-misses-the-doors) | bug, roomle-ui command | high — success reported, fronts unchanged |
+| 51 | [A replace drops the group's materials](#51-a-replace-drops-the-groups-materials) | bug, MCP server | high — materials lost without a correction |
 | 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner | high — the kitchen stands in the wall |
 | 49 | [A new group stands on an obstacle](#49-a-new-group-stands-on-an-obstacle) | MCP server feedback, instructions | high — cabinets across a window and on furniture |
 | 27 | [A new group needs a point the model computes](#27-a-new-group-needs-a-point-the-model-computes) | decision D23, instructions | high — groups outside the room |
@@ -25,7 +26,8 @@ never drop the agent's content silently.
 | 45 | ["The middle unit" read from the docking](#45-the-middle-unit-read-from-the-docking) | plan context | medium — the wrong unit edited |
 | 46 | [A new group beside an existing one for "add a cabinet to the right of the kitchen"](#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | instructions | medium — a separate group |
 | 48 | [A worktop colour sent as `mod_PaneltopColor`](#48-a-worktop-colour-sent-as-mod_paneltopcolor) | `find-attributes` | medium — the worktop keeps its default |
-| 39 | [A unit merged into a coloured kitchen keeps the default material](#39-a-unit-merged-into-a-coloured-kitchen-keeps-the-default-material) | MCP server correction | medium — a dark unit in a white kitchen |
+| 39 | [A unit added to a coloured kitchen keeps the default material](#39-a-unit-added-to-a-coloured-kitchen-keeps-the-default-material) | MCP server correction | medium — a dark unit in a white kitchen |
+| 52 | [A group material overwrites a unit's own value](#52-a-group-material-overwrites-a-units-own-value) | bug, MCP server | medium — accents lost, the agent repairs them |
 | 36 | [A wall-unit row runs into a unit hung above a base unit](#36-a-wall-unit-row-runs-into-a-unit-hung-above-a-base-unit) | MCP server correction | medium — two wall units in one place |
 | 42 | [A wall unit that keeps its place overlaps the unit that moved in below it](#42-a-wall-unit-that-keeps-its-place-overlaps-the-unit-that-moved-in-below-it) | roomle-ui command, MCP server feedback | medium — two units above in one place |
 | 41 | [A row edit puts a unit in front of a door without a hint](#41-a-row-edit-puts-a-unit-in-front-of-a-door-without-a-hint) | MCP server feedback | low — the unit stands inside the room |
@@ -83,7 +85,29 @@ the unit's fronts.
 **Test.** A glue-logic test: after `change-group-attribute mod_FrontColor` on a group, a
 `change-module-attribute mod_FrontColor` on one root changes the front colour of that root's door.
 
-**Reproduce.** `mcp-test-2026-10-05_15-31-08`: gpt-6-astra 08.
+**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 08.
+
+## 51. A replace drops the group's materials
+
+**Problem.** `create-or-replace-groups` with the id of a group in the plan — a replace — loses the
+group's materials: the units fall back to the default toe kick, worktop, outside carcase and handle
+position, and the result has no correction. The call that created the group had set each of them
+and reported it.
+
+**Cause.** `applyKitchenWideAttributes` (`tool-executors.ts`) sets with `change-group-attribute`
+only the group attributes the loaded group does not list among its own settings. After a replace
+the group lists the attributes its load just sent, so none of them is set on the units; the replace
+rebuilds the roots with their own attributes, and the values the first call set on every unit are
+gone.
+
+**To do.** Tell the library's group settings apart from the other group attributes without the
+loaded group's list — e.g. from the master data — so a replace sets the same attributes on its units
+as a create (D36), and reports each.
+
+**Test.** A tool-executors test: a replace of a group with `mod_ToekickColor` in its `attributes`
+runs `change-group-attribute mod_ToekickColor` after the load and reports it, as the create does.
+
+**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 06.
 
 ## 35. The handleless right corner unit as the first root with two legs stands 239 mm in the wall
 
@@ -133,7 +157,7 @@ group gets the hint with the free stretches; a group beside them gets none. The 
 with gpt-5-mini and gpt-5.4-mini: the group ends clear of the obstacles, after one correction at
 most.
 
-**Reproduce.** `mcp-test-2026-10-06_14-25-34`: gpt-5-mini 01, 02 and 03, gpt-5.4-mini 01 and 02.
+**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 09.
 
 ## 27. A new group needs a point the model computes
 
@@ -243,16 +267,16 @@ first.
 
 **Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5.4-mini 11.
 
-## 39. A unit merged into a coloured kitchen keeps the default material
+## 39. A unit added to a coloured kitchen keeps the default material
 
-**Problem.** A unit added with `merge-article-into-group` to a kitchen with a kitchen-wide material
+**Problem.** A unit added with `merge-article-into-group` or `insert-article-into-group` to a kitchen with a kitchen-wide material
 (e.g. `mod_FrontColor` 192 on every unit) carries the default material; the answer does not say so.
 
-**Cause.** `merge-article-into-group` forwards only the `attributes` the agent sends. The
+**Cause.** `merge-article-into-group` and `insert-article-into-group` forward only the `attributes` the agent sends. The
 kitchen-wide attributes of D36 are set by `create-or-replace-groups` after its load and are not part
 of the group, so a later unit does not inherit them.
 
-**To do.** Give the merged unit the value the group's article roots share for a material attribute
+**To do.** Give the merged or inserted unit the value the group's article roots share for a material attribute
 the new article carries (`mod_FrontColor`, `mod_CarcaseColor`, … — every root of the group with the
 same value) when the agent sent none, and report it as a correction; an attribute the agent sent
 wins.
@@ -260,7 +284,27 @@ wins.
 **Test.** A group whose roots all carry `mod_FrontColor` 192: `merge-article-into-group` without
 attributes forwards `mod_FrontColor` 192 with the correction; with `mod_FrontColor` 160 sent, 160.
 
-**Reproduce.** `mcp-test-2026-10-05_14-20-34`: gpt-5-mini 08.
+**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 26.
+
+## 52. A group material overwrites a unit's own value
+
+**Problem.** When the agent sends a material for the group and another value of it on single roots —
+an accent: dark wall units in a light kitchen, `Modern` fronts on two wall units of a `Classic`
+kitchen — every unit ends with the group's value. The correction says only "set on every unit", and
+the agent needs further calls to restore the accents.
+
+**Cause.** `applyKitchenWideAttributes` (`tool-executors.ts`) runs `change-group-attribute` after
+the load, which sets the attribute on every root and sub module of the group (D20) — over the roots'
+own values from the load. D36 keeps a unit attribute on some roots per unit.
+
+**To do.** After a group attribute, set each root's own value of it again (with its sub modules, see
+issue 40), and name those roots in the correction ("… set on every unit except …").
+
+**Test.** A tool-executors test: a group with `mod_FrontColor` 190 and two roots with
+`mod_FrontColor` 326 — after the load the two roots carry 326, the others 190, and the correction
+names the two roots.
+
+**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 08.
 
 ## 36. A wall-unit row runs into a unit hung above a base unit
 
@@ -324,7 +368,7 @@ level 0, a window at the height of the units). The row is built anyway; the user
 reach into the door's span gives the hint; a row that stood in front of the door before the edit
 gives none.
 
-**Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5-mini 23, gpt-5.4-mini 23, gpt-6-astra 23.
+**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 23.
 
 ## 37. A first call with a guessed payload
 
@@ -376,7 +420,7 @@ whether a retry of the step is safe (the tool calls of the step are already carr
 
 **Test.** The chat handler test streams an `error` part and asserts the logged step.
 
-**Reproduce.** `mcp-test-2026-10-04_13-00-37`: gpt-6-astra 09.
+**Reproduce.** `mcp-test-2026-10-07_09-46-08`: gpt-6-astra 24.
 
 ## 13. Undocked wall units reject the whole group
 

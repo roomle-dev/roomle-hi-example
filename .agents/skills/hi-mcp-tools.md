@@ -86,9 +86,11 @@ attribute id, never its name.
 
 **Trusted descriptions**: every `desc` (article, root, module, attribute, attribute value) is
 authoritative, and `dimensions` give the size, over the catalog images of the master data
-(`imageUrl`). The rule covers only the catalog images, not the renderings of `get-plan-images` or
-an image the user attaches. It is in `get-authoring-rules` and in the description of
-`get-plan-context`. The server strips every `imageUrl` from its results (D7).
+(`imageUrl`). A colour code in the desc of an attribute value — `Cloudy blue (#506080)` — is the
+colour of that value, taken as it is: light, dark and the hue come from it, not from the name (D53).
+The rule covers only the catalog images, not the renderings of `get-plan-images` or an image the
+user attaches. It is in `get-authoring-rules` and in the descriptions of `get-plan-context` and
+`find-attributes`. The server strips every `imageUrl` from its results (D7).
 
 **Usage**:
 ```javascript
@@ -296,7 +298,9 @@ const { matches } = await findAttributes({ text: 'front' });
 The matches include the attributes of the roots the library generates (worktop `mr_Countertop`,
 toe kick, finger grip, backsplash, …): the compacted master data keeps the root modules and the
 sub modules of the master data's `Root` group, which are the generated roots. The worktop colour is
-`mod_CountertopColor`, set on the whole group with `change-group-attribute`.
+`mod_CountertopColor`, set on the whole group with `change-group-attribute`. The desc of a colour
+value carries its code — `Cloudy blue (#506080)` —, the colour of that value; the description of
+`find-attributes` tells the agent to choose a dark, a light or a blue value by it (D53).
 
 ### get-price, get-order-data, get-plan-images
 

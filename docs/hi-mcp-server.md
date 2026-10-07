@@ -370,7 +370,9 @@ attributes with their `selections` and the root modules that carry them. The
 vocabulary is the compacted master data of `get-plan-context` (root modules
 — the generated ones such as the worktop `mr_Countertop` included — and their
 customer-facing attributes). At most 20 matches are returned; narrow
-the text when the result carries a `hint`.
+the text when the result carries a `hint`. The desc of a colour value
+carries its code — `Cloudy blue (#506080)` —, the colour of that value;
+the agent chooses a dark, a light or a blue value by it.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -618,9 +620,12 @@ group one point and one rotation; the planner calculates every root position.
   and the attribute id of the dimension (e.g. `mod_Width`), never its name.
 - **Every `desc` is authoritative** — of an article, a root, a module, an
   attribute and an attribute value: the agent trusts it for what a thing is,
-  and `dimensions` for how big an article is. Both are authoritative over
-  the catalog images of the master data (`imageUrl`): the agent never takes
-  the kind or the size of an article from a catalog image. The rule covers
+  and `dimensions` for how big an article is. A colour code in the desc of
+  an attribute value — `Cloudy blue (#506080)` — is the colour of that
+  value: the agent takes it as it is and chooses light, dark or a hue by it,
+  not by the name. All of them are authoritative over the catalog images of
+  the master data (`imageUrl`): the agent never takes the kind or the size
+  of an article, or the colour of a value, from a catalog image. The rule covers
   only the catalog images. It does not cover the renderings of
   `get-plan-images` or an image the user attaches in the chat. This holds
   for a wrong `desc` too, by design: it is fixed in the library data, never

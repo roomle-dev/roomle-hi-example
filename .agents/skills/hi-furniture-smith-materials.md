@@ -10,9 +10,9 @@
 
 This skill documents the process to extract material data (colors and finishes) from the Roomle HOMAG Intelligence (HI) system's master data and generate a structured markdown table.
 
-The process reads the Furniture_Smith master data (`docs/library-information/master-data.json`) and extracts all "Text" type attributes that contain "Color" in their name or description, then compiles their selections into a deduplicated, sorted table of materials with the description (`desc`), the swatch thumbnail (`imageUrl`), and the **color code calculated from actual image pixels**. Materials without thumbnail (no `imageUrl` in any selection) are filtered out.
+The process reads the Furniture_Smith master data (`docs/library-information/master-data.json`) and extracts all "Text" type attributes that contain "Color" in their name or description, then compiles their selections into a deduplicated, sorted table of materials with the description (`desc`), the swatch thumbnail (`imageUrl`), and the **color code**. Materials without thumbnail (no `imageUrl` in any selection) are filtered out.
 
-**IMPORTANT:** The color codes are **calculated by analyzing actual image pixels using Sharp**, NOT guessed from material names. This ensures accurate color representation for all materials.
+**IMPORTANT:** The color code of a material is the `#RRGGBB` code its description carries (`Cloudy blue (#506080)`): the library states the color, and the code is taken as it is. Only a material whose description has no code gets a color **calculated by analyzing the pixels of its thumbnail with Sharp** — never guessed from its name. With the Furniture_Smith data of 2026-10-07 every description carries its code, so no thumbnail is analysed.
 
 ---
 
@@ -44,9 +44,10 @@ Filter: type == Text AND (name OR desc contains "Color")
 Filter: selection has an imageUrl (thumbnail)
 Deduplicate by value
     ↓ Sort by numeric value
-    ↓ Download thumbnail images
-    ↓ Analyze pixel data with Sharp
-    ↓ Calculate dominant color for each
+    ↓ Take the color code of the description where it carries one
+    ↓ Only for a material without a code:
+        download its thumbnail, analyze the pixel data with Sharp,
+        calculate the dominant color
     ↓ Add the color code to the description unless it has one
 Markdown Table (materials.md) with Suggested Color and Suggested Description columns
 ```
@@ -76,28 +77,25 @@ This installs:
 - **sharp** - High performance image processing library
 - **node-fetch** - For downloading images
 
-### Step 3: Generate Materials Table with Accurate Colors
+### Step 3: Generate the Materials Table
 
-Use this JavaScript script to extract materials and calculate their colors from actual image pixels:
+Use this JavaScript script to extract the materials and their colors:
 
 ```bash
 node .agents/scripts/extract-dominant-color-from-image.js --all
 ```
 
 This script will:
-- Download all 21 thumbnail images from the TecConfig CDN
-- Analyze the actual pixel data of each image using Sharp
-- Calculate the dominant color for each material
-- Generate the materials.md table with the accurate colors
-
-**First run** will take ~10-20 seconds to download and process all images.
+- Take the color code of every description that carries one (`(from desc)` in its output)
+- Download and analyze, with Sharp, only the thumbnails of materials without a code — none with the Furniture_Smith data of 2026-10-07
+- Generate the materials.md table
 
 **Options:**
 ```bash
-# Regenerate materials.md with accurate colors
+# Regenerate materials.md
 node .agents/scripts/extract-dominant-color-from-image.js --all
 
-# List all materials with their accurately calculated colors
+# List all materials with their colors
 node .agents/scripts/extract-dominant-color-from-image.js --all --list-colors
 
 # Custom input/output paths
@@ -117,14 +115,17 @@ node .agents/scripts/extract-dominant-color-from-image.js --all --dry-run
 ```bash
 cd /Users/gernotsteinegger/source/roomle/roomle-hi-example
 git add docs/library-information/master-data.json docs/library-information/materials.md
-git commit -m "docs: update Furniture_Smith materials catalog with accurately calculated colors from image pixels"
+git commit -m "docs: update the Furniture_Smith materials catalog"
 ```
 
 ---
 
 ## Color Extraction Algorithm
 
-The materials table includes a **Suggested Color** column that contains hex color codes **calculated by analyzing actual image pixels** using Sharp library. This is NOT guessed from material names.
+The materials table includes a **Suggested Color** column with the hex color code of each material:
+
+1. **The description's code** — a description that carries a `#RRGGBB` code (`Cloudy blue (#506080)`) gives the color, taken as it is. The library states the color of the value; nothing is downloaded. The MCP server's agent trusts the same code (D53 in [the behaviour reference](../../docs/hi-mcp-behaviour.md#3-decisions)).
+2. **The thumbnail's pixels** — only a material whose description has no code gets its color calculated from its thumbnail with the Sharp library, as below.
 
 ### Why Accuracy Matters
 
@@ -137,11 +138,11 @@ Initial attempts to map material names to predefined colors produced **INACCURAT
 | Dark walnut | `#4A3728` | `#906040` | ❌ No |
 | Dark marble | `#483D8B` | `#404040` | ❌ No (purple vs gray!) |
 
-The only accurate method is to **calculate from actual image pixels**.
+A name is no source of a color: the description's code is, and for a material without one the pixels of its thumbnail.
 
 ### Algorithm Steps (JavaScript/Sharp)
 
-For each material thumbnail, the algorithm performs:
+For each material whose description carries no code, the algorithm performs:
 
 1. **Download**: Fetch the image from the TecConfig CDN URL using node-fetch
 2. **Resize**: Scale to 100x100px using Sharp (maintains color distribution, faster processing)
@@ -156,33 +157,9 @@ This approach works for:
 - **Uniform color swatches** (blues, greens, whites, blacks) - exact match
 - **Textured materials** (wood, marble, stone) - finds the average/dominant color that best represents the material
 
-### Calculated Colors (From Actual Images via Sharp)
+### Colors of the Materials
 
-The following are the **accurate** colors calculated from the actual Furniture_Smith thumbnail images:
-
-| Material | Value | Hex Color |
-|---|---|---|
-| Cloudy blue | 152 | `#506080` |
-| Denim blue | 155 | `#102040` |
-| Olive green | 160 | `#909060` |
-| Seaweed green | 165 | `#606040` |
-| Light grey | 178 | `#D0C0C0` |
-| Sunny white | 190 | `#F0F0E0` |
-| Snow white | 192 | `#F0F0F0` |
-| Jet black | 199 | `#000000` |
-| Dark walnut | 214 | `#906040` |
-| Walnut | 215 | `#C09070` |
-| Tiepolo walnut | 216 | `#705040` |
-| Oak | 222 | `#704020` |
-| Bijoux oak | 224 | `#806050` |
-| Dark oak | 229 | `#101010` |
-| Maple | 230 | `#E0D0C0` |
-| Ash grey | 240 | `#303030` |
-| Ponderosa pine | 250 | `#909080` |
-| Concrete | 316 | `#808080` |
-| Dark marble | 324 | `#404040` |
-| Slate | 326 | `#303030` |
-| Marble | 380 | `#E0E0E0` |
+[`docs/library-information/materials.md`](../../docs/library-information/materials.md) lists every material with its thumbnail, description and color — 48 materials since the library refresh of 2026-10-07, every one with the code in its description.
 
 ### Color Preview in Markdown
 
@@ -256,10 +233,10 @@ The generated table has 6 columns:
 - **Description:** The description the library gives the material
 
 ### 5. Suggested Color
-- **Source:** **Calculated by analyzing actual image pixels** using Sharp library
+- **Source:** the `#RRGGBB` code of `selection.desc`; for a material whose description has no code, **calculated by analyzing the pixels of its thumbnail** with the Sharp library
 - **Type:** Inline math color square + hex color code
 - **Example:** `$\color{#506080}\blacksquare$ #506080`
-- **Description:** Hex color code **calculated from the actual thumbnail image**, with a visual color preview. This provides accurate color representation for all materials.
+- **Description:** Hex color code of the material, with a visual color preview.
 - **Format:** `#RRGGBB` hexadecimal color code
 - **Preview:** Each color is displayed as a colored square before the hex code
 
@@ -305,31 +282,7 @@ The generated table has 6 columns:
 
 ## Current Materials
 
-As of the latest master data fetch, the Furniture_Smith library contains **21 materials** with accurately calculated colors and suggested descriptions:
-
-| Name | Value | Accurate Color | Suggested Description |
-|---|---|---|---|
-| Cloudy blue | 152 | `#506080` | Cloudy blue (#506080) |
-| Denim blue | 155 | `#102040` | Denim blue (#102040) |
-| Olive green | 160 | `#909060` | Olive green (#909060) |
-| Seaweed green | 165 | `#606040` | Seaweed green (#606040) |
-| Light grey | 178 | `#D0C0C0` | Light grey (#D0C0C0) |
-| Sunny white | 190 | `#F0F0E0` | Sunny white (#F0F0E0) |
-| Snow white | 192 | `#F0F0F0` | Snow white (#F0F0F0) |
-| Jet black | 199 | `#000000` | Jet black (#000000) |
-| Dark walnut | 214 | `#906040` | Dark walnut (#906040) |
-| Walnut | 215 | `#C09070` | Walnut (#C09070) |
-| Tiepolo walnut | 216 | `#705040` | Tiepolo walnut (#705040) |
-| Oak | 222 | `#704020` | Oak (#704020) |
-| Bijoux oak | 224 | `#806050` | Bijoux oak (#806050) |
-| Dark oak | 229 | `#101010` | Dark oak (#101010) |
-| Maple | 230 | `#E0D0C0` | Maple (#E0D0C0) |
-| Ash grey | 240 | `#303030` | Ash grey (#303030) |
-| Ponderosa pine | 250 | `#909080` | Ponderosa pine (#909080) |
-| Concrete | 316 | `#808080` | Concrete (#808080) |
-| Dark marble | 324 | `#404040` | Dark marble (#404040) |
-| Slate | 326 | `#303030` | Slate (#303030) |
-| Marble | 380 | `#E0E0E0` | Marble (#E0E0E0) |
+[`docs/library-information/materials.md`](../../docs/library-information/materials.md) lists the current materials with their values, colors and descriptions.
 
 ---
 
@@ -342,7 +295,7 @@ When planning with HI MCP, use the material values (e.g., "190" for Sunny white)
 ## Related Files
 
 - `docs/library-information/master-data.json` — Source master data (generated using [hi-furniture-smith-article-catalog.md](./hi-furniture-smith-article-catalog.md))
-- `docs/library-information/materials.md` — Generated materials table with **accurately calculated** colors and suggested descriptions
+- `docs/library-information/materials.md` — Generated materials table with colors and suggested descriptions
 - `.agents/scripts/extract-dominant-color-from-image.js` — JavaScript color extraction script (uses Sharp)
 - `.agents/scripts/package.json` — Dependencies for the color extraction script
 - `.agents/skills/hi-furniture-smith-article-catalog.md` — Article catalog generation skill (describes how to create article.json and master-data.json)

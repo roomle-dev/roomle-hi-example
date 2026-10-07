@@ -7,6 +7,9 @@
  *
  * This is NOT guessing from names - it CALCULATES from the actual image.
  *
+ * With --all, a material whose description carries a color code (#RRGGBB)
+ * takes that code; only a material without one has its thumbnail analysed.
+ *
  * Algorithm:
  * 1. Download the image from URL
  * 2. Resize to 100x100px (maintains color distribution)
@@ -118,6 +121,13 @@ async function getColorFromUrl(url) {
 // ============================================================================
 
 /**
+ * The color code (#RRGGBB) a description carries, or null
+ */
+function colorCodeOf(desc) {
+  return desc?.match(/#[0-9a-f]{6}\b/i)?.[0].toUpperCase() ?? null;
+}
+
+/**
  * Extract materials from the master data
  */
 function extractMaterials(data) {
@@ -213,8 +223,14 @@ async function extractAllColors(data, showProgress = true) {
     const selection = materials[value];
     const name = selection.name;
     const imageUrl = selection.imageUrl;
+    const colorCode = colorCodeOf(selection.desc);
 
-    if (imageUrl) {
+    if (colorCode) {
+      if (showProgress) {
+        console.log(`  ${name}: ${colorCode} (from desc)`);
+      }
+      materialColors[value] = colorCode;
+    } else if (imageUrl) {
       if (showProgress) {
         process.stdout.write(`  Extracting color for ${name}... `);
       }
@@ -285,7 +301,7 @@ The generation process is described in [hi-furniture-smith-materials.md](../../.
 
 ## Color Extraction
 
-The "Suggested Color" column contains hex color codes **calculated by analyzing actual image pixels**. This is NOT guessed from material names - each color is calculated by:
+The "Suggested Color" column is the color code of the description where the description carries one (\`#RRGGBB\`, e.g. \`Cloudy blue (#506080)\`): the library states the color of the value, and the code is taken as it is. Only a material whose description has no code gets a color calculated from the pixels of its thumbnail - NOT guessed from its name:
 
 1. Downloading the thumbnail image from the URL
 2. Resizing to 100x100px (maintains color distribution)
@@ -293,9 +309,7 @@ The "Suggested Color" column contains hex color codes **calculated by analyzing 
 4. Quantizing colors by grouping similar RGB values
 5. Finding the most frequent color
 
-This method provides **accurate** color representation for all materials, whether they are uniform colors or textured surfaces (wood, marble, stone, etc.).
-
-The color extraction script uses Node.js with the Sharp library for image processing.
+The calculation uses Node.js with the Sharp library for image processing.
 
 ## Materials
 
@@ -323,10 +337,9 @@ The color extraction script uses Node.js with the Sharp library for image proces
       markdown += `| ${name} | ${value} | ${thumbnail} | ${desc} | ${colorDisplay} | ${suggestedDesc} |\n`;
     } else {
       const colorDisplay = createMarkdownColorDisplay(color);
-      const hasColorCode = /#[0-9a-f]{6}\b/i.test(desc);
       const suggestedDesc = !desc
         ? color
-        : hasColorCode
+        : colorCodeOf(desc)
           ? desc
           : `${desc} (${color})`;
       markdown += `| ${name} | ${value} | ${thumbnail} | ${desc} | ${colorDisplay} | ${suggestedDesc} |\n`;
@@ -437,7 +450,9 @@ async function main() {
         await extractAllColors(data);
 
       if (options.listColors) {
-        console.log('\nMaterial Colors (extracted from actual images):');
+        console.log(
+          '\nMaterial Colors (from the description, else from the thumbnail):'
+        );
         console.log('='.repeat(60));
         for (const value of sortedValues) {
           const selection = materials[value];
@@ -494,6 +509,7 @@ async function main() {
 // ============================================================================
 
 export {
+  colorCodeOf,
   extractDominantColor,
   getColorFromUrl,
   downloadImage,

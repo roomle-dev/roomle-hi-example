@@ -63,7 +63,9 @@ node .agents/scripts/generate-article-catalog.js
 - Writes one table row per article with the columns described in [Column Data Sources](#column-data-sources)
 - Takes the dimensions from the `roots[0].attributes` array and formats them as `L {Depth} mm W {Width} mm H {Height} mm`
 - Replaces pipes in the category with slashes (to avoid breaking markdown tables)
+- Takes the FUNCTION sentence of the [structured description](#structured-description) for the Description column
 - Derives the suggested description by the [Suggested Description Generation Rules](#suggested-description-generation-rules)
+- Writes the full description of every article below the table, one `### {articleId}` section with one bullet per description section
 - Saves to `docs/library-information/articles.md` and prints `Generated docs/library-information/articles.md with 111 articles`
 
 ### Step 3: Commit Changes
@@ -120,17 +122,17 @@ The markdown table has 7 columns. Here is the exact source of each column from t
 - **Description:** Article thumbnail image for visual identification
 
 ### 6. Description
-- **Source:** `article.desc`
+- **Source:** The FUNCTION section of `article.desc` (see [Structured Description](#structured-description)); the whole `article.desc` on one line when it has no FUNCTION section
 - **Type:** String
-- **Example:** `"Sideboard with 1 door, 1 drawer"`
-- **Description:** Human-readable description of the article from the source data
+- **Example:** `"Living-room sideboard, 60 cm wide, with 1 door and 1 drawer."`
+- **Description:** What the article is, in the words of the library; the full description follows the table
 
 ### 7. Suggested Description
-- **Source:** Generated from `article.desc`, `article.category`, `article.articleId` and the `mod_Height` of `article.roots[0].attributes`
+- **Source:** Generated from the FUNCTION sentence, `article.category` and the `mod_Height` of `article.roots[0].attributes`
 - **Type:** String (technically enhanced)
 - **Generation Logic:** See [Suggested Description Generation Rules](#suggested-description-generation-rules)
 - **Purpose:** Provides agents with complete article understanding without needing to analyze images
-- **Example:** `"Corner base cabinet, 1 door, adjustable shelves"` (derived from `"Fingergrip corner base cabinet direction left with 1 door, adjustable shelves"`)
+- **Example:** `"Tall cabinet, 60 cm wide, 1 door and adjustable shelves, high"` (derived from `"Tall cabinet, 60 cm wide, with 1 door and adjustable shelves."`)
 - **Benefits:** 
   - Enables faster planning
   - Eliminates need for image analysis
@@ -141,21 +143,33 @@ The markdown table has 7 columns. Here is the exact source of each column from t
 
 ## Suggested Description Generation Rules
 
-The Suggested Description gives agents a technically accurate, complete description without analyzing images. `generate-article-catalog.js` derives it from the original description, in this order:
+The Suggested Description gives agents a technically accurate, complete description without analyzing images. `generate-article-catalog.js` derives it from the FUNCTION sentence, in this order:
 
-1. **Overrides**: `DU` → "Range hood", `GSP` → "Dishwasher unit", `SM_TV` → "Wall unit, TV decoration"; a description that is just "Dunstabzug" → "Range hood"; an empty description stays empty
-2. **Remove prefixes**: A leading "Fingergrip" is dropped
-3. **Translate German terms** (whole words): Oberschrank → Wall cabinet, Oberschrankregal → Wall cabinet shelf, Einlegeböden → adjustable shelves, feste Zwischenböden → fixed shelves, Tür/Türen → door/doors, Schublade/Schubladen → drawer/drawers, Auszug/Auszüge → pullout/pullouts, Dunstabzug → range hood, Kochfeld → hob, Herd → stove, Spüle → sink, Faltklappe → folding flap, Schwenkklappe → hinged flap, mit → with
-4. **Comma lists**: "with" becomes a comma; spaces and commas are normalized
-5. **Drop the direction**: "direction left/right" is removed; the article id carries it (`…L…`/`…R…`), and the descriptions of `UELTB90` and `UERTB90` even name the opposite side
-6. **Hob cabinets**: "hob cabinet" → "cabinet, hob", e.g. "Base hob cabinet" → "Base cabinet, hob"
-7. **Singular**: "1 doors/drawers/pullouts" → "1 door/drawer/pullout"
-8. **Capitalize** the first letter
-9. **Furniture type**: Unless the text names sideboard, lowboard, tall/wall/base cabinet, filler, panel or closet, the type from the category goes in front: Sideboard, Lowboard, Tall cabinet (tall unit), Wall cabinet (wall unit), Base cabinet (base unit), Filler, Panel, Closet cabinet
-10. **Height**: ", low" for a `mod_Height` below 500 mm, ", high" from 2000 mm, unless the text says so already
-11. **Corner**: ", corner" when the category or the description names a corner and the text does not yet
+1. **Empty**: an empty FUNCTION sentence stays empty
+2. **Comma lists**: the closing period is dropped, "with" becomes a comma; spaces and commas are normalized
+3. **Capitalize** the first letter
+4. **Furniture type**: Unless the text names a sideboard, lowboard, filler, panel, closet, wardrobe, or a base/wall/tall cabinet, unit, carcase or housing, the type from the category goes in front: Sideboard, Lowboard, Tall cabinet (tall unit), Wall cabinet (wall unit), Base cabinet (base unit), Filler, Panel, Closet cabinet
+5. **Height**: ", low" for a `mod_Height` below 500 mm, ", high" from 2000 mm, unless the text says so already
+6. **Corner**: ", corner" when the category names a corner and the text does not yet
 
-Example: `"Fingergrip corner base cabinet direction left with 1 door, adjustable shelves"` → `"Corner base cabinet, 1 door, adjustable shelves"`
+Example: `"Dishwasher housing / front unit for a built-in dishwasher."` in the category `Kitchen | Base Units | Appliance` → `"Base cabinet, dishwasher housing / front unit for a built-in dishwasher"`
+
+---
+
+## Structured Description
+
+The library gives every article a structured `desc`: sections separated by a blank line, each a label line in capitals followed by its text. Every Furniture_Smith article has FUNCTION, PURPOSE, TYPICAL_PLACEMENT, REQUIREMENTS, RECOMMENDED_NEIGHBOURS, RESTRICTIONS, STYLE_COMPATIBILITY, SEARCH_KEYWORDS and AI_SELECTION_HINT; `H60M` also has RECOMMENDED_INTERIORS.
+
+```text
+FUNCTION:
+Living-room sideboard, 60 cm wide, with 1 door and 1 drawer.
+
+PURPOSE:
+Combines a drawer for small items with a door compartment for larger goods.
+…
+```
+
+The table shows the FUNCTION sentence; the "Article Descriptions" part of `articles.md` lists every section of every article, in the order of the library.
 
 ---
 
@@ -172,7 +186,7 @@ Example: `"Fingergrip corner base cabinet direction left with 1 door, adjustable
       "catalog": "Furniture_Smith",
       "articleId": "SB_UB600S",
       "articleName": "SB_BD600DR",
-      "desc": "Sideboard with 1 door, 1 drawer",
+      "desc": "FUNCTION:\nLiving-room sideboard, 60 cm wide, with 1 door and 1 drawer.\n\nPURPOSE:\n…",
       "imageUrl": "https://.../SB_UB600S.png?sv=...",
       "category": "Living | Sideboard",
       "isConfigDummy": false,

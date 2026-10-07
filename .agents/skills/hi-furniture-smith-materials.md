@@ -47,7 +47,7 @@ Deduplicate by value
     ↓ Download thumbnail images
     ↓ Analyze pixel data with Sharp
     ↓ Calculate dominant color for each
-    ↓ Combine description with color code
+    ↓ Add the color code to the description unless it has one
 Markdown Table (materials.md) with Suggested Color and Suggested Description columns
 ```
 
@@ -252,7 +252,7 @@ The generated table has 6 columns:
 ### 4. Description
 - **Source:** `selection.desc` from each attribute's selections array
 - **Type:** String
-- **Example:** `"Sunny white"`, `"Concrete"` (for Furniture_Smith every material's desc equals its name)
+- **Example:** `"Sunny white (#F0F0E0)"`, `"Concrete (#808080)"` (for Furniture_Smith every material's desc is its name followed by its color code)
 - **Description:** The description the library gives the material
 
 ### 5. Suggested Color
@@ -264,11 +264,11 @@ The generated table has 6 columns:
 - **Preview:** Each color is displayed as a colored square before the hex code
 
 ### 6. Suggested Description (NEW)
-- **Source:** Combination of `selection.desc` and the extracted color code
+- **Source:** `selection.desc`, with the extracted color code added when the description has none
 - **Type:** String
 - **Example:** `"Cloudy blue (#506080)"`, `"Dark walnut (#906040)"`
 - **Description:** A combined identifier that includes both the material description and its dominant color code (hex only, without the preview). Useful for quick identification and as a compact reference.
-- **Format:** `{Description} ({ColorCode})`
+- **Format:** `{Description}` when the description already contains a hex color code (`#RRGGBB`), as every Furniture_Smith description does; otherwise `{Description} ({ColorCode})`, or the color code alone when the description is empty
 
 ---
 
@@ -285,13 +285,13 @@ The generated table has 6 columns:
   "selections": [
     {
       "value": "316",
-      "desc": "Concrete",
+      "desc": "Concrete (#808080)",
       "name": "Concrete",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/3e219bf4-0d63-4eb1-86c4-96a9e69c052b_316_concrete.jpg?sv=...&sig=..."
     },
     {
       "value": "326",
-      "desc": "Slate",
+      "desc": "Slate (#303030)",
       "name": "Slate",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/180cf5df-60d8-4179-bd00-fafd65ee74ef_326_slate.jpg?sv=...&sig=..."
     }

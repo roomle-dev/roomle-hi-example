@@ -57,15 +57,17 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
 
 #### Random tests
 
-Every session adds `randomTests` new tests (in `docs/test-prompts.json`; 3 when it is missing, 0 for
-none; a number the user names replaces it), written by the agent that runs this skill. They go only
-into `$SESSION/tests.json`, always at its end after the last fixed test — never into
-`docs/test-prompts.json`.
+Every session adds `randomTests` new tests (in `$SESSION/tests.json`, copied from
+`docs/test-prompts.json`; 3 when it is missing, 0 for none), written by the agent that runs this
+skill. A number the user names goes into the session file:
+`jq '.randomTests = <n>' "$SESSION/tests.json" > "$SESSION/tests.tmp" && mv "$SESSION/tests.tmp" "$SESSION/tests.json"`.
+The random tests go only into `$SESSION/tests.json`, always at its end after the last fixed test —
+never into `docs/test-prompts.json`.
 
-1. Draw a plan for each at random, so that sessions do not repeat themselves:
+1. Draw a plan for each at random from the session file, so that sessions do not repeat themselves:
 
    ```bash
-   node -e 'const { plans, randomTests = 3 } = require("./docs/test-prompts.json"); const names = Object.keys(plans); for (let i = 0; i < randomTests; i++) console.log(names[Math.floor(Math.random() * names.length)])'
+   node -e 'const { plans, randomTests = 3 } = require(require("path").resolve(process.argv[1])); const names = Object.keys(plans); for (let i = 0; i < randomTests; i++) console.log(names[Math.floor(Math.random() * names.length)])' "$SESSION/tests.json"
    ```
 
 2. Write one test per drawn plan: a request a user of that plan could make that no fixed test

@@ -260,5 +260,10 @@ of the tests differ from the plan:
 | Full `PlannerKernelTest` (Debug) | — | 2752 test cases pass |
 | Playground, Open-Plan Room, `PLAN` mode, front wall | the gap from 401 back to −1749, then a wall to 3248 | wall to −3849, gap to −1749, wall to −1699, gap to 401, wall to 3248, at levels 0 and 2100 |
 
+The review (Copilot) found open point 2 of the plan: an opening that covers a whole wall piece left
+it a wall, for example a third, overlapping opening that bridges two gaps. It was fixed in the same
+pull request: such a piece becomes a gap. The section "a third opening bridges the gaps of the first
+two" failed before and passes now, and the full `PlannerKernelTest` still passes.
+
 Open: the [reproduction](#reproduce) in `get-plan-context` once roomle-ui takes a kernel release with
 the fix.

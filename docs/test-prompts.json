@@ -289,6 +289,21 @@
       ],
       "prompt": "that was the wrong unit - remove the last unit, not the middle one",
       "expect": "undo, then remove-article-from-group or delete-root-module on the last unit: one group of the first two units"
+    },
+    {
+      "id": "kitchen-conversation",
+      "title": "Kitchen conversation: L-shaped kitchen, fronts, larder, island, sloping ceiling",
+      "plan": "default-room",
+      "prompt": [
+        "Plan a modern L-shaped kitchen for a family of four.",
+        "Replace all fronts with natural oak.",
+        "Add a pull-out larder unit on the left.",
+        "3.8 m wide wall, cooking island, country-house style, budget €15,000",
+        "Only handleless fronts and dark colors",
+        "I have a room with a sloping ceiling and need a lot of storage space",
+        "Add a pull-out larder unit"
+      ],
+      "expect": "turn 1: one kitchen group around a corner, a leg on each of two walls, with sink, hob and range hood, oven, fridge, dishwasher and storage for four (drawer units, wall units, a tall unit), modern fronts; turn 2: change-group-attribute, an oak mod_FrontColor (Oak 222) on every unit; turn 3: merge-article-into-group, a tall unit with pull-outs (e.g. HT2AB60 or HTS2AB60) at the left end of the kitchen, overlapping neither the window nor the door; turn 4: a kitchen row of at most 3800 mm on one wall and a separate island group that carries the hob, country-house fronts (e.g. Oak), get-price is called and the answer compares the total with the €15,000 budget and says whether it replaced the L-shaped kitchen; turn 5: handleless units (the Kitchen handleless articles, e.g. US2A60 to EUS2A60, where a variant exists) and a dark mod_FrontColor on every unit; turn 6: the room has no sloping ceiling - the answer says so or asks where it is, and any storage it adds fits the walls; turn 7: one more tall unit with pull-outs at a free end of a row"
     }
   ]
 }

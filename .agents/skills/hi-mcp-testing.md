@@ -59,7 +59,8 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
 
 Every session adds `randomTests` new tests (in `docs/test-prompts.json`; 3 when it is missing, 0 for
 none; a number the user names replaces it), written by the agent that runs this skill. They go only
-into `$SESSION/tests.json`, after the fixed tests — never into `docs/test-prompts.json`.
+into `$SESSION/tests.json`, always at its end after the last fixed test — never into
+`docs/test-prompts.json`.
 
 1. Draw a plan for each at random, so that sessions do not repeat themselves:
 
@@ -242,14 +243,14 @@ with "Random:" in the summary and in their run sections, each run section says s
 
 | Model | Planner | Tests | Pass | Partial | Fail | Bugs |
 |---|---|---|---|---|---|---|
-| gpt-5-mini | bo-test | 21 run (3 random), 0 skipped | … | … | … | … |
+| gpt-5-mini | bo-test | 36 run (3 random), 0 skipped | … | … | … | … |
 
 ## Summary
 
 | # | Test | Verdict | Bug | Plan snapshot |
 |---|---|---|---|---|
 | 01 | [<title>](#01-<title-slug>) | pass | no | `ps_…` |
-| 31 | [Random: <title>](#31-random-<title-slug>) | fail | no | `ps_…` |
+| 34 | [Random: <title>](#34-random-<title-slug>) | fail | no | `ps_…` |
 
 ## Random tests
 
@@ -257,7 +258,7 @@ Generated for this session by the agent that ran it; not in `docs/test-prompts.j
 
 | # | Test | Plan | Verdict | Keep as a fixed test |
 |---|---|---|---|---|
-| 31 | [Random: <title>](#31-random-<title-slug>) | <plan name> | fail | yes — <what it covers that no fixed test does> |
+| 34 | [Random: <title>](#34-random-<title-slug>) | <plan name> | fail | yes — <what it covers that no fixed test does> |
 
 ```json
 <the random tests as they are in tests.json>
@@ -298,16 +299,7 @@ Plan: <plan name>
 
 **Bug — <yes: component / no: model finding / no: environment>**: <why>
 
-## 31 Random: <title>
-
-> <prompt — one quote line per turn of a conversation>
-
-Plan: <plan name>
-
-- **Random test**: generated for this session, not in `docs/test-prompts.json`
-- …
-
-## 09 <title of an image test>
+## 28 <title of an image test>
 
 > <prompt, or "(empty)">
 
@@ -316,9 +308,18 @@ Plan: <plan name>
 
 | Image | Perspective | Perspective object | Top |
 |---|---|---|---|
-| <img src="gpt-5-mini/09-<test id>/prompt-image.jpg" width="210"> | <img src="gpt-5-mini/09-<test id>/perspective-image.png" width="210"> | <img src="gpt-5-mini/09-<test id>/perspective-object-image.png" width="210"> | <img src="gpt-5-mini/09-<test id>/top-image.png" width="210"> |
+| <img src="gpt-5-mini/28-<test id>/prompt-image.jpg" width="210"> | <img src="gpt-5-mini/28-<test id>/perspective-image.png" width="210"> | <img src="gpt-5-mini/28-<test id>/perspective-object-image.png" width="210"> | <img src="gpt-5-mini/28-<test id>/top-image.png" width="210"> |
 
 …
+
+## 34 Random: <title>
+
+> <prompt — one quote line per turn of a conversation>
+
+Plan: <plan name>
+
+- **Random test**: generated for this session, not in `docs/test-prompts.json`
+- …
 
 ## Skipped
 

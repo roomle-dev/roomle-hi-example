@@ -6,6 +6,7 @@
 > **Date**: 2026-10-07
 > **Author**: AI Assistant
 > **Status**: Open
+> **Plan**: [trust-the-colour-code-in-material-descriptions-implementation-plan.md](trust-the-colour-code-in-material-descriptions-implementation-plan.md)
 
 ## Affected repositories
 

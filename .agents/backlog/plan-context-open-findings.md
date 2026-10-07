@@ -1,50 +1,63 @@
 # Backlog: open findings about the plan context
 
 > **Type**: Backlog — findings about what `get-plan-context` shows, not investigated yet
-> **Domain**: roomle-ui `homag-intelligence` — `hi-plan-context.ts` (`deriveWalls`, `shapeObstacles`, `shapeRoot`), RoomleCore's obstacle map; consumer: `get-plan-context` (§5.4 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#54-the-plan-context-get-plan-context))
+> **Domain**: roomle-ui `homag-intelligence` — `hi-plan-context.ts` (`deriveWalls`, `shapeObstacles`, `shapeRoot`), RoomleCore's room contour and obstacle map; consumer: `get-plan-context` (§5.4 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#54-the-plan-context-get-plan-context))
 
 Each finding names the problem, its cause where it is known, the to-do and its test. A finding
 leaves this document when its fix is in the code or it is decided not to fix it.
 
 | # | Finding | Kind | Priority |
 |---|---|---|---|
-| 1 | [A wall entry that runs against the contour gets the opposite side](#1-a-wall-entry-that-runs-against-the-contour-gets-the-opposite-side) | roomle-ui `deriveWalls` | medium — a wrong wall name and rotation |
-| 2 | [A root outline reaches into its neighbour](#2-a-root-outline-reaches-into-its-neighbour) | roomle-ui `shapeObstacles` or library parts | low — a false overlap in `obstacles` |
+| 1 | [A wall entry that runs against the contour gets the opposite side](#1-a-wall-entry-that-runs-against-the-contour-gets-the-opposite-side) | RoomleCore room contour, [RML-18072](https://roomle.atlassian.net/browse/RML-18072) | medium — a wrong wall name and rotation |
+| 2 | [A root outline reaches into its neighbour](#2-a-root-outline-reaches-into-its-neighbour) | not a defect — article description, MCP text | low — neighbours of one group overlap in `obstacles` |
 | 3 | [A calculation error of a new group reaches the agent through nothing](#3-a-calculation-error-of-a-new-group-reaches-the-agent-through-nothing) | roomle-ui, MCP server feedback | low — not seen in a run yet |
 | 4 | [The kernel's obstacle outline of an HI group lies off the group](#4-the-kernels-obstacle-outline-of-an-hi-group-lies-off-the-group) | RoomleCore | low — the plan context does not use it |
 | 5 | [A changed position height is reported with its old value](#5-a-changed-position-height-is-reported-with-its-old-value) | roomle-ui command result | low — the agent may set it again |
 
 ## 1. A wall entry that runs against the contour gets the opposite side
 
+**Ticket.** [RML-18072](https://roomle.atlassian.net/browse/RML-18072) (RoomleCore)
+
 **Problem.** The Open-Plan Room's contour runs back along the front wall between its two doors. The
 wall entry there (an `opening`, from x 401 to −1749) gets the side `top` and the name "back wall",
-and a `facingRotationY` that turns a group's back away from that wall.
+and a `facingRotationY` that turns a group's back away from that wall. The entry after it is a
+"front wall" from −1749 to 3248, across both doors.
 
-**Cause.** `deriveWalls` (roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-plan-context.ts:752`)
-takes the side and `facingRotationY` from the direction of each segment, assuming a
-counter-clockwise contour with the room on its left. A segment that runs back along a wall breaks
-the assumption. The server names the wall by its side (`wallName`, `hi-mcp/hi-mcp-server/plan-space.ts:391`).
+**Cause.** The kernel's room contour. A second opening on a straight wall is inserted into both wall
+pieces the first opening left, so the contour runs back along the wall (RoomleCore
+`ObjectSurroundings::addOpeningToContour`, `object-surrounding-geometry.cpp:615`). `deriveWalls`
+(roomle-ui `hi-plan-context.ts:752`) rightly takes the side from the segment direction: the
+kernel's contour runs counter-clockwise with the room on its left.
 
-**To do.** Find the contour of the plan in the kernel; derive the side of a wall entry from the side
-the room lies on, not from the segment direction alone.
+**To do.** Wait for the RoomleCore fix (RML-18072). Then take the fixed kernel into roomle-ui and
+check the reproduction below. Nothing changes in roomle-ui or in this repository, and no further
+query of the kernel is added.
 
-**Test.** A `deriveWalls` test with a contour that runs back along one wall between two doors.
+**Test.** In RoomleCore: the room contour of a wall with two doors (RML-18072).
 
 **Reproduce.** `get-plan-context` on the Open-Plan Room (`ps_qwm5odi6tyflyqwpdcxz1la791ho633`).
+Once fixed, every wall entry of the front wall has the side `bottom` and `facingRotationY` 180.
 
 ## 2. A root outline reaches into its neighbour
 
-**Problem.** In `obstacles.groups` of the Open-Plan Room, the outline of the sink unit `SUBA60`
-reaches 996 mm along the row, into its neighbour: a root module seems to overlap the one beside it.
+**Not a defect.** The obstacles are correct. A root module's outline is the outline of its
+geometry, not the box of its docking vectors (D45). A part that reaches past the cabinet reaches
+past it in the outline too.
 
-**Cause.** `shapeObstacles` (`hi-plan-context.ts:897`; `rootOutline`, `:860`, from `rootPoints`, `:442`)
-takes a root's outline from the bounding box of
-its parts; one part of `SUBA60` is wider than the cabinet. Which part it is, is not known.
+**Observation.** In `obstacles.groups` of the Open-Plan Room, the outline of the sink unit `SUBA60`
+reaches 996 mm along the row, into its neighbour, while the unit is 600 mm wide. The sink gives the
+article its special geometry. `shapeObstacles` (`hi-plan-context.ts:897`) takes a root's outline
+from its parts (`rootOutline`, `:860`, from `rootPoints`, `:442`).
 
-**To do.** Find the part; decide whether the outline takes the carcase parts only or the library's
-part is wrong.
+**To do.**
+- Library: the article's description (`desc`) states that its geometry reaches past its width.
+  Check the live catalog first; this may already be done. The recorded description
+  (`docs/library-information/article.json`) does not mention it.
+- MCP server: decide whether the obstacles text should say that an outline is the outline of the
+  geometry and can reach past the docking vectors, over a neighbour. That text is in the
+  instructions (`hi-mcp-server.ts:24`) and in the `get-plan-context` description (`:169`).
 
-**Test.** A `shapeObstacles` test with a root whose part reaches past its docking vectors.
+**Test.** None; the obstacles do not change.
 
 **Reproduce.** `get-plan-context` on the Open-Plan Room (`ps_qwm5odi6tyflyqwpdcxz1la791ho633`): the
 `SUBA60` root of the kitchen on the right wall.

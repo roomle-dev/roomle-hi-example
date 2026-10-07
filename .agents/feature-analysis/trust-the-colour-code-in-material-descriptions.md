@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18063](https://roomle.atlassian.net/browse/RML-18063) "HI agent: trust the #rrggbb colour code in material descriptions instead of analysing thumbnails"
 > **Date**: 2026-10-07
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Implemented (not merged) — steps 1 to 4 of the plan on `feat/trust-colour-code-in-material-desc-RML-18063`, [verified](#close-out); the prompt test (step 5) waits for a yes
 > **Plan**: [trust-the-colour-code-in-material-descriptions-implementation-plan.md](trust-the-colour-code-in-material-descriptions-implementation-plan.md)
 
 ## Affected repositories
@@ -292,3 +292,40 @@ reference and date stay true as they are. The ticket allows either.
 Verification: `npm test` and `npm run typecheck` at the `hi-mcp` root; `npm run extract-colors` in
 `.agents/scripts` produces an unchanged table and downloads nothing; `npm run lint` and
 `npm run format:check` at the repository root.
+
+## Close-out
+
+Implemented on 2026-10-07 as planned, with D53 as recommended (decision 1 of the plan). The prompt
+test of step 5 is not done: it waits for an explicit yes.
+
+| Change | Where |
+|---|---|
+| The colour sentence in the rule; the colour code in the descriptions of `get-plan-context` and `find-attributes` | `hi-mcp-server.ts` |
+| `it('tells the agent that a colour code in a desc is the colour of the value')`, written first and failing on the old text | `hi-mcp-server.test.ts` |
+| `colorCodeOf`; `--all` takes the code from the desc and analyses a thumbnail only for a value without one | `extract-dominant-color-from-image.js` |
+| Desc first, pixels only as the fallback; the two stale 21-row tables replaced by a pointer to `materials.md` | `hi-furniture-smith-materials.md` |
+| Regenerated: only the "Color Extraction" section changed | `materials.md` |
+| D53, §5.2, §5.4, §6 `find-attributes` | `docs/hi-mcp-behaviour.md` |
+| The trusted-desc bullet and `find-attributes` | `docs/hi-mcp-server.md` |
+| "Trusted descriptions" and `find-attributes` | `.agents/skills/hi-mcp-tools.md` |
+
+Two deviations from the plan:
+
+- The generated "Color Extraction" section leaves out the planned sentence "with the library data
+  of 2026-10-07 every material carries its code": a generated file would keep that date after a
+  later refresh. The skill states it, dated, instead.
+- In the materials skill, the heading of step 3, the commit message of step 4 and the line on
+  `materials.md` under "Related Files" also claimed a pixel calculation for every material; they
+  say "colors" now.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| The new test on the old text | fails |
+| `npm test` at the `hi-mcp` root | 447 tests pass |
+| `npm run typecheck` at the `hi-mcp` root | passes |
+| `npm run lint`, `npm run format:check` at the root | pass |
+| The script with `--all` | 48 materials "(from desc)", no thumbnail downloaded; the table of `materials.md` unchanged |
+| The fallback, with synthetic data and a local image server | a value with a code takes it without a request; a value without one is downloaded and its colour calculated |
+| The markdown links of every changed document | no broken link |

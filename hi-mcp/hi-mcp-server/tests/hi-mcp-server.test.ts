@@ -397,6 +397,28 @@ describe('hi-mcp-server tool calls', () => {
     }
   });
 
+  it('tells the agent that a colour code in a desc is the colour of the value', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    const { tools } = await client.listTools();
+    const descriptionOf = (name: string) =>
+      tools.find((tool) => tool.name === name)?.description;
+
+    expect(rules).toContain(
+      'A colour code in the desc of an attribute value - Cloudy blue (#506080) - is the colour of that value'
+    );
+    expect(rules).toContain('not by the name');
+    expect(rules).toContain('or the colour of a value, from a catalog image');
+    expect(descriptionOf('get-plan-context')).toContain(
+      'a colour code in the desc of an attribute value (#rrggbb) is the colour of that value'
+    );
+    expect(descriptionOf('find-attributes')).toContain(
+      'pick a dark, a light or a blue value by its code'
+    );
+  });
+
   it('teaches the row edits and which end of a row keeps its place', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(

@@ -4,7 +4,7 @@
 > **Analysis**: [trust-the-colour-code-in-material-descriptions.md](trust-the-colour-code-in-material-descriptions.md) — the library data, the served rule and the tooling this plan rests on
 > **Date**: 2026-10-07
 > **Author**: AI Assistant
-> **Status**: Open — waiting for the review
+> **Status**: Steps 1 to 4 done (2026-10-07), step 5 waits for a yes — see the [close-out of the analysis](trust-the-colour-code-in-material-descriptions.md#close-out)
 > **Branch**: `feat/trust-colour-code-in-material-desc-RML-18063` (roomle-hi-example only)
 
 ---

@@ -95,8 +95,8 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open (step 1 done, step 2 open, step 3 on request) | 2026-10-07 |
 | [A reasoning effort per GPT chat model: implementation plan](feature-analysis/reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open (step 1 done) | 2026-10-07 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open (product goal) | 2026-09-27 |
-| [Trust the colour code in material descriptions](feature-analysis/trust-the-colour-code-in-material-descriptions.md) | Open | 2026-10-07 |
-| [Trust the colour code in material descriptions: implementation plan](feature-analysis/trust-the-colour-code-in-material-descriptions-implementation-plan.md) | Open (waiting for the review) | 2026-10-07 |
+| [Trust the colour code in material descriptions](feature-analysis/trust-the-colour-code-in-material-descriptions.md) | Implemented (not merged) | 2026-10-07 |
+| [Trust the colour code in material descriptions: implementation plan](feature-analysis/trust-the-colour-code-in-material-descriptions-implementation-plan.md) | Steps 1 to 4 done, step 5 waits for a yes | 2026-10-07 |
 
 ### Refactoring Analyses
 

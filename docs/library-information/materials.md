@@ -23,7 +23,7 @@ The generation process is described in [hi-furniture-smith-materials.md](../../.
 
 ## Color Extraction
 
-The "Suggested Color" column contains hex color codes **calculated by analyzing actual image pixels**. This is NOT guessed from material names - each color is calculated by:
+The "Suggested Color" column is the color code of the description where the description carries one (`#RRGGBB`, e.g. `Cloudy blue (#506080)`): the library states the color of the value, and the code is taken as it is. Only a material whose description has no code gets a color calculated from the pixels of its thumbnail - NOT guessed from its name:
 
 1. Downloading the thumbnail image from the URL
 2. Resizing to 100x100px (maintains color distribution)
@@ -31,9 +31,7 @@ The "Suggested Color" column contains hex color codes **calculated by analyzing 
 4. Quantizing colors by grouping similar RGB values
 5. Finding the most frequent color
 
-This method provides **accurate** color representation for all materials, whether they are uniform colors or textured surfaces (wood, marble, stone, etc.).
-
-The color extraction script uses Node.js with the Sharp library for image processing.
+The calculation uses Node.js with the Sharp library for image processing.
 
 ## Materials
 

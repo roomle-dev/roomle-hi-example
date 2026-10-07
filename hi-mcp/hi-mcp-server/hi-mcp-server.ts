@@ -416,8 +416,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'the root modules beside it are docked together, and the ' +
         'root modules at a wall or in a corner keep their place. A wall unit or a range hood that hung from the ' +
         'removed root module hangs from the one that moves into the gap. A root module with a neighbour on one side only is removed and ' +
-        'nothing else moves. Removing a corner article between two legs deletes it as delete-root-module does: ' +
-        'root modules no longer docked together become separate groups. Removing the only root module removes the group. To ' +
+        'nothing else moves. Removing a corner article between two legs closes the gap as well: one leg turns by 90 ' +
+        'degrees, with the units above it, and is docked to the other, so the legs form one straight row - the result ' +
+        'names the leg that turned. Removing the only root module removes the group. To ' +
         'delete an article and leave the gap, use delete-root-module. Generated roots ' +
         '(worktop, toe kick) cannot be removed - the library regenerates them. Returns the changed group.',
       inputSchema: {

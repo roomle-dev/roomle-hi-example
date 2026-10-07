@@ -123,6 +123,13 @@
       "expect": "remove-article-from-group of the drawer unit next to the corner: the gap closes towards the corner, the corner unit stays, the hob unit moves into the gap with the range hood; the wall unit above the removed unit keeps its place and the answer says so"
     },
     {
+      "id": "edit-remove-corner-unit",
+      "title": "Remove the corner unit",
+      "plan": "corner-kitchen-wall-units",
+      "prompt": "remove the corner unit",
+      "expect": "remove-article-from-group of the corner unit: one group; one leg turns by 90 degrees with its wall units and is docked to the other, so the legs form one straight row; the answer says which leg turned"
+    },
+    {
       "id": "edit-swap-hob-unit",
       "title": "Swap the hob unit",
       "plan": "corner-kitchen-wall-units",

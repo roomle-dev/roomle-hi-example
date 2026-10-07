@@ -80,7 +80,9 @@ status block where one is present.
 
 One document per bug: root-cause analysis written **before** the fix, closed out **after** it.
 
-*No open bug analysis.*
+| Document | Status | Last touched |
+|---|---|---|
+| [Removing a corner article splits the group](bug-analysis/remove-corner-article-splits-the-group.md) | Open (implemented, not merged) | 2026-10-07 |
 
 ### Feature Analyses
 
@@ -127,7 +129,6 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the open gaps of running "test the mcp": the object-only render under software GL, the unrecorded hint, a run that loses its page, tests only written by hand, the snapshot save with a local planner | 2026-10-07 |
 | [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — a store page that never connects for an external agent, the live isolation check, access control, the image's second lockfile, the root scripts' flags, SIGTERM | 2026-10-07 |
 | [The planner's load result per input group](backlog/planner-load-outcome-per-group.md) — roomle-ui names per input group what it built, so `create-or-replace-groups` reports a group left out in `notLoaded` | 2026-10-07 |
-| [A deletion makes the wall units groups of their own](backlog/delete-root-module-splits-off-wall-units.md) — `deleteRootModule` keeps the wall units with the floor units they hang above | 2026-10-07 |
 | [One planner undo step per tool call](backlog/one-undo-step-per-tool-call.md) — roomle-ui resolves a command after its follow-up reload and groups a tool call into one undo step; then the server drops its follow-up wait | 2026-10-07 |
 | [Open findings about the plan context](backlog/plan-context-open-findings.md) — wall sides, root outlines, calculation errors, the obstacle outline of a group, position heights | 2026-10-07 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-07 |

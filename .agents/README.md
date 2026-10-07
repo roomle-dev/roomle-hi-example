@@ -83,6 +83,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | Document | Status | Last touched |
 |---|---|---|
 | [Removing a corner article splits the group](bug-analysis/remove-corner-article-splits-the-group.md) | Open (implemented, not merged) | 2026-10-07 |
+| [The room contour runs back along a wall with two openings](bug-analysis/room-contour-runs-back-along-a-wall-with-two-openings.md) | Open (fix in RoomleCore) | 2026-10-07 |
 
 ### Feature Analyses
 

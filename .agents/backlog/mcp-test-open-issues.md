@@ -17,7 +17,6 @@ never drop the agent's content silently.
 | # | Issue | Kind | Priority |
 |---|---|---|---|
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui, [RML-18073](https://roomle.atlassian.net/browse/RML-18073) | high — wall cabinets on the worktop |
-| 40 | [A unit colour after a kitchen-wide colour misses the doors](#40-a-unit-colour-after-a-kitchen-wide-colour-misses-the-doors) | bug, roomle-ui command, [RML-18074](https://roomle.atlassian.net/browse/RML-18074) | high — success reported, fronts unchanged |
 | 51 | [A replace drops the group's materials](#51-a-replace-drops-the-groups-materials) | bug, MCP server, [RML-18075](https://roomle.atlassian.net/browse/RML-18075) | high — materials lost without a correction |
 | 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner, [RML-18076](https://roomle.atlassian.net/browse/RML-18076) | high — the kitchen stands in the wall |
 | 49 | [A new group stands on an obstacle](#49-a-new-group-stands-on-an-obstacle) | MCP server feedback, instructions, [RML-18077](https://roomle.atlassian.net/browse/RML-18077) | high — cabinets across a window and on furniture |
@@ -67,28 +66,6 @@ offset is lost, and fix it there.
 height after `mod_FrontColor` and `mod_CountertopColor`.
 
 **Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 32 (the model set `mod_HeightPosInsertion` 1480 on the two wall units that had dropped).
-## 40. A unit colour after a kitchen-wide colour misses the doors
-
-**Ticket.** [RML-18074](https://roomle.atlassian.net/browse/RML-18074)
-
-**Problem.** After a kitchen-wide `mod_FrontColor` (D36, set by `change-group-attribute`),
-`change-module-attribute mod_FrontColor` without `moduleId` on one unit reports success and the plan
-context shows the new value on the root, but the doors keep the kitchen-wide colour: in
-`order-data.json` the root carries the new value and its `mf_Door` the old one.
-
-**Cause.** `change-group-attribute` sets the attribute on every root and every sub module that
-carries it (D20), so the doors hold their own value. `change-module-attribute` without `moduleId`
-sets the root only.
-
-**To do.** `change-module-attribute` without `moduleId` sets the attribute on the root and on its sub
-modules that carry it, in one calculation — the root-level counterpart of D20 (roomle-ui, the command
-in `hi-plan-context.ts` / `glue-logic.ts`). The tool description says that a unit attribute reaches
-the unit's fronts.
-
-**Test.** A glue-logic test: after `change-group-attribute mod_FrontColor` on a group, a
-`change-module-attribute mod_FrontColor` on one root changes the front colour of that root's door.
-
-**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 29 (the two niche wall units).
 ## 51. A replace drops the group's materials
 
 **Ticket.** [RML-18075](https://roomle.atlassian.net/browse/RML-18075)
@@ -307,8 +284,8 @@ the agent needs further calls to restore the accents.
 the load, which sets the attribute on every root and sub module of the group (D20) — over the roots'
 own values from the load. D36 keeps a unit attribute on some roots per unit.
 
-**To do.** After a group attribute, set each root's own value of it again (with its sub modules, see
-issue 40), and name those roots in the correction ("… set on every unit except …").
+**To do.** After a group attribute, set each root's own value of it again (with its sub modules,
+D54), and name those roots in the correction ("… set on every unit except …").
 
 **Test.** A tool-executors test: a group with `mod_FrontColor` 190 and two roots with
 `mod_FrontColor` 326 — after the load the two roots carry 326, the others 190, and the correction

@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18074](https://roomle.atlassian.net/browse/RML-18074); backlog [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 40; related: [RML-18004](https://roomle.atlassian.net/browse/RML-18004) (D20), [RML-18041](https://roomle.atlassian.net/browse/RML-18041) (D36), issue 52 of the same backlog
 > **Date**: 2026-10-07
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Open — implemented on `fix/unit-attribute-reaches-fronts-RML-18074` in roomle-ui and roomle-hi-example, [verified](#verification), not yet merged
 
 ## Affected repositories
 
@@ -236,3 +236,44 @@ payload and the forwarding do not change.
    - Steps 5 and 6: unchanged.
    - One extra call: `change-module-attribute mod_Height` on a GSP root module. Its
      `mf_Dishwasher` gets the same height, and the group loads once (Decision 3).
+
+## Implementation
+
+**roomle-ui:**
+- `changeModuleAttribute` without `moduleId` takes the root module and its sub modules that carry
+  the attribute from the new helper `_attributeTargets`, and sets them with one `modifyAttribute`.
+  It returns `changedModuleIds`. With `moduleId` the command calls `updateAttribute` for that one
+  sub module, as before.
+- `changeGroupAttribute` uses the same helper for each root module.
+- The JSDoc of the command in `external-object-api.ts` changed with it.
+- Two new tests in `glue-logic-test.ts`, and two adapted result expectations.
+
+**roomle-hi-example:**
+- The `change-module-attribute` description and its `moduleId` parameter.
+- D54 in `docs/hi-mcp-behaviour.md`, with the command-tool row and the P2 row.
+- The tool reference in `docs/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`.
+- Issue 40 removed from the backlog, and issue 52 refers to D54.
+
+The served description says "root module", not "unit": the vocabulary guard of
+`hi-mcp-server.test.ts` refuses "the unit" in served text.
+
+## Verification
+
+1. **roomle-ui, homag-intelligence:** 531 tests pass. The two new tests and the two adapted ones
+   fail on the old `changeModuleAttribute`. `tsc` (`lint:types:sdk`), oxlint and prettier on the
+   changed files are clean.
+2. **roomle-hi-example, hi-mcp:** 447 tests pass; the typecheck, `npm run lint` and the format
+   check are clean.
+3. **Live,** on 2026-10-07: roomle-ui with the fix on `:5174` (`npm run dev -- --port 5174`),
+   `EXAMPLE_SERVER_URL=http://localhost:5174/`, and `.temp/result/issue-RML-18074/verify-18074.mjs`
+   (output in `verify.json`).
+
+| Step | Root module | Its sub module |
+|---|---|---|
+| Two HTB60 with group attribute `mod_FrontColor` 190 | 190* | `mf_Door` 190* |
+| `change-module-attribute mod_FrontColor` 240 on the first | 240* | `mf_Door` **240\*** (before the fix: 190*) |
+| Counter-check: two HTB60 without a group colour, 326 on the first | 326* | `mf_Door` 326* (the same colour as before, now as an own input value) |
+| EUTB60 + GSP, `change-module-attribute mod_Height` 780 on GSP | 780* | `mf_Dishwasher` 780* |
+
+The result of the colour change names `changedModuleIds` `[<root id>, "mf_Door"]`, and the result of
+the height change `[<root id>, "mf_Dishwasher"]`. The plan keeps its three groups.

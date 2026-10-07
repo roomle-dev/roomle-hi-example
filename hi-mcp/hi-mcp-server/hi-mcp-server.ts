@@ -340,17 +340,18 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'change-module-attribute',
     {
       description:
-        'Sets one attribute of a root module of a group in the plan, or of one of its sub modules, and ' +
-        'recalculates the group. The ids are the ones get-plan-context shows (a sub module by its id in ' +
+        'Sets one attribute of a root module of a group in the plan and of its sub modules that carry it - ' +
+        'the front colour of a root module reaches its fronts -, or with moduleId of that one sub module only, ' +
+        'and recalculates the group. The ids are the ones get-plan-context shows (a sub module by its id in ' +
         'subModules); attribute ids and allowed values come from the masterData section of get-plan-context ' +
-        'or from find-attributes. Returns the changed group.',
+        'or from find-attributes. Returns the changed group and the ids of the changed modules.',
       inputSchema: {
         rootModuleId: z.string().describe('The id of the root module.'),
         moduleId: z
           .string()
           .optional()
           .describe(
-            'The id of the sub module. Omit to change an attribute of the root module itself.'
+            'The id of the sub module. Omit to change the root module and its sub modules that carry the attribute.'
           ),
         attributeId: z.string().describe('The id of the attribute.'),
         value: z

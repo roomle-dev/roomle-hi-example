@@ -68,11 +68,11 @@ Guarded by `it('resolves the Foundry deployments to the Foundry endpoint')` in
 
 **Reasoning effort.** The chat sends the reasoning effort of `HI_CHAT_REASONING_EFFORT`
 (`providerOptions.azure.reasoningEffort`) to the GPT deployments; unset, each deployment runs at
-its default. OpenAI documents `medium` as the default of gpt-5-mini and `none` (no reasoning) for
-gpt-5.4-mini; the Foundry defaults are not verified. The step log ([a chat turn](#a-chat-turn))
-reads 0 reasoning tokens for the Foundry deployments, so it does not show the effective effort. gpt-5-mini and
+its default. Measured on the Foundry resource (2026-10-07): gpt-5.4-mini does not reason at its
+default (0 reasoning tokens in every step), gpt-5-mini and gpt-6-astra reason as at `medium`. The
+step log ([a chat turn](#a-chat-turn)) shows the reasoning tokens of every step. gpt-5-mini and
 gpt-5.4-mini read images and have a 400k context window. The reasoning effort is set by the chat
-client, not by the MCP server. Measuring it and choosing the chat's model and effort are open:
+client, not by the MCP server. An effort per deployment is open:
 [backlog](../../.agents/backlog/reasoning-effort-for-the-gpt-chat-models.md).
 
 The launcher then:
@@ -144,7 +144,9 @@ the conversation and the MCP tools, and runs `streamText` in steps
   and ends with an `[error]` line naming the limit; the plan keeps what the
   tools changed.
 - Every step logs its tokens (in, out, reasoning), its tool calls and its
-  duration (`[hi-chat] step n: …`).
+  duration (`[hi-chat] step n: …`); "out" counts the reasoning tokens too.
+  Guarded by `it('logs the reasoning tokens of a step')` in
+  `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`.
 
 ## Images in the chat
 

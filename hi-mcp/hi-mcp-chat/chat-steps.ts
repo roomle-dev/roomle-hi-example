@@ -1,4 +1,4 @@
-import { stepCountIs } from 'ai';
+import { stepCountIs, type LanguageModelUsage } from 'ai';
 
 export const MAX_CHAT_STEPS = 16;
 
@@ -16,20 +16,13 @@ export const chatSteps = {
 };
 
 interface StepUsage {
-  usage?: {
-    inputTokens?: { total?: number } | number;
-    outputTokens?: { total?: number; reasoning?: number } | number;
-  };
+  usage?: Pick<
+    LanguageModelUsage,
+    'inputTokens' | 'outputTokens' | 'outputTokenDetails'
+  >;
   toolCalls?: { toolName?: string; input?: unknown }[];
   finishReason?: unknown;
 }
-
-const total = (tokens: { total?: number } | number | undefined): number =>
-  typeof tokens === 'number' ? tokens : (tokens?.total ?? 0);
-
-const reasoning = (
-  tokens: { reasoning?: number } | number | undefined
-): number => (typeof tokens === 'number' ? 0 : (tokens?.reasoning ?? 0));
 
 /**
  * Logs what the model produced in every step - the tokens in, out and spent
@@ -49,9 +42,10 @@ export const logStepUsage = (log: (line: string) => void = console.log) => {
       typeof result.finishReason === 'string'
         ? result.finishReason
         : JSON.stringify(result.finishReason ?? '');
+    const usage = result.usage;
     log(
-      `[hi-chat] step ${step}: ${total(result.usage?.inputTokens)} in, ` +
-        `${total(result.usage?.outputTokens)} out, ${reasoning(result.usage?.outputTokens)} reasoning tokens; ` +
+      `[hi-chat] step ${step}: ${usage?.inputTokens ?? 0} in, ` +
+        `${usage?.outputTokens ?? 0} out, ${usage?.outputTokenDetails.reasoningTokens ?? 0} reasoning tokens; ` +
         `${tools.length > 0 ? `tools: ${tools.join(', ')}` : 'no tool'}; ${finish}; ${Date.now() - startedAt} ms`
     );
     startedAt = Date.now();

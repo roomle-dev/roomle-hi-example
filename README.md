@@ -5,7 +5,8 @@ HI MCP server (`hi-mcp/hi-mcp-server`): an AI agent plans HOMAG Intelligence
 object groups in a live Roomle room-planner session.
 
 New to the HI MCP? The [user guide](./docs/user-guide/README.md) explains what it does, the three
-ways to use it, and how to talk to the assistant.
+ways to use it, and how to talk to the assistant. How it is built — the processes, modules,
+protocols and conventions — is in the [implementation documentation](./docs/implementation/README.md).
 
 ## Usage
 

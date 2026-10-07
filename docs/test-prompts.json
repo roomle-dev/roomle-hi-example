@@ -1,4 +1,5 @@
 {
+  "randomTests": 3,
   "models": [
     {
       "provider": "gpt-5-mini",

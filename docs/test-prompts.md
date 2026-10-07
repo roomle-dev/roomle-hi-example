@@ -155,6 +155,7 @@ table and the kitchen.
 | Field | Content |
 |---|---|
 | `models` | the chat models to test, `{ provider, apiKey }`: a provider name of the launcher and its key — `"$NAME"` reads the key from the environment variable `NAME`, which keeps it out of the committed file |
+| `randomTests` | how many random tests the "test the mcp" skill adds to each session (default 3, 0 for none): the agent running it writes them for one of the plans drawn at random, marks them `"random": true` and puts them only into the session's test file — the report shows them as random tests ([skill](../.agents/skills/hi-mcp-testing.md#random-tests)) |
 | `plans` | the plans above by name: `{ "<name>": "<plan snapshot id>" }` |
 | `tests` | `{ id, title, plan, prompt?, image?, expect? }` — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message — a `prompt` list is sent as consecutive turns of one conversation, the image with the last turn; `expect` says what the evaluation checks, per turn for a list |
 

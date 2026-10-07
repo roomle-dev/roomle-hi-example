@@ -55,6 +55,43 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
   - For a model without images, leave the image tests out of the file and list them in the report
     as skipped.
 
+#### Random tests
+
+Every session adds `randomTests` new tests (in `docs/test-prompts.json`; 3 when it is missing, 0 for
+none; a number the user names replaces it), written by the agent that runs this skill. They go only
+into `$SESSION/tests.json`, after the fixed tests — never into `docs/test-prompts.json`.
+
+1. Draw a plan for each at random, so that sessions do not repeat themselves:
+
+   ```bash
+   node -e 'const { plans, randomTests = 3 } = require("./docs/test-prompts.json"); const names = Object.keys(plans); for (let i = 0; i < randomTests; i++) console.log(names[Math.floor(Math.random() * names.length)])'
+   ```
+
+2. Write one test per drawn plan: a request a user of that plan could make that no fixed test
+   covers. Vary the furniture (kitchen, wardrobe, sideboard, media unit, utility room, tall units),
+   the place (a wall, a corner, a free spot), materials and dimensions of the
+   [catalog](../../docs/library-information/articles.md), edits of a group the plan has, undo and
+   redo, and conversations of two or three turns. An edit needs an HI group in the plan (see the
+   plan in [test-prompts.md](../../docs/test-prompts.md#plans)). Plain English user words: no tool
+   name, no id, no image ([ADR 0006](../decisions/0006-prompt-tests-assess-the-agent.md)). Write
+   `expect` before the run, from the plan and the catalog.
+
+3. Write them to `$SESSION/random-tests.json` as a list, in the form of the fixed tests with the mark
+   `"random": true`, the id `random-<n>-<slug>` and the title `Random: <title>`:
+
+   ```json
+   [{ "id": "random-1-walnut-sideboard-left-wall", "title": "Random: walnut sideboard, left wall",
+      "plan": "living-room", "random": true,
+      "prompt": "add a sideboard of three walnut cabinets to the left wall",
+      "expect": "one group of three base cabinets against the left wall, walnut fronts" }]
+   ```
+
+   and append them:
+
+   ```bash
+   jq --slurpfile random "$SESSION/random-tests.json" '.tests += $random[0]' "$SESSION/tests.json" > "$SESSION/tests.tmp" && mv "$SESSION/tests.tmp" "$SESSION/tests.json"
+   ```
+
 ### 4. Run
 
 One command runs every test for every model of the file, one after another:
@@ -70,8 +107,7 @@ node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" 
   `errors`.
 - If the time limit stops it, start the same command again: it skips every test whose directory
   holds `run.json`.
-- Exit code 1 of a run is a result like any other (an operation, the model or the chat reported an
-  error).
+- Exit code 1 of a run is a result like any other (the model or the chat reported an error).
 - The runner repeats a run without `run.json` (the launcher or the page did not come up) once. A run
   that still has none is in `results.json` with "no run.json"; the report lists it as not run, with
   the last lines of its `console.log`.
@@ -185,6 +221,11 @@ sections go straight into `report.md`.
 
 The session folder is shared as it is, e.g. zipped: `report.md` links only files inside it.
 
+The random tests are marked wherever they appear: the header row counts them, their titles start
+with "Random:" in the summary and in their run sections, each run section says so, and the section
+"Random tests" lists them with their JSON — a random test worth keeping can be copied from there into
+`docs/test-prompts.json`.
+
 - Copy the source image of every image test into `$SESSION/images/`:
 
   ```bash
@@ -201,13 +242,26 @@ The session folder is shared as it is, e.g. zipped: `report.md` links only files
 
 | Model | Planner | Tests | Pass | Partial | Fail | Bugs |
 |---|---|---|---|---|---|---|
-| gpt-5-mini | bo-test | 18 run, 0 skipped | … | … | … | … |
+| gpt-5-mini | bo-test | 21 run (3 random), 0 skipped | … | … | … | … |
 
 ## Summary
 
 | # | Test | Verdict | Bug | Plan snapshot |
 |---|---|---|---|---|
 | 01 | [<title>](#01-<title-slug>) | pass | no | `ps_…` |
+| 31 | [Random: <title>](#31-random-<title-slug>) | fail | no | `ps_…` |
+
+## Random tests
+
+Generated for this session by the agent that ran it; not in `docs/test-prompts.json`.
+
+| # | Test | Plan | Verdict | Keep as a fixed test |
+|---|---|---|---|---|
+| 31 | [Random: <title>](#31-random-<title-slug>) | <plan name> | fail | yes — <what it covers that no fixed test does> |
+
+```json
+<the random tests as they are in tests.json>
+```
 
 ## Bugs
 
@@ -243,6 +297,15 @@ Plan: <plan name>
 **Evaluation — <verdict>**: <what is in the plan against what was asked, with the evidence>
 
 **Bug — <yes: component / no: model finding / no: environment>**: <why>
+
+## 31 Random: <title>
+
+> <prompt — one quote line per turn of a conversation>
+
+Plan: <plan name>
+
+- **Random test**: generated for this session, not in `docs/test-prompts.json`
+- …
 
 ## 09 <title of an image test>
 
@@ -299,7 +362,7 @@ node .agents/scripts/run-hi-mcp-tests.js [<tests.json>] [--out <dir>] [--dev]
 
 | Argument | Meaning |
 |---|---|
-| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `tests` (`{ id, title, plan, prompt?, image?, expect? }`, `prompt` a text or a list of turns); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
+| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `tests` (`{ id, title, plan, prompt?, image?, expect?, random? }`, `prompt` a text or a list of turns), `randomTests` (how many random tests [step 3](#random-tests) adds); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
 | `--out <dir>` | the session directory, default `.temp/result/mcp-test-<local time>/`; an existing one is continued |
 | `--dev` | passed to every run |
 
@@ -307,7 +370,7 @@ The runner:
 
 1. checks the file before the first run — every model has a key (a `"$NAME"` variable is set), every test has a
    unique kebab-case `id`, a `plan` of `plans`, a prompt (a text or a list of texts) or an image and an existing
-   image file — and names every problem;
+   image file; `randomTests` is a whole number — and names every problem;
 2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider> "<apiKey>"
    "<prompt>" ["<prompt>" …] --plan <id> [--image <file>] --out <out>/<provider>/<NN>-<id>`
    (one `"<prompt>"` per turn of a `prompt` list),
@@ -319,7 +382,7 @@ The runner:
 
 A run takes about 40 s for the launcher, the page and the snapshot, plus the model's chat time
 (gpt-5.4-mini 5–15 s, gpt-5-mini 30–60 s, gpt-6-astra up to 150 s per turn): the 33 tests of the
-file (one of them a conversation of seven turns) take about an hour and a quarter for the three GPT
+file (one of them a conversation of seven turns) and the random tests take about an hour and a quarter for the three GPT
 models on a machine with a GPU against the local planner.
 A fix committed while the runner goes on takes effect from the next run, because every run
 starts a fresh server and chat; the report then says which runs ran with which build.
@@ -374,7 +437,7 @@ The script:
 | `top-object-image.png`, `perspective-object-image.png` | the HI objects only (missing when the plan has no groups) |
 | `plan.xml` | the plan XML |
 
-Exit code 0 when no operation, the chat and the snapshot reported an error; 1 when one did, or when no
+Exit code 0 when neither the chat nor the snapshot reported an error; 1 when one did, or when no
 snapshot or no plan snapshot id came back (the reason is in `errors`) — the result
 directory is written in both cases, after an error the snapshot shows the plan as the model left
 it. A failed planner call the model reports in its answer is not an error of the run: it is in

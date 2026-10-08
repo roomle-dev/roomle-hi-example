@@ -90,6 +90,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [A replace drops the group's materials](bug-analysis/replace-drops-the-group-materials.md) | Open (implemented, not merged) | 2026-10-08 |
 | [A new group is placed at a point the model computes](bug-analysis/new-group-placed-at-a-point-the-model-computes.md) | Open (implemented, not merged) | 2026-10-08 |
 | [A lone wall unit drops onto the worktop](bug-analysis/lone-wall-unit-drops-onto-the-worktop.md) | Open (implemented, not merged) | 2026-10-08 |
+| [The wall units get framed glass fronts](bug-analysis/wall-units-get-framed-glass-fronts.md) | Open (analysed, one decision needed) | 2026-10-08 |
 
 ### Feature Analyses
 

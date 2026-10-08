@@ -24,7 +24,7 @@ at the end.
 | Anchor probe | `knownAnchorFrames`, `probeAnchorFrame`, `takeBackProbe` |
 | Placement normalisation | `normalizePlacement` |
 | Docking graph and its completion | `sidePartnersOf`, `rowWalk`, `separateSideVectorPartners`, `connectUnreachedRoots`, `reportUnsentRoots`, `completeDocking` |
-| Group-wide attributes, group id memory, post-load checks | `generatedRootAttributes`, `moveGeneratedRootOverrides`, `agentGroupIds`, `applyKitchenWideAttributes`, `reportRevertedReplaces` |
+| Group-wide attributes, group id memory, post-load checks | `generatedRootAttributes`, `moveGeneratedRootOverrides`, `agentGroupIds`, `applyGroupWideAttributes`, `groupSettingIdsOf`, `reportRevertedReplaces` |
 | The obstacle hint (D55) | `WALL_STRIP_MM`, `objectBlockers`, `rootBlockersBeside`, `freeStretchesNote`, `obstacleHint`; the geometry in `plan-space.ts`: `rootVolumesInRoom`, `stripInFrontOfWall`, `wallOfRoot`, `freeStretchesAlongWall`, `convexHull` (an object outline is tested by its hull: the separating-axis test of `convexPolygonsTouch` holds for convex outlines only) |
 | Partial loads | `NotLoadedGroup`, `keepBuildable`, `nothingLoaded` |
 | Payload preparation | `dropMalformedDocking`, `liftNestedRoots`, `completeDockingEntries`, `normalizedAttributes`, `reportUnusedFields`, `readDockToAsRelation`, `prepareGroup` |
@@ -71,7 +71,7 @@ The longest pipeline. Each group of the call is prepared on its own; a group tha
 call and is reported in `notLoaded`, the others load
 ([§8.3](../hi-mcp-behaviour.md#83-create-or-replace-groups)).
 
-1. **Kitchen-wide attributes first.** `generatedRootAttributes` takes the attributes the agent set on
+1. **Group-wide attributes first.** `generatedRootAttributes` takes the attributes the agent set on
    generated roots (worktop, toe kick) before they are dropped.
 2. **Prepare** each group (`prepareGroup`, through `keepBuildable`): drop malformed docking, lift
    units nested in docking entries to roots, complete docking entries, read `dockTo` as a relation,
@@ -98,8 +98,10 @@ call and is reported in `notLoaded`, the others load
 10. **Load:** `loadExternalObjectGroupLayout({ posGroups }, 'posGroups', { reason: 'adjusted' })`. An
     empty result throws "No groups were created or replaced", with every `notLoaded` reason.
 11. **After the load:** read the groups again; detect a replace the planner silently reverted
-    (`reportRevertedReplaces`); apply the kitchen-wide attributes with
-    `externalObjectGroupOperation('change-group-attribute', …)` (`applyKitchenWideAttributes`);
+    (`reportRevertedReplaces`); apply the group-wide attributes with
+    `externalObjectGroupOperation('change-group-attribute', …)` (`applyGroupWideAttributes`) — every
+    group attribute but the library's group settings, which `groupSettingIdsOf` takes from the
+    master data's `groupSettings`;
     remember the agent's group ids (`rememberAgentGroupIds`); hint at unpositioned groups. The
     reads after the load take `groups`, `obstacles` and `rooms`; with an `obstacles` section the
     raw groups are read and `obstacleHint` names every root module of the call's groups on an

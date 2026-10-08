@@ -21,7 +21,7 @@ the planner splits groups and generates ids.
 
 The server pairs the new groups of the plan with the input groups in order (`matchResultGroups`,
 `tool-executors.ts:1568-1581`). A group the planner leaves out shifts that pairing, so the
-kitchen-wide attributes (G46), the remembered agent ids (G50) and the hint of a group at the place of
+group-wide attributes (G46), the remembered agent ids (G50) and the hint of a group at the place of
 another go to the wrong group.
 
 A replace the library cannot calculate is the same gap: roomle-ui restores the previous group
@@ -44,7 +44,7 @@ comparing the articles before and after (`reportRevertedReplaces`, `tool-executo
 - `it.fails('RML-18033: reports a group omitted by the planner in notLoaded')` in
   `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` becomes a regular test: two new groups, the
   planner builds one, `notLoaded` names the other.
-- A call whose first group the planner leaves out sets the kitchen-wide attributes on the second
+- A call whose first group the planner leaves out sets the group-wide attributes on the second
   group's result.
 - roomle-ui: the load result of a layout with a group the library cannot calculate names that group.
 

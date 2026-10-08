@@ -540,7 +540,7 @@ Examples:
 ### undo, redo
 
 No parameters. `undo` reverts the plan change of the last tool call that changed the plan — a
-whole `create-or-replace-groups` call with its kitchen-wide material included — and `redo` brings
+whole `create-or-replace-groups` call with its group-wide material included — and `redo` brings
 it back; call `undo` again to revert the call before. The server records every tool call that
 changed the plan with the planner steps it made (`plan-history.ts`) and steps the planner's own undo
 history back by that many steps, each confirmed by the history event the page relays

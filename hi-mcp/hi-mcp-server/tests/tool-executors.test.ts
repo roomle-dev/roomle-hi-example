@@ -3010,14 +3010,15 @@ describe('create-or-replace-groups materials', () => {
   const createMaterialsApi = (
     groupsBefore: any[],
     groupsAfter: any[],
-    overrides: Record<string, unknown> = {}
+    overrides: Record<string, unknown> = {},
+    masterData: Record<string, unknown> = masterDataFixture
   ) => {
     let groupReads = 0;
     return createApi(planContextFixture, {
       getExternalObjectPlanContext: vi.fn(async (sections: string[]) =>
         sections.includes('groups')
           ? { groups: groupReads++ === 0 ? groupsBefore : groupsAfter }
-          : planContextFixture
+          : { ...planContextFixture, masterData }
       ),
       ...overrides,
     });
@@ -3064,6 +3065,44 @@ describe('create-or-replace-groups materials', () => {
       'rooms',
     ]);
     expect(result.groups).toEqual([created]);
+  });
+
+  it('sets the group attributes on every unit after a replace, except the group settings of the master data', async () => {
+    // RML-18075: after a replace the planner lists the attributes the call sent
+    const sent = [
+      { id: 'mod_ToekickColor', value: '224' },
+      { id: 'mod_GroupHeight', value: 1500 },
+    ];
+    const api = createMaterialsApi(
+      [makeShapedGroup()],
+      [makeShapedGroup({ attributes: sent })],
+      {},
+      {
+        'lib-1': {
+          ...masterDataFixture['lib-1'],
+          groupSettings: ['mod_GroupHeight'],
+        },
+      }
+    );
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          id: 'g1',
+          libraryId: 'lib-1',
+          attributes: sent,
+          roots: [{ id: 'r1', articleId: 'article-1' }],
+        },
+      ],
+    })) as Record<string, any>;
+    expect(commandsOf(api)).toEqual([
+      [
+        'change-group-attribute',
+        { groupId: 'g1', attributeId: 'mod_ToekickColor', value: '224' },
+      ],
+    ]);
+    expect(result.corrections).toEqual([
+      'posGroups[0]: mod_ToekickColor "224" was set on every unit of group \'g1\'',
+    ]);
   });
 
   it('moves an override only a generated root carries to the group', async () => {

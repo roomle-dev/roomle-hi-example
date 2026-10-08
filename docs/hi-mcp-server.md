@@ -345,8 +345,9 @@ coordinate system throughout (3D, right-handed, Y up).
 - `masterData` — only when included explicitly: per library the root modules
   (id, name, desc) with their relevant attribute ids, and the attributes a
   customer sees (`isMain` or `userRight` `Simple`) with desc, type, group and
-  `selections` (value, name and desc). The same compacted attribute vocabulary is
-  searched by [find-attributes](#find-attributes)
+  `selections` (value, name and desc), and `groupSettings`, the attributes the
+  library's group orchestrator sets on a group. The same compacted attribute
+  vocabulary is searched by [find-attributes](#find-attributes)
 
 Example: `{ "include": ["articles", "groups"] }`
 
@@ -395,9 +396,12 @@ modules. The agent never authors root positions. Docking written as `contextData
 `get-plan-context` carries it — is still accepted. A root's `attributes` are
 overrides of that root module; a material for the whole group goes into the group's
 `attributes`, and the server sets it on every root module and on the worktop after the
-load (`corrections` says so). An override only the generated worktop carries is
-moved to the group, and a resubmitted group keeps the colours of its worktop and
-toe kick.
+load — after a create and after a replace (`corrections` says so); the library's group
+settings (`groupSettings` of the master data) stay with the group. An override only the
+generated worktop carries is moved to the group, and a resubmitted group keeps the colours
+of its worktop and toe kick. A root module a replace adds inherits the attributes the
+library passes on between neighbours (fronts, handles, carcase) from the root module it is
+docked to; its own `attributes` override them.
 
 A new group is positioned with `placement: { posGroup, posRotationY,
 rootId? }` — see [Positioning a group](#positioning-a-group). It is applied
@@ -535,9 +539,9 @@ its first UUID segment or in one character is read as that root and reported.
 | `delete-group` | `groupId` | Deletes the group |
 | `delete-root-module` | `rootModuleId` | Deletes one root module and leaves the gap; root modules no longer docked together become separate groups where they stand, and deleting the only root module deletes the group. Generated roots (worktop, toe kick) cannot be deleted |
 | `remove-article-from-group` | `rootModuleId`, `groupId` (optional: the group of the root module) | Removes one root module and closes the gap: the neighbours are docked to each other, the root modules at a wall stay, a wall unit hung on it hangs on the root module that moves into the gap. A root module with a neighbour on one side only is removed and nothing else moves; a corner article between two legs is removed and the gap closed by turning one leg by 90° with the units above it, and the result names the leg that turned; the only root module is deleted with its group (`gapClosed: false`) |
-| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }` | Docks the article as a new root module to a free docking vector of a root module of the group (`mode` default `StartStart`, `offset` default `[0, 0, 0]`) |
-| `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between: [rootId, rootId]` | Inserts an article between two root modules that stand side by side, in either order, whatever the group and the article (a low cabinet between two wardrobes too); the root modules at a wall or in a corner keep their place and the others move by the article's width. Two root modules of one row that are no neighbours put the article beside the first-named, towards the second (reported) |
-| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | Replaces a root module with an article of one root module; the new root module keeps the position and the docking, `attributes` override attributes of the new root module (`mod_Width` for another width - the other root modules move by the difference), and a docking the new article cannot take is named in `corrections` |
+| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }` | Docks the article as a new root module to a free docking vector of a root module of the group (`mode` default `StartStart`, `offset` default `[0, 0, 0]`); the new root module inherits the attributes the library passes on between neighbours (fronts, handles, carcase) from `dockTo.rootId`, and `attributes` override them |
+| `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between: [rootId, rootId]` | Inserts an article between two root modules that stand side by side, in either order, whatever the group and the article (a low cabinet between two wardrobes too); the root modules at a wall or in a corner keep their place and the others move by the article's width. Two root modules of one row that are no neighbours put the article beside the first-named, towards the second (reported). The new root module inherits the attributes the library passes on between neighbours from the first root module of `between`, and `attributes` override them |
+| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | Replaces a root module with an article of one root module; the new root module keeps the position, the docking and the attributes the library passes on between neighbours, `attributes` override attributes of the new root module (`mod_Width` for another width - the other root modules move by the difference), and a docking the new article cannot take is named in `corrections` |
 | `swap-root-modules` | `groupId`, `rootModuleIds: [rootId, rootId]` | Lets two root modules change places, neighbours or not; attributes and the wall units hanging from a root module go with it, the group keeps its length and the root modules at a wall keep their place |
 | `merge-groups` | `targetGroupId`, `groupIds` | Merges the groups into the target group where they stand, like the planner's merge action; nothing is moved and no docking is added |
 

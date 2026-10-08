@@ -822,7 +822,7 @@ const agentFacingArticle = (article: any, articles: any[]) => {
 
 // The walls in the words of the user: a name per wall, an opening named as
 // such (the contour gives it no type), and the room corners with their point
-// and the rotation of a corner kitchen there.
+// and the rotation of a group that starts with a corner article there.
 const agentFacingRooms = (rooms: any) => {
   if (!Array.isArray(rooms?.rooms)) {
     return rooms;
@@ -1478,7 +1478,7 @@ const completeDocking = (
     : connectUnreachedRoots(group.roots, articles, prefix, corrections);
 };
 
-interface KitchenWideAttribute {
+interface GroupWideAttribute {
   id: string;
   value: unknown;
 }
@@ -1487,13 +1487,13 @@ interface CallGroup {
   group: any;
   index: number;
   // attributes the server sets on the whole group after the load
-  kitchenWide: KitchenWideAttribute[];
+  groupWide: GroupWideAttribute[];
 }
 
 // The input attributes of the generated roots (the worktop's colour) a group
 // from get-plan-context carries: C1 drops the roots, the attributes are set
 // again after the load.
-const generatedRootAttributes = (group: any): KitchenWideAttribute[] =>
+const generatedRootAttributes = (group: any): GroupWideAttribute[] =>
   Array.isArray(group?.roots)
     ? group.roots
         .filter(isGeneratedRoot)
@@ -1526,9 +1526,9 @@ const moduleIdsOf = (article: any): string[] =>
 
 // An override of an attribute the unit's own module does not carry but a
 // generated root module does - the worktop colour on a base unit - is meant
-// for the kitchen: it leaves the root and is set on the group after the load.
-// The generated modules are the master data's root modules no catalog article
-// has.
+// for the whole group: it leaves the root and is set on the group after the
+// load. The generated modules are the master data's root modules no catalog
+// article has.
 const moveGeneratedRootOverrides = async (
   roomDesignerApi: PlannerApi,
   callGroups: CallGroup[],
@@ -1564,7 +1564,7 @@ const moveGeneratedRootOverrides = async (
         .filter((module) => !articleModuleIds.has(module?.id))
         .flatMap((module) => module.attributes ?? [])
     );
-    const moved = (root.attributes as KitchenWideAttribute[]).filter(
+    const moved = (root.attributes as GroupWideAttribute[]).filter(
       (attribute) =>
         !ownAttributeIds.has(attribute.id) &&
         generatedAttributeIds.has(attribute.id)
@@ -1573,12 +1573,12 @@ const moveGeneratedRootOverrides = async (
       continue;
     }
     root.attributes = root.attributes.filter(
-      (attribute: KitchenWideAttribute) => !moved.includes(attribute)
+      (attribute: GroupWideAttribute) => !moved.includes(attribute)
     );
     if (root.attributes.length === 0) {
       delete root.attributes;
     }
-    callGroup.kitchenWide.push(...moved);
+    callGroup.groupWide.push(...moved);
     corrections.push(
       `posGroups[${callGroup.index}] root '${root.id}': a '${root.articleId}' has no attribute ` +
         `${quotedIds(moved.map((attribute) => attribute.id))} - the generated roots of the group carry it, so it is set on the whole group`
@@ -1843,11 +1843,28 @@ const obstacleHint = ({
   ].join(' ');
 };
 
+// The library's group settings stay with the group. The master data names
+// them; on a planner whose master data does not, the attributes the loaded
+// group lists stand in for them - the settings after a create, but what was
+// sent after a replace.
+const groupSettingIdsOf = async (
+  roomDesignerApi: PlannerApi,
+  group: any
+): Promise<Set<string>> => {
+  const groupSettings = (await masterDataOf(roomDesignerApi))[group.libraryId]
+    ?.groupSettings;
+  return new Set(
+    Array.isArray(groupSettings)
+      ? groupSettings
+      : ((group.attributes ?? []) as any[]).map((attribute) => attribute?.id)
+  );
+};
+
 // The group attributes that are not the library's group settings, the
 // overrides moved off the roots and the colours of the dropped generated roots
 // are set on every unit of the group with the planner's change-group-attribute
-// command. True when a command ran.
-const applyKitchenWideAttributes = async (
+// command, after a create and after a replace. True when a command ran.
+const applyGroupWideAttributes = async (
   roomDesignerApi: PlannerApi,
   callGroups: CallGroup[],
   beforeGroupIds: Set<string>,
@@ -1855,20 +1872,20 @@ const applyKitchenWideAttributes = async (
   corrections: string[]
 ): Promise<boolean> => {
   let applied = false;
-  for (const [{ group, index, kitchenWide }, result] of matchResultGroups(
+  for (const [{ group, index, groupWide }, result] of matchResultGroups(
     callGroups,
     beforeGroupIds,
     groups
   )) {
-    const settingIds = new Set(
-      ((result.attributes ?? []) as any[]).map((attribute) => attribute?.id)
-    );
+    const groupAttributes = (group.attributes ?? []) as GroupWideAttribute[];
+    const settingIds =
+      groupAttributes.length > 0
+        ? await groupSettingIdsOf(roomDesignerApi, result)
+        : new Set<string>();
     const toApply = new Map<string, unknown>();
     for (const attribute of [
-      ...((group.attributes ?? []) as KitchenWideAttribute[]).filter(
-        (attribute) => !settingIds.has(attribute.id)
-      ),
-      ...kitchenWide,
+      ...groupAttributes.filter((attribute) => !settingIds.has(attribute.id)),
+      ...groupWide,
     ]) {
       toApply.set(attribute.id, attribute.value);
     }
@@ -3131,7 +3148,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         (args.posGroups as any[]).map((group, index) => ({
           group,
           index,
-          kitchenWide: generatedRootAttributes(group),
+          groupWide: generatedRootAttributes(group),
         })),
         notLoaded,
         ({ group, index }) =>
@@ -3329,7 +3346,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         corrections
       );
       if (
-        await applyKitchenWideAttributes(
+        await applyGroupWideAttributes(
           roomDesignerApi,
           callGroups,
           beforeGroupIds,

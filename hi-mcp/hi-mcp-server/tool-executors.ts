@@ -1965,6 +1965,148 @@ const groupSettingIdsOf = async (
   );
 };
 
+interface LibraryChange {
+  libraryId: string;
+  attributeId: string;
+  from?: string;
+  to: string;
+  roots: any[];
+}
+
+const inputValuesOf = (root: any): Map<string, string> =>
+  new Map(
+    ((root?.attributes ?? []) as any[])
+      .filter(
+        (attribute) =>
+          typeof attribute?.id === 'string' && attribute.value !== undefined
+      )
+      .map((attribute) => [attribute.id, String(attribute.value)])
+  );
+
+// What the library changed besides the attributes a command set, by the input
+// attributes of the root modules before and after: another attribute whose
+// value changed - a front program switched by a front colour -, or a set
+// attribute that a root module the command set it on ends with another value
+// of. The root modules changed alike are one change.
+const findLibraryChanges = (
+  before: any[],
+  after: any[],
+  applied: GroupWideAttribute[],
+  isSetOn: (root: any) => boolean = () => true
+): LibraryChange[] => {
+  const appliedValues = new Map(
+    applied.map(({ id, value }) => [id, String(attributeValue(value))])
+  );
+  const changes = new Map<string, LibraryChange>();
+  for (const group of after) {
+    const rootsBefore = (before.find((candidate) => candidate?.id === group?.id)
+      ?.roots ?? []) as any[];
+    for (const root of (group?.roots ?? []) as any[]) {
+      const rootBefore = rootsBefore.find(
+        (candidate) => candidate?.id === root?.id
+      );
+      if (!rootBefore) {
+        continue;
+      }
+      const was = inputValuesOf(rootBefore);
+      for (const [attributeId, to] of inputValuesOf(root)) {
+        const from =
+          isSetOn(root) && appliedValues.has(attributeId)
+            ? appliedValues.get(attributeId)
+            : was.get(attributeId);
+        if (to === from) {
+          continue;
+        }
+        const key = [group.libraryId, attributeId, from, to].join('\n');
+        const change: LibraryChange = changes.get(key) ?? {
+          libraryId: group.libraryId,
+          attributeId,
+          from,
+          to,
+          roots: [],
+        };
+        change.roots.push(root);
+        changes.set(key, change);
+      }
+    }
+  }
+  return [...changes.values()];
+};
+
+// A value as the agent reads it in the master data: with its desc.
+const describedValue = (
+  masterData: Record<string, any>,
+  libraryId: string,
+  attributeId: string,
+  value: string
+): string => {
+  const desc = ((masterData[libraryId]?.attributes ?? []) as any[])
+    .find((attribute) => attribute?.id === attributeId)
+    ?.selections?.find(
+      (selection: any) => String(selection?.value) === value
+    )?.desc;
+  return desc ? `${JSON.stringify(value)} (${desc})` : JSON.stringify(value);
+};
+
+// "with mod_FrontColor "324" (Dark marble) the library changed
+// mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (…) to "Modern" (…)"
+const libraryChangeSentences = async (
+  roomDesignerApi: PlannerApi,
+  changes: LibraryChange[],
+  applied: GroupWideAttribute[],
+  prefix: string
+): Promise<string[]> => {
+  if (changes.length === 0) {
+    return [];
+  }
+  const masterData = await masterDataOf(roomDesignerApi);
+  return changes.map(({ libraryId, attributeId, from, to, roots }) => {
+    const described = (id: string, value: string) =>
+      describedValue(masterData, libraryId, id, value);
+    const cause = applied
+      .map(
+        ({ id, value }) =>
+          `${id} ${described(id, String(attributeValue(value)))}`
+      )
+      .join(' and ');
+    const rootLabels = roots
+      .map((root) => `'${root.id}' (${root.articleId})`)
+      .join(', ');
+    return (
+      `${prefix}: with ${cause} the library changed ${attributeId} of ` +
+      `${roots.length === 1 ? 'root module' : 'root modules'} ${rootLabels}` +
+      (from === undefined ? '' : ` from ${described(attributeId, from)}`) +
+      ` to ${described(attributeId, to)}`
+    );
+  });
+};
+
+// An attribute command's result with the library's changes after its
+// corrections.
+const withLibraryChanges = async (
+  roomDesignerApi: PlannerApi,
+  result: any,
+  before: any[],
+  applied: GroupWideAttribute,
+  isSetOn: (root: any) => boolean,
+  tool: string
+) => {
+  const sentences = await libraryChangeSentences(
+    roomDesignerApi,
+    findLibraryChanges(
+      before,
+      (result?.groups ?? []) as any[],
+      [applied],
+      isSetOn
+    ),
+    [applied],
+    tool
+  );
+  return sentences.length > 0
+    ? { ...result, corrections: [...(result?.corrections ?? []), ...sentences] }
+    : result;
+};
+
 // The group attributes that are not the library's group settings, the
 // overrides moved off the roots and the colours of the dropped generated roots
 // are set on every unit of the group with the planner's change-group-attribute
@@ -1994,13 +2136,19 @@ const applyGroupWideAttributes = async (
     ]) {
       toApply.set(attribute.id, attribute.value);
     }
+    let changedGroup: any;
     for (const [attributeId, value] of toApply) {
       applied = true;
       try {
-        await roomDesignerApi.extended.externalObjectGroupOperation(
-          'change-group-attribute',
-          { groupId: result.id, attributeId, value: attributeValue(value) }
-        );
+        const changed =
+          await roomDesignerApi.extended.externalObjectGroupOperation(
+            'change-group-attribute',
+            { groupId: result.id, attributeId, value: attributeValue(value) }
+          );
+        changedGroup =
+          ((changed?.groups ?? []) as any[]).find(
+            (candidate) => candidate?.id === result.id
+          ) ?? changedGroup;
         corrections.push(
           `posGroups[${index}]: ${attributeId} ${JSON.stringify(value)} was set on every unit of group '${result.id}'`
         );
@@ -2010,6 +2158,17 @@ const applyGroupWideAttributes = async (
             (error instanceof Error ? error.message : String(error))
         );
       }
+    }
+    if (changedGroup) {
+      const appliedToGroup = [...toApply].map(([id, value]) => ({ id, value }));
+      corrections.push(
+        ...(await libraryChangeSentences(
+          roomDesignerApi,
+          findLibraryChanges([result], [changedGroup], appliedToGroup),
+          appliedToGroup,
+          `posGroups[${index}]`
+        ))
+      );
     }
   }
   return applied;
@@ -3900,21 +4059,28 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         'change-module-attribute',
         corrections
       );
-      return withCorrections(
-        await withPlanRoots(
-          () =>
-            roomDesignerApi.extended.externalObjectGroupOperation(
-              'change-module-attribute',
-              {
-                rootModuleId,
-                moduleId: args.moduleId ?? null,
-                attributeId: args.attributeId,
-                value: attributeValue(args.value),
-              }
-            ),
-          groups
+      return withLibraryChanges(
+        roomDesignerApi,
+        withCorrections(
+          await withPlanRoots(
+            () =>
+              roomDesignerApi.extended.externalObjectGroupOperation(
+                'change-module-attribute',
+                {
+                  rootModuleId,
+                  moduleId: args.moduleId ?? null,
+                  attributeId: args.attributeId,
+                  value: attributeValue(args.value),
+                }
+              ),
+            groups
+          ),
+          corrections
         ),
-        corrections
+        groups,
+        { id: args.attributeId as string, value: args.value },
+        (root) => !args.moduleId && root?.id === rootModuleId,
+        'change-module-attribute'
       );
     })
   ),
@@ -3922,17 +4088,22 @@ export const toolExecutors: Record<string, ToolExecutor> = {
   'change-group-attribute': planChange(
     'change-group-attribute',
     inPlacementFrame(async (roomDesignerApi, args) => {
-      const group = findGroup(
-        await planGroups(roomDesignerApi),
-        args.groupId as string
-      );
-      return roomDesignerApi.extended.externalObjectGroupOperation(
-        'change-group-attribute',
-        {
-          groupId: group.id,
-          attributeId: args.attributeId,
-          value: attributeValue(args.value),
-        }
+      const groups = await planGroups(roomDesignerApi);
+      const group = findGroup(groups, args.groupId as string);
+      return withLibraryChanges(
+        roomDesignerApi,
+        await roomDesignerApi.extended.externalObjectGroupOperation(
+          'change-group-attribute',
+          {
+            groupId: group.id,
+            attributeId: args.attributeId,
+            value: attributeValue(args.value),
+          }
+        ),
+        groups,
+        { id: args.attributeId as string, value: args.value },
+        () => true,
+        'change-group-attribute'
       );
     })
   ),

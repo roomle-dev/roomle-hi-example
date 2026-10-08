@@ -394,7 +394,9 @@ The server corrects what it can and builds every group it can
 1. **`corrections`** — what the server changed in the input and applied: a placement it cannot use
    (`posGroup` not a point, no numeric `posRotationY`) or one on a group already in the plan is not
    used, a `rootId` that names no root is dropped, `repositioningData` is taken as the placement,
-   a `place-group` target that overlaps another group is moved along the wall
+   a `place-group` target that overlaps another group is moved along the wall; and what the planner
+   or the library changed beyond what was sent — a docking the planner dropped, a front program the
+   library switched with a front colour (D59)
 2. **`notLoaded`** — the groups or roots that could not be built, with what to send instead: an
    `articleId` the catalog does not have, a root the server cannot dock
 3. **Error result** — only when nothing in the call can be built, or a tool cannot act (an unknown

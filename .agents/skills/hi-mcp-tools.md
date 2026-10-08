@@ -123,7 +123,7 @@ to the group, and the colours of the generated roots a resubmitted group carries
 a replace adds inherits the attributes the library passes on between neighbours (fronts, handles,
 carcase) from the root it is docked to; its own `attributes` override them (D56).
 
-**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
+**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input, and what the library changed with the group attributes — a front colour reset by a front program, D59) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
 
 **Usage**:
 ```javascript
@@ -233,7 +233,11 @@ planner has loaded the result:
   `merge-article-into-group`, two roots of `insert-article-into-group` that are no neighbours, a
   root id read as the plan's id it abbreviates or misspells — and what the planner corrected or
   could not keep, prefixed with the command: a docking the new unit of `exchange-root-module` or `swap-root-modules` cannot take,
-  a unit above that keeps its place or a deletion instead of closing the gap (`delete-article-and-compact`)
+  a unit above that keeps its place or a deletion instead of closing the gap (`delete-article-and-compact`);
+  after `change-module-attribute` and `change-group-attribute`, last, every other attribute the library
+  changed with the one set — "with mod_FrontColor "324" (Dark marble (#404040)) the library changed
+  mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (…) to "Modern" (Mitred frame fronts with
+  glass filling)" (D59)
 - `hint`: after a row edit (insert, `delete-article-and-compact`, exchange, swap) — names the units above that moved with
   the unit below them, and says when the row now reaches past a wall or into another group
 

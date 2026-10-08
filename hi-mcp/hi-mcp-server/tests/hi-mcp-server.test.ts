@@ -626,6 +626,43 @@ describe('hi-mcp-server tool calls', () => {
     }
   });
 
+  it('tells the agent that the front program says how a front is built and that a colour can switch it', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    const { tools } = await client.listTools();
+    const descriptionOf = (name: string) =>
+      tools.find((tool) => tool.name === name)?.description;
+    const served = [
+      client.getInstructions() ?? '',
+      rules,
+      JSON.stringify(tools),
+    ].join('\n');
+
+    expect(rules).toContain(
+      'the front program says how a front is built - by its desc'
+    );
+    expect(rules).toContain(
+      'Choose it by its desc first, then the front colour'
+    );
+    expect(rules).toContain(
+      'a colour it does not offer switches the program to one that does, and the fronts are then built as that program says'
+    );
+    expect(rules).toContain(
+      'keep the fronts the user wants: undo a switched program, take the closest colour their program offers'
+    );
+    for (const tool of ['change-module-attribute', 'change-group-attribute']) {
+      expect(descriptionOf(tool)).toContain(
+        'a front colour the front program does not offer switches the program'
+      );
+      expect(descriptionOf(tool)).toContain(
+        'corrections name every attribute the library changed besides the one set'
+      );
+    }
+    expect(served).not.toContain('allowed values');
+  });
+
   it('describes how to succeed instead of what is rejected, and where the corrections are', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(
@@ -644,6 +681,15 @@ describe('hi-mcp-server tool calls', () => {
     );
     expect(rules).toContain(
       'Read corrections, notLoaded and hint in a result: corrections lists what the server changed in your input'
+    );
+    expect(rules).toContain(
+      'and what the library changed beyond the attribute you set - a front program switched by a front colour'
+    );
+    expect(
+      tools.find((tool) => tool.name === 'create-or-replace-groups')
+        ?.description
+    ).toContain(
+      'corrections (what the server changed in the input, and what the library changed beyond the attributes sent'
     );
     expect(rules).toContain(
       'notLoaded lists the groups and the roots it could not build'

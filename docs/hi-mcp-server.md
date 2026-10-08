@@ -428,7 +428,8 @@ correction:
 
 Returns the loaded runtime ids and the resulting groups (with their final
 ids, `pos`, `rotationY`, `footprint`), plus a hint when a group of this call
-is still unpositioned, `corrections` (what the server changed in the input)
+is still unpositioned, `corrections` (what the server changed in the input, and what the
+library changed with the group attributes — a front colour reset by a front program)
 and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build and, with
 `rootIds`, the roots of a loaded group it could not build — one unknown article id drops that root,
 not the group). A group id you gave an earlier group of the session replaces that group. A `hint`
@@ -538,8 +539,8 @@ its first UUID segment or in one character is read as that root and reported.
 
 | Tool | Parameters | Effect |
 | ---- | ---------- | ------ |
-| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | Sets an attribute of a root module and of its sub modules that carry it, or with `moduleId` of that one sub module (the id in `subModules`); without `moduleId` the result lists the `changedModuleIds` |
-| `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it; the result lists the `changedModuleIds` |
+| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | Sets an attribute of a root module and of its sub modules that carry it, or with `moduleId` of that one sub module (the id in `subModules`); without `moduleId` the result lists the `changedModuleIds`; every other attribute the library changed with it — a front program switched by a front colour, which changes how the fronts are built — is named in `corrections` |
+| `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it; the result lists the `changedModuleIds`; every other attribute the library changed with it — a front program switched by a front colour, which changes how the fronts are built — is named in `corrections` |
 | `delete-group` | `groupId` | Deletes the group |
 | `delete-article-in-place` | `rootModuleId` | Deletes an article and leaves the gap — the tool for "delete" or "remove" unless the user asks to close the gap; root modules no longer docked together become separate groups where they stand, and deleting the only root module deletes the group. Generated roots (worktop, toe kick) cannot be deleted |
 | `delete-article-and-compact` | `rootModuleId`, `groupId` (optional: the group of the root module) | Deletes an article and closes the gap — when the user asks to close it: the neighbours are docked to each other, the root modules at a wall stay, a wall unit hung on it hangs on the root module that moves into the gap. A root module with a neighbour on one side only is deleted and nothing else moves; a corner article between two legs is deleted and the gap closed by turning one leg by 90° with the units above it, and the result names the leg that turned; the only root module is deleted with its group (`gapClosed: false`) |
@@ -550,8 +551,10 @@ its first UUID segment or in one character is read as that root and reported.
 | `merge-groups` | `targetGroupId`, `groupIds` | Merges the groups into the target group where they stand, like the planner's merge action; nothing is moved and no docking is added |
 
 `value` is a string, a number (passed on as its string) or a boolean. Attribute
-ids and allowed values come from the `masterData` section of `get-plan-context`
-or from `find-attributes`.
+ids and their values come from the `masterData` section of `get-plan-context`
+or from `find-attributes`. A value may come only with the value of a related attribute: a front
+colour the front program does not offer switches the program, and the library makes that change in
+its calculation, not in the master data.
 
 In a row edit — insert, `delete-article-and-compact`, exchange, swap — the end of the row at a wall
 or in a corner keeps its place and the other end moves; wall units and the

@@ -13,7 +13,8 @@
 > **Status**: Fixed — [implemented](#implementation) on roomle-ui
 > `fix/lone-wall-unit-drops-RML-18081` ([roomle-ui#3105](https://github.com/roomle-dev/roomle-ui/pull/3105),
 > merged into `fix/hi-mcp-api-and-tools`) and [verified](#verification-1) with unit tests and live
-> without a model; reaches roomle-ui `master` with `fix/hi-mcp-api-and-tools`
+> without a model; on roomle-ui `release/bo-test`, the planner the example page loads, and on
+> `master` with `fix/hi-mcp-api-and-tools`
 
 ## Affected repositories
 

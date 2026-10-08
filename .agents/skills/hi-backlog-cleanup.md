@@ -45,8 +45,12 @@ git switch --no-track -c docs/<slug> origin/master
 - Grep the symbols and `file:line` references the item names at HEAD.
 - `git log --oneline origin/master --grep=<TICKET>` and `git log --oneline origin/master -S<symbol>
   -- hi-mcp minimal-hi-example .agents/scripts` for landed work.
-- roomle-ui items: roomle-ui `origin/master`; ligna-store items: ligna-store `origin/master` (fetch
-  each once).
+- roomle-ui items: done when the fix is on roomle-ui `origin/release/bo-test`, the planner the
+  example page loads (`DEFAULT_SERVER_URL`, `minimal-hi-example/index.html`), or on `origin/master`:
+  `git branch -r --contains <sha>`. A fix merged into the HI branch `fix/hi-mcp-api-and-tools`
+  reaches `release/bo-test` from there. A resolved bug leaves the backlog then; it never waits as a
+  "land the roomle-ui branch" item. ligna-store items: ligna-store `origin/master` (fetch each
+  repository once).
 - An item about the served text — a rule, a tool description, a result message — is done when the
   text in `hi-mcp/hi-mcp-server/` says it. A test run that happens not to show the issue is no fix.
 - Jira: `Accepted` is the closed state in RML. A closed ticket does not prove the code changed — check

@@ -11,7 +11,7 @@
 
 `create-or-replace-groups` reports in `notLoaded` only the groups the server excluded before the load
 (D30). A group of the call that the planner itself does not build is not reported: after the load
-the server checks only that the result is not empty (`tool-executors.ts:3112-3122`), and the call
+the server checks only that the result is not empty (`tool-executors.ts:3621-3631`), and the call
 reads as a success.
 
 **Cause.** `loadExternalObjectGroupLayout` returns one `{ id }` per loaded plan object — the runtime
@@ -20,13 +20,13 @@ id, nothing that names the input group (`LoadExternalObjectGroupResult`, roomle-
 the planner splits groups and generates ids.
 
 The server pairs the new groups of the plan with the input groups in order (`matchResultGroups`,
-`tool-executors.ts:1568-1581`). A group the planner leaves out shifts that pairing, so the
-group-wide attributes (G46), the remembered agent ids (G50) and the hint of a group at the place of
+`tool-executors.ts:1690-1709`). A group the planner leaves out shifts that pairing, so the
+wall placement (D23), the group-wide attributes (G46), the remembered agent ids (G50) and the hint of a group at the place of
 another go to the wrong group.
 
 A replace the library cannot calculate is the same gap: roomle-ui restores the previous group
 (`_discardCalculation`, `glue-logic.ts:2836`) and returns it as loaded; the server tells it only by
-comparing the articles before and after (`reportRevertedReplaces`, `tool-executors.ts:1731`, the
+comparing the articles before and after (`reportRevertedReplaces`, `tool-executors.ts:2029`, the
 §8.3 row "kept its previous content" of
 [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#83-create-or-replace-groups)).
 

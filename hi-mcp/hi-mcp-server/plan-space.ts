@@ -629,6 +629,35 @@ const projectOntoAxis = (
   return [minimum, maximum];
 };
 
+const cross = (
+  [originX, originZ]: [number, number],
+  [aX, aZ]: [number, number],
+  [bX, bZ]: [number, number]
+): number => (aX - originX) * (bZ - originZ) - (aZ - originZ) * (bX - originX);
+
+// The convex hull of floor points (monotone chain). convexPolygonsTouch holds
+// for convex outlines only; an L-shaped sofa is tested like its hull.
+export const convexHull = (points: [number, number][]): [number, number][] => {
+  const sorted = [...points].sort(([aX, aZ], [bX, bZ]) => aX - bX || aZ - bZ);
+  if (sorted.length < 3) {
+    return sorted;
+  }
+  const halfHull = (ordered: [number, number][]): [number, number][] => {
+    const chain: [number, number][] = [];
+    for (const point of ordered) {
+      while (
+        chain.length >= 2 &&
+        cross(chain[chain.length - 2], chain[chain.length - 1], point) <= 0
+      ) {
+        chain.pop();
+      }
+      chain.push(point);
+    }
+    return chain.slice(0, -1);
+  };
+  return [...halfHull(sorted), ...halfHull([...sorted].reverse())];
+};
+
 // Two convex footprints touch when no edge normal of either separates them by
 // more than the tolerance (separating axis theorem); flush contact counts.
 export const convexPolygonsTouch = (

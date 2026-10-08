@@ -21,6 +21,7 @@ import {
 import {
   adjoiningWall,
   alignmentRunsParallel,
+  convexHull,
   footprintCornersInRoom,
   freeStretchesAlongWall,
   groupCornerGeometry,
@@ -1684,7 +1685,7 @@ const objectBlockers = (obstacles: any, rooms: any): Blocker[] =>
       return [
         {
           key,
-          corners: outline,
+          corners: convexHull(outline),
           heights,
           text: `overlaps an object (x ${wholeMm(Math.min(...xs))} to ${wholeMm(Math.max(...xs))}, z ${wholeMm(Math.min(...zs))} to ${wholeMm(Math.max(...zs))}, ${wholeMm(heights[0])} to ${wholeMm(heights[1])} mm)`,
         },

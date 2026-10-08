@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   adjoiningWall,
   alignmentRunsParallel,
+  convexHull,
   convexPolygonsTouch,
   freeStretchesAlongWall,
   groupCornerGeometry,
@@ -332,6 +333,48 @@ describe('wallOfOpening', () => {
     expect(
       wallOfOpening(chair, [{ walls: [WALL_RIGHT, WALL_TOP] }])
     ).toBeUndefined();
+  });
+});
+
+describe('convexHull', () => {
+  // an L-shaped sofa, and a unit in its bounding box beyond the hull
+  const lShaped: [number, number][] = [
+    [1000, -2500],
+    [3000, -2500],
+    [3000, -2000],
+    [1500, -2000],
+    [1500, -1000],
+    [1000, -1000],
+  ];
+  const unit = {
+    corners: [
+      [2400, -1500],
+      [2900, -1500],
+      [2900, -1100],
+      [2400, -1100],
+    ] as [number, number][],
+    heights: [0, 720] as [number, number],
+  };
+
+  it('drops the notch of an L-shaped outline, so a unit beyond the hull overlaps nothing', () => {
+    const hull = convexHull(lShaped);
+    expect(hull).toHaveLength(5);
+    expect(hull).toEqual(
+      expect.arrayContaining([
+        [1000, -2500],
+        [3000, -2500],
+        [3000, -2000],
+        [1500, -1000],
+        [1000, -1000],
+      ])
+    );
+    // the separating-axis test needs a convex outline
+    expect(
+      volumesOverlap(unit, { corners: lShaped, heights: [0, 800] }, 5)
+    ).toBe(true);
+    expect(volumesOverlap(unit, { corners: hull, heights: [0, 800] }, 5)).toBe(
+      false
+    );
   });
 });
 

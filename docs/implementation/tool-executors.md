@@ -25,7 +25,7 @@ at the end.
 | Placement normalisation | `normalizePlacement` |
 | Docking graph and its completion | `sidePartnersOf`, `rowWalk`, `separateSideVectorPartners`, `connectUnreachedRoots`, `reportUnsentRoots`, `completeDocking` |
 | Group-wide attributes, group id memory, post-load checks | `generatedRootAttributes`, `moveGeneratedRootOverrides`, `agentGroupIds`, `applyKitchenWideAttributes`, `reportRevertedReplaces` |
-| The obstacle hint (D55) | `WALL_STRIP_MM`, `objectBlockers`, `rootBlockersBeside`, `freeStretchesNote`, `obstacleHint`; the geometry in `plan-space.ts`: `rootVolumesInRoom`, `stripInFrontOfWall`, `wallOfRoot`, `freeStretchesAlongWall` |
+| The obstacle hint (D55) | `WALL_STRIP_MM`, `objectBlockers`, `rootBlockersBeside`, `freeStretchesNote`, `obstacleHint`; the geometry in `plan-space.ts`: `rootVolumesInRoom`, `stripInFrontOfWall`, `wallOfRoot`, `freeStretchesAlongWall`, `convexHull` (an object outline is tested by its hull: the separating-axis test of `convexPolygonsTouch` holds for convex outlines only) |
 | Partial loads | `NotLoadedGroup`, `keepBuildable`, `nothingLoaded` |
 | Payload preparation | `dropMalformedDocking`, `liftNestedRoots`, `completeDockingEntries`, `normalizedAttributes`, `reportUnusedFields`, `readDockToAsRelation`, `prepareGroup` |
 | Geometry for place-group | `placedGroupVolumes`, `overlappedGroupIds`, `resolveWall`, `placeGroupAtWall`, `standsAt`, `freePlacementAlongWall` |

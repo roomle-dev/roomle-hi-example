@@ -498,3 +498,12 @@ replaced by test 8.
      corrections are as before.
 3. **MCP tests with models**: not run yet; they wait for a go.
 
+### Review of PR #77
+
+- **An object outline is tested by its convex hull** (`convexHull`, `plan-space.ts`). The
+  separating-axis test of `convexPolygonsTouch` holds for convex outlines only. With an L-shaped
+  outline it tested only the L's own edge directions, so a unit in the L's bounding box but beyond
+  its hull was reported. Default 4 now holds as written. Tests: `convexHull` in
+  `plan-space.test.ts`, "tests an L-shaped object like its convex hull" in
+  `tool-executors.test.ts`.
+

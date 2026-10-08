@@ -3402,6 +3402,38 @@ describe('obstacle hints', () => {
     );
   });
 
+  it('tests an L-shaped object like its convex hull', async () => {
+    // the unit stands in the bounding box of the sofa, beyond its hull
+    const api = createObstacleApi({
+      shapedAfter: [makeShapedGroup({ id: 'g-new' })],
+      rawAfter: [
+        rawGroup('g-new', [2400, 0, -1500], 0, [
+          rawUnit('i1', 'base-unit', [0, 0, 0], [500, 720, 400]),
+        ]),
+      ],
+      obstacles: {
+        objects: [
+          {
+            kind: 'object',
+            outline: [
+              [1000, 0, -2500],
+              [3000, 0, -2500],
+              [3000, 0, -2000],
+              [1500, 0, -2000],
+              [1500, 0, -1000],
+              [1000, 0, -1000],
+            ],
+            bottomMm: 0,
+            topMm: 800,
+          },
+        ],
+        groups: [],
+      },
+    });
+    const result = await createGroups(api);
+    expect(result.hint).toBeUndefined();
+  });
+
   it('says nothing about a group beside or touching an obstacle', async () => {
     const api = createObstacleApi({
       shapedAfter: [

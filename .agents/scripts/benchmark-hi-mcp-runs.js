@@ -14,7 +14,9 @@
  * --test keeps the runs of that test id and can be repeated. Prints the
  * benchmark as Markdown; with --out it writes benchmark.md and benchmark.json
  * there instead. A planner call is timed when planner-calls.json carries its
- * ms.
+ * ms. A run whose chat ended with an error (a turn's errors in run.json) is
+ * listed and marked, but left out of the per-test and tool tables; a test with
+ * fewer than two measured runs is marked there.
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -189,6 +191,7 @@ const benchmarkRun = (dir) => {
     notLoaded: sum(toolCalls.map((call) => call.notLoaded?.length ?? 0)),
     toolErrors: toolCalls.filter((call) => call.error).length,
     errors: run.errors?.length ?? 0,
+    chatErrors: run.turns.flatMap((turn) => turn.errors ?? []),
     tools,
     stepLog: steps,
   };
@@ -226,34 +229,48 @@ const plannerSummary = (calls) => {
 };
 
 const toMarkdown = (runs) => {
+  const measured = runs.filter((run) => run.chatErrors.length === 0);
   const lines = ['# HI MCP benchmark', ''];
   lines.push(
     '| Model | Test | Runs | Chat s mean | min | max | Steps mean | Input tokens mean |',
     '|---|---|---|---|---|---|---|---|'
   );
-  const groups = groupBy(runs, (run) => `${run.model}\t${run.test}`);
+  const groups = groupBy(measured, (run) => `${run.model}\t${run.test}`);
   for (const group of groups.values()) {
     const chat = group.map((run) => run.chatMs ?? 0);
     lines.push(
-      `| ${group[0].model} | ${group[0].test} | ${group.length} | ${seconds(mean(chat))} | ` +
+      `| ${group[0].model} | ${group[0].test} | ${group.length}${group.length < 2 ? ' (fewer than 2)' : ''} | ${seconds(mean(chat))} | ` +
         `${seconds(Math.min(...chat))} | ${seconds(Math.max(...chat))} | ` +
         `${mean(group.map((run) => run.steps)).toFixed(1)} | ` +
         `${thousands(mean(group.map((run) => run.inputTokens)))} |`
+    );
+  }
+  if (measured.length < runs.length) {
+    lines.push(
+      '',
+      'Left out of the per-test and tool tables, because the chat ended with an error: ' +
+        runs
+          .map((run, index) => ({ run, number: index + 1 }))
+          .filter(({ run }) => run.chatErrors.length > 0)
+          .map(({ run, number }) => `run ${number} (${run.chatErrors[0]})`)
+          .join(', ') +
+        '.'
     );
   }
   lines.push(
     '',
     '## Runs',
     '',
-    '| Run | Model | Test | Chat s | Steps | Model s | Tools s | Other s | Input tokens | Output tokens | Reasoning tokens | Plan changes | Corrections | Not loaded | Errors |',
-    '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|'
+    '| Run | Model | Test | Chat s | Steps | Model s | Tools s | Other s | Input tokens | Output tokens | Reasoning tokens | Plan changes | Corrections | Not loaded | Errors | Left out |',
+    '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|'
   );
   runs.forEach((run, index) => {
     lines.push(
       `| ${index + 1} | ${run.model} | ${run.test} | ${seconds(run.chatMs)} | ${run.steps} | ` +
         `${seconds(run.modelMs)} | ${seconds(run.toolsMs)} | ${seconds(run.otherMs)} | ` +
         `${thousands(run.inputTokens)} | ${run.outputTokens} | ${run.reasoningTokens} | ` +
-        `${run.planChanges} | ${run.corrections} | ${run.notLoaded} | ${run.errors + run.toolErrors} |`
+        `${run.planChanges} | ${run.corrections} | ${run.notLoaded} | ${run.errors + run.toolErrors} | ` +
+        `${run.chatErrors.length > 0 ? 'chat error' : ''} |`
     );
   });
   lines.push(
@@ -263,7 +280,7 @@ const toMarkdown = (runs) => {
     '| Model | Tool | Calls | Calls per run | Total s | Mean ms |',
     '|---|---|---|---|---|---|'
   );
-  for (const [model, modelRuns] of groupBy(runs, (run) => run.model)) {
+  for (const [model, modelRuns] of groupBy(measured, (run) => run.model)) {
     const totals = {};
     for (const [name, tool] of modelRuns.flatMap((run) =>
       Object.entries(run.tools)
@@ -284,7 +301,7 @@ const toMarkdown = (runs) => {
   runs.forEach((run, index) => {
     lines.push(
       '',
-      `## ${index + 1} ${run.model} — ${run.test}`,
+      `## ${index + 1} ${run.model} — ${run.test}${run.chatErrors.length > 0 ? ' (left out)' : ''}`,
       '',
       `\`${run.dir}\``,
       '',

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-08T12:53:22.694Z",
+  "generatedAt": "2026-10-08T13:06:22.696Z",
   "runs": [
     {
       "dir": ".temp/result/mcp-test-2026-10-07_11-58-22/gpt-6-astra/28-image-kitchen-left-wall",
@@ -19,6 +19,7 @@
       "notLoaded": 0,
       "toolErrors": 0,
       "errors": 1,
+      "chatErrors": [],
       "tools": {
         "get-authoring-rules": {
           "calls": 1,
@@ -497,6 +498,9 @@
       "notLoaded": 0,
       "toolErrors": 0,
       "errors": 2,
+      "chatErrors": [
+        "Failed to process successful response"
+      ],
       "tools": {
         "get-authoring-rules": {
           "calls": 1,
@@ -994,6 +998,7 @@
       "notLoaded": 0,
       "toolErrors": 0,
       "errors": 1,
+      "chatErrors": [],
       "tools": {
         "get-authoring-rules": {
           "calls": 1,
@@ -1969,6 +1974,7 @@
       "notLoaded": 0,
       "toolErrors": 0,
       "errors": 1,
+      "chatErrors": [],
       "tools": {
         "get-authoring-rules": {
           "calls": 1,
@@ -2946,6 +2952,7 @@
       "notLoaded": 0,
       "toolErrors": 0,
       "errors": 0,
+      "chatErrors": [],
       "tools": {
         "get-authoring-rules": {
           "calls": 1,
@@ -3427,6 +3434,7 @@
       "notLoaded": 0,
       "toolErrors": 0,
       "errors": 0,
+      "chatErrors": [],
       "tools": {
         "get-authoring-rules": {
           "calls": 1,
@@ -4212,6 +4220,7 @@
       "notLoaded": 0,
       "toolErrors": 0,
       "errors": 0,
+      "chatErrors": [],
       "tools": {
         "get-authoring-rules": {
           "calls": 1,
@@ -4630,6 +4639,7 @@
       "notLoaded": 0,
       "toolErrors": 0,
       "errors": 0,
+      "chatErrors": [],
       "tools": {
         "get-authoring-rules": {
           "calls": 1,

@@ -3,39 +3,41 @@
 | Model | Test | Runs | Chat s mean | min | max | Steps mean | Input tokens mean |
 |---|---|---|---|---|---|---|---|
 | gpt-6-astra | image-kitchen-left-wall | 2 | 69.7 | 68.8 | 70.6 | 9.5 | 597.0k |
-| gpt-6-astra | image-planning-right-wall | 2 | 123.6 | 113.5 | 133.7 | 9.0 | 743.5k |
 | gpt-6-astra | image-kitchen-back-right-corner | 2 | 98.6 | 60.1 | 137.1 | 11.5 | 902.0k |
 | gpt-6-astra | image-only-no-text | 2 | 108.5 | 76.5 | 140.5 | 9.5 | 599.2k |
+| gpt-6-astra | image-planning-right-wall | 1 (fewer than 2) | 113.5 | 113.5 | 113.5 | 12.0 | 1102.2k |
+
+Left out of the per-test and tool tables, because the chat ended with an error: run 2 (Failed to process successful response).
 
 ## Runs
 
-| Run | Model | Test | Chat s | Steps | Model s | Tools s | Other s | Input tokens | Output tokens | Reasoning tokens | Plan changes | Corrections | Not loaded | Errors |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | gpt-6-astra | image-kitchen-left-wall | 68.8 | 9 | 61.6 | 7.0 | 0.2 | 563.4k | 1249 | 245 | 3 | 9 | 0 | 1 |
-| 2 | gpt-6-astra | image-planning-right-wall | 133.7 | 6 | 55.5 | 16.4 | 61.8 | 384.7k | 1697 | 558 | 4 | 16 | 0 | 2 |
-| 3 | gpt-6-astra | image-kitchen-back-right-corner | 137.1 | 16 | 109.1 | 27.9 | 0.1 | 1349.5k | 3197 | 661 | 10 | 21 | 0 | 1 |
-| 4 | gpt-6-astra | image-only-no-text | 140.5 | 12 | 113.8 | 26.5 | 0.1 | 785.5k | 3354 | 561 | 6 | 37 | 0 | 1 |
-| 5 | gpt-6-astra | image-kitchen-left-wall | 70.6 | 10 | 63.1 | 7.3 | 0.2 | 630.6k | 1238 | 245 | 2 | 8 | 0 | 0 |
-| 6 | gpt-6-astra | image-planning-right-wall | 113.5 | 12 | 91.1 | 21.9 | 0.5 | 1102.2k | 2432 | 806 | 7 | 25 | 0 | 0 |
-| 7 | gpt-6-astra | image-kitchen-back-right-corner | 60.1 | 7 | 48.4 | 11.6 | 0.1 | 454.5k | 1261 | 381 | 3 | 8 | 0 | 0 |
-| 8 | gpt-6-astra | image-only-no-text | 76.5 | 7 | 63.7 | 12.6 | 0.2 | 412.9k | 1448 | 423 | 2 | 26 | 0 | 0 |
+| Run | Model | Test | Chat s | Steps | Model s | Tools s | Other s | Input tokens | Output tokens | Reasoning tokens | Plan changes | Corrections | Not loaded | Errors | Left out |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | gpt-6-astra | image-kitchen-left-wall | 68.8 | 9 | 61.6 | 7.0 | 0.2 | 563.4k | 1249 | 245 | 3 | 9 | 0 | 1 |  |
+| 2 | gpt-6-astra | image-planning-right-wall | 133.7 | 6 | 55.5 | 16.4 | 61.8 | 384.7k | 1697 | 558 | 4 | 16 | 0 | 2 | chat error |
+| 3 | gpt-6-astra | image-kitchen-back-right-corner | 137.1 | 16 | 109.1 | 27.9 | 0.1 | 1349.5k | 3197 | 661 | 10 | 21 | 0 | 1 |  |
+| 4 | gpt-6-astra | image-only-no-text | 140.5 | 12 | 113.8 | 26.5 | 0.1 | 785.5k | 3354 | 561 | 6 | 37 | 0 | 1 |  |
+| 5 | gpt-6-astra | image-kitchen-left-wall | 70.6 | 10 | 63.1 | 7.3 | 0.2 | 630.6k | 1238 | 245 | 2 | 8 | 0 | 0 |  |
+| 6 | gpt-6-astra | image-planning-right-wall | 113.5 | 12 | 91.1 | 21.9 | 0.5 | 1102.2k | 2432 | 806 | 7 | 25 | 0 | 0 |  |
+| 7 | gpt-6-astra | image-kitchen-back-right-corner | 60.1 | 7 | 48.4 | 11.6 | 0.1 | 454.5k | 1261 | 381 | 3 | 8 | 0 | 0 |  |
+| 8 | gpt-6-astra | image-only-no-text | 76.5 | 7 | 63.7 | 12.6 | 0.2 | 412.9k | 1448 | 423 | 2 | 26 | 0 | 0 |  |
 
 ## Tools
 
 | Model | Tool | Calls | Calls per run | Total s | Mean ms |
 |---|---|---|---|---|---|
-| gpt-6-astra | create-or-replace-groups | 13 | 1.6 | 103.8 | 7988 |
-| gpt-6-astra | change-module-attribute | 10 | 1.3 | 8.9 | 886 |
-| gpt-6-astra | undo | 4 | 0.5 | 8.2 | 2053 |
+| gpt-6-astra | create-or-replace-groups | 12 | 1.7 | 90.1 | 7505 |
+| gpt-6-astra | undo | 4 | 0.6 | 8.2 | 2053 |
+| gpt-6-astra | change-module-attribute | 7 | 1.0 | 6.3 | 894 |
 | gpt-6-astra | change-group-attribute | 3 | 0.4 | 2.8 | 933 |
 | gpt-6-astra | place-group | 3 | 0.4 | 2.3 | 751 |
 | gpt-6-astra | get-plan-images | 3 | 0.4 | 1.9 | 621 |
 | gpt-6-astra | swap-root-modules | 2 | 0.3 | 1.6 | 808 |
 | gpt-6-astra | delete-root-module | 1 | 0.1 | 1.6 | 1568 |
-| gpt-6-astra | find-attributes | 53 | 6.6 | 1.2 | 23 |
-| gpt-6-astra | get-plan-context | 13 | 1.6 | 0.3 | 26 |
+| gpt-6-astra | find-attributes | 49 | 7.0 | 1.1 | 23 |
+| gpt-6-astra | get-plan-context | 12 | 1.7 | 0.3 | 26 |
 | gpt-6-astra | delete-group | 1 | 0.1 | 0.1 | 89 |
-| gpt-6-astra | get-authoring-rules | 8 | 1.0 | 0.1 | 10 |
+| gpt-6-astra | get-authoring-rules | 7 | 1.0 | 0.1 | 10 |
 
 ## 1 gpt-6-astra — image-kitchen-left-wall
 
@@ -53,7 +55,7 @@
 | 8 | 1 | place-group | 4.0 | 0.8 | 3.2 | 77.7k | 30 | 0 | 5.6k | getExternalObjectPlanContext ×2, getExternalObjectGroups ×4, loadExternalObjectGroupLayout ×1 |
 | 9 | 1 | — (stop) | 12.3 | 0.0 | 12.3 | 83.4k | 78 | 0 | – |  |
 
-## 2 gpt-6-astra — image-planning-right-wall
+## 2 gpt-6-astra — image-planning-right-wall (left out)
 
 `.temp/result/mcp-test-2026-10-07_11-58-22/gpt-6-astra/29-image-planning-right-wall`
 

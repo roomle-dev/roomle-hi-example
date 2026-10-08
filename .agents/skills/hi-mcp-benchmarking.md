@@ -18,10 +18,13 @@ and their analyses live in [`.agents/benchmarks/`](../benchmarks/README.md).
 - **Compare like with like.** Same tests, plan, models, reasoning effort and planner (bo-test or
   `--dev`) before and after; name the commit each run used.
 - **At least two runs per test and model.** The same prompt and image take 60 s in one run and
-  137 s in the next; one run is no baseline.
-- **Leave out runs a provider error ended** (`errors` in `run.json`, e.g. "Failed to process
-  successful response"), and say which. A failed snapshot save after the chat does not touch the chat
-  time.
+  137 s in the next; one run is no baseline. A test with fewer valid runs stays out of the baseline
+  (the benchmark marks it "fewer than 2") until its next run; its steps still count in the step
+  analysis.
+- **Leave out runs whose chat ended with an error** (a turn's `errors` in `run.json`, e.g. a
+  provider's "Failed to process successful response"), and say which. The benchmark marks them and
+  leaves them out of its per-test and tool tables. A failed snapshot save after the chat (`errors`
+  of the run only) does not touch the chat time; such a run counts.
 - **Trace every finding to its cause** in the served text, a tool result, the tool API or the
   library data, with the run and the step that show it — the model's own choice is never the root
   cause ([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort)).
@@ -69,9 +72,9 @@ It reads, per run, `run.json`, `console.log` and `planner-calls.json`, and write
 
 | Table | Content |
 |---|---|
-| per test | runs, chat seconds (mean, min, max), steps and input tokens (mean) per model and test |
-| runs | per run: chat s, steps, model s, tools s, other s (the chat time outside the steps), tokens in, out and reasoning, plan changes, corrections, groups not loaded, errors |
-| tools | per model and tool: calls, calls per run, total s, mean ms |
+| per test | runs, chat seconds (mean, min, max), steps and input tokens (mean) per model and test — the runs whose chat ended with an error left out, a test with fewer than two runs marked |
+| runs | per run: chat s, steps, model s, tools s, other s (the chat time outside the steps), tokens in, out and reasoning, plan changes, corrections, groups not loaded, errors, and "chat error" for a run left out |
+| tools | per model and tool: calls, calls per run, total s, mean ms — without the runs left out |
 | per run | per step: turn, tools, step s, tools s, model s, input, output, reasoning, result tokens, planner calls per method (with their seconds when `planner-calls.json` has `ms`) |
 
 The derived values:

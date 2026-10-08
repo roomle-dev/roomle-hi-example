@@ -1670,13 +1670,12 @@ const objectBlockers = (obstacles: any, rooms: any): Blocker[] =>
           return [];
         }
         const [from, to] = object.fromEndMm as [number, number];
-        const sill = heights[0] > 0 ? `, from ${wholeMm(heights[0])} mm` : '';
         return [
           {
             key,
             corners: stripInFrontOfWall(wall, [from, to], WALL_STRIP_MM),
             heights,
-            text: `stands in front of the ${object.kind} in the ${wallName(wall.side)} (wall ${wall.index}, fromEndMm ${wholeMm(from)} to ${wholeMm(to)}${sill})`,
+            text: `stands in front of the ${object.kind} in the ${wallName(wall.side)} (wall ${wall.index}, fromEndMm ${wholeMm(from)} to ${wholeMm(to)}, ${wholeMm(heights[0])} to ${wholeMm(heights[1])} mm)`,
           },
         ];
       }

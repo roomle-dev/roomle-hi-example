@@ -139,8 +139,8 @@ and tests each root module of each group of the call:
 3. **In front of a door or a window**: two conditions together:
    - it overlaps the strip in front of the opening: the opening's `fromEndMm` span on its wall,
      reaching the wall strip's depth ([default 1](#defaults-for-review)) into the room;
-   - its height range reaches above the opening's `bottomMm`. A door starts at the floor; base
-     units below a window's sill are fine.
+   - its height range overlaps the opening's, `bottomMm` to `topMm`. A door starts at the
+     floor; base units below a window's sill and wall units above a door or a window are fine.
 
 ### The hint
 
@@ -161,7 +161,7 @@ of an L-shaped group gets its own wall. For test 32, with the default strip of 6
 would read:
 
 > Root module 'd92e40fb' (OTB30) of group '4d696867' stands in front of the window in the back
-> wall (wall 5, fromEndMm 235 to 2335, from 950 mm) - free stretches of the left wall (wall 0) at
+> wall (wall 5, fromEndMm 235 to 2335, 950 to 2170 mm) - free stretches of the left wall (wall 0) at
 > its height: fromEndMm 0 to 4400.
 
 The new test replaces `groupsAtTheSamePlace`, because a group at another group's point overlaps
@@ -477,12 +477,12 @@ replaced by test 8.
 
 ### Results
 
-1. `npm test` (459 tests: 13 new, the two served-text tests extended), `npm run typecheck`, `npm run lint` and
+1. `npm test` (462 tests: 16 new — 3 of them from the review —, the two served-text tests extended), `npm run typecheck`, `npm run lint` and
    `npm run format:check` pass.
 2. **Live, headless**: the deployed bo-test planner and the MCP server of the branch, with the
    tools called directly (`.temp/result/issue-RML-18077/verify-18077.mjs`, `verify.json`).
    - **Default Room, test 32's call 2** (both groups). The OTB30 in the back left corner gets
-     "stands in front of the window in the back wall (wall 5, fromEndMm 235 to 2335, from 950 mm)
+     "stands in front of the window in the back wall (wall 5, fromEndMm 235 to 2335, 950 to 2170 mm)
      - free stretches of the left wall (wall 0) at its height: fromEndMm 0 to 4400". The range
      hood DU gets the same sentence. It hangs 402 mm from the back wall and covers the window's
      first 266 mm, within the 600 mm strip (default 1). The group on the right wall gets none.
@@ -506,4 +506,10 @@ replaced by test 8.
   its hull was reported. Default 4 now holds as written. Tests: `convexHull` in
   `plan-space.test.ts`, "tests an L-shaped object like its convex hull" in
   `tool-executors.test.ts`.
+- **A door or a window is tested within its height**, `bottomMm` to `topMm`, as the code did.
+  A wall unit hung over a door frame does not block the door. The review read D55's "a window
+  above its `bottomMm`" as unbounded above, and so did the hint's "from 950 mm". D55, its §8 rows,
+  this analysis and the hint now state the opening's height range: "(wall 5, fromEndMm 235 to
+  2335, 950 to 2170 mm)", in the format of an object's. Test: "tests a door or a window within its
+  height" in `tool-executors.test.ts`.
 

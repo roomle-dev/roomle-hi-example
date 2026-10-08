@@ -3331,7 +3331,7 @@ describe('obstacle hints', () => {
     });
     const result = await createGroups(api);
     const inFrontOfTheWindow =
-      'stands in front of the window in the back wall (wall 2, fromEndMm 1000 to 2000, from 950 mm) - ' +
+      'stands in front of the window in the back wall (wall 2, fromEndMm 1000 to 2000, 950 to 2170 mm) - ' +
       'free stretches of the back wall (wall 2) at its height: fromEndMm 0 to 1000, 2000 to 4000.';
     expect(result.hint).toBe(
       [
@@ -3359,7 +3359,7 @@ describe('obstacle hints', () => {
     const result = await createGroups(api);
     expect(result.hint).toBe(
       "Root module 'w1' (wall-unit) of group 'g-new' stands in front of the window in the back wall " +
-        '(wall 2, fromEndMm 300 to 1300, from 950 mm) - free stretches of the left wall (wall 3) at its ' +
+        '(wall 2, fromEndMm 300 to 1300, 950 to 2170 mm) - free stretches of the left wall (wall 3) at its ' +
         `height: fromEndMm 0 to 2400. ${BUILT_AS_SENT}`
     );
   });
@@ -3434,6 +3434,20 @@ describe('obstacle hints', () => {
     expect(result.hint).toBeUndefined();
   });
 
+  it('tests a door or a window within its height', async () => {
+    // a wall unit over the door of the right wall, above its top at 2100 mm
+    const api = createObstacleApi({
+      shapedAfter: [makeShapedGroup({ id: 'g-new' })],
+      rawAfter: [
+        rawGroup('g-new', [4000, 0, -900], 270, [
+          rawUnit('w1', 'wall-unit', [0, 2150, 0], [600, 350, 350]),
+        ]),
+      ],
+    });
+    const result = await createGroups(api);
+    expect(result.hint).toBeUndefined();
+  });
+
   it('says nothing about a group beside or touching an obstacle', async () => {
     const api = createObstacleApi({
       shapedAfter: [
@@ -3488,7 +3502,7 @@ describe('obstacle hints', () => {
     ]);
     expect(result.hint).toBe(
       "Root module 'w2' (wall-unit) of group 'g1' stands in front of the window in the back wall " +
-        '(wall 2, fromEndMm 1000 to 2000, from 950 mm) - free stretches of the back wall (wall 2) at its ' +
+        '(wall 2, fromEndMm 1000 to 2000, 950 to 2170 mm) - free stretches of the back wall (wall 2) at its ' +
         `height: fromEndMm 0 to 1000, 2000 to 4000. ${BUILT_AS_SENT}`
     );
   });

@@ -96,7 +96,7 @@ describe('hi-mcp-server tool calls', () => {
   });
 
   it.each([
-    ['change-module-attribute', { attributeId: 'front', value: 'white' }],
+    ['change-module-attribute', { rootModuleIds: ['r1'], value: 'white' }],
     ['change-group-attribute', { groupId: 'g1', value: 'white' }],
     ['delete-group', {}],
     ['delete-article-in-place', {}],
@@ -254,22 +254,30 @@ describe('hi-mcp-server tool calls', () => {
   });
 
   it('accepts a number as an attribute value and passes it on as its string', async () => {
-    const plannerApi = createMockPlannerApi();
+    const plannerApi = createMockPlannerApi({
+      getExternalObjectPlanContext: vi.fn(async () => ({
+        groups: [{ id: 'g1', roots: [{ id: 'r1' }] }],
+      })),
+    });
     const client = await connectClient(plannerApi);
 
     const result = await client.callTool({
       name: 'change-module-attribute',
-      arguments: { rootModuleId: 'r1', attributeId: 'mod_Width', value: 900 },
+      arguments: {
+        rootModuleIds: ['r1'],
+        attributeId: 'mod_Width',
+        value: 900,
+      },
     });
 
     expect((result as { isError?: boolean }).isError).toBeFalsy();
     expect(
       plannerApi.extended.externalObjectGroupOperation
-    ).toHaveBeenCalledWith('change-module-attribute', {
-      rootModuleId: 'r1',
-      moduleId: null,
-      attributeId: 'mod_Width',
-      value: '900',
+    ).toHaveBeenCalledWith('change-attributes', {
+      groupId: 'g1',
+      attributes: [
+        { attributeId: 'mod_Width', value: '900', rootModuleIds: ['r1'] },
+      ],
     });
   });
 
@@ -468,6 +476,24 @@ describe('hi-mcp-server tool calls', () => {
     );
     expect(descriptionOf('find-attributes')).toContain(
       'pick a dark, a light or a blue value by its code'
+    );
+  });
+
+  it('tells the agent that one search finds every colour attribute and its values once', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    const description = tools.find(
+      (tool) => tool.name === 'find-attributes'
+    )?.description;
+
+    expect(description).toContain(
+      'Every word of the text is matched on its own, in any order, British and American spelling alike'
+    );
+    expect(description).toContain(
+      'one search for "color" returns every colour attribute'
+    );
+    expect(description).toContain(
+      'a value list several attributes share is listed once (sameSelectionsAs names the attribute that lists it)'
     );
   });
 

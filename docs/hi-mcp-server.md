@@ -299,7 +299,7 @@ coordinate system throughout (3D, right-handed, Y up).
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `include` | `('masterData' \| 'rooms' \| 'articles' \| 'groups' \| 'obstacles')[]` | no | Sections to include; `rooms`, `articles`, `groups` and `obstacles` when omitted |
+| `include` | `('masterData' \| 'rooms' \| 'articles' \| 'articleDescriptions' \| 'groups' \| 'obstacles')[]` | no | Sections to include; `rooms`, `articles`, `groups` and `obstacles` when omitted |
 
 - `rooms` — every room carries its contour `levels` with 3D segments
   (`pos: [x, level, -y]`, the same right-handed coordinate system as a group's
@@ -312,7 +312,9 @@ coordinate system throughout (3D, right-handed, Y up).
   against that wall (see [Positioning a group](#positioning-a-group)) — and a
   `corners` list: per room corner its `name` (back left, back right, front
   left, front right), `point` and the `posRotationY` of a corner kitchen there
-- `articles` — compact catalog: `articleId`, `articleName`, `desc`,
+- `articles` — compact catalog: `articleId`, `articleName`, `desc` (of a
+  description written in sections, its FUNCTION and AI_SELECTION_HINT lines:
+  what the article is and when to pick it),
   `category`, and per root module its master-data `module` (id, name,
   desc), `dimensions` (the template's `Dim` attributes with id,
   name and value in millimetres — for Furniture_Smith `mod_Width`, `mod_Depth`,
@@ -349,6 +351,9 @@ coordinate system throughout (3D, right-handed, Y up).
   `selections` (value, name and desc), and `groupSettings`, the attributes the
   library's group orchestrator sets on a group. The same compacted attribute
   vocabulary is searched by [find-attributes](#find-attributes)
+- `articleDescriptions` — only when included explicitly: per article its
+  `articleId` and full `desc` (purpose, placement, requirements, neighbours,
+  restrictions, style)
 
 Example: `{ "include": ["articles", "groups"] }`
 
@@ -371,7 +376,12 @@ id, name, description, group or selection name — and returns the matching
 attributes with their `selections` and the root modules that carry them. The
 vocabulary is the compacted master data of `get-plan-context` (root modules
 — the generated ones such as the worktop `mr_Countertop` included — and their
-customer-facing attributes). At most 20 matches are returned; narrow
+customer-facing attributes). Every word of the text is matched on its own, in
+any order, and colour/color, grey/gray and worktop/countertop read alike: one
+search for `color` returns every colour attribute — front, carcase, countertop,
+toe kick and the others. A value list several attributes share is listed once;
+the later attributes carry `sameSelectionsAs`, the id of the attribute that
+lists it. At most 20 matches are returned; narrow
 the text when the result carries a `hint`. The desc of a colour value
 carries its code — `Cloudy blue (#506080)` —, the colour of that value;
 the agent chooses a dark, a light or a blue value by it.
@@ -429,7 +439,9 @@ correction:
 
 Returns the loaded runtime ids and the resulting groups (with their final
 ids, `pos`, `rotationY`, `footprint`), plus a hint when a group of this call
-is still unpositioned, `corrections` (what the server changed in the input, and what the
+is still unpositioned, `groupAttributes` (`[{ index, id, set, notCarried? }]`: per group the
+group attributes set on every unit, and those no unit of the group carries — the group stands
+without them), `corrections` (what the server changed in the input, and what the
 library changed with the group attributes — a front colour reset by a front program)
 and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build and, with
 `rootIds`, the roots of a loaded group it could not build — one unknown article id drops that root,
@@ -540,8 +552,8 @@ its first UUID segment or in one character is read as that root and reported.
 
 | Tool | Parameters | Effect |
 | ---- | ---------- | ------ |
-| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | Sets an attribute of a root module and of its sub modules that carry it, or with `moduleId` of that one sub module (the id in `subModules`); without `moduleId` the result lists the `changedModuleIds`; every other attribute the library changed with it — a front program switched by a front colour, which changes how the fronts are built — is named in `corrections` |
-| `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it; the result lists the `changedModuleIds`; every other attribute the library changed with it — a front program switched by a front colour, which changes how the fronts are built — is named in `corrections` |
+| `change-module-attribute` | `rootModuleIds` (or one `rootModuleId`), `moduleId?`, `attributeId`, `value` | Sets an attribute of one or more root modules — of one group or of several — and of their sub modules that carry it, or with `moduleId` of that one sub module of each (the id in `subModules`); one planner command per group. Returns `{ command, groupIds, changedModuleIds?, corrections? }`, not the group; a root module it could not change and every other attribute the library changed with it — a front program switched by a front colour, which changes how the fronts are built — are named in `corrections` |
+| `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it. Returns `{ command, groupIds, changedModuleIds, corrections? }`, not the group; every other attribute the library changed with it — a front program switched by a front colour, which changes how the fronts are built — is named in `corrections` |
 | `delete-group` | `groupId` | Deletes the group |
 | `delete-article-in-place` | `rootModuleId` | Deletes an article and leaves the gap — the tool for "delete" or "remove" unless the user asks to close the gap; root modules no longer docked together become separate groups where they stand, and deleting the only root module deletes the group. Generated roots (worktop, toe kick) cannot be deleted |
 | `delete-article-and-compact` | `rootModuleId`, `groupId` (optional: the group of the root module) | Deletes an article and closes the gap — when the user asks to close it: the neighbours are docked to each other, the root modules at a wall stay, a wall unit hung on it hangs on the root module that moves into the gap. A root module with a neighbour on one side only is deleted and nothing else moves; a corner article between two legs is deleted and the gap closed by turning one leg by 90° with the units above it, and the result names the leg that turned; the only root module is deleted with its group (`gapClosed: false`) |
@@ -565,7 +577,7 @@ row is built anyway.
 
 Examples:
 
-- `change-module-attribute`: `{ "rootModuleId": "id0001", "attributeId": "b", "value": "900" }`
+- `change-module-attribute`: `{ "rootModuleIds": ["id0001", "id0003"], "attributeId": "mod_FrontColor", "value": "199" }`
 - `change-group-attribute`: `{ "groupId": "a1b2c3", "attributeId": "front", "value": "white" }`
 - `merge-article-into-group`: `{ "groupId": "a1b2c3", "articleId": "<drawer unit>", "dockTo": { "rootId": "id0003", "ownDockingVector": "RightBottom", "dockingVector": "LeftBottom" } }`
 - `insert-article-into-group`: `{ "groupId": "a1b2c3", "articleId": "<drawer unit>", "between": ["id0001", "id0002"] }`

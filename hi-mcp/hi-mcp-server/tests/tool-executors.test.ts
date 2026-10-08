@@ -561,6 +561,61 @@ describe('get-plan-context', () => {
     expect(result.articles[1].cornerArticle).toBe(true);
   });
 
+  describe('article descriptions', () => {
+    // a description as Furniture_Smith writes them, in nine sections
+    const sectioned =
+      'FUNCTION:\nLiving-room sideboard, 60 cm wide, with 1 door and 1 drawer.\n\n' +
+      'PURPOSE:\nCombines a drawer for small items with a door compartment.\n\n' +
+      'RESTRICTIONS:\nNot a kitchen or wet-area unit.\n\n' +
+      'AI_SELECTION_HINT:\nSelect for mixed drawer and door storage in a living room.';
+    const sideboard = {
+      ...articleFixture,
+      articleId: 'SB_UB600S',
+      desc: sectioned,
+    };
+
+    it('shortens an article description to its function and selection hint', async () => {
+      const api = createApi({ articles: [sideboard] });
+      const result = (await toolExecutors['get-plan-context'](api, {
+        include: ['articles'],
+      })) as Record<string, any>;
+      expect(result.articles[0].desc).toBe(
+        'Living-room sideboard, 60 cm wide, with 1 door and 1 drawer. ' +
+          'Select for mixed drawer and door storage in a living room.'
+      );
+      expect(result.articleDescriptions).toBeUndefined();
+    });
+
+    it('keeps an article description without these sections as it is', async () => {
+      const api = createApi({ articles: [articleFixture] });
+      const result = (await toolExecutors['get-plan-context'](api, {
+        include: ['articles'],
+      })) as Record<string, any>;
+      expect(result.articles[0].desc).toBe('A tall unit');
+    });
+
+    it('returns the full article descriptions only in the articleDescriptions section', async () => {
+      const api = createApi({ articles: [sideboard, articleFixture] });
+      const result = (await toolExecutors['get-plan-context'](api, {
+        include: ['articleDescriptions'],
+      })) as Record<string, any>;
+      expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+        'articles',
+      ]);
+      expect(result.articleDescriptions).toEqual([
+        { articleId: 'SB_UB600S', desc: sectioned },
+        { articleId: 'article-1', desc: 'A tall unit' },
+      ]);
+      expect(result.articles).toBeUndefined();
+
+      const both = (await toolExecutors['get-plan-context'](api, {
+        include: ['articles', 'articleDescriptions'],
+      })) as Record<string, any>;
+      expect(both.articles[0].desc).not.toBe(sectioned);
+      expect(both.articleDescriptions[0].desc).toBe(sectioned);
+    });
+  });
+
   it('flags a corner article on an empty plan, where the planner has not derived the flag yet', async () => {
     const uncalculatedCorner = {
       ...articleFixture,
@@ -629,6 +684,84 @@ describe('find-attributes', () => {
         },
       ],
       total: 1,
+    });
+  });
+
+  describe('words', () => {
+    // colour attributes spelled as Furniture_Smith spells them, two of them
+    // with the same values
+    const palette = [
+      { value: '190', name: 'Sunny white', desc: 'Sunny white (#F0F0E0)' },
+      { value: '240', name: 'Ash grey', desc: 'Ash grey (#303030)' },
+    ];
+    const colourApi = () =>
+      createApi({
+        masterData: {
+          'lib-1': {
+            libraryId: 'lib-1',
+            modules: [],
+            attributes: [
+              {
+                id: 'mod_FrontColor',
+                name: 'Front color',
+                group: 'Front | Design',
+                selections: palette,
+              },
+              {
+                id: 'mod_CountertopColor',
+                name: 'Countertop color',
+                group: 'Countertop | Design',
+                selections: palette,
+              },
+              {
+                id: 'mod_HandleDesign',
+                name: 'Handle design',
+                group: 'FrontOpening | Handle',
+                selections: [
+                  { value: '20', name: 'Rail', desc: 'Rail handle' },
+                ],
+              },
+            ],
+          },
+        },
+      });
+    const idsFound = async (text: string) =>
+      (
+        (await toolExecutors['find-attributes'](colourApi(), {
+          text,
+        })) as Record<string, any>
+      ).matches.map((match: any) => match.id);
+
+    it('matches every word of the text on its own, in any order', async () => {
+      expect(await idsFound('front color')).toEqual(['mod_FrontColor']);
+      expect(await idsFound('color front')).toEqual(['mod_FrontColor']);
+      expect(await idsFound('design handle')).toEqual(['mod_HandleDesign']);
+      expect(await idsFound('front walnut')).toEqual([]);
+    });
+
+    it('reads colour as color, grey as gray and worktop as countertop', async () => {
+      expect(await idsFound('front colour')).toEqual(['mod_FrontColor']);
+      expect(await idsFound('worktop colour')).toEqual(['mod_CountertopColor']);
+      expect(await idsFound('ash gray')).toEqual([
+        'mod_FrontColor',
+        'mod_CountertopColor',
+      ]);
+    });
+
+    it('lists a value list several attributes share once', async () => {
+      const result = (await toolExecutors['find-attributes'](colourApi(), {
+        text: 'colour',
+      })) as Record<string, any>;
+      expect(result.matches[0].selections).toEqual(palette);
+      expect(result.matches[1]).toEqual({
+        libraryId: 'lib-1',
+        id: 'mod_CountertopColor',
+        name: 'Countertop color',
+        group: 'Countertop | Design',
+        sameSelectionsAs: 'mod_FrontColor',
+        rootModules: [],
+      });
+      expect(result.total).toBe(2);
     });
   });
 
@@ -3090,7 +3223,7 @@ describe('create-or-replace-groups materials', () => {
     return calls[calls.length - 1][0].posGroups[0].roots;
   };
 
-  it('applies the group attributes that are not group settings to every unit after the load', async () => {
+  it('sets the group attributes that are not group settings in one planner command after the load', async () => {
     const created = makeShapedGroup({
       id: 'g-new',
       attributes: [{ id: 'mod_GroupHeight', value: 1500 }],
@@ -3103,6 +3236,7 @@ describe('create-or-replace-groups materials', () => {
           attributes: [
             { id: 'front', value: 'white' },
             { id: 'mod_GroupHeight', value: 1500 },
+            { id: 'carcase', value: 'oak' },
           ],
           roots: [pick()],
         },
@@ -3110,13 +3244,20 @@ describe('create-or-replace-groups materials', () => {
     })) as Record<string, any>;
     expect(commandsOf(api)).toEqual([
       [
-        'change-group-attribute',
-        { groupId: 'g-new', attributeId: 'front', value: 'white' },
+        'change-attributes',
+        {
+          groupId: 'g-new',
+          attributes: [
+            { attributeId: 'front', value: 'white' },
+            { attributeId: 'carcase', value: 'oak' },
+          ],
+        },
       ],
     ]);
-    expect(result.corrections).toEqual([
-      'posGroups[0]: front "white" was set on every unit of group \'g-new\'',
+    expect(result.groupAttributes).toEqual([
+      { index: 0, id: 'g-new', set: ['front', 'carcase'] },
     ]);
+    expect(result.corrections).toBeUndefined();
     // the groups are read again after the command
     expect(api.extended.getExternalObjectPlanContext).toHaveBeenLastCalledWith([
       'groups',
@@ -3126,7 +3267,34 @@ describe('create-or-replace-groups materials', () => {
     expect(result.groups).toEqual([created]);
   });
 
-  it('names the colour the library reset with a group front program', async () => {
+  it('names the attributes set and those no unit of the group carries in groupAttributes, not in corrections', async () => {
+    const api = createMaterialsApi([], [makeShapedGroup({ id: 'g-new' })], {
+      externalObjectGroupOperation: vi.fn(async (command: string) => ({
+        command,
+        groups: [],
+        removedGroupIds: [],
+        skippedAttributes: [{ attributeId: 'backsplash' }],
+      })),
+    });
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          attributes: [
+            { id: 'front', value: 'white' },
+            { id: 'backsplash', value: 'grey' },
+          ],
+          roots: [pick()],
+        },
+      ],
+    })) as Record<string, any>;
+    expect(result.groupAttributes).toEqual([
+      { index: 0, id: 'g-new', set: ['front'], notCarried: ['backsplash'] },
+    ]);
+    expect(result.corrections).toBeUndefined();
+  });
+
+  it('names the group attributes once as the cause of a library change', async () => {
     const loaded = makeShapedGroup({
       id: 'g-new',
       roots: [
@@ -3163,8 +3331,7 @@ describe('create-or-replace-groups materials', () => {
       ],
     })) as Record<string, any>;
     expect(result.corrections).toEqual([
-      'posGroups[0]: mod_FrontProgram "Classic" was set on every unit of group \'g-new\'',
-      'posGroups[0]: with mod_FrontProgram "Classic" (Simple fronts in plain decors) the library changed ' +
+      'posGroups[0]: with its group attributes the library changed ' +
         "mod_FrontColor of root modules 'w1' (OTB60), 'w2' (OTB60) from \"324\" (Dark marble (#404040)) " +
         'to "152" (Cloudy blue (#506080))',
     ]);
@@ -3175,20 +3342,19 @@ describe('create-or-replace-groups materials', () => {
       id: 'g-new',
       roots: [wallUnit('w1', { mod_FrontColor: '324' })],
     });
-    const afterEachCommand = [
-      { mod_FrontColor: '152', mod_FrontProgram: 'Classic' },
-      { mod_FrontColor: '178', mod_FrontProgram: 'Classic' },
-    ].map((attributes) =>
-      makeShapedGroup({ id: 'g-new', roots: [wallUnit('w1', attributes)] })
-    );
-    let commands = 0;
+    const changed = makeShapedGroup({
+      id: 'g-new',
+      roots: [
+        wallUnit('w1', { mod_FrontColor: '178', mod_FrontProgram: 'Classic' }),
+      ],
+    });
     const api = createMaterialsApi(
       [],
       [loaded],
       {
         externalObjectGroupOperation: vi.fn(async (command: string) => ({
           command,
-          groups: [afterEachCommand[commands++]],
+          groups: [changed],
           removedGroupIds: [],
         })),
       },
@@ -3206,10 +3372,7 @@ describe('create-or-replace-groups materials', () => {
         },
       ],
     })) as Record<string, any>;
-    expect(result.corrections).toEqual([
-      'posGroups[0]: mod_FrontProgram "Classic" was set on every unit of group \'g-new\'',
-      'posGroups[0]: mod_FrontColor "178" was set on every unit of group \'g-new\'',
-    ]);
+    expect(result.corrections).toBeUndefined();
   });
 
   it('sets the group attributes on every unit after a replace, except the group settings of the master data', async () => {
@@ -3241,13 +3404,17 @@ describe('create-or-replace-groups materials', () => {
     })) as Record<string, any>;
     expect(commandsOf(api)).toEqual([
       [
-        'change-group-attribute',
-        { groupId: 'g1', attributeId: 'mod_ToekickColor', value: '224' },
+        'change-attributes',
+        {
+          groupId: 'g1',
+          attributes: [{ attributeId: 'mod_ToekickColor', value: '224' }],
+        },
       ],
     ]);
-    expect(result.corrections).toEqual([
-      'posGroups[0]: mod_ToekickColor "224" was set on every unit of group \'g1\'',
+    expect(result.groupAttributes).toEqual([
+      { index: 0, id: 'g1', set: ['mod_ToekickColor'] },
     ]);
+    expect(result.corrections).toBeUndefined();
   });
 
   it('moves an override only a generated root carries to the group', async () => {
@@ -3282,13 +3449,18 @@ describe('create-or-replace-groups materials', () => {
     ]);
     expect(commandsOf(api)).toEqual([
       [
-        'change-group-attribute',
-        { groupId: 'g-new', attributeId: 'countertop', value: '224' },
+        'change-attributes',
+        {
+          groupId: 'g-new',
+          attributes: [{ attributeId: 'countertop', value: '224' }],
+        },
       ],
     ]);
     expect(result.corrections).toEqual([
       "posGroups[0] root 'u1': a 'article-1' has no attribute 'countertop' - the generated roots of the group carry it, so it is set on the whole group",
-      'posGroups[0]: countertop "224" was set on every unit of group \'g-new\'',
+    ]);
+    expect(result.groupAttributes).toEqual([
+      { index: 0, id: 'g-new', set: ['countertop'] },
     ]);
   });
 
@@ -3332,8 +3504,9 @@ describe('create-or-replace-groups materials', () => {
     })) as Record<string, any>;
     expect(result.loaded).toEqual([{ id: 'loaded-1' }]);
     expect(result.corrections).toEqual([
-      "posGroups[0]: nope could not be set on group 'g-new' - No module of group 'g-new' has the attribute 'nope'.",
+      "posGroups[0]: the group attributes nope could not be set on group 'g-new' - No module of group 'g-new' has the attribute 'nope'.",
     ]);
+    expect(result.groupAttributes).toBeUndefined();
   });
 
   it('sets the colours of the generated roots again after a replace', async () => {
@@ -3360,13 +3533,17 @@ describe('create-or-replace-groups materials', () => {
     expect(loadedRoots(api)).toEqual([{ id: 'r1', articleId: 'article-1' }]);
     expect(commandsOf(api)).toEqual([
       [
-        'change-group-attribute',
-        { groupId: 'g1', attributeId: 'countertop', value: '224' },
+        'change-attributes',
+        {
+          groupId: 'g1',
+          attributes: [{ attributeId: 'countertop', value: '224' }],
+        },
       ],
     ]);
-    expect(result.corrections).toEqual([
-      'posGroups[0]: countertop "224" was set on every unit of group \'g1\'',
+    expect(result.groupAttributes).toEqual([
+      { index: 0, id: 'g1', set: ['countertop'] },
     ]);
+    expect(result.corrections).toBeUndefined();
   });
 });
 
@@ -4565,8 +4742,11 @@ describe('create-or-replace-groups wall placement', () => {
     );
     expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledTimes(1);
     expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
-      'change-group-attribute',
-      { groupId: 'new-1', attributeId: 'front', value: 'white' }
+      'change-attributes',
+      {
+        groupId: 'new-1',
+        attributes: [{ attributeId: 'front', value: 'white' }],
+      }
     );
   });
 
@@ -4778,10 +4958,8 @@ describe('positions in the placement frame', () => {
       posGroups: [{ roots: [pick()] }],
     })) as Record<string, any>;
     expect(created.groups[0].position).toEqual(atLeftEdge);
-    const changed = (await toolExecutors['change-group-attribute'](api, {
-      groupId: 'hood',
-      attributeId: 'grp_Front',
-      value: 'walnut',
+    const changed = (await toolExecutors['delete-article-in-place'](api, {
+      rootModuleId: 'h1',
     })) as Record<string, any>;
     expect(changed.groups[0].position).toEqual(atLeftEdge);
   });
@@ -4873,36 +5051,6 @@ describe('group command tools', () => {
   };
 
   it.each([
-    [
-      'change-module-attribute',
-      { rootModuleId: 'r1', attributeId: 'front', value: 'white' },
-      {
-        rootModuleId: 'r1',
-        moduleId: null,
-        attributeId: 'front',
-        value: 'white',
-      },
-    ],
-    [
-      'change-module-attribute',
-      {
-        rootModuleId: 'r1',
-        moduleId: 'sub-1',
-        attributeId: 'front',
-        value: 'white',
-      },
-      {
-        rootModuleId: 'r1',
-        moduleId: 'sub-1',
-        attributeId: 'front',
-        value: 'white',
-      },
-    ],
-    [
-      'change-group-attribute',
-      { groupId: 'island', attributeId: 'front', value: 'white' },
-      { groupId: 'island-1', attributeId: 'front', value: 'white' },
-    ],
     ['delete-group', { groupId: 'kitchen-2' }, { groupId: 'kitchen-2' }],
     [
       'merge-article-into-group',
@@ -4966,6 +5114,257 @@ describe('group command tools', () => {
       tool,
       payload
     );
+  });
+
+  describe('attribute tools', () => {
+    const kitchenAndIsland = {
+      ...planContextFixture,
+      groups: [
+        makeShapedGroup({
+          id: 'kitchen-1',
+          roots: ['u1', 'u2', 'u3'].map((id) => makeShapedRoot({ id })),
+        }),
+        makeShapedGroup({
+          id: 'island-1',
+          roots: [makeShapedRoot({ id: 'i1' })],
+        }),
+      ],
+    };
+    // the planner answers with the group of the command and the root modules
+    // it was given
+    const attributeApi = (overrides: Record<string, unknown> = {}) =>
+      createApi(kitchenAndIsland, {
+        externalObjectGroupOperation: vi.fn(
+          async (command: string, payload: any) => ({
+            command,
+            groups: kitchenAndIsland.groups.filter(
+              (group) =>
+                group.id === payload.groupId ||
+                group.roots.some((root) => root.id === payload.rootModuleId)
+            ),
+            removedGroupIds: [],
+            changedModuleIds:
+              payload.attributes?.[0]?.rootModuleIds ??
+              (payload.rootModuleId ? [] : ['u1', 'u2', 'u3']),
+          })
+        ),
+        ...overrides,
+      });
+    const commandsOf = (api: ReturnType<typeof createApi>) =>
+      api.extended.externalObjectGroupOperation.mock.calls;
+
+    it('sets an attribute on several root modules of one group in one planner command', async () => {
+      const api = attributeApi();
+      const result = await toolExecutors['change-module-attribute'](api, {
+        rootModuleIds: ['u1', 'u3'],
+        attributeId: 'front',
+        value: 'black',
+      });
+      expect(commandsOf(api)).toEqual([
+        [
+          'change-attributes',
+          {
+            groupId: 'kitchen-1',
+            attributes: [
+              {
+                attributeId: 'front',
+                value: 'black',
+                rootModuleIds: ['u1', 'u3'],
+              },
+            ],
+          },
+        ],
+      ]);
+      expect(result).toEqual({
+        command: 'change-module-attribute',
+        groupIds: ['kitchen-1'],
+        changedModuleIds: ['u1', 'u3'],
+      });
+    });
+
+    it('sends one planner command per group for root modules of several groups', async () => {
+      const api = attributeApi();
+      const result = await toolExecutors['change-module-attribute'](api, {
+        rootModuleIds: ['u1', 'i1', 'u2'],
+        attributeId: 'front',
+        value: 900,
+      });
+      expect(commandsOf(api)).toEqual([
+        [
+          'change-attributes',
+          {
+            groupId: 'kitchen-1',
+            attributes: [
+              {
+                attributeId: 'front',
+                value: '900',
+                rootModuleIds: ['u1', 'u2'],
+              },
+            ],
+          },
+        ],
+        [
+          'change-attributes',
+          {
+            groupId: 'island-1',
+            attributes: [
+              { attributeId: 'front', value: '900', rootModuleIds: ['i1'] },
+            ],
+          },
+        ],
+      ]);
+      expect(result).toEqual({
+        command: 'change-module-attribute',
+        groupIds: ['kitchen-1', 'island-1'],
+        changedModuleIds: ['u1', 'u2', 'i1'],
+      });
+    });
+
+    it('reads a single rootModuleId as a list of one', async () => {
+      const api = attributeApi();
+      await toolExecutors['change-module-attribute'](api, {
+        rootModuleId: 'u2',
+        attributeId: 'front',
+        value: 'white',
+      });
+      expect(commandsOf(api)).toEqual([
+        [
+          'change-attributes',
+          {
+            groupId: 'kitchen-1',
+            attributes: [
+              { attributeId: 'front', value: 'white', rootModuleIds: ['u2'] },
+            ],
+          },
+        ],
+      ]);
+    });
+
+    it('sets the sub module of every root module with moduleId, one command each', async () => {
+      const api = attributeApi();
+      await toolExecutors['change-module-attribute'](api, {
+        rootModuleIds: ['u1', 'i1'],
+        moduleId: 'front-1',
+        attributeId: 'front',
+        value: 'white',
+      });
+      expect(commandsOf(api)).toEqual([
+        [
+          'change-module-attribute',
+          {
+            rootModuleId: 'u1',
+            moduleId: 'front-1',
+            attributeId: 'front',
+            value: 'white',
+          },
+        ],
+        [
+          'change-module-attribute',
+          {
+            rootModuleId: 'i1',
+            moduleId: 'front-1',
+            attributeId: 'front',
+            value: 'white',
+          },
+        ],
+      ]);
+    });
+
+    it('names a group once when the commands of several of its root modules changed it', async () => {
+      const api = attributeApi();
+      const result = await toolExecutors['change-module-attribute'](api, {
+        rootModuleIds: ['u1', 'u3'],
+        moduleId: 'front-1',
+        attributeId: 'front',
+        value: 'white',
+      });
+      expect(commandsOf(api)).toHaveLength(2);
+      expect(result).toEqual({
+        command: 'change-module-attribute',
+        groupIds: ['kitchen-1'],
+      });
+    });
+
+    it('answers an attribute change with the changed groups and modules, not the whole group', async () => {
+      const api = attributeApi();
+      const result = await toolExecutors['change-group-attribute'](api, {
+        groupId: 'kitchen',
+        attributeId: 'front',
+        value: 'white',
+      });
+      expect(commandsOf(api)).toEqual([
+        [
+          'change-group-attribute',
+          { groupId: 'kitchen-1', attributeId: 'front', value: 'white' },
+        ],
+      ]);
+      expect(result).toEqual({
+        command: 'change-group-attribute',
+        groupIds: ['kitchen-1'],
+        changedModuleIds: ['u1', 'u2', 'u3'],
+      });
+    });
+
+    it('changes the root modules the planner takes and names the others', async () => {
+      const api = attributeApi({
+        externalObjectGroupOperation: vi.fn(
+          async (command: string, payload: any) => {
+            if (payload.groupId === 'island-1') {
+              throw new Error(
+                "No module of root module 'i1' has the attribute 'front'."
+              );
+            }
+            return {
+              command,
+              groups: [kitchenAndIsland.groups[0]],
+              removedGroupIds: [],
+              changedModuleIds: ['u1'],
+            };
+          }
+        ),
+      });
+      const result = await toolExecutors['change-module-attribute'](api, {
+        rootModuleIds: ['u1', 'i1', 'x9'],
+        attributeId: 'front',
+        value: 'white',
+      });
+      expect(result).toEqual({
+        command: 'change-module-attribute',
+        groupIds: ['kitchen-1'],
+        changedModuleIds: ['u1'],
+        corrections: [
+          "change-module-attribute: root module 'x9' is not in the plan - it was not changed",
+          "change-module-attribute: root module 'i1' kept its value - No module of root module 'i1' has the attribute 'front'.",
+        ],
+      });
+    });
+
+    it("rejects with the planner's reason when its only command is refused", async () => {
+      const api = attributeApi({
+        externalObjectGroupOperation: vi.fn(async () => {
+          throw new Error(
+            "No module of root module 'u1' has the attribute 'nope'."
+          );
+        }),
+      });
+      await expect(
+        toolExecutors['change-module-attribute'](api, {
+          rootModuleIds: ['u1'],
+          attributeId: 'nope',
+          value: 'x',
+        })
+      ).rejects.toThrow(
+        "No module of root module 'u1' has the attribute 'nope'."
+      );
+      await expect(
+        toolExecutors['change-module-attribute'](api, {
+          attributeId: 'front',
+          value: 'x',
+        })
+      ).rejects.toThrow(
+        'change-module-attribute: name the root modules that get the value in rootModuleIds.'
+      );
+    });
   });
 
   it.each([
@@ -5548,11 +5947,38 @@ describe('group command tools', () => {
         value: '900',
       })) as Record<string, any>;
       expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
-        'change-module-attribute',
-        { rootModuleId: first, moduleId: null, attributeId: 'b', value: '900' }
+        'change-attributes',
+        {
+          groupId: 'kitchen-1',
+          attributes: [
+            { attributeId: 'b', value: '900', rootModuleIds: [first] },
+          ],
+        }
       );
       expect(result.corrections).toEqual([
         `change-module-attribute: root id '${sent}' was read as '${first}'`,
+      ]);
+    });
+
+    it('resolves every root id of the list', async () => {
+      const api = createApi(uuidPlan);
+      const result = (await toolExecutors['change-module-attribute'](api, {
+        rootModuleIds: ['aaaa1111', 'ffff2222'],
+        attributeId: 'b',
+        value: '900',
+      })) as Record<string, any>;
+      expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+        'change-attributes',
+        {
+          groupId: 'kitchen-1',
+          attributes: [
+            { attributeId: 'b', value: '900', rootModuleIds: [first, second] },
+          ],
+        }
+      );
+      expect(result.corrections).toEqual([
+        `change-module-attribute: root id 'aaaa1111' was read as '${first}'`,
+        `change-module-attribute: root id 'ffff2222' was read as '${second}'`,
       ]);
     });
 
@@ -6211,11 +6637,14 @@ describe('plan changes', () => {
     createApi(planContextFixture, {
       externalObjectGroupOperation: vi.fn(
         async (command: string, payload: any) => {
-          events.push(`start ${payload.rootModuleId}`);
+          const id =
+            payload.rootModuleId ??
+            payload.attributes?.[0]?.rootModuleIds?.join(',');
+          events.push(`start ${id}`);
           await new Promise((resolve) => setTimeout(resolve, 10));
-          events.push(`end ${payload.rootModuleId}`);
-          if (failing.includes(payload.rootModuleId)) {
-            throw new Error(`refused ${payload.rootModuleId}`);
+          events.push(`end ${id}`);
+          if (failing.includes(id)) {
+            throw new Error(`refused ${id}`);
           }
           return { command, groups: [], removedGroupIds: [] };
         }
@@ -6228,12 +6657,12 @@ describe('plan changes', () => {
     await Promise.all([
       toolExecutors['delete-article-in-place'](api, { rootModuleId: 'a' }),
       toolExecutors['change-module-attribute'](api, {
-        rootModuleId: 'b',
+        rootModuleIds: ['r1'],
         attributeId: 'b',
         value: '900',
       }),
     ]);
-    expect(events).toEqual(['start a', 'end a', 'start b', 'end b']);
+    expect(events).toEqual(['start a', 'end a', 'start r1', 'end r1']);
   });
 
   it('reads the plan context after a running plan change, both reads in one plan state', async () => {
@@ -6390,9 +6819,12 @@ describe('undo and redo', () => {
       }),
       externalObjectGroupOperation: vi.fn(
         async (command: string, payload: any) => {
-          if (command === 'change-module-attribute') {
+          const attributeIds = payload.attributes?.map(
+            (change: any) => change.attributeId
+          ) ?? [payload.attributeId];
+          if (attributeIds.includes('colour')) {
             throw new Error(
-              `Module 'r1' has no attribute '${payload.attributeId}'.`
+              "No module of root module 'r1' has the attribute 'colour'."
             );
           }
           if (command === 'delete-group') {
@@ -6404,9 +6836,12 @@ describe('undo and redo', () => {
               group.id === payload.groupId
                 ? {
                     ...group,
-                    attributes: [
-                      { id: payload.attributeId, value: payload.value },
-                    ],
+                    attributes: payload.attributes
+                      ? payload.attributes.map((change: any) => ({
+                          id: change.attributeId,
+                          value: change.value,
+                        }))
+                      : [{ id: payload.attributeId, value: payload.value }],
                   }
                 : group
             )
@@ -6519,22 +6954,29 @@ describe('undo and redo', () => {
     expect(planner.raw()).toEqual([initialGroup]);
   });
 
-  it('reverts a kitchen with a material in one call, one planner undo per step', async () => {
+  it('reverts a kitchen with three materials with two planner undos', async () => {
     const planner = historyPlanner();
     await toolExecutors['create-or-replace-groups'](planner.api, {
       posGroups: [
         {
           libraryId: 'lib-1',
-          attributes: [{ id: 'front', value: 'white' }],
+          attributes: [
+            { id: 'front', value: 'white' },
+            { id: 'carcase', value: 'oak' },
+            { id: 'countertop', value: '224' },
+          ],
           roots: [{ id: 'u1', articleId: 'article-1' }],
         },
       ],
     });
     expect(
       planner.api.extended.externalObjectGroupOperation
+    ).toHaveBeenCalledOnce();
+    expect(
+      planner.api.extended.externalObjectGroupOperation
     ).toHaveBeenCalledWith(
-      'change-group-attribute',
-      expect.objectContaining({ groupId: 'new-1', attributeId: 'front' })
+      'change-attributes',
+      expect.objectContaining({ groupId: 'new-1' })
     );
 
     const result = (await toolExecutors.undo(planner.api, {})) as any;
@@ -6823,24 +7265,27 @@ describe('undo and redo', () => {
   });
 
   it('expects every follow-up reload of a call that lands after the call', async () => {
-    vi.useFakeTimers();
-    // two kitchen-wide attributes: two group commands, both reloads late
     const planner = historyPlanner({ followUpDelayMs: 2500 });
-    const creating = toolExecutors['create-or-replace-groups'](planner.api, {
+    await toolExecutors['create-or-replace-groups'](planner.api, {
       posGroups: [
         {
           libraryId: 'lib-1',
           placement: { posGroup: [0, 0, 0], posRotationY: 0 },
-          attributes: [
-            { id: 'front', value: 'white' },
-            { id: 'handle', value: 'steel' },
-          ],
           roots: [{ id: 'u1', articleId: 'article-1' }],
         },
       ],
     });
+    const created = planner.raw();
+    vi.useFakeTimers();
+    // one attribute on root modules of two groups: two group commands, both
+    // reloads late
+    const changing = toolExecutors['change-module-attribute'](planner.api, {
+      rootModuleIds: ['r1', 'u1'],
+      attributeId: 'front',
+      value: 'white',
+    });
     await vi.advanceTimersByTimeAsync(4100);
-    await creating;
+    await changing;
     expect(planHistory.lastDone()?.settled).toBe(false);
     expect(planHistory.lateFollowUps).toBe(1);
 
@@ -6849,8 +7294,8 @@ describe('undo and redo', () => {
     const undoing = toolExecutors.undo(planner.api, {});
     await vi.advanceTimersByTimeAsync(3000);
     const result = (await undoing) as any;
-    expect(result.undone).toBe('create-or-replace-groups');
-    expect(planner.raw()).toEqual([initialGroup]);
+    expect(result.undone).toBe('change-module-attribute');
+    expect(planner.raw()).toEqual(created);
   });
 
   it('waits for the follow-up reload of an attribute change', async () => {
@@ -6862,6 +7307,20 @@ describe('undo and redo', () => {
     const result = (await toolExecutors.undo(planner.api, {})) as any;
     expect(result.undone).toBe('change-group-attribute');
     expect(result.hint).toBeUndefined();
+  });
+
+  it('waits for the follow-up reload of the group attributes of a create', async () => {
+    const planner = historyPlanner({ followUpDelayMs: 50 });
+    await toolExecutors['create-or-replace-groups'](planner.api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          attributes: [{ id: 'front', value: 'white' }],
+          roots: [{ id: 'u1', articleId: 'article-1' }],
+        },
+      ],
+    });
+    expect(planHistory.lastDone()?.groupsAfter).toContain('"pos":[0,0,10]');
   });
 
   it('waits for a follow-up reload at most two seconds', async () => {
@@ -6915,7 +7374,9 @@ describe('undo and redo', () => {
         attributeId: 'colour',
         value: 'red',
       })
-    ).rejects.toThrow(/has no attribute/);
+    ).rejects.toThrow(
+      "No module of root module 'r1' has the attribute 'colour'."
+    );
 
     const result = (await toolExecutors.undo(planner.api, {})) as any;
     expect(result.undone).toBe('change-group-attribute');

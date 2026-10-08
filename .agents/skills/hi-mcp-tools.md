@@ -23,7 +23,7 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 ### Editing Tools
 | Tool | Purpose |
 |---|---|
-| `change-module-attribute` | Set an attribute of a root module and of its sub modules that carry it, or of one sub module |
+| `change-module-attribute` | Set an attribute of one or more root modules and of their sub modules that carry it, or of one sub module of each |
 | `change-group-attribute` | Set an attribute on every module of a group that has it |
 | `delete-group` | Delete a group |
 | `delete-article-in-place` | Delete an article and leave the gap — the tool for "delete" or "remove" unless the user asks to close the gap; the rest splits where it is no longer docked together |
@@ -92,7 +92,9 @@ authoritative, and `dimensions` give the size, over the catalog images of the ma
 colour of that value, taken as it is: light, dark and the hue come from it, not from the name (D53).
 The rule covers only the catalog images, not the renderings of `get-plan-images` or an image the
 user attaches. It is in `get-authoring-rules` and in the descriptions of `get-plan-context` and
-`find-attributes`. The server strips every `imageUrl` from its results (D7).
+`find-attributes`. The server strips every `imageUrl` from its results (D7). An article's `desc`
+in the catalog is short — of a description written in sections, its FUNCTION and AI_SELECTION_HINT
+lines; `include: ['articleDescriptions']` returns the full ones (D63).
 
 **Usage**:
 ```javascript
@@ -123,7 +125,7 @@ to the group, and the colours of the generated roots a resubmitted group carries
 a replace adds inherits the attributes the library passes on between neighbours (fronts, handles,
 carcase) from the root it is docked to; its own `attributes` override them (D56).
 
-**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input, and what the library changed with the group attributes — a front colour reset by a front program, D59) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
+**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), `groupAttributes` (`[{ index, id, set, notCarried? }]`: per group the group attributes set on every unit with one planner command, and those no unit of the group carries — the group stands without them, nothing to undo, D65), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input, and what the library changed with the group attributes — a front colour reset by a front program, D59) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
 
 **Usage**:
 ```javascript
@@ -192,7 +194,7 @@ own group features; the group keeps its position
 
 **Parameters**:
 ```typescript
-'change-module-attribute': { rootModuleId: string, moduleId?: string, attributeId: string, value: string | number | boolean }
+'change-module-attribute': { rootModuleIds: string[], rootModuleId?: string, moduleId?: string, attributeId: string, value: string | number | boolean }
 'change-group-attribute':  { groupId: string, attributeId: string, value: string | number | boolean }
 'delete-group':            { groupId: string }
 'delete-article-in-place':      { rootModuleId: string }
@@ -221,12 +223,19 @@ direction), and a `dockingVector` the article does not have becomes the partner 
 unit or a range hood merged `*Top -> *Bottom` on a floor unit without a y offset gets the hang gap
 of the wall units (D35), reported.
 
-**Returns**: `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed?, corrections?, hint? }` once the
+`change-module-attribute` sets the value on every root module of `rootModuleIds` — one group or
+several, one planner command per group (`change-attributes`); a single `rootModuleId` is read as a
+list of one; with `moduleId`, one command per root module. A root module it could not change is
+named in `corrections`, the others change.
+
+**Returns**: the two attribute commands `{ command, groupIds, changedModuleIds?, corrections? }`,
+not the group (D62); the others `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed?, corrections?, hint? }`, once the
 planner has loaded the result:
 
-- `groups`: the affected groups in the `get-plan-context` shape
+- `groups`: the affected groups in the `get-plan-context` shape; `groupIds` for the attribute
+  commands
 - `changedModuleIds`: for `change-group-attribute`, and for `change-module-attribute` without `moduleId` —
-  the root module and the sub modules it set
+  the root modules and the sub modules it set
 - `gapClosed`: for `delete-article-and-compact` — `true` when the gap was closed, `false` when the
   unit was deleted as `delete-article-in-place` does
 - `corrections`: what the server corrected before forwarding — the docking of
@@ -305,13 +314,19 @@ the call (the user changed the plan in the planner while the call ran) is taken 
 
 **Usage**:
 ```javascript
-const { matches } = await findAttributes({ text: 'front' });
+const { matches } = await findAttributes({ text: 'front colour' });
 ```
+
+Every word of the text is matched on its own, in any order, and colour/color, grey/gray and
+worktop/countertop read alike: one search for `color` returns every colour attribute. A value
+list several attributes share is listed once; the later attributes carry `sameSelectionsAs`, the
+id of the attribute that lists it (D64).
 
 The matches include the attributes of the roots the library generates (worktop `mr_Countertop`,
 toe kick, finger grip, backsplash, …): the compacted master data keeps the root modules and the
 sub modules of the master data's `Root` group, which are the generated roots. The worktop colour is
-`mod_CountertopColor`, set on the whole group with `change-group-attribute`. The desc of a colour
+`mod_CountertopColor`, set on the whole group with `change-group-attribute` or as a group attribute
+of `create-or-replace-groups`. The desc of a colour
 value carries its code — `Cloudy blue (#506080)` —, the colour of that value; the description of
 `find-attributes` tells the agent to choose a dark, a light or a blue value by it (D53).
 
@@ -365,7 +380,7 @@ try {
 | roots '…' are not docked to a placed root (in `notLoaded`) | A part the docking does not connect to the first root, which the server cannot dock to the free end of a row: no free row end, a wall unit without a wall-unit row | Dock it to a placed root (the error names the placed roots and the entry to send). Only for docking written as `contextData`: with relations, such a root continues the row of its kind |
 | duplicate root id '…' named in the docking (in `notLoaded`) | Two roots of a group share an id that a docking entry names | Give every root a unique id |
 | Root module '…' has no free docking vector '…' | `merge-article-into-group` on a side the planner reports as taken although the row ends there; a taken side with a free row end is moved there and reported in `corrections` | Use one of the root's `freeDockingVectors` (the error lists them) |
-| Module '…' has no attribute '…' | `change-module-attribute` with an attribute the master data assigns neither to the root module nor to its sub modules (with `moduleId`: not to that sub module) | Look the attribute up with `find-attributes` — its `rootModules` name the modules that have it |
+| No module of root module '…' has the attribute '…' (with `moduleId`: Module '…' has no attribute '…') | `change-module-attribute` with an attribute the master data assigns neither to the root modules nor to their sub modules (with `moduleId`: not to that sub module) | Look the attribute up with `find-attributes` — its `rootModules` name the modules that have it |
 | Root module '…' is generated by the library | `delete-article-in-place` or `delete-article-and-compact` on a worktop or toe kick | Remove the article root instead; the library regenerates the rest |
 | Article '…' has n root modules | `exchange-root-module` or `insert-article-into-group` with an article of several root modules | Pick an article of one root module, or rebuild with `create-or-replace-groups` |
 | '…' and '…' are not in one row | `insert-article-into-group` with two roots that stand in no row together | Send two neighbours of one row — the error names the side neighbours of the first root |

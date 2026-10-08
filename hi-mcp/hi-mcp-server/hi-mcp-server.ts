@@ -161,7 +161,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'wall: a side label (left/right/top/bottom as seen in the top-view image), start/end [x, 0, z] in millimetres ' +
         '(the 3D contour points on the floor), lengthMm, type, heightMm, thicknessMm and facingRotationY - the ' +
         'posRotationY of a group standing with its back against that wall), articles (compact catalog: articleId, ' +
-        'name, desc, category, and per root module its master-data module, dimensions (the size attributes - ' +
+        'name, desc - what the article is and when to pick it -, category, and per root module its master-data module, dimensions (the size attributes - ' +
         'e.g. Width, Depth, Height - with their values in millimetres), main attribute values, ' +
         'docking vector names, insert levels and sub-modules, plus cornerArticle ' +
         "for articles made for a room corner), groups (the groups currently in the plan: position with pos - the room point of the group's back left bottom corner, as a placement names it - rotationY, rootId (only with two corner articles: the one pos belongs to) and footprint, and " +
@@ -173,7 +173,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'and per group its root modules with id, outline and bottomMm/topMm). masterData (per library the root ' +
         'modules and the customer-facing attributes with their values; modules, attributes and values carry ' +
         'their desc) is returned only when included ' +
-        'explicitly; the same compacted attribute vocabulary is searched by find-attributes. Every desc is ' +
+        'explicitly; the same compacted attribute vocabulary is searched by find-attributes. articleDescriptions ' +
+        '(per article its full description: purpose, placement, requirements, neighbours, restrictions, style) is ' +
+        'returned only when included explicitly. Every desc is ' +
         'authoritative and dimensions give the size - trust them over the catalog images (imageUrl); a colour ' +
         'code in the desc of an attribute value (#rrggbb) is the colour of that value. Use it before ' +
         'authoring or modifying groups.',
@@ -182,8 +184,8 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .array(z.string())
           .optional()
           .describe(
-            'The sections to include: masterData, rooms, articles, groups, obstacles. Default: rooms, articles, groups and obstacles. ' +
-              'Add masterData for the attribute vocabulary.'
+            'The sections to include: masterData, rooms, articles, articleDescriptions, groups, obstacles. Default: rooms, articles, groups and obstacles. ' +
+              'Add masterData for the attribute vocabulary, articleDescriptions for the full descriptions of the articles.'
           ),
       },
     },
@@ -199,14 +201,18 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'group or selection name) and returns the matching attributes with their values (each with ' +
         'its desc) and the root modules that carry them. The vocabulary is the compacted master data ' +
         'of get-plan-context (root modules and their customer-facing attributes). Use it to find the attribute ' +
-        'for a requested property, e.g. the front colour, and the value to set. The desc of a value carries ' +
+        'for a requested property, e.g. "front color", and the value to set. Every word of the text is matched on ' +
+        'its own, in any order, British and American spelling alike (colour and color, grey and gray, worktop ' +
+        'and countertop): one search for "color" returns every colour attribute - front, carcase, countertop, ' +
+        'toe kick and the others - with their values, and a value list several attributes share is listed once ' +
+        '(sameSelectionsAs names the attribute that lists it). The desc of a value carries ' +
         'its colour code where the library gives one - Cloudy blue (#506080) -, the colour of that value: ' +
         'pick a dark, a light or a blue value by its code.',
       inputSchema: {
         text: z
           .string()
           .min(1)
-          .describe('The text to search for, case-insensitive.'),
+          .describe('The words to search for, case-insensitive.'),
         libraryId: z
           .string()
           .optional()
@@ -256,7 +262,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'the replaced group; a placement on it is not used; a root module the replace adds inherits ' +
         'the attributes the library passes on between neighbours - fronts, handles, carcase - from the root module it is docked to, and its attributes override them); ' +
         'all other groups are created with regenerated ids. Returns the loaded object ids and the resulting groups - ' +
-        'check their pos and footprint - plus corrections (what the server changed in the input, and what the library ' +
+        'check their pos and footprint - plus groupAttributes (per group the group attributes set on every unit, and ' +
+        'notCarried: those no unit of the group has - the group stands without them, nothing to undo), corrections (what ' +
+        'the server changed in the input, and what the library ' +
         'changed beyond the attributes sent - a front colour reset by a front program), notLoaded (the groups it ' +
         'could not build, with what to send instead) and hint (a root module on an obstacle, in another group or in front of ' +
         'a door or a window, with the free stretches of its wall). The payload format is returned by get-authoring-rules.',
@@ -351,22 +359,31 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'change-module-attribute',
     {
       description:
-        'Sets one attribute of a root module of a group in the plan and of its sub modules that carry it - ' +
-        'the front colour of a root module reaches its fronts -, or with moduleId of that one sub module only, ' +
-        'and recalculates the group. The ids are the ones get-plan-context shows (a sub module by its id in ' +
+        'Sets one attribute of one or more root modules in the plan and of their sub modules that carry it - ' +
+        'the front colour of a root module reaches its fronts -, or with moduleId of that one sub module of ' +
+        'each root module only, and recalculates their groups: name every root module that gets the value in ' +
+        'one call, e.g. the accent fronts of a row. The root modules may belong to one group or to several. ' +
+        'The ids are the ones get-plan-context shows (a sub module by its id in ' +
         'subModules); attribute ids and values come from the masterData section of get-plan-context ' +
         'or from find-attributes. ' +
         'The library may change a related attribute with it - a front colour the front program does not offer ' +
         'switches the program, and the fronts are built differently; corrections name every attribute the ' +
         'library changed besides the one set. ' +
-        'Returns the changed group and the ids of the changed modules.',
+        'Returns the ids of the changed groups and modules and the corrections; get-plan-context shows the groups.',
       inputSchema: {
-        rootModuleId: z.string().describe('The id of the root module.'),
+        rootModuleIds: z
+          .array(z.string())
+          .optional()
+          .describe('The ids of the root modules that get the value.'),
+        rootModuleId: z
+          .string()
+          .optional()
+          .describe('The id of a single root module, as one of rootModuleIds.'),
         moduleId: z
           .string()
           .optional()
           .describe(
-            'The id of the sub module. Omit to change the root module and its sub modules that carry the attribute.'
+            'The id of the sub module. Omit to change the root modules and their sub modules that carry the attribute.'
           ),
         attributeId: z.string().describe('The id of the attribute.'),
         value: z
@@ -386,7 +403,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'The library may change a related attribute with it - a front colour the front program does not offer ' +
         'switches the program, and the fronts are built differently; corrections name every attribute the ' +
         'library changed besides the one set. ' +
-        'Returns the changed group and the ids of the changed modules.',
+        'Returns the id of the group, the ids of the changed modules and the corrections; get-plan-context shows the group.',
       inputSchema: {
         groupId: z
           .string()

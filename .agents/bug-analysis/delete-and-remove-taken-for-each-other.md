@@ -565,6 +565,6 @@ Implemented as planned, in roomle-hi-example only:
   `delete-article-in-place`; the two corner prompts end with "and close the gap".
 - Documentation: D58, D40 superseded in part, D39 names the roomle-ui command, the new names in
   D52, §4, §6, §8 and every tool reference, skill, `AGENTS.md` and the Copilot instructions; the
-  backlog's issue 42 and the undo item take the new names; issue 43 describes the open chat check.
+  backlog's issue 42 and the undo item take the new names; issue 43 is removed.
 
 Not run: the chat check. It waits for a go.

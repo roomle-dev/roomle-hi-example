@@ -20,7 +20,6 @@ never drop the agent's content silently.
 | 51 | [A replace drops the group's materials](#51-a-replace-drops-the-groups-materials) | bug, roomle-ui, [RML-18075](https://roomle.atlassian.net/browse/RML-18075) | high — materials lost without a correction |
 | 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner, [RML-18076](https://roomle.atlassian.net/browse/RML-18076) | high — the kitchen stands in the wall |
 | 27 | [A new group needs a point the model computes](#27-a-new-group-needs-a-point-the-model-computes) | decision D23, instructions, [RML-18078](https://roomle.atlassian.net/browse/RML-18078) | high — groups outside the room |
-| 43 | ["Delete" and "remove" are taken for each other](#43-delete-and-remove-are-taken-for-each-other) | instructions, [RML-18079](https://roomle.atlassian.net/browse/RML-18079) | high — the other edit than asked |
 | 45 | ["The middle unit" read from the docking](#45-the-middle-unit-read-from-the-docking) | plan context | medium — the wrong unit edited |
 | 46 | [A new group beside an existing one for "add a cabinet to the right of the kitchen"](#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | instructions | medium — a separate group |
 | 48 | [A worktop colour sent as `mod_PaneltopColor`](#48-a-worktop-colour-sent-as-mod_paneltopcolor) | `find-attributes` | medium — the worktop keeps its default |
@@ -146,22 +145,6 @@ is reloaded once with the computed one; a corner kitchen goes into the corner th
 the group inside the room at the wall.
 
 **Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5.4-mini 02 and 06 (the wall's start).
-
-## 43. "Delete" and "remove" are taken for each other
-
-**Ticket.** [RML-18079](https://roomle.atlassian.net/browse/RML-18079)
-
-**Problem.** Whether the models take `delete-article-in-place` for "delete" and "remove" and
-`delete-article-and-compact` when the user asks to close the gap (D58) is not checked.
-
-**To do.** Run the test below; if a model takes the other tool, find the part of the tool list
-that leads it there and change it.
-
-**Test.** "remove the middle unit" and "delete the middle unit" take `delete-article-in-place`;
-"remove the base unit next to the corner unit on the right wall and close the gap" takes
-`delete-article-and-compact` — gpt-5-mini and gpt-5.4-mini, three runs each.
-
-**Reproduce.** `run-hi-mcp-prompt.js gpt-5.4-mini "$AZURE_GPT_KEY" "remove the middle unit" --plan ps_qply732i7knwtkfjm1z86sa8vrt00ms`
 
 ## 45. "The middle unit" read from the docking
 

@@ -13,7 +13,7 @@
   `remove-article-from-group` and `delete-group` and one sentence of the instructions
   (`hi-mcp-server.ts`), an optional `groupId` for `remove-article-from-group`
   (`tool-executors.ts`), the tests that pin both, the D40 row and the §6 rows of
-  `docs/hi-mcp-behaviour.md`, the tool references, and the removal of backlog issue 43.
+  `docs/hi-mcp-behaviour.md`, the tool references, and backlog issue 43.
 
 Not changed:
 
@@ -323,8 +323,9 @@ Implemented as planned, in roomle-hi-example only:
 - Tests: two new tests and one extended in `hi-mcp-server.test.ts`, six new cases in
   `tool-executors.test.ts`. Typecheck, 470 unit tests, lint and format pass.
 - Documentation: D40, the §6 rows, C17 and G54 in `docs/hi-mcp-behaviour.md`; the tool tables of
-  `docs/hi-mcp-server.md`, the server README and `docs/implementation/`; both skills; backlog
-  issue 43 removed.
+  `docs/hi-mcp-server.md`, the server README and `docs/implementation/`; both skills. Backlog
+  issue 43 stays open with the state after this change, as the plan's removal hid the
+  unverified result (review of PR #78).
 
 ### The chat check
 

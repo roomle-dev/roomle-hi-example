@@ -460,6 +460,9 @@ The plan was carried out as written. Where the implementation differs from it or
   - "kitchen-wide" also became "group-wide" in `hi-mcp/hi-mcp-server/README.md` and in the
     implementation docs.
   - The user guide's prompts ("the whole kitchen") are the user's words, so they stay.
+  - After the review of PR #79, backlog issues 51 and 39 stay open, reduced to the roomle-ui step,
+    and `docs/hi-mcp-behaviour.md` marks the replace part of D36, the `groupSettings` of D48 and
+    D56 as planned until the roomle-ui branch is released.
 
 ## Verification
 

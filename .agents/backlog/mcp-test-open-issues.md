@@ -23,10 +23,13 @@ never drop the agent's content silently.
 | 36 | [A wall-unit row runs into a unit hung above a base unit](#36-a-wall-unit-row-runs-into-a-unit-hung-above-a-base-unit) | MCP server correction | medium — two wall units in one place |
 | 42 | [A wall unit that keeps its place overlaps the unit that moved in below it](#42-a-wall-unit-that-keeps-its-place-overlaps-the-unit-that-moved-in-below-it) | roomle-ui command, MCP server feedback | medium — two units above in one place |
 | 53 | [`place-group` reports an overlap with a group inside an L-shaped group](#53-place-group-reports-an-overlap-with-a-group-inside-an-l-shaped-group) | bug, MCP server | medium — a wrong note, or a group moved away |
+| 54 | [A group centred on a wall stands off the centre when the group materials are set](#54-a-group-centred-on-a-wall-stands-off-the-centre-when-the-group-materials-are-set) | bug, MCP server placement | medium — the group 100 to 200 mm off the centre |
+| 55 | [A 450 mm dishwasher takes a 600 mm slot in the row](#55-a-450-mm-dishwasher-takes-a-600-mm-slot-in-the-row) | bug, planner or library | medium — the range hood off the hob |
 | 41 | [A row edit puts a unit in front of a door without a hint](#41-a-row-edit-puts-a-unit-in-front-of-a-door-without-a-hint) | MCP server feedback | low — the unit stands inside the room |
 | 37 | [A first call with a guessed payload](#37-a-first-call-with-a-guessed-payload) | instructions | low — one lost step |
 | 47 | [A root id sent as the group id is refused](#47-a-root-id-sent-as-the-group-id-is-refused) | MCP server correction | low — one lost step |
 | 38 | [A provider answer the AI SDK cannot process ends the turn without an answer](#38-a-provider-answer-the-ai-sdk-cannot-process-ends-the-turn-without-an-answer) | chat | low — rare |
+| 56 | [A group material no module of the group carries](#56-a-group-material-no-module-of-the-group-carries) | instructions | low — a material not built, reported |
 | 13 | [Undocked wall units reject the whole group](#13-undocked-wall-units-reject-the-whole-group) | MCP server correction | low — a group without relations only |
 | 50 | [Two units on one Top side vector take the same place](#50-two-units-on-one-top-side-vector-take-the-same-place) | MCP server correction | low — two units in one place |
 | 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | low — docking written as `contextData` only |
@@ -153,7 +156,7 @@ already')` (roomle-ui `glue-logic-test.ts`), whose kept unit already overlaps th
 the correction names the overlapped unit; a remove whose kept unit overlaps nothing gives the
 correction without it.
 
-**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 14.
+**Reproduce.** `mcp-test-2026-10-08_13-56-35`: gpt-6-astra 15.
 ## 53. `place-group` reports an overlap with a group inside an L-shaped group
 
 **Problem.** In a plan with an L-shaped kitchen along two walls and an island in front of it,
@@ -180,6 +183,46 @@ group that does overlap a root module still gets the note.
 
 **Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 33 (turn 7).
 
+## 54. A group centred on a wall stands off the centre when the group materials are set
+
+**Problem.** A new group placed by wall with alignment `center`, whose group materials the server
+sets after the load (D36), can stand 100 to 200 mm off the wall's centre. The server centres the
+footprint it measures after the first load, and the group the materials leave behind is narrower or
+wider: 3396 mm measured and 3010 mm built (193 mm off), 3619 mm measured and 3832 mm built (106 mm
+off). A group without group materials stands centred to within 5 mm.
+
+**Cause.** Not analysed. The placement by wall (D23) loads the group, computes the target from the
+calculated group and reloads it; the group materials (D36) follow the reload. Which material changes
+the extent — an end panel (`W60H`, `mod_Upright*`), a handle, a re-arrangement — is open.
+
+**To do.** Find the attribute that changes the footprint between the measurement and the built
+group; then measure after the group materials, or set them before the measurement, so that the
+group is centred once.
+
+**Test.** A unit test of the placement by wall with group attributes in `tool-executors.test.ts`:
+the target uses the footprint the group has with its materials; the test `image-kitchen-left-wall`
+of `docs/test-prompts.json` stands centred within 10 mm.
+
+**Reproduce.** `mcp-test-2026-10-08_13-56-35`: gpt-6-astra 30 and 31.
+
+## 55. A 450 mm dishwasher takes a 600 mm slot in the row
+
+**Problem.** `GSP` (dishwasher front) with `mod_Width` 450 is 450 mm wide in the order data, but in
+the row it takes 600 mm: its outline spans 599 mm, and the next root module starts 600 mm after it.
+A range hood the agent placed for a 450 mm dishwasher hangs 152 mm off the hob. Nothing reports it.
+
+**Cause.** Not analysed: the library may build the 600 mm appliance niche whatever the front width,
+or the docking vectors of `GSP` do not follow `mod_Width`.
+
+**To do.** Compare the docking vectors and the geometry of `GSP` at `mod_Width` 450 and 600 in the
+planner. Either the row follows the width, or the article catalog of the plan context says that
+`GSP` takes 600 mm.
+
+**Test.** A row with `GSP` at `mod_Width` 450: the next root module starts 450 mm after it, or the
+catalog's `dimensions` of `GSP` name the fixed width.
+
+**Reproduce.** `mcp-test-2026-10-08_13-56-35`: gpt-6-astra 34.
+
 ## 41. A row edit puts a unit in front of a door without a hint
 
 **Problem.** Inserting a drawer unit between the hob unit and the sink unit of the Corner Kitchen
@@ -202,7 +245,7 @@ with the free stretches of their wall; `withRowHints` can call it with the group
 reach into the door's span gives the hint; a row that stood in front of the door before the edit
 gives none.
 
-**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 13.
+**Reproduce.** `mcp-test-2026-10-08_13-56-35`: gpt-6-astra 16.
 ## 37. A first call with a guessed payload
 
 **Problem.** gpt-5.4-mini's first `create-or-replace-groups` call, before it reads the rules, sends an
@@ -256,6 +299,27 @@ whether a retry of the step is safe (the tool calls of the step are already carr
 module (e.g. `chat-steps.ts`), whose test feeds an `error` part and asserts the logged step.
 
 **Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 29.
+## 56. A group material no module of the group carries
+
+**Problem.** The agent sends `mod_BacksplashColor` and `mod_BacksplashHeight` as group materials for
+groups the library builds without a backsplash, and `mod_UprightColor` for a group without an end
+panel. The corrections say that the material could not be set, and the material the user asked
+for — the dark backsplash of an image — is not built.
+
+**Cause.** The `masterData` section lists the attributes of every generated root module (D48), the
+backsplash included, and nothing tells the agent which generated root modules a group gets or when
+the library generates a backsplash.
+
+**To do.** Find in the library when it generates a backsplash (a group setting, an article). Then
+say it in the served text, or let the server set the attribute that switches the backsplash on when
+the agent sends a backsplash material.
+
+**Test.** A unit test of the served text in `hi-mcp-server.test.ts`; the test
+`image-kitchen-left-wall` of `docs/test-prompts.json`: the backsplash of the image is built, or the
+answer says why not.
+
+**Reproduce.** `mcp-test-2026-10-08_13-56-35`: gpt-6-astra 30 and 34.
+
 ## 13. Undocked wall units reject the whole group
 
 **Problem.** `create-or-replace-groups` with a group whose roots carry no relation and no docking —

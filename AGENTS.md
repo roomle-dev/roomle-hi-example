@@ -124,6 +124,8 @@ The start script (`npm start`) provides:
 ├── CLAUDE.md                     # Redirect to AGENTS.md (for Claude Code)
 ├── .agents/                      # Digital Brain - AI agent knowledge base
 │   ├── README.md                 # Digital brain index
+│   ├── benchmarks/               # Benchmarks and performance analyses
+│   │   └── README.md
 │   ├── bug-analysis/             # Bug root-cause analyses
 │   │   └── README.md
 │   ├── feature-analysis/         # Feature investigations
@@ -173,6 +175,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | [`.agents/skills/roomle-hi-concepts.md`](./.agents/skills/roomle-hi-concepts.md) | HI concepts: rooms, walls, articles, groups, docking vectors, positioning |
 | [`.agents/skills/vercel-ai-sdk-chat.md`](./.agents/skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: providers, server-side auth, @ai-sdk/mcp, streamText |
 | [`.agents/skills/hi-mcp-testing.md`](./.agents/skills/hi-mcp-testing.md) | The user asks to **"test the mcp"** (runs the tests of `docs/test-prompts.json` with `run-hi-mcp-tests.js`, writes an evaluated report); testing the HI MCP end to end: running a prompt through the chat with a real model and planner, the stored snapshot result |
+| [`.agents/skills/hi-mcp-benchmarking.md`](./.agents/skills/hi-mcp-benchmarking.md) | Benchmarking the HI agent: measuring the performance, where the time goes, why the agent is slow, comparing the speed before and after a change — `benchmark-hi-mcp-runs.js` over test runs, the analysis and its document in `.agents/benchmarks/` |
 | [`.agents/skills/hi-analysis-cleanup.md`](./.agents/skills/hi-analysis-cleanup.md) | The user says **"cleanup analyses"** / "cleanup analysis": clean up `.agents/bug-analysis/`, `.agents/feature-analysis/` and `.agents/refactoring-analysis/` — close out every analysis whose work has landed: verify it, promote its durable outcome into the living reference, decisions, ADRs and backlog, delete it, fix the links, rebuild the index |
 | [`.agents/skills/hi-backlog-cleanup.md`](./.agents/skills/hi-backlog-cleanup.md) | The user says **"cleanup backlog"**: verify every backlog item against the code, remove what landed, strip history, refresh the code references; reviewing or updating the backlog |
 | [`.github/skills/roomle-pr-resolution.md`](./.github/skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads. Never merge the PR |
@@ -310,6 +313,7 @@ The `.agents/` folder serves as the "digital brain" for roomle-hi-example, conta
 ```
 .agents/
 ├── README.md                     # Digital brain index (this file)
+├── benchmarks/                   # Benchmarks and performance analyses
 ├── bug-analysis/                 # Bug root-cause analyses (written before fix)
 ├── feature-analysis/             # Feature investigations and decisions
 ├── refactoring-analysis/         # Refactoring analyses with reports
@@ -342,6 +346,7 @@ change.
 | Bug analysis | new file in `.agents/bug-analysis/` with kebab-case slug |
 | Feature analysis | new file in `.agents/feature-analysis/` with kebab-case slug |
 | Refactoring analysis | new file in `.agents/refactoring-analysis/` with kebab-case slug |
+| Benchmark and performance analysis | new file in `.agents/benchmarks/` with kebab-case slug, its benchmark in a folder of the same name — see [`.agents/skills/hi-mcp-benchmarking.md`](./.agents/skills/hi-mcp-benchmarking.md) |
 | New feature capability | Update `docs/hi-mcp-server.md` or create new file in `docs/` |
 | MCP server behaviour — a tool, a served rule, a result, a guard, a correction, feedback, a decision | `docs/hi-mcp-behaviour.md`, in the same change |
 | MCP tool reference updates | `.agents/skills/hi-mcp-tools.md` |

@@ -53,6 +53,7 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [hi-mcp-testing.md](./skills/hi-mcp-testing.md) | "Test the MCP": a temporary subset of `docs/test-prompts.json` (default every test, `gpt-5-mini`) run by `run-hi-mcp-tests.js` into `.temp/result/<session>/<model>/`, `report.md` with plan snapshot ids, images, evaluation and bug verdicts; the run script `run-hi-mcp-prompt.js` (a plan, operations, prompts and an image in headless Chromium, snapshot, plan snapshot id, planner calls) | The user asks to "test the mcp"; testing prompts or models against the real planner |
 | [hi-analysis-cleanup.md](./skills/hi-analysis-cleanup.md) | "Cleanup analyses": clean up `bug-analysis/`, `feature-analysis/` and `refactoring-analysis/` — verify every analysis, promote the durable outcome of the landed ones into the living reference, decisions, ADRs, backlog and skills, delete them, fix the links, rebuild this index | The user says "cleanup analyses" or "cleanup analysis"; reviewing or tidying the analysis folders |
 | [hi-backlog-cleanup.md](./skills/hi-backlog-cleanup.md) | "Cleanup backlog": the backlog as open todos only — verify every item against the code, remove what landed, strip history, refresh the code references | The user says "cleanup backlog"; reviewing or updating the backlog |
+| [hi-mcp-benchmarking.md](./skills/hi-mcp-benchmarking.md) | Benchmarks of the HI agent: the chat time of test runs per model step (tokens, model time, tool time, planner calls) with `benchmark-hi-mcp-runs.js`, the analysis of where the time goes, the document in `benchmarks/` | The user asks to benchmark or measure the performance, where the time goes, or to compare the speed before and after a change |
 
 ### Decisions (Architecture Decision Records)
 
@@ -106,12 +107,12 @@ done. The analysis and the report are the same document — the report is append
 
 ### Benchmarks & Performance Analyses
 
-Performance measurements, bottleneck analyses, and optimization studies.
+Performance measurements, bottleneck analyses, and optimization studies, in
+[`benchmarks/`](benchmarks/README.md), written with
+[hi-mcp-benchmarking.md](skills/hi-mcp-benchmarking.md). Each document keeps its benchmark in a
+folder of the same name.
 
-*This folder is initially empty. Add benchmark documents as needed.*
-
-| Document | Last touched |
-|---|---|
+No benchmark yet.
 
 ### Backlog
 

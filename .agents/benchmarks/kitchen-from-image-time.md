@@ -14,9 +14,11 @@
 - **roomle-hi-example** — this benchmark, the benchmark script and skill, the planner-call timing
   of the run script; improvements 1, 3, 4 and 5 change the MCP server's served text and tool
   results.
-- **roomle-ui** — improvement 2 only: one planner command that sets several group attributes in one
-  recalculation.
-- **ligna-store** — no change; its chat uses the same MCP server and gets improvements 1–5 with it.
+- **roomle-ui** — improvement 2: one planner command that sets several group attributes in one
+  recalculation; improvement 3 only if several root modules are to be set in one recalculation.
+- **ligna-store** — no change; its chat uses the same MCP server, its page bridge already forwards
+  `externalObjectGroupOperation`, and it gets the planner command of improvement 2 with the planner
+  it embeds.
 
 The ticket asks for the analysis in `.agents/feature-analysis/`; it lives in the new folder
 `.agents/benchmarks/` at the user's request (2026-10-08), with the benchmark it is based on.
@@ -263,13 +265,13 @@ Savings are per run, against the gpt-6-astra baseline of 92 s, 10.2 steps and 69
 They overlap in part and are estimates from the step cost of [3.3](#33-what-a-step-costs), fitted
 over all 7 valid runs; the benchmark of [8](#8-the-benchmark-to-repeat) measures them.
 
-| # | Improvement | Changes | Expected saving |
-|---|---|---|---|
-| 1 | **One search finds the material.** The `find-attributes` description's example in the library's words ("Front color"); a search that matches each word on its own and both spellings (colour/color, worktop/countertop); the shared colour palette once per result instead of 21 values per attribute. Better still: the group-wide material attributes (front, carcase, worktop, toe kick, handle) and their palette in `get-authoring-rules`, so a kitchen needs no search | served text, `find-attributes` in `tool-executors.ts` | 1–2 steps, 7–14 s; up to 2.9 steps and 20 s with the palette in the rules; 5–10k result tokens |
-| 2 | **Several group attributes in one planner command.** A roomle-ui command that sets a list of attributes on a group with one recalculation, used by `create-or-replace-groups` for the group attributes (D36) | roomle-ui `HI_GROUP_OPERATION`, `applyGroupWideAttributes` | 5–6 s per create, about 9 s per run; an undo of a create in one planner undo instead of 8–17 (see [one-undo-step-per-tool-call.md](../backlog/one-undo-step-per-tool-call.md)) |
-| 3 | **Edit several root modules in one call, answer with what changed.** `change-module-attribute` with a list of root modules (or of changes); command results with the changed root modules and the corrections instead of the whole group | `hi-mcp-server.ts`, command executors | about 1 step per run (run 6: 3–4 steps, 25 s); 6–8k tokens per avoided result |
-| 4 | **Corrections only for corrections.** The group attributes set by D36 named once and short (or not at all), not one correction each; a D59 sentence names the attribute that caused the change, not every attribute of the call; a group attribute no module of the group carries reported as a note, not a failure | G46, D59 in `tool-executors.ts` | 1–3k tokens per create; the undo-and-rebuild of run 4 (2 steps, 29 s) |
-| 5 | **A compact catalog.** `get-plan-context` returns per article one line of description (its AI_SELECTION_HINT, 56 characters on average) instead of nine sections; the full description on request | `get-plan-context` in `tool-executors.ts`, `hi-mcp-server.ts` | about 19k tokens per step, about a quarter of the input tokens; about 0.25 s per step (2–3 s per run) with gpt-6-astra, to be measured for the other models |
+| # | Improvement | Repositories | Changes | Expected saving |
+|---|---|---|---|---|
+| 1 | **One search finds the material.** The `find-attributes` description's example in the library's words ("Front color"); a search that matches each word on its own and both spellings (colour/color, worktop/countertop); the shared colour palette once per result instead of 21 values per attribute. Better still: the group-wide material attributes (front, carcase, worktop, toe kick, handle) and their palette in `get-authoring-rules`, so a kitchen needs no search | roomle-hi-example | the `find-attributes` description in `hi-mcp-server.ts`, its search in `tool-executors.ts`, `AUTHORING_RULES` | 1–2 steps, 7–14 s; up to 2.9 steps and 20 s with the palette in the rules; 5–10k result tokens |
+| 2 | **Several group attributes in one planner command.** A roomle-ui command that sets a list of attributes on a group with one recalculation, used by `create-or-replace-groups` for the group attributes (D36) | roomle-ui, roomle-hi-example | roomle-ui: the command in `HI_GROUP_OPERATION` (`hi-plan-context.ts`); roomle-hi-example: `applyGroupWideAttributes` sends it, `docs/hi-mcp-behaviour.md` | 5–6 s per create, about 9 s per run; an undo of a create in one planner undo instead of 8–17 (see [one-undo-step-per-tool-call.md](../backlog/one-undo-step-per-tool-call.md)) |
+| 3 | **Edit several root modules in one call, answer with what changed.** `change-module-attribute` with a list of root modules (or of changes); command results with the changed root modules and the corrections instead of the whole group | roomle-hi-example; roomle-ui only to set several root modules in one recalculation | the schema in `hi-mcp-server.ts`, the command executors in `tool-executors.ts`; without a roomle-ui change the server sends one planner command per root module | about 1 step per run (run 6: 3–4 steps, 25 s); 6–8k tokens per avoided result |
+| 4 | **Corrections only for corrections.** The group attributes set by D36 named once and short (or not at all), not one correction each; a D59 sentence names the attribute that caused the change, not every attribute of the call; a group attribute no module of the group carries reported as a note, not a failure | roomle-hi-example | G46 and D59 in `tool-executors.ts`, `docs/hi-mcp-behaviour.md` | 1–3k tokens per create; the undo-and-rebuild of run 4 (2 steps, 29 s) |
+| 5 | **A compact catalog.** `get-plan-context` returns per article one line of description (its AI_SELECTION_HINT, 56 characters on average) instead of nine sections; the full description on request | roomle-hi-example | `get-plan-context` in `tool-executors.ts`, its description in `hi-mcp-server.ts`; the library's descriptions stay as they are | about 19k tokens per step, about a quarter of the input tokens; about 0.25 s per step (2–3 s per run) with gpt-6-astra, to be measured for the other models |
 
 Improvements 1–4 shorten the path to the first correct create; [4.5](#45-rebuilds-after-the-first-create)
 needs the measurement gaps closed before a fix can be named.

@@ -155,8 +155,8 @@ performs the edit with its own group features and answers once the result is loa
 | `change-module-attribute` | the root among all roots of the plan | `withPlanRoots`, `withCorrections` |
 | `change-group-attribute` | the group | the planner's result |
 | `delete-group` | the group | the planner's result |
-| `delete-root-module` | the root among all roots | `withPlanRoots`, `withCorrections` |
-| `remove-article-from-group` | the group — without `groupId` the group that holds the root (`groupOfRoot`) —, the root within it | `withRowHints` + both |
+| `delete-article-in-place` | the root among all roots | `withPlanRoots`, `asTool` (the result names the tool, not the planner command), `withCorrections` |
+| `delete-article-and-compact` | the group — without `groupId` the group that holds the root (`groupOfRoot`) —, the root within it | `withRowHints` + `withPlanRoots`, `asTool`, `withCorrections` |
 | `merge-article-into-group` | the group, the article, the target root and side (`dockTarget`) | `withPlanRoots`, `withCorrections` |
 | `exchange-root-module` | the group, the article, the root | `withRowHints` + both |
 | `insert-article-into-group` | the group, the article, both roots (`insertBetween`) | `withRowHints` + both |
@@ -192,7 +192,7 @@ server's part:
 - `withRowHints` compares the raw groups before and after the edit and adds a `hint` when the row
   newly reaches past a wall or into a group it did not overlap before (`rowReachHints`), and names
   the wall units that moved with the unit below them (`movedUnitsAboveHint`). It does not apply to
-  `merge-article-into-group` and `delete-root-module`.
+  `merge-article-into-group` and `delete-article-in-place`.
 
 ## undo, redo
 

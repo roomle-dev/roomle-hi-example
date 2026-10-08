@@ -12,8 +12,9 @@ const EXPECTED_TOOLS = [
   'change-group-attribute',
   'change-module-attribute',
   'create-or-replace-groups',
+  'delete-article-and-compact',
+  'delete-article-in-place',
   'delete-group',
-  'delete-root-module',
   'exchange-root-module',
   'find-attributes',
   'get-authoring-rules',
@@ -26,7 +27,6 @@ const EXPECTED_TOOLS = [
   'merge-groups',
   'place-group',
   'redo',
-  'remove-article-from-group',
   'swap-root-modules',
   'undo',
 ];
@@ -99,13 +99,13 @@ describe('hi-mcp-server tool calls', () => {
     ['change-module-attribute', { attributeId: 'front', value: 'white' }],
     ['change-group-attribute', { groupId: 'g1', value: 'white' }],
     ['delete-group', {}],
-    ['delete-root-module', {}],
+    ['delete-article-in-place', {}],
     ['merge-article-into-group', { groupId: 'g1', articleId: 'a1' }],
     ['exchange-root-module', { groupId: 'g1', rootModuleId: 'r1' }],
     ['merge-groups', { targetGroupId: 'g1', groupIds: [] }],
     ['insert-article-into-group', { groupId: 'g1', articleId: 'a1' }],
     ['swap-root-modules', { groupId: 'g1', rootModuleIds: ['r1'] }],
-    ['remove-article-from-group', { groupId: 'g1' }],
+    ['delete-article-and-compact', { groupId: 'g1' }],
   ])(
     'rejects %s without a required argument before any planner call',
     async (name, args) => {
@@ -209,14 +209,16 @@ describe('hi-mcp-server tool calls', () => {
     const client = await connectClient(createMockPlannerApi());
 
     await client.callTool({
-      name: 'delete-root-module',
+      name: 'delete-article-in-place',
       arguments: { rootModuleId: 'r1' },
     });
     await client.callTool({ name: 'get-price', arguments: {} });
 
     const lines = log.mock.calls.map(([line]) => String(line));
     log.mockRestore();
-    expect(lines).toContain('[hi-mcp] tool delete-root-module feedback {}');
+    expect(lines).toContain(
+      '[hi-mcp] tool delete-article-in-place feedback {}'
+    );
     expect(
       lines.some((line) => line.startsWith('[hi-mcp] tool get-price feedback'))
     ).toBe(false);
@@ -283,14 +285,17 @@ describe('hi-mcp-server tool calls', () => {
     const client = await connectClient(plannerApi);
 
     const result = await client.callTool({
-      name: 'delete-root-module',
+      name: 'delete-article-in-place',
       arguments: { rootModuleId: 'r1' },
     });
 
     expect(
       plannerApi.extended.externalObjectGroupOperation
     ).toHaveBeenCalledWith('delete-root-module', { rootModuleId: 'r1' });
-    expect(JSON.parse(textOf(result))).toEqual(operationResult);
+    expect(JSON.parse(textOf(result))).toEqual({
+      ...operationResult,
+      command: 'delete-article-in-place',
+    });
   });
 
   it('answers get-authoring-rules without a planner call', async () => {
@@ -427,72 +432,70 @@ describe('hi-mcp-server tool calls', () => {
 
     for (const sentence of [
       'insert-article-into-group inserts an article between two root modules',
-      'remove-article-from-group removes a root module and closes the gap',
-      'delete-root-module deletes a root module and leaves the gap',
+      'delete-article-and-compact deletes an article and closes the gap',
+      'delete-article-in-place deletes an article and leaves the gap',
       'delete-group deletes a group',
       'swap-root-modules lets two root modules change places',
       'an article of another size - "a 900 mm cabinet" - is the same article with that attribute set',
-      'Take the user\'s word: to "remove" an article is remove-article-from-group, to "delete" an article is delete-root-module',
-      'In an insert, a remove, an exchange or a swap the root modules at a wall or in a corner keep their place and the others move',
+      'Delete and remove mean the same: delete-article-in-place, unless the user asks to close the gap - then delete-article-and-compact',
+      'In an insert, a delete that closes the gap, an exchange or a swap the root modules at a wall or in a corner keep their place and the others move',
       'an article between two root modules with insert-article-into-group',
       'Example 6 - "insert a low cabinet between the high cabinets" is insert-article-into-group',
     ]) {
       expect(rules).toContain(sentence);
     }
     expect(client.getInstructions()).toContain(
-      'remove-article-from-group (remove a root module and close the gap)'
+      'delete-article-and-compact (delete an article and close the gap)'
     );
   });
 
-  it("binds the user's word to delete-root-module and remove-article-from-group in their opening sentence", async () => {
+  it('names the delete edits by their outcome and leaves the gap by default', async () => {
     const client = await connectClient(createMockPlannerApi());
     const { tools } = await client.listTools();
     const toolNamed = (name: string) =>
       tools.find((tool) => tool.name === name);
-    const deleteRoot = toolNamed('delete-root-module')?.description ?? '';
-    const removeRoot =
-      toolNamed('remove-article-from-group')?.description ?? '';
+    const inPlace = toolNamed('delete-article-in-place')?.description ?? '';
+    const compact = toolNamed('delete-article-and-compact')?.description ?? '';
 
-    expect(deleteRoot).toMatch(
-      /^The tool for "delete": when the user asks to delete a unit, a cabinet, a module or an article, it deletes that root module from its group and leaves the gap/
+    expect(inPlace).toMatch(
+      /^Deletes an article from its group and leaves the gap - the tool for "delete" or "remove" when the user does not ask to close the gap/
     );
-    expect(removeRoot).toMatch(
-      /^The tool for "remove": when the user asks to remove a unit, a cabinet, a module or an article, it removes that root module from its group and closes the gap/
+    expect(compact).toMatch(
+      /^Deletes an article from its group and closes the gap - the tool when the user asks to close the gap/
     );
-    expect(deleteRoot).toContain(
-      'When the user says remove, use remove-article-from-group.'
+    expect(inPlace).toContain(
+      'To close the gap, use delete-article-and-compact.'
     );
-    expect(removeRoot).toContain(
-      'When the user says delete, use delete-root-module.'
-    );
-    for (const description of [deleteRoot, removeRoot]) {
-      expect(description).not.toContain('To close the gap, use');
-      expect(description).not.toContain(
-        'To delete an article and leave the gap'
-      );
-    }
-    for (const name of ['delete-root-module', 'remove-article-from-group']) {
+    expect(compact).toContain('To leave the gap, use delete-article-in-place.');
+    for (const name of [
+      'delete-article-in-place',
+      'delete-article-and-compact',
+    ]) {
       expect(toolNamed(name)?.inputSchema.required).toEqual(['rootModuleId']);
     }
   });
 
-  it('says remove only for remove-article-from-group', async () => {
+  it("no longer names a delete edit by the user's word", async () => {
     const client = await connectClient(createMockPlannerApi());
-    const { tools } = await client.listTools();
-    const descriptionOf = (name: string) =>
-      tools.find((tool) => tool.name === name)?.description ?? '';
-
-    expect(descriptionOf('delete-group')).toMatch(/^Deletes a group/);
-    expect(descriptionOf('delete-group')).not.toMatch(/remov/i);
-    expect(
-      descriptionOf('delete-root-module').replace(
-        'When the user says remove, use remove-article-from-group.',
-        ''
-      )
-    ).not.toMatch(/remov/i);
-    expect(descriptionOf('remove-article-from-group')).toContain(
-      'Removing the only root module deletes the group.'
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
     );
+    const { tools } = await client.listTools();
+    const served = [
+      client.getInstructions() ?? '',
+      rules,
+      JSON.stringify(tools),
+    ].join('\n');
+
+    for (const text of [
+      'delete-root-module',
+      'remove-article-from-group',
+      "Take the user's word",
+      'The tool for "remove"',
+    ]) {
+      expect(served).not.toContain(text);
+    }
+    expect(rules).toContain('Delete and remove mean the same');
   });
 
   it('speaks of articles and root modules, not of kitchens, and inserts between any two root modules', async () => {

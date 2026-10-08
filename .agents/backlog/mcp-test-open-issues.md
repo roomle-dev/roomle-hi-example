@@ -151,21 +151,15 @@ the group inside the room at the wall.
 
 **Ticket.** [RML-18079](https://roomle.atlassian.net/browse/RML-18079)
 
-**Problem.** For "remove the middle unit" gpt-5.4-mini calls `delete-root-module`: the gap stays
-and the group falls apart — a corner kitchen into four groups. It decides with no reasoning tokens.
+**Problem.** Whether the models take `delete-article-in-place` for "delete" and "remove" and
+`delete-article-and-compact` when the user asks to close the gap (D58) is not checked.
 
-**Cause.** The HI chat does not read the rules, so only the tool list binds the user's word to the
-tool. The descriptions of `delete-root-module` and `remove-article-from-group` open with the word
-("The tool for "delete"" / "The tool for "remove""), and `delete-group` deletes; gpt-5.4-mini
-still takes `delete-root-module` for "remove". What else in the tool list leads it there is not
-analysed; the tool names are not the cause.
+**To do.** Run the test below; if a model takes the other tool, find the part of the tool list
+that leads it there and change it.
 
-**To do.** Check the descriptions with the test below; if gpt-5.4-mini still takes
-`delete-root-module` for "remove", find what leads it there and change it.
-
-**Test.** "delete the middle unit", "remove the middle unit" and "remove the base unit next to the
-corner unit on the right wall" with gpt-5-mini and gpt-5.4-mini, three runs each, take the
-matching tool.
+**Test.** "remove the middle unit" and "delete the middle unit" take `delete-article-in-place`;
+"remove the base unit next to the corner unit on the right wall and close the gap" takes
+`delete-article-and-compact` — gpt-5-mini and gpt-5.4-mini, three runs each.
 
 **Reproduce.** `run-hi-mcp-prompt.js gpt-5.4-mini "$AZURE_GPT_KEY" "remove the middle unit" --plan ps_qply732i7knwtkfjm1z86sa8vrt00ms`
 
@@ -284,7 +278,7 @@ moves a unit to the same way.
 
 ## 42. A wall unit that keeps its place overlaps the unit that moved in below it
 
-**Problem.** `remove-article-from-group` on the unit next to the corner of the Corner Kitchen: the hob
+**Problem.** `delete-article-and-compact` on the unit next to the corner of the Corner Kitchen: the hob
 unit moves into the gap with its range hood (D42), and the wall unit above the removed unit keeps
 its place, because the hob unit carries a unit above it already. The hood now hangs in the place of
 that wall unit. The correction says that the wall unit keeps its place, not that it overlaps the
@@ -296,7 +290,7 @@ row hints (`withRowHints`, `tool-executors.ts`) compare whole groups, so an over
 the same group is not seen.
 
 **To do.** The correction names the unit above that the kept unit now overlaps, and says what the
-agent can do: remove the kept unit with `remove-article-from-group`, or move the units above. The
+agent can do: remove the kept unit with `delete-article-and-compact`, or move the units above. The
 planner tests the kept unit's box against the boxes of the units above that moved
 (`carriersOfUnitsAbove`, `hi-root-module-arrangement.ts`).
 

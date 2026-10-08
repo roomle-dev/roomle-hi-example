@@ -91,8 +91,8 @@ template string in this file; there is no separate rules file.
 | `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | `planChange` | `externalObjectGroupOperation` |
 | `change-group-attribute` | `groupId`, `attributeId`, `value` | `planChange` | same |
 | `delete-group` | `groupId` | `planChange` | same |
-| `delete-root-module` | `rootModuleId` | `planChange` | same |
-| `remove-article-from-group` | `rootModuleId`, `groupId` (optional) | `planChange` | same |
+| `delete-article-in-place` | `rootModuleId` | `planChange` | same |
+| `delete-article-and-compact` | `rootModuleId`, `groupId` (optional) | `planChange` | same |
 | `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo` | `planChange` | same |
 | `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between: [id, id]` | `planChange` | same |
 | `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | `planChange` | same |
@@ -242,7 +242,7 @@ rounded to 0.1 mm.
 Some roomle-ui commands commit a second step — the follow-up reload when the kernel reports the
 group's new position. For `FOLLOW_UP_COMMANDS` (`change-module-attribute`, `change-group-attribute`,
 `exchange-root-module`, `insert-article-into-group`, `swap-root-modules`) and for a
-`remove-article-from-group` that closed the gap, the call waits up to `FOLLOW_UP_WAIT_MS` (2 s) for
+`delete-article-and-compact` that closed the gap, the call waits up to `FOLLOW_UP_WAIT_MS` (2 s) for
 that event — only when the page relays history events at all. A follow-up that has not arrived by
 the end of the call is registered as expected (`expectLateFollowUp`) and the record is `settled:
 false`.

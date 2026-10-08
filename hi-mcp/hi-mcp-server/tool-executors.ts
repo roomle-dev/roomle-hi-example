@@ -582,6 +582,10 @@ const withCorrections = (result: any, corrections: string[]) => {
   return all.length > 0 ? { ...result, corrections: all } : result;
 };
 
+// The agent knows the tool, not the planner command it forwards: the result
+// and its corrections name the tool.
+const asTool = (result: any, tool: string) => ({ ...result, command: tool });
+
 // The root after `start` along a side vector, when the row reaches `target`
 // in that direction - past a corner article, which joins two legs.
 const neighbourTowards = (
@@ -3605,33 +3609,36 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     })
   ),
 
-  'delete-root-module': planChange(
-    'delete-root-module',
+  'delete-article-in-place': planChange(
+    'delete-article-in-place',
     inPlacementFrame(async (roomDesignerApi, args) => {
       const corrections: string[] = [];
       const groups = await planGroups(roomDesignerApi);
       const rootModuleId = resolveRootId(
         rootsOfGroups(groups),
         args.rootModuleId as string,
-        'delete-root-module',
+        'delete-article-in-place',
         corrections
       );
       return withCorrections(
-        await withPlanRoots(
-          () =>
-            roomDesignerApi.extended.externalObjectGroupOperation(
-              'delete-root-module',
-              { rootModuleId }
-            ),
-          groups
+        asTool(
+          await withPlanRoots(
+            () =>
+              roomDesignerApi.extended.externalObjectGroupOperation(
+                'delete-root-module',
+                { rootModuleId }
+              ),
+            groups
+          ),
+          'delete-article-in-place'
         ),
         corrections
       );
     })
   ),
 
-  'remove-article-from-group': planChange(
-    'remove-article-from-group',
+  'delete-article-and-compact': planChange(
+    'delete-article-and-compact',
     inPlacementFrame(async (roomDesignerApi, args) => {
       const corrections: string[] = [];
       const context =
@@ -3647,18 +3654,21 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       const rootModuleId = resolveRootId(
         group.roots ?? [],
         args.rootModuleId as string,
-        'remove-article-from-group',
+        'delete-article-and-compact',
         corrections
       );
       return withRowHints(roomDesignerApi, group.id, context, async () =>
         withCorrections(
-          await withPlanRoots(
-            () =>
-              roomDesignerApi.extended.externalObjectGroupOperation(
-                'remove-article-from-group',
-                { groupId: group.id, rootModuleId }
-              ),
-            [group]
+          asTool(
+            await withPlanRoots(
+              () =>
+                roomDesignerApi.extended.externalObjectGroupOperation(
+                  'remove-article-from-group',
+                  { groupId: group.id, rootModuleId }
+                ),
+              [group]
+            ),
+            'delete-article-and-compact'
           ),
           corrections
         )

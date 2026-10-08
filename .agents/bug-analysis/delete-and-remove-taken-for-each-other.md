@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18079](https://roomle.atlassian.net/browse/RML-18079); backlog [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 43; related: [RML-18045](https://roomle.atlassian.net/browse/RML-18045) (the row edit tools, D40), [RML-18065](https://roomle.atlassian.net/browse/RML-18065) (D52), [RML-18041](https://roomle.atlassian.net/browse/RML-18041) (umbrella)
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — PR #78 merged (word openings, optional `groupId`), not verified; the outcome names are planned on `fix/name-delete-tools-by-outcome-RML-18079`
+> **Status**: Open — PR #78 merged (word openings, optional `groupId`); the outcome names (D58) implemented on `fix/name-delete-tools-by-outcome-RML-18079`, verified with unit tests; the chat check waits for a go
 
 ## Affected repositories
 
@@ -542,3 +542,29 @@ gap either way.
   "remove the middle unit", "delete the middle unit" (both expected: in place) and "remove the base
   unit next to the corner unit on the right wall and close the gap" (expected: compact), with
   gpt-5-mini and gpt-5.4-mini, three runs each — 18 runs, about 18 minutes.
+
+## Implementation of the outcome names
+
+Implemented as planned, in roomle-hi-example only:
+
+- `hi-mcp-server.ts`: `delete-article-in-place` and `delete-article-and-compact` replace
+  `delete-root-module` and `remove-article-from-group`, with the planned descriptions; the rules say
+  "Delete and remove mean the same: delete-article-in-place, unless the user asks to close the gap -
+  then delete-article-and-compact"; the instructions and the list of plan-changing tools take the
+  new names.
+- `tool-executors.ts`: the executors run under the new names and forward the planner commands
+  `delete-root-module` and `remove-article-from-group` as before; `asTool` gives the result and the
+  planner's corrections the tool name.
+- Tests: in `hi-mcp-server.test.ts` the two tests of PR #78 are replaced by "names the delete edits
+  by their outcome and leaves the gap by default" and "no longer names a delete edit by the user's
+  word"; `tool-executors.test.ts` renames the two executors and adds "forwards the planner command
+  and names itself in the result" and "names itself, not the planner command, in the corrections
+  of the planner" (both for each tool). The forwarding cases moved from the shared table into that
+  new test instead of a planner-command column. Typecheck, 474 unit tests, lint and format pass.
+- `docs/test-prompts.json`: as planned — "remove" and "delete the middle unit" expect
+  `delete-article-in-place`; the two corner prompts end with "and close the gap".
+- Documentation: D58, D40 superseded in part, D39 names the roomle-ui command, the new names in
+  D52, §4, §6, §8 and every tool reference, skill, `AGENTS.md` and the Copilot instructions; the
+  backlog's issue 42 and the undo item take the new names; issue 43 describes the open chat check.
+
+Not run: the chat check. It waits for a go.

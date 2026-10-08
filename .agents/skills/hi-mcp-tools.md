@@ -26,8 +26,8 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 | `change-module-attribute` | Set an attribute of a root module and of its sub modules that carry it, or of one sub module |
 | `change-group-attribute` | Set an attribute on every module of a group that has it |
 | `delete-group` | Delete a group |
-| `delete-root-module` | Delete one root module and leave the gap; the rest splits where it is no longer docked together |
-| `remove-article-from-group` | Remove one root module and close the gap |
+| `delete-article-in-place` | Delete an article and leave the gap — the tool for "delete" or "remove" unless the user asks to close the gap; the rest splits where it is no longer docked together |
+| `delete-article-and-compact` | Delete an article and close the gap, when the user asks for it |
 | `merge-article-into-group` | Dock one more article to a free docking vector of a root module; it inherits the neighbour's fronts, handles and carcase |
 | `insert-article-into-group` | Insert an article between two root modules that stand side by side, whatever the group and the article; the root modules away from the wall move; it inherits the fronts, handles and carcase of the first-named root |
 | `exchange-root-module` | Replace a root module with an article, keeping its docking and the fronts, handles and carcase of the replaced one |
@@ -192,8 +192,8 @@ own group features; the group keeps its position
 'change-module-attribute': { rootModuleId: string, moduleId?: string, attributeId: string, value: string | number | boolean }
 'change-group-attribute':  { groupId: string, attributeId: string, value: string | number | boolean }
 'delete-group':            { groupId: string }
-'delete-root-module':      { rootModuleId: string }
-'remove-article-from-group': { groupId?: string, rootModuleId: string }
+'delete-article-in-place':      { rootModuleId: string }
+'delete-article-and-compact': { groupId?: string, rootModuleId: string }
 'merge-article-into-group': {
   groupId: string, articleId: string, attributes?: { id, value }[],
   dockTo: { rootId: string, ownDockingVector: string, dockingVector: string,
@@ -224,23 +224,23 @@ planner has loaded the result:
 - `groups`: the affected groups in the `get-plan-context` shape
 - `changedModuleIds`: for `change-group-attribute`, and for `change-module-attribute` without `moduleId` —
   the root module and the sub modules it set
-- `gapClosed`: for `remove-article-from-group` — `true` when the gap was closed, `false` when the
-  unit was deleted as `delete-root-module` does
+- `gapClosed`: for `delete-article-and-compact` — `true` when the gap was closed, `false` when the
+  unit was deleted as `delete-article-in-place` does
 - `corrections`: what the server corrected before forwarding — the docking of
   `merge-article-into-group`, two roots of `insert-article-into-group` that are no neighbours, a
   root id read as the plan's id it abbreviates or misspells — and what the planner corrected or
   could not keep, prefixed with the command: a docking the new unit of `exchange-root-module` or `swap-root-modules` cannot take,
-  a unit above that keeps its place or a deletion instead of a remove (`remove-article-from-group`)
+  a unit above that keeps its place or a deletion instead of a remove (`delete-article-and-compact`)
 - `hint`: after a row edit (insert, remove, exchange, swap) — names the units above that moved with
   the unit below them, and says when the row now reaches past a wall or into another group
 
-- `delete-root-module`: deletes the unit and leaves the gap: units no longer docked together become
+- `delete-article-in-place`: deletes the unit and leaves the gap: units no longer docked together become
   separate groups where they stand; deleting the only unit deletes the group; generated roots
   (worktop, toe kick) cannot be deleted
-- `remove-article-from-group`: removes the unit and closes the gap: its neighbours are docked to each
+- `delete-article-and-compact`: deletes the unit and closes the gap: its neighbours are docked to each
   other, the end of the row at a wall stays, a unit hung on it hangs on the neighbour that moves into
-  the gap; a unit at a row end is removed and nothing else moves; a corner article between two legs
-  is removed and the gap closed by turning one leg by 90° with the units above it, and the
+  the gap; a unit at a row end is deleted and nothing else moves; a corner article between two legs
+  is deleted and the gap closed by turning one leg by 90° with the units above it, and the
   `corrections` name the leg that turned (D52); the only unit is deleted with its group
   (`gapClosed: false`). A remove never splits a group
 - `exchange-root-module`: the article has one root module; the new unit keeps the position and
@@ -359,7 +359,7 @@ try {
 | duplicate root id '…' named in the docking (in `notLoaded`) | Two roots of a group share an id that a docking entry names | Give every root a unique id |
 | Root module '…' has no free docking vector '…' | `merge-article-into-group` on a side the planner reports as taken although the row ends there; a taken side with a free row end is moved there and reported in `corrections` | Use one of the root's `freeDockingVectors` (the error lists them) |
 | Module '…' has no attribute '…' | `change-module-attribute` with an attribute the master data assigns neither to the root module nor to its sub modules (with `moduleId`: not to that sub module) | Look the attribute up with `find-attributes` — its `rootModules` name the modules that have it |
-| Root module '…' is generated by the library | `delete-root-module` or `remove-article-from-group` on a worktop or toe kick | Remove the article root instead; the library regenerates the rest |
+| Root module '…' is generated by the library | `delete-article-in-place` or `delete-article-and-compact` on a worktop or toe kick | Remove the article root instead; the library regenerates the rest |
 | Article '…' has n root modules | `exchange-root-module` or `insert-article-into-group` with an article of several root modules | Pick an article of one root module, or rebuild with `create-or-replace-groups` |
 | '…' and '…' are not in one row | `insert-article-into-group` with two roots that stand in no row together | Send two neighbours of one row — the error names the side neighbours of the first root |
 | both ids name the root '…' | `swap-root-modules` with one root twice | Name the two units that change places |

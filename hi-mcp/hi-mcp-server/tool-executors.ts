@@ -76,6 +76,9 @@ const PLAN_CONTEXT_SECTIONS: unknown[] = [
   'obstacles',
 ];
 
+// A section of the server: the full descriptions of the catalog's articles.
+const ARTICLE_DESCRIPTIONS = 'articleDescriptions';
+
 const DEFAULT_SECTIONS: PlanContextSection[] = [
   'rooms',
   'articles',
@@ -156,8 +159,27 @@ const repositionedGroup = (resultGroup: any, placement: GroupPlacement) => {
   };
 };
 
-const attributeMatches = (attribute: any, needle: string): boolean =>
-  [
+// The library spells one way, the agent often the other: both read alike.
+const SPELLINGS: [RegExp, string][] = [
+  [/colour/g, 'color'],
+  [/grey/g, 'gray'],
+  [/worktop/g, 'countertop'],
+];
+
+const searchable = (text: string): string =>
+  SPELLINGS.reduce(
+    (normalized, [spelling, as]) => normalized.replace(spelling, as),
+    text.toLowerCase()
+  );
+
+const searchWords = (text: string): string[] =>
+  searchable(text)
+    .split(/[\s,;()-]+/)
+    .filter((word) => word.length > 0);
+
+// Every word is in one of the attribute's fields.
+const attributeMatches = (attribute: any, words: string[]): boolean => {
+  const fields = [
     attribute.id,
     attribute.name,
     attribute.desc,
@@ -167,12 +189,31 @@ const attributeMatches = (attribute: any, needle: string): boolean =>
       selection.desc,
       selection.value,
     ]),
-  ].some(
-    (value) =>
-      value !== undefined &&
-      value !== null &&
-      String(value).toLowerCase().includes(needle)
-  );
+  ]
+    .filter((value) => value !== undefined && value !== null)
+    .map((value) => searchable(String(value)));
+  return words.every((word) => fields.some((field) => field.includes(word)));
+};
+
+// A value list several attributes share is listed once: the later attributes
+// name the attribute that lists it.
+const withSharedSelectionsOnce = (matches: any[]): any[] => {
+  const listedBy = new Map<string, string>();
+  return matches.map((match) => {
+    if (!Array.isArray(match.selections) || match.selections.length === 0) {
+      return match;
+    }
+    const key = `${match.libraryId}\n${JSON.stringify(match.selections, (field, value) => (field === 'imageUrl' ? undefined : value))}`;
+    const listing = listedBy.get(key);
+    if (listing === undefined) {
+      listedBy.set(key, match.id);
+      return match;
+    }
+    const shared = { ...match, sameSelectionsAs: listing };
+    delete shared.selections;
+    return shared;
+  });
+};
 
 const isArticlePickOnly = (root: any): boolean =>
   !root?.posData && !root?.modules && !root?.parts;
@@ -341,6 +382,29 @@ const resolveRootId = (
 
 const rootsOfGroups = (groups: any[]): any[] =>
   groups.flatMap((group) => (group?.roots ?? []) as any[]);
+
+// The root modules by the group that holds them, in the order sent, and the
+// ones no group of the plan holds.
+const rootModulesByGroup = (
+  groups: any[],
+  rootModuleIds: string[]
+): { byGroup: Map<string, string[]>; unknown: string[] } => {
+  const byGroup = new Map<string, string[]>();
+  const unknown: string[] = [];
+  for (const rootModuleId of rootModuleIds) {
+    const group = groups.find((candidate) =>
+      ((candidate?.roots ?? []) as any[]).some(
+        (root) => root?.id === rootModuleId
+      )
+    );
+    if (group) {
+      byGroup.set(group.id, [...(byGroup.get(group.id) ?? []), rootModuleId]);
+    } else {
+      unknown.push(rootModuleId);
+    }
+  }
+  return { byGroup, unknown };
+};
 
 // The planner's "not found" for a root module, with the roots of the plan.
 const withPlanRoots = async <T>(
@@ -590,6 +654,17 @@ const withCorrections = (result: any, corrections: string[]) => {
 // and its corrections name the tool.
 const asTool = (result: any, tool: string) => ({ ...result, command: tool });
 
+// An attribute change answers with what changed, not with the whole group:
+// get-plan-context shows the group.
+const compactAttributeResult = (result: any) => ({
+  command: result.command,
+  groupIds: ((result.groups ?? []) as any[]).map((group) => group.id),
+  ...(result.changedModuleIds?.length > 0 && {
+    changedModuleIds: result.changedModuleIds,
+  }),
+  ...(result.corrections?.length > 0 && { corrections: result.corrections }),
+});
+
 // The root after `start` along a side vector, when the row reaches `target`
 // in that direction - past a corner article, which joins two legs.
 const neighbourTowards = (
@@ -817,11 +892,28 @@ const planGroups = async (roomDesignerApi: PlannerApi): Promise<any[]> =>
   ((await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']))
     .groups ?? []) as any[];
 
+// A sectioned article description - FUNCTION:, PURPOSE:, …,
+// AI_SELECTION_HINT: - shortened to what the article is and when to pick it.
+const SHORT_DESCRIPTION_SECTIONS = ['FUNCTION', 'AI_SELECTION_HINT'];
+const shortDescription = (desc: unknown): unknown => {
+  if (typeof desc !== 'string') {
+    return desc;
+  }
+  const lines = SHORT_DESCRIPTION_SECTIONS.map((section) =>
+    desc
+      .match(new RegExp(`(?:^|\\n)${section}:[ \\t]*\\n([^\\n]+)`))?.[1]
+      ?.trim()
+  ).filter((line) => line);
+  return lines.length > 0 ? lines.join(' ') : desc;
+};
+
 // The agent picks corner articles by cornerArticle; the flag is completed for
-// an empty plan, and the corner point stays with the server.
+// an empty plan, and the corner point stays with the server. The description
+// is short; the articleDescriptions section has the full one.
 const agentFacingArticle = (article: any, articles: any[]) => {
   const compact = {
     ...article,
+    ...(article.desc !== undefined && { desc: shortDescription(article.desc) }),
     cornerArticle: isCornerArticle(articles, article),
   };
   delete compact.cornerPoint;
@@ -2049,11 +2141,13 @@ const describedValue = (
 };
 
 // "with mod_FrontColor "324" (Dark marble) the library changed
-// mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (…) to "Modern" (…)"
+// mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (…) to "Modern" (…)";
+// the cause is the attribute a command set, or a text such as "its group
+// attributes".
 const libraryChangeSentences = async (
   roomDesignerApi: PlannerApi,
   changes: LibraryChange[],
-  applied: GroupWideAttribute[],
+  cause: GroupWideAttribute | string,
   prefix: string
 ): Promise<string[]> => {
   if (changes.length === 0) {
@@ -2063,17 +2157,15 @@ const libraryChangeSentences = async (
   return changes.map(({ libraryId, attributeId, from, to, roots }) => {
     const described = (id: string, value: string) =>
       describedValue(masterData, libraryId, id, value);
-    const cause = applied
-      .map(
-        ({ id, value }) =>
-          `${id} ${described(id, String(attributeValue(value)))}`
-      )
-      .join(' and ');
+    const causeText =
+      typeof cause === 'string'
+        ? cause
+        : `${cause.id} ${described(cause.id, String(attributeValue(cause.value)))}`;
     const rootLabels = roots
       .map((root) => `'${root.id}' (${root.articleId})`)
       .join(', ');
     return (
-      `${prefix}: with ${cause} the library changed ${attributeId} of ` +
+      `${prefix}: with ${causeText} the library changed ${attributeId} of ` +
       `${roots.length === 1 ? 'root module' : 'root modules'} ${rootLabels}` +
       (from === undefined ? '' : ` from ${described(attributeId, from)}`) +
       ` to ${described(attributeId, to)}`
@@ -2099,7 +2191,7 @@ const withLibraryChanges = async (
       [applied],
       isSetOn
     ),
-    [applied],
+    applied,
     tool
   );
   return sentences.length > 0
@@ -2107,16 +2199,26 @@ const withLibraryChanges = async (
     : result;
 };
 
+// What a create or a replace set on every unit of a group: the attributes set,
+// and those no unit of the group carries - the group stands without them.
+interface GroupAttributesReport {
+  index: number;
+  id: string;
+  set: string[];
+  notCarried?: string[];
+}
+
 // The group attributes that are not the library's group settings, the
 // overrides moved off the roots and the colours of the dropped generated roots
-// are set on every unit of the group with the planner's change-group-attribute
-// command, after a create and after a replace. True when a command ran.
+// are set on every unit of the group with one change-attributes command of the
+// planner, after a create and after a replace. True when a command ran.
 const applyGroupWideAttributes = async (
   roomDesignerApi: PlannerApi,
   callGroups: CallGroup[],
   beforeGroupIds: Set<string>,
   groups: any[],
-  corrections: string[]
+  corrections: string[],
+  reports: GroupAttributesReport[]
 ): Promise<boolean> => {
   let applied = false;
   for (const [{ group, index, groupWide }, result] of matchResultGroups(
@@ -2136,38 +2238,55 @@ const applyGroupWideAttributes = async (
     ]) {
       toApply.set(attribute.id, attribute.value);
     }
-    let changedGroup: any;
-    for (const [attributeId, value] of toApply) {
-      applied = true;
-      try {
-        const changed =
-          await roomDesignerApi.extended.externalObjectGroupOperation(
-            'change-group-attribute',
-            { groupId: result.id, attributeId, value: attributeValue(value) }
-          );
-        changedGroup =
-          ((changed?.groups ?? []) as any[]).find(
-            (candidate) => candidate?.id === result.id
-          ) ?? changedGroup;
-        corrections.push(
-          `posGroups[${index}]: ${attributeId} ${JSON.stringify(value)} was set on every unit of group '${result.id}'`
+    if (toApply.size === 0) {
+      continue;
+    }
+    applied = true;
+    try {
+      const changed =
+        await roomDesignerApi.extended.externalObjectGroupOperation(
+          'change-attributes',
+          {
+            groupId: result.id,
+            attributes: [...toApply].map(([attributeId, value]) => ({
+              attributeId,
+              value: attributeValue(value),
+            })),
+          }
         );
-      } catch (error) {
+      const notCarried = new Set(
+        ((changed?.skippedAttributes ?? []) as any[]).map(
+          (skipped) => skipped?.attributeId
+        )
+      );
+      const set = [...toApply.keys()].filter((id) => !notCarried.has(id));
+      reports.push({
+        index,
+        id: result.id,
+        set,
+        ...(notCarried.size > 0 && { notCarried: [...notCarried] }),
+      });
+      const changedGroup = ((changed?.groups ?? []) as any[]).find(
+        (candidate) => candidate?.id === result.id
+      );
+      if (changedGroup) {
         corrections.push(
-          `posGroups[${index}]: ${attributeId} could not be set on group '${result.id}' - ` +
-            (error instanceof Error ? error.message : String(error))
+          ...(await libraryChangeSentences(
+            roomDesignerApi,
+            findLibraryChanges(
+              [result],
+              [changedGroup],
+              set.map((id) => ({ id, value: toApply.get(id) }))
+            ),
+            'its group attributes',
+            `posGroups[${index}]`
+          ))
         );
       }
-    }
-    if (changedGroup) {
-      const appliedToGroup = [...toApply].map(([id, value]) => ({ id, value }));
+    } catch (error) {
       corrections.push(
-        ...(await libraryChangeSentences(
-          roomDesignerApi,
-          findLibraryChanges([result], [changedGroup], appliedToGroup),
-          appliedToGroup,
-          `posGroups[${index}]`
-        ))
+        `posGroups[${index}]: the group attributes ${[...toApply.keys()].join(', ')} could not be set on group '${result.id}' - ` +
+          (error instanceof Error ? error.message : String(error))
       );
     }
   }
@@ -3241,6 +3360,7 @@ const oneAtATime =
 const FOLLOW_UP_COMMANDS = new Set([
   'change-module-attribute',
   'change-group-attribute',
+  'change-attributes',
   'exchange-root-module',
   'insert-article-into-group',
   'swap-root-modules',
@@ -3555,18 +3675,24 @@ export const toolExecutors: Record<string, ToolExecutor> = {
   'get-plan-context': oneAtATime(
     inPlacementFrame(async (roomDesignerApi, args) => {
       // an unknown section is ignored
-      const known = (Array.isArray(args.include) ? args.include : []).filter(
-        (section): section is PlanContextSection =>
-          PLAN_CONTEXT_SECTIONS.includes(section)
+      const include = Array.isArray(args.include) ? args.include : [];
+      const withDescriptions = include.includes(ARTICLE_DESCRIPTIONS);
+      const known = include.filter((section): section is PlanContextSection =>
+        PLAN_CONTEXT_SECTIONS.includes(section)
       );
-      const requested = known.length > 0 ? known : DEFAULT_SECTIONS;
+      const requested =
+        known.length > 0 || withDescriptions ? known : DEFAULT_SECTIONS;
+      // the descriptions come with the articles
+      const withArticles = withDescriptions && !requested.includes('articles');
       // the walls name the doors and windows of the obstacles
       const withRooms =
         requested.includes('obstacles') && !requested.includes('rooms');
       const context =
-        await roomDesignerApi.extended.getExternalObjectPlanContext(
-          withRooms ? [...requested, 'rooms'] : requested
-        );
+        await roomDesignerApi.extended.getExternalObjectPlanContext([
+          ...requested,
+          ...(withRooms ? ['rooms' as const] : []),
+          ...(withArticles ? ['articles' as const] : []),
+        ]);
       if (!isObject(context)) {
         return context;
       }
@@ -3582,19 +3708,25 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       }
       if (Array.isArray(result.articles)) {
         const articles = result.articles as any[];
+        if (withDescriptions) {
+          result[ARTICLE_DESCRIPTIONS] = articles.map(
+            ({ articleId, desc }) => ({ articleId, desc })
+          );
+        }
         result.articles = articles.map((article) =>
           agentFacingArticle(article, articles)
         );
+      }
+      if (withArticles) {
+        delete result.articles;
       }
       return result;
     })
   ),
 
   'find-attributes': async (roomDesignerApi, args) => {
-    const needle = String(args.text ?? '')
-      .trim()
-      .toLowerCase();
-    if (needle.length === 0) {
+    const words = searchWords(String(args.text ?? ''));
+    if (words.length === 0) {
       throw new Error('text must not be empty.');
     }
     const libraryId = args.libraryId as string | undefined;
@@ -3612,7 +3744,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       // attributes only
       const rootModules = (masterData.modules ?? []) as any[];
       for (const attribute of masterData.attributes ?? []) {
-        if (!attributeMatches(attribute, needle)) {
+        if (!attributeMatches(attribute, words)) {
           continue;
         }
         matches.push({
@@ -3627,7 +3759,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       }
     }
     return {
-      matches: matches.slice(0, MAX_ATTRIBUTE_MATCHES),
+      matches: withSharedSelectionsOnce(
+        matches.slice(0, MAX_ATTRIBUTE_MATCHES)
+      ),
       total: matches.length,
       ...(matches.length > MAX_ATTRIBUTE_MATCHES && {
         hint: `Only the first ${MAX_ATTRIBUTE_MATCHES} of ${matches.length} matches are listed - narrow the text.`,
@@ -3890,13 +4024,15 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         (groups ?? []) as any[],
         corrections
       );
+      const groupAttributes: GroupAttributesReport[] = [];
       if (
         await applyGroupWideAttributes(
           roomDesignerApi,
           callGroups,
           beforeGroupIds,
           (groups ?? []) as any[],
-          corrections
+          corrections,
+          groupAttributes
         )
       ) {
         placed = await roomDesignerApi.extended.getExternalObjectPlanContext([
@@ -3951,6 +4087,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       return {
         loaded,
         groups,
+        ...(groupAttributes.length > 0 && { groupAttributes }),
         ...(hints.length > 0 && { hint: hints.join(' ') }),
         ...(corrections.length > 0 && { corrections }),
         ...(notLoaded.length > 0 && { notLoaded }),
@@ -4051,36 +4188,105 @@ export const toolExecutors: Record<string, ToolExecutor> = {
   'change-module-attribute': planChange(
     'change-module-attribute',
     inPlacementFrame(async (roomDesignerApi, args) => {
+      const tool = 'change-module-attribute';
       const corrections: string[] = [];
+      const sent = [
+        ...((args.rootModuleIds as string[] | undefined) ?? []),
+        ...(typeof args.rootModuleId === 'string' ? [args.rootModuleId] : []),
+      ];
+      if (sent.length === 0) {
+        throw new Error(
+          `${tool}: name the root modules that get the value in rootModuleIds.`
+        );
+      }
       const groups = await planGroups(roomDesignerApi);
-      const rootModuleId = resolveRootId(
-        rootsOfGroups(groups),
-        args.rootModuleId as string,
-        'change-module-attribute',
-        corrections
-      );
-      return withLibraryChanges(
-        roomDesignerApi,
-        withCorrections(
-          await withPlanRoots(
-            () =>
-              roomDesignerApi.extended.externalObjectGroupOperation(
-                'change-module-attribute',
-                {
-                  rootModuleId,
-                  moduleId: args.moduleId ?? null,
-                  attributeId: args.attributeId,
-                  value: attributeValue(args.value),
-                }
-              ),
-            groups
-          ),
-          corrections
+      const rootModuleIds = [
+        ...new Set(
+          sent.map((id) =>
+            resolveRootId(rootsOfGroups(groups), id, tool, corrections)
+          )
         ),
-        groups,
-        { id: args.attributeId as string, value: args.value },
-        (root) => !args.moduleId && root?.id === rootModuleId,
-        'change-module-attribute'
+      ];
+      const { attributeId } = args;
+      const value = attributeValue(args.value);
+      const { byGroup, unknown } = rootModulesByGroup(groups, rootModuleIds);
+      // with a sub module, one command per root module; else one per group
+      const commands: [string, string[], Record<string, unknown>][] =
+        args.moduleId
+          ? [...byGroup.values()]
+              .flat()
+              .map((rootModuleId) => [
+                'change-module-attribute',
+                [rootModuleId],
+                { rootModuleId, moduleId: args.moduleId, attributeId, value },
+              ])
+          : [...byGroup].map(([groupId, ids]) => [
+              'change-attributes',
+              ids,
+              {
+                groupId,
+                attributes: [{ attributeId, value, rootModuleIds: ids }],
+              },
+            ]);
+      const results: any[] = [];
+      const errors: unknown[] = [];
+      const failures: string[] = [];
+      for (const [command, ids, payload] of commands) {
+        try {
+          results.push(
+            await roomDesignerApi.extended.externalObjectGroupOperation(
+              command,
+              payload
+            )
+          );
+        } catch (error) {
+          errors.push(error);
+          failures.push(
+            `${tool}: ${ids.length === 1 ? `root module '${ids[0]}' kept its value` : `root modules '${ids.join("', '")}' kept their value`} - ` +
+              (error instanceof Error ? error.message : String(error))
+          );
+        }
+      }
+      if (results.length === 0) {
+        if (commands.length === 1) {
+          throw errors[0];
+        }
+        if (failures.length > 0) {
+          throw new Error(failures.join(' '));
+        }
+        throw new Error(
+          `${unknown.length === 1 ? 'Root module' : 'Root modules'} '${unknown.join("', '")}' not found. ` +
+            `Roots in the plan: ${rootsOfGroups(groups)
+              .map((root) => root.id)
+              .join(', ')}`
+        );
+      }
+      corrections.push(
+        ...unknown.map(
+          (id) =>
+            `${tool}: root module '${id}' is not in the plan - it was not changed`
+        ),
+        ...failures
+      );
+      const merged = {
+        command: tool,
+        groups: results.flatMap((result) => result?.groups ?? []),
+        changedModuleIds: [
+          ...new Set(
+            results.flatMap((result) => result?.changedModuleIds ?? [])
+          ),
+        ],
+        corrections: results.flatMap((result) => result?.corrections ?? []),
+      };
+      return compactAttributeResult(
+        await withLibraryChanges(
+          roomDesignerApi,
+          withCorrections(merged, corrections),
+          groups,
+          { id: attributeId as string, value: args.value },
+          (root) => !args.moduleId && rootModuleIds.includes(root?.id),
+          tool
+        )
       );
     })
   ),
@@ -4090,20 +4296,22 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     inPlacementFrame(async (roomDesignerApi, args) => {
       const groups = await planGroups(roomDesignerApi);
       const group = findGroup(groups, args.groupId as string);
-      return withLibraryChanges(
-        roomDesignerApi,
-        await roomDesignerApi.extended.externalObjectGroupOperation(
-          'change-group-attribute',
-          {
-            groupId: group.id,
-            attributeId: args.attributeId,
-            value: attributeValue(args.value),
-          }
-        ),
-        groups,
-        { id: args.attributeId as string, value: args.value },
-        () => true,
-        'change-group-attribute'
+      return compactAttributeResult(
+        await withLibraryChanges(
+          roomDesignerApi,
+          await roomDesignerApi.extended.externalObjectGroupOperation(
+            'change-group-attribute',
+            {
+              groupId: group.id,
+              attributeId: args.attributeId,
+              value: attributeValue(args.value),
+            }
+          ),
+          groups,
+          { id: args.attributeId as string, value: args.value },
+          () => true,
+          'change-group-attribute'
+        )
       );
     })
   ),

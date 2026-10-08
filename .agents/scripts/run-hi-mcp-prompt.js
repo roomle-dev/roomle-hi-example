@@ -18,7 +18,7 @@
  * (with every call of a plan-changing MCP tool per turn:
  * what the model sent, and the corrections, groups not loaded or error it got
  * back), plan-context.json (rooms and groups after the chat),
- * planner-calls.json (the chat's), prompt-image.jpg (the image sent) and every
+ * planner-calls.json (the chat's, each with the page's time in ms), prompt-image.jpg (the image sent) and every
  * snapshot field as a file of its own. Exits 1 when the chat or the snapshot
  * reported an error or no snapshot or plan snapshot id came back;
  * a stopped run (Ctrl+C) stops every server and stores nothing.
@@ -326,6 +326,7 @@ const parseFrame = (payload) => {
 // WebSocket frames: the server's own log cuts the arguments short.
 const recordPlannerCalls = (page) => {
   const calls = [];
+  const startedAt = new Map();
   let resolveClientId;
   const clientId = new Promise((resolve) => {
     resolveClientId = resolve;
@@ -339,6 +340,7 @@ const recordPlannerCalls = (page) => {
           method: message.method,
           args: message.args,
         });
+        startedAt.set(message.id, Date.now());
       }
     });
     socket.on('framesent', ({ payload }) => {
@@ -349,6 +351,7 @@ const recordPlannerCalls = (page) => {
       const call =
         message?.kind === 'result' && calls.find(({ id }) => id === message.id);
       if (call) {
+        call.ms = Date.now() - startedAt.get(call.id);
         call.ok = message.ok;
         if (!message.ok) {
           call.error = message.error;

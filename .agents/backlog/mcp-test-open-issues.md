@@ -17,13 +17,11 @@ never drop the agent's content silently.
 | # | Issue | Kind | Priority |
 |---|---|---|---|
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui, [RML-18073](https://roomle.atlassian.net/browse/RML-18073) | high — wall cabinets on the worktop |
-| 51 | [A replace drops the group's materials](#51-a-replace-drops-the-groups-materials) | bug, roomle-ui, [RML-18075](https://roomle.atlassian.net/browse/RML-18075) | high — materials lost without a correction |
 | 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner, [RML-18076](https://roomle.atlassian.net/browse/RML-18076) | high — the kitchen stands in the wall |
 | 27 | [A new group needs a point the model computes](#27-a-new-group-needs-a-point-the-model-computes) | decision D23, instructions, [RML-18078](https://roomle.atlassian.net/browse/RML-18078) | high — groups outside the room |
 | 45 | ["The middle unit" read from the docking](#45-the-middle-unit-read-from-the-docking) | plan context | medium — the wrong unit edited |
 | 46 | [A new group beside an existing one for "add a cabinet to the right of the kitchen"](#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | instructions | medium — a separate group |
 | 48 | [A worktop colour sent as `mod_PaneltopColor`](#48-a-worktop-colour-sent-as-mod_paneltopcolor) | `find-attributes` | medium — the worktop keeps its default |
-| 39 | [A unit added to a coloured kitchen keeps the default material](#39-a-unit-added-to-a-coloured-kitchen-keeps-the-default-material) | roomle-ui, [RML-18075](https://roomle.atlassian.net/browse/RML-18075) | medium — a dark unit in a white kitchen |
 | 52 | [A group material overwrites a unit's own value](#52-a-group-material-overwrites-a-units-own-value) | bug, MCP server | medium — accents lost, the agent repairs them |
 | 36 | [A wall-unit row runs into a unit hung above a base unit](#36-a-wall-unit-row-runs-into-a-unit-hung-above-a-base-unit) | MCP server correction | medium — two wall units in one place |
 | 42 | [A wall unit that keeps its place overlaps the unit that moved in below it](#42-a-wall-unit-that-keeps-its-place-overlaps-the-unit-that-moved-in-below-it) | roomle-ui command, MCP server feedback | medium — two units above in one place |
@@ -64,29 +62,6 @@ offset is lost, and fix it there.
 height after `mod_FrontColor` and `mod_CountertopColor`.
 
 **Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 32 (the model set `mod_HeightPosInsertion` 1480 on the two wall units that had dropped).
-## 51. A replace drops the group's materials
-
-**Ticket.** [RML-18075](https://roomle.atlassian.net/browse/RML-18075)
-
-**Problem.** `create-or-replace-groups` with the id of a group in the plan — a replace — loses the
-group's materials: the units fall back to the default toe kick, worktop, outside carcase and handle
-position, and the result has no correction.
-
-**Cause.** The planner lets the library set a group's attributes on a create only and keeps them as
-sent on a replace. The server tells the library's group settings apart by the master data's
-`groupSettings` (`groupSettingIdsOf`, `tool-executors.ts`, D36); the planner's compacted master
-data does not name them yet, so the server falls back to the loaded group's list, which after a
-replace holds the sent materials.
-
-**To do.** Land roomle-ui `fix/replace-keeps-group-materials-RML-18075`: `compactMasterData` names the group settings. Then mark the
-replace part of D36 and the group settings of D48 in effect.
-
-**Test.** roomle-ui `hi-plan-context-test.ts`: `compactMasterData` names `groupSettings`. The
-server side is tested: "sets the group attributes on every unit after a replace, except the group
-settings of the master data" in `tool-executors.test.ts`.
-
-**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 32 (the replace of both groups).
-
 ## 35. The handleless right corner unit as the first root with two legs stands 239 mm in the wall
 
 **Ticket.** [RML-18076](https://roomle.atlassian.net/browse/RML-18076)
@@ -199,26 +174,6 @@ first match for "worktop" (its desc or the result order).
 first.
 
 **Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5.4-mini 11.
-
-## 39. A unit added to a coloured kitchen keeps the default material
-
-**Ticket.** [RML-18075](https://roomle.atlassian.net/browse/RML-18075)
-
-**Problem.** A unit added with `merge-article-into-group` or `insert-article-into-group` to a group
-with a group-wide material (e.g. `mod_FrontColor` 192 on every unit) carries the default material
-of its article template; the answer does not say so.
-
-**Cause.** The planner's merge and insert commands do not pass the neighbour's `implicitRelevant`
-input attributes on; the planner's own add and `exchange-root-module` do. The served text already
-says that a new root module inherits them (D56).
-
-**To do.** Land roomle-ui `fix/replace-keeps-group-materials-RML-18075`: a root module added by a replace, by `merge-article-into-group` or
-by `insert-article-into-group` inherits from its neighbour. Then mark D56 in effect.
-
-**Test.** roomle-ui `glue-logic-test.ts`: "gives a new root module the implicitRelevant input
-attributes of its neighbour, and a sent attribute wins".
-
-**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 12 (an insert).
 
 ## 52. A group material overwrites a unit's own value
 

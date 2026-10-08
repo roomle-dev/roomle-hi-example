@@ -1420,13 +1420,18 @@ describe('create-or-replace-groups validation', () => {
       'posGroups[0]: the placement takes wall, alignment, offsetMm and roomIndex, or posGroup, posRotationY and rootId - scale dropped',
     ]);
 
-    // a placement by wall: loaded without a position, placed after the load
+    // a placement by wall: loaded without a position, placed after the load -
+    // this planner builds no new group, so none can be placed
     ({ loadedGroup, result } = await placed({
       wall: 'right',
       alignment: 'top',
     }));
     expect(loadedGroup).toEqual({ roots: [pick()] });
-    expect(result.corrections).toBeUndefined();
+    expect(result.corrections).toEqual([
+      expect.stringMatching(
+        /^posGroups\[0\]: the planner built 0 new groups for the 1 of the call/
+      ),
+    ]);
   });
 
   it('uses no placement on a group that is already in the plan, which keeps its position', async () => {
@@ -4160,6 +4165,8 @@ describe('create-or-replace-groups wall placement', () => {
       cornerRootIds?: string[];
       reloadedLast?: boolean;
       reloadFails?: boolean;
+      reloadFailsFor?: string[];
+      omitted?: number[];
       uncalculated?: boolean;
     } = {}
   ) => {
@@ -4211,10 +4218,13 @@ describe('create-or-replace-groups wall placement', () => {
         }
         const loadedIds: string[] = [];
         const reloadedIds: string[] = [];
-        for (const posGroup of layout.posGroups) {
+        for (const [index, posGroup] of layout.posGroups.entries()) {
           const inPlan = raw.find((group) => group.id === posGroup.id);
           if (inPlan) {
-            if (options.reloadFails) {
+            if (
+              options.reloadFails ||
+              options.reloadFailsFor?.includes(inPlan.id)
+            ) {
               continue;
             }
             const moved = posGroup.repositioningData
@@ -4223,6 +4233,9 @@ describe('create-or-replace-groups wall placement', () => {
             raw = raw.map((group) => (group === inPlan ? moved : group));
             loadedIds.push(inPlan.id);
             reloadedIds.push(inPlan.id);
+            continue;
+          }
+          if (options.omitted?.includes(index)) {
             continue;
           }
           const group = makeGroup({
@@ -4512,9 +4525,46 @@ describe('create-or-replace-groups wall placement', () => {
     }));
     expect(loads).toHaveLength(2);
     expect(result.corrections).toEqual([
-      "posGroups[0]: group 'new-1' could not be reloaded at the top wall - it stays where the planner put it; " +
+      "posGroups[0]: group 'new-1' was not moved to the top wall - the planner did not reload it there; " +
         'place-group moves it',
     ]);
+  });
+
+  it('names each group the reload left where it was, also when the planner reloaded the others', async () => {
+    // the load answers with runtime ids, so the server checks where each
+    // group stands
+    const { result, loads } = await placedBy(
+      [
+        row({ wall: 'back', alignment: 'left' }),
+        row({ wall: 'back', alignment: 'right' }),
+      ],
+      { reloadFailsFor: ['new-1'] }
+    );
+    expect(loads[1].map((group: any) => group.id)).toEqual(['new-1', 'new-2']);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: group 'new-1' was not moved to the top wall - the planner did not reload it there; " +
+        'place-group moves it',
+    ]);
+  });
+
+  it('moves no group by wall when the planner built more or fewer new groups than the call sent, and says so', async () => {
+    // the planner leaves out the first group: paired by order, the second
+    // group would take the first one's wall
+    const { result, loads } = await placedBy(
+      [row({ wall: 'left' }), row({ wall: 'back' })],
+      { omitted: [0] }
+    );
+    expect(loads).toHaveLength(1);
+    expect(result.corrections).toEqual(
+      [0, 1].map((index) =>
+        expect.stringMatching(
+          new RegExp(
+            `^posGroups\\[${index}\\]: the planner built 1 new groups for the 2 of the call, so the server ` +
+              'cannot tell which one this group became - it was not placed at the (left|top) wall'
+          )
+        )
+      )
+    );
   });
 });
 

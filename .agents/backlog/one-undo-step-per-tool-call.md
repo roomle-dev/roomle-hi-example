@@ -22,8 +22,8 @@ resolve before their last reload:
   the deployed planner it lands within the result.
 
 The server works around both: it counts the steps of every tool call (`countingPlannerApi`,
-`hi-mcp/hi-mcp-server/tool-executors.ts:3052`), waits up to 2 s for the follow-up of the commands in
-`FOLLOW_UP_COMMANDS` (`:3014`, `FOLLOW_UP_WAIT_MS` `:3026`), records a call whose follow-up has not
+`hi-mcp/hi-mcp-server/tool-executors.ts:3095`), waits up to 2 s for the follow-up of the commands in
+`FOLLOW_UP_COMMANDS` (`:3057`, `FOLLOW_UP_WAIT_MS` `:3069`), records a call whose follow-up has not
 arrived as unsettled, and withholds `undo` until it lands. The step count and the list of follow-up
 commands are roomle-ui behaviour copied into the server.
 

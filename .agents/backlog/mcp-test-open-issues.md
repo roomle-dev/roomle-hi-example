@@ -129,7 +129,7 @@ kitchen" with gpt-5.4-mini merges the unit into the row.
 and sets `mod_PaneltopColor` as a group-wide attribute; no module has it, the planner refuses it
 (P3, reported), and the worktop keeps its default.
 
-**Cause.** Not analysed: which match of `find-attributes` (`tool-executors.ts:3366`, matches in
+**Cause.** Not analysed: which match of `find-attributes` (`tool-executors.ts:3409`, matches in
 master-data order) for the model's search text leads it to
 the panel top instead of `mod_CountertopColor`.
 

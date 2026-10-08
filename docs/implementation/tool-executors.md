@@ -100,11 +100,14 @@ call and is reported in `notLoaded`, the others load
    `toRepositioningData` derives the planner's repositioning.
 10. **Load:** `loadExternalObjectGroupLayout({ posGroups }, 'posGroups', { reason: 'adjusted' })`. An
     empty result throws "No groups were created or replaced", with every `notLoaded` reason.
-11. **After the load:** read the groups again. With groups placed by wall, `placeAtWalls` matches
+11. **After the load:** read the groups again. With groups placed by wall, `placeAtWalls` moves
+    none when the planner built more or fewer new groups than the call sent (G60); else it matches
     the new groups to the call once (`CallGroup.resultId`, which `matchResultGroups` prefers, since
     the kernel may list a reloaded group elsewhere), computes every target with `wallTarget` — a
     group of the call counts in the overlap test once it has its target — and reloads them in one
-    `loadExternalObjectGroupLayout`; then the groups are read once more. Detect a replace the planner silently reverted
+    `loadExternalObjectGroupLayout`, and names each group that still covers the floor it covered
+    before (`floorCorners`, `sameFloor`, G59) — the load answers with runtime ids, and the group
+    origin moves to another root or corner on a reload; then the groups are read once more. Detect a replace the planner silently reverted
     (`reportRevertedReplaces`); apply the group-wide attributes with
     `externalObjectGroupOperation('change-group-attribute', …)` (`applyGroupWideAttributes`) — every
     group attribute but the library's group settings, which `groupSettingIdsOf` takes from the

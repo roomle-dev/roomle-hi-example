@@ -551,3 +551,29 @@ served text and documentation; the chat check was not run.
 - `.agents/skills/hi-authoring-rules.md`, the obstacles bullet of "Positioning a group", still says
   "A root module cannot stand where an object or another group's root module overlaps it" and "keep
   that span free" — the rule the served text dropped with D55 (RML-18077).
+
+### Review of PR #82
+
+Three findings of the Copilot review, each verified against the code:
+
+- **The pairing by order can shift** (valid). A group the planner leaves out shifts the pairing of
+  the new groups with the call's (RML-18033, `it.fails` in `tool-executors.test.ts`, backlog
+  [planner-load-outcome-per-group](../backlog/planner-load-outcome-per-group.md)); a wall placement
+  would then move another group to its wall. `placeAtWalls` now moves no group by wall when the
+  planner built more or fewer new groups than the call sent, and names every group placed by wall
+  (G60). Pairing by the planner's answer stays the backlog's roomle-ui contract.
+- **A partial reload reads as success** (valid in intent, not in form). The load answers with
+  runtime ids (`{ id: 38 }`), which name no group, so they cannot be compared with the groups sent.
+  The server reads the groups after the reload instead. A first version compared the group origin
+  with the target's (`standsAt`); the live check showed that the planner keeps the origin at another
+  root or corner after a reload — 10 mm off for a row with a worktop overhang, 261 mm for a corner
+  group — and named every moved group. The check compares the floor a group covers: a group that
+  still covers the floor it covered before the reload was not moved (G59). Live, no group is named.
+- **The description omits `roomIndex` and `start`/`end`** (valid in part). The description now
+  names `roomIndex` and `end` with `offsetMm` measured from the wall's end, as `fromEndMm`: the HI
+  chat does not read the rules. `start` stays accepted and untaught (Q5): it is the contour term that
+  led the models to the wrong corner.
+
+Unit tests: 492 pass — a group left out by the planner moves no group by wall; a reload that leaves
+one of two groups in place names that one. The live check without a model gave the positions of
+[Results](#results) with no correction but the front colour.

@@ -2921,16 +2921,62 @@ interface ResolvedWallPlacement {
   resolved: ResolvedWall;
 }
 
+// The corners of a calculated group's footprint on the floor of the room.
+const floorCorners = (group: any): [number, number][] => {
+  const footprint = groupFootprint(group);
+  return footprint ? footprintCornersInRoom(footprint, group) : [];
+};
+
+const sameFloor = (
+  corners: [number, number][],
+  others: [number, number][]
+): boolean =>
+  corners.length > 0 &&
+  corners.length === others.length &&
+  corners.every(
+    ([x, z], index) =>
+      Math.hypot(x - others[index][0], z - others[index][1]) <=
+      OVERLAP_TOLERANCE_MM
+  );
+
 // A new group placed by wall is loaded where the planner puts it, since only
 // the calculated group has the width the wall arithmetic needs; then the new
 // groups go to their walls in one reload, as place-group moves a group. A
 // group of the call counts in the overlap test once it has its target.
-// Returns whether anything was reloaded.
+// The new groups of the plan are paired with the call's by their order; when
+// the planner built more or fewer new groups than the call sent, no group can
+// be told, and none is moved. Returns whether anything was reloaded.
 const placeAtWalls = async (
   roomDesignerApi: PlannerApi,
   wallPlacements: Map<CallGroup, ResolvedWallPlacement>,
+  callGroups: CallGroup[],
+  beforeGroupIds: Set<string>,
+  resultGroups: any[],
   corrections: string[]
 ): Promise<boolean> => {
+  const builtCount = resultGroups.filter(
+    (group) => !beforeGroupIds.has(group.id)
+  ).length;
+  const sentCount = callGroups.filter(
+    ({ group }) => !beforeGroupIds.has(group.id)
+  ).length;
+  if (builtCount !== sentCount) {
+    for (const [{ index }, { resolved }] of wallPlacements) {
+      corrections.push(
+        `posGroups[${index}]: the planner built ${builtCount} new groups for the ${sentCount} of the call, so ` +
+          `the server cannot tell which one this group became - it was not placed at the ${resolved.wall.side} ` +
+          'wall; get-plan-context shows the groups, place-group moves one'
+      );
+    }
+    return false;
+  }
+  for (const [callGroup, result] of matchResultGroups(
+    callGroups,
+    beforeGroupIds,
+    resultGroups
+  )) {
+    callGroup.resultId = result.id;
+  }
   const rawGroups =
     ((await roomDesignerApi.extended.getExternalObjectGroups()) ?? []) as any[];
   const placedIds = new Set(
@@ -2940,7 +2986,13 @@ const placeAtWalls = async (
     rawGroups.filter((group) => !placedIds.has(group.id)),
     ''
   );
-  const reloads: { prefix: string; id: string; side: string }[] = [];
+  const reloads: {
+    prefix: string;
+    id: string;
+    side: string;
+    before: [number, number][];
+    target: [number, number][];
+  }[] = [];
   const posGroups: any[] = [];
   for (const [{ index, resultId }, { spec, resolved }] of wallPlacements) {
     if (resultId === undefined) {
@@ -2968,21 +3020,37 @@ const placeAtWalls = async (
       volume: volumeOf(placement.footprint, placement.heights, placement),
     });
     posGroups.push(repositionedGroup(rawGroup, placement));
-    reloads.push({ prefix, id: resultId, side: resolved.wall.side });
+    reloads.push({
+      prefix,
+      id: resultId,
+      side: resolved.wall.side,
+      before: floorCorners(rawGroup),
+      target: footprintCornersInRoom(placement.footprint, placement),
+    });
   }
   if (posGroups.length === 0) {
     return false;
   }
-  const loaded = await roomDesignerApi.extended.loadExternalObjectGroupLayout(
+  await roomDesignerApi.extended.loadExternalObjectGroupLayout(
     { posGroups },
     'posGroups',
     { reason: 'adjusted' }
   );
-  if (!loaded || loaded.length === 0) {
-    for (const { prefix, id, side } of reloads) {
+  // The load answers with runtime ids, which name no group, so each group is
+  // checked on the floor: one the reload left out still covers the floor it
+  // covered before. Its origin tells nothing - after a reload the planner
+  // keeps it at another root or corner.
+  const reloaded =
+    ((await roomDesignerApi.extended.getExternalObjectGroups()) ?? []) as any[];
+  for (const { prefix, id, side, before, target } of reloads) {
+    const group = reloaded.find((candidate) => candidate.id === id);
+    if (
+      !group ||
+      (sameFloor(floorCorners(group), before) && !sameFloor(target, before))
+    ) {
       corrections.push(
-        `${prefix}: group '${id}' could not be reloaded at the ${side} wall - it stays where the planner ` +
-          'put it; place-group moves it'
+        `${prefix}: group '${id}' was not moved to the ${side} wall - the planner did not reload it ` +
+          'there; place-group moves it'
       );
     }
   }
@@ -3634,21 +3702,22 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         'obstacles',
         'rooms',
       ]);
-      if (wallPlacements.size > 0) {
-        for (const [callGroup, result] of matchResultGroups(
+      if (
+        wallPlacements.size > 0 &&
+        (await placeAtWalls(
+          roomDesignerApi,
+          wallPlacements,
           callGroups,
           beforeGroupIds,
-          (placed.groups ?? []) as any[]
-        )) {
-          callGroup.resultId = result.id;
-        }
-        if (await placeAtWalls(roomDesignerApi, wallPlacements, corrections)) {
-          placed = await roomDesignerApi.extended.getExternalObjectPlanContext([
-            'groups',
-            'obstacles',
-            'rooms',
-          ]);
-        }
+          (placed.groups ?? []) as any[],
+          corrections
+        ))
+      ) {
+        placed = await roomDesignerApi.extended.getExternalObjectPlanContext([
+          'groups',
+          'obstacles',
+          'rooms',
+        ]);
       }
       let groups = placed.groups;
       const replacedInputIds = new Set(

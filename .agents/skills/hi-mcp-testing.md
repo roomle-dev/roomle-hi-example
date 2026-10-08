@@ -433,7 +433,7 @@ The script:
 |---|---|
 | `run.json` | provider; `plan`; `turns` (per turn the prompt, the `image` file it carried, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` — errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
 | `plan-context.json` | `get-plan-context` with rooms and groups after the chat — the walls and where the groups stand |
-| `planner-calls.json` | every planner call during the chat: method, full arguments, `ok`, and the page's `error` |
+| `planner-calls.json` | every planner call during the chat: method, full arguments, `ok`, the page's `error`, and `ms` — how long the page took from the call to its result |
 | `prompt-image.jpg` | with `--image` only: the image as the model got it |
 | `order-data.json` | `orderData` of the snapshot — the groups with their articles and attributes |
 | `top-image.png`, `perspective-image.png` | the whole plan rendered |

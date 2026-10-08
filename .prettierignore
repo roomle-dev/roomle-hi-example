@@ -4,3 +4,4 @@ node_modules
 *.md
 package-lock.json
 docs/library-information
+.agents/benchmarks/*/benchmark.json

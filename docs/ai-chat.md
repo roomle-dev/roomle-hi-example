@@ -66,14 +66,18 @@ sets no `temperature`: the GPT deployments are reasoning models and reject it.
 Guarded by `it('resolves the Foundry deployments to the Foundry endpoint')` in
 `hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`.
 
-**Reasoning effort.** The chat sends the reasoning effort of `HI_CHAT_REASONING_EFFORT`
-(`providerOptions.azure.reasoningEffort`) to the GPT deployments; unset, each deployment runs at
-its default. Measured on the Foundry resource (2026-10-07): gpt-5.4-mini does not reason at its
-default (0 reasoning tokens in every step), gpt-5-mini and gpt-6-astra reason as at `medium`. The
-step log ([a chat turn](#a-chat-turn)) shows the reasoning tokens of every step. gpt-5-mini and
-gpt-5.4-mini read images and have a 400k context window. The reasoning effort is set by the chat
-client, not by the MCP server. An effort per deployment is open:
-[backlog](../.agents/backlog/reasoning-effort-for-the-gpt-chat-models.md).
+**Reasoning effort.** The chat sends the lightweight deployments gpt-5.4-mini and gpt-5-mini the
+reasoning effort `high` (`providerOptions.azure.reasoningEffort`, from `FOUNDRY_DEPLOYMENTS` in
+`chat-config.ts`): accuracy goes over speed, and they plan worse than gpt-6-astra. gpt-6-astra runs
+at its default. `HI_CHAT_REASONING_EFFORT` overrides the effort of every GPT deployment; Mistral,
+Anthropic and Google models get none. Guarded by
+`it('gives the lightweight GPT deployments reasoning effort high')` in
+`hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`. The defaults measured on the Foundry resource
+(2026-10-07): gpt-5.4-mini does not reason (0 reasoning tokens in every step), gpt-5-mini and
+gpt-6-astra reason as at `medium`. The step log ([a chat turn](#a-chat-turn)) shows the reasoning
+tokens of every step. gpt-5-mini and gpt-5.4-mini read images and have a 400k context window. The
+reasoning effort is set by the chat client, not by the MCP server. Measuring the planning quality
+at `high` is open: [backlog](../.agents/backlog/reasoning-effort-for-the-gpt-chat-models.md).
 
 The launcher then:
 
@@ -294,7 +298,7 @@ turn timeout — ends the stream with an `[error] …` line.
 | `HI_MCP_URL` | `http://localhost:3100/mcp` | The MCP server the chat backend connects to |
 | `HI_CHAT_PAGE_ORIGINS` | `http://localhost:3000`, `http://127.0.0.1:3000` | Allowed CORS origins (the launcher sets it to match `EXAMPLE_PORT`) |
 | `HI_CHAT_TURN_TIMEOUT_MS` | `300000` | A turn that has not answered within this time is aborted and ends with an `[error]` line naming the limit; the plan keeps what the tools changed |
-| `HI_CHAT_REASONING_EFFORT` | — | The reasoning effort sent to the GPT deployments (`gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`), e.g. `medium`; unset, the deployment's default |
+| `HI_CHAT_REASONING_EFFORT` | per deployment | The reasoning effort sent to the GPT deployments (`gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`), e.g. `medium`; unset, `high` for gpt-5.4-mini and gpt-5-mini and the default of gpt-6-astra |
 
 ## Security notes
 

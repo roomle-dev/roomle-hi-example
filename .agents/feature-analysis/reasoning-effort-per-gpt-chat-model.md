@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18043](https://roomle.atlassian.net/browse/RML-18043) "hi mcp - increase reasoning effort for lightweight models"; backlog item [reasoning-effort-for-the-gpt-chat-models.md](../backlog/reasoning-effort-for-the-gpt-chat-models.md)
 > **Date**: 2026-10-07
 > **Author**: AI Assistant
-> **Status**: Open — step 1 done, step 2 open, step 3 only on request
+> **Status**: Open — step 1 done, step 2 changed: the example chat sends gpt-5.4-mini and gpt-5-mini `high` (decided 2026-10-08, instead of `low` and `medium`), the ligna-store chat is open, step 3 only on request
 > **Plan**: [reasoning-effort-per-gpt-chat-model-implementation-plan.md](reasoning-effort-per-gpt-chat-model-implementation-plan.md)
 
 ---

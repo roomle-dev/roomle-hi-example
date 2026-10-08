@@ -5,7 +5,7 @@
 > SDK path, the measured defaults and the gpt-5.4-mini results this plan rests on
 > **Date**: 2026-10-07
 > **Author**: AI Assistant
-> **Status**: Step 1 done, step 2 open, step 3 only on request
+> **Status**: Step 1 done, step 2 changed: the example chat sends gpt-5.4-mini and gpt-5-mini `high` (decided 2026-10-08, instead of `low` and `medium`), the ligna-store chat is open, step 3 only on request
 > **Branch**: `feat/reasoning-effort-per-model-RML-18043` (roomle-hi-example: steps 1 and the
 > documents), a new branch for step 2; `feat/hi-mcp-reasoning-effort-RML-18043` (ligna-store, step 2)
 

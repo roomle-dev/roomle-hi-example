@@ -122,7 +122,9 @@ base64 data URLs on user messages. Response: `text/plain`, streamed — the mode
    aborted after `HI_CHAT_TURN_TIMEOUT_MS` (5 minutes).
 5. **Step log:** tokens in, out and reasoning, tool calls, finish reason and duration per step.
 
-`HI_CHAT_REASONING_EFFORT` is passed as `providerOptions.azure.reasoningEffort` to the Azure models.
+The reasoning effort is passed as `providerOptions.azure.reasoningEffort` to the Azure models:
+`HI_CHAT_REASONING_EFFORT`, else the Foundry deployment's effort in `FOUNDRY_DEPLOYMENTS` (`high`
+for gpt-5.4-mini and gpt-5-mini, none for gpt-6-astra).
 
 ### Images
 

@@ -190,6 +190,30 @@ describe('getChatConfig', () => {
     ).toBeUndefined();
   });
 
+  it('gives the lightweight GPT deployments reasoning effort high', () => {
+    // RML-18043: gpt-5.4-mini does not reason at its Foundry default and plans worst
+    expect(
+      getChatConfig({ HI_CHAT_PROVIDER: 'gpt-5.4-mini' }).reasoningEffort
+    ).toBe('high');
+    expect(
+      getChatConfig({ HI_CHAT_PROVIDER: 'gpt-5-mini' }).reasoningEffort
+    ).toBe('high');
+    expect(
+      getChatConfig({ HI_CHAT_PROVIDER: 'gpt-6-astra' }).reasoningEffort
+    ).toBeUndefined();
+    expect(
+      getChatConfig({
+        HI_CHAT_PROVIDER: 'gpt-5.4-mini',
+        HI_CHAT_REASONING_EFFORT: 'medium',
+      }).reasoningEffort
+    ).toBe('medium');
+    for (const provider of ['mistral', 'claude', 'gemini', 'azure']) {
+      expect(
+        getChatConfig({ HI_CHAT_PROVIDER: provider }).reasoningEffort
+      ).toBeUndefined();
+    }
+  });
+
   it('knows which models read images', () => {
     const imageInput = (env: NodeJS.ProcessEnv) =>
       getChatConfig(env).imageInput;

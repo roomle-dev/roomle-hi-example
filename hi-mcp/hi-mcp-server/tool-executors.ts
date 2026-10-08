@@ -137,7 +137,8 @@ const withoutPositions = (root: any) => {
 // A calculated group sent back with a new placement: the placement becomes
 // repositioningData of the first article root, and no root carries a
 // position. The generated roots (worktop, toe kick) travel with the group, so
-// they keep their attributes - the colours - over the reload.
+// they keep their attributes - the colours - over the reload, and so do the
+// group's own attributes, which the planner keeps as sent on a reload.
 const repositionedGroup = (resultGroup: any, placement: GroupPlacement) => {
   const roots = (resultGroup.roots ?? []) as any[];
   const anchor = roots.find((root) => !isGeneratedRoot(root));
@@ -147,6 +148,9 @@ const repositionedGroup = (resultGroup: any, placement: GroupPlacement) => {
   return {
     id: resultGroup.id,
     ...(resultGroup.libraryId && { libraryId: resultGroup.libraryId }),
+    ...(resultGroup.attributes?.length && {
+      attributes: resultGroup.attributes,
+    }),
     roots: roots.map(withoutPositions),
     repositioningData: repositioningFromPlacement(placement, anchor),
   };
@@ -875,7 +879,11 @@ const PLACEMENT_FIELDS = ['posGroup', 'posRotationY', 'rootId'];
 const attributeValue = (value: unknown): unknown =>
   typeof value === 'number' ? String(value) : value;
 
-const WALL_PLACEMENT_FIELDS = ['wall', 'alignment', 'offsetMm'];
+const WALL_PLACEMENT_FIELDS = ['wall', 'alignment', 'offsetMm', 'roomIndex'];
+
+// the walls and alignments of place-group, which a placement by wall shares
+const WALL_LABELS = ['left', 'right', 'top', 'bottom', 'back', 'front'];
+const WALL_ALIGNMENTS = ['start', 'center', 'end', ...WALL_LABELS];
 
 const PROBE_ROOT_ID = 'anchor-probe';
 
@@ -968,6 +976,98 @@ const isFloorPoint = (value: unknown): value is [number, number] =>
 const PLACEMENT_NOT_USED =
   'it was not used, so the planner positions the group (an existing group keeps its position)';
 
+const isWallPlacement = (placement: any): boolean =>
+  typeof placement === 'object' &&
+  placement !== null &&
+  placement.wall !== undefined;
+
+const dropUnknownPlacementFields = (
+  placement: any,
+  known: string[],
+  prefix: string,
+  corrections: string[]
+): void => {
+  const unknownFields = Object.keys(placement).filter(
+    (field) => !known.includes(field)
+  );
+  if (unknownFields.length === 0) {
+    return;
+  }
+  for (const field of unknownFields) {
+    delete placement[field];
+  }
+  corrections.push(
+    `${prefix}: the placement takes wall, alignment, offsetMm and roomIndex, or posGroup, posRotationY ` +
+      `and rootId - ${unknownFields.join(', ')} dropped`
+  );
+};
+
+// The values of a placement by wall the server cannot read take their default.
+const WALL_PLACEMENT_DEFAULTS: [
+  string,
+  (value: any) => boolean,
+  string,
+  string,
+][] = [
+  [
+    'alignment',
+    (value) => WALL_ALIGNMENTS.includes(value),
+    'center, end, start or the side label of an adjoining wall',
+    'the group was centred',
+  ],
+  ['offsetMm', Number.isFinite, 'a number of millimetres', '0 was used'],
+  [
+    'roomIndex',
+    (value) => Number.isInteger(value) && value >= 0,
+    'a room index',
+    'room 0 was used',
+  ],
+];
+
+// A placement by wall as far as the server can use it: a wall it cannot read
+// leaves the group without the placement, a point beside the wall is dropped.
+const normalizeWallPlacement = (
+  group: any,
+  prefix: string,
+  corrections: string[]
+): void => {
+  const { placement } = group;
+  const pointFields = Object.keys(placement).filter((field) =>
+    PLACEMENT_FIELDS.includes(field)
+  );
+  if (pointFields.length > 0) {
+    for (const field of pointFields) {
+      delete placement[field];
+    }
+    corrections.push(
+      `${prefix}: the placement names a wall and a point - the wall was used, ${pointFields.join(', ')} dropped`
+    );
+  }
+  dropUnknownPlacementFields(
+    placement,
+    WALL_PLACEMENT_FIELDS,
+    prefix,
+    corrections
+  );
+  const { wall } = placement;
+  if (!WALL_LABELS.includes(wall) && !(Number.isInteger(wall) && wall >= 0)) {
+    delete group.placement;
+    corrections.push(
+      `${prefix}: the placement's wall ${JSON.stringify(wall)} is neither a side label (left, right, back, front) ` +
+        `nor a wall index - ${PLACEMENT_NOT_USED}`
+    );
+    return;
+  }
+  for (const [field, readable, expected, fallback] of WALL_PLACEMENT_DEFAULTS) {
+    if (placement[field] !== undefined && !readable(placement[field])) {
+      corrections.push(
+        `${prefix}: the placement's ${field} ${JSON.stringify(placement[field])} is not ${expected} - ${fallback}`
+      );
+      delete placement[field];
+    }
+  }
+};
+
 // A placement as far as the server can use it. One it cannot use is dropped,
 // so no repositioning reaches the planner and the planner positions the group.
 const normalizePlacement = (
@@ -984,25 +1084,16 @@ const normalizePlacement = (
   ) {
     delete group.placement;
     corrections.push(
-      `${prefix}: the placement is not { posGroup, posRotationY } - ${PLACEMENT_NOT_USED}`
+      `${prefix}: the placement is not { wall, alignment?, offsetMm? } or { posGroup, posRotationY } - ` +
+        PLACEMENT_NOT_USED
     );
     return;
   }
-  const unknownFields = Object.keys(placement).filter(
-    (field) => !PLACEMENT_FIELDS.includes(field)
-  );
-  if (unknownFields.length > 0) {
-    for (const field of unknownFields) {
-      delete placement[field];
-    }
-    corrections.push(
-      `${prefix}: the placement takes only posGroup, posRotationY and rootId - ` +
-        `${unknownFields.join(', ')} dropped` +
-        (unknownFields.some((field) => WALL_PLACEMENT_FIELDS.includes(field))
-          ? '; place-group stands a group against a wall or into a corner by its side label'
-          : '')
-    );
+  if (isWallPlacement(placement)) {
+    normalizeWallPlacement(group, prefix, corrections);
+    return;
   }
+  dropUnknownPlacementFields(placement, PLACEMENT_FIELDS, prefix, corrections);
   if (isFloorPoint(placement.posGroup)) {
     const [x, z] = placement.posGroup;
     placement.posGroup = [x, 0, z];
@@ -1492,6 +1583,9 @@ interface CallGroup {
   index: number;
   // attributes the server sets on the whole group after the load
   groupWide: GroupWideAttribute[];
+  // the group of the plan it became, once a reload may have changed the order
+  // of the plan's groups
+  resultId?: string;
 }
 
 // The input attributes of the generated roots (the worktop's colour) a group
@@ -1591,18 +1685,25 @@ const moveGeneratedRootOverrides = async (
 };
 
 // The group of the plan each group of the call became: a replaced group by its
-// id, a new group by its order among the groups the load added.
+// id, a new group by its order among the groups the load added - or by the id
+// matched before a reload.
 const matchResultGroups = (
   callGroups: CallGroup[],
   beforeGroupIds: Set<string>,
   groups: any[]
 ): [CallGroup, any][] => {
-  const newGroups = groups.filter((group) => !beforeGroupIds.has(group.id));
+  const matched = new Set(callGroups.map((callGroup) => callGroup.resultId));
+  const newGroups = groups.filter(
+    (group) => !beforeGroupIds.has(group.id) && !matched.has(group.id)
+  );
   let nextNew = 0;
   return callGroups.flatMap((callGroup) => {
-    const result = beforeGroupIds.has(callGroup.group.id)
-      ? groups.find((candidate) => candidate.id === callGroup.group.id)
-      : newGroups[nextNew++];
+    const result =
+      callGroup.resultId !== undefined
+        ? groups.find((candidate) => candidate.id === callGroup.resultId)
+        : beforeGroupIds.has(callGroup.group.id)
+          ? groups.find((candidate) => candidate.id === callGroup.group.id)
+          : newGroups[nextNew++];
     return result ? [[callGroup, result]] : [];
   });
 };
@@ -2724,6 +2825,170 @@ const freePlacementAlongWall = (
   return undefined;
 };
 
+// A correction of place-group is a sentence of its own; one of
+// create-or-replace-groups continues the "posGroups[i]" prefix.
+const sentence = (prefix: string, text: string): string =>
+  prefix
+    ? `${prefix}: ${text}`
+    : `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+
+// A wall placement as place-group and the placement of a new group name it.
+const wallPlacementSpec = (
+  fields: Record<string, unknown>
+): WallPlacementSpec => ({
+  wall: sideLabel(fields.wall as string | number),
+  alignment: sideLabel(
+    (fields.alignment as WallAlignment | undefined) ?? 'center'
+  ),
+  offsetMm: (fields.offsetMm as number | undefined) ?? 0,
+  roomIndex: (fields.roomIndex as number | undefined) ?? 0,
+});
+
+// The wall of a wall placement. An alignment that runs parallel to the wall
+// names no corner of it, so the group is centred.
+const resolveWallPlacement = (
+  rooms: any[],
+  spec: WallPlacementSpec,
+  prefix: string,
+  corrections: string[]
+): ResolvedWall => {
+  const resolved = resolveWall(rooms, spec);
+  if (
+    isWallSide(spec.alignment) &&
+    alignmentRunsParallel(resolved.wall, spec.alignment)
+  ) {
+    corrections.push(
+      sentence(
+        prefix,
+        `the alignment '${spec.alignment}' runs parallel to the ${resolved.wall.side} wall - ` +
+          'the group was centred on the wall instead'
+      )
+    );
+    spec.alignment = 'center';
+  }
+  return resolved;
+};
+
+// Where a calculated group stands at a wall: a target that overlaps another
+// group moves along the wall to the nearest free position.
+const wallTarget = (
+  rawGroup: any,
+  resolved: ResolvedWall,
+  spec: WallPlacementSpec,
+  others: PlacedGroupVolume[],
+  prefix: string,
+  corrections: string[]
+): GroupPlacement => {
+  const placement = placeGroupAtWall(rawGroup, resolved, spec);
+  const overlapped = overlappedGroupIds(
+    volumeOf(placement.footprint, placement.heights, placement),
+    others
+  );
+  if (overlapped.length === 0) {
+    return placement;
+  }
+  const named = overlapped.map((id) => `'${id}'`).join(', ');
+  const free =
+    placement.placedIn === 'wall'
+      ? freePlacementAlongWall(placement, resolved.wall, spec, others)
+      : undefined;
+  if (!free) {
+    corrections.push(
+      sentence(
+        prefix,
+        `group '${rawGroup.id}' overlaps group ${named} - there is no free position on the ` +
+          `${resolved.wall.side} wall for it, so it stands where it was asked to`
+      )
+    );
+    return placement;
+  }
+  const movedMm = Math.round(
+    Math.hypot(free.pos[0] - placement.pos[0], free.pos[2] - placement.pos[2])
+  );
+  corrections.push(
+    sentence(
+      prefix,
+      `group '${rawGroup.id}' would overlap group ${named} at the ${resolved.wall.side} wall - it was moved ` +
+        `${movedMm} mm along the wall to stand beside it. If the units belong together, join the ` +
+        'groups with merge-groups'
+    )
+  );
+  return free;
+};
+
+interface ResolvedWallPlacement {
+  spec: WallPlacementSpec;
+  resolved: ResolvedWall;
+}
+
+// A new group placed by wall is loaded where the planner puts it, since only
+// the calculated group has the width the wall arithmetic needs; then the new
+// groups go to their walls in one reload, as place-group moves a group. A
+// group of the call counts in the overlap test once it has its target.
+// Returns whether anything was reloaded.
+const placeAtWalls = async (
+  roomDesignerApi: PlannerApi,
+  wallPlacements: Map<CallGroup, ResolvedWallPlacement>,
+  corrections: string[]
+): Promise<boolean> => {
+  const rawGroups =
+    ((await roomDesignerApi.extended.getExternalObjectGroups()) ?? []) as any[];
+  const placedIds = new Set(
+    [...wallPlacements.keys()].map((callGroup) => callGroup.resultId)
+  );
+  const others = placedGroupVolumes(
+    rawGroups.filter((group) => !placedIds.has(group.id)),
+    ''
+  );
+  const reloads: { prefix: string; id: string; side: string }[] = [];
+  const posGroups: any[] = [];
+  for (const [{ index, resultId }, { spec, resolved }] of wallPlacements) {
+    if (resultId === undefined) {
+      continue;
+    }
+    const prefix = `posGroups[${index}]`;
+    const rawGroup = rawGroups.find((group) => group.id === resultId);
+    if (!rawGroup || !groupFootprint(rawGroup)) {
+      corrections.push(
+        `${prefix}: group '${resultId}' has no calculated geometry - it was not placed at the ` +
+          `${resolved.wall.side} wall; place-group moves it once it is calculated`
+      );
+      continue;
+    }
+    const placement = wallTarget(
+      rawGroup,
+      resolved,
+      spec,
+      others,
+      prefix,
+      corrections
+    );
+    others.push({
+      id: resultId,
+      volume: volumeOf(placement.footprint, placement.heights, placement),
+    });
+    posGroups.push(repositionedGroup(rawGroup, placement));
+    reloads.push({ prefix, id: resultId, side: resolved.wall.side });
+  }
+  if (posGroups.length === 0) {
+    return false;
+  }
+  const loaded = await roomDesignerApi.extended.loadExternalObjectGroupLayout(
+    { posGroups },
+    'posGroups',
+    { reason: 'adjusted' }
+  );
+  if (!loaded || loaded.length === 0) {
+    for (const { prefix, id, side } of reloads) {
+      corrections.push(
+        `${prefix}: group '${id}' could not be reloaded at the ${side} wall - it stays where the planner ` +
+          'put it; place-group moves it'
+      );
+    }
+  }
+  return true;
+};
+
 // The page runs every planner call it receives at once, so the tool calls that
 // change the plan run one after another: the anchor probe tells the groups it
 // loaded by comparing the plan's groups before and after its load, and the
@@ -3197,6 +3462,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         await roomDesignerApi.extended.getExternalObjectPlanContext([
           'groups',
           'obstacles',
+          ...(callGroups.some(({ group }) => isWallPlacement(group.placement))
+            ? ['rooms']
+            : []),
         ]);
       const beforeGroupIds = new Set(
         ((preContext.groups ?? []) as any[]).map((group) => group.id)
@@ -3221,6 +3489,35 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           corrections.push(
             `posGroups[${index}]: group '${group.id}' is already in the plan - its placement was not ` +
               'used and the group keeps its position; place-group moves it'
+          );
+        }
+      }
+      // A placement by wall is applied after the load, when the planner has
+      // calculated the group; the anchor probe and the repositioning are for
+      // the placements by point.
+      const wallPlacements = new Map<CallGroup, ResolvedWallPlacement>();
+      const rooms = ((preContext.rooms as any)?.rooms ?? []) as any[];
+      for (const callGroup of callGroups) {
+        const { group, index } = callGroup;
+        if (!isWallPlacement(group.placement)) {
+          continue;
+        }
+        const spec = wallPlacementSpec(group.placement);
+        delete group.placement;
+        try {
+          wallPlacements.set(callGroup, {
+            spec,
+            resolved: resolveWallPlacement(
+              rooms,
+              spec,
+              `posGroups[${index}]`,
+              corrections
+            ),
+          });
+        } catch (error) {
+          corrections.push(
+            `posGroups[${index}]: ${(error as Error).message.replace(/\.$/, '')} - the placement was not used, so the ` +
+              'planner positions the group'
           );
         }
       }
@@ -3337,6 +3634,22 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         'obstacles',
         'rooms',
       ]);
+      if (wallPlacements.size > 0) {
+        for (const [callGroup, result] of matchResultGroups(
+          callGroups,
+          beforeGroupIds,
+          (placed.groups ?? []) as any[]
+        )) {
+          callGroup.resultId = result.id;
+        }
+        if (await placeAtWalls(roomDesignerApi, wallPlacements, corrections)) {
+          placed = await roomDesignerApi.extended.getExternalObjectPlanContext([
+            'groups',
+            'obstacles',
+            'rooms',
+          ]);
+        }
+      }
       let groups = placed.groups;
       const replacedInputIds = new Set(
         posGroups
@@ -3400,8 +3713,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         ...(unpositionedGroupIds.length > 0
           ? [
               `Groups ${unpositionedGroupIds.join(', ')} are not positioned and sit at the plan origin. ` +
-                'A group gets its position from the placement ({ posGroup, posRotationY }) it is created ' +
-                'with (see get-authoring-rules), or place-group moves it against a wall or into a room corner.',
+                'A group gets its position from the placement it is created with - { wall, alignment?, ' +
+                'offsetMm? } or { posGroup, posRotationY } (see get-authoring-rules) -, or place-group moves ' +
+                'it against a wall or into a room corner.',
             ]
           : []),
         ...(obstacles ? [obstacles] : []),
@@ -3421,14 +3735,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     inPlacementFrame(async (roomDesignerApi, args) => {
       const corrections: string[] = [];
       const groupId = args.groupId as string;
-      const spec: WallPlacementSpec = {
-        wall: sideLabel(args.wall as string | number),
-        alignment: sideLabel(
-          (args.alignment as WallAlignment | undefined) ?? 'center'
-        ),
-        offsetMm: (args.offsetMm as number | undefined) ?? 0,
-        roomIndex: (args.roomIndex as number | undefined) ?? 0,
-      };
+      const spec = wallPlacementSpec(args);
       const context =
         await roomDesignerApi.extended.getExternalObjectPlanContext([
           'rooms',
@@ -3438,17 +3745,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       const groups = (context.groups ?? []) as any[];
       const group = findGroup(groups, groupId);
       const rooms = ((context.rooms as any)?.rooms ?? []) as any[];
-      const resolved = resolveWall(rooms, spec);
-      if (
-        isWallSide(spec.alignment) &&
-        alignmentRunsParallel(resolved.wall, spec.alignment)
-      ) {
-        corrections.push(
-          `The alignment '${spec.alignment}' runs parallel to the ${resolved.wall.side} wall - ` +
-            'the group was centred on the wall instead'
-        );
-        spec.alignment = 'center';
-      }
+      const resolved = resolveWallPlacement(rooms, spec, '', corrections);
       // the placement math needs the calculated group with its geometry; the
       // plan context returns the groups compacted
       const rawGroups =
@@ -3460,38 +3757,14 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           `Group '${groupId}' has no calculated geometry to place.`
         );
       }
-      let placement = placeGroupAtWall(rawGroup, resolved, spec);
-      const others = placedGroupVolumes(rawGroups, group.id);
-      const overlapped = overlappedGroupIds(
-        volumeOf(placement.footprint, placement.heights, placement),
-        others
+      const placement = wallTarget(
+        rawGroup,
+        resolved,
+        spec,
+        placedGroupVolumes(rawGroups, group.id),
+        '',
+        corrections
       );
-      if (overlapped.length > 0) {
-        const named = overlapped.map((id) => `'${id}'`).join(', ');
-        const free =
-          placement.placedIn === 'wall'
-            ? freePlacementAlongWall(placement, resolved.wall, spec, others)
-            : undefined;
-        if (free) {
-          const movedMm = Math.round(
-            Math.hypot(
-              free.pos[0] - placement.pos[0],
-              free.pos[2] - placement.pos[2]
-            )
-          );
-          corrections.push(
-            `Group '${group.id}' would overlap group ${named} at the ${resolved.wall.side} wall - it was moved ` +
-              `${movedMm} mm along the wall to stand beside it. If the units belong together, join the ` +
-              'groups with merge-groups'
-          );
-          placement = free;
-        } else {
-          corrections.push(
-            `Group '${group.id}' overlaps group ${named} - there is no free position on the ` +
-              `${resolved.wall.side} wall for it, so it stands where it was asked to`
-          );
-        }
-      }
       if (standsAt(rawGroup, placement)) {
         corrections.push(
           `Group '${group.id}' already stands at the ${resolved.wall.side} wall as asked - nothing was reloaded`

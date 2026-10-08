@@ -2,8 +2,8 @@
 
 How the server turns the agent's description of a group into something the planner can arrange:
 the relations become docking (`group-layout.ts`), a placement becomes a repositioning of one anchor
-root (`group-placement.ts`), and `place-group` computes a wall or corner position from the group's
-geometry (`plan-space.ts`). All files are in `hi-mcp/hi-mcp-server/`. The rules the agent is given
+root (`group-placement.ts`), and `place-group` and a placement by wall compute a wall or corner
+position from the group's geometry (`plan-space.ts`). All files are in `hi-mcp/hi-mcp-server/`. The rules the agent is given
 are in [hi-mcp-behaviour.md §7](../hi-mcp-behaviour.md#7-positioning). [Back to the overview](./README.md).
 
 ## Coordinate conventions
@@ -100,8 +100,11 @@ an article does not have is done in `dockTarget` (merge-article-into-group); dro
 
 ## Placing a new group — group-placement.ts
 
-A new group comes with a `placement { posGroup, posRotationY, rootId? }`: the room point where the
-group's back left bottom corner goes, and its rotation. The planner positions a group by the
+A new group placed by point comes with a `placement { posGroup, posRotationY, rootId? }`: the room
+point where the group's back left bottom corner goes, and its rotation. A group placed by wall
+(`placement { wall, alignment?, offsetMm?, roomIndex? }`, D23) takes the path of `place-group`
+instead: it is loaded where the planner puts it, and `placeAtWalls` (`tool-executors.ts`) computes
+its target from the calculated group and reloads it there. The planner positions a group by the
 transform of one root, so the server has to say which root and where that root goes.
 
 ### The anchor root — `findAnchorRoot`
@@ -148,7 +151,7 @@ into a new placement.
 
 ## Geometry — plan-space.ts
 
-Used by `place-group`, the overlap and in-room tests of the row edits and of
+Used by `place-group` and a placement by wall, the overlap and in-room tests of the row edits and of
 `merge-article-into-group`, and the plan-context vocabulary.
 
 | Function | Returns |
@@ -165,7 +168,7 @@ Used by `place-group`, the overlap and in-room tests of the row edits and of
 | `volumesOverlap`, `convexPolygonsTouch` | overlap of two placed groups with a tolerance (separating axis test) |
 | `wallOfOpening` | the wall, room and span of a door or window |
 | `groupPointToRoom`, `footprintCornersInRoom`, `rootFootprintInRoom` | group space to room space |
-| `repositioningFromPlacement` | the repositioning of a raw group position for `place-group` |
+| `repositioningFromPlacement` | the repositioning of a raw group position for `place-group` and a placement by wall |
 
 `DerivedWall` — the walls of the plan context — comes from roomle-ui (`deriveWalls` in
 `hi-plan-context.ts`); only straight contour segments become walls.

@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18078](https://roomle.atlassian.net/browse/RML-18078); backlog [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 27; decision D23 (deferred) of [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md); related: [RML-18007](https://roomle.atlassian.net/browse/RML-18007) (`place-group`, D21), [RML-17966](https://roomle.atlassian.net/browse/RML-17966) (removed the old wall placement), [RML-18041](https://roomle.atlassian.net/browse/RML-18041)
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — analysed and [planned](#implementation-plan); the plan and the points of [Decisions to take](#decisions-to-take) wait for review
+> **Status**: Open — implemented on `fix/place-new-group-by-wall-RML-18078` and [verified](#implementation-and-verification) with unit tests and live without a model; the chat check waits for a go; not yet merged
 
 ## Affected repositories
 
@@ -496,3 +496,58 @@ and the group centred on the back wall, inside the room. `docs/test-prompts.md` 
 
 The plan is committed beside the analysis. The implementation follows in two commits: the code
 with its tests, the served text and the documentation, then the test prompt.
+
+## Implementation and verification
+
+Implemented as planned on 2026-10-08, with the decisions Q1 to Q6 as recommended. Code, unit tests,
+served text and documentation; the chat check was not run.
+
+### Deviations from the plan
+
+- **The reload keeps the group's attributes.** The live check found that a group placed by wall
+  lost the attributes the library sets on a create (`mod_GroupGenerationLogic`,
+  `mod_GroupWidthAdjustment` and five more): `repositionedGroup` sent no group `attributes`, and the
+  planner keeps a reloaded group's attributes as sent. The reload of `place-group` is the same
+  function, so moving a group dropped them too. `repositionedGroup` now sends the group's own
+  attributes (C1 in `docs/hi-mcp-behaviour.md`), guarded by
+  `it('reloads the group with its group attributes, which the planner keeps as sent')` and by the
+  first test of the wall placement.
+- **A correction of the shared wall logic** starts with the "posGroups[i]" prefix in
+  `create-or-replace-groups` and as a sentence of its own in `place-group` (`sentence`); the
+  messages of `place-group` are unchanged.
+- **The test fake** of the wall placement calculates a new group as a row of base units with a
+  height: a group without height data overlaps nothing (G22), and the overlap tests need one.
+
+### Results
+
+- **Unit tests**: 490 pass (`npx vitest run` in `hi-mcp`) — 13 new tests of the wall placement,
+  the new `place-group` test of the group attributes, the new undo test and the new served-text
+  test; the `place-group` tests pass unchanged. `npm run typecheck`, `npm run lint` and
+  `npm run format:check` are clean, `check-markdown-links.js` reports no bad link.
+- **Live check**, without a model: the example page in headless Chromium against the deployed
+  planner (Default Room, `ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv`, a fresh plan per call), the MCP SDK
+  client against the launcher on ports 3001 and 3110. After the fix of the group attributes:
+
+  | Call | Result |
+  |---|---|
+  | Four `UTB60` by point at the back wall's end (reference) | [−685, 0, −3765], 0, 2420 mm, 7 group attributes |
+  | Four `UTB60`, `{ wall: back, alignment: right }` | [2405, 0, −3765], 0 — flush in the back right corner (2405 + 2410 = 4815), 7 group attributes |
+  | Four `UTB60`, `{ wall: back }` | [865, 0, −3765], 0 — centred, the position gpt-6-astra computed for the same row |
+  | `UERTB90` with two units on each leg, `{ wall: right, alignment: back }` | [4815, 0, −3765], 270 — the corner article in the back right corner, the legs along the right and the back wall (top image) |
+  | Two `UTB60` by `{ wall: left }` with `mod_FrontColor` 215, beside one `UTB60` by point | [−685, 0, −665], 90 and [1500, 0, −1500], 0; the colour on the first group's units only |
+  | Two `UTB60` by point, then `place-group` `{ wall: right, alignment: back }` | moved into the back right corner, 7 group attributes kept |
+
+  Each call took one `create-or-replace-groups` call of 1.1 to 1.5 s. The kernel listed the groups
+  in the order of the load after the reload; the matching by `resultId` does not depend on it.
+  Before the fix, the groups placed by wall had no group attributes, the one placed by point seven.
+
+### Not run
+
+- The chat check of the ticket ("add a group of 4 cabinets to the wall in the back" and a centred
+  row with gpt-5.4-mini, three runs each, a few minutes) waits for a go.
+
+### Noticed, not changed
+
+- `.agents/skills/hi-authoring-rules.md`, the obstacles bullet of "Positioning a group", still says
+  "A root module cannot stand where an object or another group's root module overlaps it" and "keep
+  that span free" — the rule the served text dropped with D55 (RML-18077).

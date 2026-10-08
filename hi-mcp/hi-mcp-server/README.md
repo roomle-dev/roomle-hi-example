@@ -381,9 +381,11 @@ attributes? }`), and every root after the first names its neighbour with one rel
 arranges the root modules. The agent never authors root positions. Docking written as
 `contextData` — a group from `get-plan-context` carries it — is still accepted.
 
-A new group is positioned with `placement: { posGroup, posRotationY, rootId? }` — see
-[Positioning a group](#positioning-a-group). It is applied once, during the load that creates the
-group, so the group never appears at the origin first.
+A new group is positioned with `placement: { wall, alignment?, offsetMm?, roomIndex? }` at a wall
+or in a room corner, or with `placement: { posGroup, posRotationY, rootId? }` anywhere else — see
+[Positioning a group](#positioning-a-group). A placement by point is applied during the load that
+creates the group. A group placed by wall is loaded, then moved to its wall in one reload, because
+its width exists only once the planner has calculated it (D23).
 
 The server corrects what it can and reports each correction in `corrections`: it drops
 `articlePos`/`rotationY` on roots and `pos`/`rotationY` on groups, puts a root without a relation
@@ -409,15 +411,14 @@ one of the library's group settings — a material for the whole group — is se
 the load and reported.
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm room, from the back
-right corner, one call. `posGroup` is the right wall's `end` (`[4000, 0, -3000]`), `270` its
-`facingRotationY`:
+right corner, one call, placed at the right wall flush into its corner with the back wall:
 
 ```json
 {
   "posGroups": [
     {
       "libraryId": "<libraryId>",
-      "placement": { "posGroup": [4000, 0, -3000], "posRotationY": 270 },
+      "placement": { "wall": "right", "alignment": "back" },
       "roots": [
         { "id": "u1", "articleId": "<articleId>" },
         { "id": "u2", "articleId": "<articleId>", "rightOf": "u1" },
@@ -429,16 +430,16 @@ right corner, one call. `posGroup` is the right wall's `end` (`[4000, 0, -3000]`
 ```
 
 Example — an L-shaped kitchen in the back right corner of the same room is ONE group starting
-with the corner article `c1`: `posGroup` is the corner point, `270` the rotation of the right
-back corner; the units `rightOf` the corner article run along the right wall, the units `leftOf` it
-along the back wall, and the wall units hang beside the tall unit and above the base unit:
+with the corner article `c1`, placed at the right wall with the back wall as alignment; looking
+into the corner from the room, the units `rightOf` the corner article run along the right wall,
+the units `leftOf` it along the back wall, and the wall units hang beside the tall unit and above the base unit:
 
 ```json
 {
   "posGroups": [
     {
       "libraryId": "<libraryId>",
-      "placement": { "posGroup": [4000, 0, -3000], "posRotationY": 270 },
+      "placement": { "wall": "right", "alignment": "back" },
       "roots": [
         { "id": "c1", "articleId": "<corner article>" },
         { "id": "r1", "articleId": "<base unit>", "rightOf": "c1" },
@@ -457,8 +458,10 @@ along the back wall, and the wall units hang beside the tall unit and above the 
 Moves an existing group against a wall or into a room corner. The tool runs in the server: it
 reads the rooms and the groups, takes the calculated group from the planner
 (`getExternalObjectGroups`), computes the position from the wall, the alignment and the group's
-footprint — a group with a corner article goes into the corner when the alignment names the
-adjoining wall — and reloads the group there, once. The roots and their docking stay as they are.
+footprint — the same logic places a new group by wall in `create-or-replace-groups`; a group
+with a corner article goes into the corner when the alignment names the adjoining wall — and
+reloads the group there, once. The roots, their docking and the group's attributes stay as they
+are.
 Groups may touch. A target that overlaps another group — footprints and height ranges overlap by
 more than 5 mm — is moved along the same wall to the nearest free position, and `corrections`
 names the group and the distance and suggests `merge-groups` if the units belong together; into a
@@ -635,14 +638,22 @@ calculates every root position.
 
 ## Positioning a group
 
-A new group is positioned by one point and one rotation, given in the call that creates it:
-`placement: { posGroup, posRotationY, rootId? }` — the same for a group at a wall, in a corner,
-or anywhere in the room.
+A new group is positioned in the call that creates it, in one of two forms:
+
+- **At a wall or in a room corner**: `placement: { wall, alignment?, offsetMm?, roomIndex? }`,
+  the parameters and defaults of [place-group](#place-group) — `wall` a side label (`left`,
+  `right`, `back`, `front`) or a wall index; `alignment` `center` (the default), the side label of
+  the adjoining wall to stand flush in the corner the two walls share (wall `back` with alignment
+  `right` is the back right corner), or `end`; `offsetMm` the distance from that corner or from
+  the wall's end. The server computes the point and the rotation from the calculated group; a
+  target that overlaps another group moves along the wall, and `corrections` says so.
+- **Anywhere else**, and for a group of wall units only: one point and one rotation,
+  `placement: { posGroup, posRotationY, rootId? }`.
 
 - **One group per kitchen**: every unit standing beside, above or back to back with another unit
   is a root of the same group, related to it. The group carries one placement — a kitchen is never
   split into several positioned groups.
-- **Point**: `posGroup` is the room point of the group's back left bottom corner, in millimetres
+- **Point** (the second form): `posGroup` is the room point of the group's back left bottom corner, in millimetres
   (`y` = 0 on the floor; for a group of wall units only, their mounting height). In a room corner
   it is the corner point.
 - **Rotation**: `posRotationY` turns the group around `posGroup`, in degrees, **counter-clockwise
@@ -652,21 +663,13 @@ or anywhere in the room.
 - **Walls**: every wall in `get-plan-context` has `start`/`end` (floor points in the coordinates
   of `posGroup`), `lengthMm`, `type` and `facingRotationY`. With `posRotationY` = the wall's
   `facingRotationY` the group's back stands against the wall, and the group runs from `posGroup`
-  towards the wall's `start`:
-
-  | Target | `posGroup` |
-  | --- | --- |
-  | Flush into the corner at the wall's end | `end` |
-  | At a distance d from that corner | `end + d · (start − end) / lengthMm` |
-  | Centred on the wall | the same, d = (lengthMm − group width) / 2 |
-  | Right end flush into the corner at the wall's start | the same, d = lengthMm − group width |
-
-  The group width is the sum of the unit widths of the row (`dimensions` in the catalog;
-  `position.footprint.widthMm` of a loaded group gives it).
-- **Room corners**: every room carries a `corners` list with the `point` and the `posRotationY` of
-  each corner — the `facingRotationY` of the wall that ends there; a corner kitchen takes both from
-  it and starts with a corner article, and its rows run along both walls. For a rectangular room
-  (back = top, front = bottom in the top-view image):
+  towards the wall's `start`. A group at a wall takes the first form, so that the server computes
+  the point.
+- **Room corners**: a corner kitchen starts with a corner article and names one wall of the corner
+  as `wall` and the other as `alignment`; looking into the corner from the room, the `RightBottom`
+  row runs along the wall on the right. Every room also carries a `corners` list with the `point`
+  and the `posRotationY` of each corner — the `facingRotationY` of the wall that ends there — for
+  the point form. For a rectangular room (back = top, front = bottom in the top-view image):
 
   | Wall / corner | `posRotationY` | Corner: `RightBottom` row runs along | Corner: `LeftBottom` row runs along |
   | --- | --- | --- | --- |
@@ -679,7 +682,8 @@ or anywhere in the room.
   on its right (`mod_CarcaseDirection` Right, e.g. `UELTB90`) by 90° more itself, so its rows run
   as listed. The group is read back with the `posGroup` and `posRotationY` it was placed with.
 
-- **Two corner articles** (a U-shaped kitchen): set `rootId` to the corner article that goes into
+- **Two corner articles** (a U-shaped kitchen): in the wall form the first corner article in
+  `roots` goes into the corner; in the point form `rootId` names the corner article that goes into
   the corner `posGroup` names.
 - **Anywhere else** (an island, the middle of the room, next to a door): any free floor point as
   `posGroup`, any `posRotationY`.
@@ -697,8 +701,7 @@ With a connected agent, this sequence exercises the whole PoC:
 1. `get-plan-context` — rooms (with walls), compact articles (with docking vectors and
    dimensions), current groups; `find-attributes` for the attribute behind a requested property
 2. `create-or-replace-groups` — create one group with two docked cabinets and a `placement`
-   with the right wall's `end` as `posGroup` and its `facingRotationY` as `posRotationY`; they
-   appear arranged along the right wall, from the back right corner
+   `{ "wall": "right", "alignment": "back" }`; they appear arranged along the right wall, from the back right corner
 3. Take the group from the result, change it, resubmit with its id — the group is updated, not
    duplicated
 4. `place-group` — move the group to another wall or into a corner (`wall: "left"`, or
@@ -720,13 +723,13 @@ Ready-to-use prompts for the connected agent, from read-only to write operations
 | "What articles are available in this library? Summarize them with their descriptions." | `get-plan-context` (`articles`) |
 | "Describe the room and the groups currently in the plan." | `get-plan-context` (`rooms`, `groups`) |
 | "Create a sideboard of three docked cabinets, 800 mm wide each, against the longest wall." | `get-plan-context`, `create-or-replace-groups` |
-| "Add a group of three tall units to the wall on the right." | `get-plan-context`, `create-or-replace-groups` (`placement` from the right wall) |
+| "Add a group of three tall units to the wall on the right." | `get-plan-context`, `create-or-replace-groups` (`placement` `{ wall: "right" }`) |
 | "Add a wardrobe next to the existing group." | `get-plan-context`, `merge-article-into-group` (the wardrobe docks to a free vector of the group's end root) |
 | "Make all cabinets in the group 900 mm high." | `get-plan-context`, `change-group-attribute` |
 | "Make the fronts of the whole kitchen white." | `find-attributes`, `change-group-attribute` |
 | "Which attribute sets the front colour, and which values are allowed?" | `find-attributes` |
 | "Put a wall unit above each base unit." | `get-plan-context`, `create-or-replace-groups` (replace, stacking recipe) |
-| "Plan an L-shaped kitchen into the back right corner." | `get-plan-context` (a `cornerArticle`), `create-or-replace-groups` (corner recipe, `placement` at the corner point, `posRotationY` 270) |
+| "Plan an L-shaped kitchen into the back right corner." | `get-plan-context` (a `cornerArticle`), `create-or-replace-groups` (corner recipe, `placement` `{ wall: "right", alignment: "back" }`) |
 | "Move the group to the back right corner." | `get-plan-context`, `place-group` (`wall: "right"`, `alignment: "top"`) |
 | "Move the kitchen to the left wall, centred." | `get-plan-context`, `place-group` (`wall: "left"`) |
 | "Replace the middle cabinet with a drawer unit." | `get-plan-context`, `exchange-root-module` |

@@ -18,7 +18,6 @@ never drop the agent's content silently.
 |---|---|---|---|
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui, [RML-18073](https://roomle.atlassian.net/browse/RML-18073) | high — wall cabinets on the worktop |
 | 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner, [RML-18076](https://roomle.atlassian.net/browse/RML-18076) | high — the kitchen stands in the wall |
-| 27 | [A new group needs a point the model computes](#27-a-new-group-needs-a-point-the-model-computes) | decision D23, instructions, [RML-18078](https://roomle.atlassian.net/browse/RML-18078) | high — groups outside the room |
 | 45 | ["The middle unit" read from the docking](#45-the-middle-unit-read-from-the-docking) | plan context | medium — the wrong unit edited |
 | 46 | [A new group beside an existing one for "add a cabinet to the right of the kitchen"](#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | instructions | medium — a separate group |
 | 48 | [A worktop colour sent as `mod_PaneltopColor`](#48-a-worktop-colour-sent-as-mod_paneltopcolor) | `find-attributes` | medium — the worktop keeps its default |
@@ -83,43 +82,6 @@ of `UERTB90`, and fix the frame or report the planner defect.
 **Test.** The payload below loads with the corner unit's back edges on both walls.
 
 **Reproduce.** `mcp-test-2026-10-04_13-00-37`: gpt-5.4-mini 11.
-
-## 27. A new group needs a point the model computes
-
-**Ticket.** [RML-18078](https://roomle.atlassian.net/browse/RML-18078)
-
-**Problem.** A new group is positioned with `posGroup` and `posRotationY` the model takes from a wall:
-its `end` and its `facingRotationY`, or a point computed along it for a centred or offset row. Models
-take the wall's `start` instead of its `end` (the group runs out of the room), combine a point and a
-rotation of different walls, or send no placement and move the group with `place-group` right after
-(a second call and a reload).
-
-**Cause.** The walls array names `start` and `end` in the direction of the room contour, so the end
-of the back wall is its left corner — a model that reads "start" as the beginning of a row takes the
-wrong corner. A centred row is a computation (example 4 of the rules). `place-group` takes a wall, an
-alignment and an offset; `create-or-replace-groups` does not — `placement { wall, alignment,
-offsetMm }` is deferred (D23). A group outside the room is never refused (D22).
-
-**To do.** Decide D23: a placement by wall, alignment and offset in `create-or-replace-groups`, with
-the point computed by the server as `place-group` does. Until then, say in the
-`create-or-replace-groups` description which corner a wall's `end` is ("the corner on the left as seen
-from the room").
-
-**Constraints.** The footprint of a new group exists only once the planner has calculated it, so the
-server loads the group without `repositioningData` and then runs the `place-group` logic in the same
-call — `placeGroupAtWall` (`tool-executors.ts:2414`), the overlap check and the reload, moved out of
-the `place-group` executor so that both use it; the reload keeps the generated roots and their
-colours, as the reload of `place-group` does. `normalizePlacement` (`tool-executors.ts:946`) then
-accepts `{ wall, alignment?, offsetMm?, roomIndex? }` beside `{ posGroup, posRotationY, rootId? }`,
-and G11 no longer drops the wall fields. A width computed before the load from the catalog's
-`mod_Width` of the floor row breaks on corner articles and range hoods.
-
-**Test.** Unit: a new group placed by wall and alignment loads once without `repositioningData` and
-is reloaded once with the computed one; a corner kitchen goes into the corner the alignment names.
-"add a group of 4 cabinets to the wall in the back" and a centred row with gpt-5.4-mini: one call,
-the group inside the room at the wall.
-
-**Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5.4-mini 02 and 06 (the wall's start).
 
 ## 45. "The middle unit" read from the docking
 

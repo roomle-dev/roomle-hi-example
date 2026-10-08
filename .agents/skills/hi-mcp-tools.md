@@ -25,7 +25,7 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 |---|---|
 | `change-module-attribute` | Set an attribute of a root module and of its sub modules that carry it, or of one sub module |
 | `change-group-attribute` | Set an attribute on every module of a group that has it |
-| `delete-group` | Remove a group |
+| `delete-group` | Delete a group |
 | `delete-root-module` | Delete one root module and leave the gap; the rest splits where it is no longer docked together |
 | `remove-article-from-group` | Remove one root module and close the gap |
 | `merge-article-into-group` | Dock one more article to a free docking vector of a root module |
@@ -191,7 +191,7 @@ own group features; the group keeps its position
 'change-group-attribute':  { groupId: string, attributeId: string, value: string | number | boolean }
 'delete-group':            { groupId: string }
 'delete-root-module':      { rootModuleId: string }
-'remove-article-from-group': { groupId: string, rootModuleId: string }
+'remove-article-from-group': { groupId?: string, rootModuleId: string }
 'merge-article-into-group': {
   groupId: string, articleId: string, attributes?: { id, value }[],
   dockTo: { rootId: string, ownDockingVector: string, dockingVector: string,

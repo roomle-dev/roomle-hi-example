@@ -429,6 +429,7 @@ describe('hi-mcp-server tool calls', () => {
       'insert-article-into-group inserts an article between two root modules',
       'remove-article-from-group removes a root module and closes the gap',
       'delete-root-module deletes a root module and leaves the gap',
+      'delete-group deletes a group',
       'swap-root-modules lets two root modules change places',
       'an article of another size - "a 900 mm cabinet" - is the same article with that attribute set',
       'Take the user\'s word: to "remove" an article is remove-article-from-group, to "delete" an article is delete-root-module',
@@ -440,6 +441,57 @@ describe('hi-mcp-server tool calls', () => {
     }
     expect(client.getInstructions()).toContain(
       'remove-article-from-group (remove a root module and close the gap)'
+    );
+  });
+
+  it("binds the user's word to delete-root-module and remove-article-from-group in their opening sentence", async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    const toolNamed = (name: string) =>
+      tools.find((tool) => tool.name === name);
+    const deleteRoot = toolNamed('delete-root-module')?.description ?? '';
+    const removeRoot =
+      toolNamed('remove-article-from-group')?.description ?? '';
+
+    expect(deleteRoot).toMatch(
+      /^The tool for "delete": when the user asks to delete a unit, a cabinet, a module or an article, it deletes that root module from its group and leaves the gap/
+    );
+    expect(removeRoot).toMatch(
+      /^The tool for "remove": when the user asks to remove a unit, a cabinet, a module or an article, it removes that root module from its group and closes the gap/
+    );
+    expect(deleteRoot).toContain(
+      'When the user says remove, use remove-article-from-group.'
+    );
+    expect(removeRoot).toContain(
+      'When the user says delete, use delete-root-module.'
+    );
+    for (const description of [deleteRoot, removeRoot]) {
+      expect(description).not.toContain('To close the gap, use');
+      expect(description).not.toContain(
+        'To delete an article and leave the gap'
+      );
+    }
+    for (const name of ['delete-root-module', 'remove-article-from-group']) {
+      expect(toolNamed(name)?.inputSchema.required).toEqual(['rootModuleId']);
+    }
+  });
+
+  it('says remove only for remove-article-from-group', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    const descriptionOf = (name: string) =>
+      tools.find((tool) => tool.name === name)?.description ?? '';
+
+    expect(descriptionOf('delete-group')).toMatch(/^Deletes a group/);
+    expect(descriptionOf('delete-group')).not.toMatch(/remov/i);
+    expect(
+      descriptionOf('delete-root-module').replace(
+        'When the user says remove, use remove-article-from-group.',
+        ''
+      )
+    ).not.toMatch(/remov/i);
+    expect(descriptionOf('remove-article-from-group')).toContain(
+      'Removing the only root module deletes the group.'
     );
   });
 

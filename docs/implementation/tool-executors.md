@@ -154,7 +154,7 @@ performs the edit with its own group features and answers once the result is loa
 | `change-group-attribute` | the group | the planner's result |
 | `delete-group` | the group | the planner's result |
 | `delete-root-module` | the root among all roots | `withPlanRoots`, `withCorrections` |
-| `remove-article-from-group` | the group, the root within it | `withRowHints` + both |
+| `remove-article-from-group` | the group — without `groupId` the group that holds the root (`groupOfRoot`) —, the root within it | `withRowHints` + both |
 | `merge-article-into-group` | the group, the article, the target root and side (`dockTarget`) | `withPlanRoots`, `withCorrections` |
 | `exchange-root-module` | the group, the article, the root | `withRowHints` + both |
 | `insert-article-into-group` | the group, the article, both roots (`insertBetween`) | `withRowHints` + both |

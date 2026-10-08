@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18079](https://roomle.atlassian.net/browse/RML-18079); backlog [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 43; related: [RML-18045](https://roomle.atlassian.net/browse/RML-18045) (the row edit tools, D40), [RML-18065](https://roomle.atlassian.net/browse/RML-18065) (D52), [RML-18041](https://roomle.atlassian.net/browse/RML-18041) (umbrella)
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — analysed and planned on `fix/delete-and-remove-tool-choice-RML-18079`
+> **Status**: Open — implemented on `fix/delete-and-remove-tool-choice-RML-18079`, [verified](#implementation-and-verification) with unit tests; the chat check was stopped after 4 of 18 runs, one of them still wrong; not yet merged
 
 ## Affected repositories
 
@@ -309,3 +309,34 @@ resolved root id; the executor calls it only without `groupId`.
   base unit next to the corner unit on the right wall" on corner-kitchen-wall-units, with
   gpt-5-mini and gpt-5.4-mini, three runs each — 15 runs, about 15 minutes. Expected: every run
   takes the tool of its word.
+
+## Implementation and verification
+
+Implemented as planned, in roomle-hi-example only:
+
+- `hi-mcp-server.ts`: the descriptions of `delete-root-module` and `remove-article-from-group` open
+  with "The tool for "delete"" / "The tool for "remove"" and point to the other tool by its word;
+  `delete-group` "Deletes a group"; the rules say "delete-group deletes a group"; the `groupId` of
+  `remove-article-from-group` is optional.
+- `tool-executors.ts`: `groupOfRoot` finds the group that holds the root module when `groupId` is
+  left out or empty; a root id that matches no root, or two, is G54.
+- Tests: two new tests and one extended in `hi-mcp-server.test.ts`, six new cases in
+  `tool-executors.test.ts`. Typecheck, 470 unit tests, lint and format pass.
+- Documentation: D40, the §6 rows, C17 and G54 in `docs/hi-mcp-behaviour.md`; the tool tables of
+  `docs/hi-mcp-server.md`, the server README and `docs/implementation/`; both skills; backlog
+  issue 43 removed.
+
+### The chat check
+
+Not run as planned: it was stopped after 4 of 18 runs
+(`.temp/result/issue-RML-18079/verify-fix/`):
+
+| Prompt | gpt-5-mini | gpt-5.4-mini |
+|---|---|---|
+| "delete the middle unit" | `delete-root-module` | `delete-root-module` |
+| "remove the middle unit" | `remove-article-from-group` | **`delete-root-module`** |
+
+gpt-5.4-mini still took `delete-root-module` for "remove the middle unit" in its one run with the
+new descriptions. The descriptions alone may not be enough for gpt-5.4-mini at its default
+effort; the full check is open.
+

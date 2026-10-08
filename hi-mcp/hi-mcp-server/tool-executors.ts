@@ -788,6 +788,23 @@ const findGroup = (groups: any[], groupId: string): any => {
   return group;
 };
 
+// The group whose roots hold a root module, by the root id as resolveRootId
+// reads it across the plan.
+const groupOfRoot = (groups: any[], rootId: string): any => {
+  const resolved = resolveRootId(rootsOfGroups(groups), rootId, '', []);
+  const group = groups.find((candidate) =>
+    (candidate.roots ?? []).some((root: any) => String(root?.id) === resolved)
+  );
+  if (!group) {
+    const rootIds = rootsOfGroups(groups).map((root) => root.id);
+    throw new Error(
+      `Root module '${rootId}' not found. Roots in the plan: ` +
+        `${rootIds.join(', ') || 'none'}.`
+    );
+  }
+  return group;
+};
+
 const planGroups = async (roomDesignerApi: PlannerApi): Promise<any[]> =>
   ((await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']))
     .groups ?? []) as any[];
@@ -3606,7 +3623,10 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           'articles',
           'rooms',
         ]);
-      const group = findGroup(context.groups ?? [], args.groupId as string);
+      const groups = (context.groups ?? []) as any[];
+      const group = args.groupId
+        ? findGroup(groups, args.groupId as string)
+        : groupOfRoot(groups, args.rootModuleId as string);
       const rootModuleId = resolveRootId(
         group.roots ?? [],
         args.rootModuleId as string,

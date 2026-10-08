@@ -20,7 +20,6 @@ never drop the agent's content silently.
 | 51 | [A replace drops the group's materials](#51-a-replace-drops-the-groups-materials) | bug, MCP server, [RML-18075](https://roomle.atlassian.net/browse/RML-18075) | high — materials lost without a correction |
 | 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner, [RML-18076](https://roomle.atlassian.net/browse/RML-18076) | high — the kitchen stands in the wall |
 | 27 | [A new group needs a point the model computes](#27-a-new-group-needs-a-point-the-model-computes) | decision D23, instructions, [RML-18078](https://roomle.atlassian.net/browse/RML-18078) | high — groups outside the room |
-| 43 | ["Delete" and "remove" are taken for each other](#43-delete-and-remove-are-taken-for-each-other) | instructions, [RML-18079](https://roomle.atlassian.net/browse/RML-18079) | high — the other edit than asked |
 | 45 | ["The middle unit" read from the docking](#45-the-middle-unit-read-from-the-docking) | plan context | medium — the wrong unit edited |
 | 46 | [A new group beside an existing one for "add a cabinet to the right of the kitchen"](#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | instructions | medium — a separate group |
 | 48 | [A worktop colour sent as `mod_PaneltopColor`](#48-a-worktop-colour-sent-as-mod_paneltopcolor) | `find-attributes` | medium — the worktop keeps its default |
@@ -146,28 +145,6 @@ is reloaded once with the computed one; a corner kitchen goes into the corner th
 the group inside the room at the wall.
 
 **Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5.4-mini 02 and 06 (the wall's start).
-
-## 43. "Delete" and "remove" are taken for each other
-
-**Ticket.** [RML-18079](https://roomle.atlassian.net/browse/RML-18079)
-
-**Problem.** For "delete the middle unit" gpt-5-mini calls `remove-article-from-group` and closes the
-gap; for "remove the middle unit" and "remove the base unit next to the corner unit" gpt-5.4-mini calls
-`delete-root-module`, which splits the group — a corner kitchen into four groups.
-
-**Cause.** Both tool descriptions open with the user's word (D40), and the models still take the
-other tool, so the descriptions do not make the difference clear enough. Which sentence leads them
-to the other tool is not analysed; the tool names differ in more than the verb, and both
-descriptions speak of a root module.
-
-**To do.** Analyse the tool choice of the runs below against the two descriptions
-(`hi-mcp-server.ts:399`, `:415` — both already open with the verb, in parallel words) and the tool
-list of the instructions, and change the sentence that leads the models to the other tool.
-
-**Test.** `hi-mcp-server.test.ts` pins the opening sentences; "delete the middle unit" and "remove
-the middle unit" with gpt-5-mini and gpt-5.4-mini, three runs each, take the matching tool.
-
-**Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5-mini 17, gpt-5.4-mini 16 and 24.
 
 ## 45. "The middle unit" read from the docking
 

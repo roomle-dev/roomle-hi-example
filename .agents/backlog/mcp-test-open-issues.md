@@ -16,7 +16,7 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Priority |
 |---|---|---|---|
-| 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui, [RML-18073](https://roomle.atlassian.net/browse/RML-18073) | high — wall cabinets on the worktop |
+| 23 | [A lone wall unit drops onto the worktop after the load](#23-a-lone-wall-unit-drops-onto-the-worktop-after-the-load) | bug, roomle-ui, [RML-18073](https://roomle.atlassian.net/browse/RML-18073), [RML-18081](https://roomle.atlassian.net/browse/RML-18081) | high — wall cabinets on the worktop |
 | 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner, [RML-18076](https://roomle.atlassian.net/browse/RML-18076) | high — the kitchen stands in the wall |
 | 45 | ["The middle unit" read from the docking](#45-the-middle-unit-read-from-the-docking) | plan context | medium — the wrong unit edited |
 | 46 | [A new group beside an existing one for "add a cabinet to the right of the kitchen"](#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | instructions | medium — a separate group |
@@ -39,26 +39,28 @@ never drop the agent's content silently.
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
 
-## 23. A worktop colour change drops hanging wall units onto the worktop
+## 23. A lone wall unit drops onto the worktop after the load
 
-**Ticket.** [RML-18073](https://roomle.atlassian.net/browse/RML-18073)
+**Ticket.** [RML-18073](https://roomle.atlassian.net/browse/RML-18073), [RML-18081](https://roomle.atlassian.net/browse/RML-18081)
 
-**Problem.** A wall unit or a range hood hung `above` a base unit stands at y 1480 after the load and
-at y 820 — on the worktop — after the `change-group-attribute` commands the server runs for the
-group-wide materials (D36), typically after `mod_CountertopColor`. Units hung beside a tall unit or
-beside the hood keep y 1480. A group of one base unit and one wall unit keeps y 1480 after the same
-commands, and not every kitchen shows it. No correction reports it. Every kitchen with wall units and
-a material is exposed, since the server sets the materials itself.
+**Problem.** A wall unit hung `above` a floor unit that has a neighbour, with no other wall unit
+docked beside it, stands at y 1480 after the load. It stands at y 820, on the worktop, after the
+first attribute change, whatever the attribute. In a chat, that change is the group materials the
+server sets right after the load (D36). No correction reports it.
 
-**Cause.** Not found. The worktop regeneration of `mod_CountertopColor` is the likely trigger;
-suspected: the arrangement stores the reciprocal of a docking entry without its offset
-(`hi-root-module-arrangement.ts`, roomle-ui).
+**Cause.** roomle-ui: the arrangement writes the reverse of a docking entry without its offset
+(`_validateAndCompleteContextData`, `hi-root-module-arrangement.ts`). The planner's answer to the
+load replaces the carrier's docking with the links of the vectors that touch. Only the reverse entry
+on the wall unit is left, without the offset, and the next arrangement docks the wall unit flush on
+the carrier ([analysis](../bug-analysis/lone-wall-unit-drops-onto-the-worktop.md)).
 
-**To do.** Reproduce in roomle-ui with the payload below, find where the hang
-offset is lost, and fix it there.
+**To do.** Land roomle-ui `fix/lone-wall-unit-drops-RML-18081`
+([roomle-ui#3105](https://github.com/roomle-dev/roomle-ui/pull/3105)): the reverse entry carries
+the offset negated. The server needs no change.
 
-**Test.** A glue-logic test: a group with a wall unit hung by an offset above a base unit keeps its
-height after `mod_FrontColor` and `mod_CountertopColor`.
+**Test.** roomle-ui `hi-root-module-arrangement-test.ts` (the mirrored offset; the hang by the wall
+unit's own entry) and `glue-logic-test.ts` (a lone wall unit keeps its height after the planner's
+answer to a load and an attribute change).
 
 **Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 32 (the model set `mod_HeightPosInsertion` 1480 on the two wall units that had dropped).
 ## 35. The handleless right corner unit as the first root with two legs stands 239 mm in the wall

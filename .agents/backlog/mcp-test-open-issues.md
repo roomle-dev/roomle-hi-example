@@ -16,7 +16,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Priority |
 |---|---|---|---|
-| 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner, [RML-18076](https://roomle.atlassian.net/browse/RML-18076) | high — the kitchen stands in the wall |
 | 45 | ["The middle unit" read from the docking](#45-the-middle-unit-read-from-the-docking) | plan context | medium — the wrong unit edited |
 | 46 | [A new group beside an existing one for "add a cabinet to the right of the kitchen"](#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | instructions | medium — a separate group |
 | 48 | [A worktop colour sent as `mod_PaneltopColor`](#48-a-worktop-colour-sent-as-mod_paneltopcolor) | `find-attributes` | medium — the worktop keeps its default |
@@ -37,32 +36,6 @@ never drop the agent's content silently.
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
-
-## 35. The handleless right corner unit as the first root with two legs stands 239 mm in the wall
-
-**Ticket.** [RML-18076](https://roomle.atlassian.net/browse/RML-18076)
-
-**Problem.** `EUERTB90` (the handleless right-handed corner unit) as the first root, with units
-`rightOf` and `leftOf` it, placed at the back right corner `[4815, 0, -3765]` / 270, can stand with
-its back 239 mm in the right wall (group pos `[5054, 0, -3765]`, footprint x 2944–5054). The same
-article with one leg or as a later root, and `UERTB90` with two legs, stand inside the room. This is
-the placement by point; a placement by wall (D23) puts the corner by the calculated corner geometry
-(`placeCornerAtWalls`, `plan-space.ts:512`), not by the anchor frame.
-
-**Cause.** Not analysed. The server sends the corner point with the anchor frame
-`rootRelPos [261, 0, 0]`, `rootRelRotationY 0`; the planner arranges the corner unit at
-`[261, 0, 239]` in group space, so the left leg's back line lies 239 mm behind the corner unit's.
-Either the frame of the handleless right corner (`anchorFrameOfRoot`, `group-placement.ts:214`) misses
-the article's back offset, or the planner's arrangement of the left leg does.
-
-**To do.** Reproduce with the payload below, compare the probe's `dockInfos` of `EUERTB90` with those
-of `UERTB90`, and fix the frame or report the planner defect. Load the same group with
-`{ wall: right, alignment: back }` too: if its left leg also stands in the wall, the planner's
-arrangement is at fault.
-
-**Test.** The payload below loads with the corner unit's back edges on both walls.
-
-**Reproduce.** `mcp-test-2026-10-04_13-00-37`: gpt-5.4-mini 11.
 
 ## 45. "The middle unit" read from the docking
 

@@ -19,7 +19,6 @@ never drop the agent's content silently.
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui, [RML-18073](https://roomle.atlassian.net/browse/RML-18073) | high — wall cabinets on the worktop |
 | 51 | [A replace drops the group's materials](#51-a-replace-drops-the-groups-materials) | bug, MCP server, [RML-18075](https://roomle.atlassian.net/browse/RML-18075) | high — materials lost without a correction |
 | 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner, [RML-18076](https://roomle.atlassian.net/browse/RML-18076) | high — the kitchen stands in the wall |
-| 49 | [A new group stands on an obstacle](#49-a-new-group-stands-on-an-obstacle) | MCP server feedback, instructions, [RML-18077](https://roomle.atlassian.net/browse/RML-18077) | high — cabinets across a window and on furniture |
 | 27 | [A new group needs a point the model computes](#27-a-new-group-needs-a-point-the-model-computes) | decision D23, instructions, [RML-18078](https://roomle.atlassian.net/browse/RML-18078) | high — groups outside the room |
 | 43 | ["Delete" and "remove" are taken for each other](#43-delete-and-remove-are-taken-for-each-other) | instructions, [RML-18079](https://roomle.atlassian.net/browse/RML-18079) | high — the other edit than asked |
 | 45 | ["The middle unit" read from the docking](#45-the-middle-unit-read-from-the-docking) | plan context | medium — the wrong unit edited |
@@ -111,37 +110,6 @@ of `UERTB90`, and fix the frame or report the planner defect.
 
 **Reproduce.** `mcp-test-2026-10-04_13-00-37`: gpt-5.4-mini 11.
 
-## 49. A new group stands on an obstacle
-
-**Ticket.** [RML-18077](https://roomle.atlassian.net/browse/RML-18077)
-
-**Problem.** A new group is placed with wall units across a window, onto furniture or into another
-group, and the result reports success.
-
-**Cause.** The obstacle rule (`AUTHORING_RULES`, `hi-mcp-server.ts`) leaves the overlap test to the
-model: it has to compare the outlines and height ranges of its root modules with every object, and a
-window's `fromEndMm` with its own d. The walls rule hands it recipes that ignore obstacles — centred,
-flush into a corner, at the wall's end — and the models take them. No result of
-`create-or-replace-groups` or `place-group` says that a group overlaps an object or a door's or a
-window's span. Other groups are covered only in part: `place-group` moves a group along the wall
-past another group or reports the overlap (`tool-executors.ts:3233`), `create-or-replace-groups`
-reports only a new group at the same point as another (`groupsAtTheSamePlace`,
-`tool-executors.ts:1638`), and D43 covers row edits.
-
-**To do.** A hint in the results of `create-or-replace-groups` and `place-group`, like D43's: per
-root module that overlaps an object or a root module of another group in outline and height range,
-or stands in a door's span or in a window's span above its `bottomMm`, its id, what it overlaps,
-and the free stretches of that wall as `fromEndMm` ranges. The group is built anyway — the user may
-want it so. Then shorten the obstacle rule to what the hint does not cover. Issue 41 can use the same
-test for a row edit.
-
-**Test.** tool-executors tests: a group created across a window, onto an object and into another
-group gets the hint with the free stretches; a group beside them gets none. The MCP tests
-`obstacle-window-back-wall`, `obstacle-back-wall-beside-the-sofa` and `obstacle-island-free-spot`
-with gpt-5-mini and gpt-5.4-mini: the group ends clear of the obstacles, after one correction at
-most.
-
-**Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 32 (the OTB30 in front of the window).
 ## 27. A new group needs a point the model computes
 
 **Ticket.** [RML-18078](https://roomle.atlassian.net/browse/RML-18078)
@@ -371,8 +339,11 @@ so a row in front of it still stands inside the room.
 
 **To do.** The D43 hint also names an opening the row now stands in front of and did not before: the
 row's back edge along a wall overlaps an opening segment of that wall at the row's height (a door at
-level 0, a window at the height of the units). The server already places doors and windows on their
-wall and span (`wallOfOpening`, `plan-space.ts:695`). The row is built anyway; the user may want it so.
+level 0, a window at the height of the units). The obstacle hint of D55 runs this test for new and
+placed groups: `objectBlockers` (`tool-executors.ts`) turns each door and window into the strip in
+front of it (`stripInFrontOfWall`, `plan-space.ts`), and `obstacleHint` names the root modules in it
+with the free stretches of their wall; `withRowHints` can call it with the groups before the edit as
+`before`. The row is built anyway; the user may want it so.
 
 **Test.** A tool-executors test: a row along a wall with a door segment. An insert that makes the row
 reach into the door's span gives the hint; a row that stood in front of the door before the edit

@@ -508,10 +508,13 @@ describe('hi-mcp-server tool calls', () => {
       'every root after the first names one neighbour of the same group by its id, with exactly one of these fields'
     );
     expect(rules).toContain(
-      'Read corrections and notLoaded in a result: corrections lists what the server changed in your input'
+      'Read corrections, notLoaded and hint in a result: corrections lists what the server changed in your input'
     );
     expect(rules).toContain(
       'notLoaded lists the groups and the roots it could not build'
+    );
+    expect(rules).toContain(
+      'hint names something to check that stopped nothing - a root module on an obstacle, with the free stretches of its wall.'
     );
   });
 
@@ -537,17 +540,20 @@ describe('hi-mcp-server tool calls', () => {
     );
   });
 
-  it('tells the agent what stands in the room and to keep the span of a door or a window free', async () => {
+  it('tells the agent what stands in the room and that the hint names a root module on an obstacle', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(
       await client.callTool({ name: 'get-authoring-rules', arguments: {} })
     );
     expect(rules).toContain(
-      'A root module cannot stand where an object or a root module of another group overlaps it both in the outline and in the height range.'
+      "Put a new group on a stretch of wall or a spot that obstacles leaves free, with the recipes above too; base units lower than a window's bottomMm fit below it."
     );
     expect(rules).toContain(
-      "keep that span free from the floor for a door and from the window's bottomMm for a window - base units lower than bottomMm fit below a window, tall units and wall units do not."
+      "The result's hint names every root module that overlaps an object or another group or stands in front of a door or a window, with the free stretches of its wall."
     );
+    // the server tests the outlines, not the agent (D55)
+    expect(rules).not.toContain('cannot stand where');
+    expect(rules).not.toContain('keep that span free');
     expect(rules).toContain(
       'any point on the floor that obstacles leaves free as posGroup'
     );
@@ -560,6 +566,16 @@ describe('hi-mcp-server tool calls', () => {
       'obstacles (what stands in the room, in the coordinates of the walls'
     );
     expect(planContext?.description).toContain('roomIndex, wall and fromEndMm');
+    const createGroups = tools.find(
+      (tool) => tool.name === 'create-or-replace-groups'
+    );
+    expect(createGroups?.description).toContain(
+      'and hint (a root module on an obstacle, in another group or in front of a door or a window, with the free stretches of its wall)'
+    );
+    const placeGroup = tools.find((tool) => tool.name === 'place-group');
+    expect(placeGroup?.description).toContain(
+      'a hint when a root module stands on an object or in front of a door or a window'
+    );
     expect(
       (planContext?.inputSchema.properties?.include as { description?: string })
         ?.description
@@ -1020,7 +1036,7 @@ describe('hi-mcp-server through the page bridge', () => {
       // the plan after the call, for undo
       'getExternalObjectGroups',
     ]);
-    expect(calls[0].args).toEqual([['rooms', 'groups']]);
+    expect(calls[0].args).toEqual([['rooms', 'groups', 'obstacles']]);
     expect(calls[3].args).toEqual([
       {
         posGroups: [

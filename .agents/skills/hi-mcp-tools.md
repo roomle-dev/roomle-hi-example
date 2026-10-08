@@ -72,7 +72,9 @@ array) and `fromEndMm`, its span along that wall measured from the wall's end. `
 gives per HI group the room-space `outline` and height range of every root module that is not
 generated, from the parts of the calculated group — the kernel's own outline of a group is not
 used: it lies up to 250 mm off (D45). No walls. Requested alone, `obstacles` makes the server
-fetch the rooms too
+fetch the rooms too. The agent does not compare outlines itself: the results of
+`create-or-replace-groups` and `place-group` name every root module on an obstacle in their `hint`,
+with the free stretches of its wall (D55)
 
 **Article size**: per root module of an article, `dimensions` lists the size attributes with id,
 name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels
@@ -119,7 +121,7 @@ that is not one of the library's group settings on every unit and generated root
 reports it. An override only a generated root carries (the worktop colour on a base unit) is moved
 to the group, and the colours of the generated roots a resubmitted group carries are set again.
 
-**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a new group at the place of another gets a `hint`; `dockTo` on a root is read as its relation
+**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
 
 **Usage**:
 ```javascript
@@ -169,7 +171,8 @@ stands where asked is not reloaded.
 
 **Returns**: `placedIn` (`'corner'` or `'wall'`), the wall, and the resulting group with its
 `position`, plus `corrections` when the server corrected the request (an overlap, a parallel
-alignment, a group that already stands there)
+alignment, a group that already stands there) and a `hint` when a root module stands on an object or
+in front of a door or a window after the move, with the free stretches of its wall (D55)
 
 **Usage**:
 ```javascript

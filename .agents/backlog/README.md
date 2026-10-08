@@ -10,7 +10,6 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| [23 — A lone wall unit drops onto the worktop after the load](mcp-test-open-issues.md#23-a-lone-wall-unit-drops-onto-the-worktop-after-the-load) | roomle-ui ([RML-18081](https://roomle.atlassian.net/browse/RML-18081)): land `fix/lone-wall-unit-drops-RML-18081`, which keeps the offset in the mirrored docking entry; the server needs no change | high |
 | [35 — The handleless right corner unit as the first root with two legs stands 239 mm in the wall](mcp-test-open-issues.md#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | Reproduce, compare the anchor frames of `EUERTB90` and `UERTB90`, fix the frame or report the planner defect ([RML-18076](https://roomle.atlassian.net/browse/RML-18076)) | high |
 | [45 — "The middle unit" read from the docking](mcp-test-open-issues.md#45-the-middle-unit-read-from-the-docking) | A row position per root in the plan context | medium |
 | [46 — A new group beside an existing one](mcp-test-open-issues.md#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | One clause in the `create-or-replace-groups` description: an article beside a group goes into it | medium |

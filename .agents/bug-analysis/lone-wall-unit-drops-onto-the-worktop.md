@@ -10,9 +10,10 @@
 > [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 23
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — [implemented](#implementation) on roomle-ui
-> `fix/lone-wall-unit-drops-RML-18081` ([roomle-ui#3105](https://github.com/roomle-dev/roomle-ui/pull/3105))
-> and [verified](#verification-1) with unit tests and live without a model; not merged
+> **Status**: Fixed — [implemented](#implementation) on roomle-ui
+> `fix/lone-wall-unit-drops-RML-18081` ([roomle-ui#3105](https://github.com/roomle-dev/roomle-ui/pull/3105),
+> merged into `fix/hi-mcp-api-and-tools`) and [verified](#verification-1) with unit tests and live
+> without a model; reaches roomle-ui `master` with `fix/hi-mcp-api-and-tools`
 
 ## Affected repositories
 
@@ -258,8 +259,8 @@ roomle-ui `fix/lone-wall-unit-drops-RML-18081`, commit `389ba5e1c`, pull request
   `unit` helper. The pull request has it as a decision thread, beside the plan thread and the
   submitter thread.
 
-roomle-hi-example: backlog issue 23 waits for the roomle-ui branch. It is renamed: the trigger is
-the first attribute change after the load, not the worktop colour.
+roomle-hi-example: backlog issue 23 left the backlog when roomle-ui#3105 was merged. The MCP
+server did not change.
 
 ## Verification
 
@@ -282,6 +283,6 @@ the first attribute change after the load, not the worktop colour.
 
 ## Open points
 
-- RML-18073 has the same cause. Link or close it as a duplicate of RML-18081?
+- RML-18073 has the same cause and is linked to RML-18081 as its duplicate; closing it is open.
 - Should the server's result name a root module that one of its own commands moved? That is not
   part of this fix: once roomle-ui keeps the offset, the commands move nothing.

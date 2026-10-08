@@ -428,7 +428,8 @@ correction:
 
 Returns the loaded runtime ids and the resulting groups (with their final
 ids, `pos`, `rotationY`, `footprint`), plus a hint when a group of this call
-is still unpositioned, `corrections` (what the server changed in the input)
+is still unpositioned, `corrections` (what the server changed in the input, and what the
+library changed with the group attributes — a front colour reset by a front program)
 and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build and, with
 `rootIds`, the roots of a loaded group it could not build — one unknown article id drops that root,
 not the group). A group id you gave an earlier group of the session replaces that group. A `hint`

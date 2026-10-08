@@ -86,7 +86,8 @@ The full guideline, with the rules for adding a guard, is in
 Every result tells the agent what happened:
 
 - **what was built** — the resulting groups with their position
-- **what the server corrected** — a `corrections` list, one sentence per correction
+- **what the server corrected, and what the planner or the library changed beyond what was sent** — a
+  `corrections` list, one sentence per correction (C20, D59)
 - **what was not built, and why** — a `notLoaded` list (`create-or-replace-groups`) that names what to send instead: a group, or with `rootIds` the roots of a group that loaded without them
 - **what to check** — a `hint` that stops nothing
 
@@ -489,7 +490,7 @@ A group that cannot be built at one of these steps leaves the call and goes to `
 others go on.
 
 **Result**: `loaded` (the planner's runtime ids), `groups` (**every** group in the plan, in the
-plan-context shape), `hint` (an unpositioned group, a root module on an obstacle — D55), `corrections` (what the server changed in the input), and `notLoaded`
+plan-context shape), `hint` (an unpositioned group, a root module on an obstacle — D55), `corrections` (what the server changed in the input, and what the library changed with the group attributes — D59), and `notLoaded`
 — `[{ index, id?, rootIds?, errors }]` for the groups it could not build (D30) and, with `rootIds`,
 for the roots of a loaded group it could not build (G15). A conflicting placement is not sent (D26).
 

@@ -402,7 +402,8 @@ be built. Every guard and correction:
 
 Returns the loaded runtime ids and the resulting groups (with their final ids, `pos`,
 `rotationY`, `footprint`), plus a hint when a group of this call is still unpositioned,
-`corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, rootIds?,
+`corrections` (what the server changed in the input, and what the library changed with the group
+attributes — a front colour reset by a front program) and `notLoaded` (`[{ index, id?, rootIds?,
 errors }]`, the groups it could not build and, with `rootIds`, the roots of a loaded group it could
 not build — one unknown article id drops that root, not the group). The `hint` also names each root
 module of the call's groups that overlaps an object or a root module of another group, or stands in

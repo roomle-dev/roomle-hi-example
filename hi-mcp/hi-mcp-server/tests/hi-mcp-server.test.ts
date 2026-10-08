@@ -685,6 +685,12 @@ describe('hi-mcp-server tool calls', () => {
     expect(rules).toContain(
       'and what the library changed beyond the attribute you set - a front program switched by a front colour'
     );
+    expect(
+      tools.find((tool) => tool.name === 'create-or-replace-groups')
+        ?.description
+    ).toContain(
+      'corrections (what the server changed in the input, and what the library changed beyond the attributes sent'
+    );
     expect(rules).toContain(
       'notLoaded lists the groups and the roots it could not build'
     );

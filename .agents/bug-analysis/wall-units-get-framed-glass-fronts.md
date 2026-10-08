@@ -129,7 +129,11 @@ In the order of [Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-res
    `corrections`, with the value descs from the master data, for example: "root module 'upperleft'
    (O2TB90): mod_FrontProgram changed from Classic (Simple fronts in plain decors) to Modern (Mitred
    frame fronts with glass filling) - Classic does not offer mod_FrontColor 324 (Dark marble)". The
-   comparison needs no table of the library's palette.
+   comparison needs no table of the library's palette. `corrections` is the channel, not a field of
+   its own: it already carries what the planner changed beyond what was sent (C20), the agent reads it
+   in every result, and the chat summarises it. Its definition in the rules, the descriptions and the
+   docs says that it also names what the library changed (review of
+   [#84](https://github.com/roomle-dev/roomle-hi-example/pull/84)).
 3. **No correction of the input.** The server cannot tell whether the user prefers the slab front
    or the colour, and the library offers no slab front in dark marble. Which one the agent keeps is
    the [open decision](#open-decision).

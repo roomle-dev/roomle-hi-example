@@ -256,7 +256,8 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'the replaced group; a placement on it is not used; a root module the replace adds inherits ' +
         'the attributes the library passes on between neighbours - fronts, handles, carcase - from the root module it is docked to, and its attributes override them); ' +
         'all other groups are created with regenerated ids. Returns the loaded object ids and the resulting groups - ' +
-        'check their pos and footprint - plus corrections (what the server changed in the input), notLoaded (the groups it ' +
+        'check their pos and footprint - plus corrections (what the server changed in the input, and what the library ' +
+        'changed beyond the attributes sent - a front colour reset by a front program), notLoaded (the groups it ' +
         'could not build, with what to send instead) and hint (a root module on an obstacle, in another group or in front of ' +
         'a door or a window, with the free stretches of its wall). The payload format is returned by get-authoring-rules.',
       inputSchema: {

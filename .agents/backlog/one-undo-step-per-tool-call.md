@@ -13,7 +13,7 @@ resolve before their last reload:
   The planner's own undo button reverts such a call piecewise: a kitchen with a material takes two
   clicks, and the first leaves the kitchen without its material.
 - `change-module-attribute`, `change-group-attribute`, `exchange-root-module`,
-  `insert-article-into-group`, `swap-root-modules` and a `remove-article-from-group` that closed the
+  `insert-article-into-group`, `swap-root-modules` and a `delete-article-and-compact` that closed the
   gap resolve after their own load, but the kernel answers that load with the group's position
   (`respondWithPositionInPlan`, roomle-ui `roomle-planner.ts:2657`), and roomle-ui reloads the group
   once more — a second history event that joins the step, before or after the command resolves.

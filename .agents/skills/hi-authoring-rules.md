@@ -233,8 +233,8 @@ An existing group is edited with the command tools, never by positioning new uni
 `merge-article-into-group` docks one more unit at a free end of a row with the docking pairs above
 (`dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }`, `ownDockingVector` one of
 the root's `freeDockingVectors`), `insert-article-into-group` inserts a unit between two
-neighbouring units (`between`), `remove-article-from-group` removes a unit and closes the gap,
-`delete-root-module` deletes a unit and leaves the gap (units no longer docked together become
+neighbouring units (`between`), `delete-article-and-compact` deletes a unit and closes the gap,
+`delete-article-in-place` deletes a unit and leaves the gap (units no longer docked together become
 separate groups where they stand), `exchange-root-module` replaces a unit and keeps its docking —
 with `attributes` also by one of another width —, `swap-root-modules` lets two units change places,
 `delete-group` deletes a group, `change-module-attribute` and `change-group-attribute` set

@@ -4323,7 +4323,6 @@ describe('group command tools', () => {
       { groupId: 'island-1', attributeId: 'front', value: 'white' },
     ],
     ['delete-group', { groupId: 'kitchen-2' }, { groupId: 'kitchen-2' }],
-    ['delete-root-module', { rootModuleId: 'r1' }, { rootModuleId: 'r1' }],
     [
       'merge-article-into-group',
       { groupId: 'island', articleId: 'article-1', dockTo },
@@ -4370,11 +4369,6 @@ describe('group command tools', () => {
       { targetGroupId: 'kitchen-1', groupIds: ['kitchen-2', 'island-1'] },
     ],
     [
-      'remove-article-from-group',
-      { groupId: 'kitchen-2', rootModuleId: 'r1' },
-      { groupId: 'kitchen-2', rootModuleId: 'r1' },
-    ],
-    [
       'swap-root-modules',
       { groupId: 'island', rootModuleIds: ['r1', 'unit-2'] },
       { groupId: 'island-1', rootModuleIds: ['r1', 'unit-2'] },
@@ -4392,6 +4386,66 @@ describe('group command tools', () => {
       payload
     );
   });
+
+  it.each([
+    [
+      'delete-article-in-place',
+      'delete-root-module',
+      { rootModuleId: 'r1' },
+      { rootModuleId: 'r1' },
+    ],
+    [
+      'delete-article-and-compact',
+      'remove-article-from-group',
+      { groupId: 'kitchen-2', rootModuleId: 'r1' },
+      { groupId: 'kitchen-2', rootModuleId: 'r1' },
+    ],
+  ])(
+    '%s forwards the planner command %s and names itself in the result',
+    async (tool, command, args, payload) => {
+      const api = createApi(planWithGroups);
+
+      await expect(toolExecutors[tool](api, args)).resolves.toEqual({
+        command: tool,
+        groups: [],
+        removedGroupIds: [],
+      });
+      expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+        command,
+        payload
+      );
+    }
+  );
+
+  it.each([
+    ['delete-article-in-place', { rootModuleId: 'r1' }],
+    [
+      'delete-article-and-compact',
+      { groupId: 'kitchen-2', rootModuleId: 'r1' },
+    ],
+  ])(
+    '%s names itself, not the planner command, in the corrections of the planner',
+    async (tool, args) => {
+      const api = createApi(planWithGroups, {
+        externalObjectGroupOperation: vi.fn(async (command: string) => ({
+          command,
+          groups: [],
+          removedGroupIds: [],
+          corrections: ['the planner corrected something'],
+        })),
+      });
+
+      const result = (await toolExecutors[tool](api, args)) as Record<
+        string,
+        any
+      >;
+
+      expect(result.command).toBe(tool);
+      expect(result.corrections).toEqual([
+        `${tool}: the planner corrected something`,
+      ]);
+    }
+  );
 
   it.each([
     [
@@ -4413,7 +4467,7 @@ describe('group command tools', () => {
       { groupId: 'hall', articleId: 'article-1', between: ['r1', 'r2'] },
     ],
     ['swap-root-modules', { groupId: 'kitchen', rootModuleIds: ['r1', 'r2'] }],
-    ['remove-article-from-group', { groupId: 'hall', rootModuleId: 'r1' }],
+    ['delete-article-and-compact', { groupId: 'hall', rootModuleId: 'r1' }],
   ])(
     '%s rejects an unknown or ambiguous group id with the groups in the plan',
     async (tool, args) => {
@@ -4928,7 +4982,7 @@ describe('group command tools', () => {
         }),
       });
       await expect(
-        toolExecutors['delete-root-module'](api, { rootModuleId: 'x' })
+        toolExecutors['delete-article-in-place'](api, { rootModuleId: 'x' })
       ).rejects.toThrow(
         `Root module 'x' not found. Roots in the plan: ${first}, ${second}`
       );
@@ -4940,14 +4994,14 @@ describe('group command tools', () => {
 
     it('forwards an empty root id as sent instead of taking it as a prefix', async () => {
       // review of PR 62: '' is a prefix of every id, so a plan with one root
-      // would have resolved a delete-root-module with an empty id to it
+      // would have resolved a delete-article-in-place with an empty id to it
       const api = createApi(uuidPlan, {
         externalObjectGroupOperation: vi.fn(async () => {
           throw new Error("Root module '' not found.");
         }),
       });
       await expect(
-        toolExecutors['delete-root-module'](api, { rootModuleId: '' })
+        toolExecutors['delete-article-in-place'](api, { rootModuleId: '' })
       ).rejects.toThrow("Root module '' not found. Roots in the plan:");
       expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
         'delete-root-module',
@@ -5129,7 +5183,7 @@ describe('row edit tools', () => {
       }
     );
 
-    const result = (await toolExecutors['remove-article-from-group'](api, {
+    const result = (await toolExecutors['delete-article-and-compact'](api, {
       groupId: 'kitchen-1',
       rootModuleId: 'r3',
     })) as Record<string, any>;
@@ -5140,11 +5194,11 @@ describe('row edit tools', () => {
     );
     expect(result.gapClosed).toBe(false);
     expect(result.corrections).toEqual([
-      "remove-article-from-group: 'r3' was at the end of its row - it was deleted, nothing else moved",
+      "delete-article-and-compact: 'r3' was at the end of its row - it was deleted, nothing else moved",
     ]);
   });
 
-  describe('remove-article-from-group without a group id', () => {
+  describe('delete-article-and-compact without a group id', () => {
     const islandGroup = makeShapedGroup({
       id: 'island-1',
       roots: [
@@ -5159,7 +5213,7 @@ describe('row edit tools', () => {
       });
       return {
         api,
-        result: toolExecutors['remove-article-from-group'](api, args),
+        result: toolExecutors['delete-article-and-compact'](api, args),
       };
     };
 
@@ -5190,7 +5244,7 @@ describe('row edit tools', () => {
       const { api, result } = remove({ rootModuleId: 'isl-b' });
 
       expect(((await result) as Record<string, any>).corrections).toEqual([
-        "remove-article-from-group: root id 'isl-b' was read as 'isl-b3'",
+        "delete-article-and-compact: root id 'isl-b' was read as 'isl-b3'",
       ]);
       expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
         'remove-article-from-group',
@@ -5452,7 +5506,7 @@ describe('plan changes', () => {
     const events: string[] = [];
     const api = recordingApi(events);
     await Promise.all([
-      toolExecutors['delete-root-module'](api, { rootModuleId: 'a' }),
+      toolExecutors['delete-article-in-place'](api, { rootModuleId: 'a' }),
       toolExecutors['change-module-attribute'](api, {
         rootModuleId: 'b',
         attributeId: 'b',
@@ -5474,7 +5528,7 @@ describe('plan changes', () => {
       return [];
     });
     await Promise.all([
-      toolExecutors['delete-root-module'](api, { rootModuleId: 'a' }),
+      toolExecutors['delete-article-in-place'](api, { rootModuleId: 'a' }),
       toolExecutors['get-plan-context'](api, { include: ['groups'] }),
     ]);
     // the first reads are the change's own: it resolves the root id and
@@ -5494,8 +5548,8 @@ describe('plan changes', () => {
     const events: string[] = [];
     const api = recordingApi(events, ['a']);
     const [first, second] = await Promise.allSettled([
-      toolExecutors['delete-root-module'](api, { rootModuleId: 'a' }),
-      toolExecutors['delete-root-module'](api, { rootModuleId: 'b' }),
+      toolExecutors['delete-article-in-place'](api, { rootModuleId: 'a' }),
+      toolExecutors['delete-article-in-place'](api, { rootModuleId: 'b' }),
     ]);
     expect(first).toMatchObject({
       status: 'rejected',
@@ -5961,9 +6015,9 @@ describe('undo and redo', () => {
     expect(planner.api.extended.redo).not.toHaveBeenCalled();
   });
 
-  it('waits for the follow-up reload of a remove that closed the gap, and not after a deletion', async () => {
+  it('waits for the follow-up reload of a delete that closed the gap, and not after one that left it', async () => {
     const closing = historyPlanner({ followUpDelayMs: 50 });
-    await toolExecutors['remove-article-from-group'](closing.api, {
+    await toolExecutors['delete-article-and-compact'](closing.api, {
       groupId: 'g1',
       rootModuleId: 'r1',
     });
@@ -5973,7 +6027,7 @@ describe('undo and redo', () => {
     planHistory.reset();
     const deleting = historyPlanner({ gapClosed: false });
     const started = Date.now();
-    await toolExecutors['remove-article-from-group'](deleting.api, {
+    await toolExecutors['delete-article-and-compact'](deleting.api, {
       groupId: 'g1',
       rootModuleId: 'r1',
     });

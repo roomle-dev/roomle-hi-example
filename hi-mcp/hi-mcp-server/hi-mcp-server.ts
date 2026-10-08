@@ -24,7 +24,7 @@ const AUTHORING_RULES = `Authoring rules for pos groups:
 - Obstacles: the obstacles section of get-plan-context lists what stands in the room, in the coordinates of the walls - objects (doors, windows, other furniture) with kind, outline (floor points [x, 0, z]) and bottomMm to topMm, a door or a window also with roomIndex, wall (its index in the walls array) and fromEndMm, its span along that wall measured from the wall's end like d -, and per group its root modules with id, outline and bottomMm to topMm. Put a new group on a stretch of wall or a spot that obstacles leaves free, with the recipes above too; base units lower than a window's bottomMm fit below it. The result's hint names every root module that overlaps an object or another group or stands in front of a door or a window, with the free stretches of its wall.
 - Extending a group: articles next to an existing group are root modules of that group, never a new group. Dock each new article to a free docking vector of the root module it continues (freeDockingVectors per root: a free LeftBottom takes the new root's RightBottom, a free RightBottom takes LeftBottom, a free Top vector takes the new root's Bottom vector) - one article with merge-article-into-group, several at once by adding the picks, each with its relation, to the group from get-plan-context and resubmitting it with its id; an article between two root modules with insert-article-into-group. A new root module inherits the attributes the library passes on between neighbours - fronts, handles, carcase - from the root module it is docked to (insert-article-into-group: the first of between), as in the planner; its attributes override them. A new group is only for a free stretch of wall or a free spot in the room (obstacles shows what is taken) - never position a new group against an existing one.
 - To move an existing group against a wall or into a room corner, call place-group: the wall by side label or index, alignment start, center or end, or the side label of the adjoining wall to sit flush in that corner (wall right + alignment top is the back right corner), offsetMm along the wall. The group keeps its roots and docking.
-- To change an existing group, use the command tools: merge-article-into-group adds an article at a free end of a row, insert-article-into-group inserts an article between two root modules, remove-article-from-group removes a root module and closes the gap, delete-root-module deletes a root module and leaves the gap (root modules no longer docked together become separate groups where they stand), exchange-root-module replaces a root module - with attributes also by an article of another width -, swap-root-modules lets two root modules change places, delete-group deletes a group, change-module-attribute and change-group-attribute set attributes, merge-groups joins groups where they stand (nothing is moved, no docking is added). Take the user's word: to "remove" an article is remove-article-from-group, to "delete" an article is delete-root-module. In an insert, a remove, an exchange or a swap the root modules at a wall or in a corner keep their place and the others move; wall units and the range hood move with the root module they hang from. Every command returns the changed groups. To rebuild a group, take it from get-plan-context, change it, and resubmit it with its id and without placement via create-or-replace-groups - it keeps its position; keep the ids of the root modules you keep.
+- To change an existing group, use the command tools: merge-article-into-group adds an article at a free end of a row, insert-article-into-group inserts an article between two root modules, delete-article-and-compact deletes an article and closes the gap, delete-article-in-place deletes an article and leaves the gap (root modules no longer docked together become separate groups where they stand), exchange-root-module replaces a root module - with attributes also by an article of another width -, swap-root-modules lets two root modules change places, delete-group deletes a group, change-module-attribute and change-group-attribute set attributes, merge-groups joins groups where they stand (nothing is moved, no docking is added). Delete and remove mean the same: delete-article-in-place, unless the user asks to close the gap - then delete-article-and-compact. In an insert, a delete that closes the gap, an exchange or a swap the root modules at a wall or in a corner keep their place and the others move; wall units and the range hood move with the root module they hang from. Every command returns the changed groups. To rebuild a group, take it from get-plan-context, change it, and resubmit it with its id and without placement via create-or-replace-groups - it keeps its position; keep the ids of the root modules you keep.
 - Verify results numerically: the returned groups carry position (pos, rotationY, footprint) and per root the dockingVectors, the input attributes and the docking; the hint names a root module that stands on an obstacle. Do not judge a position from a rendering alone.
 - Undo a wrong result: when a result is not what was asked - the wrong wall, a root module missing or replaced by mistake, a merge or a delete that went wrong - call undo and send the corrected call, instead of correcting the wrong plan piece by piece; one undo reverts one tool call. A group that only needs a change is edited with the command tools. undo and redo also serve the user who asks for them.
 - Read corrections, notLoaded and hint in a result: corrections lists what the server changed in your input and has already applied; notLoaded lists the groups and the roots it could not build, with what to send instead; hint names something to check that stopped nothing - a root module on an obstacle, with the free stretches of its wall.
@@ -66,7 +66,7 @@ const INSTRUCTIONS = `This server orchestrates HOMAG Intelligence (HI) object gr
 Typical workflow:
 1. get-plan-context: fetch the rooms (each with a derived walls array), the article catalog (desc, category, dimensions, docking vector names, sub-modules per article), the groups currently in the plan and the obstacles (doors, windows, other furniture and the root modules of the groups, where they stand). Add masterData to include for the attribute vocabulary, or look an attribute up with find-attributes.
 2. create-or-replace-groups: author the whole piece of furniture as ONE group - article picks, each article after the first naming its neighbour with one relation (rightOf, leftOf, onTop, above or behind), a material for the whole group in the group's attributes, plus one placement for the new group ({ posGroup, posRotationY }: the room point of the group's back left corner and its rotation, taken from the walls array - a wall's end point and facingRotationY, or a room corner point with the rotation from the corner rules; a plan into a room corner starts with a corner article, cornerArticle true in the catalog). One call creates, relates and positions the group; never author root positions and never split one piece of furniture into several groups. A group whose id matches an existing group in the plan completely replaces that group and keeps its position; all other groups are created. Articles next to an existing group are added to that group, docked to a free docking vector of the root module they continue - a new group is only for a free stretch of wall. The payload format, the relations, the corner rules and complete examples are returned by get-authoring-rules.
-3. Edit an existing group with the command tools: merge-article-into-group (dock one more article at the end of a row), insert-article-into-group (an article between two root modules), remove-article-from-group (remove a root module and close the gap), delete-root-module (delete a root module, the gap stays) and delete-group, exchange-root-module (replace a root module), swap-root-modules (two root modules change places), change-module-attribute and change-group-attribute (attributes, e.g. the front colour of the whole group), merge-groups (join groups that stand next to each other); place-group moves a group to another wall or into a room corner. Resubmit a whole group with create-or-replace-groups only to rebuild it. undo reverts the last tool call that changed the plan, redo brings it back.
+3. Edit an existing group with the command tools: merge-article-into-group (dock one more article at the end of a row), insert-article-into-group (an article between two root modules), delete-article-and-compact (delete an article and close the gap), delete-article-in-place (delete an article, the gap stays) and delete-group, exchange-root-module (replace a root module), swap-root-modules (two root modules change places), change-module-attribute and change-group-attribute (attributes, e.g. the front colour of the whole group), merge-groups (join groups that stand next to each other); place-group moves a group to another wall or into a room corner. Resubmit a whole group with create-or-replace-groups only to rebuild it. undo reverts the last tool call that changed the plan, redo brings it back.
 4. Check the result with get-price or get-order-data, and inspect it with get-plan-images.
 
 ${AUTHORING_RULES}`;
@@ -91,8 +91,8 @@ const PLAN_CHANGING_TOOLS = [
   'change-module-attribute',
   'change-group-attribute',
   'delete-group',
-  'delete-root-module',
-  'remove-article-from-group',
+  'delete-article-in-place',
+  'delete-article-and-compact',
   'merge-article-into-group',
   'insert-article-into-group',
   'exchange-root-module',
@@ -401,34 +401,34 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
   );
 
   server.registerTool(
-    'delete-root-module',
+    'delete-article-in-place',
     {
       description:
-        'The tool for "delete": when the user asks to delete a unit, a cabinet, a module or an article, it deletes ' +
-        'that root module from its group and leaves the gap - root modules that are no longer ' +
-        'docked together afterwards become separate groups where they stand; deleting the only root module deletes ' +
-        'the group. When the user says remove, use remove-article-from-group. Generated roots (worktop, toe kick) ' +
+        'Deletes an article from its group and leaves the gap - the tool for "delete" or "remove" when the user does ' +
+        'not ask to close the gap: every other root module keeps its place; root modules that are no longer ' +
+        'docked together afterwards become separate groups where they stand, and deleting the only root module deletes ' +
+        'the group. To close the gap, use delete-article-and-compact. Generated roots (worktop, toe kick) ' +
         'cannot be deleted - the library regenerates them. Returns the remaining groups.',
       inputSchema: {
         rootModuleId: z.string().describe('The id of the root module.'),
       },
     },
-    async (args) => textResult(await runTool('delete-root-module', args))
+    async (args) => textResult(await runTool('delete-article-in-place', args))
   );
 
   server.registerTool(
-    'remove-article-from-group',
+    'delete-article-and-compact',
     {
       description:
-        'The tool for "remove": when the user asks to remove a unit, a cabinet, a module or an article, it removes ' +
-        'that root module from its group and closes the gap - the root modules beside it are docked together, and the ' +
+        'Deletes an article from its group and closes the gap - the tool when the user asks to close the gap (move ' +
+        'the others up, keep the row together): the root modules beside it are docked together, and the ' +
         'root modules at a wall or in a corner keep their place. A wall unit or a range hood that hung from the ' +
-        'removed root module hangs from the one that moves into the gap. A root module with a neighbour on one side only is removed and ' +
-        'nothing else moves. Removing a corner article between two legs closes the gap as well: one leg turns by 90 ' +
+        'deleted root module hangs from the one that moves into the gap. A root module with a neighbour on one side only is deleted and ' +
+        'nothing else moves. Deleting a corner article between two legs closes the gap as well: one leg turns by 90 ' +
         'degrees, with the units above it, and is docked to the other, so the legs form one straight row - the result ' +
-        'names the leg that turned. Removing the only root module deletes the group. When the user says delete, ' +
-        'use delete-root-module. Generated roots ' +
-        '(worktop, toe kick) cannot be removed - the library regenerates them. Returns the changed group.',
+        'names the leg that turned. Deleting the only root module deletes the group. To leave the gap, ' +
+        'use delete-article-in-place. Generated roots ' +
+        '(worktop, toe kick) cannot be deleted - the library regenerates them. Returns the changed group.',
       inputSchema: {
         groupId: z
           .string()
@@ -440,7 +440,8 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         rootModuleId: z.string().describe('The id of the root module.'),
       },
     },
-    async (args) => textResult(await runTool('remove-article-from-group', args))
+    async (args) =>
+      textResult(await runTool('delete-article-and-compact', args))
   );
 
   server.registerTool(

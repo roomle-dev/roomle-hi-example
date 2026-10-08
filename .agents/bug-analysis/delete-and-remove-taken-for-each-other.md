@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18079](https://roomle.atlassian.net/browse/RML-18079); backlog [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 43; related: [RML-18045](https://roomle.atlassian.net/browse/RML-18045) (the row edit tools, D40), [RML-18065](https://roomle.atlassian.net/browse/RML-18065) (D52), [RML-18041](https://roomle.atlassian.net/browse/RML-18041) (umbrella)
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — implemented on `fix/delete-and-remove-tool-choice-RML-18079`, [verified](#implementation-and-verification) with unit tests; the chat check was stopped after 4 of 18 runs, one of them still wrong; not yet merged
+> **Status**: Open — PR #78 merged (word openings, optional `groupId`); the outcome names (D58) implemented on `fix/name-delete-tools-by-outcome-RML-18079`, verified with unit tests; the chat check waits for a go
 
 ## Affected repositories
 
@@ -341,3 +341,230 @@ gpt-5.4-mini still took `delete-root-module` for "remove the middle unit" in its
 new descriptions. The descriptions alone may not be enough for gpt-5.4-mini at its default
 effort; the full check is open.
 
+
+## Names by the outcome (ticket comment 155887)
+
+The proposal: rename the two tools by what happens to the group, not by the user's verb —
+`delete-in-place` (today `delete-root-module`: the root module goes, everything else stays, a row
+falls apart into separate groups) and `delete-and-compact` (today `remove-article-from-group`: the
+root module goes, and the group closes the gap — part of it shifts, a leg turns when a corner
+article goes).
+
+### What it changes
+
+**The choice is no longer the user's word.** Both names start with "delete"; "remove" and
+"delete" become synonyms, as they are in everyday language. The model chooses by the outcome. This
+replaces D40 ("two edits, named by the user's word"), and the "Take the user's word" sentence and
+the word openings of PR #78 go.
+
+**A request that names no outcome needs a default.** "Delete the middle unit" and "remove the
+middle unit" say nothing about the gap. With outcome names, nothing in the request decides
+anymore, so the descriptions must say which tool applies when the user does not say whether the
+gap closes. Without that sentence the model falls back on its own preference. gpt-5.4-mini's
+preference is known: it took the tool that leaves the gap in every run, for "remove" and
+"delete". The default is therefore the part of the change that decides the result for this
+ticket's prompts. It is a product decision, not a naming question.
+
+**The descriptions match the names.** Each opens with its outcome and points to the other tool by
+the outcome: "To close the gap, use delete-and-compact." / "To keep every other root module in
+place, use delete-in-place." The repository's rule is to describe how to succeed (§2.4), so
+Gemini's "Do NOT use if …" becomes that positive pointer. D51 and D52 stay: `delete-and-compact`
+still says that a leg turns when a corner article goes.
+
+### What the evidence says
+
+Untested. The one rename tried in the harness, `remove-article-from-group` → `remove-root-module`
+(names that differ only in the verb), did not help: gpt-5.4-mini still took `delete-root-module` 9
+of 10 times. That supports the proposal's premise — the verbs are near-synonyms to the model —
+but says nothing about outcome names. Whether gpt-5.4-mini then takes the default the
+descriptions name has to be checked with the chat check of the ticket.
+
+### What it touches
+
+roomle-hi-example only. The planner commands keep their names (roomle-ui `HI_GROUP_OPERATION`,
+`hi-plan-context.ts:956`, `:961`); the executors forward them as today.
+
+| Where | What changes |
+|---|---|
+| `hi-mcp-server.ts` | two tool names and descriptions, `PLAN_CHANGING_TOOLS`, the rules (`:27`: the command list, "Take the user's word" goes) and the instructions (`:69`) |
+| `tool-executors.ts` | the executor keys and the labels in corrections and errors; the `command` the planner returns (`remove-article-from-group`) is shown to the agent under the new tool name; the follow-up wait after a closed gap (`:2756`) |
+| tests | `hi-mcp-server.test.ts` (23 places), `tool-executors.test.ts` (24) |
+| `docs/test-prompts.json` | eight tests name the tools in their expectation; four of them start with "delete the middle unit" to split the row (`edit-join-groups`, `undo-last-change`, `redo-last-change`, `undo-a-wrong-command`), and `edit-delete-unit` / `edit-remove-unit` encode today's word rule — their expectations follow the default |
+| docs | D40 superseded by a new decision; §6 and §8.5 of `docs/hi-mcp-behaviour.md`; `docs/hi-mcp-server.md`, the server README, `docs/implementation/`, three skills, `AGENTS.md`, `.github/copilot-instructions.md` |
+
+The ligna-store needs no change: it gets the tool list from the server. An MCP client that cached
+the old names (a running Claude Desktop session) sees the new ones on its next connection.
+
+What PR #78 (merged) does beside the words stays: `remove-article-from-group` takes the root
+module id alone (G54), and `delete-group` deletes. Its word openings and the D40 amendment would
+be replaced, in a follow-up pull request.
+
+### Decisions
+
+Gernot, 2026-10-08:
+
+1. **The default leaves the gap.** "Delete the middle unit" and "remove the middle unit" leave the
+   gap; the gap closes only when the user asks for it.
+2. **The names speak of articles**, as the agent does: the catalog is `articles`, every root of a
+   group carries its `articleId` and `articleName`, and the edits the agent already picks by name
+   are `merge-article-into-group` and `insert-article-into-group`. The tools become
+   `delete-article-in-place` and `delete-article-and-compact`, beside `delete-group`.
+
+## Implementation plan: the delete edits named by their outcome
+
+Only roomle-hi-example changes; the planner commands of roomle-ui keep their names
+(`delete-root-module`, `remove-article-from-group`), and the executors forward them as today. The
+old tool names go without an alias: an MCP client reads the tool list on every connection.
+
+1. The served text (`hi-mcp-server.ts`) → verify: the new and changed tests of
+   `hi-mcp-server.test.ts` pass.
+2. The executors (`tool-executors.ts`) → verify: the renamed and new tests of
+   `tool-executors.test.ts` pass.
+3. `npm run typecheck`, `npm test`, `npm run lint`, `npm run format:check` → all green.
+4. The documentation and the test prompts → verify: `check-markdown-links.js` reports no bad link,
+   `docs/test-prompts.json` parses.
+5. The chat check of the ticket waits for a go (see Verification).
+
+### The served text: `hi-mcp-server.ts`
+
+**`delete-article-in-place`** (today `delete-root-module`, `:403`):
+
+> Deletes an article from its group and leaves the gap - the tool for "delete" or "remove" when
+> the user does not ask to close the gap: every other root module keeps its place; root modules
+> that are no longer docked together afterwards become separate groups where they stand, and
+> deleting the only root module deletes the group. To close the gap, use
+> delete-article-and-compact. Generated roots (worktop, toe kick) cannot be deleted - the library
+> regenerates them. Returns the remaining groups.
+
+**`delete-article-and-compact`** (today `remove-article-from-group`, `:419`):
+
+> Deletes an article from its group and closes the gap - the tool when the user asks to close the
+> gap (move the others up, keep the row together): the root modules beside it are docked
+> together, and the root modules at a wall or in a corner keep their place. A wall unit or a range
+> hood that hung from the deleted root module hangs from the one that moves into the gap. A root
+> module with a neighbour on one side only is deleted and nothing else moves. Deleting a corner
+> article between two legs closes the gap as well: one leg turns by 90 degrees, with the units
+> above it, and is docked to the other, so the legs form one straight row - the result names the
+> leg that turned. Deleting the only root module deletes the group. To leave the gap, use
+> delete-article-in-place. Generated roots (worktop, toe kick) cannot be deleted - the library
+> regenerates them. Returns the changed group.
+
+The inputs stay: `rootModuleId` for both, `groupId` optional for the compacting one (G54).
+
+**`AUTHORING_RULES`** (`:27`): "remove-article-from-group removes a root module and closes the gap,
+delete-root-module deletes a root module and leaves the gap (…)" becomes
+"delete-article-and-compact deletes an article and closes the gap, delete-article-in-place deletes
+an article and leaves the gap (…)". "Take the user's word: …" becomes "Delete and remove mean the
+same: delete-article-in-place, unless the user asks to close the gap - then
+delete-article-and-compact." "In an insert, a remove, an exchange or a swap" becomes "In an insert,
+a delete that closes the gap, an exchange or a swap".
+
+**`INSTRUCTIONS`** (`:69`): "delete-article-and-compact (delete an article and close the gap),
+delete-article-in-place (delete an article, the gap stays) and delete-group".
+
+**`PLAN_CHANGING_TOOLS`** (`:94`, `:95`) and the two registrations (`:403`, `:419`) take the new
+names.
+
+### The executors: `tool-executors.ts`
+
+- The executor keys, their `planChange` labels (which `undo` reports as the reverted tool) and the
+  labels of `resolveRootId` take the new names (`:3608`, `:3633`).
+- `externalObjectGroupOperation` keeps the planner commands `delete-root-module` and
+  `remove-article-from-group`; `hasFollowUp` (`:2756`) compares the planner command and stays.
+- The result names the tool, not the planner command: the planner returns `command:
+  'remove-article-from-group'`, and `withCorrections` prefixes the planner's corrections with it
+  (`:579`). Both executors set `command` to their tool name before `withCorrections`, so the agent
+  never reads the old names — "delete-article-and-compact: 'r3' was at the end of its row - it was
+  deleted, nothing else moved".
+
+### Unit tests
+
+`hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`:
+
+- Changed: the tool list (`:16`, `:29`), the required-argument cases (`:102`, `:108`), the logging
+  and bridge tests (`:212`–`:292`: the tool is called by its new name, the planner still gets
+  `delete-root-module`), and the rule sentences of "teaches the row edits" (`:430`–`:443`).
+- Replaced: the two tests of PR #78 (`:447`, `:479`) by **"names the delete edits by their outcome
+  and leaves the gap by default"** — `delete-article-in-place` starts with 'Deletes an article from
+  its group and leaves the gap - the tool for "delete" or "remove" when the user does not ask to
+  close the gap'; `delete-article-and-compact` starts with 'Deletes an article from its group and
+  closes the gap - the tool when the user asks to close the gap'; each points to the other by the
+  outcome ('To close the gap, use delete-article-and-compact.' / 'To leave the gap, use
+  delete-article-in-place.'); both require `rootModuleId` only — and **"no longer names a delete
+  edit by the user's word"** — no served text (instructions, rules, tool list) contains
+  `delete-root-module`, `remove-article-from-group`, "Take the user's word" or 'The tool for
+  "remove"'; the rules contain 'Delete and remove mean the same'.
+
+`hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`:
+
+- Renamed: every call of the two executors (24 places), with the planner commands unchanged in
+  the expectations; the G54 tests of PR #78 under the new name.
+- Changed: "forwards its command to the planner" (`:4334`) gets a column for the planner command,
+  so the two renamed tools forward `delete-root-module` / `remove-article-from-group`.
+- New: **"names the tool, not the planner command, in the result and its corrections"** — the
+  planner answers `command: 'remove-article-from-group'` with a correction; the result has
+  `command: 'delete-article-and-compact'` and the correction 'delete-article-and-compact: …'; the
+  same for `delete-article-in-place`.
+
+### The test prompts: `docs/test-prompts.json`
+
+| Test | Prompt | Expectation |
+|---|---|---|
+| `edit-delete-unit` | "delete the middle unit" (stays) | `delete-article-in-place`: two groups that keep their places |
+| `edit-remove-unit` | "remove the middle unit" (stays — the ticket's prompt) | `delete-article-in-place`, the default: two groups that keep their places |
+| `edit-remove-next-to-corner` | "remove the base unit next to the corner unit on the right wall and close the gap" | `delete-article-and-compact`, as today's expectation |
+| `edit-remove-corner-unit` | "remove the corner unit and close the gap" | `delete-article-and-compact`, as today's expectation |
+| `edit-join-groups`, `undo-last-change`, `redo-last-change`, `undo-a-wrong-command` | unchanged | turn 1 `delete-article-in-place` instead of `delete-root-module` |
+
+`undo-a-wrong-command` turn 2 ("remove the last unit, not the middle one") then expects
+`delete-article-in-place` of the last unit after the undo — a unit at the end of a row leaves no
+gap either way.
+
+### The documentation
+
+- `docs/hi-mcp-behaviour.md`: new decision **D58** "The delete edits are named by their outcome,
+  and the default leaves the gap" (the two decisions above, the evidence of this analysis); D40
+  "superseded in part by D58" — what each edit does stays, the selection by the word goes; D52
+  names `delete-article-and-compact`; the §6 rows (`:508`, `:509`) and §8.5 (C17, G54, C20, P4)
+  take the new names; every other mention of the two tools.
+- `docs/hi-mcp-server.md`, `hi-mcp/hi-mcp-server/README.md` (the tool tables and the example
+  prompts "Remove the middle cabinet." / "Delete the middle cabinet."), `docs/implementation/`,
+  `.agents/skills/hi-mcp-tools.md`, `hi-mcp-server.md`, `hi-authoring-rules.md`, `AGENTS.md`
+  (`:401`), `.github/copilot-instructions.md` (`:468`): the new names.
+- `docs/test-prompts.md`, if it names the expectations above.
+- `.agents/backlog/mcp-test-open-issues.md`: issue 43 describes the new state — the outcome names
+  are in place, the chat check is open — and goes when the chat check passes.
+
+### Verification
+
+- Unit tests, typecheck, lint and format as in step 3.
+- **The chat check is not part of the implementation; it waits for a go.** When given:
+  "remove the middle unit", "delete the middle unit" (both expected: in place) and "remove the base
+  unit next to the corner unit on the right wall and close the gap" (expected: compact), with
+  gpt-5-mini and gpt-5.4-mini, three runs each — 18 runs, about 18 minutes.
+
+## Implementation of the outcome names
+
+Implemented as planned, in roomle-hi-example only:
+
+- `hi-mcp-server.ts`: `delete-article-in-place` and `delete-article-and-compact` replace
+  `delete-root-module` and `remove-article-from-group`, with the planned descriptions; the rules say
+  "Delete and remove mean the same: delete-article-in-place, unless the user asks to close the gap -
+  then delete-article-and-compact"; the instructions and the list of plan-changing tools take the
+  new names.
+- `tool-executors.ts`: the executors run under the new names and forward the planner commands
+  `delete-root-module` and `remove-article-from-group` as before; `asTool` gives the result and the
+  planner's corrections the tool name.
+- Tests: in `hi-mcp-server.test.ts` the two tests of PR #78 are replaced by "names the delete edits
+  by their outcome and leaves the gap by default" and "no longer names a delete edit by the user's
+  word"; `tool-executors.test.ts` renames the two executors and adds "forwards the planner command
+  and names itself in the result" and "names itself, not the planner command, in the corrections
+  of the planner" (both for each tool). The forwarding cases moved from the shared table into that
+  new test instead of a planner-command column. Typecheck, 474 unit tests, lint and format pass.
+- `docs/test-prompts.json`: as planned — "remove" and "delete the middle unit" expect
+  `delete-article-in-place`; the two corner prompts end with "and close the gap".
+- Documentation: D58, D40 superseded in part, D39 names the roomle-ui command, the new names in
+  D52, §4, §6, §8 and every tool reference, skill, `AGENTS.md` and the Copilot instructions; the
+  backlog's issue 42 and the undo item take the new names; issue 43 describes the open chat check.
+
+Not run: the chat check. It waits for a go.

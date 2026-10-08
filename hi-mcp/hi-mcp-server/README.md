@@ -487,7 +487,7 @@ the planner's group command API (`externalObjectGroupOperation`, roomle-ui),
 which performs the edit with the planner's own group features and answers once
 the planner has loaded the result. A new command needs no page change: it is a
 payload of the one planner method on the allow-lists. The group keeps its
-position; in a row edit (insert, remove, exchange with another width, swap) the
+position; in a row edit (insert, `delete-article-and-compact`, exchange with another width, swap) the
 end of the row at a wall or in a corner keeps its place and the other end moves,
 and the wall units and the range hood move with the root module they hang from.
 Every command returns `{ command, groups, removedGroupIds, changedModuleIds?,
@@ -517,8 +517,8 @@ Group ids accept a unique prefix.
 | `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | Sets an attribute of a root module and of its sub modules that carry it, or with `moduleId` of that one sub module (the id in `subModules`); without `moduleId` the result lists the `changedModuleIds` |
 | `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it; the result lists the `changedModuleIds` |
 | `delete-group` | `groupId` | Deletes the group |
-| `delete-root-module` | `rootModuleId` | Deletes one root module and leaves the gap — the tool for "delete": root modules no longer docked together become separate groups where they stand, and deleting the only root module deletes the group. Generated roots (worktop, toe kick) cannot be deleted |
-| `remove-article-from-group` | `rootModuleId`, `groupId` (optional: the group of the root module) | Removes one root module and closes the gap — the tool for "remove": its neighbours are docked to each other, and a unit that hung on it hangs on the root module that moves into the gap. A root module at the end of a row is removed and nothing else moves; a corner article between two legs is removed and the gap closed by turning one leg by 90° with the units above it, and the result names the leg that turned; the only root module is deleted with its group (`gapClosed: false`) |
+| `delete-article-in-place` | `rootModuleId` | Deletes an article and leaves the gap — the tool for "delete" or "remove" unless the user asks to close the gap: root modules no longer docked together become separate groups where they stand, and deleting the only root module deletes the group. Generated roots (worktop, toe kick) cannot be deleted |
+| `delete-article-and-compact` | `rootModuleId`, `groupId` (optional: the group of the root module) | Deletes an article and closes the gap — when the user asks to close it: its neighbours are docked to each other, and a unit that hung on it hangs on the root module that moves into the gap. A root module at the end of a row is deleted and nothing else moves; a corner article between two legs is deleted and the gap closed by turning one leg by 90° with the units above it, and the result names the leg that turned; the only root module is deleted with its group (`gapClosed: false`) |
 | `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }` | Docks the article as a new root module to a free docking vector of a root module of the group (`mode` default `StartStart`, `offset` default `[0, 0, 0]`) |
 | `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between: [rootId, rootId]` | Inserts the article between two root modules that stand side by side, in either order, whatever the group and the article; the other root modules move by the article's width |
 | `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | Replaces a root module with an article of one root module; the new root module keeps the position and the docking. `attributes` override attributes of the new root module — `mod_Width` 900 for another width, and the rest of the row moves by the difference |
@@ -705,8 +705,8 @@ With a connected agent, this sequence exercises the whole PoC:
    `wall: "right"` with `alignment: "top"` for the back right corner)
 5. `change-module-attribute` — change a dimension; the plan updates visibly.
    `merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`,
-   `swap-root-modules`, `remove-article-from-group` and `delete-root-module` add, insert,
-   replace, swap, remove and delete a unit
+   `swap-root-modules`, `delete-article-and-compact` and `delete-article-in-place` add, insert,
+   replace, swap and delete a unit
 6. `undo` — the last change is reverted; `redo` brings it back
 7. `get-price` — returns the total
 8. `get-plan-images` — the agent sees the plan
@@ -732,8 +732,8 @@ Ready-to-use prompts for the connected agent, from read-only to write operations
 | "Replace the middle cabinet with a drawer unit." | `get-plan-context`, `exchange-root-module` |
 | "Insert a low cabinet between the high cabinets." | `get-plan-context`, `insert-article-into-group` |
 | "Swap the first and the last cabinet." | `get-plan-context`, `swap-root-modules` |
-| "Remove the middle cabinet." | `get-plan-context`, `remove-article-from-group` (the row closes the gap) |
-| "Delete the middle cabinet." | `get-plan-context`, `delete-root-module` (the gap stays, the rest splits into two groups) |
+| "Remove the middle cabinet." | `get-plan-context`, `delete-article-in-place` (the default: the gap stays, the rest splits into two groups) |
+| "Remove the middle cabinet and close the gap." | `get-plan-context`, `delete-article-and-compact` (the row closes the gap) |
 | "Undo that." | `undo` |
 | "Join the two groups standing side by side." | `get-plan-context`, `merge-groups` |
 | "Delete the island." | `get-plan-context`, `delete-group` |

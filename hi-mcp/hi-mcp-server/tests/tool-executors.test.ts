@@ -186,6 +186,59 @@ const masterDataFixture = {
   },
 };
 
+// The front attributes of Furniture_Smith: a colour the program does not offer
+// switches the program, a program resets a colour it does not offer.
+const frontAttributes = [
+  {
+    id: 'mod_FrontProgram',
+    name: 'Front program',
+    desc: 'Program of the front',
+    type: 'Text',
+    group: 'Front | Design',
+    selections: [
+      {
+        value: 'Classic',
+        desc: 'Simple fronts in plain decors',
+        name: 'Classic',
+      },
+      {
+        value: 'Modern',
+        desc: 'Mitred frame fronts with glass filling',
+        name: 'Modern',
+      },
+    ],
+  },
+  {
+    id: 'mod_FrontColor',
+    name: 'Front color',
+    desc: 'Color of the front',
+    type: 'Text',
+    group: 'Front | Design',
+    selections: [
+      { value: '324', desc: 'Dark marble (#404040)', name: 'Dark marble' },
+      { value: '152', desc: 'Cloudy blue (#506080)', name: 'Cloudy blue' },
+    ],
+  },
+];
+
+const frontMasterData = {
+  'lib-1': {
+    ...masterDataFixture['lib-1'],
+    attributes: [...masterDataFixture['lib-1'].attributes, ...frontAttributes],
+  },
+};
+
+// A wall unit with its input attributes.
+const wallUnit = (id: string, attributes: Record<string, string>) =>
+  makeShapedRoot({
+    id,
+    articleId: 'OTB60',
+    attributes: Object.entries(attributes).map(([attributeId, value]) => ({
+      id: attributeId,
+      value,
+    })),
+  });
+
 const articleFixture = {
   articleId: 'article-1',
   articleName: 'Tall unit',
@@ -3073,6 +3126,92 @@ describe('create-or-replace-groups materials', () => {
     expect(result.groups).toEqual([created]);
   });
 
+  it('names the colour the library reset with a group front program', async () => {
+    const loaded = makeShapedGroup({
+      id: 'g-new',
+      roots: [
+        wallUnit('w1', { mod_FrontColor: '324' }),
+        wallUnit('w2', { mod_FrontColor: '324' }),
+      ],
+    });
+    const changed = makeShapedGroup({
+      id: 'g-new',
+      roots: [
+        wallUnit('w1', { mod_FrontColor: '152', mod_FrontProgram: 'Classic' }),
+        wallUnit('w2', { mod_FrontColor: '152', mod_FrontProgram: 'Classic' }),
+      ],
+    });
+    const api = createMaterialsApi(
+      [],
+      [loaded],
+      {
+        externalObjectGroupOperation: vi.fn(async (command: string) => ({
+          command,
+          groups: [changed],
+          removedGroupIds: [],
+        })),
+      },
+      frontMasterData
+    );
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          attributes: [{ id: 'mod_FrontProgram', value: 'Classic' }],
+          roots: [pick()],
+        },
+      ],
+    })) as Record<string, any>;
+    expect(result.corrections).toEqual([
+      'posGroups[0]: mod_FrontProgram "Classic" was set on every unit of group \'g-new\'',
+      'posGroups[0]: with mod_FrontProgram "Classic" (Simple fronts in plain decors) the library changed ' +
+        "mod_FrontColor of root modules 'w1' (OTB60), 'w2' (OTB60) from \"324\" (Dark marble (#404040)) " +
+        'to "152" (Cloudy blue (#506080))',
+    ]);
+  });
+
+  it('does not name a colour the group sets itself after its program', async () => {
+    const loaded = makeShapedGroup({
+      id: 'g-new',
+      roots: [wallUnit('w1', { mod_FrontColor: '324' })],
+    });
+    const afterEachCommand = [
+      { mod_FrontColor: '152', mod_FrontProgram: 'Classic' },
+      { mod_FrontColor: '178', mod_FrontProgram: 'Classic' },
+    ].map((attributes) =>
+      makeShapedGroup({ id: 'g-new', roots: [wallUnit('w1', attributes)] })
+    );
+    let commands = 0;
+    const api = createMaterialsApi(
+      [],
+      [loaded],
+      {
+        externalObjectGroupOperation: vi.fn(async (command: string) => ({
+          command,
+          groups: [afterEachCommand[commands++]],
+          removedGroupIds: [],
+        })),
+      },
+      frontMasterData
+    );
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          attributes: [
+            { id: 'mod_FrontProgram', value: 'Classic' },
+            { id: 'mod_FrontColor', value: '178' },
+          ],
+          roots: [pick()],
+        },
+      ],
+    })) as Record<string, any>;
+    expect(result.corrections).toEqual([
+      'posGroups[0]: mod_FrontProgram "Classic" was set on every unit of group \'g-new\'',
+      'posGroups[0]: mod_FrontColor "178" was set on every unit of group \'g-new\'',
+    ]);
+  });
+
   it('sets the group attributes on every unit after a replace, except the group settings of the master data', async () => {
     // RML-18075: after a replace the planner lists the attributes the call sent
     const sent = [
@@ -5503,6 +5642,145 @@ describe('group command tools', () => {
     ).rejects.toThrow(
       "Root module 'r1' has no free docking vector 'RightBottom'"
     );
+  });
+
+  describe('library changes', () => {
+    const wallUnits = (attributes: Record<string, string>[]) =>
+      makeShapedGroup({
+        id: 'g1',
+        roots: attributes.map((unit, index) => wallUnit(`w${index + 1}`, unit)),
+      });
+    // the group in the plan before the command, the group the planner returns
+    const libraryApi = (
+      before: any,
+      after: any,
+      plannerCorrections?: string[]
+    ) =>
+      createApi(
+        {
+          ...planContextFixture,
+          groups: [before],
+          masterData: frontMasterData,
+        },
+        {
+          externalObjectGroupOperation: vi.fn(async (command: string) => ({
+            command,
+            groups: [after],
+            removedGroupIds: [],
+            ...(plannerCorrections && { corrections: plannerCorrections }),
+          })),
+        }
+      );
+    const classic = { mod_FrontProgram: 'Classic', mod_FrontColor: '152' };
+    const modern = { mod_FrontProgram: 'Modern', mod_FrontColor: '324' };
+    const switched =
+      'with mod_FrontColor "324" (Dark marble (#404040)) the library changed mod_FrontProgram of ' +
+      'root module \'w1\' (OTB60) from "Classic" (Simple fronts in plain decors) to "Modern" ' +
+      '(Mitred frame fronts with glass filling)';
+
+    it('names the front program the library switched with a front colour', async () => {
+      const api = libraryApi(wallUnits([classic]), wallUnits([modern]));
+      const result = (await toolExecutors['change-module-attribute'](api, {
+        rootModuleId: 'w1',
+        attributeId: 'mod_FrontColor',
+        value: '324',
+      })) as Record<string, any>;
+      expect(result.corrections).toEqual([
+        `change-module-attribute: ${switched}`,
+      ]);
+    });
+
+    it('names a value the library set on a root module without one', async () => {
+      const api = libraryApi(
+        wallUnits([{ mod_FrontColor: '152' }]),
+        wallUnits([modern])
+      );
+      const result = (await toolExecutors['change-module-attribute'](api, {
+        rootModuleId: 'w1',
+        attributeId: 'mod_FrontColor',
+        value: '324',
+      })) as Record<string, any>;
+      expect(result.corrections).toEqual([
+        'change-module-attribute: with mod_FrontColor "324" (Dark marble (#404040)) the library changed ' +
+          'mod_FrontProgram of root module \'w1\' (OTB60) to "Modern" (Mitred frame fronts with glass filling)',
+      ]);
+    });
+
+    it('names the root modules the library changed alike in one sentence', async () => {
+      const api = libraryApi(
+        wallUnits([classic, classic, classic]),
+        wallUnits([modern, modern, modern])
+      );
+      const result = (await toolExecutors['change-group-attribute'](api, {
+        groupId: 'g1',
+        attributeId: 'mod_FrontColor',
+        value: '324',
+      })) as Record<string, any>;
+      expect(result.corrections).toEqual([
+        'change-group-attribute: with mod_FrontColor "324" (Dark marble (#404040)) the library changed ' +
+          "mod_FrontProgram of root modules 'w1' (OTB60), 'w2' (OTB60), 'w3' (OTB60) from \"Classic\" " +
+          '(Simple fronts in plain decors) to "Modern" (Mitred frame fronts with glass filling)',
+      ]);
+    });
+
+    it('names the library changes after the corrections of the server and the planner', async () => {
+      const api = libraryApi(wallUnits([classic]), wallUnits([modern]), [
+        'the docking of a neighbour was dropped',
+      ]);
+      const result = (await toolExecutors['change-module-attribute'](api, {
+        rootModuleId: 'w',
+        attributeId: 'mod_FrontColor',
+        value: '324',
+      })) as Record<string, any>;
+      expect(result.corrections).toEqual([
+        "change-module-attribute: root id 'w' was read as 'w1'",
+        'change-module-attribute: the docking of a neighbour was dropped',
+        `change-module-attribute: ${switched}`,
+      ]);
+    });
+
+    it('adds nothing when the library changed only the attribute that was set', async () => {
+      const api = libraryApi(
+        wallUnits([classic, { ...classic, mod_FrontColor: '190' }]),
+        wallUnits([
+          { ...classic, mod_FrontColor: '178' },
+          { ...classic, mod_FrontColor: '190' },
+        ])
+      );
+      const result = (await toolExecutors['change-module-attribute'](api, {
+        rootModuleId: 'w1',
+        attributeId: 'mod_FrontColor',
+        value: '178',
+      })) as Record<string, any>;
+      expect(result.corrections).toBeUndefined();
+    });
+
+    it('does not take a root module for changed when the command set one of its sub modules', async () => {
+      const api = libraryApi(wallUnits([classic]), wallUnits([classic]));
+      const result = (await toolExecutors['change-module-attribute'](api, {
+        rootModuleId: 'w1',
+        moduleId: 'sub-1',
+        attributeId: 'mod_FrontColor',
+        value: '324',
+      })) as Record<string, any>;
+      expect(result.corrections).toBeUndefined();
+    });
+
+    it('names a value without a desc by the value alone', async () => {
+      const api = libraryApi(
+        wallUnits([classic]),
+        wallUnits([{ mod_FrontProgram: 'Tuscan', mod_FrontColor: '324' }])
+      );
+      const result = (await toolExecutors['change-module-attribute'](api, {
+        rootModuleId: 'w1',
+        attributeId: 'mod_FrontColor',
+        value: '324',
+      })) as Record<string, any>;
+      expect(result.corrections).toEqual([
+        'change-module-attribute: with mod_FrontColor "324" (Dark marble (#404040)) the library changed ' +
+          'mod_FrontProgram of root module \'w1\' (OTB60) from "Classic" (Simple fronts in plain decors) to "Tuscan"',
+      ]);
+    });
   });
 });
 

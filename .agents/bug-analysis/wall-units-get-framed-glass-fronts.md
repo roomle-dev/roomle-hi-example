@@ -8,8 +8,8 @@
 > **Trigger**: [RML-18094](https://roomle.atlassian.net/browse/RML-18094)
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — analysed and [planned](#plan); the plan assumes (a) of the
-> [open decision](#open-decision)
+> **Status**: Open — [implemented](#implementation) with (a) of the [open decision](#open-decision)
+> (D60) and verified with unit tests and without a model against the planner; not merged
 
 ## Affected repositories
 
@@ -287,3 +287,42 @@ command tools. It has a master data with `mod_FrontProgram` and `mod_FrontColor`
   324 → 152, the `change-module-attribute` names the switch Classic → Modern, and no other
   attribute is named (no noise from the library's write-back).
 - No chat run unless asked.
+
+## Implementation
+
+As planned, on `docs/wrong-front-design-analysis-RML-18094`
+([#84](https://github.com/roomle-dev/roomle-hi-example/pull/84)):
+
+- `hi-mcp-server.ts`: the Fronts rule, the end of the corrections rule, "values" instead of "allowed
+  values", the library sentence in the descriptions of `change-module-attribute` and
+  `change-group-attribute`.
+- `tool-executors.ts`: `findLibraryChanges` (the comparison, root modules changed alike grouped),
+  `libraryChangeSentences` (the value descs, master data read only when something changed),
+  `withLibraryChanges` (the two commands); `applyGroupWideAttributes` compares the loaded group with
+  the group the last of its commands returns. `change-module-attribute` compares the set value only
+  on the root module it set, and with `moduleId` on none.
+- `docs/hi-mcp-behaviour.md`: D59, D60, the Fronts rule (§5.2), §5.3, §6, §8.1, G46, C22;
+  `docs/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`: the attribute commands.
+
+Limit: after a create, the sentence names all group attributes the server set as the cause, also
+those that did not change the attribute ("with mod_FrontProgram "Classic" (…) and
+mod_CountertopColor "324" (…) the library changed mod_FrontColor …"): one comparison per group, so
+that a colour the group sets itself after its program is not reported as reset.
+
+### Verification
+
+- Unit tests: 502 passed — 9 new in `tool-executors.test.ts` (`describe('library changes')`, two in
+  `describe('create-or-replace-groups materials')`), 1 new and 1 extended in
+  `hi-mcp-server.test.ts`. Typecheck, lint and format check pass.
+- Without a model, against the deployed planner (`replay/replay-sequence.mjs`, result in the
+  scratchpad `verify/replay2.json`):
+  - the create with group `mod_FrontProgram` Classic and wall units on 324: "with mod_FrontProgram
+    "Classic" (Simple fronts in plain decors) and mod_CountertopColor "324" (Dark marble (#404040))
+    the library changed mod_FrontColor of root modules '…' (OTB60), '…' (OTB60) from "324" (Dark
+    marble (#404040)) to "152" (Cloudy blue (#506080))";
+  - `change-module-attribute mod_FrontColor 324`: "with mod_FrontColor "324" (Dark marble
+    (#404040)) the library changed mod_FrontProgram of root module '…' (OTB60) from "Classic"
+    (Simple fronts in plain decors) to "Modern" (Mitred frame fronts with glass filling)";
+  - no other attribute is named.
+- No chat run.
+

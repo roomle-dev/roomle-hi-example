@@ -233,7 +233,11 @@ planner has loaded the result:
   `merge-article-into-group`, two roots of `insert-article-into-group` that are no neighbours, a
   root id read as the plan's id it abbreviates or misspells — and what the planner corrected or
   could not keep, prefixed with the command: a docking the new unit of `exchange-root-module` or `swap-root-modules` cannot take,
-  a unit above that keeps its place or a deletion instead of closing the gap (`delete-article-and-compact`)
+  a unit above that keeps its place or a deletion instead of closing the gap (`delete-article-and-compact`);
+  after `change-module-attribute` and `change-group-attribute`, last, every other attribute the library
+  changed with the one set — "with mod_FrontColor "324" (Dark marble (#404040)) the library changed
+  mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (…) to "Modern" (Mitred frame fronts with
+  glass filling)" (D59)
 - `hint`: after a row edit (insert, `delete-article-and-compact`, exchange, swap) — names the units above that moved with
   the unit below them, and says when the row now reaches past a wall or into another group
 

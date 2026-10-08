@@ -218,6 +218,13 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 |---|---|---|---|
 | D58 | **The delete edits are named by their outcome, and the default leaves the gap.** `delete-article-in-place` (formerly `delete-root-module`) deletes an article and leaves the gap; `delete-article-and-compact` (formerly `remove-article-from-group`) deletes an article and closes the gap. "Delete" and "remove" mean the same: the tool is `delete-article-in-place`, unless the user asks to close the gap. The names speak of articles, as the plan context and the other edits (`merge-article-into-group`, `insert-article-into-group`) do. Each description opens with its outcome and the case it is for, and points to the other tool by the outcome; the result and the planner's corrections name the tool, not the planner command, which keeps its name. Replaces the selection by the word of D40: the two verbs are near-synonyms to the models — with descriptions that opened with the word, gpt-5.4-mini still took the tool that leaves the gap for "remove", and names that differed only in the verb did not help either | user, 2026-10-08 ([RML-18079](https://roomle.atlassian.net/browse/RML-18079)) | in effect — the descriptions, `AUTHORING_RULES`, `INSTRUCTIONS`, `hi-mcp-server.ts`; `asTool`, `tool-executors.ts` |
 
+### Library changes (2026-10-08)
+
+| # | Decision | Source | State |
+|---|---|---|---|
+| D59 | **The library's own changes are named.** After `change-module-attribute`, `change-group-attribute` and the group attributes set after a create or a replace (D36), the server compares the input attributes of the root modules before and after. Every other attribute whose value changed — a front program switched by a front colour, a front colour reset by a front program — and a set attribute that a root module the command set it on ends with another value of are named in `corrections`, with the value descs of the master data, the root modules changed alike in one sentence. The library ties attributes together only in its calculation, not in the master data (Furniture_Smith: the stone decors 316, 326, 324 and 380 come only with the front program Modern, mitred frame fronts with glass filling), so the agent learns it from the result. The rules and the descriptions of the two commands say so; the served text no longer calls the values "allowed values". After a create, the sentence names all group attributes the server set as the cause | [RML-18094](https://roomle.atlassian.net/browse/RML-18094) | in effect — `findLibraryChanges`, `libraryChangeSentences`, `withLibraryChanges`, `applyGroupWideAttributes`, `tool-executors.ts`; guarded by `describe('library changes')` and `it('names the colour the library reset with a group front program')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
+| D60 | **Keep the fronts, not the colour.** The front program says how a front is built; the agent chooses it by its desc first, then the colour. When the colour the user wants comes only with fronts built differently — dark marble only as mitred frame fronts with glass filling —, the agent keeps the fronts the user wants: it undoes a switched program, takes the closest colour their program offers and tells the user which fronts the wanted colour comes with. Rejected: loading a program and a colour together that the library's rules never produce — the planner renders it, but the next attribute change of that root module switches the program | the plan of [RML-18094](https://roomle.atlassian.net/browse/RML-18094), option (a), implemented on the user's go, 2026-10-08 | in effect — the Fronts rule of `AUTHORING_RULES`, `hi-mcp-server.ts`; guarded by `it('tells the agent that the front program says how a front is built and that a colour can switch it')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` |
+
 ## 4. How a tool call runs
 
 - **MCP endpoint**: `POST /mcp` — Streamable HTTP, JSON response mode, stateless (a new transport per
@@ -328,6 +335,11 @@ tool. It covers:
 - **Trusted descriptions** (D8, D53) — a colour code in the desc of a value is its colour; a desc
   says what an article is, not where the user may put it —,
   **one piece of furniture is one group** (D14), **never author a position** (D15).
+- **Fronts** (D59, D60): the front program says how a front is built, by its desc — chosen first,
+  then the colour; a colour the program does not offer switches the program, a program resets a
+  colour it does not offer, and `corrections` name every such change; when the wanted colour comes
+  only with fronts built differently, the agent keeps the fronts, takes the closest colour and tells
+  the user.
 - **Relations**: every root after the first names one neighbour — `rightOf`, `leftOf`, `onTop`
   (`align`, `gapMm`), `above` (`gapMm`), `behind`; wall units beside a tall unit, corner kitchens,
   and the default for a root without a relation (D34).
@@ -362,7 +374,8 @@ tool. It covers:
 - **`get-authoring-rules`** returns the rules as plain text.
 - **An error** is an error result (`isError: true`) with the message as text. A schema error reads
   "Input validation error: …".
-- Results that change the plan carry `corrections` when the server corrected the input, and
+- Results that change the plan carry `corrections` when the server corrected the input or the
+  library changed an attribute beyond the one set (D59), and
   `create-or-replace-groups` reports the groups it could not build in `notLoaded` (§2.3).
 
 ### 5.4 The plan context (`get-plan-context`)
@@ -517,8 +530,8 @@ position.
 
 | Tool | Parameters | Server before forwarding | Planner |
 |---|---|---|---|
-| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | resolves the root id (C17) | sets the attribute on the root module and on its sub modules that carry it, or with `moduleId` on that one sub module (D54, P1, P2) |
-| `change-group-attribute` | `groupId`, `attributeId`, `value` | resolves the group id (G18) | sets it on every module that has it (D20, P3) |
+| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | resolves the root id (C17) | sets the attribute on the root module and on its sub modules that carry it, or with `moduleId` on that one sub module (D54, P1, P2); the attributes the library changed with it are named in `corrections` (C22) |
+| `change-group-attribute` | `groupId`, `attributeId`, `value` | resolves the group id (G18) | sets it on every module that has it (D20, P3); the attributes the library changed with it are named in `corrections` (C22) |
 | `delete-group` | `groupId` | resolves the group id | deletes the group |
 | `delete-article-in-place` | `rootModuleId` | resolves the root id (C17) | deletes the root module and leaves the gap: root modules no longer docked together become separate groups where they stand (P4, D40) |
 | `delete-article-and-compact` | `rootModuleId`, `groupId` optional | resolves the group id and the root id (C17); without `groupId`, the group that holds the root module (G54) | deletes the root module and closes the gap; a root module with a neighbour on one side only is deleted and nothing else moves; a corner article between two legs is deleted and the gap closed by turning one leg by 90° with the units above it, the correction names the leg (D52); the only root module is deleted with its group, reported with `gapClosed: false` (D40, P4) |
@@ -530,7 +543,7 @@ position.
 
 `value` is a string, a number (passed on as its string) or a boolean. **Result**:
 `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed? }` — the affected groups in the plan-context
-shape, and for `delete-article-and-compact` whether the gap was closed — plus `corrections` when the server corrected the input before forwarding, followed by the planner's corrections, each named by its tool (C20).
+shape, and for `delete-article-and-compact` whether the gap was closed — plus `corrections` when the server corrected the input before forwarding, followed by the planner's corrections, each named by its tool (C20), and after an attribute command the attributes the library changed besides the one set (C22).
 
 ### undo, redo
 
@@ -627,7 +640,7 @@ brings the probe group back.
 
 | Channel | When | Content |
 |---|---|---|
-| `corrections` | the server changed the input | One sentence per correction: the group (input index and id) or the command, what was sent, and what the server did. In `create-or-replace-groups`, `place-group` and the command tools that take a root id or an article — `change-module-attribute`, `delete-article-in-place`, `delete-article-and-compact`, `merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`, `swap-root-modules` —, there followed by the planner's corrections (C20) |
+| `corrections` | the server changed the input, or the library changed an attribute beyond the one set (D59) | One sentence per correction: the group (input index and id) or the command, what was sent, and what the server did. In `create-or-replace-groups`, `place-group` and the command tools that take a root id or an article — `change-module-attribute`, `delete-article-in-place`, `delete-article-and-compact`, `merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`, `swap-root-modules` —, there followed by the planner's corrections (C20); after `change-module-attribute`, `change-group-attribute` and the group attributes of a create or a replace, last the attributes the library changed (C22, G46) |
 | `notLoaded` | a group of `create-or-replace-groups` cannot be built, or a group loads without some of its roots | `[{ index, id?, rootIds?, errors }]`, each error naming what to send instead; the other groups and roots load |
 | `hint` | something to check; nothing stopped | an unpositioned group (`create-or-replace-groups`), a root module on an obstacle (`create-or-replace-groups`, `place-group`, D55), what a row edit did to the row (D42, D43), more than 20 matches (`find-attributes`), why `undo` or `redo` reverted nothing, groups that differ after an `undo` or `redo` (§8.8) |
 | Error result | nothing in the call can be done | `create-or-replace-groups`: no group can be built, or the planner loaded none; the other tools: a guard of §8.4–8.6, or the planner's message |
@@ -724,7 +737,7 @@ corrections, G31–G45.
 | G45 | `above` a tall unit — nothing hangs above a tall unit | hangs it `above` the floor unit beside the tall unit when the relations name one (either side); else beside the tall unit with the tops flush (`rightOf`, Top vectors) | correction |
 | G39 | `above` a floor unit where the catalog gives no tall unit height | the wall unit stands on the floor unit | correction naming `gapMm` |
 | G30 | any other input that fails the preparation of a group | does not build that group; the other groups of the call load (D30) | `notLoaded`: "posGroups[i]: could not be read - …" |
-| G46 | a group attribute that is not one of the library's group settings (D36), on a create and on a replace | sets it on every unit and generated root of the loaded group with `change-group-attribute` | correction: "mod_FrontColor \"215\" was set on every unit of group '…'"; the planner's answer when it cannot — P3, no module has it — as the correction "… could not be set on group '…' - …" |
+| G46 | a group attribute that is not one of the library's group settings (D36), on a create and on a replace | sets it on every unit and generated root of the loaded group with `change-group-attribute` | correction: "mod_FrontColor \"215\" was set on every unit of group '…'"; the planner's answer when it cannot — P3, no module has it — as the correction "… could not be set on group '…' - …"; an attribute the library changed with them, as the correction "with mod_FrontProgram \"Classic\" (Simple fronts in plain decors) the library changed mod_FrontColor of root modules '…' (OTB60), '…' (OTB60) from \"324\" (Dark marble (#404040)) to \"152\" (Cloudy blue (#506080))" (D59) |
 | G47 | a root override of an attribute the unit's own module does not carry but a generated root module does — the master data's root modules no catalog article has (`mod_CountertopColor` on a base unit) | moves it off the root and sets it on the whole group (G46) | correction |
 | G48 | the input attributes of the generated roots C1 drops from a resubmitted group (the worktop colour) | sets them on the group again after the load (G46) | correction |
 | G49 | `dockTo { rootId, ownDockingVector, dockingVector }` on a root — the field of `merge-article-into-group` — or `dockTo { id, relation }` | reads it as the relation it describes — the `relation` named inside, else by the vectors: `RightBottom -> LeftBottom` = `rightOf`, the mirror = `leftOf`, a Top → Bottom pair = `above`, `BackBottom -> BackBottom` = `behind`; a pair it cannot read, or a root that names a relation already, drops it | correction |
@@ -765,6 +778,7 @@ corrections, G31–G45.
 | G53 | `swap-root-modules` naming one root twice | nothing | error asking for the two units that change places |
 | G54 | `delete-article-and-compact` without `groupId`, with a root module id that matches no root of the plan, or more than one | nothing: without a group the delete cannot run | error "Root module '…' not found. Roots in the plan: …" — the answer the planner gives `delete-article-in-place` for the same id (C17, P11) |
 | C20 | a correction of the planner (a dropped docking, a hung unit moved to another carrier, a deletion instead of closing the gap) | passes it on after the server's own, named by the tool | correction |
+| C22 | `change-module-attribute` or `change-group-attribute` after which the library changed another attribute of a root module — a front program switched by a front colour —, or a root module the command set ends with another value | passes the result on; compares the input attributes of the root modules before and after (D59) | correction after the planner's: "with mod_FrontColor \"324\" (Dark marble (#404040)) the library changed mod_FrontProgram of root module 'w1' (OTB60) from \"Classic\" (Simple fronts in plain decors) to \"Modern\" (Mitred frame fronts with glass filling)" — the root modules changed alike in one sentence |
 | D43 | an insert, a `delete-article-and-compact`, an exchange or a swap that makes the row reach past a wall of the room, or overlap another group that stood beside it before (not a group the edit split off) | builds it | `hint`: "the row now reaches past a wall of the room - …" / "the row now overlaps group '…'" |
 | D42 | a row edit that moved wall units or the range hood of the group (by the catalog and the positions before and after) | — | `hint`: "the wall units and the range hood above the moved units moved with them ('w1', 'h1') - edit the wall row the same way if it should line up with the floor units" |
 | G15 | an article id the catalog does not have | nothing | error with the valid article ids |

@@ -64,14 +64,14 @@
       "title": "Remove a unit",
       "plan": "three-tall-units",
       "prompt": "remove the middle unit",
-      "expect": "remove-article-from-group: one group of two units without a gap, the back end stays at z -3765"
+      "expect": "delete-article-in-place, the default: the kitchen splits into two groups that keep their places"
     },
     {
       "id": "edit-delete-unit",
       "title": "Delete a unit",
       "plan": "three-tall-units",
       "prompt": "delete the middle unit",
-      "expect": "delete-root-module: the kitchen splits into two groups that keep their places"
+      "expect": "delete-article-in-place: the kitchen splits into two groups that keep their places"
     },
     {
       "id": "edit-delete-group",
@@ -119,15 +119,15 @@
       "id": "edit-remove-next-to-corner",
       "title": "Remove the unit next to the corner",
       "plan": "corner-kitchen-wall-units",
-      "prompt": "remove the base unit next to the corner unit on the right wall",
-      "expect": "remove-article-from-group of the drawer unit next to the corner: the gap closes towards the corner, the corner unit stays, the hob unit moves into the gap with the range hood; the wall unit above the removed unit keeps its place and the answer says so"
+      "prompt": "remove the base unit next to the corner unit on the right wall and close the gap",
+      "expect": "delete-article-and-compact of the drawer unit next to the corner: the gap closes towards the corner, the corner unit stays, the hob unit moves into the gap with the range hood; the wall unit above the removed unit keeps its place and the answer says so"
     },
     {
       "id": "edit-remove-corner-unit",
       "title": "Remove the corner unit",
       "plan": "corner-kitchen-wall-units",
-      "prompt": "remove the corner unit",
-      "expect": "remove-article-from-group of the corner unit: one group; one leg turns by 90 degrees with its wall units and is docked to the other, so the legs form one straight row; the answer says which leg turned"
+      "prompt": "remove the corner unit and close the gap",
+      "expect": "delete-article-and-compact of the corner unit: one group; one leg turns by 90 degrees with its wall units and is docked to the other, so the legs form one straight row; the answer says which leg turned"
     },
     {
       "id": "edit-swap-hob-unit",
@@ -144,7 +144,7 @@
         "delete the middle unit",
         "join the two groups on the right wall"
       ],
-      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: merge-groups: one group with both units"
+      "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: merge-groups: one group with both units"
     },
     {
       "id": "edit-swap-units",
@@ -161,14 +161,14 @@
       "title": "Undo the last change",
       "plan": "three-tall-units",
       "prompt": ["delete the middle unit", "undo the last change"],
-      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: undo: one group of three tall units again"
+      "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: undo: one group of three tall units again"
     },
     {
       "id": "redo-last-change",
       "title": "Redo the undone change",
       "plan": "three-tall-units",
       "prompt": ["delete the middle unit", "undo the last change", "redo that"],
-      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: undo: one group of three tall units again; turn 3: redo: the middle unit removed again, two groups"
+      "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: undo: one group of three tall units again; turn 3: redo: the middle unit removed again, two groups"
     },
     {
       "id": "undo-a-wrong-command",
@@ -178,7 +178,7 @@
         "delete the middle unit",
         "that was the wrong unit - remove the last unit, not the middle one"
       ],
-      "expect": "turn 1: delete-root-module, the kitchen splits into two groups; turn 2: undo, then remove-article-from-group or delete-root-module on the last unit: one group of the first two units"
+      "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: undo, then delete-article-and-compact or delete-article-in-place on the last unit: one group of the first two units"
     },
     {
       "id": "kitchen-back-right-corner",

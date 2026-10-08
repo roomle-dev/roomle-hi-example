@@ -25,11 +25,14 @@ never drop the agent's content silently.
 | 53 | [`place-group` reports an overlap with a group inside an L-shaped group](#53-place-group-reports-an-overlap-with-a-group-inside-an-l-shaped-group) | bug, MCP server | medium — a wrong note, or a group moved away |
 | 54 | [A group centred on a wall stands off the centre when the group materials are set](#54-a-group-centred-on-a-wall-stands-off-the-centre-when-the-group-materials-are-set) | bug, MCP server placement | medium — the group 100 to 200 mm off the centre |
 | 55 | [A 450 mm dishwasher takes a 600 mm slot in the row](#55-a-450-mm-dishwasher-takes-a-600-mm-slot-in-the-row) | bug, planner or library | medium — the range hood off the hob |
+| 57 | [A program sent after its colour resets the colour](#57-a-program-sent-after-its-colour-resets-the-colour) | MCP server correction | medium — a wrong material until the agent repairs it |
 | 41 | [A row edit puts a unit in front of a door without a hint](#41-a-row-edit-puts-a-unit-in-front-of-a-door-without-a-hint) | MCP server feedback | low — the unit stands inside the room |
 | 37 | [A first call with a guessed payload](#37-a-first-call-with-a-guessed-payload) | instructions | low — one lost step |
 | 47 | [A root id sent as the group id is refused](#47-a-root-id-sent-as-the-group-id-is-refused) | MCP server correction | low — one lost step |
 | 38 | [A provider answer the AI SDK cannot process ends the turn without an answer](#38-a-provider-answer-the-ai-sdk-cannot-process-ends-the-turn-without-an-answer) | chat | low — rare |
 | 56 | [A group material no module of the group carries](#56-a-group-material-no-module-of-the-group-carries) | instructions | low — a material not built, reported |
+| 58 | [Several attributes of a group take one call each](#58-several-attributes-of-a-group-take-one-call-each) | tool API, speed | low — more planner commands and undo steps |
+| 59 | [`undo` and a create answer with every group of the plan](#59-undo-and-a-create-answer-with-every-group-of-the-plan) | tool result, speed | low — context sent again in every later step |
 | 13 | [Undocked wall units reject the whole group](#13-undocked-wall-units-reject-the-whole-group) | MCP server correction | low — a group without relations only |
 | 50 | [Two units on one Top side vector take the same place](#50-two-units-on-one-top-side-vector-take-the-same-place) | MCP server correction | low — two units in one place |
 | 3 | [A docking ring anchors the wrong root](#3-a-docking-ring-anchors-the-wrong-root) | bug, MCP server | low — docking written as `contextData` only |
@@ -82,15 +85,17 @@ kitchen" with gpt-5.4-mini merges the unit into the row.
 and sets `mod_PaneltopColor` as a group-wide attribute; no module has it, the planner refuses it
 (P3, reported), and the worktop keeps its default.
 
-**Cause.** Not analysed: which match of `find-attributes` (`tool-executors.ts:3409`, matches in
-master-data order) for the model's search text leads it to
-the panel top instead of `mod_CountertopColor`.
+**Cause.** `find-attributes` reads "worktop" as "countertop" (D64), so "worktop colour" finds
+`mod_CountertopColor`. A search for a colour alone lists the matches in master-data order, and
+`mod_PaneltopColor` ("Color", group "Paneltop") comes first; nothing in the match says that the
+panel top is not the worktop.
 
-**To do.** Replay the `find-attributes` calls of the run below, and make the worktop's attribute the
-first match for "worktop" (its desc or the result order).
+**To do.** Replay the `find-attributes` calls of the run below. Then order the matches of a colour
+search so that the attributes of the kitchen articles come before the panel top, or name the
+generated root module of each attribute (worktop `mr_Countertop`, panel top) in the match.
 
-**Test.** A `find-attributes` test: "worktop" and "worktop colour" return `mod_CountertopColor`
-first.
+**Test.** A `find-attributes` test: "worktop colour" returns `mod_CountertopColor` first, and a
+colour search names the worktop's attribute as the worktop's.
 
 **Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5.4-mini 11.
 
@@ -98,19 +103,21 @@ first.
 
 **Problem.** When the agent sends a material for the group and another value of it on single roots —
 an accent: dark wall units in a light kitchen, `Modern` fronts on two wall units of a `Classic`
-kitchen — every unit ends with the group's value. The correction says only "set on every unit", and
+kitchen — every unit ends with the group's value. `groupAttributes` names the attribute as set, and
 the agent needs further calls to restore the accents.
 
-**Cause.** `applyGroupWideAttributes` (`tool-executors.ts:1972`) runs `change-group-attribute` after
-the load of a create and of a replace, which sets the attribute on every root and sub module of the group (D20) — over the roots'
-own values from the load. D36 keeps a unit attribute on some roots per unit.
+**Cause.** `applyGroupWideAttributes` (`tool-executors.ts`) sends the group attributes after the
+load of a create and of a replace as one `change-attributes` command without `rootModuleIds`, which
+sets each attribute on every root and sub module of the group that carries it — over the roots' own
+values from the load. D36 keeps a unit attribute on some roots per unit.
 
-**To do.** After a group attribute, set each root's own value of it again (with its sub modules,
-D54), and name those roots in the correction ("… set on every unit except …").
+**To do.** Append each root's own value of a group attribute to the same `change-attributes`
+command as an entry with its `rootModuleIds`, after the group's entry — the entries apply in their
+order — and name those roots in `groupAttributes`.
 
 **Test.** A tool-executors test: a group with `mod_FrontColor` 190 and two roots with
-`mod_FrontColor` 326 — after the load the two roots carry 326, the others 190, and the correction
-names the two roots.
+`mod_FrontColor` 326 — one `change-attributes` command whose last entry sets 326 on the two roots,
+and `groupAttributes` names them.
 
 **Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 29 (the niche wall units).
 ## 36. A wall-unit row runs into a unit hung above a base unit
@@ -203,7 +210,7 @@ group is centred once.
 the target uses the footprint the group has with its materials; the test `image-kitchen-left-wall`
 of `docs/test-prompts.json` stands centred within 10 mm.
 
-**Reproduce.** `mcp-test-2026-10-08_13-56-35`: gpt-6-astra 30 and 31.
+**Reproduce.** `mcp-test-2026-10-08_16-33-40`: gpt-6-astra 30 (3010 mm built, 193 mm off).
 
 ## 55. A 450 mm dishwasher takes a 600 mm slot in the row
 
@@ -222,6 +229,25 @@ planner. Either the row follows the width, or the article catalog of the plan co
 catalog's `dimensions` of `GSP` name the fixed width.
 
 **Reproduce.** `mcp-test-2026-10-08_13-56-35`: gpt-6-astra 34.
+
+## 57. A program sent after its colour resets the colour
+
+**Problem.** The agent sends the group attributes `mod_CountertopColor` 216 and then
+`mod_CountertopProgram` Cube; the library resets the worktop colour to the program's 152 (Cloudy
+blue). The correction says so (D59), and the agent spends two more steps to set the colour again.
+
+**Cause.** `change-attributes` applies its entries in the order the agent sent them, each with the
+library's conflict results, and a program resets a colour it does not offer. The rules ask for the
+program first only for the fronts ("Choose it by its desc first, then the front colour").
+
+**To do.** `applyGroupWideAttributes` sends the program attributes (`mod_*Program`) of the group
+attributes before the others, so that a colour sent with its program survives; the rules need no
+change.
+
+**Test.** A tool-executors test: group attributes `[mod_CountertopColor, mod_CountertopProgram]` —
+the `change-attributes` entries start with the program.
+
+**Reproduce.** `mcp-test-2026-10-08_16-33-40`: gpt-6-astra 34.
 
 ## 41. A row edit puts a unit in front of a door without a hint
 
@@ -303,7 +329,7 @@ module (e.g. `chat-steps.ts`), whose test feeds an `error` part and asserts the 
 
 **Problem.** The agent sends `mod_BacksplashColor` and `mod_BacksplashHeight` as group materials for
 groups the library builds without a backsplash, and `mod_UprightColor` for a group without an end
-panel. The corrections say that the material could not be set, and the material the user asked
+panel. `groupAttributes` names them in `notCarried`, and the material the user asked
 for — the dark backsplash of an image — is not built.
 
 **Cause.** The `masterData` section lists the attributes of every generated root module (D48), the
@@ -318,7 +344,44 @@ the agent sends a backsplash material.
 `image-kitchen-left-wall` of `docs/test-prompts.json`: the backsplash of the image is built, or the
 answer says why not.
 
-**Reproduce.** `mcp-test-2026-10-08_13-56-35`: gpt-6-astra 30 and 34.
+**Reproduce.** `mcp-test-2026-10-08_16-33-40`: gpt-6-astra 30 and 31.
+
+## 58. Several attributes of a group take one call each
+
+**Problem.** "Only handleless fronts and dark colours" on a kitchen and its island became ten
+`change-group-attribute` calls in one step — five attributes on two groups. Each call is a planner
+command with its own calculation, load and undo step, and its own result in the agent's context.
+
+**Cause.** The tool API: `change-group-attribute` takes one `attributeId` and one `value`. The
+planner's `change-attributes` sets a list in one calculation (D36, D62), but no tool offers the list
+for an existing group.
+
+**To do.** `change-group-attribute` takes `attributes: [{ attributeId, value }]` beside the single
+attribute and sends them as one `change-attributes`; its description says so.
+
+**Test.** A tool-executors test: three attributes on one group — one `change-attributes` command
+with three entries; a served-text test for the description.
+
+**Reproduce.** `mcp-test-2026-10-08_16-33-40`: gpt-6-astra 35 (turn 5).
+
+## 59. `undo` and a create answer with every group of the plan
+
+**Problem.** The result of `undo` and `redo`, and of `create-or-replace-groups`, carries every group
+of the plan in the plan-context shape: one `undo` of an attribute change added 14.9k tokens to the
+agent's context, a create of two groups 16.9k, and every later step of the turn sends them again.
+
+**Cause.** The tool results: `undo` and `redo` return every group of the plan now, a create every
+group in the plan (§6 of `docs/hi-mcp-behaviour.md`), whatever the call changed.
+
+**To do.** Measure first whether the agent reads the plan context after these calls when they
+return less. Then return the groups the call changed — a create the groups of the call, `undo` the
+groups the reverted call changed — and the ids of the others.
+
+**Test.** Tool-executors tests of the two results; the benchmark of the kitchen-from-image tests
+(`.agents/benchmarks/`) for the steps and tokens.
+
+**Reproduce.** `mcp-test-2026-10-08_16-33-40`: gpt-6-astra 31 (the create of step 4, the `undo` of
+step 6).
 
 ## 13. Undocked wall units reject the whole group
 

@@ -10,8 +10,9 @@
 > [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 23
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — [planned](#implementation-plan); roomle-ui branch
-> `fix/lone-wall-unit-drops-RML-18081`
+> **Status**: Open — [implemented](#implementation) on roomle-ui
+> `fix/lone-wall-unit-drops-RML-18081` ([roomle-ui#3105](https://github.com/roomle-dev/roomle-ui/pull/3105))
+> and [verified](#verification-1) with unit tests and live without a model; not merged
 
 ## Affected repositories
 
@@ -243,6 +244,41 @@ No server code and no served text change. With the roomle-ui fix:
   three tests, the fixture and `.agents/homag-intelligence.md`.
 - roomle-hi-example: this plan; after the fix, one commit with the backlog and the close-out of
   this document.
+
+## Implementation
+
+roomle-ui `fix/lone-wall-unit-drops-RML-18081`, commit `389ba5e1c`, pull request
+[roomle-ui#3105](https://github.com/roomle-dev/roomle-ui/pull/3105) into `fix/hi-mcp-api-and-tools`:
+
+- `mirrorDockOffset` sits beside `mirrorDockMode`. `_validateAndCompleteContextData` writes the
+  reverse entry with the negated offset.
+- `.agents/homag-intelligence.md` describes the reverse entry and the lone wall unit.
+- The tests and the fixture are as planned, with one deviation: the arrangement test of the hang
+  is in `describe('units above')`, not in `describe('_arrangePositions')`. It reuses that block's
+  `unit` helper. The pull request has it as a decision thread, beside the plan thread and the
+  submitter thread.
+
+roomle-hi-example: backlog issue 23 waits for the roomle-ui branch. It is renamed: the trigger is
+the first attribute change after the load, not the worktop colour.
+
+## Verification
+
+- **Unit tests** (homag-intelligence): all 536 pass. The three new tests fail without the fix: the
+  wall unit lands at y 720 instead of 1380, and the reverse entry has no offset.
+- **Checks:** `lint:types:sdk`, `lint:code:sdk` and `format:push` pass, as do the pre-commit hooks.
+  `lint:code:sdk` reports one warning that already existed, in
+  `planner-core/__tests__/plan-view-model.ts`.
+- **Live, without a model:** the replay of the reproduction against the dev server of the branch
+  (`.temp/result/issue-RML-18081/fixed/replay.json`):
+
+  | Group | After | `wall` position | `mod_HeightPosInsertion` | Docking of `wall` |
+  |---|---|---|---|---|
+  | row | the load and each of the three commands | [610, 1480, 0] | 1480 | `LeftBottom -> base2.LeftTop [0, -660, 0]` |
+  | pair | the load and each of the three commands | [10, 1480, 0] | 1480 | `LeftBottom -> base1.LeftTop [0, -660, 0]` |
+
+  Only the fixed code writes the offset on the wall unit's entry, which shows that the page ran the
+  branch.
+- No chat runs.
 
 ## Open points
 

@@ -532,7 +532,7 @@ result of the step before it.
 | 3 | Review the analysis | human | the root cause, the gap, or the scope is confirmed |
 | 4 | Plan the implementation and the unit tests | agent | the implementation plan as a ticket comment |
 | 5 | Review the plan | human | the approach is approved before any code changes |
-| 6 | Implement the plan | agent | code, tests, and documentation on a purpose branch, opened as a pull request — see [Pull Requests](#pull-requests) |
+| 6 | Implement the plan | agent | code, tests, and documentation on a purpose branch, opened as a pull request only when the human asks for it — see [Hard Rule: NO Automatic Pull Requests](#hard-rule-no-automatic-pull-requests) |
 | 7 | Review the code | human | review comments on the pull request |
 | 8 | Apply the review suggestions | agent | new commits, every review thread replied to or resolved — see [Pull Request Resolution](#pull-request-resolution) |
 | 9 | Review the code again | agent, preferably a different one than the implementer | review comments on the pull request |
@@ -554,6 +554,10 @@ step.
 ### Hard Rule: NO Force Pushes
 
 **NEVER use `git push --force` or `git push -f` on any branch, especially master.** Force pushing rewrites history and is absolutely forbidden. If you need to undo commits, create a new revert commit instead.
+
+### Hard Rule: NO Automatic Pull Requests
+
+**NEVER create a pull request on your own.** Not with `gh pr create`, not through the GitHub API or any other tool, not as the last step of a finished task. A pull request is created only when the user explicitly asks for one in the current conversation. When the work is finished, commit it on a purpose branch and say that a pull request can be opened on request.
 
 ### Commit Message Format
 

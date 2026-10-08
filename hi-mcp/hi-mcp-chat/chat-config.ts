@@ -28,14 +28,16 @@ export interface ChatModel {
 }
 
 // Deployments on the HI Azure AI Foundry resource, reached through its OpenAI
-// v1 endpoint: the CLI name is the deployment name.
+// v1 endpoint: the CLI name is the deployment name. A deployment without a
+// reasoning effort runs at its Foundry default.
 export const FOUNDRY_BASE_URL =
   'https://dfhifoundrysweden.services.ai.azure.com/openai/v1';
-export const FOUNDRY_DEPLOYMENTS = [
-  'gpt-5-mini',
-  'gpt-5.4-mini',
-  'gpt-6-astra',
-];
+export const FOUNDRY_DEPLOYMENTS: Record<string, { reasoningEffort?: string }> =
+  {
+    'gpt-5-mini': { reasoningEffort: 'high' },
+    'gpt-5.4-mini': { reasoningEffort: 'high' },
+    'gpt-6-astra': {},
+  };
 
 // CLI provider names (npm start <provider>) resolved to a provider and model.
 // Full model ids pass through: mistral-*, claude-* and gemini-* ids map to their
@@ -69,7 +71,7 @@ export const PROVIDER_MODEL_ALIASES: Record<
 
 export const resolveChatModel = (requested: string | undefined): ChatModel => {
   const name = requested ?? 'mistral';
-  if (FOUNDRY_DEPLOYMENTS.includes(name)) {
+  if (Object.hasOwn(FOUNDRY_DEPLOYMENTS, name)) {
     return { provider: 'azure', modelId: name, baseUrl: FOUNDRY_BASE_URL };
   }
   for (const provider of Object.keys(
@@ -163,7 +165,11 @@ export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
       : ['http://localhost:3000', 'http://127.0.0.1:3000'],
     turnTimeoutMs:
       Number(env.HI_CHAT_TURN_TIMEOUT_MS) || DEFAULT_TURN_TIMEOUT_MS,
-    reasoningEffort: env.HI_CHAT_REASONING_EFFORT || undefined,
+    reasoningEffort:
+      env.HI_CHAT_REASONING_EFFORT ||
+      (chatModel.baseUrl
+        ? FOUNDRY_DEPLOYMENTS[modelId].reasoningEffort
+        : undefined),
   };
 };
 

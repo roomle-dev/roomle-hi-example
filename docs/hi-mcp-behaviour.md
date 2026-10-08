@@ -302,8 +302,9 @@ costs a fixed 4–5 s, so the tools save steps and the agent's context.
   always ends with an answer (`chat-steps.ts`). A turn that has not answered after
   `HI_CHAT_TURN_TIMEOUT_MS` (5 minutes) is aborted and ends with "[error] the turn took longer than
   … minutes and was ended - the plan holds what the tools changed so far"; every step logs its
-  tokens (in, out, reasoning), its tool calls and its duration; `HI_CHAT_REASONING_EFFORT` sets the
-  reasoning effort of the GPT deployments ([RML-18041](https://roomle.atlassian.net/browse/RML-18041)). The example page sends its
+  tokens (in, out, reasoning), its tool calls and its duration; gpt-5.4-mini and gpt-5-mini plan at
+  reasoning effort `high` ([RML-18043](https://roomle.atlassian.net/browse/RML-18043)),
+  `HI_CHAT_REASONING_EFFORT` overrides it for every GPT deployment ([RML-18041](https://roomle.atlassian.net/browse/RML-18041)). The example page sends its
   bridge `clientId` with every `/chat` request; the chat backend requires it and connects to
   `/mcp?client=<clientId>` (retaining any `session` query). The example disables chat submission
   until the bridge sends `ready`, and again when it closes or refuses the page.

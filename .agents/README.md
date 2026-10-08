@@ -112,7 +112,9 @@ Performance measurements, bottleneck analyses, and optimization studies, in
 [hi-mcp-benchmarking.md](skills/hi-mcp-benchmarking.md). Each document keeps its benchmark in a
 folder of the same name.
 
-No benchmark yet.
+| Document | Status | Last touched |
+|---|---|---|
+| [Where the time goes when the HI agent plans a kitchen from an image](benchmarks/kitchen-from-image-time.md) | Open (gpt-6-astra measured; gpt-5-mini and gpt-5.4-mini not run) | 2026-10-08 |
 
 ### Backlog
 

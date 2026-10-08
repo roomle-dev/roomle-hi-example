@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18075](https://roomle.atlassian.net/browse/RML-18075) with the decisions of [comment 155885](https://roomle.atlassian.net/browse/RML-18075?focusedCommentId=155885); backlog [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issues 51 and 39; related: [RML-18041](https://roomle.atlassian.net/browse/RML-18041) (D36), [RML-18074](https://roomle.atlassian.net/browse/RML-18074) (D54), issue 52 of the same backlog
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — analysed, not implemented
+> **Status**: Open — analysed and planned, not implemented. Branch `fix/replace-keeps-group-materials-RML-18075` in both repositories; in roomle-ui it is based on `fix/unit-attribute-reaches-fronts-RML-18074`
 
 ## Affected repositories
 
@@ -273,6 +273,9 @@ materials. Alternatively, a root that already exists could keep the input values
 every attribute the call does not send. That would be new behaviour of the replace and would need
 a decision.
 
+**Decided (Gernot, 2026-10-08): kept.** A replace builds what it is sent. A root sent again without
+its attributes takes those of its article template. The amended D36 records it.
+
 ## Consequences
 
 - **A replace takes more planner steps:** one `change-group-attribute` per group material, as a
@@ -287,33 +290,155 @@ a decision.
   it stays with the group (as on a create today). Between neighbours it is passed on like the other
   `implicitRelevant` attributes.
 
-## Tests
+## Implementation plan
 
-- **roomle-hi-example, `tests/tool-executors.test.ts`**:
-  - A replace of a group with `mod_ToekickColor` in its `attributes` runs
-    `change-group-attribute mod_ToekickColor` after the load and reports it, although the loaded
-    group lists the attribute (the ticket's test).
-  - A group setting named by the master data's `groupSettings` (`mod_GroupHeight`) is not set on
-    the units, on a create and on a replace.
-  - Without `groupSettings` in the master data, the loaded group's list decides, as today.
-  - The existing test "applies the group attributes that are not group settings to every unit
-    after the load" gets `groupSettings` in its master data.
-- **roomle-hi-example, `tests/hi-mcp-server.test.ts`**: the three descriptions and the "Extending a
-  group" rule say that a new root module takes the materials of its neighbour and that its
-  `attributes` override them.
-- **roomle-ui**:
-  - `compactMasterData` names the group orchestrator's attributes as `groupSettings`, and an empty
-    list without an orchestrator.
-  - `mergeArticleIntoGroup` gives the new root module the `implicitRelevant` input values of
-    `dockTo.rootId`, and a sent attribute wins.
-  - `insertArticleIntoGroup` gives them from the first-named root.
-  - A replace gives a new root those of the root it is docked to, along a chain of new roots, and
-    leaves the roots that already exist unchanged.
+Both repositories work on `fix/replace-keeps-group-materials-RML-18075`. In roomle-ui the branch is
+based on `fix/unit-attribute-reaches-fronts-RML-18074` (D54, not merged yet). The line numbers are
+those of roomle-ui `master` and roomle-hi-example `master`.
 
-## Verification (proposed, not run)
+### roomle-ui
 
-The unit tests, typecheck, lint and format of both repositories. On request, a live check that
-calls the tools directly, without a model, with a local roomle-ui:
+1. **The group settings in the compacted master data** (`hi-plan-context.ts`):
+   - Add `isGroupOrchestratorModule` beside `isRootModule` (`:230`). It is true for
+     `isGroupOrchestrator === true` or `moduleType === 'GroupOrchestrator'`, the same test that
+     `_hasGroupOrchestrator` (`glue-logic.ts`) makes today. `_hasGroupOrchestrator` then uses it,
+     so the test lives in one place.
+   - Add `groupSettings: string[]` to `HiPlanMasterData` (`:101`).
+   - `compactMasterData` (`:257`) fills `groupSettings` with the `assignedAttributes` of the
+     orchestrator modules. A library without an orchestrator gets an empty list.
+2. **One helper for passing attributes on** (`glue-logic.ts`):
+   `_inheritNeighbourAttributes(group, neighbour, newRoots, sentAttributes)` runs
+   `_applyImplicitRelevantAttributes` (`:2238`) from the neighbour onto the new roots. Then it runs
+   `_applyRootAttributeOverrides` with the sent attributes on the first of them.
 
-- test 32's create and replace: the materials are on every unit after the replace;
-- test 12's insert: the inserted root module carries 224, 224 and 160.
+   The order matters. `_applyImplicitRelevantAttributes` overwrites an input value, and it clears
+   `isInput` when the neighbour holds no input value. So the agent's attributes go on afterwards,
+   as in `_swapRootModule` (`:3334`), which stays as it is.
+3. **The replace branch** of `_createOrReplacePosGroupsFromLayout` (`:1022`–`:1044`). Before
+   `_replaceRootModuleIdsAndRemapDockedRoots`, every new root takes the attributes of a root it is
+   linked to (`areLinked`, `:617`). A new root is one whose id is not among `existingRootIds` and
+   that is not generated.
+   - Order: first the new roots linked to a root that was already in the group, then those linked
+     to a new root that is done, until none is left.
+   - A new root linked to nothing takes none.
+   - A pick's sent attributes come from the input group's root with that id, because
+     `_prepareArticlePickRoots` has already applied them once.
+
+   This covers a replace with new roots, and `merge-article-into-group`, whose new pick is linked
+   to `dockTo.rootId`. It also holds for every other caller of `loadExternalObjectGroupLayout` with
+   `posGroups`: a root added by a replace takes its neighbour's attributes, as an add in the
+   planner does.
+4. **`insertArticleIntoGroup`** (`:1503`). Call `_expandArticlePick(articleId)` without the
+   attributes, and call `_inheritNeighbourAttributes(group, first, newRoots, attributes)` once the
+   docking entries are added.
+5. **JSDoc** (`external-object-api.ts`). These entries say that a new root module takes the
+   `implicitRelevant` input attributes of its neighbour, and that `attributes` override them:
+   - in `externalObjectGroupOperation`, the lines of `merge-article-into-group` and
+     `exchange-root-module` (`:476`, `:477`; for exchange, the neighbour is the replaced root
+     module);
+   - `loadExternalObjectGroupLayout` (`:291`).
+
+   The list does not name `insert-article-into-group` today, and it stays that way.
+
+### roomle-hi-example
+
+1. **`tool-executors.ts`**:
+   - The renames of decision A, and the two comments that name a kitchen.
+   - New `groupSettingIdsOf(roomDesignerApi, group)`. It returns the `groupSettings` that the
+     master data (`masterDataOf`) gives for the group's library. A planner without the list falls
+     back to the attribute ids the loaded group lists, as today.
+   - `applyGroupWideAttributes` takes its `settingIds` from it. It reads them only for a call group
+     with group attributes, so a call without them reads no master data.
+2. **`hi-mcp-server.ts`** (the served text, D51):
+   - The description of `merge-article-into-group`: "The new root module inherits the attributes
+     the library passes on between neighbours - fronts, handles, carcase - from dockTo.rootId;
+     attributes override them."
+   - The same sentence in `insert-article-into-group` (from the first root module of `between`) and
+     in `exchange-root-module` (from the replaced root module).
+   - `create-or-replace-groups`: the sentence on a replace says that a new root module of a
+     replaced group inherits them from the root module it is docked to.
+   - The rule "Extending a group" (`:25`) says the same for picks added by resubmitting the group.
+3. **Documents**:
+   - `docs/hi-mcp-behaviour.md`:
+     - the header's state;
+     - D36 amended: on a create and on a replace, with the group settings from the master data's
+       `groupSettings`, else from the loaded group. A replace builds what it is sent: a root sent
+       again without its attributes takes those of its template (decision of 2026-10-08);
+     - D48 amended: the master data names the group settings;
+     - new D56 (decision B, with the two defaults) and D57 (decision A);
+     - "kitchen-wide" in §4, "the whole kitchen" in §5.2, the `masterData` row of §5.4, step 7 of
+       `create-or-replace-groups` in §6, the rows of the three tools in the command table, and
+       G46.
+   - `docs/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`: the three tools and the group
+     attributes.
+   - `docs/implementation/tool-executors.md` and `docs/implementation/README.md`: the new names.
+   - The backlog:
+     - issues 51 and 39 leave `mcp-test-open-issues.md`, with their overview rows;
+     - the mentions of the old name and of "kitchen-wide" in issues 23, 48 and 52,
+       `one-undo-step-per-tool-call.md` and `planner-load-outcome-per-group.md` follow the rename.
+
+### Unit tests
+
+**roomle-ui: one new test, and one more expectation in an existing test.**
+
+- New, in `glue-logic-test.ts` under "row edits", beside "applies the attribute overrides of the
+  pick to the new root": **"gives a new root module the implicitRelevant input attributes of its
+  neighbour, and a sent attribute wins"**.
+
+  Setup: the free row gets the modules of the mock library, where `color` is `implicitRelevant`.
+  `root-1` has the input value blue, `root-2` and `root-3` have green. The article's template is
+  `module-3`.
+
+  1. `insertArticleIntoGroup` between `root-1` and `root-2`, without attributes: the new root
+     module has blue, the first-named root's value.
+  2. `mergeArticleIntoGroup` onto the free `RightBottom` of `root-3`, without attributes: the new
+     root module has green, through the replace branch.
+  3. `mergeArticleIntoGroup` onto that new root module, with `color` red: red, as input.
+
+  If the arrangement gets in the way of the merges, steps 2 and 3 mock `arrangeRootModules`, as the
+  merge test does.
+- Existing, in `hi-plan-context-test.ts`: "should keep only the modules of group roots and their
+  customer-facing attributes". Its fixture already has the orchestrator module `orchestrator-e`. It
+  gets one more expectation: `groupSettings` equals `['attr-orchestrated']`.
+
+Because of the one-test limit, no roomle-ui unit test covers two cases: a chain of new roots in one
+replace, and a library without an orchestrator.
+
+**roomle-hi-example: two new tests.**
+
+- In `tool-executors.test.ts` under "create-or-replace-groups materials": **"sets the group
+  attributes on every unit after a replace, except the group settings of the master data"**.
+
+  Setup: a replace of `g1` with `mod_ToekickColor` and `mod_GroupHeight` in its `attributes`. The
+  loaded group lists both, as the planner returns it after a replace. The master data of `lib-1`
+  names `groupSettings: ['mod_GroupHeight']`.
+
+  Expected: one `change-group-attribute mod_ToekickColor`, reported as "… was set on every unit of
+  group 'g1'". This is the ticket's test, extended by the setting.
+- In `hi-mcp-server.test.ts`: **"tells the agent that a new root module inherits the attributes of
+  its neighbour"**. The descriptions of the three tools and of `create-or-replace-groups`, and the
+  rule "Extending a group", each say it, together with "attributes override them".
+
+Not changed:
+
+- "applies the group attributes that are not group settings to every unit after the load". Its
+  master data has no `groupSettings`, so it now covers the fallback to the loaded group's list.
+- Tests that count the reads of `getExternalObjectPlanContext` in a call with group attributes are
+  checked: the master data is read once more there (once per server, then cached).
+
+### Verification
+
+1. roomle-ui: in `packages/web-sdk`, run `CI=true npm run test -- --run packages/homag-intelligence`,
+   `npm run lint:code:sdk` and `npm run lint:types`.
+2. roomle-hi-example: in `hi-mcp`, run `npm test` and `npm run typecheck`; at the top level, run
+   `npm run lint` and `npm run format:check`.
+3. No live check and no model run without a request. If wanted, a live check of about 15 minutes
+   calls the tools directly, without a model, with the local roomle-ui:
+   - test 32's create and replace: the materials are on every unit after the replace;
+   - test 12's insert: the inserted root module carries 224, 224 and 160.
+
+### Commits
+
+- roomle-hi-example: this plan, then one commit with the fix, its tests, the served text, the
+  documents and the backlog.
+- roomle-ui: one commit with the fix, its test and the JSDoc.

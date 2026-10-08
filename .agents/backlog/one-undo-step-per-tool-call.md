@@ -9,7 +9,7 @@
 One tool call puts one or several steps on the planner's undo history, and the command tools
 resolve before their last reload:
 
-- `create-or-replace-groups` makes one step for the load and one per kitchen-wide attribute (D36).
+- `create-or-replace-groups` makes one step for the load and one per group-wide attribute (D36).
   The planner's own undo button reverts such a call piecewise: a kitchen with a material takes two
   clicks, and the first leaves the kitchen without its material.
 - `change-module-attribute`, `change-group-attribute`, `exchange-root-module`,

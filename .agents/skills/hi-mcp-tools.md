@@ -28,9 +28,9 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 | `delete-group` | Delete a group |
 | `delete-root-module` | Delete one root module and leave the gap; the rest splits where it is no longer docked together |
 | `remove-article-from-group` | Remove one root module and close the gap |
-| `merge-article-into-group` | Dock one more article to a free docking vector of a root module |
-| `insert-article-into-group` | Insert an article between two root modules that stand side by side, whatever the group and the article; the root modules away from the wall move |
-| `exchange-root-module` | Replace a root module with an article, keeping its docking |
+| `merge-article-into-group` | Dock one more article to a free docking vector of a root module; it inherits the neighbour's fronts, handles and carcase |
+| `insert-article-into-group` | Insert an article between two root modules that stand side by side, whatever the group and the article; the root modules away from the wall move; it inherits the fronts, handles and carcase of the first-named root |
+| `exchange-root-module` | Replace a root module with an article, keeping its docking and the fronts, handles and carcase of the replaced one |
 | `swap-root-modules` | Let two root modules of a group change places |
 | `merge-groups` | Join groups where they stand |
 
@@ -117,9 +117,11 @@ from `get-plan-context` carries it.
 
 **Materials**: a root's `attributes` are overrides of that root module. A material for the whole group
 (fronts, worktop, carcase) goes into the group's `attributes`; the server sets every group attribute
-that is not one of the library's group settings on every unit and generated root after the load and
-reports it. An override only a generated root carries (the worktop colour on a base unit) is moved
-to the group, and the colours of the generated roots a resubmitted group carries are set again.
+that is not one of the library's group settings (`groupSettings` of the master data) on every unit and
+generated root after the load — after a create and after a replace — and reports it. An override only a generated root carries (the worktop colour on a base unit) is moved
+to the group, and the colours of the generated roots a resubmitted group carries are set again. A root
+a replace adds inherits the attributes the library passes on between neighbours (fronts, handles,
+carcase) from the root it is docked to; its own `attributes` override them (D56).
 
 **Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
 

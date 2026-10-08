@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18075](https://roomle.atlassian.net/browse/RML-18075) with the decisions of [comment 155885](https://roomle.atlassian.net/browse/RML-18075?focusedCommentId=155885); backlog [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issues 51 and 39; related: [RML-18041](https://roomle.atlassian.net/browse/RML-18041) (D36), [RML-18074](https://roomle.atlassian.net/browse/RML-18074) (D54), issue 52 of the same backlog
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — analysed and planned, not implemented. Branch `fix/replace-keeps-group-materials-RML-18075` in both repositories; in roomle-ui it is based on `fix/unit-attribute-reaches-fronts-RML-18074`
+> **Status**: Open — implemented on `fix/replace-keeps-group-materials-RML-18075` in roomle-ui (based on `fix/unit-attribute-reaches-fronts-RML-18074`) and roomle-hi-example, [verified by the unit tests](#verification), not merged
 
 ## Affected repositories
 
@@ -442,3 +442,31 @@ Not changed:
 - roomle-hi-example: this plan, then one commit with the fix, its tests, the served text, the
   documents and the backlog.
 - roomle-ui: one commit with the fix, its test and the JSDoc.
+
+## Implementation
+
+The plan was carried out as written. Where the implementation differs from it or adds to it:
+
+- **roomle-ui**:
+  - `_inheritAttributesOfAddedRoots` takes neither a generated root (worktop, toe kick) as a
+    neighbour nor one as an added root.
+  - `_expandArticlePick` lost its `attributes` parameter, because the insert was its only caller.
+  - The template of the new test carries an empty `attributes` list.
+    `_applyImplicitRelevantAttributes` adds an inherited value only to a root that has such a list,
+    and every article template of a library has one.
+- **roomle-hi-example**:
+  - The materials tests' `createMaterialsApi` takes the master data as an optional fourth
+    parameter.
+  - "kitchen-wide" also became "group-wide" in `hi-mcp/hi-mcp-server/README.md` and in the
+    implementation docs.
+  - The user guide's prompts ("the whole kitchen") are the user's words, so they stay.
+
+## Verification
+
+1. **roomle-ui, homag-intelligence:** 532 tests pass. Without the source changes, the new test
+   and the extended `compactMasterData` test fail. `tsc` (`lint:types:sdk`) is clean, and so are
+   oxlint and prettier on the changed files.
+2. **roomle-hi-example, hi-mcp:** 472 tests pass. Without the changes to `tool-executors.ts` and
+   `hi-mcp-server.ts`, both new tests fail. The typecheck, `npm run lint` and
+   `npm run format:check` are clean.
+3. **Not run:** the live check and any model run, which wait for a request (see the plan).

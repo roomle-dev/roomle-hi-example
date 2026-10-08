@@ -80,7 +80,7 @@ ligna-store chat (runs in the page) ──────── MCP ─────
    checks the allow-list, runs the method on `roomDesignerApi.extended`, and replies
    `{ kind: 'result', id, ok, result }`. The planner's `onHistoryChange` arrives as `historyChange`
    events.
-7. The executor reads the plan again, applies kitchen-wide attributes, collects corrections, hints
+7. The executor reads the plan again, applies group-wide attributes, collects corrections, hints
    and `notLoaded` groups, and returns the result. `inPlacementFrame` rewrites every group position
    into the placement frame the agent writes; `withoutImageUrls` strips signed URLs.
 8. The chat backend streams the model's answer to the page, with a `[tool] <name>` line per tool call

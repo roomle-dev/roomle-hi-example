@@ -543,6 +543,39 @@ describe('hi-mcp-server tool calls', () => {
     expect(served).not.toMatch(/the unit\b/);
   });
 
+  it('tells the agent that a new root module inherits the attributes of its neighbour', async () => {
+    // RML-18075: as an article added in the planner
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    const { tools } = await client.listTools();
+    const descriptionOf = (name: string) =>
+      tools.find((tool) => tool.name === name)?.description ?? '';
+    const inherited =
+      'the attributes the library passes on between neighbours - fronts, handles, carcase -';
+
+    for (const [text, neighbour] of [
+      [
+        descriptionOf('merge-article-into-group'),
+        'from the root module of dockTo',
+      ],
+      [
+        descriptionOf('insert-article-into-group'),
+        'from the first root module of between',
+      ],
+      [descriptionOf('exchange-root-module'), 'of the replaced one'],
+      [
+        descriptionOf('create-or-replace-groups'),
+        'from the root module it is docked to',
+      ],
+      [rules, 'from the root module it is docked to'],
+    ]) {
+      expect(text).toContain(`${inherited} ${neighbour}`);
+      expect(text).toContain('attributes override them');
+    }
+  });
+
   it('describes how to succeed instead of what is rejected, and where the corrections are', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(

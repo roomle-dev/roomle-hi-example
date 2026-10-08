@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18079](https://roomle.atlassian.net/browse/RML-18079); backlog [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 43; related: [RML-18045](https://roomle.atlassian.net/browse/RML-18045) (the row edit tools, D40), [RML-18065](https://roomle.atlassian.net/browse/RML-18065) (D52), [RML-18041](https://roomle.atlassian.net/browse/RML-18041) (umbrella)
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — analysed on `fix/delete-and-remove-tool-choice-RML-18079`
+> **Status**: Open — analysed and planned on `fix/delete-and-remove-tool-choice-RML-18079`
 
 ## Affected repositories
 
@@ -186,3 +186,126 @@ The reasoning effort is not the fix: gpt-5.4-mini takes the right tool at effort
   tool (`run-hi-mcp-prompt.js`, about 15 minutes).
 - The test prompts `edit-remove-unit`, `edit-delete-unit` and `edit-remove-next-to-corner` of
   `docs/test-prompts.json` already cover it in "test the mcp".
+
+## Implementation plan
+
+Only roomle-hi-example changes. Five steps, each verified:
+
+1. The served text (`hi-mcp-server.ts`) → verify: the new tests of `hi-mcp-server.test.ts` pass.
+2. The optional `groupId` (`hi-mcp-server.ts`, `tool-executors.ts`) → verify: the new tests of
+   `tool-executors.test.ts` pass, the existing tests of `remove-article-from-group` with a
+   `groupId` pass unchanged.
+3. `npm run typecheck`, `npm test`, `npm run lint`, `npm run format:check` → all green.
+4. The documentation → verify: `check-markdown-links.js` reports no bad link.
+5. The chat check of the ticket → verify: every run takes the matching tool.
+
+### The served text: `hi-mcp-server.ts`
+
+**`delete-root-module`** (`:405`) — the word first, the cross-reference by the word:
+
+> The tool for "delete": when the user asks to delete a unit, a cabinet, a module or an article,
+> it deletes that root module from its group and leaves the gap - root modules that are no longer
+> docked together afterwards become separate groups where they stand; deleting the only root
+> module deletes the group. When the user says remove, use remove-article-from-group. Generated
+> roots (worktop, toe kick) cannot be deleted - the library regenerates them. Returns the
+> remaining groups.
+
+**`remove-article-from-group`** (`:421`) — the same opening; the middle stays as it is (D51, D52);
+the only root module "deletes the group"; the cross-reference by the word:
+
+> The tool for "remove": when the user asks to remove a unit, a cabinet, a module or an article,
+> it removes that root module from its group and closes the gap - the root modules beside it are
+> docked together, and the root modules at a wall or in a corner keep their place. A wall unit or
+> a range hood that hung from the removed root module hangs from the one that moves into the gap.
+> A root module with a neighbour on one side only is removed and nothing else moves. Removing a
+> corner article between two legs closes the gap as well: one leg turns by 90 degrees, with the
+> units above it, and is docked to the other, so the legs form one straight row - the result
+> names the leg that turned. Removing the only root module deletes the group. When the user says
+> delete, use delete-root-module. Generated roots (worktop, toe kick) cannot be removed - the
+> library regenerates them. Returns the changed group.
+
+Its `groupId` (`:431`) becomes optional: "The id of the group, optional - left out, the server
+takes the group of the root module. A unique id prefix is accepted."
+
+**`delete-group`** (`:391`): "Deletes a group with all its root modules from the plan. Returns the
+id of the deleted group."
+
+**`AUTHORING_RULES`** (`:27`): "delete-group removes a group" → "delete-group deletes a group". The
+sentence "Take the user's word: …" stays. `INSTRUCTIONS` (`:69`) already lists the two tools with
+their own verbs and stays.
+
+### The optional `groupId`: `tool-executors.ts`
+
+`remove-article-from-group` (`:3599`) takes the group from the root module when `groupId` is left
+out:
+
+- The root id is resolved against the roots of every group (`resolveRootId` over
+  `rootsOfGroups`, C17 as for `delete-root-module`), and the group is the one whose roots hold the
+  resolved id.
+- When no group holds it — the id matches no root, or more than one —, the executor throws before
+  any planner call: "Root module '…' not found. Roots in the plan: …" — the message the planner
+  gives `delete-root-module` for the same id (P11 with the roots appended, C17). New guard **G54**.
+  Steps 1–4 of the guard rule do not apply: without a group the server cannot run the remove, and
+  an id that matches no root has no intent to read.
+- With a `groupId`, nothing changes: `findGroup` (G18) and the root within that group (C17, P5).
+
+A small helper, `groupOfRoot(groups, rootId, label, corrections)`, returns the group and the
+resolved root id; the executor calls it only without `groupId`.
+
+### Unit tests
+
+`hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`:
+
+- New: **"binds the user's word to delete-root-module and remove-article-from-group in their
+  opening sentence"** — `delete-root-module` starts with 'The tool for "delete": when the user asks
+  to delete a unit, a cabinet, a module or an article, it deletes that root module from its group
+  and leaves the gap'; `remove-article-from-group` with the same words for "remove" and "closes
+  the gap"; each contains its cross-reference 'When the user says remove, use
+  remove-article-from-group' / 'When the user says delete, use delete-root-module'; neither
+  contains 'To close the gap, use' or 'To delete an article and leave the gap'. The input schema of
+  both requires `rootModuleId` only.
+- New: **"says remove only for remove-article-from-group"** — the `delete-group` description starts
+  with 'Deletes a group' and does not match /remov/i; the `delete-root-module` description matches
+  /remov/i only in its cross-reference; the remove description says 'Removing the only root module
+  deletes the group'.
+- Changed: "teaches the row edits and which end of a row keeps its place" (`:422`) adds
+  'delete-group deletes a group' to the sentences of the rules.
+- Unchanged: "rejects remove-article-from-group without a required argument" (`:98`) — its case
+  `{ groupId: 'g1' }` lacks `rootModuleId`, which stays required.
+
+`hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`, beside the row-edit tests (`rowGroup`,
+`:4985`), with a plan of two groups:
+
+- New: **"remove-article-from-group without a group id removes the root module from the group that
+  holds it"** — the planner gets `{ groupId: <that group>, rootModuleId }`, and the row hint runs
+  for that group.
+- New: **"remove-article-from-group without a group id reads a root id prefix in every group"** —
+  the correction "remove-article-from-group: root id '…' was read as '…'" and the group of the
+  resolved root.
+- New: **"remove-article-from-group without a group id names the roots of the plan for a root id
+  that matches no root"** — the error "Root module 'x' not found. Roots in the plan: …", no planner
+  call (G54); also for an id that is a prefix of two roots.
+- Unchanged and still passing: "forwards its command to the planner" (`:4334`) and "rejects an
+  unknown or ambiguous group id" (`:4377`) — a `groupId` that is sent works as today.
+
+### The documentation
+
+- `docs/hi-mcp-behaviour.md`: D40 — the descriptions open with the user's word, because the HI
+  chat does not read the rules; "remove" is used for `remove-article-from-group` only; found with
+  gpt-5.4-mini (RML-18079). §6: the input of `remove-article-from-group` is `rootModuleId`, `groupId`
+  optional (`:497`), `delete-group` "deletes the group" (`:495`). §8.5: C17 names
+  `remove-article-from-group` without `groupId` across all groups, new row G54.
+- `docs/hi-mcp-server.md` (`:535`, `:537`), `hi-mcp/hi-mcp-server/README.md` (`:519`, `:521`),
+  `docs/implementation/mcp-server.md` (`:93`, `:95`), `docs/implementation/tool-executors.md`
+  (`:155`, `:157`), `.agents/skills/hi-mcp-tools.md` (`:28`, `:30`, `:194`),
+  `.agents/skills/hi-authoring-rules.md` (`:240`): `groupId` optional, `delete-group` deletes.
+- `.agents/backlog/mcp-test-open-issues.md`: issue 43 and its row are removed.
+
+### Verification
+
+- Unit tests, typecheck, lint and format as in step 3.
+- The chat check of the ticket, through `run-hi-mcp-prompt.js` with the deployed planner (ports
+  3001/3201): "delete the middle unit" and "remove the middle unit" on three-tall-units, "remove the
+  base unit next to the corner unit on the right wall" on corner-kitchen-wall-units, with
+  gpt-5-mini and gpt-5.4-mini, three runs each — 15 runs, about 15 minutes. Expected: every run
+  takes the tool of its word.

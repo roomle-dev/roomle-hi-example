@@ -8,6 +8,7 @@
 > **Status**: Open — baseline measured for gpt-6-astra; gpt-5-mini and gpt-5.4-mini not run yet ([6](#6-open-the-other-two-models))
 > **Data**: [kitchen-from-image-time/benchmark.md](kitchen-from-image-time/benchmark.md) (every run, step by step), `kitchen-from-image-time/benchmark.json`
 > **How to repeat**: [hi-mcp-benchmarking.md](../skills/hi-mcp-benchmarking.md)
+> **Plan**: [kitchen-from-image-time-implementation-plan.md](kitchen-from-image-time-implementation-plan.md) — the five improvements and their unit tests
 
 **Repositories**
 

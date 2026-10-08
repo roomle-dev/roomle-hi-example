@@ -343,8 +343,12 @@ describe('hi-mcp-server tool calls', () => {
     const { tools } = await client.listTools();
     const descriptionOf = (name: string) =>
       tools.find((tool) => tool.name === name)?.description ?? '';
+    // the whole wall placement, for a client that does not read the rules
     expect(descriptionOf('create-or-replace-groups')).toContain(
-      'At a wall or in a room corner: { wall, alignment?, offsetMm? }'
+      'At a wall or in a room corner: { wall, alignment?, offsetMm?, roomIndex? }'
+    );
+    expect(descriptionOf('create-or-replace-groups')).toContain(
+      "or end; offsetMm moves it along the wall away from that corner or from the wall's end - the fromEndMm of the obstacles is measured from there; roomIndex the room, 0 by default."
     );
     expect(descriptionOf('create-or-replace-groups')).toContain(
       'The server computes the point and the rotation.'

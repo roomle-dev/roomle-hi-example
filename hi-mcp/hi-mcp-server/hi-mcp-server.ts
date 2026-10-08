@@ -242,11 +242,13 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'id of the neighbour; the server builds the docking from it, and the planner arranges the root modules; never author root ' +
         'positions. Author one piece of furniture as ONE group: articles beside, above or back to back with each other are ' +
         "related root modules of the same group, never separately positioned groups; a material for the whole group goes into the group's attributes. Position a new group in the same " +
-        'call with placement. At a wall or in a room corner: { wall, alignment?, offsetMm? } - wall a side label ' +
-        '(left, right, back, front) or a wall index; alignment center (the default) or the side label of the ' +
-        'adjoining wall, which puts the group flush into that corner (wall back with alignment right: the back ' +
-        'right corner), a group that starts with a corner article into the corner; offsetMm moves it along the ' +
-        'wall away from that corner. The server computes the point and the rotation. Anywhere else, an island or ' +
+        'call with placement. At a wall or in a room corner: { wall, alignment?, offsetMm?, roomIndex? } - wall a ' +
+        'side label (left, right, back, front) or a wall index; alignment center (the default), the side label ' +
+        'of the adjoining wall, which puts the group flush into that corner (wall back with alignment right: the ' +
+        'back right corner) and a group that starts with a corner article into the corner, or end; offsetMm moves ' +
+        "it along the wall away from that corner or from the wall's end - the fromEndMm of the obstacles is " +
+        'measured from there; roomIndex the room, 0 by default. The server computes the point and the rotation. ' +
+        'Anywhere else, an island or ' +
         "a free spot: { posGroup, posRotationY }, the room point of the group's back left corner and its " +
         'rotation. A group whose id matches an existing group completely ' +
         'replaces that group and keeps its position (root modules keep their ids when they already exist in ' +

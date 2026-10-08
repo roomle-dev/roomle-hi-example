@@ -2,10 +2,10 @@
 
 > **Type**: Bug Analysis
 > **Domain**: hi-mcp — the served text of `delete-group`, `delete-root-module` and `remove-article-from-group` (`hi-mcp-server.ts`); the HI chat (`chat-config.ts`, `chat-server.ts`)
-> **Trigger**: [RML-18079](https://roomle.atlassian.net/browse/RML-18079); backlog [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 43; related: [RML-18045](https://roomle.atlassian.net/browse/RML-18045) (the row edit tools, D40), [RML-18065](https://roomle.atlassian.net/browse/RML-18065) (D52), [RML-18041](https://roomle.atlassian.net/browse/RML-18041) (umbrella)
+> **Trigger**: [RML-18079](https://roomle.atlassian.net/browse/RML-18079); backlog [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 43 (removed 2026-10-08); related: [RML-18045](https://roomle.atlassian.net/browse/RML-18045) (the row edit tools, D40), [RML-18065](https://roomle.atlassian.net/browse/RML-18065) (D52), [RML-18041](https://roomle.atlassian.net/browse/RML-18041) (umbrella)
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — PR #78 merged (word openings, optional `groupId`); the outcome names (D58) implemented on `fix/name-delete-tools-by-outcome-RML-18079`, verified with unit tests; the chat check waits for a go
+> **Status**: Open — PR #78 merged (word openings, optional `groupId`); the outcome names (D58) implemented on `fix/name-delete-tools-by-outcome-RML-18079`, verified with unit tests; the chat check was not run, and backlog issue 43 was removed without it (Gernot, 2026-10-08)
 
 ## Affected repositories
 
@@ -565,6 +565,7 @@ Implemented as planned, in roomle-hi-example only:
   `delete-article-in-place`; the two corner prompts end with "and close the gap".
 - Documentation: D58, D40 superseded in part, D39 names the roomle-ui command, the new names in
   D52, §4, §6, §8 and every tool reference, skill, `AGENTS.md` and the Copilot instructions; the
-  backlog's issue 42 and the undo item take the new names; issue 43 describes the open chat check.
+  backlog's issue 42 and the undo item take the new names; issue 43 is removed.
 
-Not run: the chat check. It waits for a go.
+Not run: the chat check. Unlike the plan, backlog issue 43 was removed without it, by Gernot's
+decision (2026-10-08): the check is not tracked in the backlog.

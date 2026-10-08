@@ -36,4 +36,4 @@ promoted into the living reference, and the document can be deleted.
 
 | Document | Status | Description |
 |---|---|---|
-| [kitchen-from-image-time.md](kitchen-from-image-time.md) | Open | RML-18064: where the time goes when the agent plans a kitchen from an image — gpt-6-astra baseline (95 s, 10.4 steps, 757k input tokens per run), five flaws and five improvements; gpt-5-mini and gpt-5.4-mini not run yet |
+| [kitchen-from-image-time.md](kitchen-from-image-time.md) | Open | RML-18064: where the time goes when the agent plans a kitchen from an image — gpt-6-astra baseline (92 s, 10.2 steps, 699k input tokens per run over the three tests with two valid runs; `image-planning-right-wall` has one), five flaws and five improvements; gpt-5-mini and gpt-5.4-mini not run yet |

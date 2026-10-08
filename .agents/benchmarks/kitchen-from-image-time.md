@@ -25,9 +25,11 @@ The ticket asks for the analysis in `.agents/feature-analysis/`; it lives in the
 
 ## Executive summary
 
-gpt-6-astra needs **95 s and 10.4 model steps** on average to plan a kitchen from an image (7 valid
-runs of the four tests, 60–140 s). The chat time is almost all model time (83 %); the tools take
-17 %.
+gpt-6-astra needs **92 s and 10.2 model steps** on average to plan a kitchen from an image — the
+baseline of the three tests with two valid runs each (6 runs, 60–140 s);
+`image-planning-right-wall` has one valid run and joins the baseline with its second
+([6](#6-open-the-other-two-models)). The step analysis below uses all 7 valid runs (95 s and 10.4
+steps on average). The chat time is almost all model time (83 %); the tools take 17 %.
 
 1. **The number of steps decides the time.** Every step costs about 4–5 s even when the model writes
    only a tool call; output adds about 11.6 s per 1,000 tokens. The input size barely counts with
@@ -41,12 +43,12 @@ runs of the four tests, 60–140 s). The chat time is almost all model time (83 
    API ([4](#4-flaws-that-cost-steps-and-time)). The tool description of `find-attributes` names "the
    front colour" as its example; the library spells it "Front color", and that search finds
    nothing.
-5. **Input tokens cost money, not time.** 757k input tokens per run, 62 % of them the first step's
-   results (article catalog and rules) sent again in every later step. The catalog's article
-   descriptions alone are 49 % of it.
+5. **Input tokens cost money, not time.** 699k input tokens per run in the baseline. 62 % of all
+   input tokens are the first step's results (article catalog and rules), sent again in every later
+   step. The catalog's article descriptions alone are 49 % of the catalog.
 
 The five improvements in [5](#5-proposed-improvements) are expected to save about 30–40 s of the
-95 s (about 4–6 steps) and a quarter to a third of the input tokens. Each one says what it changes and what it
+92 s (about 4–6 steps) and a quarter to a third of the input tokens. Each one says what it changes and what it
 saves. The other two models of `docs/test-prompts.json` need runs before their breakdown exists
 ([6](#6-open-the-other-two-models)).
 
@@ -87,7 +89,11 @@ the per-step tables of [benchmark.md](kitchen-from-image-time/benchmark.md). Der
 provider's default effort, the deployed bo-test planner): `mcp-test-2026-10-07_11-58-22` (runs 1–4
 of the benchmark) and `mcp-test-2026-10-08_13-56-35` (runs 5–8). No model was run for this analysis.
 Run 2 ended with the provider error "Failed to process successful response" 62 s into its seventh
-step; it is left out of every figure below. The snapshot save of runs 1, 3 and 4 failed with HTTP
+step; it is left out of every figure below, and the benchmark marks it and leaves it out of its
+per-test and tool tables. **The baseline** takes only the tests with at least two valid runs, as the
+[benchmarking rules](../skills/hi-mcp-benchmarking.md#rules) ask: `image-kitchen-left-wall`,
+`image-kitchen-back-right-corner` and `image-only-no-text`. The step analysis (3.2–3.5, 4) uses all 7
+valid runs: a run is evidence of what a step costs whether its test has a second run or not. The snapshot save of runs 1, 3 and 4 failed with HTTP
 400 after the chat — it does not touch the chat time.
 
 **The served sizes** were measured live without a model: the launcher on spare ports, headless
@@ -101,10 +107,11 @@ client.
 | Test | Valid runs | Chat s | Steps | Input tokens |
 |---|---|---|---|---|
 | `image-kitchen-left-wall` | 2 | 69, 71 | 9, 10 | 563k, 631k |
-| `image-planning-right-wall` | 1 | 113 | 12 | 1,102k |
 | `image-kitchen-back-right-corner` | 2 | 137, 60 | 16, 7 | 1,350k, 455k |
 | `image-only-no-text` | 2 | 140, 76 | 12, 7 | 786k, 413k |
-| **Mean** | 7 | **95** | **10.4** | **757k** |
+| **Baseline: mean of the three tests** | 6 | **92** | **10.2** | **699k** |
+| `image-planning-right-wall` — not in the baseline, one valid run | 1 | 113 | 12 | 1,102k |
+| Mean of all 7 valid runs, for the step analysis | 7 | 95 | 10.4 | 757k |
 
 The spread within a test is large — 60 s against 137 s for the same prompt and image. The long runs
 are the ones that rebuild after the first create ([4.5](#45-rebuilds-after-the-first-create)).
@@ -252,9 +259,9 @@ possibly more — to be measured ([6](#6-open-the-other-two-models)).
 
 ## 5. Proposed improvements
 
-Savings are per run, against the gpt-6-astra baseline of 95 s, 10.4 steps and 757k input tokens.
-They overlap in part and are estimates from the step cost of [3.3](#33-what-a-step-costs); the
-benchmark of [8](#8-the-benchmark-to-repeat) measures them.
+Savings are per run, against the gpt-6-astra baseline of 92 s, 10.2 steps and 699k input tokens.
+They overlap in part and are estimates from the step cost of [3.3](#33-what-a-step-costs), fitted
+over all 7 valid runs; the benchmark of [8](#8-the-benchmark-to-repeat) measures them.
 
 | # | Improvement | Changes | Expected saving |
 |---|---|---|---|
@@ -288,7 +295,7 @@ The proposed run, not started — it waits for a go:
 |---|---|---|---|
 | the four tests × gpt-5-mini and gpt-5.4-mini, once | 8 | about 15–25 min | about 4–6M |
 | the same, twice (for the spread) | 16 | about 30–50 min | about 8–12M |
-| plus gpt-6-astra once, for the planner times per call (`ms`, new) | +4 | +8 min | +3M |
+| plus gpt-6-astra once, for the planner times per call (`ms`, new) and the second valid run of `image-planning-right-wall`, which then joins the baseline | +4 | +8 min | +3M |
 
 ## 7. Measurement gaps
 

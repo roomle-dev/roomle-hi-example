@@ -19,7 +19,7 @@ Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rot
 {
   id: string,              // Unique identifier
   libraryId: string,       // Optional library identifier
-  placement: object,       // { posGroup, posRotationY, rootId? } - positions a new group
+  placement: object,       // { wall, alignment?, offsetMm?, roomIndex? } or { posGroup, posRotationY, rootId? } - positions a new group
   roots: Root[]            // Required: array of root modules
 }
 ```
@@ -159,10 +159,17 @@ Millimeters added after docking:
 
 ## Positioning a group
 
-A new group is positioned by one point and one rotation, given in the call that creates it — at a
-wall, in a corner, or anywhere in the room:
+A new group is positioned in the call that creates it, in one of two forms (D23):
 
 ```javascript
+// at a wall or in a room corner - the server computes the point
+placement: {
+  wall: 'left' | 'right' | 'back' | 'front' | number, // side label or wall index
+  alignment: string,     // optional - 'center' (default), the side label of the adjoining wall, 'end'
+  offsetMm: number,      // optional - from that corner or from the wall's end
+  roomIndex: number      // optional - 0 by default
+}
+// anywhere else, and for a group of wall units only
 placement: {
   posGroup: [x, y, z],   // the group's back left bottom corner in the room, mm (y = 0 on the floor)
   posRotationY: number,  // degrees, counter-clockwise as seen from above
@@ -170,7 +177,14 @@ placement: {
 }
 ```
 
-- **Point**: `posGroup` is the room point of the group's back left bottom corner; for a group of
+- **By wall**: the parameters and defaults of `place-group` ([Moving a group](#moving-a-group)).
+  The side label of the adjoining wall puts the group flush into the corner the two walls share
+  (`wall: 'back'`, `alignment: 'right'` is the back right corner) and a corner article into the
+  corner; `end` with `offsetMm` measures from the wall's end, as `fromEndMm` of the obstacles does.
+  The server loads the group, computes the target from the calculated group, moves a target that
+  overlaps another group along the wall, and reloads the group there.
+
+- **Point** (the second form): `posGroup` is the room point of the group's back left bottom corner; for a group of
   wall units only, its y is their mounting height. In a room corner it is the corner point. It
   holds for every article: the server places the anchor by the back left bottom corner of its
   docking vectors, also where its origin lies elsewhere (the centre of a range hood, the arm of a
@@ -180,14 +194,14 @@ placement: {
   (in the top-view image) — the `rotationY` convention of the kernel (RoomleCore) and the glue logic
   ([rotation sense](./roomle-hi-concepts.md#rotation-sense)). The right wall is **270**, the left
   wall **90**.
-- **Against a wall**: `posRotationY` = the wall's `facingRotationY`; the group's back stands against
-  the wall and the group runs from `posGroup` towards the wall's `start`. `posGroup` = `end` puts
-  it flush into the corner at the wall's end; `end + d · (start − end) / lengthMm` shifts it by d;
-  d = (lengthMm − group width) / 2 centres it; d = lengthMm − group width puts its right end into
-  the corner at the wall's `start`.
-- **Corner**: `posGroup` and `posRotationY` = the `point` and `posRotationY` of the corner in the
-  room's `corners` list of `get-plan-context` (the `facingRotationY` of the wall that ends in that
-  corner); a corner kitchen starts with a corner article. For a right-handed corner
+- **Against a wall** with a point: `posRotationY` = the wall's `facingRotationY`; the group's back
+  stands against the wall and the group runs from `posGroup` towards the wall's `start`. A group at
+  a wall takes the placement by wall, so that the server computes the point.
+- **Corner**: a corner kitchen starts with a corner article and names one wall of the corner as
+  `wall` and the other as `alignment`; looking into the corner from the room, the units `rightOf`
+  the corner article run along the wall on the right. With a point: the `point` and `posRotationY`
+  of the corner in the room's `corners` list of `get-plan-context` (the `facingRotationY` of the
+  wall that ends in that corner). For a right-handed corner
   article (`mod_CarcaseDirection` Right) the server adds 90° itself; the group is read back with
   the `posRotationY` it was placed with.
 
@@ -198,8 +212,9 @@ placement: {
 | Front wall / right front corner | 180 | front wall, to the left | right wall, to the back |
 | Right wall / right back corner | 270 | right wall, to the front | back wall, to the left |
 
-- **Two corner articles** (a U-shaped kitchen): set `rootId` to the corner article that goes into
-  the corner `posGroup` names.
+- **Two corner articles** (a U-shaped kitchen): by wall, the first corner article in `roots` goes
+  into the corner; with a point, `rootId` names the corner article that goes into the corner
+  `posGroup` names.
 - **Anywhere else** (island, middle of the room, next to a door): any floor point `obstacles` leaves
   free, any rotation.
 - **Outside the room** is allowed: the server never refuses, moves or warns about a group placed
@@ -208,7 +223,8 @@ placement: {
   windows and other objects with `kind`, `outline` and `bottomMm`/`topMm`, and per group the outlines
   of its root modules. A root module cannot stand where an object or another group's root module
   overlaps it in outline and height range. A door or a window lies in a wall (`roomIndex`, `wall`,
-  `fromEndMm` — its span from the wall's end, like d): keep that span free from the floor for a door,
+  `fromEndMm` — its span from the wall's end; a placement with that wall, alignment `end` and
+  `offsetMm` = the start of a free stretch puts a group on it): keep that span free from the floor for a door,
   from the window's `bottomMm` for a window; base units lower than that fit below a window.
 - **New groups only**: the placement is applied once, when the group is created. A placement on a
   group already in the plan is not used — the group keeps its position, and `corrections` says so;
@@ -257,7 +273,7 @@ built is an error. Every guard and correction:
 - `gapMm` beside a unit, an unknown `align`, a second relation field — ignored
 - `pos`/`rotationY` on a group, `articlePos`/`rotationY` on a root — dropped
 - `repositioningData` on a group — taken as the placement
-- `placement`: other fields dropped, `posGroup` `[x, z]` completed to `[x, 0, z]`, a `rootId` that names no root dropped; a placement the server cannot use (`posGroup` not a point, no numeric `posRotationY`) and a placement on a group that is already in the plan are not used — the planner positions the group, an existing group keeps its position
+- `placement`: fields of neither form dropped; by wall: a point beside the wall dropped, an `alignment`, `offsetMm` or `roomIndex` it cannot read taken as its default, a wall it cannot read or the room does not have not used, a target that overlaps another group moved along the wall; by point: `posGroup` `[x, z]` completed to `[x, 0, z]`, a `rootId` that names no root dropped; a placement the server cannot use (`posGroup` not a point, no numeric `posRotationY`) and a placement on a group that is already in the plan are not used — the planner positions the group, an existing group keeps its position
 - A root without `id` gets `root-1`, `root-2`, …; a duplicate root id no docking entry names is renamed (`u1` → `u1-2`)
 - Roots the docking does not connect to the first root — docked to the free end of a row of their kind (floor units or wall units), `mode` `StartStart`, `offset` `[0, 0, 0]`
 - Two roots on one side docking vector (`LeftBottom`, `RightBottom`) at the same place — the later one is docked to the free end of that row, or of its leg when the row ends at a corner article; Top vectors and `BackBottom` may carry several

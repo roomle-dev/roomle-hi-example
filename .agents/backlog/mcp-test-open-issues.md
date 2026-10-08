@@ -18,7 +18,6 @@ never drop the agent's content silently.
 |---|---|---|---|
 | 23 | [A worktop colour change drops hanging wall units onto the worktop](#23-a-worktop-colour-change-drops-hanging-wall-units-onto-the-worktop) | bug, roomle-ui, [RML-18073](https://roomle.atlassian.net/browse/RML-18073) | high — wall cabinets on the worktop |
 | 35 | [The handleless right corner unit as the first root with two legs stands 239 mm in the wall](#35-the-handleless-right-corner-unit-as-the-first-root-with-two-legs-stands-239-mm-in-the-wall) | bug, MCP server placement or planner, [RML-18076](https://roomle.atlassian.net/browse/RML-18076) | high — the kitchen stands in the wall |
-| 27 | [A new group needs a point the model computes](#27-a-new-group-needs-a-point-the-model-computes) | decision D23, instructions, [RML-18078](https://roomle.atlassian.net/browse/RML-18078) | high — groups outside the room |
 | 45 | ["The middle unit" read from the docking](#45-the-middle-unit-read-from-the-docking) | plan context | medium — the wrong unit edited |
 | 46 | [A new group beside an existing one for "add a cabinet to the right of the kitchen"](#46-a-new-group-beside-an-existing-one-for-add-a-cabinet-to-the-right-of-the-kitchen) | instructions | medium — a separate group |
 | 48 | [A worktop colour sent as `mod_PaneltopColor`](#48-a-worktop-colour-sent-as-mod_paneltopcolor) | `find-attributes` | medium — the worktop keeps its default |
@@ -69,7 +68,9 @@ height after `mod_FrontColor` and `mod_CountertopColor`.
 **Problem.** `EUERTB90` (the handleless right-handed corner unit) as the first root, with units
 `rightOf` and `leftOf` it, placed at the back right corner `[4815, 0, -3765]` / 270, can stand with
 its back 239 mm in the right wall (group pos `[5054, 0, -3765]`, footprint x 2944–5054). The same
-article with one leg or as a later root, and `UERTB90` with two legs, stand inside the room.
+article with one leg or as a later root, and `UERTB90` with two legs, stand inside the room. This is
+the placement by point; a placement by wall (D23) puts the corner by the calculated corner geometry
+(`placeCornerAtWalls`, `plan-space.ts:512`), not by the anchor frame.
 
 **Cause.** Not analysed. The server sends the corner point with the anchor frame
 `rootRelPos [261, 0, 0]`, `rootRelRotationY 0`; the planner arranges the corner unit at
@@ -78,48 +79,13 @@ Either the frame of the handleless right corner (`anchorFrameOfRoot`, `group-pla
 the article's back offset, or the planner's arrangement of the left leg does.
 
 **To do.** Reproduce with the payload below, compare the probe's `dockInfos` of `EUERTB90` with those
-of `UERTB90`, and fix the frame or report the planner defect.
+of `UERTB90`, and fix the frame or report the planner defect. Load the same group with
+`{ wall: right, alignment: back }` too: if its left leg also stands in the wall, the planner's
+arrangement is at fault.
 
 **Test.** The payload below loads with the corner unit's back edges on both walls.
 
 **Reproduce.** `mcp-test-2026-10-04_13-00-37`: gpt-5.4-mini 11.
-
-## 27. A new group needs a point the model computes
-
-**Ticket.** [RML-18078](https://roomle.atlassian.net/browse/RML-18078)
-
-**Problem.** A new group is positioned with `posGroup` and `posRotationY` the model takes from a wall:
-its `end` and its `facingRotationY`, or a point computed along it for a centred or offset row. Models
-take the wall's `start` instead of its `end` (the group runs out of the room), combine a point and a
-rotation of different walls, or send no placement and move the group with `place-group` right after
-(a second call and a reload).
-
-**Cause.** The walls array names `start` and `end` in the direction of the room contour, so the end
-of the back wall is its left corner — a model that reads "start" as the beginning of a row takes the
-wrong corner. A centred row is a computation (example 4 of the rules). `place-group` takes a wall, an
-alignment and an offset; `create-or-replace-groups` does not — `placement { wall, alignment,
-offsetMm }` is deferred (D23). A group outside the room is never refused (D22).
-
-**To do.** Decide D23: a placement by wall, alignment and offset in `create-or-replace-groups`, with
-the point computed by the server as `place-group` does. Until then, say in the
-`create-or-replace-groups` description which corner a wall's `end` is ("the corner on the left as seen
-from the room").
-
-**Constraints.** The footprint of a new group exists only once the planner has calculated it, so the
-server loads the group without `repositioningData` and then runs the `place-group` logic in the same
-call — `placeGroupAtWall` (`tool-executors.ts:2414`), the overlap check and the reload, moved out of
-the `place-group` executor so that both use it; the reload keeps the generated roots and their
-colours, as the reload of `place-group` does. `normalizePlacement` (`tool-executors.ts:946`) then
-accepts `{ wall, alignment?, offsetMm?, roomIndex? }` beside `{ posGroup, posRotationY, rootId? }`,
-and G11 no longer drops the wall fields. A width computed before the load from the catalog's
-`mod_Width` of the floor row breaks on corner articles and range hoods.
-
-**Test.** Unit: a new group placed by wall and alignment loads once without `repositioningData` and
-is reloaded once with the computed one; a corner kitchen goes into the corner the alignment names.
-"add a group of 4 cabinets to the wall in the back" and a centred row with gpt-5.4-mini: one call,
-the group inside the room at the wall.
-
-**Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5.4-mini 02 and 06 (the wall's start).
 
 ## 45. "The middle unit" read from the docking
 
@@ -163,7 +129,7 @@ kitchen" with gpt-5.4-mini merges the unit into the row.
 and sets `mod_PaneltopColor` as a group-wide attribute; no module has it, the planner refuses it
 (P3, reported), and the worktop keeps its default.
 
-**Cause.** Not analysed: which match of `find-attributes` (`tool-executors.ts:2899`, matches in
+**Cause.** Not analysed: which match of `find-attributes` (`tool-executors.ts:3409`, matches in
 master-data order) for the model's search text leads it to
 the panel top instead of `mod_CountertopColor`.
 
@@ -182,7 +148,7 @@ an accent: dark wall units in a light kitchen, `Modern` fronts on two wall units
 kitchen — every unit ends with the group's value. The correction says only "set on every unit", and
 the agent needs further calls to restore the accents.
 
-**Cause.** `applyGroupWideAttributes` (`tool-executors.ts:1867`) runs `change-group-attribute` after
+**Cause.** `applyGroupWideAttributes` (`tool-executors.ts:1972`) runs `change-group-attribute` after
 the load of a create and of a replace, which sets the attribute on every root and sub module of the group (D20) — over the roots'
 own values from the load. D36 keeps a unit attribute on some roots per unit.
 
@@ -203,7 +169,7 @@ place of another unit above the next carrier the same way. Nothing reports it.
 
 **Cause.** The compile separates two units `above` one carrier (G44, `group-layout.ts:499`), and
 `completeDocking` then separates two roots on one side vector (G8, `separateSideVectorPartners`,
-`tool-executors.ts:1296`); neither checks whether a row reaches a unit hung `above` another carrier
+`tool-executors.ts:1415`); neither checks whether a row reaches a unit hung `above` another carrier
 — the compile has the catalog, but does not use the widths.
 
 **To do.** With the unit widths of the catalog (`mod_Width`), a unit `above` a floor unit whose place
@@ -244,20 +210,23 @@ correction without it.
 `place-group` on the kitchen reports "Group … overlaps group … - there is no free position on the top
 wall for it, so it stands where it was asked to", although no root module of the kitchen overlaps
 the island. Had a free stretch existed, the server would have moved the kitchen along the wall away
-from an island it never touched.
+from an island it never touched. A new group placed by wall (D23) takes the same test: placed against
+such an L-shaped group, it is moved away from a group it does not touch.
 
 **Cause.** `placedGroupVolumes` and `overlappedGroupIds` (`tool-executors.ts`) build one volume per
 group from `groupFootprint` (`plan-space.ts`), the rectangle around all its root modules. The
-rectangle of an L-shaped group covers the floor inside the L. `freePlacementAlongWall` and the row
-edit hints of D43 (`rowReachHints`) use the same volumes.
+rectangle of an L-shaped group covers the floor inside the L. `wallTarget` and
+`freePlacementAlongWall` — for `place-group` and for a placement by wall in
+`create-or-replace-groups` (`placeAtWalls`) — and the row edit hints of D43 (`rowReachHints`) use the
+same volumes.
 
 **To do.** Test overlaps per root module: one volume per root from `rootFootprintPoints`, two groups
 overlap when a root of one overlaps a root of the other. Keep the group rectangle only as a quick
 pre-test.
 
 **Test.** A tool-executors test: an L-shaped group and a small group inside its L. `place-group` on
-the L reports no overlap and does not move it; a group that does overlap a root module still gets the
-note.
+the L reports no overlap and does not move it, nor does a new group placed by wall beside the L; a
+group that does overlap a root module still gets the note.
 
 **Reproduce.** `mcp-test-2026-10-07_11-58-22`: gpt-6-astra 33 (turn 7).
 
@@ -366,7 +335,7 @@ same mode and offset stand in the same place, and nothing is reported. Two wall 
 tall unit both get the tall unit's `RightTop`; docking written as `contextData` can do the same.
 
 **Cause.** The side correction (G8, D29) counts `LeftBottom` and `RightBottom` only (`SIDE_VECTORS`,
-`tool-executors.ts:1066`; `sidePartnersOf`, `:1096`), and the compile writes `RightTop → LeftTop` for
+`tool-executors.ts:1184`; `sidePartnersOf`, `:1214`), and the compile writes `RightTop → LeftTop` for
 every wall unit `rightOf` a tall unit (`pairOf`, `group-layout.ts:539-551`).
 
 **To do.** Count the Top side vectors in `sidePartnersOf` as sides of their own: the later of two

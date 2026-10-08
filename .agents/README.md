@@ -88,6 +88,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [A new group stands on an obstacle without a hint](bug-analysis/new-group-on-an-obstacle-without-a-hint.md) | Open (implemented, not merged) | 2026-10-07 |
 | ["Delete" and "remove" are taken for each other](bug-analysis/delete-and-remove-taken-for-each-other.md) | Open (implemented, not merged) | 2026-10-08 |
 | [A replace drops the group's materials](bug-analysis/replace-drops-the-group-materials.md) | Open (implemented, not merged) | 2026-10-08 |
+| [A new group is placed at a point the model computes](bug-analysis/new-group-placed-at-a-point-the-model-computes.md) | Open (implemented, not merged) | 2026-10-08 |
 
 ### Feature Analyses
 

@@ -1417,34 +1417,40 @@ describe('create-or-replace-groups validation', () => {
       rootId: 'u1',
     });
     expect(result.corrections).toEqual([
-      'posGroups[0]: the placement takes only posGroup, posRotationY and rootId - scale dropped',
+      'posGroups[0]: the placement takes wall, alignment, offsetMm and roomIndex, or posGroup, posRotationY and rootId - scale dropped',
     ]);
 
+    // a placement by wall: loaded without a position, placed after the load -
+    // this planner builds no new group, so none can be placed
     ({ loadedGroup, result } = await placed({
       wall: 'right',
       alignment: 'top',
     }));
     expect(loadedGroup).toEqual({ roots: [pick()] });
     expect(result.corrections).toEqual([
-      'posGroups[0]: the placement takes only posGroup, posRotationY and rootId - wall, alignment dropped; place-group stands a group against a wall or into a corner by its side label',
       expect.stringMatching(
-        /the placement needs posGroup \[x, y, z\].* - it was not used/
+        /^posGroups\[0\]: the planner built 0 new groups for the 1 of the call/
       ),
     ]);
   });
 
   it('uses no placement on a group that is already in the plan, which keeps its position', async () => {
-    const { loadedGroup, result } = await loadedWith([
-      {
-        ...makeShapedGroup(),
-        placement: { posGroup: [0, 0, 0], posRotationY: 0 },
-      },
-    ]);
-    expect(loadedGroup).not.toHaveProperty('repositioningData');
-    expect(loadedGroup.id).toBe('g1');
-    expect(result.corrections).toEqual([
-      "posGroups[0]: group 'g1' is already in the plan - its placement was not used and the group keeps its position; place-group moves it",
-    ]);
+    for (const placement of [
+      { posGroup: [0, 0, 0], posRotationY: 0 },
+      { wall: 'right', alignment: 'back' },
+    ]) {
+      const { api, loadedGroup, result } = await loadedWith([
+        { ...makeShapedGroup(), placement },
+      ]);
+      expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(
+        1
+      );
+      expect(loadedGroup).not.toHaveProperty('repositioningData');
+      expect(loadedGroup.id).toBe('g1');
+      expect(result.corrections).toEqual([
+        "posGroups[0]: group 'g1' is already in the plan - its placement was not used and the group keeps its position; place-group moves it",
+      ]);
+    }
   });
 
   it('loads a group without the root whose article the catalog does not have and names it', async () => {
@@ -3637,66 +3643,63 @@ describe('create-or-replace-groups compile corrections', () => {
   });
 });
 
-describe('place-group', () => {
-  // a calculated group as getExternalObjectGroups returns it (raw), next to
-  // the shaped groups of the plan context
-  const makeRoot = (overrides: Record<string, unknown> = {}) => ({
-    id: 'r1',
-    articleId: 'article-1',
+// a calculated group as getExternalObjectGroups returns it (raw), next to
+// the shaped groups of the plan context
+const makeRoot = (overrides: Record<string, unknown> = {}) => ({
+  id: 'r1',
+  articleId: 'article-1',
+  articlePos: [0, 0, 0],
+  rotationY: 0,
+  attributes: [
+    { id: 'b', value: 800, isInput: true },
+    { id: 't', value: 600, isInput: true },
+  ],
+  dockInfos: [{ id: 'LeftBottom' }, { id: 'RightBottom' }],
+  contextData: { dockedRoots: [] },
+  modules: [],
+  ...overrides,
+});
+
+const makeGroup = (overrides: Record<string, unknown> = {}) => ({
+  id: 'g1',
+  libraryId: 'lib-1',
+  pos: [0, 0, 0],
+  rotationY: 0,
+  roots: [makeRoot()],
+  logMessages: [],
+  ...overrides,
+});
+
+// mr_CornerunitStraight as calculated: the corner point lies 261 mm left of
+// the root origin
+const cornerDockInfos = [
+  { id: 'LeftBackBottom', start: [-261, 0, 0], end: [-261, 0, 661] },
+  { id: 'RightBackBottom', start: [-261, 0, 0], end: [900, 0, 0] },
+];
+
+// The planner moves a reloaded raw group so that its repositioning root
+// lands at posGroup (G = T(posGroup, posRotationY) · R_root⁻¹).
+const repositioned = (group: any, { posGroup, posRotationY, rootId }: any) => {
+  const anchor = group.roots.find((root: any) => root.id === rootId) ?? {
     articlePos: [0, 0, 0],
     rotationY: 0,
-    attributes: [
-      { id: 'b', value: 800, isInput: true },
-      { id: 't', value: 600, isInput: true },
-    ],
-    dockInfos: [{ id: 'LeftBottom' }, { id: 'RightBottom' }],
-    contextData: { dockedRoots: [] },
-    modules: [],
-    ...overrides,
-  });
-
-  const makeGroup = (overrides: Record<string, unknown> = {}) => ({
-    id: 'g1',
-    libraryId: 'lib-1',
-    pos: [0, 0, 0],
-    rotationY: 0,
-    roots: [makeRoot()],
-    logMessages: [],
-    ...overrides,
-  });
-
-  // mr_CornerunitStraight as calculated: the corner point lies 261 mm left of
-  // the root origin
-  const cornerDockInfos = [
-    { id: 'LeftBackBottom', start: [-261, 0, 0], end: [-261, 0, 661] },
-    { id: 'RightBackBottom', start: [-261, 0, 0], end: [900, 0, 0] },
-  ];
-
-  // The planner moves a reloaded raw group so that its repositioning root
-  // lands at posGroup (G = T(posGroup, posRotationY) · R_root⁻¹).
-  const repositioned = (
-    group: any,
-    { posGroup, posRotationY, rootId }: any
-  ) => {
-    const anchor = group.roots.find((root: any) => root.id === rootId) ?? {
-      articlePos: [0, 0, 0],
-      rotationY: 0,
-    };
-    const rotationY = posRotationY - (anchor.rotationY ?? 0);
-    const radians = (rotationY * Math.PI) / 180;
-    const [x, y, z] = anchor.articlePos ?? [0, 0, 0];
-    const offset = [
-      x * Math.cos(radians) + z * Math.sin(radians),
-      y,
-      -x * Math.sin(radians) + z * Math.cos(radians),
-    ];
-    return {
-      ...group,
-      pos: posGroup.map((value: number, axis: number) => value - offset[axis]),
-      rotationY,
-    };
   };
+  const rotationY = posRotationY - (anchor.rotationY ?? 0);
+  const radians = (rotationY * Math.PI) / 180;
+  const [x, y, z] = anchor.articlePos ?? [0, 0, 0];
+  const offset = [
+    x * Math.cos(radians) + z * Math.sin(radians),
+    y,
+    -x * Math.sin(radians) + z * Math.cos(radians),
+  ];
+  return {
+    ...group,
+    pos: posGroup.map((value: number, axis: number) => value - offset[axis]),
+    rotationY,
+  };
+};
 
+describe('place-group', () => {
   const createPlaceApi = (
     shapedGroups: any[],
     rawGroups: any[],
@@ -4055,6 +4058,19 @@ describe('place-group', () => {
     expect(reloaded.repositioningData.rootId).toBe('r1');
   });
 
+  it('reloads the group with its group attributes, which the planner keeps as sent', async () => {
+    const settings = [
+      { id: 'mod_GroupGenerationLogic', value: 'Closet' },
+      { id: 'mod_CarcaseDistanceWall', value: 0 },
+    ];
+    const api = createPlaceApi(
+      [makeShapedGroup()],
+      [makeGroup({ attributes: settings })]
+    );
+    await toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' });
+    expect(reloadedGroup(api).attributes).toEqual(settings);
+  });
+
   it('does not reload a group that already stands where asked', async () => {
     // issue 28: centred on the right wall, where the group stands already
     for (const rotationY of [270, -90]) {
@@ -4123,6 +4139,432 @@ describe('place-group', () => {
       toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' })
     ).rejects.toThrow(/Group 'g1' has no calculated geometry to place/);
     expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
+  });
+});
+
+describe('create-or-replace-groups wall placement', () => {
+  // the attributes the library sets on a new group
+  const LIBRARY_GROUP_SETTINGS = [
+    { id: 'mod_GroupGenerationLogic', value: 'Closet' },
+  ];
+  // a base unit with its height, so that the overlap test counts it
+  const BASE_UNIT_ATTRIBUTES = [
+    { id: 'b', value: 800, isInput: true },
+    { id: 't', value: 600, isInput: true },
+    { id: 'h', value: 720, isInput: true },
+  ];
+
+  // A planner that calculates a new group as a row of its picks, 800 mm each,
+  // where it puts a group without a position (arrival), and moves a reloaded
+  // group of the plan to its repositioning. With reloadedLast it lists a
+  // reloaded group after the others, as the kernel may.
+  const createWallApi = (
+    options: {
+      existing?: any[];
+      arrival?: number[];
+      cornerRootIds?: string[];
+      reloadedLast?: boolean;
+      reloadFails?: boolean;
+      reloadFailsFor?: string[];
+      omitted?: number[];
+      uncalculated?: boolean;
+    } = {}
+  ) => {
+    let raw: any[] = [...(options.existing ?? [])];
+    let created = 0;
+    const calculatedRoot = (root: any, index: number) =>
+      makeRoot({
+        id: root.id,
+        articleId: root.articleId,
+        articlePos: [800 * index, 0, 0],
+        attributes: BASE_UNIT_ATTRIBUTES,
+        ...(options.cornerRootIds?.includes(root.id) && {
+          dockInfos: cornerDockInfos,
+        }),
+        ...(options.uncalculated && { attributes: [], dockInfos: [] }),
+      });
+    const shaped = (group: any) =>
+      makeShapedGroup({
+        id: group.id,
+        position: { pos: group.pos, rotationY: group.rotationY },
+        roots: group.roots.map((root: any) => makeShapedRoot({ id: root.id })),
+      });
+    return createApi(undefined, {
+      getExternalObjectPlanContext: vi.fn(async () => ({
+        ...planContextFixture,
+        groups: raw.filter((group) => group.id !== 'probe-group').map(shaped),
+      })),
+      getExternalObjectGroups: vi.fn(async () => raw),
+      removeExternalObject: vi.fn(async (id: string) => {
+        raw = raw.filter((group) => group.id !== id);
+      }),
+      loadExternalObjectGroupLayout: vi.fn(async (layout: any) => {
+        if (isProbeLoad(layout)) {
+          raw = [
+            ...raw,
+            makeGroup({
+              id: 'probe-group',
+              roots: [
+                makeRoot({
+                  id: 'p1',
+                  dockInfos: [
+                    { id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, 561] },
+                  ],
+                }),
+              ],
+            }),
+          ];
+          return [{ id: 'probe-group' }];
+        }
+        const loadedIds: string[] = [];
+        const reloadedIds: string[] = [];
+        for (const [index, posGroup] of layout.posGroups.entries()) {
+          const inPlan = raw.find((group) => group.id === posGroup.id);
+          if (inPlan) {
+            if (
+              options.reloadFails ||
+              options.reloadFailsFor?.includes(inPlan.id)
+            ) {
+              continue;
+            }
+            const moved = posGroup.repositioningData
+              ? repositioned(inPlan, posGroup.repositioningData)
+              : inPlan;
+            raw = raw.map((group) => (group === inPlan ? moved : group));
+            loadedIds.push(inPlan.id);
+            reloadedIds.push(inPlan.id);
+            continue;
+          }
+          if (options.omitted?.includes(index)) {
+            continue;
+          }
+          const group = makeGroup({
+            id: `new-${++created}`,
+            pos: options.arrival ?? [0, 0, 0],
+            attributes: LIBRARY_GROUP_SETTINGS,
+            roots: posGroup.roots.map(calculatedRoot),
+          });
+          raw = [
+            ...raw,
+            posGroup.repositioningData
+              ? repositioned(group, posGroup.repositioningData)
+              : group,
+          ];
+          loadedIds.push(group.id);
+        }
+        if (options.reloadedLast) {
+          raw = [
+            ...raw.filter((group) => !reloadedIds.includes(group.id)),
+            ...raw.filter((group) => reloadedIds.includes(group.id)),
+          ];
+        }
+        return loadedIds.map((id) => ({ id }));
+      }),
+    });
+  };
+
+  const loadCalls = (api: ReturnType<typeof createWallApi>) =>
+    (
+      api.extended.loadExternalObjectGroupLayout.mock
+        .calls as unknown as any[][]
+    ).map(([layout]) => layout.posGroups);
+
+  const placedBy = async (
+    posGroups: unknown[],
+    options: Parameters<typeof createWallApi>[0] = {}
+  ) => {
+    const api = createWallApi(options);
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups,
+    })) as Record<string, any>;
+    return { api, result, loads: loadCalls(api) };
+  };
+
+  const row = (placement: unknown, extra: Record<string, unknown> = {}) => ({
+    libraryId: 'lib-1',
+    placement,
+    roots: [pick()],
+    ...extra,
+  });
+
+  it('loads a new group placed by wall once without a position and reloads it once at the wall', async () => {
+    const { result, loads } = await placedBy([
+      row({ wall: 'right', alignment: 'back' }),
+    ]);
+    expect(loads).toHaveLength(2);
+    expect(loads[0]).toEqual([{ libraryId: 'lib-1', roots: [pick()] }]);
+    expect(loads[1]).toHaveLength(1);
+    expect(loads[1][0].id).toBe('new-1');
+    expect(loads[1][0].repositioningData).toEqual({
+      posGroup: [4000, 0, -3000],
+      posRotationY: 270,
+      rootId: 'u1',
+    });
+    // the reload changes nothing but the position: the planner keeps the
+    // group attributes as sent
+    expect(loads[1][0].attributes).toEqual(LIBRARY_GROUP_SETTINGS);
+    expect(result.corrections).toBeUndefined();
+    expect(result.groups[0].position).toMatchObject({
+      pos: [4000, 0, -3000],
+      rotationY: 270,
+    });
+  });
+
+  it('centres a new group on the wall by default', async () => {
+    const { loads } = await placedBy([row({ wall: 'back' })]);
+    expect(loads[1][0].repositioningData).toMatchObject({
+      posGroup: [1600, 0, -3000],
+      posRotationY: 0,
+    });
+  });
+
+  it("measures offsetMm from the wall's end with alignment end", async () => {
+    const { loads } = await placedBy([
+      row({ wall: 'back', alignment: 'end', offsetMm: 500 }),
+    ]);
+    expect(loads[1][0].repositioningData).toMatchObject({
+      posGroup: [500, 0, -3000],
+      posRotationY: 0,
+    });
+  });
+
+  it('puts a new group that starts with a corner article into the corner the alignment names', async () => {
+    const { loads } = await placedBy(
+      [
+        {
+          libraryId: 'lib-1',
+          placement: { wall: 'right', alignment: 'top' },
+          roots: [{ id: 'c1', articleId: 'article-1' }],
+        },
+      ],
+      { cornerRootIds: ['c1'] }
+    );
+    // the corner point [-261, 0, 0], turned by 270, lands on [4000, 0, -3000]
+    expect(loads[1][0].repositioningData).toEqual({
+      posGroup: [4000, 0, -2739],
+      posRotationY: 270,
+      rootId: 'c1',
+    });
+  });
+
+  it('moves a new group off another group along the wall and says so', async () => {
+    const { result, loads } = await placedBy(
+      [row({ wall: 'back', alignment: 'right' })],
+      {
+        existing: [
+          makeGroup({
+            id: 'g7',
+            pos: [3200, 0, -3000],
+            roots: [makeRoot({ attributes: BASE_UNIT_ATTRIBUTES })],
+          }),
+        ],
+      }
+    );
+    expect(loads[1][0].repositioningData).toMatchObject({
+      posGroup: [2400, 0, -3000],
+      posRotationY: 0,
+    });
+    expect(result.corrections).toEqual([
+      "posGroups[0]: group 'new-1' would overlap group 'g7' at the top wall - it was moved 800 mm along the " +
+        'wall to stand beside it. If the units belong together, join the groups with merge-groups',
+    ]);
+  });
+
+  it('counts the other new groups of the call at their targets, not where the planner first put them', async () => {
+    // the planner puts every new group into the back left corner, where the
+    // first one goes
+    const { result, loads } = await placedBy(
+      [
+        row({ wall: 'back', alignment: 'left' }),
+        row({ wall: 'back', alignment: 'left' }),
+      ],
+      { arrival: [0, 0, -3000] }
+    );
+    expect(
+      loads[1].map((group: any) => [group.id, group.repositioningData.posGroup])
+    ).toEqual([
+      ['new-1', [0, 0, -3000]],
+      ['new-2', [800, 0, -3000]],
+    ]);
+    expect(result.corrections).toEqual([
+      expect.stringMatching(
+        /^posGroups\[1\]: group 'new-2' would overlap group 'new-1' at the top wall - it was moved 800 mm/
+      ),
+    ]);
+  });
+
+  it('places one group by wall and another by point in one call', async () => {
+    const { loads } = await placedBy([
+      row({ posGroup: [4000, 0, -3000], posRotationY: 270 }),
+      row({ wall: 'back' }),
+    ]);
+    // the probe, the load of both, the reload of the group placed by wall
+    expect(loads).toHaveLength(3);
+    expect(loads[0][0].roots[0].id).toBe('anchor-probe');
+    expect(loads[1][0].repositioningData).toMatchObject({
+      posGroup: [4000, 0, -3000],
+      posRotationY: 270,
+    });
+    expect(loads[1][1]).not.toHaveProperty('repositioningData');
+    expect(loads[2].map((group: any) => group.id)).toEqual(['new-2']);
+    expect(loads[2][0].repositioningData).toMatchObject({
+      posGroup: [1600, 0, -3000],
+      posRotationY: 0,
+    });
+  });
+
+  it('keeps each new group matched to its input when the planner lists a reloaded group last', async () => {
+    const { api } = await placedBy(
+      [
+        row(
+          { wall: 'back' },
+          { attributes: [{ id: 'front', value: 'white' }] }
+        ),
+        { libraryId: 'lib-1', roots: [pick()] },
+      ],
+      { reloadedLast: true }
+    );
+    expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledTimes(1);
+    expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+      'change-group-attribute',
+      { groupId: 'new-1', attributeId: 'front', value: 'white' }
+    );
+  });
+
+  it('builds a new group without its placement when the room has no such wall, and says so', async () => {
+    for (const [placement, message] of [
+      [
+        { wall: 9 },
+        /^posGroups\[0\]: Wall '9' not found\. .* Available walls: \[.*\]/,
+      ],
+      [
+        { wall: 'back', roomIndex: 3 },
+        /^posGroups\[0\]: Room index 3 not found - the plan has 1 room\(s\)/,
+      ],
+    ] as const) {
+      const { result, loads } = await placedBy([row(placement)]);
+      expect(loads).toHaveLength(1);
+      expect(loads[0]).toEqual([{ libraryId: 'lib-1', roots: [pick()] }]);
+      expect(result.corrections).toEqual([expect.stringMatching(message)]);
+      expect(result.corrections[0]).toMatch(
+        /[^.] - the placement was not used, so the planner positions the group$/
+      );
+    }
+  });
+
+  it('reads a wall placement it can partly use with its defaults, and says so', async () => {
+    let { result, loads } = await placedBy([
+      row({
+        wall: 'back',
+        alignment: 'diagonal',
+        offsetMm: 'far',
+        roomIndex: -1,
+      }),
+    ]);
+    expect(loads[1][0].repositioningData).toMatchObject({
+      posGroup: [1600, 0, -3000],
+      posRotationY: 0,
+    });
+    expect(result.corrections).toEqual([
+      'posGroups[0]: the placement\'s alignment "diagonal" is not center, end, start or the side label of an adjoining wall - the group was centred',
+      'posGroups[0]: the placement\'s offsetMm "far" is not a number of millimetres - 0 was used',
+      "posGroups[0]: the placement's roomIndex -1 is not a room index - room 0 was used",
+    ]);
+
+    for (const wall of [{}, 'middle', -1]) {
+      ({ result, loads } = await placedBy([row({ wall })]));
+      expect(loads).toHaveLength(1);
+      expect(result.corrections).toEqual([
+        `posGroups[0]: the placement's wall ${JSON.stringify(wall)} is neither a side label (left, right, back, ` +
+          'front) nor a wall index - it was not used, so the planner positions the group (an existing group ' +
+          'keeps its position)',
+      ]);
+    }
+  });
+
+  it('uses the wall when a placement names a wall and a point, and says so', async () => {
+    const { result, loads } = await placedBy([
+      row({ wall: 'back', posGroup: [0, 0, 0], posRotationY: 90, scale: 2 }),
+    ]);
+    expect(loads).toHaveLength(2);
+    expect(loads[0][0]).not.toHaveProperty('repositioningData');
+    expect(loads[1][0].repositioningData).toMatchObject({
+      posGroup: [1600, 0, -3000],
+      posRotationY: 0,
+    });
+    expect(result.corrections).toEqual([
+      'posGroups[0]: the placement names a wall and a point - the wall was used, posGroup, posRotationY dropped',
+      'posGroups[0]: the placement takes wall, alignment, offsetMm and roomIndex, or posGroup, posRotationY and rootId - scale dropped',
+    ]);
+  });
+
+  it('centres a new group when the alignment runs parallel to the wall', async () => {
+    const { result, loads } = await placedBy([
+      row({ wall: 'back', alignment: 'front' }),
+    ]);
+    expect(loads[1][0].repositioningData).toMatchObject({
+      posGroup: [1600, 0, -3000],
+    });
+    expect(result.corrections).toEqual([
+      "posGroups[0]: the alignment 'bottom' runs parallel to the top wall - the group was centred on the wall instead",
+    ]);
+  });
+
+  it('leaves a new group it cannot place where the planner put it, and says so', async () => {
+    let { result, loads } = await placedBy([row({ wall: 'back' })], {
+      uncalculated: true,
+    });
+    expect(loads).toHaveLength(1);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: group 'new-1' has no calculated geometry - it was not placed at the top wall; " +
+        'place-group moves it once it is calculated',
+    ]);
+
+    ({ result, loads } = await placedBy([row({ wall: 'back' })], {
+      reloadFails: true,
+    }));
+    expect(loads).toHaveLength(2);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: group 'new-1' was not moved to the top wall - the planner did not reload it there; " +
+        'place-group moves it',
+    ]);
+  });
+
+  it('names each group the reload left where it was, also when the planner reloaded the others', async () => {
+    // the load answers with runtime ids, so the server checks where each
+    // group stands
+    const { result, loads } = await placedBy(
+      [
+        row({ wall: 'back', alignment: 'left' }),
+        row({ wall: 'back', alignment: 'right' }),
+      ],
+      { reloadFailsFor: ['new-1'] }
+    );
+    expect(loads[1].map((group: any) => group.id)).toEqual(['new-1', 'new-2']);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: group 'new-1' was not moved to the top wall - the planner did not reload it there; " +
+        'place-group moves it',
+    ]);
+  });
+
+  it('moves no group by wall when the planner built more or fewer new groups than the call sent, and says so', async () => {
+    // the planner leaves out the first group: paired by order, the second
+    // group would take the first one's wall
+    const { result, loads } = await placedBy(
+      [row({ wall: 'left' }), row({ wall: 'back' })],
+      { omitted: [0] }
+    );
+    expect(loads).toHaveLength(1);
+    expect(result.corrections).toEqual(
+      [0, 1].map((index) =>
+        expect.stringMatching(
+          new RegExp(
+            `^posGroups\\[${index}\\]: the planner built 1 new groups for the 2 of the call, so the server ` +
+              'cannot tell which one this group became - it was not placed at the (left|top) wall'
+          )
+        )
+      )
+    );
   });
 });
 
@@ -5601,6 +6043,9 @@ describe('undo and redo', () => {
       gapClosed?: boolean;
       readDelayMs?: number;
       order?: string[];
+      // new groups calculated with a footprint, and a load of a group in
+      // the plan that moves it
+      calculated?: boolean;
     } = {}
   ) => {
     let raw: any[] = [initialGroup];
@@ -5641,6 +6086,13 @@ describe('undo and redo', () => {
         if (options.failRealLoad) {
           throw new Error('The planner could not load the group.');
         }
+        const [posGroup] = layout.posGroups;
+        const inPlan = raw.find((group) => group.id === posGroup.id);
+        if (options.calculated && inPlan) {
+          const moved = repositioned(inPlan, posGroup.repositioningData);
+          step(raw.map((group) => (group === inPlan ? moved : group)));
+          return [{ id: inPlan.id }];
+        }
         const id = `new-${++created}`;
         step([
           ...raw,
@@ -5648,7 +6100,12 @@ describe('undo and redo', () => {
             id,
             libraryId: 'lib-1',
             attributes: [],
-            roots: layout.posGroups[0].roots,
+            roots: options.calculated
+              ? posGroup.roots.map((root: any) =>
+                  makeRoot({ id: root.id, articleId: root.articleId })
+                )
+              : posGroup.roots,
+            ...(options.calculated && { pos: [0, 0, 0], rotationY: 0 }),
           },
         ]);
         return [{ id }];
@@ -5801,6 +6258,28 @@ describe('undo and redo', () => {
       'change-group-attribute',
       expect.objectContaining({ groupId: 'new-1', attributeId: 'front' })
     );
+
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(2);
+    expect(result.undone).toBe('create-or-replace-groups');
+    expect(planner.raw()).toEqual([initialGroup]);
+  });
+
+  it('reverts a new group placed by wall, its load and its reload, in one undo', async () => {
+    const planner = historyPlanner({ calculated: true });
+    await toolExecutors['create-or-replace-groups'](planner.api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          placement: { wall: 'back' },
+          roots: [{ id: 'u1', articleId: 'article-1' }],
+        },
+      ],
+    });
+    expect(
+      planner.api.extended.loadExternalObjectGroupLayout
+    ).toHaveBeenCalledTimes(2);
+    expect(planner.raw()[1].pos).toEqual([1600, 0, -3000]);
 
     const result = (await toolExecutors.undo(planner.api, {})) as any;
     expect(planner.api.extended.undo).toHaveBeenCalledTimes(2);

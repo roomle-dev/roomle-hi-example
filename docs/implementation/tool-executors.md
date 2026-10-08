@@ -22,13 +22,13 @@ at the end.
 | Group lookup | `findGroup`, `planGroups` |
 | The plan context the agent sees | `agentFacingArticle`, `agentFacingRooms`, `agentFacingObstacles` |
 | Anchor probe | `knownAnchorFrames`, `probeAnchorFrame`, `takeBackProbe` |
-| Placement normalisation | `normalizePlacement` |
+| Placement normalisation | `normalizePlacement`, `normalizeWallPlacement`, `isWallPlacement` |
 | Docking graph and its completion | `sidePartnersOf`, `rowWalk`, `separateSideVectorPartners`, `connectUnreachedRoots`, `reportUnsentRoots`, `completeDocking` |
 | Group-wide attributes, group id memory, post-load checks | `generatedRootAttributes`, `moveGeneratedRootOverrides`, `agentGroupIds`, `applyGroupWideAttributes`, `groupSettingIdsOf`, `reportRevertedReplaces` |
 | The obstacle hint (D55) | `WALL_STRIP_MM`, `objectBlockers`, `rootBlockersBeside`, `freeStretchesNote`, `obstacleHint`; the geometry in `plan-space.ts`: `rootVolumesInRoom`, `stripInFrontOfWall`, `wallOfRoot`, `freeStretchesAlongWall`, `convexHull` (an object outline is tested by its hull: the separating-axis test of `convexPolygonsTouch` holds for convex outlines only) |
 | Partial loads | `NotLoadedGroup`, `keepBuildable`, `nothingLoaded` |
 | Payload preparation | `dropMalformedDocking`, `liftNestedRoots`, `completeDockingEntries`, `normalizedAttributes`, `reportUnusedFields`, `readDockToAsRelation`, `prepareGroup` |
-| Geometry for place-group | `placedGroupVolumes`, `overlappedGroupIds`, `resolveWall`, `placeGroupAtWall`, `standsAt`, `freePlacementAlongWall` |
+| Geometry for place-group and a placement by wall | `placedGroupVolumes`, `overlappedGroupIds`, `resolveWall`, `placeGroupAtWall`, `standsAt`, `freePlacementAlongWall`; shared: `wallPlacementSpec`, `resolveWallPlacement`, `wallTarget`, `placeAtWalls` |
 | Concurrency and undo recording | `oneAtATime`, `countingPlannerApi`, `recorded`, `planChange` |
 | Undo and redo | `stepHistory`, `revertToolCall` |
 | Positions in the placement frame | `inPlacementFrame` |
@@ -77,7 +77,8 @@ call and is reported in `notLoaded`, the others load
    units nested in docking entries to roots, complete docking entries, read `dockTo` as a relation,
    report unused fields, normalise attributes, drop positions (group `pos`/`rotationY`, root
    `articlePos`/`rotationY`), read `repositioningData` as a `placement`, give missing ids, rename
-   duplicates, normalise the placement (`normalizePlacement`).
+   duplicates, normalise the placement (`normalizePlacement`; a placement with a `wall` field by
+   `normalizeWallPlacement`).
 3. **Reduce every root to an article pick** (`toArticlePick`): id, article id, library, attributes,
    docking without indices, relation fields.
 4. **Resolve article ids** against the catalog (`resolveArticleIds`): another spelling is read as the
@@ -92,12 +93,21 @@ call and is reported in `notLoaded`, the others load
    docked to a free row end of their kind (`connectUnreachedRoots`); roots that cannot be reached
    are reported (`reportUnsentRoots`).
 9. **Placement:** a group already in the plan keeps its place (its placement is dropped, with a
-   correction). For a new group with a placement, the anchor root is found (`anchorRootOf`), its
+   correction). A placement by wall is resolved (`resolveWallPlacement`; a wall the room does not
+   have leaves the group without it) and kept aside for the step after the load. For a new group
+   placed by point, the anchor root is found (`anchorRootOf`), its
    anchor frame is taken from `knownAnchorFrames` or learned by `probeAnchorFrame`, and
    `toRepositioningData` derives the planner's repositioning.
 10. **Load:** `loadExternalObjectGroupLayout({ posGroups }, 'posGroups', { reason: 'adjusted' })`. An
     empty result throws "No groups were created or replaced", with every `notLoaded` reason.
-11. **After the load:** read the groups again; detect a replace the planner silently reverted
+11. **After the load:** read the groups again. With groups placed by wall, `placeAtWalls` moves
+    none when the planner built more or fewer new groups than the call sent (G60); else it matches
+    the new groups to the call once (`CallGroup.resultId`, which `matchResultGroups` prefers, since
+    the kernel may list a reloaded group elsewhere), computes every target with `wallTarget` — a
+    group of the call counts in the overlap test once it has its target — and reloads them in one
+    `loadExternalObjectGroupLayout`, and names each group that still covers the floor it covered
+    before (`floorCorners`, `sameFloor`, G59) — the load answers with runtime ids, and the group
+    origin moves to another root or corner on a reload; then the groups are read once more. Detect a replace the planner silently reverted
     (`reportRevertedReplaces`); apply the group-wide attributes with
     `externalObjectGroupOperation('change-group-attribute', …)` (`applyGroupWideAttributes`) — every
     group attribute but the library's group settings, which `groupSettingIdsOf` takes from the
@@ -125,20 +135,22 @@ gives `IDENTITY_FRAME` and a correction: the group may stand off the requested p
 ## place-group
 
 1. Reads `wall` and `alignment` side labels (`back` → `top`, `front` → `bottom`, `sideLabel`);
-   defaults: alignment `center`, offset 0, room 0.
+   defaults: alignment `center`, offset 0, room 0 (`wallPlacementSpec`, shared with a placement by
+   wall).
 2. Reads `rooms`, `groups` and `obstacles`, finds the group (`findGroup`) and the wall (`resolveWall`: a side label
    means the longest real wall on that side).
 3. An alignment that runs along the wall (`alignmentRunsParallel`) becomes `center`, with a
-   correction.
+   correction (steps 2 and 3: `resolveWallPlacement`).
 4. Reads the raw group (`getExternalObjectGroups`) — without calculated geometry it throws.
 5. `placeGroupAtWall` computes the raw group position: into the corner (`placeCornerAtWalls`) when
    the alignment names an adjoining wall and the group has a corner geometry, else against the wall
    (`placeAgainstWall`). The group keeps its height.
 6. If the group would overlap another (`volumesOverlap`, 5 mm tolerance) when placed against a wall,
    `freePlacementAlongWall` tries the free spans beside the other groups, nearest first; if none is
-   free, it stays as asked, with a correction.
+   free, it stays as asked, with a correction (steps 5 and 6: `wallTarget`).
 7. If the group already stands there (`standsAt`), nothing is loaded.
-8. Loads `repositionedGroup(rawGroup, placement)` with `loadExternalObjectGroupLayout`.
+8. Loads `repositionedGroup(rawGroup, placement)` with `loadExternalObjectGroupLayout`: the roots,
+   the generated ones included, and the group's attributes, which the planner keeps as sent.
 9. With an `obstacles` section, reads the raw groups again and `obstacleHint` names the root modules
    on an object or in front of a door or a window; the other groups stay with step 6 (D55).
 

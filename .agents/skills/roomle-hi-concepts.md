@@ -95,7 +95,7 @@ to back with another one is a root of the same group.
 ```javascript
 {
   libraryId: "<libraryId>",
-  placement: { posGroup: [4000, 0, -3000], posRotationY: 270 }, // the end of the right wall, its facingRotationY
+  placement: { wall: "right", alignment: "back" }, // the right wall, flush into its corner with the back wall
   roots: [
     { id: "u1", articleId: "<base unit>" },
     { id: "u2", articleId: "<base unit>", rightOf: "u1" },
@@ -108,7 +108,13 @@ Every root after the first names one neighbour with one relation — `rightOf`, 
 `above`, `behind` — and the server builds the docking from it
 ([hi-authoring-rules.md](./hi-authoring-rules.md#relations)).
 
-**Placement properties:**
+**Placement properties**, at a wall or in a room corner:
+- `wall` — a side label (`left`, `right`, `back`, `front`) or a wall index
+- `alignment` — optional: `center` (default), the side label of the adjoining wall (flush into that corner), or `end`
+- `offsetMm` — optional: the distance from that corner or from the wall's end
+- `roomIndex` — optional, 0 by default
+
+Anywhere else, and for a group of wall units only:
 - `posGroup` — [x, y, z] in millimetres: the room point of the group's back left bottom corner
 - `posRotationY` — rotation of the group in degrees, counter-clockwise as seen from above
 - `rootId` — optional, only with two corner articles: the one that goes into the corner `posGroup` names
@@ -141,9 +147,10 @@ turned. The server places and reports every group by the docking corner
 
 ### 5. Positioning
 
-A new group is positioned by `placement: { posGroup, posRotationY, rootId? }` — one point and one
-rotation, given in the call that creates it, the same for a group at a wall, in a corner or
-anywhere in the room.
+A new group is positioned in the call that creates it: at a wall or in a room corner by
+`placement: { wall, alignment?, offsetMm?, roomIndex? }` — the server computes the point from the
+calculated group, as `place-group` does —, anywhere else by `placement: { posGroup, posRotationY,
+rootId? }`, one point and one rotation.
 
 - `posGroup` is the room point of the group's back left bottom corner; in a room corner it is the
   corner point.
@@ -152,8 +159,9 @@ anywhere in the room.
   `leftOf`, `onTop`, `above`, `behind`), and the server builds the docking from it — see
   [hi-authoring-rules.md](./hi-authoring-rules.md#relations).
 - `posRotationY` is in degrees, counter-clockwise as seen from above. Against a wall it is the
-  wall's `facingRotationY` (rectangular room: back 0, left 90, front 180, right 270), and
-  `posGroup` lies on the wall, from its `end` towards its `start`.
+  wall's `facingRotationY` (rectangular room: back 0, left 90, front 180, right 270), and the
+  group runs from `posGroup` towards the wall's `start`; a group at a wall takes the placement by
+  wall instead.
 - Free space comes from the `obstacles` section of `get-plan-context`: doors, windows and other
   objects as outlines with a height range, and the root module outlines of every group. A door or a
   window names the wall it lies in and its span from the wall's end — see
@@ -305,13 +313,13 @@ HI Configuration
 1. **Never Author Root Positions** — Roots are positioned by docking, a new group by its `placement`
 2. **Roots Are Related** — Every root after the first names a neighbour of the same group; the server connects a root without one to the free end of the row of its kind and says so
 3. **Valid Docking Pairs** — `RightBottom → LeftBottom`, `LeftBottom → RightBottom`, a Top vector → a Bottom vector, `BackBottom → BackBottom`
-4. **Positions Come From the Walls** — `posGroup` and `posRotationY` are taken from a wall's `start`/`end` and `facingRotationY`, or from a room corner
+4. **Positions Come From the Walls** — A group at a wall or in a room corner names the wall and the alignment; the server computes the point
 5. **Docking Vectors Must Exist** — A docking names vectors the article has
 
 ### Positioning Rules
 
-1. **One Mechanism** — Every new group is positioned with a `placement` (a point and a rotation)
-2. **Against a Wall** — `posRotationY` = the wall's `facingRotationY`, `posGroup` on the wall from its `end` towards its `start`
+1. **One Placement** — Every new group is positioned with a `placement`: by wall at a wall or in a room corner, by point anywhere else
+2. **Against a Wall** — `wall` and `alignment` (the side label of the adjoining wall for a corner, `center`, or `end` with `offsetMm`); the server computes the point from the calculated group
 3. **Docking Vectors Transform** — Vectors are transformed with root's position and rotation
 4. **Extend, Don't Butt** — Units next to an existing group are docked into that group (one unit: `merge-article-into-group`); groups may touch and overlap when created, and `place-group` moves a target that overlaps another group along the wall to the nearest free position
 5. **Moving** — An existing group is moved with `place-group`, never with a placement
@@ -333,17 +341,13 @@ const context = await callTool("get-plan-context", {});
 const baseUnit = context.articles.find(a => a.category?.includes("Base Units"));
 
 // Step 2: The group - every root after the first names its neighbour
-const frontWall = context.rooms.rooms[0].walls.find(w => w.side === "bottom"); // front = bottom in the top view
 const group = {
   libraryId: baseUnit.libraryId,
   roots: [
     { id: "u1", articleId: baseUnit.articleId },
     { id: "u2", articleId: baseUnit.articleId, rightOf: "u1" }
   ],
-  placement: {
-    posGroup: frontWall.end,                 // flush into the corner at the wall's end
-    posRotationY: frontWall.facingRotationY
-  }
+  placement: { wall: "front", alignment: "left" } // flush into the front left corner
 };
 
 // Step 3: Send to Roomle via create-or-replace-groups
@@ -372,17 +376,13 @@ const articles = context.articles;
 ### Centring a Group on a Wall
 
 ```javascript
-// d along the wall from its end: centred, d = (lengthMm - group width) / 2
-const wall = context.rooms.rooms[0].walls.find(w => w.side === "bottom");
-const width = 1200; // the article widths of the row, from the catalog's dimensions
-const d = (wall.lengthMm - width) / 2;
-const posGroup = wall.end.map((e, i) => e + (d * (wall.start[i] - e)) / wall.lengthMm);
+// centred is the default alignment; the server computes the point from the calculated group
 const group = {
   roots: [
     { id: "u1", articleId: "<base unit 600>" },
     { id: "u2", articleId: "<base unit 600>", rightOf: "u1" }
   ],
-  placement: { posGroup, posRotationY: wall.facingRotationY }
+  placement: { wall: "front" }
 };
 ```
 
@@ -417,7 +417,7 @@ Fetch the payload format with the get-authoring-rules tool.
 1. **One Group per Piece of Furniture** — Relate every unit to its neighbour in the same group
 2. **Corner Articles for Corners** — A corner kitchen starts with a corner article
 3. **Read the Catalog** — `desc`, `category` and `dimensions` say what an article is and how big
-4. **Position From the Walls** — Take `posGroup`/`posRotationY` from a wall's `end` and `facingRotationY`, or from the room's `corners`
+4. **Position by Wall** — Name the wall and the alignment of a group at a wall or in a room corner; a point only anywhere else
 5. **Verify Numerically** — Check the returned `position` and `corrections`
 
 ### Performance

@@ -130,15 +130,18 @@ carcase) from the root it is docked to; its own `attributes` override them (D56)
 await createOrReplaceGroups({ posGroups: [group1, group2] });
 ```
 
-**Positioning**: a new group carries `placement: { posGroup, posRotationY, rootId? }` —
-`posGroup` the room point of the group's back left bottom corner, `posRotationY` the rotation in
-degrees, counter-clockwise as seen from above; `rootId` only with two corner articles, naming the
-one that goes into the corner `posGroup` names. One piece of furniture is one group: relate every further article
-to its neighbour instead of positioning it. Against a wall: `posRotationY` = the wall's `facingRotationY`,
-`posGroup` = the wall's `end` (flush into that corner) or a point from `end` towards `start`; in a
-corner: the corner point and the `facingRotationY` of the wall that ends there (for a right-handed
-corner article the server adds 90° itself, see the table in the authoring rules). `posGroup` is the
-back left bottom corner for every article — the server places the anchor by the back left bottom
+**Positioning**: a new group carries a placement in one of two forms. At a wall or in a room
+corner: `placement: { wall, alignment?, offsetMm?, roomIndex? }` — the parameters and defaults of
+`place-group`; the alignment `center` (default), the side label of the adjoining wall (flush into
+that corner, a corner article into the corner) or `end`, `offsetMm` from that corner or from the
+wall's end. The server loads the group, computes the target from the calculated group as
+`place-group` does (an overlap moves it along the wall) and reloads it there (D23). Anywhere else,
+and for a group of wall units only: `placement: { posGroup, posRotationY, rootId? }` — `posGroup`
+the room point of the group's back left bottom corner, `posRotationY` the rotation in degrees,
+counter-clockwise as seen from above; `rootId` only with two corner articles, naming the one that
+goes into the corner `posGroup` names. One piece of furniture is one group: relate every further
+article to its neighbour instead of positioning it. `posGroup` is the back left bottom corner for
+every article — the server places the anchor by the back left bottom
 corner of its docking vectors, also for a range hood whose origin is its centre. See the
 [authoring rules skill](./hi-authoring-rules.md#positioning-a-group).
 
@@ -372,7 +375,8 @@ result: positions on groups and roots dropped, `repositioningData` taken as the 
 placement the server cannot use or one on a group already in the plan not used (the planner
 positions the group, an existing group keeps its position), unconnected roots docked to the free
 end of a row, a unit on a taken side moved to the free end of the row, an article id read in the
-catalog's spelling, a `place-group` target moved off an overlap or centred on a parallel alignment.
+catalog's spelling, a target of `place-group` or of a placement by wall moved off an overlap or
+centred on a parallel alignment, a value of a placement by wall it cannot read taken as its default.
 Every guard and correction:
 [hi-mcp-behaviour.md §8](../../docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
 

@@ -5,7 +5,8 @@
 > guard, automatic correction and feedback message. Every change to a tool, a served rule, a guard, a
 > correction or a result updates this document in the same change.
 >
-> **State**: the code of 2026-10-08 — with the obstacles of the plan context
+> **State**: the code of 2026-10-08 — with the placement of a new group by wall
+> ([RML-18078](https://roomle.atlassian.net/browse/RML-18078), D23), with the obstacles of the plan context
 > ([RML-18036](https://roomle.atlassian.net/browse/RML-18036), D45) and the hint that names a root
 > module on an obstacle ([RML-18077](https://roomle.atlassian.net/browse/RML-18077), D55) —, with the group materials set
 > after a replace too and new root modules that inherit from their neighbour ([RML-18075](https://roomle.atlassian.net/browse/RML-18075), D36, D56) —, the served text speaks of
@@ -14,7 +15,7 @@
 > ([RML-18044](https://roomle.atlassian.net/browse/RML-18044)), after the fixes of the MCP test backlog
 > ([RML-18041](https://roomle.atlassian.net/browse/RML-18041)), which built on the refactoring of
 > the guards ([RML-18033](https://roomle.atlassian.net/browse/RML-18033)).
-> A decision that is not implemented yet is marked **deferred** (D23); every other one is in effect.
+> A decision that is not implemented yet is marked **planned**; every other one is in effect.
 >
 > **Not covered here**: setup, clients and deployment. See
 > [hi-mcp-server.md](hi-mcp-server.md) (the example page and MCP
@@ -55,7 +56,8 @@ Two parts have different responsibilities:
 ### 2.1 The agent declares what and where, the planner arranges
 
 The agent picks articles, sets their attributes, names for every unit one neighbour with one
-relation (D34), and gives a new group one point and one rotation. The planner calculates every root
+relation (D34), and gives a new group a wall with an alignment, or one point and one rotation
+(D23). The planner calculates every root
 position. The server completes everything else: the docking from the relations, the article
 template, the docking indices, the anchor root, and the anchor's frame — where its back left bottom
 corner lies (D33).
@@ -143,7 +145,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 |---|---|---|---|---|
 | D14 | One piece of furniture is one group ("one kitchen" until D44): articles beside, above or back to back are docked root modules of the same group | 2026-09-29 | rules `hi-mcp-server.ts:10` | in effect (rule) |
 | D15 | A root is an article pick; root positions come from the docking only | 2026-09-16 | rules (`AUTHORING_RULES`, `hi-mcp-server.ts`) | in effect |
-| D16 | A new group is positioned with `placement { posGroup, posRotationY, rootId? }`, applied once, when the group is created; the server anchors it | 2026-09-30 | [RML-18007](https://roomle.atlassian.net/browse/RML-18007) Task 1 | in effect |
+| D16 | A new group is positioned with `placement { posGroup, posRotationY, rootId? }` or, since D23, `placement { wall, alignment?, offsetMm?, roomIndex? }`, applied once, when the group is created; the server anchors it | 2026-09-30 | [RML-18007](https://roomle.atlassian.net/browse/RML-18007) Task 1 | in effect |
 | D17 | With two corner articles, `rootId` names the one that goes into the corner `posGroup` names | 2026-09-30 | [RML-18007](https://roomle.atlassian.net/browse/RML-18007) Task 1, P1 | in effect |
 | D18 | The server places a corner article by its corner point and turns a right-handed one by 90° itself | 2026-09-30 | [RML-18007](https://roomle.atlassian.net/browse/RML-18007) Task 1; `toRepositioningData` | superseded by D33, which keeps both for every article |
 | D19 | `merge-article-into-group` positions by docking (`dockTo`), never by coordinates | 2026-09-30 | [RML-18004](https://roomle.atlassian.net/browse/RML-18004) | in effect |
@@ -151,10 +153,10 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D54 | `change-module-attribute` without `moduleId` sets the attribute on the root module and on each of its sub modules whose master-data module carries it, in one calculation — the root-level counterpart of D20 and the planner's own root-module selection, so the front colour of a root module reaches its fronts after a group colour. A sub module with a value of its own gets the new value too, and `changedModuleIds` names every changed module; a root module without the attribute sets only its sub modules. With `moduleId` only that sub module changes | 2026-10-07 | [RML-18074](https://roomle.atlassian.net/browse/RML-18074) | in effect — roomle-ui `changeModuleAttribute`, `glue-logic.ts` |
 | D21 | `place-group` works on the calculated group, keeps the group's height, and returns `{ placedIn, wall, group }`; it knows walls and corners, not free points | 2026-09-30 | [RML-18007](https://roomle.atlassian.net/browse/RML-18007) Task 2, Q1, Q3–Q5 | in effect — `place-group`, `tool-executors.ts`; `plan-space.ts` |
 | D22 | A group outside the room is never refused, removed or warned about: the user may ask for it — a terrace, a space without walls in the plan, a parking spot while planning —, and the server cannot tell that request from a wrong placement. Rejected: a room check after the load. In "test the mcp" a group outside the room is a model finding ([hi-mcp-testing.md](../.agents/skills/hi-mcp-testing.md)) | 2026-10-01 | user, review before [PR #42](https://github.com/roomle-dev/roomle-hi-example/pull/42), which dropped the check with its rule sentence and tests | in effect |
-| D23 | `placement { wall, alignment, offsetMm }` in `create-or-replace-groups` — deferred, "ask first" | 2026-09-30 | [RML-18007](https://roomle.atlassian.net/browse/RML-18007) Task 2, D2; [backlog issue 27](../.agents/backlog/mcp-test-open-issues.md#27-a-new-group-needs-a-point-the-model-computes) | deferred |
+| D23 | **A new group is placed by wall, alignment and offset**, as `place-group` moves a group: `placement { wall, alignment?, offsetMm?, roomIndex? }` in `create-or-replace-groups`, with the walls, alignments and defaults of `place-group`, beside the placement by point, which stays for an island, a free spot and a group of wall units only. The server loads the group without a position, computes the target from the calculated group — the width a wall placement needs exists only after the calculation —, moves a target that overlaps another group along the wall (G22) and reloads the group once; the anchor probe is not needed. Two loads, two planner steps, which `undo` reverts together (D47); D46 holds for the placement by point. A placement with a wall and a point uses the wall (G57); with two corner articles the first one in roots goes into the corner. The new groups of the plan are paired with the call's by their order; when the planner built more or fewer new groups than the call sent — a group it leaves out shifts that order ([backlog](../.agents/backlog/planner-load-outcome-per-group.md)) —, the server moves no group by wall (G60). After the reload it tells a group the planner did not move by the floor it covers, which is the floor it covered before: the load answers with runtime ids that name no group, and after a reload the planner keeps the group origin at another root or corner, so neither tells (G59). The served text teaches the wall form for a wall or a room corner — a corner by the side label of the adjoining wall, a free stretch by `end` and `offsetMm` from `fromEndMm` — and no longer the `end + d` arithmetic. Rejected: a probe of the whole group and one load at the target — every call would calculate the group twice and turn the footprint into the anchor's frame on a second path; a width from the catalog before the load — it breaks on corner articles and range hoods. Found with gpt-5.4-mini, which took a wall's start instead of its end in 7 of 67 placements (MCP tests of 2026-10-06 and 2026-10-07) | 2026-10-08 | [RML-18078](https://roomle.atlassian.net/browse/RML-18078); deferred since [RML-18007](https://roomle.atlassian.net/browse/RML-18007) Task 2, D2 | in effect — `placeAtWalls`, `normalizeWallPlacement`, `wallTarget`, `tool-executors.ts`; `AUTHORING_RULES`, the descriptions, `hi-mcp-server.ts` |
 | D24 | `place-group` rejects a target that meets another group (contact guard) | 2026-09-30 | [RML-18007](https://roomle.atlassian.net/browse/RML-18007) Task 2, D1 | superseded by D27 |
 | D25 | A placement on a group that is already in the plan is rejected | 2026-09-30 | [RML-18007](https://roomle.atlassian.net/browse/RML-18007) Task 1 | superseded by D26 |
-| D46 | **A new group stands where the placement says after the one load that creates it, and the server owns its anchor.** The server finds the anchor by the docking (C5), not by the order of the roots — the models did not list it first —, and learns the anchor's frame before the load (C6, D33). Rejected: a correction load after the creation — load, read the calculated anchor, move it: every offset group would load twice and visibly jump, and moving is `place-group`'s (D21); a planner repositioning option that places a root by its docking corner — the corner turn is a convention of the served corner rules, not of the planner, and it needs a roomle-ui release; the footprint corner as the reference — it includes generated parts, the worktop overhangs by 10 mm; a special case for the range hood, such as centring it over the nearest hob — it guesses the intent, which docking states. Whether the probe can go away is open ([backlog](../.agents/backlog/roomle-ui-article-template-geometry.md)): the frame depends on the attribute overrides, and an article template gives the default variant | 2026-10-02 | [RML-18007](https://roomle.atlassian.net/browse/RML-18007); user, 2026-10-02 (D33) | in effect — `findAnchorRoot`, `toRepositioningData`, `group-placement.ts`; `probeAnchorFrame`, `tool-executors.ts` |
+| D46 | **A new group stands where the placement says after the one load that creates it, and the server owns its anchor.** This holds for the placement by point; a placement by wall loads the group and moves it (D23). The server finds the anchor by the docking (C5), not by the order of the roots — the models did not list it first —, and learns the anchor's frame before the load (C6, D33). Rejected: a correction load after the creation — load, read the calculated anchor, move it: every offset group would load twice and visibly jump, and moving is `place-group`'s (D21); a planner repositioning option that places a root by its docking corner — the corner turn is a convention of the served corner rules, not of the planner, and it needs a roomle-ui release; the footprint corner as the reference — it includes generated parts, the worktop overhangs by 10 mm; a special case for the range hood, such as centring it over the nearest hob — it guesses the intent, which docking states. Whether the probe can go away is open ([backlog](../.agents/backlog/roomle-ui-article-template-geometry.md)): the frame depends on the attribute overrides, and an article template gives the default variant | 2026-10-02 | [RML-18007](https://roomle.atlassian.net/browse/RML-18007); user, 2026-10-02 (D33) | in effect — `findAnchorRoot`, `toRepositioningData`, `group-placement.ts`; `probeAnchorFrame`, `tool-executors.ts` |
 
 ### Guards and corrections (2026-10-02)
 
@@ -240,9 +242,9 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
   | Method | Used by | Timeout |
   |---|---|---|
   | `getExternalObjectPlanContext(include)` | every tool that reads the plan | 30 s |
-  | `loadExternalObjectGroupLayout(layout, 'posGroups', { reason: 'adjusted' })` | `create-or-replace-groups`, `place-group`, the anchor probe | 120 s |
+  | `loadExternalObjectGroupLayout(layout, 'posGroups', { reason: 'adjusted' })` | `create-or-replace-groups` (and its reload of the groups placed by wall), `place-group`, the anchor probe | 120 s |
   | `externalObjectGroupOperation(command, payload)` | the command tools | 120 s |
-  | `getExternalObjectGroups()` | `place-group`, the anchor probe, the position of every returned group (calculated geometry), the plan before and after a tool call that changes it (D38) | 30 s |
+  | `getExternalObjectGroups()` | `place-group`, a placement by wall, the anchor probe, the position of every returned group (calculated geometry), the plan before and after a tool call that changes it (D38) | 30 s |
   | `undo()` | `undo`, the anchor probe (undoes its load) | 30 s |
   | `redo()` | `redo` | 30 s |
   | `removeExternalObject(id)` | the anchor probe, for a probe group its undo left in the plan (a page without `undo`) | 30 s |
@@ -331,11 +333,13 @@ tool. It covers:
   and the default for a root without a relation (D34).
 - **Docking vectors**: how to read the `contextData` of a group from `get-plan-context`, and the
   vectors `merge-article-into-group` names in `dockTo`.
-- **Placement**: the point and the rotation taken from the walls array, the table of room corners,
-  and the right-handed corner article.
+- **Placement** (D23): by wall, alignment and offset at a wall or in a room corner — the server
+  computes the point —, by point and rotation anywhere else and for a group of wall units only; the
+  walls array for the point form; which leg of a corner group runs along which wall, as seen from
+  the room.
 - **Obstacles** (D45, D55): what the `obstacles` section lists, a door's or a window's wall and span
   from the wall's end, that a new group goes on a stretch of wall or a spot `obstacles` leaves free —
-  with the recipes of the walls rule too —, that base units lower than a window's `bottomMm` fit
+  a stretch by alignment `end` and `offsetMm` = the start of its `fromEndMm` —, that base units lower than a window's `bottomMm` fit
   below it, and that the result's `hint` names every root module on an obstacle with the free
   stretches of its wall.
 - **Extending** — at the end of a row with `merge-article-into-group`, between two root modules
@@ -447,21 +451,25 @@ The server runs these steps:
 2. It reduces the roots to article picks and strips the docking indices (C2, C3).
 3. It reads the article ids in the catalog's spelling (G15), compiles the relations into docking
    entries (D34, C15, C16, G31–G45), reports the roots a new group names in its docking but never
-   sends (G26), completes the docking (G7, G8), and drops a placement on a group that is already in
-   the plan (G16).
-4. For every placed group, it learns the frame of the anchor — its docking corner and, for a corner
+   sends (G26), completes the docking (G7, G8), drops a placement on a group that is already in
+   the plan (G16), and resolves the wall of a placement by wall (G55, G20).
+4. For every group placed by point, it learns the frame of the anchor — its docking corner and, for a corner
    article, its turn — by a probe load, once per library, article and attribute set (C6, G17).
-5. It turns the placement into the planner's repositioning of the anchor root (C5, C6). The group
+5. It turns the placement by point into the planner's repositioning of the anchor root (C5, C6). The group
    reaches the planner with `id`, `libraryId`, `roots`, `attributes` and the repositioning.
 6. It loads the groups that can be built in one call with `reason: 'adjusted'`, reads the groups,
    and adds a hint for a group of the call that has no position. For a replace it reads the
    calculated groups before the load (D55).
-7. It sets the group-wide attributes (D36) — the group attributes that are not among the library's
+7. It moves the groups placed by wall to their walls (D23): it matches the groups of the call to
+   the plan's groups once, computes each target from the calculated group as `place-group` does —
+   an overlap with another group, or with a group of the call already at its target, moves it
+   along the wall (G22) —, and reloads them in one call (G58–G60).
+8. It sets the group-wide attributes (D36) — the group attributes that are not among the library's
    group settings (`groupSettings` of the master data; without them, the attributes the loaded
    group lists), the overrides moved off the roots (G47) and the colours of the generated roots it
    dropped (G48) — on every unit of the group with the planner's `change-group-attribute` command
    (G46), after a create and after a replace, and reads the groups again.
-8. It tests the root modules of the groups of the call against the obstacles and the other groups
+9. It tests the root modules of the groups of the call against the obstacles and the other groups
    and adds the `hint` of D55.
 
 A group that cannot be built at one of these steps leaves the call and goes to `notLoaded`; the
@@ -491,8 +499,10 @@ type `wall` on that side. It reads the calculated group (G21) and computes the p
 - **against the wall** — otherwise, by its footprint
 
 The group keeps its height. The server checks the target against the other groups (G22) and reloads
-the group once, with its roots — the generated ones included — and docking unchanged. A group that
-already stands where asked is not reloaded.
+the group once, with its roots — the generated ones included —, its group attributes and its docking
+unchanged (C1). A group that
+already stands where asked is not reloaded. The same logic places a new group by wall in
+`create-or-replace-groups` (D23).
 
 **Result**: `placedIn` (`corner` or `wall`), the `wall`, the resulting `group`, `corrections`
 when the server corrected the request — an overlap moves the group along the wall (D27), an
@@ -564,16 +574,21 @@ brings the probe group back.
 
 ## 7. Positioning
 
-- **A new group** gets `placement { posGroup, posRotationY, rootId? }`:
-  - `posGroup` is the room point of the group's back left bottom corner (`y` = 0 on the floor; for
-    wall units only, their mounting height).
-  - `posRotationY` is in degrees, counter-clockwise from above (D13).
-- **Against a wall**: `posRotationY` is the wall's `facingRotationY`. `posGroup` is the wall's
-  `end` (flush into that corner) or `end + d · (start − end) / lengthMm`. The group runs from
-  `posGroup` towards `start`.
-- **In a room corner**, a corner kitchen starts with a corner article. `posGroup` and `posRotationY`
-  are the `point` and the `posRotationY` of the corner in the room's `corners` list (§5.4) — the
-  `facingRotationY` of the wall that ends in the corner. For a rectangular room (back = top):
+- **A new group** gets a placement in one of two forms (D16, D23):
+  - **At a wall or in a room corner**: `placement { wall, alignment?, offsetMm?, roomIndex? }`, the
+    parameters and defaults of `place-group`. The server loads the group, computes the target from
+    the calculated group and reloads it there. `end` with `offsetMm` measures from the wall's end,
+    as the `fromEndMm` of the obstacles does.
+  - **Anywhere else**, and for a group of wall units only: `placement { posGroup, posRotationY,
+    rootId? }`. `posGroup` is the room point of the group's back left bottom corner (`y` = 0 on the
+    floor; for wall units only, their mounting height), `posRotationY` is in degrees,
+    counter-clockwise from above (D13). Against a wall, `posRotationY` is the wall's
+    `facingRotationY`, and the group runs from `posGroup` towards the wall's `start`.
+- **In a room corner**, a corner kitchen starts with a corner article. The wall form names one wall
+  of the corner as `wall` and the other as `alignment`; the point form takes the `point` and the
+  `posRotationY` of the corner in the room's `corners` list (§5.4) — the `facingRotationY` of the
+  wall that ends in the corner. Looking into the corner from the room, the `RightBottom` row runs
+  along the wall on the right. For a rectangular room (back = top):
 
   | Corner | `posRotationY` | `RightBottom` row runs along | `LeftBottom` row runs along |
   |---|---|---|---|
@@ -589,7 +604,7 @@ brings the probe group back.
   each corner with the rotation of the table — guarded by
   `it('puts the corner point into the %s corner with the rotation of the corner rules')` in
   `hi-mcp/hi-mcp-server/tests/plan-space.test.ts`.
-- **The anchor**: the root whose back left corner goes to `posGroup`. The server finds it (C5) and
+- **The anchor** of a placement by point: the root whose back left corner goes to `posGroup`. The server finds it (C5) and
   places it by its docking corner, wherever its origin is (C6, D33), before the one load that
   creates the group (D46) — guarded by
   `it('puts the docking corner of every offset article on posGroup at %d degrees')` in
@@ -601,7 +616,8 @@ brings the probe group back.
 - **A conflicting placement** — on a group that is already in the plan, or one the server cannot
   use — creates no `repositioningData`, and the planner positions the group; an existing group
   keeps its position (D26).
-- **Overlaps**: in `place-group`, a target that overlaps another group is moved along the wall
+- **Overlaps**: in `place-group` and in a placement by wall, a target that overlaps another group is
+  moved along the wall
   (D27). Groups may touch. A root module on an object, in another group or in front of a door or a
   window is built as sent, and the `hint` names it with the free stretches of its wall (D55).
 
@@ -629,7 +645,7 @@ them per turn as `toolCalls` in `run.json`, also when the agent calls a tool twi
 
 | ID | Correction | Where |
 |---|---|---|
-| C1 | Roots marked `isGenerated` (worktop, toe kick) are dropped from a `create-or-replace-groups` payload; the library regenerates them, and their input attributes are set again after the load (G48). `place-group` keeps them in its reload, so they keep their attributes — the worktop colour — over the move | `prepareGroup`; `repositionedGroup` |
+| C1 | Roots marked `isGenerated` (worktop, toe kick) are dropped from a `create-or-replace-groups` payload; the library regenerates them, and their input attributes are set again after the load (G48). The reload of `place-group` and of a placement by wall keeps them, so they keep their attributes — the worktop colour — over the move, and it sends the group's own attributes, which the planner keeps as sent on a reload: without them it dropped the library's group settings (`mod_GroupGenerationLogic` and the others; found in the live check of [RML-18078](https://roomle.atlassian.net/browse/RML-18078), for `place-group` too) | `prepareGroup`; `repositionedGroup` |
 | C2 | The read-only fields of a group from `get-plan-context` are ignored: per root `articleName`, `desc`, `category`, `imageUrl`, `isGenerated`, `dockingVectors`, `freeDockingVectors`, `subModules`, `logMessages`; per group `position`, `logMessages`. Every other field the server does not use is reported (G27). The group `attributes` reach the planner | `prepareGroup`; the field strip of `create-or-replace-groups` |
 | C3 | Docking vector indices are stripped and resolved from the names | `stripDockingIndices` |
 | C4 | A unique prefix of a group id is accepted | `findGroup` |
@@ -669,10 +685,17 @@ corrections, G31–G45.
 | G8 | the same, where the later root already follows in that row (a chain plus an extra entry on the first root) | drops the extra entry | correction |
 | G9 | `repositioningData` | takes it as the placement, or drops it beside a placement | correction |
 | G10 | a placement that is not an object | does not use it: no `repositioningData`, the planner positions the group | correction |
-| G11 | other placement fields (`wall`, `alignment`, `offsetMm`, …) | drops them; points to `place-group` for the wall fields | correction |
+| G11 | placement fields of neither form | drops them | correction naming the fields of both forms |
 | G12 | `posGroup` `[x, z]` | completes it to `[x, 0, z]` | correction |
 | G12, G13 | another `posGroup`, or no numeric `posRotationY` | does not use the placement, as G10 | correction |
 | G14 | a `rootId` that names no root | drops it; the server picks the anchor | correction |
+| G55 | a placement by wall whose `wall` is neither a side label nor a wall index, or names a room or a wall the plan does not have | does not use it: the planner positions the group | correction: "the placement's wall … is neither a side label (left, right, back, front) nor a wall index - …" / the message of G19 followed by "- the placement was not used, so the planner positions the group" |
+| G56 | a placement by wall with an `alignment`, `offsetMm` or `roomIndex` it cannot read | takes the default: `center`, 0, room 0 | correction |
+| G57 | a placement with a wall and a point | uses the wall and drops `posGroup`, `posRotationY` and `rootId` | correction: "the placement names a wall and a point - the wall was used, … dropped" |
+| G20, G22 | a placement by wall with an alignment parallel to the wall, or a target that overlaps another group — a group of the call placed by wall counts at its target, not where the planner first put it | as in `place-group` (§8.4) | correction |
+| G58 | a new group placed by wall that the planner has not calculated | leaves it where the planner put it | correction: "group '…' has no calculated geometry - it was not placed at the … wall; place-group moves it once it is calculated" |
+| G59 | a group placed by wall that still covers the floor it covered before the reload — the load answers with runtime ids, and the planner keeps the group origin elsewhere after a reload, so the server compares the floor | leaves it where the planner put it | correction: "group '…' was not moved to the … wall - the planner did not reload it there; place-group moves it" |
+| G60 | a call with a placement by wall for which the planner built more or fewer new groups than the call sent — the pairing by order cannot tell them apart | moves no group by wall | correction per group placed by wall: "the planner built … new groups for the … of the call, so the server cannot tell which one this group became - it was not placed at the … wall; get-plan-context shows the groups, place-group moves one" |
 | G15 | an article id in another spelling (case, whitespace) | reads it in the catalog's spelling | correction |
 | G15 | an article id the catalog does not have, beside roots it has | builds the group without that root; a relation or docking entry that named it names nothing, so its root gets the default (G31, G7) | `notLoaded` entry with `rootIds` and the valid article ids (the first 100): "… the root was not built, the other roots were; send it with merge-article-into-group or a valid article id" |
 | G15 | every article id of the group unknown | does not build the group | `notLoaded` with the valid article ids |

@@ -9,7 +9,8 @@
 One tool call puts one or several steps on the planner's undo history, and the command tools
 resolve before their last reload:
 
-- `create-or-replace-groups` makes one step for the load and one per group-wide attribute (D36).
+- `create-or-replace-groups` makes one step for the load, one for the reload of the groups placed by
+  wall (D23) and one per group-wide attribute (D36).
   The planner's own undo button reverts such a call piecewise: a kitchen with a material takes two
   clicks, and the first leaves the kitchen without its material.
 - `change-module-attribute`, `change-group-attribute`, `exchange-root-module`,
@@ -21,8 +22,8 @@ resolve before their last reload:
   the deployed planner it lands within the result.
 
 The server works around both: it counts the steps of every tool call (`countingPlannerApi`,
-`hi-mcp/hi-mcp-server/tool-executors.ts:2585`), waits up to 2 s for the follow-up of the commands in
-`FOLLOW_UP_COMMANDS` (`:2547`, `FOLLOW_UP_WAIT_MS` `:2559`), records a call whose follow-up has not
+`hi-mcp/hi-mcp-server/tool-executors.ts:3095`), waits up to 2 s for the follow-up of the commands in
+`FOLLOW_UP_COMMANDS` (`:3057`, `FOLLOW_UP_WAIT_MS` `:3069`), records a call whose follow-up has not
 arrived as unsettled, and withholds `undo` until it lands. The step count and the list of follow-up
 commands are roomle-ui behaviour copied into the server.
 

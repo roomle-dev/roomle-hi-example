@@ -192,7 +192,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 2. **Articles** — Catalog of available modules with dimensions, docking vectors, categories
 3. **Groups** — Collections of root modules (article picks) with docking relationships
 4. **Docking** — Roots are positioned relative to each other via docking vectors and modes
-5. **Positioning** — New groups are positioned with a `placement`: one point and one rotation, taken from a wall's `end` and `facingRotationY`; the server anchors the group (`group-placement.ts`). Existing groups are moved with `place-group` (`plan-space.ts`)
+5. **Positioning** — New groups are positioned with a `placement`: at a wall or in a room corner by `wall`, `alignment` and `offsetMm` — the server loads the group and moves it there with the logic of `place-group` (`plan-space.ts`) —, anywhere else by one point and one rotation, which the server anchors (`group-placement.ts`). Existing groups are moved with `place-group`
 
 ### Authoring Rules
 

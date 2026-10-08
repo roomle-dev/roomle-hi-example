@@ -318,18 +318,61 @@ describe('hi-mcp-server tool calls', () => {
       await client.callTool({ name: 'get-authoring-rules', arguments: {} })
     );
     expect(text).toContain(
-      'placement: { posGroup: [x, y, z], posRotationY, rootId? } positions a new group'
+      'placement positions a new group, in one of two forms. At a wall or in a room corner: { wall, alignment?, offsetMm?, roomIndex? }'
     );
+    expect(text).toContain('{ posGroup: [x, y, z], posRotationY, rootId? }');
     expect(text).toContain('counter-clockwise as seen from above');
-    expect(text).toContain("posRotationY = the wall's facingRotationY");
-    expect(text).toContain('back right 270');
+    expect(text).toContain('back 0, left 90, front 180, right 270');
     expect(text).toContain(
       'every room of get-plan-context carries a corners list'
+    );
+    expect(text).toContain(
+      'Looking into the corner from the room, the root modules rightOf the corner article run along the wall on the right'
     );
     expect(text).toContain('an entry of type opening is a door');
     expect(text).toContain(
       'To move an existing group against a wall or into a room corner, call place-group'
     );
+  });
+
+  it('places a new group by wall and alignment and leaves the point to the server', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    const { tools } = await client.listTools();
+    const descriptionOf = (name: string) =>
+      tools.find((tool) => tool.name === name)?.description ?? '';
+    // the whole wall placement, for a client that does not read the rules
+    expect(descriptionOf('create-or-replace-groups')).toContain(
+      'At a wall or in a room corner: { wall, alignment?, offsetMm?, roomIndex? }'
+    );
+    expect(descriptionOf('create-or-replace-groups')).toContain(
+      "or end; offsetMm moves it along the wall away from that corner or from the wall's end - the fromEndMm of the obstacles is measured from there; roomIndex the room, 0 by default."
+    );
+    expect(descriptionOf('create-or-replace-groups')).toContain(
+      'The server computes the point and the rotation.'
+    );
+    expect(descriptionOf('place-group')).toContain(
+      'a new group takes the same wall, alignment and offsetMm in its placement in create-or-replace-groups'
+    );
+    expect(client.getInstructions()).toContain(
+      '{ wall, alignment?, offsetMm? } at a wall or in a room corner - the server computes the point -'
+    );
+    const served = [
+      client.getInstructions() ?? '',
+      rules,
+      JSON.stringify(tools),
+    ].join('\n');
+    for (const recipe of [
+      'end + d',
+      'd = (lengthMm',
+      'its end point and its facingRotationY',
+      'position a group created without placement',
+      'never compute wall points',
+    ]) {
+      expect(served).not.toContain(recipe);
+    }
   });
 
   it('carries the one-group principle and the relation examples', async () => {
@@ -348,9 +391,13 @@ describe('hi-mcp-server tool calls', () => {
     expect(text).toContain(
       '{ "id": "l1", "articleId": "<base unit>", "leftOf": "c1" }'
     );
-    // the complete L-shaped corner kitchen example, placed at the room corner point
+    // the complete L-shaped corner kitchen example, placed into the corner of
+    // two walls
     expect(text).toContain(
-      '"placement": { "posGroup": [<corner x>, 0, <corner z>], "posRotationY": 270 }'
+      'is ONE group starting with the corner article c1, placed at the right wall with the back wall as alignment'
+    );
+    expect(text).toContain(
+      '"placement": { "wall": "right", "alignment": "back" }'
     );
     expect(text).toContain('Example 5');
   });
@@ -634,7 +681,7 @@ describe('hi-mcp-server tool calls', () => {
       await client.callTool({ name: 'get-authoring-rules', arguments: {} })
     );
     expect(rules).toContain(
-      "Put a new group on a stretch of wall or a spot that obstacles leaves free, with the recipes above too; base units lower than a window's bottomMm fit below it."
+      "Put a new group on a stretch of wall or a spot that obstacles leaves free: fromEndMm is measured from the wall's end, so a placement with that wall, alignment end and offsetMm = the start of a free stretch puts the group on it; base units lower than a window's bottomMm fit below it."
     );
     expect(rules).toContain(
       "The result's hint names every root module that overlaps an object or another group or stands in front of a door or a window, with the free stretches of its wall."

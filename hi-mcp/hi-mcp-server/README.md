@@ -487,7 +487,7 @@ the planner's group command API (`externalObjectGroupOperation`, roomle-ui),
 which performs the edit with the planner's own group features and answers once
 the planner has loaded the result. A new command needs no page change: it is a
 payload of the one planner method on the allow-lists. The group keeps its
-position; in a row edit (insert, remove, exchange with another width, swap) the
+position; in a row edit (insert, `delete-article-and-compact`, exchange with another width, swap) the
 end of the row at a wall or in a corner keeps its place and the other end moves,
 and the wall units and the range hood move with the root module they hang from.
 Every command returns `{ command, groups, removedGroupIds, changedModuleIds?,

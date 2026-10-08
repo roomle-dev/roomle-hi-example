@@ -549,7 +549,7 @@ its first UUID segment or in one character is read as that root and reported.
 ids and allowed values come from the `masterData` section of `get-plan-context`
 or from `find-attributes`.
 
-In a row edit — insert, remove, exchange, swap — the end of the row at a wall
+In a row edit — insert, `delete-article-and-compact`, exchange, swap — the end of the row at a wall
 or in a corner keeps its place and the other end moves; wall units and the
 range hood move with the unit they hang from. The result's `hint` names those
 units and says when the row now reaches past a wall or into another group; the

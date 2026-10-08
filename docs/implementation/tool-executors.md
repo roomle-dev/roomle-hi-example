@@ -181,7 +181,7 @@ merge, insert and exchange are forwarded unchanged.
 
 ### Row edits
 
-For insert, remove, exchange and swap the server does **not** rewrite the row's docking — the planner
+For insert, `delete-article-and-compact`, exchange and swap the server does **not** rewrite the row's docking — the planner
 does: it closes or opens the gap, keeps the ends at a wall or in a corner, and moves the units
 above with their carrier (roomle-ui `hi-root-module-arrangement.ts`, `carriersOfUnitsAbove`). The
 server's part:

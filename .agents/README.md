@@ -89,7 +89,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | ["Delete" and "remove" are taken for each other](bug-analysis/delete-and-remove-taken-for-each-other.md) | Open (implemented, not merged) | 2026-10-08 |
 | [A replace drops the group's materials](bug-analysis/replace-drops-the-group-materials.md) | Open (implemented, not merged) | 2026-10-08 |
 | [A new group is placed at a point the model computes](bug-analysis/new-group-placed-at-a-point-the-model-computes.md) | Open (implemented, not merged) | 2026-10-08 |
-| [A lone wall unit drops onto the worktop](bug-analysis/lone-wall-unit-drops-onto-the-worktop.md) | Open (implemented, not merged) | 2026-10-08 |
+| [A lone wall unit drops onto the worktop](bug-analysis/lone-wall-unit-drops-onto-the-worktop.md) | Fixed (roomle-ui#3105, merged into `fix/hi-mcp-api-and-tools`) | 2026-10-08 |
 | [The wall units get framed glass fronts](bug-analysis/wall-units-get-framed-glass-fronts.md) | Open (implemented, not merged) | 2026-10-08 |
 
 ### Feature Analyses
@@ -132,9 +132,9 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 
 | Document | Last touched |
 |---|---|
-| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-07 |
+| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-08 |
 | [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — measure, then let the plan context carry every article's docking vectors and corner point, and remove the server's probe where the default variant suffices | 2026-10-07 |
-| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner that "test the mcp" shows | 2026-10-07 |
+| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner that "test the mcp" shows | 2026-10-08 |
 | [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — gpt-5.4-mini plans without reasoning: set an effort per Foundry deployment from the measured data and verify it; further measurement only on request | 2026-10-07 |
 | [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the open gaps of running "test the mcp": the object-only render under software GL, the unrecorded hint, a run that loses its page, tests only written by hand, the snapshot save with a local planner | 2026-10-07 |
 | [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — a store page that never connects for an external agent, the live isolation check, access control, the image's second lockfile, the root scripts' flags, SIGTERM | 2026-10-07 |

@@ -8,7 +8,8 @@
 > **Trigger**: [RML-18094](https://roomle.atlassian.net/browse/RML-18094)
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open — analysed, [one decision](#open-decision) needed before the plan
+> **Status**: Open — analysed and [planned](#plan); the plan assumes (a) of the
+> [open decision](#open-decision)
 
 ## Affected repositories
 
@@ -159,3 +160,130 @@ here dark marble, only with glass frames:
   frames.
 - **(b) Keep the colour**, accept the frames, and say so.
 - **(c) Ask the user** before choosing.
+
+## Plan
+
+Only roomle-hi-example changes. The plan takes (a) of the open decision; (b) or (c) change only
+the last sentence of the new "Fronts" rule (step 1).
+
+### 1. The served text — `hi-mcp-server.ts`
+
+- **`AUTHORING_RULES`, a new rule after the desc rule (line 9):** "Fronts: the front program says
+  how a front is built - its desc: a simple front, a frame with wooden filling, a mitred frame with
+  glass filling, a milled front. Choose it by its desc first, then the front colour. A program
+  offers only some colours: a colour it does not offer switches the program to one that does, and
+  the fronts are then built as that program says; a program resets a colour it does not offer.
+  corrections name every such change. When the colour the user wants comes only with fronts built
+  differently, keep the fronts: undo, take the closest colour the program offers, and tell the user
+  which fronts that colour comes with."
+- **Line 8:** "Attribute ids and allowed values come from the masterData section" becomes
+  "Attribute ids and their values come from …".
+- **Line 30**, the corrections rule, gets: "… and what the library changed beyond the attribute you
+  set - a front program switched by a front colour".
+- **`get-plan-context`** (line 172-173): "the customer-facing attributes with their allowed values"
+  becomes "with their values".
+- **`find-attributes`** (line 197-200): "with their allowed values" becomes "with their values".
+- **`change-module-attribute`** (line 352-356) and **`change-group-attribute`** (line 378-380):
+  "allowed values" becomes "values", and both get: "The library may change a related attribute with
+  it - a front colour the front program does not offer switches the program, and the fronts are
+  built differently; corrections name every attribute the library changed besides the one set."
+
+### 2. Name the library's changes — `tool-executors.ts`
+
+**A new helper**, `libraryChanges(before, after, applied, masterData, prefix)`. It compares the root
+modules' input attributes of the groups before and after one or more attribute commands. Roots are
+matched by group id and root id. It returns one sentence per change, roots with the same change
+together:
+
+- An attribute that was not set by the command is reported when its value differs, also when it
+  had no input value before.
+- An attribute the command did set is reported on a root that ends with another value.
+
+The value descs come from the master data of the group's library (`masterDataOf`), a value without
+a desc stands alone:
+
+```text
+change-module-attribute: with mod_FrontColor "324" (Dark marble (#404040)) the library changed
+mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (Simple fronts in plain decors) to
+"Modern" (Mitred frame fronts with glass filling)
+```
+
+```text
+posGroups[0]: with mod_FrontProgram "Classic" (Simple fronts in plain decors) the library changed
+mod_FrontColor of root modules 'w1' (OTB60), 'w2' (OTB60) from "324" (Dark marble (#404040)) to
+"152" (Cloudy blue (#506080))
+```
+
+**The three places**, none with an extra planner call:
+
+- **`change-module-attribute`** (`tool-executors.ts:3892-3920`): before = the groups it already
+  reads to resolve the root id, after = the planner result's `groups`. The sentences follow the
+  server's and the planner's corrections (C20).
+- **`change-group-attribute`** (`tool-executors.ts:3922-3938`): before = the groups it reads for
+  `findGroup`, after = the result's `groups`. The result carries the sentences as `corrections`.
+- **`applyGroupWideAttributes`** (D36, `tool-executors.ts:1972-2013`): before = the loaded group
+  `result`, after = the group the last `change-group-attribute` returns. One comparison per group
+  covers all its group attributes, so a colour the group itself sets after its program is not
+  reported as reset.
+
+A command with `moduleId` changes a sub module's attributes, which the root inputs do not show.
+It gets no sentence, as before.
+
+### 3. Documentation
+
+- `docs/hi-mcp-behaviour.md`:
+  - **D59** "The library's own changes are named" (§3, Flexibility, D51);
+  - **D60** "Keep the fronts, not the colour" — the user's open decision, recorded once decided;
+  - §5.2: the Fronts rule;
+  - §5.3 and §8.1: corrections also carry the library's changes;
+  - §6, the command tools' result;
+  - §8.3 G46: its feedback gains the library sentence;
+  - §8.5: a new row **C22**.
+- `docs/hi-mcp-server.md` (lines 541-542) and `.agents/skills/hi-mcp-tools.md` (lines 26-27, 228):
+  the attribute commands name the library's changes in `corrections`.
+- This analysis: the status and the outcome after the implementation.
+
+### 4. Unit tests
+
+`hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`, a new `describe('library changes')` in the group
+command tools. It has a master data with `mod_FrontProgram` and `mod_FrontColor` and their descs
+(not added to the shared `masterDataFixture`, which other tests count), and a fake
+`externalObjectGroupOperation` that returns the group after the change:
+
+- `it('names the front program the library switched with a front colour')` — before: w1 Classic;
+  `change-module-attribute mod_FrontColor 324`; after: w1 324 + Modern. Corrections equal the first
+  sentence above.
+- `it('names a value the library set on a root module without one')` — w1 had no program input;
+  after: Modern. The sentence reads "changed mod_FrontProgram … to "Modern" (…)", without "from".
+- `it('names the root modules the library changed alike in one sentence')` —
+  `change-group-attribute` on three wall units.
+- `it('names the library changes after the corrections of the planner')` — the planner's correction
+  first, then the library's.
+- `it('adds nothing when the library changed only the attribute that was set')` — no `corrections`
+  field.
+- `it('names a value without a desc by the value alone')`.
+
+`describe('create-or-replace-groups materials')`:
+
+- `it('names the colour the library reset with a group front program')` — loaded w1, w2 with 324;
+  group attribute Classic; the command returns them with 152. The corrections are "…
+  mod_FrontProgram "Classic" was set on every unit …" followed by the second sentence above.
+- `it('does not name a colour the group sets itself after its program')` — group Classic and 178;
+  the first command resets the colour, the second sets 178. Only the two "was set" corrections.
+
+`hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`:
+
+- `it('tells the agent that the front program says how a front is built and that a colour can switch it')`
+  — the Fronts rule in `get-authoring-rules`, the library sentence in the descriptions of
+  `change-module-attribute` and `change-group-attribute`, and no "allowed values" anywhere in the
+  served text.
+- `it('describes how to succeed instead of what is rejected, and where the corrections are')` —
+  extended by the new end of the corrections rule.
+
+### 5. Verification
+
+- `npm test`, `npm run typecheck`, `npm run lint`, `npm run format:check`.
+- Without a model, against the planner: `replay/replay-sequence.mjs`. The create names the reset
+  324 → 152, the `change-module-attribute` names the switch Classic → Modern, and no other
+  attribute is named (no noise from the library's write-back).
+- No chat run unless asked.

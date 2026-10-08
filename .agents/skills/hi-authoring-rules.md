@@ -4,11 +4,13 @@
 
 ## Core Principle
 
-**Never author root positions.** Roots are positioned by their relation — each unit names its neighbour, and the server builds the docking; a new group is positioned by its `placement` — one point and one rotation taken from the walls.
+**Never author root positions.** Roots are positioned by their relation — each unit names its neighbour, and the server builds the docking; a new group is positioned by its `placement` — a wall with an alignment, or one point and one rotation.
 
 **Words.** The catalog offers articles; a group is one piece of furniture made of articles (a kitchen, a wardrobe, a sideboard, a utility room); an article placed in a group is a root module. A high or tall cabinet or a wardrobe is about 2000 mm high, a low cabinet or base cabinet 720 mm. The user decides which articles stand next to each other; an article named by its kind comes from the category of its neighbours where that category has one.
 
 **One piece of furniture is one group.** Every article standing beside, above or back to back with another article is a related root module of the same group; the group carries one placement. Never split one piece of furniture into several positioned groups.
+
+**Fronts.** The front program says how a front is built — its desc: simple fronts, frame fronts with wooden filling, mitred frame fronts with glass filling, milled fronts. Choose it by its desc first, then the front colour. A program offers only some colours: a colour it does not offer switches the program, and a program resets a colour it does not offer; `corrections` name every such change. When the colour the user wants comes only with fronts built differently, keep the fronts: undo, take the closest colour the program offers, and tell the user which fronts the wanted colour comes with ([D59, D60](../../docs/hi-mcp-behaviour.md#3-decisions)).
 
 Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rotationY` on a root — are **ignored**: the server drops them and reports it in `corrections`.
 
@@ -221,11 +223,13 @@ placement: {
   outside the room — the user may ask for one ([D22](../../docs/hi-mcp-behaviour.md#3-decisions)).
 - **Obstacles**: the `obstacles` section of `get-plan-context` lists what stands in the room — doors,
   windows and other objects with `kind`, `outline` and `bottomMm`/`topMm`, and per group the outlines
-  of its root modules. A root module cannot stand where an object or another group's root module
-  overlaps it in outline and height range. A door or a window lies in a wall (`roomIndex`, `wall`,
-  `fromEndMm` — its span from the wall's end; a placement with that wall, alignment `end` and
-  `offsetMm` = the start of a free stretch puts a group on it): keep that span free from the floor for a door,
-  from the window's `bottomMm` for a window; base units lower than that fit below a window.
+  of its root modules. A door or a window lies in a wall (`roomIndex`, `wall`, `fromEndMm` — its
+  span from the wall's end). Put a new group on a stretch of wall or a spot that `obstacles` leaves
+  free: a placement with that wall, alignment `end` and `offsetMm` = the start of a free stretch
+  puts a group on it; base units lower than a window's `bottomMm` fit below it. The result's `hint`
+  names every root module that overlaps an object or another group or stands in front of a door or
+  a window, with the free stretches of its wall; the group is built anyway
+  ([D55](../../docs/hi-mcp-behaviour.md#3-decisions)).
 - **New groups only**: the placement is applied once, when the group is created. A placement on a
   group already in the plan is not used — the group keeps its position, and `corrections` says so;
   a group resubmitted without placement keeps its position.
@@ -288,16 +292,15 @@ built is an error. Every guard and correction:
 
 ### Returned as a hint (the group is loaded):
 - A group of the call that is still unpositioned — it sits at the plan origin; a group gets its position from the placement it is created with, or `place-group` moves it against a wall or into a corner
-- A new group at the place of another group (the same point within 5 mm and the same rotation) — units that belong together are sent as one group or joined with `merge-groups`
+- A root module that overlaps an object or a root module of another group, or stands in front of a door or a window — named with the free stretches of its wall; units that belong together are sent as one group or joined with `merge-groups`
 
 ## Practical Patterns
 
 ### Pattern 1: Simple Row
 ```javascript
 {
-  // centred on the left wall of a 4000 x 3000 room (start [0, 0, -3000], end [0, 0, 0], facing 90):
-  // d = (3000 - 1200) / 2 = 900 from the end towards the start
-  placement: { posGroup: [0, 0, -900], posRotationY: 90 },
+  // centred on the left wall - center is the default alignment
+  placement: { wall: 'left' },
   roots: [
     { id: 'u1', articleId: 'base-unit-600' },
     { id: 'u2', articleId: 'base-unit-600', rightOf: 'u1' }
@@ -308,8 +311,8 @@ built is an error. Every guard and correction:
 ### Pattern 2: L-Shaped Corner
 ```javascript
 {
-  // left back corner of a 4000 x 3000 room: the end of the back wall, facing 0
-  placement: { posGroup: [0, 0, -3000], posRotationY: 0 },
+  // the left back corner: one wall of the corner as wall, the other as alignment
+  placement: { wall: 'back', alignment: 'left' },
   roots: [
     { id: 'corner', articleId: 'corner-unit-900' },
     { id: 'u1', articleId: 'base-unit-600', leftOf: 'corner' },
@@ -321,8 +324,8 @@ built is an error. Every guard and correction:
 ### Pattern 3: Wall Units Beside a Tall Unit and Above a Base Unit
 ```javascript
 {
-  // centred on the left wall: d = (3000 - 1200) / 2 = 900
-  placement: { posGroup: [0, 0, -900], posRotationY: 90 },
+  // centred on the left wall
+  placement: { wall: 'left' },
   roots: [
     { id: 'tall', articleId: 'tall-unit-600' },
     { id: 'base', articleId: 'base-unit-600', rightOf: 'tall' },

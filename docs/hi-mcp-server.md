@@ -17,7 +17,8 @@ is a WebSocket. It is used as-is; the launcher only wires environment
 variables ([ADR 0002](../.agents/decisions/0002-one-mcp-server-configured-from-outside.md)).
 The same server also serves the ligna-store as its client — its chat window,
 opened with the `model`, `api_key` and `mcp_server` query parameters — and it is
-the one deployed to Azure and Cloudflare.
+the one deployed to Cloudflare ([cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md));
+[azure-mcp-server.md](setup/azure-mcp-server.md) is the runbook for Azure App Service.
 
 The server is **agent-agnostic**: it contains no client-specific code. Any
 MCP client with Streamable HTTP transport support can connect (Claude Code,

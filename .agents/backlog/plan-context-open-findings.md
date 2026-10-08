@@ -8,35 +8,10 @@ leaves this document when its fix is in the code or it is decided not to fix it.
 
 | # | Finding | Kind | Priority |
 |---|---|---|---|
-| 1 | [A wall entry that runs against the contour gets the opposite side](#1-a-wall-entry-that-runs-against-the-contour-gets-the-opposite-side) | RoomleCore room contour, [RML-18072](https://roomle.atlassian.net/browse/RML-18072) | medium — a wrong wall name and rotation |
 | 2 | [A root outline reaches into its neighbour](#2-a-root-outline-reaches-into-its-neighbour) | not a defect — article description, MCP text | low — neighbours of one group overlap in `obstacles` |
 | 3 | [A calculation error of a new group reaches the agent through nothing](#3-a-calculation-error-of-a-new-group-reaches-the-agent-through-nothing) | roomle-ui, MCP server feedback | low — not seen in a run yet |
 | 4 | [The kernel's obstacle outline of an HI group lies off the group](#4-the-kernels-obstacle-outline-of-an-hi-group-lies-off-the-group) | RoomleCore | low — the plan context does not use it |
 | 5 | [A changed position height is reported with its old value](#5-a-changed-position-height-is-reported-with-its-old-value) | roomle-ui command result | low — the agent may set it again |
-
-## 1. A wall entry that runs against the contour gets the opposite side
-
-**Ticket.** [RML-18072](https://roomle.atlassian.net/browse/RML-18072) (RoomleCore)
-
-**Problem.** The Open-Plan Room's contour runs back along the front wall between its two doors. The
-wall entry there (an `opening`, from x 401 to −1749) gets the side `top` and the name "back wall",
-and a `facingRotationY` that turns a group's back away from that wall. The entry after it is a
-"front wall" from −1749 to 3248, across both doors.
-
-**Cause.** The kernel's room contour. A second opening on a straight wall is inserted into both wall
-pieces the first opening left, so the contour runs back along the wall (RoomleCore
-`ObjectSurroundings::addOpeningToContour`, `object-surrounding-geometry.cpp:615`). `deriveWalls`
-(roomle-ui `hi-plan-context.ts:752`) rightly takes the side from the segment direction: the
-kernel's contour runs counter-clockwise with the room on its left.
-
-**To do.** Wait for the RoomleCore fix (RML-18072). Then take the fixed kernel into roomle-ui and
-check the reproduction below. Nothing changes in roomle-ui or in this repository, and no further
-query of the kernel is added.
-
-**Test.** In RoomleCore: the room contour of a wall with two doors (RML-18072).
-
-**Reproduce.** `get-plan-context` on the Open-Plan Room (`ps_qwm5odi6tyflyqwpdcxz1la791ho633`).
-Once fixed, every wall entry of the front wall has the side `bottom` and `facingRotationY` 180.
 
 ## 2. A root outline reaches into its neighbour
 

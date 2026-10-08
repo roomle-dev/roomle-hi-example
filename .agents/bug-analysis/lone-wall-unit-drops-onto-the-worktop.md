@@ -10,7 +10,8 @@
 > [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 23
 > **Date**: 2026-10-08
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Open — [planned](#implementation-plan); roomle-ui branch
+> `fix/lone-wall-unit-drops-RML-18081`
 
 ## Affected repositories
 
@@ -155,6 +156,93 @@ with the planner's own records.
 
 **Verification**: the replay above against the local roomle-ui (`--dev`). The row's wall unit
 stays at [610, 1480, 0] after every command.
+
+## Implementation plan
+
+roomle-ui works on `fix/lone-wall-unit-drops-RML-18081`, based on `fix/hi-mcp-api-and-tools`
+(`e55be7ab1`, not merged yet). Its pull request targets that branch. roomle-hi-example keeps this
+document on `docs/lone-wall-unit-drops-RML-18081` (PR #83). Line numbers are those of the roomle-ui
+base branch. There, the `glue-logic.ts` functions sit at other lines than on master:
+`changedGroupPlanningSituation` `:2429`, `_updateGroupGeometry` `:2625`,
+`_setRootModuleContextData` `:2665`.
+
+### roomle-ui
+
+1. **The reverse entry carries the offset** (`hi-root-module-arrangement.ts`,
+   `_validateAndCompleteContextData`, `:887-896`). The connection back to `rootA` gets
+   `dockedRootA.offset` negated, beside the mirrored mode. The negation avoids `-0`
+   (`-component + 0`, as `roundToSteps` does), so the entry reads `[0, -660, 0]`.
+
+   Nothing else in the operator changes. `setModulePositionFromDocking` (`:546-550`) already adds
+   an entry's offset as a group-space translation, so the negated offset places the carrier from
+   the wall unit exactly where the original entry places the wall unit from the carrier.
+2. **Living reference** (`.agents/homag-intelligence.md`):
+   - `:125`: one sentence. The arrangement completes every entry with its reverse on the partner
+     root, with the mode mirrored and the offset negated, as the kernel records a docked pair.
+   - `:162`: "The docking context cannot do it: … wall units then form clusters of their own that
+     the arrangement leaves in place". This now holds only for wall units docked beside each other.
+     A lone wall unit touches nothing, so the kernel's answer does not name it. It keeps the reverse
+     entry with the negated offset, and the arrangement hangs it from its floor unit again
+     (RML-18081).
+
+Considered and rejected:
+
+- **Merge the kernel's answer with the entries it cannot see** (`_setRootModuleContextData`). That
+  changes every takeover of a kernel answer (split, merge, delete, planning situation) and is wider
+  than the defect.
+- **Drop the reverse entry of a link the kernel's answer removed**, so that a lone wall unit becomes
+  a cluster of its own and moves with its carrier by position. That needs a new cleanup step across
+  roots the answer does not name. The offset-less mirror would also stay wrong for any arrangement
+  that reaches the wall unit before its carrier.
+- **A workaround in the MCP server**: set `mod_HeightPosInsertion` after the materials, or send the
+  materials with the load. Every later arrangement would still drop the unit: a row edit, a swap,
+  or an attribute change in the planner.
+
+### Unit tests (roomle-ui)
+
+- `hi-root-module-arrangement-test.ts`, `describe('_validateAndCompleteContextData')` (`:291`):
+  `it('writes the connection back with the mode mirrored and the offset negated')`. A's `RightTop`
+  carries B's `LeftTop` with `StartEnd` and `[0, 660, 0]`. B's entry back to A reads
+  `EndStart` with `[0, -660, 0]`.
+- The same file, `describe('_arrangePositions')`:
+  `it('hangs a unit from its carrier by the unit's own entry when the carrier lost it')`. A row of
+  three cabinets with `LeftTop` vectors at 720. The middle cabinet has only side links. The wall
+  unit carries `LeftBottom -> middle.LeftTop` with `[0, -660, 0]`. It is arranged at y 1380. Today
+  it lands at y 720.
+- `glue-logic-test.ts`, `describe('row edits')`, beside `it('moves a unit above with the unit below
+  it when an attribute change resizes a module')` (`:10122`): `it('keeps a lone wall unit hanging
+  after the kernel's answer to a load drops the hang entry of its carrier')`.
+  1. `hangWallUnit(freeRowGroup(), 'wall-1', 1)`.
+  2. `changedGroupPlanningSituation` with an answer that names `root-2` with its side links only,
+     not `wall-1`.
+  3. `modifyAttribute`.
+  4. The loaded `wall-1` stands at `[600, 1380, 0]`. Today it stands at `[600, 720, 0]`.
+
+  The fixture `hangWallUnit` (`:10048`) gives the wall unit's entry `offset: [0, -660, 0]`, the
+  state the arrangement writes now. The four row edit tests that use it keep their results: the
+  carrier still holds its own entry there.
+
+### Verification
+
+- `cd packages/web-sdk && npm run test -- -t "<test name>"` for the new tests, then the whole
+  homag-intelligence suite (`npm run test`), the lint and the typecheck (npm scripts only).
+- Live, without a model: the replay `.temp/result/issue-RML-18081/replay-hang.mjs` against the
+  local roomle-ui dev server. The row's wall unit stays at y 1480 after each of the three commands.
+  The pair stays as before. No chat runs.
+
+### roomle-hi-example
+
+No server code and no served text change. With the roomle-ui fix:
+
+- backlog issue 23 (RML-18073) and its overview row leave `mcp-test-open-issues.md`;
+- this document records the implementation and the verification.
+
+### Commits
+
+- roomle-ui: one commit, `fix: keep the offset in the mirrored hi docking entry` — the code, the
+  three tests, the fixture and `.agents/homag-intelligence.md`.
+- roomle-hi-example: this plan; after the fix, one commit with the backlog and the close-out of
+  this document.
 
 ## Open points
 

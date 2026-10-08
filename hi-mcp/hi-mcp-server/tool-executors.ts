@@ -4270,7 +4270,14 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       );
       const merged = {
         command: tool,
-        groups: results.flatMap((result) => result?.groups ?? []),
+        // a group several commands changed, once, as the last one left it
+        groups: [
+          ...new Map(
+            results
+              .flatMap((result) => (result?.groups ?? []) as any[])
+              .map((group) => [group?.id, group])
+          ).values(),
+        ],
         changedModuleIds: [
           ...new Set(
             results.flatMap((result) => result?.changedModuleIds ?? [])

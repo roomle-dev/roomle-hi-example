@@ -5270,6 +5270,21 @@ describe('group command tools', () => {
       ]);
     });
 
+    it('names a group once when the commands of several of its root modules changed it', async () => {
+      const api = attributeApi();
+      const result = await toolExecutors['change-module-attribute'](api, {
+        rootModuleIds: ['u1', 'u3'],
+        moduleId: 'front-1',
+        attributeId: 'front',
+        value: 'white',
+      });
+      expect(commandsOf(api)).toHaveLength(2);
+      expect(result).toEqual({
+        command: 'change-module-attribute',
+        groupIds: ['kitchen-1'],
+      });
+    });
+
     it('answers an attribute change with the changed groups and modules, not the whole group', async () => {
       const api = attributeApi();
       const result = await toolExecutors['change-group-attribute'](api, {

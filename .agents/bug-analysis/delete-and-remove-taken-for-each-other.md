@@ -341,3 +341,71 @@ gpt-5.4-mini still took `delete-root-module` for "remove the middle unit" in its
 new descriptions. The descriptions alone may not be enough for gpt-5.4-mini at its default
 effort; the full check is open.
 
+
+## Names by the outcome (ticket comment 155887)
+
+The proposal: rename the two tools by what happens to the group, not by the user's verb —
+`delete-in-place` (today `delete-root-module`: the root module goes, everything else stays, a row
+falls apart into separate groups) and `delete-and-compact` (today `remove-article-from-group`: the
+root module goes, and the group closes the gap — part of it shifts, a leg turns when a corner
+article goes).
+
+### What it changes
+
+**The choice is no longer the user's word.** Both names start with "delete"; "remove" and
+"delete" become synonyms, as they are in everyday language. The model chooses by the outcome. This
+replaces D40 ("two edits, named by the user's word"), and the "Take the user's word" sentence and
+the word openings of PR #78 go.
+
+**A request that names no outcome needs a default.** "Delete the middle unit" and "remove the
+middle unit" say nothing about the gap. With outcome names, nothing in the request decides
+anymore, so the descriptions must say which tool applies when the user does not say whether the
+gap closes. Without that sentence the model falls back on its own preference. gpt-5.4-mini's
+preference is known: it took the tool that leaves the gap in every run, for "remove" and
+"delete". The default is therefore the part of the change that decides the result for this
+ticket's prompts. It is a product decision, not a naming question.
+
+**The descriptions match the names.** Each opens with its outcome and points to the other tool by
+the outcome: "To close the gap, use delete-and-compact." / "To keep every other root module in
+place, use delete-in-place." The repository's rule is to describe how to succeed (§2.4), so
+Gemini's "Do NOT use if …" becomes that positive pointer. D51 and D52 stay: `delete-and-compact`
+still says that a leg turns when a corner article goes.
+
+### What the evidence says
+
+Untested. The one rename tried in the harness, `remove-article-from-group` → `remove-root-module`
+(names that differ only in the verb), did not help: gpt-5.4-mini still took `delete-root-module` 9
+of 10 times. That supports the proposal's premise — the verbs are near-synonyms to the model —
+but says nothing about outcome names. Whether gpt-5.4-mini then takes the default the
+descriptions name has to be checked with the chat check of the ticket.
+
+### What it touches
+
+roomle-hi-example only. The planner commands keep their names (roomle-ui `HI_GROUP_OPERATION`,
+`hi-plan-context.ts:956`, `:961`); the executors forward them as today.
+
+| Where | What changes |
+|---|---|
+| `hi-mcp-server.ts` | two tool names and descriptions, `PLAN_CHANGING_TOOLS`, the rules (`:27`: the command list, "Take the user's word" goes) and the instructions (`:69`) |
+| `tool-executors.ts` | the executor keys and the labels in corrections and errors; the `command` the planner returns (`remove-article-from-group`) is shown to the agent under the new tool name; the follow-up wait after a closed gap (`:2756`) |
+| tests | `hi-mcp-server.test.ts` (23 places), `tool-executors.test.ts` (24) |
+| `docs/test-prompts.json` | eight tests name the tools in their expectation; four of them start with "delete the middle unit" to split the row (`edit-join-groups`, `undo-last-change`, `redo-last-change`, `undo-a-wrong-command`), and `edit-delete-unit` / `edit-remove-unit` encode today's word rule — their expectations follow the default |
+| docs | D40 superseded by a new decision; §6 and §8.5 of `docs/hi-mcp-behaviour.md`; `docs/hi-mcp-server.md`, the server README, `docs/implementation/`, three skills, `AGENTS.md`, `.github/copilot-instructions.md` |
+
+The ligna-store needs no change: it gets the tool list from the server. An MCP client that cached
+the old names (a running Claude Desktop session) sees the new ones on its next connection.
+
+PR #78 keeps what it does beside the words: `remove-article-from-group` takes the root module id
+alone (G54), and `delete-group` deletes. Its word openings and the D40 amendment would be
+replaced.
+
+### Open decisions
+
+1. **The default** when the request does not say whether the gap closes ("delete the middle
+   unit", "remove the base unit next to the corner unit"): `delete-and-compact`,
+   `delete-in-place`, or still by the word ("remove" compacts, "delete" leaves the gap — which
+   keeps today's word problem).
+2. **The names**: `delete-in-place` and `delete-and-compact` as proposed, or with the object like
+   the other tools (`delete-group`, `swap-root-modules`), e.g. `delete-root-module-in-place` and
+   `delete-root-module-and-compact`, so that neither reads as an operation on a group.
+3. **Where**: in PR #78 (the same ticket), or in a follow-up pull request after PR #78.

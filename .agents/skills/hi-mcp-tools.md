@@ -230,8 +230,8 @@ planner has loaded the result:
   `merge-article-into-group`, two roots of `insert-article-into-group` that are no neighbours, a
   root id read as the plan's id it abbreviates or misspells — and what the planner corrected or
   could not keep, prefixed with the command: a docking the new unit of `exchange-root-module` or `swap-root-modules` cannot take,
-  a unit above that keeps its place or a deletion instead of a remove (`delete-article-and-compact`)
-- `hint`: after a row edit (insert, remove, exchange, swap) — names the units above that moved with
+  a unit above that keeps its place or a deletion instead of closing the gap (`delete-article-and-compact`)
+- `hint`: after a row edit (insert, `delete-article-and-compact`, exchange, swap) — names the units above that moved with
   the unit below them, and says when the row now reaches past a wall or into another group
 
 - `delete-article-in-place`: deletes the unit and leaves the gap: units no longer docked together become
@@ -242,7 +242,7 @@ planner has loaded the result:
   the gap; a unit at a row end is deleted and nothing else moves; a corner article between two legs
   is deleted and the gap closed by turning one leg by 90° with the units above it, and the
   `corrections` name the leg that turned (D52); the only unit is deleted with its group
-  (`gapClosed: false`). A remove never splits a group
+  (`gapClosed: false`). `delete-article-and-compact` never splits a group
 - `exchange-root-module`: the article has one root module; the new unit keeps the position and
   the docking of the replaced one; `attributes` override attributes of the new unit (`mod_Width` for
   another width: the rest of the row moves by the difference, the end at a wall stays); a docking

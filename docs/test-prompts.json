@@ -39,6 +39,13 @@
       "prompt": "add a group of 4 cabinets to the wall in the back"
     },
     {
+      "id": "four-cabinets-centred-back-wall",
+      "title": "Four base cabinets, centred on the back wall",
+      "plan": "default-room",
+      "prompt": "add a row of four base cabinets centred on the back wall",
+      "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of four base cabinets with its back against the back wall, centred on it (the back wall runs from x -685 to 4815), inside the room"
+    },
+    {
       "id": "edit-change-one-unit",
       "title": "Change one unit",
       "plan": "three-tall-units",

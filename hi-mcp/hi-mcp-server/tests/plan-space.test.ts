@@ -3,6 +3,7 @@ import {
   adjoiningWall,
   alignmentRunsParallel,
   convexPolygonsTouch,
+  freeStretchesAlongWall,
   groupCornerGeometry,
   groupFootprint,
   groupHeightRange,
@@ -13,13 +14,17 @@ import {
   resolveWallAlignment,
   roomCorners,
   roomOfPoint,
+  rootVolumesInRoom,
   spanAlongWall,
+  stripInFrontOfWall,
   volumesOverlap,
   wallName,
   wallOfOpening,
+  wallOfRoot,
   wallSpanStart,
   type DerivedWall,
   type GroupFootprint,
+  type RootVolume,
 } from '../plan-space';
 
 const IDENTITY_MATRIX = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
@@ -327,6 +332,158 @@ describe('wallOfOpening', () => {
     expect(
       wallOfOpening(chair, [{ walls: [WALL_RIGHT, WALL_TOP] }])
     ).toBeUndefined();
+  });
+});
+
+describe('rootVolumesInRoom', () => {
+  const cabinet = (overrides: Record<string, unknown> = {}) => ({
+    id: 'r1',
+    articleId: 'base-60',
+    articlePos: [0, 0, 0],
+    rotationY: 0,
+    parts: [
+      { relPos: [0, 0, 0], dim: [600, 720, 560], fullMatrix: IDENTITY_MATRIX },
+    ],
+    ...overrides,
+  });
+  const rounded = (corners: [number, number][]) =>
+    corners.map(([x, z]) => [Math.round(x) + 0, Math.round(z) + 0]);
+
+  it('turns the box of each root module into room space with its height and rotation', () => {
+    const volumes = rootVolumesInRoom({
+      pos: [1000, 0, -3000],
+      rotationY: 90,
+      roots: [
+        cabinet(),
+        // a root module of the other leg of an L
+        cabinet({ id: 'r2', rotationY: 90 }),
+        cabinet({ id: 'worktop', isGenerated: true }),
+      ],
+    });
+    expect(
+      volumes.map(({ corners, ...volume }) => ({
+        ...volume,
+        corners: rounded(corners),
+      }))
+    ).toEqual([
+      {
+        id: 'r1',
+        articleId: 'base-60',
+        corners: [
+          [1000, -3000],
+          [1000, -3600],
+          [1560, -3600],
+          [1560, -3000],
+        ],
+        heights: [0, 720],
+        rotationY: 90,
+      },
+      {
+        id: 'r2',
+        articleId: 'base-60',
+        corners: [
+          [400, -3000],
+          [400, -3560],
+          [1000, -3560],
+          [1000, -3000],
+        ],
+        heights: [0, 720],
+        rotationY: 180,
+      },
+    ]);
+  });
+});
+
+describe('stripInFrontOfWall', () => {
+  it('lies in front of the span, into the room', () => {
+    expect(stripInFrontOfWall(WALL_TOP, [1000, 2000], 600)).toEqual([
+      [1000, -3000],
+      [2000, -3000],
+      [2000, -2400],
+      [1000, -2400],
+    ]);
+  });
+});
+
+const rootVolume = (
+  [minX, maxX]: [number, number],
+  [minZ, maxZ]: [number, number],
+  heights: [number, number],
+  rotationY: number
+): RootVolume => ({
+  id: 'r1',
+  corners: [
+    [minX, minZ],
+    [maxX, minZ],
+    [maxX, maxZ],
+    [minX, maxZ],
+  ],
+  heights,
+  rotationY,
+});
+
+describe('wallOfRoot', () => {
+  it('finds the wall a root module faces away from', () => {
+    const walls = [WALL_RIGHT, WALL_TOP, WALL_LEFT];
+    const baseUnit = rootVolume([1000, 1600], [-3000, -2400], [0, 720], 0);
+    expect(wallOfRoot(walls, baseUnit, 600)).toBe(WALL_TOP);
+    // in the back left corner, turned like the left wall
+    const cornerUnit = rootVolume([0, 600], [-3000, -2400], [0, 720], 90);
+    expect(wallOfRoot(walls, cornerUnit, 600)).toBe(WALL_LEFT);
+    // a dishwasher stands 13 mm off the wall
+    const offTheWall = rootVolume([1000, 1600], [-2987, -2387], [0, 720], 0);
+    expect(wallOfRoot(walls, offTheWall, 600)).toBe(WALL_TOP);
+    const island = rootVolume([1000, 1600], [-2000, -1400], [0, 720], 0);
+    expect(wallOfRoot(walls, island, 600)).toBeUndefined();
+  });
+});
+
+describe('freeStretchesAlongWall', () => {
+  const windowStrip = {
+    corners: stripInFrontOfWall(WALL_TOP, [1500, 2500], 600),
+    heights: [950, 2170] as [number, number],
+  };
+
+  it('leaves out what stands in front of the wall at its height', () => {
+    const wallUnit = rootVolume([1000, 1600], [-3000, -2650], [1480, 2200], 0);
+    expect(
+      freeStretchesAlongWall(WALL_TOP, wallUnit, [windowStrip], 5)
+    ).toEqual([
+      [0, 1500],
+      [2500, 4000],
+    ]);
+    // below the window's sill
+    const baseUnit = rootVolume([1000, 1600], [-3000, -2400], [0, 720], 0);
+    expect(
+      freeStretchesAlongWall(WALL_TOP, baseUnit, [windowStrip], 5)
+    ).toEqual([[0, 4000]]);
+    // deeper in the room than the wall unit, and a gap of 300 mm beside it
+    const deeper = {
+      corners: [
+        [3000, -2500],
+        [3500, -2500],
+        [3500, -2000],
+        [3000, -2000],
+      ] as [number, number][],
+      heights: [0, 2000] as [number, number],
+    };
+    const atTheWall = {
+      corners: [
+        [300, -3000],
+        [1500, -3000],
+        [1500, -2700],
+        [300, -2700],
+      ] as [number, number][],
+      heights: [0, 2200] as [number, number],
+    };
+    expect(
+      freeStretchesAlongWall(
+        WALL_TOP,
+        wallUnit,
+        [windowStrip, deeper, atTheWall],
+        5
+      )
+    ).toEqual([[2500, 4000]]);
   });
 });
 

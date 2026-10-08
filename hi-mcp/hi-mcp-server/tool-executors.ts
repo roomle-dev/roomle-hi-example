@@ -22,6 +22,7 @@ import {
   adjoiningWall,
   alignmentRunsParallel,
   footprintCornersInRoom,
+  freeStretchesAlongWall,
   groupCornerGeometry,
   groupFootprint,
   groupPointToRoom,
@@ -33,17 +34,21 @@ import {
   roomCorners,
   roomOfPoint,
   rootFootprintInRoom,
+  rootVolumesInRoom,
   rotateDirection,
   spanAlongWall,
+  stripInFrontOfWall,
   volumesOverlap,
   wallName,
   wallOfOpening,
+  wallOfRoot,
   wallSpanStart,
 } from './plan-space';
 import type {
   DerivedWall,
   GroupFootprint,
   PlacedVolume,
+  RootVolume,
   WallAlignment,
   WallSide,
 } from './plan-space';
@@ -1627,45 +1632,199 @@ const rememberAgentGroupIds = (
   }
 };
 
-const sameRotation = (a: number, b: number): boolean => {
-  const turn = (((a - b) % 360) + 360) % 360;
-  return Math.min(turn, 360 - turn) < 0.01;
-};
+// What a root module can stand on: an object, the strip in front of a door or
+// a window, or a root module of another group. The key tells the same blocker
+// before and after a replace.
+interface Blocker extends PlacedVolume {
+  key: string;
+  text: string;
+  groupId?: string;
+}
 
-// A new group that stands where another group stands - the same point and
-// rotation - is most likely the same kitchen sent twice, or units that belong
-// to the other group; the agent is told, never refused (D22).
-const groupsAtTheSamePlace = (
-  callGroups: CallGroup[],
-  beforeGroupIds: Set<string>,
-  groups: any[]
-): string[] =>
-  matchResultGroups(callGroups, beforeGroupIds, groups).flatMap(
-    ([{ group }, result]) => {
-      if (beforeGroupIds.has(group.id) || !isPoint(result.position?.pos)) {
-        return [];
-      }
-      const other = groups.find(
-        (candidate) =>
-          candidate.id !== result.id &&
-          isPoint(candidate.position?.pos) &&
-          Math.hypot(
-            ...[0, 1, 2].map(
-              (axis) => candidate.position.pos[axis] - result.position.pos[axis]
-            )
-          ) <= OVERLAP_TOLERANCE_MM &&
-          sameRotation(
-            candidate.position.rotationY ?? 0,
-            result.position.rotationY ?? 0
-          )
+const wholeMm = (value: number): number => Math.round(value) + 0;
+
+const rootLabel = (root: RootVolume): string =>
+  `'${root.id}'${root.articleId ? ` (${root.articleId})` : ''}`;
+
+// The objects of the obstacles section: furniture by its outline, a door or a
+// window by the strip in front of it on its wall (D55).
+const objectBlockers = (obstacles: any, rooms: any): Blocker[] =>
+  ((agentFacingObstacles(obstacles, rooms)?.objects ?? []) as any[]).flatMap(
+    (object): Blocker[] => {
+      const outline = ((object?.outline ?? []) as number[][]).map(
+        ([x, , z]): [number, number] => [x, z]
       );
-      return other
-        ? [
-            `Group '${result.id}' stands at the place of group '${other.id}' - if the units belong together, send them as one group or join them with merge-groups.`,
-          ]
-        : [];
+      const heights: [number, number] = [
+        Number(object.bottomMm),
+        Number(object.topMm),
+      ];
+      const key = `${object.kind}:${JSON.stringify(
+        outline.map(([x, z]) => [wholeMm(x), wholeMm(z)])
+      )}`;
+      if (object.kind === 'door' || object.kind === 'window') {
+        const wall = (
+          (rooms?.rooms?.[object.roomIndex]?.walls ?? []) as DerivedWall[]
+        ).find((candidate) => candidate.index === object.wall);
+        if (!wall || !Array.isArray(object.fromEndMm)) {
+          return [];
+        }
+        const [from, to] = object.fromEndMm as [number, number];
+        const sill = heights[0] > 0 ? `, from ${wholeMm(heights[0])} mm` : '';
+        return [
+          {
+            key,
+            corners: stripInFrontOfWall(wall, [from, to], WALL_STRIP_MM),
+            heights,
+            text: `stands in front of the ${object.kind} in the ${wallName(wall.side)} (wall ${wall.index}, fromEndMm ${wholeMm(from)} to ${wholeMm(to)}${sill})`,
+          },
+        ];
+      }
+      const xs = outline.map(([x]) => x);
+      const zs = outline.map(([, z]) => z);
+      return [
+        {
+          key,
+          corners: outline,
+          heights,
+          text: `overlaps an object (x ${wholeMm(Math.min(...xs))} to ${wholeMm(Math.max(...xs))}, z ${wholeMm(Math.min(...zs))} to ${wholeMm(Math.max(...zs))}, ${wholeMm(heights[0])} to ${wholeMm(heights[1])} mm)`,
+        },
+      ];
     }
   );
+
+interface GroupRootVolumes {
+  id: string;
+  roots: RootVolume[];
+}
+
+const rootVolumesOfGroups = (groups: any[]): GroupRootVolumes[] =>
+  groups.map((group) => ({ id: group.id, roots: rootVolumesInRoom(group) }));
+
+const rootBlockersBeside = (
+  groups: GroupRootVolumes[],
+  groupId: string
+): Blocker[] =>
+  groups
+    .filter((group) => group.id !== groupId)
+    .flatMap((group) =>
+      group.roots.map((root) => ({
+        corners: root.corners,
+        ...(root.heights && { heights: root.heights }),
+        key: `root:${root.id}`,
+        text: `overlaps root module ${rootLabel(root)} of group '${group.id}'`,
+        groupId: group.id,
+      }))
+    );
+
+const freeStretchesNote = (
+  walls: DerivedWall[],
+  root: RootVolume,
+  blockers: Blocker[]
+): string => {
+  const wall = wallOfRoot(walls, root, WALL_STRIP_MM);
+  if (!wall) {
+    return '';
+  }
+  const named = `the ${wallName(wall.side)} (wall ${wall.index})`;
+  const stretches = freeStretchesAlongWall(
+    wall,
+    root,
+    blockers,
+    OVERLAP_TOLERANCE_MM
+  );
+  return stretches.length > 0
+    ? ` - free stretches of ${named} at its height: fromEndMm ${stretches
+        .map(([from, to]) => `${from} to ${to}`)
+        .join(', ')}`
+    : ` - no stretch of ${named} is free for it at its height`;
+};
+
+interface ObstacleHintInput {
+  groupIds: string[];
+  rawGroups: any[];
+  obstacles: any;
+  rooms: any;
+  withGroups: boolean;
+  before?: any[];
+  closing: string;
+}
+
+// What the root modules of the named groups stand on, with the free stretches
+// of their wall; the group is built anyway (D55, D51). A replaced group is told
+// only what it did not stand on before. Without the obstacles section of the
+// plan context nothing is told.
+const obstacleHint = ({
+  groupIds,
+  rawGroups,
+  obstacles,
+  rooms,
+  withGroups,
+  before = [],
+  closing,
+}: ObstacleHintInput): string | undefined => {
+  if (!Array.isArray(obstacles?.objects)) {
+    return undefined;
+  }
+  const objects = objectBlockers(obstacles, rooms);
+  const walls = ((rooms?.rooms ?? []) as any[]).flatMap(
+    (room) => (room?.walls ?? []) as DerivedWall[]
+  );
+  const findings = (
+    groups: GroupRootVolumes[],
+    group: GroupRootVolumes,
+    root: RootVolume
+  ): Blocker[] =>
+    [
+      ...objects,
+      ...(withGroups ? rootBlockersBeside(groups, group.id) : []),
+    ].filter((blocker) => volumesOverlap(root, blocker, OVERLAP_TOLERANCE_MM));
+  const tested = (groups: GroupRootVolumes[]) =>
+    groups.filter((group) => groupIds.includes(group.id));
+  const volumesBefore = rootVolumesOfGroups(before);
+  const keysBefore = new Map<string, Set<string>>(
+    tested(volumesBefore).flatMap((group) =>
+      group.roots.map((root): [string, Set<string>] => [
+        root.id,
+        new Set(
+          findings(volumesBefore, group, root).map((blocker) => blocker.key)
+        ),
+      ])
+    )
+  );
+  const volumesAfter = rootVolumesOfGroups(rawGroups);
+  const sentences: string[] = [];
+  let namesAGroup = false;
+  for (const group of tested(volumesAfter)) {
+    const others = rootBlockersBeside(volumesAfter, group.id);
+    for (const root of group.roots) {
+      const known = keysBefore.get(root.id);
+      const found = findings(volumesAfter, group, root).filter(
+        (blocker) => !known?.has(blocker.key)
+      );
+      if (found.length === 0) {
+        continue;
+      }
+      namesAGroup ||= found.some((blocker) => blocker.groupId !== undefined);
+      const what = found.map((blocker) => blocker.text).join(' and ');
+      const stretches = freeStretchesNote(walls, root, [...objects, ...others]);
+      sentences.push(
+        `Root module ${rootLabel(root)} of group '${group.id}' ${what}${stretches}.`
+      );
+    }
+  }
+  if (sentences.length === 0) {
+    return undefined;
+  }
+  return [
+    ...sentences,
+    closing,
+    ...(namesAGroup
+      ? [
+          'If the units belong together, send them as one group or join them with merge-groups.',
+        ]
+      : []),
+  ].join(' ');
+};
 
 // The group attributes that are not the library's group settings, the
 // overrides moved off the roots and the colours of the dropped generated roots
@@ -2293,6 +2452,11 @@ const PARTNER_VECTOR: Record<string, string> = {
 };
 
 const OVERLAP_TOLERANCE_MM = 5;
+
+// The strip along a wall: a root module in it in front of a door or a window
+// stands in front of that opening, and one whose back lies in it stands at
+// the wall it faces away from (D55).
+const WALL_STRIP_MM = 600;
 
 const volumeOf = (
   footprint: GroupFootprint,
@@ -2992,7 +3156,10 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       );
 
       const preContext =
-        await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']);
+        await roomDesignerApi.extended.getExternalObjectPlanContext([
+          'groups',
+          'obstacles',
+        ]);
       const beforeGroupIds = new Set(
         ((preContext.groups ?? []) as any[]).map((group) => group.id)
       );
@@ -3100,6 +3267,13 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           }
         }
       }
+      // a replaced group is told only what it did not stand on before (D55)
+      const rawGroupsBefore =
+        preContext.obstacles !== undefined &&
+        posGroups.some((group) => beforeGroupIds.has(group.id))
+          ? (((await roomDesignerApi.extended.getExternalObjectGroups()) ??
+              []) as any[])
+          : [];
 
       const loaded =
         await roomDesignerApi.extended.loadExternalObjectGroupLayout(
@@ -3120,10 +3294,12 @@ export const toolExecutors: Record<string, ToolExecutor> = {
               .join('')
         );
       }
-      const context =
-        await roomDesignerApi.extended.getExternalObjectPlanContext(['groups']);
-
-      let groups = context.groups;
+      let placed = await roomDesignerApi.extended.getExternalObjectPlanContext([
+        'groups',
+        'obstacles',
+        'rooms',
+      ]);
+      let groups = placed.groups;
       const replacedInputIds = new Set(
         posGroups
           .map((group) => group.id)
@@ -3144,11 +3320,12 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           corrections
         )
       ) {
-        groups = (
-          await roomDesignerApi.extended.getExternalObjectPlanContext([
-            'groups',
-          ])
-        ).groups;
+        placed = await roomDesignerApi.extended.getExternalObjectPlanContext([
+          'groups',
+          'obstacles',
+          'rooms',
+        ]);
+        groups = placed.groups;
       }
       rememberAgentGroupIds(
         callGroups,
@@ -3162,6 +3339,25 @@ export const toolExecutors: Record<string, ToolExecutor> = {
             (!beforeGroupIds.has(group.id) || replacedInputIds.has(group.id))
         )
         .map((group: any) => group.id);
+      const obstacles =
+        placed.obstacles !== undefined
+          ? obstacleHint({
+              groupIds: matchResultGroups(
+                callGroups,
+                beforeGroupIds,
+                (groups ?? []) as any[]
+              ).map(([, result]) => result.id),
+              rawGroups:
+                ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
+                  []) as any[],
+              obstacles: placed.obstacles,
+              rooms: placed.rooms,
+              withGroups: true,
+              before: rawGroupsBefore,
+              closing:
+                'The groups were built as sent - move or change them if the user did not ask for them there.',
+            })
+          : undefined;
       const hints = [
         ...(unpositionedGroupIds.length > 0
           ? [
@@ -3170,11 +3366,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
                 'with (see get-authoring-rules), or place-group moves it against a wall or into a room corner.',
             ]
           : []),
-        ...groupsAtTheSamePlace(
-          callGroups,
-          beforeGroupIds,
-          (groups ?? []) as any[]
-        ),
+        ...(obstacles ? [obstacles] : []),
       ];
       return {
         loaded,
@@ -3203,6 +3395,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         await roomDesignerApi.extended.getExternalObjectPlanContext([
           'rooms',
           'groups',
+          'obstacles',
         ]);
       const groups = (context.groups ?? []) as any[];
       const group = findGroup(groups, groupId);
@@ -3284,6 +3477,21 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       const after = await roomDesignerApi.extended.getExternalObjectPlanContext(
         ['groups']
       );
+      // the objects, doors and windows; the other groups are G22's
+      const hint =
+        context.obstacles !== undefined
+          ? obstacleHint({
+              groupIds: [group.id],
+              rawGroups:
+                ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
+                  []) as any[],
+              obstacles: context.obstacles,
+              rooms: context.rooms,
+              withGroups: false,
+              closing:
+                'The group was placed anyway - move or change it if the user did not ask for it there.',
+            })
+          : undefined;
       return withCorrections(
         {
           placedIn: placement.placedIn,
@@ -3291,6 +3499,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           group: ((after.groups ?? []) as any[]).find(
             (candidate) => candidate.id === group.id
           ),
+          ...(hint && { hint }),
         },
         corrections
       );

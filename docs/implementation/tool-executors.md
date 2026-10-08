@@ -24,7 +24,8 @@ at the end.
 | Anchor probe | `knownAnchorFrames`, `probeAnchorFrame`, `takeBackProbe` |
 | Placement normalisation | `normalizePlacement` |
 | Docking graph and its completion | `sidePartnersOf`, `rowWalk`, `separateSideVectorPartners`, `connectUnreachedRoots`, `reportUnsentRoots`, `completeDocking` |
-| Group-wide attributes, group id memory, post-load checks | `generatedRootAttributes`, `moveGeneratedRootOverrides`, `agentGroupIds`, `applyKitchenWideAttributes`, `groupsAtTheSamePlace`, `reportRevertedReplaces` |
+| Group-wide attributes, group id memory, post-load checks | `generatedRootAttributes`, `moveGeneratedRootOverrides`, `agentGroupIds`, `applyKitchenWideAttributes`, `reportRevertedReplaces` |
+| The obstacle hint (D55) | `WALL_STRIP_MM`, `objectBlockers`, `rootBlockersBeside`, `freeStretchesNote`, `obstacleHint`; the geometry in `plan-space.ts`: `rootVolumesInRoom`, `stripInFrontOfWall`, `wallOfRoot`, `freeStretchesAlongWall` |
 | Partial loads | `NotLoadedGroup`, `keepBuildable`, `nothingLoaded` |
 | Payload preparation | `dropMalformedDocking`, `liftNestedRoots`, `completeDockingEntries`, `normalizedAttributes`, `reportUnusedFields`, `readDockToAsRelation`, `prepareGroup` |
 | Geometry for place-group | `placedGroupVolumes`, `overlappedGroupIds`, `resolveWall`, `placeGroupAtWall`, `standsAt`, `freePlacementAlongWall` |
@@ -99,8 +100,12 @@ call and is reported in `notLoaded`, the others load
 11. **After the load:** read the groups again; detect a replace the planner silently reverted
     (`reportRevertedReplaces`); apply the kitchen-wide attributes with
     `externalObjectGroupOperation('change-group-attribute', …)` (`applyKitchenWideAttributes`);
-    remember the agent's group ids (`rememberAgentGroupIds`); hint at unpositioned groups and
-    groups at the same place (`groupsAtTheSamePlace`).
+    remember the agent's group ids (`rememberAgentGroupIds`); hint at unpositioned groups. The
+    reads after the load take `groups`, `obstacles` and `rooms`; with an `obstacles` section the
+    raw groups are read and `obstacleHint` names every root module of the call's groups on an
+    object, in another group or in front of a door or a window (D55). For a replace, the read
+    before the load takes `obstacles` too, and the raw groups before the load tell what the group
+    stood on already.
 
 Result: `{ loaded, groups, hint?, corrections?, notLoaded? }`. `groups` is every group of the plan,
 `loaded` the planner's ids of the loaded groups.
@@ -119,7 +124,7 @@ gives `IDENTITY_FRAME` and a correction: the group may stand off the requested p
 
 1. Reads `wall` and `alignment` side labels (`back` → `top`, `front` → `bottom`, `sideLabel`);
    defaults: alignment `center`, offset 0, room 0.
-2. Reads `rooms` and `groups`, finds the group (`findGroup`) and the wall (`resolveWall`: a side label
+2. Reads `rooms`, `groups` and `obstacles`, finds the group (`findGroup`) and the wall (`resolveWall`: a side label
    means the longest real wall on that side).
 3. An alignment that runs along the wall (`alignmentRunsParallel`) becomes `center`, with a
    correction.
@@ -132,8 +137,10 @@ gives `IDENTITY_FRAME` and a correction: the group may stand off the requested p
    free, it stays as asked, with a correction.
 7. If the group already stands there (`standsAt`), nothing is loaded.
 8. Loads `repositionedGroup(rawGroup, placement)` with `loadExternalObjectGroupLayout`.
+9. With an `obstacles` section, reads the raw groups again and `obstacleHint` names the root modules
+   on an object or in front of a door or a window; the other groups stay with step 6 (D55).
 
-Result: `{ placedIn: 'wall' | 'corner', wall, group }` with corrections.
+Result: `{ placedIn: 'wall' | 'corner', wall, group, hint? }` with corrections.
 
 ## The command tools
 

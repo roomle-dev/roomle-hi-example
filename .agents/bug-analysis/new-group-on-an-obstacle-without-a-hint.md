@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18077](https://roomle.atlassian.net/browse/RML-18077); backlog [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) issue 49; related: [RML-18036](https://roomle.atlassian.net/browse/RML-18036) (D45, the obstacles), issues 41 and 53 of the same backlog, [RML-18041](https://roomle.atlassian.net/browse/RML-18041) (umbrella)
 > **Date**: 2026-10-07
 > **Author**: AI Assistant
-> **Status**: Open — analysed and [planned](#implementation-plan), not fixed
+> **Status**: Open — implemented on `fix/new-group-on-an-obstacle-RML-18077`, [verified](#implementation-and-verification) with unit tests and live, the model runs wait for a go; not yet merged
 
 ## Affected repositories
 
@@ -457,3 +457,44 @@ no `obstacles`, so they get no hint and no extra read.
    `obstacle-back-wall-beside-the-sofa` and `obstacle-island-free-spot` with gpt-5-mini and
    gpt-5.4-mini, and `image-only-no-text` with gpt-6-astra. These are 7 runs, about 15 minutes.
    Expected: every group ends clear of the obstacles, after one correction at most.
+
+## Implementation and verification
+
+Implemented on `fix/new-group-on-an-obstacle-RML-18077` as planned (D55), with three differences:
+
+- **No `obstacleFindings` function.** The test is the local `findings` of `obstacleHint`, over the
+  blockers of `objectBlockers` (objects, and the strips in front of doors and windows) and
+  `rootBlockersBeside` (the root modules of the other groups).
+- **The closing sentence of `place-group`** reads "The group was placed anyway - move or change it
+  if the user did not ask for it there." The `create-or-replace-groups` sentence is the planned one.
+- **Test 11** pins three raw reads: the plan history's read before and after the call, and the
+  placement frame's read. The executor of `master` makes the same three, so the hint adds none on
+  a planner without the obstacles section.
+
+Three existing assertions pinned the sections of the plan-context reads. They now expect
+`obstacles` and `rooms`. The test "hints at a new group that stands at the place of another" is
+replaced by test 8.
+
+### Results
+
+1. `npm test` (459 tests: 13 new, the two served-text tests extended), `npm run typecheck`, `npm run lint` and
+   `npm run format:check` pass.
+2. **Live, headless**: the deployed bo-test planner and the MCP server of the branch, with the
+   tools called directly (`.temp/result/issue-RML-18077/verify-18077.mjs`, `verify.json`).
+   - **Default Room, test 32's call 2** (both groups). The OTB30 in the back left corner gets
+     "stands in front of the window in the back wall (wall 5, fromEndMm 235 to 2335, from 950 mm)
+     - free stretches of the left wall (wall 0) at its height: fromEndMm 0 to 4400". The range
+     hood DU gets the same sentence. It hangs 402 mm from the back wall and covers the window's
+     first 266 mm, within the 600 mm strip (default 1). The group on the right wall gets none.
+   - **Default Room, gpt-5-mini 01's centred row.** The two wall units in front of the window get
+     the sentence, with the free stretch "fromEndMm 2335 to 5500". The 235 mm left of the window
+     is narrower than a unit. The base units below the sill get none.
+   - **Open-plan room, gpt-5-mini 02's two H2TB60 in the back left corner.** Both get "overlaps
+     an object (x -4521 to -1502, z 2259 to 3319, 0 to 828 mm)", the sofa, with "free stretches
+     of the back wall (wall 9) at its height: fromEndMm 3805 to 5416". That is x −1021 to 590,
+     the stretch between the side table and the door that the test evaluation named.
+   - **Open-plan room, `place-group` of the kitchen** to the back wall's end. Seven root modules
+     get the sofa, and two also the side table (x −1461 to −1021, 0 to 450 mm). The G22
+     corrections are as before.
+3. **MCP tests with models**: not run yet; they wait for a go.
+

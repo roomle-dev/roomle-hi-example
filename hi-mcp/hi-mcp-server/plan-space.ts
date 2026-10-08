@@ -38,6 +38,8 @@ interface FootprintModule {
 
 interface FootprintRoot extends FootprintModule {
   id?: string;
+  articleId?: string;
+  isGenerated?: boolean;
   articlePos?: number[];
   rotationY?: number;
   dockInfos?: { id?: string; start?: number[]; end?: number[] }[];
@@ -730,6 +732,183 @@ export const wallOfOpening = (
     }
   });
   return found;
+};
+
+export interface RootVolume extends PlacedVolume {
+  id: string;
+  articleId?: string;
+  rotationY: number;
+}
+
+// Every root module of a calculated group but the generated ones, as the box
+// of its parts in room space with its height and its rotation in the room.
+export const rootVolumesInRoom = (
+  group: FootprintGroup & PlacedGroup
+): RootVolume[] => {
+  const partMatricesAreGroupSpace = (group.ver ?? 0) > 0;
+  const groupY = group.pos?.[1] ?? 0;
+  return (group.roots ?? []).flatMap((root) => {
+    const points = root.isGenerated
+      ? []
+      : rootFootprintPoints(root, partMatricesAreGroupSpace);
+    if (points.length === 0) {
+      return [];
+    }
+    const xs = points.map(([x]) => x);
+    const zs = points.map(([, z]) => z);
+    const [minX, maxX] = [Math.min(...xs), Math.max(...xs)];
+    const [minZ, maxZ] = [Math.min(...zs), Math.max(...zs)];
+    const corners = (
+      [
+        [minX, minZ],
+        [maxX, minZ],
+        [maxX, maxZ],
+        [minX, maxZ],
+      ] as [number, number][]
+    ).map((corner) => groupPointToRoom(group, corner));
+    const heights = rootHeights(root, partMatricesAreGroupSpace);
+    const [bottom, top] = [Math.min(...heights), Math.max(...heights)];
+    return [
+      {
+        id: root.id ?? '',
+        ...(root.articleId !== undefined && { articleId: root.articleId }),
+        corners,
+        ...(top - bottom >= 1 && {
+          heights: [bottom + groupY, top + groupY] as [number, number],
+        }),
+        rotationY: normalizeDegrees(
+          (group.rotationY ?? 0) + (root.rotationY ?? 0)
+        ),
+      },
+    ];
+  });
+};
+
+// Into the room from a wall: the front of a group with its back to the wall.
+const intoRoom = (wall: DerivedWall): [number, number] =>
+  rotateDirection([0, 1], wall.facingRotationY);
+
+const distanceFromWall = (
+  wall: DerivedWall,
+  [x, z]: [number, number]
+): number => {
+  const [[startX, startZ]] = wallFloorPoints(wall);
+  const [inX, inZ] = intoRoom(wall);
+  return (x - startX) * inX + (z - startZ) * inZ;
+};
+
+const pointAlongWall = (
+  wall: DerivedWall,
+  fromEndMm: number,
+  intoRoomMm: number
+): [number, number] => {
+  const [[startX, startZ], [endX, endZ]] = wallFloorPoints(wall);
+  const length = Math.hypot(endX - startX, endZ - startZ);
+  const [inX, inZ] = intoRoom(wall);
+  return [
+    endX + ((startX - endX) * fromEndMm) / length + inX * intoRoomMm,
+    endZ + ((startZ - endZ) * fromEndMm) / length + inZ * intoRoomMm,
+  ];
+};
+
+// The floor in front of a span of a wall, measured from the wall's end,
+// reaching depthMm into the room.
+export const stripInFrontOfWall = (
+  wall: DerivedWall,
+  [fromEndMm, toEndMm]: [number, number],
+  depthMm: number
+): [number, number][] => [
+  pointAlongWall(wall, fromEndMm, 0),
+  pointAlongWall(wall, toEndMm, 0),
+  pointAlongWall(wall, toEndMm, depthMm),
+  pointAlongWall(wall, fromEndMm, depthMm),
+];
+
+const sameAngle = (a: number, b: number): boolean => {
+  const turn = normalizeDegrees(a - b);
+  return Math.min(turn, 360 - turn) < 0.5;
+};
+
+// The wall a root module faces away from: turned like the wall's
+// facingRotationY, beside it along the wall, and with its back nearest to it,
+// at most depthMm away. A corner unit touches two walls; its rotation tells.
+export const wallOfRoot = (
+  walls: DerivedWall[],
+  root: RootVolume,
+  depthMm: number
+): DerivedWall | undefined => {
+  let found: DerivedWall | undefined;
+  let nearest = depthMm;
+  for (const wall of walls) {
+    if (
+      wall.type !== 'wall' ||
+      !sameAngle(wall.facingRotationY, root.rotationY)
+    ) {
+      continue;
+    }
+    const [from, to] = spanAlongWall(wall, root.corners);
+    if (Math.min(to, wall.lengthMm) - Math.max(from, 0) <= POINT_EPSILON_MM) {
+      continue;
+    }
+    const back = Math.abs(
+      Math.min(...root.corners.map((corner) => distanceFromWall(wall, corner)))
+    );
+    if (back <= nearest) {
+      nearest = back;
+      found = wall;
+    }
+  }
+  return found;
+};
+
+// The stretches of a wall, measured from its end, where the root module -
+// as deep and at the height it is - stands clear of every blocker; stretches
+// narrower than the root module are left out.
+export const freeStretchesAlongWall = (
+  wall: DerivedWall,
+  root: RootVolume,
+  blockers: PlacedVolume[],
+  toleranceMm: number
+): [number, number][] => {
+  const length = wall.lengthMm;
+  const depth = Math.max(
+    ...root.corners.map((corner) => distanceFromWall(wall, corner))
+  );
+  const [rootFrom, rootTo] = spanAlongWall(wall, root.corners);
+  if (depth <= 0 || !root.heights) {
+    return [];
+  }
+  const strip: PlacedVolume = {
+    corners: stripInFrontOfWall(wall, [0, length], depth),
+    heights: root.heights,
+  };
+  const taken = blockers
+    .filter((blocker) => volumesOverlap(strip, blocker, toleranceMm))
+    .map((blocker) => spanAlongWall(wall, blocker.corners))
+    .map(([from, to]): [number, number] => [
+      Math.max(from, 0),
+      Math.min(to, length),
+    ])
+    .filter(([from, to]) => to > from)
+    .sort(([a], [b]) => a - b);
+  const free: [number, number][] = [];
+  let start = 0;
+  for (const [from, to] of taken) {
+    if (from > start) {
+      free.push([start, from]);
+    }
+    start = Math.max(start, to);
+  }
+  if (start < length) {
+    free.push([start, length]);
+  }
+  return free
+    .filter(([from, to]) => to - from >= rootTo - rootFrom - toleranceMm)
+    .map(([from, to]): [number, number] => [
+      Math.round(length - to) + 0,
+      Math.round(length - from) + 0,
+    ])
+    .reverse();
 };
 
 // The group placement expressed as the room transform of one root module, so

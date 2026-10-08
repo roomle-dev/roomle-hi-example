@@ -424,8 +424,10 @@ ids, `pos`, `rotationY`, `footprint`), plus a hint when a group of this call
 is still unpositioned, `corrections` (what the server changed in the input)
 and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build and, with
 `rootIds`, the roots of a loaded group it could not build — one unknown article id drops that root,
-not the group). A group id you gave an earlier group of the session replaces that group, and a new
-group that stands at the place of another gets a `hint`.
+not the group). A group id you gave an earlier group of the session replaces that group. A `hint`
+names each root module of the call's groups that overlaps an object or a root module of another
+group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm`
+ranges; the group is built anyway (D55).
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm
 room, from the back right corner, one call. `posGroup` is the right wall's
@@ -498,8 +500,9 @@ No page change: the planner methods it calls are on every page's allow-list.
 | `roomIndex` | `number` | no | Room in the `rooms` array. Default 0 |
 
 Returns `placedIn` (`corner` or `wall`), the wall, and the resulting group
-with its `position`, plus `corrections` when the server corrected the request.
-The group keeps its height, so a group of wall units only stays at its
+with its `position`, plus `corrections` when the server corrected the request
+and a `hint` when a root module stands on an object or in front of a door or a
+window after the move, with the free stretches of its wall (D55). The group keeps its height, so a group of wall units only stays at its
 mounting height.
 
 Example: `{ "groupId": "a1b2c3", "wall": "right", "alignment": "top" }`
@@ -739,11 +742,11 @@ for a group at a wall, in a corner, or anywhere in the room.
   article that goes into the corner `posGroup` names.
 - **Anywhere else** (an island, the middle of the room, next to a door): any
   floor point `obstacles` leaves free as `posGroup`, any `posRotationY`.
-- **Obstacles**: a root module cannot stand where an object or a root module
-  of another group overlaps it both in its `outline` and in its height range
-  (`bottomMm` to `topMm`). A door or a window lies in a wall: keep its
-  `fromEndMm` span of that wall free — from the floor for a door, from the
-  window's `bottomMm` for a window, where base units lower than that still fit.
+- **Obstacles**: a new group goes on a stretch of wall or a spot `obstacles`
+  leaves free, with the recipes above too; base units lower than a window's
+  `bottomMm` fit below it. The result's `hint` names every root module that
+  overlaps an object or another group or stands in front of a door or a window,
+  with the free stretches of its wall (D55).
 - **New groups only**: the placement is applied once, when the group is
   created. A placement on a group that is already in the plan is not used —
   the group keeps its position, and `corrections` says so; a group

@@ -5,8 +5,9 @@
 > guard, automatic correction and feedback message. Every change to a tool, a served rule, a guard, a
 > correction or a result updates this document in the same change.
 >
-> **State**: the code of 2026-10-06 — with the obstacles of the plan context
-> ([RML-18036](https://roomle.atlassian.net/browse/RML-18036), D45) —, the served text speaks of
+> **State**: the code of 2026-10-08 — with the obstacles of the plan context
+> ([RML-18036](https://roomle.atlassian.net/browse/RML-18036), D45) and the hint that names a root
+> module on an obstacle ([RML-18077](https://roomle.atlassian.net/browse/RML-18077), D55) —, the served text speaks of
 > articles and root modules, not of kitchens (D44), with the row edit tools
 > ([RML-18045](https://roomle.atlassian.net/browse/RML-18045)) and the undo and redo tools
 > ([RML-18044](https://roomle.atlassian.net/browse/RML-18044)), after the fixes of the MCP test backlog
@@ -192,6 +193,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | # | Decision | Source | State |
 |---|---|---|---|
 | D45 | **What stands in the room is a default section of its own.** `get-plan-context` returns `obstacles`: the doors, windows and other plan objects of the kernel's obstacle map as floor outlines with their height range — `kind` door, window or object, no names: an obstacle is an obstacle —, and per HI group the room-space outlines of its root modules. The group outlines come from the parts of the calculated groups, not from the obstacle map: the kernel's outline of an HI group was 50 to 250 mm off on the ticket's plan. The walls of the map are left out — the `rooms` section has them, named and per room. Doors and windows lie behind the room boundary and only touch it, so an overlap test never flags them; the server gives each its wall and its span from the wall's end (C21), the terms of a placement. Root geometry stays out of `groups` (D15); the outlines in `obstacles` are read-only. A planner without the section returns none, and the tool works as before | [RML-18036](https://roomle.atlassian.net/browse/RML-18036) | in effect — `shapeObstacles` (roomle-ui `hi-plan-context.ts`), `agentFacingObstacles`, `wallOfOpening` |
+| D55 | **The server tests the obstacles, and the result names what a root module stands on.** After the load of `create-or-replace-groups` and the reload of `place-group`, the server tests every root module of the groups of the call: does it overlap an object, a root module of another group (`create-or-replace-groups` only — `place-group` keeps G22), or the strip in front of a door, or of a window above its `bottomMm`? The strip along a wall is 600 mm deep (`WALL_STRIP_MM`). The `hint` names each such root module, what it stands on or in front of, and the free stretches of its wall at its height as `fromEndMm` ranges; the group is built anyway — the user may want a cabinet in front of a window (D51). A root module's wall is the wall it faces away from, with its back within the strip; at a corner its rotation decides, and each leg of an L-shaped group has its own wall. The root modules come from the calculated groups, which carry their rotation, the objects from `obstacles`. A replaced group is told only what it did not stand on before (as D43). An object outline that is not convex is tested like its convex hull. The served text no longer asks the agent to compare outlines and spans. Replaces the hint for a new group at the place of another. Found with a corner wall unit of the left wall in front of the back wall's window (`mcp-test-2026-10-07_11-58-22`, gpt-6-astra 32) and with groups on the sofa, in the kitchen and across the window | [RML-18077](https://roomle.atlassian.net/browse/RML-18077), 2026-10-08 | in effect — `obstacleHint`, `objectBlockers`, `tool-executors.ts`; `rootVolumesInRoom`, `stripInFrontOfWall`, `wallOfRoot`, `freeStretchesAlongWall`, `plan-space.ts` |
 
 ### Flexibility (2026-10-07)
 
@@ -317,10 +319,11 @@ tool. It covers:
   vectors `merge-article-into-group` names in `dockTo`.
 - **Placement**: the point and the rotation taken from the walls array, the table of room corners,
   and the right-handed corner article.
-- **Obstacles** (D45): what the `obstacles` section lists, that a root module cannot stand where an
-  object or another group's root module overlaps it in outline and height range, and that the span of
-  a door is kept free from the floor, the span of a window from its `bottomMm` — base units lower
-  than that fit below a window. Free spots and free stretches of wall are the ones `obstacles` leaves.
+- **Obstacles** (D45, D55): what the `obstacles` section lists, a door's or a window's wall and span
+  from the wall's end, that a new group goes on a stretch of wall or a spot `obstacles` leaves free —
+  with the recipes of the walls rule too —, that base units lower than a window's `bottomMm` fit
+  below it, and that the result's `hint` names every root module on an obstacle with the free
+  stretches of its wall.
 - **Extending** — at the end of a row with `merge-article-into-group`, between two root modules
   with `insert-article-into-group` —, moving with `place-group`, editing with the command tools and which
   end of a row moves in a row edit (D41, D42), verifying results
@@ -435,17 +438,20 @@ The server runs these steps:
 5. It turns the placement into the planner's repositioning of the anchor root (C5, C6). The group
    reaches the planner with `id`, `libraryId`, `roots`, `attributes` and the repositioning.
 6. It loads the groups that can be built in one call with `reason: 'adjusted'`, reads the groups,
-   and adds a hint for a group of the call that has no position.
+   and adds a hint for a group of the call that has no position. For a replace it reads the
+   calculated groups before the load (D55).
 7. It sets the kitchen-wide attributes (D36) — the group attributes that are not among the loaded
    group's settings, the overrides moved off the roots (G47) and the colours of the generated roots
    it dropped (G48) — on every unit of the group with the planner's `change-group-attribute` command
    (G46), and reads the groups again.
+8. It tests the root modules of the groups of the call against the obstacles and the other groups
+   and adds the `hint` of D55.
 
 A group that cannot be built at one of these steps leaves the call and goes to `notLoaded`; the
 others go on.
 
 **Result**: `loaded` (the planner's runtime ids), `groups` (**every** group in the plan, in the
-plan-context shape), `hint`, `corrections` (what the server changed in the input), and `notLoaded`
+plan-context shape), `hint` (an unpositioned group, a root module on an obstacle — D55), `corrections` (what the server changed in the input), and `notLoaded`
 — `[{ index, id?, rootIds?, errors }]` for the groups it could not build (D30) and, with `rootIds`,
 for the roots of a loaded group it could not build (G15). A conflicting placement is not sent (D26).
 
@@ -471,9 +477,10 @@ The group keeps its height. The server checks the target against the other group
 the group once, with its roots — the generated ones included — and docking unchanged. A group that
 already stands where asked is not reloaded.
 
-**Result**: `placedIn` (`corner` or `wall`), the `wall`, the resulting `group`, and `corrections`
+**Result**: `placedIn` (`corner` or `wall`), the `wall`, the resulting `group`, `corrections`
 when the server corrected the request — an overlap moves the group along the wall (D27), an
-alignment parallel to the wall centres it.
+alignment parallel to the wall centres it —, and a `hint` when a root module stands on an object or
+in front of a door or a window after the reload (D55).
 
 ### The command tools
 
@@ -578,7 +585,8 @@ brings the probe group back.
   use — creates no `repositioningData`, and the planner positions the group; an existing group
   keeps its position (D26).
 - **Overlaps**: in `place-group`, a target that overlaps another group is moved along the wall
-  (D27). Groups may touch.
+  (D27). Groups may touch. A root module on an object, in another group or in front of a door or a
+  window is built as sent, and the `hint` names it with the free stretches of its wall (D55).
 
 ## 8. Guards, corrections and feedback
 
@@ -588,7 +596,7 @@ brings the probe group back.
 |---|---|---|
 | `corrections` | the server changed the input | One sentence per correction: the group (input index and id) or the command, what was sent, and what the server did. In `create-or-replace-groups`, `place-group` and the command tools that take a root id or an article — `change-module-attribute`, `delete-root-module`, `remove-article-from-group`, `merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`, `swap-root-modules` —, there followed by the planner's corrections (C20) |
 | `notLoaded` | a group of `create-or-replace-groups` cannot be built, or a group loads without some of its roots | `[{ index, id?, rootIds?, errors }]`, each error naming what to send instead; the other groups and roots load |
-| `hint` | something to check; nothing stopped | an unpositioned group and a new group at the place of another (`create-or-replace-groups`), what a row edit did to the row (D42, D43), more than 20 matches (`find-attributes`), why `undo` or `redo` reverted nothing, groups that differ after an `undo` or `redo` (§8.8) |
+| `hint` | something to check; nothing stopped | an unpositioned group (`create-or-replace-groups`), a root module on an obstacle (`create-or-replace-groups`, `place-group`, D55), what a row edit did to the row (D42, D43), more than 20 matches (`find-attributes`), why `undo` or `redo` reverted nothing, groups that differ after an `undo` or `redo` (§8.8) |
 | Error result | nothing in the call can be done | `create-or-replace-groups`: no group can be built, or the planner loaded none; the other tools: a guard of §8.4–8.6, or the planner's message |
 
 A correction that the rules describe as normal is silent (§8.2). A correction of a mistake is
@@ -686,7 +694,7 @@ corrections, G31–G45.
 | — | the planner loads nothing | — | error result: "No groups were created or replaced …" |
 | — | a replaced group that still holds its previous articles instead of the ones sent — the planner could not calculate the new layout and restored the group (roomle-ui `_discardCalculation`) | — | correction: "the planner could not calculate the new layout of group '…' and kept its previous content - …; send the layout again with another article" |
 | — | a group of the call has no position after the load | — | `hint` |
-| — | a new group that stands at the place of another group — the same point within 5 mm and the same rotation (D22: never refused) | — | `hint`: "Group '…' stands at the place of group '…' - if the units belong together, send them as one group or join them with merge-groups" |
+| D55 | a root module of a group of the call that overlaps an object or a root module of another group, or stands in the 600 mm strip in front of a door, or of a window above its `bottomMm` — by more than 5 mm; a replaced group only for what it did not stand on before | builds it (D51) | `hint`: "Root module 'w1' (OTB30) of group '…' stands in front of the window in the back wall (wall 5, fromEndMm 235 to 2335, from 950 mm) - free stretches of the left wall (wall 0) at its height: fromEndMm 0 to 4400. The groups were built as sent - move or change them if the user did not ask for them there." — with another group named: "… overlaps root module 'r1' (…) of group '…' …", then "If the units belong together, send them as one group or join them with merge-groups." Without a wall the stretches are left out; without a wide enough stretch: "- no stretch of the … is free for it at its height" |
 
 ### 8.4 `place-group`
 
@@ -698,6 +706,7 @@ corrections, G31–G45.
 | G21 | a group without calculated geometry | nothing | error: "Group '…' has no calculated geometry to place." |
 | G22 | a target that overlaps another group — footprints and height ranges overlap by more than 5 mm | moves the group along the same wall to the nearest position free of overlap. Touching is no overlap, wall units above another group's base units do not overlap them, and a group without height data overlaps nothing (`volumesOverlap`, guarded by `it('does not count touching groups, groups above each other or groups without height data')` in `plan-space.test.ts`) | correction naming the group and the distance, suggesting `merge-groups` if the units belong together |
 | G22 | the same, placed into a corner or without a free position on the wall | places the group as asked | correction: "… overlaps group '…' - there is no free position …" |
+| D55 | after the reload, a root module that overlaps an object or stands in the 600 mm strip in front of a door, or of a window above its `bottomMm` (another group is G22's) | places it as asked | `hint`: "Root module '…' (…) of group '…' overlaps an object (x … to …, z … to …, … to … mm) - free stretches of the left wall (wall 3) at its height: fromEndMm … The group was placed anyway - move or change it if the user did not ask for it there." |
 | — | a group that already stands where asked (origin within 5 mm, same rotation) | no reload | correction: "Group '…' already stands at the … wall as asked - nothing was reloaded" |
 | — | the reload fails | — | error: "Group '…' could not be reloaded at the new position." |
 
@@ -795,7 +804,8 @@ Nothing here is an error result: the tool answers with its name `null` and a `hi
 | Chat steps per turn | 16, the last without tools | `hi-mcp-chat/chat-steps.ts` |
 | `find-attributes` matches | 20 | `MAX_ATTRIBUTE_MATCHES` |
 | Valid article ids in G15's message | 100 | `requireCatalogArticle` |
-| Overlap tolerance of `place-group` | 5 mm | `OVERLAP_TOLERANCE_MM` |
+| Overlap tolerance of `place-group` and of the obstacle hint | 5 mm | `OVERLAP_TOLERANCE_MM` |
+| Strip along a wall: in front of a door or a window, and where a root module stands at a wall (D55) | 600 mm | `WALL_STRIP_MM` |
 | Wait for the follow-up reload of an attribute change or exchange | 2 s | `FOLLOW_UP_WAIT_MS` |
 | Wait for the history event of a planner undo or redo | 1 s | `HISTORY_EVENT_WAIT_MS` |
 | Wait in `undo` for a late follow-up reload of the last call | 2 s | `FOLLOW_UP_WAIT_MS` |

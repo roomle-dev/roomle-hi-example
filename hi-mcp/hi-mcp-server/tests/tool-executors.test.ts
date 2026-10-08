@@ -2532,19 +2532,6 @@ describe('create-or-replace-groups loading', () => {
     expect(result.hint).toBeUndefined();
   });
 
-  it('hints at a new group that stands at the place of another', async () => {
-    const existing = makeShapedGroup({ id: 'g1' });
-    const created = makeShapedGroup({ id: 'g-new' });
-    const api = createSequenceApi([[existing], [existing, created]]);
-    const result = (await toolExecutors['create-or-replace-groups'](api, {
-      posGroups: [{ libraryId: 'lib-1', roots: [pick()] }],
-    })) as Record<string, any>;
-    expect(result.hint).toBe(
-      "Group 'g-new' stands at the place of group 'g1' - if the units belong together, send them as one group or join them with merge-groups."
-    );
-    expect(result.corrections).toBeUndefined();
-  });
-
   it('reports a replace the planner reverted to the previous content', async () => {
     // issue 34: the plan context after the load still holds the one root of g1
     const api = createApi(planContextFixture);
@@ -2648,8 +2635,15 @@ describe('create-or-replace-groups loading', () => {
     expect(getExternalObjectPlanContext).toHaveBeenNthCalledWith(1, [
       'articles',
     ]);
-    expect(getExternalObjectPlanContext).toHaveBeenNthCalledWith(2, ['groups']);
-    expect(getExternalObjectPlanContext).toHaveBeenNthCalledWith(3, ['groups']);
+    expect(getExternalObjectPlanContext).toHaveBeenNthCalledWith(2, [
+      'groups',
+      'obstacles',
+    ]);
+    expect(getExternalObjectPlanContext).toHaveBeenNthCalledWith(3, [
+      'groups',
+      'obstacles',
+      'rooms',
+    ]);
   });
 
   it('hints at placement for a created group without a position', async () => {
@@ -3066,6 +3060,8 @@ describe('create-or-replace-groups materials', () => {
     // the groups are read again after the command
     expect(api.extended.getExternalObjectPlanContext).toHaveBeenLastCalledWith([
       'groups',
+      'obstacles',
+      'rooms',
     ]);
     expect(result.groups).toEqual([created]);
   });
@@ -3187,6 +3183,294 @@ describe('create-or-replace-groups materials', () => {
     expect(result.corrections).toEqual([
       'posGroups[0]: countertop "224" was set on every unit of group \'g1\'',
     ]);
+  });
+});
+
+// what stands in the 4000 x 3000 room as the planner returns it: a window
+// behind the back wall, a door behind the right wall, a chair in the room and
+// a sofa at the left wall
+const windowBehindTheBackWall = (fromX: number, toX: number) => ({
+  kind: 'window',
+  outline: [
+    [toX, 0, -3120],
+    [fromX, 0, -3120],
+    [fromX, 0, -3000],
+    [toX, 0, -3000],
+  ],
+  bottomMm: 950,
+  topMm: 2170,
+});
+const obstaclesInTheRoom = {
+  objects: [
+    windowBehindTheBackWall(1000, 2000),
+    {
+      kind: 'door',
+      outline: [
+        [4100, 0, -1000],
+        [4100, 0, -100],
+        [4000, 0, -100],
+        [4000, 0, -1000],
+      ],
+      bottomMm: 0,
+      topMm: 2100,
+    },
+    {
+      kind: 'object',
+      outline: [
+        [1500, 0, -1500],
+        [2000, 0, -1500],
+        [2000, 0, -1000],
+        [1500, 0, -1000],
+      ],
+      bottomMm: 0,
+      topMm: 790,
+    },
+    {
+      kind: 'object',
+      outline: [
+        [0, 0, -2000],
+        [900, 0, -2000],
+        [900, 0, -1000],
+        [0, 0, -1000],
+      ],
+      bottomMm: 0,
+      topMm: 800,
+    },
+  ],
+  groups: [],
+};
+
+describe('obstacle hints', () => {
+  // a unit of a calculated group: its side and top vectors give its outline
+  // and its height
+  const rawUnit = (
+    id: string,
+    articleId: string,
+    articlePos: number[],
+    [width, height, depth]: [number, number, number]
+  ) => ({
+    id,
+    articleId,
+    articlePos,
+    rotationY: 0,
+    dockInfos: [
+      { id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, depth] },
+      { id: 'RightBottom', start: [width, 0, 0], end: [width, 0, depth] },
+      { id: 'LeftTop', start: [0, height, 0], end: [0, height, depth] },
+    ],
+  });
+  const baseUnit = (id: string, x: number) =>
+    rawUnit(id, 'base-unit', [x, 0, 0], [600, 720, 600]);
+  const wallUnit = (id: string, x: number, depth = 350) =>
+    rawUnit(id, 'wall-unit', [x, 1480, 0], [600, 720, depth]);
+  const rawGroup = (
+    id: string,
+    pos: number[],
+    rotationY: number,
+    roots: any[]
+  ) => ({ id, pos, rotationY, roots });
+
+  // the plan before and after the load: the shaped groups of the plan
+  // context and the calculated groups
+  const createObstacleApi = ({
+    shapedBefore = [],
+    shapedAfter,
+    rawBefore = [],
+    rawAfter,
+    obstacles = obstaclesInTheRoom,
+  }: {
+    shapedBefore?: any[];
+    shapedAfter: any[];
+    rawBefore?: any[];
+    rawAfter: any[];
+    obstacles?: unknown;
+  }) => {
+    let loaded = false;
+    return createApi(planContextFixture, {
+      getExternalObjectPlanContext: vi.fn(async (sections: string[]) =>
+        sections.includes('groups')
+          ? {
+              groups: loaded ? shapedAfter : shapedBefore,
+              obstacles,
+              rooms: { rooms: [room] },
+            }
+          : planContextFixture
+      ),
+      loadExternalObjectGroupLayout: vi.fn(async () => {
+        loaded = true;
+        return [{ id: 'loaded-1' }];
+      }),
+      getExternalObjectGroups: vi.fn(async () =>
+        loaded ? rawAfter : rawBefore
+      ),
+    });
+  };
+
+  const createGroups = async (
+    api: ReturnType<typeof createApi>,
+    posGroups: any[] = [{ libraryId: 'lib-1', roots: [pick()] }]
+  ) =>
+    (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups,
+    })) as Record<string, any>;
+
+  const BUILT_AS_SENT =
+    'The groups were built as sent - move or change them if the user did not ask for them there.';
+
+  it('names the wall units across a window with the free stretches of the wall', async () => {
+    const api = createObstacleApi({
+      shapedAfter: [makeShapedGroup({ id: 'g-new' })],
+      rawAfter: [
+        rawGroup('g-new', [800, 0, -3000], 0, [
+          baseUnit('b1', 0),
+          baseUnit('b2', 600),
+          wallUnit('w1', 0),
+          wallUnit('w2', 600),
+        ]),
+      ],
+    });
+    const result = await createGroups(api);
+    const inFrontOfTheWindow =
+      'stands in front of the window in the back wall (wall 2, fromEndMm 1000 to 2000, from 950 mm) - ' +
+      'free stretches of the back wall (wall 2) at its height: fromEndMm 0 to 1000, 2000 to 4000.';
+    expect(result.hint).toBe(
+      [
+        `Root module 'w1' (wall-unit) of group 'g-new' ${inFrontOfTheWindow}`,
+        `Root module 'w2' (wall-unit) of group 'g-new' ${inFrontOfTheWindow}`,
+        BUILT_AS_SENT,
+      ].join(' ')
+    );
+  });
+
+  it('names a corner unit on the adjoining wall that reaches into a window', async () => {
+    // test 32: a base unit with a 400 mm deep wall unit above it in the back
+    // left corner, against the left wall; the window starts 300 mm from the
+    // corner
+    const api = createObstacleApi({
+      shapedAfter: [makeShapedGroup({ id: 'g-new' })],
+      rawAfter: [
+        rawGroup('g-new', [0, 0, -2400], 90, [
+          baseUnit('b1', 0),
+          wallUnit('w1', 0, 400),
+        ]),
+      ],
+      obstacles: { objects: [windowBehindTheBackWall(300, 1300)], groups: [] },
+    });
+    const result = await createGroups(api);
+    expect(result.hint).toBe(
+      "Root module 'w1' (wall-unit) of group 'g-new' stands in front of the window in the back wall " +
+        '(wall 2, fromEndMm 300 to 1300, from 950 mm) - free stretches of the left wall (wall 3) at its ' +
+        `height: fromEndMm 0 to 2400. ${BUILT_AS_SENT}`
+    );
+  });
+
+  it('names a root module on an object', async () => {
+    const api = createObstacleApi({
+      shapedAfter: [makeShapedGroup({ id: 'g-new' })],
+      rawAfter: [rawGroup('g-new', [1400, 0, -1600], 0, [baseUnit('i1', 0)])],
+    });
+    const result = await createGroups(api);
+    expect(result.hint).toBe(
+      "Root module 'i1' (base-unit) of group 'g-new' overlaps an object (x 1500 to 2000, z -1500 to -1000, " +
+        `0 to 790 mm). ${BUILT_AS_SENT}`
+    );
+  });
+
+  it('names a root module in another group and advises merging', async () => {
+    const existing = rawGroup('g1', [1000, 0, -3000], 0, [
+      rawUnit('r1', 'article-1', [0, 0, 0], [600, 720, 600]),
+    ]);
+    const api = createObstacleApi({
+      shapedBefore: [makeShapedGroup({ id: 'g1' })],
+      shapedAfter: [
+        makeShapedGroup({ id: 'g1' }),
+        makeShapedGroup({ id: 'g-new' }),
+      ],
+      rawBefore: [existing],
+      rawAfter: [
+        existing,
+        rawGroup('g-new', [1000, 0, -3000], 0, [
+          rawUnit('u1', 'article-1', [0, 0, 0], [600, 720, 600]),
+        ]),
+      ],
+    });
+    const result = await createGroups(api);
+    expect(result.hint).toBe(
+      "Root module 'u1' (article-1) of group 'g-new' overlaps root module 'r1' (article-1) of group 'g1' - " +
+        'free stretches of the back wall (wall 2) at its height: fromEndMm 0 to 1000, 1600 to 4000. ' +
+        `${BUILT_AS_SENT} If the units belong together, send them as one group or join them with merge-groups.`
+    );
+  });
+
+  it('says nothing about a group beside or touching an obstacle', async () => {
+    const api = createObstacleApi({
+      shapedAfter: [
+        makeShapedGroup({ id: 'g-row' }),
+        makeShapedGroup({ id: 'g-island' }),
+      ],
+      rawAfter: [
+        // the wall units end where the window's span starts
+        rawGroup('g-row', [400, 0, -3000], 0, [
+          baseUnit('b1', 0),
+          wallUnit('w1', 0),
+        ]),
+        // the island touches the chair
+        rawGroup('g-island', [900, 0, -1500], 0, [baseUnit('i1', 0)]),
+      ],
+    });
+    const result = await createGroups(api, [
+      { libraryId: 'lib-1', roots: [pick()] },
+      { libraryId: 'lib-1', roots: [pick()] },
+    ]);
+    expect(result.hint).toBeUndefined();
+  });
+
+  it('names only what a replaced group did not stand on before', async () => {
+    // w1 stood in front of the window before the replace, w2 is new
+    const api = createObstacleApi({
+      shapedBefore: [makeShapedGroup({ id: 'g1' })],
+      shapedAfter: [makeShapedGroup({ id: 'g1' })],
+      rawBefore: [
+        rawGroup('g1', [1000, 0, -3000], 0, [
+          baseUnit('r1', 0),
+          wallUnit('w1', 0),
+        ]),
+      ],
+      rawAfter: [
+        rawGroup('g1', [1000, 0, -3000], 0, [
+          baseUnit('r1', 0),
+          wallUnit('w1', 0),
+          wallUnit('w2', 600),
+        ]),
+      ],
+    });
+    const result = await createGroups(api, [
+      {
+        id: 'g1',
+        libraryId: 'lib-1',
+        roots: [
+          { id: 'r1', articleId: 'article-1' },
+          { id: 'u2', articleId: 'article-1', rightOf: 'r1' },
+        ],
+      },
+    ]);
+    expect(result.hint).toBe(
+      "Root module 'w2' (wall-unit) of group 'g1' stands in front of the window in the back wall " +
+        '(wall 2, fromEndMm 1000 to 2000, from 950 mm) - free stretches of the back wall (wall 2) at its ' +
+        `height: fromEndMm 0 to 1000, 2000 to 4000. ${BUILT_AS_SENT}`
+    );
+  });
+
+  it('builds without a hint and without an extra read on a planner without obstacles', async () => {
+    // D45: a planner without the obstacles section
+    const api = createApi(planContextFixture);
+    const result = await createGroups(api, [
+      { id: 'g1', libraryId: 'lib-1', roots: [pick()] },
+    ]);
+    expect(result.hint).toBeUndefined();
+    // the plan history's reads before and after the call and the read of the
+    // placement frame - none for a hint
+    expect(api.extended.getExternalObjectGroups).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -3331,13 +3615,18 @@ describe('place-group', () => {
   const createPlaceApi = (
     shapedGroups: any[],
     rawGroups: any[],
-    afterShapedGroups: any[] = shapedGroups
+    afterShapedGroups: any[] = shapedGroups,
+    obstacles?: unknown
   ) => {
     let currentRawGroups = rawGroups;
     return createApi(undefined, {
       getExternalObjectPlanContext: vi.fn(async (sections: string[]) =>
         sections.includes('rooms')
-          ? { rooms: { rooms: [room] }, groups: shapedGroups }
+          ? {
+              rooms: { rooms: [room] },
+              groups: shapedGroups,
+              ...(obstacles !== undefined && { obstacles }),
+            }
           : { groups: afterShapedGroups }
       ),
       getExternalObjectGroups: vi.fn(async () => currentRawGroups),
@@ -3478,6 +3767,46 @@ describe('place-group', () => {
     expect(result.corrections).toEqual([
       "Group 'g1' would overlap group 'g2' at the right wall - it was moved 800 mm along the wall to stand beside it. If the units belong together, join the groups with merge-groups",
     ]);
+  });
+
+  it('names an object the placed group stands on', async () => {
+    // centred on the left wall, the tall unit stands on the sofa
+    const api = createPlaceApi(
+      [makeShapedGroup()],
+      [makeGroup({ roots: [tallRoot()] })],
+      [makeShapedGroup()],
+      obstaclesInTheRoom
+    );
+    const result = (await toolExecutors['place-group'](api, {
+      groupId: 'g1',
+      wall: 'left',
+    })) as Record<string, any>;
+    expect(result.hint).toBe(
+      "Root module 'r1' (article-1) of group 'g1' overlaps an object (x 0 to 900, z -2000 to -1000, 0 to 800 mm) - " +
+        'free stretches of the left wall (wall 3) at its height: fromEndMm 0 to 1000, 2000 to 3000. ' +
+        'The group was placed anyway - move or change it if the user did not ask for it there.'
+    );
+    expect(result).not.toHaveProperty('corrections');
+  });
+
+  it('leaves another group to the corrections', async () => {
+    const api = createPlaceApi(
+      shapedPair,
+      [
+        makeGroup({ roots: [tallRoot()] }),
+        neighbourOnTheRightWall([4000, 0, -1900]),
+      ],
+      shapedPair,
+      obstaclesInTheRoom
+    );
+    const result = (await toolExecutors['place-group'](api, {
+      groupId: 'g1',
+      wall: 'right',
+    })) as Record<string, any>;
+    expect(result.corrections).toEqual([
+      "Group 'g1' would overlap group 'g2' at the right wall - it was moved 800 mm along the wall to stand beside it. If the units belong together, join the groups with merge-groups",
+    ]);
+    expect(result).not.toHaveProperty('hint');
   });
 
   it('places a group that only touches another one as asked', async () => {

@@ -15,8 +15,13 @@ AI agent (any MCP client, anywhere) --https--> https://<app>.azurewebsites.net/m
 ```
 
 The same Node process serves both endpoints. App Service terminates TLS in front — the server code
-runs plain HTTP/WS behind it, so no certificates are needed. WebSockets must be **enabled** (step 6
+runs plain HTTP/WS behind it, so no certificates are needed. WebSockets must be **enabled** (step 5
 below).
+
+The deployed server runs on Cloudflare ([cloudflare-mcp-server.md](./cloudflare-mcp-server.md),
+[ADR 0004](../../.agents/decisions/0004-hi-mcp-server-on-cloudflare-containers.md)). This runbook
+is the alternative for a team with the rights to create an App Service in an Azure subscription;
+the server code is the same on both hosts.
 
 ## Prerequisites
 
@@ -190,7 +195,7 @@ the tools while a page is connected. For the PoC:
   ```
 
 A shared-secret header check on `/mcp` or App Service Easy Auth are the follow-up options once the
-PoC becomes a shared setup (see the
-[Azure analysis](../../.agents/feature-analysis/mcp-azure-deployment-and-session-bootstrapping.md)).
+PoC becomes a shared setup; the access control of the public endpoint is an open decision in the
+[backlog](../../.agents/backlog/deployment-and-session-issues.md#3-the-public-mcp-endpoint-has-no-access-control).
 The server holds **one connected page at a time** — a second page is refused (WebSocket close 4409)
 while the first is connected.

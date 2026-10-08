@@ -28,8 +28,13 @@ A document counts as done only when all of these hold:
   served text.
 - The guarding test exists: an `it('…')` in `hi-mcp/<package>/tests/*.test.ts`; for served text, a
   test of [`docs/test-prompts.json`](../../docs/test-prompts.json) can guard it as well.
-- roomle-ui work is on roomle-ui `origin/master`, ligna-store work on ligna-store `origin/master`
-  (fetch each once up front, not per agent).
+- roomle-ui work is on roomle-ui `origin/release/bo-test`, the planner the example page loads
+  (`DEFAULT_SERVER_URL`, `minimal-hi-example/index.html`), or on `origin/master`:
+  `git branch -r --contains <sha>`. A fix merged into the HI branch `fix/hi-mcp-api-and-tools`
+  reaches `release/bo-test` from there. A solved bug keeps no analysis: once its fix is there, the
+  analysis is closed out, also while the roomle-ui pull request to `master` is still open.
+  ligna-store work is on ligna-store `origin/master` (fetch each repository once up front, not per
+  agent).
 - Jira: `PAGER=cat jira issue list -q "key=<KEY>" --plain --no-headers --columns status,resolution`.
   `Accepted` is the closed state in RML; `Won't Do` is abandoned. A closed ticket alone does not
   prove the code changed — tickets are closed while the work is still on a local branch.
@@ -54,6 +59,7 @@ its home already states it; add it only where it does not.
 | How a feature works — the server, the tools, the chat, the pages, a deployment | the living-reference document of the area: [`hi-mcp-server.md`](../../docs/hi-mcp-server.md), [`ai-chat.md`](../../docs/ai-chat.md), [`hi-mcp/hi-mcp-server/README.md`](../../hi-mcp/hi-mcp-server/README.md), [`docs/`](../../docs/) — a new document for a new feature |
 | A tool's parameters and examples | [`hi-mcp-tools.md`](hi-mcp-tools.md) |
 | HI domain knowledge — rooms, walls, articles, docking, positioning | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), [`hi-authoring-rules.md`](hi-authoring-rules.md) |
+| How the planner or the library behaves, as a root-cause investigation found it — what a load report replaces, how the arrangement docks, what an attribute switches | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), or the planner section of `hi-mcp-behaviour.md` where it explains the server's behaviour; written as today's behaviour |
 | The regression test | it exists; name it next to the invariant: guarded by `it('…')` in `hi-mcp/hi-mcp-server/tests/….test.ts`, or by the test `<id>` of `docs/test-prompts.json` |
 | A debugging or test recipe — a run script, a headless check, a deployment step | the matching skill in `.agents/skills/` ([`hi-mcp-testing.md`](hi-mcp-testing.md), [`hi-mcp-cloudflare-deployment.md`](hi-mcp-cloudflare-deployment.md)) |
 | Model comparisons and before/after numbers that later work compares against | `.agents/benchmarks/`, with a row in the benchmarks table of [`.agents/README.md`](../README.md) |
@@ -64,9 +70,15 @@ Drop the rest: symptom, reproduction, investigation trace, line-level root-cause
 verification logs, the runs of past test sessions and their plan snapshot ids, alternative fixes of a
 bug that nobody would re-propose.
 
-The living reference describes how the code works **today**. Never paste history into it — no "was
-fixed in", "previously", "the old code", ticket stories. The date and the state of a decision in §3
-of `hi-mcp-behaviour.md` are the only history it keeps.
+The living reference describes how the code works **today**. It never says what was wrong in the
+past — not the defect ("a replace lost its materials"), not what an earlier version did, not how a
+problem was found ("found in the live check of …", "the model took …"), no "was fixed in",
+"previously", "no longer", "the old code", ticket stories. A rejected approach is stated as rejected,
+with its reason in terms of today's behaviour. It does not record when something was solved,
+fixed, verified or confirmed — no "confirmed live on …", "amended …", "since the refresh of …". It
+carries no ticket numbers: an RML number or a Jira link is irrelevant to how the code works. The
+decision date, who decided and the state of a decision in §3 of `hi-mcp-behaviour.md` are the only
+history it keeps. Ticket numbers belong to the backlog items and the analyses.
 
 ## Hard rules
 
@@ -79,9 +91,9 @@ of `hi-mcp-behaviour.md` are the only history it keeps.
 - **Open work stays.** An analysis of an open bug, an undecided feature or a refactoring not carried
   out yet remains in its folder until the work lands or is abandoned.
 - **No dangling links.** Point a link to a deleted document at the living-reference section that now
-  carries the outcome, or replace it with plain text and the Jira ticket link
-  (`[RML-18041](https://roomle.atlassian.net/browse/RML-18041)`) — the sources of the decisions in
-  `hi-mcp-behaviour.md`, the `Analysis` line of an ADR and the details of a backlog item included.
+  carries the outcome, or remove it. In a backlog item or an ADR's `Analysis` line, plain text and
+  the Jira ticket link (`[RML-18041](https://roomle.atlassian.net/browse/RML-18041)`) may replace it;
+  the living reference takes no ticket link.
 
 ## Procedure
 
@@ -165,6 +177,14 @@ documents. In [`.agents/backlog/README.md`](../backlog/README.md), no row links 
 
   A link into `.temp/` (local, ignored by git) or out of the repository by a relative path is broken
   for everyone else: replace it with the plan snapshot id, a GitHub URL or plain text.
+- No past defect in the living reference: over the living-reference files the cleanup touched,
+
+  ```bash
+  git diff origin/master -- docs .agents/skills hi-mcp/hi-mcp-server/README.md | grep '^+' | grep -n -i -E "was fixed|fixed in|previously|no longer|used to|the old |found (in|with|by)|lost its|dropped|before the fix|after the fix|since the|amended|confirmed|20[0-9]{2}-[0-9]{2}-[0-9]{2}|RML-[0-9]+"
+  ```
+
+  A remaining hit is acceptable only as a description of today's behaviour, or as the date column
+  of a decision row.
 - No placeholder left:
   `grep -rn -E "ADR XXXX|\bDXX\b" --include='*.md' --exclude=hi-analysis-cleanup.md --exclude-dir=node_modules .`
 - No plain-text mention of a deleted path: `git grep --untracked -F -f <deleted-slugs>`. A slug that

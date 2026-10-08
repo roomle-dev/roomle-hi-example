@@ -59,7 +59,7 @@ and all tool logic.
 | `group-layout.ts` | The relations of `create-or-replace-groups` (`rightOf`, `above`, …) compiled into docking entries |
 | `plan-history.ts` | The record of the tool calls that changed the plan, with their planner steps, for `undo` and `redo` |
 | `group-placement.ts` | The placement of a new group: finds the root it is anchored at by following the docking and derives the planner's repositioning |
-| `plan-space.ts` | The geometry of `place-group`: footprint and corner geometry of a calculated group, wall and corner placement, the overlap test between groups |
+| `plan-space.ts` | The geometry of `place-group` and of a placement by wall: footprint and corner geometry of a calculated group, wall and corner placement, the overlap test between groups; the obstacle test of the `hint`: root modules in room space, the strip in front of a wall, the free stretches of a wall |
 | `planner-api.ts` | The planner methods the tools call, forwarded to the page with per-method timeouts |
 | `page-bridge.ts` | Connected-page registry, call correlation, timeouts, protocol check, "no page connected" error |
 | `types.ts` | WebSocket message protocol, `BRIDGE_PROTOCOL` (the page side carries its own copy) |
@@ -511,8 +511,8 @@ put the article of `insert-article-into-group` beside the first-named, towards
 the second. Root ids are resolved by a unique prefix, their
 last UUID segments or one character. The result reports these in
 `corrections`, followed by the planner's own corrections (a docking the new
-article cannot take, a unit above that keeps its place, a deletion instead of a
-remove). The planner's own checks (e.g. groups of different libraries
+article cannot take, a unit above that keeps its place, a deletion instead of
+closing the gap). The planner's own checks (e.g. groups of different libraries
 in `merge-groups`) are unchanged, and their message is passed on as the error.
 Group ids accept a unique prefix.
 
@@ -530,8 +530,11 @@ Group ids accept a unique prefix.
 | `merge-groups` | `targetGroupId`, `groupIds` | Merges the groups into the target group where they stand, like the planner's merge action; nothing is moved and no docking is added |
 
 `value` is a string, a number (passed on as its string) or a boolean. Attribute
-ids and allowed values come from the `masterData` section of `get-plan-context`
-or from `find-attributes`.
+ids and their values come from the `masterData` section of `get-plan-context`
+or from `find-attributes`. The library may change a related attribute with the
+one set — a front colour the front program does not offer switches the program,
+and the fronts are built differently —; `corrections` name every attribute the
+library changed besides the one set (D59).
 
 Examples:
 
@@ -573,8 +576,8 @@ the top image, `top` at the upper edge.
 ## Authoring pos groups
 
 The guiding principle: **the agent declares what and where, the planner arranges the units.** The
-agent picks the articles, docks them and gives the group one point and one rotation; the planner
-calculates every root position.
+agent picks the articles, docks them and gives the group a wall with an alignment, or one point and
+one rotation; the planner calculates every root position.
 
 - A pos group is `{ id?, libraryId?, placement?, roots: [...] }`. Sending a group whose `id`
   matches an existing group replaces that group and keeps its position; without a matching `id` a
@@ -593,8 +596,13 @@ calculates every root position.
   Sub-modules come with the article — the agent authors articles, their attributes and their
   relations, nothing else. Everything else the calculation needs — the master-data module and the
   full input attribute set — is completed automatically from the article template. `attributes`
-  are `[{ id, value }]` overrides; attribute ids and allowed values come from the `masterData`
+  are `[{ id, value }]` overrides; attribute ids and their values come from the `masterData`
   section (requested explicitly) or from `find-attributes`.
+- **Fronts**: the front program says how a front is built, by its desc — chosen first, then the
+  front colour. A colour the program does not offer switches the program, and a program resets a
+  colour it does not offer; `corrections` name every such change. When the colour the user wants
+  comes only with fronts built differently, the agent keeps the fronts, takes the closest colour
+  and tells the user (D59, D60).
 - **Never author a position**: no `articlePos`/`rotationY` on a root, no `pos`/`rotationY` on a
   group — the server drops them. Roots are positioned by their relation only; a new group is
   positioned with `placement` only — see [Positioning a group](#positioning-a-group).

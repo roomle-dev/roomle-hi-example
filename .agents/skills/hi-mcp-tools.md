@@ -396,5 +396,5 @@ The tools run in the server; the timeout applies to each planner call they make 
 1. Always start with `get-plan-context`
 2. Validate article IDs before using
 3. Use free docking vectors when extending
-4. Position every new group with a placement — for a wall, its end point and its facingRotationY
+4. Position every new group with a placement — at a wall or in a room corner by `wall`, `alignment` and `offsetMm`, anywhere else by `posGroup` and `posRotationY`
 5. Edit existing groups with the command tools; resubmit a whole group only to rebuild it

@@ -165,7 +165,9 @@ rootId? }`, one point and one rotation.
 - Free space comes from the `obstacles` section of `get-plan-context`: doors, windows and other
   objects as outlines with a height range, and the root module outlines of every group. A door or a
   window names the wall it lies in and its span from the wall's end — see
-  [hi-authoring-rules.md](./hi-authoring-rules.md#positioning-a-group).
+  [hi-authoring-rules.md](./hi-authoring-rules.md#positioning-a-group). The result's `hint` names a
+  root module that stands on an obstacle or in front of a door or a window, with the free stretches
+  of its wall; the group is built anyway.
 - It is applied once, when the group is created. A placement on a group that is already in the
   plan is not used — the group keeps its position, and `corrections` says so; a group resubmitted
   without placement keeps its position.

@@ -51,7 +51,7 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
 | [vercel-ai-sdk-chat.md](./skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: provider selection, server-side auth, @ai-sdk/mcp, streamText route | Implementing the AI chat window (RML-17984), Vercel AI SDK, MCP client integration |
 | [hi-mcp-testing.md](./skills/hi-mcp-testing.md) | "Test the MCP": a temporary subset of `docs/test-prompts.json` (default every test, `gpt-5-mini`) run by `run-hi-mcp-tests.js` into `.temp/result/<session>/<model>/`, `report.md` with plan snapshot ids, images, evaluation and bug verdicts; the run script `run-hi-mcp-prompt.js` (a plan, operations, prompts and an image in headless Chromium, snapshot, plan snapshot id, planner calls) | The user asks to "test the mcp"; testing prompts or models against the real planner |
-| [hi-analysis-cleanup.md](./skills/hi-analysis-cleanup.md) | "Cleanup analyses": verify every analysis, promote the durable outcome of the landed ones into the living reference, decisions, ADRs, backlog and skills, delete them, fix the links, rebuild this index | The user says "cleanup analyses"; reviewing or tidying the analysis folders |
+| [hi-analysis-cleanup.md](./skills/hi-analysis-cleanup.md) | "Cleanup analyses": clean up `bug-analysis/`, `feature-analysis/` and `refactoring-analysis/` — verify every analysis, promote the durable outcome of the landed ones into the living reference, decisions, ADRs, backlog and skills, delete them, fix the links, rebuild this index | The user says "cleanup analyses" or "cleanup analysis"; reviewing or tidying the analysis folders |
 | [hi-backlog-cleanup.md](./skills/hi-backlog-cleanup.md) | "Cleanup backlog": the backlog as open todos only — verify every item against the code, remove what landed, strip history, refresh the code references | The user says "cleanup backlog"; reviewing or updating the backlog |
 
 ### Decisions (Architecture Decision Records)
@@ -80,17 +80,7 @@ status block where one is present.
 
 One document per bug: root-cause analysis written **before** the fix, closed out **after** it.
 
-| Document | Status | Last touched |
-|---|---|---|
-| [Removing a corner article splits the group](bug-analysis/remove-corner-article-splits-the-group.md) | Open (implemented, not merged) | 2026-10-07 |
-| [The room contour runs back along a wall with two openings](bug-analysis/room-contour-runs-back-along-a-wall-with-two-openings.md) | Open (fixed in RoomleCore PR #2565, waits for the kernel release) | 2026-10-07 |
-| [A unit attribute after a group attribute misses the unit's fronts](bug-analysis/unit-attribute-misses-fronts-after-group-attribute.md) | Open (implemented, not merged) | 2026-10-07 |
-| [A new group stands on an obstacle without a hint](bug-analysis/new-group-on-an-obstacle-without-a-hint.md) | Open (implemented, not merged) | 2026-10-07 |
-| ["Delete" and "remove" are taken for each other](bug-analysis/delete-and-remove-taken-for-each-other.md) | Open (implemented, not merged) | 2026-10-08 |
-| [A replace drops the group's materials](bug-analysis/replace-drops-the-group-materials.md) | Open (implemented, not merged) | 2026-10-08 |
-| [A new group is placed at a point the model computes](bug-analysis/new-group-placed-at-a-point-the-model-computes.md) | Open (implemented, not merged) | 2026-10-08 |
-| [A lone wall unit drops onto the worktop](bug-analysis/lone-wall-unit-drops-onto-the-worktop.md) | Fixed (roomle-ui#3105, merged into `fix/hi-mcp-api-and-tools`) | 2026-10-08 |
-| [The wall units get framed glass fronts](bug-analysis/wall-units-get-framed-glass-fronts.md) | Open (implemented, not merged) | 2026-10-08 |
+No bug analysis is open.
 
 ### Feature Analyses
 
@@ -99,12 +89,9 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [MCP Azure deployment and session bootstrapping](feature-analysis/mcp-azure-deployment-and-session-bootstrapping.md) | Open | 2026-10-06 |
 | [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open (step 1 done, step 2 open, step 3 on request) | 2026-10-07 |
 | [A reasoning effort per GPT chat model: implementation plan](feature-analysis/reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open (step 1 done) | 2026-10-07 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open (product goal) | 2026-09-27 |
-| [Trust the colour code in material descriptions](feature-analysis/trust-the-colour-code-in-material-descriptions.md) | Implemented (not merged) | 2026-10-07 |
-| [Trust the colour code in material descriptions: implementation plan](feature-analysis/trust-the-colour-code-in-material-descriptions-implementation-plan.md) | Steps 1 to 4 done, step 5 waits for a yes | 2026-10-07 |
 
 ### Refactoring Analyses
 
@@ -140,7 +127,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — a store page that never connects for an external agent, the live isolation check, access control, the image's second lockfile, the root scripts' flags, SIGTERM | 2026-10-07 |
 | [The planner's load result per input group](backlog/planner-load-outcome-per-group.md) — roomle-ui names per input group what it built, so `create-or-replace-groups` reports a group left out in `notLoaded` | 2026-10-07 |
 | [One planner undo step per tool call](backlog/one-undo-step-per-tool-call.md) — roomle-ui resolves a command after its follow-up reload and groups a tool call into one undo step; then the server drops its follow-up wait | 2026-10-07 |
-| [Open findings about the plan context](backlog/plan-context-open-findings.md) — wall sides, root outlines, calculation errors, the obstacle outline of a group, position heights | 2026-10-07 |
+| [Open findings about the plan context](backlog/plan-context-open-findings.md) — root outlines, calculation errors, the obstacle outline of a group, position heights | 2026-10-08 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-07 |
 | [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-07 |
 | [A backend-controlled agent loop with browser-executed scene tools](backlog/backend-agent-loop-with-browser-scene-tools.md) — the scene tools in the browser, the agent loop and the credentials in the backend | 2026-10-07 |
@@ -164,7 +151,7 @@ The following phrases trigger the analysis workflow automatically:
 1. **Write analysis** — Before any code changes, write the complete analysis document
 2. **Do the work** — Implement the fix, feature, or refactoring
 3. **Close out** — Update the document with the results, set status, promote durable knowledge
-4. **Delete once landed** — when the work is on `master`, ["cleanup analyses"](skills/hi-analysis-cleanup.md) promotes the durable outcome and deletes the document; git history, the Jira comment and the pull request keep the record
+4. **Delete once landed** — when the work is on `master` (a roomle-ui fix: on `release/bo-test` or `master`), ["cleanup analyses"](skills/hi-analysis-cleanup.md) promotes the durable outcome and deletes the document; git history, the Jira comment and the pull request keep the record. A solved bug keeps no analysis
 
 ### Status Values
 
@@ -214,8 +201,8 @@ Every analysis document should include:
 
 | What you produced | Where it goes | Lifecycle |
 |---|---|---|
-| **Living reference** — how things work now | `.agents/skills/` or `docs/` | Updated when behaviour changes |
-| **Historical record** — analysis, benchmark, refactoring | `.agents/<analysis-type>/` | Never updated after close-out; deleted by ["cleanup analyses"](skills/hi-analysis-cleanup.md) once the work is on `master` |
+| **Living reference** — how things work now | `.agents/skills/` or `docs/` | Updated when behaviour changes; says what holds today — never what was wrong, when something was solved, or a ticket number |
+| **Historical record** — analysis, benchmark, refactoring | `.agents/<analysis-type>/` | Never updated after close-out; deleted by ["cleanup analyses"](skills/hi-analysis-cleanup.md) once the work has landed |
 | **Decision** — why code is shaped this way | `.agents/decisions/` (create folder if needed) | Living reference |
 | **ADR** — architecture decision record | `.agents/decisions/` | Living reference |
 

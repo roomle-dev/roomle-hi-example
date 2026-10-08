@@ -29,7 +29,7 @@ is promoted into the appropriate living-reference document, and this document is
 - Fix summary and validation results
 
 Mechanics: Follow the pattern from RoomleCore's analysis close-out process.
-Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup.md) promotes the durable outcome and deletes this document.
+Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or `master` — ["cleanup analyses"](../skills/hi-analysis-cleanup.md) promotes the durable outcome and deletes this document. A solved bug keeps no analysis.
 
 ## Current Documents
 

@@ -173,7 +173,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | [`.agents/skills/roomle-hi-concepts.md`](./.agents/skills/roomle-hi-concepts.md) | HI concepts: rooms, walls, articles, groups, docking vectors, positioning |
 | [`.agents/skills/vercel-ai-sdk-chat.md`](./.agents/skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: providers, server-side auth, @ai-sdk/mcp, streamText |
 | [`.agents/skills/hi-mcp-testing.md`](./.agents/skills/hi-mcp-testing.md) | The user asks to **"test the mcp"** (runs the tests of `docs/test-prompts.json` with `run-hi-mcp-tests.js`, writes an evaluated report); testing the HI MCP end to end: running a prompt through the chat with a real model and planner, the stored snapshot result |
-| [`.agents/skills/hi-analysis-cleanup.md`](./.agents/skills/hi-analysis-cleanup.md) | The user says **"cleanup analyses"** / "cleanup analysis": close out every analysis whose work has landed — verify it, promote its durable outcome into the living reference, decisions, ADRs and backlog, delete it, fix the links, rebuild the index |
+| [`.agents/skills/hi-analysis-cleanup.md`](./.agents/skills/hi-analysis-cleanup.md) | The user says **"cleanup analyses"** / "cleanup analysis": clean up `.agents/bug-analysis/`, `.agents/feature-analysis/` and `.agents/refactoring-analysis/` — close out every analysis whose work has landed: verify it, promote its durable outcome into the living reference, decisions, ADRs and backlog, delete it, fix the links, rebuild the index |
 | [`.agents/skills/hi-backlog-cleanup.md`](./.agents/skills/hi-backlog-cleanup.md) | The user says **"cleanup backlog"**: verify every backlog item against the code, remove what landed, strip history, refresh the code references; reviewing or updating the backlog |
 | [`.github/skills/roomle-pr-resolution.md`](./.github/skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads. Never merge the PR |
 
@@ -349,6 +349,24 @@ change.
 | Living reference | `docs/` for user-facing documentation |
 
 **Important**: Analysis documents in `.agents/bug-analysis/`, `.agents/feature-analysis/`, and `.agents/refactoring-analysis/` are **historical records** — they document the analysis process and decisions, but the durable knowledge should be promoted to living-reference documentation in `docs/` or the skill files.
+
+**The living reference describes today.** Everything outside the analyses and the backlog —
+`docs/`, `.agents/skills/`, the READMEs, `docs/hi-mcp-behaviour.md` — says how the code works now:
+
+- When an analysis is deleted, its valuable content goes there first: the invariants, the decisions
+  and the rejected approaches someone could re-propose, the guarding tests, and how the planner and
+  the library behave as the investigation found it.
+- It never says what was wrong in the past: no defect, no earlier behaviour, no "found in" or
+  "found with", no "previously", "no longer" or "was fixed".
+- It does not record when something was solved, fixed, verified or confirmed.
+- It carries no ticket numbers. They belong to the analyses, the backlog items, the pull requests
+  and the Jira comments.
+- A decision row in §3 of `docs/hi-mcp-behaviour.md` keeps its decision date, who decided and its
+  state.
+
+**A solved bug keeps no analysis.** Once its fix has landed — on `master`, a roomle-ui fix on
+`release/bo-test` or `master` — ["cleanup analyses"](./.agents/skills/hi-analysis-cleanup.md) promotes the valuable content and
+deletes the document, and the bug's item leaves the backlog.
 
 ## MCP Client Connection
 

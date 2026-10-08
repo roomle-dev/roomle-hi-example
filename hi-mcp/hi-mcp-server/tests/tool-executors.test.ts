@@ -5105,6 +5105,75 @@ describe('row edit tools', () => {
     ]);
   });
 
+  describe('remove-article-from-group without a group id', () => {
+    const islandGroup = makeShapedGroup({
+      id: 'island-1',
+      roots: [
+        makeShapedRoot({ id: 'isl-a7' }),
+        makeShapedRoot({ id: 'isl-b3' }),
+      ],
+    });
+    const remove = (args: Record<string, unknown>) => {
+      const api = createApi({
+        ...planContextFixture,
+        groups: [rowGroup, islandGroup],
+      });
+      return {
+        api,
+        result: toolExecutors['remove-article-from-group'](api, args),
+      };
+    };
+
+    it.each([
+      [{ rootModuleId: 'r2' }, { groupId: 'kitchen-1', rootModuleId: 'r2' }],
+      [
+        { rootModuleId: 'isl-a7' },
+        { groupId: 'island-1', rootModuleId: 'isl-a7' },
+      ],
+      [
+        { groupId: '', rootModuleId: 'isl-a7' },
+        { groupId: 'island-1', rootModuleId: 'isl-a7' },
+      ],
+    ])(
+      'removes the root module from the group that holds it (%o)',
+      async (args, payload) => {
+        const { api, result } = remove(args);
+
+        await expect(result).resolves.toBeDefined();
+        expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+          'remove-article-from-group',
+          payload
+        );
+      }
+    );
+
+    it('reads a root id prefix in every group', async () => {
+      const { api, result } = remove({ rootModuleId: 'isl-b' });
+
+      expect(((await result) as Record<string, any>).corrections).toEqual([
+        "remove-article-from-group: root id 'isl-b' was read as 'isl-b3'",
+      ]);
+      expect(api.extended.externalObjectGroupOperation).toHaveBeenCalledWith(
+        'remove-article-from-group',
+        { groupId: 'island-1', rootModuleId: 'isl-b3' }
+      );
+    });
+
+    it.each(['no-such-root', 'isl-'])(
+      "names the roots of the plan for '%s', which matches no root or two",
+      async (rootModuleId) => {
+        const { api, result } = remove({ rootModuleId });
+
+        await expect(result).rejects.toThrow(
+          `Root module '${rootModuleId}' not found. Roots in the plan: r1, r2, r3, r9, isl-a7, isl-b3.`
+        );
+        expect(
+          api.extended.externalObjectGroupOperation
+        ).not.toHaveBeenCalled();
+      }
+    );
+  });
+
   it('passes on the docking an exchanged article cannot take', async () => {
     const api = createApi(
       { ...planContextFixture, groups: [rowGroup] },

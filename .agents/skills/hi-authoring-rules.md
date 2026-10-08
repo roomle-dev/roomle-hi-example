@@ -237,7 +237,7 @@ neighbouring units (`between`), `remove-article-from-group` removes a unit and c
 `delete-root-module` deletes a unit and leaves the gap (units no longer docked together become
 separate groups where they stand), `exchange-root-module` replaces a unit and keeps its docking —
 with `attributes` also by one of another width —, `swap-root-modules` lets two units change places,
-`delete-group` removes a group, `change-module-attribute` and `change-group-attribute` set
+`delete-group` deletes a group, `change-module-attribute` and `change-group-attribute` set
 attributes, and `merge-groups` joins groups where they stand, without moving them or adding
 docking. In a row edit the end of the row at a wall or in a corner keeps its place and the other end
 moves; wall units and the range hood move with the unit they hang from, and the result's `hint`

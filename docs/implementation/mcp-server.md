@@ -92,7 +92,7 @@ template string in this file; there is no separate rules file.
 | `change-group-attribute` | `groupId`, `attributeId`, `value` | `planChange` | same |
 | `delete-group` | `groupId` | `planChange` | same |
 | `delete-root-module` | `rootModuleId` | `planChange` | same |
-| `remove-article-from-group` | `groupId`, `rootModuleId` | `planChange` | same |
+| `remove-article-from-group` | `rootModuleId`, `groupId` (optional) | `planChange` | same |
 | `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo` | `planChange` | same |
 | `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between: [id, id]` | `planChange` | same |
 | `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | `planChange` | same |

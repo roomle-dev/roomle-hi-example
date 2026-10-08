@@ -151,23 +151,23 @@ the group inside the room at the wall.
 
 **Ticket.** [RML-18079](https://roomle.atlassian.net/browse/RML-18079)
 
-**Problem.** For "delete the middle unit" gpt-5-mini calls `remove-article-from-group` and closes the
-gap; for "remove the middle unit" and "remove the base unit next to the corner unit" gpt-5.4-mini calls
-`delete-root-module`, which splits the group — a corner kitchen into four groups.
+**Problem.** For "remove the middle unit" gpt-5.4-mini calls `delete-root-module`: the gap stays
+and the group falls apart — a corner kitchen into four groups. It decides with no reasoning tokens.
 
-**Cause.** Both tool descriptions open with the user's word (D40), and the models still take the
-other tool, so the descriptions do not make the difference clear enough. Which sentence leads them
-to the other tool is not analysed; the tool names differ in more than the verb, and both
-descriptions speak of a root module.
+**Cause.** The HI chat does not read the rules, so only the tool list binds the user's word to the
+tool. The descriptions of `delete-root-module` and `remove-article-from-group` open with the word
+("The tool for "delete"" / "The tool for "remove""), and `delete-group` deletes; gpt-5.4-mini
+still takes `delete-root-module` for "remove". What else in the tool list leads it there is not
+analysed; the tool names are not the cause.
 
-**To do.** Analyse the tool choice of the runs below against the two descriptions
-(`hi-mcp-server.ts:399`, `:415` — both already open with the verb, in parallel words) and the tool
-list of the instructions, and change the sentence that leads the models to the other tool.
+**To do.** Check the descriptions with the test below; if gpt-5.4-mini still takes
+`delete-root-module` for "remove", find what leads it there and change it.
 
-**Test.** `hi-mcp-server.test.ts` pins the opening sentences; "delete the middle unit" and "remove
-the middle unit" with gpt-5-mini and gpt-5.4-mini, three runs each, take the matching tool.
+**Test.** "delete the middle unit", "remove the middle unit" and "remove the base unit next to the
+corner unit on the right wall" with gpt-5-mini and gpt-5.4-mini, three runs each, take the
+matching tool.
 
-**Reproduce.** `mcp-test-2026-10-06_08-31-06`: gpt-5-mini 17, gpt-5.4-mini 16 and 24.
+**Reproduce.** `run-hi-mcp-prompt.js gpt-5.4-mini "$AZURE_GPT_KEY" "remove the middle unit" --plan ps_qply732i7knwtkfjm1z86sa8vrt00ms`
 
 ## 45. "The middle unit" read from the docking
 

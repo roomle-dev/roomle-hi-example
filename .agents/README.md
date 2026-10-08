@@ -86,6 +86,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [The room contour runs back along a wall with two openings](bug-analysis/room-contour-runs-back-along-a-wall-with-two-openings.md) | Open (fixed in RoomleCore PR #2565, waits for the kernel release) | 2026-10-07 |
 | [A unit attribute after a group attribute misses the unit's fronts](bug-analysis/unit-attribute-misses-fronts-after-group-attribute.md) | Open (implemented, not merged) | 2026-10-07 |
 | [A new group stands on an obstacle without a hint](bug-analysis/new-group-on-an-obstacle-without-a-hint.md) | Open (implemented, not merged) | 2026-10-07 |
+| ["Delete" and "remove" are taken for each other](bug-analysis/delete-and-remove-taken-for-each-other.md) | Open (implemented, not merged) | 2026-10-08 |
 
 ### Feature Analyses
 

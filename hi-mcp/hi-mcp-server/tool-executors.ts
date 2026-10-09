@@ -4871,7 +4871,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           `Group '${groupId}' has no calculated geometry to place.`
         );
       }
-      const placement = wallTarget(
+      const placementCorrectionsFrom = corrections.length;
+      let placement = wallTarget(
         rawGroup,
         resolved,
         spec,
@@ -4910,13 +4911,14 @@ export const toolExecutors: Record<string, ToolExecutor> = {
         (candidate) => candidate.id === group.id
       );
       if (rawGroupAfter && groupFootprint(rawGroupAfter)) {
+        const asBuiltCorrections: string[] = [];
         const placementAsBuilt = wallTarget(
           rawGroupAfter,
           resolved,
           spec,
           placedGroupVolumes(rawGroupsAfter, group.id),
           '',
-          []
+          asBuiltCorrections
         );
         if (!standsAt(rawGroupAfter, placementAsBuilt)) {
           await roomDesignerApi.extended.loadExternalObjectGroupLayout(
@@ -4924,6 +4926,14 @@ export const toolExecutors: Record<string, ToolExecutor> = {
             'posGroups',
             { reason: 'adjusted' }
           );
+          // what the measure at the new place found - an overlap there -
+          // replaces what the measure at the old place said
+          corrections.splice(
+            placementCorrectionsFrom,
+            corrections.length - placementCorrectionsFrom,
+            ...asBuiltCorrections
+          );
+          placement = placementAsBuilt;
         }
       }
       const after = await roomDesignerApi.extended.getExternalObjectPlanContext(
@@ -5089,7 +5099,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       // the single attribute and the list, the last value of an id winning
       const sent = new Map<string, unknown>(
         [
-          ...(typeof args.attributeId === 'string'
+          ...(typeof args.attributeId === 'string' && args.value !== undefined
             ? [{ attributeId: args.attributeId, value: args.value }]
             : []),
           ...((args.attributes as any[] | undefined) ?? []),

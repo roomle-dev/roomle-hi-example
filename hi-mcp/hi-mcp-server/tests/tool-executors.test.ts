@@ -3682,6 +3682,31 @@ describe('create-or-replace-groups relations', () => {
     ]);
   });
 
+  it('puts it at the left end of a wall-unit row that grows to the left', async () => {
+    const { result, loadedGroup } = await loadedWithWidths([
+      {
+        libraryId: 'lib-1',
+        roots: [
+          ...baseRow,
+          { id: 'wall3', articleId: 'wall', above: 'base3' },
+          { id: 'wall2', articleId: 'wall', leftOf: 'wall3' },
+          { id: 'wall1', articleId: 'wall', leftOf: 'wall2' },
+          { id: 'wall4', articleId: 'wall', above: 'base2' },
+        ],
+      },
+    ]);
+    const hangsLeftOf = (unit: string, target: string) =>
+      (dockingOf(loadedGroup)[target] as any[]).some(
+        (context) =>
+          context.ownDockingVector === 'LeftBottom' &&
+          context.dockedRoots.some((docked: any) => docked.id === unit)
+      );
+    expect(hangsLeftOf('wall4', 'wall1')).toBe(true);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: 'wall4' would hang above 'base2' in the place of 'wall2' - it was put leftOf 'wall1', the end of that row of wall units",
+    ]);
+  });
+
   it('checks the place a second unit above one floor unit moves to the same way', async () => {
     const { result, loadedGroup } = await loadedWithWidths([
       {
@@ -5121,6 +5146,56 @@ describe('place-group', () => {
     ]);
   });
 
+  it('reports an overlap the measure at the new place finds when it places the group once more', async () => {
+    // g2 ends 50 mm beside where g1, 800 mm wide, stands centred; at the new
+    // place the library builds g1 1000 mm wide, into g2
+    let rawGroups: any[] = [
+      makeGroup({ roots: [tallRoot()] }),
+      neighbourOnTheRightWall([4000, 0, -2750]),
+    ];
+    const api = createApi(undefined, {
+      getExternalObjectPlanContext: vi.fn(async () => ({
+        rooms: { rooms: [room] },
+        groups: shapedPair,
+      })),
+      getExternalObjectGroups: vi.fn(async () => rawGroups),
+      loadExternalObjectGroupLayout: vi.fn(async (layout: any) => {
+        const { id, repositioningData } = layout.posGroups[0];
+        rawGroups = rawGroups.map((group) =>
+          group.id === id
+            ? repositioned(
+                {
+                  ...group,
+                  roots: [
+                    tallRoot({
+                      attributes: [
+                        { id: 'b', value: 1000, isInput: true },
+                        { id: 't', value: 600, isInput: true },
+                        { id: 'h', value: 2000, isInput: true },
+                      ],
+                    }),
+                  ],
+                },
+                repositioningData
+              )
+            : group
+        );
+        return [{ id: 'g1' }];
+      }),
+    });
+    const result = (await toolExecutors['place-group'](api, {
+      groupId: 'g1',
+      wall: 'right',
+    })) as Record<string, any>;
+
+    expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledTimes(2);
+    expect(result.corrections).toEqual([
+      expect.stringMatching(
+        /^Group 'g1' would overlap group 'g2' at the right wall - it was moved \d+ mm along the wall/
+      ),
+    ]);
+  });
+
   it('names an object the placed group stands on', async () => {
     // centred on the left wall, the tall unit stands on the sofa
     const api = createPlaceApi(
@@ -6412,6 +6487,19 @@ describe('group command tools', () => {
         groupIds: ['kitchen-1'],
         changedModuleIds: ['u1', 'u2', 'u3'],
       });
+    });
+
+    it('asks for the value of an attribute sent without one, and sends nothing', async () => {
+      const api = attributeApi();
+      await expect(
+        toolExecutors['change-group-attribute'](api, {
+          groupId: 'kitchen-1',
+          attributeId: 'front',
+        })
+      ).rejects.toThrow(
+        'change-group-attribute: name the attribute with attributeId and value, or several with attributes [{ attributeId, value }].'
+      );
+      expect(commandsOf(api)).toEqual([]);
     });
 
     it('names an attribute of the list that no module of the group has', async () => {

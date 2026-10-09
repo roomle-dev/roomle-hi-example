@@ -520,13 +520,18 @@ export const relationsToDocking = (
   // Per carrier and edge: the unit that hangs there (the anchor) and the last
   // unit of the wall-unit row that grew from it (the tail).
   const aboveAt = new Map<string, { anchor: Link; tail: any }>();
-  const moveRightOf = (moved: Link, target: any) =>
+  const moveBeside = (
+    moved: Link,
+    target: any,
+    relation: 'rightOf' | 'leftOf' = 'rightOf'
+  ) =>
     Object.assign(moved, {
-      relation: 'rightOf',
+      relation,
       target,
       align: 'left',
       gapMm: undefined,
     });
+  const moveRightOf = (moved: Link, target: any) => moveBeside(moved, target);
   for (const link of kept) {
     if (link.relation !== 'above') {
       continue;
@@ -684,12 +689,20 @@ export const relationsToDocking = (
         standing.push(...row);
         continue;
       }
+      // the free end of that row: a row that grows leftOf its start, from a
+      // tall unit for example, ends on the left
+      const grows = kept.some(
+        (candidate) =>
+          candidate.unit === taken && candidate.relation === 'leftOf'
+      )
+        ? 'leftOf'
+        : 'rightOf';
       let tail = taken;
       for (;;) {
         const next = kept.find(
           (candidate) =>
             candidate.target === tail &&
-            candidate.relation === 'rightOf' &&
+            candidate.relation === grows &&
             isWall(candidate.unit) &&
             !row.includes(candidate.unit)
         );
@@ -700,9 +713,9 @@ export const relationsToDocking = (
       }
       notes.push(
         `${quoted(link.unit.id)} would hang above ${quoted(link.target.id)} in the place of ${quoted(taken.id)} - ` +
-          `it was put rightOf ${quoted(tail.id)}, the end of that row of wall units`
+          `it was put ${grows} ${quoted(tail.id)}, the end of that row of wall units`
       );
-      moveRightOf(link, tail);
+      moveBeside(link, tail, grows);
       moved = true;
       break;
     }

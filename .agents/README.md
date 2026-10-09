@@ -104,6 +104,7 @@ done. The analysis and the report are the same document — the report is append
 | Document | Status | Last touched |
 |---|---|---|
 | [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-06 |
+| [Validation of the MCP test fixes of RML-18103](refactoring-analysis/mcp-test-branch-validation.md) | Done | 2026-10-09 |
 
 ### Benchmarks & Performance Analyses
 

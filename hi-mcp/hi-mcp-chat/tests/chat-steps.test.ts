@@ -1,10 +1,16 @@
-import { jsonSchema, streamText, tool } from 'ai';
+import {
+  APICallError,
+  jsonSchema,
+  streamText,
+  tool,
+  TypeValidationError,
+} from 'ai';
 import { convertArrayToReadableStream, MockLanguageModelV3 } from 'ai/test';
 import { describe, expect, it, vi } from 'vitest';
 import {
   chatSteps,
+  createStepLog,
   isTurnTimeout,
-  logStepUsage,
   MAX_CHAT_STEPS,
   turnTimeoutMessage,
 } from '../chat-steps';
@@ -87,7 +93,7 @@ describe('chatSteps', () => {
       messages: [{ role: 'user', content: 'plan a kitchen' }],
       tools,
       ...chatSteps,
-      onStepEnd: logStepUsage(log),
+      onStepEnd: createStepLog(log).onStepEnd,
     });
     await result.text;
     expect(log).toHaveBeenCalledTimes(MAX_CHAT_STEPS);
@@ -124,12 +130,66 @@ describe('chatSteps', () => {
         }),
       }),
       messages: [{ role: 'user', content: 'plan a kitchen' }],
-      onStepEnd: logStepUsage(log),
+      onStepEnd: createStepLog(log).onStepEnd,
     });
     await result.text;
     expect(log).toHaveBeenCalledTimes(1);
     expect(log.mock.calls[0][0]).toMatch(
       /^\[hi-chat\] step 1: 100 in, 50 out, 40 reasoning tokens; no tool; stop; \d+ ms$/
+    );
+  });
+
+  it('logs the step that failed with what the provider answered', async () => {
+    // a model that fails in its second step the way the SDK reports an answer
+    // it cannot process
+    let calls = 0;
+    const failure = new APICallError({
+      message: 'Failed to process successful response',
+      url: 'https://provider.example/chat/completions',
+      requestBodyValues: {},
+      statusCode: 200,
+      responseHeaders: { 'apim-request-id': 'req-42' },
+      cause: new TypeValidationError({
+        value: { choices: [{ delta: { content: null } }] },
+        cause: new Error('Invalid input: expected string'),
+      }),
+    });
+    const model = new MockLanguageModelV3({
+      doStream: async () => {
+        calls += 1;
+        if (calls === 2) {
+          throw failure;
+        }
+        return { stream: convertArrayToReadableStream(toolCall('call-1')) };
+      },
+    });
+    const log = vi.fn();
+    const logError = vi.fn();
+    const stepLog = createStepLog(log, logError);
+    const result = streamText({
+      model,
+      messages: [{ role: 'user', content: 'plan a kitchen' }],
+      tools,
+      ...chatSteps,
+      onStepEnd: stepLog.onStepEnd,
+    });
+    for await (const part of result.stream) {
+      if (part.type === 'error') {
+        stepLog.onError(part.error);
+      }
+    }
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(logError).toHaveBeenCalledTimes(1);
+    const line = logError.mock.calls[0][0] as string;
+    expect(line).toMatch(/^\[hi-chat\] step 2 failed after \d+ ms: /);
+    expect(line).toContain(
+      'AI_APICallError: Failed to process successful response, status 200, ' +
+        'url https://provider.example/chat/completions, request req-42'
+    );
+    expect(line).toContain(' <- caused by AI_TypeValidationError: ');
+    expect(line).toContain('value {"choices":[{"delta":{"content":null}}]}');
+    expect(line).toContain(
+      ' <- caused by Error: Invalid input: expected string'
     );
   });
 

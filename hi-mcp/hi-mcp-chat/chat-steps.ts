@@ -24,15 +24,66 @@ interface StepUsage {
   finishReason?: unknown;
 }
 
+const LOGGED_BODY_CHARS = 2000;
+
+const shortened = (value: unknown): string => {
+  const text = typeof value === 'string' ? value : JSON.stringify(value);
+  return text !== undefined && text.length > LOGGED_BODY_CHARS
+    ? `${text.slice(0, LOGGED_BODY_CHARS)}... (${text.length} chars)`
+    : String(text);
+};
+
+const REQUEST_ID_HEADERS = ['x-request-id', 'apim-request-id', 'request-id'];
+
+/**
+ * What a failed provider call tells, cause by cause: the error, the HTTP
+ * status, the url, the provider's request id, and the body, text or value the
+ * SDK could not process. "Failed to process successful response" carries the
+ * status of the answer; its cause names what in the answer failed.
+ */
+export const describeStepError = (error: unknown): string => {
+  const causes: string[] = [];
+  const seen = new Set<unknown>();
+  for (
+    let current: any = error;
+    typeof current === 'object' && current !== null && !seen.has(current);
+    current = current.cause
+  ) {
+    seen.add(current);
+    const requestId = REQUEST_ID_HEADERS.map(
+      (header) => current.responseHeaders?.[header]
+    ).find((value) => value !== undefined);
+    causes.push(
+      [
+        `${current.name ?? 'Error'}: ${current.message ?? String(current)}`,
+        current.statusCode !== undefined && `status ${current.statusCode}`,
+        current.url !== undefined && `url ${current.url}`,
+        requestId !== undefined && `request ${requestId}`,
+        current.responseBody !== undefined &&
+          `body ${shortened(current.responseBody)}`,
+        current.text !== undefined && `text ${shortened(current.text)}`,
+        current.value !== undefined && `value ${shortened(current.value)}`,
+      ]
+        .filter((field) => field !== false)
+        .join(', ')
+    );
+  }
+  return causes.length > 0 ? causes.join(' <- caused by ') : String(error);
+};
+
 /**
  * Logs what the model produced in every step - the tokens in, out and spent
  * on reasoning, the tools it called with the size of their input, and the
- * step's duration - so a long turn shows where its time goes.
+ * step's duration - so a long turn shows where its time goes; and the step
+ * that failed, with what the provider answered.
  */
-export const logStepUsage = (log: (line: string) => void = console.log) => {
+export const createStepLog = (
+  log: (line: string) => void = console.log,
+  logError: (line: string) => void = console.error
+) => {
   let step = 0;
   let startedAt = Date.now();
-  return (result: StepUsage) => {
+  const onStepEnd = (result: StepUsage) => {
     step += 1;
     const tools = (result.toolCalls ?? []).map(
       (call) =>
@@ -50,6 +101,11 @@ export const logStepUsage = (log: (line: string) => void = console.log) => {
     );
     startedAt = Date.now();
   };
+  const onError = (error: unknown) =>
+    logError(
+      `[hi-chat] step ${step + 1} failed after ${Date.now() - startedAt} ms: ${describeStepError(error)}`
+    );
+  return { onStepEnd, onError };
 };
 
 // AbortSignal.timeout rejects with a TimeoutError, a manual abort with an

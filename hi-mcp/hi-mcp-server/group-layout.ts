@@ -23,6 +23,11 @@ const HOOD = /hood/i;
 
 const HEIGHT = 'mod_Height';
 
+const WIDTH = 'mod_Width';
+
+// Two places along a row overlap by more than this.
+const PLACE_TOLERANCE_MM = 5;
+
 const STACKING_VECTORS: Record<string, [string, string]> = {
   left: ['LeftTop', 'LeftBottom'],
   right: ['RightTop', 'RightBottom'],
@@ -93,6 +98,20 @@ const rootHeight = (articles: any[], root: any): number | undefined =>
       (attribute) => attribute?.id === HEIGHT
     )?.value
   ) ?? articleHeight(catalogArticleOf(articles, root));
+
+// The width of a unit: its mod_Width override, else the article's width.
+const rootWidth = (articles: any[], root: any): number | undefined =>
+  numberOf(
+    ((root?.attributes ?? []) as any[]).find(
+      (attribute) => attribute?.id === WIDTH
+    )?.value
+  ) ??
+  numberOf(
+    (
+      (catalogArticleOf(articles, root)?.rootModules?.[0]?.dimensions ??
+        []) as any[]
+    ).find((dimension) => dimension?.id === WIDTH)?.value
+  );
 
 // The height most articles of a kind have in the library.
 const usualHeight = (
@@ -501,13 +520,18 @@ export const relationsToDocking = (
   // Per carrier and edge: the unit that hangs there (the anchor) and the last
   // unit of the wall-unit row that grew from it (the tail).
   const aboveAt = new Map<string, { anchor: Link; tail: any }>();
-  const moveRightOf = (moved: Link, target: any) =>
+  const moveBeside = (
+    moved: Link,
+    target: any,
+    relation: 'rightOf' | 'leftOf' = 'rightOf'
+  ) =>
     Object.assign(moved, {
-      relation: 'rightOf',
+      relation,
       target,
       align: 'left',
       gapMm: undefined,
     });
+  const moveRightOf = (moved: Link, target: any) => moveBeside(moved, target);
   for (const link of kept) {
     if (link.relation !== 'above') {
       continue;
@@ -534,6 +558,170 @@ export const relationsToDocking = (
     );
     moveRightOf(link, slot.tail);
     slot.tail = link.unit;
+  }
+
+  // A row of wall units grows from the unit it starts with: a unit hung above a
+  // floor unit whose place that row takes already would hang in the same
+  // place, so it continues the row rightOf its last unit. The places come
+  // from the widths of the catalog, along each row of floor units; a corner
+  // article ends a straight row, and a unit of unknown width has no place. A
+  // range hood keeps its place above the hob unit.
+  interface Place {
+    row: string;
+    from: number;
+    to: number;
+  }
+  const widthOf = (root: any) => rootWidth(articles, root);
+  const isSideLink = (link: Link) =>
+    link.relation === 'rightOf' || link.relation === 'leftOf';
+  const placesOf = (): Map<string, Place> => {
+    const places = new Map<string, Place>();
+    for (const start of roots.filter((root) => !isWall(root))) {
+      const width = widthOf(start);
+      if (places.has(start.id) || width === undefined) {
+        continue;
+      }
+      places.set(start.id, { row: start.id, from: 0, to: width });
+      const queue = [start];
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        if (current !== start && isCornerArticle(articles, current)) {
+          continue;
+        }
+        const at = places.get(current.id)!;
+        for (const link of kept) {
+          if (!isSideLink(link) || isWall(link.unit) || isWall(link.target)) {
+            continue;
+          }
+          const [other, toTheRight] =
+            link.target === current
+              ? [link.unit, link.relation === 'rightOf']
+              : link.unit === current
+                ? [link.target, link.relation === 'leftOf']
+                : [undefined, false];
+          const otherWidth = other && widthOf(other);
+          if (!other || places.has(other.id) || otherWidth === undefined) {
+            continue;
+          }
+          const from = toTheRight ? at.to : at.from - otherWidth;
+          places.set(other.id, { row: at.row, from, to: from + otherWidth });
+          queue.push(other);
+        }
+      }
+    }
+    for (let placed = true; placed; ) {
+      placed = false;
+      for (const link of kept) {
+        const at = places.get(link.target.id);
+        const width = widthOf(link.unit);
+        if (
+          !isWall(link.unit) ||
+          places.has(link.unit.id) ||
+          !at ||
+          width === undefined
+        ) {
+          continue;
+        }
+        const from =
+          link.relation === 'above'
+            ? link.align === 'right'
+              ? at.to - width
+              : at.from
+            : link.relation === 'rightOf'
+              ? at.to
+              : link.relation === 'leftOf'
+                ? at.from - width
+                : undefined;
+        if (from === undefined) {
+          continue;
+        }
+        places.set(link.unit.id, { row: at.row, from, to: from + width });
+        placed = true;
+      }
+    }
+    return places;
+  };
+  // a wall unit and the wall units that continue its row
+  const rowFrom = (unit: any): any[] => {
+    const row = [unit];
+    for (let at = 0; at < row.length; at++) {
+      for (const link of kept) {
+        if (
+          link.target === row[at] &&
+          isWall(link.unit) &&
+          isSideLink(link) &&
+          !row.includes(link.unit)
+        ) {
+          row.push(link.unit);
+        }
+      }
+    }
+    return row;
+  };
+  for (let round = 0; round <= kept.length; round++) {
+    const places = placesOf();
+    // the rows beside a tall unit stand first
+    const standing = kept
+      .filter(
+        (link) => isWall(link.unit) && !isWall(link.target) && isSideLink(link)
+      )
+      .flatMap((link) => rowFrom(link.unit));
+    let moved = false;
+    for (const link of kept) {
+      if (link.relation !== 'above' || !isWall(link.unit)) {
+        continue;
+      }
+      const row = rowFrom(link.unit);
+      const place = places.get(link.unit.id);
+      const taken =
+        !isHood(link.unit) && place
+          ? standing.find((other) => {
+              const at = places.get(other.id);
+              return (
+                !row.includes(other) &&
+                at?.row === place.row &&
+                at.from < place.to - PLACE_TOLERANCE_MM &&
+                place.from < at.to - PLACE_TOLERANCE_MM
+              );
+            })
+          : undefined;
+      if (!taken) {
+        standing.push(...row);
+        continue;
+      }
+      // the free end of that row: a row that grows leftOf its start, from a
+      // tall unit for example, ends on the left
+      const grows = kept.some(
+        (candidate) =>
+          candidate.unit === taken && candidate.relation === 'leftOf'
+      )
+        ? 'leftOf'
+        : 'rightOf';
+      let tail = taken;
+      for (;;) {
+        const next = kept.find(
+          (candidate) =>
+            candidate.target === tail &&
+            candidate.relation === grows &&
+            isWall(candidate.unit) &&
+            !row.includes(candidate.unit)
+        );
+        if (!next) {
+          break;
+        }
+        tail = next.unit;
+      }
+      notes.push(
+        `${quoted(link.unit.id)} would hang above ${quoted(link.target.id)} in the place of ${quoted(taken.id)} - ` +
+          `it was put ${grows} ${quoted(tail.id)}, the end of that row of wall units`
+      );
+      moveBeside(link, tail, grows);
+      moved = true;
+      break;
+    }
+    if (!moved) {
+      break;
+    }
   }
 
   const pairOf = (link: Link): Pair => {

@@ -89,7 +89,7 @@ template string in this file; there is no separate rules file.
 | `create-or-replace-groups` | `posGroups: object[]` (≥ 1) | `planChange` | `loadExternalObjectGroupLayout`; the anchor probe also `undo`, `removeExternalObject` |
 | `place-group` | `groupId`, `wall` (side label or index), `roomIndex?`, `alignment?`, `offsetMm?` | `planChange` | `getExternalObjectGroups`, `loadExternalObjectGroupLayout` |
 | `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | `planChange` | `externalObjectGroupOperation` |
-| `change-group-attribute` | `groupId`, `attributeId`, `value` | `planChange` | same |
+| `change-group-attribute` | `groupId`, `attributeId?`, `value?`, `attributes?` | `planChange` | same |
 | `delete-group` | `groupId` | `planChange` | same |
 | `delete-article-in-place` | `rootModuleId` | `planChange` | same |
 | `delete-article-and-compact` | `rootModuleId`, `groupId` (optional) | `planChange` | same |

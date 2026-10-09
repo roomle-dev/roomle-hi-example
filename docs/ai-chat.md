@@ -151,6 +151,14 @@ the conversation and the MCP tools, and runs `streamText` in steps
   duration (`[hi-chat] step n: …`); "out" counts the reasoning tokens too.
   Guarded by `it('logs the reasoning tokens of a step')` in
   `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`.
+- A step that fails is logged with its number and what the provider answered
+  (`[hi-chat] step n failed after … ms: …`): per cause the error, the HTTP
+  status, the url, the provider's request id and the body, text or value the
+  AI SDK could not process — "Failed to process successful response" carries
+  the status of the answer, its cause what in the answer failed
+  (`createStepLog`, `describeStepError` in `chat-steps.ts`). Guarded by
+  `it('logs the step that failed with what the provider answered')` in
+  `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`.
 
 ## Images in the chat
 

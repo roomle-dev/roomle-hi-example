@@ -97,7 +97,7 @@ describe('hi-mcp-server tool calls', () => {
 
   it.each([
     ['change-module-attribute', { rootModuleIds: ['r1'], value: 'white' }],
-    ['change-group-attribute', { groupId: 'g1', value: 'white' }],
+    ['change-group-attribute', { attributeId: 'front', value: 'white' }],
     ['delete-group', {}],
     ['delete-article-in-place', {}],
     ['merge-article-into-group', { groupId: 'g1', articleId: 'a1' }],
@@ -340,6 +340,21 @@ describe('hi-mcp-server tool calls', () => {
     expect(text).toContain('an entry of type opening is a door');
     expect(text).toContain(
       'To move an existing group against a wall or into a room corner, call place-group'
+    );
+  });
+
+  it('asks the agent to say which group material the library does not build', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    const description =
+      tools.find((tool) => tool.name === 'create-or-replace-groups')
+        ?.description ?? '';
+
+    expect(description).toContain(
+      'notCarried: those no unit of the group has - the library builds no part for them in this group'
+    );
+    expect(description).toContain(
+      'say in the answer which material is not built'
     );
   });
 
@@ -682,8 +697,8 @@ describe('hi-mcp-server tool calls', () => {
       expect(descriptionOf(tool)).toContain(
         'a front colour the front program does not offer switches the program'
       );
-      expect(descriptionOf(tool)).toContain(
-        'corrections name every attribute the library changed besides the one set'
+      expect(descriptionOf(tool)).toMatch(
+        /corrections name every attribute the library changed besides the ones? set/
       );
     }
     expect(served).not.toContain('allowed values');
@@ -858,6 +873,90 @@ describe('hi-mcp-server tool calls', () => {
     expect(merge).not.toContain('<gap');
     expect(merge).not.toContain('600, 0');
     expect(merge).toContain('at the height of the wall units');
+  });
+
+  const servedText = async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    const { tools } = await client.listTools();
+    const descriptionOf = (name: string) =>
+      tools.find((tool) => tool.name === name)?.description ?? '';
+    return { client, rules, tools, descriptionOf };
+  };
+
+  it('tells a client that does not read the rules to create a group with all its articles and to add an article to the group beside it', async () => {
+    const { descriptionOf } = await servedText();
+    expect(descriptionOf('create-or-replace-groups')).toContain(
+      'A group is created with all its articles in one call: roots holds every article of the group from the first call, each with its relation - a group is never created empty and filled later.'
+    );
+    expect(descriptionOf('create-or-replace-groups')).toContain(
+      'An article beside an existing group goes into that group: merge-article-into-group at the end of a row, insert-article-into-group between two root modules.'
+    );
+  });
+
+  it('tells the agent the place of a root module in its row', async () => {
+    const { rules, descriptionOf } = await servedText();
+    expect(descriptionOf('get-plan-context')).toContain(
+      'rowIndex, its place in its row - 1 at the left end as seen from the front'
+    );
+    expect(rules).toContain(
+      'A root module named by its place - the middle unit, the second from the left, the last one - is found by rowIndex'
+    );
+    expect(rules).toContain(
+      'The roots are listed in the order they were added, not in row order.'
+    );
+  });
+
+  it('names the root modules of every attribute match and lists the attributes in the plan first', async () => {
+    const { descriptionOf } = await servedText();
+    expect(descriptionOf('find-attributes')).toContain(
+      'the root modules that carry them, with their names - the worktop colour is the colour of the root module Countertop; the attributes the root modules in the plan carry come first'
+    );
+  });
+
+  it("keeps a root module's own value of a group material", async () => {
+    const { rules, descriptionOf } = await servedText();
+    expect(rules).toContain(
+      'a root module that names its own value of it in its attributes keeps that value - an accent'
+    );
+    expect(descriptionOf('create-or-replace-groups')).toContain(
+      'rootValues: the root modules that keep their own value of one'
+    );
+  });
+
+  it('sets several attributes of a group in one call', async () => {
+    const { client, tools, descriptionOf } = await servedText();
+    expect(descriptionOf('change-group-attribute')).toContain(
+      'several at once with attributes - all the materials of a group in one call, the programs set before the colours'
+    );
+    const schema = tools.find((tool) => tool.name === 'change-group-attribute')
+      ?.inputSchema as any;
+    expect(schema.required).toEqual(['groupId']);
+    expect(Object.keys(schema.properties)).toEqual([
+      'groupId',
+      'attributeId',
+      'value',
+      'attributes',
+    ]);
+    const result = await client.callTool({
+      name: 'change-group-attribute',
+      arguments: { groupId: 'g1', attributes: [{ attributeId: 'front' }] },
+    });
+    expect(textOf(result)).toContain('Input validation error');
+  });
+
+  it('answers a create, an undo and a redo with the groups they changed and the others by id', async () => {
+    const { descriptionOf } = await servedText();
+    expect(descriptionOf('create-or-replace-groups')).toContain(
+      'the groups of the call - check their pos and footprint - and otherGroupIds, the other groups of the plan, unchanged'
+    );
+    for (const tool of ['undo', 'redo']) {
+      expect(descriptionOf(tool)).toContain(
+        'removedGroupIds - the groups it took out of the plan - and otherGroupIds, the groups it left as they were'
+      );
+    }
   });
 
   it('never tells the agent how the server positions a group internally', async () => {
@@ -1238,6 +1337,8 @@ describe('hi-mcp-server through the page bridge', () => {
       // the plan before the first step, for undo
       'getExternalObjectGroups',
       'loadExternalObjectGroupLayout',
+      // the group as built at the new place, which stands as asked
+      'getExternalObjectGroups',
       'getExternalObjectPlanContext',
       'getExternalObjectGroups',
       // the plan after the call, for undo

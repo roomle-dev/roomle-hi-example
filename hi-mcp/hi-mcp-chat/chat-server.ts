@@ -11,8 +11,8 @@ import { CHAT_SYSTEM_PROMPT, getChatConfig } from './chat-config';
 import { createChatRequestHandler, type StreamChat } from './chat-handler';
 import {
   chatSteps,
+  createStepLog,
   isTurnTimeout,
-  logStepUsage,
   turnTimeoutMessage,
 } from './chat-steps';
 import { toolResultFilesAsUserMessages } from './tool-result-images';
@@ -113,6 +113,7 @@ const streamChat: StreamChat = async (messages, clientId) => {
       })
     );
     const model = getLanguageModel(config);
+    const stepLog = createStepLog();
     const result = streamText({
       model,
       instructions: CHAT_SYSTEM_PROMPT,
@@ -125,7 +126,7 @@ const streamChat: StreamChat = async (messages, clientId) => {
       // A turn that does not answer in time ends with a message instead of
       // "assistant is working…" without end.
       abortSignal: AbortSignal.timeout(config.turnTimeoutMs),
-      onStepEnd: logStepUsage(),
+      onStepEnd: stepLog.onStepEnd,
       ...(providerOptions(config) && {
         providerOptions: providerOptions(config),
       }),
@@ -150,7 +151,7 @@ const streamChat: StreamChat = async (messages, clientId) => {
               controller.enqueue(encoder.encode(part.text));
             }
             if (part.type === 'error') {
-              console.error('[hi-chat] stream error', part.error);
+              stepLog.onError(part.error);
               controller.enqueue(encoder.encode(errorText(part.error)));
             }
             // the turn timeout ends the stream with an abort part
@@ -164,6 +165,9 @@ const streamChat: StreamChat = async (messages, clientId) => {
             }
           }
         } catch (error) {
+          // a provider answer the SDK cannot process ends the stream with a
+          // throw, not with an error part
+          stepLog.onError(error);
           controller.enqueue(encoder.encode(errorText(error)));
         } finally {
           controller.close();

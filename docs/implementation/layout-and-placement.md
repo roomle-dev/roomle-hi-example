@@ -75,6 +75,12 @@ flush with the tall units: tall height − wall unit height − floor unit heigh
 6. **Side flip:** wall units beside a tall unit on the side without floor units move to the other side.
 7. **Two units above one carrier:** the later one goes right of the first one's row; a hood takes the
    first place.
+8. **A unit above a floor unit whose place a wall-unit row takes:** with the catalog widths
+   (`mod_Width`, a root's override first) the compile places every unit along each straight row of
+   floor units — a corner article ends one —, and a unit `above` a floor unit whose place a row of
+   wall units from elsewhere takes already goes right of that row's last unit (G64). The rows beside
+   a tall unit stand first, then the units `above` in list order; a hood keeps its place, a unit of
+   unknown width has none.
 
 ### Vector pairs
 
@@ -165,7 +171,8 @@ Used by `place-group` and a placement by wall, the overlap and in-room tests of 
 | `placeCornerAtWalls` | the raw group in a corner, flush with both walls, shifted by `offsetMm` |
 | `wallSpanStart`, `spanAlongWall` | where along a wall a span starts; the span of a footprint along a wall |
 | `alignmentRunsParallel`, `resolveWallAlignment` | a side label as `start` or `end` of a wall (left = smaller x, top = smaller z) |
-| `volumesOverlap`, `convexPolygonsTouch` | overlap of two placed groups with a tolerance (separating axis test) |
+| `volumesOverlap`, `convexPolygonsTouch` | overlap of two placed volumes with a tolerance (separating axis test) |
+| `rootVolumesInRoom` | the box of every root module that is not generated, in room space, with its height range and rotation — two groups overlap when two of these overlap (`overlappedGroupIds`, `tool-executors.ts`) |
 | `wallOfOpening` | the wall, room and span of a door or window |
 | `groupPointToRoom`, `footprintCornersInRoom`, `rootFootprintInRoom` | group space to room space |
 | `repositioningFromPlacement` | the repositioning of a raw group position for `place-group` and a placement by wall |
@@ -181,8 +188,9 @@ Used by `place-group` and a placement by wall, the overlap and in-room tests of 
   and corner placements of the test room, an L-shaped room and a wall split by a door;
   `tests/group-layout.test.ts` a full kitchen of a real agent that must compile to exactly its own
   docking.
-- **Footprints are bounding rectangles** — for L- and U-shaped groups the overlap and in-room tests
-  are conservative.
+- **Footprints are bounding rectangles** — for L- and U-shaped groups the in-room test is
+  conservative; the overlap test of two groups compares their root modules, the rectangles are its
+  quick test first.
 - **roomle-ui computes footprints too.** The `position.footprint` of the plan context comes from
   roomle-ui (`hi-plan-context.ts`); `plan-space.ts` computes its own. Keep them in step.
 - **The served rules depend on these conventions.** The rotation sense, the wall `end` rule and the

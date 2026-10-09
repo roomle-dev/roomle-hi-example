@@ -252,6 +252,52 @@ const rootHeights = (
   return heights;
 };
 
+// The kernel docks a CollisionBox too, which is no docking vector.
+const dockingVectorsOf = (root: FootprintRoot) =>
+  (root.dockInfos ?? []).filter(
+    (dockInfo) =>
+      dockInfo.id !== 'CollisionBox' &&
+      (dockInfo.start?.length ?? 0) >= 3 &&
+      (dockInfo.end?.length ?? 0) >= 3
+  );
+
+export interface DockingBox {
+  min: [number, number, number];
+  max: [number, number, number];
+}
+
+// The box of a root module's docking vectors in group space; undefined
+// without docking vectors.
+export const dockingVectorBox = (
+  root: FootprintRoot
+): DockingBox | undefined => {
+  const points = dockingVectorsOf(root).flatMap((dockInfo) =>
+    [dockInfo.start!, dockInfo.end!].map((point) =>
+      transformPointByRoot(root, [point[0], point[1], point[2]])
+    )
+  );
+  if (points.length === 0) {
+    return undefined;
+  }
+  const axis = (index: number, pick: (...values: number[]) => number) =>
+    pick(...points.map((point) => point[index]));
+  return {
+    min: [axis(0, Math.min), axis(1, Math.min), axis(2, Math.min)],
+    max: [axis(0, Math.max), axis(1, Math.max), axis(2, Math.max)],
+  };
+};
+
+// The start point of a root module's docking vector in group space.
+export const dockingVectorStart = (
+  root: FootprintRoot,
+  vectorId: string
+): [number, number, number] | undefined => {
+  const start = dockingVectorsOf(root).find(
+    (dockInfo) => dockInfo.id === vectorId
+  )?.start;
+  return start && transformPointByRoot(root, [start[0], start[1], start[2]]);
+};
+
 // The vertical extent of a group in group space; undefined without height data.
 export const groupHeightRange = (
   group: FootprintGroup

@@ -381,7 +381,8 @@ any order, and colour/color, grey/gray and worktop/countertop read alike: one
 search for `color` returns every colour attribute — front, carcase, countertop,
 toe kick and the others. A value list several attributes share is listed once;
 the later attributes carry `sameSelectionsAs`, the id of the attribute that
-lists it. At most 20 matches are returned; narrow
+lists it. Every match names its root modules with id and name, and the
+attributes the root modules in the plan carry come first. At most 20 matches are returned; narrow
 the text when the result carries a `hint`. The desc of a colour value
 carries its code — `Cloudy blue (#506080)` —, the colour of that value;
 the agent chooses a dark, a light or a blue value by it.
@@ -407,7 +408,8 @@ modules. The agent never authors root positions. Docking written as `contextData
 `get-plan-context` carries it — is still accepted. A root's `attributes` are
 overrides of that root module; a material for the whole group goes into the group's
 `attributes`, and the server sets it on every root module and on the worktop after the
-load — after a create and after a replace (`corrections` says so); the library's group
+load — after a create and after a replace, the programs first (`groupAttributes` says so) —,
+and a root module that names its own value of it keeps that value; the library's group
 settings (`groupSettings` of the master data) stay with the group. An override only the
 generated worktop carries is moved to the group, and a resubmitted group keeps the colours
 of its worktop and toe kick. A root module a replace adds inherits the attributes the
@@ -437,11 +439,12 @@ correction:
 | --------- | ---- | -------- | ----------- |
 | `posGroups` | `object[]` (min 1) | yes | Pos groups following the [authoring rules](#authoring-pos-groups) |
 
-Returns the loaded runtime ids and the resulting groups (with their final
-ids, `pos`, `rotationY`, `footprint`), plus a hint when a group of this call
-is still unpositioned, `groupAttributes` (`[{ index, id, set, notCarried? }]`: per group the
-group attributes set on every unit, and those no unit of the group carries — the group stands
-without them), `corrections` (what the server changed in the input, and what the
+Returns the loaded runtime ids and the groups of the call (with their final
+ids, `pos`, `rotationY`, `footprint`) and `otherGroupIds`, the other groups of
+the plan, unchanged, plus a hint when a group of this call
+is still unpositioned, `groupAttributes` (`[{ index, id, set, notCarried?, rootValues? }]`: per group the
+group attributes set on every unit, those no unit of the group carries — the group stands
+without them —, and the root modules that keep their own value of one), `corrections` (what the server changed in the input, and what the
 library changed with the group attributes — a front colour reset by a front program)
 and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build and, with
 `rootIds`, the roots of a loaded group it could not build — one unknown article id drops that root,
@@ -503,11 +506,12 @@ the planner (`getExternalObjectGroups`), computes the position from the wall,
 the alignment and the group's footprint — a group with a corner article goes
 into the corner when the alignment names the adjoining wall — and reloads the
 group there, once — the same logic places a new group by wall in
-`create-or-replace-groups`. The roots and their docking stay as they are, the generated
+`create-or-replace-groups`. The roots and their docking stay as they are — a wall unit hanging above a
+floor unit is docked to it again, so it keeps its place —, the generated
 roots (worktop, toe kick) travel with the group and keep their colours, the group
 keeps its attributes, and a group that already stands where asked is not reloaded. Groups may
-touch. A target that overlaps another group — footprints and height ranges
-overlap by more than 5 mm — is moved along the same wall to the nearest free
+touch. A target that overlaps another group — a root module of the one and a root
+module of the other overlap by more than 5 mm in footprint and height — is moved along the same wall to the nearest free
 position, and `corrections` names the group and the distance and suggests
 `merge-groups` if the units belong together; into a corner, or without a free
 position on the wall, the group is placed as asked and the overlap reported.
@@ -553,7 +557,7 @@ its first UUID segment or in one character is read as that root and reported.
 | Tool | Parameters | Effect |
 | ---- | ---------- | ------ |
 | `change-module-attribute` | `rootModuleIds` (or one `rootModuleId`), `moduleId?`, `attributeId`, `value` | Sets an attribute of one or more root modules — of one group or of several — and of their sub modules that carry it, or with `moduleId` of that one sub module of each (the id in `subModules`); one planner command per group. Returns `{ command, groupIds, changedModuleIds?, corrections? }`, not the group; a root module it could not change and every other attribute the library changed with it — a front program switched by a front colour, which changes how the fronts are built — are named in `corrections` |
-| `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it. Returns `{ command, groupIds, changedModuleIds, corrections? }`, not the group; every other attribute the library changed with it — a front program switched by a front colour, which changes how the fronts are built — is named in `corrections` |
+| `change-group-attribute` | `groupId`, `attributeId` and `value`, or `attributes: [{ attributeId, value }]` | Sets the attribute on every root and sub module of the group that has it; several attributes in one calculation with `attributes`, the programs first. Returns `{ command, groupIds, changedModuleIds, corrections? }`, not the group; every other attribute the library changed with it — a front program switched by a front colour, which changes how the fronts are built — is named in `corrections` |
 | `delete-group` | `groupId` | Deletes the group |
 | `delete-article-in-place` | `rootModuleId` | Deletes an article and leaves the gap — the tool for "delete" or "remove" unless the user asks to close the gap; root modules no longer docked together become separate groups where they stand, and deleting the only root module deletes the group. Generated roots (worktop, toe kick) cannot be deleted |
 | `delete-article-and-compact` | `rootModuleId`, `groupId` (optional: the group of the root module) | Deletes an article and closes the gap — when the user asks to close it: the neighbours are docked to each other, the root modules at a wall stay, a wall unit hung on it hangs on the root module that moves into the gap. A root module with a neighbour on one side only is deleted and nothing else moves; a corner article between two legs is deleted and the gap closed by turning one leg by 90° with the units above it, and the result names the leg that turned; the only root module is deleted with its group (`gapClosed: false`) |
@@ -588,8 +592,9 @@ Examples:
 No parameters. `undo` reverts the plan change of the last tool call that
 changed the plan — the planner steps that one call made, e.g. a kitchen and its
 material — and `redo` brings it back. Call `undo` again to revert the call
-before. Both return the reverted tool (`undone` / `redone`) and every group of
-the plan. Nothing to undo or redo is a normal result with `undone: null` and a
+before. Both return the reverted tool (`undone` / `redone`), the groups it changed as
+they are now, `removedGroupIds` for the groups it took out of the plan and
+`otherGroupIds` for the others. Nothing to undo or redo is a normal result with `undone: null` and a
 `hint`; so is a plan the user changed in the planner after the last tool call
 — the planner's own undo button reverts those changes. An undo that would not
 give back the plan before the call, because the user changed the plan while the

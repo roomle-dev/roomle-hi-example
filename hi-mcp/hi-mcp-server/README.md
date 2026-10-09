@@ -359,8 +359,9 @@ description, group or selection name — and returns the matching attributes wit
 `selections` and the root modules that carry them. The vocabulary is the compacted master data of
 `get-plan-context` (root modules and their customer-facing attributes): the worktop colour, for
 example, is `mod_CountertopColor` of the generated root `mr_Countertop`, set on the whole group with
-`change-group-attribute`. At most 20 matches are returned; narrow the text when the result carries a
-`hint`.
+`change-group-attribute`. Every match names its root modules with id and name, and the attributes
+the root modules in the plan carry come first. At most 20 matches are returned; narrow the text
+when the result carries a `hint`.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -400,8 +401,9 @@ be built. Every guard and correction:
 | --------- | ---- | -------- | ----------- |
 | `posGroups` | `object[]` (min 1) | yes | Pos groups following the [authoring rules](#authoring-pos-groups) |
 
-Returns the loaded runtime ids and the resulting groups (with their final ids, `pos`,
-`rotationY`, `footprint`), plus a hint when a group of this call is still unpositioned,
+Returns the loaded runtime ids and the groups of the call (with their final ids, `pos`,
+`rotationY`, `footprint`) and `otherGroupIds`, the other groups of the plan, unchanged, plus a hint
+when a group of this call is still unpositioned,
 `corrections` (what the server changed in the input, and what the library changed with the group
 attributes — a front colour reset by a front program) and `notLoaded` (`[{ index, id?, rootIds?,
 errors }]`, the groups it could not build and, with `rootIds`, the roots of a loaded group it could
@@ -463,8 +465,8 @@ footprint — the same logic places a new group by wall in `create-or-replace-gr
 with a corner article goes into the corner when the alignment names the adjoining wall — and
 reloads the group there, once. The roots, their docking and the group's attributes stay as they
 are.
-Groups may touch. A target that overlaps another group — footprints and height ranges overlap by
-more than 5 mm — is moved along the same wall to the nearest free position, and `corrections`
+Groups may touch. A target that overlaps another group — a root module of the one and a root module
+of the other overlap by more than 5 mm in footprint and height — is moved along the same wall to the nearest free position, and `corrections`
 names the group and the distance and suggests `merge-groups` if the units belong together; into a
 corner, or without a free position on the wall, the group is placed as asked and the overlap
 reported. No page change: the planner methods it calls are on every page's allow-list.
@@ -511,15 +513,15 @@ put the article of `insert-article-into-group` beside the first-named, towards
 the second. Root ids are resolved by a unique prefix, their
 last UUID segments or one character. The result reports these in
 `corrections`, followed by the planner's own corrections (a docking the new
-article cannot take, a unit above that keeps its place, a deletion instead of
-closing the gap). The planner's own checks (e.g. groups of different libraries
+article cannot take, a unit above that keeps its place and the unit above it
+now overlaps, a deletion instead of closing the gap). The planner's own checks (e.g. groups of different libraries
 in `merge-groups`) are unchanged, and their message is passed on as the error.
 Group ids accept a unique prefix.
 
 | Tool | Parameters | Effect |
 | ---- | ---------- | ------ |
 | `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | Sets an attribute of a root module and of its sub modules that carry it, or with `moduleId` of that one sub module (the id in `subModules`); without `moduleId` the result lists the `changedModuleIds` |
-| `change-group-attribute` | `groupId`, `attributeId`, `value` | Sets the attribute on every root and sub module of the group that has it; the result lists the `changedModuleIds` |
+| `change-group-attribute` | `groupId`, `attributeId` and `value`, or `attributes: [{ attributeId, value }]` | Sets the attributes on every root and sub module of the group that has them, several in one calculation, the programs first; the result lists the `changedModuleIds` |
 | `delete-group` | `groupId` | Deletes the group |
 | `delete-article-in-place` | `rootModuleId` | Deletes an article and leaves the gap — the tool for "delete" or "remove" unless the user asks to close the gap: root modules no longer docked together become separate groups where they stand, and deleting the only root module deletes the group. Generated roots (worktop, toe kick) cannot be deleted |
 | `delete-article-and-compact` | `rootModuleId`, `groupId` (optional: the group of the root module) | Deletes an article and closes the gap — when the user asks to close it: its neighbours are docked to each other, and a unit that hung on it hangs on the root module that moves into the gap. A root module at the end of a row is deleted and nothing else moves; a corner article between two legs is deleted and the gap closed by turning one leg by 90° with the units above it, and the result names the leg that turned; the only root module is deleted with its group (`gapClosed: false`) |
@@ -554,7 +556,8 @@ history back by that many steps, each confirmed by the history event the page re
 (`onHistoryChange`). Only tool calls are reverted: after a change made in the planner, `undo`
 reverts nothing and says that the planner's undo button reverts those changes.
 
-Returns `{ undone | redone, groups, hint? }` — the reverted tool and every group of the plan. Nothing
+Returns `{ undone | redone, groups, removedGroupIds?, otherGroupIds?, hint? }` — the reverted tool,
+the groups it changed as they are now, the groups it took out of the plan, and the others by id. Nothing
 to undo or redo is a normal result with the tool `null` and a `hint` that says why. The planner
 methods `undo` and `redo` are on every page's allow-list, and every page relays `onHistoryChange`.
 

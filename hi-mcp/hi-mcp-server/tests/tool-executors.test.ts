@@ -356,6 +356,77 @@ describe('get-plan-context', () => {
     });
   });
 
+  // r1, r2 and r3 stand in a row, n was inserted between r1 and r2 and is
+  // listed last; w1 hangs above r1
+  const side = (id: string, vector: string, partner: string) => ({
+    dockedRoots: [
+      {
+        ownDockingVector: vector,
+        dockedRoots: [
+          {
+            id: partner,
+            dockingVector:
+              vector === 'RightBottom' ? 'LeftBottom' : 'RightBottom',
+          },
+        ],
+      },
+    ],
+  });
+  const rowAfterInsert = makeShapedGroup({
+    roots: [
+      makeShapedRoot({
+        id: 'r1',
+        contextData: {
+          dockedRoots: [
+            ...side('r1', 'RightBottom', 'n').dockedRoots,
+            {
+              ownDockingVector: 'LeftTop',
+              dockedRoots: [{ id: 'w1', dockingVector: 'LeftBottom' }],
+            },
+          ],
+        },
+      }),
+      makeShapedRoot({
+        id: 'r2',
+        contextData: side('r2', 'RightBottom', 'r3'),
+      }),
+      makeShapedRoot({ id: 'r3' }),
+      makeShapedRoot({ id: 'n', contextData: side('n', 'RightBottom', 'r2') }),
+      makeShapedRoot({ id: 'w1' }),
+    ],
+  });
+
+  it('gives every root module of a row its place in the row, counted from the left end', async () => {
+    const api = createApi({ ...planContextFixture, groups: [rowAfterInsert] });
+    const result: any = await toolExecutors['get-plan-context'](api, {});
+    const rowIndexOf = (id: string) =>
+      result.groups[0].roots.find((root: any) => root.id === id).rowIndex;
+    expect(['r1', 'n', 'r2', 'r3'].map(rowIndexOf)).toEqual([1, 2, 3, 4]);
+    // a unit beside no other one has no place in a row
+    expect(rowIndexOf('w1')).toBeUndefined();
+  });
+
+  it('reads the row from the docking written on either root', async () => {
+    // the planner completes the reciprocal entries; here only the left
+    // neighbour of each pair names the other
+    const mirrored = makeShapedGroup({
+      roots: [
+        makeShapedRoot({ id: 'b', contextData: side('b', 'LeftBottom', 'a') }),
+        makeShapedRoot({ id: 'a' }),
+        makeShapedRoot({ id: 'c', contextData: side('c', 'LeftBottom', 'b') }),
+      ],
+    });
+    const api = createApi({ ...planContextFixture, groups: [mirrored] });
+    const result: any = await toolExecutors['get-plan-context'](api, {});
+    expect(
+      result.groups[0].roots.map((root: any) => [root.id, root.rowIndex])
+    ).toEqual([
+      ['b', 2],
+      ['a', 1],
+      ['c', 3],
+    ]);
+  });
+
   it('names the walls, marks the openings and lists the room corners', async () => {
     // issues 12 and 30: the right wall of the default room is a stub, the
     // door opening and the long wall
@@ -660,6 +731,7 @@ describe('find-attributes', () => {
     });
     expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
       'masterData',
+      'groups',
     ]);
     expect(result).toEqual({
       matches: [
@@ -680,11 +752,92 @@ describe('find-attributes', () => {
               imageUrl: 'https://example.com/white.png',
             },
           ],
-          rootModules: ['module-1'],
+          rootModules: [{ id: 'module-1', name: 'Tall module' }],
         },
       ],
       total: 1,
     });
+  });
+
+  // Furniture_Smith: the panel top's colour is listed before the worktop's in
+  // the master data, and both are named Color
+  const topsMasterData = {
+    'lib-1': {
+      libraryId: 'lib-1',
+      modules: [
+        {
+          id: 'mr_Paneltop',
+          name: 'Top panel',
+          attributes: ['mod_PaneltopColor'],
+        },
+        {
+          id: 'mr_Countertop',
+          name: 'Countertop',
+          attributes: ['mod_CountertopColor'],
+        },
+      ],
+      attributes: [
+        {
+          id: 'mod_PaneltopColor',
+          name: 'Color',
+          desc: 'Color of the panel top',
+          group: 'Paneltop',
+          selections: [{ value: '316', name: 'Dark marble' }],
+        },
+        {
+          id: 'mod_CountertopColor',
+          name: 'Countertop color',
+          desc: 'Color of the countertop',
+          group: 'Countertop | Design',
+          selections: [{ value: '316', name: 'Dark marble' }],
+        },
+      ],
+    },
+  };
+  const worktop = {
+    id: 'w',
+    articleId: 'mr_Countertop',
+    isGenerated: true,
+    attributes: [{ id: 'mod_CountertopColor', value: '215' }],
+  };
+
+  it('lists the attributes the root modules in the plan carry first, and names the root modules', async () => {
+    const api = createApi({
+      masterData: topsMasterData,
+      groups: [makeShapedGroup({ roots: [makeShapedRoot(), worktop] })],
+    });
+    const result: any = await toolExecutors['find-attributes'](api, {
+      text: 'marble',
+    });
+    expect(result.matches.map((match: any) => match.id)).toEqual([
+      'mod_CountertopColor',
+      'mod_PaneltopColor',
+    ]);
+    expect(result.matches[0].rootModules).toEqual([
+      { id: 'mr_Countertop', name: 'Countertop' },
+    ]);
+    expect(result.matches[1].rootModules).toEqual([
+      { id: 'mr_Paneltop', name: 'Top panel' },
+    ]);
+  });
+
+  it('finds the worktop colour first for "worktop colour"', async () => {
+    const api = createApi({ masterData: topsMasterData, groups: [] });
+    const result: any = await toolExecutors['find-attributes'](api, {
+      text: 'worktop colour',
+    });
+    expect(result.matches[0].id).toBe('mod_CountertopColor');
+  });
+
+  it('keeps the master data order on a plan without groups', async () => {
+    const api = createApi({ masterData: topsMasterData, groups: [] });
+    const result: any = await toolExecutors['find-attributes'](api, {
+      text: 'marble',
+    });
+    expect(result.matches.map((match: any) => match.id)).toEqual([
+      'mod_PaneltopColor',
+      'mod_CountertopColor',
+    ]);
   });
 
   describe('words', () => {
@@ -1464,18 +1617,438 @@ describe('create-or-replace-groups validation', () => {
     ]);
   });
 
+  const withHeight = (article: any, height: number) => ({
+    ...article,
+    rootModules: [
+      {
+        module: { id: `${article.articleId}-module` },
+        dimensions: [{ id: 'mod_Height', name: 'Height', value: height }],
+      },
+    ],
+  });
+
+  it('hangs undocked wall units above a placed floor unit when the group has no wall unit yet', async () => {
+    const base = withHeight(articleFixture, 720);
+    const wallUnit = withHeight(
+      {
+        ...articleFixture,
+        articleId: 'wall-1',
+        category: 'Kitchen | Wall Units | Storage',
+      },
+      720
+    );
+    const tall = withHeight(
+      {
+        ...articleFixture,
+        articleId: 'tall-1',
+        category: 'Kitchen | Tall Units',
+      },
+      2100
+    );
+    const { loadedGroup, result } = await loadedWith(
+      [
+        {
+          roots: [
+            { id: 'u1', articleId: 'article-1' },
+            { id: 'u2', articleId: 'article-1' },
+            { id: 'w1', articleId: 'wall-1' },
+            { id: 'w2', articleId: 'wall-1' },
+          ],
+        },
+      ],
+      { ...planContextFixture, articles: [base, wallUnit, tall] }
+    );
+    const docking = Object.fromEntries(
+      loadedGroup.roots.map((root: any) => [root.id, root.contextData])
+    );
+    expect(docking.u1.dockedRoots).toEqual([
+      {
+        ownDockingVector: 'RightBottom',
+        dockedRoots: [entry('u2', 'LeftBottom')],
+      },
+      {
+        ownDockingVector: 'LeftTop',
+        dockedRoots: [{ ...entry('w1', 'LeftBottom'), offset: [0, 660, 0] }],
+      },
+    ]);
+    expect(docking.w1.dockedRoots).toEqual([
+      {
+        ownDockingVector: 'RightBottom',
+        dockedRoots: [entry('w2', 'LeftBottom')],
+      },
+    ]);
+    expect(result.corrections).toEqual([
+      expect.stringContaining("'u2' was docked to the RightBottom of 'u1'"),
+      "posGroups[0]: roots 'w1' were not docked to the placed roots - the wall unit 'w1' was docked above 'u1' " +
+        "(its LeftBottom on the LeftTop of 'u1'), 660 mm above it at the height of the wall units",
+      expect.stringContaining("'w2' was docked to the RightBottom of 'w1'"),
+    ]);
+    expect(result.notLoaded).toBeUndefined();
+  });
+
+  it('docks a part with floor units by a floor unit, and its wall unit stays on its carrier', async () => {
+    const wallUnit = {
+      ...articleFixture,
+      articleId: 'wall-1',
+      category: 'Kitchen | Wall Units | Storage',
+    };
+    const { loadedGroup, result } = await loadedWith(
+      [
+        {
+          roots: [
+            { id: 'r0', articleId: 'article-1' },
+            // the first root of the part: a wall unit with a free LeftBottom
+            { id: 'w', articleId: 'wall-1' },
+            {
+              id: 'b1',
+              articleId: 'article-1',
+              contextData: {
+                dockedRoots: [
+                  {
+                    ownDockingVector: 'LeftTop',
+                    dockedRoots: [
+                      {
+                        id: 'w',
+                        dockingVector: 'LeftBottom',
+                        offset: [0, 660, 0],
+                      },
+                    ],
+                  },
+                  {
+                    ownDockingVector: 'RightBottom',
+                    dockedRoots: [{ id: 'b2', dockingVector: 'LeftBottom' }],
+                  },
+                ],
+              },
+            },
+            { id: 'b2', articleId: 'article-1' },
+          ],
+        },
+      ],
+      catalogWith(wallUnit)
+    );
+    const docking = Object.fromEntries(
+      loadedGroup.roots.map((root: any) => [root.id, root.contextData])
+    );
+    expect(docking.r0).toEqual({
+      dockedRoots: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('b1', 'LeftBottom')],
+        },
+      ],
+    });
+    expect(docking.w).toBeUndefined();
+    expect(result.corrections).toEqual([
+      "posGroups[0]: roots 'w', 'b1', 'b2' were not docked to the placed roots - 'b1' was docked to the " +
+        "RightBottom of 'r0', the free end of that row (mode StartStart, offset [0, 0, 0])",
+    ]);
+  });
+
+  const sideEntry = (vector: string, id: string, dockingVector: string) => ({
+    ownDockingVector: vector,
+    dockedRoots: [{ id, dockingVector }],
+  });
+
+  it('drops the entry that closes a row into a ring, so the group is anchored as the planner places it', async () => {
+    // cab1 -> cab2 -> cab3 -> cab4 along RightBottom, and cab4 on cab1's
+    // LeftBottom: from cab1 the planner reaches cab2 and cab4 first, so cab3's
+    // entry to cab4 is the one it never uses
+    const { loadedGroup, result } = await loadedWith([
+      {
+        placement: { posGroup: [0, 0, 0], posRotationY: 0 },
+        roots: [
+          {
+            id: 'cab1',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [
+                sideEntry('RightBottom', 'cab2', 'LeftBottom'),
+                sideEntry('LeftBottom', 'cab4', 'RightBottom'),
+              ],
+            },
+          },
+          {
+            id: 'cab2',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [sideEntry('RightBottom', 'cab3', 'LeftBottom')],
+            },
+          },
+          {
+            id: 'cab3',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [sideEntry('RightBottom', 'cab4', 'LeftBottom')],
+            },
+          },
+          { id: 'cab4', articleId: 'article-1' },
+        ],
+      },
+    ]);
+    expect(loadedGroup.roots[2].contextData).toEqual({ dockedRoots: [] });
+    // the left end of the row cab4, cab1, cab2, cab3
+    expect(loadedGroup.repositioningData.rootId).toBe('cab4');
+    expect(result.corrections).toEqual([
+      "posGroups[0]: the docking of 'cab4' on the RightBottom of 'cab3' closes the row into a ring - dropped; " +
+        "the planner places 'cab4' by its other docking, and a row has two ends",
+    ]);
+  });
+
+  it('reads the reciprocal entries of a group from get-plan-context as one link, not as a ring', async () => {
+    const { loadedGroup, result } = await loadedWith([
+      {
+        roots: [
+          {
+            id: 'u1',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [sideEntry('RightBottom', 'u2', 'LeftBottom')],
+            },
+          },
+          {
+            id: 'u2',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [
+                sideEntry('LeftBottom', 'u1', 'RightBottom'),
+                sideEntry('RightBottom', 'u3', 'LeftBottom'),
+              ],
+            },
+          },
+          {
+            id: 'u3',
+            articleId: 'article-1',
+            contextData: {
+              dockedRoots: [sideEntry('LeftBottom', 'u2', 'RightBottom')],
+            },
+          },
+        ],
+      },
+    ]);
+    expect(loadedGroup.roots[2].contextData).toEqual({
+      dockedRoots: [sideEntry('LeftBottom', 'u2', 'RightBottom')],
+    });
+    expect(result.corrections).toBeUndefined();
+  });
+
+  it('keeps wall units docked to each other and to their floor units', async () => {
+    const wallUnit = {
+      ...articleFixture,
+      articleId: 'wall-1',
+      category: 'Kitchen | Wall Units | Storage',
+    };
+    const hung = (id: string) => ({
+      ownDockingVector: 'LeftTop',
+      dockedRoots: [{ id, dockingVector: 'LeftBottom', offset: [0, 660, 0] }],
+    });
+    const { result } = await loadedWith(
+      [
+        {
+          roots: [
+            {
+              id: 'b1',
+              articleId: 'article-1',
+              contextData: {
+                dockedRoots: [
+                  sideEntry('RightBottom', 'b2', 'LeftBottom'),
+                  hung('w1'),
+                ],
+              },
+            },
+            {
+              id: 'b2',
+              articleId: 'article-1',
+              contextData: { dockedRoots: [hung('w2')] },
+            },
+            {
+              id: 'w1',
+              articleId: 'wall-1',
+              contextData: {
+                dockedRoots: [sideEntry('RightBottom', 'w2', 'LeftBottom')],
+              },
+            },
+            { id: 'w2', articleId: 'wall-1' },
+          ],
+        },
+      ],
+      catalogWith(wallUnit)
+    );
+    expect(result.corrections).toBeUndefined();
+  });
+
+  const cornerArticle = {
+    ...articleFixture,
+    articleId: 'corner-1',
+    category: 'Kitchen | Base Units | Corner',
+    rootModules: [
+      {
+        module: { id: 'mr_CornerunitStraight' },
+        dockingVectors: [
+          'LeftBackBottom',
+          'RightBackBottom',
+          'LeftBottom',
+          'RightBottom',
+        ],
+      },
+    ],
+  };
+
+  it('drops docking to a vector the article does not have and docks the root like an undocked root', async () => {
+    // a corner article has no back
+    const { loadedGroup, result } = await loadedWith(
+      [
+        {
+          roots: [
+            {
+              id: 'c1',
+              articleId: 'corner-1',
+              contextData: {
+                dockedRoots: [
+                  sideEntry('RightBottom', 'r1', 'LeftBottom'),
+                  sideEntry('BackBottom', 'sink', 'BackBottom'),
+                ],
+              },
+            },
+            { id: 'r1', articleId: 'article-1' },
+            { id: 'sink', articleId: 'article-1' },
+          ],
+        },
+      ],
+      catalogWith(cornerArticle)
+    );
+    expect(loadedGroup.roots[0].contextData).toEqual({
+      dockedRoots: [sideEntry('RightBottom', 'r1', 'LeftBottom')],
+    });
+    expect(loadedGroup.roots[1].contextData).toEqual({
+      dockedRoots: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('sink', 'LeftBottom')],
+        },
+      ],
+    });
+    expect(result.corrections).toEqual([
+      "posGroups[0]: docking to a vector the article does not have was dropped - 'sink' on the BackBottom of 'c1' - " +
+        "'corner-1' has no BackBottom; the root is docked like an undocked root",
+      expect.stringContaining("'sink' was docked to the RightBottom of 'r1'"),
+    ]);
+  });
+
+  it('meets a vector with its partner when the article does not have the one named', async () => {
+    const { loadedGroup, result } = await loadedWith(
+      [
+        {
+          roots: [
+            {
+              id: 'u1',
+              articleId: 'article-1',
+              contextData: {
+                dockedRoots: [sideEntry('LeftBottom', 'c1', 'LeftTop')],
+              },
+            },
+            { id: 'c1', articleId: 'corner-1' },
+          ],
+        },
+      ],
+      catalogWith(cornerArticle)
+    );
+    expect(loadedGroup.roots[0].contextData).toEqual({
+      dockedRoots: [sideEntry('LeftBottom', 'c1', 'RightBottom')],
+    });
+    expect(result.corrections).toEqual([
+      "posGroups[0]: docking vectors the article does not have were replaced - 'c1' meets the LeftBottom of 'u1' " +
+        "with its RightBottom - 'corner-1' has no LeftTop",
+    ]);
+  });
+
+  it('puts a floor unit docked on a base unit into the floor row, and keeps a wall unit above it', async () => {
+    const baseUnit = {
+      ...articleFixture,
+      articleId: 'base-1',
+      category: 'Kitchen | Base Units | Storage',
+    };
+    const wallUnit = {
+      ...articleFixture,
+      articleId: 'wall-1',
+      category: 'Kitchen | Wall Units | Storage',
+    };
+    const { loadedGroup, result } = await loadedWith(
+      [
+        {
+          roots: [
+            {
+              id: 'b1',
+              articleId: 'base-1',
+              contextData: {
+                dockedRoots: [
+                  {
+                    ownDockingVector: 'LeftTop',
+                    dockedRoots: [
+                      {
+                        id: 'sink',
+                        dockingVector: 'LeftBottom',
+                        offset: [0, 660, 0],
+                      },
+                    ],
+                  },
+                  {
+                    ownDockingVector: 'RightTop',
+                    dockedRoots: [
+                      {
+                        id: 'w1',
+                        dockingVector: 'RightBottom',
+                        offset: [0, 660, 0],
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+            { id: 'sink', articleId: 'base-1' },
+            { id: 'w1', articleId: 'wall-1' },
+          ],
+        },
+      ],
+      catalogWith(baseUnit, wallUnit)
+    );
+    expect(loadedGroup.roots[0].contextData.dockedRoots).toEqual([
+      {
+        ownDockingVector: 'RightTop',
+        dockedRoots: [
+          { id: 'w1', dockingVector: 'RightBottom', offset: [0, 660, 0] },
+        ],
+      },
+      {
+        ownDockingVector: 'RightBottom',
+        dockedRoots: [entry('sink', 'LeftBottom')],
+      },
+    ]);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: floor unit 'sink' was docked on the LeftTop of the base unit 'b1' - nothing stands on a base " +
+        'unit, so the docking was dropped and the unit continues the floor row',
+      expect.stringContaining("'sink' was docked to the RightBottom of 'b1'"),
+    ]);
+  });
+
   it('reports a root it cannot dock and loads the other groups', async () => {
     const wallUnit = {
       ...articleFixture,
       articleId: 'wall-1',
       category: 'Kitchen | Wall Units | Storage',
     };
-    const api = createApi(catalogWith(wallUnit));
+    const tall = {
+      ...articleFixture,
+      articleId: 'tall-1',
+      category: 'Kitchen | Tall Units',
+    };
+    const api = createApi(catalogWith(wallUnit, tall));
     const result = (await toolExecutors['create-or-replace-groups'](api, {
       posGroups: [
         {
+          // nothing hangs above a tall unit
           roots: [
-            { id: 'u1', articleId: 'article-1' },
+            { id: 't1', articleId: 'tall-1' },
             { id: 'w1', articleId: 'wall-1' },
           ],
         },
@@ -1485,9 +2058,12 @@ describe('create-or-replace-groups validation', () => {
     expect(result.notLoaded.map((entry: any) => entry.index)).toEqual([0]);
     expect(result.notLoaded[0].errors).toEqual([
       expect.stringMatching(
-        /^posGroups\[0\]: roots 'w1' are not docked to a placed root \('u1' is placed/
+        /^posGroups\[0\]: roots 'w1' are not docked to a placed root \('t1' is placed/
       ),
     ]);
+    expect(result.notLoaded[0].errors[0]).toContain(
+      '{ "id": "B", "articleId": "...", "rightOf": "A" }'
+    );
     expect(api.extended.loadExternalObjectGroupLayout).toHaveBeenCalledWith(
       { posGroups: [{ roots: [pick()] }] },
       'posGroups',
@@ -2005,9 +2581,12 @@ describe('create-or-replace-groups loading', () => {
       'posGroups',
       { reason: 'adjusted' }
     );
+    // the fake plan holds g1 before and after the load: the call built no
+    // group of its own there, and g1 is named by its id only
     expect(result).toMatchObject({
       loaded: [{ id: 'loaded-1' }],
-      groups: [{ id: 'g1' }],
+      groups: [],
+      otherGroupIds: ['g1'],
     });
     expect((result as Record<string, any>).hint).toBeUndefined();
   });
@@ -3050,6 +3629,127 @@ describe('create-or-replace-groups relations', () => {
     offset: [0, 0, 0],
   });
 
+  // the same catalog, every article 600 mm wide
+  const loadedWithWidths = async (posGroups: unknown[]) => {
+    const api = createApi({
+      ...kitchenContext,
+      articles: kitchenContext.articles.map((article) => ({
+        ...article,
+        rootModules: article.rootModules.map((rootModule) => ({
+          ...rootModule,
+          dimensions: [
+            ...rootModule.dimensions,
+            { id: 'mod_Width', name: 'Width', value: 600 },
+          ],
+        })),
+      })),
+    });
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups,
+    })) as Record<string, any>;
+    const calls = api.extended.loadExternalObjectGroupLayout.mock
+      .calls as unknown as any[][];
+    return { result, loadedGroup: calls[calls.length - 1][0].posGroups[0] };
+  };
+  const baseRow = [
+    { id: 'base1', articleId: 'base' },
+    { id: 'base2', articleId: 'base', rightOf: 'base1' },
+    { id: 'base3', articleId: 'base', rightOf: 'base2' },
+  ];
+  const hangsRightOf = (group: any, unit: string, target: string) =>
+    (dockingOf(group)[target] as any[]).some(
+      (context) =>
+        context.ownDockingVector === 'RightBottom' &&
+        context.dockedRoots.some((docked: any) => docked.id === unit)
+    );
+
+  it('puts a unit hung above a floor unit whose place a wall-unit row takes at the end of that row', async () => {
+    const { result, loadedGroup } = await loadedWithWidths([
+      {
+        libraryId: 'lib-1',
+        roots: [
+          ...baseRow,
+          { id: 'wall1', articleId: 'wall', above: 'base1' },
+          { id: 'wall2', articleId: 'wall', rightOf: 'wall1' },
+          { id: 'wall3', articleId: 'wall', rightOf: 'wall2' },
+          { id: 'wall4', articleId: 'wall', above: 'base3' },
+        ],
+      },
+    ]);
+    expect(hangsRightOf(loadedGroup, 'wall4', 'wall3')).toBe(true);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: 'wall4' would hang above 'base3' in the place of 'wall3' - it was put rightOf 'wall3', the end of that row of wall units",
+    ]);
+  });
+
+  it('checks the place a second unit above one floor unit moves to the same way', async () => {
+    const { result, loadedGroup } = await loadedWithWidths([
+      {
+        libraryId: 'lib-1',
+        roots: [
+          ...baseRow,
+          { id: 'wall1', articleId: 'wall', above: 'base1' },
+          // G44 puts wall2 rightOf wall1, into the place above base2
+          { id: 'wall2', articleId: 'wall', above: 'base1' },
+          { id: 'wall3', articleId: 'wall', above: 'base2' },
+        ],
+      },
+    ]);
+    expect(hangsRightOf(loadedGroup, 'wall2', 'wall1')).toBe(true);
+    expect(hangsRightOf(loadedGroup, 'wall3', 'wall2')).toBe(true);
+    expect(result.corrections).toEqual([
+      "posGroups[0]: 'wall1' and 'wall2' both hang above 'base1' - 'wall2' was put rightOf 'wall1'",
+      "posGroups[0]: 'wall3' would hang above 'base2' in the place of 'wall2' - it was put rightOf 'wall2', the end of that row of wall units",
+    ]);
+  });
+
+  it('leaves wall units that hang side by side above their floor units as they are', async () => {
+    const { result } = await loadedWithWidths([
+      {
+        libraryId: 'lib-1',
+        roots: [
+          ...baseRow,
+          { id: 'wall1', articleId: 'wall', above: 'base1' },
+          { id: 'wall2', articleId: 'wall', above: 'base2' },
+          { id: 'wall3', articleId: 'wall', rightOf: 'wall2' },
+        ],
+      },
+    ]);
+    expect(result.corrections).toBeUndefined();
+  });
+
+  it("docks the second wall unit beside a tall unit to the free end of the first one's row", async () => {
+    const { result, loadedGroup } = await loaded([
+      {
+        libraryId: 'lib-1',
+        roots: [
+          { id: 't1', articleId: 'tall' },
+          { id: 'w1', articleId: 'wall', rightOf: 't1' },
+          { id: 'w2', articleId: 'wall', rightOf: 't1' },
+        ],
+      },
+    ]);
+    expect(dockingOf(loadedGroup)).toEqual({
+      t1: [
+        {
+          ownDockingVector: 'RightTop',
+          dockedRoots: [entry('w1', 'LeftTop')],
+        },
+      ],
+      w1: [
+        {
+          ownDockingVector: 'RightBottom',
+          dockedRoots: [entry('w2', 'LeftBottom')],
+        },
+      ],
+      w2: [],
+    });
+    expect(result.corrections).toEqual([
+      "posGroups[0]: roots 'w1', 'w2' were docked to the RightTop of root 't1' at the same place - 'w2' was " +
+        "docked to the RightBottom of 'w1', the free end of the row of 'w1'",
+    ]);
+  });
+
   it('loads a relation payload as docking, without the relation fields', async () => {
     const { result, loadedGroup } = await loaded([
       {
@@ -3267,6 +3967,32 @@ describe('create-or-replace-groups materials', () => {
     expect(result.groups).toEqual([created]);
   });
 
+  it('passes on the root module the library could not calculate with the group attributes', async () => {
+    const plannerCorrection =
+      "the library could not calculate root module 'panel-1' with these attributes, so they were not set on it - the other root modules carry them";
+    const api = createMaterialsApi([], [makeShapedGroup({ id: 'g-new' })], {
+      externalObjectGroupOperation: vi.fn(async (command: string) => ({
+        command,
+        groups: [],
+        removedGroupIds: [],
+        corrections: [plannerCorrection],
+      })),
+    });
+    const result = (await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          attributes: [
+            { id: 'front', value: 'white' },
+            { id: 'mod_UprightColor', value: '192' },
+          ],
+          roots: [pick()],
+        },
+      ],
+    })) as Record<string, any>;
+    expect(result.corrections).toEqual([`posGroups[0]: ${plannerCorrection}`]);
+  });
+
   it('names the attributes set and those no unit of the group carries in groupAttributes, not in corrections', async () => {
     const api = createMaterialsApi([], [makeShapedGroup({ id: 'g-new' })], {
       externalObjectGroupOperation: vi.fn(async (command: string) => ({
@@ -3292,6 +4018,192 @@ describe('create-or-replace-groups materials', () => {
       { index: 0, id: 'g-new', set: ['front'], notCarried: ['backsplash'] },
     ]);
     expect(result.corrections).toBeUndefined();
+  });
+
+  it('sends the program attributes of the group before the others, so a colour sent with its program stays', async () => {
+    const api = createMaterialsApi([], [makeShapedGroup({ id: 'g-new' })]);
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          attributes: [
+            { id: 'mod_CountertopColor', value: '216' },
+            { id: 'mod_CountertopProgram', value: 'Cube' },
+          ],
+          roots: [pick()],
+        },
+      ],
+    });
+    expect(
+      ((commandsOf(api)[0] as any[])[1] as any).attributes.map(
+        (attribute: any) => attribute.attributeId
+      )
+    ).toEqual(['mod_CountertopProgram', 'mod_CountertopColor']);
+  });
+
+  // the planner regenerates the ids of new roots and keeps their order
+  const loadedAccentGroup = (frontColors: (string | undefined)[]) =>
+    makeShapedGroup({
+      id: 'g-new',
+      roots: [
+        ...frontColors.map((color, position) =>
+          makeShapedRoot({
+            id: `n${position + 1}`,
+            attributes: color ? [{ id: 'mod_FrontColor', value: color }] : [],
+          })
+        ),
+        {
+          id: 'worktop',
+          articleId: 'mr_Countertop',
+          isGenerated: true,
+          attributes: [],
+        },
+      ],
+    });
+  const accentPayload = () => ({
+    posGroups: [
+      {
+        libraryId: 'lib-1',
+        attributes: [{ id: 'mod_FrontColor', value: '190' }],
+        roots: [
+          { id: 'u1', articleId: 'article-1' },
+          {
+            id: 'u2',
+            articleId: 'article-1',
+            rightOf: 'u1',
+            attributes: [{ id: 'mod_FrontColor', value: '326' }],
+          },
+          {
+            id: 'u3',
+            articleId: 'article-1',
+            rightOf: 'u2',
+            attributes: [{ id: 'mod_FrontColor', value: 326 }],
+          },
+        ],
+      },
+    ],
+  });
+
+  it("sets a root module's own value of a group attribute on that root module after the group's value", async () => {
+    const changed = loadedAccentGroup(['190', '326', '326']);
+    const api = createMaterialsApi(
+      [],
+      [loadedAccentGroup([undefined, '326', '326'])],
+      {
+        externalObjectGroupOperation: vi.fn(async (command: string) => ({
+          command,
+          groups: [changed],
+          removedGroupIds: [],
+        })),
+      }
+    );
+    const result = (await toolExecutors['create-or-replace-groups'](
+      api,
+      accentPayload()
+    )) as Record<string, any>;
+    expect(commandsOf(api)).toEqual([
+      [
+        'change-attributes',
+        {
+          groupId: 'g-new',
+          attributes: [
+            { attributeId: 'mod_FrontColor', value: '190' },
+            {
+              attributeId: 'mod_FrontColor',
+              value: '326',
+              rootModuleIds: ['n2', 'n3'],
+            },
+          ],
+        },
+      ],
+    ]);
+    expect(result.groupAttributes).toEqual([
+      {
+        index: 0,
+        id: 'g-new',
+        set: ['mod_FrontColor'],
+        rootValues: [
+          { id: 'mod_FrontColor', value: '326', rootModuleIds: ['n2', 'n3'] },
+        ],
+      },
+    ]);
+    // the accents are what was sent, no library change
+    expect(result.corrections).toBeUndefined();
+  });
+
+  it("sets a root module's own program again before its accent, since the group's colour may have switched it", async () => {
+    const api = createMaterialsApi([], [loadedAccentGroup([undefined, '326'])]);
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          libraryId: 'lib-1',
+          attributes: [{ id: 'mod_FrontColor', value: '190' }],
+          roots: [
+            { id: 'u1', articleId: 'article-1' },
+            {
+              id: 'u2',
+              articleId: 'article-1',
+              rightOf: 'u1',
+              attributes: [
+                { id: 'mod_FrontColor', value: '326' },
+                { id: 'mod_FrontProgram', value: 'Nature' },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(((commandsOf(api)[0] as any[])[1] as any).attributes).toEqual([
+      { attributeId: 'mod_FrontColor', value: '190' },
+      {
+        attributeId: 'mod_FrontProgram',
+        value: 'Nature',
+        rootModuleIds: ['n2'],
+      },
+      { attributeId: 'mod_FrontColor', value: '326', rootModuleIds: ['n2'] },
+    ]);
+  });
+
+  it('finds the root modules of the accents by the value they were loaded with when the order does not tell', async () => {
+    // the planner added a root module of its own
+    const loaded = loadedAccentGroup([undefined, '326', '326', undefined]);
+    const api = createMaterialsApi([], [loaded]);
+    await toolExecutors['create-or-replace-groups'](api, accentPayload());
+    expect(((commandsOf(api)[0] as any[])[1] as any).attributes[1]).toEqual({
+      attributeId: 'mod_FrontColor',
+      value: '326',
+      rootModuleIds: ['n2', 'n3'],
+    });
+  });
+
+  it('keeps the ids of the root modules a replace keeps', async () => {
+    const before = makeShapedGroup({
+      id: 'g1',
+      roots: [makeShapedRoot({ id: 'r1' }), makeShapedRoot({ id: 'r2' })],
+    });
+    const api = createMaterialsApi([before], [before]);
+    await toolExecutors['create-or-replace-groups'](api, {
+      posGroups: [
+        {
+          id: 'g1',
+          libraryId: 'lib-1',
+          attributes: [{ id: 'mod_FrontColor', value: '190' }],
+          roots: [
+            { id: 'r1', articleId: 'article-1' },
+            {
+              id: 'r2',
+              articleId: 'article-1',
+              rightOf: 'r1',
+              attributes: [{ id: 'mod_FrontColor', value: '326' }],
+            },
+          ],
+        },
+      ],
+    });
+    expect(((commandsOf(api)[0] as any[])[1] as any).attributes).toEqual([
+      { attributeId: 'mod_FrontColor', value: '190' },
+      { attributeId: 'mod_FrontColor', value: '326', rootModuleIds: ['r2'] },
+    ]);
   });
 
   it('names the group attributes once as the cause of a library change', async () => {
@@ -4061,6 +4973,42 @@ describe('place-group', () => {
     expect(api.extended.loadExternalObjectGroupLayout).not.toHaveBeenCalled();
   });
 
+  it('places the group once more by its measure at the new place when the library builds it there with another width', async () => {
+    // at its old place, at a wall, the library built the unit 1000 mm wide;
+    // at the new place it builds it 800 mm wide again
+    const wide = makeRoot({
+      attributes: [
+        { id: 'b', value: 1000, isInput: true },
+        { id: 't', value: 600, isInput: true },
+      ],
+    });
+    let rawGroups: any[] = [makeGroup({ roots: [wide] })];
+    const api = createApi(undefined, {
+      getExternalObjectPlanContext: vi.fn(async () => ({
+        rooms: { rooms: [room] },
+        groups: [makeShapedGroup()],
+      })),
+      getExternalObjectGroups: vi.fn(async () => rawGroups),
+      loadExternalObjectGroupLayout: vi.fn(async (layout: any) => {
+        const { repositioningData } = layout.posGroups[0];
+        rawGroups = rawGroups.map((group) =>
+          repositioned({ ...group, roots: [makeRoot()] }, repositioningData)
+        );
+        return [{ id: 'g1' }];
+      }),
+    });
+    await toolExecutors['place-group'](api, { groupId: 'g1', wall: 'right' });
+    const placements = (
+      api.extended.loadExternalObjectGroupLayout.mock
+        .calls as unknown as any[][]
+    ).map(([layout]) => layout.posGroups[0].repositioningData.posGroup);
+    // centred by 1000 mm first, then by the 800 mm it has at the new place
+    expect(placements).toEqual([
+      [4000, 0, -2000],
+      [4000, 0, -1900],
+    ]);
+  });
+
   it('accepts a unique id prefix and a wall index', async () => {
     const api = createPlaceApi(
       [makeShapedGroup({ id: 'group-abc' })],
@@ -4252,6 +5200,137 @@ describe('place-group', () => {
       4000, 1400, -1900,
     ]);
     expect(result).not.toHaveProperty('corrections');
+  });
+
+  // a base unit and a wall unit hanging 660 mm above it: the kernel's docking
+  // links only vectors that touch, so the wall unit is docked to nothing below
+  const sideVectors = (width: number, depth: number, height: number) => [
+    { id: 'LeftBottom', start: [0, 0, 0], end: [0, 0, depth] },
+    { id: 'RightBottom', start: [width, 0, 0], end: [width, 0, depth] },
+    { id: 'LeftTop', start: [0, height, 0], end: [0, height, depth] },
+    { id: 'RightTop', start: [width, height, 0], end: [width, height, depth] },
+  ];
+  const kitchenWithWallUnit = makeGroup({
+    id: 'k1',
+    roots: [
+      makeRoot({ id: 'b1', dockInfos: sideVectors(600, 561, 720) }),
+      makeRoot({
+        id: 'w1',
+        articlePos: [0, 1380, 0],
+        dockInfos: sideVectors(600, 350, 720),
+      }),
+      makeRoot({
+        id: 'w2',
+        articlePos: [600, 1380, 0],
+        dockInfos: sideVectors(600, 350, 720),
+        contextData: {
+          dockedRoots: [
+            {
+              ownDockingVector: 'LeftBottom',
+              dockedRoots: [{ id: 'w1', dockingVector: 'RightBottom' }],
+            },
+          ],
+        },
+      }),
+    ],
+  });
+
+  it('docks a wall unit hanging above a floor unit to it again before the reload, so it keeps its place', async () => {
+    const api = createPlaceApi(
+      [makeShapedGroup({ id: 'k1' })],
+      [kitchenWithWallUnit]
+    );
+    await toolExecutors['place-group'](api, { groupId: 'k1', wall: 'back' });
+    const roots = reloadedGroup(api).roots;
+    expect(roots.find((root: any) => root.id === 'b1').contextData).toEqual({
+      dockedRoots: [
+        {
+          ownDockingVector: 'LeftTop',
+          dockedRoots: [
+            {
+              id: 'w1',
+              dockingVector: 'LeftBottom',
+              mode: 'StartStart',
+              offset: [0, 660, 0],
+            },
+          ],
+        },
+      ],
+    });
+    // w2 hangs beside w1 and over nothing: its docking stays as it is
+    expect(roots.find((root: any) => root.id === 'w2').contextData).toEqual(
+      kitchenWithWallUnit.roots[2].contextData
+    );
+  });
+
+  // an L-shaped group in the back left corner: three root modules along the
+  // back wall, two down the left wall; its box covers the floor inside the L
+  const boxRoot = (
+    id: string,
+    articlePos: number[],
+    widthMm: number,
+    depthMm: number
+  ) =>
+    makeRoot({
+      id,
+      articlePos,
+      attributes: [
+        { id: 'b', value: widthMm, isInput: true },
+        { id: 't', value: depthMm, isInput: true },
+        { id: 'h', value: 2000, isInput: true },
+      ],
+    });
+  const lShaped = makeGroup({
+    id: 'L',
+    pos: [0, 0, -3000],
+    rotationY: 0,
+    roots: [
+      boxRoot('a1', [0, 0, 0], 800, 600),
+      boxRoot('a2', [800, 0, 0], 800, 600),
+      boxRoot('a3', [1600, 0, 0], 800, 600),
+      boxRoot('b1', [0, 0, 600], 600, 800),
+      boxRoot('b2', [0, 0, 1400], 600, 800),
+    ],
+  });
+  const smallGroupAt = (pos: number[]) =>
+    makeGroup({
+      id: 'small',
+      pos,
+      rotationY: 0,
+      roots: [boxRoot('s1', [0, 0, 0], 800, 600)],
+    });
+
+  it('reports no overlap with a group inside an L-shaped group that no root module touches', async () => {
+    const api = createPlaceApi(
+      [makeShapedGroup({ id: 'L' }), makeShapedGroup({ id: 'small' })],
+      // inside the L: x 1000 to 1800, z -2000 to -1400
+      [lShaped, smallGroupAt([1000, 0, -2000])]
+    );
+    const result: any = await toolExecutors['place-group'](api, {
+      groupId: 'L',
+      wall: 'back',
+      alignment: 'left',
+    });
+    expect(result.corrections).toEqual([
+      "Group 'L' already stands at the top wall as asked - nothing was reloaded",
+    ]);
+  });
+
+  it('still moves an L-shaped group away from a group that one of its root modules overlaps', async () => {
+    const api = createPlaceApi(
+      [makeShapedGroup({ id: 'L' }), makeShapedGroup({ id: 'small' })],
+      // on the leg down the left wall: x 200 to 1000, z -2200 to -1600
+      [lShaped, smallGroupAt([200, 0, -2200])]
+    );
+    const result: any = await toolExecutors['place-group'](api, {
+      groupId: 'L',
+      wall: 'back',
+      alignment: 'left',
+    });
+    expect(result.corrections).toEqual([
+      "Group 'L' would overlap group 'small' at the top wall - it was moved 1000 mm along the wall to stand " +
+        'beside it. If the units belong together, join the groups with merge-groups',
+    ]);
   });
 
   it('places the group as asked and reports the overlap when the wall has no free position', async () => {
@@ -4955,7 +6034,7 @@ describe('positions in the placement frame', () => {
       }
     );
     const created = (await toolExecutors['create-or-replace-groups'](api, {
-      posGroups: [{ roots: [pick()] }],
+      posGroups: [{ id: hoodGroup.id, roots: [pick()] }],
     })) as Record<string, any>;
     expect(created.groups[0].position).toEqual(atLeftEdge);
     const changed = (await toolExecutors['delete-article-in-place'](api, {
@@ -5303,6 +6382,110 @@ describe('group command tools', () => {
         groupIds: ['kitchen-1'],
         changedModuleIds: ['u1', 'u2', 'u3'],
       });
+    });
+
+    it('sets several attributes of a group with one planner command, the programs first', async () => {
+      const api = attributeApi();
+      const result = await toolExecutors['change-group-attribute'](api, {
+        groupId: 'kitchen-1',
+        attributes: [
+          { attributeId: 'front', value: 'black' },
+          { attributeId: 'mod_FrontProgram', value: 'Modern' },
+          { attributeId: 'handle', value: 0 },
+        ],
+      });
+      expect(commandsOf(api)).toEqual([
+        [
+          'change-attributes',
+          {
+            groupId: 'kitchen-1',
+            attributes: [
+              { attributeId: 'mod_FrontProgram', value: 'Modern' },
+              { attributeId: 'front', value: 'black' },
+              { attributeId: 'handle', value: '0' },
+            ],
+          },
+        ],
+      ]);
+      expect(result).toEqual({
+        command: 'change-group-attribute',
+        groupIds: ['kitchen-1'],
+        changedModuleIds: ['u1', 'u2', 'u3'],
+      });
+    });
+
+    it('names an attribute of the list that no module of the group has', async () => {
+      const api = attributeApi({
+        externalObjectGroupOperation: vi.fn(async (command: string) => ({
+          command,
+          groups: [kitchenAndIsland.groups[0]],
+          removedGroupIds: [],
+          skippedAttributes: [{ attributeId: 'backsplash' }],
+        })),
+      });
+      const result: any = await toolExecutors['change-group-attribute'](api, {
+        groupId: 'kitchen-1',
+        attributes: [
+          { attributeId: 'front', value: 'black' },
+          { attributeId: 'backsplash', value: 'grey' },
+        ],
+      });
+      expect(result.corrections).toEqual([
+        "change-group-attribute: no module of group 'kitchen-1' has the attribute 'backsplash' - it was not set",
+      ]);
+    });
+
+    it('asks for the attribute when none is named', async () => {
+      await expect(
+        toolExecutors['change-group-attribute'](attributeApi(), {
+          groupId: 'kitchen-1',
+        })
+      ).rejects.toThrow(
+        'change-group-attribute: name the attribute with attributeId and value, or several with attributes [{ attributeId, value }].'
+      );
+    });
+
+    it('reads a root id sent as the group id as the group that holds the root module', async () => {
+      const api = attributeApi();
+      const result: any = await toolExecutors['change-group-attribute'](api, {
+        groupId: 'u2',
+        attributeId: 'front',
+        value: 'white',
+      });
+      expect(((commandsOf(api)[0] as any[])[1] as any).groupId).toBe(
+        'kitchen-1'
+      );
+      expect(result.corrections).toEqual([
+        "change-group-attribute: 'u2' names a root module, not a group - the command ran on its group 'kitchen-1'",
+      ]);
+    });
+
+    it('reads a unique prefix of a root id as the group that holds the root module', async () => {
+      const api = createApi({
+        ...planContextFixture,
+        groups: [
+          makeShapedGroup({
+            id: 'g-1',
+            roots: [makeShapedRoot({ id: '7f3a-root' })],
+          }),
+          makeShapedGroup({ id: 'g-2' }),
+        ],
+      });
+      const result: any = await toolExecutors['delete-group'](api, {
+        groupId: '7f3a',
+      });
+      expect(commandsOf(api)).toEqual([['delete-group', { groupId: 'g-1' }]]);
+      expect(result.corrections).toEqual([
+        "delete-group: '7f3a' names a root module, not a group - the command ran on its group 'g-1'",
+      ]);
+    });
+
+    it('still names the groups of the plan for an id that names no group and no root module', async () => {
+      await expect(
+        toolExecutors['delete-group'](attributeApi(), { groupId: 'nothing' })
+      ).rejects.toThrow(
+        "Group 'nothing' not found. Groups in the plan: kitchen-1, island-1."
+      );
     });
 
     it('changes the root modules the planner takes and names the others', async () => {
@@ -6499,6 +7682,59 @@ describe('row edit tools', () => {
       expect(result.hint).toBeUndefined();
     });
 
+    // a row along the right wall from its back end; the door of the room
+    // spans z -1000 to -100 of that wall
+    const rightWallRow = (count: number) => ({
+      id: 'kitchen-1',
+      pos: [4000, 0, -3000],
+      rotationY: 270,
+      roots: Array.from({ length: count }, (_, index) =>
+        rawCabinet(`kitchen-1-${index + 1}`, index * 600)
+      ),
+    });
+    const editBesideTheDoor = async (before: unknown[], after: unknown[]) => {
+      const api = createApi(
+        {
+          ...planContextFixture,
+          groups: [rowGroup],
+          obstacles: obstaclesInTheRoom,
+        },
+        {
+          getExternalObjectGroups: vi
+            .fn()
+            .mockResolvedValueOnce(before)
+            .mockResolvedValue(after),
+        }
+      );
+      return (await toolExecutors['insert-article-into-group'](api, {
+        groupId: 'kitchen-1',
+        articleId: 'article-1',
+        between: ['r1', 'r2'],
+      })) as Record<string, any>;
+    };
+
+    it('names a door the row stands in front of after the edit', async () => {
+      const result = await editBesideTheDoor(
+        [rightWallRow(3)],
+        [rightWallRow(4)]
+      );
+      expect(result.hint).toContain(
+        "Root module 'kitchen-1-4' of group 'kitchen-1' stands in front of the door in the right wall (wall 1"
+      );
+      expect(result.hint).not.toContain("'kitchen-1-3'");
+      expect(result.hint).toContain(
+        'The row was edited as asked - move the group or edit the row if the user did not ask for it there.'
+      );
+    });
+
+    it('says nothing about a row that stood in front of the door before the edit', async () => {
+      const result = await editBesideTheDoor(
+        [rightWallRow(4)],
+        [rightWallRow(4)]
+      );
+      expect(result.hint).toBeUndefined();
+    });
+
     it('tells when the edit makes the row overlap another group', async () => {
       const result = await editWithGroups(
         [rawRow('kitchen-1', 0, 3), rawRow('island-1', 2400, 2)],
@@ -6952,6 +8188,48 @@ describe('undo and redo', () => {
       groups: [shaped(initialGroup)],
     });
     expect(planner.raw()).toEqual([initialGroup]);
+  });
+
+  const createRow = (planner: ReturnType<typeof historyPlanner>) =>
+    toolExecutors['create-or-replace-groups'](planner.api, {
+      posGroups: [
+        { libraryId: 'lib-1', roots: [{ id: 'u1', articleId: 'article-1' }] },
+      ],
+    });
+
+  it('answers a create with the groups of the call and the other groups by their id', async () => {
+    const planner = historyPlanner();
+    const result = (await createRow(planner)) as any;
+    expect(result.groups.map((group: any) => group.id)).toEqual(['new-1']);
+    expect(result.otherGroupIds).toEqual(['g1']);
+  });
+
+  it('returns the groups the reverted call changed, and the others by their id', async () => {
+    const planner = historyPlanner();
+    await createRow(planner);
+    await changeFront(planner);
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(result).toEqual({
+      undone: 'change-group-attribute',
+      groups: [shaped(initialGroup)],
+      otherGroupIds: ['new-1'],
+    });
+  });
+
+  it('names the group an undone create took out of the plan, and the group a redo brought back', async () => {
+    const planner = historyPlanner();
+    await createRow(planner);
+    const undone = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(undone).toEqual({
+      undone: 'create-or-replace-groups',
+      groups: [],
+      otherGroupIds: ['g1'],
+      removedGroupIds: ['new-1'],
+    });
+    const redone = (await toolExecutors.redo(planner.api, {})) as any;
+    expect(redone.groups.map((group: any) => group.id)).toEqual(['new-1']);
+    expect(redone.otherGroupIds).toEqual(['g1']);
+    expect(redone.removedGroupIds).toBeUndefined();
   });
 
   it('reverts a kitchen with three materials with two planner undos', async () => {

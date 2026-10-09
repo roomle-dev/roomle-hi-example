@@ -24,7 +24,7 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 | Tool | Purpose |
 |---|---|
 | `change-module-attribute` | Set an attribute of one or more root modules and of their sub modules that carry it, or of one sub module of each |
-| `change-group-attribute` | Set an attribute on every module of a group that has it |
+| `change-group-attribute` | Set one attribute, or several in one call, on every module of a group that has them |
 | `delete-group` | Delete a group |
 | `delete-article-in-place` | Delete an article and leave the gap — the tool for "delete" or "remove" unless the user asks to close the gap; the rest splits where it is no longer docked together |
 | `delete-article-and-compact` | Delete an article and close the gap, when the user asks for it |
@@ -76,6 +76,12 @@ fetch the rooms too. The agent does not compare outlines itself: the results of
 `create-or-replace-groups` and `place-group` name every root module on an obstacle in their `hint`,
 with the free stretches of its wall (D55)
 
+**Rows**: every root module docked side by side with another one carries `rowIndex`, its place in
+its row — 1 at the left end as seen from the front; floor units and wall units form rows of their
+own, and a corner article joins the two legs into one row. The roots are listed in the order they
+were added, an inserted one last, so "the middle unit" is read from `rowIndex` (D66). Every group a
+tool returns carries it; a resubmitted group's `rowIndex` is ignored.
+
 **Article size**: per root module of an article, `dimensions` lists the size attributes with id,
 name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels
 `mod_UprightDepth`, `mod_UprightHeight`; the range hood `DU` and the TV `SM_TV` have none). A root
@@ -120,12 +126,14 @@ from `get-plan-context` carries it.
 **Materials**: a root's `attributes` are overrides of that root module. A material for the whole group
 (fronts, worktop, carcase) goes into the group's `attributes`; the server sets every group attribute
 that is not one of the library's group settings (`groupSettings` of the master data) on every unit and
-generated root after the load — after a create and after a replace — and reports it. An override only a generated root carries (the worktop colour on a base unit) is moved
+generated root after the load — after a create and after a replace, the program attributes first, so a
+colour sent with its program stays — and reports it. A root module that names its own value of a group
+attribute keeps it — an accent: the same command sets that value on it after the group's (D36). An override only a generated root carries (the worktop colour on a base unit) is moved
 to the group, and the colours of the generated roots a resubmitted group carries are set again. A root
 a replace adds inherits the attributes the library passes on between neighbours (fronts, handles,
 carcase) from the root it is docked to; its own `attributes` override them (D56).
 
-**Returns**: `loaded` (the planner's object ids), `groups` (every group in the plan), `groupAttributes` (`[{ index, id, set, notCarried? }]`: per group the group attributes set on every unit with one planner command, and those no unit of the group carries — the group stands without them, nothing to undo, D65), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input, and what the library changed with the group attributes — a front colour reset by a front program, D59) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
+**Returns**: `loaded` (the planner's object ids), `groups` (the groups of the call), `otherGroupIds` (the other groups of the plan, unchanged — D68), `groupAttributes` (`[{ index, id, set, notCarried?, rootValues? }]`: per group the group attributes set on every unit with one planner command, those no unit of the group carries — the library builds no part for them in this group, the group stands without them, nothing to undo, and the answer says which material is not built, D65 —, and the root modules that keep their own value of one, `{ id, value, rootModuleIds }`), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input, and what the library changed with the group attributes — a front colour reset by a front program, D59) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
 
 **Usage**:
 ```javascript
@@ -137,7 +145,8 @@ corner: `placement: { wall, alignment?, offsetMm?, roomIndex? }` — the paramet
 `place-group`; the alignment `center` (default), the side label of the adjoining wall (flush into
 that corner, a corner article into the corner) or `end`, `offsetMm` from that corner or from the
 wall's end. The server loads the group, computes the target from the calculated group as
-`place-group` does (an overlap moves it along the wall) and reloads it there (D23). Anywhere else,
+`place-group` does (an overlap moves it along the wall), reloads it there and sets its group
+materials after the reload (D23). Anywhere else,
 and for a group of wall units only: `placement: { posGroup, posRotationY, rootId? }` — `posGroup`
 the room point of the group's back left bottom corner, `posRotationY` the rotation in degrees,
 counter-clockwise as seen from above; `rootId` only with two corner articles, naming the one that
@@ -170,11 +179,15 @@ position
 A side label as alignment means flush into the corner with that adjoining wall (`wall: 'right'`,
 `alignment: 'top'` is the back right corner); a group with a corner article goes into that corner.
 `back` and `front` name the `top` and `bottom` wall. Groups may touch. A target that overlaps
-another group (footprints and height ranges overlap by more than 5 mm) is moved along the same wall
+another group (a root module of the one and a root module of the other overlap by more than 5 mm in
+footprint and height — the box around an L-shaped group is only the quick test) is moved along the same wall
 to the nearest free position; into a corner, or without a free position on the wall, the group is
 placed as asked. An alignment parallel to the target wall centres the group. The reload carries
-the generated roots (worktop, toe kick) with the group, so their colours stay; a group that already
-stands where asked is not reloaded.
+the generated roots (worktop, toe kick) with the group, so their colours stay, and docks a wall unit
+hanging above a floor unit to it again, so it keeps its place (C24); a group that already
+stands where asked is not reloaded. The library builds a group for its place - at a wall it may
+widen the units at the end of a row -, so after the reload the group is measured as built there and
+placed once more by that measure when it does not stand as asked (D70).
 
 **Returns**: `placedIn` (`'corner'` or `'wall'`), the wall, and the resulting group with its
 `position`, plus `corrections` when the server corrected the request (an overlap, a parallel
@@ -195,7 +208,8 @@ own group features; the group keeps its position
 **Parameters**:
 ```typescript
 'change-module-attribute': { rootModuleIds: string[], rootModuleId?: string, moduleId?: string, attributeId: string, value: string | number | boolean }
-'change-group-attribute':  { groupId: string, attributeId: string, value: string | number | boolean }
+'change-group-attribute':  { groupId: string, attributeId?: string, value?: string | number | boolean,
+                             attributes?: { attributeId: string, value: string | number | boolean }[] }
 'delete-group':            { groupId: string }
 'delete-article-in-place':      { rootModuleId: string }
 'delete-article-and-compact': { groupId?: string, rootModuleId: string }
@@ -228,6 +242,12 @@ several, one planner command per group (`change-attributes`); a single `rootModu
 list of one; with `moduleId`, one command per root module. A root module it could not change is
 named in `corrections`, the others change.
 
+`change-group-attribute` sets one attribute with the planner's `change-group-attribute`, several
+(`attributes`) with one `change-attributes` — one calculation, one undo step, the program attributes
+first (D67); an attribute of the list no module of the group has is named in `corrections`. Every
+tool that takes a group id reads a root id, or a unique prefix of one, as the group that holds the
+root module, and says so in `corrections` (C23).
+
 **Returns**: the two attribute commands `{ command, groupIds, changedModuleIds?, corrections? }`,
 not the group (D62); the others `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed?, corrections?, hint? }`, once the
 planner has loaded the result:
@@ -242,13 +262,16 @@ planner has loaded the result:
   `merge-article-into-group`, two roots of `insert-article-into-group` that are no neighbours, a
   root id read as the plan's id it abbreviates or misspells — and what the planner corrected or
   could not keep, prefixed with the command: a docking the new unit of `exchange-root-module` or `swap-root-modules` cannot take,
-  a unit above that keeps its place or a deletion instead of closing the gap (`delete-article-and-compact`);
+  a unit above that keeps its place, with the unit above that moved in and now overlaps it, or a deletion instead of
+  closing the gap (`delete-article-and-compact`);
   after `change-module-attribute` and `change-group-attribute`, last, every other attribute the library
   changed with the one set — "with mod_FrontColor "324" (Dark marble (#404040)) the library changed
   mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (…) to "Modern" (Mitred frame fronts with
   glass filling)" (D59)
 - `hint`: after a row edit (insert, `delete-article-and-compact`, exchange, swap) — names the units above that moved with
-  the unit below them, and says when the row now reaches past a wall or into another group
+  the unit below them, says when the row now reaches past a wall or into another group, and names a
+  root module that now stands in front of a door or a window or on an object, with the free stretches
+  of its wall (D43, D55)
 
 - `delete-article-in-place`: deletes the unit and leaves the gap: units no longer docked together become
   separate groups where they stand; deleting the only unit deletes the group; generated roots
@@ -297,7 +320,9 @@ by the history event the page relays (`onHistoryChange`), and compares the plan 
 before the call. Only tool calls are reverted: after a change in the planner the records are
 forgotten (D38). The anchor probe undoes its own load, so it leaves no step.
 
-**Returns**: `{ undone | redone: <tool> | null, groups, hint? }` — every group of the plan; `null` and a
+**Returns**: `{ undone | redone: <tool> | null, groups, removedGroupIds?, otherGroupIds?, hint? }` — the
+groups the reverted call changed, as they are now, the groups the revert took out of the plan, and the
+others by their id (D68); every group of the plan when nothing was reverted; `null` and a
 `hint` when there is nothing to undo or redo, the plan was changed in the planner, or the planner's
 history no longer holds the call; an undo or redo that does not give back the plan before or after
 the call (the user changed the plan in the planner while the call ran) is taken back, with a `hint`;
@@ -320,7 +345,10 @@ const { matches } = await findAttributes({ text: 'front colour' });
 Every word of the text is matched on its own, in any order, and colour/color, grey/gray and
 worktop/countertop read alike: one search for `color` returns every colour attribute. A value
 list several attributes share is listed once; the later attributes carry `sameSelectionsAs`, the
-id of the attribute that lists it (D64).
+id of the attribute that lists it (D64). Every match names the root modules that carry it,
+`rootModules: [{ id, name }]`, and the attributes the root modules in the plan carry come first —
+the panel top's colour, named Color like the worktop's, comes after the worktop's in a group that
+has a worktop.
 
 The matches include the attributes of the roots the library generates (worktop `mr_Countertop`,
 toe kick, finger grip, backsplash, …): the compacted master data keeps the root modules and the

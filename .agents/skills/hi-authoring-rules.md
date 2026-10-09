@@ -31,7 +31,7 @@ Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rot
 {
   id: string,              // Unique within group
   articleId: string,       // From catalog (required)
-  attributes: Attribute[],  // Optional: overrides of that root module; a material for the whole group goes into the group's attributes
+  attributes: Attribute[],  // Optional: overrides of that root module; a material for the whole group goes into the group's attributes, and a root's own value of it stays (an accent)
   // one relation to a root of the same group (every root after the first):
   rightOf | leftOf | onTop | above | behind: string,
   align: 'left' | 'right' | 'back',  // Optional, onTop and above
@@ -354,7 +354,10 @@ built is an error. Every guard and correction:
 
 ## Using Free Docking Vectors
 
-When extending existing groups, check `freeDockingVectors` from `get-plan-context`:
+When extending existing groups, check `freeDockingVectors` from `get-plan-context`. A root module
+named by its place — the middle unit, the second from the left — is found by `rowIndex`, its place
+in its row counted from 1 at the left end as seen from the front (floor units and wall units counted
+apart); the roots are listed in the order they were added, not in row order:
 
 ```javascript
 const group = context.groups.find(g => g.id === 'target');

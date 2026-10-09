@@ -5,7 +5,7 @@ import { toolExecutors } from './tool-executors';
 
 const AUTHORING_RULES = `Authoring rules for pos groups:
 - Words: the catalog offers articles - cabinets, wardrobes, appliances, panels. A group is one piece of furniture made of articles: a kitchen, a wardrobe, a sideboard, a utility room, a row of cabinets. An article placed in a group is a root module (root for short); the user may call it a cabinet, a unit or a module. The kind of an article follows the catalog's category and dimensions: a high or tall cabinet or a wardrobe is about 2000 mm high, a low cabinet or base cabinet about 720 mm high and stands on the floor, a wall cabinet hangs on the wall. The user decides which articles stand next to each other: a low cabinet between two high cabinets is an order like any other. When the user names a kind, not an article, take the article of that kind from the category of its neighbours where that category has one (a kitchen cabinet into a kitchen, a wardrobe into a wardrobe), else the closest kind of another category.
-- A group is { id?, libraryId?, placement?, roots: [...] }. A root module is an article pick and nothing else: { id, articleId, attributes? } plus one relation that names its neighbour (rightOf, leftOf, onTop, above or behind - see Relations below). The server ignores every other field - a position on a root or a group included - and drops roots marked isGenerated (worktop, toe kick - the library regenerates them). Every root position comes from its relation; the position of a new group comes from its placement. Groups returned by get-plan-context carry their docking as contextData instead - resubmit them as they are. Use a unique id of your choice for new roots (the planner regenerates it and remaps your docking references); keep the real ids of roots that already exist in a replaced group. Choose the articleId from the article catalog of get-plan-context: desc and category say what an article is and what it is for, dimensions give its size (per size attribute its id, its name - e.g. Width, Depth, Height - and its value in millimetres; a root in groups carries the same attribute ids among its attributes, and change-module-attribute with that attribute id, never its name, changes the size of a root module; an article of another size - "a 900 mm cabinet" - is the same article with that attribute set, which merge-article-into-group, insert-article-into-group and exchange-root-module take in their attributes), dockingVectors the names of its docking vectors, subModules its fronts and appliances, cornerArticle true marks an article made for a room corner. Sub-modules come with the article - you author articles, their attributes and their relations, nothing else. attributes is an optional list of { id, value } overrides of that root module; a material for the whole group - the fronts, the worktop, the carcase - goes into the group's attributes ({ id, value } entries beside roots), and the server sets it on every root module and on the worktop. Attribute ids and their values come from the masterData section (request it with include) or from find-attributes. Everything else the calculation needs is completed automatically from the article template.
+- A group is { id?, libraryId?, placement?, roots: [...] }. A root module is an article pick and nothing else: { id, articleId, attributes? } plus one relation that names its neighbour (rightOf, leftOf, onTop, above or behind - see Relations below). The server ignores every other field - a position on a root or a group included - and drops roots marked isGenerated (worktop, toe kick - the library regenerates them). Every root position comes from its relation; the position of a new group comes from its placement. Groups returned by get-plan-context carry their docking as contextData instead - resubmit them as they are. Use a unique id of your choice for new roots (the planner regenerates it and remaps your docking references); keep the real ids of roots that already exist in a replaced group. Choose the articleId from the article catalog of get-plan-context: desc and category say what an article is and what it is for, dimensions give its size (per size attribute its id, its name - e.g. Width, Depth, Height - and its value in millimetres; a root in groups carries the same attribute ids among its attributes, and change-module-attribute with that attribute id, never its name, changes the size of a root module; an article of another size - "a 900 mm cabinet" - is the same article with that attribute set, which merge-article-into-group, insert-article-into-group and exchange-root-module take in their attributes), dockingVectors the names of its docking vectors, subModules its fronts and appliances, cornerArticle true marks an article made for a room corner. Sub-modules come with the article - you author articles, their attributes and their relations, nothing else. attributes is an optional list of { id, value } overrides of that root module; a material for the whole group - the fronts, the worktop, the carcase - goes into the group's attributes ({ id, value } entries beside roots), and the server sets it on every root module and on the worktop; a root module that names its own value of it in its attributes keeps that value - an accent, e.g. dark wall units in a light group. Attribute ids and their values come from the masterData section (request it with include) or from find-attributes. Everything else the calculation needs is completed automatically from the article template.
 - Every desc - of an article, a root, a module, an attribute and an attribute value - is authoritative: trust it for what that article, module or value is, and trust dimensions for how big an article is. A colour code in the desc of an attribute value - Cloudy blue (#506080) - is the colour of that value: take it as it is, and tell light from dark and one hue from another by it, not by the name. All of them are authoritative over the catalog images of the master data (imageUrl): never take the kind or the size of an article, or the colour of a value, from a catalog image. A desc says what an article is, not where the user may put it.
 - Fronts: the front program says how a front is built - by its desc: simple fronts, frame fronts with wooden filling, mitred frame fronts with glass filling, milled fronts. Choose it by its desc first, then the front colour. A program offers only some colours: a colour it does not offer switches the program to one that does, and the fronts are then built as that program says; a program resets a colour it does not offer. corrections name every such change. When the colour the user wants comes only with fronts built differently, keep the fronts the user wants: undo a switched program, take the closest colour their program offers, and tell the user which fronts the wanted colour comes with.
 - One piece of furniture is one group. Every article standing beside, above or back to back with another article is a root module of the SAME group, related to it; a new group carries one placement, and the planner derives every root position from the relations. Never create a second group to put articles next to existing ones - articles that belong together are related.
@@ -26,7 +26,8 @@ const AUTHORING_RULES = `Authoring rules for pos groups:
 - Extending a group: articles next to an existing group are root modules of that group, never a new group. Dock each new article to a free docking vector of the root module it continues (freeDockingVectors per root: a free LeftBottom takes the new root's RightBottom, a free RightBottom takes LeftBottom, a free Top vector takes the new root's Bottom vector) - one article with merge-article-into-group, several at once by adding the picks, each with its relation, to the group from get-plan-context and resubmitting it with its id; an article between two root modules with insert-article-into-group. A new root module inherits the attributes the library passes on between neighbours - fronts, handles, carcase - from the root module it is docked to (insert-article-into-group: the first of between), as in the planner; its attributes override them. A new group is only for a free stretch of wall or a free spot in the room (obstacles shows what is taken) - never position a new group against an existing one.
 - To move an existing group against a wall or into a room corner, call place-group with wall, alignment and offsetMm as in a placement. The group keeps its roots and docking.
 - To change an existing group, use the command tools: merge-article-into-group adds an article at a free end of a row, insert-article-into-group inserts an article between two root modules, delete-article-and-compact deletes an article and closes the gap, delete-article-in-place deletes an article and leaves the gap (root modules no longer docked together become separate groups where they stand), exchange-root-module replaces a root module - with attributes also by an article of another width -, swap-root-modules lets two root modules change places, delete-group deletes a group, change-module-attribute and change-group-attribute set attributes, merge-groups joins groups where they stand (nothing is moved, no docking is added). Delete and remove mean the same: delete-article-in-place, unless the user asks to close the gap - then delete-article-and-compact. In an insert, a delete that closes the gap, an exchange or a swap the root modules at a wall or in a corner keep their place and the others move; wall units and the range hood move with the root module they hang from. Every command returns the changed groups. To rebuild a group, take it from get-plan-context, change it, and resubmit it with its id and without placement via create-or-replace-groups - it keeps its position; keep the ids of the root modules you keep.
-- Verify results numerically: the returned groups carry position (pos, rotationY, footprint) and per root the dockingVectors, the input attributes and the docking; the hint names a root module that stands on an obstacle. Do not judge a position from a rendering alone.
+- Verify results numerically: the returned groups carry position (pos, rotationY, footprint) and per root the dockingVectors, the input attributes, the docking and rowIndex; the hint names a root module that stands on an obstacle. Do not judge a position from a rendering alone.
+- A root module named by its place - the middle unit, the second from the left, the last one - is found by rowIndex: its place in its row, 1 at the left end as seen from the front, floor units and wall units counted apart. The roots are listed in the order they were added, not in row order.
 - Undo a wrong result: when a result is not what was asked - the wrong wall, a root module missing or replaced by mistake, a merge or a delete that went wrong - call undo and send the corrected call, instead of correcting the wrong plan piece by piece; one undo reverts one tool call. A group that only needs a change is edited with the command tools. undo and redo also serve the user who asks for them.
 - Read corrections, notLoaded and hint in a result: corrections lists what the server changed in your input and has already applied, and what the library changed beyond the attribute you set - a front program switched by a front colour; notLoaded lists the groups and the roots it could not build, with what to send instead; hint names something to check that stopped nothing - a root module on an obstacle, with the free stretches of its wall.
 
@@ -166,7 +167,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'docking vector names, insert levels and sub-modules, plus cornerArticle ' +
         "for articles made for a room corner), groups (the groups currently in the plan: position with pos - the room point of the group's back left bottom corner, as a placement names it - rotationY, rootId (only with two corner articles: the one pos belongs to) and footprint, and " +
         'per root the article pick with input attributes, docking, docking vector names and the free docking vectors ' +
-        'a new root can dock to, plus its desc - no root positions, ' +
+        'a new root can dock to, plus its desc and rowIndex, its place in its row - 1 at the left end as seen from the ' +
+        'front; floor units and wall units form rows of their own, and the roots are listed in the order they were added - ' +
+        'no root positions, ' +
         'no geometry; a returned group is a valid create-or-replace-groups payload) and obstacles (what stands in the ' +
         'room, in the coordinates of the walls: objects - doors, windows, other furniture - with kind, outline ' +
         "(floor points [x, 0, z]) and bottomMm/topMm, a door or a window also with roomIndex, wall and fromEndMm (its span along that wall from the wall's end); " +
@@ -199,7 +202,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       description:
         'Searches the attribute vocabulary of the loaded libraries by text (attribute id, name, description, ' +
         'group or selection name) and returns the matching attributes with their values (each with ' +
-        'its desc) and the root modules that carry them. The vocabulary is the compacted master data ' +
+        'its desc) and the root modules that carry them, with their names - the worktop colour is the colour of ' +
+        'the root module Countertop; the attributes the root modules in the plan carry come first. ' +
+        'The vocabulary is the compacted master data ' +
         'of get-plan-context (root modules and their customer-facing attributes). Use it to find the attribute ' +
         'for a requested property, e.g. "front color", and the value to set. Every word of the text is matched on ' +
         'its own, in any order, British and American spelling alike (colour and color, grey and gray, worktop ' +
@@ -248,7 +253,10 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'after the first names its neighbour with one relation: rightOf, leftOf, onTop, above or behind with the ' +
         'id of the neighbour; the server builds the docking from it, and the planner arranges the root modules; never author root ' +
         'positions. Author one piece of furniture as ONE group: articles beside, above or back to back with each other are ' +
-        "related root modules of the same group, never separately positioned groups; a material for the whole group goes into the group's attributes. Position a new group in the same " +
+        "related root modules of the same group, never separately positioned groups; a material for the whole group goes into the group's attributes, and a root module's own value of it stays. " +
+        'A group is created with all its articles in one call: roots holds every article of the group from the first call, each with its relation - a group is never created empty and filled later. ' +
+        'An article beside an existing group goes into that group: merge-article-into-group at the end of a row, insert-article-into-group between two root modules. ' +
+        'Position a new group in the same ' +
         'call with placement. At a wall or in a room corner: { wall, alignment?, offsetMm?, roomIndex? } - wall a ' +
         'side label (left, right, back, front) or a wall index; alignment center (the default), the side label ' +
         'of the adjoining wall, which puts the group flush into that corner (wall back with alignment right: the ' +
@@ -261,9 +269,10 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'replaces that group and keeps its position (root modules keep their ids when they already exist in ' +
         'the replaced group; a placement on it is not used; a root module the replace adds inherits ' +
         'the attributes the library passes on between neighbours - fronts, handles, carcase - from the root module it is docked to, and its attributes override them); ' +
-        'all other groups are created with regenerated ids. Returns the loaded object ids and the resulting groups - ' +
-        'check their pos and footprint - plus groupAttributes (per group the group attributes set on every unit, and ' +
-        'notCarried: those no unit of the group has - the group stands without them, nothing to undo), corrections (what ' +
+        'all other groups are created with regenerated ids. Returns the loaded object ids, the groups of the call - ' +
+        'check their pos and footprint - and otherGroupIds, the other groups of the plan, unchanged; plus groupAttributes (per group the group attributes set on every unit, ' +
+        'notCarried: those no unit of the group has - the library builds no part for them in this group, a backsplash or an end panel for example, so the group stands ' +
+        'without them, nothing to undo; say in the answer which material is not built -, and rootValues: the root modules that keep their own value of one), corrections (what ' +
         'the server changed in the input, and what the library ' +
         'changed beyond the attributes sent - a front colour reset by a front program), notLoaded (the groups it ' +
         'could not build, with what to send instead) and hint (a root module on an obstacle, in another group or in front of ' +
@@ -398,20 +407,38 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'change-group-attribute',
     {
       description:
-        'Sets one attribute on every module of a group that has it - the root modules and their sub ' +
-        'modules, e.g. the front colour of a whole group - in one recalculation. ' +
+        'Sets attributes on every module of a group that has them - the root modules and their sub ' +
+        'modules, e.g. the front colour of a whole group - in one recalculation: one attribute with attributeId ' +
+        'and value, several at once with attributes - all the materials of a group in one call, the programs set ' +
+        'before the colours. ' +
         'The library may change a related attribute with it - a front colour the front program does not offer ' +
         'switches the program, and the fronts are built differently; corrections name every attribute the ' +
-        'library changed besides the one set. ' +
+        'library changed besides the ones set, and an attribute no module of the group has. ' +
         'Returns the id of the group, the ids of the changed modules and the corrections; get-plan-context shows the group.',
       inputSchema: {
         groupId: z
           .string()
           .describe('The id of the group. A unique id prefix is accepted.'),
-        attributeId: z.string().describe('The id of the attribute.'),
+        attributeId: z
+          .string()
+          .optional()
+          .describe('The id of the attribute, with value.'),
         value: z
           .union([z.string(), z.number(), z.boolean()])
+          .optional()
           .describe('The new value: a string, a number or a boolean.'),
+        attributes: z
+          .array(
+            z.object({
+              attributeId: z.string(),
+              value: z.union([z.string(), z.number(), z.boolean()]),
+            })
+          )
+          .min(1)
+          .optional()
+          .describe(
+            'Several attributes set in one recalculation: [{ attributeId, value }].'
+          ),
       },
     },
     async (args) => textResult(await runTool('change-group-attribute', args))
@@ -636,7 +663,8 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         "Reverts the plan change of the last tool call that changed the plan, as the planner's undo does. " +
         'Use it when that result is not what was asked - the user says it was the wrong article, wall or group, or a ' +
         'merge or delete went wrong - and then send the corrected call; call it again to revert the call before. ' +
-        'Returns the reverted tool and every group of the plan now; when there is nothing to undo, the result says so.',
+        'Returns the reverted tool, the groups it changed back as they are now, removedGroupIds - the groups it took out ' +
+        'of the plan - and otherGroupIds, the groups it left as they were; when there is nothing to undo, the result says so.',
       inputSchema: {},
     },
     async () => textResult(await runTool('undo', {}))
@@ -647,7 +675,8 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     {
       description:
         'Brings back the tool call the last undo reverted. A new change of the plan ends redo. Returns the ' +
-        'restored tool and every group of the plan now; when there is nothing to redo, the result says so.',
+        'restored tool, the groups it changed as they are now, removedGroupIds - the groups it took out of the plan - ' +
+        'and otherGroupIds, the groups it left as they were; when there is nothing to redo, the result says so.',
       inputSchema: {},
     },
     async () => textResult(await runTool('redo', {}))

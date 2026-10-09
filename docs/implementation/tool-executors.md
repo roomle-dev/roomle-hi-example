@@ -18,20 +18,20 @@ at the end.
 | find-attributes matching | `attributeMatches` |
 | Article and root id resolution | `catalogArticleId`, `catalogSpellingOf`, `resolveArticleIds`, `removeReferencesTo`, `resolveRootId`, `withPlanRoots` |
 | merge-article-into-group target | `articleWidth`, `unitStaysInRoom`, `dockTarget` |
-| Row-edit helpers | `neighbourTowards`, `rowReachHints`, `movedUnitsAboveHint`, `withRowHints`, `insertBetween` |
-| Group lookup | `findGroup`, `planGroups` |
+| Row-edit helpers | `neighbourTowards`, `rowReachHints`, `movedUnitsAboveHint`, `withRowHints` (with `obstacleHint` against the groups before the edit), `insertBetween` |
+| Group lookup | `findGroup` (a root id names the group that holds it: `groupHoldingRoot`), `planGroups` |
 | The plan context the agent sees | `agentFacingArticle`, `agentFacingRooms`, `agentFacingObstacles` |
 | Anchor probe | `knownAnchorFrames`, `probeAnchorFrame`, `takeBackProbe` |
 | Placement normalisation | `normalizePlacement`, `normalizeWallPlacement`, `isWallPlacement` |
-| Docking graph and its completion | `sidePartnersOf`, `rowWalk`, `separateSideVectorPartners`, `connectUnreachedRoots`, `reportUnsentRoots`, `completeDocking` |
-| Group-wide attributes, group id memory, post-load checks | `generatedRootAttributes`, `moveGeneratedRootOverrides`, `agentGroupIds`, `applyGroupWideAttributes`, `groupSettingIdsOf`, `reportRevertedReplaces` |
+| Docking graph and its completion | `sidePartnersOf` (Bottom and Top side vectors, `isSidePair`), `rowWalk`, `separateSideVectorPartners`, `breakRowRings`, `vectorFree`, `connectUnreachedRoots`, `reportUnsentRoots`, `completeDocking`; before the relations `dropUnknownDockingVectors`, `dropFloorUnitsOnBaseUnits` |
+| Group-wide attributes, group id memory, post-load checks | `generatedRootAttributes`, `moveGeneratedRootOverrides`, `agentGroupIds`, `applyGroupWideAttributes`, `programsFirst`, `rootValuesOf`, `loadedRootOf`, `groupSettingIdsOf`, `reportRevertedReplaces` |
 | The obstacle hint (D55) | `WALL_STRIP_MM`, `objectBlockers`, `rootBlockersBeside`, `freeStretchesNote`, `obstacleHint`; the geometry in `plan-space.ts`: `rootVolumesInRoom`, `stripInFrontOfWall`, `wallOfRoot`, `freeStretchesAlongWall`, `convexHull` (an object outline is tested by its hull: the separating-axis test of `convexPolygonsTouch` holds for convex outlines only) |
 | Partial loads | `NotLoadedGroup`, `keepBuildable`, `nothingLoaded` |
 | Payload preparation | `dropMalformedDocking`, `liftNestedRoots`, `completeDockingEntries`, `normalizedAttributes`, `reportUnusedFields`, `readDockToAsRelation`, `prepareGroup` |
-| Geometry for place-group and a placement by wall | `placedGroupVolumes`, `overlappedGroupIds`, `resolveWall`, `placeGroupAtWall`, `standsAt`, `freePlacementAlongWall`; shared: `wallPlacementSpec`, `resolveWallPlacement`, `wallTarget`, `placeAtWalls` |
+| Geometry for place-group and a placement by wall | `groupVolumes` (the box of the group and of each root module), `placedGroupVolumes`, `overlappedGroupIds` (root module against root module, the boxes first), `resolveWall`, `placeGroupAtWall`, `standsAt`, `freePlacementAlongWall`; shared: `wallPlacementSpec`, `resolveWallPlacement`, `wallTarget`, `placeAtWalls` |
 | Concurrency and undo recording | `oneAtATime`, `countingPlannerApi`, `recorded`, `planChange` |
-| Undo and redo | `stepHistory`, `revertToolCall` |
-| Positions in the placement frame | `inPlacementFrame` |
+| Undo and redo | `stepHistory`, `revertToolCall`, `changedGroupIds`, `changedGroupsOnly` |
+| Positions in the placement frame, places in a row | `inPlacementFrame`, `withRowIndices` |
 | The executors | `toolExecutors` |
 
 ## Wrappers
@@ -85,13 +85,18 @@ call and is reported in `notLoaded`, the others load
    catalog's; an unknown article drops that root and every reference to it, and the group still
    loads — only a group without any known article fails.
 5. **Relations to docking** (`relationsToDocking`, [Layout and placement](./layout-and-placement.md#relations-to-docking--group-layoutts)).
+   Docking written as `contextData` is checked first: a vector the article does not have, where the
+   catalog knows its vectors (`dropUnknownDockingVectors`, G62), and a floor unit on a Top vector of
+   a base unit (`dropFloorUnitsOnBaseUnits`, G63).
 6. **Move attribute overrides** meant for generated roots (`moveGeneratedRootOverrides`).
 7. **Group ids:** a group id the agent invented for a new group in an earlier call is mapped to the id
    the planner gave it (`resolveAgentGroupIds`), so resending it replaces instead of duplicating.
-8. **Complete the docking** of new groups (`completeDocking`): a second unit on an occupied side goes
-   to the free end of the row (`separateSideVectorPartners`, `rowWalk`); unconnected parts are
-   docked to a free row end of their kind (`connectUnreachedRoots`); roots that cannot be reached
-   are reported (`reportUnsentRoots`).
+8. **Complete the docking** of new groups (`completeDocking`): a second unit on an occupied side —
+   also a second wall unit on a Top side vector of a tall unit — goes to the free end of the row
+   (`separateSideVectorPartners`, `rowWalk`); an entry that closes a row into a ring is dropped
+   (`breakRowRings`, G61); unconnected parts are docked to a free row end of their kind by a root of
+   their kind, or a first wall unit hangs above a floor unit (`connectUnreachedRoots`); roots that
+   cannot be reached are reported (`reportUnsentRoots`).
 9. **Placement:** a group already in the plan keeps its place (its placement is dropped, with a
    correction). A placement by wall is resolved (`resolveWallPlacement`; a wall the room does not
    have leaves the group without it) and kept aside for the step after the load. For a new group
@@ -107,20 +112,22 @@ call and is reported in `notLoaded`, the others load
     group of the call counts in the overlap test once it has its target — and reloads them in one
     `loadExternalObjectGroupLayout`, and names each group that still covers the floor it covered
     before (`floorCorners`, `sameFloor`, G59) — the load answers with runtime ids, and the group
-    origin moves to another root or corner on a reload; then the groups are read once more. Detect a replace the planner silently reverted
-    (`reportRevertedReplaces`); apply the group-wide attributes with
-    `externalObjectGroupOperation('change-group-attribute', …)` (`applyGroupWideAttributes`) — every
-    group attribute but the library's group settings, which `groupSettingIdsOf` takes from the
-    master data's `groupSettings`;
-    remember the agent's group ids (`rememberAgentGroupIds`); hint at unpositioned groups. The
+    origin moves to another root or corner on a reload; then the groups are read once more. Detect a
+    replace the planner silently reverted (`reportRevertedReplaces`); apply the group-wide attributes
+    with one `externalObjectGroupOperation('change-attributes', …)` (`applyGroupWideAttributes`) —
+    every group attribute but the library's group settings, which `groupSettingIdsOf` takes from the
+    master data's `groupSettings`, the programs first (`programsFirst`), and a root module's own value
+    of one after it (`rootValuesOf`, `loadedRootOf`) —, and read the groups again. Remember the
+    agent's group ids (`rememberAgentGroupIds`); hint at unpositioned groups. The
     reads after the load take `groups`, `obstacles` and `rooms`; with an `obstacles` section the
     raw groups are read and `obstacleHint` names every root module of the call's groups on an
     object, in another group or in front of a door or a window (D55). For a replace, the read
     before the load takes `obstacles` too, and the raw groups before the load tell what the group
     stood on already.
 
-Result: `{ loaded, groups, hint?, corrections?, notLoaded? }`. `groups` is every group of the plan,
-`loaded` the planner's ids of the loaded groups.
+Result: `{ loaded, groups, otherGroupIds?, groupAttributes?, hint?, corrections?, notLoaded? }`.
+`groups` holds the groups of the call (`changedGroupsOnly`), `otherGroupIds` the other groups of the
+plan, `loaded` the planner's ids of the loaded groups.
 
 ### The anchor probe
 
@@ -165,8 +172,8 @@ performs the edit with its own group features and answers once the result is loa
 | Tool | Resolves | Result wrapping |
 | ---- | -------- | --------------- |
 | `change-module-attribute` | the root among all roots of the plan | `withPlanRoots`, `withCorrections` |
-| `change-group-attribute` | the group | the planner's result |
-| `delete-group` | the group | the planner's result |
+| `change-group-attribute` | the group (a root id: its group); one attribute as `change-group-attribute`, several as one `change-attributes`, the programs first | `withLibraryChanges`, `compactAttributeResult` |
+| `delete-group` | the group (a root id: its group) | `withCorrections` |
 | `delete-article-in-place` | the root among all roots | `withPlanRoots`, `asTool` (the result names the tool, not the planner command), `withCorrections` |
 | `delete-article-and-compact` | the group — without `groupId` the group that holds the root (`groupOfRoot`) —, the root within it | `withRowHints` + `withPlanRoots`, `asTool`, `withCorrections` |
 | `merge-article-into-group` | the group, the article, the target root and side (`dockTarget`) | `withPlanRoots`, `withCorrections` |

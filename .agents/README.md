@@ -81,7 +81,10 @@ status block where one is present.
 
 One document per bug: root-cause analysis written **before** the fix, closed out **after** it.
 
-No bug analysis is open.
+| Document | Status | Last touched |
+|---|---|---|
+| [Readable article and wall names in row-edit feedback](bug-analysis/readable-row-edit-feedback.md) | Fixed — verified locally | 2026-10-09 |
+| [Preserve the outcome when a provider failure interrupts a chat turn](bug-analysis/chat-provider-failure-recovery.md) | Fixed locally — interrupted turns recovered; provider cause unconfirmed | 2026-10-09 |
 
 ### Feature Analyses
 
@@ -90,6 +93,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Explain the door or window a placement keeps clear](feature-analysis/explain-opening-clearance.md) | Implemented — verified locally | 2026-10-09 |
 | [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open (step 1 done, step 2 open, step 3 on request) | 2026-10-07 |
 | [A reasoning effort per GPT chat model: implementation plan](feature-analysis/reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open (step 1 done) | 2026-10-07 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open (product goal) | 2026-09-27 |

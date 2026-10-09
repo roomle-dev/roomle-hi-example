@@ -7926,8 +7926,194 @@ describe('row edit tools', () => {
       })) as Record<string, any>;
 
       expect(result.hint).toBe(
-        "the wall units and the range hood above the moved units moved with them ('w1') - edit the wall row the same way if it should line up with the floor units"
+        "the wall units and the range hood above the moved units moved with them ('w1' (wall-article)) - edit the wall row the same way if it should line up with the floor units"
       );
+    });
+
+    it.each([
+      ['left wall', 0, 0, true],
+      ['left wall', 6000, 0, true],
+      ['left wall', 0, 270, true],
+      [undefined, 0, 0, false],
+    ])(
+      'names the turned leg by its original wall %s (room x %s, group turn %s, walls %s)',
+      async (sourceWall, roomX, groupTurn, withWalls) => {
+        const shiftedRoom = (x: number) => ({
+          ...room,
+          walls: room.walls.map((wall) => ({
+            ...wall,
+            start: [wall.start[0] + x, wall.start[1], wall.start[2]],
+            end: [wall.end[0] + x, wall.end[1], wall.end[2]],
+          })),
+        });
+        const raw = (turned: boolean) => [
+          {
+            id: 'kitchen-1',
+            pos: [roomX, 0, -3000],
+            rotationY: groupTurn,
+            roots: ['r1', 'r2'].map((id, index) => ({
+              ...rawCabinet(id, index * 600),
+              articleId: 'article-1',
+              articlePos: turned
+                ? [600 + index * 600, 0, 0]
+                : [0, 0, 1200 + index * 600],
+              rotationY: (turned ? 0 : 90) - groupTurn,
+            })),
+          },
+        ];
+        // compensate the rotated group frame while preserving the room positions
+        const inRoom = (groups: any[]) =>
+          groups.map((group) => ({
+            ...group,
+            roots: group.roots.map((root: any) => ({
+              ...root,
+              articlePos:
+                groupTurn === 270
+                  ? [
+                      root.articlePos[2],
+                      root.articlePos[1],
+                      -root.articlePos[0],
+                    ]
+                  : root.articlePos,
+            })),
+          }));
+        const api = createApi(
+          {
+            ...planContextFixture,
+            groups: [rowGroup],
+            rooms: {
+              rooms: withWalls
+                ? roomX
+                  ? [room, shiftedRoom(roomX)]
+                  : [room]
+                : [],
+            },
+          },
+          {
+            getExternalObjectGroups: vi
+              .fn()
+              .mockResolvedValueOnce(inRoom(raw(false)))
+              .mockResolvedValue(inRoom(raw(true))),
+            externalObjectGroupOperation: vi.fn(async () => ({
+              groups: [],
+              removedGroupIds: [],
+              gapClosed: true,
+            })),
+          }
+        );
+
+        const result: any = await toolExecutors['delete-article-and-compact'](
+          api,
+          {
+            groupId: 'kitchen-1',
+            rootModuleId: 'r9',
+          }
+        );
+
+        expect(result.hint).toBe(
+          `${sourceWall ? 'the leg on the left wall' : 'the leg'} turned by 90°` +
+            (withWalls ? ' and now runs along the back wall' : '') +
+            " (root modules 'r1' (article-1), 'r2' (article-1))"
+        );
+      }
+    );
+
+    it('names a wall unit that rotates in place', async () => {
+      const wallArticle = {
+        ...articleFixture,
+        articleId: 'wall-article',
+        category: 'Kitchen | Wall Units | Storage',
+      };
+      const raw = (rotationY: number) => [
+        {
+          id: 'kitchen-1',
+          pos: [600, 0, -1500],
+          roots: [
+            {
+              id: 'w1',
+              articleId: 'wall-article',
+              articlePos: [0, 1380, 0],
+              rotationY,
+            },
+          ],
+        },
+      ];
+      const api = createApi(
+        {
+          ...planContextFixture,
+          groups: [rowGroup],
+          articles: [articleFixture, wallArticle],
+        },
+        {
+          getExternalObjectGroups: vi
+            .fn()
+            .mockResolvedValueOnce(raw(90))
+            .mockResolvedValue(raw(0)),
+        }
+      );
+
+      const result: any = await toolExecutors['swap-root-modules'](api, {
+        groupId: 'kitchen-1',
+        rootModuleIds: ['r1', 'r3'],
+      });
+
+      expect(result.hint).toContain("'w1' (wall-article)");
+    });
+
+    it('does not report a turned leg when only the group frame changes', async () => {
+      const wallArticle = {
+        ...articleFixture,
+        articleId: 'wall-article',
+        category: 'Kitchen | Wall Units | Storage',
+      };
+      const raw = (rotationY: number) => [
+        {
+          id: 'kitchen-1',
+          pos: [600, 0, -1500],
+          rotationY,
+          roots: [
+            {
+              ...rawCabinet('r1', 0),
+              articleId: 'article-1',
+              rotationY: -rotationY,
+            },
+            {
+              id: 'w1',
+              articleId: 'wall-article',
+              articlePos: [0, 1380, 0],
+              rotationY: -rotationY,
+            },
+          ],
+        },
+      ];
+      const api = createApi(
+        {
+          ...planContextFixture,
+          groups: [rowGroup],
+          articles: [articleFixture, wallArticle],
+        },
+        {
+          getExternalObjectGroups: vi
+            .fn()
+            .mockResolvedValueOnce(raw(0))
+            .mockResolvedValue(raw(90)),
+          externalObjectGroupOperation: vi.fn(async () => ({
+            groups: [],
+            removedGroupIds: [],
+            gapClosed: true,
+          })),
+        }
+      );
+
+      const result: any = await toolExecutors['delete-article-and-compact'](
+        api,
+        {
+          groupId: 'kitchen-1',
+          rootModuleId: 'r9',
+        }
+      );
+
+      expect(result.hint).toBeUndefined();
     });
   });
 

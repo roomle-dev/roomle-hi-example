@@ -90,7 +90,9 @@ its chat in the page.
 
 | File | Responsibility |
 | ---- | -------------- |
-| `chat-server.ts` | the HTTP server, the model, the MCP client, `streamText` |
+| `chat-server.ts` | the HTTP server |
+| `chat-stream.ts` | the model, the MCP client, `streamText`, the plain-text response |
+| `chat-recovery.ts` | recorded tool outcomes, interruption summary and completed message pairs; copied to ligna-store |
 | `chat-handler.ts` | routing, CORS, request validation |
 | `chat-config.ts` | configuration, provider and model resolution, the system prompt, images |
 | `chat-steps.ts` | the step loop and the step log |

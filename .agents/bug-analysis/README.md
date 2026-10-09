@@ -33,5 +33,10 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 ## Current Documents
 
-This folder is initially empty. Add bug analysis documents as needed following the naming convention:
+| Document | Status | Issue |
+|---|---|---|
+| [Readable article and wall names in row-edit feedback](readable-row-edit-feedback.md) | Fixed | RML-18103 #62 |
+| [Preserve the outcome when a provider failure interrupts a chat turn](chat-provider-failure-recovery.md) | Fixed locally | RML-18103 #38 |
+
+Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

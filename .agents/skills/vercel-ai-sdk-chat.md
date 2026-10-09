@@ -21,6 +21,21 @@ Deviations from the comment's example code, found during implementation:
 - The provider API key does **not** come from a URL parameter (as the ticket required) — it is passed as a CLI argument to the launcher and forwarded as an environment variable, keeping it out of the browser history and server logs.
 - The ligna-store chat is the exception: the store is a static site without a backend, so it runs the AI SDK in the page (`streamText` and `@ai-sdk/mcp` in ligna-store `hi-mcp/chat.ts`) and takes the key from the store URL (`api_key`) — acceptable for a demo only. In the browser, `@ai-sdk/mcp` needs a bound `fetch` (`fetch: (input, init) => fetch(input, init)`): the transport calls it detached, which the browser rejects.
 
+## Interrupted turns
+
+The example's `chat-stream.ts` records MCP execution through `chat-recovery.ts`. Provider errors,
+thrown streams and aborts finish with one readable outcome summary plus the diagnostic marker.
+Only successful returned write results are reported as completed. An MCP error, thrown write or
+pending write is unconfirmed; the answer asks to read the plan before trying it again. Read-only
+turns say that nothing was created or changed. Partial text stays visible and is marked incomplete.
+Recovery repeats no operation, calls no model and performs no automatic undo. Logging is best
+effort and cannot stop recovery. `chat-stream.test.ts` covers these paths with mock models.
+
+Keep the store's `hi-mcp/chat-recovery.ts` copy in sync. Its chat returns completed assistant/tool
+message pairs and the interruption summary, which the window retains for the next turn. Pending
+calls have no fabricated result; failed model-output conversion keeps the actual result as text.
+The recovery implementation and completed message pairs are covered in the example's `chat-stream.test.ts`.
+
 ## System Architecture Overview
 
 The application uses a **three-tier architecture** to keep API keys secure while allowing the model to manipulate your 3D scene:

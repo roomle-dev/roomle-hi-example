@@ -74,7 +74,10 @@ generated, from the parts of the calculated group — the kernel's own outline o
 used: it lies up to 250 mm off (D45). No walls. Requested alone, `obstacles` makes the server
 fetch the rooms too. The agent does not compare outlines itself: the results of
 `create-or-replace-groups` and `place-group` name every root module on an obstacle in their `hint`,
-with the free stretches of its wall (D55)
+with the free stretches of its wall (D55). When a door or window determines a placement, the tool description
+asks the agent to name it and explain whether the final placement keeps it clear, using the
+returned obstacle dimensions and final tool results. Below-sill placement, horizontal clearance
+and overlap are described according to the measured result; missing data is no assurance of clearance.
 
 **Rows**: every root module docked side by side with another one carries `rowIndex`, its place in
 its row — 1 at the left end as seen from the front; floor units and wall units form rows of their
@@ -263,15 +266,18 @@ planner has loaded the result:
   root id read as the plan's id it abbreviates or misspells — and what the planner corrected or
   could not keep, prefixed with the command: a docking the new unit of `exchange-root-module` or `swap-root-modules` cannot take,
   a unit above that keeps its place, with the unit above that moved in and now overlaps it, or a deletion instead of
-  closing the gap (`delete-article-and-compact`);
+  closing the gap (`delete-article-and-compact`), with each named root labelled by its id and article id
+  from the original group, falling back to its article name or id alone;
   after `change-module-attribute` and `change-group-attribute`, last, every other attribute the library
   changed with the one set — "with mod_FrontColor "324" (Dark marble (#404040)) the library changed
   mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (…) to "Modern" (Mitred frame fronts with
   glass filling)" (D59)
 - `hint`: after a row edit (insert, `delete-article-and-compact`, exchange, swap) — names the units above that moved with
-  the unit below them, says when the row now reaches past a wall or into another group, and names a
+  the unit below them by root id and article id, says when the row now reaches past a wall or into another group, and names a
   root module that now stands in front of a door or a window or on an object, with the free stretches
-  of its wall (D43, D55)
+  of its wall (D43, D55). A turned leg is named by its original wall and the wall it now runs along
+  when known, with the ids and article ids of its roots together (D52). Before/after room positions
+  and rotations distinguish a rotation in place from a change of group frame
 
 - `delete-article-in-place`: deletes the unit and leaves the gap: units no longer docked together become
   separate groups where they stand; deleting the only unit deletes the group; generated roots
@@ -280,7 +286,7 @@ planner has loaded the result:
   other, the end of the row at a wall stays, a unit hung on it hangs on the neighbour that moves into
   the gap; a unit at a row end is deleted and nothing else moves; a corner article between two legs
   is deleted and the gap closed by turning one leg by 90° with the units above it, and the
-  `corrections` name the leg that turned (D52); the only unit is deleted with its group
+  `corrections` name the roots of the leg that turned, and `hint` names its original and destination wall when known (D52); the only unit is deleted with its group
   (`gapClosed: false`). `delete-article-and-compact` never splits a group
 - `exchange-root-module`: the article has one root module; the new unit keeps the position and
   the docking of the replaced one; `attributes` override attributes of the new unit (`mod_Width` for

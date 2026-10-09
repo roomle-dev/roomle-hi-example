@@ -877,16 +877,23 @@ const movedUnitsAboveHint = (
     return [];
   }
   // where a root stands in the room: the planner may move the group origin
-  const roomPosition = (group: any, root: any): string => {
+  const roomPose = (group: any, root: any): string => {
     const [x = 0, y = 0, z = 0] = (root.articlePos ?? []) as number[];
     const [roomX, roomZ] = groupPointToRoom(group, [x, z]);
-    return roundedPosition([roomX, Number(group.pos?.[1] ?? 0) + y, roomZ]);
+    return roundedPosition([
+      roomX,
+      Number(group.pos?.[1] ?? 0) + y,
+      roomZ,
+      (((Number(group.rotationY ?? 0) + Number(root.rotationY ?? 0)) % 360) +
+        360) %
+        360,
+    ]);
   };
-  const positionBefore = new Map<string, string>(
+  const poseBefore = new Map<string, string>(
     before.flatMap((group) =>
       ((group.roots ?? []) as any[]).map((root) => [
         root.id,
-        roomPosition(group, root),
+        roomPose(group, root),
       ])
     )
   );
@@ -894,16 +901,64 @@ const movedUnitsAboveHint = (
     .filter(
       (root) =>
         !root.isGenerated &&
-        positionBefore.has(root.id) &&
+        poseBefore.has(root.id) &&
         isWallUnitArticle(catalogArticleOf(articles, root)) &&
-        positionBefore.get(root.id) !== roomPosition(rawAfter, root)
+        poseBefore.get(root.id) !== roomPose(rawAfter, root)
     )
-    .map((root) => `'${root.id}'`);
+    .map(rootLabel);
   return moved.length > 0
     ? [
         `the wall units and the range hood above the moved units moved with them (${moved.join(', ')}) - edit the wall row the same way if it should line up with the floor units`,
       ]
     : [];
+};
+
+const turnedLegHints = (
+  groupId: string,
+  before: any[],
+  after: any[],
+  rooms: any[],
+  articles: any[]
+): string[] => {
+  const original = before.find((group) => group.id === groupId);
+  const changed = after.find((group) => group.id === groupId);
+  if (!original || !changed) {
+    return [];
+  }
+  const rootsAfter = new Map(
+    rootVolumesInRoom(changed).map((root) => [root.id, root])
+  );
+  const wallOf = (root: RootVolume) => {
+    const center: [number, number] = [
+      root.corners.reduce((sum, [x]) => sum + x, 0) / root.corners.length,
+      root.corners.reduce((sum, [, z]) => sum + z, 0) / root.corners.length,
+    ];
+    const room = roomOfPoint(rooms, center, OVERLAP_TOLERANCE_MM);
+    const wall = wallOfRoot(room?.walls ?? [], root, WALL_STRIP_MM);
+    return wall && wallName(wall.side);
+  };
+  const legs = new Map<string, string[]>();
+  for (const root of rootVolumesInRoom(original)) {
+    const next = rootsAfter.get(root.id);
+    const articleRoot = original.roots.find((unit: any) => unit.id === root.id);
+    if (!next || isWallUnitArticle(catalogArticleOf(articles, articleRoot))) {
+      continue;
+    }
+    const turn = (next.rotationY - root.rotationY + 360) % 360;
+    const degrees = Math.round(Math.min(turn, 360 - turn));
+    if (degrees === 0) {
+      continue;
+    }
+    const from = wallOf(root);
+    const to = wallOf(next);
+    const sentence =
+      `${from ? `the leg on the ${from}` : 'the leg'} turned by ${degrees}°` +
+      (to ? ` and now runs along the ${to}` : '');
+    legs.set(sentence, [...(legs.get(sentence) ?? []), rootLabel(root)]);
+  }
+  return [...legs].map(
+    ([sentence, roots]) => `${sentence} (root modules ${roots.join(', ')})`
+  );
 };
 
 // A row edit with its hints: the plan before and after the edit decides.
@@ -943,6 +998,9 @@ const withRowHints = async (
   const hints = [
     ...rowReachHints(groupId, before, after, room?.walls ?? []),
     ...movedUnitsAboveHint(groupId, before, after, context?.articles ?? []),
+    ...(result.gapClosed
+      ? turnedLegHints(groupId, before, after, rooms, context?.articles ?? [])
+      : []),
     ...(obstacles ? [obstacles] : []),
   ];
   return hints.length > 0 ? { ...result, hint: hints.join('; ') } : result;

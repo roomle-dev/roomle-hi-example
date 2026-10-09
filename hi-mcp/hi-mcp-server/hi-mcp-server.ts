@@ -173,7 +173,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'no geometry; a returned group is a valid create-or-replace-groups payload) and obstacles (what stands in the ' +
         'room, in the coordinates of the walls: objects - doors, windows, other furniture - with kind, outline ' +
         "(floor points [x, 0, z]) and bottomMm/topMm, a door or a window also with roomIndex, wall and fromEndMm (its span along that wall from the wall's end); " +
-        'and per group its root modules with id, outline and bottomMm/topMm). masterData (per library the root ' +
+        'and per group its root modules with id, outline and bottomMm/topMm). ' +
+        'When a door or window determines a placement, briefly name it and explain whether the final placement ' +
+        'keeps it clear, using the returned obstacle dimensions and final tool results. masterData (per library the root ' +
         'modules and the customer-facing attributes with their values; modules, attributes and values carry ' +
         'their desc) is returned only when included ' +
         'explicitly; the same compacted attribute vocabulary is searched by find-attributes. articleDescriptions ' +

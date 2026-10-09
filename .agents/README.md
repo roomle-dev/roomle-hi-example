@@ -83,6 +83,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Snapshot loss after a prompt test page navigates](bug-analysis/mcp-test-navigation-snapshot-loss.md) | Fixed — verified locally | 2026-10-09 |
 | [Reserve a final answer step in the store chat](bug-analysis/store-chat-final-answer-step.md) | Fixed — verified locally | 2026-10-09 |
 | [Readable article and wall names in row-edit feedback](bug-analysis/readable-row-edit-feedback.md) | Fixed — verified locally | 2026-10-09 |
 | [Preserve the outcome when a provider failure interrupts a chat turn](bug-analysis/chat-provider-failure-recovery.md) | Fixed locally — interrupted turns recovered; provider cause unconfirmed | 2026-10-09 |
@@ -98,6 +99,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Generate standard MCP prompt tests per session](feature-analysis/generated-mcp-standard-tests.md) | Implemented — verified locally | 2026-10-09 |
 | [Explain the door or window a placement keeps clear](feature-analysis/explain-opening-clearance.md) | Implemented — verified locally | 2026-10-09 |
 | [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open (step 1 done, step 2 open, step 3 on request) | 2026-10-07 |
 | [A reasoning effort per GPT chat model: implementation plan](feature-analysis/reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open (step 1 done) | 2026-10-07 |
@@ -135,10 +137,10 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 |---|---|
 | [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-09 |
 | [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — measure, then let the plan context carry every article's docking vectors and corner point, and remove the server's probe where the default variant suffices | 2026-10-07 |
-| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner that "test the mcp" shows, each with the module, team or repository responsible | 2026-10-09 |
+| [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner detected by the MCP prompt tests, each with the module, team or repository responsible | 2026-10-09 |
 | [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: the sink width of a sink unit, handleless fronts | 2026-10-09 |
 | [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — gpt-5.4-mini plans without reasoning: set an effort per Foundry deployment from the measured data and verify it; further measurement only on request | 2026-10-07 |
-| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the open gaps of running "test the mcp": the object-only render under software GL, the unrecorded hint, a run that loses its page, tests only written by hand, the snapshot save with a local planner | 2026-10-07 |
+| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL | 2026-10-09 |
 | [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — access control | 2026-10-09 |
 | [The planner's load result per input group](backlog/planner-load-outcome-per-group.md) — roomle-ui names per input group what it built, so `create-or-replace-groups` reports a group left out in `notLoaded` | 2026-10-07 |
 | [One planner undo step per tool call](backlog/one-undo-step-per-tool-call.md) — roomle-ui resolves a command after its follow-up reload and groups a tool call into one undo step; then the server drops its follow-up wait | 2026-10-07 |

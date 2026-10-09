@@ -13,7 +13,7 @@ A solved issue is removed entirely as soon as its implementation is verified, in
 working branch. Pending merges, releases or deployments do not keep it in the backlog; record
 that status and the release verification in its analysis until the fix lands.
 [`README.md`](../backlog/README.md) lists every item by area, one row each; the items themselves are
-the numbered issues of [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md),
+the numbered issues of [`mcp-issues.md`](../backlog/mcp-issues.md),
 [`library-issues.md`](../backlog/library-issues.md) and
 [`mcp-test-infrastructure-issues.md`](../backlog/mcp-test-infrastructure-issues.md), a README row, or
 a document of their own. Each item carries:

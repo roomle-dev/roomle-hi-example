@@ -39,6 +39,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Description |
 |---|---|---|
+| [generated-mcp-standard-tests.md](generated-mcp-standard-tests.md) | Implemented | MCP test infrastructure #4: generated standard coverage, checked session preparation, reporting and resume; verified locally |
 | [explain-opening-clearance.md](explain-opening-clearance.md) | Implemented | RML-18103 #63: whether and how the answer names the door or window that determined a placement |
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open | Feature analysis for Sales Configurator AI integration kickoff proposal |
 | [reasoning-effort-per-gpt-chat-model.md](reasoning-effort-per-gpt-chat-model.md) | Open | RML-18043, step by step: (1) the step log read the wrong usage field — fixed; (2) an effort per Foundry deployment from the measured data — gpt-5.4-mini does not reason by default — to be verified by unit tests and one live run per deployment; (3) detailed measurement only on request, with its time and token cost |

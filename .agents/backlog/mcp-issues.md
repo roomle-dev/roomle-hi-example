@@ -1,10 +1,12 @@
-# Open issues of the MCP test
+# Open MCP issues
 
-> **Type**: Backlog — what is still to be done about the planning the MCP server produces
+> **Type**: Backlog — defects and hardening in the MCP server, chat and planner
 > **Domain**: hi-mcp — `create-or-replace-groups`, `merge-article-into-group`, the command tools
 > (`hi-mcp/hi-mcp-server/tool-executors.ts`, `group-layout.ts`, `group-placement.ts`), the served
 > text (`hi-mcp-server.ts`), the chat (`hi-mcp/hi-mcp-chat`); roomle-ui defects the runs show
 > **Maintained by**: step 7 of [the testing skill](../skills/hi-mcp-testing.md#7-open-issues)
+
+These are issues in the MCP server, chat, planner or library data detected by the MCP prompt tests.
 
 Each issue names the problem, its cause, the to-do, the test of the fix and how to reproduce it; the
 overview names the module, team or repository responsible for the fix, and the model and the

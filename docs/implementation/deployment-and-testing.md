@@ -117,8 +117,33 @@ node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<pro
    plan XML, order data, and a saved plan snapshot id.
 
 Output in `--out` or `.temp/result/<time>-<provider>/`: `run.json` (turns, answers, tool calls,
-errors, the snapshot id), the plan context, the planner calls, the images, the plan XML and the
-order data. Exit code 1 on an error or without a snapshot id.
+errors, the snapshot id, `snapshotCaptured` and `navigations`), the plan context, the planner calls,
+the images, the plan XML and the order data. Exit code 1 on an error or without a snapshot id.
+Frame navigation is logged to `console.log` and stored with its timestamp, URL, main-frame flag,
+run phase (`loading`, `chat`, `snapshot`, `complete`) and whether only the URL fragment changed.
+
+### Snapshot persistence and repository ownership
+
+`getExternalObjectSnapshot()` collects images, XML and order data. The separate
+`saveExternalObjectSnapshot()` call persists the plan and returns `planSnapshotId`; local images
+and XML alone do not establish that the plan was saved.
+
+| Repository | Responsibility |
+|---|---|
+| roomle-hi-example | The prompt runner calls the planner API and stores its returned snapshot id and errors. The example's Save snapshot button uses the same API. |
+| roomle-ui | The planner saves the external-object and full-plan snapshots through `RoomlePlanner` and `RapiAccess.savePlanSnapshot()`. `RapiAccess._fetch()` owns endpoint version selection through `resolveRapiUrl()`. |
+| ligna-store | The planner and cart consume the same snapshot APIs supplied by roomle-ui. Endpoint selection belongs to the planner SDK. |
+| RoomleCore | Supplies the plan XML and scene data; the planner SDK sends the persistence request. |
+
+`/planSnapshots` requests use RAPI v2. In roomle-ui,
+`packages/common/src/utils/rapi-version.ts` switches a versioned base URL per request: only paths
+listed in `RAPI_V3_PATHS` use v3; plan snapshots are outside that list. Custom proxy base URLs
+without a version suffix are preserved. The test runner and host pages use the planner API
+without constructing or overriding the snapshot endpoint. The routing tests are in roomle-ui's
+`tests/unit/common/utils/rapi-version.spec.ts`.
+
+An API save failure is recorded as `saving the snapshot failed: …` in `run.json`. It is distinct
+from interrupted browser capture and does not by itself trigger the suite's navigation retry.
 
 ### The suite — `run-hi-mcp-tests.js`
 
@@ -127,11 +152,51 @@ node .agents/scripts/run-hi-mcp-tests.js [docs/test-prompts.json] [--out <dir>] 
 ```
 
 Reads `models` (provider and key, `"$NAME"` reads the environment), `plans` and `tests` from the test
-file, validates it, and runs every model × test as a child `run-hi-mcp-prompt.js`. A test directory
-that already holds `run.json` is skipped, so a rerun with the same `--out` resumes; `results.json` is
-rewritten after every run. The `expect` of a test is not evaluated by the script — the evaluation is
-part of the [testing skill](../../.agents/skills/hi-mcp-testing.md). With 3 models and about 30 tests a
-full run takes close to an hour.
+file, validates it, and runs every model × test as a child `run-hi-mcp-prompt.js`.
+
+The [testing skill](../../.agents/skills/hi-mcp-testing.md#3-tests) prepares a full session file
+from the selected fixed cases, six agent-generated standard cases (creation, placement,
+attributes, edits, undo/redo and a conversation), then the requested number of random cases.
+The agent writes their prompts and expectations before running them. A `jq` composition command
+checks the generated counts, coverage, expectations, plans, markings and unique ids. Cases stay
+in the session directory, and a resumed session uses the same prepared file. Runs limited to
+named tests add cases only when requested. The CLI executes supplied cases; it does not generate
+them. Direct execution on `docs/test-prompts.json` runs its fixed cases only.
+
+The suite repeats a
+run once when it produces no `run.json` or navigation interrupts its snapshot capture. A capture is
+interrupted when it has no saved snapshot id and a destroyed-context/navigation error, or when
+`snapshotCaptured` is false and a frame navigated during `chat` or `snapshot`. Initial loading and
+fragment-only URL changes do not trigger the latter condition. A missing saved snapshot id alone
+does not trigger a retry.
+
+Before the retry, the entire first directory is moved to `<NN>-<test id>.attempt-1/`. The retry uses
+the original plan and prompts in a fresh browser and writes to the normal test directory.
+`results.json` names that selected directory in `dir` and lists all attempt directories in
+`attempts`; reports evaluate the selected directory and retain the first attempt as diagnostics.
+A rerun with the same `--out` resumes an interrupted first attempt or an archived attempt awaiting
+its retry. Once both attempt directories exist, it keeps the second result, including a second
+failure, without launching another attempt. Other existing `run.json` results are skipped.
+
+`results.json` is rewritten after every run and preserves ids, titles and the random flag. The
+skill uses `standard-` ids and `Standard:` titles to distinguish generated standard cases without
+another result field. The `expect` of a test is evaluated by the agent, not by the script. The skill
+writes one report and PDF per session, with separate fixed, standard and random counts and the
+generated case JSON. The duration depends on the selected models, case count and number of turns.
+
+The test infrastructure has regression coverage independent of the MCP unit tests:
+
+```bash
+node --test .agents/scripts/tests/*.test.js
+```
+
+The suite tests run the actual runner with local fake prompt processes. The generated-case tests
+execute the skill's documented `jq` composition filter and cover counts, coverage, case metadata,
+fixed/standard/random execution, zero random cases, focused runs and resume without duplication.
+The browser tests use
+Playwright and intercepted test pages to navigate the main page and planner frame while a capture
+is pending. They make no model requests and require the existing Playwright installation in
+`.agents/scripts/`; the generated-case tests also require `jq`.
 
 When an interactive `npm start` holds ports 3000 and 3200, run with `EXAMPLE_PORT` and `HI_CHAT_PORT`
 set to free ports.

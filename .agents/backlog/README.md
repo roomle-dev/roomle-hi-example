@@ -5,12 +5,12 @@ per item. The backlog holds open work only. An item leaves it when its fix is in
 
 ## Planning by the MCP server
 
-Details, causes, tests and how to reproduce: [mcp-test-open-issues.md](mcp-test-open-issues.md), or
+Details, causes, tests and how to reproduce: [mcp-issues.md](mcp-issues.md), or
 the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| [64 — A free-standing wall is missing from the plan context](mcp-test-open-issues.md#64-a-free-standing-wall-is-missing-from-the-plan-context) | roomle-ui: list a free-standing wall in the obstacles | medium |
+| [64 — A free-standing wall is missing from the plan context](mcp-issues.md#64-a-free-standing-wall-is-missing-from-the-plan-context) | roomle-ui: list a free-standing wall in the obstacles | medium |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
 
@@ -50,10 +50,6 @@ Details: [mcp-test-infrastructure-issues.md](mcp-test-infrastructure-issues.md).
 | Item | To do | Priority |
 |---|---|---|
 | [1 — The object-only perspective render draws an empty frame under software GL](mcp-test-infrastructure-issues.md#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl) | roomle-ui: find why the frame is dropped under SwiftShader | low |
-| [2 — The hint of a tool result is not recorded](mcp-test-infrastructure-issues.md#2-the-hint-of-a-tool-result-is-not-recorded) | Log the `hint` and store it per tool call in `run.json` | medium |
-| [3 — A run whose page navigates after the chat stores no snapshot](mcp-test-infrastructure-issues.md#3-a-run-whose-page-navigates-after-the-chat-stores-no-snapshot) | Log the page's navigations; repeat a run without a plan snapshot id once | low |
-| [4 — The suite runs only the tests written by hand](mcp-test-infrastructure-issues.md#4-the-suite-runs-only-the-tests-written-by-hand) | Generated and random tests in the temporary test file of "test the mcp" (RML-18027) | low |
-| [5 — Saving the plan snapshot fails](mcp-test-infrastructure-issues.md#5-saving-the-plan-snapshot-fails) | Log the response body; check whether the v3 `planSnapshots` `POST` needs a signed request (roomle-ui) | low |
 
 ## Deployment, launcher and page sessions
 

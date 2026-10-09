@@ -12,19 +12,20 @@
  * sent as consecutive turns of one chat) and randomTests (how many random tests
  * the "test the mcp" skill adds; checked only). Before the first run it checks
  * the file, the images and the keys. A run goes
- * to <out>/<provider>/<NN>-<id>/ with its console.log; a run without run.json
- * (the launcher or the page did not come up) is repeated once, and a test
- * whose directory already holds run.json is skipped - a stopped session
- * continues with the same --out. <out>/results.json lists the runs and is
+ * to <out>/<provider>/<NN>-<id>/ with its console.log. Missing run.json or a
+ * navigation-interrupted capture gets one retry; the first attempt is kept
+ * in <NN>-<id>.attempt-1/. Other stored results and an exhausted retry are
+ * skipped on resume with the same --out. <out>/results.json lists the runs and is
  * rewritten after each one (default out: .temp/result/mcp-test-<local time>/).
  */
 
 import { spawn } from 'node:child_process';
 import { existsSync, openSync, closeSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { isNavigationInterrupted } from './mcp-test-navigation.js';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const RUN_SCRIPT = join(REPO_DIR, '.agents', 'scripts', 'run-hi-mcp-prompt.js');
@@ -203,11 +204,34 @@ const main = async () => {
       const startedAt = Date.now();
       let exitCode = null;
       let run = await readRun(dir);
-      if (!run) {
-        await mkdir(dir, { recursive: true });
-        for (let attempt = 0; attempt < 2 && !run && !stopped; attempt++) {
-          exitCode = await runOnce(args, join(dir, 'console.log'));
-          run = await readRun(dir);
+      const firstAttemptDir = `${dir}.attempt-1`;
+      let hasFirstAttempt = existsSync(firstAttemptDir);
+      if ((!run || isNavigationInterrupted(run)) && !stopped) {
+        if (existsSync(dir) && !hasFirstAttempt) {
+          await rename(dir, firstAttemptDir);
+          hasFirstAttempt = true;
+          run = undefined;
+        }
+        if (!existsSync(dir)) {
+          for (
+            let attempt = hasFirstAttempt ? 1 : 0;
+            attempt < 2 && !stopped;
+            attempt++
+          ) {
+            await mkdir(dir, { recursive: true });
+            exitCode = await runOnce(args, join(dir, 'console.log'));
+            run = await readRun(dir);
+            if (
+              (run && !isNavigationInterrupted(run)) ||
+              attempt === 1 ||
+              stopped
+            ) {
+              break;
+            }
+            await rename(dir, firstAttemptDir);
+            hasFirstAttempt = true;
+            run = undefined;
+          }
         }
       }
       if (stopped && !run) {
@@ -219,6 +243,9 @@ const main = async () => {
         title: test.title,
         random: test.random === true,
         dir: relative(outDir, dir),
+        attempts: (hasFirstAttempt ? [firstAttemptDir, dir] : [dir]).map(
+          (attemptDir) => relative(outDir, attemptDir)
+        ),
         exitCode,
         planSnapshotId: run?.planSnapshotId ?? null,
         errors: run ? run.errors : ['no run.json - see console.log'],

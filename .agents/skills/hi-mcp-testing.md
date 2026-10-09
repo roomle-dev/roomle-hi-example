@@ -34,6 +34,9 @@ mkdir -p "$SESSION"
 
 ### 3. Tests
 
+When continuing an existing session, reuse its prepared `tests.json` and go straight to
+[Run](#4-run). Do not copy the source file again or generate another set of cases.
+
 Write the temporary test file `$SESSION/tests.json`: `docs/test-prompts.json` with only the chosen
 models — by default every test and the `gpt-5-mini` model:
 
@@ -42,6 +45,8 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
 ```
 
 - A subset of the tests the user names: filter `.tests` by `id` the same way.
+- A run limited to named tests keeps that scope: generate no extra cases unless the user asks
+  for them. Set `STANDARD_COUNT=0` and the session's `randomTests` to 0 in that case.
 - Tests with an `image` stay only for models that read images. The chat backend decides that for
   the model the provider name resolves to: `readsImages(resolveChatModel(<provider>))` in
   [chat-config.ts](../../hi-mcp/hi-mcp-chat/chat-config.ts).
@@ -55,13 +60,40 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
   - For a model without images, leave the image tests out of the file and list them in the report
     as skipped.
 
+#### Generated standard tests
+
+A full "test the mcp" session adds six standard cases, written by the agent before the run, one
+for each coverage area below. Set `STANDARD_COUNT=6`. For a focused run, set it to the number of
+generated standard cases the user requests (0 when none are requested).
+
+| Coverage key | What the case checks |
+|---|---|
+| `create` | Create a group with a specific unit count and composition. |
+| `place` | Put or move a group at a named wall, corner or free spot that fits the plan. |
+| `attributes` | Apply a supported material, colour or dimension to the intended units. |
+| `edit` | Insert, exchange, delete or reorder units in an existing group. |
+| `history` | Change a group, undo that change and redo it over consecutive turns. |
+| `conversation` | Create a group and refine it over two or three turns, retaining earlier requirements. |
+
+Read the selected [plans](../../docs/test-prompts.md#plans) and the
+[catalog](../../docs/library-information/articles.md). Choose a request variant that the fixed
+cases do not cover; vary the plan, units, placement and attributes between sessions. An edit uses
+a saved plan with HI groups or creates its group in an earlier turn. Use plain user words, no
+tool names or ids ([ADR 0006](../decisions/0006-prompt-tests-assess-the-agent.md)).
+
+Write the cases to `$SESSION/standard-tests.json` as a list with the same fields as fixed cases:
+`id: "standard-<coverage key>-<slug>"`, `title: "Standard: <title>"`, `plan`, `prompt` and `expect`.
+Leave `random` absent or false. Write `expect` from the plan and catalog before execution, with
+checks for every conversation turn. When `STANDARD_COUNT=0`, write `[]`. These cases belong only
+to the session, not to `docs/test-prompts.json`.
+
 #### Random tests
 
-Every session adds `randomTests` new tests (in `$SESSION/tests.json`, copied from
+A full session adds `randomTests` new tests (in `$SESSION/tests.json`, copied from
 `docs/test-prompts.json`; 3 when it is missing, 0 for none), written by the agent that runs this
 skill. A number the user names goes into the session file:
 `jq '.randomTests = <n>' "$SESSION/tests.json" > "$SESSION/tests.tmp" && mv "$SESSION/tests.tmp" "$SESSION/tests.json"`.
-The random tests go only into `$SESSION/tests.json`, always at its end after the last fixed test —
+The random tests go only into `$SESSION/tests.json`, always at its end after the standard cases —
 never into `docs/test-prompts.json`.
 
 1. Draw a plan for each at random from the session file, so that sessions do not repeat themselves:
@@ -89,11 +121,45 @@ never into `docs/test-prompts.json`.
       "expect": "one group of three base cabinets against the left wall, walnut fronts" }]
    ```
 
-   and append them:
+   When `randomTests` is 0, write `[]` to `$SESSION/random-tests.json`.
 
-   ```bash
-   jq --slurpfile random "$SESSION/random-tests.json" '.tests += $random[0]' "$SESSION/tests.json" > "$SESSION/tests.tmp" && mv "$SESSION/tests.tmp" "$SESSION/tests.json"
-   ```
+#### Compose and check the session
+
+Append standard and random cases once, keeping fixed cases first and random cases last. This
+command checks counts, coverage, expectations, plan references, markings and unique ids. If it
+fails, correct the generated lists and rerun it; the original `tests.json` stays intact.
+
+```bash
+jq --slurpfile standard "$SESSION/standard-tests.json" \
+   --slurpfile random "$SESSION/random-tests.json" \
+   --argjson standardCount "$STANDARD_COUNT" '
+  . as $suite
+  | ($standard[0] + $random[0]) as $generated
+  | if any(.tests[]; (.id | startswith("standard-")) or .random == true)
+    then error("Session already prepared") else . end
+  | if ($standard[0] | length) != $standardCount
+       or ($random[0] | length) != (.randomTests // 3)
+    then error("Unexpected generated test counts") else . end
+  | if $standardCount == 6 and
+       ([$standard[0][].id | split("-")[1]] | sort) !=
+       ["attributes", "conversation", "create", "edit", "history", "place"]
+    then error("Standard coverage is incomplete") else . end
+  | if any($generated[]; (.expect | type) != "string" or (.expect | length) == 0
+       or $suite.plans[.plan] == null)
+    then error("Generated tests need expectations and valid plans") else . end
+  | if any($standard[0][]; (.id | startswith("standard-") | not)
+       or (.title | startswith("Standard: ") | not) or .random == true)
+       or any($random[0][]; (.id | startswith("random-") | not)
+       or (.title | startswith("Random: ") | not) or .random != true)
+    then error("Generated test markings are invalid") else . end
+  | .tests += $generated
+  | if ([.tests[].id] | unique | length) != (.tests | length)
+    then error("Duplicate test ids") else . end
+' "$SESSION/tests.json" > "$SESSION/tests.tmp" && mv "$SESSION/tests.tmp" "$SESSION/tests.json"
+```
+
+The runner validates prompt and image fields before starting. It executes the prepared file;
+it does not generate cases when called directly on `docs/test-prompts.json`.
 
 ### 4. Run
 
@@ -106,14 +172,22 @@ node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" 
 - Start it as **one background command** with a timeout of about 2 minutes per test and model (at
   most 2 hours).
 - Evaluate each test while the runner goes on. `runner.log` gets one line per finished run, and
-  `$SESSION/results.json` lists them: per run `model`, `test`, `dir`, `exitCode`, `planSnapshotId`,
-  `errors`.
-- If the time limit stops it, start the same command again: it skips every test whose directory
-  holds `run.json`.
+  `$SESSION/results.json` lists them: per run `model`, `test`, `dir`, `attempts`, `exitCode`,
+  `planSnapshotId`, `errors`.
+- If the time limit stops it, start the same command again. Stored results are skipped unless a
+  first attempt has an interrupted capture or no `run.json` and still has its one retry available.
 - Exit code 1 of a run is a result like any other (the model or the chat reported an error).
-- The runner repeats a run without `run.json` (the launcher or the page did not come up) once. A run
-  that still has none is in `results.json` with "no run.json"; the report lists it as not run, with
-  the last lines of its `console.log`.
+- The runner repeats a run without `run.json` once. It also repeats a capture interrupted by
+  navigation: no saved snapshot id with a destroyed-context/navigation error, or
+  `snapshotCaptured: false` with frame navigation during `chat` or `snapshot`. Initial loading,
+  fragment-only URL changes and a missing saved snapshot id alone do not trigger that retry.
+- The first attempt is preserved in `<NN>-<test id>.attempt-1/`; the retry uses the original plan
+  and prompts in a fresh browser and writes to the normal directory. `results.json` lists both
+  directories in `attempts` and selects the current result in `dir`. Evaluate that selected result;
+  read the first attempt for diagnostics. Both directories retain their own logs and artifacts.
+- The archive keeps the retry limit across resume, including a stop between archiving and retry.
+  After two attempts the runner retains the second result, including a failure. A result with no
+  `run.json` is listed as "no run.json"; the report lists it as not run with its console log.
 
 A run's directory is `$SESSION/<model>/<NN>-<test id>/`: `<model>` is the provider name, `<NN>` the
 test's position in the file.
@@ -128,11 +202,11 @@ Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json`
 | `top-image.png`, `perspective-image.png` | where the group stands, what it consists of |
 | `perspective-object-image.png` | the group alone — its fronts, appliances and materials, without the room |
 | `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
-| `run.json` | `plan`; per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId` |
+| `run.json` | `plan`; per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId`; `snapshotCaptured`; `navigations` (timestamp, phase, main frame, URL, `fragmentOnly`) |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
 | `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) and what stands in the room (`obstacles.objects[]`: `kind`, `outline`, `bottomMm`/`topMm`, a door or window with `wall` and `fromEndMm`; `obstacles.groups[].roots[]`: the room-space outline and height range of every root module) |
 | `planner-calls.json` | what the MCP server sent to the planner during the chat: `loadExternalObjectGroupLayout` — `args[0].posGroups[]` with the roots, their docking (`contextData.dockedRoots`) and attributes, and `repositioningData` (the placement); `externalObjectGroupOperation` — `args` = the command and its payload; `ok: false` with the page's `error` |
-| `console.log` | `[hi-mcp]` and `[hi-chat]` errors |
+| `console.log` | `[hi-mcp]` and `[hi-chat]` errors; `[run-hi-mcp-prompt] navigation` events |
 
 The evidence at a glance:
 
@@ -224,10 +298,11 @@ sections go straight into `report.md`.
 
 The session folder is shared as it is, e.g. zipped: `report.md` links only files inside it.
 
-The random tests are marked wherever they appear: the header row counts them, their titles start
-with "Random:" in the summary and in their run sections, each run section says so, and the section
-"Random tests" lists them with their JSON — a random test worth keeping can be copied from there into
-`docs/test-prompts.json`.
+The header row counts fixed, generated standard and random tests separately. Preserve the
+`Standard:` and `Random:` titles in the summary and run headings. Each generated run names its
+origin; the "Standard tests" section lists coverage keys, plans and case JSON, and "Random tests"
+lists the random cases with their JSON. A generated case worth keeping can be copied from there
+into `docs/test-prompts.json` with a fixed id/title and without the random flag.
 
 - Copy the source image of every image test into `$SESSION/images/`:
 
@@ -245,14 +320,27 @@ with "Random:" in the summary and in their run sections, each run section says s
 
 | Model | Planner | Tests | Pass | Partial | Fail | Bugs |
 |---|---|---|---|---|---|---|
-| gpt-5-mini | bo-test | 36 run (3 random), 0 skipped | … | … | … | … |
+| gpt-5-mini | bo-test | 44 run (35 fixed, 6 standard, 3 random), 0 skipped | … | … | … | … |
 
 ## Summary
 
 | # | Test | Verdict | Bug | Plan snapshot |
 |---|---|---|---|---|
 | 01 | [<title>](#01-<title-slug>) | pass | no | `ps_…` |
-| 34 | [Random: <title>](#34-random-<title-slug>) | fail | no | `ps_…` |
+| 36 | [Standard: <title>](#36-standard-<title-slug>) | pass | no | `ps_…` |
+| 42 | [Random: <title>](#42-random-<title-slug>) | fail | no | `ps_…` |
+
+## Standard tests
+
+Generated for this session by the agent that ran it; not in `docs/test-prompts.json`.
+
+| # | Coverage | Test | Plan | Verdict |
+|---|---|---|---|---|
+| 36 | create | [Standard: <title>](#36-standard-<title-slug>) | <plan name> | pass |
+
+```json
+<the standard tests as they are in tests.json>
+```
 
 ## Random tests
 
@@ -260,7 +348,7 @@ Generated for this session by the agent that ran it; not in `docs/test-prompts.j
 
 | # | Test | Plan | Verdict | Keep as a fixed test |
 |---|---|---|---|---|
-| 34 | [Random: <title>](#34-random-<title-slug>) | <plan name> | fail | yes — <what it covers that no fixed test does> |
+| 42 | [Random: <title>](#42-random-<title-slug>) | <plan name> | fail | yes — <what it covers that no fixed test does> |
 
 ```json
 <the random tests as they are in tests.json>
@@ -314,7 +402,16 @@ Plan: <plan name>
 
 …
 
-## 34 Random: <title>
+## 36 Standard: <title>
+
+> <prompt — one quote line per turn of a conversation>
+
+Plan: <plan name>
+
+- **Standard test**: generated for this session; coverage: <coverage key>
+- …
+
+## 42 Random: <title>
 
 > <prompt — one quote line per turn of a conversation>
 
@@ -343,7 +440,7 @@ jumping to the run sections, the images embedded at most 640 px wide (about 3 MB
 
 ### 7. Open issues
 
-Update [mcp-test-open-issues.md](../backlog/mcp-test-open-issues.md). The backlog is a to-do list,
+Update [mcp-issues.md](../backlog/mcp-issues.md). The backlog is a to-do list,
 not an archive: it holds only what is still to be done — no history of runs, findings or fixes.
 
 - add every bug and hardening candidate of the report that is not listed yet: the problem in the
@@ -385,14 +482,15 @@ The runner:
    (one `"<prompt>"` per turn of a `prompt` list),
    with its output in that directory's `console.log`. It runs one at a time (the ports are fixed),
    each with a fresh launcher and browser;
-3. skips a test whose directory holds `run.json`, and repeats a run that ends without one once;
+3. repeats a run without `run.json` or with navigation-interrupted capture once, preserving the
+   first attempt beside the selected result; resumes with the same `--out` and never exceeds two
+   attempts; other stored results are skipped;
 4. rewrites `<out>/results.json` after each run and prints one line per run;
 5. passes Ctrl+C (SIGINT/SIGTERM) on to the running run, which stops its servers, and ends.
 
 A run takes about 40 s for the launcher, the page and the snapshot, plus the model's chat time
-(gpt-5.4-mini 5–15 s, gpt-5-mini 30–60 s, gpt-6-astra up to 150 s per turn): the 33 tests of the
-file (one of them a conversation of seven turns) and the random tests take about an hour and a quarter for the three GPT
-models on a machine with a GPU against the local planner.
+(gpt-5.4-mini 5–15 s, gpt-5-mini 30–60 s, gpt-6-astra up to 150 s per turn). The session duration
+depends on the selected models, fixed and generated case counts, and conversation turns.
 A fix committed while the runner goes on takes effect from the next run, because every run
 starts a fresh server and chat; the report then says which runs ran with which build.
 
@@ -460,6 +558,7 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 ## Prerequisites
 
 - Node 20+
+- `jq` for preparing and checking the session test file
 - `npm install` in `.agents/scripts` (Playwright 1.55.0 — the version roomle-ui uses, so its cached
   Chromium is reused; on a machine without it: `npx playwright install chromium` in `.agents/scripts`;
   marked and sharp for the PDF of the report)

@@ -13,8 +13,10 @@ The repository root is an npm workspace root over `hi-mcp`, `hi-mcp/hi-mcp-serve
 over `hi-mcp-server`, `hi-mcp-chat` and `cf`. `hi-mcp-client` has no `package.json` — it is covered
 by the typecheck and the tests only.
 
-There are two lockfiles: the root `package-lock.json` (CI) and `hi-mcp/package-lock.json` (the
-Dockerfile and the launcher's `npm install`).
+The root `package-lock.json` pins all five workspaces for CI, local installs and the Docker image.
+The image copies every workspace manifest and installs only the production dependencies of
+`hi-mcp/hi-mcp-server`. The root `.dockerignore` limits the build context to those manifests,
+the lockfile, the shared TypeScript config and the server source.
 
 | Where | Script | Runs |
 | ----- | ------ | ---- |
@@ -46,10 +48,10 @@ page   ── wss://…/bridge?session=<name> ───────────�
 
 | File | Content |
 | ---- | ------- |
-| `hi-mcp/cf/wrangler.jsonc` | Worker `hi-mcp-poc`; container `HiMcpContainer` built from `./Dockerfile` with the build context `hi-mcp/`, instance type `basic`, at most 5 instances; Durable Object binding `HI_MCP`; `HI_MCP_STORE_URL` |
+| `hi-mcp/cf/wrangler.jsonc` | Worker `hi-mcp-poc`; container `HiMcpContainer` built from `./Dockerfile` with the repository root as build context, instance type `basic`, at most 5 instances; Durable Object binding `HI_MCP`; `HI_MCP_STORE_URL` |
 | `hi-mcp/cf/src/worker.ts` | routes `/mcp` and `/bridge` to the container of the `session` query parameter (`default` without one) |
-| `hi-mcp/cf/src/container.ts` | `defaultPort` 3000, `sleepAfter` 15 minutes, passes `PORT` and `HI_MCP_STORE_URL`; starts the container on the first request |
-| `hi-mcp/cf/Dockerfile` | `node:20-slim`; installs only the server workspace (`npm ci --workspace hi-mcp-server`), copies the server sources, `npm start` |
+| `hi-mcp/cf/src/container.ts` | `defaultPort` 3000, `sleepAfter` 15 minutes, passes `PORT` and `HI_MCP_STORE_URL` with `mcp_session` selected from the request or `default`; sets the link before SDK `containerFetch` handles startup and forwarding, including 503 for exhausted capacity and 429 for startup throttling |
+| `hi-mcp/cf/Dockerfile` | `node:20-slim`; installs from the root lockfile with `npm ci --workspace hi-mcp/hi-mcp-server --omit=dev`, copies the server sources, `npm start --workspace hi-mcp/hi-mcp-server` |
 
 - **One session, one container, one page.** The page passes its session as `mcp_session`, appended
   to `/bridge?session=`; MCP clients use `/mcp?session=`. A container keeps the page, the pending
@@ -80,9 +82,12 @@ is aliased to a stub).
 | `hi-mcp-server/tests/plan-history.test.ts` | the undo record and history events |
 | `hi-mcp-server/tests/page-bridge.test.ts` | handshake, one page, call correlation, timeouts, disconnect (with `fake-page-socket.ts`) |
 | `hi-mcp-server/tests/planner-api.test.ts` | the methods and timeouts; the client allow-list matches |
+| `hi-mcp-server/tests/example-launcher.test.ts` | starts the real page, MCP and chat with a dummy key on unused ports; SIGTERM/SIGINT to only the launcher PID release every port (POSIX; no model request) |
 | `hi-mcp-client/tests/browser-bridge.test.ts` | the page side of the bridge |
 | `hi-mcp-chat/tests/*.test.ts` | provider resolution, request handling, the step loop, the Mistral image middleware |
 | `cf/tests/worker.test.ts` | the Worker's routing |
+| `cf/tests/container.test.ts` | the named/default store link is set before container startup and preserved across bridge reconnects |
+| `cf/tests/container-startup-errors.test.ts` | the installed container SDK returns 503/429/500 for startup failures through the wrapper; startup errors do not escape as Worker exceptions |
 
 Many tests are named in [hi-mcp-behaviour.md](../hi-mcp-behaviour.md) as the guard of a decision or
 a message — a renamed test breaks those references.

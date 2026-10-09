@@ -6,7 +6,7 @@
 
 The HI MCP Server lets AI agents orchestrate HOMAG Intelligence (HI) object groups in live Roomle room-planner sessions. There is **one MCP server implementation** in this repository: the TypeScript server in `hi-mcp/hi-mcp-server` (`@modelcontextprotocol/sdk` + `ws` + zod, run via `vite-node`). It carries no client-specific code and serves no page: every client wires itself to it through environment variables, and the example page is served and opened by the launcher `minimal-hi-example/start.mjs` ([ADR 0002](../decisions/0002-one-mcp-server-configured-from-outside.md)).
 
-Clients of the same server: the standalone HI presets example (`minimal-hi-example/index.html`, started by the launcher) and the ligna-store, whose bridge starts together with its chat window — on any stage, with the `model`, `api_key` and `mcp_server` query parameters (its page-side bridge is a copy of `hi-mcp/hi-mcp-client/`).
+Clients of the same server: the standalone HI presets example (`minimal-hi-example/index.html`, started by the launcher) and the ligna-store, whose bridge starts on any stage with a valid `mcp_server` query parameter. `model` and `api_key` add its optional chat window; missing or invalid chat settings leave the bridge enabled. The store resolves one client/session identity for bridge and chat, using `mcp_session` or a fresh per-page ID (its page-side bridge is a copy of `hi-mcp/hi-mcp-client/`).
 
 ### Architecture
 
@@ -41,9 +41,9 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 #### 1. Launcher (`minimal-hi-example/start.mjs`)
 - **Build gate**: installs the `hi-mcp` workspace when `node_modules` is missing and runs the typecheck (`npm run typecheck` at the `hi-mcp` root) before anything starts. There is no compiled artifact: `vite-node` runs the TypeScript.
 - **Static serving**: serves `minimal-hi-example/` on port 3000 (configurable via `EXAMPLE_PORT`).
-- **Server spawn**: `npm start --workspace hi-mcp-server` in the `hi-mcp` root, with `HI_MCP_STORE_URL` pointing the "no page connected" error at the example URL and, unless set, `HI_MCP_PAGE_ORIGINS` naming the page's origin (`localhost` and `127.0.0.1` on the page port, plus `https://www.roomle.com`) — another `EXAMPLE_PORT` needs no extra configuration. `HI_MCP_PORT` moves the server and is passed to the page as `mcp_port`.
+- **Server spawn**: Node invokes the installed `vite-node` CLI with `server.ts` directly in the `hi-mcp-server` workspace, with `HI_MCP_STORE_URL` pointing the "no page connected" error at the example URL and, unless set, `HI_MCP_PAGE_ORIGINS` naming the page's origin (`localhost` and `127.0.0.1` on the page port, plus `https://www.roomle.com`) — another `EXAMPLE_PORT` needs no extra configuration. `HI_MCP_PORT` moves the server and is passed to the page as `mcp_port`.
 - **Browser auto-open**, skipped with `--no-open`.
-- Exits when the MCP server exits; SIGINT/SIGTERM kill the child and exit.
+- Exits when a server child exits; SIGINT/SIGTERM stop the direct MCP and optional chat children and exit, releasing their ports with the page port. The POSIX process regression in `hi-mcp-server/tests/example-launcher.test.ts` signals only the launcher PID and verifies all three ports can be bound again.
 
 #### 2. MCP server (`hi-mcp/hi-mcp-server/server.ts`)
 - **Port**: 3100 (`HI_MCP_PORT` / `PORT` env)
@@ -146,7 +146,7 @@ The ligna-store runs the same protocol via `hi-mcp/hi-mcp-client/` (browser-brid
 
 ```bash
 npm start                          # from the repository root: page + MCP server
-node minimal-hi-example/start.mjs --no-open   # same, without opening a browser
+npm start -- --no-open             # same, without opening a browser
 EXAMPLE_PORT=3101 npm start         # other page port
 npm run start:cf                    # page + the Cloudflare-hosted MCP server, no local server
 cd hi-mcp && npm test               # unit tests

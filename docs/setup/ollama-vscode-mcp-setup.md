@@ -110,7 +110,7 @@ the `servers` configuration above.
 1. In the Copilot Chat panel, switch the mode to **Agent Mode** (or ensure the **`⚡` Tools** button is enabled)
 2. Verify that **`hi-orchestrator`** is listed under attached tools
 3. Open the HI page the tools operate on and keep it open — the tools work on the planning session of the connected browser page, the server relays their planner calls into it:
-   - Cloud server: open the Roomle store with its chat parameters and a session name, e.g. `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>` with the `<name>` of your MCP configuration (see [Connecting an agent to the cloud MCP server](connect-agent-to-cloud-mcp.md))
+   - Cloud server: open the Roomle store with `mcp_server` and a session name, e.g. `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>` with the `<name>` of your MCP configuration (see [Connecting an agent to the cloud MCP server](connect-agent-to-cloud-mcp.md))
    - Local server: open `http://localhost:3000/?mcp=true` (started with `npm start` in the repository root, which opens this page automatically)
 4. Enter your kitchen planning prompt—VS Code Copilot will route the inference directly to your local Ollama model while calling HI-specific functions on your MCP server!
 
@@ -149,7 +149,7 @@ If `hi-orchestrator` doesn't appear under attached tools:
 
 If tool calls to the HI MCP server fail:
 1. Verify the server is accessible from your network
-2. Check that the HI page is open in your browser — tool calls execute in the connected page: the local server via the WebSocket bridge (the example page at `http://localhost:3000/?mcp=true`), the cloud server via the store page opened with its chat parameters and the session name of your server URL
+2. Check that the HI page is open in your browser — tool calls execute in the connected page: the local server via the WebSocket bridge (the example page at `http://localhost:3000/?mcp=true`), the cloud server via the store page opened with `mcp_server` and the session name of your server URL
 3. Ensure you have the correct permissions and session state
 
 ---

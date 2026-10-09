@@ -15,8 +15,8 @@ The MCP server is the TypeScript implementation from
 layer is `@modelcontextprotocol/sdk` with zod tool schemas, and the page bridge
 is a WebSocket. It is used as-is; the launcher only wires environment
 variables ([ADR 0002](../.agents/decisions/0002-one-mcp-server-configured-from-outside.md)).
-The same server also serves the ligna-store as its client — its chat window,
-opened with the `model`, `api_key` and `mcp_server` query parameters — and it is
+The same server also serves the ligna-store as its client — its bridge starts with a valid
+`mcp_server` query parameter; `model` and `api_key` add the optional chat window — and it is
 the one deployed to Cloudflare ([cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md));
 [azure-mcp-server.md](setup/azure-mcp-server.md) is the runbook for Azure App Service.
 
@@ -152,9 +152,13 @@ need a deploy first: a push to `release/cloudflare`, or `npm run deploy:cf`. Det
 
 The launcher installs and typechecks the `hi-mcp` workspace (the build gate),
 serves the example, starts the MCP server, and opens the example in the
-default browser at `http://localhost:3000/?mcp=true` (pass `--no-open` to
-skip that). If port 3000 is taken (the ligna-store dev server uses it too),
+default browser at `http://localhost:3000/?mcp=true` (`npm start -- --no-open`
+skips that). If port 3000 is taken (the ligna-store dev server uses it too),
 start with another page port: `EXAMPLE_PORT=3101 npm start`.
+
+Ctrl+C or SIGTERM to the launcher stops the example page, the local MCP server and the optional
+chat backend. The launcher starts each server directly through Node and the workspace's installed
+`vite-node` CLI, so termination reaches the server process itself and releases its port.
 
 Select a preset (or enter a library id) in the top bar and keep the tab
 open — the server terminal logs `page connected`.

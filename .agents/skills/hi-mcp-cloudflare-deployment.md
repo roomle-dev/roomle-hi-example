@@ -33,7 +33,7 @@ npx wrangler deploy
 or, from the repository root, `npm run deploy:cf` (the same command; arguments after `--` go to
 wrangler, e.g. `npm run deploy:cf -- --dry-run` builds the image without deploying).
 
-- rebuilds the container image from the `hi-mcp/` context and replaces the running deployment
+- rebuilds the container image from the repository-root context and replaces the running deployment
   **in place** — same Worker, same container app, **same URL**; connectors and store links keep
   working
 - wrangler requires **Node 22+** (on this machine: put `~/.volta/bin` first on the PATH; the
@@ -64,9 +64,9 @@ https://<worker name>.<account subdomain>.workers.dev/mcp
 
 1. `initialize` over the public URL → HTTP 200 (the exact curl command is in
    [docs/setup/cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md))
-2. open the store with its chat parameters (`store.stage=INT&model=<model>&api_key=<key>&mcp_server=<the URL>`
-   — the store starts its bridge only with its chat window) → `npx wrangler tail` shows
-   `page connected`
+2. open the store with `store.stage=INT&mcp_server=<the URL>&mcp_session=<name>` and start planning
+   (no chat model or key needed) → `npx wrangler tail` shows `page connected`;
+   `get-plan-context` on `/mcp?session=<name>` returns that planner's context
 3. or, without the store: `npm run start:cf` opens the HI example against the deployment
    (session = the OS user name, page port 3000 only) → the page log shows
    `MCP connected to the MCP server`, and `get-plan-context` on the printed MCP URL returns the
@@ -74,6 +74,10 @@ https://<worker name>.<account subdomain>.workers.dev/mcp
 
 The page's WebSocket upgrade passes through the Worker into the container; the fallback, should it
 ever stop passing, is in the [Cloudflare ADR](../decisions/0004-hi-mcp-server-on-cloudflare-containers.md).
+
+For session-routing or bridge changes, run the [live session checks](../../docs/setup/cloudflare-mcp-server.md#live-session-checks): independent pages/devices, shared-session ownership and reconnect/handoff, and five-session capacity/recovery. Authenticate to the hosted store first. Dummy chat keys and direct MCP requests suffice; do not submit model prompts just to check isolation. A synthetic planner probe checks the live server but does not establish hosted-store plan changes or chat feedback.
+
+Container startup belongs to SDK `containerFetch`, after setting the session-specific `HI_MCP_STORE_URL`. It returns 503 for exhausted capacity, 429 for startup throttling, and 500 for other startup failures. Keep that error handling in the request path; `cf/tests/container-startup-errors.test.ts` exercises the installed SDK with failing startup.
 
 ## Verifying a workflow or lockfile change on Linux
 
@@ -116,7 +120,7 @@ npx wrangler containers delete <ID>        # stop and remove the container appli
 | Symptom | Fix |
 | ------- | --- |
 | wrangler refuses to start | Node < 22 on the PATH — use `~/.volta/bin` first |
-| image build: `npm ci` … `lock file's <pkg>@<a> does not satisfy <pkg>@<b>` | the image installs from `hi-mcp/package-lock.json`, which `npm install` never updates (`hi-mcp/` is a workspace of the repository root, so npm writes the root lockfile). Regenerate it outside the root workspace, as described in [Refreshing the image lockfile](../../docs/setup/cloudflare-mcp-server.md#refreshing-the-image-lockfile) |
+| image build: `npm ci` … `lock file's <pkg>@<a> does not satisfy <pkg>@<b>` | a workspace manifest and the root `package-lock.json` disagree — update the root lockfile and verify the Linux image build; see [Updating image dependencies](../../docs/setup/cloudflare-mcp-server.md#updating-image-dependencies) |
 | `Cannot resolve host` / a client refuses the URL | URL built from the account ID instead of the account subdomain — take the URL from the deploy output |
 | deploy fails with "different durable object namespace" | orphaned container app from an earlier delete — `wrangler containers list` + `containers delete` |
 | deploy uploads the Worker, then `Unauthorized` | **nothing to delete** — the container-app update step lost authorization. In order: retry the deploy → fresh `wrangler logout && wrangler login` → check the container app state in the dashboard → fall back to an API token: dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template, then `CLOUDFLARE_API_TOKEN=<token> npx wrangler deploy` |
@@ -125,7 +129,7 @@ npx wrangler containers delete <ID>        # stop and remove the container appli
 | GitHub deploy step is not authenticated | the secrets are missing in the `cloudflare` environment, or the run is not on `release/cloudflare` (the environment's branch rule) |
 | deploy rejects `"instance_type": "basic"` | change to `standard-1` in `wrangler.jsonc` |
 | first request takes ~10 s | the container boots on demand after sleeping — expected |
-| agent gets "No HI page connected" | no page is connected to this session — open the store with its chat parameters and the same session (`mcp_session=<name>` on the page, `?session=<name>` in the client URL). The URL the agent names (`HI_MCP_STORE_URL`, `wrangler.jsonc` vars) lacks the chat parameters, so its page does not connect ([backlog](../backlog/deployment-and-session-issues.md#1-a-store-page-opened-for-an-external-agent-never-connects)) |
+| agent gets "No HI page connected" | no page is connected to this session — open the suggested store URL and start planning. `HiMcpContainer.fetch` adds the requesting session, or `mcp_session=default` for an unnamed agent, to `HI_MCP_STORE_URL` before container startup; the page needs no chat credentials. Keep the tab open |
 
 ## Where the details live
 

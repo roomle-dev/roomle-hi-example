@@ -19,7 +19,7 @@ record.
 | `HOST` | Bind address | all interfaces |
 | `HI_MCP_PAGE_ORIGINS` | Comma-separated origins allowed for `/bridge` and for CORS on `/mcp` | `http://localhost:3000`, `http://127.0.0.1:3000`, `https://www.roomle.com` |
 | `HI_MCP_TLS_CERT` + `HI_MCP_TLS_KEY` | Serve HTTPS and WSS instead of HTTP and WS | off |
-| `HI_MCP_STORE_URL` | The page URL named in the "No HI page connected" error | `http://localhost:3000/?store.stage=INT` |
+| `HI_MCP_STORE_URL` | The page URL named in the "No HI page connected" error | `http://localhost:3000/?store.stage=INT&mcp_server=http://localhost:3100`; the MCP port and HTTP/TLS scheme follow the server configuration |
 
 A stray `PORT` in the environment moves the server — the launcher and the pages assume 3100 unless
 `HI_MCP_PORT` is set.

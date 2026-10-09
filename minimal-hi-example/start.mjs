@@ -29,6 +29,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { userInfo } from 'node:os';
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -174,20 +175,24 @@ const startExampleServer = () =>
     server.listen(STATIC_PORT, () => resolve(server));
   });
 
+const startServer = (workspace, entrypoint, env) => {
+  const cwd = join(HI_MCP_DIR, workspace);
+  const cli = createRequire(join(cwd, 'package.json')).resolve(
+    'vite-node/vite-node.mjs'
+  );
+  return spawn(process.execPath, [cli, entrypoint], {
+    cwd,
+    stdio: 'inherit',
+    env,
+  });
+};
+
 const startMcpServer = () => {
   const childEnv = { ...process.env, HI_MCP_STORE_URL: EXAMPLE_URL };
   if (!childEnv.HI_MCP_PAGE_ORIGINS) {
     childEnv.HI_MCP_PAGE_ORIGINS = `http://localhost:${STATIC_PORT},http://127.0.0.1:${STATIC_PORT},https://www.roomle.com`;
   }
-  const mcpServer = spawn(
-    npmCommand,
-    ['start', '--workspace', 'hi-mcp-server'],
-    {
-      cwd: HI_MCP_DIR,
-      stdio: 'inherit',
-      env: childEnv,
-    }
-  );
+  const mcpServer = startServer('hi-mcp-server', 'server.ts', childEnv);
   mcpServer.on('exit', (code) => {
     if (!shuttingDown) {
       process.exit(code ?? 0);
@@ -206,15 +211,7 @@ const startChatServer = () => {
   if (!childEnv.HI_CHAT_PAGE_ORIGINS) {
     childEnv.HI_CHAT_PAGE_ORIGINS = `http://localhost:${STATIC_PORT},http://127.0.0.1:${STATIC_PORT}`;
   }
-  const chatServer = spawn(
-    npmCommand,
-    ['start', '--workspace', 'hi-mcp-chat'],
-    {
-      cwd: HI_MCP_DIR,
-      stdio: 'inherit',
-      env: childEnv,
-    }
-  );
+  const chatServer = startServer('hi-mcp-chat', 'chat-server.ts', childEnv);
   chatServer.on('exit', (code) => {
     if (!shuttingDown) {
       process.exit(code ?? 0);

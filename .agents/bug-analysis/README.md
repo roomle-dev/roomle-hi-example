@@ -37,6 +37,10 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 |---|---|---|
 | [Readable article and wall names in row-edit feedback](readable-row-edit-feedback.md) | Fixed | RML-18103 #62 |
 | [Preserve the outcome when a provider failure interrupts a chat turn](chat-provider-failure-recovery.md) | Fixed locally | RML-18103 #38 |
+| [Connect a store planner to an external MCP agent without built-in chat](external-agent-store-bridge.md) | Fixed locally | Deployment/session backlog #1 |
+| [Build the Cloudflare MCP image from the repository lockfile](cloudflare-image-root-lockfile.md) | Fixed locally | Deployment/session backlog #4 |
+| [Forward launcher flags through the root npm scripts](root-launcher-flags.md) | Fixed locally | Deployment/session backlog #5 |
+| [Stop the example servers when the launcher receives SIGTERM](launcher-sigterm-shutdown.md) | Fixed locally | Deployment/session backlog #6 |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

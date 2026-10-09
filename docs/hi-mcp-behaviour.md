@@ -313,6 +313,13 @@ Decided with the backlog of the MCP test, implemented on the user's go.
   change in the planner. The first planner step of a call ends redo, as the planner drops its redo
   future with it — also when the call leaves no step in the end (a probe load undone, then a failed
   load).
+- **The store connection** starts when its planner is available and `mcp_server` is valid,
+  independently of chat settings. `mcp_session` selects a shared session; without it the store
+  generates one per page. Bridge and optional chat resolve one client/session identity, so the
+  chat's `client` parameter owns exactly that planner. External agents use the same session
+  without a browser `client` parameter. Cloudflare supplies `HI_MCP_STORE_URL` with the request's
+  session (or `default`) before container startup, so the no-page error directs the user to the
+  agent's session without requiring chat credentials.
 - **The HI chat** (`hi-mcp-chat`) is an MCP client of this server. It gives the model a
   five-sentence system prompt (`CHAT_SYSTEM_PROMPT`, `chat-config.ts`) — the first names what HI
   plans, "kitchens, wardrobes, living room and utility furniture, all made of articles", not "a
@@ -910,7 +917,7 @@ Infrastructure checks, kept. The page allow-list and the origin check are securi
 
 | Message | When |
 |---|---|
-| "No HI page connected. Have the user open the ligna-store in their browser at … and start planning there …" | no page on the bridge |
+| "No HI page connected. Have the user open the ligna-store in their browser at … and start planning there …" | no page on the bridge; Cloudflare's configured store link carries the requesting session or `mcp_session=default` for an unnamed client. The local fallback includes `mcp_server` with its configured port and HTTP/TLS scheme. The store starts its bridge independently of chat |
 | "The connected page (…) runs an outdated HI MCP page bridge that expects tool calls. Have the user update the page bridge to protocol 2 … and reload the page." | a page with an old bridge |
 | "Planner call '…' timed out after …ms" | a planner call exceeded its timeout (§4). The page is not told to stop, so a plan change may still complete: read the plan before sending it again |
 | "The demo page disconnected" | the page left during a call |

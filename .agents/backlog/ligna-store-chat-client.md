@@ -8,6 +8,13 @@
 The store runs its own chat against the same MCP server as the example chat. Where the two differ,
 the store loses what the example already handles.
 
+## Overview
+
+| # | Issue | To do |
+|---|---|---|
+| 1 | [The images of `get-plan-images` reach Mistral as base64 text](#1-the-images-of-get-plan-images-reach-mistral-as-base64-text) | Move tool images into a user message with the example's middleware |
+| 2 | [A turn can end without an answer](#2-a-turn-can-end-without-an-answer) | Reserve the final step for the model's answer |
+
 ---
 
 ## 1. The images of `get-plan-images` reach Mistral as base64 text

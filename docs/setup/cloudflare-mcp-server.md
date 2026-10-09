@@ -17,7 +17,7 @@ store page (anyone's browser) ──wss──> …/bridge
 ```
 
 The container runs the tools and relays their planner calls into the connected ligna-store page
-(opened with its chat parameters and `mcp_server`) — the planning session itself lives in that page.
+(opened with `mcp_server` and a matching `mcp_session`) — the planning session itself lives in that page.
 Modeled on roomle-model-exporter's `cf/` deployment. The decisions and the rejected alternatives:
 [ADR 0004 — the server on Cloudflare Containers](../../.agents/decisions/0004-hi-mcp-server-on-cloudflare-containers.md),
 [ADR 0005 — deploy from `release/cloudflare`](../../.agents/decisions/0005-deploy-hi-mcp-from-release-cloudflare.md).
@@ -129,11 +129,11 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST https://<worker>.<subdomain>.wo
 2. Watch the server console: `npx wrangler tail` (in `hi-mcp/cf`) — the first request boots
    the container and must show `HI group orchestrator MCP server ready`.
 
-3. Open the store with its chat parameters — the store starts its bridge only together with its
-   chat window, so it needs `model` and `api_key` besides `mcp_server` — and a session name:
+3. Open the store with `mcp_server` and a session name, then start planning. The bridge needs
+   no chat model or API key:
 
 ```text
-https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<name>
+https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<name>
 ```
 
 4. `wrangler tail` shows `page connected` — the page's WebSocket reaches the container through
@@ -146,23 +146,56 @@ https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key
 
 ## The handout for colleagues (parallel use, per session)
 
-The store chat generates a fresh session ID per page automatically. Two tabs opened with the same
+The store bridge generates a fresh session ID per page automatically. Two tabs opened with the same
 store URL, without `mcp_session`, get separate containers and independent planners. At most five
 containers can run at once; when capacity is exhausted, the chat stays disabled and reports that
-it cannot connect. An external MCP client that must share a page's planner still needs a known
+it cannot connect. The bridge retries every three seconds. Closing a page does not free its
+container immediately: it sleeps after 15 minutes without activity. Once a slot is available,
+the waiting page can connect to its own planner.
+
+Container startup and forwarding use the SDK's `containerFetch`. Exhausted capacity returns HTTP
+503, startup throttling returns 429, and other startup failures return 500. Browser WebSocket
+errors do not expose that HTTP response body, so the chat reports a connection failure rather
+than a capacity-specific error.
+
+An external MCP client that must share a page's planner still needs a known
 session name: supply `mcp_session=<name>` on that store page and use the same name in the client URL.
 
 | Link | Where |
 | ---- | ----- |
-| Store page (browser, keep open) | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<name>` |
+| Store page (browser, keep open) | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<name>` |
 | MCP server (for their client's connector) | `https://<worker>.<subdomain>.workers.dev/mcp?session=<name>` |
 
-Without a session name, an external MCP client still connects to `default`, but a store chat page
-does not. The store page's bridge reconnects on its own after the
+Without a session name, an external MCP client connects to `default`; use `mcp_session=default`
+to share its planner. A store URL without `mcp_session` generates its own session. Before starting
+each container, `HiMcpContainer.fetch` adds the request's session (or `default`) to `HI_MCP_STORE_URL`.
+The no-page error therefore suggests a store link for that agent's container, preserving the
+configured stage and server. Chat is optional: add `model` and `api_key` to show the store chat.
+The store page's bridge reconnects on its own after the
 container slept; the first request after a sleep takes ~10 s (container boot — one boot per
 session). Which setup needs which URL parameters — local server, deployed store, cloud server,
 parallel sessions — is covered by the **setup matrix** in the
 [PoC README](../../hi-mcp/hi-mcp-server/README.md#the-setup-matrix-which-setup-needs-which-url-parameters).
+
+### Live session checks
+
+Use the hosted test store and the public Worker, with temporary plans. Authenticate to the store
+before starting; a blank page with HTTP 401 is its Basic Auth challenge, not a bridge failure.
+Chat controls can be checked with a supported `model` and a dummy `api_key` without submitting a
+prompt. Direct MCP calls with the page's captured `session` and `client` verify the planner and
+browser CORS without sending plan data to an AI provider.
+
+| Check | Expected result |
+| --- | --- |
+| Same store URL in two pages, without `mcp_session`; repeat on two devices | Different generated sessions; both receive bridge `ready`. A reversible edit and undo in one plan leave the other unchanged. Cross-client requests return 409. |
+| Two pages with the same explicit `mcp_session` | The owner keeps working; the second bridge closes with 4409, shows the occupied message, disables chat and stops automatic retries. |
+| Reconnect and owner handoff | Reconnecting within a page keeps its identity. After the owner disconnects, another page may become the owner; pending calls fail and the old client's requests return 409. Reloading a page generates a new identity. |
+| Five controlled sessions and a sixth | The first five stay usable. The sixth has no `ready` or other planner's context and keeps chat disabled. After a controlled session closes and its container sleeps, the sixth connects to its own planner. |
+
+Record Worker/image and store versions, session/client IDs, close codes, HTTP and MCP results,
+plan states and visible feedback. A server test using synthetic planner replies verifies routing
+and ownership; checking actual plan changes and chat feedback requires the real hosted store.
+Close the test pages and stop polling their sessions after the checks so their containers sleep.
 
 ## Browser clients (CORS)
 
@@ -218,34 +251,34 @@ Optionally verify locally first: `npm test` in `hi-mcp/`, or the docker build be
 The exact image Cloudflare builds runs locally:
 
 ```bash
-cd hi-mcp
-docker build -f cf/Dockerfile -t hi-mcp-poc-cf .
-docker run -d --name hi-mcp-cf-test -p 3101:3000 hi-mcp-poc-cf
+# from the repository root
+docker build --platform linux/amd64 -f hi-mcp/cf/Dockerfile -t hi-mcp-poc-cf .
+docker run -d --platform linux/amd64 --name hi-mcp-cf-test -p 3101:3000 hi-mcp-poc-cf
 docker logs -f hi-mcp-cf-test      # Local: http://localhost:3000/mcp
 # then point store/MCP client at http://127.0.0.1:3101 (mcp_server=http://127.0.0.1:3101)
 docker rm -f hi-mcp-cf-test
 ```
 
-## Refreshing the image lockfile
+## Updating image dependencies
 
-The image installs from `hi-mcp/package-lock.json`, not from the repository-root lockfile.
-`hi-mcp/` is a workspace of the repository root, so an `npm install` inside `hi-mcp/` writes only
-the root lockfile, and `hi-mcp/package-lock.json` goes stale after every dependency change in a
-`hi-mcp` workspace. The image copies only the manifests of the `hi-mcp` root, `hi-mcp-server` and
-`cf` (`cf/Dockerfile`), so a stale `hi-mcp-chat` entry does no harm; a change in one of the three
-fails the image build with *"`npm ci` can only install packages when your package.json and
-package-lock.json … are in sync"*. To refresh the file, regenerate it outside the
-root workspace, starting from the current file so that unchanged pins stay the same:
+The image and CI use the repository-root `package-lock.json`. Wrangler's `image_build_context`
+is `../..` relative to `hi-mcp/cf/wrangler.jsonc`, so every `COPY` path is relative to the repository
+root. The Dockerfile copies all five workspace manifests before running
+`npm ci --workspace hi-mcp/hi-mcp-server --omit=dev`; the workspace path selects the server alone.
+Chat/provider SDKs, Cloudflare tooling and development packages stay out of the runtime image.
+The root `.dockerignore` includes only the manifests, lockfile, shared TypeScript config and server
+source, keeping host dependencies and other repository content outside the context.
+
+After changing a workspace dependency, update the root lockfile:
 
 ```bash
-cd hi-mcp
-T=$(mktemp -d) && mkdir -p $T/hi-mcp-server $T/hi-mcp-chat $T/cf
-cp package.json package-lock.json $T/
-for w in hi-mcp-server hi-mcp-chat cf; do cp $w/package.json $T/$w/; done
-(cd $T && npm install --package-lock-only --ignore-scripts) && cp $T/package-lock.json .
+# from the repository root
+npm install --package-lock-only --ignore-scripts
 ```
 
-Then check the result with the local docker build above and commit the updated lockfile.
+Keep the manifests and root lockfile in the same commit. Check the local image build above and
+the [Linux CI steps](../../.agents/skills/hi-mcp-cloudflare-deployment.md#verifying-a-workflow-or-lockfile-change-on-linux).
+The deploy workflow builds this same image after its typechecks and tests.
 
 ## Teardown (the container app needs its own delete)
 
@@ -265,7 +298,7 @@ npx wrangler containers delete <ID>  # stop and remove the container application
 | Symptom | Cause / fix |
 | ------- | ----------- |
 | wrangler refuses to start | Node < 22 on the PATH — use `~/.volta/bin` first |
-| image build: `npm ci` … `Invalid: lock file's <pkg>@<a> does not satisfy <pkg>@<b>` | `hi-mcp/package-lock.json` is stale — see [Refreshing the image lockfile](#refreshing-the-image-lockfile) |
+| image build: `npm ci` … `Invalid: lock file's <pkg>@<a> does not satisfy <pkg>@<b>` | a workspace manifest and the root `package-lock.json` disagree — update the root lockfile and verify the Linux build; see [Updating image dependencies](#updating-image-dependencies) |
 | deploy uploads the Worker, then `Unauthorized` | **nothing to delete** — the container-app update step lost authorization (the Worker upload itself succeeded). In order: retry the deploy → fresh `wrangler logout && wrangler login` → check the container app state in the dashboard (Containers → `hi-mcp-poc-himcpcontainer`) → fall back to an API token: dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template, then `CLOUDFLARE_API_TOKEN=<token> npx wrangler deploy`. Until a deploy fully succeeds, the running container keeps the previous image |
 | GitHub deploy uploads the Worker, then `Unauthorized`/403 at the container step | the API token lacks **Account · Containers · Edit** — edit the token in Cloudflare, then "Re-run jobs" |
 | GitHub run, test step: `Cannot find module @rollup/rollup-linux-x64-gnu` (or another `…-linux-x64…` binary) | the root `package-lock.json` lost the Linux binaries ([npm/cli#4828](https://github.com/npm/cli/issues/4828): a lockfile written from a macOS `node_modules`). Re-resolve the package on Linux with `npm update <package> --package-lock-only --ignore-scripts` in `node:22` (`--platform linux/amd64`), then run the workflow's steps in the same container — see [Verifying a workflow or lockfile change on Linux](../../.agents/skills/hi-mcp-cloudflare-deployment.md#verifying-a-workflow-or-lockfile-change-on-linux) |
@@ -274,8 +307,8 @@ npx wrangler containers delete <ID>  # stop and remove the container application
 | deploy: "already an application … different durable object namespace" | orphaned container app from an earlier `wrangler delete` — `wrangler containers list` + `wrangler containers delete <ID>` |
 | deploy rejects the config | `instance_type` naming — use `standard-1`; or Containers require the Workers Paid plan |
 | First request is slow (~10 s) | the container boots on demand after sleeping — expected, not an error |
-| `page connected` never appears in `wrangler tail` | (a) the store URL lacks `model`, `api_key` or `mcp_server` — the store starts its bridge only with its chat window, (b) the page origin is not in `HI_MCP_PAGE_ORIGINS`, (c) the WebSocket upgrade no longer passes the Worker — the fallback is in the [Cloudflare ADR](../../.agents/decisions/0004-hi-mcp-server-on-cloudflare-containers.md) |
-| Tool error `No HI page connected` | no page is connected to this session — open the store with its chat parameters, and for an external client with `mcp_session=<name>` matching the client's `?session=<name>` |
+| `page connected` never appears in `wrangler tail` | (a) the store URL lacks a valid `mcp_server` or its planner is not started, (b) the page origin is not in `HI_MCP_PAGE_ORIGINS`, (c) the WebSocket upgrade does not pass the Worker — the fallback is in the [Cloudflare ADR](../../.agents/decisions/0004-hi-mcp-server-on-cloudflare-containers.md) |
+| Tool error `No HI page connected` | no page is connected to this session — open the suggested store URL and start planning; its `mcp_session` matches the client's `?session=<name>` or `default` when absent. Keep the tab open |
 | The store chat reports the planner in use (WebSocket close 4409) | another page holds this session's planner (two pages with the same `mcp_session`) — the first page keeps it; close it or drop `mcp_session` |
 | Tool error `... is not a function` | the `bo-test` UI lacks the HI planner APIs — same as in every other setup |
 | `initialize` returns 406 | the client must accept `application/json, text/event-stream` — all MCP SDK clients do |

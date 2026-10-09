@@ -46,10 +46,18 @@ The allow-list is `getExternalObjectPlanContext`, `loadExternalObjectGroupLayout
 `resolveBridgeUrls` / `resolveBridgeUrl` turn an `http(s)` server URL into `ws(s)`, strip a trailing
 slash, and append `/bridge`.
 
+The store's `Planner.vue` resolves `mcpOptions` from `mcp_server` and `mcp_session`, then starts
+the bridge when its planner is available. The resolver generates one `clientId` and uses it as
+the session when none is supplied. Optional `chatOptions` reuse that identity and add a supported
+model, API key and image support; only then is the chat window started. Missing or invalid chat
+settings leave the bridge enabled. A page without a valid `mcp_server` starts no bridge, including
+on INT. Unmount and locale reload dispose the bridge and optional chat together.
+
 ## The launcher — `minimal-hi-example/start.mjs`
 
-`npm start` at the repository root runs `node minimal-hi-example/start.mjs` with the positional
-arguments; flags must be passed to the script directly (`node minimal-hi-example/start.mjs --no-open`).
+The root `start`, `dev` and `start:cf` scripts invoke `node minimal-hi-example/start.mjs` directly,
+with `--dev` or `--cf` for those modes. npm forwards positional arguments and flags after `--`,
+for example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`.
 
 ### Arguments
 
@@ -73,14 +81,20 @@ arguments; flags must be passed to the script directly (`node minimal-hi-example
 1. **Build gate:** `npm install` in `hi-mcp/` when `node_modules` is missing, then always
    `npm run typecheck`; a failure stops the launcher.
 2. **Static server** for `minimal-hi-example/` (`/` → `index.html`; only `.html`, `.js`, `.md`, `.json`).
-3. **MCP server:** `npm start --workspace hi-mcp-server` with `HI_MCP_STORE_URL` set to the example URL.
-4. **Chat backend** (with a provider): `npm start --workspace hi-mcp-chat` with `HI_CHAT_TOKEN`,
+3. **MCP server:** Node runs the workspace's installed `vite-node` CLI with `server.ts`, with
+   `HI_MCP_STORE_URL` set to the example URL.
+4. **Chat backend** (with a provider): Node runs the same CLI with `chat-server.ts`, with `HI_CHAT_TOKEN`,
    `HI_CHAT_PROVIDER` and `HI_MCP_URL`.
 5. **Prints** `Example:`, `MCP:` and `Chat:` lines — the test scripts parse the `Example:` line — and
    opens `http://localhost:3000/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`
    plus `chat=true`, ports, `server_url` or the Cloudflare parameters.
 
 When a child exits, the launcher exits with its code; SIGINT and SIGTERM stop both children.
+Each server is a direct child of the launcher, running in its workspace directory with inherited
+stdio. Signals reach the servers without depending on npm or shell forwarding. The static
+page server stops with the launcher. The POSIX process regression in
+`hi-mcp-server/tests/example-launcher.test.ts` verifies that all three ports can be bound again
+after signalling only the launcher PID.
 
 ## The chat backend — `hi-mcp/hi-mcp-chat`
 

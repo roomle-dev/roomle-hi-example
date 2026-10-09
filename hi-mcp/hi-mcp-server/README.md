@@ -94,15 +94,15 @@ occupied port with the command to free it instead of a bare stack trace, and —
 through a wrapper script whose stdin it inherits — it shuts itself down when that script ends, so
 no orphaned instance keeps the port.
 
-Then open the store page **with the chat parameters, the INT stage and a plan id** (keep the tab
+Then open the store page **with `mcp_server`, the INT stage and a plan id** (keep the tab
 open):
 
 ```text
-http://localhost:3000/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=http://localhost:3100&id=ps_bse5tc50687uh64hm8jul7j1kiuacyx
+http://localhost:3000/?store.stage=INT&mcp_server=http://localhost:3100&id=ps_bse5tc50687uh64hm8jul7j1kiuacyx
 ```
 
-The store-side bridge starts only together with the store's chat window — with `model`, `api_key`
-and `mcp_server`, on every stage. The INT stage selects the `bo-test` UI server and the
+The store-side bridge starts with a valid `mcp_server`, on every stage. `model` and `api_key`
+add the optional chat window. The INT stage selects the `bo-test` UI server and the
 `HI_PRE_Roomle_Milestone_2` HI backend the tools run against; the store resolves the HI credentials
 server-side via the backend id, so no HI credentials are needed here. The page connects to the MCP
 server; the server terminal logs `page connected`.
@@ -113,15 +113,18 @@ server; the server terminal logs `page connected`.
 | --------- | ------ |
 | `store.stage=INT` | Selects the `bo-test` UI + `HI_PRE_Roomle_Milestone_2` HI backend the tools run against |
 | `id=<plan id>` | Loads a plan / plan snapshot into the planner (a `ps_…` id from the INT environment) |
-| `model=<model>`, `api_key=<key>` | Show the store's chat window; the store-side bridge starts only together with it. `model` is one of `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, `mistral-large-latest`, `mistral-medium-latest` |
+| `model=<model>`, `api_key=<key>` | Show the optional store chat when `mcp_server` is set. `model` is one of `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, `mistral-large-latest`, `mistral-medium-latest` |
 | `mcp_server=<url>` | The MCP server of the chat and the bridge: `http://localhost:3100` locally, or a deployment such as `https://hi-mcp-poc.hi-orchestrator.workers.dev` — `http(s)` or `ws(s)` both accepted. Required: without it the store starts no bridge |
-| `mcp_session=<name>` | Optional shared session for an external MCP client on Cloudflare; a store chat without it generates a fresh session per page. Local servers ignore the session for routing. |
+| `mcp_session=<name>` | Optional shared session for an external MCP client on Cloudflare; a store page without it generates a fresh session per page. Local servers ignore the session for routing. |
 
 ### The setup matrix (which setup needs which URL parameters)
 
 For a store chat, both the browser bridge and MCP requests carry the same session. Local servers
 ignore `mcp_session` for routing but accept only one planner page and refuse a second page with a
-visible chat error. A store page with no chat parameters does not connect its bridge.
+visible chat error. A store page needs only `mcp_server` to connect its bridge. Bridge and optional
+chat share one client/session identity; external agents use the matching session without the
+browser's private `client` parameter. Cloudflare's no-page link supplies the requesting session,
+or `mcp_session=default` for a client using `/mcp` without a session.
 
 | Store page | `mcp_server` | `mcp_session` | Bridge connects to | Parallel users |
 | ---------- | ------------ | -------------- | ------------------ | ------------- |
@@ -150,9 +153,9 @@ active get HTTP 409 instead of changing another planner.
 
 | Setup | Server | Store page | MCP client |
 | ----- | ------ | ---------- | ---------- |
-| local + local | `npm start` | `http://localhost:3000/?store.stage=INT&model=…&api_key=…&mcp_server=http://localhost:3100&id=…` | `http://localhost:3100/mcp` |
-| local server + deployed store | `npm start` | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=…&api_key=…&mcp_server=http://localhost:3100&id=…` | `http://localhost:3100/mcp` |
-| Azure server + deployed store | App Service, WebSockets enabled | `…&model=…&api_key=…&mcp_server=https://<app>.azurewebsites.net&id=…` | `https://<app>.azurewebsites.net/mcp` |
+| local + local | `npm start` | `http://localhost:3000/?store.stage=INT&mcp_server=http://localhost:3100&id=…` | `http://localhost:3100/mcp` |
+| local server + deployed store | `npm start` | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=http://localhost:3100&id=…` | `http://localhost:3100/mcp` |
+| Azure server + deployed store | App Service, WebSockets enabled | `…&mcp_server=https://<app>.azurewebsites.net&id=…` | `https://<app>.azurewebsites.net/mcp` |
 
 The bridge connects to the `mcp_server` URL, with the scheme mapped to `ws`/`wss`.
 `ws://localhost:3100` is a loopback connection, which is not mixed content, so it works from an
@@ -161,7 +164,7 @@ needs the optional TLS variant below and `mcp_server=https://localhost:3100`.
 
 ### Connecting the deployed store (test stage)
 
-Open `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=http://localhost:3100&id=<plan id>`
+Open `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=http://localhost:3100&id=<plan id>`
 (the store deployment must contain the `hi-mcp/` bridge and the hook in `Planner.vue`). The page
 connects to the local MCP server over `ws://localhost:3100/bridge` — no certificate needed; the
 browser may ask for permission to reach the local network. The server terminal logs
@@ -759,7 +762,7 @@ Ready-to-use prompts for the connected agent, from read-only to write operations
 
 | Symptom | Cause / fix |
 | ------- | ----------- |
-| Tool error `No HI page connected` | Start the store (`npm run dev`) and open `http://localhost:3000/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=http://localhost:3100&id=<plan id>` and keep the tab open — the bridge starts only together with the store's chat window |
+| Tool error `No HI page connected` | Start the store (`npm run dev`) and open `http://localhost:3000/?store.stage=INT&mcp_server=http://localhost:3100&id=<plan id>` and keep the tab open — the bridge starts without chat credentials |
 | Tool error `... is not a function` | The UI served for the stage (`bo-test` at INT) does not contain the Part 1 HI APIs (`getExternalObjectPlanContext`, …) — the web-sdk deployment there has to catch up |
 | Port 3100 already in use | The server names the fix itself (`lsof -ti tcp:3100 \| xargs kill`); since the auto-shutdown guard this should only happen when a second instance is started deliberately |
 | Several store tabs open | The first connected tab owns the planner and receives the tool calls; a second tab is refused (WebSocket close 4409, "Planner session in use") until the first one leaves |

@@ -129,11 +129,10 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST https://hi-mcp-poc-json.azurewe
 7b. Watch the server console: portal → App → **Monitoring → Log stream** — it must show
 `HI group orchestrator MCP server ready` and `waiting for the ligna-store page`.
 
-7c. Open the store with its chat parameters and the `mcp_server` parameter — the store starts its
-bridge only together with its chat window:
+7c. Open the store with the `mcp_server` parameter — its bridge needs no chat model or API key:
 
 ```text
-https://www.roomle.com/t/ligna-store-test/?store.stage=INT&id=ps_bse5tc50687uh64hm8jul7j1kiuacyx&model=<model>&api_key=<key>&mcp_server=https://hi-mcp-poc-json.azurewebsites.net
+https://www.roomle.com/t/ligna-store-test/?store.stage=INT&id=ps_bse5tc50687uh64hm8jul7j1kiuacyx&mcp_server=https://hi-mcp-poc-json.azurewebsites.net
 ```
 
 The page's bridge normalizes the URL to `wss://…/bridge` and connects outward to the app; the log
@@ -177,8 +176,8 @@ cd .. && az webapp deploy --resource-group rg-hi-mcp-poc --name hi-mcp-poc-json 
 | `AuthorizationFailed` on create | no write rights — send the admin request from Prerequisites |
 | `NameAlreadyExists` on web app create | the app name is globally unique — pick another suffix; use the same name in the store URL's `mcp_server` |
 | App shows "Application Error" / unresponsive after deploy | Log stream (Monitoring → Log stream): if the server does not start, the build/startup failed — check Deployment Center for the `npm install`/build error |
-| `page connected` never appears | (a) WebSockets not enabled (step 5), (b) the store URL lacks `model`, `api_key` or `mcp_server=https://<app>.azurewebsites.net` — the store starts its bridge only with its chat window, (c) page origin not in `HI_MCP_PAGE_ORIGINS` |
-| Tool error `No HI page connected` | the store tab is not open or lost the connection — reload it with the chat parameters and `mcp_server`; the bridge reconnects on its own after a page reload |
+| `page connected` never appears | (a) WebSockets not enabled (step 5), (b) the store URL lacks a valid `mcp_server=https://<app>.azurewebsites.net` or its planner is not started, (c) page origin not in `HI_MCP_PAGE_ORIGINS` |
+| Tool error `No HI page connected` | the store tab is not open or lost the connection — reload it with `mcp_server`; the bridge reconnects on its own after a page reload |
 | Tool error `... is not a function` | the UI served for the stage does not contain the HI planner APIs — independent of Azure (same as locally) |
 | First request is very slow (~30 s) | F1 plan cold start — use B1, or just retry |
 

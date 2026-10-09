@@ -61,12 +61,7 @@ Details: [deployment-and-session-issues.md](deployment-and-session-issues.md).
 
 | Item | To do | Priority |
 |---|---|---|
-| [1 — A store page opened for an external agent never connects](deployment-and-session-issues.md#1-a-store-page-opened-for-an-external-agent-never-connects) | ligna-store: start the bridge with `mcp_server` alone, the chat window only with `model` and `api_key` as well | high |
-| [2 — Per-page isolation is not checked on the live deployment](deployment-and-session-issues.md#2-per-page-isolation-is-not-checked-on-the-live-deployment) | Two store tabs, a shared `mcp_session`, a sixth session against the Cloudflare deployment | medium |
 | [3 — The public MCP endpoint has no access control](deployment-and-session-issues.md#3-the-public-mcp-endpoint-has-no-access-control) | Decide session links, roomle.com OAuth or a shared secret before the URL goes beyond a trial | medium |
-| [4 — The Cloudflare image installs from a second lockfile](deployment-and-session-issues.md#4-the-cloudflare-image-installs-from-a-second-lockfile) | Build the image from the root lockfile, delete `hi-mcp/package-lock.json` | medium |
-| [5 — The root npm scripts swallow the launcher's flags](deployment-and-session-issues.md#5-the-root-npm-scripts-swallow-the-launchers-flags) | Root scripts run `node minimal-hi-example/start.mjs` directly | low |
-| [6 — SIGTERM to the launcher leaves the servers running](deployment-and-session-issues.md#6-sigterm-to-the-launcher-leaves-the-servers-running) | Spawn the servers in a process group the launcher ends | low |
 
 ## Architecture
 

@@ -33,11 +33,11 @@ occupied port with the command to free it instead of a bare stack trace.
 
 | Client page | URL |
 | ----------- | --- |
-| local store | `http://localhost:3000/?store.stage=INT&id=<plan id>&model=<model>&api_key=<key>&mcp_server=http://localhost:3100` (`npm run dev` in the ligna-store) |
-| deployed store | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&id=<plan id>&model=<model>&api_key=<key>&mcp_server=http://localhost:3100` |
+| local store | `http://localhost:3000/?store.stage=INT&id=<plan id>&mcp_server=http://localhost:3100` (`npm run dev` in the ligna-store) |
+| deployed store | `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&id=<plan id>&mcp_server=http://localhost:3100` |
 
-The store starts its bridge only together with its chat window, so it needs `model`, `api_key` and
-`mcp_server`. The page connects outward to the server at `ws://localhost:3100/bridge` — loopback
+The store starts its bridge with a valid `mcp_server`; add `model` and `api_key` only for its optional
+chat window. The page connects outward to the server at `ws://localhost:3100/bridge` — loopback
 connections are not mixed content, so this works from the local http page and the deployed https
 page alike; for a browser that refuses it, start the server with the optional
 `HI_MCP_TLS_CERT`/`HI_MCP_TLS_KEY` and use `mcp_server=https://localhost:3100`. The deployed store
@@ -205,5 +205,5 @@ If you don't want to run the tunnel command every time, use the server deployed 
 ([cloudflare-mcp-server.md](./cloudflare-mcp-server.md); connecting an agent:
 [connect-agent-to-cloud-mcp.md](./connect-agent-to-cloud-mcp.md)), or host it on Azure App Service
 ([azure-mcp-server.md](./azure-mcp-server.md)). With the server in the cloud, open the deployed store
-with its chat parameters and the `mcp_server` parameter so the page connects to it:
-`https://www.roomle.com/t/ligna-store-test/?store.stage=INT&id=<plan id>&model=<model>&api_key=<key>&mcp_server=https://<server>`
+with the `mcp_server` parameter so the page connects to it:
+`https://www.roomle.com/t/ligna-store-test/?store.stage=INT&id=<plan id>&mcp_server=https://<server>`

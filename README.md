@@ -27,7 +27,7 @@ npm start openai <api-key>
 | ---------- | ------------ |
 | `npm start` | Example page on :3000, MCP server on :3100, browser opens |
 | `npm run mcp-server` | MCP server only on :3100; no page or chat backend |
-| `node minimal-hi-example/start.mjs --no-open` | Same, without opening the browser (the root npm scripts do not pass flags on to the launcher) |
+| `npm start -- --no-open` | Same, without opening the browser |
 | `npm start gpt-5-mini <api-key>` | Plus chat with the `gpt-5-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-5.4-mini <api-key>` | Plus chat with the `gpt-5.4-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-6-astra <api-key>` | Plus chat with the `gpt-6-astra` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
@@ -39,6 +39,10 @@ npm start openai <api-key>
 | `npm run dev <same arguments>` | Same as the matching `npm start` variant, but the planner loads from the local Rubens UI dev server (:5173) |
 | `npm run start:cf <same arguments>` | Same as the matching `npm start` variant, but with the MCP server deployed on Cloudflare instead of a local one (session = your OS user name, page port 3000 only) |
 | `EXAMPLE_SERVER_URL=<url> npm start <same arguments>` | Same as the matching `npm start` variant, but the planner loads from `<url>` (passed to the page as `server_url`) |
+
+The root `start`, `dev` and `start:cf` scripts run the launcher directly. Put launcher flags after
+`--`, for example `npm run dev -- --no-open` or `npm run start:cf -- --no-open`. Provider/key
+arguments can be combined with flags: `npm start -- mistral <api-key> --no-open`.
 
 Start the example, the MCP server and the chat against any Rubens UI, e.g. the local
 dev server:

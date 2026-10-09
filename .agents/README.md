@@ -83,6 +83,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Reserve a final answer step in the store chat](bug-analysis/store-chat-final-answer-step.md) | Fixed — verified locally | 2026-10-09 |
 | [Readable article and wall names in row-edit feedback](bug-analysis/readable-row-edit-feedback.md) | Fixed — verified locally | 2026-10-09 |
 | [Preserve the outcome when a provider failure interrupts a chat turn](bug-analysis/chat-provider-failure-recovery.md) | Fixed locally — interrupted turns recovered; provider cause unconfirmed | 2026-10-09 |
 | [Connect a store planner to an external MCP agent without built-in chat](bug-analysis/external-agent-store-bridge.md) | Fixed locally — independent bridge and matching session links | 2026-10-09 |
@@ -146,7 +147,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-07 |
 | [A backend-controlled agent loop with browser-executed scene tools](backlog/backend-agent-loop-with-browser-scene-tools.md) — the scene tools in the browser, the agent loop and the credentials in the backend | 2026-10-07 |
 | [Analyse how Spec Kit can help with the prompting](backlog/speckit-for-the-prompting.md) — Spec Kit's prompt sections as inspiration for the served text and the chat prompt | 2026-10-07 |
-| [The ligna-store chat as a client of the HI MCP server](backlog/ligna-store-chat-client.md) — the Mistral image adapter and a final answer step | 2026-10-06 |
+| [The ligna-store chat as a client of the HI MCP server](backlog/ligna-store-chat-client.md) — the Mistral image adapter | 2026-10-09 |
 
 ---
 

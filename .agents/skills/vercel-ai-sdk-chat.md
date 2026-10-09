@@ -21,6 +21,8 @@ Deviations from the comment's example code, found during implementation:
 - The provider API key does **not** come from a URL parameter (as the ticket required) — it is passed as a CLI argument to the launcher and forwarded as an environment variable, keeping it out of the browser history and server logs.
 - The ligna-store chat is the exception: the store is a static site without a backend, so it runs the AI SDK in the page (`streamText` and `@ai-sdk/mcp` in ligna-store `hi-mcp/chat.ts`) and takes the key from the store URL (`api_key`) — acceptable for a demo only. In the browser, `@ai-sdk/mcp` needs a bound `fetch` (`fetch: (input, init) => fetch(input, init)`): the transport calls it detached, which the browser rejects.
 
+The store's browser `streamChat` has an eight-step budget (`MAX_CHAT_STEPS` in ligna-store `hi-mcp/chat.ts`). Its `prepareStep` disables tools on the final model step, reserving that call for an answer from the preceding tool results; earlier steps may call tools, and an early normal answer ends the turn. The policy applies to both Azure and Mistral. The example keeps its own 16-step budget.
+
 ## Interrupted turns
 
 The example's `chat-stream.ts` records MCP execution through `chat-recovery.ts`. Provider errors,

@@ -170,6 +170,13 @@ the conversation and the MCP tools, and runs `streamText` in steps
   `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`. Diagnostics are best effort;
   unserialisable details or a throwing logger cannot stop recovery.
 
+The ligna-store browser chat has at most eight model steps (`MAX_CHAT_STEPS` in
+its `hi-mcp/chat.ts`). It reserves the eighth step for an answer with
+`prepareStep` and `toolChoice: 'none'`; the first seven steps may call tools.
+The final model call receives the preceding tool results. The model can answer
+earlier and finish without using the full budget. This policy applies to both
+Azure and Mistral and is owned by the chat client.
+
 The ligna-store uses the same `chat-recovery.ts` implementation in its browser
 chat. Keep the two copies in sync. An interrupted turn returns complete
 assistant/tool message pairs and the interruption summary, so the window

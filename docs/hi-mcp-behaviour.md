@@ -103,6 +103,12 @@ server uses, because every MCP client supports it.
   served text free of rejections and checks that it explains `corrections` and `notLoaded`.
 - **Keep it short and plain.** A rule that needs a long explanation is a candidate for simplifying
   the API.
+- **Library-neutral.** The server serves every HI library. The served text, the results and the
+  server's logic carry no information about a specific library — no article, category, attribute,
+  value or measure of one library, not even as an example. The only source of library information
+  is the library data the plan context passes on: the master data and the article list, and in them
+  the `desc` properties (D8). When the agent picks the wrong library content because it lacks
+  information, the fix is the desc in the library data, never a served rule.
 - **Never mention internals**: `repositioningData`, the anchor frame, the anchor probe, `rootRelPos`,
   `cornerPoint`. `tests/hi-mcp-server.test.ts` guards this
   ("never tells the agent how the server positions a group internally").

@@ -348,7 +348,13 @@ not an archive: it holds only what is still to be done — no history of runs, f
 
 - add every bug and hardening candidate of the report that is not listed yet: the problem in the
   present tense, the cause in the code, the to-do, its test, and a **Reproduce** line naming the run
-  whose payload reproduces it;
+  whose payload reproduces it; a to-do never puts library information into the server — what the
+  agent lacks about a library goes into the descs of the library data
+  ([library-neutral](../../docs/hi-mcp-behaviour.md#24-instructions));
+- describe a library issue in [library-issues.md](../backlog/library-issues.md), with the library
+  and whether it is reported to the library development team; the overview of the open issues gets
+  only its row, linking there;
+- name in every overview row the module, team or repository responsible for the fix (**Responsible**);
 - for a listed issue that showed again, replace its **Reproduce** line with the latest run — one line,
   never a list of runs;
 - remove an issue, and its index row, when its fix is in the code — a run that happens not to show it

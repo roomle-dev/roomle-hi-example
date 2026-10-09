@@ -10,7 +10,8 @@ when work that a backlog item describes has landed. Step 7 of
 
 **Open todos only.** A backlog document says what is still to do, never what was done.
 [`README.md`](../backlog/README.md) lists every item by area, one row each; the items themselves are
-the numbered issues of [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) and
+the numbered issues of [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md),
+[`library-issues.md`](../backlog/library-issues.md) and
 [`mcp-test-infrastructure-issues.md`](../backlog/mcp-test-infrastructure-issues.md), a README row, or
 a document of their own. Each item carries:
 

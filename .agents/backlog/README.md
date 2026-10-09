@@ -10,14 +10,22 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| [60 — The sink top of a sink unit reaches past the row or over the hob](mcp-test-open-issues.md#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | Library: the sink unit's description names the width of the sink with its drainer and the side it reaches over | medium |
-| [61 — Handleless fronts done with a handle attribute](mcp-test-open-issues.md#61-handleless-fronts-done-with-a-handle-attribute) | One rule: handleless fronts are the handleless articles | medium |
 | [62 — A correction names units by their id only](mcp-test-open-issues.md#62-a-correction-names-units-by-their-id-only) | Name the article and the wall of a leg in the corrections and hints | low |
 | [63 — The answer does not name the window a placement keeps clear](mcp-test-open-issues.md#63-the-answer-does-not-name-the-window-a-placement-keeps-clear) | Decide whether the answer names it; then one sentence | low |
 | [64 — A free-standing wall is missing from the plan context](mcp-test-open-issues.md#64-a-free-standing-wall-is-missing-from-the-plan-context) | roomle-ui: list a free-standing wall in the obstacles | medium |
 | [38 — A provider answer the AI SDK cannot process ends the turn without an answer](mcp-test-open-issues.md#38-a-provider-answer-the-ai-sdk-cannot-process-ends-the-turn-without-an-answer) | Read the logged provider answer of the next failure; decide on a retry | low |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
+
+## Libraries
+
+What the library data lacks for the agent to plan right; the fix is in the library. Details:
+[library-issues.md](library-issues.md).
+
+| Item | To do | Priority |
+|---|---|---|
+| [60 — The sink top of a sink unit reaches past the row or over the hob](library-issues.md#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG library (reported): the sink unit's description names the width of the sink with its drainer and the side it reaches over | medium |
+| [61 — Handleless fronts done with a handle attribute](library-issues.md#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG library: the descs say which one handleless fronts are — the handleless articles or the value "No handle" | medium |
 
 ## Planner (roomle-ui, RoomleCore)
 

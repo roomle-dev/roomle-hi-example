@@ -7,69 +7,28 @@
 > **Maintained by**: step 7 of [the testing skill](../skills/hi-mcp-testing.md#7-open-issues)
 
 Each issue names the problem, its cause, the to-do, the test of the fix and how to reproduce it; the
-overview names the model and the reasoning effort of the run that reproduces it — empty where it is
-unknown; a model the chat sends no effort for runs at its provider's default. An issue leaves this
-document when its fix is in the code. The guideline for every server issue is
+overview names the module, team or repository responsible for the fix, and the model and the
+reasoning effort of the run that reproduces it — empty where it is unknown; a model the chat sends
+no effort for runs at its provider's default. A library issue — the library data lacks what the
+agent needs — is described in [library-issues.md](library-issues.md); the overview links to it. An
+issue leaves this document when its fix is in the code. The guideline for every server issue is
 [Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort): wrong content an agent creates
 is an instruction problem first; correct where the intent is clear, report what was corrected, and
 never drop the agent's content silently.
 
 ## Overview
 
-| # | Issue | Kind | Priority | Model | Reasoning effort |
-|---|---|---|---|---|---|
-| 60 | [The sink top of a sink unit reaches past the row or over the hob](#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | library information | medium — the drainer in the air or over the hob | gpt-6-astra |  |
-| 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | instructions | medium — handled articles where the user asked for handleless ones | gpt-6-astra |  |
-| 62 | [A correction names units by their id only](#62-a-correction-names-units-by-their-id-only) | MCP server feedback | low — the answer stays vague | gpt-6-astra |  |
-| 63 | [The answer does not name the window a placement keeps clear](#63-the-answer-does-not-name-the-window-a-placement-keeps-clear) | instructions | low — the plan is right | gpt-6-astra |  |
-| 64 | [A free-standing wall is missing from the plan context](#64-a-free-standing-wall-is-missing-from-the-plan-context) | roomle-ui plan context | medium — a group can be planned into the wall | gpt-6-astra |  |
-| 38 | [A provider answer the AI SDK cannot process ends the turn without an answer](#38-a-provider-answer-the-ai-sdk-cannot-process-ends-the-turn-without-an-answer) | chat | low — rare | gpt-5-mini | high |
+| # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
+|---|---|---|---|---|---|---|
+| 60 | [The sink top of a sink unit reaches past the row or over the hob](library-issues.md#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | library information | HOMAG library | medium — the drainer in the air or over the hob | gpt-6-astra |  |
+| 61 | [Handleless fronts done with a handle attribute](library-issues.md#61-handleless-fronts-done-with-a-handle-attribute) | library information | HOMAG library | medium — handled articles where the user asked for handleless ones | gpt-6-astra |  |
+| 62 | [A correction names units by their id only](#62-a-correction-names-units-by-their-id-only) | MCP server feedback | roomle-hi-example `hi-mcp-server` | low — the answer stays vague | gpt-6-astra |  |
+| 63 | [The answer does not name the window a placement keeps clear](#63-the-answer-does-not-name-the-window-a-placement-keeps-clear) | instructions | roomle-hi-example `hi-mcp-server` | low — the plan is right | gpt-6-astra |  |
+| 64 | [A free-standing wall is missing from the plan context](#64-a-free-standing-wall-is-missing-from-the-plan-context) — [RML-18116](https://roomle.atlassian.net/browse/RML-18116) | roomle-ui plan context | roomle-ui `homag-intelligence` | medium — a group can be planned into the wall | gpt-6-astra |  |
+| 38 | [A provider answer the AI SDK cannot process ends the turn without an answer](#38-a-provider-answer-the-ai-sdk-cannot-process-ends-the-turn-without-an-answer) | chat | roomle-hi-example `hi-mcp-chat` | low — rare | gpt-5-mini | high |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
-
-## 60. The sink top of a sink unit reaches past the row or over the hob
-
-**Problem.** The sink unit `SUT60` carries a sink with its drainer, 980 mm wide, on the 600 mm unit.
-Placed as the last unit of a row, the drainer reaches 396 mm past the end of the row, into the air;
-swapped beside the hob unit, it covers part of the hob. Whether the agent puts a base unit under the
-drainer is chance: in 6 runs of the test `image-kitchen-left-wall` on the same planner, `master` and
-the branch alike, the create put the sink unit last every time; the model swapped it into the row
-afterwards in one.
-
-**Cause.** Nothing tells the agent that the sink is wider than its unit: the catalog description of
-`SUT60` names a 60 cm sink base unit, the sink's width and the side of its drainer are not in it. The
-geometry is intended (the library builds the sink that way); the root module's outline in `obstacles`
-shows it, but only as a number the agent does not read for this (see
-[plan-context-open-findings.md](plan-context-open-findings.md), finding 2).
-
-**To do.** The library: the description of every sink unit names the width of its sink with the
-drainer and the side the drainer reaches over, and that a base unit belongs under it. Then check
-that the served text needs nothing more.
-
-**Test.** The test `image-kitchen-left-wall` of `docs/test-prompts.json`: the sink unit stands with a
-base unit under its drainer in three runs of gpt-6-astra; `edit-swap-hob-unit`: the drainer does not
-cover the hob.
-
-**Reproduce.** `mcp-test-2026-10-08_22-59-32`: gpt-6-astra 30.
-
-## 61. Handleless fronts done with a handle attribute
-
-**Problem.** For "only handleless fronts" the agent keeps the handled articles and sets
-`mod_HandleDesign` to the value without a handle, where the test expects the handleless articles of
-the catalog (category `Kitchen handleless`).
-
-**Cause.** No served rule says how to make fronts handleless: the catalog has handleless articles,
-and the master data has a handle design value without a handle; nothing says which one the user
-means.
-
-**To do.** One sentence in the rules: handleless fronts are the handleless articles of the catalog
-(`exchange-root-module` for an existing group), not a handle attribute on handled articles.
-
-**Test.** `hi-mcp-server.test.ts`: the rule is served; the test `kitchen-conversation` turn 5 ends
-with handleless articles.
-
-**Reproduce.** `mcp-test-2026-10-09_00-59-22`: gpt-6-astra 35 (turn 5).
 
 ## 62. A correction names units by their id only
 
@@ -103,6 +62,8 @@ the window clear; the plan does, the answer does not mention the window.
 **Reproduce.** `mcp-test-2026-10-09_00-59-22`: gpt-6-astra 27.
 
 ## 64. A free-standing wall is missing from the plan context
+
+**Ticket.** [RML-18116](https://roomle.atlassian.net/browse/RML-18116)
 
 **Problem.** A wall that stands free in a room — the Living Room has one at x 1870 from z -2550 to
 1050, 120 mm thick (`plan.xml`, edge 12 → 13) — is neither in `rooms[].walls` nor in `obstacles` of

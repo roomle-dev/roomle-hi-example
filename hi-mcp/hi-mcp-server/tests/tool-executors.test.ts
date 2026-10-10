@@ -966,7 +966,7 @@ describe('find-attributes', () => {
 
 describe('create-or-replace-groups validation', () => {
   it.fails(
-    'RML-18033: reports a group omitted by the planner in notLoaded',
+    'RML-18139: reports a group omitted by the planner in notLoaded',
     async () => {
       const api = createApi(planContextFixture);
       api.extended.getExternalObjectPlanContext

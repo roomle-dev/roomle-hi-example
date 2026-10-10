@@ -202,8 +202,27 @@ Result: `{ placedIn: 'wall' | 'corner', wall, group, hint? }` with corrections.
 Every command tool resolves the ids it is given, corrects what it can, and forwards one planner
 command: `externalObjectGroupOperation(command, payload)`. The planner (roomle-ui `glue-logic.ts`)
 performs the edit with its own group features and answers once the result is loaded.
-Attribute commands also await the kernel's planning-situation callback and its calculated
-follow-up load, so the result and library-change feedback use the actual placement's attributes.
+The planner load awaits the planning-situation callbacks emitted by its own kernel call and their
+calculated follow-up loads. Attribute commands retain their per-group operation slot from the first
+mutation through that completion, so competing commands cannot change their attributes. The result
+and library-change feedback use the actual placement's attributes.
+
+`PlannerKernelAccess.loadExternalObjectGroups` captures callback promises during the synchronous
+kernel load and restores that capture scope before yielding. Earlier user moves, later callbacks
+and nested loads have independent completion. A failed calculated reload rejects its originating
+load. Deletion and merge reports claim only their corresponding operation kind; the operation slot
+stays occupied until completion and is released in `finally` on success or failure.
+
+This contract is guarded by these roomle-ui tests:
+
+- `glue-logic-test.ts`: `returns the position height after the kernel callback and follow-up load (%s)`,
+  `does not let a planning callback claim a pending deletion`,
+  `rejects a competing batch without changing the accepted attributes (first batch: %s)` and
+  `releases the batch operation slot after a pre-load attribute conflict failure`, plus
+  `rejects a failed callback reload and permits the next attribute command`.
+- `planner-kernel-access.ts`: `awaits only planning callbacks emitted by its own load` and
+  `rejects a load when its planning callback reload fails`.
+- `roomle-planner.ts`: `attribute loads await their planning-situation reload`.
 
 | Tool | Resolves | Result wrapping |
 | ---- | -------- | --------------- |

@@ -220,6 +220,13 @@ attribute of type `Dim`.
 An attribute is set on a root by its id (`attributes: [{ id, value }]`, `change-module-attribute`),
 on a whole group in the group's `attributes` or with `change-group-attribute`.
 
+A library can derive input attributes from a group's actual placement during context preparation.
+Setting an insertion-height attribute therefore does not guarantee that the group adopts that
+height: the calculated value can follow the placement the planner retains. Attribute command
+results wait for that calculation and report the retained value, including library adjustments.
+The contract is guarded by `returns the position height after the kernel callback and follow-up load (%s)`
+in roomle-ui `glue-logic-test.ts`.
+
 ### Article Parameters
 
 Parameters are user-configurable properties of articles.

@@ -84,12 +84,11 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | Document | Status | Last touched |
 |---|---|---|
 | [Explain root outlines that extend over a neighbour](bug-analysis/root-outline-overhang-explanation.md) | Fixed locally — MCP wording; library follow-up in #60 | 2026-10-10 |
-| [Return height attributes after the kernel position callback](bug-analysis/plan-context-height-readback.md) | Fixed — verified locally | 2026-10-10 |
-| [Report calculation errors of newly loaded groups](bug-analysis/new-group-calculation-feedback.md) | Fixed — verified locally | 2026-10-10 |
-| [Plan-context findings: affected repositories](bug-analysis/plan-context-findings-repository-scope.md) | Open — scope analysed | 2026-10-10 |
-| [Snapshot loss after a prompt test page navigates](bug-analysis/mcp-test-navigation-snapshot-loss.md) | Fixed — verified locally | 2026-10-09 |
-| [Reserve a final answer step in the store chat](bug-analysis/store-chat-final-answer-step.md) | Fixed — verified locally | 2026-10-09 |
-| [Readable article and wall names in row-edit feedback](bug-analysis/readable-row-edit-feedback.md) | Fixed — verified locally | 2026-10-09 |
+| [Report calculation errors of newly loaded groups](bug-analysis/new-group-calculation-feedback.md) | Fixed locally — not landed | 2026-10-10 |
+| [Plan-context findings: affected repositories](bug-analysis/plan-context-findings-repository-scope.md) | Open — kernel and library scope remains | 2026-10-10 |
+| [Snapshot loss after a prompt test page navigates](bug-analysis/mcp-test-navigation-snapshot-loss.md) | Fixed locally — not landed | 2026-10-09 |
+| [Reserve a final answer step in the store chat](bug-analysis/store-chat-final-answer-step.md) | Fixed locally — not landed | 2026-10-09 |
+| [Readable article and wall names in row-edit feedback](bug-analysis/readable-row-edit-feedback.md) | Fixed locally — MCP change unlanded; UI change released | 2026-10-09 |
 | [Preserve the outcome when a provider failure interrupts a chat turn](bug-analysis/chat-provider-failure-recovery.md) | Fixed locally — interrupted turns recovered; provider cause unconfirmed | 2026-10-09 |
 | [Connect a store planner to an external MCP agent without built-in chat](bug-analysis/external-agent-store-bridge.md) | Fixed locally — independent bridge and matching session links | 2026-10-09 |
 | [Build the Cloudflare MCP image from the repository lockfile](bug-analysis/cloudflare-image-root-lockfile.md) | Fixed locally — root lockfile and build context | 2026-10-09 |
@@ -103,23 +102,20 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Generate standard MCP prompt tests per session](feature-analysis/generated-mcp-standard-tests.md) | Implemented — verified locally | 2026-10-09 |
-| [Explain the door or window a placement keeps clear](feature-analysis/explain-opening-clearance.md) | Implemented — verified locally | 2026-10-09 |
-| [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open (step 1 done, step 2 open, step 3 on request) | 2026-10-07 |
-| [A reasoning effort per GPT chat model: implementation plan](feature-analysis/reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open (step 1 done) | 2026-10-07 |
-| [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open (product goal) | 2026-09-27 |
+| [Generate standard MCP prompt tests per session](feature-analysis/generated-mcp-standard-tests.md) | Implemented locally — not landed | 2026-10-09 |
+| [Explain the door or window a placement keeps clear](feature-analysis/explain-opening-clearance.md) | Implemented locally — not landed | 2026-10-09 |
+| [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open — example high effort landed; store effort and measurement open | 2026-10-07 |
+| [A reasoning effort per GPT chat model: implementation plan](feature-analysis/reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open — example high effort landed; store effort and measurement open | 2026-10-07 |
+| [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
 ### Refactoring Analyses
 
 One document per refactoring, written **before** the work and carrying the report once the work is
 done. The analysis and the report are the same document — the report is appended at close-out.
 
-*This folder is initially empty. Add refactoring analysis documents as needed.*
-
 | Document | Status | Last touched |
 |---|---|---|
 | [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-06 |
-| [Validation of the MCP test fixes of RML-18103](refactoring-analysis/mcp-test-branch-validation.md) | Done | 2026-10-09 |
 
 ### Benchmarks & Performance Analyses
 

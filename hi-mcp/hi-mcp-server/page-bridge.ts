@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws';
 import type { McpBridgeCall, McpBridgeMessage } from './types';
-import { BRIDGE_PROTOCOL } from './types';
+import { BRIDGE_PROTOCOL, HI_MCP_PORT } from './types';
 
 export const DEFAULT_CALL_TIMEOUT_MS = 30_000;
 export const SNAPSHOT_CALL_TIMEOUT_MS = 120_000;
@@ -119,10 +119,16 @@ export class PageBridge {
     }
     const page = this._page;
     if (!page || page.readyState !== WebSocket.OPEN) {
+      const port =
+        Number(process.env.HI_MCP_PORT ?? process.env.PORT) || HI_MCP_PORT;
+      const scheme =
+        process.env.HI_MCP_TLS_CERT && process.env.HI_MCP_TLS_KEY
+          ? 'https'
+          : 'http';
       throw new Error(
         'No HI page connected. Have the user open the ligna-store in their browser at ' +
           (process.env.HI_MCP_STORE_URL ??
-            'http://localhost:3000/?store.stage=INT') +
+            `http://localhost:3000/?store.stage=INT&mcp_server=${scheme}://localhost:${port}`) +
           ' and start planning there - the page connects to this server on its own, and the ' +
           'tools work in that tab while it stays open.'
       );

@@ -81,7 +81,20 @@ status block where one is present.
 
 One document per bug: root-cause analysis written **before** the fix, closed out **after** it.
 
-No bug analysis is open.
+| Document | Status | Last touched |
+|---|---|---|
+| [Preserve completed tool outcomes and clarify calculation recovery advice](bug-analysis/pr-review-tool-outcomes-and-calculation-advice.md) | Fixed locally — PR review fixes | 2026-10-10 |
+| [Explain root outlines that extend over a neighbour](bug-analysis/root-outline-overhang-explanation.md) | Fixed locally — MCP wording; library follow-up in #60 | 2026-10-10 |
+| [Report calculation errors of newly loaded groups](bug-analysis/new-group-calculation-feedback.md) | Fixed locally — not landed | 2026-10-10 |
+| [Plan-context findings: affected repositories](bug-analysis/plan-context-findings-repository-scope.md) | Open — kernel and library scope remains | 2026-10-10 |
+| [Snapshot loss after a prompt test page navigates](bug-analysis/mcp-test-navigation-snapshot-loss.md) | Fixed locally — not landed | 2026-10-09 |
+| [Reserve a final answer step in the store chat](bug-analysis/store-chat-final-answer-step.md) | Fixed locally — not landed | 2026-10-09 |
+| [Readable article and wall names in row-edit feedback](bug-analysis/readable-row-edit-feedback.md) | Fixed locally — MCP change unlanded; UI change released | 2026-10-09 |
+| [Preserve the outcome when a provider failure interrupts a chat turn](bug-analysis/chat-provider-failure-recovery.md) | Fixed locally — interrupted turns recovered; provider cause unconfirmed | 2026-10-09 |
+| [Connect a store planner to an external MCP agent without built-in chat](bug-analysis/external-agent-store-bridge.md) | Fixed locally — independent bridge and matching session links | 2026-10-09 |
+| [Build the Cloudflare MCP image from the repository lockfile](bug-analysis/cloudflare-image-root-lockfile.md) | Fixed locally — root lockfile and build context | 2026-10-09 |
+| [Forward launcher flags through the root npm scripts](bug-analysis/root-launcher-flags.md) | Fixed locally — direct Node invocation | 2026-10-09 |
+| [Stop the example servers when the launcher receives SIGTERM](bug-analysis/launcher-sigterm-shutdown.md) | Fixed locally — direct server children and signal checks | 2026-10-09 |
 
 ### Feature Analyses
 
@@ -90,21 +103,20 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open (step 1 done, step 2 open, step 3 on request) | 2026-10-07 |
-| [A reasoning effort per GPT chat model: implementation plan](feature-analysis/reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open (step 1 done) | 2026-10-07 |
-| [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open (product goal) | 2026-09-27 |
+| [Generate standard MCP prompt tests per session](feature-analysis/generated-mcp-standard-tests.md) | Implemented locally — not landed | 2026-10-09 |
+| [Explain the door or window a placement keeps clear](feature-analysis/explain-opening-clearance.md) | Implemented locally — not landed | 2026-10-09 |
+| [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open — example high effort landed; store effort and measurement open | 2026-10-07 |
+| [A reasoning effort per GPT chat model: implementation plan](feature-analysis/reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open — example high effort landed; store effort and measurement open | 2026-10-07 |
+| [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
 ### Refactoring Analyses
 
 One document per refactoring, written **before** the work and carrying the report once the work is
 done. The analysis and the report are the same document — the report is appended at close-out.
 
-*This folder is initially empty. Add refactoring analysis documents as needed.*
-
 | Document | Status | Last touched |
 |---|---|---|
 | [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-06 |
-| [Validation of the MCP test fixes of RML-18103](refactoring-analysis/mcp-test-branch-validation.md) | Done | 2026-10-09 |
 
 ### Benchmarks & Performance Analyses
 
@@ -124,20 +136,21 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 
 | Document | Last touched |
 |---|---|
-| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-08 |
+| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-09 |
 | [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — measure, then let the plan context carry every article's docking vectors and corner point, and remove the server's probe where the default variant suffices | 2026-10-07 |
-| [Open issues of the MCP test](backlog/mcp-test-open-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner that "test the mcp" shows | 2026-10-08 |
+| [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner detected by the MCP prompt tests, each with the module, team or repository responsible | 2026-10-09 |
+| [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: the sink width of a sink unit, handleless fronts | 2026-10-09 |
 | [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — gpt-5.4-mini plans without reasoning: set an effort per Foundry deployment from the measured data and verify it; further measurement only on request | 2026-10-07 |
-| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the open gaps of running "test the mcp": the object-only render under software GL, the unrecorded hint, a run that loses its page, tests only written by hand, the snapshot save with a local planner | 2026-10-07 |
-| [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — a store page that never connects for an external agent, the live isolation check, access control, the image's second lockfile, the root scripts' flags, SIGTERM | 2026-10-07 |
+| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL | 2026-10-09 |
+| [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — access control | 2026-10-09 |
 | [The planner's load result per input group](backlog/planner-load-outcome-per-group.md) — roomle-ui names per input group what it built, so `create-or-replace-groups` reports a group left out in `notLoaded` | 2026-10-07 |
 | [One planner undo step per tool call](backlog/one-undo-step-per-tool-call.md) — roomle-ui resolves a command after its follow-up reload and groups a tool call into one undo step; then the server drops its follow-up wait | 2026-10-07 |
-| [Open findings about the plan context](backlog/plan-context-open-findings.md) — root outlines, calculation errors, the obstacle outline of a group, position heights | 2026-10-08 |
+| [Open findings about the plan context](backlog/plan-context-open-findings.md) — the kernel obstacle outline of a group; RoomleCore | 2026-10-10 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-07 |
 | [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-07 |
 | [A backend-controlled agent loop with browser-executed scene tools](backlog/backend-agent-loop-with-browser-scene-tools.md) — the scene tools in the browser, the agent loop and the credentials in the backend | 2026-10-07 |
 | [Analyse how Spec Kit can help with the prompting](backlog/speckit-for-the-prompting.md) — Spec Kit's prompt sections as inspiration for the served text and the chat prompt | 2026-10-07 |
-| [The ligna-store chat as a client of the HI MCP server](backlog/ligna-store-chat-client.md) — the Mistral image adapter and a final answer step | 2026-10-06 |
+| [The ligna-store chat as a client of the HI MCP server](backlog/ligna-store-chat-client.md) — the Mistral image adapter | 2026-10-09 |
 
 ---
 

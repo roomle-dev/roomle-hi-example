@@ -33,6 +33,7 @@ import { constants } from 'node:os';
 import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { recordNavigations } from './mcp-test-navigation.js';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAUNCHER = join(REPO_DIR, 'minimal-hi-example', 'start.mjs');
@@ -555,6 +556,7 @@ const runSession = async (options, launcher, browser) => {
     ? `${exampleUrl}&plan_id=${encodeURIComponent(options.plan)}`
     : exampleUrl;
   const page = await browser.newPage();
+  const navigation = recordNavigations(page);
   const { calls: plannerCalls, clientId: pageClientId } =
     recordPlannerCalls(page);
   await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
@@ -574,6 +576,7 @@ const runSession = async (options, launcher, browser) => {
   console.log('[run-hi-mcp-prompt] page ready');
   const promptImage =
     options.imageBytes && (await prepareImage(page, options.imageBytes));
+  navigation.setPhase('chat');
   const turns = await runConversation(
     options.prompts,
     promptImage && { file: options.image, dataUrl: promptImage },
@@ -583,6 +586,7 @@ const runSession = async (options, launcher, browser) => {
   const chatPlannerCalls = plannerCalls.slice();
   const errors = turns.flatMap((turn) => turn.errors);
   const chatDoneAt = Date.now();
+  navigation.setPhase('snapshot');
   console.log('[run-hi-mcp-prompt] chat done, reading and saving the snapshot');
   let planContext;
   try {
@@ -620,12 +624,15 @@ const runSession = async (options, launcher, browser) => {
   } catch (error) {
     errors.push(`saving the snapshot failed: ${error.message}`);
   }
+  navigation.setPhase('complete');
   const run = {
     provider: options.provider,
     plan: options.plan ?? null,
     turns,
     errors,
     planSnapshotId,
+    snapshotCaptured: !!snapshot,
+    navigations: navigation.entries,
     exampleUrl: pageUrl,
     startedAt: startedAt.toISOString(),
     durationsMs: {

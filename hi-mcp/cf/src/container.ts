@@ -23,7 +23,14 @@ export class HiMcpContainer extends Container {
   }
 
   override async fetch(request: Request): Promise<Response> {
-    await this.startAndWaitForPorts();
+    const storeUrl = this.envVars?.HI_MCP_STORE_URL;
+    if (storeUrl) {
+      const url = new URL(storeUrl);
+      const session =
+        new URL(request.url).searchParams.get('session') ?? 'default';
+      url.searchParams.set('mcp_session', session);
+      this.envVars = { ...this.envVars, HI_MCP_STORE_URL: url.toString() };
+    }
     return this.containerFetch(request, PORT);
   }
 }

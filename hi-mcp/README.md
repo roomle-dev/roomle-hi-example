@@ -14,7 +14,7 @@ npm workspace folder per PoC.
 ## Quick Access
 
 The HI MCP server is deployed at Cloudflare:
-- **Store Page**: `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev` — the store connects its bridge only together with its chat window, so `model` and `api_key` are required; add `&mcp_session=<name>` for an external MCP client
+- **Store Page**: `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>` — the bridge starts without chat credentials; add `model` and `api_key` only to show the store's chat window
 - **MCP Server Endpoint**: `https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=<name>` — the same `<name>` as the store page's `mcp_session`
 - **Cloudflare Dashboard**: https://dash.cloudflare.com/be70a3966e4c4ccfa9349004b9ccf948/
 

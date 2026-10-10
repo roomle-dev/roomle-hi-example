@@ -9,8 +9,12 @@ when work that a backlog item describes has landed. Step 7 of
 ## What the backlog is
 
 **Open todos only.** A backlog document says what is still to do, never what was done.
+A solved issue is removed entirely as soon as its implementation is verified, including on the
+working branch. Pending merges, releases or deployments do not keep it in the backlog; record
+that status and the release verification in its analysis until the fix lands.
 [`README.md`](../backlog/README.md) lists every item by area, one row each; the items themselves are
-the numbered issues of [`mcp-test-open-issues.md`](../backlog/mcp-test-open-issues.md) and
+the numbered issues of [`mcp-issues.md`](../backlog/mcp-issues.md),
+[`library-issues.md`](../backlog/library-issues.md) and
 [`mcp-test-infrastructure-issues.md`](../backlog/mcp-test-infrastructure-issues.md), a README row, or
 a document of their own. Each item carries:
 
@@ -45,12 +49,12 @@ git switch --no-track -c docs/<slug> origin/master
 - Grep the symbols and `file:line` references the item names at HEAD.
 - `git log --oneline origin/master --grep=<TICKET>` and `git log --oneline origin/master -S<symbol>
   -- hi-mcp minimal-hi-example .agents/scripts` for landed work.
-- roomle-ui items: done when the fix is on roomle-ui `origin/release/bo-test`, the planner the
-  example page loads (`DEFAULT_SERVER_URL`, `minimal-hi-example/index.html`), or on `origin/master`:
-  `git branch -r --contains <sha>`. A fix merged into the HI branch `fix/hi-mcp-api-and-tools`
-  reaches `release/bo-test` from there. A resolved bug leaves the backlog then; it never waits as a
-  "land the roomle-ui branch" item. ligna-store items: ligna-store `origin/master` (fetch each
-  repository once).
+- Verify a local fix on the working branch against the planner or client used in its check.
+  A verified fix leaves the backlog without waiting for merge or deployment. To check an already
+  released fix, roomle-ui uses `origin/release/bo-test` (the planner the example loads) or
+  `origin/master`; ligna-store uses `origin/master`. Use `git branch -r --contains <sha>` and fetch
+  each affected repository once when checking those remote branches. Release status belongs
+  in the analysis, never in a replacement "land the branch" backlog item.
 - An item about the served text — a rule, a tool description, a result message — is done when the
   text in `hi-mcp/hi-mcp-server/` says it. A test run that happens not to show the issue is no fix.
 - Jira: `Accepted` is the closed state in RML. A closed ticket does not prove the code changed — check

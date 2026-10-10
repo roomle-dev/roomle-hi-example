@@ -30,14 +30,14 @@ Keep the tab open; it is the session the agent works in.
 ### 1. Open the store page (first, and keep the tab open)
 
 ```text
-https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<your session name>
+https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<your session name>
 ```
 
 Open it and start planning — no plan id needed; append `&id=<plan id>` only to open a specific
-existing plan. The store connects to the server only together with its own chat window, so the URL
-needs a chat `model` and its `api_key` as well (the models are listed in the ligna-store
-`hi-mcp/README.md`). The `<your session name>` is any short word of your choice (e.g. your first
-name): it routes your tab and your agent into **your own container**, so parallel users do not
+existing plan. The store starts its bridge with `mcp_server`; no chat model or API key is needed.
+Add `model` and `api_key` only to use the store's own chat window. The `<your session name>` is
+any short word of your choice (e.g. your first name): it routes your tab and your agent into
+**your own container**, so parallel users do not
 interfere. The page's bridge connects to the cloud server — in the server log
 (`npx wrangler tail` in `hi-mcp/cf`) appears `page connected`. Without this tab, the tools
 answer `No HI page connected`.
@@ -94,7 +94,7 @@ the page the user sees.
   session of its own that no connector knows, and a connector without `?session=` reaches the
   shared `default` container. A second page on the same session is refused; the first keeps the
   planner.
-- The store URL needs `store.stage=INT`, `model`, `api_key` and `mcp_server`; a plan `id` is
+- The store URL needs `store.stage=INT` and `mcp_server`; a plan `id` is
   optional (without it the user starts planning from the store).
 - Everything the agent does happens in the visible tab — reload the tab if the connection was
   lost; the bridge reconnects on its own after container sleeps and restarts.
@@ -104,7 +104,7 @@ the page the user sees.
 | Symptom | Cause / fix |
 | ------- | ----------- |
 | Mistral refuses the Server URL | wrong URL — account ID instead of account subdomain; take it from the deploy output |
-| Agent: `No HI page connected` | no store tab on this session — open the URL of step 1 (with the chat parameters and your session name), start planning, keep the tab open. The URL the agent names (`HI_MCP_STORE_URL`) lacks the chat parameters |
+| Agent: `No HI page connected` | no store tab on this session — open the suggested store URL or the URL of step 1 with your session name, start planning and keep the tab open. Cloudflare's suggested URL carries the client's session, or `mcp_session=default` for an unnamed client |
 | First answer is slow | container boots on demand (~10 s) — just resend |
 | Agent: `... is not a function` | the `bo-test` UI lacks the HI planner APIs — a web-sdk deployment issue, not the setup |
 | The store chat reports the planner in use | another tab already holds this session — close it, or pick another session name |

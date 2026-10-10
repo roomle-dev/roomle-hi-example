@@ -130,6 +130,7 @@ The start script (`npm start`) provides:
 │   │   └── README.md
 │   ├── feature-analysis/         # Feature investigations
 │   │   └── README.md
+│   ├── images/                   # Images of the backlog and the analyses
 │   ├── refactoring-analysis/     # Refactoring analyses with reports
 │   │   └── README.md
 │   └── skills/                  # On-demand domain knowledge
@@ -257,6 +258,16 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 - Error responses from the page should be relayed back to the MCP client
 - Connection state should be tracked and logged
 
+### Library-Neutral
+
+The MCP server serves every HI library, not only Furniture_Smith. The served rules, the tool
+descriptions, the results and the server's logic contain no information about a specific library —
+no article, category, attribute, value or measure of one library, not even as an example. The only
+source of library information is the library data: the master data and the article list, and in
+them the `desc` properties. When an agent picks the wrong library content because it lacks
+information, the fix is the desc in the library data, never a served rule. See §2.4 of
+[`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md#24-instructions).
+
 ### Guards Are a Last Resort
 
 A **guard** is a check in the MCP server that refuses an agent's input because it identifies the
@@ -316,6 +327,7 @@ The `.agents/` folder serves as the "digital brain" for roomle-hi-example, conta
 ├── benchmarks/                   # Benchmarks and performance analyses
 ├── bug-analysis/                 # Bug root-cause analyses (written before fix)
 ├── feature-analysis/             # Feature investigations and decisions
+├── images/                       # Images of the backlog and the analyses
 ├── refactoring-analysis/         # Refactoring analyses with reports
 ├── scripts/                      # Utility scripts (JavaScript only)
 └── skills/                      # On-demand domain knowledge (skills)

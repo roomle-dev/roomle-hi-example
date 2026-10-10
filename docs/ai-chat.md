@@ -145,8 +145,17 @@ the conversation and the MCP tools, and runs `streamText` in steps
   `it('ends a turn that uses every step with the model answer')` in
   `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`.
 - A turn that has not answered within `HI_CHAT_TURN_TIMEOUT_MS` is aborted
-  and ends with an `[error]` line naming the limit; the plan keeps what the
-  tools changed.
+  and ends with an `[error]` line naming the limit and a readable interruption
+  summary; the plan keeps what the tools changed.
+- A provider error or thrown stream error ends with one interruption summary
+  derived from the recorded tool outcomes (`chat-recovery.ts`). Completed
+  writes name the returned groups, articles, corrections and omissions. A
+  returned tool error, thrown write or pending write is unconfirmed: read the
+  plan before trying that operation again. With only read-only calls, the
+  answer says that nothing was created or changed. Partial text stays visible
+  and is marked incomplete. The chat makes no recovery model call, repeats no
+  operation and performs no automatic undo. These paths are covered by
+  `hi-mcp/hi-mcp-chat/tests/chat-stream.test.ts`.
 - Every step logs its tokens (in, out, reasoning), its tool calls and its
   duration (`[hi-chat] step n: …`); "out" counts the reasoning tokens too.
   Guarded by `it('logs the reasoning tokens of a step')` in
@@ -158,7 +167,26 @@ the conversation and the MCP tools, and runs `streamText` in steps
   the status of the answer, its cause what in the answer failed
   (`createStepLog`, `describeStepError` in `chat-steps.ts`). Guarded by
   `it('logs the step that failed with what the provider answered')` in
-  `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`.
+  `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`. Diagnostics are best effort;
+  unserialisable details or a throwing logger cannot stop recovery. A throwing tool-completion
+  logger also leaves the successful MCP result intact for the next model step, guarded by
+  `it('keeps a completed write successful when its completion log throws')` in
+  `hi-mcp/hi-mcp-chat/tests/chat-stream.test.ts`.
+
+The ligna-store browser chat has at most eight model steps (`MAX_CHAT_STEPS` in
+its `hi-mcp/chat.ts`). It reserves the eighth step for an answer with
+`prepareStep` and `toolChoice: 'none'`; the first seven steps may call tools.
+The final model call receives the preceding tool results. The model can answer
+earlier and finish without using the full budget. This policy applies to both
+Azure and Mistral and is owned by the chat client.
+
+The ligna-store uses the same `chat-recovery.ts` implementation in its browser
+chat. Keep the two copies in sync. An interrupted turn returns complete
+assistant/tool message pairs and the interruption summary, so the window
+retains the evidence for the next turn. Pending calls have no fabricated tool
+result. If a tool's model-output conversion fails, the history keeps its
+actual result as text. The example's plain-text chat stores the readable
+summary in its conversation.
 
 ## Images in the chat
 
@@ -254,7 +282,9 @@ Copilot. A new group is positioned by the `placement` it is created with.
 | ---- | ---- |
 | `chat-config.ts` | Environment parsing and request body validation |
 | `chat-handler.ts` | HTTP handler factory: CORS, `/health`, `/capabilities`, `POST /chat`, error relay |
-| `chat-server.ts` | Entry point: provider model (Mistral/Anthropic/Google/Azure) + `@ai-sdk/mcp` + `streamText`, listen on the chat port |
+| `chat-server.ts` | Entry point: listen on the chat port |
+| `chat-stream.ts` | Provider model (Mistral/Anthropic/Google/Azure), per-turn MCP client, `streamText` and plain-text response |
+| `chat-recovery.ts` | Record tool execution, summarise interrupted turns and retain completed message pairs; copied to ligna-store |
 | `chat-steps.ts` | The step loop of a turn (16 steps, the last without tools), the step log, the turn timeout message |
 | `tool-result-images.ts` | Mistral middleware: the images of a tool result go to the model as a user message |
 | `tests/chat-handler.test.ts` | Unit tests (config, validation, CORS, error relay, streaming) |

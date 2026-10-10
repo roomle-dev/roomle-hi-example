@@ -12,10 +12,10 @@
     "minimal-hi-example"
   ],
   "scripts": {
-    "start": "npm start --workspace minimal-hi-example",
+    "start": "node minimal-hi-example/start.mjs",
     "mcp-server": "npm start --workspace hi-mcp-server",
-    "dev": "npm run dev --workspace minimal-hi-example",
-    "start:cf": "npm run start:cf --workspace minimal-hi-example",
+    "dev": "node minimal-hi-example/start.mjs --dev",
+    "start:cf": "node minimal-hi-example/start.mjs --cf",
     "plan:mistral": "npm start mistral $MISTRAL_API_KEY",
     "plan:gpt5": "npm start gpt-5-mini $AZURE_GPT_KEY",
     "plan:gpt5.4": "npm start gpt-5.4-mini $AZURE_GPT_KEY",

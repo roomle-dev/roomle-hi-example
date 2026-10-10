@@ -27,7 +27,12 @@ interface StepUsage {
 const LOGGED_BODY_CHARS = 2000;
 
 const shortened = (value: unknown): string => {
-  const text = typeof value === 'string' ? value : JSON.stringify(value);
+  let text: string | undefined;
+  try {
+    text = typeof value === 'string' ? value : JSON.stringify(value);
+  } catch {
+    text = Object.prototype.toString.call(value);
+  }
   return text !== undefined && text.length > LOGGED_BODY_CHARS
     ? `${text.slice(0, LOGGED_BODY_CHARS)}... (${text.length} chars)`
     : String(text);
@@ -85,26 +90,31 @@ export const createStepLog = (
   let startedAt = Date.now();
   const onStepEnd = (result: StepUsage) => {
     step += 1;
-    const tools = (result.toolCalls ?? []).map(
-      (call) =>
-        `${call.toolName} (${JSON.stringify(call.input ?? {}).length} chars)`
-    );
-    const finish =
-      typeof result.finishReason === 'string'
-        ? result.finishReason
-        : JSON.stringify(result.finishReason ?? '');
-    const usage = result.usage;
-    log(
-      `[hi-chat] step ${step}: ${usage?.inputTokens ?? 0} in, ` +
-        `${usage?.outputTokens ?? 0} out, ${usage?.outputTokenDetails.reasoningTokens ?? 0} reasoning tokens; ` +
-        `${tools.length > 0 ? `tools: ${tools.join(', ')}` : 'no tool'}; ${finish}; ${Date.now() - startedAt} ms`
-    );
+    try {
+      const tools = (result.toolCalls ?? []).map(
+        (call) =>
+          `${call.toolName} (${JSON.stringify(call.input ?? {}).length} chars)`
+      );
+      const finish =
+        typeof result.finishReason === 'string'
+          ? result.finishReason
+          : JSON.stringify(result.finishReason ?? '');
+      const usage = result.usage;
+      log(
+        `[hi-chat] step ${step}: ${usage?.inputTokens ?? 0} in, ` +
+          `${usage?.outputTokens ?? 0} out, ${usage?.outputTokenDetails.reasoningTokens ?? 0} reasoning tokens; ` +
+          `${tools.length > 0 ? `tools: ${tools.join(', ')}` : 'no tool'}; ${finish}; ${Date.now() - startedAt} ms`
+      );
+    } catch {}
     startedAt = Date.now();
   };
-  const onError = (error: unknown) =>
-    logError(
-      `[hi-chat] step ${step + 1} failed after ${Date.now() - startedAt} ms: ${describeStepError(error)}`
-    );
+  const onError = (error: unknown) => {
+    try {
+      logError(
+        `[hi-chat] step ${step + 1} failed after ${Date.now() - startedAt} ms: ${describeStepError(error)}`
+      );
+    } catch {}
+  };
   return { onStepEnd, onError };
 };
 

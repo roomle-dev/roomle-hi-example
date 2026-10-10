@@ -32,8 +32,11 @@ checked out. The repository is public.
   packages. A change to the workflow or the lockfile is checked in `node:22` on `linux/amd64`
   ([deployment skill](../skills/hi-mcp-cloudflare-deployment.md#verifying-a-workflow-or-lockfile-change-on-linux)); macOS proves nothing about the
   runner.
-- The image still installs from `hi-mcp/package-lock.json`
-  ([backlog](../backlog/deployment-and-session-issues.md#4-the-cloudflare-image-installs-from-a-second-lockfile)).
+- CI and the image share the repository-root `package-lock.json`. The image builds from the root,
+  copies all workspace manifests, and selects `hi-mcp/hi-mcp-server` by its workspace path with
+  `--omit=dev`; chat/provider packages and Cloudflare tooling stay outside the runtime image.
+  The root `.dockerignore` includes only the install inputs and server source.
+  See [Updating image dependencies](../../docs/setup/cloudflare-mcp-server.md#updating-image-dependencies).
 - `hi-mcp/cf/package.json` asks for `latest`; a lockfile refresh can pull in a new
   `@cloudflare/containers` or wrangler, which the test gate catches before a deploy.
 

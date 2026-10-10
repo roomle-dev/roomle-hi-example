@@ -3303,6 +3303,110 @@ describe('create-or-replace-groups loading', () => {
     expect(result.hint).toBeUndefined();
   });
 
+  it.each(['Error', 'Fatal'])(
+    'reports a new root calculation %s while keeping the loaded groups',
+    async (category) => {
+      const failed = makeShapedGroup({
+        id: 'new-runtime-id',
+        roots: [
+          makeShapedRoot({ id: 'failed-runtime-root' }),
+          makeShapedRoot({ id: 'valid-runtime-root' }),
+        ],
+      });
+      const other = makeShapedGroup({ id: 'other-runtime-id' });
+      let loaded = false;
+      const api = createApi(planContextFixture, {
+        getExternalObjectPlanContext: vi.fn(async () => ({
+          ...planContextFixture,
+          groups: loaded
+            ? [...planContextFixture.groups, failed, other]
+            : planContextFixture.groups,
+        })),
+        loadExternalObjectGroupLayout: vi.fn(async () => {
+          loaded = true;
+          return [{ id: 'loaded-failed' }, { id: 'loaded-other' }];
+        }),
+        getExternalObjectGroups: vi.fn(async () =>
+          loaded
+            ? [
+                {
+                  id: 'g1',
+                  roots: [
+                    {
+                      id: 'unrelated',
+                      logMessages: [
+                        { category: 'Error', msg: 'Unrelated error' },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  id: failed.id,
+                  roots: [
+                    {
+                      id: 'failed-runtime-root',
+                      articleId: 'article-1',
+                      logMessages: [
+                        {
+                          category,
+                          msg: 'Width cannot be calculated\nInternal stack trace',
+                        },
+                      ],
+                    },
+                    {
+                      id: 'valid-runtime-root',
+                      articleId: 'article-1',
+                      logMessages: [
+                        { category: 'Warning', msg: 'Optional note' },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  id: other.id,
+                  roots: [{ id: 'other-root', logMessages: [] }],
+                },
+              ]
+            : []
+        ),
+      });
+      const result = (await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [
+          { roots: [{ id: 'unknown', articleId: 'not-an-article' }] },
+          {
+            roots: [
+              { id: 'bad', articleId: 'article-1' },
+              { id: 'good', articleId: 'article-1', rightOf: 'bad' },
+            ],
+          },
+          { roots: [pick()] },
+        ],
+      })) as Record<string, any>;
+
+      expect(result.loaded).toHaveLength(2);
+      expect(result.groups.map((group: any) => group.id)).toEqual([
+        failed.id,
+        other.id,
+      ]);
+      expect(result.notLoaded).toEqual([
+        expect.objectContaining({ index: 0 }),
+        {
+          index: 1,
+          id: failed.id,
+          rootIds: ['failed-runtime-root'],
+          errors: [expect.stringContaining('Width cannot be calculated')],
+        },
+      ]);
+      expect(result.notLoaded[1].errors[0]).toContain(
+        "'failed-runtime-root' (article-1)"
+      );
+      expect(result.notLoaded[1].errors[0]).toContain('attribute overrides');
+      expect(result.notLoaded[1].errors[0]).not.toContain(
+        'Internal stack trace'
+      );
+    }
+  );
+
   it('reports a replace the planner reverted to the previous content', async () => {
     // issue 34: the plan context after the load still holds the one root of g1
     const api = createApi(planContextFixture);
@@ -3991,6 +4095,66 @@ describe('create-or-replace-groups materials', () => {
     ]);
     expect(result.groups).toEqual([created]);
   });
+
+  it.each(['Error', 'Fatal'])(
+    'names group attributes in the recovery advice for a root calculation %s after applying them',
+    async (category) => {
+      const created = makeShapedGroup({ id: 'g-new' });
+      let attributesApplied = false;
+      const api = createMaterialsApi([], [created], {
+        externalObjectGroupOperation: vi.fn(async (command: string) => {
+          attributesApplied = true;
+          return { command, groups: [created], removedGroupIds: [] };
+        }),
+        getExternalObjectGroups: vi.fn(async () => [
+          {
+            id: created.id,
+            roots: [
+              {
+                id: 'r1',
+                articleId: 'article-1',
+                logMessages: attributesApplied
+                  ? [{ category, msg: 'Width cannot be calculated' }]
+                  : [],
+              },
+            ],
+          },
+        ]),
+      });
+      const result = (await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [
+          {
+            libraryId: 'lib-1',
+            attributes: [{ id: 'b', value: 900 }],
+            roots: [pick()],
+          },
+        ],
+      })) as Record<string, any>;
+
+      expect(commandsOf(api)).toEqual([
+        [
+          'change-attributes',
+          {
+            groupId: created.id,
+            attributes: [{ attributeId: 'b', value: '900' }],
+          },
+        ],
+      ]);
+      expect(result.groups).toEqual([created]);
+      expect(result.notLoaded).toEqual([
+        {
+          index: 0,
+          id: created.id,
+          rootIds: ['r1'],
+          errors: [expect.stringContaining('Width cannot be calculated')],
+        },
+      ]);
+      expect(result.notLoaded[0].errors[0]).toContain(
+        'posGroups[0].attributes'
+      );
+      expect(result.notLoaded[0].errors[0]).toContain('attribute overrides');
+    }
+  );
 
   it('passes on the root module the library could not calculate with the group attributes', async () => {
     const plannerCorrection =
@@ -4805,16 +4969,15 @@ describe('obstacle hints', () => {
     );
   });
 
-  it('builds without a hint and without an extra read on a planner without obstacles', async () => {
+  it('builds without obstacle hints and reads raw calculation diagnostics', async () => {
     // D45: a planner without the obstacles section
     const api = createApi(planContextFixture);
     const result = await createGroups(api, [
       { id: 'g1', libraryId: 'lib-1', roots: [pick()] },
     ]);
     expect(result.hint).toBeUndefined();
-    // the plan history's reads before and after the call and the read of the
-    // placement frame - none for a hint
-    expect(api.extended.getExternalObjectGroups).toHaveBeenCalledTimes(3);
+    // History, calculation diagnostics and placement frame; no obstacle hint.
+    expect(api.extended.getExternalObjectGroups).toHaveBeenCalledTimes(4);
   });
 });
 
@@ -7926,8 +8089,194 @@ describe('row edit tools', () => {
       })) as Record<string, any>;
 
       expect(result.hint).toBe(
-        "the wall units and the range hood above the moved units moved with them ('w1') - edit the wall row the same way if it should line up with the floor units"
+        "the wall units and the range hood above the moved units moved with them ('w1' (wall-article)) - edit the wall row the same way if it should line up with the floor units"
       );
+    });
+
+    it.each([
+      ['left wall', 0, 0, true],
+      ['left wall', 6000, 0, true],
+      ['left wall', 0, 270, true],
+      [undefined, 0, 0, false],
+    ])(
+      'names the turned leg by its original wall %s (room x %s, group turn %s, walls %s)',
+      async (sourceWall, roomX, groupTurn, withWalls) => {
+        const shiftedRoom = (x: number) => ({
+          ...room,
+          walls: room.walls.map((wall) => ({
+            ...wall,
+            start: [wall.start[0] + x, wall.start[1], wall.start[2]],
+            end: [wall.end[0] + x, wall.end[1], wall.end[2]],
+          })),
+        });
+        const raw = (turned: boolean) => [
+          {
+            id: 'kitchen-1',
+            pos: [roomX, 0, -3000],
+            rotationY: groupTurn,
+            roots: ['r1', 'r2'].map((id, index) => ({
+              ...rawCabinet(id, index * 600),
+              articleId: 'article-1',
+              articlePos: turned
+                ? [600 + index * 600, 0, 0]
+                : [0, 0, 1200 + index * 600],
+              rotationY: (turned ? 0 : 90) - groupTurn,
+            })),
+          },
+        ];
+        // compensate the rotated group frame while preserving the room positions
+        const inRoom = (groups: any[]) =>
+          groups.map((group) => ({
+            ...group,
+            roots: group.roots.map((root: any) => ({
+              ...root,
+              articlePos:
+                groupTurn === 270
+                  ? [
+                      root.articlePos[2],
+                      root.articlePos[1],
+                      -root.articlePos[0],
+                    ]
+                  : root.articlePos,
+            })),
+          }));
+        const api = createApi(
+          {
+            ...planContextFixture,
+            groups: [rowGroup],
+            rooms: {
+              rooms: withWalls
+                ? roomX
+                  ? [room, shiftedRoom(roomX)]
+                  : [room]
+                : [],
+            },
+          },
+          {
+            getExternalObjectGroups: vi
+              .fn()
+              .mockResolvedValueOnce(inRoom(raw(false)))
+              .mockResolvedValue(inRoom(raw(true))),
+            externalObjectGroupOperation: vi.fn(async () => ({
+              groups: [],
+              removedGroupIds: [],
+              gapClosed: true,
+            })),
+          }
+        );
+
+        const result: any = await toolExecutors['delete-article-and-compact'](
+          api,
+          {
+            groupId: 'kitchen-1',
+            rootModuleId: 'r9',
+          }
+        );
+
+        expect(result.hint).toBe(
+          `${sourceWall ? 'the leg on the left wall' : 'the leg'} turned by 90°` +
+            (withWalls ? ' and now runs along the back wall' : '') +
+            " (root modules 'r1' (article-1), 'r2' (article-1))"
+        );
+      }
+    );
+
+    it('names a wall unit that rotates in place', async () => {
+      const wallArticle = {
+        ...articleFixture,
+        articleId: 'wall-article',
+        category: 'Kitchen | Wall Units | Storage',
+      };
+      const raw = (rotationY: number) => [
+        {
+          id: 'kitchen-1',
+          pos: [600, 0, -1500],
+          roots: [
+            {
+              id: 'w1',
+              articleId: 'wall-article',
+              articlePos: [0, 1380, 0],
+              rotationY,
+            },
+          ],
+        },
+      ];
+      const api = createApi(
+        {
+          ...planContextFixture,
+          groups: [rowGroup],
+          articles: [articleFixture, wallArticle],
+        },
+        {
+          getExternalObjectGroups: vi
+            .fn()
+            .mockResolvedValueOnce(raw(90))
+            .mockResolvedValue(raw(0)),
+        }
+      );
+
+      const result: any = await toolExecutors['swap-root-modules'](api, {
+        groupId: 'kitchen-1',
+        rootModuleIds: ['r1', 'r3'],
+      });
+
+      expect(result.hint).toContain("'w1' (wall-article)");
+    });
+
+    it('does not report a turned leg when only the group frame changes', async () => {
+      const wallArticle = {
+        ...articleFixture,
+        articleId: 'wall-article',
+        category: 'Kitchen | Wall Units | Storage',
+      };
+      const raw = (rotationY: number) => [
+        {
+          id: 'kitchen-1',
+          pos: [600, 0, -1500],
+          rotationY,
+          roots: [
+            {
+              ...rawCabinet('r1', 0),
+              articleId: 'article-1',
+              rotationY: -rotationY,
+            },
+            {
+              id: 'w1',
+              articleId: 'wall-article',
+              articlePos: [0, 1380, 0],
+              rotationY: -rotationY,
+            },
+          ],
+        },
+      ];
+      const api = createApi(
+        {
+          ...planContextFixture,
+          groups: [rowGroup],
+          articles: [articleFixture, wallArticle],
+        },
+        {
+          getExternalObjectGroups: vi
+            .fn()
+            .mockResolvedValueOnce(raw(0))
+            .mockResolvedValue(raw(90)),
+          externalObjectGroupOperation: vi.fn(async () => ({
+            groups: [],
+            removedGroupIds: [],
+            gapClosed: true,
+          })),
+        }
+      );
+
+      const result: any = await toolExecutors['delete-article-and-compact'](
+        api,
+        {
+          groupId: 'kitchen-1',
+          rootModuleId: 'r9',
+        }
+      );
+
+      expect(result.hint).toBeUndefined();
     });
   });
 

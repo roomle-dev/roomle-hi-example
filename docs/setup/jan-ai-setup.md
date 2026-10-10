@@ -33,9 +33,9 @@ Because Ollama exposes an OpenAI-compatible API locally, you can attach your exi
 
 The tools work on the planning session of an open Roomle ligna-store tab — the MCP server relays their planner calls into it. Before connecting Jan, open the store page in your browser and keep the tab open:
 
-1. Open this URL in your browser — the store connects to the MCP server only together with its own chat window, so it needs a chat `model` and its `api_key` (the models are listed in the ligna-store `hi-mcp/README.md`):
+1. Open this URL in your browser — the store connects its bridge without a chat model or API key:
    ```text
-   https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>
+   https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>
    ```
 2. Start planning or open an existing plan in the store.
 3. Keep this tab open — it is the session the agent works in.
@@ -61,5 +61,5 @@ The tools work on the planning session of an open Roomle ligna-store tab — the
 ## Related Resources
 
 - MCP Server Endpoint: `https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=<name>`
-- Store Page: `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>`
+- Store Page: `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>`
 - See also: [QUICKSTART.md](../../hi-mcp/hi-mcp-server/QUICKSTART.md) for additional setup details

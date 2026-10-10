@@ -8,6 +8,12 @@
 The store runs its own chat against the same MCP server as the example chat. Where the two differ,
 the store loses what the example already handles.
 
+## Overview
+
+| # | Issue | To do |
+|---|---|---|
+| 1 | [The images of `get-plan-images` reach Mistral as base64 text](#1-the-images-of-get-plan-images-reach-mistral-as-base64-text) | Move tool images into a user message with the example's middleware |
+
 ---
 
 ## 1. The images of `get-plan-images` reach Mistral as base64 text
@@ -26,21 +32,5 @@ message.
 
 **Test.** The example's `tests/tool-result-images.test.ts` covers the middleware; in the store, a
 Mistral turn that calls `get-plan-images` answers from the images.
-
-**Reproduce.** Not reproduced in a run; follows from the code above.
-
-## 2. A turn can end without an answer
-
-**Problem.** `streamChat` stops after eight steps with `stopWhen: stepCountIs(8)` (ligna-store
-`hi-mcp/chat.ts:75`), and every step may call a tool. A turn whose tool calls need corrections or a
-retry uses all eight steps on tools and ends without a summary.
-
-**To do.** Take the example's step policy `chatSteps` (`hi-mcp/hi-mcp-chat/chat-steps.ts:10`): the
-last step may not call a tool, so the turn always ends with an answer. The number of steps is a
-product choice of its own; the example uses 16.
-
-**Test.** The example's `it('ends a turn that uses every step with the model answer')` in
-`hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`; in the store, a turn that calls a tool in every step
-still ends with an answer.
 
 **Reproduce.** Not reproduced in a run; follows from the code above.

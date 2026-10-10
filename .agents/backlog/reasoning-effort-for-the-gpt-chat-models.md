@@ -1,7 +1,7 @@
 # Backlog: reasoning effort for the GPT chat models
 
 > **Type**: Backlog item (hardening, chat)
-> **Domain**: `hi-mcp/hi-mcp-chat` — `chat-config.ts` (`FOUNDRY_DEPLOYMENTS`), `chat-server.ts` (`providerOptions`); ligna-store `hi-mcp/chat.ts`
+> **Domain**: `hi-mcp/hi-mcp-chat` — `chat-config.ts` (`FOUNDRY_DEPLOYMENTS`), `chat-stream.ts` (`providerOptions`); ligna-store `hi-mcp/chat.ts`
 > **Status**: Open
 > **Ticket**: [RML-18043](https://roomle.atlassian.net/browse/RML-18043)
 

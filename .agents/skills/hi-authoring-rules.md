@@ -223,8 +223,10 @@ placement: {
   outside the room — the user may ask for one ([D22](../../docs/hi-mcp-behaviour.md#3-decisions)).
 - **Obstacles**: the `obstacles` section of `get-plan-context` lists what stands in the room — doors,
   windows and other objects with `kind`, `outline` and `bottomMm`/`topMm`, and per group the outlines
-  of its root modules. A door or a window lies in a wall (`roomIndex`, `wall`, `fromEndMm` — its
-  span from the wall's end). Put a new group on a stretch of wall or a spot that `obstacles` leaves
+  of its root modules. Root outlines bound the calculated parts and can extend past their docking
+  edges over a neighbour in the same group; that overlap alone is not a placement error.
+  Article-specific overhangs belong in the library descriptions. A door or a window lies in a wall
+  (`roomIndex`, `wall`, `fromEndMm` — its span from the wall's end). Put a new group on a stretch of wall or a spot that `obstacles` leaves
   free: a placement with that wall, alignment `end` and `offsetMm` = the start of a free stretch
   puts a group on it; base units lower than a window's `bottomMm` fit below it. The result's `hint`
   names every root module that overlaps an object or another group or stands in front of a door or

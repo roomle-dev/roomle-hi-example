@@ -15,8 +15,8 @@ The MCP server is the TypeScript implementation from
 layer is `@modelcontextprotocol/sdk` with zod tool schemas, and the page bridge
 is a WebSocket. It is used as-is; the launcher only wires environment
 variables ([ADR 0002](../.agents/decisions/0002-one-mcp-server-configured-from-outside.md)).
-The same server also serves the ligna-store as its client — its chat window,
-opened with the `model`, `api_key` and `mcp_server` query parameters — and it is
+The same server also serves the ligna-store as its client — its bridge starts with a valid
+`mcp_server` query parameter; `model` and `api_key` add the optional chat window — and it is
 the one deployed to Cloudflare ([cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md));
 [azure-mcp-server.md](setup/azure-mcp-server.md) is the runbook for Azure App Service.
 
@@ -152,9 +152,13 @@ need a deploy first: a push to `release/cloudflare`, or `npm run deploy:cf`. Det
 
 The launcher installs and typechecks the `hi-mcp` workspace (the build gate),
 serves the example, starts the MCP server, and opens the example in the
-default browser at `http://localhost:3000/?mcp=true` (pass `--no-open` to
-skip that). If port 3000 is taken (the ligna-store dev server uses it too),
+default browser at `http://localhost:3000/?mcp=true` (`npm start -- --no-open`
+skips that). If port 3000 is taken (the ligna-store dev server uses it too),
 start with another page port: `EXAMPLE_PORT=3101 npm start`.
+
+Ctrl+C or SIGTERM to the launcher stops the example page, the local MCP server and the optional
+chat backend. The launcher starts each server directly through Node and the workspace's installed
+`vite-node` CLI, so termination reaches the server process itself and releases its port.
 
 Select a preset (or enter a library id) in the top bar and keep the tab
 open — the server terminal logs `page connected`.
@@ -297,6 +301,11 @@ Returns a snapshot of the HI planning session, agent-ready as the planner API
 (`getExternalObjectPlanContext`) provides it — compacted sections, one
 coordinate system throughout (3D, right-handed, Y up).
 
+The tool description asks the agent to briefly name a door or window that determines a placement
+and explain whether the final placement keeps it clear, using the returned obstacle dimensions
+and final tool results. The answer describes horizontal clearance, cabinets below a sill, or an
+overlap according to the measured result; missing data is no assurance of clearance.
+
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `include` | `('masterData' \| 'rooms' \| 'articles' \| 'articleDescriptions' \| 'groups' \| 'obstacles')[]` | no | Sections to include; `rooms`, `articles`, `groups` and `obstacles` when omitted |
@@ -343,7 +352,10 @@ coordinate system throughout (3D, right-handed, Y up).
   index in the walls array) and `fromEndMm`, its span along that wall measured
   from the wall's end —, and `groups`, per HI group the `id`, `outline` and
   `bottomMm`/`topMm` of every root module that is not generated, from the
-  parts of the calculated group. No walls. Requested alone, the server fetches
+  parts of the calculated group. A root outline can extend past its docking edges over a neighbour
+  in the same group; that overlap alone is not a placement error. The authoring rules and tool
+  description explain this, and the library descriptions explain article-specific overhangs.
+  No walls. Requested alone, the server fetches
   the rooms too for the walls of the doors and windows
 - `masterData` — only when included explicitly: per library the root modules
   (id, name, desc) with their relevant attribute ids, and the attributes a
@@ -447,8 +459,12 @@ group attributes set on every unit, those no unit of the group carries — the g
 without them —, and the root modules that keep their own value of one), `corrections` (what the server changed in the input, and what the
 library changed with the group attributes — a front colour reset by a front program)
 and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build and, with
-`rootIds`, the roots of a loaded group it could not build — one unknown article id drops that root,
-not the group). A group id you gave an earlier group of the session replaces that group. A `hint`
+`rootIds`, the roots of a loaded group it could not build or fully calculate — one unknown article
+id drops that root, not the group; an `Error` or `Fatal` calculation log reports the root's first
+diagnostic and asks you to check the group's attributes and the root's overrides against the library
+data, then change the failing values or replace the article, while keeping the loaded
+group and roots). `index` names the original input group; diagnostic ids are the planner's runtime
+ids. A group id you gave an earlier group of the session replaces that group. A `hint`
 names each root module of the call's groups that overlaps an object or a root module of another
 group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm`
 ranges; the group is built anyway (D55).
@@ -560,7 +576,7 @@ its first UUID segment or in one character is read as that root and reported.
 | `change-group-attribute` | `groupId`, `attributeId` and `value`, or `attributes: [{ attributeId, value }]` | Sets the attribute on every root and sub module of the group that has it; several attributes in one calculation with `attributes`, the programs first. Returns `{ command, groupIds, changedModuleIds, corrections? }`, not the group; every other attribute the library changed with it — a front program switched by a front colour, which changes how the fronts are built — is named in `corrections` |
 | `delete-group` | `groupId` | Deletes the group |
 | `delete-article-in-place` | `rootModuleId` | Deletes an article and leaves the gap — the tool for "delete" or "remove" unless the user asks to close the gap; root modules no longer docked together become separate groups where they stand, and deleting the only root module deletes the group. Generated roots (worktop, toe kick) cannot be deleted |
-| `delete-article-and-compact` | `rootModuleId`, `groupId` (optional: the group of the root module) | Deletes an article and closes the gap — when the user asks to close it: the neighbours are docked to each other, the root modules at a wall stay, a wall unit hung on it hangs on the root module that moves into the gap. A root module with a neighbour on one side only is deleted and nothing else moves; a corner article between two legs is deleted and the gap closed by turning one leg by 90° with the units above it, and the result names the leg that turned; the only root module is deleted with its group (`gapClosed: false`) |
+| `delete-article-and-compact` | `rootModuleId`, `groupId` (optional: the group of the root module) | Deletes an article and closes the gap — when the user asks to close it: the neighbours are docked to each other, the root modules at a wall stay, a wall unit hung on it hangs on the root module that moves into the gap. A root module with a neighbour on one side only is deleted and nothing else moves; a corner article between two legs is deleted and the gap closed by turning one leg by 90° with the units above it, and the result names the leg by its original and destination wall when known; the only root module is deleted with its group (`gapClosed: false`) |
 | `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo: { rootId, ownDockingVector, dockingVector, mode?, offset? }` | Docks the article as a new root module to a free docking vector of a root module of the group (`mode` default `StartStart`, `offset` default `[0, 0, 0]`); the new root module inherits the attributes the library passes on between neighbours (fronts, handles, carcase) from `dockTo.rootId`, and `attributes` override them |
 | `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between: [rootId, rootId]` | Inserts an article between two root modules that stand side by side, in either order, whatever the group and the article (a low cabinet between two wardrobes too); the root modules at a wall or in a corner keep their place and the others move by the article's width. Two root modules of one row that are no neighbours put the article beside the first-named, towards the second (reported). The new root module inherits the attributes the library passes on between neighbours from the first root module of `between`, and `attributes` override them |
 | `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | Replaces a root module with an article of one root module; the new root module keeps the position, the docking and the attributes the library passes on between neighbours, `attributes` override attributes of the new root module (`mod_Width` for another width - the other root modules move by the difference), and a docking the new article cannot take is named in `corrections` |
@@ -573,11 +589,20 @@ or from `find-attributes`. A value may come only with the value of a related att
 colour the front program does not offer switches the program, and the library makes that change in
 its calculation, not in the master data.
 
+Attribute commands wait for the kernel's position callback and its follow-up calculation/load.
+The returned corrections use the final attributes, including a position height derived from the
+actual placement or adjusted by the library.
+
 In a row edit — insert, `delete-article-and-compact`, exchange, swap — the end of the row at a wall
 or in a corner keeps its place and the other end moves; wall units and the
 range hood move with the unit they hang from. The result's `hint` names those
-units and says when the row now reaches past a wall or into another group; the
-row is built anyway.
+units by root id and article id and says when the row now reaches past a wall or into another group; the
+row is built anyway. A turned leg is identified by its original wall and the wall it
+now runs along, when the calculated geometry identifies them. The comparison uses
+room positions and rotations, so rotating in place counts and changing the group
+frame alone does not. `delete-article-and-compact` corrections name each root with
+its id and article id from the original group, falling back to the article name
+or the id alone when metadata is absent.
 
 Examples:
 

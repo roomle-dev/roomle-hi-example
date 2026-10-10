@@ -14,6 +14,34 @@ describe('PageBridge.call', () => {
     );
   });
 
+  it.each([
+    [undefined, undefined, undefined, undefined, 'http://localhost:3100'],
+    ['3110', '3200', undefined, undefined, 'http://localhost:3110'],
+    [undefined, '3200', undefined, undefined, 'http://localhost:3200'],
+    ['3110', undefined, 'cert.pem', 'key.pem', 'https://localhost:3110'],
+  ])(
+    'includes the local MCP server in the default store link (%s, %s, %s, %s)',
+    async (mcpPort, port, cert, key, serverUrl) => {
+      vi.stubEnv('HI_MCP_STORE_URL', undefined);
+      vi.stubEnv('HI_MCP_PORT', mcpPort);
+      vi.stubEnv('PORT', port);
+      vi.stubEnv('HI_MCP_TLS_CERT', cert);
+      vi.stubEnv('HI_MCP_TLS_KEY', key);
+      try {
+        const error = await new PageBridge()
+          .call('getExternalObjectPlanContext', [['rooms']])
+          .catch((error: Error) => error);
+        expect(error).toBeInstanceOf(Error);
+        const url = new URL((error as Error).message.match(/at (\S+) and/)![1]);
+        expect(url.searchParams.get('mcp_server')).toBe(serverUrl);
+        expect(url.searchParams.get('store.stage')).toBe('INT');
+        expect(url.searchParams.has('api_key')).toBe(false);
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    }
+  );
+
   it('names the configured store URL when HI_MCP_STORE_URL is set', async () => {
     vi.stubEnv(
       'HI_MCP_STORE_URL',

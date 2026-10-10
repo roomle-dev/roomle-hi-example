@@ -13,8 +13,10 @@ The repository root is an npm workspace root over `hi-mcp`, `hi-mcp/hi-mcp-serve
 over `hi-mcp-server`, `hi-mcp-chat` and `cf`. `hi-mcp-client` has no `package.json` — it is covered
 by the typecheck and the tests only.
 
-There are two lockfiles: the root `package-lock.json` (CI) and `hi-mcp/package-lock.json` (the
-Dockerfile and the launcher's `npm install`).
+The root `package-lock.json` pins all five workspaces for CI, local installs and the Docker image.
+The image copies every workspace manifest and installs only the production dependencies of
+`hi-mcp/hi-mcp-server`. The root `.dockerignore` limits the build context to those manifests,
+the lockfile, the shared TypeScript config and the server source.
 
 | Where | Script | Runs |
 | ----- | ------ | ---- |
@@ -46,10 +48,10 @@ page   ── wss://…/bridge?session=<name> ───────────�
 
 | File | Content |
 | ---- | ------- |
-| `hi-mcp/cf/wrangler.jsonc` | Worker `hi-mcp-poc`; container `HiMcpContainer` built from `./Dockerfile` with the build context `hi-mcp/`, instance type `basic`, at most 5 instances; Durable Object binding `HI_MCP`; `HI_MCP_STORE_URL` |
+| `hi-mcp/cf/wrangler.jsonc` | Worker `hi-mcp-poc`; container `HiMcpContainer` built from `./Dockerfile` with the repository root as build context, instance type `basic`, at most 5 instances; Durable Object binding `HI_MCP`; `HI_MCP_STORE_URL` |
 | `hi-mcp/cf/src/worker.ts` | routes `/mcp` and `/bridge` to the container of the `session` query parameter (`default` without one) |
-| `hi-mcp/cf/src/container.ts` | `defaultPort` 3000, `sleepAfter` 15 minutes, passes `PORT` and `HI_MCP_STORE_URL`; starts the container on the first request |
-| `hi-mcp/cf/Dockerfile` | `node:20-slim`; installs only the server workspace (`npm ci --workspace hi-mcp-server`), copies the server sources, `npm start` |
+| `hi-mcp/cf/src/container.ts` | `defaultPort` 3000, `sleepAfter` 15 minutes, passes `PORT` and `HI_MCP_STORE_URL` with `mcp_session` selected from the request or `default`; sets the link before SDK `containerFetch` handles startup and forwarding, including 503 for exhausted capacity and 429 for startup throttling |
+| `hi-mcp/cf/Dockerfile` | `node:20-slim`; installs from the root lockfile with `npm ci --workspace hi-mcp/hi-mcp-server --omit=dev`, copies the server sources, `npm start --workspace hi-mcp/hi-mcp-server` |
 
 - **One session, one container, one page.** The page passes its session as `mcp_session`, appended
   to `/bridge?session=`; MCP clients use `/mcp?session=`. A container keeps the page, the pending
@@ -80,9 +82,12 @@ is aliased to a stub).
 | `hi-mcp-server/tests/plan-history.test.ts` | the undo record and history events |
 | `hi-mcp-server/tests/page-bridge.test.ts` | handshake, one page, call correlation, timeouts, disconnect (with `fake-page-socket.ts`) |
 | `hi-mcp-server/tests/planner-api.test.ts` | the methods and timeouts; the client allow-list matches |
+| `hi-mcp-server/tests/example-launcher.test.ts` | starts the real page, MCP and chat with a dummy key on unused ports; SIGTERM/SIGINT to only the launcher PID release every port (POSIX; no model request) |
 | `hi-mcp-client/tests/browser-bridge.test.ts` | the page side of the bridge |
 | `hi-mcp-chat/tests/*.test.ts` | provider resolution, request handling, the step loop, the Mistral image middleware |
 | `cf/tests/worker.test.ts` | the Worker's routing |
+| `cf/tests/container.test.ts` | the named/default store link is set before container startup and preserved across bridge reconnects |
+| `cf/tests/container-startup-errors.test.ts` | the installed container SDK returns 503/429/500 for startup failures through the wrapper; startup errors do not escape as Worker exceptions |
 
 Many tests are named in [hi-mcp-behaviour.md](../hi-mcp-behaviour.md) as the guard of a decision or
 a message — a renamed test breaks those references.
@@ -112,8 +117,33 @@ node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<pro
    plan XML, order data, and a saved plan snapshot id.
 
 Output in `--out` or `.temp/result/<time>-<provider>/`: `run.json` (turns, answers, tool calls,
-errors, the snapshot id), the plan context, the planner calls, the images, the plan XML and the
-order data. Exit code 1 on an error or without a snapshot id.
+errors, the snapshot id, `snapshotCaptured` and `navigations`), the plan context, the planner calls,
+the images, the plan XML and the order data. Exit code 1 on an error or without a snapshot id.
+Frame navigation is logged to `console.log` and stored with its timestamp, URL, main-frame flag,
+run phase (`loading`, `chat`, `snapshot`, `complete`) and whether only the URL fragment changed.
+
+### Snapshot persistence and repository ownership
+
+`getExternalObjectSnapshot()` collects images, XML and order data. The separate
+`saveExternalObjectSnapshot()` call persists the plan and returns `planSnapshotId`; local images
+and XML alone do not establish that the plan was saved.
+
+| Repository | Responsibility |
+|---|---|
+| roomle-hi-example | The prompt runner calls the planner API and stores its returned snapshot id and errors. The example's Save snapshot button uses the same API. |
+| roomle-ui | The planner saves the external-object and full-plan snapshots through `RoomlePlanner` and `RapiAccess.savePlanSnapshot()`. `RapiAccess._fetch()` owns endpoint version selection through `resolveRapiUrl()`. |
+| ligna-store | The planner and cart consume the same snapshot APIs supplied by roomle-ui. Endpoint selection belongs to the planner SDK. |
+| RoomleCore | Supplies the plan XML and scene data; the planner SDK sends the persistence request. |
+
+`/planSnapshots` requests use RAPI v2. In roomle-ui,
+`packages/common/src/utils/rapi-version.ts` switches a versioned base URL per request: only paths
+listed in `RAPI_V3_PATHS` use v3; plan snapshots are outside that list. Custom proxy base URLs
+without a version suffix are preserved. The test runner and host pages use the planner API
+without constructing or overriding the snapshot endpoint. The routing tests are in roomle-ui's
+`tests/unit/common/utils/rapi-version.spec.ts`.
+
+An API save failure is recorded as `saving the snapshot failed: …` in `run.json`. It is distinct
+from interrupted browser capture and does not by itself trigger the suite's navigation retry.
 
 ### The suite — `run-hi-mcp-tests.js`
 
@@ -122,11 +152,51 @@ node .agents/scripts/run-hi-mcp-tests.js [docs/test-prompts.json] [--out <dir>] 
 ```
 
 Reads `models` (provider and key, `"$NAME"` reads the environment), `plans` and `tests` from the test
-file, validates it, and runs every model × test as a child `run-hi-mcp-prompt.js`. A test directory
-that already holds `run.json` is skipped, so a rerun with the same `--out` resumes; `results.json` is
-rewritten after every run. The `expect` of a test is not evaluated by the script — the evaluation is
-part of the [testing skill](../../.agents/skills/hi-mcp-testing.md). With 3 models and about 30 tests a
-full run takes close to an hour.
+file, validates it, and runs every model × test as a child `run-hi-mcp-prompt.js`.
+
+The [testing skill](../../.agents/skills/hi-mcp-testing.md#3-tests) prepares a full session file
+from the selected fixed cases, six agent-generated standard cases (creation, placement,
+attributes, edits, undo/redo and a conversation), then the requested number of random cases.
+The agent writes their prompts and expectations before running them. A `jq` composition command
+checks the generated counts, coverage, expectations, plans, markings and unique ids. Cases stay
+in the session directory, and a resumed session uses the same prepared file. Runs limited to
+named tests add cases only when requested. The CLI executes supplied cases; it does not generate
+them. Direct execution on `docs/test-prompts.json` runs its fixed cases only.
+
+The suite repeats a
+run once when it produces no `run.json` or navigation interrupts its snapshot capture. A capture is
+interrupted when it has no saved snapshot id and a destroyed-context/navigation error, or when
+`snapshotCaptured` is false and a frame navigated during `chat` or `snapshot`. Initial loading and
+fragment-only URL changes do not trigger the latter condition. A missing saved snapshot id alone
+does not trigger a retry.
+
+Before the retry, the entire first directory is moved to `<NN>-<test id>.attempt-1/`. The retry uses
+the original plan and prompts in a fresh browser and writes to the normal test directory.
+`results.json` names that selected directory in `dir` and lists all attempt directories in
+`attempts`; reports evaluate the selected directory and retain the first attempt as diagnostics.
+A rerun with the same `--out` resumes an interrupted first attempt or an archived attempt awaiting
+its retry. Once both attempt directories exist, it keeps the second result, including a second
+failure, without launching another attempt. Other existing `run.json` results are skipped.
+
+`results.json` is rewritten after every run and preserves ids, titles and the random flag. The
+skill uses `standard-` ids and `Standard:` titles to distinguish generated standard cases without
+another result field. The `expect` of a test is evaluated by the agent, not by the script. The skill
+writes one report and PDF per session, with separate fixed, standard and random counts and the
+generated case JSON. The duration depends on the selected models, case count and number of turns.
+
+The test infrastructure has regression coverage independent of the MCP unit tests:
+
+```bash
+node --test .agents/scripts/tests/*.test.js
+```
+
+The suite tests run the actual runner with local fake prompt processes. The generated-case tests
+execute the skill's documented `jq` composition filter and cover counts, coverage, case metadata,
+fixed/standard/random execution, zero random cases, focused runs and resume without duplication.
+The browser tests use
+Playwright and intercepted test pages to navigate the main page and planner frame while a capture
+is pending. They make no model requests and require the existing Playwright installation in
+`.agents/scripts/`; the generated-case tests also require `jq`.
 
 When an interactive `npm start` holds ports 3000 and 3200, run with `EXAMPLE_PORT` and `HI_CHAT_PORT`
 set to free ports.

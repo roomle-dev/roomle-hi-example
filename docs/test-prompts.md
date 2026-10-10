@@ -157,7 +157,7 @@ table and the kitchen.
 | `models` | the chat models to test, `{ provider, apiKey }`: a provider name of the launcher and its key — `"$NAME"` reads the key from the environment variable `NAME`, which keeps it out of the committed file |
 | `randomTests` | how many random tests the "test the mcp" skill adds to each session (default 3, 0 for none): the agent running it writes them for one of the plans drawn at random, marks them `"random": true` and appends them only to the end of the session's test file — the report shows them as random tests ([skill](../.agents/skills/hi-mcp-testing.md#random-tests)) |
 | `plans` | the plans above by name: `{ "<name>": "<plan snapshot id>" }` |
-| `tests` | `{ id, title, plan, prompt?, image?, expect? }`, in the order they run, from simple to complex: single groups, single edits, edits that need more understanding, edits over two or three turns, kitchens around a corner, obstacles, the image tests, and the kitchen conversation last — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message — a `prompt` list is sent as consecutive turns of one conversation, the image with the last turn; `expect` says what the evaluation checks, per turn for a list |
+| `tests` | `{ id, title, plan, prompt?, image?, expect?, random? }`, in the order they run, from simple to complex: single groups, single edits, edits that need more understanding, edits over two or three turns, kitchens around a corner, obstacles, the image tests, and the kitchen conversation last — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message — a `prompt` list is sent as consecutive turns of one conversation, the image with the last turn; `expect` says what the evaluation checks, per turn for a list |
 
 **Decision** ([ADR 0006](../.agents/decisions/0006-prompt-tests-assess-the-agent.md)): the tests
 assess how well the agent understands the prompts and picks the right tools; they do not test the
@@ -166,6 +166,30 @@ tools. A test never calls a tool itself — the tools are tested by the unit tes
 asks for the change in an earlier turn — "join groups" first asks to delete the middle unit; `undo-last-change`, `redo-last-change` and `undo-a-wrong-command`
 first ask to delete the middle unit of the Three Tall Units — `redo-last-change` also to undo it —
 and the last turn asks the agent to undo, redo or correct that change. Every turn is evaluated.
+
+## Prepared test sessions
+
+A full **"test the mcp"** session uses the
+[testing skill](../.agents/skills/hi-mcp-testing.md#3-tests) to prepare a temporary `tests.json`
+with three kinds of cases, in this order:
+
+| Kind | Preparation | Marking |
+|---|---|---|
+| Fixed | Copy the selected cases from `test-prompts.json`. | Their committed ids and titles. |
+| Generated standard | Write six new cases: creation, placement, attributes, edits, undo/redo and a conversation, one per coverage area. Choose variants distinct from the fixed cases. | `standard-<coverage>-<slug>` id, `Standard: <title>`, no random flag. |
+| Random | Draw a plan at random for each of `randomTests` new cases (default 3, 0 for none). | `random-<n>-<slug>` id, `Random: <title>`, `random: true`. |
+
+The agent writes the generated prompts and expectations before execution, from the saved plans
+and catalog. They stay in the session directory. A run limited to named tests adds no extra cases
+unless the user requests them. The skill's composition command checks generated counts, standard
+coverage, expectations, plan references, markings and unique ids before replacing the session
+file. A resumed session reuses that prepared file.
+
+The runner executes every case supplied in `tests.json`; direct execution on the committed
+`test-prompts.json` runs its fixed cases. Generation and evaluation belong to the skill, including
+the `randomTests` count. The single session report counts fixed, standard and random cases
+separately, includes the generated case JSON, and preserves their title prefixes in every summary
+and run section.
 
 ## Testing Guidelines
 
@@ -190,7 +214,8 @@ To run every test for every model and keep the results, use the runner; ask an a
 mcp"** ([HI MCP testing skill](../.agents/skills/hi-mcp-testing.md)) for an evaluated report:
 
 ```bash
-node .agents/scripts/run-hi-mcp-tests.js                     # docs/test-prompts.json, every model
+node .agents/scripts/run-hi-mcp-tests.js                     # fixed cases, every model
+node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" # prepared skill session
 node .agents/scripts/run-hi-mcp-prompt.js gpt-5-mini "$AZURE_GPT_KEY" "add a group of three tall units to the wall on the right" --plan ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv
 ```
 

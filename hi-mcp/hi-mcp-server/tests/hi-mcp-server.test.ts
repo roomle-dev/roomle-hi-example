@@ -343,6 +343,18 @@ describe('hi-mcp-server tool calls', () => {
     );
   });
 
+  it('asks for a grounded opening explanation in the tool list without reading authoring rules', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    const description = tools.find(
+      (tool) => tool.name === 'get-plan-context'
+    )?.description;
+
+    expect(description).toContain(
+      'When a door or window determines a placement, briefly name it and explain whether the final placement keeps it clear, using the returned obstacle dimensions and final tool results.'
+    );
+  });
+
   it('asks the agent to say which group material the library does not build', async () => {
     const client = await connectClient(createMockPlannerApi());
     const { tools } = await client.listTools();
@@ -1190,6 +1202,8 @@ describe('hi-mcp-server through the page bridge', () => {
       'loadExternalObjectGroupLayout',
       'getExternalObjectPlanContext',
       // the position read back in the placement frame
+      'getExternalObjectGroups',
+      // the final calculation diagnostics
       'getExternalObjectGroups',
       // the plan after the call, for undo
       'getExternalObjectGroups',

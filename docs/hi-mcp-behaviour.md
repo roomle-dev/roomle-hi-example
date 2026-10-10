@@ -88,7 +88,7 @@ Every result tells the agent what happened:
 - **what was built** — the resulting groups with their position
 - **what the server corrected, and what the planner or the library changed beyond what was sent** — a
   `corrections` list, one sentence per correction (C20, D59)
-- **what was not built, and why** — a `notLoaded` list (`create-or-replace-groups`) that names what to send instead: a group, or with `rootIds` the roots of a group that loaded without them
+- **what was not built or fully calculated, and why** — a `notLoaded` list (`create-or-replace-groups`) that names what to send instead: a group, or with `rootIds` the roots that were omitted or whose loaded calculation has an `Error` or `Fatal` diagnostic
 - **what to check** — a `hint` that stops nothing
 
 An error result (`isError`) is the answer only when nothing could be done. A message names the fix
@@ -103,6 +103,16 @@ server uses, because every MCP client supports it.
   served text free of rejections and checks that it explains `corrections` and `notLoaded`.
 - **Keep it short and plain.** A rule that needs a long explanation is a candidate for simplifying
   the API.
+- **Explain relevant openings.** The `get-plan-context` description asks the agent to name a door
+  or window that determines a placement and say whether the final placement keeps it clear,
+  using the returned obstacle dimensions and final tool results. Both chats receive this sentence
+  in the tool list, even without reading `get-authoring-rules`.
+- **Library-neutral.** The server serves every HI library. The served text, the results and the
+  server's logic carry no information about a specific library — no article, category, attribute,
+  value or measure of one library, not even as an example. The only source of library information
+  is the library data the plan context passes on: the master data and the article list, and in them
+  the `desc` properties (D8). When the agent picks the wrong library content because it lacks
+  information, the fix is the desc in the library data, never a served rule.
 - **Never mention internals**: `repositioningData`, the anchor frame, the anchor probe, `rootRelPos`,
   `cornerPoint`. `tests/hi-mcp-server.test.ts` guards this
   ("never tells the agent how the server positions a group internally").
@@ -183,8 +193,8 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D39 | **The row edits are planner commands.** `insert-article-into-group`, `delete-article-and-compact` (the roomle-ui command `remove-article-from-group`) and `swap-root-modules` are roomle-ui commands that rewrite the docking of the row and let the root module arrangement move the units, against the group before the edit, in one reload (D3). The server resolves the ids, corrects what it can and forwards one command. Rejected: the server rewriting the relations and replacing the group with `create-or-replace-groups` — the replace path keeps no wall distance, the server would have to pick the end that stays and position the group without the planner (D26), and a replace regenerates the ids; and an insert as a mode of `merge-article-into-group` — a tool named for the intent is what the model selects by, and a taken side there means the end of the row (D29) | [RML-18045](https://roomle.atlassian.net/browse/RML-18045) | in effect — `insert-article-into-group`, `swap-root-modules`, `tool-executors.ts`; roomle-ui `glue-logic.ts` |
 | D40 | **Remove and delete are two edits, named by the user's word.** The rules and the two tool descriptions tell the agent to take the user's word: "remove" is `remove-article-from-group`, "delete" is `delete-root-module` (added after the MCP test of 2026-10-05, where gpt-5-mini closed the gap for "delete the middle unit"). **Each description opens with its word** — "The tool for "delete": when the user asks to delete a unit, a cabinet, a module or an article, …" — and points to the other tool by its word, not by the gap: the HI chat does not read the rules, and with the word as an aside behind the gap gpt-5.4-mini took `delete-root-module` for "remove" in every chat run (amended 2026-10-08, [RML-18079](https://roomle.atlassian.net/browse/RML-18079)). "Remove" names this edit only: `delete-group` deletes a group. `remove-article-from-group` takes the `rootModuleId` alone, like `delete-root-module`; its `groupId` is optional (G54). `delete-root-module` deletes a unit and leaves the gap: units no longer docked together become separate groups where they stand. `remove-article-from-group` removes a unit and closes the gap: its two neighbours are docked to each other, and a unit hung on it hangs on the neighbour that moves into the gap. A unit at the end of a row leaves no gap: it is removed in the same reload and nothing else moves. **A remove never splits a group** (amended 2026-10-07, [RML-18065](https://roomle.atlassian.net/browse/RML-18065)): a corner article between two legs is removed and the gap closed as well (D52). Only the only unit of a group is deleted, with its group. A deletion splits by docking, so with `delete-root-module` wall units hanging with a gap above their floor units become groups of their own — that is what "delete" means | user, review of the plan, 2026-10-05; the corner article: user, 2026-10-07; the word first: [RML-18079](https://roomle.atlassian.net/browse/RML-18079), 2026-10-08 | superseded in part by D58 — what each edit does stays, under the names `delete-article-in-place` and `delete-article-and-compact`; the selection by the user's word goes |
 | D41 | **Which part of a row moves.** The end of the row at a wall or in a corner keeps its place, and the other end moves; a row without a wall on its axis keeps the end at the group origin — the left end as seen from the front, the corner article of a corner kitchen. A row that grows from wall to wall is built anyway | [RML-18045](https://roomle.atlassian.net/browse/RML-18045) | in effect (roomle-ui `keepWallDistances`) |
-| D42 | **Units above follow the unit they hang from.** A wall unit, a range hood or a unit on top moves with the unit below it — on an insert with the pushed unit, on a swap with its own unit, on a `delete-article-and-compact` with the neighbour that takes the place of the removed unit, unless that neighbour carries a unit above it already: then the unit keeps its place, and the correction names the unit above that moved in and now overlaps it. The planner finds the unit below by position: its docking context links only vectors that touch, so after a load a wall unit hanging with a gap is no longer docked to its floor unit (found live, 2026-10-05). Nothing edits the wall row automatically: the same tools edit it | [RML-18045](https://roomle.atlassian.net/browse/RML-18045) | in effect (roomle-ui) — `removeArticleFromGroup`, `unitsOverlapping`; guarded by `it('keeps a unit above in place when the neighbour carries one already')` in roomle-ui `glue-logic-test.ts` |
-| D43 | **A row edit says what it did to the row.** When an insert, a `delete-article-and-compact`, an exchange or a swap makes a row that stood inside the room reach past a wall, overlap a group it did not overlap before, or stand in front of a door or a window or on an object it did not stand on before (the test of D55), the result's `hint` says so; the row is built anyway. This is no warning about a group outside the room (D22): a group that stood outside before the edit is never reported. The `hint` also names the units above that moved with the unit below them (D42) | [RML-18045](https://roomle.atlassian.net/browse/RML-18045), 2026-10-05 | in effect — `withRowHints`, `rowReachHints`, `obstacleHint`, `tool-executors.ts`; guarded by `it('names a door the row stands in front of after the edit')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
+| D42 | **Units above follow the unit they hang from.** A wall unit, a range hood or a unit on top moves with the unit below it — on an insert with the pushed unit, on a swap with its own unit, on a `delete-article-and-compact` with the neighbour that takes the place of the removed unit, unless that neighbour carries a unit above it already: then the unit keeps its place, and the correction names the unit above that moved in and now overlaps it. The planner finds the unit below by position: its docking context links only vectors that touch, so after a load a wall unit hanging with a gap is no longer docked to its floor unit (found live, 2026-10-05). The corrections of `delete-article-and-compact` label each named root with its id and article id, or its article name when the id is absent, from the group before removal. Nothing edits the wall row automatically: the same tools edit it | [RML-18045](https://roomle.atlassian.net/browse/RML-18045) | in effect (roomle-ui) — `removeArticleFromGroup`, `unitsOverlapping`; guarded by `it('keeps a unit above in place when the neighbour carries one already')` in roomle-ui `glue-logic-test.ts` |
+| D43 | **A row edit says what it did to the row.** When an insert, a `delete-article-and-compact`, an exchange or a swap makes a row that stood inside the room reach past a wall, overlap a group it did not overlap before, or stand in front of a door or a window or on an object it did not stand on before (the test of D55), the result's `hint` says so; the row is built anyway. This is no warning about a group outside the room (D22): a group that stood outside before the edit is never reported. The `hint` also names the units above that moved with the unit below them by id and article id (D42). Movement is measured by room position and rotation before and after, so a change of group frame alone says nothing | [RML-18045](https://roomle.atlassian.net/browse/RML-18045), 2026-10-05 | in effect — `withRowHints`, `rowReachHints`, `obstacleHint`, `tool-executors.ts`; guarded by `it('names a door the row stands in front of after the edit')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
 | D49 | **A size is an attribute.** A root module of another size is the same article with its size attribute set (`mod_Width` 900) — in `create-or-replace-groups` and in the `attributes` of `merge-article-into-group`, `insert-article-into-group` and `exchange-root-module`. The catalog has one size per article: without the rule, gpt-5-mini asked back whether "a 900 mm cabinet with drawers" meant a tall or a base unit (MCP test of 2026-10-05) | [RML-18045](https://roomle.atlassian.net/browse/RML-18045), 2026-10-05 | in effect — `AUTHORING_RULES`, the `exchange-root-module` description, `hi-mcp-server.ts` |
 
 ### Words (2026-10-06)
@@ -206,7 +216,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | # | Decision | Source | State |
 |---|---|---|---|
 | D51 | **The tools do not restrict the agent, and they always say what happens.** The goal is not to restrict the agent but to be as flexible as possible: a tool carries out what the agent asks wherever the planner can. What happens has to be clearly specified at all times — in the tool description before the call and in the result after it | user, 2026-10-07 ([RML-18065](https://roomle.atlassian.net/browse/RML-18065)) | in effect for every new or changed tool |
-| D52 | **`delete-article-and-compact` of a corner article closes the gap.** It deletes a corner article between two legs like every other root module: its two neighbours are docked to each other, so one leg turns by 90° and the legs form one straight row. The units above the turned leg turn with it. The end of the row at a wall keeps its place (D41), so the other leg may move along its wall. The description says so before the call; after it, the correction names the leg that turned and the leg it is docked to, and the row hint names the wall units that moved (D42, D51). Rejected: a kernel deletion of a corner article instead — it splits the group into its docked clusters, so each leg and each cluster of wall units becomes a group of its own; the two legs can be docked to each other once one of them turns | user | in effect — roomle-ui `removeArticleFromGroup`, `moveUnitsAboveWithTheirCarriers`; `hi-mcp-server.ts`; guarded by `it('removes a corner article by turning one leg with the units above it and docking it to the other')` in roomle-ui `glue-logic-test.ts` and the test `edit-remove-corner-unit` of `docs/test-prompts.json` |
+| D52 | **`delete-article-and-compact` of a corner article closes the gap.** It deletes a corner article between two legs like every other root module: its two neighbours are docked to each other, so one leg turns by 90° and the legs form one straight row. The units above the turned leg turn with it. The end of the row at a wall keeps its place (D41), so the other leg may move along its wall. The description says so before the call; after it, the correction names the leg that turned and the leg it is docked to, and the row hint names the wall units that moved (D42, D51). The server identifies the turned leg by its original wall and its destination wall from the root geometry in room coordinates, using the room containing each root. Roots with the same wall-to-wall turn are named together, with their ids and article ids; an unknown wall is omitted. Rejected: a kernel deletion of a corner article instead — it splits the group into its docked clusters, so each leg and each cluster of wall units becomes a group of its own; the two legs can be docked to each other once one of them turns | user | in effect — roomle-ui `removeArticleFromGroup`, `moveUnitsAboveWithTheirCarriers`; `hi-mcp-server.ts`; guarded by `it('removes a corner article by turning one leg with the units above it and docking it to the other')` in roomle-ui `glue-logic-test.ts` and the test `edit-remove-corner-unit` of `docs/test-prompts.json` |
 
 ### New root modules (2026-10-08)
 
@@ -248,7 +258,7 @@ Decided with the backlog of the MCP test, implemented on the user's go.
 | D66 | **A root module of a row carries its place in it.** Every root module docked side by side with another one gets `rowIndex`, its place in its row, 1 at the left end as seen from the front; floor units and wall units form rows of their own, and a corner article joins the two legs into one row. The roots are listed in the order they were added — an inserted root module last —, so "the middle unit" is read from `rowIndex`, not from the order. Every group a tool returns in the plan-context shape carries it; it is read-only and ignored when the group is resubmitted (C2). A root module beside no other one, and a row closed into a ring, get none. Rejected: listing the roots in row order — the first root is where the planner starts its arrangement, and a resubmitted group would change | user, the MCP test backlog | in effect — `withRowIndices`, `inPlacementFrame`, `tool-executors.ts`; the description of `get-plan-context` and `AUTHORING_RULES`, `hi-mcp-server.ts`; guarded by `it('gives every root module of a row its place in the row, counted from the left end')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` and `it('tells the agent the place of a root module in its row')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` |
 | D67 | **Several attributes of a group in one call.** `change-group-attribute` takes `attributes: [{ attributeId, value }]` beside the single `attributeId` and `value`, and sends them as one `change-attributes` command — one calculation, one undo step —, the program attributes first (D36). An attribute no module of the group has is named in `corrections`; the others are set. One attribute alone stays the planner's `change-group-attribute` command | user, the MCP test backlog | in effect — `change-group-attribute`, `tool-executors.ts`; the schema and description, `hi-mcp-server.ts`; guarded by `it('sets several attributes of a group with one planner command, the programs first')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
 | D68 | **A create, an undo and a redo answer with the groups they changed.** `create-or-replace-groups` returns the groups of the call in the plan-context shape and `otherGroupIds`, the other groups of the plan; `undo` and `redo` return the groups the reverted call changed as they are now, `removedGroupIds` for the groups they took out of the plan, and `otherGroupIds`. The agent knows the other groups already; every later step of the turn would send them again. An `undo` or `redo` that reverts nothing still returns every group | user, the MCP test backlog | in effect — `changedGroupsOnly`, `changedGroupIds`, `revertToolCall`, `tool-executors.ts`; guarded by `it('answers a create with the groups of the call and the other groups by their id')` and `it('returns the groups the reverted call changed, and the others by their id')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
-| D69 | **A value the library cannot calculate a root module with is left out on that root module.** When the library cannot calculate a root module with the values of a `change-attributes` — the upright colour `192` on an end panel `W60H`, for example —, the planner sets the values again on every other root module, in one load, and names the root modules that keep their previous values in `corrections`; when no root module can take them, the group stays as it was. The planner restores a group it cannot calculate (P-checks stay, D5), so one root module does not cost the others their values. The server passes the correction on — after a create prefixed with `posGroups[i]` | 2026-10-09, user | in effect — roomle-ui `changeAttributes`, `discardedRootModuleIds`, `glue-logic.ts`; `applyGroupWideAttributes`, `tool-executors.ts`; guarded by `it('sets the attributes on the other root modules when the library cannot calculate one of them with them, and names it')` in roomle-ui `glue-logic-test.ts` and `it('passes on the root module the library could not calculate with the group attributes')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
+| D69 | **A value the library cannot calculate a root module with is left out on that root module.** When the library cannot calculate a root module with the values of a `change-attributes` — the upright colour `192` on an end panel `W60H`, for example —, the planner sets the values again on every other root module, in one load, and names the root modules that keep their previous values in `corrections`; when no root module can take them, the group stays as it was. The planner restores a group it cannot calculate (P-checks stay, D5), so one root module does not cost the others their values. Rejected: the server infers a discarded calculation from unchanged attributes and retries each attribute separately — unchanged values identify neither a discard nor its failing root module, and separate retries lose the group-command boundary. The server passes the correction on — after a create prefixed with `posGroups[i]` | 2026-10-09, user | in effect — roomle-ui `changeAttributes`, `discardedRootModuleIds`, `glue-logic.ts`; `applyGroupWideAttributes`, `tool-executors.ts`; guarded by `it('sets the attributes on the other root modules when the library cannot calculate one of them with them, and names it')` in roomle-ui `glue-logic-test.ts` and `it('passes on the root module the library could not calculate with the group attributes')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
 | D70 | **`place-group` places a group by its measure at the new place.** The library builds a group for its place — at a wall it widens the units at the end of a row to reach the wall —, so a group measured at its old place can be wider or narrower at the new one. After the reload the server measures the group as built there and, when it does not stand as asked, places it once more by that measure; what that measure finds — an overlap with another group at the new place — is reported instead of what the first measure said | 2026-10-09, user | in effect — `place-group`, `tool-executors.ts`; guarded by `it('places the group once more by its measure at the new place when the library builds it there with another width')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
 
 ## 4. How a tool call runs
@@ -303,6 +313,13 @@ Decided with the backlog of the MCP test, implemented on the user's go.
   change in the planner. The first planner step of a call ends redo, as the planner drops its redo
   future with it — also when the call leaves no step in the end (a probe load undone, then a failed
   load).
+- **The store connection** starts when its planner is available and `mcp_server` is valid,
+  independently of chat settings. `mcp_session` selects a shared session; without it the store
+  generates one per page. Bridge and optional chat resolve one client/session identity, so the
+  chat's `client` parameter owns exactly that planner. External agents use the same session
+  without a browser `client` parameter. Cloudflare supplies `HI_MCP_STORE_URL` with the request's
+  session (or `default`) before container startup, so the no-page error directs the user to the
+  agent's session without requiring chat credentials.
 - **The HI chat** (`hi-mcp-chat`) is an MCP client of this server. It gives the model a
   five-sentence system prompt (`CHAT_SYSTEM_PROMPT`, `chat-config.ts`) — the first names what HI
   plans, "kitchens, wardrobes, living room and utility furniture, all made of articles", not "a
@@ -311,13 +328,25 @@ Decided with the backlog of the MCP test, implemented on the user's go.
   which one, instead of asking; the fifth asks it to summarise what it changed from the last tool
   results only, never by repeating them, and to name what was asked but is not in the plan — and **not** the server's instructions, so the model learns the rules only when it calls
   `get-authoring-rules`. A chat turn has 16 steps; the last one cannot call a tool, so the turn
-  always ends with an answer (`chat-steps.ts`). A turn that has not answered after
+  reserves an answer step (`chat-steps.ts`). A turn that has not answered after
   `HI_CHAT_TURN_TIMEOUT_MS` (5 minutes) is aborted and ends with "[error] the turn took longer than
-  … minutes and was ended - the plan holds what the tools changed so far"; every step logs its
+  … minutes and was ended - the plan holds what the tools changed so far" and a readable
+  interruption summary. A provider or stream failure also ends with that summary, from tool
+  outcomes captured during execution (`chat-recovery.ts`), even when the step cannot finish.
+  Completed writes name their returned groups and articles, corrections and omissions; a tool
+  error, thrown write or pending write is unconfirmed, and the answer asks to read the plan before
+  trying it again. If only read-only tools ran, it says that nothing was created or changed.
+  Partial text stays visible and is marked incomplete. Recovery calls no model, repeats no
+  operation and performs no automatic undo. The ligna-store keeps complete assistant/tool
+  message pairs and the summary for the next turn, with no fabricated pending result; the
+  example stores the summary text. `chat-stream.test.ts` covers the response and the retained
+  tool message pairs. Every step logs its
   tokens (in, out, reasoning), its tool calls and its duration, and a step that fails its number with
   what the provider answered — per cause the error, the HTTP status, the url, the provider's request id
-  and the body, text or value the AI SDK could not process (`createStepLog`, `describeStepError`); gpt-5.4-mini and gpt-5-mini plan at
-  reasoning effort `high` ([RML-18043](https://roomle.atlassian.net/browse/RML-18043)),
+  and the body, text or value the AI SDK could not process (`createStepLog`, `describeStepError`);
+  logging is best effort and cannot prevent the outcome message. A thrown tool-completion log
+  cannot turn a successful MCP result into a tool error for the model. gpt-5.4-mini and gpt-5-mini
+  plan at reasoning effort `high` ([RML-18043](https://roomle.atlassian.net/browse/RML-18043)),
   `HI_CHAT_REASONING_EFFORT` overrides it for every GPT deployment ([RML-18041](https://roomle.atlassian.net/browse/RML-18041)). The example page sends its
   bridge `clientId` with every `/chat` request; the chat backend requires it and connects to
   `/mcp?client=<clientId>` (retaining any `session` query). The example disables chat submission
@@ -380,7 +409,9 @@ tool. It covers:
   walls array for the point form; which leg of a corner group runs along which wall, as seen from
   the room.
 - **Obstacles** (D45, D55): what the `obstacles` section lists, a door's or a window's wall and span
-  from the wall's end, that a new group goes on a stretch of wall or a spot `obstacles` leaves free —
+  from the wall's end; root outlines bound the calculated parts and can extend past their docking
+  edges over a neighbour in the same group — that overlap alone is not a placement error;
+  that a new group goes on a stretch of wall or a spot `obstacles` leaves free —
   a stretch by alignment `end` and `offsetMm` = the start of its `fromEndMm` —, that base units lower than a window's `bottomMm` fit
   below it, and that the result's `hint` names every root module on an obstacle with the free
   stretches of its wall.
@@ -425,6 +456,17 @@ One coordinate system throughout: 3D, right-handed, Y up, millimetres. A contour
 
 Default sections: `rooms`, `articles`, `groups`, `obstacles`. Requested without `rooms`, `obstacles` makes the server fetch
 the rooms too, for the walls of the doors and windows, and return only `obstacles`.
+
+Root outlines bound the calculated parts and can extend past their docking edges over a neighbour
+in the same group. That overlap alone is not a placement error. Both the authoring rules and the
+`get-plan-context` description explain this; article-specific overhangs belong in the library's
+descriptions.
+
+The answer explains a door or window relevant to the placement, using its span and height together
+with the final group geometry and tool feedback. Cabinets below a sill are described as below the
+window only when their tops are below its `bottomMm`; cabinets beside it clear its horizontal
+span. An overlap is described as an overlap. Missing dimensions or an absent overlap hint alone
+do not establish clearance.
 
 ### 5.5 What the agent is not given
 
@@ -524,8 +566,16 @@ The server runs these steps:
    dropped (G48) — on every unit of the group with one planner command, `change-attributes`
    (G46), the programs first and a root module's own value after the group's, after a create and
    after a replace, and reads the groups again.
-9. It tests the root modules of the groups of the call against the obstacles and the other groups
-   and adds the `hint` of D55.
+9. It reads the final raw groups and reports roots with `Error` or `Fatal` calculation logs in
+   `notLoaded`, matched by runtime group id to the original input index. Each root gets its first
+   diagnostic line and an action to check the group's attributes and the root's overrides against
+   the library data, then change the failing values or replace the article. Loaded groups
+   and their other roots stay in the result; warnings and errors of unrelated groups are ignored.
+   Group-attribute recovery is guarded by
+   `names group attributes in the recovery advice for a root calculation %s after applying them`
+   in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`.
+10. It uses the same raw groups to test the root modules of the groups of the call against the
+    obstacles and the other groups and adds the `hint` of D55.
 
 A group that cannot be built at one of these steps leaves the call and goes to `notLoaded`; the
 others go on.
@@ -533,7 +583,8 @@ others go on.
 **Result**: `loaded` (the planner's runtime ids), `groups` (the groups of the call, in the
 plan-context shape), `otherGroupIds` (the other groups of the plan, unchanged — D68), `groupAttributes` (per group of the call `{ index, id, set, notCarried?, rootValues? }`: the group attributes set on every unit, those no unit of the group carries — D65 —, and the root modules that keep their own value of one, `{ id, value, rootModuleIds }` — D36), `hint` (an unpositioned group, a root module on an obstacle — D55), `corrections` (what the server changed in the input, and what the library changed with the group attributes — D59), and `notLoaded`
 — `[{ index, id?, rootIds?, errors }]` for the groups it could not build (D30) and, with `rootIds`,
-for the roots of a loaded group it could not build (G15). A conflicting placement is not sent (D26).
+for the roots of a loaded group it could not build (G15) or fully calculate. A calculation diagnostic
+does not remove the root or group from the planner. A conflicting placement is not sent (D26).
 
 ### place-group
 
@@ -576,7 +627,7 @@ position.
 | `change-group-attribute` | `groupId`, `attributeId` and `value`, or `attributes [{ attributeId, value }]` | resolves the group id (G18, C23); one attribute: the planner command `change-group-attribute`, several: one `change-attributes`, the programs first (D67) | sets them on every module that has them (D20, P3); an attribute of the list no module has is named in `corrections`; the attributes the library changed with them are named in `corrections` (C22) |
 | `delete-group` | `groupId` | resolves the group id | deletes the group |
 | `delete-article-in-place` | `rootModuleId` | resolves the root id (C17) | deletes the root module and leaves the gap: root modules no longer docked together become separate groups where they stand (P4, D40) |
-| `delete-article-and-compact` | `rootModuleId`, `groupId` optional | resolves the group id and the root id (C17); without `groupId`, the group that holds the root module (G54) | deletes the root module and closes the gap; a root module with a neighbour on one side only is deleted and nothing else moves; a corner article between two legs is deleted and the gap closed by turning one leg by 90° with the units above it, the correction names the leg (D52); the only root module is deleted with its group, reported with `gapClosed: false` (D40, P4) |
+| `delete-article-and-compact` | `rootModuleId`, `groupId` optional | resolves the group id and the root id (C17); without `groupId`, the group that holds the root module (G54) | deletes the root module and closes the gap; a root module with a neighbour on one side only is deleted and nothing else moves; a corner article between two legs is deleted and the gap closed by turning one leg by 90° with the units above it, the correction names the leg with root ids and article labels, and the hint names its original and destination wall when known (D52); the only root module is deleted with its group, reported with `gapClosed: false` (D40, P4) |
 | `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo { rootId, ownDockingVector, dockingVector, mode?, offset? }` | resolves the group id and `dockTo.rootId` (C17), reads the article id in the catalog's spelling (G15), moves an occupied side to the free end of the row (D29), derives a missing partner vector (P7) and the hang gap of a wall unit on a floor unit (D35) | docks the article as a new root module, which inherits from `dockTo.rootId` (D56) (P5–P8) |
 | `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between [rootId, rootId]` | resolves the group id and the root ids (C17), reads the article id in the catalog's spelling (G15), inserts beside the first-named root when the two are no neighbours (C19, G52) | docks the new root module between the two, whatever the group and the article (D44); it inherits from the first root of `between` (D56); the root modules at a wall stay (D41, P14, P16) |
 | `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | resolves the group id and the root id (C17), checks the article (G15) | replaces the root module; the new one keeps its docking and inherits from the replaced one (D56); `attributes` override attributes of the new root module, e.g. another width, and the other root modules move by the difference; a docking the new article cannot take is named in `corrections` (P9, C20) |
@@ -587,6 +638,12 @@ position.
 attribute commands: `{ command, groupIds, changedModuleIds?, corrections? }` (D62). **Result** of
 the others: `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed? }` — the affected groups in the plan-context
 shape, and for `delete-article-and-compact` whether the gap was closed — plus `corrections` when the server corrected the input before forwarding, followed by the planner's corrections, each named by its tool (C20), and after an attribute command the attributes the library changed besides the one set (C22).
+
+Attribute commands wait for their load's kernel planning-situation callbacks and calculated follow-up
+loads. An unrelated user move does not complete the command. Their planner result and the server's
+library-change feedback therefore read attributes derived from the actual placement, including an
+insertion height the library adjusts. The [command implementation](implementation/tool-executors.md#the-command-tools)
+describes callback ownership, operation-slot lifetime and the guarding planner tests.
 
 ### undo, redo
 
@@ -797,6 +854,7 @@ has its own corrections, G31–G45 and G64.
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |
 | — | the planner loads nothing | — | error result: "No groups were created or replaced …" |
 | — | a replaced group that still holds its previous articles instead of the ones sent — the planner could not calculate the new layout and restored the group (roomle-ui `_discardCalculation`) | — | correction: "the planner could not calculate the new layout of group '…' and kept its previous content - …; send the layout again with another article" |
+| — | a loaded root of a group of the call with an `Error` or `Fatal` calculation log | keeps the loaded groups and roots | `notLoaded`: original input `index`, runtime group `id`, failing runtime `rootIds`, and one error per root with its first diagnostic line and the action to check `posGroups[index].attributes` and the root's attribute overrides against the library data, then change the failing values or replace its article; warnings and unrelated groups are ignored |
 | — | a group of the call has no position after the load | — | `hint` |
 | D55 | a root module of a group of the call that overlaps an object or a root module of another group, or stands in the 600 mm strip in front of a door or a window within its height, `bottomMm` to `topMm` — by more than 5 mm; a replaced group only for what it did not stand on before | builds it (D51) | `hint`: "Root module 'w1' (OTB30) of group '…' stands in front of the window in the back wall (wall 5, fromEndMm 235 to 2335, 950 to 2170 mm) - free stretches of the left wall (wall 0) at its height: fromEndMm 0 to 4400. The groups were built as sent - move or change them if the user did not ask for them there." — with another group named: "… overlaps root module 'r1' (…) of group '…' …", then "If the units belong together, send them as one group or join them with merge-groups." Without a wall the stretches are left out; without a wide enough stretch: "- no stretch of the … is free for it at its height" |
 
@@ -830,10 +888,11 @@ has its own corrections, G31–G45 and G64.
 | G52 | `insert-article-into-group` with two roots that are in no row together | nothing: the server cannot tell where the unit goes | error naming the side neighbours of the first root and asking for two neighbours of one row |
 | G53 | `swap-root-modules` naming one root twice | nothing | error asking for the two units that change places |
 | G54 | `delete-article-and-compact` without `groupId`, with a root module id that matches no root of the plan, or more than one | nothing: without a group the delete cannot run | error "Root module '…' not found. Roots in the plan: …" — the answer the planner gives `delete-article-in-place` for the same id (C17, P11); guarded by `describe('delete-article-and-compact without a group id')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
-| C20 | a correction of the planner (a dropped docking, a hung unit moved to another carrier, a unit above that keeps its place and the unit above it now overlaps, a deletion instead of closing the gap) | passes it on after the server's own, named by the tool | correction |
+| C20 | a correction of the planner (a dropped docking, a hung unit moved to another carrier, a unit above that keeps its place and the unit above it now overlaps, a deletion instead of closing the gap) | passes it on after the server's own, named by the tool; `delete-article-and-compact` labels the named roots from the original group as id plus article id, falling back to the article name or just the id | correction |
 | C22 | `change-module-attribute` or `change-group-attribute` after which the library changed another attribute of a root module — a front program switched by a front colour —, or a root module the command set ends with another value | passes the result on; compares the input attributes of the root modules before and after (D59) | correction after the planner's: "with mod_FrontColor \"324\" (Dark marble (#404040)) the library changed mod_FrontProgram of root module 'w1' (OTB60) from \"Classic\" (Simple fronts in plain decors) to \"Modern\" (Mitred frame fronts with glass filling)" — the root modules changed alike in one sentence |
 | D43 | an insert, a `delete-article-and-compact`, an exchange or a swap that makes the row reach past a wall of the room, overlap another group that stood beside it before (not a group the edit split off), or makes a root module stand in front of a door or a window or on an object it did not stand on before (D55, by the groups before the edit) | builds it | `hint`: "the row now reaches past a wall of the room - …" / "the row now overlaps group '…'" / "Root module '…' (…) of group '…' stands in front of the door in the right wall (wall 1, fromEndMm …) - free stretches of the right wall … The row was edited as asked - move the group or edit the row if the user did not ask for it there." |
-| D42 | a row edit that moved wall units or the range hood of the group (by the catalog and the positions before and after) | — | `hint`: "the wall units and the range hood above the moved units moved with them ('w1', 'h1') - edit the wall row the same way if it should line up with the floor units" |
+| D42 | a row edit that moved or rotated wall units or the range hood of the group (by the catalog and the room positions and rotations before and after) | — | `hint`: "the wall units and the range hood above the moved units moved with them ('<root id>' (<article id>), …) - edit the wall row the same way if it should line up with the floor units" |
+| D52 | `delete-article-and-compact` that turns a leg | compares calculated root geometry and rotations in room coordinates; identifies each root's room and wall before and after; omits unknown walls | `hint`: "the leg on the left wall turned by 90° and now runs along the back wall (root modules '<root id>' (<article id>), …)" — roots making the same wall-to-wall turn in one sentence |
 | G15 | an article id the catalog does not have | nothing | error with the valid article ids |
 | D29 | `merge-article-into-group` on a taken side vector | docks the unit to the root at the free end of that row in the named direction — when that row ends at a corner article, to the free end of the leg in the other direction —, or to the named root's free other side when the unit would stand outside the room at that end (the calculated group and the contour of the room the group stands in decide, not the bounding box of its walls) | correction, naming the end it skipped |
 | P7 | a `dockingVector` the new article does not have (by the catalog) | uses the partner of `ownDockingVector` when the article has it | correction |
@@ -882,7 +941,7 @@ Infrastructure checks, kept. The page allow-list and the origin check are securi
 
 | Message | When |
 |---|---|
-| "No HI page connected. Have the user open the ligna-store in their browser at … and start planning there …" | no page on the bridge |
+| "No HI page connected. Have the user open the ligna-store in their browser at … and start planning there …" | no page on the bridge; Cloudflare's configured store link carries the requesting session or `mcp_session=default` for an unnamed client. The local fallback includes `mcp_server` with its configured port and HTTP/TLS scheme. The store starts its bridge independently of chat |
 | "The connected page (…) runs an outdated HI MCP page bridge that expects tool calls. Have the user update the page bridge to protocol 2 … and reload the page." | a page with an old bridge |
 | "Planner call '…' timed out after …ms" | a planner call exceeded its timeout (§4). The page is not told to stop, so a plan change may still complete: read the plan before sending it again |
 | "The demo page disconnected" | the page left during a call |

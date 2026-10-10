@@ -19,12 +19,12 @@ npm start
 npm run dev        # in the ligna-store repository
 ```
 
-**4. Open the store page with the chat parameters, the INT stage and a plan id**, keep the tab
-open — the store's bridge starts only together with its chat window (`model`, `api_key`,
-`mcp_server`; the models: [README](./README.md#notes-on-the-client-page)):
+**4. Open the store page with `mcp_server`, the INT stage and a plan id**, keep the tab
+open — its bridge needs no chat model or API key. Add `model` and `api_key` only for the optional
+store chat (the models: [README](./README.md#notes-on-the-client-page)):
 
 ```text
-http://localhost:3000/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=http://localhost:3100&id=ps_bse5tc50687uh64hm8jul7j1kiuacyx
+http://localhost:3000/?store.stage=INT&mcp_server=http://localhost:3100&id=ps_bse5tc50687uh64hm8jul7j1kiuacyx
 ```
 
 The server terminal logs `page connected`.

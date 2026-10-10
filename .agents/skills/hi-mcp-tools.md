@@ -71,10 +71,15 @@ no agent can open, three quarters of the tokens). Every wall carries a `name` in
 array) and `fromEndMm`, its span along that wall measured from the wall's end. `obstacles.groups`
 gives per HI group the room-space `outline` and height range of every root module that is not
 generated, from the parts of the calculated group — the kernel's own outline of a group is not
-used: it lies up to 250 mm off (D45). No walls. Requested alone, `obstacles` makes the server
-fetch the rooms too. The agent does not compare outlines itself: the results of
+used: it lies up to 250 mm off (D45). Root outlines bound the calculated parts and can extend past
+the docking edges over a neighbour in the same group; that overlap alone is not a placement error.
+Article-specific overhangs are described by the library data. No walls. Requested alone,
+`obstacles` makes the server fetch the rooms too. The agent does not compare outlines itself: the results of
 `create-or-replace-groups` and `place-group` name every root module on an obstacle in their `hint`,
-with the free stretches of its wall (D55)
+with the free stretches of its wall (D55). When a door or window determines a placement, the tool description
+asks the agent to name it and explain whether the final placement keeps it clear, using the
+returned obstacle dimensions and final tool results. Below-sill placement, horizontal clearance
+and overlap are described according to the measured result; missing data is no assurance of clearance.
 
 **Rows**: every root module docked side by side with another one carries `rowIndex`, its place in
 its row — 1 at the left end as seen from the front; floor units and wall units form rows of their
@@ -133,7 +138,7 @@ to the group, and the colours of the generated roots a resubmitted group carries
 a replace adds inherits the attributes the library passes on between neighbours (fronts, handles,
 carcase) from the root it is docked to; its own `attributes` override them (D56).
 
-**Returns**: `loaded` (the planner's object ids), `groups` (the groups of the call), `otherGroupIds` (the other groups of the plan, unchanged — D68), `groupAttributes` (`[{ index, id, set, notCarried?, rootValues? }]`: per group the group attributes set on every unit with one planner command, those no unit of the group carries — the library builds no part for them in this group, the group stands without them, nothing to undo, and the answer says which material is not built, D65 —, and the root modules that keep their own value of one, `{ id, value, rootModuleIds }`), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input, and what the library changed with the group attributes — a front colour reset by a front program, D59) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
+**Returns**: `loaded` (the planner's object ids), `groups` (the groups of the call), `otherGroupIds` (the other groups of the plan, unchanged — D68), `groupAttributes` (`[{ index, id, set, notCarried?, rootValues? }]`: per group the group attributes set on every unit with one planner command, those no unit of the group carries — the library builds no part for them in this group, the group stands without them, nothing to undo, and the answer says which material is not built, D65 —, and the root modules that keep their own value of one, `{ id, value, rootModuleIds }`), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input, and what the library changed with the group attributes — a front colour reset by a front program, D59) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build or fully calculate (an unknown article id drops the root, not the group; an Error/Fatal calculation log reports its first diagnostic line and the action to check the group's attributes and the root's overrides against the library data, then change the failing values or replace the article, keeping the loaded group and roots), matched by runtime ids to the original input index, each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
 
 **Usage**:
 ```javascript
@@ -250,7 +255,9 @@ root module, and says so in `corrections` (C23).
 
 **Returns**: the two attribute commands `{ command, groupIds, changedModuleIds?, corrections? }`,
 not the group (D62); the others `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed?, corrections?, hint? }`, once the
-planner has loaded the result:
+planner has loaded the result. Attribute commands also wait for the kernel's planning-situation
+callback and its calculated follow-up load; their library-change feedback reads the actual
+placement's attributes, including a height the library adjusts:
 
 - `groups`: the affected groups in the `get-plan-context` shape; `groupIds` for the attribute
   commands
@@ -263,15 +270,18 @@ planner has loaded the result:
   root id read as the plan's id it abbreviates or misspells — and what the planner corrected or
   could not keep, prefixed with the command: a docking the new unit of `exchange-root-module` or `swap-root-modules` cannot take,
   a unit above that keeps its place, with the unit above that moved in and now overlaps it, or a deletion instead of
-  closing the gap (`delete-article-and-compact`);
+  closing the gap (`delete-article-and-compact`), with each named root labelled by its id and article id
+  from the original group, falling back to its article name or id alone;
   after `change-module-attribute` and `change-group-attribute`, last, every other attribute the library
   changed with the one set — "with mod_FrontColor "324" (Dark marble (#404040)) the library changed
   mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (…) to "Modern" (Mitred frame fronts with
   glass filling)" (D59)
 - `hint`: after a row edit (insert, `delete-article-and-compact`, exchange, swap) — names the units above that moved with
-  the unit below them, says when the row now reaches past a wall or into another group, and names a
+  the unit below them by root id and article id, says when the row now reaches past a wall or into another group, and names a
   root module that now stands in front of a door or a window or on an object, with the free stretches
-  of its wall (D43, D55)
+  of its wall (D43, D55). A turned leg is named by its original wall and the wall it now runs along
+  when known, with the ids and article ids of its roots together (D52). Before/after room positions
+  and rotations distinguish a rotation in place from a change of group frame
 
 - `delete-article-in-place`: deletes the unit and leaves the gap: units no longer docked together become
   separate groups where they stand; deleting the only unit deletes the group; generated roots
@@ -280,7 +290,7 @@ planner has loaded the result:
   other, the end of the row at a wall stays, a unit hung on it hangs on the neighbour that moves into
   the gap; a unit at a row end is deleted and nothing else moves; a corner article between two legs
   is deleted and the gap closed by turning one leg by 90° with the units above it, and the
-  `corrections` name the leg that turned (D52); the only unit is deleted with its group
+  `corrections` name the roots of the leg that turned, and `hint` names its original and destination wall when known (D52); the only unit is deleted with its group
   (`gapClosed: false`). `delete-article-and-compact` never splits a group
 - `exchange-root-module`: the article has one root module; the new unit keeps the position and
   the docking of the replaced one; `attributes` override attributes of the new unit (`mod_Width` for

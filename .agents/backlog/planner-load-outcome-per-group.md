@@ -3,7 +3,7 @@
 > **Type**: Backlog item (roomle-ui contract; consumer: the hi-mcp server's `create-or-replace-groups`)
 > **Domain**: roomle-ui `homag-intelligence` — `loadExternalObjectGroupLayout` (`external-object-api.ts`, `glue-logic.ts`); hi-mcp `tool-executors.ts`
 > **Status**: Open — needs a roomle-ui contract change
-> **Ticket**: [RML-18033](https://roomle.atlassian.net/browse/RML-18033)
+> **Ticket**: [RML-18139](https://roomle.atlassian.net/browse/RML-18139)
 
 ---
 
@@ -43,7 +43,7 @@ comparing the articles before and after (`reportRevertedReplaces`, `tool-executo
 
 ## Test
 
-- `it.fails('RML-18033: reports a group omitted by the planner in notLoaded')` in
+- `it.fails('RML-18139: reports a group omitted by the planner in notLoaded')` in
   `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` becomes a regular test: two new groups, the
   planner builds one, `notLoaded` names the other.
 - A call whose first group the planner leaves out sets the group-wide attributes on the second

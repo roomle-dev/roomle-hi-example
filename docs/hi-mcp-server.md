@@ -352,7 +352,10 @@ overlap according to the measured result; missing data is no assurance of cleara
   index in the walls array) and `fromEndMm`, its span along that wall measured
   from the wall's end —, and `groups`, per HI group the `id`, `outline` and
   `bottomMm`/`topMm` of every root module that is not generated, from the
-  parts of the calculated group. No walls. Requested alone, the server fetches
+  parts of the calculated group. A root outline can extend past its docking edges over a neighbour
+  in the same group; that overlap alone is not a placement error. The authoring rules and tool
+  description explain this, and the library descriptions explain article-specific overhangs.
+  No walls. Requested alone, the server fetches
   the rooms too for the walls of the doors and windows
 - `masterData` — only when included explicitly: per library the root modules
   (id, name, desc) with their relevant attribute ids, and the attributes a
@@ -456,8 +459,11 @@ group attributes set on every unit, those no unit of the group carries — the g
 without them —, and the root modules that keep their own value of one), `corrections` (what the server changed in the input, and what the
 library changed with the group attributes — a front colour reset by a front program)
 and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build and, with
-`rootIds`, the roots of a loaded group it could not build — one unknown article id drops that root,
-not the group). A group id you gave an earlier group of the session replaces that group. A `hint`
+`rootIds`, the roots of a loaded group it could not build or fully calculate — one unknown article
+id drops that root, not the group; an `Error` or `Fatal` calculation log reports the root's first
+diagnostic and asks you to check its overrides or replace the article, while keeping the loaded
+group and roots). `index` names the original input group; diagnostic ids are the planner's runtime
+ids. A group id you gave an earlier group of the session replaces that group. A `hint`
 names each root module of the call's groups that overlaps an object or a root module of another
 group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm`
 ranges; the group is built anyway (D55).
@@ -581,6 +587,10 @@ ids and their values come from the `masterData` section of `get-plan-context`
 or from `find-attributes`. A value may come only with the value of a related attribute: a front
 colour the front program does not offer switches the program, and the library makes that change in
 its calculation, not in the master data.
+
+Attribute commands wait for the kernel's position callback and its follow-up calculation/load.
+The returned corrections use the final attributes, including a position height derived from the
+actual placement or adjusted by the library.
 
 In a row edit — insert, `delete-article-and-compact`, exchange, swap — the end of the row at a wall
 or in a corner keeps its place and the other end moves; wall units and the

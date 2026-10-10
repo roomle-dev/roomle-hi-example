@@ -1203,6 +1203,8 @@ describe('hi-mcp-server through the page bridge', () => {
       'getExternalObjectPlanContext',
       // the position read back in the placement frame
       'getExternalObjectGroups',
+      // the final calculation diagnostics
+      'getExternalObjectGroups',
       // the plan after the call, for undo
       'getExternalObjectGroups',
     ]);

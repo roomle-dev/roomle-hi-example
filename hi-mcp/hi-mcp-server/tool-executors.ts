@@ -3007,7 +3007,7 @@ const reportRevertedReplaces = (
 };
 
 // A group the server could not build, or - with rootIds - a group it built
-// without those roots.
+// without those roots, or could not fully calculate them.
 interface NotLoadedGroup {
   index: number;
   id?: string;
@@ -4851,6 +4851,37 @@ export const toolExecutors: Record<string, ToolExecutor> = {
             (!beforeGroupIds.has(group.id) || replacedInputIds.has(group.id))
         )
         .map((group: any) => group.id);
+      const rawGroupsAfter =
+        ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
+          []) as any[];
+      for (const [{ index }, result] of matchResultGroups(
+        callGroups,
+        beforeGroupIds,
+        (groups ?? []) as any[]
+      )) {
+        const failedRoots = (
+          rawGroupsAfter.find((group) => group.id === result.id)?.roots ?? []
+        ).flatMap((root: any) => {
+          const error = (root.logMessages ?? []).find(
+            (message: any) =>
+              message.category === 'Error' || message.category === 'Fatal'
+          );
+          return error ? [{ root, error }] : [];
+        });
+        if (failedRoots.length > 0) {
+          notLoaded.push({
+            index,
+            id: result.id,
+            rootIds: failedRoots.map(({ root }: any) => root.id),
+            errors: failedRoots.map(
+              ({ root, error }: any) =>
+                `posGroups[${index}]: the library could not calculate root '${root.id}' (${root.articleId ?? root.name}) ` +
+                `of group '${result.id}' - ${String(error.msg).split('\n')[0].trim().replace(/\.$/, '')}. ` +
+                "Check the root's attribute overrides against the library data and change them or replace the article; the loaded groups and other roots were kept."
+            ),
+          });
+        }
+      }
       const obstacles =
         placed.obstacles !== undefined
           ? obstacleHint({
@@ -4859,9 +4890,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
                 beforeGroupIds,
                 (groups ?? []) as any[]
               ).map(([, result]) => result.id),
-              rawGroups:
-                ((await roomDesignerApi.extended.getExternalObjectGroups()) ??
-                  []) as any[],
+              rawGroups: rawGroupsAfter,
               obstacles: placed.obstacles,
               rooms: placed.rooms,
               withGroups: true,

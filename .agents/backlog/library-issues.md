@@ -36,11 +36,16 @@ afterwards in one.
 **Cause.** Nothing tells the agent that the sink is wider than its unit: the catalog description of
 `SUT60` names a 60 cm sink base unit, the sink's width and the side of its drainer are not in it. The
 geometry is intended (the library builds the sink that way); the root module's outline in `obstacles`
-shows it, but only as a number the agent does not read for this (see
-[plan-context-open-findings.md](plan-context-open-findings.md), finding 2).
+shows it, but the description does not give the article-specific meaning. `SUBA60` has the same
+missing description: its 600 mm unit spans 995.75 mm along the row in the Open-Plan Room, including
+its sink geometry. Both full live descriptions, checked on 2026-10-10, omit the sink/drainer width
+and overhang. The generic MCP text explains that outlines can extend past docking edges over a
+neighbour in the same group; the library data still needs the article-specific information.
 
 **To do.** The library: the description of every sink unit names the width of its sink with the
-drainer and the side the drainer reaches over, and that a base unit belongs under it. Then check
+drainer and the side the drainer reaches over, and that a base unit belongs under it — including
+`SUT60` and `SUBA60`. Put this in `FUNCTION` or `AI_SELECTION_HINT` so the compact article catalog
+carries it (D63), with any fuller detail in the other sections. Then check
 that the served text needs nothing more.
 
 **Status.** Reported to the HOMAG library development team.
@@ -56,7 +61,9 @@ that the served text needs nothing more.
 base unit under its drainer in three runs of gpt-6-astra; `edit-swap-hob-unit`: the drainer does not
 cover the hob.
 
-**Reproduce.** `mcp-test-2026-10-08_22-59-32`: gpt-6-astra 30.
+**Reproduce.** `mcp-test-2026-10-08_22-59-32`: gpt-6-astra 30. For `SUBA60`: Open-Plan Room
+(`ps_qwm5odi6tyflyqwpdcxz1la791ho633`), root `cdca7a4b-f4d7-4fd1-a56e-07157a35cdcb` in group
+`c2b9fe06-9bef-4fb3-b7bf-c44f72ce09aa`; read its 600 mm width, outline and article description.
 
 ## 61. Handleless fronts done with a handle attribute
 

@@ -71,8 +71,10 @@ no agent can open, three quarters of the tokens). Every wall carries a `name` in
 array) and `fromEndMm`, its span along that wall measured from the wall's end. `obstacles.groups`
 gives per HI group the room-space `outline` and height range of every root module that is not
 generated, from the parts of the calculated group — the kernel's own outline of a group is not
-used: it lies up to 250 mm off (D45). No walls. Requested alone, `obstacles` makes the server
-fetch the rooms too. The agent does not compare outlines itself: the results of
+used: it lies up to 250 mm off (D45). Root outlines bound the calculated parts and can extend past
+the docking edges over a neighbour in the same group; that overlap alone is not a placement error.
+Article-specific overhangs are described by the library data. No walls. Requested alone,
+`obstacles` makes the server fetch the rooms too. The agent does not compare outlines itself: the results of
 `create-or-replace-groups` and `place-group` name every root module on an obstacle in their `hint`,
 with the free stretches of its wall (D55). When a door or window determines a placement, the tool description
 asks the agent to name it and explain whether the final placement keeps it clear, using the
@@ -136,7 +138,7 @@ to the group, and the colours of the generated roots a resubmitted group carries
 a replace adds inherits the attributes the library passes on between neighbours (fronts, handles,
 carcase) from the root it is docked to; its own `attributes` override them (D56).
 
-**Returns**: `loaded` (the planner's object ids), `groups` (the groups of the call), `otherGroupIds` (the other groups of the plan, unchanged — D68), `groupAttributes` (`[{ index, id, set, notCarried?, rootValues? }]`: per group the group attributes set on every unit with one planner command, those no unit of the group carries — the library builds no part for them in this group, the group stands without them, nothing to undo, and the answer says which material is not built, D65 —, and the root modules that keep their own value of one, `{ id, value, rootModuleIds }`), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input, and what the library changed with the group attributes — a front colour reset by a front program, D59) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
+**Returns**: `loaded` (the planner's object ids), `groups` (the groups of the call), `otherGroupIds` (the other groups of the plan, unchanged — D68), `groupAttributes` (`[{ index, id, set, notCarried?, rootValues? }]`: per group the group attributes set on every unit with one planner command, those no unit of the group carries — the library builds no part for them in this group, the group stands without them, nothing to undo, and the answer says which material is not built, D65 —, and the root modules that keep their own value of one, `{ id, value, rootModuleIds }`), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input, and what the library changed with the group attributes — a front colour reset by a front program, D59) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build and, with `rootIds`, the roots of a loaded group it could not build or fully calculate (an unknown article id drops the root, not the group; an Error/Fatal calculation log reports its first diagnostic line and the action to check overrides or replace the article, keeping the loaded group and roots), matched by runtime ids to the original input index, each error naming what to send instead; the other groups and roots load). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
 
 **Usage**:
 ```javascript
@@ -253,7 +255,9 @@ root module, and says so in `corrections` (C23).
 
 **Returns**: the two attribute commands `{ command, groupIds, changedModuleIds?, corrections? }`,
 not the group (D62); the others `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed?, corrections?, hint? }`, once the
-planner has loaded the result:
+planner has loaded the result. Attribute commands also wait for the kernel's planning-situation
+callback and its calculated follow-up load; their library-change feedback reads the actual
+placement's attributes, including a height the library adjusts:
 
 - `groups`: the affected groups in the `get-plan-context` shape; `groupIds` for the attribute
   commands

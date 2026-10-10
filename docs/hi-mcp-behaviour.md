@@ -88,7 +88,7 @@ Every result tells the agent what happened:
 - **what was built** — the resulting groups with their position
 - **what the server corrected, and what the planner or the library changed beyond what was sent** — a
   `corrections` list, one sentence per correction (C20, D59)
-- **what was not built, and why** — a `notLoaded` list (`create-or-replace-groups`) that names what to send instead: a group, or with `rootIds` the roots of a group that loaded without them
+- **what was not built or fully calculated, and why** — a `notLoaded` list (`create-or-replace-groups`) that names what to send instead: a group, or with `rootIds` the roots that were omitted or whose loaded calculation has an `Error` or `Fatal` diagnostic
 - **what to check** — a `hint` that stops nothing
 
 An error result (`isError`) is the answer only when nothing could be done. A message names the fix
@@ -408,7 +408,9 @@ tool. It covers:
   walls array for the point form; which leg of a corner group runs along which wall, as seen from
   the room.
 - **Obstacles** (D45, D55): what the `obstacles` section lists, a door's or a window's wall and span
-  from the wall's end, that a new group goes on a stretch of wall or a spot `obstacles` leaves free —
+  from the wall's end; root outlines bound the calculated parts and can extend past their docking
+  edges over a neighbour in the same group — that overlap alone is not a placement error;
+  that a new group goes on a stretch of wall or a spot `obstacles` leaves free —
   a stretch by alignment `end` and `offsetMm` = the start of its `fromEndMm` —, that base units lower than a window's `bottomMm` fit
   below it, and that the result's `hint` names every root module on an obstacle with the free
   stretches of its wall.
@@ -453,6 +455,11 @@ One coordinate system throughout: 3D, right-handed, Y up, millimetres. A contour
 
 Default sections: `rooms`, `articles`, `groups`, `obstacles`. Requested without `rooms`, `obstacles` makes the server fetch
 the rooms too, for the walls of the doors and windows, and return only `obstacles`.
+
+Root outlines bound the calculated parts and can extend past their docking edges over a neighbour
+in the same group. That overlap alone is not a placement error. Both the authoring rules and the
+`get-plan-context` description explain this; article-specific overhangs belong in the library's
+descriptions.
 
 The answer explains a door or window relevant to the placement, using its span and height together
 with the final group geometry and tool feedback. Cabinets below a sill are described as below the
@@ -558,8 +565,12 @@ The server runs these steps:
    dropped (G48) — on every unit of the group with one planner command, `change-attributes`
    (G46), the programs first and a root module's own value after the group's, after a create and
    after a replace, and reads the groups again.
-9. It tests the root modules of the groups of the call against the obstacles and the other groups
-   and adds the `hint` of D55.
+9. It reads the final raw groups and reports roots with `Error` or `Fatal` calculation logs in
+   `notLoaded`, matched by runtime group id to the original input index. Each root gets its first
+   diagnostic line and an action to check its overrides or replace the article. Loaded groups
+   and their other roots stay in the result; warnings and errors of unrelated groups are ignored.
+10. It uses the same raw groups to test the root modules of the groups of the call against the
+    obstacles and the other groups and adds the `hint` of D55.
 
 A group that cannot be built at one of these steps leaves the call and goes to `notLoaded`; the
 others go on.
@@ -567,7 +578,8 @@ others go on.
 **Result**: `loaded` (the planner's runtime ids), `groups` (the groups of the call, in the
 plan-context shape), `otherGroupIds` (the other groups of the plan, unchanged — D68), `groupAttributes` (per group of the call `{ index, id, set, notCarried?, rootValues? }`: the group attributes set on every unit, those no unit of the group carries — D65 —, and the root modules that keep their own value of one, `{ id, value, rootModuleIds }` — D36), `hint` (an unpositioned group, a root module on an obstacle — D55), `corrections` (what the server changed in the input, and what the library changed with the group attributes — D59), and `notLoaded`
 — `[{ index, id?, rootIds?, errors }]` for the groups it could not build (D30) and, with `rootIds`,
-for the roots of a loaded group it could not build (G15). A conflicting placement is not sent (D26).
+for the roots of a loaded group it could not build (G15) or fully calculate. A calculation diagnostic
+does not remove the root or group from the planner. A conflicting placement is not sent (D26).
 
 ### place-group
 
@@ -621,6 +633,10 @@ position.
 attribute commands: `{ command, groupIds, changedModuleIds?, corrections? }` (D62). **Result** of
 the others: `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed? }` — the affected groups in the plan-context
 shape, and for `delete-article-and-compact` whether the gap was closed — plus `corrections` when the server corrected the input before forwarding, followed by the planner's corrections, each named by its tool (C20), and after an attribute command the attributes the library changed besides the one set (C22).
+
+Attribute commands wait for the kernel's planning-situation callback and its calculated follow-up
+load. Their planner result and the server's library-change feedback therefore read the attributes
+derived from the actual placement, including an insertion height the library adjusts.
 
 ### undo, redo
 
@@ -831,6 +847,7 @@ has its own corrections, G31–G45 and G64.
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |
 | — | the planner loads nothing | — | error result: "No groups were created or replaced …" |
 | — | a replaced group that still holds its previous articles instead of the ones sent — the planner could not calculate the new layout and restored the group (roomle-ui `_discardCalculation`) | — | correction: "the planner could not calculate the new layout of group '…' and kept its previous content - …; send the layout again with another article" |
+| — | a loaded root of a group of the call with an `Error` or `Fatal` calculation log | keeps the loaded groups and roots | `notLoaded`: original input `index`, runtime group `id`, failing runtime `rootIds`, and one error per root with its first diagnostic line and the action to check its attribute overrides against the library data or replace its article; warnings and unrelated groups are ignored |
 | — | a group of the call has no position after the load | — | `hint` |
 | D55 | a root module of a group of the call that overlaps an object or a root module of another group, or stands in the 600 mm strip in front of a door or a window within its height, `bottomMm` to `topMm` — by more than 5 mm; a replaced group only for what it did not stand on before | builds it (D51) | `hint`: "Root module 'w1' (OTB30) of group '…' stands in front of the window in the back wall (wall 5, fromEndMm 235 to 2335, 950 to 2170 mm) - free stretches of the left wall (wall 0) at its height: fromEndMm 0 to 4400. The groups were built as sent - move or change them if the user did not ask for them there." — with another group named: "… overlaps root module 'r1' (…) of group '…' …", then "If the units belong together, send them as one group or join them with merge-groups." Without a wall the stretches are left out; without a wide enough stretch: "- no stretch of the … is free for it at its height" |
 

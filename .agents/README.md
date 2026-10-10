@@ -83,6 +83,10 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Explain root outlines that extend over a neighbour](bug-analysis/root-outline-overhang-explanation.md) | Fixed locally — MCP wording; library follow-up in #60 | 2026-10-10 |
+| [Return height attributes after the kernel position callback](bug-analysis/plan-context-height-readback.md) | Fixed — verified locally | 2026-10-10 |
+| [Report calculation errors of newly loaded groups](bug-analysis/new-group-calculation-feedback.md) | Fixed — verified locally | 2026-10-10 |
+| [Plan-context findings: affected repositories](bug-analysis/plan-context-findings-repository-scope.md) | Open — scope analysed | 2026-10-10 |
 | [Snapshot loss after a prompt test page navigates](bug-analysis/mcp-test-navigation-snapshot-loss.md) | Fixed — verified locally | 2026-10-09 |
 | [Reserve a final answer step in the store chat](bug-analysis/store-chat-final-answer-step.md) | Fixed — verified locally | 2026-10-09 |
 | [Readable article and wall names in row-edit feedback](bug-analysis/readable-row-edit-feedback.md) | Fixed — verified locally | 2026-10-09 |
@@ -144,7 +148,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — access control | 2026-10-09 |
 | [The planner's load result per input group](backlog/planner-load-outcome-per-group.md) — roomle-ui names per input group what it built, so `create-or-replace-groups` reports a group left out in `notLoaded` | 2026-10-07 |
 | [One planner undo step per tool call](backlog/one-undo-step-per-tool-call.md) — roomle-ui resolves a command after its follow-up reload and groups a tool call into one undo step; then the server drops its follow-up wait | 2026-10-07 |
-| [Open findings about the plan context](backlog/plan-context-open-findings.md) — root outlines, calculation errors, the obstacle outline of a group, position heights | 2026-10-08 |
+| [Open findings about the plan context](backlog/plan-context-open-findings.md) — the kernel obstacle outline of a group; RoomleCore | 2026-10-10 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-07 |
 | [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-07 |
 | [A backend-controlled agent loop with browser-executed scene tools](backlog/backend-agent-loop-with-browser-scene-tools.md) — the scene tools in the browser, the agent loop and the credentials in the backend | 2026-10-07 |

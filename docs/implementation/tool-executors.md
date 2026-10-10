@@ -1,10 +1,41 @@
 # Tool Executors
 
-`hi-mcp/hi-mcp-server/tool-executors.ts` holds the logic of every tool: it validates and corrects
-the agent's input, composes the planner calls, and shapes the result. It is the largest file of the
-server (≈3,700 lines). What the tools do towards the agent, with every correction and message, is
+[`tool-executors.ts`](../../hi-mcp/hi-mcp-server/tool-executors.ts) holds the planner tool logic:
+it validates and corrects the agent's input, composes the planner calls, and shapes the result.
+What the tools do towards the agent, with every correction and message, is
 in [hi-mcp-behaviour.md §6](../hi-mcp-behaviour.md#6-tools) and
 [§8](../hi-mcp-behaviour.md#8-guards-corrections-and-feedback). [Back to the overview](./README.md).
+
+## Tool overview
+
+The server exposes these 20 MCP tools. Their names, input schemas and handlers are registered in
+[`hi-mcp-server.ts`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts). Nineteen handlers call the
+matching entry in `toolExecutors`; `get-authoring-rules` returns `AUTHORING_RULES` directly from
+the server and needs no connected planner page. Parameters and result formats are in the
+[tool reference](../hi-mcp-server.md#tool-reference).
+
+| Tool | Purpose | Changes the plan | Implementation details |
+| ---- | ------- | ---------------- | ---------------------- |
+| `get-plan-context` | Read rooms, articles, groups, obstacles and optional master data | No | [Context reads and shaping](#get-plan-context) |
+| `find-attributes` | Search library attributes and their available values | No | [Attribute search](#find-attributes) |
+| `get-authoring-rules` | Read the group payload format, relations, placement rules and examples | No | [Direct server handler](../hi-mcp-server.md#get-authoring-rules) |
+| `create-or-replace-groups` | Create groups with a placement or rebuild existing groups by id | Yes | [Creation and replacement pipeline](#create-or-replace-groups) |
+| `place-group` | Move an existing group against a wall or into a room corner | Yes | [Placement pipeline](#place-group) |
+| `change-module-attribute` | Set an attribute on selected root modules or their submodules | Yes | [Command forwarding and result wrapping](#the-command-tools) |
+| `change-group-attribute` | Set one or several attributes on the modules of a group | Yes | [Command forwarding and result wrapping](#the-command-tools) |
+| `delete-group` | Delete an entire group | Yes | [Command forwarding and result wrapping](#the-command-tools) |
+| `delete-article-in-place` | Delete an article and leave the gap; disconnected roots become separate groups | Yes | [Command forwarding and result wrapping](#the-command-tools) |
+| `delete-article-and-compact` | Delete an article and close the gap where the row permits it | Yes | [Row edits](#row-edits) |
+| `merge-article-into-group` | Add an article at a free docking side of an existing group | Yes | [Docking target selection](#merge-article-into-group-where-the-unit-goes) |
+| `exchange-root-module` | Replace a root module with another article | Yes | [Row edits](#row-edits) |
+| `insert-article-into-group` | Insert an article between two root modules | Yes | [Row edits](#row-edits) |
+| `swap-root-modules` | Exchange the places of two root modules | Yes | [Row edits](#row-edits) |
+| `merge-groups` | Join existing groups where they stand | Yes | [Command forwarding and result wrapping](#the-command-tools) |
+| `undo` | Revert the last tool call that changed the plan | Yes | [Tool-call history](#undo-redo) |
+| `redo` | Reapply the tool call reverted by undo | Yes | [Tool-call history](#undo-redo) |
+| `get-price` | Calculate the plan's price | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
+| `get-order-data` | Read order data from a plan snapshot | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
+| `get-plan-images` | Render perspective and top-view images of the plan | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
 
 ## The file
 
@@ -119,8 +150,11 @@ call and is reported in `notLoaded`, the others load
     master data's `groupSettings`, the programs first (`programsFirst`), and a root module's own value
     of one after it (`rootValuesOf`, `loadedRootOf`) —, and read the groups again. Remember the
     agent's group ids (`rememberAgentGroupIds`); hint at unpositioned groups. The
-    reads after the load take `groups`, `obstacles` and `rooms`; with an `obstacles` section the
-    raw groups are read and `obstacleHint` names every root module of the call's groups on an
+    reads after the load take `groups`, `obstacles` and `rooms`. The final raw groups are read for
+    calculation diagnostics; roots with `Error` or `Fatal` logs get a `notLoaded` entry with the
+    original input index, runtime group/root ids, first diagnostic line and the action to check
+    overrides or replace the article. Loaded groups stay in the result. With an `obstacles` section,
+    `obstacleHint` uses the same raw groups and names every root module of the call's groups on an
     object, in another group or in front of a door or a window (D55). For a replace, the read
     before the load takes `obstacles` too, and the raw groups before the load tell what the group
     stood on already.
@@ -168,6 +202,8 @@ Result: `{ placedIn: 'wall' | 'corner', wall, group, hint? }` with corrections.
 Every command tool resolves the ids it is given, corrects what it can, and forwards one planner
 command: `externalObjectGroupOperation(command, payload)`. The planner (roomle-ui `glue-logic.ts`)
 performs the edit with its own group features and answers once the result is loaded.
+Attribute commands also await the kernel's planning-situation callback and its calculated
+follow-up load, so the result and library-change feedback use the actual placement's attributes.
 
 | Tool | Resolves | Result wrapping |
 | ---- | -------- | --------------- |
@@ -223,6 +259,10 @@ Thin forwards: `fetchPrice()`; `getExternalObjectSnapshot({ orderData: true })` 
 `getExternalObjectSnapshot({ perspectiveImage, topImage })` returning both images.
 
 ## The plan context the agent sees
+
+Root outlines in `obstacles` bound the calculated parts, so they can extend beyond their docking
+edges over a neighbour in the same group. The authoring rules and `get-plan-context` description
+explain that this overlap alone is not a placement error; the executor passes the geometry through.
 
 roomle-ui returns the plan context agent-ready (D48); the server adds its vocabulary:
 

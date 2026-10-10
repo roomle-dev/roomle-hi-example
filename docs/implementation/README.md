@@ -13,7 +13,7 @@ deploy it in [setup](../setup/).
 | Page | Covers |
 | ---- | ------ |
 | [MCP server](./mcp-server.md) | `server.ts`, tool registration, the page bridge, the planner methods, undo and redo |
-| [Tool executors](./tool-executors.md) | `tool-executors.ts`: the pipeline of every tool, the plan context the agent sees, corrections, row edits |
+| [Tool executors](./tool-executors.md#tool-overview) | Overview table of all MCP tools; `tool-executors.ts`: tool pipelines, the plan context the agent sees, corrections, row edits |
 | [Layout and placement](./layout-and-placement.md) | `group-layout.ts`, `group-placement.ts`, `plan-space.ts`, the coordinate conventions |
 | [Pages, chat and launcher](./pages-chat-and-launcher.md) | the page side of the bridge, `start.mjs`, the chat backend `hi-mcp-chat` |
 | [Deployment and testing](./deployment-and-testing.md) | Cloudflare, the workspaces and scripts, the unit tests, the end-to-end test runs |

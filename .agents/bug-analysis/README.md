@@ -35,6 +35,10 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [Explain root outlines that extend over a neighbour](root-outline-overhang-explanation.md) | Fixed locally — MCP wording; library follow-up in #60 | Plan-context finding #2 (RML-18103) |
+| [Return height attributes after the kernel position callback](plan-context-height-readback.md) | Fixed locally | Plan-context finding #5 (RML-18103) |
+| [Report calculation errors of newly loaded groups](new-group-calculation-feedback.md) | Fixed locally | Plan-context finding #3 (RML-18103) |
+| [Plan-context findings: affected repositories](plan-context-findings-repository-scope.md) | Open — scope analysed | Plan-context backlog #2–5 (RML-18103) |
 | [Snapshot loss after a prompt test page navigates](mcp-test-navigation-snapshot-loss.md) | Fixed locally | MCP test infrastructure backlog #3 |
 | [Reserve a final answer step in the store chat](store-chat-final-answer-step.md) | Fixed locally | Ligna-store chat backlog #2 (RML-18033) |
 | [Readable article and wall names in row-edit feedback](readable-row-edit-feedback.md) | Fixed | RML-18103 #62 |

@@ -3303,6 +3303,110 @@ describe('create-or-replace-groups loading', () => {
     expect(result.hint).toBeUndefined();
   });
 
+  it.each(['Error', 'Fatal'])(
+    'reports a new root calculation %s while keeping the loaded groups',
+    async (category) => {
+      const failed = makeShapedGroup({
+        id: 'new-runtime-id',
+        roots: [
+          makeShapedRoot({ id: 'failed-runtime-root' }),
+          makeShapedRoot({ id: 'valid-runtime-root' }),
+        ],
+      });
+      const other = makeShapedGroup({ id: 'other-runtime-id' });
+      let loaded = false;
+      const api = createApi(planContextFixture, {
+        getExternalObjectPlanContext: vi.fn(async () => ({
+          ...planContextFixture,
+          groups: loaded
+            ? [...planContextFixture.groups, failed, other]
+            : planContextFixture.groups,
+        })),
+        loadExternalObjectGroupLayout: vi.fn(async () => {
+          loaded = true;
+          return [{ id: 'loaded-failed' }, { id: 'loaded-other' }];
+        }),
+        getExternalObjectGroups: vi.fn(async () =>
+          loaded
+            ? [
+                {
+                  id: 'g1',
+                  roots: [
+                    {
+                      id: 'unrelated',
+                      logMessages: [
+                        { category: 'Error', msg: 'Unrelated error' },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  id: failed.id,
+                  roots: [
+                    {
+                      id: 'failed-runtime-root',
+                      articleId: 'article-1',
+                      logMessages: [
+                        {
+                          category,
+                          msg: 'Width cannot be calculated\nInternal stack trace',
+                        },
+                      ],
+                    },
+                    {
+                      id: 'valid-runtime-root',
+                      articleId: 'article-1',
+                      logMessages: [
+                        { category: 'Warning', msg: 'Optional note' },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  id: other.id,
+                  roots: [{ id: 'other-root', logMessages: [] }],
+                },
+              ]
+            : []
+        ),
+      });
+      const result = (await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [
+          { roots: [{ id: 'unknown', articleId: 'not-an-article' }] },
+          {
+            roots: [
+              { id: 'bad', articleId: 'article-1' },
+              { id: 'good', articleId: 'article-1', rightOf: 'bad' },
+            ],
+          },
+          { roots: [pick()] },
+        ],
+      })) as Record<string, any>;
+
+      expect(result.loaded).toHaveLength(2);
+      expect(result.groups.map((group: any) => group.id)).toEqual([
+        failed.id,
+        other.id,
+      ]);
+      expect(result.notLoaded).toEqual([
+        expect.objectContaining({ index: 0 }),
+        {
+          index: 1,
+          id: failed.id,
+          rootIds: ['failed-runtime-root'],
+          errors: [expect.stringContaining('Width cannot be calculated')],
+        },
+      ]);
+      expect(result.notLoaded[1].errors[0]).toContain(
+        "'failed-runtime-root' (article-1)"
+      );
+      expect(result.notLoaded[1].errors[0]).toContain('attribute overrides');
+      expect(result.notLoaded[1].errors[0]).not.toContain(
+        'Internal stack trace'
+      );
+    }
+  );
+
   it('reports a replace the planner reverted to the previous content', async () => {
     // issue 34: the plan context after the load still holds the one root of g1
     const api = createApi(planContextFixture);
@@ -4805,16 +4909,15 @@ describe('obstacle hints', () => {
     );
   });
 
-  it('builds without a hint and without an extra read on a planner without obstacles', async () => {
+  it('builds without obstacle hints and reads raw calculation diagnostics', async () => {
     // D45: a planner without the obstacles section
     const api = createApi(planContextFixture);
     const result = await createGroups(api, [
       { id: 'g1', libraryId: 'lib-1', roots: [pick()] },
     ]);
     expect(result.hint).toBeUndefined();
-    // the plan history's reads before and after the call and the read of the
-    // placement frame - none for a hint
-    expect(api.extended.getExternalObjectGroups).toHaveBeenCalledTimes(3);
+    // History, calculation diagnostics and placement frame; no obstacle hint.
+    expect(api.extended.getExternalObjectGroups).toHaveBeenCalledTimes(4);
   });
 });
 

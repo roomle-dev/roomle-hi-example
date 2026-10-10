@@ -18,13 +18,14 @@ the ticket. A change leaves this document when the library carries it.
 
 | # | Change | Library | Articles | Status | Ticket |
 |---|---|---|---|---|---|
-| 1 | [The sink unit descriptions do not say that a sink unit needs an article on its right](#1-the-sink-unit-descriptions-do-not-say-that-a-sink-unit-needs-an-article-on-its-right) | HOMAG Furniture_Smith | `SUB2A90`, `SUBA60`, `SUT60` | reported to the library development team | RML-18124 |
+| 1 | [The sink unit descriptions do not say that a sink unit needs an article on its right](#1-the-sink-unit-descriptions-do-not-say-that-a-sink-unit-needs-an-article-on-its-right) | HOMAG Furniture_Smith | `SUB2A90`, `SUBA60`, `SUT60`, `ESUB2A90`, `ESUT60` | reported to the library development team | RML-18124 |
 
 ## 1. The sink unit descriptions do not say that a sink unit needs an article on its right
 
 **Library.** HOMAG Furniture_Smith.
 
-**Articles.** `SUB2A90` (SBF2P90), `SUBA60` (SBFP60), `SUT60` (SBD60).
+**Articles.** `SUB2A90` (SBF2P90), `SUBA60` (SBFP60), `SUT60` (SBD60), and their handleless
+variants `ESUB2A90` (FSBF2P90) and `ESUT60` (FSBD60).
 
 **Ticket.** RML-18124. Backlog item 60 of
 [`.agents/backlog/library-issues.md`](../../.agents/backlog/library-issues.md).
@@ -38,25 +39,39 @@ The reason is the geometry: the sink of `SUT60` carries its drainer and is 980 m
 `SUBA60` has the same geometry — its 600 mm unit spans 995.75 mm along the row in the Open-Plan
 Room, including its sink geometry.
 
-Nothing in the library data tells the agent this. The fix belongs in the `desc` of the three sink
-units, never in a served rule.
+Nothing in the library data tells the agent this. The fix belongs in the `desc` of the sink units,
+never in a served rule.
 
-**What the descriptions say today.** None of the three states that another article belongs on the
-sink unit's right, and none states the sink/drainer width or the side the drainer reaches over. All
-three share the same `REQUIREMENTS`, `RECOMMENDED_NEIGHBOURS` and `RESTRICTIONS` sections.
+The handleless variants `ESUB2A90` and `ESUT60` carry the same sink geometry and the same missing
+statement: their descriptions name a handleless sink base unit and its fronts, and say nothing about
+the sink width, the drainer side or the article that belongs on their right.
+
+**What the descriptions say today.** None of the articles states that another article belongs on the
+sink unit's right, and none states the sink/drainer width or the side the drainer reaches over. The
+three handled units share the same `REQUIREMENTS`, `RECOMMENDED_NEIGHBOURS` and `RESTRICTIONS`
+sections; the two handleless units share their own.
 
 | Article | Label | `FUNCTION` | `AI_SELECTION_HINT` |
 |---|---|---|---|
 | `SUB2A90` | SBF2P90 | Sink base unit, 90 cm wide, with 1 fixed front and 2 pull-outs. | Select for a wide sink cabinet with additional pull-out storage. |
 | `SUBA60` | SBFP60 | Sink base unit, 60 cm wide, with 1 fixed front and 1 pull-out. | Select for a sink cabinet that also offers a storage pull-out. |
 | `SUT60` | SBD60 | Sink base unit, 60 cm wide, with 1 hinged door. | Select when the user requests a sink or washing area. |
+| `ESUB2A90` | FSBF2P90 | Handleless sink base unit, 90 cm wide, with 1 fixed front and 2 drawers (fingergrip). | Select for a wide handleless sink cabinet with drawers. |
+| `ESUT60` | FSBD60 | Handleless sink base unit, 60 cm wide, with 1 door (fingergrip). | Select for a sink in a handleless kitchen with a single door. |
 
-Shared sections of all three:
+Shared sections of the three handled units:
 
 - `REQUIREMENTS`: Requires a compatible sink, water supply and waste-water connection. base unit:
   carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
 - `RECOMMENDED_NEIGHBOURS`: Dishwasher unit, drawer base units, worktop elements.
 - `RESTRICTIONS`: Cannot house an oven; not suitable for islands without plumbing.
+
+Shared sections of the two handleless units:
+
+- `REQUIREMENTS`: Requires a compatible sink, water supply and waste-water connection. base unit:
+  carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+- `RECOMMENDED_NEIGHBOURS`: Handleless dishwasher unit, handleless drawer base units.
+- `RESTRICTIONS`: Cannot house an oven; not for islands without plumbing.
 
 `RECOMMENDED_NEIGHBOURS` names neighbours as *recommendations*, not as a requirement, and it does
 not say the neighbour belongs on the right.
@@ -116,8 +131,36 @@ SEARCH_KEYWORDS: sink cabinet, sink base unit, wash basin cabinet, plumbing cabi
 AI_SELECTION_HINT: Select when the user requests a sink or washing area. Place a base unit on its right.
 ```
 
+`ESUB2A90` (FSBF2P90):
+
+```
+FUNCTION: Handleless sink base unit, 90 cm wide, with 1 fixed front and 2 drawers (fingergrip). A base unit belongs on its right, because the sink with its drainer is wider than the unit.
+PURPOSE: Wide handleless sink cabinet with plumbing access and drawer storage.
+TYPICAL_PLACEMENT: Base row, within the washing zone.
+REQUIREMENTS: Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+RECOMMENDED_NEIGHBOURS: Handleless dishwasher unit, handleless drawer base units.
+RESTRICTIONS: Cannot house an oven; not for islands without plumbing.
+STYLE_COMPATIBILITY: Modern handleless (fingergrip) kitchen. Minimalist and premium designs.
+SEARCH_KEYWORDS: handleless sink cabinet, fingergrip sink unit, sink drawer base.
+AI_SELECTION_HINT: Select for a wide handleless sink cabinet with drawers. Place a base unit on its right.
+```
+
+`ESUT60` (FSBD60):
+
+```
+FUNCTION: Handleless sink base unit, 60 cm wide, with 1 door (fingergrip). A base unit belongs on its right, because the sink with its drainer is wider than the unit.
+PURPOSE: Supports a kitchen sink in a handleless kitchen, with plumbing access.
+TYPICAL_PLACEMENT: Base row, within the washing zone.
+REQUIREMENTS: Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+RECOMMENDED_NEIGHBOURS: Handleless dishwasher unit, handleless drawer base units.
+RESTRICTIONS: Cannot house an oven; not for islands without plumbing.
+STYLE_COMPATIBILITY: Modern handleless (fingergrip) kitchen. Minimalist and premium designs.
+SEARCH_KEYWORDS: handleless sink cabinet, fingergrip sink unit, grip-less sink base.
+AI_SELECTION_HINT: Select for a sink in a handleless kitchen with a single door. Place a base unit on its right.
+```
+
 **Acceptance criteria.**
 
-- The descriptions of `SUB2A90`, `SUBA60` and `SUT60` say that another article belongs on their
-  right.
+- The descriptions of `SUB2A90`, `SUBA60`, `SUT60`, `ESUB2A90` and `ESUT60` say that another article
+  belongs on their right.
 - At the first attempt, the agent places a sink unit with an article on its right.

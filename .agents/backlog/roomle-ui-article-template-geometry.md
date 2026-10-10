@@ -1,6 +1,8 @@
 # Backlog: article template geometry in the roomle-ui plan context
 
 > **Type**: Backlog item (roomle-ui; replaces a workaround in the MCP server)
+> **Status**: Open — needs a roomle-ui change
+> **Ticket**: [RML-18140](https://roomle.atlassian.net/browse/RML-18140)
 > **Domain**: roomle-ui `homag-intelligence` — `GlueLogicImplementation.getPlanContext`, `hi-plan-context.ts`; consumer: the hi-mcp server's `create-or-replace-groups`
 
 ---

@@ -448,9 +448,8 @@ not an archive: it holds only what is still to be done — no history of runs, f
   whose payload reproduces it; a to-do never puts library information into the server — what the
   agent lacks about a library goes into the descs of the library data
   ([library-neutral](../../docs/hi-mcp-behaviour.md#24-instructions));
-- describe a library issue in [library-issues.md](../backlog/library-issues.md), with the library
-  and whether it is reported to the library development team; the overview of the open issues gets
-  only its row, linking there;
+- describe a library issue only in [library-issues.md](../backlog/library-issues.md), including its
+  overview, with the library and whether it is reported to the library development team;
 - name in every overview row the module, team or repository responsible for the fix (**Responsible**);
 - for a listed issue that showed again, replace its **Reproduce** line with the latest run — one line,
   never a list of runs;

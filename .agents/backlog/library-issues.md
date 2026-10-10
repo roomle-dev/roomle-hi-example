@@ -10,9 +10,8 @@ the agent knows of a library comes only from the library data. When the agent pl
 that data lacks information, the fix is in the library, and the issue is here. What a library builds
 is intended; an issue asks for information, not for other geometry. Each issue names the library,
 the problem, its cause, the to-do for the library, the test, whether it is reported to the library
-development team, and how to reproduce it. The overview of
-[mcp-issues.md](mcp-issues.md) lists these issues with a link here. An issue
-leaves this document when the library carries the fix.
+development team, and how to reproduce it. MCP, chat and planner issues are tracked in
+[mcp-issues.md](mcp-issues.md). An issue leaves this document when the library carries the fix.
 
 ## Overview
 

@@ -44,6 +44,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
 | [reasoning-effort-per-gpt-chat-model.md](reasoning-effort-per-gpt-chat-model.md) | Open — example high effort landed; store effort and measurement open | RML-18043: example sets `high` for gpt-5-mini and gpt-5.4-mini and keeps the provider default for gpt-6-astra; store effort settings remain open; further measurement only on request |
 | [reasoning-effort-per-gpt-chat-model-implementation-plan.md](reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open — example high effort landed; store effort and measurement open | RML-18043: example effort and usage logging implemented; store effort settings and their verification remain open; detailed measurement only on request |
+| [article-template-geometry-in-plan-context.md](article-template-geometry-in-plan-context.md) | Open | RML-18140: derive the docking vectors and the corner point of an article that is not in the plan from a calculated template in `getPlanContext`, and drop the MCP server's anchor probe |
 
 Add feature analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `group-adjustment-to-wall-width.md`).

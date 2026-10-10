@@ -4,10 +4,11 @@
 - **Status**: Open
 - **Branch**: roomle-ui `fix/hi-mcp-api-and-tools`, roomle-hi-example `fix/hi-mcp-api-and-tools`
 - **Type**: Feature analysis (a new capability in `getPlanContext` plus the removal of a server workaround)
-- **Sequencing**: this is a **consequence of the refactoring**
-  ([`move-tool-logic-to-glue-logic.md`](../refactoring-analysis/move-tool-logic-to-glue-logic.md)),
-  not a prerequisite. The calculation lands in the glue-logic as the first step of the refactoring;
-  it is not built in the server and moved down afterwards. See §4.
+- **Sequencing**: the calculation is an **independent, reusable prerequisite** — it lives in the
+  glue-logic and is consumed by the existing `getPlanContext` articles branch, so it needs no new
+  group-operation command and no server change to land. The refactoring
+  ([`move-tool-logic-to-glue-logic.md`](../refactoring-analysis/move-tool-logic-to-glue-logic.md))
+  then reuses the same calculation for the placement commands and deletes the server probe. See §4.
 
 ## Affected repositories
 
@@ -126,12 +127,11 @@ In roomle-ui, the glue-logic gains a private `_calculatedTemplateOf(articleId, a
    calculation (`_calculateNewGroup(pick, true, true)` → `libraryData.calculateGroup`). The group is
    never added to `_groupMap` or the plan.
 3. **Cache the calculated template** by `anchorVariantKey` (library, article, sorted attributes) —
-   the same key the server uses today — with `null` when the calculation throws; clear the cache in
-   `loadPosData`.
-4. **`getPlanContext`'s articles branch** passes the calculated templates of the articles it is
-   about to describe into `calculatedDockingVectorsByRoot` / `calculatedCornerPointsByRoot`, in
-   addition to the calculated groups. The catalog now carries the docking vectors and the corner
-   point of an article that is not in the plan.
+   the same key the server uses today — and clear the cache in `loadPosData`.
+4. **`getPlanContext`'s articles branch** passes the calculated templates of the requested articles
+   into `calculatedDockingVectorsByRoot` / `calculatedCornerPointsByRoot`, in addition to the
+   calculated groups. The catalog now carries the docking vectors and the corner point of an article
+   that is not in the plan.
 
 The same `_calculatedTemplateOf` serves the `create-or-replace-groups` / `place-group` commands of
 the refactoring (anchor frame, footprint), so the catalog pass and the placement pass share one
@@ -141,16 +141,61 @@ Then remove the server workaround once roomle-ui is deployed: the probe (`probeA
 `takeBackProbe`, `knownAnchorFrames`, `forgetAnchorFrames`) and the planner methods it needs
 (`getExternalObjectGroups`, `removeExternalObject`) leave `tool-executors.ts` and `planner-api.ts`.
 
-### 4.1 Why not "calculate all articles"
+### 4.1 The articles branch needs an article-level selector
+
+The `articles` branch of `getPlanContext` (line 1263) maps over **every** `_posArticleMap` value —
+it has no article-id filter. Feeding "the calculated templates of the articles it is about to
+describe" into that branch therefore means calculating **every uncached article of every loaded
+library** on the first request: the catalog-wide pass rejected in §4.3, not work proportional to the
+handful the agent uses. A 1000-article library would incur 1000 calculations on its first articles
+request despite the cache.
+
+The design therefore needs an **article-level selector** on the articles section, so the caller
+names the articles whose geometry it wants:
+
+- `getPlanContext(include: ['articles'])` keeps returning the compact catalog for every article, as
+  today, but **without** the calculated docking vectors and corner point for articles that are not
+  in the plan (the current behaviour — the derivation still reads the calculated groups).
+- A new opt-in detail request names the articles to calculate, for example
+  `getPlanContext(include: ['articles'], articleIds: ['<id>', …])` or a dedicated
+  `getArticleGeometry(articleIds)` call. Only those articles are calculated and cached; the catalog
+  entries for them carry the docking vectors and the corner point.
+
+The MCP server knows which articles it is about to describe — the ones the agent picked or is
+choosing between — so it passes exactly those ids. The cost is then proportional to the agent's use,
+which is what the per-article cache promises. Without the selector the cache is defeated on the
+first call, so the selector is part of the design, not an optimisation.
+
+### 4.2 The failure signal must be explicit
+
+`_calculate` (line 4163) catches the calculation exception, logs it and returns the **input group**,
+so `_calculateNewGroup` never throws and a caller cannot observe a failure by catching. Caching
+`null` "when the calculation throws" is therefore not implementable through this call as written: a
+failed calculation would be cached as a successful, uncalculated template.
+
+The calculation path needs an explicit failure signal. Two options:
+
+- **Validate the returned group** before caching: a calculated template carries the geometry the
+  derivation reads (`dockInfos` on its roots, a corner point for a corner article); a group that
+  still equals the input, or that carries no calculated geometry, is a failure. This needs no change
+  to `_calculate`.
+- **Return the outcome from the calculation**: a variant of `_calculateNewGroup` that reports
+  whether `libraryData.calculateGroup` threw, so `_calculatedTemplateOf` caches the template only on
+  success and caches the failure (or nothing) otherwise.
+
+The second is cleaner and is the preferred shape; the first is the fallback if the calculation path
+must stay untouched. Either way the cache never stores an uncalculated template as successful.
+
+### 4.3 Why not "calculate all articles"
 
 Calculating every article of every loaded library on each `getPlanContext` does not scale: the
 Furniture_Smith library has 111 articles, a larger library has 1000, and the cost grows with the
 catalog while the agent asks for a handful of articles. It is also not library-neutral — it bakes a
-catalog-wide pass into a server that must serve every library. The per-article cache has neither
-problem: the cost is proportional to what the agent actually uses, and the glue-logic knows nothing
-about a specific library.
+catalog-wide pass into a server that must serve every library. The per-article cache with the
+article-level selector of §4.1 has neither problem: the cost is proportional to what the agent
+actually uses, and the glue-logic knows nothing about a specific library.
 
-### 4.2 Measure once
+### 4.4 Measure once
 
 Before relying on the cache, measure in the example page whether `LibraryData.calculateGroup` is
 free of side effects for the HOMAG library (it is `libraryExports.calc`, a pure library function —
@@ -166,17 +211,20 @@ is then the only number that matters, and it is paid once per article.
   the library and carry no geometry; the docking vectors are a result of the calculation, not of the
   template.
 - **Calculate the whole catalog eagerly on every `getPlanContext`.** Rejected: it does not scale to a
-  large library and it is not library-neutral — see §4.1. The per-article cache is the design.
+  large library and it is not library-neutral — see §4.3. The per-article cache with the
+  article-level selector of §4.1 is the design.
 - **Restrict the calculation to corner articles by category.** Rejected: it hard-codes a library
   category into the glue-logic. The per-article cache needs no such restriction.
 
 ## 6. Code and documents the work would touch
 
 - `roomle-ui/packages/web-sdk/packages/homag-intelligence/src/glue-logic.ts` — the template
-  calculation and its cache, the `getPlanContext` articles branch, `loadPosData`.
-- `roomle-ui/packages/web-sdk/packages/homag-intelligence/src/hi-plan-context.ts` — no change
-  expected; the derivation helpers already accept a list of groups.
-- `roomle-hi-example/hi-mcp/hi-mcp-server/tool-executors.ts` — remove the probe.
+  calculation and its cache, the article-level selector on the `getPlanContext` articles branch,
+  `loadPosData`.
+- `roomle-ui/packages/web-sdk/packages/homag-intelligence/src/hi-plan-context.ts` — the derivation
+  helpers already accept a list of groups; the selector narrows which templates are passed in.
+- `roomle-hi-example/hi-mcp/hi-mcp-server/tool-executors.ts` — pass the article ids the agent is
+  about to describe; remove the probe.
 - `roomle-hi-example/hi-mcp/hi-mcp-server/planner-api.ts` — remove the methods the probe needed.
 - `roomle-hi-example/docs/hi-mcp-behaviour.md` — the catalog description.
 - `roomle-hi-example/.agents/skills/hi-mcp-tools.md` — the `get-plan-context` reference.

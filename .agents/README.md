@@ -105,6 +105,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Article template geometry in the plan context](feature-analysis/article-template-geometry-in-plan-context.md) | Open | 2026-10-10 |
 | [Generate standard MCP prompt tests per session](feature-analysis/generated-mcp-standard-tests.md) | Implemented locally — not landed | 2026-10-09 |
 | [Explain the door or window a placement keeps clear](feature-analysis/explain-opening-clearance.md) | Implemented locally — not landed | 2026-10-09 |
 | [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open — example high effort landed; store effort and measurement open | 2026-10-07 |
@@ -118,6 +119,7 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Move the tool logic to the glue-logic](refactoring-analysis/move-tool-logic-to-glue-logic.md) | Open | 2026-10-10 |
 | [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-06 |
 
 ### Benchmarks & Performance Analyses

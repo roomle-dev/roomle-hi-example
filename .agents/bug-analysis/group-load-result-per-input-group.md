@@ -124,17 +124,22 @@ The information is not missing from the system; it is dropped at the seam betwee
 
 ### roomle-ui — the load result names per input group what happened
 
-Extend `LoadExternalObjectGroupResult` (`external-object-api.ts:149-151`) so each entry answers for one input group:
+Extend `LoadExternalObjectGroupResult` (`external-object-api.ts:149-151`) so each entry answers for one input group. One input group can produce **zero** plan objects (left out) or **several** (split into more than one plan object), so the ids are a list, not a single id:
 
 ```ts
 export interface LoadExternalObjectGroupResult {
-  id: number;              // runtime id of the loaded ConfiguratorPlanObjectViewModel
+  ids: number[];           // runtime ids of the loaded ConfiguratorPlanObjectViewModels; empty when left out
   inputIndex: number;      // index of the input group in the layout
   inputGroupId?: string;   // the input group's id, when it had one
   outcome: 'built' | 'restored' | 'leftOut';
   reason?: string;         // the planner's reason for 'restored' and 'leftOut'
 }
 ```
+
+`ids` is empty exactly when `outcome` is `'leftOut'`, and carries more than one entry when the input
+group became several plan objects — the case the backlog item
+[`planner-load-outcome-per-group.md`](../backlog/planner-load-outcome-per-group.md) names. A
+singular `id` could not represent either without a fake value.
 
 `_createOrReplacePosGroupsFromLayout` (`glue-logic.ts:1013`) already walks the input groups in order and knows the outcome of each; it records it alongside `processedPosGroups` instead of dropping it. `_discardCalculation` (`glue-logic.ts:3109-3119`) is the one place that knows a replace was restored, so it marks the outcome there. `roomle-planner.ts:2482` carries the outcome through the `.map()` instead of reducing each group to `{ id }`.
 
@@ -149,16 +154,23 @@ The reason strings come from the planner and the library — the same diagnostic
 
 ## Ordering — where this sits
 
-This is a **consequence of the refactoring** in [`move-tool-logic-to-glue-logic.md`](../refactoring-analysis/move-tool-logic-to-glue-logic.md), not a prerequisite, and it is independent of RML-18140.
+This is an **independent, reusable prerequisite** of the refactoring in
+[`move-tool-logic-to-glue-logic.md`](../refactoring-analysis/move-tool-logic-to-glue-logic.md), not a
+consequence of it, and it is independent of RML-18140.
 
-The refactoring moves the tool logic into the glue-logic and reduces the planner API to `getExternalObjectPlanContext`, `externalObjectGroupOperation`, `fetchPrice`, `getExternalObjectSnapshot`, `undo` and `redo`. `create-or-replace-groups` becomes one `externalObjectGroupOperation` command, and the load result is part of that command's answer. The per-input-group outcome is produced in the glue-logic — `_createOrReplacePosGroupsFromLayout` is glue-logic code — so it is exactly the kind of answer the refactoring's command result is meant to carry. Building it in the server first and moving it down afterwards would be the same mistake the refactoring exists to remove.
+The per-input-group outcome is produced in the glue-logic — `_createOrReplacePosGroupsFromLayout` is
+glue-logic code — so it can be built there directly, without a server implementation and without a
+later move. The refactoring then reuses it: `create-or-replace-groups` becomes one
+`externalObjectGroupOperation` command, and the load result is part of that command's answer, so the
+outcome record is exactly the kind of answer the refactoring's command result is meant to carry.
 
-The two tickets are consequences of the same refactoring and do not block each other:
+The two tickets are independent and do not block each other:
 
 - **RML-18140** is about the *catalog* geometry of an article that is not in the plan: the server needs an article's docking vectors and corner point before it can author a group. It is answered by the per-article, lazy, cached template calculation in the glue-logic.
 - **RML-18139** is about the *load result* naming what the planner built per input group. It is answered by the outcome record in `_createOrReplacePosGroupsFromLayout`.
 
-Both are produced by the glue-logic, both travel in the command result, and neither needs the other. They can be done in either order, and both are best done as part of the refactoring rather than before it.
+Both are produced by the glue-logic and both travel in the command result once the refactoring lands.
+Neither needs the other, and neither needs the refactoring to land first.
 
 ## Tests
 

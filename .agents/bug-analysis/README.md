@@ -35,6 +35,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [The group load result names per input group what the planner built](group-load-result-per-input-group.md) | Open — analysis | RML-18139 |
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | RML-18124; library #60 |
 | [Preserve completed tool outcomes and clarify calculation recovery advice](pr-review-tool-outcomes-and-calculation-advice.md) | Fixed locally — PR review fixes | roomle-hi-example #94 |
 | [Explain root outlines that extend over a neighbour](root-outline-overhang-explanation.md) | Fixed locally — MCP wording; library follow-up in #60 | Plan-context finding #2 (RML-18103) |

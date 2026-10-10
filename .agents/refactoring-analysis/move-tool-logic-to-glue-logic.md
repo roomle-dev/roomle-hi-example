@@ -167,15 +167,13 @@ every page allow-list, and why it costs a load per anchor variant.
 **Consequences for the ordering:**
 
 - The per-article calculation belongs **in the glue-logic**, next to `_prepareArticlePickRoots` and
-  `_calculateNewGroup`, and it is reached through the **same seam** the refactoring builds
-  (`externalObjectGroupOperation`). It is not a separate feature that must land first.
-- Doing RML-18140 first would mean building the calculation **in the server** (or in
-  `getPlanContext` as a catalog-wide pass) and then moving it down again — the duplication the
-  refactoring exists to remove.
-- The refactoring therefore **subsumes** RML-18140: once the calculation lives in the glue-logic,
-  the probe is deleted, the catalog is completed for every consumer, and the planner methods the
-  probe needed leave the allow-lists. RML-18140 becomes a consequence of the refactoring, not a
-  prerequisite.
+  `_calculateNewGroup`. It is reached through the existing `getPlanContext` articles branch, so it
+  needs no new group-operation command and no server change to land — it is an **independent,
+  reusable prerequisite** the refactoring then reuses.
+- The refactoring **reuses** that calculation for the placement commands: once it lives in the
+  glue-logic, the probe is deleted, the catalog is completed for every consumer, and the planner
+  methods the probe needed leave the allow-lists. The refactoring does not have to land first for
+  the calculation to exist; it is what makes the calculation serve the placement path too.
 
 **Per article, not the whole catalog.** The calculation is per `articleId` (and per attribute
 override set), computed lazily on first need and cached. It is never "calculate all 111" — a
@@ -184,11 +182,21 @@ library with 1000 articles costs nothing until an article is asked for. The cach
 `knownAnchorFrames` uses today — and cleared in `loadPosData` (`glue-logic.ts:825`), where the
 templates are (re)loaded.
 
+**The articles branch needs an article-level selector.** The `articles` branch of `getPlanContext`
+(`glue-logic.ts:1263`) maps over every `_posArticleMap` value with no article-id filter, so feeding
+"the calculated templates of the articles it is about to describe" into it would calculate every
+uncached article of every loaded library on the first request — the catalog-wide pass this section
+rejects. The calculation is therefore reached through an **article-level selector** on the articles
+section (the caller names the article ids it wants geometry for), so the cost stays proportional to
+the agent's use. See §4.1 of
+[`article-template-geometry-in-plan-context.md`](../feature-analysis/article-template-geometry-in-plan-context.md).
+
 **Where the result is consumed.** Two consumers, one calculation:
 
-- `getPlanContext`'s articles branch (`glue-logic.ts:1263`) feeds the calculated templates into
-  `calculatedDockingVectorsByRoot` / `calculatedCornerPointsByRoot` so the catalog carries the
-  docking vectors and the corner point of an article that is not in the plan.
+- `getPlanContext`'s articles branch (`glue-logic.ts:1263`) feeds the calculated templates of the
+  **requested** articles into `calculatedDockingVectorsByRoot` / `calculatedCornerPointsByRoot` so
+  the catalog carries the docking vectors and the corner point of an article that is not in the
+  plan.
 - The `create-or-replace-groups` / `place-group` commands use the same calculated template to
   derive the anchor frame and the footprint, replacing `probeAnchorFrame` and the server's
   `plan-space.ts` re-derivation.

@@ -44,6 +44,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 | Document | Status | Description |
 |---|---|---|
 | [object-image-in-get-plan-images.md](object-image-in-get-plan-images.md) | Open | Use an object perspective image and label each returned view in get-plan-images |
+| [move-tool-logic-to-glue-logic.md](move-tool-logic-to-glue-logic.md) | Open | Move the HI MCP tool logic (validation, id resolution, geometry, hints) from the server into the roomle-ui glue-logic, maximising `externalObjectGroupOperation` |
 
 Add refactoring analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `mcp-bridge-simplification.md`).

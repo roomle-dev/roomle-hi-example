@@ -4,11 +4,16 @@
 - **Status**: Open
 - **Branch**: roomle-ui `fix/hi-mcp-api-and-tools`, roomle-hi-example `fix/hi-mcp-api-and-tools`
 - **Type**: Feature analysis (a new capability in `getPlanContext` plus the removal of a server workaround)
+- **Sequencing**: this is a **consequence of the refactoring**
+  ([`move-tool-logic-to-glue-logic.md`](../refactoring-analysis/move-tool-logic-to-glue-logic.md)),
+  not a prerequisite. The calculation lands in the glue-logic as the first step of the refactoring;
+  it is not built in the server and moved down afterwards. See §4.
 
 ## Affected repositories
 
 - **roomle-ui** — `getPlanContext` derives the docking vectors and the corner point of an article
-  that is not in the plan from a calculated template; `loadPosData` clears the template cache.
+  that is not in the plan from a **per-article, lazily calculated and cached** template;
+  `loadPosData` clears the template cache.
 - **roomle-hi-example** — the MCP server drops the anchor probe (`probeAnchorFrame`, `takeBackProbe`,
   `knownAnchorFrames`) and the planner methods it needs.
 - **ligna-store** — no change; it consumes `getPlanContext` and benefits from the complete catalog.
@@ -37,9 +42,9 @@ caches the anchor frame per library, article and attribute overrides for the ser
 extra load per anchor variant and per server start, needs planner methods on every page allow-list,
 and leaves the catalog incomplete for every other consumer.
 
-The template calculation would also give a size to the two Furniture_Smith articles whose template
-has no `Dim` attribute — the range hood `DU` and the TV `SM_TV`: their dimensions are empty, so the
-agent cannot know their width.
+The template calculation would also give a size to articles whose template has no `Dim` attribute —
+for example the range hood `DU` and the TV `SM_TV` in Furniture_Smith: their dimensions are empty, so
+the agent cannot know their width. This is a side benefit, not the reason for the change.
 
 ## 2. How the area works today
 
@@ -109,35 +114,48 @@ closed by calculating the article template once and feeding it into the existing
 
 ## 4. Proposed design
 
-In roomle-ui, `getPlanContext` calculates the template of every article whose roots have no docking
-geometry and no calculated root in the plan, and feeds the result into the existing derivation:
+The calculation is **per article, lazy, cached** — never the whole catalog. A library with 1000
+articles costs nothing until an article is asked for. This is the same granularity the server's
+`knownAnchorFrames` has today, moved into the glue-logic where the calculation belongs.
 
-1. **Build a single-pick group** of the article: `{ libraryId, roots: [{ id, articleId }] }`.
+In roomle-ui, the glue-logic gains a private `_calculatedTemplateOf(articleId, attributes?)` next to
+`_prepareArticlePickRoots` / `_calculateNewGroup`:
+
+1. **Build a single-pick group** of the article: `{ libraryId, roots: [{ id, articleId, attributes? }] }`.
 2. **Complete it from the template** (`_prepareArticlePickRoots`) and run it through the library
    calculation (`_calculateNewGroup(pick, true, true)` → `libraryData.calculateGroup`). The group is
    never added to `_groupMap` or the plan.
-3. **Cache the calculated template per articleId** (`null` when the calculation throws); clear the
-   cache in `loadPosData`.
-4. **Pass `[...calculatedGroups, ...calculatedTemplates]`** to `calculatedDockingVectorsByRoot` and
-   `calculatedCornerPointsByRoot`.
+3. **Cache the calculated template** by `anchorVariantKey` (library, article, sorted attributes) —
+   the same key the server uses today — with `null` when the calculation throws; clear the cache in
+   `loadPosData`.
+4. **`getPlanContext`'s articles branch** passes the calculated templates of the articles it is
+   about to describe into `calculatedDockingVectorsByRoot` / `calculatedCornerPointsByRoot`, in
+   addition to the calculated groups. The catalog now carries the docking vectors and the corner
+   point of an article that is not in the plan.
+
+The same `_calculatedTemplateOf` serves the `create-or-replace-groups` / `place-group` commands of
+the refactoring (anchor frame, footprint), so the catalog pass and the placement pass share one
+cache and never calculate the same article twice.
 
 Then remove the server workaround once roomle-ui is deployed: the probe (`probeAnchorFrame`,
 `takeBackProbe`, `knownAnchorFrames`, `forgetAnchorFrames`) and the planner methods it needs
 (`getExternalObjectGroups`, `removeExternalObject`) leave `tool-executors.ts` and `planner-api.ts`.
 
-### 4.1 Measure first
+### 4.1 Why not "calculate all articles"
 
-Before implementing, measure in the example page:
+Calculating every article of every loaded library on each `getPlanContext` does not scale: the
+Furniture_Smith library has 111 articles, a larger library has 1000, and the cost grows with the
+catalog while the agent asks for a handful of articles. It is also not library-neutral — it bakes a
+catalog-wide pass into a server that must serve every library. The per-article cache has neither
+problem: the cost is proportional to what the agent actually uses, and the glue-logic knows nothing
+about a specific library.
 
-- Is `LibraryData.calculateGroup` free of side effects for the HOMAG library?
-- How long do the calculations of all 111 Furniture_Smith articles take?
+### 4.2 Measure once
 
-If the full catalog is too slow, restrict the calculation to corner articles (category
-`... | Base Units | Corner`).
-
-### 4.2 Decide from the measurement
-
-Lazily per article on the first `getPlanContext`, or once after `loadPosData`.
+Before relying on the cache, measure in the example page whether `LibraryData.calculateGroup` is
+free of side effects for the HOMAG library (it is `libraryExports.calc`, a pure library function —
+`homag-intelligence.ts:159` — but confirm it mutates no library-global state). The per-article cost
+is then the only number that matters, and it is paid once per article.
 
 ## 5. Alternatives considered
 
@@ -147,8 +165,10 @@ Lazily per article on the first `getPlanContext`, or once after `loadPosData`.
 - **Add `dockInfos` to the article templates or the master data.** Rejected: the templates come from
   the library and carry no geometry; the docking vectors are a result of the calculation, not of the
   template.
-- **Calculate the whole catalog eagerly on every `getPlanContext`.** Rejected unless the measurement
-  shows it is cheap; the lazy per-article cache is the fallback.
+- **Calculate the whole catalog eagerly on every `getPlanContext`.** Rejected: it does not scale to a
+  large library and it is not library-neutral — see §4.1. The per-article cache is the design.
+- **Restrict the calculation to corner articles by category.** Rejected: it hard-codes a library
+  category into the glue-logic. The per-article cache needs no such restriction.
 
 ## 6. Code and documents the work would touch
 
@@ -164,5 +184,5 @@ Lazily per article on the first `getPlanContext`, or once after `loadPosData`.
 ## 7. Open questions
 
 - Does `calculateGroup` mutate any library-global state for the HOMAG library?
-- Is the full-catalog calculation fast enough, or must it be restricted to corner articles?
-- Lazy per article or once after `loadPosData`?
+- Is the per-article calculation fast enough that the cache is a pure win, or does the first
+  `getPlanContext` need to warm it in the background?

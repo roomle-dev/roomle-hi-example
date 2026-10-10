@@ -68,7 +68,8 @@ re-implements a large part of what the glue-logic already owns or could own:
    `PLANNER_METHODS`. Every new server-side need adds a method to every page.
 3. **The catalog is incomplete for every other consumer.** Docking vectors and the corner point are
    derived from calculated roots in the plan, so an article that is not in the plan has none. The
-   server patches this with the probe; the ligna-store and any other consumer get nothing.
+   server patches this with the probe; the ligna-store and any other consumer get nothing. The fix
+   is a per-article calculation in the glue-logic (§2.4), which serves every consumer.
 4. **The server cannot see the calculated geometry.** It re-derives footprints and wall spans from
    raw groups and the room, which is exactly the geometry the kernel already calculated. This is the
    source of the `PLACE_EPSILON_MM`, `OVERLAP_TOLERANCE_MM` and `WALL_STRIP_MM` fudge factors.
@@ -90,7 +91,7 @@ pre-resolved ids and pre-computed geometry.
 | `normalizePlacement`, `normalizeWallPlacement`, `dropUnknownPlacementFields`, `WALL_PLACEMENT_DEFAULTS` | a new `place-group` command on `externalObjectGroupOperation` (see §2.3) validates and applies the placement in the glue-logic, where the calculated footprint is available |
 | `plan-space.ts` geometry (`groupFootprint`, `placeAgainstWall`, `placeCornerAtWalls`, `freeStretchesAlongWall`, `volumesOverlap`, …) | glue-logic, over the calculated groups; the server keeps only what it needs to *describe* a result to the agent |
 | `group-layout.ts` relations → docking | already in the glue-logic for `merge-article-into-group` / `insert-article-into-group`; the server's `relationsToDocking` for `create-or-replace-groups` moves down as a `create-or-replace-groups` command |
-| `probeAnchorFrame`, `takeBackProbe`, `knownAnchorFrames`, `anchorFrameOfRoot`, `anchorVariantKey`, `toRepositioningData` | removed from the server; replaced by the template calculation of RML-18140 in `getPlanContext` (`calculatedDockingVectorsByRoot` / `calculatedCornerPointsByRoot` fed with calculated templates) |
+| `probeAnchorFrame`, `takeBackProbe`, `knownAnchorFrames`, `anchorFrameOfRoot`, `anchorVariantKey`, `toRepositioningData` | removed from the server; replaced by a **per-article template calculation in the glue-logic** (see §2.4) — the same calculation the refactoring moves down, not a separate feature |
 | `rowReachHints`, `movedUnitsAboveHint`, `turnedLegHints`, `withRowHints` | glue-logic computes the hints from the before/after calculated groups and returns them in `HiGroupOperationResult.corrections` / a new `hints` field |
 | `withCorrections`, `withLibraryChanges`, `withPlanRoots`, `withUnitsAboveDocked` | glue-logic; the server keeps only the agent-facing phrasing |
 
@@ -134,6 +135,67 @@ New commands on `externalObjectGroupOperation` (each a `HiGroupOperation` member
 
 This keeps the planner API at the current size while moving the logic down.
 
+### 2.4 The refactoring is the enabler for RML-18140, not its prerequisite
+
+The first version of this analysis put RML-18140 (the template calculation in `getPlanContext`)
+**before** the refactoring. That ordering is wrong, and the code says so.
+
+**The calculation is already a pure library function.** `LibraryData.calculateGroup` is
+`libraryExports.calc(groupData)` (`homag-intelligence.ts:159`) — no kernel, no scene, no planner
+call. `_prepareArticlePickRoots(posGroup)` (`glue-logic.ts:1117`) turns an article pick into the
+article's template roots by deep-copying the `PosArticle` from `_posArticleMap` — again without
+touching the scene. `_calculateNewGroup(pick, true, true)` (`glue-logic.ts:2956`) is
+`_replacesIDs` + `_initializePosGroup` + `_calculate`, and `_calculate` (`glue-logic.ts:4163`) runs
+`libraryData.calculateGroup` inside `_updatePosData` (`glue-logic.ts:4354`), which touches no map.
+Only `_addNewGroup` (`glue-logic.ts:3150`) writes `_groupMap`.
+
+So the glue-logic can calculate **one article's** geometry on demand, in-process, with no scene
+load and no planner round trip:
+
+```ts
+const pick = { libraryId, roots: [{ id, articleId, attributes? }] };
+this._prepareArticlePickRoots(pick);          // template roots from _posArticleMap
+const calculated = this._calculateNewGroup(pick, true, true); // libraryExports.calc
+// calculated.roots[0].dockInfos, .articlePos, .dimensions, corner point
+```
+
+That is exactly what the server's probe does today — but the probe does it by **loading a group
+into the live scene, reading it back and undoing it**, which is why it needs
+`loadExternalObjectGroupLayout`, `getExternalObjectGroups`, `removeExternalObject` and `undo` on
+every page allow-list, and why it costs a load per anchor variant.
+
+**Consequences for the ordering:**
+
+- The per-article calculation belongs **in the glue-logic**, next to `_prepareArticlePickRoots` and
+  `_calculateNewGroup`, and it is reached through the **same seam** the refactoring builds
+  (`externalObjectGroupOperation`). It is not a separate feature that must land first.
+- Doing RML-18140 first would mean building the calculation **in the server** (or in
+  `getPlanContext` as a catalog-wide pass) and then moving it down again — the duplication the
+  refactoring exists to remove.
+- The refactoring therefore **subsumes** RML-18140: once the calculation lives in the glue-logic,
+  the probe is deleted, the catalog is completed for every consumer, and the planner methods the
+  probe needed leave the allow-lists. RML-18140 becomes a consequence of the refactoring, not a
+  prerequisite.
+
+**Per article, not the whole catalog.** The calculation is per `articleId` (and per attribute
+override set), computed lazily on first need and cached. It is never "calculate all 111" — a
+library with 1000 articles costs nothing until an article is asked for. The cache is keyed by
+`anchorVariantKey` (library, article, sorted attributes) — the same key the server's
+`knownAnchorFrames` uses today — and cleared in `loadPosData` (`glue-logic.ts:825`), where the
+templates are (re)loaded.
+
+**Where the result is consumed.** Two consumers, one calculation:
+
+- `getPlanContext`'s articles branch (`glue-logic.ts:1263`) feeds the calculated templates into
+  `calculatedDockingVectorsByRoot` / `calculatedCornerPointsByRoot` so the catalog carries the
+  docking vectors and the corner point of an article that is not in the plan.
+- The `create-or-replace-groups` / `place-group` commands use the same calculated template to
+  derive the anchor frame and the footprint, replacing `probeAnchorFrame` and the server's
+  `plan-space.ts` re-derivation.
+
+Both read the same per-article cache, so the catalog pass and the placement pass never calculate
+the same article twice.
+
 ## 3. Proposed target shape
 
 ```
@@ -157,8 +219,9 @@ geometry, hints, and the template calculation of RML-18140.
 
 - **roomle-ui unit tests** (`packages/web-sdk/packages/homag-intelligence`): the existing
   `runGroupOperation` tests extend to the new commands; new tests for id resolution, placement
-  application and hints. RML-18140 adds the template-calculation tests (calculated once, cached,
-  cleared on a new catalog, no calculation when the plan has a calculated root).
+  application and hints. The per-article calculation adds tests for the cache (calculated once per
+  `anchorVariantKey`, cleared on a new catalog, no calculation when the plan already has a
+  calculated root).
 - **roomle-hi-example unit tests** (`hi-mcp/hi-mcp-server/tests`): the executor tests shrink to the
   adapter behaviour (argument reading, result shaping, error phrasing); the moved logic is tested in
   roomle-ui.
@@ -169,8 +232,8 @@ geometry, hints, and the template calculation of RML-18140.
 
 - Tool results keep their shape; `corrections` and `hints` now originate in the glue-logic.
 - `get-plan-context` on an empty plan returns docking vectors and `cornerPoint` for articles not in
-  the plan (RML-18140), so the server's `agentFacingArticle` no longer completes `cornerArticle`
-  from the category.
+  the plan (the per-article calculation of §2.4), so the server's `agentFacingArticle` no longer
+  completes `cornerArticle` from the category.
 - The page allow-lists lose `getExternalObjectGroups` and `removeExternalObject` (the example page
   keeps `removeExternalObject` for its own UI).
 
@@ -185,21 +248,37 @@ geometry, hints, and the template calculation of RML-18140.
 
 ## 7. Suggested steps
 
-1. **RML-18140 first** — the template calculation in `getPlanContext` removes the probe workaround
-   and completes the catalog. This is the prerequisite the ticket names.
-2. **Move id and article resolution** into the glue-logic operations; the server sends the raw ids
+The refactoring is the enabler; RML-18140 is a consequence of it, not a prerequisite (§2.4).
+
+1. **Add the per-article template calculation to the glue-logic** — a private
+   `_calculatedTemplateOf(articleId, attributes?)` next to `_prepareArticlePickRoots` /
+   `_calculateNewGroup`, cached by `anchorVariantKey`, cleared in `loadPosData`. This is the
+   calculation RML-18140 needs, in its final home.
+2. **Feed it into `getPlanContext`** — the articles branch passes the calculated templates into
+   `calculatedDockingVectorsByRoot` / `calculatedCornerPointsByRoot`. The catalog now carries the
+   docking vectors and the corner point of an article that is not in the plan. (This is RML-18140,
+   done in the glue-logic.)
+3. **Add `create-or-replace-groups` and `place-group` commands** on
+   `externalObjectGroupOperation`; move `group-layout.ts` and the placement geometry down; the
+   commands use the same per-article calculation for the anchor frame and the footprint.
+4. **Move id and article resolution** into the glue-logic operations; the server sends the raw ids
    and the result carries the resolved ones plus corrections.
-3. **Add `create-or-replace-groups` and `place-group` commands**; move `group-layout.ts` and the
-   placement geometry down; drop `loadExternalObjectGroupLayout` from the tool path.
-4. **Move the hints** into the glue-logic result.
-5. **Delete the moved helpers** from the server and update the page allow-lists.
+5. **Move the hints** into the glue-logic result.
+6. **Delete the moved helpers and the probe** from the server (`probeAnchorFrame`, `takeBackProbe`,
+   `knownAnchorFrames`, `forgetAnchorFrames`, `plan-space.ts`, `group-layout.ts`) and drop
+   `loadExternalObjectGroupLayout`, `getExternalObjectGroups`, `removeExternalObject` from the tool
+   path and the page allow-lists.
+
+Steps 1–2 are RML-18140; they are the first steps of the refactoring because the calculation must
+land in the glue-logic, not in the server.
 
 ## 8. Open questions
 
-- Does `LibraryData.calculateGroup` have side effects for the HOMAG library, and how long do the
-  calculations of all 111 Furniture_Smith articles take? (RML-18140 step 1 — measure first.)
+- Does `LibraryData.calculateGroup` mutate any library-global state for the HOMAG library? (Measure
+  once, in the glue-logic, before relying on the cache.)
 - Should the hints travel in `HiGroupOperationResult` as a new `hints` field, or stay in
   `corrections`?
-- The anchor frame depends on the attribute overrides; a template calculated per `articleId` gives
-  the default variant only. An anchor with overrides keeps the probe unless templates are calculated
-  per override set (RML-18140 constraint).
+- The anchor frame depends on the attribute overrides; the per-article cache is keyed by
+  `anchorVariantKey` (library, article, sorted attributes), so an anchor with overrides is a
+  separate cache entry — the same granularity the server's `knownAnchorFrames` has today. Confirm
+  that the override set is small enough that the cache stays bounded.

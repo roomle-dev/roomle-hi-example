@@ -83,6 +83,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Preserve completed tool outcomes and clarify calculation recovery advice](bug-analysis/pr-review-tool-outcomes-and-calculation-advice.md) | Fixed locally — PR review fixes | 2026-10-10 |
 | [Explain root outlines that extend over a neighbour](bug-analysis/root-outline-overhang-explanation.md) | Fixed locally — MCP wording; library follow-up in #60 | 2026-10-10 |
 | [Report calculation errors of newly loaded groups](bug-analysis/new-group-calculation-feedback.md) | Fixed locally — not landed | 2026-10-10 |
 | [Plan-context findings: affected repositories](bug-analysis/plan-context-findings-repository-scope.md) | Open — kernel and library scope remains | 2026-10-10 |

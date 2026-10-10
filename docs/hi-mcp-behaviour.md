@@ -344,8 +344,9 @@ Decided with the backlog of the MCP test, implemented on the user's go.
   tokens (in, out, reasoning), its tool calls and its duration, and a step that fails its number with
   what the provider answered — per cause the error, the HTTP status, the url, the provider's request id
   and the body, text or value the AI SDK could not process (`createStepLog`, `describeStepError`);
-  logging is best effort and cannot prevent the outcome message. gpt-5.4-mini and gpt-5-mini plan at
-  reasoning effort `high` ([RML-18043](https://roomle.atlassian.net/browse/RML-18043)),
+  logging is best effort and cannot prevent the outcome message. A thrown tool-completion log
+  cannot turn a successful MCP result into a tool error for the model. gpt-5.4-mini and gpt-5-mini
+  plan at reasoning effort `high` ([RML-18043](https://roomle.atlassian.net/browse/RML-18043)),
   `HI_CHAT_REASONING_EFFORT` overrides it for every GPT deployment ([RML-18041](https://roomle.atlassian.net/browse/RML-18041)). The example page sends its
   bridge `clientId` with every `/chat` request; the chat backend requires it and connects to
   `/mcp?client=<clientId>` (retaining any `session` query). The example disables chat submission
@@ -567,8 +568,12 @@ The server runs these steps:
    after a replace, and reads the groups again.
 9. It reads the final raw groups and reports roots with `Error` or `Fatal` calculation logs in
    `notLoaded`, matched by runtime group id to the original input index. Each root gets its first
-   diagnostic line and an action to check its overrides or replace the article. Loaded groups
+   diagnostic line and an action to check the group's attributes and the root's overrides against
+   the library data, then change the failing values or replace the article. Loaded groups
    and their other roots stay in the result; warnings and errors of unrelated groups are ignored.
+   Group-attribute recovery is guarded by
+   `names group attributes in the recovery advice for a root calculation %s after applying them`
+   in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`.
 10. It uses the same raw groups to test the root modules of the groups of the call against the
     obstacles and the other groups and adds the `hint` of D55.
 
@@ -849,7 +854,7 @@ has its own corrections, G31–G45 and G64.
 | — | no group of the call can be built | — | error result: "Invalid pos groups - nothing was loaded: …" with every error |
 | — | the planner loads nothing | — | error result: "No groups were created or replaced …" |
 | — | a replaced group that still holds its previous articles instead of the ones sent — the planner could not calculate the new layout and restored the group (roomle-ui `_discardCalculation`) | — | correction: "the planner could not calculate the new layout of group '…' and kept its previous content - …; send the layout again with another article" |
-| — | a loaded root of a group of the call with an `Error` or `Fatal` calculation log | keeps the loaded groups and roots | `notLoaded`: original input `index`, runtime group `id`, failing runtime `rootIds`, and one error per root with its first diagnostic line and the action to check its attribute overrides against the library data or replace its article; warnings and unrelated groups are ignored |
+| — | a loaded root of a group of the call with an `Error` or `Fatal` calculation log | keeps the loaded groups and roots | `notLoaded`: original input `index`, runtime group `id`, failing runtime `rootIds`, and one error per root with its first diagnostic line and the action to check `posGroups[index].attributes` and the root's attribute overrides against the library data, then change the failing values or replace its article; warnings and unrelated groups are ignored |
 | — | a group of the call has no position after the load | — | `hint` |
 | D55 | a root module of a group of the call that overlaps an object or a root module of another group, or stands in the 600 mm strip in front of a door or a window within its height, `bottomMm` to `topMm` — by more than 5 mm; a replaced group only for what it did not stand on before | builds it (D51) | `hint`: "Root module 'w1' (OTB30) of group '…' stands in front of the window in the back wall (wall 5, fromEndMm 235 to 2335, 950 to 2170 mm) - free stretches of the left wall (wall 0) at its height: fromEndMm 0 to 4400. The groups were built as sent - move or change them if the user did not ask for them there." — with another group named: "… overlaps root module 'r1' (…) of group '…' …", then "If the units belong together, send them as one group or join them with merge-groups." Without a wall the stretches are left out; without a wide enough stretch: "- no stretch of the … is free for it at its height" |
 

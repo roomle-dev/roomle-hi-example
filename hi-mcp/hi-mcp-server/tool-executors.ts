@@ -4877,7 +4877,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
               ({ root, error }: any) =>
                 `posGroups[${index}]: the library could not calculate root '${root.id}' (${root.articleId ?? root.name}) ` +
                 `of group '${result.id}' - ${String(error.msg).split('\n')[0].trim().replace(/\.$/, '')}. ` +
-                "Check the root's attribute overrides against the library data and change them or replace the article; the loaded groups and other roots were kept."
+                `Check posGroups[${index}].attributes and the root's attribute overrides against the library data; ` +
+                'change the failing values or replace the article. The loaded groups and other roots were kept.'
             ),
           });
         }

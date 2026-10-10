@@ -223,6 +223,53 @@ describe('chat response recovery', () => {
     expect(await response()).toBe('The cabinets are ready.');
   });
 
+  it('keeps a completed write successful when its completion log throws', async () => {
+    const written = mcpResult({ groups: [{ id: 'created-group', roots: [] }] });
+    const write = vi.fn(async () => written);
+    mocks.tools = { 'create-or-replace-groups': fakeTool(write) };
+    let step = 0;
+    const model = new MockLanguageModelV3({
+      doStream: async () => ({
+        stream: convertArrayToReadableStream(
+          step++ === 0
+            ? [call('create-or-replace-groups'), finish('tool-calls')]
+            : [...text('The cabinets are ready.'), finish('stop')]
+        ),
+      }),
+    });
+    mocks.model = model;
+    const log = vi.spyOn(console, 'log').mockImplementation((message) => {
+      if (String(message).startsWith('[hi-chat] tool done:')) {
+        throw new Error('Completion logger failed');
+      }
+    });
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(await response()).toBe(
+      '\n[tool] create-or-replace-groups\nThe cabinets are ready.'
+    );
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(model.doStreamCalls).toHaveLength(2);
+    expect(model.doStreamCalls[1].prompt).toContainEqual(
+      expect.objectContaining({
+        role: 'tool',
+        content: [
+          expect.objectContaining({
+            type: 'tool-result',
+            toolCallId: 'create-or-replace-groups',
+            toolName: 'create-or-replace-groups',
+            output: { type: 'json', value: written },
+          }),
+        ],
+      })
+    );
+    expect(log).toHaveBeenCalledWith(
+      expect.stringContaining('[hi-chat] tool done: create-or-replace-groups')
+    );
+    expect(errorLog).not.toHaveBeenCalled();
+    expect(mocks.close).toHaveBeenCalledTimes(1);
+  });
+
   it('retains a tool result when the SDK cannot convert it into a model message', async () => {
     const write = vi.fn(async () => {
       return mcpResult({ groups: [{ id: 'group-in-failed-step', roots: [] }] });

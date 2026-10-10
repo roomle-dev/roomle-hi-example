@@ -97,9 +97,11 @@ export const createStreamChat =
                 console.log(`[hi-chat] tool call: ${name}`);
                 try {
                   const result = await execute(input, options);
-                  console.log(
-                    `[hi-chat] tool done: ${name} (${Date.now() - toolStartedAt}ms)`
-                  );
+                  try {
+                    console.log(
+                      `[hi-chat] tool done: ${name} (${Date.now() - toolStartedAt}ms)`
+                    );
+                  } catch {}
                   return result;
                 } catch (error) {
                   try {

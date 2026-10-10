@@ -22,7 +22,7 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 | Item | To do | Priority |
 |---|---|---|
 | [60 — The sink top of a sink unit reaches past the row or over the hob](library-issues.md#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG library (reported): the sink unit's description names the width of the sink with its drainer and the side it reaches over | medium |
-| [61 — Handleless fronts done with a handle attribute](library-issues.md#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG library: the descs say which one handleless fronts are — the handleless articles or the value "No handle" | medium |
+| [61 — Handleless fronts done with a handle attribute](library-issues.md#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG library: distinguish choosing a handleless article from setting the handle design to "No handle" on a handled article | medium |
 
 ## Planner (roomle-ui, RoomleCore)
 

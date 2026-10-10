@@ -153,7 +153,8 @@ call and is reported in `notLoaded`, the others load
     reads after the load take `groups`, `obstacles` and `rooms`. The final raw groups are read for
     calculation diagnostics; roots with `Error` or `Fatal` logs get a `notLoaded` entry with the
     original input index, runtime group/root ids, first diagnostic line and the action to check
-    overrides or replace the article. Loaded groups stay in the result. With an `obstacles` section,
+    the group's attributes and the root's overrides against the library data, then change the failing
+    values or replace the article. Loaded groups stay in the result. With an `obstacles` section,
     `obstacleHint` uses the same raw groups and names every root module of the call's groups on an
     object, in another group or in front of a door or a window (D55). For a replace, the read
     before the load takes `obstacles` too, and the raw groups before the load tell what the group

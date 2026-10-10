@@ -72,11 +72,13 @@ the catalog (category `Kitchen handleless`).
 
 **Cause.** The library data does not tell the two apart: the catalog has handleless articles
 ("Handleless … (fingergrip)"), and the master data has a handle design value without a handle
-("No handle"); no desc says which one handleless fronts are.
+("No handle"); their descs do not explain how choosing a handleless article differs from setting
+that attribute value on a handled article.
 
-**To do.** The library: the descs say which one handleless fronts are — the handleless articles
-name themselves as the handleless fronts, and the desc of the value "No handle" says how it differs
-from them. The served text stays library-neutral; then check that it needs nothing more.
+**To do.** The library: the handleless articles' descs identify them as the articles for handleless
+fronts, and the desc of "No handle" explains how setting that value on a handled article differs
+from choosing a handleless article. The served text stays library-neutral; then check that it needs
+nothing more.
 
 **Status.** Not reported to the library development team.
 

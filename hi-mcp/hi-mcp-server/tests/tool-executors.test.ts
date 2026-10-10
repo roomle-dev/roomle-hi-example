@@ -4096,6 +4096,66 @@ describe('create-or-replace-groups materials', () => {
     expect(result.groups).toEqual([created]);
   });
 
+  it.each(['Error', 'Fatal'])(
+    'names group attributes in the recovery advice for a root calculation %s after applying them',
+    async (category) => {
+      const created = makeShapedGroup({ id: 'g-new' });
+      let attributesApplied = false;
+      const api = createMaterialsApi([], [created], {
+        externalObjectGroupOperation: vi.fn(async (command: string) => {
+          attributesApplied = true;
+          return { command, groups: [created], removedGroupIds: [] };
+        }),
+        getExternalObjectGroups: vi.fn(async () => [
+          {
+            id: created.id,
+            roots: [
+              {
+                id: 'r1',
+                articleId: 'article-1',
+                logMessages: attributesApplied
+                  ? [{ category, msg: 'Width cannot be calculated' }]
+                  : [],
+              },
+            ],
+          },
+        ]),
+      });
+      const result = (await toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [
+          {
+            libraryId: 'lib-1',
+            attributes: [{ id: 'b', value: 900 }],
+            roots: [pick()],
+          },
+        ],
+      })) as Record<string, any>;
+
+      expect(commandsOf(api)).toEqual([
+        [
+          'change-attributes',
+          {
+            groupId: created.id,
+            attributes: [{ attributeId: 'b', value: '900' }],
+          },
+        ],
+      ]);
+      expect(result.groups).toEqual([created]);
+      expect(result.notLoaded).toEqual([
+        {
+          index: 0,
+          id: created.id,
+          rootIds: ['r1'],
+          errors: [expect.stringContaining('Width cannot be calculated')],
+        },
+      ]);
+      expect(result.notLoaded[0].errors[0]).toContain(
+        'posGroups[0].attributes'
+      );
+      expect(result.notLoaded[0].errors[0]).toContain('attribute overrides');
+    }
+  );
+
   it('passes on the root module the library could not calculate with the group attributes', async () => {
     const plannerCorrection =
       "the library could not calculate root module 'panel-1' with these attributes, so they were not set on it - the other root modules carry them";

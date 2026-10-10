@@ -168,7 +168,10 @@ the conversation and the MCP tools, and runs `streamText` in steps
   (`createStepLog`, `describeStepError` in `chat-steps.ts`). Guarded by
   `it('logs the step that failed with what the provider answered')` in
   `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`. Diagnostics are best effort;
-  unserialisable details or a throwing logger cannot stop recovery.
+  unserialisable details or a throwing logger cannot stop recovery. A throwing tool-completion
+  logger also leaves the successful MCP result intact for the next model step, guarded by
+  `it('keeps a completed write successful when its completion log throws')` in
+  `hi-mcp/hi-mcp-chat/tests/chat-stream.test.ts`.
 
 The ligna-store browser chat has at most eight model steps (`MAX_CHAT_STEPS` in
 its `hi-mcp/chat.ts`). It reserves the eighth step for an answer with

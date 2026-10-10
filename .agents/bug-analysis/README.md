@@ -35,6 +35,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [Preserve completed tool outcomes and clarify calculation recovery advice](pr-review-tool-outcomes-and-calculation-advice.md) | Fixed locally — PR review fixes | roomle-hi-example #94 |
 | [Explain root outlines that extend over a neighbour](root-outline-overhang-explanation.md) | Fixed locally — MCP wording; library follow-up in #60 | Plan-context finding #2 (RML-18103) |
 | [Report calculation errors of newly loaded groups](new-group-calculation-feedback.md) | Fixed locally | Plan-context finding #3 (RML-18103) |
 | [Plan-context findings: affected repositories](plan-context-findings-repository-scope.md) | Open — kernel and library scope remains | Plan-context finding #4 (RML-18138); library #60 (RML-18103) |

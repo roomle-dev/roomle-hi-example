@@ -461,7 +461,8 @@ library changed with the group attributes — a front colour reset by a front pr
 and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build and, with
 `rootIds`, the roots of a loaded group it could not build or fully calculate — one unknown article
 id drops that root, not the group; an `Error` or `Fatal` calculation log reports the root's first
-diagnostic and asks you to check its overrides or replace the article, while keeping the loaded
+diagnostic and asks you to check the group's attributes and the root's overrides against the library
+data, then change the failing values or replace the article, while keeping the loaded
 group and roots). `index` names the original input group; diagnostic ids are the planner's runtime
 ids. A group id you gave an earlier group of the session replaces that group. A `hint`
 names each root module of the call's groups that overlaps an object or a root module of another

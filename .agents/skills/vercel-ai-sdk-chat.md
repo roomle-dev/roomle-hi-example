@@ -31,7 +31,9 @@ Only successful returned write results are reported as completed. An MCP error, 
 pending write is unconfirmed; the answer asks to read the plan before trying it again. Read-only
 turns say that nothing was created or changed. Partial text stays visible and is marked incomplete.
 Recovery repeats no operation, calls no model and performs no automatic undo. Logging is best
-effort and cannot stop recovery. `chat-stream.test.ts` covers these paths with mock models.
+effort and cannot stop recovery. A thrown tool-completion log also leaves the successful MCP
+result intact for the next model step. `chat-stream.test.ts` covers these paths with mock models,
+including `keeps a completed write successful when its completion log throws`.
 
 Keep the store's `hi-mcp/chat-recovery.ts` copy in sync. Its chat returns completed assistant/tool
 message pairs and the interruption summary, which the window retains for the next turn. Pending

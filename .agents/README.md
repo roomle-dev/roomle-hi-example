@@ -83,6 +83,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [PR review: random test counts and prompt expectations](bug-analysis/pr-review-random-count-and-prompt-expectations.md) | Fixed locally — PR review fixes | 2026-10-11 |
 | [Preserve the final failed MCP test attempt when resuming](bug-analysis/mcp-test-exhausted-retry-result.md) | Fixed locally — not landed | 2026-10-11 |
 | [The image planning on the right wall run ends in a provider connection reset](bug-analysis/image-planning-right-wall-connection-reset.md) | Open — analysis; transport failure, no product defect | 2026-10-11 |
 | [The group load result names per input group what the planner built](bug-analysis/group-load-result-per-input-group.md) | Open — analysis | 2026-10-10 |

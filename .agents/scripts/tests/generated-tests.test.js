@@ -22,10 +22,11 @@ const skill = await readFile(
 const filter = skill.match(
   /jq --slurpfile random[\s\S]*? '\n([\s\S]*?)\n' "\$SESSION\/tests\.json"/
 )?.[1];
+const sampler = skill.match(/node -e '([^']+)' "\$SESSION\/tests\.json"/)?.[1];
 const random = Array.from({ length: 5 }, (_, i) => ({
   id: `random-${i + 1}-storage`,
   title: `Random: storage ${i + 1}`,
-  plan: 'room',
+  plan: `room-${i + 1}`,
   random: true,
   prompt: 'Add two storage units',
   expect: 'Two storage units',
@@ -45,13 +46,15 @@ const fixture = async (t, { randomCount = 5 } = {}) => {
   const out = join(root, 'results');
   const base = {
     models: [{ provider: 'mock', apiKey: 'unused' }],
-    plans: { room: 'ps_fixture' },
+    plans: Object.fromEntries(
+      random.map((item, i) => [item.plan, `ps_fixture_${i + 1}`])
+    ),
     randomTests: randomCount,
     tests: [
       {
         id: 'fixed-storage',
         title: 'Fixed storage',
-        plan: 'room',
+        plan: random[0].plan,
         prompt: 'Add storage',
       },
     ],
@@ -131,6 +134,35 @@ test('keeps a focused session limited to its selected fixed tests', async (t) =>
   const f = await fixture(t, { randomCount: 0 });
   assert.deepEqual((await f.compose()).tests, f.base.tests);
   assert.equal((await f.run()).length, 1);
+});
+
+test('samples distinct plans up to the plan count, accepts zero and rejects larger counts', async (t) => {
+  assert.ok(sampler, 'The testing skill must define executable plan sampling');
+  const full = await fixture(t);
+  const { stdout } = await exec(process.execPath, ['-e', sampler, full.tests]);
+  assert.deepEqual(
+    stdout.trim().split('\n').sort(),
+    Object.keys(full.base.plans).sort()
+  );
+  const zero = await fixture(t, { randomCount: 0 });
+  assert.equal(
+    (await exec(process.execPath, ['-e', sampler, zero.tests])).stdout,
+    ''
+  );
+  const excessive = await fixture(t, { randomCount: 6 });
+  await assert.rejects(
+    exec(process.execPath, ['-e', sampler, excessive.tests]),
+    /randomTests.*number of plans/
+  );
+});
+
+test('rejects a count above the plan count before composition or execution', async (t) => {
+  const f = await fixture(t, { randomCount: 6 });
+  const original = await readFile(f.tests, 'utf8');
+  await assert.rejects(f.compose(), /randomTests.*number of plans/);
+  assert.equal(await readFile(f.tests, 'utf8'), original);
+  await assert.rejects(f.run(), /randomTests:.*number of plans/);
+  assert.deepEqual(await f.calls(), []);
 });
 
 test('rejects incorrect generated counts without changing the session file', async (t) => {

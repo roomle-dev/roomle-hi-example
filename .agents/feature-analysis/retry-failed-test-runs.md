@@ -119,8 +119,9 @@ transport failure**", and raise the cap from two attempts to three. Concretely:
 1. **A new predicate `isTransportFailure(run)`** beside `isNavigationInterrupted` in
    `mcp-test-navigation.js`, matching the provider/transport error signatures in `run.errors`:
    `Failed to process successful response`, `ECONNRESET`, `terminated`, `AI_APICallError`,
-   `fetch failed`, `socket hang up`, and a snapshot-phase `snapshot failed:` / `plan context
-   failed:` that is not a navigation. The orchestrator retries when
+   `fetch failed` and `socket hang up`. A snapshot or plan-context failure qualifies only if it
+   matches one of those signatures or the navigation predicate; arbitrary render/context errors
+   are retained without retry. The orchestrator retries when
    `isNavigationInterrupted(run) || isTransportFailure(run)`.
 2. **A cap of three attempts.** The loop bound becomes `attempt < 3`; the preserved directories
    become `<NN>-<id>.attempt-1/` and `<NN>-<id>.attempt-2/`, and `results.runs[].attempts` lists

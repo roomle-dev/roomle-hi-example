@@ -80,11 +80,18 @@ const isPrompt = (prompt) =>
 
 const problemsOf = ({ models, plans, tests, randomTests }) => {
   const problems = [];
+  const planCount = Object.keys(plans ?? {}).length;
   if (
     randomTests !== undefined &&
-    !(Number.isInteger(randomTests) && randomTests >= 0)
+    !(
+      Number.isInteger(randomTests) &&
+      randomTests >= 0 &&
+      randomTests <= planCount
+    )
   ) {
-    problems.push('randomTests: a whole number, 0 or more');
+    problems.push(
+      `randomTests: a whole number from 0 to ${planCount} (the number of plans)`
+    );
   }
   if (!Array.isArray(models) || models.length === 0) {
     problems.push('models: a non-empty list of { provider, apiKey }');

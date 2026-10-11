@@ -150,9 +150,10 @@ if A and B leave the runs still too slow.
 - **The runs stay sequential.** The fixed ports (3110/3200) and the one-child-at-a-time model are
   what make a run reproducible; parallelising would let two runs share a planner and corrupt both.
   The user's "the tests run almost stale, this should not be put in danger" is exactly this.
-- **The retry/resume logic.** A missing `run.json` or a navigation-interrupted capture still gets
-  one retry, the first attempt is still kept in `<NN>-<id>.attempt-1/`, and an exhausted retry is
-  still skipped on resume.
+- **The retry/resume logic.** A missing `run.json`, a navigation-interrupted capture or a
+  provider/transport failure gets at most three attempts. Superseded attempts stay in
+  `<NN>-<id>.attempt-1/` and `.attempt-2/`; the third attempt stays in the selected directory,
+  including a failure, and is retained on resume. Completed error-free runs are never retried.
 - **The stored result.** `run.json`, `plan-context.json`, `planner-calls.json`, the snapshot files
   and the plan snapshot id are unchanged, so `report.md` and the benchmark stay comparable.
 - **The chat phase.** The model and the planner are untouched; the saving is entirely in the fixed

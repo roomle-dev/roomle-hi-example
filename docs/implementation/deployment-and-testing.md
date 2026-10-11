@@ -152,7 +152,8 @@ node .agents/scripts/run-hi-mcp-tests.js [docs/test-prompts.json] [--out <dir>] 
 ```
 
 Reads `models` (provider and key, `"$NAME"` reads the environment), `plans` and `tests` from the test
-file, validates it, and runs every model × test as a child `run-hi-mcp-prompt.js`.
+file, validates it, and runs every model × test as a child `run-hi-mcp-prompt.js`. An explicit
+`randomTests` count must be a whole number from 0 to the number of available plans.
 
 The [testing skill](../../.agents/skills/hi-mcp-testing.md#3-tests) prepares a full session file
 from the selected fixed cases, then the requested number of random cases.

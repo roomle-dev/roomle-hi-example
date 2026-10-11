@@ -155,7 +155,7 @@ table and the kitchen.
 | Field | Content |
 |---|---|
 | `models` | the chat models to test, `{ provider, apiKey }`: a provider name of the launcher and its key — `"$NAME"` reads the key from the environment variable `NAME`, which keeps it out of the committed file |
-| `randomTests` | how many random tests the "test the mcp" skill adds to each session (default 5, 0 for none): the agent running it writes them for the plans drawn at random without repetition, marks them `"random": true` and appends them only to the end of the session's test file — the report shows them as random tests ([skill](../.agents/skills/hi-mcp-testing.md#random-tests)) |
+| `randomTests` | how many random tests the "test the mcp" skill adds to each session: a whole number from 0 to the number of available plans (default 5, 0 for none); a custom suite with fewer than five plans sets a count within its range. The agent running it writes them for the plans drawn at random without repetition, marks them `"random": true` and appends them only to the end of the session's test file — the report shows them as random tests ([skill](../.agents/skills/hi-mcp-testing.md#random-tests)) |
 | `plans` | the plans above by name: `{ "<name>": "<plan snapshot id>" }` |
 | `tests` | `{ id, title, plan, prompt?, image?, expect?, random? }`, in the order they run, from simple to complex: single groups, single edits, edits that need more understanding, edits over two or three turns, kitchens around a corner, obstacles, the image tests, and the kitchen conversation last — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message — a `prompt` list is sent as consecutive turns of one conversation, the image with the last turn; `expect` says what the evaluation checks, per turn for a list |
 
@@ -166,6 +166,9 @@ tools. A test never calls a tool itself — the tools are tested by the unit tes
 asks for the change in an earlier turn — "join groups" first asks to delete the middle unit; `undo-last-change`, `redo-last-change` and `undo-a-wrong-command`
 first ask to delete the middle unit of the Three Tall Units — `redo-last-change` also to undo it —
 and the last turn asks the agent to undo, redo or correct that change. Every turn is evaluated.
+
+Independent groups can be created in one batched `create-or-replace-groups` call or separate
+calls; the multi-group expectation checks their composition and placement rather than call count.
 
 The two middle-cabinet removal tests use explicit gap instructions on the Three Tall Units plan:
 

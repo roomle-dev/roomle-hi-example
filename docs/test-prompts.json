@@ -92,7 +92,7 @@
       "title": "A sideboard and a TV unit in the living room",
       "plan": "living-room",
       "prompt": "add a sideboard to the front wall and a low TV unit to the back wall",
-      "expect": "two create-or-replace-groups calls, each with a placement by wall; one sideboard group on the front wall and one low TV unit group on the back wall, both inside the room"
+      "expect": "create-or-replace-groups creates two groups, in one batched call or separate calls, each with a placement by wall: one sideboard group on the front wall and one low TV unit group on the back wall, both inside the room"
     },
     {
       "id": "closets-two-wardrobes-corner",

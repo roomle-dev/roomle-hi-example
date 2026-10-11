@@ -64,7 +64,9 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
 
 A full session adds `randomTests` new tests (in `$SESSION/tests.json`, copied from
 `docs/test-prompts.json`; 5 when it is missing, 0 for none), written by the agent that runs this
-skill. A number the user names goes into the session file:
+skill. The count must be a whole number from 0 to the number of available plans because each plan
+is drawn once. For a custom suite with fewer than five plans, set a count within that range.
+A number the user names goes into the session file:
 `jq '.randomTests = <n>' "$SESSION/tests.json" > "$SESSION/tests.tmp" && mv "$SESSION/tests.tmp" "$SESSION/tests.json"`.
 The random tests go only into `$SESSION/tests.json`, always at its end — never into
 `docs/test-prompts.json`.
@@ -99,7 +101,7 @@ before the run, from the plan and the catalog, with checks for every conversatio
    not repeat themselves and no two random tests share a plan:
 
    ```bash
-   node -e 'const { plans, randomTests = 5 } = require(require("path").resolve(process.argv[1])); const names = Object.keys(plans); for (let i = names.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [names[i], names[j]] = [names[j], names[i]]; } for (const name of names.slice(0, randomTests)) console.log(name)' "$SESSION/tests.json"
+   node -e 'const { plans, randomTests = 5 } = require(require("path").resolve(process.argv[1])); const names = Object.keys(plans); if (!Number.isInteger(randomTests) || randomTests < 0 || randomTests > names.length) throw new Error("randomTests must be a whole number from 0 to the number of plans"); for (let i = names.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [names[i], names[j]] = [names[j], names[i]]; } for (const name of names.slice(0, randomTests)) console.log(name)' "$SESSION/tests.json"
    ```
 
 2. Write them to `$SESSION/random-tests.json` as a list, in the form of the fixed tests with the mark
@@ -126,6 +128,8 @@ jq --slurpfile random "$SESSION/random-tests.json" '
   | $random[0] as $generated
   | if any(.tests[]; .random == true)
     then error("Session already prepared") else . end
+  | if (.randomTests // 5) > (.plans | length)
+    then error("randomTests cannot exceed the number of plans") else . end
   | if ($random[0] | length) != (.randomTests // 5)
     then error("Unexpected generated test counts") else . end
   | if any($generated[]; (.expect | type) != "string" or (.expect | length) == 0
@@ -441,7 +445,8 @@ The runner:
 
 1. checks the file before the first run — every model has a key (a `"$NAME"` variable is set), every test has a
    unique kebab-case `id`, a `plan` of `plans`, a prompt (a text or a list of texts) or an image and an existing
-   image file; `randomTests` is a whole number — and names every problem;
+   image file; an explicit `randomTests` is a whole number from 0 to the number of plans — and
+   names every problem;
 2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider> "<apiKey>"
    "<prompt>" ["<prompt>" …] --plan <id> [--image <file>] --out <out>/<provider>/<NN>-<id>`
    (one `"<prompt>"` per turn of a `prompt` list),

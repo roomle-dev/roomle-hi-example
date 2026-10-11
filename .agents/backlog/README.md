@@ -24,6 +24,21 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 | [60 — The sink top of a sink unit reaches past the row or over the hob](library-issues.md#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG library (reported): the sink unit's description names the drainer width and side, and states that no hob may stand immediately to its right | medium |
 | [61 — Handleless fronts done with a handle attribute](library-issues.md#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG library: distinguish choosing a handleless article from setting the handle design to "No handle" on a handled article | medium |
 
+## Library neutrality of the MCP server
+
+The server serves every HI library; its served text, results and logic must carry no information
+about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
+
+| Item | To do | Priority |
+|---|---|---|
+| Served text encodes a kitchen taxonomy | `hi-mcp-server.ts`: `AUTHORING_RULES`, `INSTRUCTIONS` and the tool descriptions reason in base/wall/tall units, worktop, hood and island as if every library were a kitchen, and name one library's concrete articles and measures. Rewrite so the rules speak of articles, root modules, relations and docking vectors | high |
+| Kitchen-kind logic in `group-layout.ts` | Drop the furniture-kind regexes (`WALL_UNIT`, `TALL_UNIT`, `BASE_UNIT`, `HOOD`) and the height-based classification; derive relations from the article's own data | high |
+| The served-text test is weaker than the policy | `hi-mcp-server.test.ts` only rejects "kitchens"; strengthen it to reject one library's concrete content | high |
+| Corner fallback reads category and module names | `group-placement.ts`: `isCornerArticle` falls back on the category and module name; use only the catalog flag and the article's docking data | medium |
+| Spelling correction maps library vocabulary | `tool-executors.ts`: `SPELLINGS` rewrites `colour`/`grey`/`worktop`; drop it or derive it from the master data | medium |
+| Tests use Furniture_Smith fixtures | `group-layout.test.ts`, `group-placement.test.ts`, `tool-executors.test.ts`, `plan-space.test.ts`: replace the real library's categories and modules with neutral fixtures | medium |
+| README and QUICKSTART kitchen examples | Rewrite the examples in the neutral vocabulary | low |
+
 ## Planner (roomle-ui, RoomleCore)
 
 | Item | To do | Details |

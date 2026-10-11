@@ -149,7 +149,7 @@ test('retries a lost render after recorded planner-frame navigation and a timeou
   assert.equal((await f.calls()).length, 2);
 });
 
-test('keeps two navigation failures without retrying again on resume', async (t) => {
+test('keeps three navigation failures without retrying again on resume', async (t) => {
   const f = await fixture(t, [
     { run: navigationFailure },
     { run: navigationFailure },
@@ -203,7 +203,14 @@ test('preserves missing-run.json attempts and keeps the retry limit across resum
     (await readFile(join(f.dir, 'console.log'), 'utf8')).trim(),
     'attempt-3'
   );
-  await f.run();
+  const resumed = await f.run();
+  assert.deepEqual(resumed.attempts, result.attempts);
+  assert.equal(existsSync(f.dir), true);
+  assert.equal(existsSync(`${f.dir}.attempt-3`), false);
+  assert.equal(
+    (await readFile(join(f.dir, 'console.log'), 'utf8')).trim(),
+    'attempt-3'
+  );
   assert.equal((await f.calls()).length, 3);
 });
 
@@ -249,7 +256,19 @@ test('stops a transport failure after three attempts', async (t) => {
     'mock/01-navigation',
   ]);
   assert.deepEqual(result.errors, transportFailure.errors);
-  await f.run();
+  const resumed = await f.run();
+  assert.equal(resumed.planSnapshotId, result.planSnapshotId);
+  assert.deepEqual(resumed.errors, result.errors);
+  assert.deepEqual(resumed.attempts, result.attempts);
+  assert.equal(existsSync(`${f.dir}.attempt-3`), false);
+  assert.deepEqual(
+    JSON.parse(await readFile(join(f.dir, 'run.json'), 'utf8')),
+    transportFailure
+  );
+  assert.equal(
+    (await readFile(join(f.dir, 'console.log'), 'utf8')).trim(),
+    'attempt-3'
+  );
   assert.equal((await f.calls()).length, 3);
 });
 

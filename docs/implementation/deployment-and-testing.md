@@ -162,20 +162,22 @@ in the session directory, and a resumed session uses the same prepared file. Run
 named tests add cases only when requested. The CLI executes supplied cases; it does not generate
 them. Direct execution on `docs/test-prompts.json` runs its fixed cases only.
 
-The suite repeats a
-run once when it produces no `run.json` or navigation interrupts its snapshot capture. A capture is
+The suite makes at most three attempts when a run produces no `run.json`, navigation interrupts its
+snapshot capture, or a provider/transport error matches `Failed to process successful response`,
+`ECONNRESET`, `socket hang up`, `fetch failed`, `terminated` or `AI_APICallError`. A capture is
 interrupted when it has no saved snapshot id and a destroyed-context/navigation error, or when
 `snapshotCaptured` is false and a frame navigated during `chat` or `snapshot`. Initial loading and
 fragment-only URL changes do not trigger the latter condition. A missing saved snapshot id alone
 does not trigger a retry.
 
-Before the retry, the entire first directory is moved to `<NN>-<test id>.attempt-1/`. The retry uses
+Before a retry, the entire superseded directory is moved to `<NN>-<test id>.attempt-<n>/`. The retry uses
 the original plan and prompts in a fresh browser and writes to the normal test directory.
 `results.json` names that selected directory in `dir` and lists all attempt directories in
-`attempts`; reports evaluate the selected directory and retain the first attempt as diagnostics.
-A rerun with the same `--out` resumes an interrupted first attempt or an archived attempt awaiting
-its retry. Once both attempt directories exist, it keeps the second result, including a second
-failure, without launching another attempt. Other existing `run.json` results are skipped.
+`attempts`; reports evaluate the selected directory and retain every superseded attempt as diagnostics.
+A rerun with the same `--out` resumes an interrupted attempt or an archived attempt awaiting
+its retry. With two superseded attempts, the third attempt stays in the normal directory, including
+its failure or its console log when no `run.json` exists. Resume neither archives it nor launches
+another attempt. Completed error-free runs and errors outside the retry conditions are skipped.
 
 `results.json` is rewritten after every run and preserves ids, titles and the random flag. The
 `expect` of a test is evaluated by the agent, not by the script. The skill

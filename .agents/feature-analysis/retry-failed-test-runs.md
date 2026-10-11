@@ -1,6 +1,6 @@
 # Retry a failed test run two or three times
 
-> **Status:** Open — analysis; no productive change made
+> **Status:** Implemented locally — not landed
 > **Date:** 2026-10-11
 > **Evidence:** `.temp/result/mcp-test-2026-10-11_09-24-39/gpt-6-astra/31-image-planning-right-wall/`
 
@@ -190,4 +190,15 @@ retried away.
 Feasible and small. Broaden the predicate to transport failures, raise the cap to three attempts,
 preserve every attempt, and never retry a completed error-free run. The change is local to the
 runner and the navigation module, keeps the runs sequential, and does not change the stored result
-shape. It is analysis-only until the user asks for the change.
+shape.
+
+## Implementation
+
+The runner implements a three-attempt limit for missing results, navigation interruptions and
+the provider/transport signatures in `isTransportFailure`. Arbitrary snapshot/render errors do
+not trigger a retry. Every superseded attempt is archived and listed in `results.json`; the third
+attempt remains selected even on resume. Completed error-free runs are retained without retry.
+
+The actual-runner tests cover recovery from a transport failure, three failed attempts, preserved
+logs and results on resume, missing-result failures and successful runs. The living reference is
+[deployment-and-testing.md](../../docs/implementation/deployment-and-testing.md).

@@ -83,6 +83,8 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Preserve the final failed MCP test attempt when resuming](bug-analysis/mcp-test-exhausted-retry-result.md) | Fixed locally — not landed | 2026-10-11 |
+| [The image planning on the right wall run ends in a provider connection reset](bug-analysis/image-planning-right-wall-connection-reset.md) | Open — analysis; transport failure, no product defect | 2026-10-11 |
 | [The group load result names per input group what the planner built](bug-analysis/group-load-result-per-input-group.md) | Open — analysis | 2026-10-10 |
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](bug-analysis/sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | 2026-10-10 |
 | [Preserve completed tool outcomes and clarify calculation recovery advice](bug-analysis/pr-review-tool-outcomes-and-calculation-advice.md) | Fixed locally — PR review fixes | 2026-10-10 |
@@ -105,7 +107,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Retry a failed test run two or three times](feature-analysis/retry-failed-test-runs.md) | Open — analysis; no productive change made | 2026-10-11 |
+| [Retry a failed test run two or three times](feature-analysis/retry-failed-test-runs.md) | Implemented locally — not landed | 2026-10-11 |
 | [Article template geometry in the plan context](feature-analysis/article-template-geometry-in-plan-context.md) | Open | 2026-10-10 |
 | [Explain the door or window a placement keeps clear](feature-analysis/explain-opening-clearance.md) | Implemented locally — not landed | 2026-10-09 |
 | [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open — example high effort landed; store effort and measurement open | 2026-10-07 |

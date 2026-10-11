@@ -230,7 +230,7 @@ const main = async () => {
         preserved.push(attemptDir);
       };
       if (shouldRetry(run) && !stopped) {
-        if (existsSync(dir)) {
+        if (existsSync(dir) && preserved.length < MAX_ATTEMPTS - 1) {
           await preserve();
           run = undefined;
         }

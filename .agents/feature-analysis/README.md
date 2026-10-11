@@ -39,7 +39,6 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Description |
 |---|---|---|
-| [generated-mcp-standard-tests.md](generated-mcp-standard-tests.md) | Implemented locally — not landed | MCP test infrastructure #4: generated standard coverage, checked session preparation, reporting and resume; verified locally |
 | [explain-opening-clearance.md](explain-opening-clearance.md) | Implemented locally — not landed | RML-18103 #63: whether and how the answer names the door or window that determined a placement |
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
 | [reasoning-effort-per-gpt-chat-model.md](reasoning-effort-per-gpt-chat-model.md) | Open — example high effort landed; store effort and measurement open | RML-18043: example sets `high` for gpt-5-mini and gpt-5.4-mini and keeps the provider default for gpt-6-astra; store effort settings remain open; further measurement only on request |

@@ -155,10 +155,9 @@ Reads `models` (provider and key, `"$NAME"` reads the environment), `plans` and 
 file, validates it, and runs every model × test as a child `run-hi-mcp-prompt.js`.
 
 The [testing skill](../../.agents/skills/hi-mcp-testing.md#3-tests) prepares a full session file
-from the selected fixed cases, six agent-generated standard cases (creation, placement,
-attributes, edits, undo/redo and a conversation), then the requested number of random cases.
+from the selected fixed cases, then the requested number of random cases.
 The agent writes their prompts and expectations before running them. A `jq` composition command
-checks the generated counts, coverage, expectations, plans, markings and unique ids. Cases stay
+checks the generated counts, expectations, plans, markings and unique ids. Cases stay
 in the session directory, and a resumed session uses the same prepared file. Runs limited to
 named tests add cases only when requested. The CLI executes supplied cases; it does not generate
 them. Direct execution on `docs/test-prompts.json` runs its fixed cases only.
@@ -179,9 +178,8 @@ its retry. Once both attempt directories exist, it keeps the second result, incl
 failure, without launching another attempt. Other existing `run.json` results are skipped.
 
 `results.json` is rewritten after every run and preserves ids, titles and the random flag. The
-skill uses `standard-` ids and `Standard:` titles to distinguish generated standard cases without
-another result field. The `expect` of a test is evaluated by the agent, not by the script. The skill
-writes one report and PDF per session, with separate fixed, standard and random counts and the
+`expect` of a test is evaluated by the agent, not by the script. The skill
+writes one report and PDF per session, with separate fixed and random counts and the
 generated case JSON. The duration depends on the selected models, case count and number of turns.
 
 The test infrastructure has regression coverage independent of the MCP unit tests:
@@ -191,8 +189,8 @@ node --test .agents/scripts/tests/*.test.js
 ```
 
 The suite tests run the actual runner with local fake prompt processes. The generated-case tests
-execute the skill's documented `jq` composition filter and cover counts, coverage, case metadata,
-fixed/standard/random execution, zero random cases, focused runs and resume without duplication.
+execute the skill's documented `jq` composition filter and cover counts, case metadata,
+fixed/random execution, zero random cases, focused runs and resume without duplication.
 The browser tests use
 Playwright and intercepted test pages to navigate the main page and planner frame while a capture
 is pending. They make no model requests and require the existing Playwright installation in

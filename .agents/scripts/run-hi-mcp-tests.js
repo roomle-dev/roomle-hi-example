@@ -12,11 +12,13 @@
  * sent as consecutive turns of one chat) and randomTests (how many random tests
  * the "test the mcp" skill adds; checked only). Before the first run it checks
  * the file, the images and the keys. A run goes
- * to <out>/<provider>/<NN>-<id>/ with its console.log. Missing run.json or a
- * navigation-interrupted capture gets one retry; the first attempt is kept
- * in <NN>-<id>.attempt-1/. Other stored results and an exhausted retry are
- * skipped on resume with the same --out. <out>/results.json lists the runs and is
- * rewritten after each one (default out: .temp/result/mcp-test-<local time>/).
+ * to <out>/<provider>/<NN>-<id>/ with its console.log. A missing run.json, a
+ * navigation-interrupted capture or a transport failure is retried up to three
+ * attempts; every superseded attempt is kept in <NN>-<id>.attempt-<n>/. A run
+ * that completed without errors is never retried. Other stored results and an
+ * exhausted retry are skipped on resume with the same --out. <out>/results.json
+ * lists the runs and is rewritten after each one (default out:
+ * .temp/result/mcp-test-<local time>/).
  */
 
 import { spawn } from 'node:child_process';
@@ -25,7 +27,10 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { isNavigationInterrupted } from './mcp-test-navigation.js';
+import {
+  isNavigationInterrupted,
+  isTransportFailure,
+} from './mcp-test-navigation.js';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const RUN_SCRIPT = join(REPO_DIR, '.agents', 'scripts', 'run-hi-mcp-prompt.js');
@@ -160,6 +165,14 @@ const readRun = async (dir) => {
   }
 };
 
+// A run is repeated when it produced no result, when a navigation interrupted
+// it, or when the provider or the transport failed. A completed error-free run
+// is never retried.
+const shouldRetry = (run) =>
+  !run || isNavigationInterrupted(run) || isTransportFailure(run);
+
+const MAX_ATTEMPTS = 3;
+
 const main = async () => {
   const options = parseOptions();
   const suite = JSON.parse(await readFile(options.tests, 'utf8'));
@@ -204,32 +217,36 @@ const main = async () => {
       const startedAt = Date.now();
       let exitCode = null;
       let run = await readRun(dir);
-      const firstAttemptDir = `${dir}.attempt-1`;
-      let hasFirstAttempt = existsSync(firstAttemptDir);
-      if ((!run || isNavigationInterrupted(run)) && !stopped) {
-        if (existsSync(dir) && !hasFirstAttempt) {
-          await rename(dir, firstAttemptDir);
-          hasFirstAttempt = true;
+      const preserved = [];
+      for (let attempt = 1; attempt < MAX_ATTEMPTS; attempt++) {
+        if (!existsSync(`${dir}.attempt-${attempt}`)) {
+          break;
+        }
+        preserved.push(`${dir}.attempt-${attempt}`);
+      }
+      const preserve = async () => {
+        const attemptDir = `${dir}.attempt-${preserved.length + 1}`;
+        await rename(dir, attemptDir);
+        preserved.push(attemptDir);
+      };
+      if (shouldRetry(run) && !stopped) {
+        if (existsSync(dir)) {
+          await preserve();
           run = undefined;
         }
         if (!existsSync(dir)) {
           for (
-            let attempt = hasFirstAttempt ? 1 : 0;
-            attempt < 2 && !stopped;
+            let attempt = preserved.length;
+            attempt < MAX_ATTEMPTS && !stopped;
             attempt++
           ) {
             await mkdir(dir, { recursive: true });
             exitCode = await runOnce(args, join(dir, 'console.log'));
             run = await readRun(dir);
-            if (
-              (run && !isNavigationInterrupted(run)) ||
-              attempt === 1 ||
-              stopped
-            ) {
+            if (!shouldRetry(run) || attempt === MAX_ATTEMPTS - 1 || stopped) {
               break;
             }
-            await rename(dir, firstAttemptDir);
-            hasFirstAttempt = true;
+            await preserve();
             run = undefined;
           }
         }
@@ -243,8 +260,8 @@ const main = async () => {
         title: test.title,
         random: test.random === true,
         dir: relative(outDir, dir),
-        attempts: (hasFirstAttempt ? [firstAttemptDir, dir] : [dir]).map(
-          (attemptDir) => relative(outDir, attemptDir)
+        attempts: [...preserved, dir].map((attemptDir) =>
+          relative(outDir, attemptDir)
         ),
         exitCode,
         planSnapshotId: run?.planSnapshotId ?? null,

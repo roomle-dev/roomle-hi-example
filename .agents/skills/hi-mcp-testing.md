@@ -157,18 +157,25 @@ node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" 
   `$SESSION/results.json` lists them: per run `model`, `test`, `dir`, `attempts`, `exitCode`,
   `planSnapshotId`, `errors`.
 - If the time limit stops it, start the same command again. Stored results are skipped unless a
-  first attempt has an interrupted capture or no `run.json` and still has its one retry available.
+  first attempt has an interrupted capture, a transport failure or no `run.json` and still has
+  retries available.
 - Exit code 1 of a run is a result like any other (the model or the chat reported an error).
-- The runner repeats a run without `run.json` once. It also repeats a capture interrupted by
-  navigation: no saved snapshot id with a destroyed-context/navigation error, or
-  `snapshotCaptured: false` with frame navigation during `chat` or `snapshot`. Initial loading,
-  fragment-only URL changes and a missing saved snapshot id alone do not trigger that retry.
-- The first attempt is preserved in `<NN>-<test id>.attempt-1/`; the retry uses the original plan
-  and prompts in a fresh browser and writes to the normal directory. `results.json` lists both
-  directories in `attempts` and selects the current result in `dir`. Evaluate that selected result;
-  read the first attempt for diagnostics. Both directories retain their own logs and artifacts.
+- The runner repeats a run without `run.json`, a capture interrupted by navigation, or a provider
+  or transport failure, up to three attempts. A navigation interruption is no saved snapshot id
+  with a destroyed-context/navigation error, or `snapshotCaptured: false` with frame navigation
+  during `chat` or `snapshot`; initial loading, fragment-only URL changes and a missing saved
+  snapshot id alone do not trigger that retry. A transport failure is an error matching
+  `Failed to process successful response`, `ECONNRESET`, `socket hang up`, `fetch failed`,
+  `terminated` or `AI_APICallError` — the model call or the connection dropped mid-stream, so the
+  run says nothing about the planning. A run that completed without errors is never retried, and a
+  real planning defect is not retried either.
+- Every superseded attempt is preserved in `<NN>-<test id>.attempt-<n>/`; the retry uses the
+  original plan and prompts in a fresh browser and writes to the normal directory. `results.json`
+  lists all attempt directories in `attempts` and selects the current result in `dir`. Evaluate
+  that selected result; read the earlier attempts for diagnostics. Every directory retains its own
+  logs and artifacts.
 - The archive keeps the retry limit across resume, including a stop between archiving and retry.
-  After two attempts the runner retains the second result, including a failure. A result with no
+  After three attempts the runner retains the third result, including a failure. A result with no
   `run.json` is listed as "no run.json"; the report lists it as not run with its console log.
 
 A run's directory is `$SESSION/<model>/<NN>-<test id>/`: `<model>` is the provider name, `<NN>` the
@@ -440,9 +447,10 @@ The runner:
    (one `"<prompt>"` per turn of a `prompt` list),
    with its output in that directory's `console.log`. It runs one at a time (the ports are fixed),
    each with a fresh launcher and browser;
-3. repeats a run without `run.json` or with navigation-interrupted capture once, preserving the
-   first attempt beside the selected result; resumes with the same `--out` and never exceeds two
-   attempts; other stored results are skipped;
+3. repeats a run without `run.json`, with a navigation-interrupted capture or with a provider or
+   transport failure, up to three attempts, preserving every superseded attempt beside the
+   selected result; resumes with the same `--out` and never exceeds three attempts; other stored
+   results are skipped;
 4. rewrites `<out>/results.json` after each run and prints one line per run;
 5. passes Ctrl+C (SIGINT/SIGTERM) on to the running run, which stops its servers, and ends.
 

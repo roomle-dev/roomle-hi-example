@@ -167,6 +167,16 @@ asks for the change in an earlier turn — "join groups" first asks to delete th
 first ask to delete the middle unit of the Three Tall Units — `redo-last-change` also to undo it —
 and the last turn asks the agent to undo, redo or correct that change. Every turn is evaluated.
 
+The two middle-cabinet removal tests use explicit gap instructions on the Three Tall Units plan:
+
+| Test | Requested result | Expected tool |
+|---|---|---|
+| `edit-remove-unit` — Remove a unit and leave the gap | The two remaining cabinets keep their positions, with a 600 mm gap between them, in separate groups. | `delete-article-in-place` |
+| `edit-delete-unit` — Remove a unit and close the gap | The cabinet in the back right corner stays; the last cabinet moves 600 mm towards it, forming one connected group without a gap. | `delete-article-and-compact` |
+
+"Remove" and "delete" have the same meaning to the agent; the requested gap behaviour selects the
+tool. The prompts describe the desired result in user words and contain no tool names.
+
 ## Prepared test sessions
 
 A full **"test the mcp"** session uses the

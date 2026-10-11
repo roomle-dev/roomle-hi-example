@@ -152,17 +152,17 @@
     },
     {
       "id": "edit-remove-unit",
-      "title": "Remove a unit",
+      "title": "Remove a unit and leave the gap",
       "plan": "three-tall-units",
-      "prompt": "remove the middle unit",
-      "expect": "delete-article-in-place, the default: the kitchen splits into two groups that keep their places"
+      "prompt": "remove the middle cabinet and leave the gap; keep the other two cabinets where they are",
+      "expect": "delete-article-in-place on the middle cabinet: two groups of one cabinet each, both in their original positions, with the 600 mm gap left between them"
     },
     {
       "id": "edit-delete-unit",
-      "title": "Delete a unit",
+      "title": "Remove a unit and close the gap",
       "plan": "three-tall-units",
-      "prompt": "delete the middle unit",
-      "expect": "delete-article-in-place: the kitchen splits into two groups that keep their places"
+      "prompt": "remove the middle cabinet and close the gap by moving the last cabinet next to the first; keep the cabinet in the back corner where it is",
+      "expect": "delete-article-and-compact on the middle cabinet: one group of the two remaining cabinets docked together with no gap; the first cabinet stays in the back right corner and the last moves 600 mm towards it; both cabinets keep their attributes"
     },
     {
       "id": "edit-delete-group",

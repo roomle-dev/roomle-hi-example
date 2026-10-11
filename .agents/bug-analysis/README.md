@@ -45,6 +45,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 | [Reserve a final answer step in the store chat](store-chat-final-answer-step.md) | Fixed locally | Ligna-store chat backlog #2 (RML-18033) |
 | [Readable article and wall names in row-edit feedback](readable-row-edit-feedback.md) | Fixed locally — MCP change unlanded; UI change released | RML-18103 #62 |
 | [Preserve the outcome when a provider failure interrupts a chat turn](chat-provider-failure-recovery.md) | Fixed locally — provider cause unconfirmed | RML-18103 #38 |
+| [The image planning on the right wall run ends in a provider connection reset](image-planning-right-wall-connection-reset.md) | Open — analysis; transport failure, no product defect | Test run 2026-10-11, test 31 |
 | [Connect a store planner to an external MCP agent without built-in chat](external-agent-store-bridge.md) | Fixed locally | Deployment/session backlog #1 |
 | [Build the Cloudflare MCP image from the repository lockfile](cloudflare-image-root-lockfile.md) | Fixed locally | Deployment/session backlog #4 |
 | [Forward launcher flags through the root npm scripts](root-launcher-flags.md) | Fixed locally | Deployment/session backlog #5 |

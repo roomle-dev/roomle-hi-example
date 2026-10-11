@@ -1,5 +1,5 @@
 {
-  "randomTests": 3,
+  "randomTests": 5,
   "models": [
     {
       "provider": "gpt-5-mini",
@@ -46,6 +46,83 @@
       "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of four base cabinets with its back against the back wall, centred on it (the back wall runs from x -685 to 4815), inside the room"
     },
     {
+      "id": "media-unit-left-wall",
+      "title": "A media unit on the left wall",
+      "plan": "default-room",
+      "prompt": "add a low media unit with a few cabinets to the wall on the left",
+      "expect": "one create-or-replace-groups call with a placement by wall (wall left, centred); one group of low cabinets with its back against the left wall, centred on it (the left wall runs from z -3765 to 1235), inside the room"
+    },
+    {
+      "id": "sideboard-living-room-front-wall",
+      "title": "A sideboard on the front wall",
+      "plan": "living-room",
+      "prompt": "add a sideboard of three low cabinets to the front wall",
+      "expect": "one create-or-replace-groups call with a placement by wall (wall front, centred); one group of three low cabinets with its back against the front wall, inside the room"
+    },
+    {
+      "id": "wardrobe-closets-back-wall",
+      "title": "Wardrobes on the back wall",
+      "plan": "closets",
+      "prompt": "add two wardrobes to the back wall",
+      "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of two tall wardrobe units with their backs against the back wall, inside the room"
+    },
+    {
+      "id": "utility-room-cabinets-left-wall",
+      "title": "Utility room cabinets on the left wall",
+      "plan": "utility-room",
+      "prompt": "add a row of three base cabinets with a worktop to the left wall",
+      "expect": "one create-or-replace-groups call with a placement by wall (wall left, centred); one group of three base cabinets with their backs against the left wall, inside the room"
+    },
+    {
+      "id": "attic-room-tall-units-right-wall",
+      "title": "Tall units on the right wall of the attic room",
+      "plan": "room-and-attic",
+      "prompt": "add three tall units to the right wall",
+      "expect": "one create-or-replace-groups call with a placement by wall (wall right, centred); one group of three tall units with their backs against the right wall, inside the room and clear of the attic"
+    },
+    {
+      "id": "place-group-move-kitchen",
+      "title": "Move the kitchen to the left wall",
+      "plan": "three-tall-units",
+      "prompt": "move the kitchen to the left wall",
+      "expect": "one place-group call on the existing group with wall left; the group keeps its three units and stands against the left wall"
+    },
+    {
+      "id": "living-room-sideboard-and-tv",
+      "title": "A sideboard and a TV unit in the living room",
+      "plan": "living-room",
+      "prompt": "add a sideboard to the front wall and a low TV unit to the back wall",
+      "expect": "create-or-replace-groups creates two groups, in one batched call or separate calls, each with a placement by wall: one sideboard group on the front wall and one low TV unit group on the back wall, both inside the room"
+    },
+    {
+      "id": "closets-two-wardrobes-corner",
+      "title": "Two wardrobes in the corner of the closet room",
+      "plan": "closets",
+      "prompt": "put two wardrobes into the back right corner",
+      "expect": "one create-or-replace-groups call with a placement by wall and alignment into the corner (wall right, alignment back); one group of two tall wardrobe units flush in the back right corner"
+    },
+    {
+      "id": "utility-room-washer-and-sink",
+      "title": "A washer and a sink in the utility room",
+      "plan": "utility-room",
+      "prompt": "add a washer and a sink cabinet to the back wall",
+      "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of a washer and a sink cabinet with their backs against the back wall, inside the room"
+    },
+    {
+      "id": "attic-room-storage-under-slope",
+      "title": "Storage units under the attic slope",
+      "plan": "room-and-attic",
+      "prompt": "add low storage units along the wall under the attic slope",
+      "expect": "one create-or-replace-groups call with a placement by wall; one group of low storage units against the wall under the slope, inside the room and clear of the attic"
+    },
+    {
+      "id": "two-wardrobes-add-third",
+      "title": "Add a third wardrobe",
+      "plan": "two-wardrobes-right-wall",
+      "prompt": "add a third wardrobe next to the two on the right wall",
+      "expect": "one create-or-replace-groups call that extends the existing group by one wardrobe docked to its free side; three wardrobes in a row on the right wall"
+    },
+    {
       "id": "edit-change-one-unit",
       "title": "Change one unit",
       "plan": "three-tall-units",
@@ -60,6 +137,13 @@
       "expect": "change-group-attribute: a white mod_FrontColor on every unit"
     },
     {
+      "id": "attributes-find-front-colour",
+      "title": "Find the front colour attribute",
+      "plan": "three-tall-units",
+      "prompt": "which front colours can I choose for the kitchen?",
+      "expect": "one find-attributes call for the front colour; the answer lists the available front colour values of the library and names the attribute"
+    },
+    {
       "id": "edit-add-one-unit",
       "title": "Add one unit",
       "plan": "three-tall-units",
@@ -68,17 +152,17 @@
     },
     {
       "id": "edit-remove-unit",
-      "title": "Remove a unit",
+      "title": "Remove a unit and leave the gap",
       "plan": "three-tall-units",
-      "prompt": "remove the middle unit",
-      "expect": "delete-article-in-place, the default: the kitchen splits into two groups that keep their places"
+      "prompt": "remove the middle cabinet and leave the gap; keep the other two cabinets where they are",
+      "expect": "delete-article-in-place on the middle cabinet: two groups of one cabinet each, both in their original positions, with the 600 mm gap left between them"
     },
     {
       "id": "edit-delete-unit",
-      "title": "Delete a unit",
+      "title": "Remove a unit and close the gap",
       "plan": "three-tall-units",
-      "prompt": "delete the middle unit",
-      "expect": "delete-article-in-place: the kitchen splits into two groups that keep their places"
+      "prompt": "remove the middle cabinet and close the gap by moving the last cabinet next to the first; keep the cabinet in the back corner where it is",
+      "expect": "delete-article-and-compact on the middle cabinet: one group of the two remaining cabinets docked together with no gap; the first cabinet stays in the back right corner and the last moves 600 mm towards it; both cabinets keep their attributes"
     },
     {
       "id": "edit-delete-group",
@@ -234,18 +318,32 @@
       "expect": "one new group of three base units away from the walls whose root modules overlap no object (dining table, chairs, rug, plant, sofa) and no other group"
     },
     {
+      "id": "order-data-kitchen",
+      "title": "Order data of the kitchen",
+      "plan": "three-tall-units",
+      "prompt": "show me the order data of the kitchen",
+      "expect": "one get-order-data call; the answer reports the order data of the plan's kitchen group"
+    },
+    {
+      "id": "plan-images-kitchen",
+      "title": "Images of the kitchen",
+      "plan": "three-tall-units",
+      "prompt": "show me the kitchen from above and in perspective",
+      "expect": "one get-plan-images call; the answer shows the perspective and the top view of the plan"
+    },
+    {
+      "id": "image-only-tall-units",
+      "title": "Image only, no text: tall units",
+      "plan": "default-room",
+      "image": "docs/images/three-tall-units.png",
+      "expect": "the model identifies the furniture as tall units (a wardrobe or cabinet), not a kitchen, and plans it as close to the image as possible: three tall units side by side; no sink, hob, oven, worktop or base units"
+    },
+    {
       "id": "image-kitchen-left-wall",
       "title": "Image: kitchen on the left-hand wall",
       "plan": "default-room",
       "prompt": "create a kitchen like the one in the image on the left-hand wall of the room",
       "image": "docs/images/kitchen-1.png"
-    },
-    {
-      "id": "image-planning-right-wall",
-      "title": "Image: planning on the right-hand wall",
-      "plan": "default-room",
-      "prompt": "create a planning as to the one shown in the picture on the right-hand wall of the room.",
-      "image": "docs/images/kitchen-3.jpeg"
     },
     {
       "id": "image-kitchen-back-right-corner",
@@ -255,11 +353,11 @@
       "image": "docs/images/kitchen-2.png"
     },
     {
-      "id": "image-only-tall-units",
-      "title": "Image only, no text: tall units",
+      "id": "image-planning-right-wall",
+      "title": "Image: planning on the right-hand wall",
       "plan": "default-room",
-      "image": "docs/images/three-tall-units.png",
-      "expect": "the model identifies the furniture as tall units (a wardrobe or cabinet), not a kitchen, and plans it as close to the image as possible: three tall units side by side; no sink, hob, oven, worktop or base units"
+      "prompt": "create a planning as to the one shown in the picture on the right-hand wall of the room.",
+      "image": "docs/images/kitchen-3.jpeg"
     },
     {
       "id": "image-only-no-text",

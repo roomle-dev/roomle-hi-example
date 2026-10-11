@@ -28,6 +28,15 @@ const navigationFailure = {
     'snapshot failed: Execution context was destroyed, most likely because of a navigation',
   ],
 };
+const transportFailure = {
+  planSnapshotId: 'ps_partial',
+  errors: [
+    'chat request failed: Failed to process successful response',
+    'terminated',
+    'read ECONNRESET',
+  ],
+  snapshotCaptured: true,
+};
 const success = {
   planSnapshotId: 'ps_fixture',
   errors: [],
@@ -140,8 +149,9 @@ test('retries a lost render after recorded planner-frame navigation and a timeou
   assert.equal((await f.calls()).length, 2);
 });
 
-test('keeps two navigation failures without retrying again on resume', async (t) => {
+test('keeps three navigation failures without retrying again on resume', async (t) => {
   const f = await fixture(t, [
+    { run: navigationFailure },
     { run: navigationFailure },
     { run: navigationFailure },
   ]);
@@ -149,9 +159,9 @@ test('keeps two navigation failures without retrying again on resume', async (t)
   assert.equal(result.exitCode, 1);
   assert.equal(result.planSnapshotId, null);
   assert.deepEqual(result.errors, navigationFailure.errors);
-  assert.equal(result.attempts.length, 2);
+  assert.equal(result.attempts.length, 3);
   assert.equal((await f.run()).planSnapshotId, null);
-  assert.equal((await f.calls()).length, 2);
+  assert.equal((await f.calls()).length, 3);
 });
 
 test('resumes an incomplete first attempt that already has run.json', async (t) => {
@@ -177,10 +187,50 @@ test('resumes after the first attempt was archived but before the retry began', 
 });
 
 test('preserves missing-run.json attempts and keeps the retry limit across resume', async (t) => {
-  const f = await fixture(t, [{ exitCode: 1 }, { exitCode: 1 }]);
+  const f = await fixture(t, [
+    { exitCode: 1 },
+    { exitCode: 1 },
+    { exitCode: 1 },
+  ]);
   const result = await f.run();
-  assert.equal(result.attempts.length, 2);
+  assert.equal(result.attempts.length, 3);
   assert.deepEqual(result.errors, ['no run.json - see console.log']);
+  assert.equal(
+    (await readFile(join(f.first, 'console.log'), 'utf8')).trim(),
+    'attempt-1'
+  );
+  assert.equal(
+    (await readFile(join(f.dir, 'console.log'), 'utf8')).trim(),
+    'attempt-3'
+  );
+  const resumed = await f.run();
+  assert.deepEqual(resumed.attempts, result.attempts);
+  assert.equal(existsSync(f.dir), true);
+  assert.equal(existsSync(`${f.dir}.attempt-3`), false);
+  assert.equal(
+    (await readFile(join(f.dir, 'console.log'), 'utf8')).trim(),
+    'attempt-3'
+  );
+  assert.equal((await f.calls()).length, 3);
+});
+
+test('retries a transport failure and preserves the failed attempt', async (t) => {
+  const f = await fixture(t, [
+    { run: transportFailure, firstOnly: true },
+    { run: success },
+  ]);
+  const result = await f.run();
+  assert.equal((await f.calls()).length, 2);
+  assert.equal(result.planSnapshotId, 'ps_fixture');
+  assert.equal(result.exitCode, 0);
+  assert.deepEqual(result.attempts, [
+    'mock/01-navigation.attempt-1',
+    'mock/01-navigation',
+  ]);
+  assert.deepEqual(
+    JSON.parse(await readFile(join(f.first, 'run.json'), 'utf8')),
+    transportFailure
+  );
   assert.equal(
     (await readFile(join(f.first, 'console.log'), 'utf8')).trim(),
     'attempt-1'
@@ -189,8 +239,46 @@ test('preserves missing-run.json attempts and keeps the retry limit across resum
     (await readFile(join(f.dir, 'console.log'), 'utf8')).trim(),
     'attempt-2'
   );
-  await f.run();
-  assert.equal((await f.calls()).length, 2);
+});
+
+test('stops a transport failure after three attempts', async (t) => {
+  const f = await fixture(t, [
+    { run: transportFailure },
+    { run: transportFailure },
+    { run: transportFailure },
+  ]);
+  const result = await f.run();
+  assert.equal((await f.calls()).length, 3);
+  assert.equal(result.exitCode, 1);
+  assert.deepEqual(result.attempts, [
+    'mock/01-navigation.attempt-1',
+    'mock/01-navigation.attempt-2',
+    'mock/01-navigation',
+  ]);
+  assert.deepEqual(result.errors, transportFailure.errors);
+  const resumed = await f.run();
+  assert.equal(resumed.planSnapshotId, result.planSnapshotId);
+  assert.deepEqual(resumed.errors, result.errors);
+  assert.deepEqual(resumed.attempts, result.attempts);
+  assert.equal(existsSync(`${f.dir}.attempt-3`), false);
+  assert.deepEqual(
+    JSON.parse(await readFile(join(f.dir, 'run.json'), 'utf8')),
+    transportFailure
+  );
+  assert.equal(
+    (await readFile(join(f.dir, 'console.log'), 'utf8')).trim(),
+    'attempt-3'
+  );
+  assert.equal((await f.calls()).length, 3);
+});
+
+test('never retries a completed error-free run', async (t) => {
+  const f = await fixture(t, [{ run: success }]);
+  const result = await f.run();
+  assert.equal((await f.calls()).length, 1);
+  assert.equal(result.planSnapshotId, 'ps_fixture');
+  assert.deepEqual(result.attempts, ['mock/01-navigation']);
+  assert.equal(existsSync(f.first), false);
 });
 
 test('reports an API save failure without navigation without retrying it', async (t) => {

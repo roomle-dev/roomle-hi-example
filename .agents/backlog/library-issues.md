@@ -15,10 +15,10 @@ development team, and how to reproduce it. MCP, chat and planner issues are trac
 
 ## Overview
 
-| # | Issue | Library | Status | Priority |
-|---|---|---|---|---|
-| 60 | [The sink top of a sink unit reaches past the row or over the hob](#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG Furniture_Smith | reported to the library development team | medium — the drainer in the air or over the hob |
-| 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | not reported | medium — handled articles where the user asked for handleless ones |
+| # | Issue | Library | Responsible | Status | Priority |
+|---|---|---|---|---|---|
+| 60 | [The sink top of a sink unit reaches past the row or over the hob](#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG Furniture_Smith | HOMAG library development team | reported to the library development team | medium — the drainer in the air or over the hob |
+| 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | not reported | medium — handled articles where the user asked for handleless ones |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -33,7 +33,9 @@ the branch alike, the create put the sink unit last every time; the model swappe
 afterwards in one.
 
 **Cause.** Nothing tells the agent that the sink is wider than its unit: the catalog description of
-`SUT60` names a 60 cm sink base unit, the sink's width and the side of its drainer are not in it. The
+`SUT60` names a 60 cm sink base unit, the sink's width and the side of its drainer are not in it.
+The description also lacks the rule that a hob must not stand immediately to the right of a sink
+unit in the row, because the drainer reaches over that neighbour. The
 geometry is intended (the library builds the sink that way); the root module's outline in `obstacles`
 shows it, but the description does not give the article-specific meaning. `SUBA60` has the same
 missing description: its 600 mm unit spans 995.75 mm along the row in the Open-Plan Room, including
@@ -44,8 +46,10 @@ neighbour in the same group; the library data still needs the article-specific i
 **To do.** The library: the description of every sink unit names the width of its sink with the
 drainer and the side the drainer reaches over, and that a base unit belongs under it — including
 `SUT60` and `SUBA60`. Put this in `FUNCTION` or `AI_SELECTION_HINT` so the compact article catalog
-carries it (D63), with any fuller detail in the other sections. Then check
-that the served text needs nothing more.
+carries it (D63), with any fuller detail in the other sections. State explicitly in the sink unit's
+description: "Do not place a hob immediately to the right of this sink unit: the sink drainer
+extends over the neighbouring unit on that side." This information belongs in the library data.
+Then check that the served text needs nothing more.
 
 **Status.** Reported to the HOMAG library development team.
 
@@ -58,11 +62,10 @@ that the served text needs nothing more.
 
 **Test.** The test `image-kitchen-left-wall` of `docs/test-prompts.json`: the sink unit stands with a
 base unit under its drainer in three runs of gpt-6-astra; `edit-swap-hob-unit`: the drainer does not
-cover the hob.
+cover the hob, and the agent identifies a swap that would put the hob immediately to the right of
+the sink as conflicting with the library's selection rule.
 
-**Reproduce.** `mcp-test-2026-10-08_22-59-32`: gpt-6-astra 30. For `SUBA60`: Open-Plan Room
-(`ps_qwm5odi6tyflyqwpdcxz1la791ho633`), root `cdca7a4b-f4d7-4fd1-a56e-07157a35cdcb` in group
-`c2b9fe06-9bef-4fb3-b7bf-c44f72ce09aa`; read its 600 mm width, outline and article description.
+**Reproduce.** `mcp-test-2026-10-11_11-41-48`: gpt-6-astra 29 (`edit-swap-hob-unit`): the swapped sink's drainer covers part of the hob.
 
 ## 61. Handleless fronts done with a handle attribute
 
@@ -84,4 +87,4 @@ nothing more.
 
 **Test.** The test `kitchen-conversation` turn 5 ends with handleless articles.
 
-**Reproduce.** `mcp-test-2026-10-09_00-59-22`: gpt-6-astra 35 (turn 5).
+**Reproduce.** `mcp-test-2026-10-11_11-41-48`: gpt-6-astra 49 (`kitchen-conversation`, turn 5).

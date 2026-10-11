@@ -37,3 +37,16 @@ export const isNavigationInterrupted = (run) =>
             (phase === 'chat' || phase === 'snapshot') && !fragmentOnly
         )))
   );
+
+// A provider or transport failure: the model call or the connection dropped
+// mid-stream, so the run says nothing about the planning. A run that completed
+// without errors never matches, and a real planning defect is not retried.
+export const isTransportFailure = (run) =>
+  Boolean(
+    run &&
+    run.errors?.some((error) =>
+      /Failed to process successful response|ECONNRESET|socket hang up|fetch failed|terminated|AI_APICallError/i.test(
+        error
+      )
+    )
+  );

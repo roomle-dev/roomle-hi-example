@@ -83,6 +83,9 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [PR review: random test counts and prompt expectations](bug-analysis/pr-review-random-count-and-prompt-expectations.md) | Fixed locally — PR review fixes | 2026-10-11 |
+| [Preserve the final failed MCP test attempt when resuming](bug-analysis/mcp-test-exhausted-retry-result.md) | Fixed locally — not landed | 2026-10-11 |
+| [The image planning on the right wall run ends in a provider connection reset](bug-analysis/image-planning-right-wall-connection-reset.md) | Open — analysis; transport failure, no product defect | 2026-10-11 |
 | [The group load result names per input group what the planner built](bug-analysis/group-load-result-per-input-group.md) | Open — analysis | 2026-10-10 |
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](bug-analysis/sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | 2026-10-10 |
 | [Preserve completed tool outcomes and clarify calculation recovery advice](bug-analysis/pr-review-tool-outcomes-and-calculation-advice.md) | Fixed locally — PR review fixes | 2026-10-10 |
@@ -105,8 +108,8 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Retry a failed test run two or three times](feature-analysis/retry-failed-test-runs.md) | Implemented locally — not landed | 2026-10-11 |
 | [Article template geometry in the plan context](feature-analysis/article-template-geometry-in-plan-context.md) | Open | 2026-10-10 |
-| [Generate standard MCP prompt tests per session](feature-analysis/generated-mcp-standard-tests.md) | Implemented locally — not landed | 2026-10-09 |
 | [Explain the door or window a placement keeps clear](feature-analysis/explain-opening-clearance.md) | Implemented locally — not landed | 2026-10-09 |
 | [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open — example high effort landed; store effort and measurement open | 2026-10-07 |
 | [A reasoning effort per GPT chat model: implementation plan](feature-analysis/reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open — example high effort landed; store effort and measurement open | 2026-10-07 |
@@ -121,6 +124,7 @@ done. The analysis and the report are the same document — the report is append
 |---|---|---|
 | [Move the tool logic to the glue-logic](refactoring-analysis/move-tool-logic-to-glue-logic.md) | Open | 2026-10-10 |
 | [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-06 |
+| [Faster MCP test runs](refactoring-analysis/faster-mcp-test-runs.md) | Open | 2026-10-11 |
 
 ### Benchmarks & Performance Analyses
 
@@ -140,10 +144,10 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 
 | Document | Last touched |
 |---|---|
-| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-09 |
+| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-11 |
 | [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — measure, then let the plan context carry every article's docking vectors and corner point, and remove the server's probe where the default variant suffices | 2026-10-07 |
 | [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner detected by the MCP prompt tests, each with the module, team or repository responsible | 2026-10-09 |
-| [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: the sink width of a sink unit, handleless fronts | 2026-10-09 |
+| [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: sink drainer width and the restriction on a hob to its right, handleless fronts | 2026-10-11 |
 | [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — gpt-5.4-mini plans without reasoning: set an effort per Foundry deployment from the measured data and verify it; further measurement only on request | 2026-10-07 |
 | [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL | 2026-10-09 |
 | [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — access control | 2026-10-09 |

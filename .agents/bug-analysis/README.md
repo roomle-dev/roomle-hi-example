@@ -35,6 +35,8 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [PR review: random test counts and prompt expectations](pr-review-random-count-and-prompt-expectations.md) | Fixed locally — PR review fixes | roomle-hi-example #98 |
+| [Preserve the final failed MCP test attempt when resuming](mcp-test-exhausted-retry-result.md) | Fixed locally — not landed | Runner retry limit and selected-result preservation |
 | [The group load result names per input group what the planner built](group-load-result-per-input-group.md) | Open — analysis | RML-18139 |
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | RML-18124; library #60 |
 | [Preserve completed tool outcomes and clarify calculation recovery advice](pr-review-tool-outcomes-and-calculation-advice.md) | Fixed locally — PR review fixes | roomle-hi-example #94 |
@@ -45,6 +47,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 | [Reserve a final answer step in the store chat](store-chat-final-answer-step.md) | Fixed locally | Ligna-store chat backlog #2 (RML-18033) |
 | [Readable article and wall names in row-edit feedback](readable-row-edit-feedback.md) | Fixed locally — MCP change unlanded; UI change released | RML-18103 #62 |
 | [Preserve the outcome when a provider failure interrupts a chat turn](chat-provider-failure-recovery.md) | Fixed locally — provider cause unconfirmed | RML-18103 #38 |
+| [The image planning on the right wall run ends in a provider connection reset](image-planning-right-wall-connection-reset.md) | Open — analysis; transport failure, no product defect | Test run 2026-10-11, test 31 |
 | [Connect a store planner to an external MCP agent without built-in chat](external-agent-store-bridge.md) | Fixed locally | Deployment/session backlog #1 |
 | [Build the Cloudflare MCP image from the repository lockfile](cloudflare-image-root-lockfile.md) | Fixed locally | Deployment/session backlog #4 |
 | [Forward launcher flags through the root npm scripts](root-launcher-flags.md) | Fixed locally | Deployment/session backlog #5 |

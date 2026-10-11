@@ -152,36 +152,37 @@ node .agents/scripts/run-hi-mcp-tests.js [docs/test-prompts.json] [--out <dir>] 
 ```
 
 Reads `models` (provider and key, `"$NAME"` reads the environment), `plans` and `tests` from the test
-file, validates it, and runs every model × test as a child `run-hi-mcp-prompt.js`.
+file, validates it, and runs every model × test as a child `run-hi-mcp-prompt.js`. An explicit
+`randomTests` count must be a whole number from 0 to the number of available plans.
 
 The [testing skill](../../.agents/skills/hi-mcp-testing.md#3-tests) prepares a full session file
-from the selected fixed cases, six agent-generated standard cases (creation, placement,
-attributes, edits, undo/redo and a conversation), then the requested number of random cases.
+from the selected fixed cases, then the requested number of random cases.
 The agent writes their prompts and expectations before running them. A `jq` composition command
-checks the generated counts, coverage, expectations, plans, markings and unique ids. Cases stay
+checks the generated counts, expectations, plans, markings and unique ids. Cases stay
 in the session directory, and a resumed session uses the same prepared file. Runs limited to
 named tests add cases only when requested. The CLI executes supplied cases; it does not generate
 them. Direct execution on `docs/test-prompts.json` runs its fixed cases only.
 
-The suite repeats a
-run once when it produces no `run.json` or navigation interrupts its snapshot capture. A capture is
+The suite makes at most three attempts when a run produces no `run.json`, navigation interrupts its
+snapshot capture, or a provider/transport error matches `Failed to process successful response`,
+`ECONNRESET`, `socket hang up`, `fetch failed`, `terminated` or `AI_APICallError`. A capture is
 interrupted when it has no saved snapshot id and a destroyed-context/navigation error, or when
 `snapshotCaptured` is false and a frame navigated during `chat` or `snapshot`. Initial loading and
 fragment-only URL changes do not trigger the latter condition. A missing saved snapshot id alone
 does not trigger a retry.
 
-Before the retry, the entire first directory is moved to `<NN>-<test id>.attempt-1/`. The retry uses
+Before a retry, the entire superseded directory is moved to `<NN>-<test id>.attempt-<n>/`. The retry uses
 the original plan and prompts in a fresh browser and writes to the normal test directory.
 `results.json` names that selected directory in `dir` and lists all attempt directories in
-`attempts`; reports evaluate the selected directory and retain the first attempt as diagnostics.
-A rerun with the same `--out` resumes an interrupted first attempt or an archived attempt awaiting
-its retry. Once both attempt directories exist, it keeps the second result, including a second
-failure, without launching another attempt. Other existing `run.json` results are skipped.
+`attempts`; reports evaluate the selected directory and retain every superseded attempt as diagnostics.
+A rerun with the same `--out` resumes an interrupted attempt or an archived attempt awaiting
+its retry. With two superseded attempts, the third attempt stays in the normal directory, including
+its failure or its console log when no `run.json` exists. Resume neither archives it nor launches
+another attempt. Completed error-free runs and errors outside the retry conditions are skipped.
 
 `results.json` is rewritten after every run and preserves ids, titles and the random flag. The
-skill uses `standard-` ids and `Standard:` titles to distinguish generated standard cases without
-another result field. The `expect` of a test is evaluated by the agent, not by the script. The skill
-writes one report and PDF per session, with separate fixed, standard and random counts and the
+`expect` of a test is evaluated by the agent, not by the script. The skill
+writes one report and PDF per session, with separate fixed and random counts and the
 generated case JSON. The duration depends on the selected models, case count and number of turns.
 
 The test infrastructure has regression coverage independent of the MCP unit tests:
@@ -191,8 +192,8 @@ node --test .agents/scripts/tests/*.test.js
 ```
 
 The suite tests run the actual runner with local fake prompt processes. The generated-case tests
-execute the skill's documented `jq` composition filter and cover counts, coverage, case metadata,
-fixed/standard/random execution, zero random cases, focused runs and resume without duplication.
+execute the skill's documented `jq` composition filter and cover counts, case metadata,
+fixed/random execution, zero random cases, focused runs and resume without duplication.
 The browser tests use
 Playwright and intercepted test pages to navigate the main page and planner frame while a capture
 is pending. They make no model requests and require the existing Playwright installation in

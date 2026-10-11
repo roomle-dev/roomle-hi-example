@@ -46,7 +46,7 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
 
 - A subset of the tests the user names: filter `.tests` by `id` the same way.
 - A run limited to named tests keeps that scope: generate no extra cases unless the user asks
-  for them. Set `STANDARD_COUNT=0` and the session's `randomTests` to 0 in that case.
+  for them. Set the session's `randomTests` to 0 in that case.
 - Tests with an `image` stay only for models that read images. The chat backend decides that for
   the model the provider name resolves to: `readsImages(resolveChatModel(<provider>))` in
   [chat-config.ts](../../hi-mcp/hi-mcp-chat/chat-config.ts).
@@ -60,11 +60,22 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
   - For a model without images, leave the image tests out of the file and list them in the report
     as skipped.
 
-#### Generated standard tests
+#### Random tests
 
-A full "test the mcp" session adds six standard cases, written by the agent before the run, one
-for each coverage area below. Set `STANDARD_COUNT=6`. For a focused run, set it to the number of
-generated standard cases the user requests (0 when none are requested).
+A full session adds `randomTests` new tests (in `$SESSION/tests.json`, copied from
+`docs/test-prompts.json`; 5 when it is missing, 0 for none), written by the agent that runs this
+skill. The count must be a whole number from 0 to the number of available plans because each plan
+is drawn once. For a custom suite with fewer than five plans, set a count within that range.
+A number the user names goes into the session file:
+`jq '.randomTests = <n>' "$SESSION/tests.json" > "$SESSION/tests.tmp" && mv "$SESSION/tests.tmp" "$SESSION/tests.json"`.
+The random tests go only into `$SESSION/tests.json`, always at its end — never into
+`docs/test-prompts.json`.
+
+The random tests are the session's own coverage: they stand in for the standard cases a fixed
+suite cannot hold, so together they exercise the whole range the fixed tests leave open — from a
+single simple request to a complex, multi-turn one. Draw the plans at random **without
+repetition**, then write one test per drawn plan, each covering a different area, so that across
+the session every area below is covered at least once:
 
 | Coverage key | What the case checks |
 |---|---|
@@ -75,43 +86,25 @@ generated standard cases the user requests (0 when none are requested).
 | `history` | Change a group, undo that change and redo it over consecutive turns. |
 | `conversation` | Create a group and refine it over two or three turns, retaining earlier requirements. |
 
-Read the selected [plans](../../docs/test-prompts.md#plans) and the
-[catalog](../../docs/library-information/articles.md). Choose a request variant that the fixed
-cases do not cover; vary the plan, units, placement and attributes between sessions. An edit uses
-a saved plan with HI groups or creates its group in an earlier turn. Use plain user words, no
-tool names or ids ([ADR 0006](../decisions/0006-prompt-tests-assess-the-agent.md)).
+At least one random test is a complex case: a conversation of two or three turns, or a request
+that combines several areas (a group created and then edited, a placement with attributes, an
+edit that needs the plan understood). The rest may be simple single-request cases. Vary the
+furniture (kitchen, wardrobe, sideboard, media unit, utility room, tall units), the place (a wall,
+a corner, a free spot), materials and dimensions of the
+[catalog](../../docs/library-information/articles.md), edits of a group the plan has, undo and
+redo, and conversations. An edit needs an HI group in the plan (see the plan in
+[test-prompts.md](../../docs/test-prompts.md#plans)). Plain English user words: no tool name, no
+id, no image ([ADR 0006](../decisions/0006-prompt-tests-assess-the-agent.md)). Write `expect`
+before the run, from the plan and the catalog, with checks for every conversation turn.
 
-Write the cases to `$SESSION/standard-tests.json` as a list with the same fields as fixed cases:
-`id: "standard-<coverage key>-<slug>"`, `title: "Standard: <title>"`, `plan`, `prompt` and `expect`.
-Leave `random` absent or false. Write `expect` from the plan and catalog before execution, with
-checks for every conversation turn. When `STANDARD_COUNT=0`, write `[]`. These cases belong only
-to the session, not to `docs/test-prompts.json`.
-
-#### Random tests
-
-A full session adds `randomTests` new tests (in `$SESSION/tests.json`, copied from
-`docs/test-prompts.json`; 3 when it is missing, 0 for none), written by the agent that runs this
-skill. A number the user names goes into the session file:
-`jq '.randomTests = <n>' "$SESSION/tests.json" > "$SESSION/tests.tmp" && mv "$SESSION/tests.tmp" "$SESSION/tests.json"`.
-The random tests go only into `$SESSION/tests.json`, always at its end after the standard cases —
-never into `docs/test-prompts.json`.
-
-1. Draw a plan for each at random from the session file, so that sessions do not repeat themselves:
+1. Draw a plan for each at random from the session file, without repetition, so that sessions do
+   not repeat themselves and no two random tests share a plan:
 
    ```bash
-   node -e 'const { plans, randomTests = 3 } = require(require("path").resolve(process.argv[1])); const names = Object.keys(plans); for (let i = 0; i < randomTests; i++) console.log(names[Math.floor(Math.random() * names.length)])' "$SESSION/tests.json"
+   node -e 'const { plans, randomTests = 5 } = require(require("path").resolve(process.argv[1])); const names = Object.keys(plans); if (!Number.isInteger(randomTests) || randomTests < 0 || randomTests > names.length) throw new Error("randomTests must be a whole number from 0 to the number of plans"); for (let i = names.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [names[i], names[j]] = [names[j], names[i]]; } for (const name of names.slice(0, randomTests)) console.log(name)' "$SESSION/tests.json"
    ```
 
-2. Write one test per drawn plan: a request a user of that plan could make that no fixed test
-   covers. Vary the furniture (kitchen, wardrobe, sideboard, media unit, utility room, tall units),
-   the place (a wall, a corner, a free spot), materials and dimensions of the
-   [catalog](../../docs/library-information/articles.md), edits of a group the plan has, undo and
-   redo, and conversations of two or three turns. An edit needs an HI group in the plan (see the
-   plan in [test-prompts.md](../../docs/test-prompts.md#plans)). Plain English user words: no tool
-   name, no id, no image ([ADR 0006](../decisions/0006-prompt-tests-assess-the-agent.md)). Write
-   `expect` before the run, from the plan and the catalog.
-
-3. Write them to `$SESSION/random-tests.json` as a list, in the form of the fixed tests with the mark
+2. Write them to `$SESSION/random-tests.json` as a list, in the form of the fixed tests with the mark
    `"random": true`, the id `random-<n>-<slug>` and the title `Random: <title>`:
 
    ```json
@@ -125,31 +118,24 @@ never into `docs/test-prompts.json`.
 
 #### Compose and check the session
 
-Append standard and random cases once, keeping fixed cases first and random cases last. This
-command checks counts, coverage, expectations, plan references, markings and unique ids. If it
-fails, correct the generated lists and rerun it; the original `tests.json` stays intact.
+Append the random cases once, keeping fixed cases first and random cases last. This command checks
+counts, expectations, plan references, markings and unique ids. If it fails, correct the generated
+list and rerun it; the original `tests.json` stays intact.
 
 ```bash
-jq --slurpfile standard "$SESSION/standard-tests.json" \
-   --slurpfile random "$SESSION/random-tests.json" \
-   --argjson standardCount "$STANDARD_COUNT" '
+jq --slurpfile random "$SESSION/random-tests.json" '
   . as $suite
-  | ($standard[0] + $random[0]) as $generated
-  | if any(.tests[]; (.id | startswith("standard-")) or .random == true)
+  | $random[0] as $generated
+  | if any(.tests[]; .random == true)
     then error("Session already prepared") else . end
-  | if ($standard[0] | length) != $standardCount
-       or ($random[0] | length) != (.randomTests // 3)
+  | if (.randomTests // 5) > (.plans | length)
+    then error("randomTests cannot exceed the number of plans") else . end
+  | if ($random[0] | length) != (.randomTests // 5)
     then error("Unexpected generated test counts") else . end
-  | if $standardCount == 6 and
-       ([$standard[0][].id | split("-")[1]] | sort) !=
-       ["attributes", "conversation", "create", "edit", "history", "place"]
-    then error("Standard coverage is incomplete") else . end
   | if any($generated[]; (.expect | type) != "string" or (.expect | length) == 0
        or $suite.plans[.plan] == null)
     then error("Generated tests need expectations and valid plans") else . end
-  | if any($standard[0][]; (.id | startswith("standard-") | not)
-       or (.title | startswith("Standard: ") | not) or .random == true)
-       or any($random[0][]; (.id | startswith("random-") | not)
+  | if any($random[0][]; (.id | startswith("random-") | not)
        or (.title | startswith("Random: ") | not) or .random != true)
     then error("Generated test markings are invalid") else . end
   | .tests += $generated
@@ -175,18 +161,25 @@ node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" 
   `$SESSION/results.json` lists them: per run `model`, `test`, `dir`, `attempts`, `exitCode`,
   `planSnapshotId`, `errors`.
 - If the time limit stops it, start the same command again. Stored results are skipped unless a
-  first attempt has an interrupted capture or no `run.json` and still has its one retry available.
+  first attempt has an interrupted capture, a transport failure or no `run.json` and still has
+  retries available.
 - Exit code 1 of a run is a result like any other (the model or the chat reported an error).
-- The runner repeats a run without `run.json` once. It also repeats a capture interrupted by
-  navigation: no saved snapshot id with a destroyed-context/navigation error, or
-  `snapshotCaptured: false` with frame navigation during `chat` or `snapshot`. Initial loading,
-  fragment-only URL changes and a missing saved snapshot id alone do not trigger that retry.
-- The first attempt is preserved in `<NN>-<test id>.attempt-1/`; the retry uses the original plan
-  and prompts in a fresh browser and writes to the normal directory. `results.json` lists both
-  directories in `attempts` and selects the current result in `dir`. Evaluate that selected result;
-  read the first attempt for diagnostics. Both directories retain their own logs and artifacts.
+- The runner repeats a run without `run.json`, a capture interrupted by navigation, or a provider
+  or transport failure, up to three attempts. A navigation interruption is no saved snapshot id
+  with a destroyed-context/navigation error, or `snapshotCaptured: false` with frame navigation
+  during `chat` or `snapshot`; initial loading, fragment-only URL changes and a missing saved
+  snapshot id alone do not trigger that retry. A transport failure is an error matching
+  `Failed to process successful response`, `ECONNRESET`, `socket hang up`, `fetch failed`,
+  `terminated` or `AI_APICallError` — the model call or the connection dropped mid-stream, so the
+  run says nothing about the planning. A run that completed without errors is never retried, and a
+  real planning defect is not retried either.
+- Every superseded attempt is preserved in `<NN>-<test id>.attempt-<n>/`; the retry uses the
+  original plan and prompts in a fresh browser and writes to the normal directory. `results.json`
+  lists all attempt directories in `attempts` and selects the current result in `dir`. Evaluate
+  that selected result; read the earlier attempts for diagnostics. Every directory retains its own
+  logs and artifacts.
 - The archive keeps the retry limit across resume, including a stop between archiving and retry.
-  After two attempts the runner retains the second result, including a failure. A result with no
+  After three attempts the runner retains the third result, including a failure. A result with no
   `run.json` is listed as "no run.json"; the report lists it as not run with its console log.
 
 A run's directory is `$SESSION/<model>/<NN>-<test id>/`: `<model>` is the provider name, `<NN>` the
@@ -298,11 +291,10 @@ sections go straight into `report.md`.
 
 The session folder is shared as it is, e.g. zipped: `report.md` links only files inside it.
 
-The header row counts fixed, generated standard and random tests separately. Preserve the
-`Standard:` and `Random:` titles in the summary and run headings. Each generated run names its
-origin; the "Standard tests" section lists coverage keys, plans and case JSON, and "Random tests"
-lists the random cases with their JSON. A generated case worth keeping can be copied from there
-into `docs/test-prompts.json` with a fixed id/title and without the random flag.
+The header row counts fixed and random tests separately. Preserve the `Random:` titles in the
+summary and run headings. Each random run names its origin; the "Random tests" section lists the
+random cases with their JSON. A random case worth keeping can be copied from there into
+`docs/test-prompts.json` with a fixed id/title and without the random flag.
 
 - Copy the source image of every image test into `$SESSION/images/`:
 
@@ -320,27 +312,14 @@ into `docs/test-prompts.json` with a fixed id/title and without the random flag.
 
 | Model | Planner | Tests | Pass | Partial | Fail | Bugs |
 |---|---|---|---|---|---|---|
-| gpt-5-mini | bo-test | 44 run (35 fixed, 6 standard, 3 random), 0 skipped | … | … | … | … |
+| gpt-5-mini | bo-test | 40 run (35 fixed, 5 random), 0 skipped | … | … | … | … |
 
 ## Summary
 
 | # | Test | Verdict | Bug | Plan snapshot |
 |---|---|---|---|---|
 | 01 | [<title>](#01-<title-slug>) | pass | no | `ps_…` |
-| 36 | [Standard: <title>](#36-standard-<title-slug>) | pass | no | `ps_…` |
-| 42 | [Random: <title>](#42-random-<title-slug>) | fail | no | `ps_…` |
-
-## Standard tests
-
-Generated for this session by the agent that ran it; not in `docs/test-prompts.json`.
-
-| # | Coverage | Test | Plan | Verdict |
-|---|---|---|---|---|
-| 36 | create | [Standard: <title>](#36-standard-<title-slug>) | <plan name> | pass |
-
-```json
-<the standard tests as they are in tests.json>
-```
+| 36 | [Random: <title>](#36-random-<title-slug>) | fail | no | `ps_…` |
 
 ## Random tests
 
@@ -348,7 +327,7 @@ Generated for this session by the agent that ran it; not in `docs/test-prompts.j
 
 | # | Test | Plan | Verdict | Keep as a fixed test |
 |---|---|---|---|---|
-| 42 | [Random: <title>](#42-random-<title-slug>) | <plan name> | fail | yes — <what it covers that no fixed test does> |
+| 36 | [Random: <title>](#36-random-<title-slug>) | <plan name> | fail | yes — <what it covers that no fixed test does> |
 
 ```json
 <the random tests as they are in tests.json>
@@ -402,16 +381,7 @@ Plan: <plan name>
 
 …
 
-## 36 Standard: <title>
-
-> <prompt — one quote line per turn of a conversation>
-
-Plan: <plan name>
-
-- **Standard test**: generated for this session; coverage: <coverage key>
-- …
-
-## 42 Random: <title>
+## 36 Random: <title>
 
 > <prompt — one quote line per turn of a conversation>
 
@@ -475,15 +445,17 @@ The runner:
 
 1. checks the file before the first run — every model has a key (a `"$NAME"` variable is set), every test has a
    unique kebab-case `id`, a `plan` of `plans`, a prompt (a text or a list of texts) or an image and an existing
-   image file; `randomTests` is a whole number — and names every problem;
+   image file; an explicit `randomTests` is a whole number from 0 to the number of plans — and
+   names every problem;
 2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider> "<apiKey>"
    "<prompt>" ["<prompt>" …] --plan <id> [--image <file>] --out <out>/<provider>/<NN>-<id>`
    (one `"<prompt>"` per turn of a `prompt` list),
    with its output in that directory's `console.log`. It runs one at a time (the ports are fixed),
    each with a fresh launcher and browser;
-3. repeats a run without `run.json` or with navigation-interrupted capture once, preserving the
-   first attempt beside the selected result; resumes with the same `--out` and never exceeds two
-   attempts; other stored results are skipped;
+3. repeats a run without `run.json`, with a navigation-interrupted capture or with a provider or
+   transport failure, up to three attempts, preserving every superseded attempt beside the
+   selected result; resumes with the same `--out` and never exceeds three attempts; other stored
+   results are skipped;
 4. rewrites `<out>/results.json` after each run and prints one line per run;
 5. passes Ctrl+C (SIGINT/SIGTERM) on to the running run, which stops its servers, and ends.
 

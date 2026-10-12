@@ -22,26 +22,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 64 | [A free-standing wall is missing from the plan context](#64-a-free-standing-wall-is-missing-from-the-plan-context) — [RML-18116](https://roomle.atlassian.net/browse/RML-18116) | roomle-ui plan context | roomle-ui `homag-intelligence` | medium — a group can be planned into the wall | gpt-6-astra |  |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
-
-## 64. A free-standing wall is missing from the plan context
-
-**Ticket.** [RML-18116](https://roomle.atlassian.net/browse/RML-18116)
-
-**Problem.** A wall that stands free in a room — the Living Room has one at x 1870 from z -2550 to
-1050, 120 mm thick (`plan.xml`, edge 12 → 13) — is neither in `rooms[].walls` nor in `obstacles` of
-`get-plan-context`. The agent sees it only in a rendering and can plan a group into it.
-
-**Cause.** The plan context takes its walls from the room contours (roomle-ui `hi-plan-context.ts`);
-a wall that is not part of a contour belongs to no room and is not listed as an obstacle.
-
-**To do.** roomle-ui: list a wall that is not part of a room contour in `obstacles` with its outline
-and height, as an object of its own kind. Then the server's obstacle hint (D55) covers it.
-
-**Test.** A roomle-ui plan-context test with a free-standing wall; the random test of the run below:
-the media unit stands clear of the wall.
-
-**Reproduce.** `mcp-test-2026-10-09_00-59-22`: gpt-6-astra 36.

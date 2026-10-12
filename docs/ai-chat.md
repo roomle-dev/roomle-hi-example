@@ -79,6 +79,20 @@ tokens of every step. gpt-5-mini and gpt-5.4-mini read images and have a 400k co
 reasoning effort is set by the chat client, not by the MCP server. Measuring the planning quality
 at `high` is open: [backlog](../.agents/backlog/reasoning-effort-for-the-gpt-chat-models.md).
 
+The effort was chosen from the 32 tests of `docs/test-prompts.json`, one run each, evaluated as
+"test the mcp" does (2026-10-07):
+
+| Effort | Pass / partial / fail | Shortfalls from its own planning | Chat median / max | Reasoning tokens (32 runs) |
+|---|---|---|---|---|
+| none | 16 / 2 / 14 | 15 | 7 s / 20 s | 0 |
+| `low` | 22 / 3 / 7 | 9 | 11 s / 142 s | 17,498 |
+| `medium` | not evaluated | — | 24 s / 240 s | 117,414 |
+
+At `low`, tests 01, 02, 04, 16, 18, 19, 24 and 26 pass that failed without reasoning; 12 (a new
+group instead of a merge) got worse. `low`'s slowest turn (142 s) waited on a `get-plan-images`
+call that timed out; `medium`'s slowest turn took 240 s, close to the 5-minute turn timeout. The
+runs at `high` are not evaluated.
+
 The launcher then:
 
 1. Runs the build gate (install + typecheck of the `hi-mcp` workspace, which

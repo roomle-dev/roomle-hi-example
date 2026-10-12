@@ -69,10 +69,9 @@ planner failure.
 
 The message text `Failed to process successful response` is the AI SDK's wrapper for “handling a
 successful HTTP response threw” (`@ai-sdk/provider-utils/src/post-to-api.ts`); the cause chain
-below it is what identifies the real failure. The same wrapper appears in
-[`chat-provider-failure-recovery.md`](chat-provider-failure-recovery.md), where the cause chain was
-**not** captured and the underlying cause stayed unknown. Here the cause chain **is** captured, and
-it names a connection reset.
+below it is what identifies the real failure. The same wrapper appears on other provider failures,
+where the cause chain is often **not** captured and the underlying cause stays unknown. Here the
+cause chain **is** captured, and it names a connection reset.
 
 ### The step-3 line is absent, and that is itself the diagnostic
 
@@ -113,9 +112,9 @@ and then dropped it.
 
 After the chat failed, the runner read the plan context (`get-plan-context` with
 `["rooms","groups","obstacles"]`) and wrote the report block above. It recorded the error, the tool
-list and the resulting snapshot id. The recovery summary is the contract implemented in
-[`chat-provider-failure-recovery.md`](chat-provider-failure-recovery.md): an interrupted turn ends
-with one truthful outcome message naming what completed and what did not. It did exactly that.
+list and the resulting snapshot id. The recovery summary is the contract of the chat's provider
+failure recovery: an interrupted turn ends with one truthful outcome message naming what completed
+and what did not. It did exactly that.
 
 ## Root cause
 
@@ -132,9 +131,8 @@ made the connection more likely to be dropped, but the drop itself is the provid
 
 - Every tool call succeeded; the planner was never asked to do anything wrong.
 - The failure is below the application: a socket reset on a 200 response.
-- The same failure mode is already documented as a provider-side risk in
-  [`chat-provider-failure-recovery.md`](chat-provider-failure-recovery.md), where the cause chain
-  was missing. This run supplies the missing cause chain for that class of failure.
+- The same failure mode is a known provider-side risk; this run supplies the cause chain for that
+  class of failure.
 - The run is read-only, so nothing was lost and nothing needs to be undone.
 
 ## Proposed change

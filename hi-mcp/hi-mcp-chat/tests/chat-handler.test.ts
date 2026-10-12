@@ -112,14 +112,6 @@ describe('getChatConfig', () => {
       provider: 'mistral',
       modelId: 'mistral-medium-latest',
     });
-    expect(resolveChatModel('mistral-large-3')).toEqual({
-      provider: 'mistral',
-      modelId: 'mistral-large-3-25-12',
-    });
-    expect(resolveChatModel('Mistral-Large-3')).toEqual({
-      provider: 'mistral',
-      modelId: 'mistral-large-3-25-12',
-    });
     expect(resolveChatModel('mistral-large-4')).toEqual({
       provider: 'mistral',
       modelId: 'mistral-large-4-0',
@@ -183,6 +175,17 @@ describe('getChatConfig', () => {
       modelId: 'gpt-6-astra',
       baseUrl: foundryBaseUrl,
     });
+    // mistral-large-3 is served from the Foundry resource, an exception to the mistral provider
+    expect(resolveChatModel('mistral-large-3')).toEqual({
+      provider: 'azure',
+      modelId: 'mistral-large-3',
+      baseUrl: foundryBaseUrl,
+    });
+    expect(resolveChatModel('Mistral-Large-3')).toEqual({
+      provider: 'azure',
+      modelId: 'mistral-large-3',
+      baseUrl: foundryBaseUrl,
+    });
     expect(resolveChatModel('openai')).toEqual({
       provider: 'azure',
       modelId: 'gpt-4o',
@@ -231,6 +234,7 @@ describe('getChatConfig', () => {
       getChatConfig(env).imageInput;
     expect(imageInput({})).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-medium' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-large-3' })).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'claude' })).toBe(true);
     expect(
       imageInput({

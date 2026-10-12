@@ -32,7 +32,7 @@ The provider name selects the provider and model:
 | `mistral` | Mistral | `mistral-large-latest` (default) |
 | `mistral-medium` | Mistral | `mistral-medium-latest` |
 | `mistral-large` | Mistral | `mistral-large-latest` |
-| `mistral-large-3` | Mistral | `mistral-large-3-25-12` |
+| `mistral-large-3` | Azure OpenAI (HI Azure AI Foundry resource) | the `mistral-large-3` deployment |
 | `mistral-large-4` | Mistral | `mistral-large-4-0` |
 | any `mistral-*` model id | Mistral | passed through (e.g. `mistral-small-latest`) |
 | `claude` / `anthropic` | Anthropic | `claude-sonnet-4-5` |
@@ -60,11 +60,13 @@ environment variable, and the **deployment name** (not the model name) via
 AZURE_RESOURCE_NAME=my-resource HI_CHAT_MODEL=my-gpt4o-deployment npm start azure <api-key>
 ```
 
-`gpt-5-mini`, `gpt-5.4-mini` and `gpt-6-astra` need neither: they are deployments on the HI
+`gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra` and `mistral-large-3` need neither: they are deployments on the HI
 Azure AI Foundry resource and are called through its OpenAI v1 endpoint
 `https://dfhifoundrysweden.services.ai.azure.com/openai/v1` with the resource's
 API key. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
-left in the shell from an `azure` run cannot redirect them. Other `gpt-*` names are
+left in the shell from an `azure` run cannot redirect them. `mistral-large-3` is an
+exception to the mistral provider: it is served from the Foundry resource, not from
+the Mistral API. Other `gpt-*` names are
 not passed through: only these deployments exist on the resource, and an unknown
 name fails at the launcher instead of as a provider error in the chat. The chat
 sets no `temperature`: the GPT deployments are reasoning models and reject it.
@@ -213,7 +215,7 @@ The chat takes an image only when the model reads images. The chat backend
 decides this from the model id it resolved (`readsImages` in
 `hi-mcp/hi-mcp-chat/chat-config.ts`): every Anthropic and Google model, and
 from the other providers the ids in `IMAGE_INPUT_MODELS`:
-`mistral-large-latest`, `mistral-medium-latest`, `mistral-large-3-25-12`,
+`mistral-large-latest`, `mistral-medium-latest`, `mistral-large-3`,
 `mistral-large-4-0`, `gpt-4o`, `gpt-5-mini`,
 `gpt-5.4-mini` and `gpt-6-astra`. Any other id gets no image input. That includes a pass-through
 `mistral-*` id and an Azure deployment named with `HI_CHAT_MODEL`: an unknown

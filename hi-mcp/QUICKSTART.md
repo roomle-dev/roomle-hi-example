@@ -15,7 +15,7 @@ The HI MCP server is deployed at Cloudflare. No local setup required.
 1. Open the store page in your browser and start planning; its bridge needs no chat model or API key.
 2. Connect your MCP client using the same session name as the store page. To use the optional store
    chat, also add `model` (`gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, `mistral-large-latest`,
-   `mistral-medium-latest` or `mistral-large-3-25-12`) and its `api_key` to the page URL.
+   `mistral-medium-latest` or `mistral-large-3`) and its `api_key` to the page URL.
 3. Start planning with HI object groups
 
 ## Local Development

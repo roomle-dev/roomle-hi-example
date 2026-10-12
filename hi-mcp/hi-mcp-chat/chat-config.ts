@@ -29,7 +29,8 @@ export interface ChatModel {
 
 // Deployments on the HI Azure AI Foundry resource, reached through its OpenAI
 // v1 endpoint: the CLI name is the deployment name. A deployment without a
-// reasoning effort runs at its Foundry default.
+// reasoning effort runs at its Foundry default. mistral-large-3 is served from
+// the Foundry resource, so it is an exception to the mistral provider.
 export const FOUNDRY_BASE_URL =
   'https://dfhifoundrysweden.services.ai.azure.com/openai/v1';
 export const FOUNDRY_DEPLOYMENTS: Record<string, { reasoningEffort?: string }> =
@@ -37,6 +38,7 @@ export const FOUNDRY_DEPLOYMENTS: Record<string, { reasoningEffort?: string }> =
     'gpt-5-mini': { reasoningEffort: 'high' },
     'gpt-5.4-mini': { reasoningEffort: 'high' },
     'gpt-6-astra': {},
+    'mistral-large-3': {},
   };
 
 // CLI provider names (npm start <provider>) resolved to a provider and model.
@@ -50,7 +52,6 @@ export const PROVIDER_MODEL_ALIASES: Record<
     mistral: 'mistral-large-latest',
     'mistral-large': 'mistral-large-latest',
     'mistral-medium': 'mistral-medium-latest',
-    'mistral-large-3': 'mistral-large-3-25-12',
     'mistral-large-4': 'mistral-large-4-0',
   },
   anthropic: {
@@ -120,7 +121,7 @@ export const DEFAULT_IMAGE_PROMPT =
 export const IMAGE_INPUT_MODELS = [
   'mistral-large-latest',
   'mistral-medium-latest',
-  'mistral-large-3-25-12',
+  'mistral-large-3',
   'mistral-large-4-0',
   'gpt-4o',
   'gpt-5-mini',

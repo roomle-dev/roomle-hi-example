@@ -15,6 +15,7 @@ the MCP server from
 ```bash
 npm start mistral <api-key>           # mistral-large-latest (default)
 npm start mistral-medium <api-key>   # mistral-medium-latest
+npm start mistral-large-4 <api-key>  # mistral-large-4-0
 npm start claude <api-key>           # claude-sonnet-4-5
 npm start gemini <api-key>           # gemini-2.5-pro (Gemini API key from Google AI Studio)
 npm start azure <api-key>            # gpt-4o deployment (see below)
@@ -73,21 +74,24 @@ sets no `temperature`: the GPT deployments are reasoning models and reject it.
 Guarded by `it('resolves the Foundry deployments to the Foundry endpoint')` in
 `hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`.
 
-**Chat Completions, not Responses.** The Foundry deployments are called through the Chat
-Completions API (`azure.chat(deployment)` in `chat-stream.ts`, `chatCompletions` in
-`chat-config.ts`), not through the Responses API the AI SDK's azure provider uses by default. The
-Responses API of the Foundry endpoint rejects image input for `mistral-large-3` with
-`Model 'Mistral-Large-3' does not support image inputs`, while its Chat Completions API accepts the
-same image. The GPT deployments and the reasoning effort work on both paths, so the chat uses the
-Chat Completions API for every Foundry deployment. Guarded by
-`it('resolves the Foundry deployments to the Foundry endpoint')` in
-`hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`.
+**API per deployment.** The Foundry GPT deployments use the Responses API
+(`azure(deployment)` in `chat-stream.ts`), which supports image input, function
+tools and reasoning together. GPT-6 Astra tool calls require Responses;
+omitting reasoning effort retains the deployment default and does not make
+Chat Completions compatible. [Official OpenAI documentation](https://developers.openai.com/api/docs/guides/latest-model).
+Foundry `mistral-large-3` uses Chat Completions (`azure.chat(deployment)`): its
+Responses endpoint rejects image input. `chatCompletions` in `chat-config.ts`
+selects that API only for Mistral. Configuration tests cover all Foundry
+deployments; `chat-stream.test.ts` verifies image/tool turns through Responses
+and retains the Mistral Chat Completions selection.
 
 **Reasoning effort.** The chat sends the lightweight deployments gpt-5.4-mini and gpt-5-mini the
 reasoning effort `high` (`providerOptions.azure.reasoningEffort`, from `FOUNDRY_DEPLOYMENTS` in
 `chat-config.ts`): accuracy goes over speed, and they plan worse than gpt-6-astra. gpt-6-astra runs
 at its default. `HI_CHAT_REASONING_EFFORT` overrides the effort of every GPT deployment; Mistral,
-Anthropic and Google models get none. Guarded by
+Anthropic and Google models get none. GPT Responses turns carry the configured
+reasoning effort alongside the MCP tools, including when the prompt has an image.
+The Chat Completions path omits explicit effort on tool turns. Guarded by
 `it('gives the lightweight GPT deployments reasoning effort high')` in
 `hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`. The defaults measured on the Foundry resource
 (2026-10-07): gpt-5.4-mini does not reason (0 reasoning tokens in every step), gpt-5-mini and

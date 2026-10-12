@@ -17,9 +17,10 @@ import {
 import { toolResultFilesAsUserMessages } from './tool-result-images';
 import { createChatRecovery } from './chat-recovery';
 
-// The reasoning effort reaches the GPT deployments as a provider option.
-const providerOptions = (config: ChatConfig) =>
-  config.reasoningEffort && config.provider === 'azure'
+const providerOptions = (config: ChatConfig, hasTools: boolean) =>
+  config.reasoningEffort &&
+  config.provider === 'azure' &&
+  (!config.azureChatCompletions || !hasTools)
     ? { azure: { reasoningEffort: config.reasoningEffort } }
     : undefined;
 
@@ -44,8 +45,6 @@ const getLanguageModel = (config: ChatConfig) => {
         resourceName: config.azureResourceName,
         baseURL: config.azureBaseUrl,
       });
-      // the Foundry deployments use the Chat Completions API: the Responses API
-      // of the Foundry endpoint rejects image input for mistral-large-3
       return config.azureChatCompletions
         ? azure.chat(config.modelId)
         : azure(config.modelId);
@@ -124,6 +123,7 @@ export const createStreamChat =
       );
       const model = getLanguageModel(config);
       const stepLog = createStepLog();
+      const options = providerOptions(config, toolNames.length > 0);
       const result = streamText({
         model,
         instructions: CHAT_SYSTEM_PROMPT,
@@ -137,9 +137,7 @@ export const createStreamChat =
         // "assistant is working…" without end.
         abortSignal: AbortSignal.timeout(config.turnTimeoutMs),
         onStepEnd: stepLog.onStepEnd,
-        ...(providerOptions(config) && {
-          providerOptions: providerOptions(config),
-        }),
+        ...(options && { providerOptions: options }),
       });
       // Mid-stream failures (Mistral auth, tool relay) surface as [error] parts
       // in the stream - the response has already started by then.

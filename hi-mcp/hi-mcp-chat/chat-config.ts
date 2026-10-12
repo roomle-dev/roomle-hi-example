@@ -25,8 +25,6 @@ export interface ChatModel {
   provider: ChatProvider;
   modelId: string;
   baseUrl?: string;
-  // the Foundry deployments are reached through the Chat Completions API: the
-  // Responses API of the Foundry endpoint rejects image input for mistral-large-3
   chatCompletions?: boolean;
 }
 
@@ -85,7 +83,7 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
       provider: 'azure',
       modelId: lower,
       baseUrl: FOUNDRY_BASE_URL,
-      chatCompletions: true,
+      chatCompletions: lower === 'mistral-large-3',
     };
   }
   for (const provider of Object.keys(
@@ -106,7 +104,7 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
     return { provider: 'google', modelId: lower };
   }
   throw new ChatRequestError(
-    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, gpt-6-astra, or a full mistral-*/claude-*/gemini-* model id`
+    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, mistral-large-4, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, gpt-6-astra, or a full mistral-*/claude-*/gemini-* model id`
   );
 };
 

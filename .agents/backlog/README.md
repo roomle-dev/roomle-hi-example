@@ -10,7 +10,6 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| [64 — A free-standing wall is missing from the plan context](mcp-issues.md#64-a-free-standing-wall-is-missing-from-the-plan-context) | roomle-ui: list a free-standing wall in the obstacles | medium |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
 

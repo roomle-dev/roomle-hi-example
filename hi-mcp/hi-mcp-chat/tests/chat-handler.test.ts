@@ -165,19 +165,19 @@ describe('getChatConfig', () => {
       provider: 'azure',
       modelId: 'gpt-5-mini',
       baseUrl: foundryBaseUrl,
-      chatCompletions: true,
+      chatCompletions: false,
     });
     expect(resolveChatModel('gpt-5.4-mini')).toEqual({
       provider: 'azure',
       modelId: 'gpt-5.4-mini',
       baseUrl: foundryBaseUrl,
-      chatCompletions: true,
+      chatCompletions: false,
     });
     expect(resolveChatModel('gpt-6-astra')).toEqual({
       provider: 'azure',
       modelId: 'gpt-6-astra',
       baseUrl: foundryBaseUrl,
-      chatCompletions: true,
+      chatCompletions: false,
     });
     // mistral-large-3 is served from the Foundry resource, an exception to the mistral provider
     expect(resolveChatModel('mistral-large-3')).toEqual({
@@ -200,7 +200,7 @@ describe('getChatConfig', () => {
     expect(config.provider).toBe('azure');
     expect(config.modelId).toBe('gpt-5.4-mini');
     expect(config.azureBaseUrl).toBe(foundryBaseUrl);
-    expect(config.azureChatCompletions).toBe(true);
+    expect(config.azureChatCompletions).toBe(false);
     expect(
       getChatConfig({
         HI_CHAT_PROVIDER: 'gpt-5-mini',

@@ -25,8 +25,6 @@ export interface ChatModel {
   provider: ChatProvider;
   modelId: string;
   baseUrl?: string;
-  // the Foundry deployments are reached through the Chat Completions API: the
-  // Responses API of the Foundry endpoint rejects image input for mistral-large-3
   chatCompletions?: boolean;
 }
 
@@ -85,7 +83,7 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
       provider: 'azure',
       modelId: lower,
       baseUrl: FOUNDRY_BASE_URL,
-      chatCompletions: true,
+      chatCompletions: lower === 'mistral-large-3',
     };
   }
   for (const provider of Object.keys(

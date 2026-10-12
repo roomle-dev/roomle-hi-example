@@ -17,12 +17,10 @@ import {
 import { toolResultFilesAsUserMessages } from './tool-result-images';
 import { createChatRecovery } from './chat-recovery';
 
-// The reasoning effort reaches the GPT deployments as a provider option. The
-// Chat Completions API rejects function tools together with a reasoning effort
-// ("Function tools with reasoning_effort are not supported"), so a turn that
-// carries tools sends none: the deployment then runs at its own default.
 const providerOptions = (config: ChatConfig, hasTools: boolean) =>
-  config.reasoningEffort && config.provider === 'azure' && !hasTools
+  config.reasoningEffort &&
+  config.provider === 'azure' &&
+  (!config.azureChatCompletions || !hasTools)
     ? { azure: { reasoningEffort: config.reasoningEffort } }
     : undefined;
 
@@ -47,8 +45,6 @@ const getLanguageModel = (config: ChatConfig) => {
         resourceName: config.azureResourceName,
         baseURL: config.azureBaseUrl,
       });
-      // the Foundry deployments use the Chat Completions API: the Responses API
-      // of the Foundry endpoint rejects image input for mistral-large-3
       return config.azureChatCompletions
         ? azure.chat(config.modelId)
         : azure(config.modelId);

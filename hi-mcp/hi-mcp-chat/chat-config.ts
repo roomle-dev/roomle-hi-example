@@ -106,7 +106,7 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
     return { provider: 'google', modelId: lower };
   }
   throw new ChatRequestError(
-    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, gpt-6-astra, or a full mistral-*/claude-*/gemini-* model id`
+    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, mistral-large-4, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, gpt-6-astra, or a full mistral-*/claude-*/gemini-* model id`
   );
 };
 

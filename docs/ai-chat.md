@@ -15,6 +15,7 @@ the MCP server from
 ```bash
 npm start mistral <api-key>           # mistral-large-latest (default)
 npm start mistral-medium <api-key>   # mistral-medium-latest
+npm start mistral-large-4 <api-key>  # mistral-large-4-0
 npm start claude <api-key>           # claude-sonnet-4-5
 npm start gemini <api-key>           # gemini-2.5-pro (Gemini API key from Google AI Studio)
 npm start azure <api-key>            # gpt-4o deployment (see below)

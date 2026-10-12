@@ -25,6 +25,9 @@ export interface ChatModel {
   provider: ChatProvider;
   modelId: string;
   baseUrl?: string;
+  // the Foundry deployments are reached through the Chat Completions API: the
+  // Responses API of the Foundry endpoint rejects image input for mistral-large-3
+  chatCompletions?: boolean;
 }
 
 // Deployments on the HI Azure AI Foundry resource, reached through its OpenAI
@@ -78,7 +81,12 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
   const name = requested ?? 'mistral';
   const lower = name.toLowerCase();
   if (Object.hasOwn(FOUNDRY_DEPLOYMENTS, lower)) {
-    return { provider: 'azure', modelId: lower, baseUrl: FOUNDRY_BASE_URL };
+    return {
+      provider: 'azure',
+      modelId: lower,
+      baseUrl: FOUNDRY_BASE_URL,
+      chatCompletions: true,
+    };
   }
   for (const provider of Object.keys(
     PROVIDER_MODEL_ALIASES
@@ -142,6 +150,8 @@ export interface ChatConfig {
   imageInput: boolean;
   azureResourceName: string | undefined;
   azureBaseUrl: string | undefined;
+  // the azure model is reached through the Chat Completions API instead of the Responses API
+  azureChatCompletions: boolean;
   mcpUrl: string;
   pageOrigins: string[];
   turnTimeoutMs: number;
@@ -165,6 +175,7 @@ export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
     imageInput: readsImages(chatModel.provider, modelId),
     azureResourceName: env.AZURE_RESOURCE_NAME || undefined,
     azureBaseUrl: chatModel.baseUrl,
+    azureChatCompletions: chatModel.chatCompletions === true,
     mcpUrl: env.HI_MCP_URL || DEFAULT_MCP_URL,
     pageOrigins: env.HI_CHAT_PAGE_ORIGINS
       ? env.HI_CHAT_PAGE_ORIGINS.split(',')

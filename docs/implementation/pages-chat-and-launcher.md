@@ -142,6 +142,12 @@ The reasoning effort is passed as `providerOptions.azure.reasoningEffort` to the
 `HI_CHAT_REASONING_EFFORT`, else the Foundry deployment's effort in `FOUNDRY_DEPLOYMENTS` (`high`
 for gpt-5.4-mini and gpt-5-mini, none for gpt-6-astra).
 
+The Foundry deployments are called through the Chat Completions API (`azure.chat(deployment)`,
+`chatCompletions` in `chat-config.ts`), not through the Responses API the AI SDK's azure provider
+uses by default: the Responses API of the Foundry endpoint rejects image input for
+`mistral-large-3`, its Chat Completions API accepts it, and the GPT deployments and the reasoning
+effort work on both paths.
+
 ### Images
 
 `readsImages` decides whether a model gets images: every Anthropic and Google model and the ids in

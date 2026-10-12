@@ -39,11 +39,16 @@ const getLanguageModel = (config: ChatConfig) => {
           'AZURE_RESOURCE_NAME is required for the azure provider (the model id is the deployment name - set it with HI_CHAT_MODEL)'
         );
       }
-      return createAzure({
+      const azure = createAzure({
         apiKey,
         resourceName: config.azureResourceName,
         baseURL: config.azureBaseUrl,
-      })(config.modelId);
+      });
+      // the Foundry deployments use the Chat Completions API: the Responses API
+      // of the Foundry endpoint rejects image input for mistral-large-3
+      return config.azureChatCompletions
+        ? azure.chat(config.modelId)
+        : azure(config.modelId);
     default:
       return wrapLanguageModel({
         model: createMistral({ apiKey })(config.modelId),

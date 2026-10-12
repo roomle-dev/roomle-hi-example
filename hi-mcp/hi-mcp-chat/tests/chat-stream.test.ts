@@ -10,7 +10,13 @@ const mocks = vi.hoisted(() => ({
   tools: {} as ToolSet,
   close: vi.fn(),
 }));
-vi.mock('@ai-sdk/azure', () => ({ createAzure: () => () => mocks.model }));
+vi.mock('@ai-sdk/azure', () => ({
+  createAzure: () => {
+    const provider = () => mocks.model;
+    provider.chat = () => mocks.model;
+    return provider;
+  },
+}));
 vi.mock('@ai-sdk/mcp', () => ({
   createMCPClient: async () => ({
     tools: async () => mocks.tools,

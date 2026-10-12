@@ -73,6 +73,16 @@ sets no `temperature`: the GPT deployments are reasoning models and reject it.
 Guarded by `it('resolves the Foundry deployments to the Foundry endpoint')` in
 `hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`.
 
+**Chat Completions, not Responses.** The Foundry deployments are called through the Chat
+Completions API (`azure.chat(deployment)` in `chat-stream.ts`, `chatCompletions` in
+`chat-config.ts`), not through the Responses API the AI SDK's azure provider uses by default. The
+Responses API of the Foundry endpoint rejects image input for `mistral-large-3` with
+`Model 'Mistral-Large-3' does not support image inputs`, while its Chat Completions API accepts the
+same image. The GPT deployments and the reasoning effort work on both paths, so the chat uses the
+Chat Completions API for every Foundry deployment. Guarded by
+`it('resolves the Foundry deployments to the Foundry endpoint')` in
+`hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`.
+
 **Reasoning effort.** The chat sends the lightweight deployments gpt-5.4-mini and gpt-5-mini the
 reasoning effort `high` (`providerOptions.azure.reasoningEffort`, from `FOUNDRY_DEPLOYMENTS` in
 `chat-config.ts`): accuracy goes over speed, and they plan worse than gpt-6-astra. gpt-6-astra runs

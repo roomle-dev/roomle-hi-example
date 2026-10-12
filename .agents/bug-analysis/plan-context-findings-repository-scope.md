@@ -4,7 +4,6 @@
 > **Status**: Open — brief repository-scope analysis; no implementation
 > **Ticket**: [RML-18103](https://roomle.atlassian.net/browse/RML-18103)
 > **Jira comment**: [Repository-scope table](https://roomle.atlassian.net/browse/RML-18103?focusedCommentId=156000)
-> **Backlog**: [Open findings about the plan context](../backlog/plan-context-open-findings.md)
 
 ## Affected repositories
 

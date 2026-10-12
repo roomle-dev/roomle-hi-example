@@ -41,7 +41,6 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 | A group the planner leaves out is not reported | `create-or-replace-groups` treats a non-empty load as success, so a group of the call the planner does not build is not named in `notLoaded`. Needs per-input outcomes from the planner (roomle-ui contract); counting runtime ids is ambiguous with split and generated groups | [planner-load-outcome-per-group.md](planner-load-outcome-per-group.md) |
 | Article template geometry in the plan context | Measure the cost of calculating the article templates, then let the plan context carry docking vectors and corner points for every article, and remove the server's probe | [roomle-ui-article-template-geometry.md](roomle-ui-article-template-geometry.md) |
 | One planner undo step per tool call | roomle-ui and hi-mcp: settle completed commands so undo can run; resolve `externalObjectGroupOperation` after its follow-up, and group a tool call into one step | [one-undo-step-per-tool-call.md](one-undo-step-per-tool-call.md) |
-| Open findings about the plan context | The kernel's outline of an HI group lies off the group (RML-18138) | [plan-context-open-findings.md](plan-context-open-findings.md) |
 
 ## Chat
 

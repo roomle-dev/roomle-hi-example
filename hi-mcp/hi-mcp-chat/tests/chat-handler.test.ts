@@ -51,6 +51,7 @@ describe('getChatConfig', () => {
     expect(config.modelId).toBe('mistral-large-latest');
     expect(config.azureResourceName).toBeUndefined();
     expect(config.azureBaseUrl).toBeUndefined();
+    expect(config.azureChatCompletions).toBe(false);
     expect(config.mcpUrl).toBe('http://localhost:3100/mcp');
     expect(config.pageOrigins).toEqual([
       'http://localhost:3000',
@@ -112,6 +113,10 @@ describe('getChatConfig', () => {
       provider: 'mistral',
       modelId: 'mistral-medium-latest',
     });
+    expect(resolveChatModel('mistral-large-4')).toEqual({
+      provider: 'mistral',
+      modelId: 'mistral-large-4-0',
+    });
     expect(resolveChatModel('mistral-small-latest')).toEqual({
       provider: 'mistral',
       modelId: 'mistral-small-latest',
@@ -160,16 +165,32 @@ describe('getChatConfig', () => {
       provider: 'azure',
       modelId: 'gpt-5-mini',
       baseUrl: foundryBaseUrl,
+      chatCompletions: true,
     });
     expect(resolveChatModel('gpt-5.4-mini')).toEqual({
       provider: 'azure',
       modelId: 'gpt-5.4-mini',
       baseUrl: foundryBaseUrl,
+      chatCompletions: true,
     });
     expect(resolveChatModel('gpt-6-astra')).toEqual({
       provider: 'azure',
       modelId: 'gpt-6-astra',
       baseUrl: foundryBaseUrl,
+      chatCompletions: true,
+    });
+    // mistral-large-3 is served from the Foundry resource, an exception to the mistral provider
+    expect(resolveChatModel('mistral-large-3')).toEqual({
+      provider: 'azure',
+      modelId: 'mistral-large-3',
+      baseUrl: foundryBaseUrl,
+      chatCompletions: true,
+    });
+    expect(resolveChatModel('Mistral-Large-3')).toEqual({
+      provider: 'azure',
+      modelId: 'mistral-large-3',
+      baseUrl: foundryBaseUrl,
+      chatCompletions: true,
     });
     expect(resolveChatModel('openai')).toEqual({
       provider: 'azure',
@@ -179,6 +200,7 @@ describe('getChatConfig', () => {
     expect(config.provider).toBe('azure');
     expect(config.modelId).toBe('gpt-5.4-mini');
     expect(config.azureBaseUrl).toBe(foundryBaseUrl);
+    expect(config.azureChatCompletions).toBe(true);
     expect(
       getChatConfig({
         HI_CHAT_PROVIDER: 'gpt-5-mini',
@@ -188,6 +210,9 @@ describe('getChatConfig', () => {
     expect(
       getChatConfig({ HI_CHAT_PROVIDER: 'azure' }).azureBaseUrl
     ).toBeUndefined();
+    expect(
+      getChatConfig({ HI_CHAT_PROVIDER: 'azure' }).azureChatCompletions
+    ).toBe(false);
   });
 
   it('gives the lightweight GPT deployments reasoning effort high', () => {
@@ -219,6 +244,7 @@ describe('getChatConfig', () => {
       getChatConfig(env).imageInput;
     expect(imageInput({})).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-medium' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-large-3' })).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'claude' })).toBe(true);
     expect(
       imageInput({

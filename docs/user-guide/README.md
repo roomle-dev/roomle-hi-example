@@ -82,7 +82,7 @@ https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key
 ```
 
 - `<model>` — one of `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, `mistral-large-latest`,
-  `mistral-medium-latest`
+  `mistral-medium-latest`, `mistral-large-3`
 - `<key>` — the API key of that model
 - add `&id=<plan id>` to open a saved plan; without it you start planning from the store
 

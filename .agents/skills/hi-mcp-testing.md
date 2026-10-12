@@ -51,7 +51,8 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
   the model the provider name resolves to: `readsImages(resolveChatModel(<provider>))` in
   [chat-config.ts](../../hi-mcp/hi-mcp-chat/chat-config.ts).
   - Every alias of the launcher reads images: `claude`, `anthropic`, `gemini`, `gemini-pro`,
-    `gemini-flash`, `google`, `mistral`, `mistral-large`, `mistral-medium`, `azure`, `openai`, and
+    `gemini-flash`, `google`, `mistral`, `mistral-large`, `mistral-medium`, `mistral-large-3`,
+    `mistral-large-4`, `azure`, `openai`, and
     the deployments `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`; so does every full `claude-*` and
     `gemini-*` id.
   - A full `mistral-*` id, or an Azure deployment named by `HI_CHAT_MODEL`, reads images only if it

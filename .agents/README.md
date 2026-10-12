@@ -83,23 +83,10 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
-| [PR review: random test counts and prompt expectations](bug-analysis/pr-review-random-count-and-prompt-expectations.md) | Fixed locally — PR review fixes | 2026-10-11 |
-| [Preserve the final failed MCP test attempt when resuming](bug-analysis/mcp-test-exhausted-retry-result.md) | Fixed locally — not landed | 2026-10-11 |
 | [The image planning on the right wall run ends in a provider connection reset](bug-analysis/image-planning-right-wall-connection-reset.md) | Open — analysis; transport failure, no product defect | 2026-10-11 |
 | [The group load result names per input group what the planner built](bug-analysis/group-load-result-per-input-group.md) | Open — analysis | 2026-10-10 |
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](bug-analysis/sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | 2026-10-10 |
-| [Preserve completed tool outcomes and clarify calculation recovery advice](bug-analysis/pr-review-tool-outcomes-and-calculation-advice.md) | Fixed locally — PR review fixes | 2026-10-10 |
-| [Explain root outlines that extend over a neighbour](bug-analysis/root-outline-overhang-explanation.md) | Fixed locally — MCP wording; library follow-up in #60 | 2026-10-10 |
-| [Report calculation errors of newly loaded groups](bug-analysis/new-group-calculation-feedback.md) | Fixed locally — not landed | 2026-10-10 |
 | [Plan-context findings: affected repositories](bug-analysis/plan-context-findings-repository-scope.md) | Open — kernel and library scope remains | 2026-10-10 |
-| [Snapshot loss after a prompt test page navigates](bug-analysis/mcp-test-navigation-snapshot-loss.md) | Fixed locally — not landed | 2026-10-09 |
-| [Reserve a final answer step in the store chat](bug-analysis/store-chat-final-answer-step.md) | Fixed locally — not landed | 2026-10-09 |
-| [Readable article and wall names in row-edit feedback](bug-analysis/readable-row-edit-feedback.md) | Fixed locally — MCP change unlanded; UI change released | 2026-10-09 |
-| [Preserve the outcome when a provider failure interrupts a chat turn](bug-analysis/chat-provider-failure-recovery.md) | Fixed locally — interrupted turns recovered; provider cause unconfirmed | 2026-10-09 |
-| [Connect a store planner to an external MCP agent without built-in chat](bug-analysis/external-agent-store-bridge.md) | Fixed locally — independent bridge and matching session links | 2026-10-09 |
-| [Build the Cloudflare MCP image from the repository lockfile](bug-analysis/cloudflare-image-root-lockfile.md) | Fixed locally — root lockfile and build context | 2026-10-09 |
-| [Forward launcher flags through the root npm scripts](bug-analysis/root-launcher-flags.md) | Fixed locally — direct Node invocation | 2026-10-09 |
-| [Stop the example servers when the launcher receives SIGTERM](bug-analysis/launcher-sigterm-shutdown.md) | Fixed locally — direct server children and signal checks | 2026-10-09 |
 
 ### Feature Analyses
 
@@ -108,11 +95,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Retry a failed test run two or three times](feature-analysis/retry-failed-test-runs.md) | Implemented locally — not landed | 2026-10-11 |
 | [Article template geometry in the plan context](feature-analysis/article-template-geometry-in-plan-context.md) | Open | 2026-10-10 |
-| [Explain the door or window a placement keeps clear](feature-analysis/explain-opening-clearance.md) | Implemented locally — not landed | 2026-10-09 |
-| [A reasoning effort per GPT chat model](feature-analysis/reasoning-effort-per-gpt-chat-model.md) | Open — example high effort landed; store effort and measurement open | 2026-10-07 |
-| [A reasoning effort per GPT chat model: implementation plan](feature-analysis/reasoning-effort-per-gpt-chat-model-implementation-plan.md) | Open — example high effort landed; store effort and measurement open | 2026-10-07 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
 ### Refactoring Analyses

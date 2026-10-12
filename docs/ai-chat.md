@@ -363,8 +363,8 @@ turn timeout — ends the stream with an `[error] …` line.
 | `HI_CHAT_TOKEN` | — | The provider API key (set by the launcher from the CLI argument) |
 | `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `mistral-large-3`, `mistral-large-4`, `claude`, `gemini`, `azure`, `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, or a full `mistral-*`/`claude-*`/`gemini-*` model id) |
 | `HI_CHAT_PORT` | `3200` | Port of the chat backend (the page reads it via the `chat_port` query parameter) |
-| `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider; ignored for `gpt-5-mini`/`gpt-5.4-mini`/`gpt-6-astra` |
-| `AZURE_RESOURCE_NAME` | — | Required for `azure`/`openai`: the Azure OpenAI resource name (ignored for `gpt-5-mini`/`gpt-5.4-mini`/`gpt-6-astra`) |
+| `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider; ignored for the Foundry deployments `gpt-5-mini`/`gpt-5.4-mini`/`gpt-6-astra`/`mistral-large-3` |
+| `AZURE_RESOURCE_NAME` | — | Required for `azure`/`openai`: the Azure OpenAI resource name (ignored for the Foundry deployments `gpt-5-mini`/`gpt-5.4-mini`/`gpt-6-astra`/`mistral-large-3`) |
 | `HI_MCP_URL` | `http://localhost:3100/mcp` | The MCP server the chat backend connects to |
 | `HI_CHAT_PAGE_ORIGINS` | `http://localhost:3000`, `http://127.0.0.1:3000` | Allowed CORS origins (the launcher sets it to match `EXAMPLE_PORT`) |
 | `HI_CHAT_TURN_TIMEOUT_MS` | `300000` | A turn that has not answered within this time is aborted and ends with an `[error]` line naming the limit; the plan keeps what the tools changed |

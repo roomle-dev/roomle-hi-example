@@ -13,7 +13,8 @@
 //                  session = the OS user name; page port 3000 only)
 // AI chat:        npm start mistral <api-key>          (mistral-large-latest)
 //                  npm start mistral-medium <api-key>   (mistral-medium-latest)
-//                  npm start mistral-large-3 <api-key>  (mistral-large-3-25-12)
+//                  npm start mistral-large-3 <api-key>  (mistral-large-3 deployment
+//                                                          on the HI Azure AI Foundry resource)
 //                  npm start claude <api-key>           (claude-sonnet-4-5)
 //                  npm start gemini <api-key>           (gemini-2.5-pro; gemini-flash: gemini-2.5-flash)
 //                  npm start azure <api-key>            (gpt-4o deployment; also set

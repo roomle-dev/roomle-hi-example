@@ -140,7 +140,9 @@ base64 data URLs on user messages. Response: `text/plain`, streamed — the mode
 
 The reasoning effort is passed as `providerOptions.azure.reasoningEffort` to the Azure models:
 `HI_CHAT_REASONING_EFFORT`, else the Foundry deployment's effort in `FOUNDRY_DEPLOYMENTS` (`high`
-for gpt-5.4-mini and gpt-5-mini, none for gpt-6-astra).
+for gpt-5.4-mini and gpt-5-mini, none for gpt-6-astra). A turn that carries tools sends no
+reasoning effort: the Chat Completions API rejects function tools together with a reasoning effort,
+so the deployment runs at its own default for that turn.
 
 The Foundry deployments are called through the Chat Completions API (`azure.chat(deployment)`,
 `chatCompletions` in `chat-config.ts`), not through the Responses API the AI SDK's azure provider

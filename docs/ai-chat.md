@@ -88,7 +88,10 @@ Chat Completions API for every Foundry deployment. Guarded by
 reasoning effort `high` (`providerOptions.azure.reasoningEffort`, from `FOUNDRY_DEPLOYMENTS` in
 `chat-config.ts`): accuracy goes over speed, and they plan worse than gpt-6-astra. gpt-6-astra runs
 at its default. `HI_CHAT_REASONING_EFFORT` overrides the effort of every GPT deployment; Mistral,
-Anthropic and Google models get none. Guarded by
+Anthropic and Google models get none. A turn that carries tools sends no reasoning effort at all:
+the Chat Completions API rejects function tools together with a reasoning effort
+(`Function tools with reasoning_effort are not supported`), so the deployment runs at its own
+default for that turn. Guarded by
 `it('gives the lightweight GPT deployments reasoning effort high')` in
 `hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`. The defaults measured on the Foundry resource
 (2026-10-07): gpt-5.4-mini does not reason (0 reasoning tokens in every step), gpt-5-mini and

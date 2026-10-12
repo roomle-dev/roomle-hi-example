@@ -17,9 +17,12 @@ import {
 import { toolResultFilesAsUserMessages } from './tool-result-images';
 import { createChatRecovery } from './chat-recovery';
 
-// The reasoning effort reaches the GPT deployments as a provider option.
-const providerOptions = (config: ChatConfig) =>
-  config.reasoningEffort && config.provider === 'azure'
+// The reasoning effort reaches the GPT deployments as a provider option. The
+// Chat Completions API rejects function tools together with a reasoning effort
+// ("Function tools with reasoning_effort are not supported"), so a turn that
+// carries tools sends none: the deployment then runs at its own default.
+const providerOptions = (config: ChatConfig, hasTools: boolean) =>
+  config.reasoningEffort && config.provider === 'azure' && !hasTools
     ? { azure: { reasoningEffort: config.reasoningEffort } }
     : undefined;
 
@@ -124,6 +127,7 @@ export const createStreamChat =
       );
       const model = getLanguageModel(config);
       const stepLog = createStepLog();
+      const options = providerOptions(config, toolNames.length > 0);
       const result = streamText({
         model,
         instructions: CHAT_SYSTEM_PROMPT,
@@ -137,9 +141,7 @@ export const createStreamChat =
         // "assistant is working…" without end.
         abortSignal: AbortSignal.timeout(config.turnTimeoutMs),
         onStepEnd: stepLog.onStepEnd,
-        ...(providerOptions(config) && {
-          providerOptions: providerOptions(config),
-        }),
+        ...(options && { providerOptions: options }),
       });
       // Mid-stream failures (Mistral auth, tool relay) surface as [error] parts
       // in the stream - the response has already started by then.

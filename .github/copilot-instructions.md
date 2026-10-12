@@ -275,6 +275,20 @@ HOMAG Intelligence (HI) is a system for kitchen cabinet management, price calcul
 - Error responses from the page should be relayed back to the MCP client
 - Connection state should be tracked and logged
 
+### Library-Neutral
+
+The MCP server serves every HI library, not only Furniture_Smith. The served rules, the tool
+descriptions, the results and the server's logic contain no information about a specific library —
+no article, category, attribute, value or measure of one library, not even as an example. The only
+source of library information is the library data: the master data and the article list, and in
+them the `desc` properties. When an agent picks the wrong library content because it lacks
+information, the fix is the desc in the library data, never a served rule. See §2.4 of
+[`docs/hi-mcp-behaviour.md`](../docs/hi-mcp-behaviour.md#24-instructions).
+
+The policy covers the served text, the results and the server's logic only. Code comments, tests
+and markdown files are no violation: a comment, a test fixture or a README example may name a
+library's content freely.
+
 ### Guards Are a Last Resort
 
 A **guard** is a check in the MCP server that refuses an agent's input because it identifies the

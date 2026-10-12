@@ -112,6 +112,18 @@ describe('getChatConfig', () => {
       provider: 'mistral',
       modelId: 'mistral-medium-latest',
     });
+    expect(resolveChatModel('mistral-large-3')).toEqual({
+      provider: 'mistral',
+      modelId: 'mistral-large-3-25-12',
+    });
+    expect(resolveChatModel('Mistral-Large-3')).toEqual({
+      provider: 'mistral',
+      modelId: 'mistral-large-3-25-12',
+    });
+    expect(resolveChatModel('mistral-large-4')).toEqual({
+      provider: 'mistral',
+      modelId: 'mistral-large-4-0',
+    });
     expect(resolveChatModel('mistral-small-latest')).toEqual({
       provider: 'mistral',
       modelId: 'mistral-small-latest',

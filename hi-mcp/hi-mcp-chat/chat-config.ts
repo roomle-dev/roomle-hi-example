@@ -50,6 +50,8 @@ export const PROVIDER_MODEL_ALIASES: Record<
     mistral: 'mistral-large-latest',
     'mistral-large': 'mistral-large-latest',
     'mistral-medium': 'mistral-medium-latest',
+    'mistral-large-3': 'mistral-large-3-25-12',
+    'mistral-large-4': 'mistral-large-4-0',
   },
   anthropic: {
     anthropic: 'claude-sonnet-4-5',
@@ -70,26 +72,29 @@ export const PROVIDER_MODEL_ALIASES: Record<
 };
 
 export const resolveChatModel = (requested: string | undefined): ChatModel => {
+  // Provider names and model ids are matched case-insensitively (`Mistral-Large-3`),
+  // and the resolved model id is lowercased, since every provider model id is lowercase.
   const name = requested ?? 'mistral';
-  if (Object.hasOwn(FOUNDRY_DEPLOYMENTS, name)) {
-    return { provider: 'azure', modelId: name, baseUrl: FOUNDRY_BASE_URL };
+  const lower = name.toLowerCase();
+  if (Object.hasOwn(FOUNDRY_DEPLOYMENTS, lower)) {
+    return { provider: 'azure', modelId: lower, baseUrl: FOUNDRY_BASE_URL };
   }
   for (const provider of Object.keys(
     PROVIDER_MODEL_ALIASES
   ) as ChatProvider[]) {
-    const modelId = PROVIDER_MODEL_ALIASES[provider][name];
+    const modelId = PROVIDER_MODEL_ALIASES[provider][lower];
     if (modelId) {
       return { provider, modelId };
     }
   }
-  if (name.startsWith('mistral')) {
-    return { provider: 'mistral', modelId: name };
+  if (lower.startsWith('mistral')) {
+    return { provider: 'mistral', modelId: lower };
   }
-  if (name.startsWith('claude')) {
-    return { provider: 'anthropic', modelId: name };
+  if (lower.startsWith('claude')) {
+    return { provider: 'anthropic', modelId: lower };
   }
-  if (name.startsWith('gemini-')) {
-    return { provider: 'google', modelId: name };
+  if (lower.startsWith('gemini-')) {
+    return { provider: 'google', modelId: lower };
   }
   throw new ChatRequestError(
     `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, gpt-6-astra, or a full mistral-*/claude-*/gemini-* model id`
@@ -115,6 +120,8 @@ export const DEFAULT_IMAGE_PROMPT =
 export const IMAGE_INPUT_MODELS = [
   'mistral-large-latest',
   'mistral-medium-latest',
+  'mistral-large-3-25-12',
+  'mistral-large-4-0',
   'gpt-4o',
   'gpt-5-mini',
   'gpt-5.4-mini',

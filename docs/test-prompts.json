@@ -12,6 +12,10 @@
     {
       "provider": "gpt-6-astra",
       "apiKey": "$AZURE_GPT_KEY"
+    },
+    {
+      "provider": "Mistral-Large-3",
+      "apiKey": "$AZURE_GPT_KEY"
     }
   ],
   "plans": {

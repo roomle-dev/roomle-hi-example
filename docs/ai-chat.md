@@ -32,6 +32,8 @@ The provider name selects the provider and model:
 | `mistral` | Mistral | `mistral-large-latest` (default) |
 | `mistral-medium` | Mistral | `mistral-medium-latest` |
 | `mistral-large` | Mistral | `mistral-large-latest` |
+| `mistral-large-3` | Mistral | `mistral-large-3-25-12` |
+| `mistral-large-4` | Mistral | `mistral-large-4-0` |
 | any `mistral-*` model id | Mistral | passed through (e.g. `mistral-small-latest`) |
 | `claude` / `anthropic` | Anthropic | `claude-sonnet-4-5` |
 | `claude-sonnet` | Anthropic | `claude-sonnet-4-5` |
@@ -42,6 +44,9 @@ The provider name selects the provider and model:
 | any `gemini-*` model id | Google (Gemini API) | passed through (e.g. `gemini-3-pro-preview`) |
 | `azure` / `openai` | Azure OpenAI | `gpt-4o` (deployment name — see below) |
 | `gpt-5-mini` / `gpt-5.4-mini` / `gpt-6-astra` | Azure OpenAI (HI Azure AI Foundry resource) | the deployment of the same name |
+
+Provider names and model ids are matched case-insensitively, so `Mistral-Large-3`
+and `mistral-large-3` are the same request.
 
 Node 20+ (the repository's minimum). The Vercel AI SDK packages declare
 `engines: node >= 22`; the chat is verified on Node 20, but stay on Node 22+
@@ -208,7 +213,8 @@ The chat takes an image only when the model reads images. The chat backend
 decides this from the model id it resolved (`readsImages` in
 `hi-mcp/hi-mcp-chat/chat-config.ts`): every Anthropic and Google model, and
 from the other providers the ids in `IMAGE_INPUT_MODELS`:
-`mistral-large-latest`, `mistral-medium-latest`, `gpt-4o`, `gpt-5-mini`,
+`mistral-large-latest`, `mistral-medium-latest`, `mistral-large-3-25-12`,
+`mistral-large-4-0`, `gpt-4o`, `gpt-5-mini`,
 `gpt-5.4-mini` and `gpt-6-astra`. Any other id gets no image input. That includes a pass-through
 `mistral-*` id and an Azure deployment named with `HI_CHAT_MODEL`: an unknown
 model gets no image feature rather than a provider error halfway through a
@@ -343,7 +349,7 @@ turn timeout — ends the stream with an `[error] …` line.
 | Variable | Default | Meaning |
 | -------- | ------- | ------- |
 | `HI_CHAT_TOKEN` | — | The provider API key (set by the launcher from the CLI argument) |
-| `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `claude`, `gemini`, `azure`, `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, or a full `mistral-*`/`claude-*`/`gemini-*` model id) |
+| `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `mistral-large-3`, `mistral-large-4`, `claude`, `gemini`, `azure`, `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, or a full `mistral-*`/`claude-*`/`gemini-*` model id) |
 | `HI_CHAT_PORT` | `3200` | Port of the chat backend (the page reads it via the `chat_port` query parameter) |
 | `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider; ignored for `gpt-5-mini`/`gpt-5.4-mini`/`gpt-6-astra` |
 | `AZURE_RESOURCE_NAME` | — | Required for `azure`/`openai`: the Azure OpenAI resource name (ignored for `gpt-5-mini`/`gpt-5.4-mini`/`gpt-6-astra`) |

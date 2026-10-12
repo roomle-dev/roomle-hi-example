@@ -13,6 +13,7 @@
 //                  session = the OS user name; page port 3000 only)
 // AI chat:        npm start mistral <api-key>          (mistral-large-latest)
 //                  npm start mistral-medium <api-key>   (mistral-medium-latest)
+//                  npm start mistral-large-3 <api-key>  (mistral-large-3-25-12)
 //                  npm start claude <api-key>           (claude-sonnet-4-5)
 //                  npm start gemini <api-key>           (gemini-2.5-pro; gemini-flash: gemini-2.5-flash)
 //                  npm start azure <api-key>            (gpt-4o deployment; also set
@@ -61,6 +62,8 @@ const CHAT_PROVIDERS = [
   'mistral',
   'mistral-medium',
   'mistral-large',
+  'mistral-large-3',
+  'mistral-large-4',
   'anthropic',
   'claude',
   'google',
@@ -73,11 +76,17 @@ const CHAT_PROVIDERS = [
   'gpt-5.4-mini',
   'gpt-6-astra',
 ];
-const isChatProvider = (name) =>
-  CHAT_PROVIDERS.includes(name) ||
-  name.startsWith('mistral-') ||
-  name.startsWith('claude-') ||
-  name.startsWith('gemini-');
+// Provider names are matched case-insensitively, so `Mistral-Large-3` and
+// `mistral-large-3` both work; the chat backend lowercases the same way.
+const isChatProvider = (name) => {
+  const lower = name.toLowerCase();
+  return (
+    CHAT_PROVIDERS.includes(lower) ||
+    lower.startsWith('mistral-') ||
+    lower.startsWith('claude-') ||
+    lower.startsWith('gemini-')
+  );
+};
 const parseChatArgs = () => {
   const positionalArgs = process.argv
     .slice(2)

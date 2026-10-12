@@ -95,7 +95,7 @@ The start script (`npm start`) provides:
 - Static file serving for the example HTML page on port 3000
 - The MCP server on port 3100 with its MCP endpoint (`POST /mcp`, Streamable HTTP)
 - A page bridge (WebSocket `/bridge`) relaying the tools' planner method calls to the Roomle planner API via `roomDesignerApi.extended`
-- With `npm start <provider> <api-key>` (providers: `mistral`/`mistral-medium`/`mistral-large`, `claude`/`anthropic`, `azure`, or any `mistral-*`/`claude-*` model id): the AI chat backend on port 3200 (Vercel AI SDK) and the page opened with the chat window visible
+- With `npm start <provider> <api-key>` (providers: `mistral`/`mistral-medium`/`mistral-large`/`mistral-large-3`/`mistral-large-4`, `claude`/`anthropic`, `azure`, or any `mistral-*`/`claude-*` model id): the AI chat backend on port 3200 (Vercel AI SDK) and the page opened with the chat window visible
 - Browser auto-open at the example URL
 
 ## Repository Structure

@@ -113,7 +113,7 @@ server; the server terminal logs `page connected`.
 | --------- | ------ |
 | `store.stage=INT` | Selects the `bo-test` UI + `HI_PRE_Roomle_Milestone_2` HI backend the tools run against |
 | `id=<plan id>` | Loads a plan / plan snapshot into the planner (a `ps_…` id from the INT environment) |
-| `model=<model>`, `api_key=<key>` | Show the optional store chat when `mcp_server` is set. `model` is one of `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, `mistral-large-latest`, `mistral-medium-latest` |
+| `model=<model>`, `api_key=<key>` | Show the optional store chat when `mcp_server` is set. `model` is one of `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, `mistral-large-latest`, `mistral-medium-latest`, `mistral-large-3-25-12` |
 | `mcp_server=<url>` | The MCP server of the chat and the bridge: `http://localhost:3100` locally, or a deployment such as `https://hi-mcp-poc.hi-orchestrator.workers.dev` — `http(s)` or `ws(s)` both accepted. Required: without it the store starts no bridge |
 | `mcp_session=<name>` | Optional shared session for an external MCP client on Cloudflare; a store page without it generates a fresh session per page. Local servers ignore the session for routing. |
 

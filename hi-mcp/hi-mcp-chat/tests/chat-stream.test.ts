@@ -9,11 +9,13 @@ const mocks = vi.hoisted(() => ({
   model: undefined as unknown,
   tools: {} as ToolSet,
   close: vi.fn(),
+  responsesModel: undefined as unknown,
+  chatModel: undefined as unknown,
 }));
 vi.mock('@ai-sdk/azure', () => ({
   createAzure: () => {
-    const provider = () => mocks.model;
-    provider.chat = () => mocks.model;
+    const provider = () => mocks.responsesModel;
+    provider.chat = () => mocks.chatModel;
     return provider;
   },
 }));
@@ -59,12 +61,13 @@ const fakeTool = (execute: () => Promise<unknown>) =>
     inputSchema: jsonSchema({ type: 'object', properties: {} }),
     execute,
   });
-const response = async (timeout = 1000) => {
+const response = async (timeout = 1000, model = 'gpt-5-mini') => {
   const streamChat = createStreamChat(
     getChatConfig({
-      HI_CHAT_PROVIDER: 'gpt-5-mini',
+      HI_CHAT_PROVIDER: model,
       HI_CHAT_TOKEN: 'test',
       HI_CHAT_TURN_TIMEOUT_MS: String(timeout),
+      AZURE_RESOURCE_NAME: 'test-resource',
     })
   );
   return (
@@ -101,6 +104,54 @@ const failingModel = (calls: Part[], mode: 'error' | 'throw' = 'error') => {
 afterEach(() => {
   vi.restoreAllMocks();
   mocks.close.mockClear();
+  mocks.responsesModel = undefined;
+  mocks.chatModel = undefined;
+});
+
+describe('azure model selection', () => {
+  it('reaches a Foundry deployment through the Chat Completions API', async () => {
+    mocks.tools = {};
+    mocks.responsesModel = new MockLanguageModelV3({
+      doStream: async () => ({
+        stream: convertArrayToReadableStream([
+          ...text('wrong API'),
+          finish('stop'),
+        ]),
+      }),
+    });
+    mocks.chatModel = new MockLanguageModelV3({
+      doStream: async () => ({
+        stream: convertArrayToReadableStream([
+          ...text('The cabinets are ready.'),
+          finish('stop'),
+        ]),
+      }),
+    });
+    expect(await response(undefined, 'mistral-large-3')).toBe(
+      'The cabinets are ready.'
+    );
+  });
+
+  it('reaches a plain azure deployment through the Responses API', async () => {
+    mocks.tools = {};
+    mocks.responsesModel = new MockLanguageModelV3({
+      doStream: async () => ({
+        stream: convertArrayToReadableStream([
+          ...text('The cabinets are ready.'),
+          finish('stop'),
+        ]),
+      }),
+    });
+    mocks.chatModel = new MockLanguageModelV3({
+      doStream: async () => ({
+        stream: convertArrayToReadableStream([
+          ...text('wrong API'),
+          finish('stop'),
+        ]),
+      }),
+    });
+    expect(await response(undefined, 'azure')).toBe('The cabinets are ready.');
+  });
 });
 
 describe('chat response recovery', () => {
@@ -109,7 +160,7 @@ describe('chat response recovery', () => {
     async (mode) => {
       const read = vi.fn(async () => mcpResult({ rooms: [] }));
       mocks.tools = { 'get-plan-context': fakeTool(read) };
-      mocks.model = failingModel([call('get-plan-context')], mode);
+      mocks.chatModel = failingModel([call('get-plan-context')], mode);
       const answer = await response();
       expect(answer).toContain('[error] Failed to process successful response');
       expect(answer).toContain('reply was interrupted');
@@ -129,7 +180,7 @@ describe('chat response recovery', () => {
       })
     );
     mocks.tools = { 'create-or-replace-groups': fakeTool(write) };
-    mocks.model = failingModel([call('create-or-replace-groups')]);
+    mocks.chatModel = failingModel([call('create-or-replace-groups')]);
     const answer = await response();
     expect(answer).toContain('group-1');
     expect(answer).toContain('catalog-cabinet');
@@ -137,7 +188,9 @@ describe('chat response recovery', () => {
     expect(answer).toContain('Unknown article missing-cabinet');
     expect(answer).not.toContain('nothing was created or changed');
     expect(write).toHaveBeenCalledTimes(1);
-    expect((mocks.model as MockLanguageModelV3).doStreamCalls).toHaveLength(2);
+    expect((mocks.chatModel as MockLanguageModelV3).doStreamCalls).toHaveLength(
+      2
+    );
   });
 
   it('marks an error result or thrown write as unconfirmed beside a successful write', async () => {
@@ -152,7 +205,7 @@ describe('chat response recovery', () => {
         throw new Error('Bridge disconnected');
       }),
     };
-    mocks.model = failingModel(
+    mocks.chatModel = failingModel(
       Object.keys(mocks.tools).map((name) => call(name))
     );
     const answer = await response();
@@ -169,7 +222,7 @@ describe('chat response recovery', () => {
     const error = Object.assign(new Error('Provider failed'), {
       value: { count: 1n },
     });
-    mocks.model = new MockLanguageModelV3({
+    mocks.chatModel = new MockLanguageModelV3({
       doStream: async () => ({
         stream: convertArrayToReadableStream([
           ...text('I started planning.'),
@@ -202,7 +255,7 @@ describe('chat response recovery', () => {
         execute: write,
       }),
     };
-    mocks.model = new MockLanguageModelV3({
+    mocks.chatModel = new MockLanguageModelV3({
       doStream: async () => ({
         stream: convertArrayToReadableStream([
           call('create-or-replace-groups'),
@@ -218,7 +271,7 @@ describe('chat response recovery', () => {
 
   it('keeps a successful answer unchanged', async () => {
     mocks.tools = {};
-    mocks.model = new MockLanguageModelV3({
+    mocks.chatModel = new MockLanguageModelV3({
       doStream: async () => ({
         stream: convertArrayToReadableStream([
           ...text('The cabinets are ready.'),
@@ -243,7 +296,7 @@ describe('chat response recovery', () => {
         ),
       }),
     });
-    mocks.model = model;
+    mocks.chatModel = model;
     const log = vi.spyOn(console, 'log').mockImplementation((message) => {
       if (String(message).startsWith('[hi-chat] tool done:')) {
         throw new Error('Completion logger failed');
@@ -288,7 +341,7 @@ describe('chat response recovery', () => {
         },
       },
     };
-    mocks.model = failingModel([call('create-or-replace-groups')]);
+    mocks.chatModel = failingModel([call('create-or-replace-groups')]);
     const answer = await response();
     expect(answer).toContain('group-in-failed-step');
     expect(answer).toContain('reply was interrupted');

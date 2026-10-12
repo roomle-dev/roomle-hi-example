@@ -32,12 +32,7 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 | Item | To do | Priority |
 |---|---|---|
 | Served text encodes a kitchen taxonomy | `hi-mcp-server.ts`: `AUTHORING_RULES`, `INSTRUCTIONS` and the tool descriptions reason in base/wall/tall units, worktop, hood and island as if every library were a kitchen, and carry one library's concrete content and fixed measures. Rewrite so the rules speak of articles, root modules, relations and docking vectors | high |
-| Kitchen-kind logic in `group-layout.ts` | Drop the furniture-kind regexes (`WALL_UNIT`, `TALL_UNIT`, `BASE_UNIT`, `HOOD`) and the height-based classification; derive relations from the article's own data | high |
-| The served-text test is weaker than the policy | `hi-mcp-server.test.ts` only rejects "kitchens"; strengthen it to reject one library's concrete content | high |
-| Corner fallback reads category and module names | `group-placement.ts`: `isCornerArticle` falls back on the category and module name; use only the catalog flag and the article's docking data | medium |
 | Spelling correction maps library vocabulary | `tool-executors.ts`: `SPELLINGS` hard-codes search normalization for `colour`/`grey`/`worktop`; drop it or derive it from the master data | medium |
-| Tests use Furniture_Smith fixtures | `group-layout.test.ts`, `group-placement.test.ts`, `tool-executors.test.ts`, `plan-space.test.ts`: replace the real library's categories and modules with neutral fixtures | medium |
-| README examples | Rewrite the examples in the neutral vocabulary | low |
 
 ## Planner (roomle-ui, RoomleCore)
 

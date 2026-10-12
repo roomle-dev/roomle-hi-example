@@ -112,7 +112,9 @@ server uses, because every MCP client supports it.
   value or measure of one library, not even as an example. The only source of library information
   is the library data the plan context passes on: the master data and the article list, and in them
   the `desc` properties (D8). When the agent picks the wrong library content because it lacks
-  information, the fix is the desc in the library data, never a served rule.
+  information, the fix is the desc in the library data, never a served rule. The policy covers the
+  served text, the results and the server's logic only: code comments, tests and markdown files are
+  no violation.
 - **Never mention internals**: `repositioningData`, the anchor frame, the anchor probe, `rootRelPos`,
   `cornerPoint`. `tests/hi-mcp-server.test.ts` guards this
   ("never tells the agent how the server positions a group internally").

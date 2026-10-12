@@ -268,6 +268,10 @@ them the `desc` properties. When an agent picks the wrong library content becaus
 information, the fix is the desc in the library data, never a served rule. See §2.4 of
 [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md#24-instructions).
 
+The policy covers the served text, the results and the server's logic only. Code comments, tests
+and markdown files are no violation: a comment, a test fixture or a README example may name a
+library's content freely.
+
 ### Guards Are a Last Resort
 
 A **guard** is a check in the MCP server that refuses an agent's input because it identifies the

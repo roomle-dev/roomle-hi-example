@@ -41,8 +41,10 @@ mkdir -p "$SESSION"
 node .agents/scripts/update-planning-results.js --model gpt-6-astra --key-env AZURE_GPT_KEY --out "$SESSION" > "$SESSION/update.log" 2>&1
 ```
 
-Start it as **one background command** with a timeout of 30 minutes. A kitchen takes about 1 to
-2.5 minutes with gpt-6-astra, five kitchens about 10 minutes.
+Start it as **one background command** with a timeout of 30 minutes. The script plans every
+`kitchen-<n>` image of `docs/images`; a kitchen takes about 1 to 2.5 minutes with gpt-6-astra, six
+kitchens about 12 minutes. With more than ten kitchen images, raise the timeout by 2.5 minutes per
+kitchen.
 
 The script [update-planning-results.js](../scripts/update-planning-results.js):
 

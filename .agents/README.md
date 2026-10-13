@@ -86,7 +86,6 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | Document | Status | Last touched |
 |---|---|---|
 | [The image planning on the right wall run ends in a provider connection reset](bug-analysis/image-planning-right-wall-connection-reset.md) | Open — analysis; transport failure, no product defect | 2026-10-11 |
-| [The group load result names per input group what the planner built](bug-analysis/group-load-result-per-input-group.md) | Open — analysis | 2026-10-10 |
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](bug-analysis/sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | 2026-10-10 |
 | [Plan-context findings: affected repositories](bug-analysis/plan-context-findings-repository-scope.md) | Open — kernel and library scope remains | 2026-10-10 |
 
@@ -97,6 +96,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
+| [The group load answers per input group what the planner built](feature-analysis/group-load-result-per-input-group.md) | Implemented — roomle-ui branch not merged | 2026-10-13 |
 | [Article template geometry in the plan context](feature-analysis/article-template-geometry-in-plan-context.md) | Open | 2026-10-10 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
@@ -129,7 +129,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 
 | Document | Last touched |
 |---|---|
-| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-11 |
+| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-13 |
 | [Article template geometry in the roomle-ui plan context](backlog/roomle-ui-article-template-geometry.md) — measure, then let the plan context carry every article's docking vectors and corner point, and remove the server's probe where the default variant suffices | 2026-10-07 |
 | [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner detected by the MCP prompt tests, each with the module, team or repository responsible | 2026-10-09 |
 | [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: sink drainer width and the restriction on a hob to its right, handleless fronts | 2026-10-11 |
@@ -137,7 +137,6 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — gpt-5.4-mini plans without reasoning: set an effort per Foundry deployment from the measured data and verify it; further measurement only on request | 2026-10-07 |
 | [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL | 2026-10-09 |
 | [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — access control | 2026-10-09 |
-| [The planner's load result per input group](backlog/planner-load-outcome-per-group.md) — roomle-ui names per input group what it built, so `create-or-replace-groups` reports a group left out in `notLoaded` | 2026-10-07 |
 | [One planner undo step per tool call](backlog/one-undo-step-per-tool-call.md) — roomle-ui resolves a command after its follow-up reload and groups a tool call into one undo step; then the server drops its follow-up wait | 2026-10-07 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-07 |
 | [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-07 |

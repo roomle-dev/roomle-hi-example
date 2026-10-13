@@ -52,7 +52,7 @@ roomle-ui, `packages/web-sdk/packages/homag-intelligence/src/` (D71).
 | `agent-facing.ts` | the plan context the agent sees: `agentFacingArticle` (`isCornerArticle`, `shortDescription`), `agentFacingRooms` (`wallName`, `roomCorners`), `agentFacingObstacles` (`wallOfOpening`) |
 | roomle-ui `hi-tool-commands.ts` | `HiToolPlanner` (what the commands read from the plan and change in it), `HiToolState`, `HI_TOOL_COMMANDS` (one command per plan-changing tool), `runToolCommand` (counts `historySteps` and `historyFollowUps`), `FOLLOW_UP_COMMANDS`, `hasFollowUp`, `placeAtWalls`, `inPlacementFrame`, `withCorrections`, `asTool`, `changedGroupsOnly` |
 | roomle-ui `hi-tool-ids.ts` | article and root id resolution: `catalogArticleId`, `catalogSpellingOf`, `resolveArticleIds`, `removeReferencesTo`, `resolveRootId`, `withPlanRoots`, `rootModulesByGroup`; group lookup: `findGroup` (a root id names the group that holds it: `groupHoldingRoot`), `groupOfRoot`; the agent's group ids: `matchResultGroups`, `resolveAgentGroupIds`, `rememberAgentGroupIds` |
-| roomle-ui `hi-tool-payload.ts` | payload preparation: `dropMalformedDocking`, `liftNestedRoots`, `completeDockingEntries`, `normalizedAttributes`, `reportUnusedFields`, `readDockToAsRelation`, `prepareGroup`; placement normalisation: `normalizePlacement`, `normalizeWallPlacement`, `isWallPlacement`; `toArticlePick`, `generatedRootAttributes`, `reportRevertedReplaces`; partial loads: `NotLoadedGroup`, `keepBuildable`, `nothingLoaded` |
+| roomle-ui `hi-tool-payload.ts` | payload preparation: `dropMalformedDocking`, `liftNestedRoots`, `completeDockingEntries`, `normalizedAttributes`, `reportUnusedFields`, `readDockToAsRelation`, `prepareGroup`; placement normalisation: `normalizePlacement`, `normalizeWallPlacement`, `isWallPlacement`; `toArticlePick`, `generatedRootAttributes`, `readLoadOutcomes`; partial loads: `NotLoadedGroup`, `keepBuildable`, `nothingLoaded` |
 | roomle-ui `hi-tool-docking.ts` | merge-article-into-group target: `articleWidth`, `unitStaysInRoom`, `dockTarget`; row edits: `neighbourTowards`, `insertBetween`; the docking graph and its completion: `sidePartnersOf` (Bottom and Top side vectors, `isSidePair`), `rowWalk`, `separateSideVectorPartners`, `breakRowRings`, `vectorFree`, `connectUnreachedRoots`, `reportUnsentRoots`, `completeDocking`; before the relations `dropUnknownDockingVectors`, `dropFloorUnitsOnBaseUnits`; places in a row: `withRowIndices` |
 | roomle-ui `hi-tool-hints.ts` | row hints: `rowReachHints`, `movedUnitsAboveHint`, `turnedLegHints`, `withRowHints` (with `obstacleHint` against the groups before the edit); the obstacle hint (D55): `objectBlockers`, `rootBlockersBeside`, `freeStretchesNote`, `obstacleHint`, with the geometry of `hi-plan-space.ts` |
 | roomle-ui `hi-tool-attributes.ts` | group-wide attributes: `moveGeneratedRootOverrides`, `applyGroupWideAttributes`, `programsFirst`, `rootValuesOf`, `loadedRootOf`, `groupSettingIdsOf`; library changes: `findLibraryChanges`, `libraryChangeSentences`, `withLibraryChanges` |
@@ -137,17 +137,20 @@ call and is reported in `notLoaded`, the others load
    anchor frame comes from its article template ([The anchor frame](#the-anchor-frame)), and
    `toRepositioningData` derives the planner's repositioning.
 10. **Load:** `loadExternalObjectGroupLayout({ posGroups }, 'posGroups', { reason: 'adjusted' })` of
-    the `HiToolPlanner` — in the planner `createOrReplacePosDataFromArticleLayout` and `loadPosGroups`
-    with the group position. An empty result throws "No groups were created or replaced", with every `notLoaded` reason.
-11. **After the load:** read the groups again. With groups placed by wall, `placeAtWalls` moves
-    none when the planner built more or fewer new groups than the call sent (G60); else it matches
-    the new groups to the call once (`CallGroup.resultId`, which `matchResultGroups` prefers, since
-    the kernel may list a reloaded group elsewhere), computes every target with `wallTarget` — a
-    group of the call counts in the overlap test once it has its target — and reloads them in one
-    load, and names each group that still covers the floor it covered
-    before (`floorCorners`, `sameFloor`, G59) — the load answers with runtime ids, and the group
-    origin moves to another root or corner on a reload; then the groups are read once more. Detect a
-    replace the planner silently reverted (`reportRevertedReplaces`); apply the group-wide attributes
+    the `HiToolPlanner` — in the planner `createOrReplacePosGroupsFromLayout` and `loadPosGroups`
+    with the group position. The load answers per group of the layout (`LayoutGroupOutcome`): the
+    group of the plan it became, the previous group restored because the library could not calculate
+    the replace, with the failed root modules under the ids the call gave them, or why the group was
+    left out (D73). `readLoadOutcomes` sets `CallGroup.resultId` from that answer, the pairing of
+    every later step (`matchResultGroups`), and puts a group left out and a replace restored into
+    `notLoaded`; the group left out leaves the call. A call of which no group was built or restored
+    throws "No groups were created or replaced", with every `notLoaded` reason.
+11. **After the load:** read the groups again. With groups placed by wall, `placeAtWalls`
+    computes every target with `wallTarget` — a group of the call counts in the overlap test once it
+    has its target — and reloads them in one load, and names each group that still covers the floor
+    it covered before (`floorCorners`, `sameFloor`, G59) — the load answers what the planner
+    calculated, not where the group stands, and the group origin moves to another root or corner on
+    a reload; then the groups are read once more. Apply the group-wide attributes
     with one group operation, `change-attributes` (`applyGroupWideAttributes`) —
     every group attribute but the library's group settings, which `groupSettingIdsOf` takes from the
     master data's `groupSettings`, the programs first (`programsFirst`), and a root module's own value
@@ -155,7 +158,7 @@ call and is reported in `notLoaded`, the others load
     agent's group ids (`rememberAgentGroupIds`); hint at unpositioned groups. The
     reads after the load take `groups`, `obstacles` and `rooms`. The final calculated groups are read
     for calculation diagnostics; roots with `Error` or `Fatal` logs get a `notLoaded` entry with the
-    original input index, runtime group/root ids, first diagnostic line and the action to check
+    original input index, the group and root ids of the plan, the first diagnostic line and the action to check
     the group's attributes and the root's overrides against the library data, then change the failing
     values or replace the article. Loaded groups stay in the result. With an `obstacles` section,
     `obstacleHint` uses the same calculated groups and names every root module of the call's groups on an
@@ -165,7 +168,7 @@ call and is reported in `notLoaded`, the others load
 
 Result: `{ loaded, groups, otherGroupIds?, groupAttributes?, hint?, corrections?, notLoaded? }`.
 `groups` holds the groups of the call (`changedGroupsOnly`), `otherGroupIds` the other groups of the
-plan, `loaded` the planner's ids of the loaded groups. `runToolCommand` adds `historySteps` and
+plan, `loaded` the ids of the groups the planner built or restored. `runToolCommand` adds `historySteps` and
 `historyFollowUps`, which the server removes.
 
 ### The anchor frame

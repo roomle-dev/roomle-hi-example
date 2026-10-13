@@ -403,7 +403,7 @@ be built. Every guard and correction:
 | --------- | ---- | -------- | ----------- |
 | `posGroups` | `object[]` (min 1) | yes | Pos groups following the [authoring rules](#authoring-pos-groups) |
 
-Returns the loaded runtime ids and the groups of the call (with their final ids, `pos`,
+Returns `loaded`, the ids of the groups the planner built or restored, and the groups of the call (with their final ids, `pos`,
 `rotationY`, `footprint`) and `otherGroupIds`, the other groups of the plan, unchanged, plus a hint
 when a group of this call is still unpositioned,
 `corrections` (what the server changed in the input, and what the library changed with the group

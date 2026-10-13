@@ -40,7 +40,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 | Document | Status | Description |
 |---|---|---|
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
-| [article-template-geometry-in-plan-context.md](article-template-geometry-in-plan-context.md) | Open | RML-18140: derive the docking vectors and the corner point of an article that is not in the plan from a calculated template in `getPlanContext`, and drop the MCP server's anchor probe |
+| [article-template-geometry-in-plan-context.md](article-template-geometry-in-plan-context.md) | Open | RML-18140: the catalog of the plan context carries the docking vectors and the corner flag of every article from templates the planner calculates once per page (0.75 s for 111 articles, measured), the article selector and the corner word matches of the server and the glue logic go; based on roomle-ui `feat/hi-layout-load-outcome-RML-18139` |
 | [group-load-result-per-input-group.md](group-load-result-per-input-group.md) | Implemented — roomle-ui `feat/hi-layout-load-outcome-RML-18139`, not merged | RML-18139: the glue-logic answers a layout load per input group — built, restored or left out with the reason — and `create-or-replace-groups` reports a left-out group and a restored replace in `notLoaded` and pairs the groups of the call by that answer; based on roomle-ui `refactor/hi-tool-logic-RML-18147` |
 
 Add feature analysis documents as needed following the naming convention:

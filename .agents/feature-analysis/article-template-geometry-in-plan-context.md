@@ -1,236 +1,268 @@
 # Article template geometry in getPlanContext
 
-- **Ticket**: RML-18140 — https://roomle.atlassian.net/browse/RML-18140
-- **Status**: Open
-- **Branch**: roomle-ui `fix/hi-mcp-api-and-tools`, roomle-hi-example `fix/hi-mcp-api-and-tools`
-- **Type**: Feature analysis (a new capability in `getPlanContext` plus the removal of a server workaround)
-- **Sequencing**: the calculation is an **independent, reusable prerequisite** — it lives in the
-  glue-logic and is consumed by the existing `getPlanContext` articles branch, so it needs no new
-  group-operation command and no server change to land. The refactoring
-  ([`move-tool-logic-to-glue-logic.md`](../refactoring-analysis/move-tool-logic-to-glue-logic.md))
-  then reuses the same calculation for the placement commands and deletes the server probe. See §4.
+> **Date**: 2026-10-13 (supersedes the analysis of 2026-10-10, written before the tool logic moved into the planner)
+> **Status**: Open
+> **Ticket**: [RML-18140](https://roomle.atlassian.net/browse/RML-18140)
+> **Base**: roomle-ui `feat/hi-layout-load-outcome-RML-18139` (`5b502b8c7`, the tool logic in the planner — [RML-18147](https://roomle.atlassian.net/browse/RML-18147), [ADR 0007](../decisions/0007-hi-mcp-tool-logic-in-the-planner.md) — and the load answer per group — [RML-18139](https://roomle.atlassian.net/browse/RML-18139)); roomle-hi-example `master` (`f30f307`)
+> **Type**: Feature analysis — the catalog of the plan context carries the docking vectors and the corner flag of every article, and the corner word matches go
 
 ## Affected repositories
 
-- **roomle-ui** — `getPlanContext` derives the docking vectors and the corner point of an article
-  that is not in the plan from a **per-article, lazily calculated and cached** template;
-  `loadPosData` clears the template cache.
-- **roomle-hi-example** — the MCP server drops the anchor probe (`probeAnchorFrame`, `takeBackProbe`,
-  `knownAnchorFrames`) and the planner methods it needs.
-- **ligna-store** — no change; it consumes `getPlanContext` and benefits from the complete catalog.
+- **roomle-ui** — `createPlanContext` (`hi-plan-context.ts`) calculates the template of every
+  article whose root modules carry no docking geometry and have no calculated root in the plan,
+  through the `calculateArticleTemplate` of the glue logic that is already on the base branch; the
+  `articleIds` option of `getExternalObjectPlanContext` goes; `isCornerArticle`
+  (`hi-group-placement.ts`) reads the catalog's `cornerArticle` flag only.
+- **roomle-hi-example** — the MCP server stops completing `cornerArticle` from the category or the
+  module name (`isCornerArticle`, `agent-facing.ts`, C7); the plan context passes through as the
+  planner reports it. The behaviour documentation, the tool reference and the skills change with
+  the catalog.
+- **ligna-store** — no change; its page bridge relays `getExternalObjectPlanContext` as it is, and
+  the store's chat gets the complete catalog.
 
 ## 1. What was asked and why
 
 The compact article catalog of `getPlanContext` describes every article of the loaded libraries so
-the agent can pick one and dock it. Two facts the agent needs are missing for an article that is not
-yet in the plan:
+the agent can pick one and dock it. Two facts the agent needs exist only as calculated geometry: the
+docking vectors of an article's root modules, and the corner flag and corner point of a corner
+article. The article templates (`loadPosData`) and the master data carry no `dockInfos`, so on an
+empty plan every article comes without docking vectors and without the corner flag.
 
-- **the docking vectors** of its root modules — the agent needs them to dock a new root to a free
-  vector of an existing root, and to know which vectors a new root offers;
-- **the corner point** and the **corner flag** of a corner article — the agent needs them to place a
-  group into a room corner.
+The ticket asks to measure the cost of calculating the article templates, to decide from the
+measurement whether the plan context calculates them lazily on the first request or once after
+`loadPosData`, to let `getPlanContext` calculate the template of every article whose roots have no
+docking geometry and no calculated root in the plan, and to remove the server's workarounds: the
+anchor probe and the completion of `cornerArticle` from the category.
 
-Both exist only as *calculated* geometry. The article templates (`loadPosData`) and the master data
-carry no `dockInfos`, so the catalog derives them from calculated roots of the same article that are
-already in the plan (`calculatedDockingVectorsByRoot`, `calculatedCornerPointsByRoot` in
-`hi-plan-context.ts`). On an empty plan there is no such root, so every article comes without
-docking vectors and without the corner flag.
+## 2. How the area works today on the base branch
 
-The MCP server works around this: for the anchor of every placed group it loads a single-pick probe
-of the article, reads the probe's docking vectors from the planner's raw groups, undoes the load and
-caches the anchor frame per library, article and attribute overrides for the server's lifetime
-(`probeAnchorFrame`, `takeBackProbe`, `knownAnchorFrames` in `tool-executors.ts`). That costs an
-extra load per anchor variant and per server start, needs planner methods on every page allow-list,
-and leaves the catalog incomplete for every other consumer.
+The refactoring of [RML-18147](https://roomle.atlassian.net/browse/RML-18147) moved the tool logic
+into the planner and, with it, the first half of this ticket. The base branch has:
 
-The template calculation would also give a size to articles whose template has no `Dim` attribute —
-for example the range hood `DU` and the TV `SM_TV` in Furniture_Smith: their dimensions are empty, so
-the agent cannot know their width. This is a side benefit, not the reason for the change.
+### 2.1 The template calculation (`glue-logic.ts`)
 
-## 2. How the area works today
+`GlueLogicImplementation.calculateArticleTemplate(articleId, attributes?)` (`glue-logic.ts:992`)
+builds a single-pick group of the article, completes it from the template
+(`_prepareArticlePickRoots`), regenerates the ids, initialises the group and runs
+`libraryData.calculateGroup` through `_updatePosData` directly — not through `_calculate`, whose
+catch would hide a failed calculation —, so an exception is caught in the method, logged and not
+cached. The result is cached in `_articleTemplates` per library, article and sorted attribute
+overrides (`glue-logic.ts:493`), cleared in `loadPosData` (`glue-logic.ts:596`). Nothing is added to
+the group map and nothing is loaded. Six tests in `__tests__/article-template-test.ts` guard it.
 
-### 2.1 The catalog derivation (`hi-plan-context.ts`)
+### 2.2 The article selector of the plan context (`hi-plan-context.ts`)
 
-`calculatedDockingVectorsByRoot(groups)` (line 528) and `calculatedCornerPointsByRoot(groups)`
-(line 550) walk the calculated roots of the given groups and key the docking vector names and the
-corner point by article id and root module id. `compactArticle(article, masterData,
-calculatedDockingVectors, calculatedCornerPoints?)` fills `rootModules[].dockingVectors`,
-`cornerArticle` and `cornerPoint` from those maps, falling back to the template's own `dockInfos`
-when it has them.
+`createPlanContext(include, designerRequests, libraries, posArticles, articleIds = [],
+calculateArticleTemplate?)` (`hi-plan-context.ts:962`) calculates, in its articles branch
+(`:1011-1030`), the template of every id in `articleIds` whose article has no root in the plan and
+passes `[...calculatedGroups, ...templates]` into `calculatedDockingVectorsByRoot` (`:544`) and
+`calculatedCornerPointsByRoot` (`:566`); `compactArticle` (`:604`) then fills
+`rootModules[].dockingVectors`, `cornerArticle` and `cornerPoint` from those maps as before. The
+selector reaches the planner API as `getExternalObjectPlanContext(include?, options?: { articleIds })`
+(`HiPlanContextOptions`, `external-object-api.ts`; `roomle-planner.ts:3183`; `hi-tools.ts:338`).
+Five tests in `__tests__/hi-plan-context-test.ts:1421-1493` guard it.
 
-### 2.2 The catalog assembly (`glue-logic.ts`, `getPlanContext`)
+### 2.3 The consumers
 
-`getPlanContext(include?)` (line ~1240) fetches `calculatedGroups = await
-this._designerRequests.getPosDataOfAllGroups()` once when `groups`, `articles` or `obstacles` are
-included. The `articles` branch (line 1263) then computes
+- The `create-or-replace-groups` command takes the anchor frame of a placement by point from
+  `calculateArticleTemplate` with the anchor's attribute overrides (`hi-tool-commands.ts:449`, C6,
+  D46). The server's probe, `getExternalObjectGroups` and `removeExternalObject` are gone from the
+  server: `planner-api.ts` has the six methods of D71.
+- **Nobody passes `articleIds`.** The server's `get-plan-context` calls
+  `getExternalObjectPlanContext([sections])` (`tool-executors.ts:455`, `planner-api.ts:33`); the
+  tool commands fetch the catalog with `getExternalObjectPlanContext(['articles'])`
+  (`hi-tool-commands.ts:333`) for the article resolution, the docking and the anchor. On an empty
+  plan the catalog is as incomplete as before the refactoring.
 
-```ts
-const calculatedDockingVectors = calculatedDockingVectorsByRoot(calculatedGroups ?? []);
-const calculatedCornerPoints = calculatedCornerPointsByRoot(calculatedGroups ?? []);
-```
+### 2.4 Two word matches stand in for the flag
 
-and maps every `_posArticleMap` value through `compactArticle`. This is the exact insertion point:
-the derivation must see the calculated templates in addition to the calculated groups.
+Because the catalog carries no flag on an empty plan, a corner article is recognised by the word
+`corner` in its category or its module id:
 
-### 2.3 The template calculation (`glue-logic.ts`)
+- in the server, `isCornerArticle` (`agent-facing.ts:187-201`) completes `cornerArticle` for the
+  agent (`agentFacingArticle`, C7);
+- in roomle-ui, `isCornerArticle` (`hi-group-placement.ts:30-45`) tells the anchor of a group
+  (`anchorRootOf`, `:245`), the root a `behind` relation may not dock to and where a row walk stops
+  (`hi-group-layout.ts:281`, `:590`), and the corner check of the docking (`hi-tool-docking.ts:497`).
 
-- `loadPosData(articleCatalogJson, libraryId)` (line 825) fills `_posArticleMap` (or
-  `_posSubArticleMap` when `isConfigDummy`), each entry `deepCopy`'d with `libraryId` set. This is
-  where the template cache must be cleared.
-- `_prepareArticlePickRoots(posGroup)` (line 1117) turns an article-pick root (`_isArticlePickRoot`:
-  has `articleId`, no `posData`/`modules`/`parts`) into the article's template roots: it deep-copies
-  the `PosArticle`, gives each template root a unique id, remaps the internal docking references,
-  calls `_updateRootModuleFromArticle` and, for index 0, copies `contextData`/`articlePos`/
-  `rotationY` from the pick and applies `_applyRootAttributeOverrides`.
-- `_calculateNewGroup(posDataJson, keepRootModuleIDs, initializePosGroup)` (line 2956) is
-  `this._replacesIDs(posDataJson, keepRootModuleIDs); if (initializePosGroup) {
-  this._initializePosGroup(posDataJson); } return this._calculate(posDataJson);`.
-- `_calculate(originalPosDataJson)` (line 4163) runs `_updatePosData` with
-  `libraryData.calculateGroup(posGroup)` inside a try/catch that logs and returns the input group on
-  error.
-- `_updatePosData` (line 4354) deep-copies the group, sets `libraryId`, clears `logMessages`, calls
-  the update function and takes over `pos`/`rotationY`/`contextData` from the original. It touches
-  no map.
-- `_addNewGroup` (line 3150) is the only place that writes `_groupMap`; `_calculateNewGroup` alone
-  does not.
+Both are guesses: a library that names its corner unit in another language, or by another word,
+gets no corner anchor and no corner flag; the served results of the server must not carry
+library-specific logic (§2.4 of [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md)).
 
-So a template calculation is `_prepareArticlePickRoots(pick)` followed by
-`_calculateNewGroup(pick, true, true)`, and it is free of side effects on `_groupMap` as long as the
-result is not passed to `_addNewGroup`/`_storeCalculatedGroup`.
+### 2.5 The measurement
 
-### 2.4 The server workaround (`tool-executors.ts`)
+Measured on 2026-10-13 on the local dev build of the base branch (roomle-ui `npm run dev` on
+`:5173`, the example page with `--dev` in headless Chromium, the HOMAG library of the example with
+111 articles), through the planner API of the page:
 
-`probeAnchorFrame(roomDesignerApi, anchor, libraryId, planGroupIds)` loads a single-pick probe group
-as authored, reads the calculated root's docking vectors from `getExternalObjectGroups()`, calls
-`takeBackProbe` (undo, or `removeExternalObject` on a page without undo) and returns
-`anchorFrameOfRoot(calculated)` or `IDENTITY_FRAME`. `knownAnchorFrames` caches the frame per
-`anchorVariantKey` (library, article, sorted attributes) for the server's lifetime;
-`forgetAnchorFrames()` clears it.
+| Call | Time |
+|---|---|
+| `getExternalObjectPlanContext(['articles'])`, first call, no templates | 29 ms |
+| the same with the ids of all 111 articles — 111 template calculations | 773 ms |
+| the same again, every template cached | 34 ms |
+| `getExternalObjectPlanContext(['articles'])` again | 4 ms |
+
+Per article through `calculateArticleTemplate` on a fresh page: 111 calculations in 738 ms,
+median 6.2 ms, 90th percentile 10 ms, slowest 59 ms (one base unit); none failed, every template
+carries docking vectors. The catalog with the templates lists the docking vectors of all 111
+articles and four corner articles with their corner point (the four 90° corner units of the
+library); without them it lists none.
+
+Side effects: a corner kitchen (a corner unit and a base unit `rightOf` it, placed `{ wall:
+'right', alignment: 'back' }`) loaded on a page that had calculated all 111 templates is identical,
+ids stripped, to the one loaded on a fresh page. `calculateGroup` is `libraryExports.calc`
+(`homag-intelligence.ts:159`), a library function without scene access.
+
+The two articles whose template has no `Dim` attribute still list no `dimensions` after the
+calculation: `compactArticle` reads the dimensions from the template's attributes, and the
+calculated template of the range hood carries no size attribute either — its width exists only in
+its docking vectors (598 mm between its left and right vectors) and its parts. The size the ticket
+expects as a side benefit does not come from the calculation as it stands (§4.5).
 
 ## 3. The gap
 
-`getPlanContext` has no source for the docking geometry of an article that is not in the plan, so
-the catalog is incomplete on an empty plan and the server compensates with a probe load. The gap is
-closed by calculating the article template once and feeding it into the existing derivation.
+The selector serves a caller that already knows which articles it wants, but the catalog is how
+the agent picks — before its first `get-plan-context` nobody can name the ids. So the catalog on an
+empty plan still carries no docking vectors and no corner flag, two word matches stand in for the
+flag, and the ticket's step 3 ("every article whose roots have no docking geometry and no
+calculated root in the plan") and step 4 (the server's completion of `cornerArticle`) are open.
+The measurement answers the ticket's steps 1 and 2: the whole catalog costs 0.75 s once per page,
+cached until the library's templates are loaded again, and the calculation has no side effect on the
+plan — lazily on the first request, no background pass.
 
 ## 4. Proposed design
 
-The calculation is **per article, lazy, cached** — never the whole catalog. A library with 1000
-articles costs nothing until an article is asked for. This is the same granularity the server's
-`knownAnchorFrames` has today, moved into the glue-logic where the calculation belongs.
+### 4.1 roomle-ui: the catalog is complete, always
 
-In roomle-ui, the glue-logic gains a private `_calculatedTemplateOf(articleId, attributes?)` next to
-`_prepareArticlePickRoots` / `_calculateNewGroup`:
+`createPlanContext` loses the `articleIds` parameter. Its articles branch calculates, through the
+`calculateArticleTemplate` callback, the template of every article of `posArticles` that has a root
+module without docking vectors of its own (`dockingVectorNames(root)` empty) and without an entry
+`${articleId}:${root.name}` in the maps of the calculated groups, once per article, and feeds the
+templates into the two maps as the selector does today. The cache of the glue logic makes the pass
+free after the first request: the catalog build itself (34 ms measured with every template cached).
+An article whose calculation fails stays without geometry and without the flag, as today.
 
-1. **Build a single-pick group** of the article: `{ libraryId, roots: [{ id, articleId, attributes? }] }`.
-2. **Complete it from the template** (`_prepareArticlePickRoots`) and run it through the library
-   calculation (`_calculateNewGroup(pick, true, true)` → `libraryData.calculateGroup`). The group is
-   never added to `_groupMap` or the plan.
-3. **Cache the calculated template** by `anchorVariantKey` (library, article, sorted attributes) —
-   the same key the server uses today — and clear the cache in `loadPosData`.
-4. **`getPlanContext`'s articles branch** passes the calculated templates of the requested articles
-   into `calculatedDockingVectorsByRoot` / `calculatedCornerPointsByRoot`, in addition to the
-   calculated groups. The catalog now carries the docking vectors and the corner point of an article
-   that is not in the plan.
+`HiPlanContextOptions` goes, with the `options` parameter of `getExternalObjectPlanContext`
+(`external-object-api.ts`, `roomle-planner.ts`, `glue-logic.ts`, `debug-logging.ts`, `hi-tools.ts`,
+the `HiToolPlanner` interface of `hi-tool-commands.ts`, the export in `packages/index.ts`). An
+option nobody passes is dead API, and the behaviour is one: the catalog carries the geometry of
+every article.
 
-The same `_calculatedTemplateOf` serves the `create-or-replace-groups` / `place-group` commands of
-the refactoring (anchor frame, footprint), so the catalog pass and the placement pass share one
-cache and never calculate the same article twice.
+### 4.2 roomle-ui: the corner flag comes from the geometry only
 
-Then remove the server workaround once roomle-ui is deployed: the probe (`probeAnchorFrame`,
-`takeBackProbe`, `knownAnchorFrames`, `forgetAnchorFrames`) and the planner methods it needs
-(`getExternalObjectGroups`, `removeExternalObject`) leave `tool-executors.ts` and `planner-api.ts`.
+`isCornerArticle` (`hi-group-placement.ts`) returns the catalog's `cornerArticle` flag and nothing
+else; the word match on the category and the module id goes. The tool commands fetch the catalog
+from the same `createPlanContext`, so the flag is there on an empty plan too. `anchorRootOf`, the
+`behind` check, the row walk and the docking check keep their callers.
 
-### 4.1 The articles branch needs an article-level selector
+### 4.3 roomle-hi-example: the server passes the flag through
 
-The `articles` branch of `getPlanContext` (line 1263) maps over **every** `_posArticleMap` value —
-it has no article-id filter. Feeding "the calculated templates of the articles it is about to
-describe" into that branch therefore means calculating **every uncached article of every loaded
-library** on the first request: the catalog-wide pass rejected in §4.3, not work proportional to the
-handful the agent uses. A 1000-article library would incur 1000 calculations on its first articles
-request despite the cache.
+`agentFacingArticle` (`agent-facing.ts`) keeps the short description and the removal of
+`cornerPoint` (D10) and drops `isCornerArticle`: `cornerArticle` is the planner's. `CORNER` and
+`isCornerArticle` leave `agent-facing.ts`; C7 retires. `planner-api.ts` is unchanged — the catalog
+needs no option.
 
-The design therefore needs an **article-level selector** on the articles section, so the caller
-names the articles whose geometry it wants:
+The server change follows the planner: on a planner without the complete catalog the flag is
+missing on an empty plan, so the server keeps C7 until the roomle-ui change is on the planner the
+pages use.
 
-- `getPlanContext(include: ['articles'])` keeps returning the compact catalog for every article, as
-  today, but **without** the calculated docking vectors and corner point for articles that are not
-  in the plan (the current behaviour — the derivation still reads the calculated groups).
-- A new opt-in detail request names the articles to calculate, for example
-  `getPlanContext(include: ['articles'], articleIds: ['<id>', …])` or a dedicated
-  `getArticleGeometry(articleIds)` call. Only those articles are calculated and cached; the catalog
-  entries for them carry the docking vectors and the corner point.
+### 4.4 Decisions to record
 
-The MCP server knows which articles it is about to describe — the ones the agent picked or is
-choosing between — so it passes exactly those ids. The cost is then proportional to the agent's use,
-which is what the per-article cache promises. Without the selector the cache is defeated on the
-first call, so the selector is part of the design, not an optimisation.
+A row in §3 of [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md), to confirm:
 
-### 4.2 The failure signal must be explicit
+> **The catalog carries the docking vectors and the corner flag of every article.** The geometry of
+> an article that is not in the plan comes from its template, calculated by the planner once per
+> page and library load on the first catalog request (0.75 s for a library of 111 articles,
+> measured) and cached until the library's templates are loaded again; `cornerArticle` is derived
+> from the corner docking vectors only, in the planner. Rejected: a word match on the category or
+> the module id, in the server or the glue logic — a guess, wrong for a library that names its
+> corner unit otherwise, and library knowledge in the server; a per-call article selector — the
+> agent picks from the catalog, so the first call can name no article; a background pass after
+> `loadPosData` — nothing to hide at 0.75 s.
 
-`_calculate` (line 4163) catches the calculation exception, logs it and returns the **input group**,
-so `_calculateNewGroup` never throws and a caller cannot observe a failure by catching. Caching
-`null` "when the calculation throws" is therefore not implementable through this call as written: a
-failed calculation would be cached as a successful, uncalculated template.
+C7 of §8.2 retires; the `articles` row of §5.4 and the `get-plan-context` paragraph of §6 say the
+catalog carries the docking vectors and the corner flag of every article.
 
-The calculation path needs an explicit failure signal. Two options:
+### 4.5 The size of an article without a `Dim` attribute — not in this ticket
 
-- **Validate the returned group** before caching: a calculated template carries the geometry the
-  derivation reads (`dockInfos` on its roots, a corner point for a corner article); a group that
-  still equals the input, or that carries no calculated geometry, is a failure. This needs no change
-  to `_calculate`.
-- **Return the outcome from the calculation**: a variant of `_calculateNewGroup` that reports
-  whether `libraryData.calculateGroup` threw, so `_calculatedTemplateOf` caches the template only on
-  success and caches the failure (or nothing) otherwise.
+The calculation gives the range hood and the TV no size attribute; a width would be a new derived
+field from the extent of the docking vectors. The agent docks a hood by relation and the planner
+places it by its template (C6), so the width matters only for choosing between hoods — which is
+what the article's `desc` is for ([library issues](../backlog/library-issues.md)). Left out; the
+ticket's sentence on it is answered by the measurement.
 
-The second is cleaner and is the preferred shape; the first is the fallback if the calculation path
-must stay untouched. Either way the cache never stores an uncalculated template as successful.
+## 5. Alternatives considered and rejected
 
-### 4.3 Why not "calculate all articles"
+- **Keep the selector and let the server pass every id, or `'all'`.** Same cost, more API: the
+  server must fetch the ids first or the planner must know a magic value, and the tool commands in
+  the planner need the complete catalog anyway.
+- **Calculate once after `loadPosData`, in the background.** Hides 0.75 s nobody waits for — the
+  page takes 8 to 12 s to load the planner — and adds a scheduling path and a race with the first
+  request. Revisit if a library of about 1000 articles (about 7 s at the measured rate) ever loads.
+- **Restrict the calculation to corner articles by category.** Library-specific, and the docking
+  vectors of every article are needed too.
+- **Keep the word match beside the flag.** A guess in two places that is wrong for a library in
+  another language and hides a failed calculation.
+- **Add `dockInfos` to the article templates or the master data.** The templates come from the
+  library and carry no geometry; the docking vectors are a result of the calculation.
+- **A size derived from the docking vectors for articles without `Dim`.** A new field for two
+  articles whose width the agent needs only to choose; the `desc` carries it (§4.5).
 
-Calculating every article of every loaded library on each `getPlanContext` does not scale: the
-Furniture_Smith library has 111 articles, a larger library has 1000, and the cost grows with the
-catalog while the agent asks for a handful of articles. It is also not library-neutral — it bakes a
-catalog-wide pass into a server that must serve every library. The per-article cache with the
-article-level selector of §4.1 has neither problem: the cost is proportional to what the agent
-actually uses, and the glue-logic knows nothing about a specific library.
+## 6. Tests
 
-### 4.4 Measure once
+roomle-ui, `__tests__/hi-plan-context-test.ts` (replacing the selector tests of `:1421-1493`):
 
-Before relying on the cache, measure in the example page whether `LibraryData.calculateGroup` is
-free of side effects for the HOMAG library (it is `libraryExports.calc`, a pure library function —
-`homag-intelligence.ts:159` — but confirm it mutates no library-global state). The per-article cost
-is then the only number that matters, and it is paid once per article.
+- `it('carries the docking vectors and the corner point of every article that is not in the plan')`
+  — `calculateGroup` called once per article
+- `it('does not calculate an article that has a calculated root in the plan')` (kept)
+- `it('does not calculate an article whose template carries its own docking vectors')`
+- `it('calculates an article once over two plan contexts')` — the cache
+- `it('leaves the geometry out when the template calculation fails')` (kept)
 
-## 5. Alternatives considered
+roomle-ui, `__tests__/hi-group-placement-test.ts`: `it('recognises a corner article by its flag')`
+replaces `:135` (flag, category or module name); `:237` (the L on an empty plan "where the catalog
+has no flag yet") anchors by the flag the catalog now carries. `__tests__/article-template-test.ts`
+stays. The planner-core test of the options forwarding goes.
 
-- **Keep the server probe.** Rejected: it costs an extra load per anchor variant and per server
-  start, needs planner methods on every page allow-list, and leaves the catalog incomplete for every
-  other consumer.
-- **Add `dockInfos` to the article templates or the master data.** Rejected: the templates come from
-  the library and carry no geometry; the docking vectors are a result of the calculation, not of the
-  template.
-- **Calculate the whole catalog eagerly on every `getPlanContext`.** Rejected: it does not scale to a
-  large library and it is not library-neutral — see §4.3. The per-article cache with the
-  article-level selector of §4.1 is the design.
-- **Restrict the calculation to corner articles by category.** Rejected: it hard-codes a library
-  category into the glue-logic. The per-article cache needs no such restriction.
+roomle-hi-example, `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`: `it('flags a corner
+article on an empty plan, where the planner has not derived the flag yet')` (`:524`) goes;
+`it('keeps the corner point of the articles to the server')` (`:449`) stays with the flag as the
+planner sends it. `tests/hi-mcp-server.test.ts:1022-1046` expects the compact JSON without a
+`cornerArticle` the server added.
 
-## 6. Code and documents the work would touch
+The ticket's test "get-plan-context on an empty plan returns `cornerPoint: [-261, 0, 0]`" holds for
+the planner's plan context, not for the agent's: the server removes `cornerPoint` (D10). The agent's
+result carries `cornerArticle: true` and the eight docking vector names of the corner unit. "The
+first corner kitchen of an empty plan lands with its corner point on the room corner without a
+probe load" holds on the base branch already (C6).
 
-- `roomle-ui/packages/web-sdk/packages/homag-intelligence/src/glue-logic.ts` — the template
-  calculation and its cache, the article-level selector on the `getPlanContext` articles branch,
-  `loadPosData`.
-- `roomle-ui/packages/web-sdk/packages/homag-intelligence/src/hi-plan-context.ts` — the derivation
-  helpers already accept a list of groups; the selector narrows which templates are passed in.
-- `roomle-hi-example/hi-mcp/hi-mcp-server/tool-executors.ts` — pass the article ids the agent is
-  about to describe; remove the probe.
-- `roomle-hi-example/hi-mcp/hi-mcp-server/planner-api.ts` — remove the methods the probe needed.
-- `roomle-hi-example/docs/hi-mcp-behaviour.md` — the catalog description.
-- `roomle-hi-example/.agents/skills/hi-mcp-tools.md` — the `get-plan-context` reference.
+## 7. Code and documents the work touches
 
-## 7. Open questions
+roomle-ui, on `feat/hi-layout-load-outcome-RML-18139`:
 
-- Does `calculateGroup` mutate any library-global state for the HOMAG library?
-- Is the per-article calculation fast enough that the cache is a pure win, or does the first
-  `getPlanContext` need to warm it in the background?
+- `packages/web-sdk/packages/homag-intelligence/src/hi-plan-context.ts` — the articles branch of
+  `createPlanContext`
+- `src/external-object-api.ts`, `src/glue-logic.ts`, `src/debug-logging.ts`, `src/hi-tools.ts`,
+  `src/hi-tool-commands.ts`, `packages/web-sdk/packages/index.ts`,
+  `packages/planner-core/src/roomle-planner.ts` — the options parameter goes
+- `src/hi-group-placement.ts` — `isCornerArticle`
+- `.agents/homag-intelligence.md` (the article templates paragraph),
+  `packages/embedding-lib/docs/homag-intelligence-embedding.md` (the plan context)
+
+roomle-hi-example, after the planner change is deployed:
+
+- `hi-mcp/hi-mcp-server/agent-facing.ts` — `agentFacingArticle` without `isCornerArticle`
+- `docs/hi-mcp-behaviour.md` — the decision row of §4.4, C7, §5.4 `articles`, §6 `get-plan-context`
+- `docs/hi-mcp-server.md`, `hi-mcp/hi-mcp-server/README.md` — the catalog and the `agent-facing.ts`
+  row
+- `docs/implementation/tool-executors.md`, `docs/implementation/layout-and-placement.md`,
+  `docs/implementation/README.md` — `agentFacingArticle`, `anchorRootOf`
+- `.agents/skills/hi-mcp-tools.md`, `.agents/skills/roomle-hi-concepts.md` (the range hood lists
+  its docking vectors now; its size stays unknown), `.agents/skills/hi-authoring-rules.md`
+- `.agents/backlog/roomle-ui-article-template-geometry.md` — closes with the work
+
+## 8. Open questions
+
+- Whether the word match of roomle-ui's `isCornerArticle` goes in this ticket (§4.2) or stays as a
+  fallback for an article whose calculation fails. The analysis says it goes: a failed calculation
+  is reported (G17), a wrong guess is not.

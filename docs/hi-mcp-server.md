@@ -455,20 +455,22 @@ correction:
 | --------- | ---- | -------- | ----------- |
 | `posGroups` | `object[]` (min 1) | yes | Pos groups following the [authoring rules](#authoring-pos-groups) |
 
-Returns the loaded runtime ids and the groups of the call (with their final
+Returns `loaded`, the ids of the groups the planner built or restored, and the groups of the call (with their final
 ids, `pos`, `rotationY`, `footprint`) and `otherGroupIds`, the other groups of
 the plan, unchanged, plus a hint when a group of this call
 is still unpositioned, `groupAttributes` (`[{ index, id, set, notCarried?, rootValues? }]`: per group the
 group attributes set on every unit, those no unit of the group carries — the group stands
 without them —, and the root modules that keep their own value of one), `corrections` (what the server changed in the input, and what the
 library changed with the group attributes — a front colour reset by a front program)
-and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build and, with
+and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build or the planner
+left out, with the reason, a replace the planner restored because the library could not calculate the
+new layout, with `rootIds` the root modules it could not calculate, and, with
 `rootIds`, the roots of a loaded group it could not build or fully calculate — one unknown article
 id drops that root, not the group; an `Error` or `Fatal` calculation log reports the root's first
 diagnostic and asks you to check the group's attributes and the root's overrides against the library
 data, then change the failing values or replace the article, while keeping the loaded
-group and roots). `index` names the original input group; diagnostic ids are the planner's runtime
-ids. A group id you gave an earlier group of the session replaces that group. A `hint`
+group and roots). `index` names the original input group; diagnostic ids are the group and root ids of the plan, as
+`get-plan-context` reports them. A group id you gave an earlier group of the session replaces that group. A `hint`
 names each root module of the call's groups that overlaps an object or a root module of another
 group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm`
 ranges; the group is built anyway (D55).

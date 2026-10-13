@@ -411,7 +411,9 @@ const compactAttributeResult = (result: any) => ({
 
 // The tools that change the plan run in the planner page: roomle-ui performs
 // the tool with the agent's arguments and reports the planner steps it made,
-// which the server records for undo.
+// which the server records for undo. A tool that failed after it changed the
+// plan answers with its error and its steps: the steps are recorded, so undo
+// reverts them, and the agent gets the error.
 const inPlanner = (
   tool: string,
   shape: (result: any) => any = (result) => result
@@ -425,6 +427,9 @@ const inPlanner = (
     };
     delete result.historySteps;
     delete result.historyFollowUps;
+    if (typeof result.error === 'string') {
+      throw new Error(result.error);
+    }
     return shape(result);
   });
 

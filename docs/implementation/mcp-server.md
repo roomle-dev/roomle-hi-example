@@ -234,7 +234,8 @@ tool command in roomle-ui counts the steps it put on the planner's undo history 
 | a group operation (`externalObjectGroupOperation` of the `HiToolPlanner`) | +1 |
 
 and reports them as `historySteps`; the counting API adds them up, a result without `historySteps`
-as one step. Before the call the counting API reads the groups of the plan context (`groupsBefore`,
+as one step. A tool that fails after it changed the plan answers with `error` and its steps; the
+counting API records them and `inPlanner` then raises the error. Before the call the counting API reads the groups of the plan context (`groupsBefore`,
 `readGroupsKey`); after the call it reads them again (`groupsAfter`). Plans are compared by
 `groupsKey`: the groups sorted by id, numbers rounded to 0.1 mm. A recorded call ends redo
 (`planHistory.record`), as the planner drops its redo future with a new step.

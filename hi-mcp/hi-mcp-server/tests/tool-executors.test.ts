@@ -1120,6 +1120,25 @@ describe('tools that change the plan', () => {
     );
     expect(planHistory.lastDone()).toBeUndefined();
   });
+
+  it('records the steps of a tool that failed after it changed the plan and relays its error', async () => {
+    const api = createApi(planContextFixture, {
+      externalObjectGroupOperation: vi.fn(async () => ({
+        error: 'The plan context could not be read.',
+        historySteps: 1,
+        historyFollowUps: 0,
+      })),
+    });
+    await expect(
+      toolExecutors['create-or-replace-groups'](api, {
+        posGroups: [{ roots: [{ id: 'u1', articleId: 'article-1' }] }],
+      })
+    ).rejects.toThrow('The plan context could not be read.');
+    expect(planHistory.lastDone()).toMatchObject({
+      tool: 'create-or-replace-groups',
+      steps: 1,
+    });
+  });
 });
 
 describe('undo and redo', () => {

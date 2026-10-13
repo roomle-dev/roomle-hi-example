@@ -322,7 +322,11 @@ Decided with the backlog of the MCP test, implemented on the user's go.
   `historySteps` the steps it put on the planner's undo history — one per load that loaded something
   and one per group operation (`runToolCommand`, guarded by `describe('runToolCommand')` in roomle-ui
   `__tests__/hi-tool-commands/run-tool-command-test.ts`) —, and the server counts them, a result without
-  `historySteps` as one step (`countingPlannerApi`). It reads the groups of the plan context before
+  `historySteps` as one step (`countingPlannerApi`). A tool that fails after it changed the plan
+  answers with `error` and its steps instead of rejecting: the server records the steps, so undo
+  reverts the half-done call, and raises the error to the agent (`inPlanner`, guarded by
+  `it('records the steps of a tool that failed after it changed the plan and relays its error')` in
+  `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`). It reads the groups of the plan context before
   the call and after it (`readGroupsKey`). The group-wide attributes of a create are one group
   operation, one step (D36). The tool command reports in `historyFollowUps` the follow-up reloads
   roomle-ui makes when the kernel answers with the group's position — after `change-module-attribute`,

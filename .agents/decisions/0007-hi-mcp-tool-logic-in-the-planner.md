@@ -42,8 +42,9 @@ The bridge protocol and the allow-list as the page's security boundary stay as A
   forwarding, `get-plan-context`, `find-attributes` and undo/redo.
 - `create-or-replace-groups` is one page round trip; the catalog of the plan context can carry the
   docking vectors and the corner point of an article that is not in the plan (`articleIds`).
-- A tool that fails after it changed the plan reports no undo steps; undo then answers that the
-  plan was changed instead of reverting the half-done call.
+- A tool that fails after it changed the plan answers with its error and the undo steps it made;
+  the server records the steps, so undo reverts the half-done call, and raises the error to the
+  agent.
 
 ## Rejected
 

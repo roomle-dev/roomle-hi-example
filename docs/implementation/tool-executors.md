@@ -71,7 +71,7 @@ context, the calculated groups, the layout load, the group operations (`runGroup
 | `oneAtATime` | Chains the call onto a module-level promise (`planChanges`), so plan changes never run concurrently; a failed call does not block the next | `get-plan-context`, every plan-changing tool, `undo`, `redo` |
 | `recorded(tool, …)` | Counts the planner steps the tool command reports, for undo ([MCP server](./mcp-server.md#undo-and-redo)) | every plan-changing tool |
 | `planChange` | `oneAtATime(recorded(…))` | every plan-changing tool |
-| `inPlanner(tool, shape?)` | `planChange` around the one planner call `externalObjectGroupOperation(tool, args)`; removes `historySteps` and `historyFollowUps` from the result; the two attribute tools shape it with `compactAttributeResult` | `create-or-replace-groups`, `place-group`, the ten command tools |
+| `inPlanner(tool, shape?)` | `planChange` around the one planner call `externalObjectGroupOperation(tool, args)`; removes `historySteps` and `historyFollowUps` from the result and raises its `error` (a tool that failed after it changed the plan); the two attribute tools shape it with `compactAttributeResult` | `create-or-replace-groups`, `place-group`, the ten command tools |
 | `inPlacementFrame` (roomle-ui) | Rewrites every group `position` into the placement frame and adds `rowIndex` ([Layout and placement](./layout-and-placement.md#reading-a-group-back-positioninplacementframe)) | the plan context of the planner, every tool command and group operation |
 
 Why `oneAtATime` exists: the page runs every call it receives at once, and the undo record of a

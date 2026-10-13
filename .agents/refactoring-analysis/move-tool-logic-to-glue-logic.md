@@ -14,8 +14,9 @@
 - **roomle-hi-example** — `hi-mcp/hi-mcp-server/tool-executors.ts` (and the helpers it imports from
   `group-placement.ts`, `group-layout.ts`, `plan-space.ts`): shrink to a thin adapter that forwards
   agent input to the planner and shapes the result for the agent.
-- **ligna-store** — no change expected; it consumes the same planner methods through its own page
-  bridge and benefits from the same glue-logic.
+- **ligna-store** — `hi-mcp/browser-bridge.ts`, its copy of the page bridge (on `master`), loses
+  the three planner methods in step 6 of §9; nothing else — it consumes the same planner methods
+  through its own page bridge and benefits from the same glue-logic.
 
 ## 1. What the current code does and why it is a problem
 
@@ -334,10 +335,222 @@ land in the glue-logic, not in the server.
 - Does the relation vocabulary (`rightOf`, `leftOf`, `onTop`, `above`, `behind`) move into roomle-ui
   with the `create-or-replace-groups` command, or does the server keep translating relations into
   docking entries (`relationsToDocking` and the side moves of `merge-article-into-group` stay)? The
-  glue-logic takes docking entries only today (§2.1).
+  glue-logic takes docking entries only today (§2.1). **Decided 2026-10-13 (user): into roomle-ui**
+  — the translation needs the calculated plan (free sides, row ends, the hang gap from real
+  heights), and the server sends intent (§9, step 3b).
 - Should the hints travel in `HiGroupOperationResult` as a new `hints` field, or stay in
   `corrections`?
 - The anchor frame depends on the attribute overrides; the per-article cache is keyed by
   `anchorVariantKey` (library, article, sorted attributes), so an anchor with overrides is a
   separate cache entry — the same granularity the server's `knownAnchorFrames` has today. Confirm
   that the override set is small enough that the cache stays bounded.
+
+## 9. Implementation plan
+
+The plan details the steps of §7 for roomle-ui, with the unit tests each step needs, and names
+the server counterpart of every step. roomle-ui facts refer to `chore/hi-tools-split-RML-18145`
+(RML-18145), the branch the work builds on: the HI MCP API implementation is
+`HiToolsImplementation` in `hi-tools.ts` (it takes the glue-logic and reaches `_designerRequests`,
+`_libraryData` and `_posArticleMap` through its public fields), the operations are dispatched by
+`runGroupOperation` in `hi-plan-context.ts` (`HI_GROUP_OPERATION`, `GROUP_OPERATION_HANDLERS`,
+`HiGroupOperations`, `HiGroupOperationOutcome` → `HiGroupOperationResult`), the plan context is
+assembled by `createPlanContext` in `hi-plan-context.ts`. The tests are Vitest in
+`packages/web-sdk/packages/homag-intelligence/__tests__/` (`cd packages/web-sdk && npm run test --
+-t "<name>"`), built on `__mocks__.ts`: `newGlueLogic`, `LibraryDataMock` (identity
+`calculateGroup`), `RoomDesignerRequestsMock`, the builders `dockedPairGroup`, `wallRowGroup`,
+`cabinet`, `dockedTo`, and `glueLogicTestHelpers` (`arrangePosGroupForTest`, `mockCalculation`);
+`hi-tools-test.ts` instantiates `new HiToolsImplementation(glueLogic)` and puts groups into the
+scene with `inScene`.
+
+### 9.1 Decisions the plan builds on
+
+| Decision | Choice |
+|---|---|
+| Relations | Into roomle-ui (user, 2026-10-13, §8) — `create-or-replace-groups` and `merge-article-into-group` take relations; the glue-logic translates them |
+| Hints | A new `hints?: string[]` field of `HiGroupOperationOutcome` / `HiGroupOperationResult` — `corrections` stays what the operation changed about the input, `hints` what to look at in the plan; the tool results already keep `corrections` and `hint` apart |
+| Failure signal of the template calculation | `_calculate` catches and returns the input, so a variant that reports the failure is added (the preferred shape of §4.2 of the feature analysis); a failed calculation is not cached |
+| Moving a group | By `repositioningData` and a reload with `applyGroupPosition: true` — the only path the glue-logic has (`_applyRepositioningData` in `hi-root-module-arrangement.ts`, `loadPosGroups` with `HI_LOAD_OBJECT_REASON.ADJUSTED`), and the sequence D23 and D47 describe; the kernel moves (`moveByRuntimeId`) stay out of the tool path |
+| Article selector | `getPlanContext(include?, options?: { articleIds?: string[] })` on `GlueLogic`, `HiTools`, `createPlanContext` and `getExternalObjectPlanContext`; the selector calculates the default variant of the named articles — the commands calculate a variant with overrides themselves |
+| C7 (`cornerArticle` from the category on an empty plan) | Stays until step 0 shows that the whole catalog is cheap enough to calculate on the first `get-plan-context` (then the selector takes `'all'` and C7 goes); the catalog-wide pass is never implicit |
+| Group materials (D36) | The `create-or-replace-groups` command sets the group-wide attributes after its reload — one planner round trip less; the server's `generatedRootAttributes` / `moveGeneratedRootOverrides` move with it |
+| Undo bookkeeping (D47) | The operation result carries `historySteps`, the planner history steps the command made; the server's `countingPlannerApi` / `readGroupsKey` go with it |
+| Branches | The implementation in roomle-ui is based on `chore/hi-tools-split-RML-18145`: a new branch `refactor/hi-tool-logic-RML-18147` created on it. roomle-hi-example: a new branch `refactor/move-tool-logic-to-glue-logic` off `master`. ligna-store: a new branch `chore/mcp-planner-methods-RML-18147` off `master` for step 6 |
+| Delivery | One roomle-ui PR and one hi-example PR per step; the server adapter of a step is developed against the local dev build (`--dev`, roomle-ui on :5173) and the test prompts of `docs/test-prompts.json` stay green after every step |
+
+### 9.2 Steps
+
+**Step 1 — the per-article template calculation (roomle-ui, RML-18140).** In
+`GlueLogicImplementation`, next to `_prepareArticlePickRoots` and `_calculateNewGroup`:
+`calculateArticleTemplate(articleId, attributes?, libraryId?): PosGroup | undefined` (on the
+`GlueLogic` interface, forwarded by `debug-logging.ts`) builds a fresh single-pick group
+`{ libraryId, roots: [{ id, articleId, attributes }] }`, completes it with
+`_prepareArticlePickRoots` (checks the article first — the method leaves an unknown article as it
+is), runs `_replacesIDs` + `_initializePosGroup` + the failure-reporting variant of `_calculate`, and
+caches the result in a new `_templateCache: Map<string, PosGroup>` keyed by library, article and
+sorted attributes (the server's `anchorVariantKey`), cleared in `loadPosData`. Nothing is written to
+`_groupMap` and nothing is loaded.
+Tests — new `__tests__/article-template-test.ts`, `calculateGroup` spied with `mockCalculation`
+and a fake that returns `dockInfos` on the root:
+
+- `it('calculates an article template once per article and attribute set')` — two calls with the
+  same article and attributes calculate once; other attributes calculate again
+- `it('applies the attribute overrides to the template root before calculating')`
+- `it('does not add the calculated template to the plan')` — `_groupMap` unchanged,
+  `loadPosGroups` not called
+- `it('forgets the templates when the library templates are loaded again')` — `loadPosData`, then
+  the same article calculates again
+- `it('returns nothing for an unknown article without calculating')`
+- `it('does not cache a failed calculation')` — a throwing `calculateGroup` gives nothing; the
+  next call calculates again
+
+**Step 0 — measure once (after step 1, on the dev build, by hand).** In the example page: the
+time per article over the whole catalog through the selector of step 2, and the side-effect check —
+a kitchen planned on a page that calculated every template equals the kitchen of a fresh page (plan
+snapshot diff). The numbers decide the C7 row of §9.1 and the open questions of §8.
+
+**Step 2 — the article selector of the plan context (roomle-ui, RML-18140).** `createPlanContext`
+takes the options; its `articles` branch calculates, for every id in `articleIds` that has no
+calculated root in the plan (`calculatedDockingVectorsByRoot` has no `${articleId}:${root.name}`
+entry), the template of step 1 and passes `[...calculatedGroups, ...templates]` into
+`calculatedDockingVectorsByRoot` and `calculatedCornerPointsByRoot`; `compactArticle` is unchanged.
+`RoomlePlanner.getExternalObjectPlanContext(include?, options?)` forwards the options. The JSDoc in
+`external-object-api.ts` and `packages/embedding-lib/docs/homag-intelligence-embedding.md` gain the
+options. Server: nothing yet — `get-plan-context` passes `articleIds: 'all'` only if step 0 allows
+it (C7 row).
+Tests — `__tests__/hi-plan-context-test.ts` (`createPlanContext`) and `hi-tools-test.ts`:
+
+- `it('carries the docking vectors and the corner point of a requested article that is not in the plan')`
+- `it('calculates no template without an article selector')` — `calculateGroup` not called
+- `it('does not calculate an article that has a calculated root in the plan')`
+- `it('ignores an unknown article id in the selector')`
+- `it('leaves the geometry out when the template calculation fails')`
+- `it('forwards the options of getExternalObjectPlanContext to the glue-logic')` (planner-core)
+
+**Step 3a — the `place-group` command (roomle-ui + server).** New `src/hi-plan-space.ts`, the
+port of `plan-space.ts`: the room-space footprint of a calculated group (part boxes via
+`fullMatrix`, docking points, the `b`/`t` fallback — `groupFootprint` of `hi-plan-context.ts` stays
+the group-space one for `HiPlanGroupPosition`), the corner geometry from the `LeftBack*` /
+`RightBack*` vectors, `placeCornerAtWalls`, `placeAgainstWall`, `freeStretchesAlongWall`,
+`volumesOverlap`, `freePlacementAlongWall`, `wallTarget`, `repositioningFromPlacement`. In
+`hi-tools.ts`: `placeGroup(groupId, { wall, alignment?, offsetMm?, roomIndex? })` resolves the
+group (`_requireGroupsInScene`), reads the rooms (`getRoomInformation` → `shapeRooms`, the walls of
+`HiPlanWall`), resolves wall and alignment as `resolveWallPlacement` does (side label or index,
+`WALL_PLACEMENT_DEFAULTS`, a correction for a wrong value instead of a refusal), computes the target
+from the calculated group, moves a target that overlaps another group to the nearest free place
+along the wall (correction), sets `repositioningData` from the target for the first article root
+and ends like `mergeArticleIntoGroup`: `createOrReplacePosDataFromArticleLayout` +
+`loadPosGroups(…, { reason: ADJUSTED, applyGroupPosition: true })`; the outcome carries
+`placedIn: 'corner' | 'wall'`. `HI_GROUP_OPERATION` gets `PLACE_GROUP`, `HiGroupOperationPayloads`
+the payload, `GROUP_OPERATION_HANDLERS` the handler. Server: the `place-group` executor becomes
+`findGroup` (until step 4) + the command call + result shaping; `plan-space.ts` and its test leave
+the server in step 6.
+Tests — `__tests__/hi-plan-space-test.ts` is `plan-space.test.ts` ported (footprint, corner
+geometry, wall and corner placement, free stretches, overlap, repositioning), and in
+`hi-tools-test.ts`, with `wallRowGroup` in a room of four walls:
+
+- `it('moves a group against a wall by repositioning data and reloads it with its position')` —
+  `loadPosGroups` called once with `ADJUSTED` and `applyGroupPosition`, the group's `pos` and
+  `rotationY` at the wall
+- `it('puts a corner group into the room corner the wall and the alignment name')`
+- `it('moves a target that overlaps another group along the wall to the nearest free place and says so')`
+- `it('places the group as asked and reports the overlap when the wall has no free place')`
+- `it('reports whether the group was placed in a corner or at a wall')`
+- `it('reads the wall by side label or index and the room by roomIndex, and corrects a wrong alignment')`
+- `it('refuses a group that is not in the plan and names the known group ids')`
+
+**Step 3b — the `create-or-replace-groups` command (roomle-ui + server).** New
+`src/hi-group-layout.ts` — the port of `group-layout.ts`: `relationsToDocking` with its
+corrections, the classification by category (`isWallUnitArticle`, `isTallUnitArticle`,
+`isBaseUnitArticle`, `isHoodArticle` — read from the article's `category`), `hangGapOf` from the
+calculated templates instead of catalog `Dim` attributes; `merge-article-into-group` takes a
+relation beside `dockTo` and the side moves of the server (`dockTarget` with `RowGeometry`) move
+into `mergeArticleIntoGroup`. New `src/hi-group-placement.ts` — the port of `group-placement.ts`:
+`findAnchorRoot`, `anchorFrameOfRoot` on the template of step 1 (article and overrides),
+`toRepositioningData`, `positionInPlacementFrame`. In `hi-tools.ts`:
+`createOrReplaceGroups({ posGroups })` — per group: the normalisation the server does today
+(`prepareGroup`, `dropUnknownPlacementFields`, `toArticlePick`, the generated roots dropped, every
+correction reported, nothing refused that can be built), the group-wide attributes split off, the
+relations into docking, the anchor frame into `repositioningData` for a placement by point, the
+load through `createOrReplacePosDataFromArticleLayout`, for a placement by wall the `placeGroup`
+of step 3a on the built group, the group-wide attributes set after the reload (D36), a replaced
+group keeps its position and a placement on it is reported (D46). The outcome names per input group
+what was built or why not (`notLoaded`, RML-18139) and `historySteps`. `shapeGroup` reports
+`position` in the placement frame (D33, `positionInPlacementFrame`) and `shapeRoot` gains
+`rowIndex` (the server's `withRowIndices`: `sidePartnersOf`, `rowWalk`), so the tools need no raw
+groups for either. Server: the executor keeps `resolveArticleIds` and `findGroup` until step 4,
+calls the command, shapes the result; `inPlacementFrame` and `withRowIndices` go.
+Tests — `__tests__/hi-group-layout-test.ts` and `__tests__/hi-group-placement-test.ts` are
+`group-layout.test.ts` and `group-placement.test.ts` ported (relations → docking with every
+correction; anchor root, anchor frame, repositioning data, placement-frame position), and in
+`hi-tools-test.ts`:
+
+- `it('builds the docking from the relations and loads the group')`
+- `it('places a new group by point with the anchor frame of its anchor article')` — a corner
+  article turned, `rootRelPos` from the template's docking corner
+- `it('places a new group by wall: loads it, moves it like place-group and reloads it once')`
+- `it('replaces a group whose id is in the plan, keeps its position and reports an unused placement')`
+- `it('names per input group what was built, and what was not and why')`
+- `it('sets the group attributes on every root module and the worktop after the reload')`
+- `it('reports the position of every returned group in the placement frame')`
+- `it('numbers the root modules of a row from the left')`
+- `it('merges an article by a relation and moves a taken side to the free end of the row')`
+
+**Step 4 — id and article resolution (roomle-ui + server).** New `src/hi-id-resolution.ts`:
+`resolveRootId` (exact, unique prefix, UUID first segment, one character off; an id that matches
+nothing or more than one is forwarded as sent), `resolveGroupId` (the same over group ids),
+`catalogSpellingOf` (the unique case-insensitive match). `_requireRootModule`,
+`_requireGroupsInScene` and `_requirePosArticleKey` resolve through them and push the reading into
+the outcome's `corrections`; an unknown article fails with the valid ids. Server: `resolveRootId`,
+`findGroup`, `groupOfRoot`, `groupHoldingRoot`, `catalogArticleId`, `catalogSpellingOf`,
+`resolveArticleIds` go; the executors send the ids as the agent gave them.
+Tests — `__tests__/hi-id-resolution-test.ts`:
+
+- `it('reads an exact id as it is')`, `it('reads a unique prefix')`, `it('reads the unique id that
+  differs in its first UUID segment')`, `it('reads the unique id one character off')`,
+  `it('forwards an ambiguous or unknown id as sent')`
+- `it('reads an article id in the spelling of the catalog')`,
+  `it('names the valid article ids for an unknown article')`
+- in `hi-tools-test.ts`: `it.each` over the commands with a `rootModuleId` or `groupId` —
+  `it('resolves a root id prefix in %s and reports the reading')`
+
+**Step 5 — the hints (roomle-ui + server).** New `src/hi-hints.ts`: `rowReachHints`,
+`movedUnitsAboveHint`, `turnedLegHints` and the obstacle hints, over the calculated groups before
+and after the operation, the rooms and the articles. `runGroupOperation` reads the calculated groups
+before the handler runs and after it and fills `hints`. Server: `withRowHints`, `withCorrections`'
+hint part, the obstacle hints and the `walls` reads for them go; the executors pass `hints` through.
+Tests — `__tests__/hi-hints-test.ts` with before/after groups from the builders:
+
+- `it('hints when a group reaches out of the room after the operation')`
+- `it('hints which wall units moved with their carrier')`
+- `it('hints a turned leg of a corner group')`
+- `it('hints a root module that overlaps an object or another group, or stands in front of a door,
+  with the free stretches of its wall')`
+- in `hi-plan-context-test.ts` (`runGroupOperation`): `it('returns the hints of the operation')`
+
+**Step 6 — the server loses what moved.** Delete `probeAnchorFrame`, `takeBackProbe`,
+`knownAnchorFrames`, `forgetAnchorFrames`, `plan-space.ts`, `group-layout.ts`,
+`group-placement.ts`, `countingPlannerApi`, `readGroupsKey` and their tests
+(`plan-space.test.ts`, `group-layout.test.ts`, `group-placement.test.ts`, the blocks `anchor
+probe`, `create-or-replace-groups relations`, `wall placement`, `positions in the placement
+frame`, `obstacle hints`, `root module ids` and `hints` of `tool-executors.test.ts` shrink to the
+adapter: argument reading, the command call, result shaping, error phrasing). Drop
+`loadExternalObjectGroupLayout`, `getExternalObjectGroups` and `removeExternalObject` from
+`planner-api.ts`, `MCP_PLANNER_METHODS` in `index.html`, `PLANNER_METHODS` in
+`browser-bridge.ts` and the ligna-store's `hi-mcp/browser-bridge.ts` (`tests/planner-api.test.ts`
+keeps the server and the reference copy in step).
+Documentation: §5.1 in `docs/hi-mcp-behaviour.md` (D23, D33, D46, C6, C7, G17, the method table,
+a decision row for the relations), `docs/hi-mcp-server.md`, `docs/implementation/tool-executors.md`
+and `layout-and-placement.md`, `.agents/skills/hi-mcp-server.md` and `hi-mcp-tools.md`,
+`hi-mcp/hi-mcp-server/README.md`; in roomle-ui the command table of
+`homag-intelligence-embedding.md` (today it lists eight of eleven commands), the JSDoc of
+`external-object-api.ts` and `.agents/homag-intelligence.md`.
+
+### 9.3 Verification
+
+Every step: the roomle-ui package tests (`npm run test` in `packages/web-sdk`) and the hi-mcp
+tests and typecheck (`npm test`, `npm run typecheck` in `hi-mcp`) green; the server step on the
+local dev build. After steps 2, 3b, 4 and 5: the test prompts of `docs/test-prompts.json` against
+the local roomle-ui with the models of the reference runs, compared per test with the reference
+session — a step is done when no test regresses on any model. Done overall when §5 holds: the tool
+results keep their shape, the probe and the three planner methods are gone, and
+`tool-executors.ts` holds no validation, resolution, geometry or hint logic.

@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18064](https://roomle.atlassian.net/browse/RML-18064) "HI agent: analyse where the time goes when it plans a kitchen from an image"
 > **Date**: 2026-10-08; second measurement 2026-10-13 ([9](#9-second-measurement-2026-10-13-after-the-five-improvements))
 > **Author**: AI Assistant
-> **Status**: Open — the five improvements are on master and measured ([9](#9-second-measurement-2026-10-13-after-the-five-improvements)): 49 s and 5.4 steps instead of 92 s and 10.2; six new flaws and improvements proposed, the like-for-like runs not made yet ([9.7](#97-open-runs-not-made))
+> **Status**: Open — the runs since the five improvements landed are analysed ([9](#9-second-measurement-2026-10-13-after-the-five-improvements)): 49 s and 5.4 steps on the three baseline tests, from three builds and two planners, so not a like-for-like comparison with the baseline; six new flaws and improvements proposed, the like-for-like runs not made yet ([9.7](#97-open-runs-not-made))
 > **Data**: [kitchen-from-image-time/benchmark.md](kitchen-from-image-time/benchmark.md) (the baseline, every run step by step), `kitchen-from-image-time/benchmark.json`; the second measurement in [kitchen-from-image-time-2026-10-13/benchmark.md](kitchen-from-image-time-2026-10-13/benchmark.md) and its `benchmark.json`
 > **How to repeat**: [hi-mcp-benchmarking.md](../skills/hi-mcp-benchmarking.md)
 > **Plan**: [kitchen-from-image-time-implementation-plan.md](kitchen-from-image-time-implementation-plan.md) — the five improvements and their unit tests
@@ -51,8 +51,10 @@ steps on average). The chat time is almost all model time (83 %); the tools take
    step. The catalog's article descriptions alone are 49 % of the catalog.
 
 The five improvements in [5](#5-proposed-improvements) were expected to save about 30–40 s of the
-92 s (about 4–6 steps) and a quarter to a third of the input tokens; measured after they landed:
-49 s, 5.4 steps and 268k input tokens ([9](#9-second-measurement-2026-10-13-after-the-five-improvements)). Each one says what it changes and what it
+92 s (about 4–6 steps) and a quarter to a third of the input tokens. The runs since they landed
+average 49 s, 5.4 steps and 268k input tokens on three builds and two planners: that describes the
+state since, not what the five improvements saved ([9](#9-second-measurement-2026-10-13-after-the-five-improvements)); the like-for-like runs are open
+([9.7](#97-open-runs-not-made)). Each one says what it changes and what it
 saves. The other two models of `docs/test-prompts.json` need runs before their breakdown exists
 ([6](#6-open-the-other-two-models)).
 
@@ -329,9 +331,12 @@ time? No model was run for it.
 
 ### 9.1 Executive summary
 
-gpt-6-astra now needs **49 s and 5.4 steps** on the three baseline tests (9 runs, 35–59 s) instead
-of 92 s and 10.2 steps, with 268k instead of 699k input tokens; over all four tests 57 s, 5.8 steps
-and 321k tokens (12 runs, 35–122 s). The chat time is 88 % model time, 12 % tools.
+In the runs since the improvements, gpt-6-astra needs on average **49 s and 5.4 steps** on the
+three baseline tests (9 runs, 35–59 s) and 268k input tokens; the baseline was 92 s, 10.2 steps and
+699k. Over all four tests: 57 s, 5.8 steps and 321k tokens (12 runs, 35–122 s). The nine runs come
+from three builds and two planners, one run per build and test ([9.3](#93-how-it-was-measured)): they describe the state
+since the improvements and do not measure what the five improvements saved — that needs the
+like-for-like runs of [9.7](#97-open-runs-not-made). The chat time is 88 % model time, 12 % tools.
 
 1. **`find-attributes` is not the tool that takes the time, but the steps it occupies are the second
    block.** The tool answers in 26 ms (63 calls, 1.6 s in 12 runs). The model spends 1.5 steps per
@@ -340,10 +345,10 @@ and 321k tokens (12 runs, 35–122 s). The chat time is 88 % model time, 12 % to
    the search steps are 28 % (56 s per run). The cause is what the model has to search for: the
    attribute vocabulary is not in the plan context, and it costs 5.5k tokens with shared value
    lists listed once ([9.5.1](#951-the-vocabulary-is-only-to-be-searched)).
-2. **Every plan-changing tool call waits 2 s in the server** for a follow-up history event that
-   does not arrive: 13 of the 16 calls of the two newest sessions, 38 s of the 81 s tool time
-   (3.2 s per run), and the `undo` after such a call waits 2 s more and undoes nothing
-   ([9.5.2](#952-the-2-s-wait-and-the-withheld-undo)).
+2. **Most plan-changing tool calls of the two newest sessions wait 2 s in the server** for a
+   follow-up history event that does not arrive: 13 of their 16 calls, 32 s outside the planner
+   calls in 8 runs (4.0 s per run); none of the 6 calls of the 10-08 session waits. The `undo` after
+   such a call waits 2 s more and undoes nothing ([9.5.2](#952-the-2-s-wait-and-the-withheld-undo)).
 3. **Sizes the library cannot calculate** cost the right-wall test its second create: 1–3 steps,
    23–41 s in 2 of 3 runs; the catalog gives each dimension's value, not its range
    ([9.5.3](#953-sizes-the-library-cannot-calculate)).
@@ -373,7 +378,8 @@ planner, which no run records ([9.8](#98-measurement-gaps)):
 | `mcp-test-2026-10-13_17-19-39` | master of that day — the plan-changing tools run in roomle-ui (D71) | local roomle-ui (`--dev`) | gpt-6-astra |
 
 Left out: the gpt-5.4-mini run of `image-kitchen-left-wall` (run 5), whose turn was ended after
-5 minutes. The gpt-6-astra tables pool the three sessions (3 runs per test); the other three models
+5 minutes. The gpt-6-astra tables pool the three sessions (3 runs per test, one per build): they describe the
+state since the improvements, not a like-for-like comparison with the baseline ([9.7](#97-open-runs-not-made)); the other three models
 have one run per test and give a step breakdown, not a baseline. The planner time per call comes
 from `planner-calls.json` (`ms`), so the server's own time in a tool call is the tool's time minus
 its planner calls.
@@ -386,9 +392,9 @@ from the first step's 135,301 characters and 35,212 result tokens.
 
 ### 9.4 Results
 
-#### 9.4.1 Before and after, per test (gpt-6-astra)
+#### 9.4.1 The baseline and the runs since, per test (gpt-6-astra)
 
-| Test | Before: chat s | steps | input tokens | After: 10-08 | 10-11 | 10-13 | After, mean of 3 |
+| Test | Baseline: chat s | steps | input tokens | Since: 10-08 | 10-11 | 10-13 | Since, mean of 3 |
 |---|---|---|---|---|---|---|---|
 | `image-kitchen-left-wall` | 69, 71 | 9, 10 | 563k, 631k | 55 s, 8, 368k | 49 s, 4, 214k | 35 s, 4, 154k | **46 s, 5.3, 245k** |
 | `image-kitchen-back-right-corner` | 137, 60 | 16, 7 | 1,350k, 455k | 42 s, 4, 140k | 42 s, 5, 283k | 59 s, 7, 453k | **48 s, 5.3, 292k** |
@@ -396,6 +402,10 @@ from the first step's 135,301 characters and 35,212 result tokens.
 | **Baseline, the three tests** | **92 s** | **10.2** | **699k** | | | | **49 s, 5.4, 268k** |
 | `image-planning-right-wall` (one valid run before) | 113 | 12 | 1,102k | 43 s, 4, 154k | 122 s, 10, 885k | 87 s, 7, 397k | 84 s, 7.0, 479k |
 | All four tests | 95 s | 10.4 | 757k | | | | 57 s, 5.8, 321k |
+
+The three columns since the improvements are three builds and two planners, one run each
+([9.3](#93-how-it-was-measured)): the table describes both states, it does not attribute the difference to the five
+improvements.
 
 The spread within a test is still large where the first create fails in part: the right-wall test
 takes 43 s with one create and 87–122 s with two ([9.5.3](#953-sizes-the-library-cannot-calculate)).
@@ -454,7 +464,7 @@ The first step's results are 32–37k tokens (plan context 116,509 characters, o
 
 | Tool | Calls (gpt-6-astra, 12 runs) | Mean | Note |
 |---|---|---|---|
-| `create-or-replace-groups` | 14 | 4.6 s | the planner's operation 1.5–4.0 s for 9–23 roots with 7–10 group attributes — the same on bo-test (loads plus `change-attributes`) and in roomle-ui (one command) — plus the server's 2 s wait ([9.5.2](#952-the-2-s-wait-and-the-withheld-undo)) |
+| `create-or-replace-groups` | 14 | 4.6 s | the planner's operation 1.5–4.0 s for 9–23 roots with 7–10 group attributes — the same on bo-test (loads plus `change-attributes`) and in roomle-ui (one command) — plus a 2 s wait in the server in 9 of the 10 creates of the 10-11 and 10-13 sessions, twice for a two-group create of 10-11, and in none of the 4 creates of 10-08 ([9.5.2](#952-the-2-s-wait-and-the-withheld-undo)) |
 | `change-module-attribute` | 2 | 2.8 s | 0.6–0.9 s planner, 2 s wait |
 | `undo` | 2 | 2.1 s | no planner undo: withheld ([9.5.2](#952-the-2-s-wait-and-the-withheld-undo)) |
 | `place-group`, `swap-root-modules` | 4 | 0.8–1.5 s | |
@@ -491,7 +501,9 @@ handle and plinth attributes alone 11,758 (3.1k tokens); one colour list of 21 v
 time — is 2.0–2.6 s in 7 of 8 calls of the 10-11 session and 2.01–2.02 s in 6 of 8 of the 10-13
 session (runs 21–23: creates and two `change-module-attribute` calls; run 24's create and
 `place-group`: 35 and 18 ms); a create with two groups waits twice (runs 15, 16: 4.4 and 4.6 s).
-38 s of the 81 s tool time of the 12 runs, 3.2 s per run. Live: a create with five group attributes
+The 13 calls that wait spend 32 s outside their planner calls — 15 waits of 2 s and 2 s of other
+server work —, 4.0 s per run of the two sessions. None of the 6 calls of the 10-08 session waits:
+their server time, 0.4–1.7 s, is the server-side tool logic between its planner calls. Live: a create with five group attributes
 took 2,575 ms; the planner's operation answered at 445 ms, the page relayed three history events at
 134, 289 and 445 ms, then nothing until the server read the groups at 2,558 ms. A
 `change-module-attribute` took 3,618 ms: operation 1,606 ms, one history event at 1,609 ms. The
@@ -565,7 +577,7 @@ step cost of [9.4.3](#943-what-a-step-costs-per-model).
 | # | Improvement | Repositories | Changes | Expected saving |
 |---|---|---|---|---|
 | 1 | **The vocabulary in the plan context.** `get-plan-context` returns by default the attributes of the compacted master data with shared value lists listed once (5.5k tokens); the rules and the catalog say that ids and values are there, so a kitchen needs no search. `find-attributes` stays for a question | roomle-hi-example | `get-plan-context` in `tool-executors.ts`, its description and `AUTHORING_RULES` in `hi-mcp-server.ts` | 1.5 steps and about 11 s per run (12.5 s of search steps, minus 0.2 s per step for the tokens); with gpt-5.4-mini 3 steps and about 56 s; input tokens about +24k (the section in every step, the search results gone). Mistral-Large-3 gets real ids for +2 s |
-| 2 | **No wait for an event that does not come, and an undo that works.** A bug analysis of the follow-up accounting with the planner's history events logged; then either roomle-ui emits the event or the server stops expecting it | roomle-ui, roomle-hi-example | `countingPlannerApi`, `revertToolCall`, `tool-executors.ts`; `runToolCommand`, `FOLLOW_UP_COMMANDS`, roomle-ui `hi-tool-commands.ts` | 2 s per plan-changing call, about 3.2 s per run; `undo` after a create or an attribute change undoes (run 15: 2 steps, 18 s) |
+| 2 | **No wait for an event that does not come, and an undo that works.** A bug analysis of the follow-up accounting with the planner's history events logged; then either roomle-ui emits the event or the server stops expecting it | roomle-ui, roomle-hi-example | `countingPlannerApi`, `revertToolCall`, `tool-executors.ts`; `runToolCommand`, `FOLLOW_UP_COMMANDS`, roomle-ui `hi-tool-commands.ts` | 2 s per wait: about 3.8 s per run in the two newest sessions (15 waits in 8 runs), 2.5 s per run over all 12; `undo` after a create or an attribute change undoes (run 15: 2 steps, 18 s) |
 | 3 | **The sizes an article takes in its catalog entry.** The library names the heights and depths of the flip-lift cabinets and the widths of the units in the descs (library item 64); the catalog's `dimensions` carry a value list where the master data has one | library data (desc); roomle-hi-example only if the master data has ranges to pass through | the descs; `agentFacingArticle` | 1–3 steps and 23–41 s in 2 of 12 runs, about 5 s per run on average |
 | 4 | **Say what `desc` covers.** The `include` description: `desc` has the function and the selection hint, enough to pick; `articleDescriptions` answers a question about an article's requirements and neighbours | roomle-hi-example | the `get-plan-context` description in `hi-mcp-server.ts` | 22k tokens per step in a third of the runs, about 1 s per run on average; 3–4 s in those runs |
 | 5 | **The placement by wall keeps clear of the group in the corner.** `alignment: back` moves a group past the footprint of a group that already stands in that corner — of the same call too — and the result says so as a correction | roomle-ui (`hi-wall-placement.ts`, the create command) | the wall placement | 1 step and 8 s per run with two groups on adjacent walls (3 of 12 runs), about 2 s per run on average |

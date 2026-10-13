@@ -120,7 +120,7 @@ folder of the same name.
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Where the time goes when the HI agent plans a kitchen from an image](benchmarks/kitchen-from-image-time.md) | Open (the five improvements measured: 49 s instead of 92 s; six new improvements proposed, like-for-like runs not made) | 2026-10-13 |
+| [Where the time goes when the HI agent plans a kitchen from an image](benchmarks/kitchen-from-image-time.md) | Open (runs since the five improvements: 49 s on three builds and two planners, not like for like; six new improvements proposed, like-for-like runs not made) | 2026-10-13 |
 | [Where the time goes when the HI agent plans a kitchen from an image: implementation plan](benchmarks/kitchen-from-image-time-implementation-plan.md) | Open (reviewed; to be implemented) | 2026-10-08 |
 
 ### Backlog

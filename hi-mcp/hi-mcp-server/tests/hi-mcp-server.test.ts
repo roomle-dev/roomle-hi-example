@@ -36,12 +36,9 @@ const createMockPlannerApi = (
 ): PlannerApi => ({
   extended: {
     getExternalObjectPlanContext: vi.fn(async () => ({})),
-    loadExternalObjectGroupLayout: vi.fn(async () => []),
     externalObjectGroupOperation: vi.fn(async () => ({})),
     fetchPrice: vi.fn(async () => null),
     getExternalObjectSnapshot: vi.fn(async () => ({})),
-    getExternalObjectGroups: vi.fn(async () => []),
-    removeExternalObject: vi.fn(async () => undefined),
     undo: vi.fn(async () => undefined),
     redo: vi.fn(async () => undefined),
     ...overrides,
@@ -163,11 +160,21 @@ describe('hi-mcp-server tool calls', () => {
 
   it('logs the feedback and the errors of a tool as one JSON line', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    // the planner corrects the article id and rejects the empty group
     const plannerApi = createMockPlannerApi({
-      getExternalObjectPlanContext: vi.fn(async () => ({
-        groups: [{ id: 'g1', libraryId: 'lib-1', roots: [] }],
-        articles: [{ articleId: 'article-1', libraryId: 'lib-1' }],
-      })),
+      externalObjectGroupOperation: vi.fn(async (command: string) => {
+        if (command === 'create-or-replace-groups') {
+          throw new Error(
+            'Invalid pos groups - nothing was loaded:\nposGroups[0]: needs a non-empty roots array'
+          );
+        }
+        return {
+          command,
+          corrections: [
+            "exchange-root-module: articleId 'ARTICLE-1' was read as 'article-1'",
+          ],
+        };
+      }),
     });
     const client = await connectClient(plannerApi);
 
@@ -253,12 +260,8 @@ describe('hi-mcp-server tool calls', () => {
     });
   });
 
-  it('accepts a number as an attribute value and passes it on as its string', async () => {
-    const plannerApi = createMockPlannerApi({
-      getExternalObjectPlanContext: vi.fn(async () => ({
-        groups: [{ id: 'g1', roots: [{ id: 'r1' }] }],
-      })),
-    });
+  it('accepts a number as an attribute value and passes it on to the planner as sent', async () => {
+    const plannerApi = createMockPlannerApi();
     const client = await connectClient(plannerApi);
 
     const result = await client.callTool({
@@ -273,22 +276,25 @@ describe('hi-mcp-server tool calls', () => {
     expect((result as { isError?: boolean }).isError).toBeFalsy();
     expect(
       plannerApi.extended.externalObjectGroupOperation
-    ).toHaveBeenCalledWith('change-attributes', {
-      groupId: 'g1',
-      attributes: [
-        { attributeId: 'mod_Width', value: '900', rootModuleIds: ['r1'] },
-      ],
+    ).toHaveBeenCalledWith('change-module-attribute', {
+      rootModuleIds: ['r1'],
+      attributeId: 'mod_Width',
+      value: 900,
     });
   });
 
   it('runs a command tool against the planner API and returns its result', async () => {
     const operationResult = {
-      command: 'delete-root-module',
+      command: 'delete-article-in-place',
       groups: [{ id: 'g1' }],
       removedGroupIds: [],
     };
     const plannerApi = createMockPlannerApi({
-      externalObjectGroupOperation: vi.fn(async () => operationResult),
+      externalObjectGroupOperation: vi.fn(async () => ({
+        ...operationResult,
+        historySteps: 1,
+        historyFollowUps: 0,
+      })),
     });
     const client = await connectClient(plannerApi);
 
@@ -299,11 +305,8 @@ describe('hi-mcp-server tool calls', () => {
 
     expect(
       plannerApi.extended.externalObjectGroupOperation
-    ).toHaveBeenCalledWith('delete-root-module', { rootModuleId: 'r1' });
-    expect(JSON.parse(textOf(result))).toEqual({
-      ...operationResult,
-      command: 'delete-article-in-place',
-    });
+    ).toHaveBeenCalledWith('delete-article-in-place', { rootModuleId: 'r1' });
+    expect(JSON.parse(textOf(result))).toEqual(operationResult);
   });
 
   it('answers get-authoring-rules without a planner call', async () => {
@@ -1054,8 +1057,14 @@ describe('hi-mcp-server tool calls', () => {
     expect(textOf(result)).toContain('No HI page connected.');
   });
 
-  it('rejects an invalid payload in the server without loading anything', async () => {
-    const plannerApi = createMockPlannerApi();
+  it("returns the planner's rejection of an invalid payload as an error result", async () => {
+    const plannerApi = createMockPlannerApi({
+      externalObjectGroupOperation: vi.fn(async () => {
+        throw new Error(
+          'Invalid pos groups - nothing was loaded:\nposGroups[0]: needs a non-empty roots array'
+        );
+      }),
+    });
     const client = await connectClient(plannerApi);
     const result = await client.callTool({
       name: 'create-or-replace-groups',
@@ -1065,8 +1074,10 @@ describe('hi-mcp-server tool calls', () => {
     expect(textOf(result)).toContain('Invalid pos groups - nothing was loaded');
     expect(textOf(result)).toContain('needs a non-empty roots array');
     expect(
-      plannerApi.extended.loadExternalObjectGroupLayout
-    ).not.toHaveBeenCalled();
+      plannerApi.extended.externalObjectGroupOperation
+    ).toHaveBeenCalledWith('create-or-replace-groups', {
+      posGroups: [{ roots: [] }],
+    });
   });
 
   it('rejects an unknown wall label of place-group without a planner call', async () => {
@@ -1115,69 +1126,29 @@ describe('hi-mcp-server tool calls', () => {
 });
 
 describe('hi-mcp-server through the page bridge', () => {
-  it('runs create-or-replace-groups as planner calls the page executes', async () => {
+  it('runs create-or-replace-groups as one planner call the page executes', async () => {
     const bridge = new PageBridge();
     const socket = attachPage(bridge);
-    // a range hood, whose origin is its centre: 299 mm right of its left edge
-    const hoodVectors = [
-      { id: 'LeftBottom', start: [-299, 0, 0], end: [-299, 0, 501] },
-      { id: 'RightBottom', start: [299, 0, 0], end: [299, 0, 501] },
-    ];
-    let rawGroups: object[] = [];
-    let loaded = false;
-    socket.respond = (method, args) => {
-      if (method === 'loadExternalObjectGroupLayout') {
-        const [layout] = args as [any];
-        if (layout.posGroups[0].roots[0].id === 'anchor-probe') {
-          rawGroups = [
-            {
-              id: 'probe',
-              roots: [{ id: 'p1', articleId: 'DU', dockInfos: hoodVectors }],
-            },
-          ];
-          return [{ id: 'probe' }];
-        }
-        // the planner keeps the group origin at the hood's centre
-        rawGroups = [
-          {
-            id: 'g1',
-            pos: [299, 0, 0],
-            rotationY: 0,
-            roots: [
-              {
-                id: 'u1',
-                articleId: 'DU',
-                articlePos: [0, 0, 0],
-                rotationY: 0,
-                dockInfos: hoodVectors,
-              },
-            ],
-          },
-        ];
-        loaded = true;
-        return [{ id: 'g1' }];
+    const created = { id: 'g1', position: { pos: [0, 0, 0], rotationY: 0 } };
+    let groups: object[] = [];
+    socket.respond = (method) => {
+      if (method === 'externalObjectGroupOperation') {
+        groups = [created];
+        return {
+          loaded: [{ id: 'g1' }],
+          groups,
+          historySteps: 1,
+          historyFollowUps: 0,
+        };
       }
-      if (method === 'getExternalObjectGroups') {
-        return rawGroups;
-      }
-      if (method === 'undo') {
-        rawGroups = [];
-        return undefined;
-      }
-      const [include] = args as [string[]];
-      if (include.includes('articles')) {
-        return { articles: [{ articleId: 'DU' }] };
-      }
-      return {
-        groups: loaded
-          ? [{ id: 'g1', position: { pos: [299, 0, 0], rotationY: 0 } }]
-          : [],
-      };
+      return { groups };
     };
     const client = await connectClient(createPlannerApi(bridge));
-    const roots = [{ id: 'u1', articleId: 'DU' }];
     const posGroups = [
-      { roots, placement: { posGroup: [0, 0, 0], posRotationY: 0 } },
+      {
+        roots: [{ id: 'u1', articleId: 'DU' }],
+        placement: { posGroup: [0, 0, 0], posRotationY: 0 },
+      },
     ];
 
     const result = await client.callTool({
@@ -1188,48 +1159,19 @@ describe('hi-mcp-server through the page bridge', () => {
     const calls = socket.sent
       .map((data) => JSON.parse(data))
       .filter((message) => message.kind === 'call');
-    expect(calls.map((call) => call.method)).toEqual([
-      'getExternalObjectPlanContext',
-      'getExternalObjectPlanContext',
-      'getExternalObjectGroups',
-      // the plan before the first step, for undo
-      'getExternalObjectGroups',
-      // the probe learns the hood's frame and undoes its load
-      'loadExternalObjectGroupLayout',
-      'getExternalObjectGroups',
-      'undo',
-      'getExternalObjectGroups',
-      'loadExternalObjectGroupLayout',
-      'getExternalObjectPlanContext',
-      // the position read back in the placement frame
-      'getExternalObjectGroups',
-      // the final calculation diagnostics
-      'getExternalObjectGroups',
+    expect(calls.map((call) => [call.method, call.args])).toEqual([
+      // the plan before the call, for undo
+      ['getExternalObjectPlanContext', [['groups']]],
+      [
+        'externalObjectGroupOperation',
+        ['create-or-replace-groups', { posGroups }],
+      ],
       // the plan after the call, for undo
-      'getExternalObjectGroups',
+      ['getExternalObjectPlanContext', [['groups']]],
     ]);
-    expect(calls[8].args).toEqual([
-      {
-        posGroups: [
-          {
-            roots,
-            repositioningData: {
-              posGroup: [0, 0, 0],
-              posRotationY: 0,
-              rootId: 'u1',
-              rootRelPos: [299, 0, 0],
-              rootRelRotationY: 0,
-            },
-          },
-        ],
-      },
-      'posGroups',
-      { reason: 'adjusted' },
-    ]);
-    // the agent reads back the point it placed the hood's left edge at
     expect(JSON.parse(textOf(result))).toEqual({
       loaded: [{ id: 'g1' }],
-      groups: [{ id: 'g1', position: { pos: [0, 0, 0], rotationY: 0 } }],
+      groups: [created],
     });
   });
 
@@ -1238,28 +1180,29 @@ describe('hi-mcp-server through the page bridge', () => {
     connectPlanHistory(bridge, planHistory);
     const socket = attachPage(bridge);
     const eventsBefore = planHistory.events;
-    let rawGroups: any[] = [{ id: 'g1', roots: [] }];
+    let groups: any[] = [{ id: 'g1', roots: [] }];
     const past: any[][] = [];
     const historyEvent = (undo: boolean, redo: boolean) =>
       socket.receive({ kind: 'event', name: 'historyChange', undo, redo });
     socket.respond = (method) => {
       if (method === 'externalObjectGroupOperation') {
-        past.push(rawGroups);
-        rawGroups = [];
+        past.push(groups);
+        groups = [];
         historyEvent(true, false);
-        return { command: 'delete-group', groups: [], removedGroupIds: ['g1'] };
+        return {
+          command: 'delete-group',
+          groups: [],
+          removedGroupIds: ['g1'],
+          historySteps: 1,
+          historyFollowUps: 0,
+        };
       }
       if (method === 'undo') {
-        rawGroups = past.pop() ?? rawGroups;
+        groups = past.pop() ?? groups;
         historyEvent(false, true);
         return undefined;
       }
-      if (method === 'getExternalObjectGroups') {
-        return rawGroups;
-      }
-      return {
-        groups: rawGroups.map((group) => ({ id: group.id, roots: [] })),
-      };
+      return { groups };
     };
     const client = await connectClient(createPlannerApi(bridge));
 
@@ -1281,7 +1224,7 @@ describe('hi-mcp-server through the page bridge', () => {
     });
   });
 
-  it('runs place-group as planner calls the page executes', async () => {
+  it('runs place-group as one planner call the page executes', async () => {
     const bridge = new PageBridge();
     const socket = attachPage(bridge);
     const rightWall = {
@@ -1293,47 +1236,25 @@ describe('hi-mcp-server through the page bridge', () => {
       type: 'wall',
       facingRotationY: 270,
     };
-    const attributes = [
-      { id: 'b', value: 800 },
-      { id: 't', value: 600 },
-    ];
-    const calculatedGroup = {
+    let placed = false;
+    const group = () => ({
       id: 'g1',
-      libraryId: 'lib-1',
-      pos: [0, 0, 0],
-      rotationY: 0,
-      roots: [
-        {
-          id: 'u1',
-          articleId: 'a1',
-          articlePos: [0, 0, 0],
-          rotationY: 0,
-          attributes,
-        },
-      ],
-    };
-    let loaded = false;
+      position: placed
+        ? { pos: [4000, 0, -3000], rotationY: 270 }
+        : { pos: [0, 0, 0], rotationY: 0 },
+    });
     socket.respond = (method) => {
-      if (method === 'getExternalObjectGroups') {
-        return [
-          loaded
-            ? { ...calculatedGroup, pos: [4000, 0, -3000], rotationY: 270 }
-            : calculatedGroup,
-        ];
+      if (method === 'externalObjectGroupOperation') {
+        placed = true;
+        return {
+          placedIn: 'wall',
+          wall: rightWall,
+          group: group(),
+          historySteps: 1,
+          historyFollowUps: 0,
+        };
       }
-      if (method === 'loadExternalObjectGroupLayout') {
-        loaded = true;
-        return [{ id: 'g1' }];
-      }
-      return {
-        rooms: { rooms: [{ walls: [rightWall] }] },
-        groups: [
-          {
-            id: 'g1',
-            position: { pos: loaded ? [4000, 0, -3000] : [0, 0, 0] },
-          },
-        ],
-      };
+      return { groups: [group()] };
     };
     const client = await connectClient(createPlannerApi(bridge));
 
@@ -1345,37 +1266,15 @@ describe('hi-mcp-server through the page bridge', () => {
     const calls = socket.sent
       .map((data) => JSON.parse(data))
       .filter((message) => message.kind === 'call');
-    expect(calls.map((call) => call.method)).toEqual([
-      'getExternalObjectPlanContext',
-      'getExternalObjectGroups',
-      // the plan before the first step, for undo
-      'getExternalObjectGroups',
-      'loadExternalObjectGroupLayout',
-      // the group as built at the new place, which stands as asked
-      'getExternalObjectGroups',
-      'getExternalObjectPlanContext',
-      'getExternalObjectGroups',
+    expect(calls.map((call) => [call.method, call.args])).toEqual([
+      // the plan before the call, for undo
+      ['getExternalObjectPlanContext', [['groups']]],
+      [
+        'externalObjectGroupOperation',
+        ['place-group', { groupId: 'g1', wall: 'right', alignment: 'top' }],
+      ],
       // the plan after the call, for undo
-      'getExternalObjectGroups',
-    ]);
-    expect(calls[0].args).toEqual([['rooms', 'groups', 'obstacles']]);
-    expect(calls[3].args).toEqual([
-      {
-        posGroups: [
-          {
-            id: 'g1',
-            libraryId: 'lib-1',
-            roots: [{ id: 'u1', articleId: 'a1', attributes }],
-            repositioningData: {
-              posGroup: [4000, 0, -3000],
-              posRotationY: 270,
-              rootId: 'u1',
-            },
-          },
-        ],
-      },
-      'posGroups',
-      { reason: 'adjusted' },
+      ['getExternalObjectPlanContext', [['groups']]],
     ]);
     expect(JSON.parse(textOf(result))).toEqual({
       placedIn: 'wall',

@@ -105,13 +105,13 @@ The start script (`npm start`) provides:
 │   └── hi-mcp-server/            # PoC 1: HI groups from a single JSON pos-group payload
 │       ├── server.ts             # Entry point: /mcp + WebSocket bridge on :3100
 │       ├── hi-mcp-server.ts      # McpServer setup + tool registrations (zod)
-│       ├── tool-executors.ts     # Tool logic: validation, planner call composition, hints
-│       ├── group-placement.ts    # Placement of a new group -> anchor root and planner repositioning
-│       ├── plan-space.ts         # place-group geometry: footprint, height, wall and corner placement, overlap test
-│       ├── planner-api.ts        # The planner methods the tools call, relayed to the page
+│       ├── tool-executors.ts     # Tool executors: plan context, find-attributes, the forward of the plan-changing tools, undo/redo
+│       ├── agent-facing.ts       # The plan context in the agent's words: wall names, corners, the wall of a door or window
+│       ├── plan-history.ts       # The record of the plan-changing tool calls for undo and redo
+│       ├── planner-api.ts        # The six planner methods the tools call, relayed to the page
 │       ├── page-bridge.ts        # Connected-page registry, call correlation
 │       ├── types.ts              # WebSocket message protocol
-│       ├── tests/                # Unit tests (tool-executors, group-placement, plan-space, planner-api, page-bridge, hi-mcp-server)
+│       ├── tests/                # Unit tests (tool-executors, plan-history, planner-api, page-bridge, hi-mcp-server)
 │       ├── README.md             # Complete PoC documentation (clients: ligna-store chat window, HI presets example)
 │       └── QUICKSTART.md         # Shortest path to a first tool call
 │   ├── hi-mcp-client/            # Page side of the server (reference copy; the store runs its own)
@@ -189,7 +189,8 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 1. **Single MCP Server Implementation** — The TypeScript server in `hi-mcp/hi-mcp-server` (`@modelcontextprotocol/sdk`, `ws`, zod, run via `vite-node`) is the only MCP server; clients (example page, ligna-store) wire themselves to it via environment variables
 2. **Streamable HTTP** — MCP protocol handled by the MCP SDK, JSON response mode, stateless (a new transport per request)
 3. **WebSocket Bridge** — The `/bridge` WebSocket connects the MCP server to the browser page
-4. **Tool Logic in the Server, Planner Calls in the Page** — The tools run in the server (`tool-executors.ts`); the planner methods they call (`planner-api.ts`) are relayed to `roomDesignerApi.extended` in the page, which executes only the methods on its allow-list
+4. **Tools in the Server, Planner Calls in the Page** — The tools run in the server (`tool-executors.ts`); the planner methods they call (`planner-api.ts`) are relayed to `roomDesignerApi.extended` in the page, which executes only the methods on its allow-list
+5. **Plan-Changing Tools Run in roomle-ui** — Every tool that changes the plan is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`; roomle-ui performs the whole tool as an HI tool command (`hi-tool-commands.ts` in `packages/web-sdk/packages/homag-intelligence/src/`): corrections, ids, docking from the relations, placement, group materials, hints. It answers with the tool's result and the planner steps it made, which the server counts for undo (D71 of [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md#3-decisions))
 
 ### HI Data Model
 
@@ -197,14 +198,14 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 2. **Articles** — Catalog of available modules with dimensions, docking vectors, categories
 3. **Groups** — Collections of root modules (article picks) with docking relationships
 4. **Docking** — Roots are positioned relative to each other via docking vectors and modes
-5. **Positioning** — New groups are positioned with a `placement`: at a wall or in a room corner by `wall`, `alignment` and `offsetMm` — the server loads the group and moves it there with the logic of `place-group` (`plan-space.ts`) —, anywhere else by one point and one rotation, which the server anchors (`group-placement.ts`). Existing groups are moved with `place-group`
+5. **Positioning** — New groups are positioned with a `placement`: at a wall or in a room corner by `wall`, `alignment` and `offsetMm` — the tool loads the group and moves it there with the logic of `place-group` (roomle-ui `hi-wall-placement.ts`, `hi-plan-space.ts`) —, anywhere else by one point and one rotation, which the tool anchors by the frame of the anchor's article template (roomle-ui `hi-group-placement.ts`). Existing groups are moved with `place-group`
 
 ### Authoring Rules
 
 - Never author root positions — roots are positioned by their relation only
 - New groups are positioned with a `placement` only (`posRotationY` counter-clockwise as seen from above: right wall 270, left wall 90)
 - Every root after the first names one neighbour with one relation: `rightOf`, `leftOf`, `onTop`, `above` or `behind`
-- The server builds the docking from the relations — vector pairs ownDockingVector -> dockingVector with mode and offset (`group-layout.ts`); groups from `get-plan-context` carry it as `contextData`
+- The tool builds the docking from the relations — vector pairs ownDockingVector -> dockingVector with mode and offset (roomle-ui `hi-group-layout.ts`); groups from `get-plan-context` carry it as `contextData`
 - Free docking vectors indicate where new modules can be added
 
 ## Hard Rules
@@ -284,8 +285,10 @@ When an agent creates wrong content, the root cause is the MCP instructions: a r
 description or an example misleads the agent, asks it to combine more than it can, or the tool
 API makes the wrong payload easy to write. That is where the fix belongs.
 
-This is about the MCP server. The planner's checks (roomle-ui) protect the planner from breaking and
-stay as they are; the server corrects the input before it forwards it, where it can.
+This is about the MCP server and the HI tool commands its plan-changing tools run in roomle-ui
+(`hi-tool-commands.ts`). The planner's checks (the group operations of roomle-ui) protect the planner
+from breaking and stay as they are; the tool command corrects the input before it runs an operation,
+where it can.
 
 **Guards are always treated as a last resort.** Take the first step that works:
 
@@ -447,9 +450,9 @@ A push to `release/cloudflare` deploys the MCP server to Cloudflare
 ### Adding New Tools
 
 1. Register the tool in `hi-mcp/hi-mcp-server/hi-mcp-server.ts` (zod schema + handler)
-2. Implement the executor in `hi-mcp/hi-mcp-server/tool-executors.ts` — the pages stay untouched; an executor that changes the plan is wrapped in `oneAtATime`, so it never runs beside another plan change
-3. An edit of existing groups needs no new planner method: add the command in roomle-ui (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`) and forward it through `externalObjectGroupOperation`. Only if the tool needs a planner method the pages do not expose yet: add it to `hi-mcp/hi-mcp-server/planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts`, then copy to the ligna-store)
-4. Add or extend unit tests in the matching `tests/` folder
+2. Implement the executor in `hi-mcp/hi-mcp-server/tool-executors.ts` — the pages stay untouched. A tool that changes the plan is a tool command in roomle-ui (`HI_TOOL_COMMAND` in `homag-intelligence/src/hi-plan-context.ts`, the command in `HI_TOOL_COMMANDS` of `hi-tool-commands.ts`) plus a forwarder here, `inPlanner('<tool name>')`, which sends it through `externalObjectGroupOperation` and wraps it in `oneAtATime`, so it never runs beside another plan change, and in the undo record
+3. An edit the planner does not offer yet is a group operation the tool command runs (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`, executed in `hi-tools.ts`) — no new planner method. Only if a tool needs a planner method the pages do not expose yet: add it to `hi-mcp/hi-mcp-server/planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts`, then copy to the ligna-store)
+4. Add or extend unit tests in the matching `tests/` folder — a tool command's in roomle-ui `homag-intelligence/__tests__/hi-tool-commands/`
 5. Update `docs/hi-mcp-behaviour.md`, the `docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
 6. Test with MCP client
 

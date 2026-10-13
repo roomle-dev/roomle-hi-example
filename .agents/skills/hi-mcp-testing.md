@@ -199,7 +199,7 @@ Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json`
 | `run.json` | `plan`; per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId`; `snapshotCaptured`; `navigations` (timestamp, phase, main frame, URL, `fragmentOnly`) |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
 | `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) and what stands in the room (`obstacles.objects[]`: `kind`, `outline`, `bottomMm`/`topMm`, a door or window with `wall` and `fromEndMm`; `obstacles.groups[].roots[]`: the room-space outline and height range of every root module) |
-| `planner-calls.json` | what the MCP server sent to the planner during the chat: `loadExternalObjectGroupLayout` — `args[0].posGroups[]` with the roots, their docking (`contextData.dockedRoots`) and attributes, and `repositioningData` (the placement); `externalObjectGroupOperation` — `args` = the command and its payload; `ok: false` with the page's `error` |
+| `planner-calls.json` | what the MCP server sent to the planner during the chat: `externalObjectGroupOperation` — `args` = the tool and the arguments the model sent (for `create-or-replace-groups` `args[1].posGroups[]` with the roots, their relations and attributes, and the `placement`), the result's `corrections`, `notLoaded`, `historySteps`; `ok: false` with the page's `error`. The docking the relations became is in `plan-context.json` (`groups[].roots[].contextData`) |
 | `console.log` | `[hi-mcp]` and `[hi-chat]` errors; `[run-hi-mcp-prompt] navigation` events |
 
 The evidence at a glance:
@@ -207,8 +207,8 @@ The evidence at a glance:
 ```bash
 jq '{planSnapshotId, errors, turns: [.turns[] | {prompt, answer: (.answer | .[0:500]), tools, toolCalls}]}' "$R/run.json"
 jq -c '.groups[]? | {group: .id[0:8], pos: .position.pos, rotationY: .position.rotationY, sizeMm: [.position.footprint.widthMm, .position.footprint.depthMm], roots: [.roots[]? | .desc]}' "$R/plan-context.json"
-jq -c '.[] | select(.method != "getExternalObjectPlanContext") | {method, ok, error, placement: [.args[0] | objects | .posGroups[]?.repositioningData | select(.)], firstArg: ([.args[0] | strings][0]), command: (if .method == "externalObjectGroupOperation" then .args else null end)}' "$R/planner-calls.json"
-jq -c '[.[] | select(.method == "loadExternalObjectGroupLayout")][-1].args[0].posGroups[].roots[] | {id, articleId, attributes: [.attributes[]? | "\(.id)=\(.value)"], docks: [.contextData.dockedRoots[]? | "\(.ownDockingVector)->" + ([.dockedRoots[].id] | join(","))]}' "$R/planner-calls.json"
+jq -c '.[] | select(.method == "externalObjectGroupOperation") | {tool: .args[0], ok, error, placement: [.args[1] | objects | .posGroups[]?.placement | select(.)], args: (if .args[0] == "create-or-replace-groups" then null else .args[1] end)}' "$R/planner-calls.json"
+jq -c '[.[] | select(.method == "externalObjectGroupOperation" and .args[0] == "create-or-replace-groups")][-1].args[1].posGroups[].roots[] | {id, articleId, attributes: [.attributes[]? | "\(.id)=\(.value)"], relation: ([to_entries[] | select(.key | IN("rightOf", "leftOf", "onTop", "above", "behind")) | "\(.key) \(.value)"] | join(","))}' "$R/planner-calls.json"
 ```
 
 Check:

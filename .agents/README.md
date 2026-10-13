@@ -27,12 +27,13 @@ deliberately rejected. Read these before proposing a change to an area they cove
 
 | ADR | Status |
 |---|---|
-| [0001 — HI MCP tool logic runs in the MCP server, pages only execute planner methods](decisions/0001-hi-mcp-tool-logic-in-the-server.md) | Accepted |
+| [0001 — HI MCP tool logic runs in the MCP server, pages only execute planner methods](decisions/0001-hi-mcp-tool-logic-in-the-server.md) | Superseded in part by 0007 |
 | [0002 — One MCP server for every client, configured from outside](decisions/0002-one-mcp-server-configured-from-outside.md) | Accepted |
 | [0003 — The AI chat is an MCP client beside the MCP server](decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) | Accepted |
 | [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](decisions/0004-hi-mcp-server-on-cloudflare-containers.md) | Accepted |
 | [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](decisions/0005-deploy-hi-mcp-from-release-cloudflare.md) | Accepted |
 | [0006 — The prompt tests assess the agent, the unit tests the tools](decisions/0006-prompt-tests-assess-the-agent.md) | Accepted |
+| [0007 — The tool logic of the plan-changing HI MCP tools runs in the planner](decisions/0007-hi-mcp-tool-logic-in-the-planner.md) | Accepted |
 
 ---
 
@@ -106,7 +107,7 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Move the tool logic to the glue-logic](refactoring-analysis/move-tool-logic-to-glue-logic.md) | Open | 2026-10-10 |
+| [Move the tool logic to the glue-logic](refactoring-analysis/move-tool-logic-to-glue-logic.md) | Open | 2026-10-13 |
 | [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-06 |
 | [Faster MCP test runs](refactoring-analysis/faster-mcp-test-runs.md) | Open | 2026-10-11 |
 

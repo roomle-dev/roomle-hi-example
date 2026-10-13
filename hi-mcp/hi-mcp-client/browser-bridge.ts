@@ -12,12 +12,9 @@ const RECONNECT_DELAY_MS = 3000;
 // step through the planner's own undo history, as its undo button does.
 export const PLANNER_METHODS = [
   'getExternalObjectPlanContext',
-  'loadExternalObjectGroupLayout',
   'externalObjectGroupOperation',
   'fetchPrice',
   'getExternalObjectSnapshot',
-  'getExternalObjectGroups',
-  'removeExternalObject',
   'undo',
   'redo',
 ];

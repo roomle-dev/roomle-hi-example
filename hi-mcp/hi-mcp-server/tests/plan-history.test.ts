@@ -80,14 +80,11 @@ describe('PlanHistory', () => {
     expect(history.changedInPlanner).toBe(true);
   });
 
-  it('ends redo with a planner step and forgets everything after a change found in the planner', () => {
+  it('forgets everything after a change found in the planner', () => {
     const history = new PlanHistory();
     history.record(call('delete-group'));
     history.record(call('place-group'));
     history.markUndone();
-    history.endRedo();
-    expect(history.lastUndone()).toBeUndefined();
-    expect(history.lastDone()?.tool).toBe('delete-group');
 
     history.markChangedInPlanner();
     expect(history.lastDone()).toBeUndefined();

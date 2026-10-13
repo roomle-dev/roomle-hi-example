@@ -1,8 +1,8 @@
 # MCP Server
 
 The process, the MCP endpoint, the tool registration, the page bridge, the planner methods, and the
-undo record. All files are in `hi-mcp/hi-mcp-server/`. The tool logic itself is described in
-[Tool executors](./tool-executors.md). [Back to the overview](./README.md).
+undo record. All files are in `hi-mcp/hi-mcp-server/`. The tool logic itself — the executors and
+the tool commands of roomle-ui — is described in [Tool executors](./tool-executors.md). [Back to the overview](./README.md).
 
 ## The process — `server.ts`
 
@@ -83,28 +83,30 @@ template string in this file; there is no separate rules file.
 
 | Tool | Input (zod, short) | Executor wrapper | Planner methods |
 | ---- | ------------------ | ---------------- | --------------- |
-| `get-plan-context` | `include?: string[]` | `oneAtATime(inPlacementFrame(…))` | `getExternalObjectPlanContext`, `getExternalObjectGroups` |
-| `find-attributes` | `text`, `libraryId?` | none | `getExternalObjectPlanContext(['masterData'])` |
+| `get-plan-context` | `include?: string[]` | `oneAtATime` | `getExternalObjectPlanContext` |
+| `find-attributes` | `text`, `libraryId?` | none | `getExternalObjectPlanContext(['masterData', 'groups'])` |
 | `get-authoring-rules` | — | none: returns `AUTHORING_RULES` | — |
-| `create-or-replace-groups` | `posGroups: object[]` (≥ 1) | `planChange` | `loadExternalObjectGroupLayout`; the anchor probe also `undo`, `removeExternalObject` |
-| `place-group` | `groupId`, `wall` (side label or index), `roomIndex?`, `alignment?`, `offsetMm?` | `planChange` | `getExternalObjectGroups`, `loadExternalObjectGroupLayout` |
-| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | `planChange` | `externalObjectGroupOperation` |
-| `change-group-attribute` | `groupId`, `attributeId?`, `value?`, `attributes?` | `planChange` | same |
-| `delete-group` | `groupId` | `planChange` | same |
-| `delete-article-in-place` | `rootModuleId` | `planChange` | same |
-| `delete-article-and-compact` | `rootModuleId`, `groupId` (optional) | `planChange` | same |
-| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo` | `planChange` | same |
-| `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between: [id, id]` | `planChange` | same |
-| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | `planChange` | same |
-| `swap-root-modules` | `groupId`, `rootModuleIds: [id, id]` | `planChange` | same |
-| `merge-groups` | `targetGroupId`, `groupIds` (≥ 1) | `planChange` | same |
-| `undo`, `redo` | — | `oneAtATime(inPlacementFrame(revertToolCall(…)))` | `undo` / `redo`, `getExternalObjectGroups` |
+| `create-or-replace-groups` | `posGroups: object[]` (≥ 1) | `inPlanner` | `externalObjectGroupOperation('create-or-replace-groups', args)` |
+| `place-group` | `groupId`, `wall` (side label or index), `roomIndex?`, `alignment?`, `offsetMm?` | `inPlanner` | `externalObjectGroupOperation('place-group', args)` |
+| `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | `inPlanner`, `compactAttributeResult` | `externalObjectGroupOperation(<tool>, args)` |
+| `change-group-attribute` | `groupId`, `attributeId?`, `value?`, `attributes?` | `inPlanner`, `compactAttributeResult` | same |
+| `delete-group` | `groupId` | `inPlanner` | same |
+| `delete-article-in-place` | `rootModuleId` | `inPlanner` | same |
+| `delete-article-and-compact` | `rootModuleId`, `groupId` (optional) | `inPlanner` | same |
+| `merge-article-into-group` | `groupId`, `articleId`, `attributes?`, `dockTo` | `inPlanner` | same |
+| `insert-article-into-group` | `groupId`, `articleId`, `attributes?`, `between: [id, id]` | `inPlanner` | same |
+| `exchange-root-module` | `groupId`, `rootModuleId`, `articleId`, `attributes?` | `inPlanner` | same |
+| `swap-root-modules` | `groupId`, `rootModuleIds: [id, id]` | `inPlanner` | same |
+| `merge-groups` | `targetGroupId`, `groupIds` (≥ 1) | `inPlanner` | same |
+| `undo`, `redo` | — | `oneAtATime(revertToolCall(…))` | `undo` / `redo`, `getExternalObjectPlanContext(['groups'])` |
 | `get-price` | — | none | `fetchPrice` |
 | `get-order-data` | — | none | `getExternalObjectSnapshot({ orderData: true })` |
 | `get-plan-images` | — | none | `getExternalObjectSnapshot({ perspectiveImage, topImage })` |
 
-`planChange = oneAtATime(recorded(tool, executor))`: serialized and recorded for undo
-([Undo and redo](#undo-and-redo)). `find-attributes`, `get-price`, `get-order-data` and
+`inPlanner(tool)` is `planChange` around the one planner call, and `planChange =
+oneAtATime(recorded(tool, executor))`: serialized and recorded for undo
+([Undo and redo](#undo-and-redo)). roomle-ui performs the tool and answers with its result plus
+`historySteps` and `historyFollowUps`, which `inPlanner` removes. `find-attributes`, `get-price`, `get-order-data` and
 `get-plan-images` run beside a plan change.
 
 ### Running a tool — `runTool`
@@ -172,7 +174,7 @@ timer.
 
 ## The bridge protocol — `types.ts`
 
-`BRIDGE_PROTOCOL = 2`: the page executes planner methods, the tool logic runs in the server.
+`BRIDGE_PROTOCOL = 2`: the server sends planner method calls, and the page executes them.
 
 | Message | Direction | Fields |
 | ------- | --------- | ------ |
@@ -194,12 +196,9 @@ request cannot reach another page after a reconnect.
 | Method | Timeout |
 | ------ | ------- |
 | `getExternalObjectPlanContext(include)` | 30 s |
-| `loadExternalObjectGroupLayout(layout, layoutType, options)` | 120 s |
 | `externalObjectGroupOperation(command, payload)` | 120 s |
 | `getExternalObjectSnapshot(options)` | 120 s |
-| `getExternalObjectGroups()` | 30 s |
 | `fetchPrice()` | 30 s |
-| `removeExternalObject(id)` | 30 s |
 | `undo()`, `redo()` | 30 s |
 
 The arguments travel as JSON, which turns `undefined` into `null` — pass every parameter explicitly
@@ -226,26 +225,30 @@ a tool call is in flight.
 
 ### Recording a call — `recorded` in `tool-executors.ts`
 
-`recorded(tool, executor)` gives the executor a counting planner API (`countingPlannerApi`):
+`recorded(tool, executor)` gives the executor a counting planner API (`countingPlannerApi`). The
+tool command in roomle-ui counts the steps it put on the planner's undo history (`runToolCommand`):
 
-| Planner call | Steps |
-| ------------ | ----- |
-| `loadExternalObjectGroupLayout` that loaded something | +1 |
-| `externalObjectGroupOperation`, `removeExternalObject` | +1 |
-| `undo` (the anchor probe takes back its load) | −1 |
+| Planner step in the page | Steps |
+| ------------------------ | ----- |
+| a layout load that loaded something | +1 |
+| a group operation (`externalObjectGroupOperation` of the `HiToolPlanner`) | +1 |
 
-Every step ends redo (`planHistory.endRedo()`), as the planner drops its redo future. Before the
-first step the counting API reads the raw groups (`groupsBefore`); after the call it reads them
-again (`groupsAfter`). Plans are compared by `groupsKey`: the raw groups sorted by id, numbers
-rounded to 0.1 mm.
+and reports them as `historySteps`; the counting API adds them up, a result without `historySteps`
+as one step. A tool that fails after it changed the plan answers with `error` and its steps; the
+counting API records them and `inPlanner` then raises the error. Before the call the counting API reads the groups of the plan context (`groupsBefore`,
+`readGroupsKey`); after the call it reads them again (`groupsAfter`). Plans are compared by
+`groupsKey`: the groups sorted by id, numbers rounded to 0.1 mm. A recorded call ends redo
+(`planHistory.record`), as the planner drops its redo future with a new step.
 
-Some roomle-ui commands commit a second step — the follow-up reload when the kernel reports the
-group's new position. For `FOLLOW_UP_COMMANDS` (`change-module-attribute`, `change-group-attribute`,
-`exchange-root-module`, `insert-article-into-group`, `swap-root-modules`) and for a
-`delete-article-and-compact` that closed the gap, the call waits up to `FOLLOW_UP_WAIT_MS` (2 s) for
-that event — only when the page relays history events at all. A follow-up that has not arrived by
-the end of the call is registered as expected (`expectLateFollowUp`) and the record is `settled:
-false`.
+Some group operations commit a second step — the follow-up reload when the kernel reports the
+group's new position. The tool command reports them as `historyFollowUps`: one per operation of
+`FOLLOW_UP_COMMANDS` (`change-module-attribute`, `change-group-attribute`, `change-attributes`,
+`exchange-root-module`, `insert-article-into-group`, `swap-root-modules`) and per
+`remove-article-from-group` that closed the gap (`hasFollowUp`, roomle-ui `hi-tool-commands.ts`).
+The call then waits up to `FOLLOW_UP_WAIT_MS` (2 s) until the page has relayed `historySteps` plus
+`historyFollowUps` history events — only when the page relays history events at all. A follow-up
+that has not arrived by the end of the call is registered as expected (`expectLateFollowUp`) and the
+record is `settled: false`.
 
 ### Reverting — `revertToolCall(direction)`
 
@@ -263,13 +266,14 @@ and [§8.8](../hi-mcp-behaviour.md#88-undo-and-redo).
 
 ## Before you change these files
 
-- **Every planner call of an executor goes through the API it is given.** A call on another planner
-  API is not counted, and the undo record breaks.
-- **A plan-changing tool must be wrapped in `planChange`.** Otherwise its history events arrive
-  outside a call, count as user changes, and clear the undo record.
+- **Every planner call of an executor goes through the API it is given**, and every planner step of
+  a tool command through its `HiToolPlanner`. A step outside them is not counted, and the undo
+  record breaks.
+- **A plan-changing tool must be wrapped in `planChange`** — `inPlanner` does it. Otherwise its
+  history events arrive outside a call, count as user changes, and clear the undo record.
 - **Undo relies on history events.** A page that does not relay `historyChange` gets no follow-up
   wait, and `stepHistory` times out after the first undo. Both shipped pages relay them.
-- **Caches outlive a page change.** `planHistory` resets on `hello`; the anchor frames, the master
-  data and the agent group ids in `tool-executors.ts` do not.
+- **The record starts over with a page.** `planHistory` resets on `hello`; the agent's group ids
+  live in the planner page (roomle-ui `HiToolState`) and start over with it.
 - **A rule or a message changed here** changes the server's behaviour — update
   [hi-mcp-behaviour.md](../hi-mcp-behaviour.md) in the same commit.

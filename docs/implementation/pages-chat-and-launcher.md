@@ -28,10 +28,10 @@ Three copies of the same client exist:
 6. **Reconnect** after 3 s (`RECONNECT_DELAY_MS`) on close — except after close code 4409, when
    another page owns the planner: then report "occupied" and stop.
 
-The allow-list is `getExternalObjectPlanContext`, `loadExternalObjectGroupLayout`,
-`externalObjectGroupOperation`, `fetchPrice`, `getExternalObjectSnapshot`, `getExternalObjectGroups`,
-`removeExternalObject`, `undo`, `redo` — the methods of `planner-api.ts`
-(`tests/planner-api.test.ts` checks that the client list matches).
+The allow-list is `getExternalObjectPlanContext`, `externalObjectGroupOperation`, `fetchPrice`,
+`getExternalObjectSnapshot`, `undo`, `redo` — the methods of `planner-api.ts`
+(`tests/planner-api.test.ts` checks that the client list matches). The example page keeps
+`removeExternalObject` for its own UI, outside the allow-list.
 
 ### Differences
 

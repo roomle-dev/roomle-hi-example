@@ -74,11 +74,8 @@ is aliased to a stub).
 
 | File | Covers |
 | ---- | ------ |
-| `hi-mcp-server/tests/tool-executors.test.ts` | every tool executor against a fake planner: plan context, validation and loading of `create-or-replace-groups`, the anchor probe, relations, materials, compile corrections, `place-group`, positions in the placement frame, the command tools, undo |
+| `hi-mcp-server/tests/tool-executors.test.ts` | every tool executor against a fake planner: the plan context in the agent's words, `find-attributes`, the forward of the plan-changing tools, one plan change at a time, undo and redo |
 | `hi-mcp-server/tests/hi-mcp-server.test.ts` | the tool registrations and descriptions, tool calls through the MCP server, the server with a page bridge |
-| `hi-mcp-server/tests/group-layout.test.ts` | relations to docking, including a real agent's kitchen |
-| `hi-mcp-server/tests/group-placement.test.ts` | anchor root, anchor frames, repositioning, the placement frame |
-| `hi-mcp-server/tests/plan-space.test.ts` | footprints, walls, corners, wall and corner placement, overlap |
 | `hi-mcp-server/tests/plan-history.test.ts` | the undo record and history events |
 | `hi-mcp-server/tests/page-bridge.test.ts` | handshake, one page, call correlation, timeouts, disconnect (with `fake-page-socket.ts`) |
 | `hi-mcp-server/tests/planner-api.test.ts` | the methods and timeouts; the client allow-list matches |
@@ -88,6 +85,20 @@ is aliased to a stub).
 | `cf/tests/worker.test.ts` | the Worker's routing |
 | `cf/tests/container.test.ts` | the named/default store link is set before container startup and preserved across bridge reconnects |
 | `cf/tests/container-startup-errors.test.ts` | the installed container SDK returns 503/429/500 for startup failures through the wrapper; startup errors do not escape as Worker exceptions |
+
+The tool commands of the plan-changing tools are tested in roomle-ui, with `npm run test` in
+`packages/web-sdk` (`packages/web-sdk/packages/homag-intelligence/__tests__/`):
+
+| File | Covers |
+| ---- | ------ |
+| `hi-tool-commands/create-or-replace-groups-input-test.ts` | the payload of `create-or-replace-groups`: preparation, article ids, relations, docking corrections |
+| `hi-tool-commands/create-or-replace-groups-placement-test.ts` | loading, the anchor frame from the article template, materials, obstacle hints, the placement by wall |
+| `hi-tool-commands/place-group-test.ts` | `place-group` |
+| `hi-tool-commands/group-commands-test.ts` | the command tools: ids, attributes, library changes, docking targets, row edits and their hints |
+| `hi-tool-commands/placement-frame-test.ts` | positions in the placement frame and the `rowIndex` of every root |
+| `hi-tool-commands/run-tool-command-test.ts` | the planner steps a tool command reports for undo |
+| `hi-group-layout-test.ts`, `hi-group-placement-test.ts`, `hi-plan-space-test.ts` | relations to docking, including a real agent's kitchen; anchor root, anchor frames, repositioning, the placement frame; footprints, walls, corners, wall and corner placement, overlap |
+| `article-template-test.ts` | `calculateArticleTemplate`: the article template calculated outside the plan, and its cache |
 
 Many tests are named in [hi-mcp-behaviour.md](../hi-mcp-behaviour.md) as the guard of a decision or
 a message — a renamed test breaks those references.

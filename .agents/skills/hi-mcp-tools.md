@@ -206,9 +206,9 @@ await placeGroup({ groupId: 'group-1', wall: 'right', alignment: 'top' });
 
 ### The command tools
 
-**Purpose**: Edit a group that is already in the plan. Each tool forwards one command to the
-planner's group command API (`externalObjectGroupOperation`), which performs it with the planner's
-own group features; the group keeps its position
+**Purpose**: Edit a group that is already in the plan. Each tool is one call of the planner's group
+command API (`externalObjectGroupOperation`): roomle-ui resolves the ids, corrects what it can and
+performs the edit with the planner's own group features; the group keeps its position
 
 **Parameters**:
 ```typescript
@@ -324,11 +324,11 @@ await changeGroupAttribute({ groupId: 'group-1', attributeId: 'front', value: 'w
 **Parameters**: none
 
 **How**: the server records every tool call that changed the plan with the planner steps it made
-(one per load, group command and removal; a kitchen with a material is two) and the raw groups
-before and after it. `undo` steps the planner's undo history back by that many steps, each confirmed
+(one per load and group command, as the planner reports them; a kitchen with a material is two) and
+the groups of the plan before and after it. `undo` steps the planner's undo history back by that many steps, each confirmed
 by the history event the page relays (`onHistoryChange`), and compares the plan with the state
 before the call. Only tool calls are reverted: after a change in the planner the records are
-forgotten (D38). The anchor probe undoes its own load, so it leaves no step.
+forgotten (D38).
 
 **Returns**: `{ undone | redone: <tool> | null, groups, removedGroupIds?, otherGroupIds?, hint? }` — the
 groups the reverted call changed, as they are now, the groups the revert took out of the plan, and the
@@ -439,10 +439,11 @@ Every guard and correction:
 
 ## Timeouts
 
-The tools run in the server; the timeout applies to each planner call they make in the page:
+The timeout applies to each planner call the server makes in the page; a tool that changes the plan
+is one call, which roomle-ui performs:
 
 - Most planner calls: 30 seconds
-- Loading groups (`create-or-replace-groups`, `place-group`, the command tools) and snapshots (`get-order-data`, `get-plan-images`): 2 minutes
+- The tools that change the plan (`create-or-replace-groups`, `place-group`, the command tools) and snapshots (`get-order-data`, `get-plan-images`): 2 minutes
 
 ## Best Practices
 

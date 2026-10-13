@@ -72,11 +72,13 @@ demo; it must not be reused as a production credential.
 ```text
 AI agent (any MCP client) --Streamable HTTP--> http://localhost:3100/mcp
                                                hi-mcp/hi-mcp-server/server.ts (vite-node)
-                                               runs the tools (validation, composition, hints)
+                                               runs the tools; a plan-changing tool is one
+                                               planner call
                                                |  WebSocket /bridge: planner method calls
                                                v
                                    the example page (index.html, served by the launcher on :3000)
-                                   executes the allow-listed methods on roomDesignerApi.extended
+                                   executes the allow-listed methods on roomDesignerApi.extended;
+                                   roomle-ui performs the plan-changing tools (HI tool commands)
 ```
 
 Two processes started by one launcher: `start.mjs` serves `index.html` on
@@ -89,14 +91,16 @@ on a port, so it connects **outward** to the server: it opens a WebSocket
 (`ws://localhost:3100/bridge`), receives planner method calls over it, and
 sends each result back over the same socket. The tools themselves run in the
 server; each tool calls one or more planner methods, which the page executes
-against `roomDesignerApi.extended`. The page executes only the methods on its
-allow-list (`getExternalObjectPlanContext`, `loadExternalObjectGroupLayout`,
-`externalObjectGroupOperation` — the command tools, `fetchPrice`,
-`getExternalObjectSnapshot`, `getExternalObjectGroups` — the calculated groups
-for `place-group`, the positions, the row hints and the anchor probe,
-`removeExternalObject` — what an undo of the anchor probe left, `undo`, `redo`;
-see the server skill) — nothing else of the planner API, such as placing an
-order, is reachable from the server. The allow-list is `MCP_PLANNER_METHODS` in
+against `roomDesignerApi.extended`. A tool that changes the plan is one call,
+`externalObjectGroupOperation(<tool name>, <the tool's arguments>)`: roomle-ui
+performs the whole tool as an HI tool command (`hi-tool-commands.ts`) — the
+corrections, the docking from the relations, the placement, the group
+materials, the hints — and answers with the tool's result. The page executes
+only the methods on its allow-list (`getExternalObjectPlanContext`,
+`externalObjectGroupOperation` — every tool that changes the plan,
+`fetchPrice`, `getExternalObjectSnapshot`, `undo`, `redo`; see the server
+skill) — nothing else of the planner API, such as placing an order, is
+reachable from the server. The allow-list is `MCP_PLANNER_METHODS` in
 `index.html` and lists exactly the methods of `planner-api.ts`, as the
 reference client's `PLANNER_METHODS` does — guarded for that copy by
 `it('calls exactly the planner methods the page bridge exposes')` in
@@ -113,7 +117,7 @@ this in its MCP log and stops reconnecting. Guarded by
 | File | Responsibility |
 | ---- | -------------- |
 | `start.mjs` | The launcher: build gate (`npm install` + typecheck of the `hi-mcp` workspace), static file server for `minimal-hi-example/` on :3000, spawns the MCP server with `HI_MCP_STORE_URL` set, opens the browser |
-| `hi-mcp/hi-mcp-server/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), tool definitions with zod schemas, the tool logic (`tool-executors.ts`: payload validation, planner call composition, hints), the planner methods it calls (`planner-api.ts`), the WebSocket page bridge with call correlation and timeouts, server instructions and authoring rules — unchanged, shared with the ligna-store client and the cloud deployments |
+| `hi-mcp/hi-mcp-server/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), tool definitions with zod schemas, the tool executors (`tool-executors.ts`: the plan context in the agent's words, `find-attributes`, the forward of the plan-changing tools, undo and redo), the planner methods it calls (`planner-api.ts`), the WebSocket page bridge with call correlation and timeouts, server instructions and authoring rules — unchanged, shared with the ligna-store client and the cloud deployments |
 | `index.html` | The example itself, plus the MCP section at the end: the WebSocket browser bridge that executes the allow-listed planner methods |
 | `package.json` | The `start` script that runs the launcher, `dev` which adds `server_url=http://localhost:5173/`, and `start:cf` which uses the MCP server deployed on Cloudflare |
 
@@ -285,9 +289,9 @@ the information the server provides — is [../../docs/hi-mcp-behaviour.md](hi-m
 
 The tools run in the server, but every planner call they make executes in the
 example page, so a tool is only as fast as the page. The timeout applies per
-planner call: 30 s by default, 120 s for `loadExternalObjectGroupLayout`
-(`create-or-replace-groups`, `place-group`), `externalObjectGroupOperation`
-(the [command tools](#editing-a-group-the-command-tools)) and
+planner call: 30 s by default, 120 s for `externalObjectGroupOperation`
+(`create-or-replace-groups`, `place-group`, the
+[command tools](#editing-a-group-the-command-tools)) and
 `getExternalObjectSnapshot` (`get-order-data`, `get-plan-images`).
 
 A JSON result comes back as compact JSON without the `imageUrl` fields of
@@ -517,8 +521,8 @@ along the back wall, and the wall units hang beside the tall unit and above the 
 ### place-group
 
 Moves an existing group against a wall or into a room corner. The tool runs in
-the server: it reads the rooms and the groups, takes the calculated group from
-the planner (`getExternalObjectGroups`), computes the position from the wall,
+the planner (roomle-ui `hi-tool-commands.ts`): it reads the rooms and the
+groups, takes the calculated group, computes the position from the wall,
 the alignment and the group's footprint — a group with a corner article goes
 into the corner when the alignment names the adjoining wall — and reloads the
 group there, once — the same logic places a new group by wall in
@@ -531,7 +535,6 @@ module of the other overlap by more than 5 mm in footprint and height — is mov
 position, and `corrections` names the group and the distance and suggests
 `merge-groups` if the units belong together; into a corner, or without a free
 position on the wall, the group is placed as asked and the overlap reported.
-No page change: the planner methods it calls are on every page's allow-list.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -551,8 +554,9 @@ Example: `{ "groupId": "a1b2c3", "wall": "right", "alignment": "top" }`
 
 ### Editing a group: the command tools
 
-The command tools change a group that is already in the plan. Each one calls
-the planner's group command API (`externalObjectGroupOperation`, roomle-ui),
+The command tools change a group that is already in the plan. Each one is a
+tool command of roomle-ui, called through `externalObjectGroupOperation`: it
+resolves the ids, corrects what it can and runs the planner's group operation,
 which performs the edit with the planner's own group features and answers once
 the planner has loaded the result. Every command keeps the group's position and
 returns `{ command, groups, removedGroupIds }`: the affected groups in the

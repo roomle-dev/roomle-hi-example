@@ -11,8 +11,9 @@
 - **roomle-ui** — `createPlanContext` (`hi-plan-context.ts`) calculates the template of every
   article whose root modules carry no docking geometry and have no calculated root in the plan,
   through the `calculateArticleTemplate` of the glue logic that is already on the base branch; the
-  `articleIds` option of `getExternalObjectPlanContext` goes; `isCornerArticle`
-  (`hi-group-placement.ts`) reads the catalog's `cornerArticle` flag only.
+  `articleIds` option of `getExternalObjectPlanContext` stays and limits the calculation to the
+  named articles (§10); `isCornerArticle` (`hi-group-placement.ts`) reads the catalog's
+  `cornerArticle` flag only.
 - **roomle-hi-example** — the MCP server stops completing `cornerArticle` from the category or the
   module name (`isCornerArticle`, `agent-facing.ts`, C7); the plan context passes through as the
   planner reports it. The behaviour documentation, the tool reference and the skills change with

@@ -5,7 +5,7 @@ export interface ToolCallRecord {
   tool: string;
   /** The planner steps the call put on the planner's undo history. */
   steps: number;
-  /** The planner's raw groups before and after the call, as comparison keys. */
+  /** The plan's groups before and after the call, as comparison keys. */
   groupsBefore: string;
   groupsAfter: string;
   /** False while a follow-up reload of the call has not arrived. */
@@ -85,11 +85,6 @@ export class PlanHistory {
 
   public end(): void {
     this._inFlight = false;
-  }
-
-  /** A new planner step ends redo, as the planner drops its redo future. */
-  public endRedo(): void {
-    this._undone = [];
   }
 
   /** A new change on top of the history ends redo, as in the planner. */

@@ -123,7 +123,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
   // What the agent sent to a tool that changes the plan, and the feedback it
   // got, go to the log as one JSON line each, so a test run can tell what the
   // agent sent and which corrections and errors it saw. The arguments are
-  // copied first: the tools correct their input in place. Every call of a
+  // copied first, so the log shows them as sent. Every call of a
   // tool that changes the plan ends with one feedback or error line, empty
   // feedback included, so a test run can pair the lines in call order.
   const runTool = async (tool: string, args: Record<string, unknown>) => {

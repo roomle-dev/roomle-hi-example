@@ -1,10 +1,12 @@
 # Layout and Placement
 
-How the server turns the agent's description of a group into something the planner can arrange:
-the relations become docking (`group-layout.ts`), a placement becomes a repositioning of one anchor
-root (`group-placement.ts`), and `place-group` and a placement by wall compute a wall or corner
-position from the group's geometry (`plan-space.ts`). All files are in `hi-mcp/hi-mcp-server/`. The rules the agent is given
-are in [hi-mcp-behaviour.md §7](../hi-mcp-behaviour.md#7-positioning). [Back to the overview](./README.md).
+How the tool commands turn the agent's description of a group into something the planner can
+arrange: the relations become docking (`hi-group-layout.ts`), a placement becomes a repositioning of
+one anchor root (`hi-group-placement.ts`), and `place-group` and a placement by wall compute a wall
+or corner position from the group's geometry (`hi-plan-space.ts`, `hi-wall-placement.ts`). All files
+are in roomle-ui, `packages/web-sdk/packages/homag-intelligence/src/`; the relations are translated
+there because the translation needs the calculated plan (D72). The rules the agent is given are in
+[hi-mcp-behaviour.md §7](../hi-mcp-behaviour.md#7-positioning). [Back to the overview](./README.md).
 
 ## Coordinate conventions
 
@@ -13,8 +15,8 @@ Read this first — most geometry bugs mix up these frames.
 - **Units:** millimetres, degrees.
 - **Room space:** `[x, y, z]`, y up, the floor at y = 0. roomle-ui maps a plan contour point `(x, y)`
   to `[x, level, −y]`, so **z = −(plan y)**: the back wall — the top of the top view — has the most
-  negative z. In plan-space 2D points are `[x, z]`.
-- **Rotation:** counter-clockwise seen from above, with the same formula in all three files:
+  negative z. In `hi-plan-space.ts` 2D points are `[x, z]`.
+- **Rotation:** counter-clockwise seen from above, with the same formula in all these files:
   `[x, y, z] ↦ [x cos θ + z sin θ, y, −x sin θ + z cos θ]`. At 90° local +x turns to room −z.
 - **An article's local frame:** +x to the right seen from the front, +y up, the back at z = 0, +z
   towards the front. At rotation 0 the back faces −z, the back wall.
@@ -27,12 +29,12 @@ Three different "positions" of a group:
 | Frame | What it is | Where |
 | ----- | ---------- | ----- |
 | **Placement** | the room point of the anchor root's docking corner (the back left bottom of the group) and the group's rotation | the agent's `placement`; `position` in every tool result |
-| **Raw group** | the group origin as the planner keeps it — for some articles their centre; the planner may report 270 as −90 | `getExternalObjectGroups()`; computed by `placeAgainstWall`, `placeCornerAtWalls` |
+| **Raw group** | the group origin as the planner keeps it — for some articles their centre; the planner may report 270 as −90 | the planner's calculated groups (`getExternalObjectGroups` of the `HiToolPlanner`); computed by `placeAgainstWall`, `placeCornerAtWalls` |
 | **Repositioning** | the transform of one root the planner applies to place the group | `repositioningData` sent with a layout |
 
 Footprints and height ranges are in group space; `place-group` keeps the group's y.
 
-## Relations to docking — group-layout.ts
+## Relations to docking — hi-group-layout.ts
 
 The agent describes a group by naming, for every unit after the first, one neighbour and one
 relation: `rightOf`, `leftOf`, `onTop`, `above`, `behind` (with `align` and `gapMm` for stacking).
@@ -51,7 +53,7 @@ The kind of a unit comes from its catalog article (`catalogArticleOf`):
 | hood | a root module id matches `/hood/i` |
 | tall unit | category `/\btall ?units?\b/i`, or not a wall unit and `mod_Height` ≥ 1500 mm |
 | base unit | category `/\bbase ?units?\b/i`, not tall, not wall — carries the worktop, nothing stands on it |
-| corner | `isCornerArticle` (`group-placement.ts`) |
+| corner | `isCornerArticle` (`hi-group-placement.ts`) |
 
 `hangGapOf` gives the gap between a floor unit and the wall unit above it, so the wall units' tops are
 flush with the tall units: tall height − wall unit height − floor unit height (e.g. 2100 − 720 − 720
@@ -104,14 +106,14 @@ The module uses fixed vector names; it never reads an article's `dockingVectors`
 an article does not have is done in `dockTarget` (merge-article-into-group); dropping positions in
 `prepareGroup` ([Tool executors](./tool-executors.md#create-or-replace-groups)).
 
-## Placing a new group — group-placement.ts
+## Placing a new group — hi-group-placement.ts
 
 A new group placed by point comes with a `placement { posGroup, posRotationY, rootId? }`: the room
 point where the group's back left bottom corner goes, and its rotation. A group placed by wall
 (`placement { wall, alignment?, offsetMm?, roomIndex? }`, D23) takes the path of `place-group`
-instead: it is loaded where the planner puts it, and `placeAtWalls` (`tool-executors.ts`) computes
+instead: it is loaded where the planner puts it, and `placeAtWalls` (`hi-tool-commands.ts`) computes
 its target from the calculated group and reloads it there. The planner positions a group by the
-transform of one root, so the server has to say which root and where that root goes.
+transform of one root, so the tool command has to say which root and where that root goes.
 
 ### The anchor root — `findAnchorRoot`
 
@@ -136,9 +138,11 @@ Where the anchor's docking corner lies in its own coordinates differs per articl
 cabinet, the left edge of a hood (`[-299, 0, 0]`), `[-261, 0, 0]` for the left-handed corner
 `UERTB90`, `[1161, 0, 0]` turned 270° for the right-handed `UELTB90`. `anchorFrameOfRoot` computes the
 frame from the root's calculated docking vectors — the turn from its back corner vectors, the point
-as the minimum of all vector points in the turned frame. The server learns the frame of each article
-variant once with the anchor probe ([Tool executors](./tool-executors.md#the-anchor-probe)) and keeps
-it in `knownAnchorFrames` by `anchorVariantKey`.
+as the minimum of all vector points in the turned frame. The root is the first root of the anchor's
+article template that is not generated: `calculateArticleTemplate` of the glue logic calculates the
+article with the anchor's attribute overrides outside the plan, once per variant
+([Tool executors](./tool-executors.md#the-anchor-frame)); within a call the frames are kept by
+`anchorVariantKey`.
 
 ### Repositioning — `toRepositioningData`
 
@@ -152,13 +156,15 @@ docking corner exactly on `posGroup`.
 `positionInPlacementFrame(rawGroup, footprint)` gives the position the agent would write: the room
 point of the anchor's docking corner, the rotation (group + root + turn, 0–360), and `rootId` only
 when the group has more than one corner root; the footprint is re-expressed from that corner.
-`inPlacementFrame` applies it to every result that carries groups, so the agent can copy a position
-into a new placement.
+`inPlacementFrame` (`hi-tool-commands.ts`) applies it to the plan context of the planner and to
+every tool command and group operation result that carries groups, so the agent can copy a position
+into a new placement; it also adds the `rowIndex` of every root (`withRowIndices`).
 
-## Geometry — plan-space.ts
+## Geometry — hi-plan-space.ts
 
 Used by `place-group` and a placement by wall, the overlap and in-room tests of the row edits and of
-`merge-article-into-group`, and the plan-context vocabulary.
+`merge-article-into-group`, and the obstacle hint. The server's `agent-facing.ts` carries its own
+`wallName`, `roomCorners`, `spanAlongWall` and `wallOfOpening` for the plan-context vocabulary.
 
 | Function | Returns |
 | -------- | ------- |
@@ -172,7 +178,7 @@ Used by `place-group` and a placement by wall, the overlap and in-room tests of 
 | `wallSpanStart`, `spanAlongWall` | where along a wall a span starts; the span of a footprint along a wall |
 | `alignmentRunsParallel`, `resolveWallAlignment` | a side label as `start` or `end` of a wall (left = smaller x, top = smaller z) |
 | `volumesOverlap`, `convexPolygonsTouch` | overlap of two placed volumes with a tolerance (separating axis test) |
-| `rootVolumesInRoom` | the box of every root module that is not generated, in room space, with its height range and rotation — two groups overlap when two of these overlap (`overlappedGroupIds`, `tool-executors.ts`) |
+| `rootVolumesInRoom` | the box of every root module that is not generated, in room space, with its height range and rotation — two groups overlap when two of these overlap (`overlappedGroupIds`, `hi-wall-placement.ts`) |
 | `wallOfOpening` | the wall, room and span of a door or window |
 | `groupPointToRoom`, `footprintCornersInRoom`, `rootFootprintInRoom` | group space to room space |
 | `repositioningFromPlacement` | the repositioning of a raw group position for `place-group` and a placement by wall |
@@ -182,17 +188,18 @@ Used by `place-group` and a placement by wall, the overlap and in-room tests of 
 
 ## Before you change these files
 
-- **The tests pin the geometry.** `tests/group-placement.test.ts` checks the anchor frames of every
-  corner hand, the anchor walk (cycles, islands, wall units, generated roots, empty plans) and that
-  the docking corner lands on `posGroup` at 0, 90, 180 and 270°; `tests/plan-space.test.ts` the wall
-  and corner placements of the test room, an L-shaped room and a wall split by a door;
-  `tests/group-layout.test.ts` a full kitchen of a real agent that must compile to exactly its own
-  docking.
+- **The tests pin the geometry** (roomle-ui `__tests__/`). `hi-group-placement-test.ts` checks the
+  anchor frames of every corner hand, the anchor walk (cycles, islands, wall units, generated roots,
+  empty plans) and that the docking corner lands on `posGroup` at 0, 90, 180 and 270°;
+  `hi-plan-space-test.ts` the wall and corner placements of the test room, an L-shaped room and a
+  wall split by a door; `hi-group-layout-test.ts` a full kitchen of a real agent that must compile to
+  exactly its own docking.
 - **Footprints are bounding rectangles** — for L- and U-shaped groups the in-room test is
   conservative; the overlap test of two groups compares their root modules, the rectangles are its
   quick test first.
-- **roomle-ui computes footprints too.** The `position.footprint` of the plan context comes from
-  roomle-ui (`hi-plan-context.ts`); `plan-space.ts` computes its own. Keep them in step.
+- **Footprints are computed twice.** The `position.footprint` of the plan context comes from
+  `hi-plan-context.ts` (group space); `hi-plan-space.ts` computes its own (room space). Keep them in
+  step.
 - **The served rules depend on these conventions.** The rotation sense, the wall `end` rule and the
   corner-hand rule are written into `AUTHORING_RULES` (`hi-mcp-server.ts`) and the behaviour
   reference — change them together.

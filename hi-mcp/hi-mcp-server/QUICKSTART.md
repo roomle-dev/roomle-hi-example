@@ -65,7 +65,8 @@ The agent calls `place-group` with the right wall and the back wall's side
 label as alignment; the server computes the position and reloads the group. `Undo that.`
 reverts the move.
 
-The unit tests live in `tests/` (server and tool logic) and `../hi-mcp-client/tests/` (page bridge) —
+The unit tests live in `tests/` (server) and `../hi-mcp-client/tests/` (page bridge), the tests of the
+tool logic in roomle-ui (`homag-intelligence/__tests__/hi-tool-commands/`) —
 `npm test` in the `hi-mcp/` folder runs them (vitest).
 
 More: [example prompts](./README.md#example-prompts) ·

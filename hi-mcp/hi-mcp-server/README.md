@@ -31,19 +31,21 @@ AI agent (any MCP client) --Streamable HTTP--> http://localhost:3100/mcp
                                                |  ws://localhost:3100  (page connects out)
                                                v
                                    ligna-store (nuxt dev server, localhost:3000)
-                                   executes tools against roomDesignerApi.extended
+                                   executes planner methods against roomDesignerApi.extended
 ```
 
 The store page cannot listen on a port, so it connects **outward** to the MCP server via WebSocket.
-The tools run in this server (`tool-executors.ts`: payload validation, planner call composition,
-agent hints). Each planner call a tool makes is relayed into the page as a method call, where it
-runs against `roomDesignerApi.extended` (the `extended.*` proxy derives its methods automatically
-from `RoomlePlanner.prototype`, so the web-sdk APIs (`getExternalObjectPlanContext`,
-`loadExternalObjectGroupLayout`, …) are reachable as-is). The page executes only the planner
-methods on its allow-list — the ones `planner-api.ts` calls. The page-side bridge lives in the
-store repository (`ligna-store/hi-mcp/`), its tested copy in
-[`../hi-mcp-client/`](../hi-mcp-client/); this folder contains the server side
-and all tool logic.
+The tools run in this server (`tool-executors.ts`). Each planner call a tool makes is relayed into
+the page as a method call, where it runs against `roomDesignerApi.extended` (the `extended.*` proxy
+derives its methods automatically from `RoomlePlanner.prototype`, so the web-sdk APIs
+(`getExternalObjectPlanContext`, `externalObjectGroupOperation`, …) are reachable as-is). A tool
+that changes the plan is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's
+arguments>)`: roomle-ui performs the whole tool — payload validation and corrections, ids, docking,
+placement, group materials, hints — as an HI tool command (`hi-tool-commands.ts` in
+`packages/web-sdk/packages/homag-intelligence/src`) and answers with the tool's result. The page
+executes only the planner methods on its allow-list — the ones `planner-api.ts` calls. The
+page-side bridge lives in the store repository (`ligna-store/hi-mcp/`), its tested copy in
+[`../hi-mcp-client/`](../hi-mcp-client/); this folder contains the server side.
 
 | Port | Process |
 | ---- | ------- |
@@ -55,15 +57,13 @@ and all tool logic.
 | `server.ts` | Entry point: HTTP server on :3100 hosting `/mcp` and the WebSocket upgrade |
 | `package.json` | Self-contained dependencies of the server (MCP SDK, ws, zod, vite-node) |
 | `hi-mcp-server.ts` | `McpServer` setup: server instructions + tool registrations with zod schemas; the handlers run the tool executors |
-| `tool-executors.ts` | The tool logic: payload validation, planner call composition, response shaping, agent hints |
-| `group-layout.ts` | The relations of `create-or-replace-groups` (`rightOf`, `above`, …) compiled into docking entries |
+| `tool-executors.ts` | The tool executors: `get-plan-context`, `find-attributes`, the forward of every plan-changing tool to the planner, one plan change at a time, the undo record, `undo` and `redo` |
+| `agent-facing.ts` | The plan context in the agent's words: wall names, room corners, the wall of a door or a window, `cornerArticle` on an empty plan, short article descriptions |
 | `plan-history.ts` | The record of the tool calls that changed the plan, with their planner steps, for `undo` and `redo` |
-| `group-placement.ts` | The placement of a new group: finds the root it is anchored at by following the docking and derives the planner's repositioning |
-| `plan-space.ts` | The geometry of `place-group` and of a placement by wall: footprint and corner geometry of a calculated group, wall and corner placement, the overlap test between groups; the obstacle test of the `hint`: root modules in room space, the strip in front of a wall, the free stretches of a wall |
 | `planner-api.ts` | The planner methods the tools call, forwarded to the page with per-method timeouts |
 | `page-bridge.ts` | Connected-page registry, call correlation, timeouts, protocol check, "no page connected" error |
 | `types.ts` | WebSocket message protocol, `BRIDGE_PROTOCOL` (the page side carries its own copy) |
-| `tests/` | Unit tests of the server and the tool logic (vitest, configured at the `hi-mcp/` workspace root) |
+| `tests/` | Unit tests of the server and the tool executors (vitest, configured at the `hi-mcp/` workspace root); the tool commands are tested in roomle-ui (`homag-intelligence/__tests__/hi-tool-commands/`) |
 
 The page side — the browser bridge with its planner method allow-list and its unit tests — is in
 [`../hi-mcp-client/`](../hi-mcp-client/).
@@ -287,8 +287,7 @@ the information the server provides — is [../../docs/hi-mcp-behaviour.md](../.
 
 The tools run in this server, but every planner call they make executes in the store page, so a
 tool is only as fast as the page. The timeout applies per planner call: 30 s by default, 120 s for
-`loadExternalObjectGroupLayout` (`create-or-replace-groups`, `place-group`),
-`externalObjectGroupOperation` (the command tools) and `getExternalObjectSnapshot`
+`externalObjectGroupOperation` (every tool that changes the plan) and `getExternalObjectSnapshot`
 (`get-order-data`, `get-plan-images`).
 
 A JSON result comes back as compact JSON without the `imageUrl` fields of the planner's plan
@@ -381,7 +380,7 @@ keeps its position (root modules keep their ids when they already exist in the r
 all other groups are created with regenerated ids. Roots are **article picks** (`{ id, articleId,
 attributes? }`), and every root after the first names its neighbour with one relation — `rightOf`,
 `leftOf`, `onTop`, `above` or `behind` — from which the server builds the docking (`contextData`,
-`group-layout.ts`). The glue logic completes the picks from the article template, and the planner
+roomle-ui `hi-group-layout.ts`). The glue logic completes the picks from the article template, and the planner
 arranges the root modules. The agent never authors root positions. Docking written as
 `contextData` — a group from `get-plan-context` carries it — is still accepted.
 
@@ -461,10 +460,9 @@ the units `leftOf` it along the back wall, and the wall units hang beside the ta
 
 ### place-group
 
-Moves an existing group against a wall or into a room corner. The tool runs in the server: it
-reads the rooms and the groups, takes the calculated group from the planner
-(`getExternalObjectGroups`), computes the position from the wall, the alignment and the group's
-footprint — the same logic places a new group by wall in `create-or-replace-groups`; a group
+Moves an existing group against a wall or into a room corner. The tool runs in the planner (roomle-ui
+`hi-tool-commands.ts`): it reads the rooms and the groups, takes the calculated group, computes the
+position from the wall, the alignment and the group's footprint — the same logic places a new group by wall in `create-or-replace-groups`; a group
 with a corner article goes into the corner when the alignment names the adjoining wall — and
 reloads the group there, once. The roots, their docking and the group's attributes stay as they
 are.
@@ -472,7 +470,7 @@ Groups may touch. A target that overlaps another group — a root module of the 
 of the other overlap by more than 5 mm in footprint and height — is moved along the same wall to the nearest free position, and `corrections`
 names the group and the distance and suggests `merge-groups` if the units belong together; into a
 corner, or without a free position on the wall, the group is placed as asked and the overlap
-reported. No page change: the planner methods it calls are on every page's allow-list.
+reported.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
@@ -491,8 +489,9 @@ Example: `{ "groupId": "a1b2c3", "wall": "right", "alignment": "top" }`
 
 ### Editing a group: the command tools
 
-The command tools change a group that is already in the plan. Each one calls
-the planner's group command API (`externalObjectGroupOperation`, roomle-ui),
+The command tools change a group that is already in the plan. Each one is a
+tool command of roomle-ui, called through `externalObjectGroupOperation`: it
+resolves the ids, corrects what it can and runs the planner's group operation,
 which performs the edit with the planner's own group features and answers once
 the planner has loaded the result. A new command needs no page change: it is a
 payload of the one planner method on the allow-lists. The group keeps its
@@ -621,7 +620,7 @@ one rotation; the planner calculates every root position.
   wall or a free spot in the room. The other edits of an existing group — replace or remove a unit,
   change attributes, join groups — are command tools too.
 - **Relations**: every root after the first names one neighbour of the same group by its id, with
-  exactly one of these fields; the server builds the docking from it (`group-layout.ts`, D34 in the
+  exactly one of these fields; the server builds the docking from it (roomle-ui `hi-group-layout.ts`, D34 in the
   [behaviour reference](../../docs/hi-mcp-behaviour.md#3-decisions)):
 
   | Relation | Meaning | Docking the server builds |

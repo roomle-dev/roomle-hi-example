@@ -10,7 +10,8 @@
  * Writes <out>/tests.json and runs it with run-hi-mcp-tests.js, which runs
  * every kitchen with run-hi-mcp-prompt.js, saves its plan snapshot and
  * continues an existing --out (stored kitchens are kept). When every kitchen
- * has a plan snapshot id and its images, copies the top, perspective and
+ * ran without errors (the snapshot is saved even after a failed chat) and has
+ * a plan snapshot id and its images, copies the top, perspective and
  * perspective object image of each to docs/images/planning-results/ and
  * rewrites docs/planning-results.md; otherwise it names the kitchens without a
  * planning, leaves the document unchanged and exits 1. Defaults: the model
@@ -190,7 +191,11 @@ const main = async () => {
     const missing = RESULT_IMAGES.filter(
       ({ file }) => !run || !existsSync(join(kitchen.runDir, file))
     ).map(({ file }) => file);
-    if (!kitchen.planSnapshotId || missing.length > 0) {
+    if (
+      run?.errors.length > 0 ||
+      !kitchen.planSnapshotId ||
+      missing.length > 0
+    ) {
       failed.push(
         `${kitchen.title} (${relative(process.cwd(), kitchen.runDir ?? out)}): ` +
           [

@@ -22,7 +22,7 @@ Unless the user names a branch or says to stay on the current one, create a new 
 current HEAD — the kitchen images and the MCP server of the checkout are what the plannings show:
 
 ```bash
-git switch -c docs/planning-results-$(date +%Y-%m-%d)
+git switch -c docs/planning-results-$(date +%Y-%m-%d-%H%M)
 ```
 
 ### 2. Model
@@ -52,7 +52,8 @@ The script [update-planning-results.js](../scripts/update-planning-results.js):
    launcher and browser with [run-hi-mcp-prompt.js](../scripts/run-hi-mcp-prompt.js), which saves
    the plan snapshot; a provider or transport failure is repeated up to three attempts; a run goes
    to `$SESSION/<model>/<NN>-kitchen-<n>/`;
-3. when every kitchen has a plan snapshot id and its three images: copies them to
+3. when every kitchen ran without errors (a run whose chat failed can still have saved its
+   snapshot) and has a plan snapshot id and its three images: copies the images to
    `docs/images/planning-results/kitchen-<n>-top.png`, `-perspective.png` and
    `-perspective-object.png` and rewrites `docs/planning-results.md` — the model, the default room
    and the date in its first paragraph, a section per kitchen;

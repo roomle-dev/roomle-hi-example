@@ -70,4 +70,4 @@ the page allow-lists gain the two methods by explicit decision (D2).
 Constraints: the undo history is shared with the user, and a plan load clears it without an event;
 the anchor probe undoes its own load, which must stay outside the grouped step.
 
-**Reproduce.** `mcp-test-2026-10-11_11-41-48`: gpt-6-astra 53, turns 2–3 (`random-sideboard-attributes-and-undo`, bo-test): change the three fronts from 152 to 192, then undo; both undo calls leave all fronts at 192 and dispatch no planner undo.
+**Reproduce.** `mcp-test-2026-10-13_17-19-39`: gpt-6-astra 53, turns 2–3 (`random-4-black-wall-units-undo-redo`, local roomle-ui): `change-module-attribute` sets the fronts of the four wall units to 199, then undo; both undo calls wait 2 s, leave the fronts at 199 and dispatch no planner undo.

@@ -19,6 +19,7 @@ development team, and how to reproduce it. MCP, chat and planner issues are trac
 |---|---|---|---|---|---|
 | 60 | [The sink top of a sink unit reaches past the row or over the hob](#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG Furniture_Smith | HOMAG library development team | reported to the library development team | medium — the drainer in the air or over the hob |
 | 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | not reported | medium — handled articles where the user asked for handleless ones |
+| 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the cabinets are not built, the agent needs a second create |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -65,7 +66,7 @@ base unit under its drainer in three runs of gpt-6-astra; `edit-swap-hob-unit`: 
 cover the hob, and the agent identifies a swap that would put the hob immediately to the right of
 the sink as conflicting with the library's selection rule.
 
-**Reproduce.** `mcp-test-2026-10-11_11-41-48`: gpt-6-astra 29 (`edit-swap-hob-unit`): the swapped sink's drainer covers part of the hob.
+**Reproduce.** `mcp-test-2026-10-13_17-19-39`: gpt-6-astra 29 (`edit-swap-hob-unit`): the swapped sink's drainer covers most of the hob.
 
 ## 61. Handleless fronts done with a handle attribute
 
@@ -87,4 +88,28 @@ nothing more.
 
 **Test.** The test `kitchen-conversation` turn 5 ends with handleless articles.
 
-**Reproduce.** `mcp-test-2026-10-11_11-41-48`: gpt-6-astra 49 (`kitchen-conversation`, turn 5).
+**Reproduce.** `mcp-test-2026-10-13_17-19-39`: gpt-6-astra 49 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
+
+## 64. Flip-lift wall cabinets with sizes the library cannot calculate
+
+**Problem.** To copy the band of cabinets above the tall units of a photo, the agent puts flip-lift
+wall cabinets (`OSKB60`, `OSKB90`) on top of the tall units with `mod_Height` 360 and `mod_Depth`
+561. The library cannot calculate them — "Error 14023: Could not find entry in
+tab_FlipliftSettings for input value: SHF - 324 - 562 - 533 - Handle" — so they are not built; the
+server builds the rest of the group and names them in `notLoaded`. The agent rebuilds them as
+resized `OTB60`, at the cost of a second create.
+
+**Cause.** The library data does not tell the agent which sizes a flip-lift wall cabinet takes: the
+descs of `OSKB60` and `OSKB90` name a swing-up flap, a wall-unit row above the worktop and clearance
+above for the flap, but no height or depth range of the flap fitting; the desc of `mod_Height` and
+`mod_Depth` names none either.
+
+**To do.** The library: the descs of the flip-lift wall cabinets name the heights and depths their
+flap fitting supports, in `FUNCTION` or `AI_SELECTION_HINT`, so the compact article catalog carries
+it (D63). Then check that the served text needs nothing more.
+
+**Status.** Not reported to the library development team.
+
+**Test.** `image-planning-right-wall`: the first create loads every root module.
+
+**Reproduce.** `mcp-test-2026-10-13_17-19-39`: gpt-6-astra 47 (`image-planning-right-wall`, the first `create-or-replace-groups`): five flip-lift top cabinets not loaded, Error 14023.

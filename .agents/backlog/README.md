@@ -22,6 +22,7 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 |---|---|---|
 | [60 — The sink top of a sink unit reaches past the row or over the hob](library-issues.md#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG library (reported): the sink unit's description names the drainer width and side, and states that no hob may stand immediately to its right | medium |
 | [61 — Handleless fronts done with a handle attribute](library-issues.md#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG library: distinguish choosing a handleless article from setting the handle design to "No handle" on a handled article | medium |
+| [64 — Flip-lift wall cabinets with sizes the library cannot calculate](library-issues.md#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG library: the flip-lift wall cabinets' descs name the heights and depths their flap fitting supports | low |
 
 ## Library neutrality of the MCP server
 
@@ -38,6 +39,8 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 | Item | To do | Details |
 |---|---|---|
 | One planner undo step per tool call | roomle-ui and hi-mcp: settle completed commands so undo can run; resolve `externalObjectGroupOperation` after its follow-up, and group a tool call into one step | [one-undo-step-per-tool-call.md](one-undo-step-per-tool-call.md) |
+| 62 — `merge-article-into-group` moves a group placed in the conversation | roomle-ui `mergeArticleIntoGroup`: a merge keeps the earlier root modules of a group placed by wall in place instead of moving the group by its former width | [mcp-issues.md, 62](mcp-issues.md#62-merge-article-into-group-moves-a-group-placed-in-the-conversation) |
+| 63 — The worktop of a handleless kitchen renders white | Analyse why a countertop with a colour (324) renders white in the handleless line but not in a handled kitchen — planner render or library | [mcp-issues.md, 63](mcp-issues.md#63-the-worktop-of-a-handleless-kitchen-renders-white) |
 
 ## Chat
 

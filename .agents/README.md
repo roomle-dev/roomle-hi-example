@@ -106,7 +106,7 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Move the tool logic to the glue-logic](refactoring-analysis/move-tool-logic-to-glue-logic.md) | Open | 2026-10-10 |
+| [Move the tool logic to the glue-logic](refactoring-analysis/move-tool-logic-to-glue-logic.md) | Open | 2026-10-13 |
 | [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-06 |
 | [Faster MCP test runs](refactoring-analysis/faster-mcp-test-runs.md) | Open | 2026-10-11 |
 

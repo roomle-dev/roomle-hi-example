@@ -76,9 +76,10 @@ consists of one or more root modules; placed in a group, each becomes a root.
 - `cornerArticle` — true for an article made for a room corner
 - `rootModules` — per root module: `module` (id, name, desc), `dimensions` (the size attributes with id, name and value in mm), `mainAttributes`, `dockingVectors` (names), `subModules` (fronts, appliances)
 
-The catalog carries docking vector names, no coordinates. On an empty plan an article whose
-template has no docking data (the range hood `DU`) lists no docking vectors and no size: unknown,
-not undockable. Field reference: [hi-authoring-rules.md](./hi-authoring-rules.md#article-catalog).
+The catalog carries the docking vector names of every article, no coordinates — of an article
+that is not in the plan from its calculated template. An article whose template has no `Dim`
+attribute (the range hood `DU`) lists no size, and one whose template cannot be calculated no
+docking vectors: unknown, not undockable. Field reference: [hi-authoring-rules.md](./hi-authoring-rules.md#article-catalog).
 
 ### 3. Groups
 

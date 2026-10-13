@@ -334,7 +334,8 @@ overlap according to the measured result; missing data is no assurance of cleara
   `mod_Height`; a root in `groups` carries the same ids among its input
   `attributes`), `mainAttributes` (the values of the `isMain` attributes),
   `dockingVectors` (the names of its docking vectors — from the template, or
-  from a calculated root of the same article in the plan), `insertLevels` and
+  from the calculated article: a root of it in the plan, or else its template,
+  which the planner calculates once per article), `insertLevels` and
   `subModules` (fronts, appliances — id, name, desc);
   `cornerArticle` is `true` for an article made for a room corner (it carries
   `LeftBack`/`RightBack` docking vectors)

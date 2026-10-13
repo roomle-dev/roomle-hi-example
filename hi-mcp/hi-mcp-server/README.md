@@ -58,7 +58,7 @@ page-side bridge lives in the store repository (`ligna-store/hi-mcp/`), its test
 | `package.json` | Self-contained dependencies of the server (MCP SDK, ws, zod, vite-node) |
 | `hi-mcp-server.ts` | `McpServer` setup: server instructions + tool registrations with zod schemas; the handlers run the tool executors |
 | `tool-executors.ts` | The tool executors: `get-plan-context`, `find-attributes`, the forward of every plan-changing tool to the planner, one plan change at a time, the undo record, `undo` and `redo` |
-| `agent-facing.ts` | The plan context in the agent's words: wall names, room corners, the wall of a door or a window, `cornerArticle` on an empty plan, short article descriptions |
+| `agent-facing.ts` | The plan context in the agent's words: wall names, room corners, the wall of a door or a window, short article descriptions |
 | `plan-history.ts` | The record of the tool calls that changed the plan, with their planner steps, for `undo` and `redo` |
 | `planner-api.ts` | The planner methods the tools call, forwarded to the page with per-method timeouts |
 | `page-bridge.ts` | Connected-page registry, call correlation, timeouts, protocol check, "no page connected" error |
@@ -314,8 +314,9 @@ Returns a snapshot of the HI planning session, shaped for the agent.
 - `articles` — compact catalog: `articleId`, `articleName`, `desc`, `category`, and
   per root module its master-data `module` (id, name, desc), `dimensions` (the
   template's `Dim` attributes with name and value), `mainAttributes` (the values of the `isMain`
-  attributes), `dockingVectors` (the names of its docking vectors — from the template, or from a
-  calculated root of the same article in the plan), `insertLevels` and `subModules` (fronts,
+  attributes), `dockingVectors` (the names of its docking vectors — from the template, or from the
+  calculated article: a root of it in the plan, or else its template, which the planner calculates
+  once per article), `insertLevels` and `subModules` (fronts,
   appliances — id, name, desc);
   `cornerArticle` is `true` for an article made for a room corner (it carries `LeftBack`/`RightBack`
   docking vectors)

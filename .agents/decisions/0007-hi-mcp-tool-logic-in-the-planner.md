@@ -40,8 +40,10 @@ The bridge protocol and the allow-list as the page's security boundary stay as A
   text, the agent-facing shaping and the undo bookkeeping.
 - The tool logic is tested in roomle-ui (`__tests__/hi-tool-commands/`), the server's tests cover
   forwarding, `get-plan-context`, `find-attributes` and undo/redo.
-- `create-or-replace-groups` is one page round trip; the catalog of the plan context can carry the
-  docking vectors and the corner point of an article that is not in the plan (`articleIds`).
+- `create-or-replace-groups` is one page round trip; the catalog of the plan context carries the
+  docking vectors and the corner point of every article, of an article that is not in the plan from
+  its template, or of the articles a caller names (`articleIds`) (D74 of
+  [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#3-decisions)).
 - A tool that fails after it changed the plan answers with its error and the undo steps it made;
   the server records the steps, so undo reverts the half-done call, and raises the error to the
   agent.

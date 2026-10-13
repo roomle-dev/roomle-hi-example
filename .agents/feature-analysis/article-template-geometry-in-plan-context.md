@@ -1,7 +1,7 @@
 # Article template geometry in getPlanContext
 
 > **Date**: 2026-10-13 (supersedes the analysis of 2026-10-10, written before the tool logic moved into the planner)
-> **Status**: Open
+> **Status**: Implemented — roomle-ui `feat/hi-plan-context-article-geometry-RML-18140`, roomle-hi-example `feat/catalog-corner-flag-from-the-planner`, neither merged
 > **Ticket**: [RML-18140](https://roomle.atlassian.net/browse/RML-18140)
 > **Base**: roomle-ui `feat/hi-layout-load-outcome-RML-18139` (`5b502b8c7`, the tool logic in the planner — [RML-18147](https://roomle.atlassian.net/browse/RML-18147), [ADR 0007](../decisions/0007-hi-mcp-tool-logic-in-the-planner.md) — and the load answer per group — [RML-18139](https://roomle.atlassian.net/browse/RML-18139)); roomle-hi-example `master` (`f30f307`)
 > **Type**: Feature analysis — the catalog of the plan context carries the docking vectors and the corner flag of every article, and the corner word matches go
@@ -442,3 +442,57 @@ Tests:
   eight docking vector names of the corner unit, and no `cornerPoint`; the first corner kitchen of
   an empty plan lands in the room corner (holds already, C6).
 - Unit tests, typecheck, lint and format pass in both repositories; the backlog item is gone.
+
+## 10. Implementation report
+
+roomle-ui `feat/hi-plan-context-article-geometry-RML-18140`, off
+`feat/hi-layout-load-outcome-RML-18139` (`5b502b8c7`):
+
+- `29333a81a` feat: carry the geometry of every article in the hi plan context (step 1)
+- `f6c2460ca` feat: tell a corner article by the catalog's flag only (step 2)
+- `fc5c53afa` docs: document the complete catalog of the hi plan context (step 3)
+- `99b1d4338` fix: keep the article selector of the hi plan context
+
+roomle-hi-example `feat/catalog-corner-flag-from-the-planner`: `4c34d85` feat: pass the corner flag
+of the catalog through as the planner reports it (step 4), and the documentation commit of step 5.
+
+Verification: the roomle-ui tests of `homag-intelligence` and `roomle-planner` pass, 1121 with one
+skipped; `npm run lint:types` reports nothing; oxlint and prettier report nothing in the changed
+files; `npm run lint:docs:sdk` reports one error in `node_modules/bun-webgpu`, the same on the base
+commit. roomle-hi-example: the 246 tests of `hi-mcp` pass, the typecheck, `npm run lint` and
+`npm run format:check` report nothing. No live check, no model run, no pull request, no
+deployment.
+
+Deviations from §9:
+
+- **The article selector stays (user, 2026-10-13).** `HiPlanContextOptions` and the `options`
+  parameter of `getExternalObjectPlanContext` are public API the ticket did not ask to remove; §4.1
+  and §9.2 removed them without asking. `99b1d4338` restores every API file, `roomle-planner.ts`
+  and its test as they are on the base branch: the branch changes no API file. `createPlanContext`
+  keeps its `articleIds` parameter: without it the articles section calculates every article that
+  needs a template, with it only the named ones. The selector tests are back, with
+  `it('calculates only the requested articles when the caller names them')`; D74 and ADR 0007 name
+  the option.
+- **The step 1 commit leaves three tests failing.** Three expectations of
+  `create-or-replace-groups-placement-test.ts` named the removed options argument as `undefined`;
+  the step 1 tests ran before the typecheck found the options in the counting planner of
+  `runToolCommand` (`hi-tool-commands.ts`). The step 2 commit adapts the three expectations and
+  `99b1d4338` restores them with the options; the branch passes from step 2 on.
+- **The counting planner of `runToolCommand`** lost the options in step 1 as well; `99b1d4338`
+  restores it with the other API files.
+- **The comment "an empty plan" of `create-or-replace-groups-placement-test.ts:330` stays**: that
+  test's plan is empty, the comment is right.
+- **More documentation than §9.6 lists**: the module table of
+  `docs/implementation/tool-executors.md`, the test list of
+  `docs/implementation/layout-and-placement.md`, and the consequence on the article selector in
+  [ADR 0007](../decisions/0007-hi-mcp-tool-logic-in-the-planner.md). The corner paragraph of
+  `.agents/skills/hi-mcp-server.md` names no plan snapshot: the living reference names no defect.
+- **The roomle-hi-example branch is off `docs/article-template-geometry-analysis`**, not `master`,
+  so the analysis and its implementation travel together.
+- **Lint and format ran on the changed files**, not as the repository-wide `--fix` and `--write`
+  scripts, so no unrelated file changed. The roomle-ui pre-commit hook runs the repository-wide
+  `lint:code`; its one warning is in `planner-core/__tests__/plan-view-model.ts`, unrelated.
+
+Open: the roomle-hi-example branch is merged only after the roomle-ui change is on the planner the
+pages use (§4.3). Two backlog items still mention the anchor probe that left the server with the
+tool logic: `one-undo-step-per-tool-call.md` and `under-relation-for-tabletops.md`.

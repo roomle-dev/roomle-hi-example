@@ -480,9 +480,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           desc,
         }));
       }
-      result.articles = articles.map((article) =>
-        agentFacingArticle(article, articles)
-      );
+      result.articles = articles.map((article) => agentFacingArticle(article));
     }
     if (withArticles) {
       delete result.articles;

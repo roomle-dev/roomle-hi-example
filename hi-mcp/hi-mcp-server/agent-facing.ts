@@ -1,5 +1,5 @@
 // The plan context in the words of the agent: wall names, room corners, the
-// wall of a door or a window, and the catalog's corner articles.
+// wall of a door or a window, and the catalog's short descriptions.
 
 type WallSide = 'left' | 'right' | 'top' | 'bottom';
 
@@ -177,31 +177,6 @@ export const wallOfOpening = (
   return found;
 };
 
-export const catalogArticleOf = (articles: any[], root: any): any | undefined =>
-  articles.find(
-    (candidate) =>
-      candidate.articleId === root.articleId &&
-      (!root.libraryId || candidate.libraryId === root.libraryId)
-  );
-
-const CORNER = /corner/i;
-
-// The catalog's cornerArticle flag is derived from docking data that only a
-// calculated root of the article provides; on an empty plan the category
-// ("... | Base Units | Corner") and the module name (mr_CornerunitStraight)
-// still tell a corner article.
-export const isCornerArticle = (articles: any[], root: any): boolean => {
-  const article = catalogArticleOf(articles, root);
-  return (
-    article !== undefined &&
-    (article.cornerArticle === true ||
-      CORNER.test(String(article.category ?? '')) ||
-      (article.rootModules ?? []).some((rootModule: any) =>
-        CORNER.test(String(rootModule?.module?.id ?? ''))
-      ))
-  );
-};
-
 // A sectioned article description - FUNCTION:, PURPOSE:, …,
 // AI_SELECTION_HINT: - shortened to what the article is and when to pick it.
 const SHORT_DESCRIPTION_SECTIONS = ['FUNCTION', 'AI_SELECTION_HINT'];
@@ -217,14 +192,12 @@ const shortDescription = (desc: unknown): unknown => {
   return lines.length > 0 ? lines.join(' ') : desc;
 };
 
-// The agent picks corner articles by cornerArticle; the flag is completed for
-// an empty plan, and the corner point is not the agent's. The description is
-// short; the articleDescriptions section has the full one.
-export const agentFacingArticle = (article: any, articles: any[]) => {
+// The corner point is not the agent's. The description is short; the
+// articleDescriptions section has the full one.
+export const agentFacingArticle = (article: any) => {
   const compact = {
     ...article,
     ...(article.desc !== undefined && { desc: shortDescription(article.desc) }),
-    cornerArticle: isCornerArticle(articles, article),
   };
   delete compact.cornerPoint;
   return compact;

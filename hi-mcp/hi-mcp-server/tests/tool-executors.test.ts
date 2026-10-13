@@ -251,12 +251,10 @@ describe('get-plan-context', () => {
     // a planner without the obstacles section (an older roomle-ui) returns
     // none, and the context is the same
     // the plan context arrives agent-ready from the planner API; the server
-    // completes the articles' cornerArticle flag, names the walls and lists
-    // the room corners
+    // names the walls and lists the room corners
     expect(result).toEqual({
       ...planContextFixture,
       rooms: { rooms: [namedRoom] },
-      articles: [{ ...articleFixture, cornerArticle: false }],
     });
   });
 
@@ -458,11 +456,30 @@ describe('get-plan-context', () => {
       include: ['articles'],
     })) as Record<string, any>;
     const { cornerPoint: _cornerPoint, ...withoutCornerPoint } = cornerArticle;
-    expect(result.articles).toEqual([
-      { ...articleFixture, cornerArticle: false },
-      withoutCornerPoint,
-    ]);
+    expect(result.articles).toEqual([articleFixture, withoutCornerPoint]);
     expect(result.articles[1].cornerArticle).toBe(true);
+  });
+
+  it('passes the corner flag through as the planner reports it', async () => {
+    const flagged = {
+      ...articleFixture,
+      articleId: 'flagged',
+      category: 'Kitchen | Base Units | Storage',
+      cornerArticle: true,
+    };
+    const namedOnly = {
+      ...articleFixture,
+      articleId: 'named-only',
+      category: 'Kitchen handleless | Base Units | Corner',
+      cornerArticle: false,
+    };
+    const api = createApi({ articles: [flagged, namedOnly] });
+    const result = (await toolExecutors['get-plan-context'](api, {
+      include: ['articles'],
+    })) as Record<string, any>;
+    expect(
+      result.articles.map((article: any) => article.cornerArticle)
+    ).toEqual([true, false]);
   });
 
   describe('article descriptions', () => {
@@ -518,20 +535,6 @@ describe('get-plan-context', () => {
       expect(both.articles[0].desc).not.toBe(sectioned);
       expect(both.articleDescriptions[0].desc).toBe(sectioned);
     });
-  });
-
-  it('flags a corner article on an empty plan, where the planner has not derived the flag yet', async () => {
-    const uncalculatedCorner = {
-      ...articleFixture,
-      articleId: 'EUERTB90',
-      category: 'Kitchen handleless | Base Units | Corner',
-      cornerArticle: false,
-    };
-    const api = createApi({ articles: [uncalculatedCorner] });
-    const result = (await toolExecutors['get-plan-context'](api, {
-      include: ['articles'],
-    })) as Record<string, any>;
-    expect(result.articles[0].cornerArticle).toBe(true);
   });
 
   it('keeps the images and descriptions of the attributes and their selections', async () => {

@@ -446,12 +446,8 @@ Tests:
 ## 10. Implementation report
 
 roomle-ui `feat/hi-plan-context-article-geometry-RML-18140`, off
-`feat/hi-layout-load-outcome-RML-18139` (`5b502b8c7`):
-
-- `29333a81a` feat: carry the geometry of every article in the hi plan context (step 1)
-- `f6c2460ca` feat: tell a corner article by the catalog's flag only (step 2)
-- `fc5c53afa` docs: document the complete catalog of the hi plan context (step 3)
-- `99b1d4338` fix: keep the article selector of the hi plan context
+`feat/hi-layout-load-outcome-RML-18139` (`5b502b8c7`), one commit for steps 1 to 3: `56256a5b7`
+feat: carry the geometry of every article in the hi plan context.
 
 roomle-hi-example `feat/catalog-corner-flag-from-the-planner`: `4c34d85` feat: pass the corner flag
 of the catalog through as the planner reports it (step 4), and the documentation commit of step 5.
@@ -460,26 +456,18 @@ Verification: the roomle-ui tests of `homag-intelligence` and `roomle-planner` p
 skipped; `npm run lint:types` reports nothing; oxlint and prettier report nothing in the changed
 files; `npm run lint:docs:sdk` reports one error in `node_modules/bun-webgpu`, the same on the base
 commit. roomle-hi-example: the 246 tests of `hi-mcp` pass, the typecheck, `npm run lint` and
-`npm run format:check` report nothing. No live check, no model run, no pull request, no
-deployment.
+`npm run format:check` report nothing. No live check, no model run, no deployment.
 
 Deviations from §9:
 
 - **The article selector stays (user, 2026-10-13).** `HiPlanContextOptions` and the `options`
   parameter of `getExternalObjectPlanContext` are public API the ticket did not ask to remove; §4.1
-  and §9.2 removed them without asking. `99b1d4338` restores every API file, `roomle-planner.ts`
-  and its test as they are on the base branch: the branch changes no API file. `createPlanContext`
-  keeps its `articleIds` parameter: without it the articles section calculates every article that
-  needs a template, with it only the named ones. The selector tests are back, with
+  and §9.2 removed them without asking. The commit leaves every API file, `roomle-planner.ts` and
+  its test as they are on the base branch, the counting planner of `runToolCommand` included.
+  `createPlanContext` keeps its `articleIds` parameter: without it the articles section calculates
+  every article that needs a template, with it only the named ones. The selector tests are back, with
   `it('calculates only the requested articles when the caller names them')`; D74 and ADR 0007 name
   the option.
-- **The step 1 commit leaves three tests failing.** Three expectations of
-  `create-or-replace-groups-placement-test.ts` named the removed options argument as `undefined`;
-  the step 1 tests ran before the typecheck found the options in the counting planner of
-  `runToolCommand` (`hi-tool-commands.ts`). The step 2 commit adapts the three expectations and
-  `99b1d4338` restores them with the options; the branch passes from step 2 on.
-- **The counting planner of `runToolCommand`** lost the options in step 1 as well; `99b1d4338`
-  restores it with the other API files.
 - **The comment "an empty plan" of `create-or-replace-groups-placement-test.ts:330` stays**: that
   test's plan is empty, the comment is right.
 - **More documentation than §9.6 lists**: the module table of

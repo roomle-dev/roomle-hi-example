@@ -130,13 +130,13 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | Document | Last touched |
 |---|---|
 | [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-13 |
-| [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner detected by the MCP prompt tests, each with the module, team or repository responsible | 2026-10-09 |
-| [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: sink drainer width and the restriction on a hob to its right, handleless fronts | 2026-10-11 |
+| [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner detected by the MCP prompt tests, each with the module, team or repository responsible: a merge that moves a group placed in the conversation, the white worktop of a handleless kitchen | 2026-10-13 |
+| [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: sink drainer width and the restriction on a hob to its right, handleless fronts, the sizes of flip-lift wall cabinets | 2026-10-13 |
 | [Library-neutrality issues of the MCP server](backlog/mcp-policy-issues.md) — what in `hi-mcp/hi-mcp-server/` still carries library-specific content: the served text's kitchen taxonomy and the search normalization | 2026-10-11 |
 | [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — gpt-5.4-mini plans without reasoning: set an effort per Foundry deployment from the measured data and verify it; further measurement only on request | 2026-10-07 |
 | [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL | 2026-10-09 |
 | [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — access control | 2026-10-09 |
-| [One planner undo step per tool call](backlog/one-undo-step-per-tool-call.md) — roomle-ui resolves a command after its follow-up reload and groups a tool call into one undo step; then the server drops its follow-up wait | 2026-10-07 |
+| [One planner undo step per tool call](backlog/one-undo-step-per-tool-call.md) — roomle-ui resolves a command after its follow-up reload and groups a tool call into one undo step; then the server drops its follow-up wait | 2026-10-13 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-07 |
 | [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-07 |
 | [A backend-controlled agent loop with browser-executed scene tools](backlog/backend-agent-loop-with-browser-scene-tools.md) — the scene tools in the browser, the agent loop and the credentials in the backend | 2026-10-07 |

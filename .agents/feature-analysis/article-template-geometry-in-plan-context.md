@@ -265,4 +265,180 @@ roomle-hi-example, after the planner change is deployed:
 
 - Whether the word match of roomle-ui's `isCornerArticle` goes in this ticket (§4.2) or stays as a
   fallback for an article whose calculation fails. The analysis says it goes: a failed calculation
-  is reported (G17), a wrong guess is not.
+  is reported (G17), a wrong guess is not. **Decided 2026-10-13 (user): it goes**, with the rest of
+  §4 as proposed.
+
+## 9. Implementation plan
+
+The plan builds on §4 as decided: the catalog of the plan context is complete, always; the article
+selector goes; the corner flag comes from the geometry only, in roomle-ui and in the server; the
+server change lands after the planner change is deployed; the articles without a `Dim` attribute
+get no size.
+
+### 9.1 Branches, commits, verification
+
+| Repository | Branch | Commits |
+|---|---|---|
+| roomle-ui | `feat/hi-plan-context-article-geometry-RML-18140` off `feat/hi-layout-load-outcome-RML-18139` | 1 `feat: carry the geometry of every article in the hi plan context` (step 1), 2 `feat: tell a corner article by the catalog's flag only` (step 2), 3 `docs: document the complete catalog of the hi plan context` (step 3) |
+| roomle-hi-example | `feat/catalog-corner-flag-from-the-planner` off `master` | 1 `feat: pass the corner flag of the catalog through as the planner reports it` (step 4), 2 `docs: document the complete catalog and close the backlog item` (step 5) |
+
+After every roomle-ui step: `cd packages/web-sdk && npm run test -- homag-intelligence` and
+`npm run test -- roomle-planner`, then at the root `npm run lint:types`, `npm run lint:code` and
+`npm run format`. roomle-hi-example: `cd hi-mcp && npm test && npm run typecheck`, then at the
+root `npm run lint`, `npm run format` and `npm run format:check`. A live check on the local dev
+build (roomle-ui on `:5173` with `npm run dev`, the example with `--dev`) only on request; no model
+run.
+
+Sequencing: the roomle-ui branch first. The roomle-hi-example branch is pushed with it and merged
+once the planner change is on the planner the pages use (§4.3); until then the deployed server
+keeps C7. No pull request is opened without being asked.
+
+### 9.2 Step 1 — the catalog carries the geometry of every article (roomle-ui)
+
+`hi-plan-context.ts`: `createPlanContext(include, designerRequests, libraries, posArticles,
+calculateArticleTemplate?)` — the `articleIds` parameter goes. The articles branch builds
+`inPlan = calculatedDockingVectorsByRoot(calculatedGroups ?? [])` first, then calculates through
+the callback, once per article, the template of every article of `posArticles` that has a root
+module without docking vectors of its own (`dockingVectorNames(root)` empty) and without an entry
+`${articleId}:${root.name}` in `inPlan`. The templates join the calculated groups in
+`geometryGroups`, from which the two maps are built as today; `compactArticle` is unchanged. The
+comment says: an article that is not in the plan has its geometry from its template, calculated
+once per article.
+
+The option goes everywhere: `HiPlanContextOptions` and the `options` parameter of
+`getExternalObjectPlanContext` in `external-object-api.ts` (interface and JSDoc), the export in
+`packages/web-sdk/packages/index.ts:199`, `roomle-planner.ts:3183` (import and signature),
+`glue-logic.ts` (the `GlueLogic` interface `:271`, the implementation `:1083`, the import),
+`debug-logging.ts:405`, `hi-tools.ts` (the `HiTools` interface `:259`, `getPlanContext` `:293`,
+`_toolPlanner.getExternalObjectPlanContext` `:276`, `_createPlanContext` `:330-338`) and
+`hi-tool-commands.ts:97-100` (`HiToolPlanner`).
+
+Tests — `__tests__/hi-plan-context-test.ts`: the describe `article selector` (`:1397-1493`)
+becomes `article templates` with the same `beforeEach` (the seeded article, `calculateGroup` spied
+to return the corner vectors):
+
+- `it('carries the docking vectors and the corner point of every article that is not in the plan')`
+  — `getPlanContext(['articles'])`: `cornerArticle` true, `cornerPoint` `[-261, 0, 0]`, the root
+  module's `dockingVectors` the two names; with a second seeded article, `calculateGroup` is called
+  once per article
+- `it('does not calculate an article that has a calculated root in the plan')` (kept, without the
+  option): `getPosDataOfAllGroups` returns a group with a calculated root of the article;
+  `calculateGroup` not called; the corner point from the plan
+- `it('does not calculate an article whose template carries its own docking vectors')` — a seeded
+  article whose template root has `dockInfos`; `calculateGroup` not called; the vectors from the
+  template
+- `it('calculates an article once over two plan contexts')` — two `getPlanContext(['articles'])`;
+  `calculateGroup` called once (the glue logic's cache)
+- `it('calculates no template without the articles section')` — `getPlanContext(['groups'])`;
+  `calculateGroup` not called (replaces `calculates no template without an article selector`;
+  `ignores an unknown article id in the selector` goes)
+- `it('leaves the geometry out when the template calculation fails')` (kept, without the option):
+  `cornerArticle` false, `dockingVectors` empty
+
+`packages/planner-core/__tests__/roomle-planner.ts:4356-4372` (`should forward the article
+selector to the glue logic`) goes; `should delegate to the glue logic` (`:4335`) stays and expects
+the call with the sections only. `__tests__/article-template-test.ts` stays as it is; the fake
+planner of `hi-tool-commands/__mocks__.ts:286` is unchanged.
+
+### 9.3 Step 2 — the corner flag from the catalog only (roomle-ui)
+
+`hi-group-placement.ts:30-45`: `CORNER` goes; `isCornerArticle(articles, root)` returns
+`catalogArticleOf(articles, root)?.cornerArticle === true`; the comment says the catalog's flag
+comes from the corner docking vectors of the calculated article, in the plan or from its template.
+The callers stay: `anchorRootOf` (`:245`), `hi-group-layout.ts:281` and `:590`,
+`hi-tool-docking.ts:497`.
+
+Tests — `__tests__/hi-group-placement-test.ts`:
+
+- the fixtures `EUERTB90` (`:28-35`, "the catalog of an empty plan") and `corner-by-module`
+  (`:36-41`) become `EUERTB90` with `cornerArticle: true` and `cornerPoint: [-261, 0, 0]`, and
+  `corner-by-name-only` with the corner category and the corner module id but
+  `cornerArticle: false`
+- `it('recognises a corner article by its flag')` replaces `:135`: `corner` and `EUERTB90` true;
+  `corner-by-name-only`, `unit` and `unknown` false
+- `it('anchors the L at the corner article by the flag the catalog carries')` replaces `:237`, the
+  same loop over the start roots
+- the catalog of `toRepositioningData with an anchor frame` (`:428-448`): `UERTB90` and `UELTB90`
+  get `cornerArticle: true`; their single-root groups anchor at that root either way, so the
+  expectations stay
+- the comments "an empty plan" in `hi-tool-commands/create-or-replace-groups-placement-test.ts:330`
+  and `create-or-replace-groups-input-test.ts:615`, `:1152` become "a catalog without the article's
+  docking vectors" — what the fake planner's catalog models; the tests use the flag and stay
+
+`hi-group-layout-test.ts` uses the flag (`:40-47`) and stays.
+
+### 9.4 Step 3 — roomle-ui documentation
+
+- `.agents/homag-intelligence.md:215`, the article templates paragraph: the plan context
+  calculates the template of every article whose root modules carry no docking vectors from the
+  template and no calculated root in the plan, once per article; `options.articleIds` leaves the
+  sentence.
+- `packages/embedding-lib/docs/homag-intelligence-embedding.md:1909-1922`: the signature without
+  `options`, the `options.articleIds` line goes, the `articles` return line says the docking
+  vectors, `cornerArticle` and `cornerPoint` come from the calculated article — a root in the plan
+  or its template, calculated by the planner once per article on the first request and kept until
+  the library's article templates are loaded again.
+- The comments `src/hi-plan-context.ts:587` and `src/hi-tool-docking.ts:577`: from the template,
+  from a calculated root in the plan, or from the article's calculated template.
+
+### 9.5 Step 4 — the server passes the flag through (roomle-hi-example)
+
+`agent-facing.ts`: `CORNER` (`:187`), `isCornerArticle` (`:193-201`) and `catalogArticleOf`
+(`:180`, used by nothing else) go; `agentFacingArticle(article)` (`:223-231`) keeps the short
+description and the removal of `cornerPoint`, without `cornerArticle`; the file comment (`:1-2`)
+drops the corner articles. `tool-executors.ts:484` calls `agentFacingArticle(article)`; the
+`articles` it passed goes if nothing else reads it.
+
+Tests:
+
+- `tests/tool-executors.test.ts:253-259`: the comment on the completed flag goes; the expectation
+  is `articles: [articleFixture]`
+- `:449` `keeps the corner point of the articles to the server`: expects
+  `[articleFixture, withoutCornerPoint]`
+- `:524` `flags a corner article on an empty plan, where the planner has not derived the flag yet`
+  goes
+- new `it('passes the corner flag through as the planner reports it')` in
+  `tests/tool-executors.test.ts`: an article with `cornerArticle: true` and a category without the
+  word stays true; one with the corner category and `cornerArticle: false` stays false
+- `tests/hi-mcp-server.test.ts:1044`: the compact JSON without `,"cornerArticle":false`
+
+### 9.6 Step 5 — roomle-hi-example documentation and the backlog
+
+- `docs/hi-mcp-behaviour.md`: a subsection `### The catalog (2026-10-13)` after `Load answers`
+  with D74, the text of §4.4 — source "user, 2026-10-13
+  ([RML-18140](https://roomle.atlassian.net/browse/RML-18140))", state "in effect —
+  `createPlanContext`, roomle-ui `hi-plan-context.ts`; `calculateArticleTemplate`,
+  `glue-logic.ts`; `isCornerArticle`, `hi-group-placement.ts`; `agentFacingArticle`,
+  `agent-facing.ts`; guarded by the tests of §9.2, §9.3 and §9.5". The row C7 (`:814`) goes; D48
+  (`:160`) drops "`cornerArticle` on an empty plan" and C7 from its list; the `articles` row of
+  §5.4 (`:488`) says the planner carries the docking vectors and the corner flag of every article,
+  from a calculated root in the plan or from the article's template calculated once per page
+  (D74), and the server removes `cornerPoint` (D10); the `get-plan-context` paragraph of §6
+  (`:539-546`) loses the sentences on C7 and `articleIds` and says the same.
+- `docs/hi-mcp-server.md:335-340` and `hi-mcp/hi-mcp-server/README.md:318-322`: `dockingVectors`
+  from the template, from a calculated root of the same article in the plan, or from the article's
+  template the planner calculates; `hi-mcp/hi-mcp-server/README.md:61` drops "`cornerArticle` on
+  an empty plan".
+- `docs/implementation/tool-executors.md:313`: the `agentFacingArticle` row without
+  `cornerArticle`; `docs/implementation/layout-and-placement.md:132-133`: `anchorRootOf` uses the
+  catalog's `cornerArticle` flag, which the planner derives from the corner docking vectors of the
+  calculated article; `docs/implementation/README.md:109`: the `agent-facing.ts` row without
+  `cornerArticle`.
+- `.agents/skills/hi-mcp-server.md:64` and `:81`: the corner article paragraph becomes the flag
+  from the planner; `.agents/skills/roomle-hi-concepts.md:79-81` and
+  `.agents/skills/hi-authoring-rules.md:69`: the catalog carries the docking vector names of every
+  article, and an article whose template has no `Dim` attribute (the range hood) lists no size.
+- **The backlog item closes:** `.agents/backlog/roomle-ui-article-template-geometry.md` is
+  deleted, and its rows leave `.agents/backlog/README.md:40` and `.agents/README.md:133`.
+- This analysis: status `Implemented`, a §10 implementation report, the row in
+  `.agents/feature-analysis/README.md`.
+
+### 9.7 Definition of done
+
+- roomle-ui: `getExternalObjectPlanContext(['articles'])` on an empty plan returns
+  `cornerArticle: true`, the corner point and the docking vector names of every corner article and
+  the docking vectors of every article; `calculateGroup` runs once per article and library load.
+- roomle-hi-example: `get-plan-context` on an empty plan returns `cornerArticle: true` and the
+  eight docking vector names of the corner unit, and no `cornerPoint`; the first corner kitchen of
+  an empty plan lands in the room corner (holds already, C6).
+- Unit tests, typecheck, lint and format pass in both repositories; the backlog item is gone.

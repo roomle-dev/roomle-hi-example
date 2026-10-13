@@ -129,8 +129,9 @@ agent wrote it in; a corner kitchen anchors at its corner article.
 Naming trap: in `dockingRelations` the map `rightOf.get(id)` is the root standing *to the right of*
 `id` — the opposite sense of the agent's field `rightOf: X`.
 
-`anchorRootOf` uses the catalog's `isCornerArticle` (the `cornerArticle` flag, or `corner` in the
-category or a module id) — on an empty plan the catalog carries no flag yet.
+`anchorRootOf` tells a corner article by the catalog's `cornerArticle` flag (`isCornerArticle`),
+which the planner derives from the corner docking vectors of the calculated article — a root of it in
+the plan, or else its template (D74).
 
 ### The anchor frame
 
@@ -190,7 +191,7 @@ Used by `place-group` and a placement by wall, the overlap and in-room tests of 
 
 - **The tests pin the geometry** (roomle-ui `__tests__/`). `hi-group-placement-test.ts` checks the
   anchor frames of every corner hand, the anchor walk (cycles, islands, wall units, generated roots,
-  empty plans) and that the docking corner lands on `posGroup` at 0, 90, 180 and 270°;
+  the corner flag) and that the docking corner lands on `posGroup` at 0, 90, 180 and 270°;
   `hi-plan-space-test.ts` the wall and corner placements of the test room, an L-shaped room and a
   wall split by a door; `hi-group-layout-test.ts` a full kitchen of a real agent that must compile to
   exactly its own docking.

@@ -436,8 +436,8 @@ const inPlanner = (
 export const toolExecutors: Record<string, ToolExecutor> = {
   // The plan context arrives agent-ready from the planner API (compacted
   // sections, 3D room contours with derived walls, the groups in the frame a
-  // placement names); the executor names the walls, completes the articles'
-  // cornerArticle flag and leaves out their corner points.
+  // placement names); the executor names the walls and leaves out the
+  // articles' corner points.
   'get-plan-context': oneAtATime(async (roomDesignerApi, args) => {
     // an unknown section is ignored
     const include = Array.isArray(args.include) ? args.include : [];
@@ -480,9 +480,7 @@ export const toolExecutors: Record<string, ToolExecutor> = {
           desc,
         }));
       }
-      result.articles = articles.map((article) =>
-        agentFacingArticle(article, articles)
-      );
+      result.articles = articles.map((article) => agentFacingArticle(article));
     }
     if (withArticles) {
       delete result.articles;

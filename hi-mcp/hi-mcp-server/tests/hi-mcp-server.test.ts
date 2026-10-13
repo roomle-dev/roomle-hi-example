@@ -1041,7 +1041,7 @@ describe('hi-mcp-server tool calls', () => {
       await client.callTool({ name: 'get-plan-context', arguments: {} })
     );
     expect(text).toBe(
-      '{"articles":[{"articleId":"HTB60","rootModules":[{"module":{"id":"mr_Tall"},"subModules":[{"id":"mf_Door"}]}],"cornerArticle":false}]}'
+      '{"articles":[{"articleId":"HTB60","rootModules":[{"module":{"id":"mr_Tall"},"subModules":[{"id":"mf_Door"}]}]}]}'
     );
   });
 

@@ -66,9 +66,9 @@ Access via `get-plan-context` (a default section, or `include: ['articles']`):
 }
 ```
 
-On an empty plan the catalog can list an article without docking vectors and without size — the
-range hood `DU`, whose template has none: that means unknown, not undockable. The server docks such
-an article like any other (G7).
+The catalog can list an article without size — the range hood `DU`, whose template has no `Dim`
+attribute — and, when its template cannot be calculated, without docking vectors: that means
+unknown, not undockable. The server docks such an article like any other (G7).
 
 ## Relations
 

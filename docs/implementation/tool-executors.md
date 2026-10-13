@@ -49,7 +49,7 @@ roomle-ui, `packages/web-sdk/packages/homag-intelligence/src/` (D71).
 | File | Main identifiers |
 | ---- | ---------------- |
 | `tool-executors.ts` | plan-context sections (`PLAN_CONTEXT_SECTIONS`, `DEFAULT_SECTIONS`); find-attributes matching (`searchWords`, `attributeMatches`, `withSharedSelectionsOnce`); concurrency and undo recording (`oneAtATime`, `countingPlannerApi`, `readGroupsKey`, `recorded`, `planChange`); undo and redo (`stepHistory`, `revertToolCall`, `changedGroupIds`, `changedGroupsOnly`); the forward of a plan-changing tool (`inPlanner`, `compactAttributeResult`); `toolExecutors`, at the end |
-| `agent-facing.ts` | the plan context the agent sees: `agentFacingArticle` (`isCornerArticle`, `shortDescription`), `agentFacingRooms` (`wallName`, `roomCorners`), `agentFacingObstacles` (`wallOfOpening`) |
+| `agent-facing.ts` | the plan context the agent sees: `agentFacingArticle` (`shortDescription`), `agentFacingRooms` (`wallName`, `roomCorners`), `agentFacingObstacles` (`wallOfOpening`) |
 | roomle-ui `hi-tool-commands.ts` | `HiToolPlanner` (what the commands read from the plan and change in it), `HiToolState`, `HI_TOOL_COMMANDS` (one command per plan-changing tool), `runToolCommand` (counts `historySteps` and `historyFollowUps`), `FOLLOW_UP_COMMANDS`, `hasFollowUp`, `placeAtWalls`, `inPlacementFrame`, `withCorrections`, `asTool`, `changedGroupsOnly` |
 | roomle-ui `hi-tool-ids.ts` | article and root id resolution: `catalogArticleId`, `catalogSpellingOf`, `resolveArticleIds`, `removeReferencesTo`, `resolveRootId`, `withPlanRoots`, `rootModulesByGroup`; group lookup: `findGroup` (a root id names the group that holds it: `groupHoldingRoot`), `groupOfRoot`; the agent's group ids: `matchResultGroups`, `resolveAgentGroupIds`, `rememberAgentGroupIds` |
 | roomle-ui `hi-tool-payload.ts` | payload preparation: `dropMalformedDocking`, `liftNestedRoots`, `completeDockingEntries`, `normalizedAttributes`, `reportUnusedFields`, `readDockToAsRelation`, `prepareGroup`; placement normalisation: `normalizePlacement`, `normalizeWallPlacement`, `isWallPlacement`; `toArticlePick`, `generatedRootAttributes`, `readLoadOutcomes`; partial loads: `NotLoadedGroup`, `keepBuildable`, `nothingLoaded` |
@@ -310,7 +310,7 @@ frame and the `rowIndex` of every root (`inPlacementFrame`); the server adds its
 | -------- | ---- |
 | `agentFacingRooms` | per wall `name` (`wallName`: back, front, left, right wall), `type: 'opening'` for a wall entry without type (a door); per room `corners` (`roomCorners`) |
 | `agentFacingObstacles` | per door and window its room, wall and span from the wall's end (`wallOfOpening`) |
-| `agentFacingArticle` | `cornerArticle` (`isCornerArticle`); removes `cornerPoint`; shortens a sectioned `desc` (`shortDescription`) |
+| `agentFacingArticle` | removes `cornerPoint`; shortens a sectioned `desc` (`shortDescription`) |
 | `withoutImageUrls` (`hi-mcp-server.ts`) | removes every `imageUrl` |
 
 ## Corrections, hints and partial loads

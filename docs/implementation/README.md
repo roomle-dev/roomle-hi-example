@@ -106,7 +106,7 @@ agent's side.
 | `hi-mcp/hi-mcp-server/server.ts` | Process entry: HTTP server, `/mcp`, the `/bridge` upgrade, origins, the `client` check |
 | `hi-mcp/hi-mcp-server/hi-mcp-server.ts` | `McpServer` per request: served instructions and rules, the 20 tool registrations (zod), logging, result shaping |
 | `hi-mcp/hi-mcp-server/tool-executors.ts` | The tool executors: `get-plan-context`, `find-attributes`, the forward of every plan-changing tool, undo and redo, one plan change at a time |
-| `hi-mcp/hi-mcp-server/agent-facing.ts` | The plan context in the agent's words: wall names, room corners, the wall of a door or a window, `cornerArticle`, short descriptions |
+| `hi-mcp/hi-mcp-server/agent-facing.ts` | The plan context in the agent's words: wall names, room corners, the wall of a door or a window, short descriptions |
 | `hi-mcp/hi-mcp-server/plan-history.ts` | The record of plan-changing tool calls for `undo` and `redo` |
 | `hi-mcp/hi-mcp-server/planner-api.ts` | The planner methods the tools may call, with their timeouts |
 | `hi-mcp/hi-mcp-server/page-bridge.ts` | The connected page, call correlation, timeouts, protocol check |

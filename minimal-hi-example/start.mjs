@@ -48,7 +48,7 @@ const EXAMPLE_SERVER_URL =
 // The deployed server accepts the page only from its default origins
 // (http://localhost:3000), and routes every session to its own container.
 const CLOUDFLARE_MCP_SERVER_URL =
-  'https://hi-mcp-poc.hi-orchestrator.workers.dev';
+  'https://hi-planning-assistant-dev.dashiell-bell.workers.dev';
 const CLOUDFLARE_PAGE_PORT = 3000;
 const useCloudflareMcp = process.argv.includes('--cf');
 const MCP_SESSION = useCloudflareMcp ? userInfo().username : undefined;

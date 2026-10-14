@@ -8,7 +8,6 @@ const call = (tool = 'delete-group') => ({
   steps: 1,
   groupsBefore: '[]',
   groupsAfter: '[]',
-  settled: true,
 });
 
 describe('PlanHistory', () => {
@@ -60,24 +59,6 @@ describe('PlanHistory', () => {
     history.reset();
     expect(history.lastDone()).toBeUndefined();
     expect(history.changedInPlanner).toBe(false);
-  });
-
-  it("takes a late follow-up as the last call's own, and a change after it as a change in the planner", () => {
-    const history = new PlanHistory();
-    history.record({ ...call(), settled: false });
-    history.expectLateFollowUp();
-    history.historyChanged();
-    expect(history.lateFollowUps).toBe(0);
-    expect(history.lastDone()?.settled).toBe(false);
-    history.settleLastDone('[{"id":"g1"}]');
-    expect(history.lastDone()).toMatchObject({
-      groupsAfter: '[{"id":"g1"}]',
-      settled: true,
-    });
-
-    history.historyChanged();
-    expect(history.lastDone()).toBeUndefined();
-    expect(history.changedInPlanner).toBe(true);
   });
 
   it('forgets everything after a change found in the planner', () => {

@@ -4,6 +4,7 @@
 > **Responsible**: roomle-ui `planner-core` and hi-mcp history accounting
 > **Domain**: roomle-ui `planner-core` — the undo step machinery (`plan-interaction-manager.ts`) and `externalObjectGroupOperation`; consumer: the hi-mcp `undo` and `redo` tools (D37, D38 in [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#architecture))
 > **Jira**: follow-up of [RML-18044](https://roomle.atlassian.net/browse/RML-18044)
+> **Status**: in progress — [RML-18164](https://roomle.atlassian.net/browse/RML-18164) does the three to-dos as the steps 2a–2c of [its plan](../feature-analysis/kitchen-from-image-improvements.md); the item leaves the backlog when the roomle-ui change is on `release/bo-test` or `master`
 
 ## Problem
 

@@ -125,6 +125,17 @@ and D71 (it plans begin and end methods on the page allow-lists; since the whole
 one `externalObjectGroupOperation`, the grouping needs no new page method). The item is closed with
 step 2c: it leaves the backlog once the roomle-ui change is on `release/bo-test` or `master`.
 
+**Measured (step 2a, 2026-10-14, local planner, `default-room`).** Every follow-up command answered
+after its reload with exactly its steps' events before the answer and none within 3 s after it: the
+create with a wall placement and ten group attributes 3 steps (events at 328, 857 and 1,701 ms,
+the answer at 1,697 ms) with 1 follow-up reported; `change-module-attribute`,
+`change-group-attribute`, `exchange-root-module`, `insert-article-into-group`, `swap-root-modules`
+and `delete-article-and-compact` 1 step each, 1 follow-up reported, one event before the answer.
+The server's own time was 2.0 s on each of them (tool time minus planner time), and `undo` after
+each waited 2.0 s and undid nothing ("has not finished the last change yet"); `place-group`, which
+reports no follow-up, was undone in 0.5 s. The hypothesis holds, for the commands outside the
+kernel-operation slot too: no command needs wrapping, roomle-ui only stops reporting follow-ups.
+
 **Change (D77, step 2b).** The planner answers a tool command settled: every command resolves after
 its last reload — exchange, insert, swap and the gap-closing remove run in the kernel-operation
 slot as the attribute commands do —, `runToolCommand` reports no follow-ups (`FOLLOW_UP_COMMANDS`

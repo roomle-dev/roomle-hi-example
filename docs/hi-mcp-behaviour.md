@@ -309,6 +309,8 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
 | # | Decision | Source | State |
 |---|---|---|---|
 | D76 | **The attribute vocabulary is a default section of the plan context.** `get-plan-context` returns `attributes` by default: per library the customer-facing attributes of the compacted master data — `id`, `name`, `desc`, `group`, `type`, `selections` with value, name and desc — with a value list several attributes share listed once, `sameSelectionsAs` naming the attribute that lists it (as `find-attributes`, D64); the root modules and the group settings stay in `masterData`, on request. The rules, the instructions and the tool descriptions say that the ids and values are there, so a planning needs no search; `find-attributes` answers a question about one attribute. A model that had to search the vocabulary spent 1.5 search-only steps and 12.5 s per run on it (gpt-6-astra; gpt-5.4-mini 3–6 steps); the section costs about 5k tokens per step. Rejected: the colour, program, handle and plinth attributes only — the server would choose per library which attributes matter (§2.4); the root modules per attribute in the section — about 10k characters more in every step, and the catalog's `mainAttributes` say which attributes a root module carries | 2026-10-14, [RML-18164](https://roomle.atlassian.net/browse/RML-18164) | in effect — `get-plan-context` (`tool-executors.ts`), `agentFacingAttributes` (`agent-facing.ts`); the served text in `hi-mcp-server.ts` |
+| D77 | **A tool command answers settled.** The planner answers a tool command after its last reload, so every history event of the call has arrived when it answers; the server counts `historySteps` only, waits for no follow-up event, and `undo` reverts the call at once. Measured live on 2026-10-14 with the local planner: every follow-up command — the attribute commands, exchange, insert, swap, the gap-closing delete — relayed exactly its steps' events before its answer and none within 3 s after it; the server's wait for one event more cost every plan-changing call 2 s and withheld `undo` after it, which then waited 2 s more and undid nothing. roomle-ui reports no follow-ups any more. Rejected: a wait in the server that counts late events — bookkeeping for a case the planner does not produce | 2026-10-14, [RML-18164](https://roomle.atlassian.net/browse/RML-18164) | in effect — `countingPlannerApi`, `recorded`, `revertToolCall` (`tool-executors.ts`), `plan-history.ts`; roomle-ui `runToolCommand` (`hi-tool-commands.ts`) |
+| D79 | **A tool call is one planner undo step.** The planner's `externalObjectGroupOperation` holds one interaction step for an HI tool command, as `replaceObject` pins one step across a remove and an add: the loads and group operations inside the call resume that step instead of committing one each, and the end of the call commits it — one history event, one undo for the user's button and for the server's `undo`; a call that throws after it changed the plan is released as well, so its half-done change is one step. The command reports `historySteps` 1 when it changed the plan and 0 when it did not, and the server's accounting stays as it is. Before, a create with a wall placement and materials made three steps — the load, the reload at the wall, the attribute command — and the planner's undo button reverted it piecewise, the first click leaving the kitchen without its materials. Rejected: begin and end methods on the page allow-lists called by the server around each call — two more bridge calls per tool call, and since D71 the whole tool runs inside one planner call, which holds the step itself | 2026-10-14, [RML-18164](https://roomle.atlassian.net/browse/RML-18164), the backlog item one planner undo step per tool call | in effect — roomle-ui `runToolCall` (`plan-interaction-manager.ts`), `externalObjectGroupOperation` (`roomle-planner.ts`), `runToolCommand` (`hi-tool-commands.ts`) |
 
 ## 4. How a tool call runs
 
@@ -353,29 +355,25 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
   receives at once, so a concurrent call would mix into the record. `get-plan-context` waits with
   them, so it never reads a plan halfway through a change. `undo` and `redo` wait with them too: an
   undo never runs beside another plan change.
-- **Every tool call that changes the plan is recorded** (D38): the tool command reports in
-  `historySteps` the steps it put on the planner's undo history — one per load that loaded something
-  and one per group operation (`runToolCommand`, guarded by `describe('runToolCommand')` in roomle-ui
-  `__tests__/hi-tool-commands/run-tool-command-test.ts`) —, and the server counts them, a result without
-  `historySteps` as one step (`countingPlannerApi`). A tool that fails after it changed the plan
+- **Every tool call that changes the plan is recorded** (D38): the planner runs a tool command as
+  one step of its undo history (D79), and the tool command reports `historySteps` 1 when it changed
+  the plan — a load that loaded something or a group operation — and 0 when it did not
+  (`runToolCommand`, guarded by `describe('runToolCommand')` in roomle-ui
+  `__tests__/hi-tool-commands/run-tool-command-test.ts`); the server counts the steps of a call, a
+  result without `historySteps` as one step (`countingPlannerApi`). A tool that fails after it changed the plan
   answers with `error` and its steps instead of rejecting: the server records the steps, so undo
   reverts the half-done call, and raises the error to the agent (`inPlanner`, guarded by
   `it('records the steps of a tool that failed after it changed the plan and relays its error')` in
   `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`). It reads the groups of the plan context before
   the call and after it (`readGroupsKey`). The group-wide attributes of a create are one group
-  operation, one step (D36). The tool command reports in `historyFollowUps` the follow-up reloads
-  roomle-ui makes when the kernel answers with the group's position — after `change-module-attribute`,
-  `change-group-attribute`, `change-attributes` (also the group-wide attributes of
-  `create-or-replace-groups`), `exchange-root-module`, `insert-article-into-group` and
-  `swap-root-modules`, and after a `delete-article-and-compact` that closed the gap (`gapClosed`)
-  (`FOLLOW_UP_COMMANDS`, `hasFollowUp`). The server then waits until the call has produced its
-  `historySteps` plus `historyFollowUps` history events, at most 2 s; a page that relays no history
-  events gets no wait. A call
-  whose follow-up has not arrived by the end of the call — a follow-up that lands after the wait,
-  while the call still reads the plan, counts as arrived (guarded by `it("takes a follow-up that lands after the wait, while the call still reads the plan, as the call's own")` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`) —
-  is recorded as unsettled, and its late reloads, when they arrive, are the call's own — as many as are outstanding, so the group-wide attributes of two groups of a `create-or-replace-groups` whose reloads both land late count both. The history events while a call runs are its own; any other one is a
-  change in the planner. A recorded call ends redo, as the planner drops its redo future with a new
-  step.
+  operation (D36), within the call's step. The planner answers a tool command after its last reload — the kernel's position
+  answer after an attribute change, an exchange, an insert, a swap or a gap-closing delete reloads the
+  group within the command (roomle-ui `_requestKernelOperation`) —, so every history event of a call
+  has arrived when the call answers, and the server waits for none (D77; guarded by
+  `it('records a call as soon as it resolves, whatever follow-ups its result reports')` in
+  `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`); a `historyFollowUps` an older planner reports
+  is ignored. The history events while a call runs are its own; any other one is a change in the
+  planner. A recorded call ends redo, as the planner drops its redo future with a new step.
 - **The store connection** starts when its planner is available and `mcp_server` is valid,
   independently of chat settings. `mcp_session` selects a shared session; without it the store
   generates one per page. Bridge and optional chat resolve one client/session identity, so the
@@ -1076,7 +1074,6 @@ Nothing here is an error result: the tool answers with its name `null` and a `hi
 | no record | nothing | "Nothing to undo: no tool call has changed the plan since the planner page connected." / "Nothing to redo: redo brings back a tool call that undo reverted, and a new change of the plan ends redo." |
 | a history event while no tool call ran, or the plan differs from the state the call left | forgets the records | "The plan was changed in the planner after the last tool call, so no tool call was reverted - the planner's own undo button reverts the changes made there." |
 | a planner undo or redo without its history event | forgets the records | "The planner's undo history no longer holds … - the plan was loaded again, nothing was undone." / "… ended after n of m steps of … - check the plan with get-plan-context." |
-| `undo` of a call whose follow-up reload has not arrived within 2 s more | nothing; the records stay | "The planner has not finished the last change yet - its follow-up reload is still outstanding. Nothing was undone; call undo again in a moment." |
 | the plan after the steps is not the plan before (`undo`) or after (`redo`) the call | takes the steps back, forgets the records | "Undo of … did not give back the plan before it - the plan was changed in the planner while the tool call ran. The undo was taken back and the plan is as it was; the planner's undo button reverts the changes made there." / "… could not be taken back completely - check the plan with get-plan-context." |
 | a page without `undo` on its allow-list | — | error result: the page's "Planner method not exposed: undo" (§8.7) |
 

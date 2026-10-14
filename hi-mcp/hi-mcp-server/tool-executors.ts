@@ -108,11 +108,7 @@ const oneAtATime =
     return run;
   };
 
-// A follow-up reload joins the undo step of the command that caused it as its
-// second history event - usually before the command resolves, sometimes after
-// it (roomle-ui respondWithPositionInPlan for the load reasons
-// change_attribute and swap_module).
-const FOLLOW_UP_WAIT_MS = 2000;
+// A planner undo or redo is confirmed by its history event.
 const HISTORY_EVENT_WAIT_MS = 1000;
 
 const roundedToTenthMm = (_key: string, value: unknown) =>
@@ -132,41 +128,26 @@ const readGroupsKey = async (roomDesignerApi: PlannerApi) =>
   groupsKey(await planGroups(roomDesignerApi));
 
 // The planner API of a tool call that changes the plan. The tool runs in the
-// planner page as one group command, which reports the steps it put on the
-// planner's undo history - one per load that loaded something and one per
-// group command - and the follow-up reloads they cause. The API counts the
-// steps, reads the plan before the first one, and waits for the follow-ups.
+// planner page as one group command, which answers after its last reload and
+// reports the steps it put on the planner's undo history - one per load that
+// loaded something and one per group command. The API counts the steps and
+// reads the plan before the first one.
 const countingPlannerApi = (roomDesignerApi: PlannerApi) => {
   const { extended } = roomDesignerApi;
   const count = {
     steps: 0,
     groupsBefore: undefined as string | undefined,
-    // the event count the call's follow-up reloads bring, earlier ones that
-    // have not landed yet included
-    followUpEvents: 0,
   };
   const api: PlannerApi = {
     extended: {
       ...extended,
       externalObjectGroupOperation: async (command, payload) => {
         count.groupsBefore ??= await readGroupsKey(roomDesignerApi);
-        const eventsBefore = planHistory.events;
         const result = await extended.externalObjectGroupOperation(
           command,
           payload
         );
-        const steps = Number(result?.historySteps ?? 1);
-        const followUps = Number(result?.historyFollowUps ?? 0);
-        count.steps += steps;
-        // a page that relays no history events gets no wait
-        if (followUps > 0 && planHistory.events > eventsBefore) {
-          count.followUpEvents =
-            Math.max(count.followUpEvents, eventsBefore) + steps + followUps;
-          await planHistory.waitForEvents(
-            count.followUpEvents,
-            FOLLOW_UP_WAIT_MS
-          );
-        }
+        count.steps += Number(result?.historySteps ?? 1);
         return result;
       },
     },
@@ -195,17 +176,6 @@ const recorded =
           groupsAfter = undefined;
         }
       }
-      // From here on nothing awaits, so no history event comes between the
-      // check and the end of the call: a follow-up that landed after the wait
-      // gave up, while the call still ran, is the call's own.
-      const lateFollowUps = Math.max(
-        0,
-        count.followUpEvents - planHistory.events
-      );
-      for (let late = 0; late < lateFollowUps; late++) {
-        planHistory.expectLateFollowUp();
-      }
-      const settled = lateFollowUps === 0;
       if (recordable && groupsAfter === undefined) {
         planHistory.forget();
       } else if (recordable) {
@@ -214,7 +184,6 @@ const recorded =
           steps: count.steps,
           groupsBefore: count.groupsBefore!,
           groupsAfter: groupsAfter!,
-          settled,
         });
       }
       planHistory.end();
@@ -258,8 +227,6 @@ const NOTHING_TO_REDO =
   'Nothing to redo: redo brings back a tool call that undo reverted, and a new change of the plan ends redo.';
 const CHANGED_IN_PLANNER =
   "The plan was changed in the planner after the last tool call, so no tool call was reverted - the planner's own undo button reverts the changes made there.";
-const STILL_FINISHING =
-  'The planner has not finished the last change yet - its follow-up reload is still outstanding. Nothing was undone; call undo again in a moment.';
 
 // The groups a tool call changed, by the plan before and after it: those it
 // created, removed or changed.
@@ -320,20 +287,6 @@ const revertToolCall =
             ? NOTHING_TO_UNDO
             : NOTHING_TO_REDO
       );
-    }
-    // an undo never runs before the call's late follow-up reload has landed:
-    // a reload after the undo would become a step of its own and end redo
-    if (undo && !call.settled) {
-      if (planHistory.lateFollowUps > 0) {
-        await planHistory.waitForEvents(
-          planHistory.events + planHistory.lateFollowUps,
-          FOLLOW_UP_WAIT_MS
-        );
-      }
-      if (planHistory.lateFollowUps > 0) {
-        return answer(null, STILL_FINISHING);
-      }
-      planHistory.settleLastDone(await readGroupsKey(roomDesignerApi));
     }
     const [from, to] = undo
       ? [call.groupsAfter, call.groupsBefore]

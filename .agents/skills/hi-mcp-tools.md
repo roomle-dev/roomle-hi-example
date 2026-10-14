@@ -339,7 +339,7 @@ others by their id (D68); every group of the plan when nothing was reverted; `nu
 `hint` when there is nothing to undo or redo, the plan was changed in the planner, or the planner's
 history no longer holds the call; an undo or redo that does not give back the plan before or after
 the call (the user changed the plan in the planner while the call ran) is taken back, with a `hint`;
-`undo` waits for a late follow-up reload of the last call and says when it is still outstanding
+the planner answers a call after its last reload, so `undo` never waits for one (D77)
 
 ### find-attributes
 

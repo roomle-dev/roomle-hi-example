@@ -78,8 +78,11 @@ Ask the team that runs the HI MCP for the API key of a chat model.
 Open the store test page with these parameters:
 
 ```text
-https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev
+https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://hi-planning-assistant.dashiell-bell.workers.dev
 ```
+
+This is the PRD server, which the store also uses when `mcp_server` is left out; the DEV server is
+`mcp_server=https://hi-planning-assistant-dev.dashiell-bell.workers.dev`.
 
 - `<model>` — one of `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, `mistral-large-latest`,
   `mistral-medium-latest`, `mistral-large-4`, `mistral-large-3`
@@ -112,7 +115,7 @@ Mistral Le Chat, GitHub Copilot in VS Code, Cursor and others.
    - **locally:** `npm start` in the repository — the MCP address is `http://localhost:3100/mcp`
    - **in the cloud:** the [store page](#1-the-store-chat) with `&mcp_session=<name>` appended, where
      `<name>` is a short word of your choice, e.g. your first name — the MCP address is
-     `https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=<name>` with the same name
+     `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp?session=<name>` (DEV: `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp?session=<name>`) with the same name
 2. Add the MCP address to your app as a connector (or "MCP server"), e.g. named `hi-orchestrator`.
 3. Start a new conversation and ask: *"Get the plan context of the HI session and summarize it."*
 

@@ -13,10 +13,14 @@ npm workspace folder per PoC.
 
 ## Quick Access
 
-The HI MCP server is deployed at Cloudflare:
-- **Store Page**: `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>` — the bridge starts without chat credentials; add `model` and `api_key` only to show the store's chat window
-- **MCP Server Endpoint**: `https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=<name>` — the same `<name>` as the store page's `mcp_session`
-- **Cloudflare Dashboard**: https://dash.cloudflare.com/be70a3966e4c4ccfa9349004b9ccf948/
+The HI MCP server is deployed at Cloudflare, as PRD and DEV:
+- **Store Page** — the bridge starts without chat credentials; add `model` and `api_key` only to show the store's chat window:
+  - PRD: `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-planning-assistant.dashiell-bell.workers.dev&mcp_session=<name>`
+  - DEV: `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-planning-assistant-dev.dashiell-bell.workers.dev&mcp_session=<name>`
+- **MCP Server Endpoint** — the same `<name>` as the store page's `mcp_session`:
+  - PRD: `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp?session=<name>`
+  - DEV: `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp?session=<name>`
+- **Cloudflare Dashboard**: https://dash.cloudflare.com/0da066df4193493f75b3eb6f8fd23d85/ (account Roomle)
 
 Documentation:
 

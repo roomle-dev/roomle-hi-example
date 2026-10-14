@@ -8,14 +8,16 @@ see [local-mcp-server.md](./local-mcp-server.md); for deploying the server itsel
 
 ## What you need
 
-- The public URL of the deployed server: `https://<worker>.<subdomain>.workers.dev` (the
-  `wrangler deploy` output prints it — never build it from the account ID, it does not resolve)
+- The public URL of the deployed server: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev`, DEV `https://hi-planning-assistant-dev.dashiell-bell.workers.dev` (the
+  `wrangler deploy` output prints it — never build it from the account ID, it does not resolve).
+  The examples below use PRD; for DEV, replace `hi-planning-assistant` with
+  `hi-planning-assistant-dev`
 - Nothing installed: no repository access, no npm, no tunnel
 
 ## How it works
 
 ```text
-your agent (e.g. Mistral) ──https──> https://<worker>.<subdomain>.workers.dev/mcp
+your agent (e.g. Mistral) ──https──> https://hi-planning-assistant.dashiell-bell.workers.dev/mcp
                                            │ the server runs the tools, relays their planner calls…
 your browser (store tab open) ──wss──> …/bridge
                                            ▼
@@ -30,7 +32,7 @@ Keep the tab open; it is the session the agent works in.
 ### 1. Open the store page (first, and keep the tab open)
 
 ```text
-https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://<worker>.<subdomain>.workers.dev&mcp_session=<your session name>
+https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-planning-assistant.dashiell-bell.workers.dev&mcp_session=<your session name>
 ```
 
 Open it and start planning — no plan id needed; append `&id=<plan id>` only to open a specific
@@ -50,7 +52,7 @@ answer `No HI page connected`.
 2. Click **+ Add connector** (top right) → select the **Custom MCP Connector** tab.
 3. Fill in:
    - **Connector Name:** `hi-orchestrator`
-   - **Server URL:** `https://<worker>.<subdomain>.workers.dev/mcp?session=<your session name>`
+   - **Server URL:** `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp?session=<your session name>`
      — the **same session name** as in your store URL, so your agent lands in your container
 4. Click **Connect**.
 
@@ -78,10 +80,10 @@ registration UI differs:
 
 | Client | Registration |
 | ------ | ------------ |
-| Claude Code | `claude mcp add --transport http hi-orchestrator "https://<worker>.<subdomain>.workers.dev/mcp?session=<your session name>"` |
+| Claude Code | `claude mcp add --transport http hi-orchestrator "https://hi-planning-assistant.dashiell-bell.workers.dev/mcp?session=<your session name>"` |
 | Claude Desktop | `mcp-remote` bridge with the same URL — see [local-mcp-server.md](./local-mcp-server.md#claude-desktop-app) |
-| Cursor / generic `mcpServers` schema | `{ "hi-orchestrator": { "url": "https://<worker>.<subdomain>.workers.dev/mcp?session=<your session name>" } }` |
-| VS Code Copilot (agent mode) | Command Palette → MCP: Open User Configuration → `{ "servers": { "hi-orchestrator": { "type": "http", "url": "https://<worker>.<subdomain>.workers.dev/mcp?session=<your session name>" } } }` |
+| Cursor / generic `mcpServers` schema | `{ "hi-orchestrator": { "url": "https://hi-planning-assistant.dashiell-bell.workers.dev/mcp?session=<your session name>" } }` |
+| VS Code Copilot (agent mode) | Command Palette → MCP: Open User Configuration → `{ "servers": { "hi-orchestrator": { "type": "http", "url": "https://hi-planning-assistant.dashiell-bell.workers.dev/mcp?session=<your session name>" } } }` |
 
 In every case the store tab of step 1 must be open with the same session name — the agent works in
 the page the user sees.

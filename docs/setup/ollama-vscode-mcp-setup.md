@@ -63,14 +63,14 @@ VS Code Copilot manages MCP connections natively using its user configuration.
 
 1. Press `Cmd + Shift + P` to open the Command Palette
 2. Type **`MCP: Open User Configuration`** and press **Enter**
-3. Add your `hi-orchestrator` server endpoint inside the JSON file:
+3. Add your `hi-orchestrator` server endpoint inside the JSON file (PRD; for DEV use `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp?session=<name>`):
 
 ```json
 {
   "servers": {
     "hi-orchestrator": {
       "type": "http",
-      "url": "https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=<name>"
+      "url": "https://hi-planning-assistant.dashiell-bell.workers.dev/mcp?session=<name>"
     }
   }
 }
@@ -110,7 +110,7 @@ the `servers` configuration above.
 1. In the Copilot Chat panel, switch the mode to **Agent Mode** (or ensure the **`⚡` Tools** button is enabled)
 2. Verify that **`hi-orchestrator`** is listed under attached tools
 3. Open the HI page the tools operate on and keep it open — the tools work on the planning session of the connected browser page, the server relays their planner calls into it:
-   - Cloud server: open the Roomle store with `mcp_server` and a session name, e.g. `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>` with the `<name>` of your MCP configuration (see [Connecting an agent to the cloud MCP server](connect-agent-to-cloud-mcp.md))
+   - Cloud server: open the Roomle store with `mcp_server` and a session name, e.g. `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-planning-assistant.dashiell-bell.workers.dev&mcp_session=<name>` (DEV: `mcp_server=https://hi-planning-assistant-dev.dashiell-bell.workers.dev`) with the `<name>` of your MCP configuration (see [Connecting an agent to the cloud MCP server](connect-agent-to-cloud-mcp.md))
    - Local server: open `http://localhost:3000/?mcp=true` (started with `npm start` in the repository root, which opens this page automatically)
 4. Enter your kitchen planning prompt—VS Code Copilot will route the inference directly to your local Ollama model while calling HI-specific functions on your MCP server!
 

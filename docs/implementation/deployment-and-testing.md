@@ -23,7 +23,7 @@ the lockfile, the shared TypeScript config and the server source.
 | root | `start`, `dev`, `start:cf` | the launcher, plain / `--dev` / `--cf` |
 | root | `mcp-server` | the MCP server alone |
 | root | `plan:mistral`, `plan:gpt5`, `plan:gpt5.4`, `plan:gpt6` | the launcher with a chat model and its key from the environment |
-| root | `deploy:cf` | `wrangler deploy` in `hi-mcp/cf` — for dry runs and emergencies |
+| root | `deploy:cf`, `deploy:cf:dev` | `wrangler deploy` in `hi-mcp/cf`, PRD / DEV (`--env dev`) — for testing, debugging and emergencies |
 | root | `format`, `format:check`, `lint`, `lint:fix` | Prettier, oxlint |
 | `hi-mcp/` | `start` | the MCP server |
 | `hi-mcp/` | `test` | vitest across the server, the client, the chat and `cf` |
@@ -36,19 +36,22 @@ with `vite` 6.4.3 — newer `vite-node` needs `vite` 8 and Node 20.19); the chat
 ## Cloudflare
 
 ```text
-client ── https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=<name> ──┐
-page   ── wss://…/bridge?session=<name> ───────────────────────────────────────┤
-                                                                              ▼
+client ── https://hi-planning-assistant[-dev].dashiell-bell.workers.dev/mcp?session=<name> ──┐
+page   ── wss://…/bridge?session=<name> ─────────────────────────────────────────────────────┤
+                                                                                             ▼
                           Worker (src/worker.ts): /mcp and /bridge only, else 404
                             env.HI_MCP.getByName(session ?? 'default').fetch(request)
-                                                                              ▼
+                                                                                             ▼
                           Container (src/container.ts): one per session, the MCP server
                             on port 3000, asleep after 15 minutes
 ```
 
+PRD runs at `https://hi-planning-assistant.dashiell-bell.workers.dev`, DEV at `https://hi-planning-assistant-dev.dashiell-bell.workers.dev` — the Roomle account, whose workers.dev
+subdomain `dashiell-bell` is shared with `roomle-planner-mcp` and is not changed.
+
 | File | Content |
 | ---- | ------- |
-| `hi-mcp/cf/wrangler.jsonc` | Worker `hi-mcp-poc`; container `HiMcpContainer` built from `./Dockerfile` with the repository root as build context, instance type `basic`, at most 5 instances; Durable Object binding `HI_MCP`; `HI_MCP_STORE_URL` |
+| `hi-mcp/cf/wrangler.jsonc` | `account_id` of the Roomle account; Worker `hi-planning-assistant` (PRD, top level) and `hi-planning-assistant-dev` (DEV, environment `dev`, which repeats the containers, the Durable Object binding and the vars); container `HiMcpContainer` built from `./Dockerfile` with the repository root as build context, instance type `basic`, at most 5 instances; Durable Object binding `HI_MCP`; `HI_MCP_STORE_URL` |
 | `hi-mcp/cf/src/worker.ts` | routes `/mcp` and `/bridge` to the container of the `session` query parameter (`default` without one) |
 | `hi-mcp/cf/src/container.ts` | `defaultPort` 3000, `sleepAfter` 15 minutes, passes `PORT` and `HI_MCP_STORE_URL` with `mcp_session` selected from the request or `default`; sets the link before SDK `containerFetch` handles startup and forwarding, including 503 for exhausted capacity and 429 for startup throttling |
 | `hi-mcp/cf/Dockerfile` | `node:20-slim`; installs from the root lockfile with `npm ci --workspace hi-mcp/hi-mcp-server --omit=dev`, copies the server sources, `npm start --workspace hi-mcp/hi-mcp-server` |
@@ -60,10 +63,12 @@ page   ── wss://…/bridge?session=<name> ───────────�
 - **Origins:** the container runs with the default page origins (`http://localhost:3000`,
   `http://127.0.0.1:3000`, `https://www.roomle.com`) — which is why `npm run start:cf` needs page
   port 3000.
-- **Deploy:** a push to `release/cloudflare` runs `.github/workflows/deploy-cloudflare.yml` — Node 22,
-  `npm ci` at the root, the typecheck, the `cf` typecheck, `npm test`, `wrangler deploy` with the
-  `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets, then a smoke test that posts
-  `initialize` to `/mcp` and expects HTTP 200 ([ADR 0005](../../.agents/decisions/0005-deploy-hi-mcp-from-release-cloudflare.md)).
+- **Deploy:** a push to `release/cloudflare` (PRD) or `release/cloudflare.dev` (DEV) runs
+  `.github/workflows/deploy-cloudflare.yml` — Node 22, `npm ci` at the root, the typecheck, the `cf`
+  typecheck, `npm test`, `wrangler deploy --env=""` or `--env="dev"` with the `CLOUDFLARE_API_TOKEN`
+  secret of the GitHub environment `cloudflare` or `cloudflare-dev`, then a smoke test that posts
+  `initialize` to the stage's `/mcp` and expects HTTP 200 ([ADR 0005](../../.agents/decisions/0005-deploy-hi-mcp-from-release-cloudflare.md),
+  [ADR 0008](../../.agents/decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md)).
   Verify a workflow or lockfile change on Linux first
   ([how](../../.agents/skills/hi-mcp-cloudflare-deployment.md#verifying-a-workflow-or-lockfile-change-on-linux)).
 

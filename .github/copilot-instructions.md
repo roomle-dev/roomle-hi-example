@@ -167,7 +167,7 @@ The start script (`npm start`) provides:
 └── .github/
     ├── copilot-instructions.md   # GitHub Copilot specific instructions (this file)
     └── workflows/
-        └── deploy-cloudflare.yml # Deploys hi-mcp to Cloudflare on a push to release/cloudflare
+        └── deploy-cloudflare.yml # Deploys hi-mcp to Cloudflare: PRD on release/cloudflare, DEV on release/cloudflare.dev
 ```
 
 ## On-Demand Skills
@@ -492,9 +492,10 @@ This starts:
 
 ### Deploying to Cloudflare
 
-A push to `release/cloudflare` deploys the MCP server to Cloudflare
+A push to `release/cloudflare` deploys PRD, a push to `release/cloudflare.dev` deploys DEV
 (`.github/workflows/deploy-cloudflare.yml`: tests, `wrangler deploy`, `initialize` check).
-`npm run deploy:cf` deploys by hand — only for dry runs and emergencies. Details:
+The servers: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp`, DEV `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp`.
+`npm run deploy:cf` (PRD) and `npm run deploy:cf:dev` (DEV) deploy by hand into the Roomle account (`account_id` in `hi-mcp/cf/wrangler.jsonc`) — only for testing, debugging and emergencies. Details:
 [`.agents/skills/hi-mcp-cloudflare-deployment.md`](../.agents/skills/hi-mcp-cloudflare-deployment.md).
 
 ### Testing Tool Calls

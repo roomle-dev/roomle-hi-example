@@ -142,7 +142,7 @@ the script runs under Windows `cmd` as well.
 To use the MCP server deployed on Cloudflare instead of a local one, run
 `npm run start:cf` (`--cf`; it can be combined with the chat arguments and with
 `--dev`). The launcher then starts no local MCP server. It opens the example with
-`mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<OS user name>`,
+`mcp_server=https://hi-planning-assistant-dev.dashiell-bell.workers.dev&mcp_session=<OS user name>` (the DEV server; PRD is `https://hi-planning-assistant.dashiell-bell.workers.dev`),
 points the chat at `…/mcp?session=<OS user name>` and prints that URL for
 external MCP clients. Each OS user name gets a container of its own. Two
 machines with the same user name share it: the first page keeps the planner,
@@ -151,7 +151,7 @@ and the server refuses the other one (WebSocket close 4409), which then shows
 has to run on port 3000, because `http://localhost:3000` is the only local origin
 the deployed server accepts, and the launcher refuses another `EXAMPLE_PORT`.
 The deployment runs the last deployed image, so server changes on a branch
-need a deploy first: a push to `release/cloudflare`, or `npm run deploy:cf`. Details:
+need a deploy of DEV first: a push to `release/cloudflare.dev`, or `npm run deploy:cf:dev`. Details:
 [cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md).
 
 The launcher installs and typechecks the `hi-mcp` workspace (the build gate),

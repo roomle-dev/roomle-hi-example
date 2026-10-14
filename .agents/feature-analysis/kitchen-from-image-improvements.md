@@ -2,7 +2,7 @@
 
 > **Type**: Feature analysis and implementation plan (steps 2 and 4 of the [change workflow](../../AGENTS.md#suggested-change-workflow))
 > **Analysis**: [kitchen-from-image-time.md](../benchmarks/kitchen-from-image-time.md), section 9 — the second measurement, its six flaws and improvements
-> **Backlog**: [one-undo-step-per-tool-call.md](../backlog/one-undo-step-per-tool-call.md) — its three to-dos are the steps 2a, 2b and 2c of improvement 2
+> **Backlog**: the item "one planner undo step per tool call" — its three to-dos are the steps 2a, 2b and 2c of improvement 2; implemented, the item is removed
 > **Trigger**: [RML-18164](https://roomle.atlassian.net/browse/RML-18164) "hi mcp - implement performance improvements", created from [RML-18064](https://roomle.atlassian.net/browse/RML-18064)
 > **Date**: 2026-10-14
 > **Author**: AI Assistant
@@ -114,7 +114,7 @@ bo-test planner got dc96fa1f4 between the sessions of 2026-10-08 (no waits) and 
 reload after they resolve. The runs record neither the counts nor the events, so this is the
 hypothesis the first step of the improvement checks live ([6.2](#62-improvement-2)).
 
-**The backlog item.** [one-undo-step-per-tool-call.md](../backlog/one-undo-step-per-tool-call.md)
+**The backlog item.** "One planner undo step per tool call" (`.agents/backlog/one-undo-step-per-tool-call.md`, removed with this work)
 describes the same workaround from the planner's side and asks for three things in roomle-ui:
 (1) trace the history events of a colour command against the server's expected count — step 2a;
 (2) `externalObjectGroupOperation` resolves after the command's follow-up reload — step 2b;
@@ -123,7 +123,7 @@ describes the same workaround from the planner's side and asks for three things 
 predates the 2026-10-10 commit (it still says the attribute commands resolve before their reload)
 and D71 (it plans begin and end methods on the page allow-lists; since the whole tool runs inside
 one `externalObjectGroupOperation`, the grouping needs no new page method). The item is closed with
-step 2c: it leaves the backlog once the roomle-ui change is on `release/bo-test` or `master`.
+step 2c and removed from the backlog.
 
 **Measured (step 2a, 2026-10-14, local planner, `default-room`).** Every follow-up command answered
 after its reload with exactly its steps' events before the answer and none within 3 s after it: the
@@ -424,7 +424,7 @@ per round — no spread, so a difference under about 15 s per test says little.
 | | `hi-mcp/hi-mcp-server/tests/*.test.ts` | the tests of [6](#6-tests) |
 | | `docs/hi-mcp-behaviour.md` | D76, D77, D79 new, D59, D63, D73 amended; §4 (the follow-up paragraph, one step per call), §5.1, §5.2 (the obstacle sentence), §5.4 (`attributes` row), §6 (`get-plan-context` include, `find-attributes`, `undo`), §8.3 (the sentences of 6), §8.8 (the unsettled row goes) |
 | | `docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md` | `get-plan-context`, `find-attributes`, the create result and `undo` sections |
-| | `.agents/backlog/one-undo-step-per-tool-call.md` | 2: all three to-dos are steps 2a–2c; the item is deleted once the roomle-ui change is on `release/bo-test` or `master` ([backlogs hold only open work](../backlog/README.md)); until then its status names this plan |
+| | `.agents/backlog/one-undo-step-per-tool-call.md` | 2: all three to-dos are steps 2a–2c; removed once implemented |
 | | `.agents/benchmarks/kitchen-from-image-time.md` | section 10: the baseline and the round per improvement, before/after per test; `kitchen-from-image-time-rml-18164/<step>/` the benchmarks |
 | roomle-ui | `homag-intelligence/src/hi-tools.ts` | 2: exchange, insert, swap, the gap-closing remove in the kernel-operation slot |
 | | `homag-intelligence/src/hi-tool-commands.ts` | 2: `FOLLOW_UP_COMMANDS`, `hasFollowUp`, the follow-up count go; 6: the `failedRoots` errors once per cause |

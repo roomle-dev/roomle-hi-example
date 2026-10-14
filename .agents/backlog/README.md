@@ -40,7 +40,6 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 
 | Item | To do | Details |
 |---|---|---|
-| One planner undo step per tool call | roomle-ui and hi-mcp: settle completed commands so undo can run; resolve `externalObjectGroupOperation` after its follow-up, and group a tool call into one step | [one-undo-step-per-tool-call.md](one-undo-step-per-tool-call.md) |
 | 62 — `merge-article-into-group` moves a group placed in the conversation | roomle-ui `mergeArticleIntoGroup`: a merge keeps the earlier root modules of a group placed by wall or by point in place instead of moving the group by its former width | [mcp-issues.md, 62](mcp-issues.md#62-merge-article-into-group-moves-a-group-placed-in-the-conversation) |
 | 63 — The worktop of a handleless kitchen renders white | Analyse why a countertop with a colour (324) renders white in the handleless line but not in a handled kitchen — planner render or library | [mcp-issues.md, 63](mcp-issues.md#63-the-worktop-of-a-handleless-kitchen-renders-white) |
 

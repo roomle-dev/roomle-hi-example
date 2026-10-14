@@ -247,14 +247,18 @@ describe('get-plan-context', () => {
       'articles',
       'groups',
       'obstacles',
+      'masterData',
     ]);
     // a planner without the obstacles section (an older roomle-ui) returns
     // none, and the context is the same
     // the plan context arrives agent-ready from the planner API; the server
-    // names the walls and lists the room corners
+    // names the walls, lists the room corners and derives the attribute
+    // vocabulary from the master data
+    const { masterData, ...sections } = planContextFixture;
     expect(result).toEqual({
-      ...planContextFixture,
+      ...sections,
       rooms: { rooms: [namedRoom] },
+      attributes: { 'lib-1': masterData['lib-1'].attributes },
     });
   });
 
@@ -343,6 +347,7 @@ describe('get-plan-context', () => {
       'articles',
       'groups',
       'obstacles',
+      'masterData',
     ]);
   });
 
@@ -556,6 +561,106 @@ describe('get-plan-context', () => {
         imageUrl: 'https://example.com/white.png',
       },
     ]);
+  });
+
+  describe('attribute vocabulary', () => {
+    const white = { value: 'white', name: 'White', desc: 'White (#ffffff)' };
+    const vocabularyMasterData = {
+      'lib-1': {
+        libraryId: 'lib-1',
+        modules: [
+          { id: 'module-1', name: 'Tall module', attributes: ['front'] },
+        ],
+        attributes: [
+          {
+            id: 'front',
+            name: 'Front color',
+            type: 'Text',
+            selections: [white],
+          },
+          {
+            id: 'carcase',
+            name: 'Carcase color',
+            type: 'Text',
+            selections: [white],
+          },
+          { id: 'b', name: 'Width', type: 'Dim' },
+        ],
+        groupSettings: ['front'],
+      },
+    };
+
+    it('returns the attribute vocabulary by default, a shared value list once, and no master data', async () => {
+      const api = createApi({
+        rooms: { rooms: [room] },
+        articles: [],
+        groups: [],
+        masterData: vocabularyMasterData,
+      });
+      const result = (await toolExecutors['get-plan-context'](api, {})) as any;
+      expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+        'rooms',
+        'articles',
+        'groups',
+        'obstacles',
+        'masterData',
+      ]);
+      expect(result.attributes).toEqual({
+        'lib-1': [
+          {
+            id: 'front',
+            name: 'Front color',
+            type: 'Text',
+            selections: [white],
+          },
+          {
+            id: 'carcase',
+            name: 'Carcase color',
+            type: 'Text',
+            sameSelectionsAs: 'front',
+          },
+          { id: 'b', name: 'Width', type: 'Dim' },
+        ],
+      });
+      expect(result.masterData).toBeUndefined();
+    });
+
+    it('returns the master data as it is beside the vocabulary when both are requested', async () => {
+      const api = createApi({ masterData: vocabularyMasterData });
+      const result = (await toolExecutors['get-plan-context'](api, {
+        include: ['masterData', 'attributes'],
+      })) as any;
+      expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledTimes(
+        1
+      );
+      expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+        'masterData',
+      ]);
+      expect(result.masterData).toEqual(vocabularyMasterData);
+      expect(result.attributes['lib-1'][1].sameSelectionsAs).toBe('front');
+    });
+
+    it('returns the vocabulary alone when only it is requested', async () => {
+      const api = createApi({ masterData: vocabularyMasterData });
+      const result = (await toolExecutors['get-plan-context'](api, {
+        include: ['attributes'],
+      })) as any;
+      expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+        'masterData',
+      ]);
+      expect(Object.keys(result)).toEqual(['attributes']);
+    });
+
+    it('keeps the vocabulary out when the request names other sections', async () => {
+      const api = createApi({ rooms: { rooms: [room] } });
+      const result = (await toolExecutors['get-plan-context'](api, {
+        include: ['rooms'],
+      })) as any;
+      expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+        'rooms',
+      ]);
+      expect(result.attributes).toBeUndefined();
+    });
   });
 });
 

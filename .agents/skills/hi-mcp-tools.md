@@ -10,7 +10,7 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 ### Core Tools
 | Tool | Purpose |
 |---|---|
-| `get-plan-context` | Get rooms, articles, groups, obstacles, masterData |
+| `get-plan-context` | Get rooms, articles, the attribute vocabulary, groups, obstacles; masterData and the full article descriptions on request |
 | `create-or-replace-groups` | Create, modify and extend groups; position new groups |
 | `place-group` | Move an existing group against a wall or into a room corner |
 | `get-authoring-rules` | Get HI authoring rules |
@@ -56,10 +56,12 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 
 **Parameters**:
 ```typescript
-{ include?: Array<'masterData' | 'rooms' | 'articles' | 'groups' | 'obstacles'> }
+{ include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'masterData' | 'articleDescriptions'> }
 ```
 
-**Returns**: Rooms, articles, groups, obstacles, masterData (if requested). Like every JSON result of the
+**Returns**: Rooms, articles, attributes (the vocabulary: per library the customer-facing
+attributes with their values, a shared value list listed once with `sameSelectionsAs` on the later
+attributes, D76), groups, obstacles; masterData and articleDescriptions if requested. Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
 (back wall, front wall, left wall, right wall) beside its `side`, a door opening the `type`
@@ -353,8 +355,10 @@ the call (the user changed the plan in the planner while the call ran) is taken 
 const { matches } = await findAttributes({ text: 'front colour' });
 ```
 
-Every word of the text is matched on its own, in any order, and colour/color, grey/gray and
-worktop/countertop read alike: one search for `color` returns every colour attribute. A value
+The tool answers a question about one attribute; the `attributes` section of `get-plan-context`
+lists the whole vocabulary by default (D76), so a planning needs no search. Every word of the text
+is matched on its own, in any order, and colour/color, grey/gray and worktop/countertop read alike:
+one search for `color` returns every colour attribute. A value
 list several attributes share is listed once; the later attributes carry `sameSelectionsAs`, the
 id of the attribute that lists it (D64). Every match names the root modules that carry it,
 `rootModules: [{ id, name }]`, and the attributes the root modules in the plan carry come first —

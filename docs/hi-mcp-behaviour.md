@@ -304,6 +304,12 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
 |---|---|---|---|
 | D75 | **Domain planning knowledge is served on demand by the tool `get-skill`.** The skills are files in the Agent Skills format in the server package (`hi-mcp/hi-mcp-server/skills/<name>/`: `SKILL.md` with `name` and `description` in its frontmatter, and the supporting files it names), maintained as their authors deliver them. The description of `get-skill` lists every skill by its frontmatter, so the agent of every client sees the index in the tool list; the result of a `SKILL.md` starts with a preamble that maps the skill onto the planning session — the survey is the plan context, the products are the catalog, what the plan context does not carry is an assumption to name —, never written into the files. Rejected: the skills in the chats' system prompts — two implementations and their tokens in every step of every turn; skill files in the IDE workspaces only — the server is installed at user scope, and the chats, Claude Desktop and Le Chat load no skill files; the skills in `INSTRUCTIONS` or `AUTHORING_RULES` — every agent would carry every skill, and the chats do not pass the instructions; MCP resources or prompts alone — a resource is an attachment the user adds, a prompt a command the user invokes, neither is model-driven; the Skills extension of MCP (`io.modelcontextprotocol/skills`) alone — no client in use supports it, it is the later step over the same files; one tool per skill — the tool list grows with every kind of room; a planning tool in the server — the agent declares, the planner arranges (§2.1) | 2026-10-14, user ([RML-18148](https://roomle.atlassian.net/browse/RML-18148)) | in effect — `skills.ts` (`loadSkills`, `skillIndex`, `readSkillFile`), `SKILL_IN_SESSION` and the registration of `get-skill` in `hi-mcp-server.ts`; guarded by `it('lists every planning skill with its description in the get-skill description and tells the agent to fetch it before planning')` and `it('answers get-skill as text, with the session preamble before the skill and without it before a supporting file')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`, and `describe('the skills of the server')` in `hi-mcp/hi-mcp-server/tests/skills.test.ts` |
 
+### Vocabulary and results (2026-10-14)
+
+| # | Decision | Source | State |
+|---|---|---|---|
+| D76 | **The attribute vocabulary is a default section of the plan context.** `get-plan-context` returns `attributes` by default: per library the customer-facing attributes of the compacted master data — `id`, `name`, `desc`, `group`, `type`, `selections` with value, name and desc — with a value list several attributes share listed once, `sameSelectionsAs` naming the attribute that lists it (as `find-attributes`, D64); the root modules and the group settings stay in `masterData`, on request. The rules, the instructions and the tool descriptions say that the ids and values are there, so a planning needs no search; `find-attributes` answers a question about one attribute. A model that had to search the vocabulary spent 1.5 search-only steps and 12.5 s per run on it (gpt-6-astra; gpt-5.4-mini 3–6 steps); the section costs about 5k tokens per step. Rejected: the colour, program, handle and plinth attributes only — the server would choose per library which attributes matter (§2.4); the root modules per attribute in the section — about 10k characters more in every step, and the catalog's `mainAttributes` say which attributes a root module carries | 2026-10-14, [RML-18164](https://roomle.atlassian.net/browse/RML-18164) | in effect — `get-plan-context` (`tool-executors.ts`), `agentFacingAttributes` (`agent-facing.ts`); the served text in `hi-mcp-server.ts` |
+
 ## 4. How a tool call runs
 
 - **MCP endpoint**: `POST /mcp` — Streamable HTTP, JSON response mode, stateless (a new transport per
@@ -418,8 +424,8 @@ offers articles, a group is one piece of furniture made of articles (a kitchen, 
 sideboard, a utility room), an article placed in a group is a root module (D44) — and contains the
 typical workflow followed by the full authoring rules:
 
-1. `get-plan-context` — rooms with walls, the article catalog, the groups, the obstacles; `masterData` or
-   `find-attributes` for attributes.
+1. `get-plan-context` — rooms with walls, the article catalog, the attribute vocabulary, the groups,
+   the obstacles; `find-attributes` for a question about one attribute (D76).
 2. For a room of a kind `get-skill` lists, the skill first (D75). `create-or-replace-groups` — the whole piece of furniture as one group: article picks, docking,
    one placement. A matching id replaces a group and keeps its position. Units next to an existing
    group are added to it.
@@ -507,13 +513,16 @@ One coordinate system throughout: 3D, right-handed, Y up, millimetres. A contour
 |---|---|
 | `rooms` | `{ rooms: [{ levels, walls }] }`. `levels`: the contour per level, segments with `cmd`, `pos`, `type` (e.g. `wall`, or none for an opening), `height`, `thickness`. `walls`, derived per room by roomle-ui from the direction of the contour, which runs counter-clockwise with the room on its left (D61): `index`, `side` (as seen in the top view), `name` (back wall, front wall, left wall, right wall), `start`/`end` (`[x, 0, z]` on the floor), `lengthMm`, `type` (`wall`, or `opening` for a door — the contour gives it no type), `heightMm`, `thicknessMm`, `facingRotationY` — the rotation of a group with its back against that wall. `corners`, per room: `name` (back left, back right, front left, front right), `point` and `posRotationY` — the rotation of a corner kitchen in that corner. The server adds the names, the opening type and the corners (C18) |
 | `articles` | The catalog: `articleId`, `articleName`, `desc` — of a description written in sections its FUNCTION and AI_SELECTION_HINT lines (D63) —, `category`, `libraryId`, `catalog`, `cornerArticle`. Per root module: `module` (id, name, desc), `dimensions` (size attributes with id, name and value in mm), `mainAttributes`, `dockingVectors` (names), `insertLevels`, `subModules` (id, name, desc). The planner derives `dockingVectors` and `cornerArticle` of every article from the calculated article — a root of it in the plan, or else its template (D74); the server removes `cornerPoint` (D10) |
+| `attributes` | Per library id: the customer-facing attributes of the compacted master data — `id`, `name`, `desc`, `group`, `type`, `selections` (value, name, desc) —, a value list several attributes share listed once, the later attributes with `sameSelectionsAs` instead (D76). The root modules and the group settings are in `masterData` |
 | `groups` | Per group: `id`, `libraryId`, `attributes`, read-only `position` (`pos`, `rotationY`, `footprint` with `x`, `z`, `widthMm`, `depthMm`), and `roots`. `pos` and `rotationY` are what a placement would name for the group where it stands: `pos` the room point of its back left bottom corner — the docking corner of its anchor root — and `rotationY` the rotation of the placement; the footprint is measured from `pos`. A group with two corner articles also carries `rootId`, the corner article `pos` belongs to, as in a placement (D17): the planner regenerates root ids, so the corner a placement named cannot be told after the load. roomle-ui derives them from the calculated groups, wherever the planner keeps the group origin (D33); a group the planner has not positioned keeps the planner's `position`. Per root: the article pick (`id`, `articleId`, input `attributes`, `contextData` with vector names only) and read-only facts (`articleName`, `desc`, `category`, `isGenerated`, `dockingVectors`, `freeDockingVectors`, `subModules` with their id, and `rowIndex` — its place in its row, 1 at the left end as seen from the front, D66). The roots are listed in the order they were added. No root positions, no geometry |
 | `masterData` | Only when requested. Per library id: the root modules (`id`, `name`, `desc`, assigned attribute ids) — the article roots and the roots the library generates (worktop `mr_Countertop`, toe kick, finger grip, backsplash, …: the sub modules of the master data's `Root` group), so the worktop colour `mod_CountertopColor` is found — and the customer-facing attributes (`id`, `name`, `desc`, `type`, `group`, `selections` with value, name and desc; the desc of a colour value carries its code, e.g. `Cloudy blue (#506080)`, D53) — and `groupSettings`, the attributes the library's group orchestrator sets on a group (D36; planned, D48) |
 | `articleDescriptions` | Only when requested. Per article `articleId` and its full `desc` (D63) |
 | `obstacles` | `{ objects, groups }`. `objects`: every plan object that is not an HI group — `kind` (`door`, `window`, `object`), `outline` (floor points `[x, 0, z]`) and `bottomMm`/`topMm`; a door or a window also `roomIndex`, `wall` (its index in the walls array) and `fromEndMm`, its span along that wall measured from the wall's end (C21). `groups`: per HI group its `id` and per root module that is not generated its `id`, `outline` (four floor points in room space) and `bottomMm`/`topMm`, from the parts of the calculated group (D45). No walls |
 
-Default sections: `rooms`, `articles`, `groups`, `obstacles`. Requested without `rooms`, `obstacles` makes the server fetch
-the rooms too, for the walls of the doors and windows, and return only `obstacles`.
+Default sections: `rooms`, `articles`, `attributes`, `groups`, `obstacles`. Requested without `rooms`, `obstacles` makes the server fetch
+the rooms too, for the walls of the doors and windows, and return only `obstacles`; `attributes`
+makes it fetch `masterData` too and return the vocabulary derived from it, `masterData` requested
+beside it as it is.
 
 Root outlines bound the calculated parts and can extend past their docking edges over a neighbour
 in the same group. That overlap alone is not a placement error. Both the authoring rules and the
@@ -587,11 +596,12 @@ directory of `hi-mcp/hi-mcp-server/skills/` in the Agent Skills format: `SKILL.m
 
 | Parameter | Type | Default |
 |---|---|---|
-| `include` | `('masterData' \| 'rooms' \| 'articles' \| 'articleDescriptions' \| 'groups' \| 'obstacles')[]` | rooms, articles, groups, obstacles |
+| `include` | `('rooms' \| 'articles' \| 'attributes' \| 'groups' \| 'obstacles' \| 'masterData' \| 'articleDescriptions')[]` | rooms, articles, attributes, groups, obstacles |
 
 The server passes the planner's plan context through. In the articles it removes `cornerPoint`
 (D10) and shortens a sectioned description (D63); `articleDescriptions` carries the full ones, read
-from the planner's articles. Every door and window of the obstacles gets its wall (C21). The planner
+from the planner's articles; `attributes` is the vocabulary derived from the planner's `masterData`
+(D76). Every door and window of the obstacles gets its wall (C21). The planner
 reports the groups in the placement frame with the `rowIndex` of every root (C14, D66), and the
 docking vectors and `cornerArticle` of every article, of an article that is not in the plan from its
 template (D74); a caller that names `articleIds` (`getExternalObjectPlanContext(include, { articleIds })`)
@@ -604,8 +614,9 @@ gets the templates of those articles only, and `get-plan-context` names none.
 | `text` | non-empty string | — |
 | `libraryId` | string | all libraries |
 
-The server searches the compacted master data case-insensitively: attribute id, name, desc, group,
-and per selection its name, desc and value. Every word of the text has to be in one of these fields,
+The tool answers a question about one attribute (D76). The server searches the compacted master
+data — the vocabulary the `attributes` section of `get-plan-context` lists — case-insensitively:
+attribute id, name, desc, group, and per selection its name, desc and value. Every word of the text has to be in one of these fields,
 and colour/color, grey/gray and worktop/countertop read alike (D64). A match is the attribute with
 its `libraryId` and the `rootModules` that carry it, each `{ id, name }`; a value list an earlier match already lists is
 replaced by `sameSelectionsAs`, the id of that attribute. The attributes the root modules of the plan's

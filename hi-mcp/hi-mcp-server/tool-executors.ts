@@ -1,7 +1,9 @@
 import {
   agentFacingArticle,
+  agentFacingAttributes,
   agentFacingObstacles,
   agentFacingRooms,
+  withSharedSelectionsOnce,
 } from './agent-facing';
 import { planHistory } from './plan-history';
 import type { ToolCallRecord } from './plan-history';
@@ -28,12 +30,17 @@ const PLAN_CONTEXT_SECTIONS: unknown[] = [
   'obstacles',
 ];
 
-// A section of the server: the full descriptions of the catalog's articles.
+// The sections of the server: the full descriptions of the catalog's
+// articles, and the attribute vocabulary, both derived from the planner's
+// sections.
 const ARTICLE_DESCRIPTIONS = 'articleDescriptions';
+const ATTRIBUTES = 'attributes';
+const SERVER_SECTIONS: unknown[] = [ARTICLE_DESCRIPTIONS, ATTRIBUTES];
 
-const DEFAULT_SECTIONS: PlanContextSection[] = [
+const DEFAULT_SECTIONS: unknown[] = [
   'rooms',
   'articles',
+  ATTRIBUTES,
   'groups',
   'obstacles',
 ];
@@ -74,26 +81,6 @@ const attributeMatches = (attribute: any, words: string[]): boolean => {
     .filter((value) => value !== undefined && value !== null)
     .map((value) => searchable(String(value)));
   return words.every((word) => fields.some((field) => field.includes(word)));
-};
-
-// A value list several attributes share is listed once: the later attributes
-// name the attribute that lists it.
-const withSharedSelectionsOnce = (matches: any[]): any[] => {
-  const listedBy = new Map<string, string>();
-  return matches.map((match) => {
-    if (!Array.isArray(match.selections) || match.selections.length === 0) {
-      return match;
-    }
-    const key = `${match.libraryId}\n${JSON.stringify(match.selections, (field, value) => (field === 'imageUrl' ? undefined : value))}`;
-    const listing = listedBy.get(key);
-    if (listing === undefined) {
-      listedBy.set(key, match.id);
-      return match;
-    }
-    const shared = { ...match, sameSelectionsAs: listing };
-    delete shared.selections;
-    return shared;
-  });
 };
 
 const rootsOfGroups = (groups: any[]): any[] =>
@@ -441,23 +428,30 @@ export const toolExecutors: Record<string, ToolExecutor> = {
   // articles' corner points.
   'get-plan-context': oneAtATime(async (roomDesignerApi, args) => {
     // an unknown section is ignored
-    const include = Array.isArray(args.include) ? args.include : [];
+    const named = (Array.isArray(args.include) ? args.include : []).filter(
+      (section) =>
+        PLAN_CONTEXT_SECTIONS.includes(section) ||
+        SERVER_SECTIONS.includes(section)
+    );
+    const include = named.length > 0 ? named : DEFAULT_SECTIONS;
     const withDescriptions = include.includes(ARTICLE_DESCRIPTIONS);
-    const known = include.filter((section): section is PlanContextSection =>
+    const withAttributes = include.includes(ATTRIBUTES);
+    const requested = include.filter((section): section is PlanContextSection =>
       PLAN_CONTEXT_SECTIONS.includes(section)
     );
-    const requested =
-      known.length > 0 || withDescriptions ? known : DEFAULT_SECTIONS;
     // the descriptions come with the articles
     const withArticles = withDescriptions && !requested.includes('articles');
     // the walls name the doors and windows of the obstacles
     const withRooms =
       requested.includes('obstacles') && !requested.includes('rooms');
+    // the vocabulary comes with the master data
+    const withMasterData = withAttributes && !requested.includes('masterData');
     const context = await roomDesignerApi.extended.getExternalObjectPlanContext(
       [
         ...requested,
         ...(withRooms ? ['rooms' as const] : []),
         ...(withArticles ? ['articles' as const] : []),
+        ...(withMasterData ? ['masterData' as const] : []),
       ]
     );
     if (!isObject(context)) {
@@ -485,6 +479,12 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     }
     if (withArticles) {
       delete result.articles;
+    }
+    if (withAttributes && result.masterData !== undefined) {
+      result[ATTRIBUTES] = agentFacingAttributes(result.masterData);
+    }
+    if (withMasterData) {
+      delete result.masterData;
     }
     return result;
   }),

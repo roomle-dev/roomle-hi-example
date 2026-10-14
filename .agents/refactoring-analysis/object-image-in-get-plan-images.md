@@ -37,7 +37,7 @@ and the **top view of the whole plan**, instead of the plan perspective and the 
 The executor requests the two images and the registration turns them into MCP image content, the
 perspective first:
 
-- [`tool-executors.ts:1869-1878`](../../hi-mcp/hi-mcp-server/tool-executors.ts#L1869-L1878) —
+- [`tool-executors.ts:540-549`](../../hi-mcp/hi-mcp-server/tool-executors.ts#L540-L549) —
   `getExternalObjectSnapshot({ perspectiveImage: true, topImage: true })`, returns
   `{ perspectiveImage, topImage }`.
 - [`hi-mcp-server.ts:487-516`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L487-L516) — the
@@ -122,21 +122,21 @@ materials, without the room"). The plan perspective answers neither well.
 ## 4. Scope — every affected location
 
 **Code** (the pages and roomle-ui stay untouched: `getExternalObjectSnapshot` is allow-listed with
-its options passed through — `MCP_PLANNER_METHODS` in [`index.html:1233`](../../minimal-hi-example/index.html#L1233),
-`PLANNER_METHODS` in [`browser-bridge.ts:17`](../../hi-mcp/hi-mcp-client/browser-bridge.ts#L17),
-[`planner-api.ts:49-54`](../../hi-mcp/hi-mcp-server/planner-api.ts#L49-L54) takes any boolean
+its options passed through — `MCP_PLANNER_METHODS` in [`index.html:1275`](../../minimal-hi-example/index.html#L1275),
+`PLANNER_METHODS` in [`browser-bridge.ts:13`](../../hi-mcp/hi-mcp-client/browser-bridge.ts#L13),
+[`planner-api.ts:15`](../../hi-mcp/hi-mcp-server/planner-api.ts#L15) takes any boolean
 options; the ligna-store does not reference the tool's result):
 
 | File | Change |
 |---|---|
-| [`tool-executors.ts:1869-1878`](../../hi-mcp/hi-mcp-server/tool-executors.ts#L1869-L1878) | request `perspectiveObjectImage` instead of `perspectiveImage`, return `{ perspectiveObjectImage, topImage }` |
+| [`tool-executors.ts:540-549`](../../hi-mcp/hi-mcp-server/tool-executors.ts#L540-L549) | request `perspectiveObjectImage` instead of `perspectiveImage`, return `{ perspectiveObjectImage, topImage }` |
 | [`hi-mcp-server.ts:487-516`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L487-L516) | the description (§5), the result type, the result shape: one text content naming the images, then the group view, then the top view (§5) |
 
 **Tests:**
 
 | File | Change |
 |---|---|
-| [`tool-executors.test.ts:2475-2494`](../../hi-mcp/hi-mcp-server/tests/tool-executors.test.ts#L2475-L2494) | the mock snapshot and the expected call `{ perspectiveObjectImage: true, topImage: true }` |
+| [`tool-executors.test.ts:966-984`](../../hi-mcp/hi-mcp-server/tests/tool-executors.test.ts#L966-L984) | the mock snapshot and the expected call `{ perspectiveObjectImage: true, topImage: true }` |
 | [`hi-mcp-server.test.ts:456-470`](../../hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts#L456-L470) | the mock snapshot keys and the expected content: the text naming the images, then the two images; **new case**: a snapshot without `perspectiveObjectImage` (no groups) returns the text saying so and one image |
 | [`hi-mcp-chat/tests/tool-result-images.test.ts`](../../hi-mcp/hi-mcp-chat/tests/tool-result-images.test.ts) | no change — a tool result with text beside images is already covered (lines 84-110): the text stays in the tool message, the images move to the next user message |
 

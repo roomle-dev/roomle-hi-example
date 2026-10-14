@@ -2,7 +2,7 @@
 
 > **Status**: Accepted
 > **Date**: 2026-10-13
-> **Ticket**: RML-18147; analysis [move-tool-logic-to-glue-logic.md](../refactoring-analysis/move-tool-logic-to-glue-logic.md), decisions D71 and D72 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)
+> **Ticket**: [RML-18147](https://roomle.atlassian.net/browse/RML-18147); decisions D71 and D72 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)
 > **Supersedes in part**: [ADR 0001](0001-hi-mcp-tool-logic-in-the-server.md) — where the tool logic runs
 
 ## Context

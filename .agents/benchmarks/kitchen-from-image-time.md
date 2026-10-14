@@ -626,7 +626,8 @@ and the step kinds of [9.4.2](#942-where-the-time-goes-by-kind-of-step-gpt-6-ast
 ## 10. Third measurement, 2026-10-14: the six improvements, one after another
 
 [RML-18164](https://roomle.atlassian.net/browse/RML-18164) implements the improvements of [9.6](#96-proposed-improvements)
-in the order of the [plan](../feature-analysis/kitchen-from-image-improvements.md), and measures
+in the order of its implementation plan (decisions D76, D77 and D79 of
+[hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)), and measures
 each one with the same small set: the four kitchen-from-image tests with gpt-6-astra, twice each,
 on one build and the local planner (`--dev`, roomle-ui `release/bo-test` at 56256a5b7 plus the
 improvements), two runner sessions per round. The benchmarks are in

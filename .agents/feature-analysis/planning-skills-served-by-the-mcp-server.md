@@ -1,7 +1,7 @@
 # Planning skills served by the HI MCP server
 
 > **Date**: 2026-10-14
-> **Status**: Open
+> **Status**: Open — analysis reviewed; implementation plan written 2026-10-14 (section 9)
 > **Ticket**: [RML-18148](https://roomle.atlassian.net/browse/RML-18148) — HI MCP: add kitchen planning skills
 > **Base**: roomle-hi-example `feat/planning-skills` (`5c4e81f`, the planning skills in `docs/planning-skills`, not on `master`; `master` is `154d14f`)
 > **Related**: [ADR 0003](../decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) (every chat is an MCP client), [hi-mcp-behaviour.md §2.4](../../docs/hi-mcp-behaviour.md#24-instructions) (the served text), the backlog items [library neutrality of the served text](../backlog/mcp-policy-issues.md) and [Spec Kit for the prompting](../backlog/speckit-for-the-prompting.md)
@@ -14,9 +14,11 @@
   image, and the documentation (`docs/hi-mcp-behaviour.md`, `docs/hi-mcp-server.md`,
   `.agents/skills/hi-mcp-tools.md`, the user guide).
 - **roomle-ui** — no change. The skills tell the agent how to plan; the planner is not involved.
-- **ligna-store** — no change. The store chat takes every tool from the server
-  (`createMCPClient().tools()`, ligna-store `hi-mcp/chat.ts`), so it gets `get-skill` with the next
-  deployment; its system prompt needs no new sentence.
+- **ligna-store** — one line: `get-skill` joins the read-only tools of the store chat's recovery
+  (`READ_ONLY_TOOLS`, ligna-store `hi-mcp/chat-recovery.ts`, the copy of the example's), or an
+  interrupted turn would report a skill fetch as an unconfirmed write. The store chat takes every
+  tool from the server (`createMCPClient().tools()`, `hi-mcp/chat.ts`), so it gets `get-skill` with
+  the next deployment; its system prompt needs no new sentence.
 
 ## 1. What was asked and why
 
@@ -324,3 +326,201 @@ time cost is in the steps, not the tokens.
 - [Agent Skills specification](https://agentskills.io/specification)
 - [Copilot: create skills](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/create-skills)
   (`.github/skills`, `.claude/skills`, `.agents/skills`)
+
+## 9. Implementation plan
+
+> Step 4 of the [change workflow](../../AGENTS.md#suggested-change-workflow). Written 2026-10-14
+> against `feat/planning-skills` (`5c4e81f`). **Branch**: roomle-hi-example
+> `feat/planning-skills-tool-RML-18148`, created from `docs/planning-skills-analysis-RML-18148`
+> when the implementation starts; ligna-store: the one-line change of `chat-recovery.ts` on a
+> branch of its own. **Commits** in roomle-hi-example: the skill files moved with the Docker ignore
+> rule; the tool with its tests and documentation; the measurement, if one is run.
+
+### 9.1 Decisions the plan takes
+
+| Decision | Choice | Why |
+|---|---|---|
+| Where the skills live (open decision 1) | `hi-mcp/hi-mcp-server/skills/<name>/`, moved with `git mv` from `docs/planning-skills/skills`; the duplicate copy, the `.docx`, the Python builder and the `.DS_Store` files are deleted; the two PDFs stay with a three-line `README.md` | one source, inside the package the Docker image copies |
+| Line endings | the files carry CRLF throughout (checked: every `SKILL.md` and reference); they are normalised to LF once in the move — the content is unchanged, Prettier ignores Markdown — and the loader tolerates CRLF anyway | fewer tokens, no `\r` in results, and the Skills extension can later serve the files byte for byte |
+| The originals or a variant (2) | the originals; the mapping of the skill onto the session is a **preamble the server prepends to the `SKILL.md` result**, never written into the files | the files stay Jochen's; the preamble is served text and lives in `hi-mcp-server.ts` (§2.4, one source) |
+| All three skills (3), the extension later (4) | as proposed | — |
+| Logging | `get-skill` goes through `runTool`, so every call is logged like every other tool (`[hi-mcp] tool get-skill`); the result is plain text, as `get-authoring-rules` answers | the test runs pair log lines per tool |
+| The description | generated from the frontmatter at module load, one line per skill: `- <name>: <description>` | cannot drift from the files |
+| The error | an unknown name or file is an error result that names the skills, or the files of that skill, available | the last-resort case of §2.2: an id that matches nothing; the message names what to send |
+
+### 9.2 Steps
+
+1. **The skill files.** `git mv docs/planning-skills/skills/<name> hi-mcp/hi-mcp-server/skills/<name>`
+   for the three skills, LF line endings; delete `docs/planning-skills/kitchen-planning-skill/` and
+   every `.DS_Store`; add `docs/planning-skills/README.md` (the PDFs are the documentation Jochen
+   delivered; the skills are served by the MCP server from `hi-mcp/hi-mcp-server/skills/`); add
+   `!hi-mcp/hi-mcp-server/skills/` to `.dockerignore`.
+   → verify: `git status` shows three renames; `docker build -f hi-mcp/cf/Dockerfile -t hi-mcp-skills .`
+   and `docker run --rm hi-mcp-skills ls hi-mcp/hi-mcp-server/skills` lists the three directories.
+2. **The loader** `hi-mcp/hi-mcp-server/skills.ts` (9.3): reads the directory once at module load,
+   parses the frontmatter, checks the name against the directory, lists the files, serves a file by
+   name and path.
+   → verify: `tests/skills.test.ts` (9.4).
+3. **The tool.** The executor `get-skill` in `tool-executors.ts`; the registration in
+   `hi-mcp-server.ts` with the generated description, the preamble before a `SKILL.md` result and
+   one sentence in `INSTRUCTIONS` step 2.
+   → verify: the tests of 9.4 in `hi-mcp-server.test.ts` and `tool-executors.test.ts`;
+   `npm run typecheck`, `npm test`, `npm run lint`, `npm run format:check` in the repository root.
+4. **The clients and the scripts.** `get-skill` joins `READ_ONLY_TOOLS` in
+   `hi-mcp/hi-mcp-chat/chat-recovery.ts` and in ligna-store `hi-mcp/chat-recovery.ts` (the two
+   copies stay identical), and `INFO_TOOLS` in `.agents/scripts/benchmark-hi-mcp-runs.js`. The
+   browser bridges are untouched: no planner method is added.
+   → verify: the chat tests pass; one new test per copy (9.4).
+5. **The documentation** (9.5), in the same commit as the tool.
+6. **The live check.** `npm start gpt-6-astra <key>`, the prompt "plan a kitchen in the back right
+   corner of the room": the log shows `tool get-skill` once with `kitchen-planning`, the kitchen
+   stands in the corner, and the answer names the assumptions. Then "add a wardrobe to the left
+   wall": no skill is fetched.
+7. **The measurement** — only when asked for (a model run): "test the mcp" on the kitchen tests
+   `kitchen-back-right-corner`, `kitchen-oven-fridge-sink-corner`,
+   `kitchen-oven-hood-sink-fridge-corner`, `full-kitchen-walnut-marble-corner`,
+   `image-kitchen-left-wall`, `image-kitchen-back-right-corner`, `image-planning-right-wall`,
+   `image-only-no-text` and `kitchen-conversation`, compared per test with the reference session
+   of the same model, and `benchmark-hi-mcp-runs.js` over both. Expected: one `get-skill` call per
+   kitchen turn, one or two more steps, about 9k more input tokens per later step; in the plannings
+   the sequence sink, preparation surface, hob and the dishwasher beside the sink. A non-kitchen
+   test that fetches a skill it does not need (a sideboard fetching `living-room-planning`) is
+   noted, not fixed, unless it costs a step in every run.
+
+### 9.3 The code
+
+`hi-mcp/hi-mcp-server/skills.ts` — no new dependency; `import.meta.url` resolves the directory
+beside the module under `vite-node` and under vitest alike (the launcher does the same with
+`fileURLToPath`):
+
+```ts
+export interface Skill { name: string; description: string; dir: string; files: string[] }
+
+export const SKILLS_DIR = join(dirname(fileURLToPath(import.meta.url)), 'skills');
+const SKILL_FILE = 'SKILL.md';
+
+// The frontmatter is one `key: value` per line, the value optionally quoted;
+// a line of any other shape is an error that names the file.
+const frontmatterOf = (text: string, file: string): Record<string, string> => { … };
+
+export const loadSkills = (dir = SKILLS_DIR): Skill[] =>
+  readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => {
+      const skillDir = join(dir, entry.name);
+      const { name, description } = frontmatterOf(readFileSync(join(skillDir, SKILL_FILE), 'utf8'), …);
+      if (name !== entry.name) throw new Error(`${…}: name "${name}" differs from its directory "${entry.name}"`);
+      if (!description) throw new Error(`${…}: no description`);
+      return { name, description, dir: skillDir, files: [SKILL_FILE, ...supportingFilesOf(skillDir)] };
+    });
+
+export const skillIndex = (skills: Skill[]): string =>
+  skills.map((skill) => `- ${skill.name}: ${skill.description}`).join('\n');
+
+// Only a file of the manifest is read, so a path cannot leave the skill directory.
+export const readSkillFile = (skills: Skill[], name: string, file = SKILL_FILE): string => {
+  const skill = skills.find((candidate) => candidate.name === name);
+  if (!skill) throw new Error(`Unknown skill "${name}" - the skills are ${skills.map((s) => s.name).join(', ')}`);
+  if (!skill.files.includes(file)) throw new Error(`Unknown file "${file}" of ${name} - its files are ${skill.files.join(', ')}`);
+  return readFileSync(join(skill.dir, file), 'utf8').replace(/\r\n/g, '\n');
+};
+
+export const skills = loadSkills();
+```
+
+`supportingFilesOf` lists the files of the directory recursively as relative POSIX paths, hidden
+files left out, sorted. A directory without `SKILL.md` fails the load (a broken skill is a
+developer error, the server does not start); a file beside the skill directories is ignored.
+
+`tool-executors.ts`:
+
+```ts
+'get-skill': async (_roomDesignerApi, { name, file }) =>
+  readSkillFile(skills, String(name), file === undefined ? undefined : String(file)),
+```
+
+`hi-mcp-server.ts` — the registration, after `get-authoring-rules`:
+
+```ts
+const SKILL_IN_SESSION =
+  'In this planning session the survey is the plan context - the walls, the doors and windows, the obstacles - and the products are the article catalog. What the plan context does not carry - services, budget, inventory, the household - is unknown: plan a concept with stated assumptions and name them in your answer, instead of asking first, unless the user asks to be interviewed. The layout is the group you create: check it against the returned positions and the obstacles, and name the alternatives and the open checks in your answer instead of building them.';
+
+server.registerTool(
+  'get-skill',
+  {
+    description:
+      'Returns a planning skill: how to plan a room of one kind well - the workflow, the zones, the ' +
+      'dimensions and the checks. Before planning a room of a kind listed here, fetch its skill and ' +
+      'follow it; fetch the files it names with file. Skills:\n' + skillIndex(skills),
+    inputSchema: {
+      name: z.string().describe('The name of the skill'),
+      file: z.string().optional().describe('A file of the skill by its path, e.g. references/planning-reference.md; SKILL.md by default'),
+    },
+  },
+  async ({ name, file }) => {
+    const text = (await runTool('get-skill', { name, file })) as string;
+    const preamble = file === undefined || file === 'SKILL.md' ? `${SKILL_IN_SESSION}\n\n` : '';
+    return { content: [{ type: 'text' as const, text: `${preamble}${text}` }] };
+  }
+);
+```
+
+`INSTRUCTIONS`, step 2, first sentence: "For a room of a kind get-skill lists, fetch that skill first
+and follow it." — neutral: the kinds are named by the index, not by the instructions.
+
+### 9.4 Unit tests
+
+The fixture of `tests/skills.test.ts` is a temporary directory (`mkdtempSync`) with skills written
+by a helper `writeSkill(root, name, frontmatter, body, files)`; the real directory is tested once.
+
+| File | Test | Checks |
+|---|---|---|
+| `tests/skills.test.ts` | loads a skill with its name, description and files, SKILL.md first | two fixture skills, one with `references/a.md`; `files` is `['SKILL.md', 'references/a.md']`, relative POSIX paths |
+| | reads a single-quoted and a double-quoted description and CRLF line endings | the three quoting styles of Jochen's files, `\r\n` throughout |
+| | ignores a file beside the skill directories and hidden files inside a skill | a `README.md` in the root, a `.DS_Store` in a skill |
+| | fails the load when the name differs from the directory, when the frontmatter or the description is missing, and when a frontmatter line is not a field | four fixtures; every error names the file |
+| | fails the load for a directory without SKILL.md | a developer error, the server does not start |
+| | serves SKILL.md by default and a file by its path with LF line endings | `readSkillFile(skills, 'a')`, `readSkillFile(skills, 'a', 'references/a.md')`; no `\r` |
+| | answers an unknown skill with the skills available, and an unknown or outside path with the files of that skill | `'b'`; `'../../server.ts'`, `'/etc/passwd'`, `'references'`; the message lists `SKILL.md, references/a.md` |
+| | the server's skills directory holds kitchen-planning, kitchen-planning-fr and living-room-planning, each with its planning reference and source catalog | `loadSkills()` on the real directory — guards Jochen's files and the move |
+| `tests/tool-executors.test.ts` ("remaining tools") | returns a skill file without a planner call | `get-skill` with `name` resolves to the text starting with `---`; with `file` to the reference; no planner method called |
+| | rejects an unknown skill naming the skills available | `rejects.toThrow(/the skills are kitchen-planning, kitchen-planning-fr, living-room-planning/)` |
+| `tests/hi-mcp-server.test.ts` | exposes exactly the expected tools | `EXPECTED_TOOLS` gains `get-skill` |
+| | lists every planning skill with its description in the get-skill description and tells the agent to fetch it before planning | for every skill of `skills`: the description contains `- ${name}: ${description}`; it contains "Before planning a room of a kind listed here, fetch its skill"; `client.getInstructions()` contains "fetch that skill first" |
+| | answers get-skill as text, with the session preamble before the skill and without it before a supporting file | no planner method called; the SKILL.md result starts with "In this planning session" and contains "# Kitchen Planning"; the reference result starts with "# Kitchen Planning Evidence"; `console.log` was called with `[hi-mcp] tool get-skill` |
+| | answers an unknown skill or file with what is available | `isError` true; the text names the three skills, or the files of `kitchen-planning` |
+| | speaks of articles and root modules, not of kitchens, … (existing) | the `/kitchen/i` check runs on `tools.filter((tool) => tool.name !== 'get-skill')`, and `descriptionOf('get-skill')` is asserted to name a kitchen — the exemption is explicit |
+| | describes how to succeed instead of what is rejected (existing), never tells the agent how the server positions a group internally (existing) | run unchanged over the new description, preamble and sentence: no "reject", no "the unit", no internals |
+| `hi-mcp-chat/tests/chat-recovery.test.ts` (or `chat-stream.test.ts`, where the read-only outcomes are tested) | reports a get-skill call as read-only in an interruption summary | an interrupted turn whose only outcome is `get-skill` says that nothing was created or changed |
+| ligna-store `hi-mcp/__tests__` (the store's copy) | the same test on the store's `chat-recovery.ts` | — |
+
+Not unit-tested, verified by hand: the Docker image carries the skills (step 1), the live check
+(step 6).
+
+### 9.5 Documentation
+
+| File | Change |
+|---|---|
+| `docs/hi-mcp-behaviour.md` | §2.4 a bullet: the planning skills are served text in files, served on demand, and the only served text that names a room kind — the general text stays neutral; §3 a group "Planning skills (2026-10-14)" with **D75**: domain planning knowledge is served on demand by `get-skill` as skills in the Agent Skills format, the index in the tool description, the session preamble before `SKILL.md`; rejected: the chats' prompts, the IDE skill folders, the instructions, resources or prompts alone, the Skills extension alone (no client in use supports it — the later step), one tool per skill, a planning tool in the server; §5.3 `get-skill` returns text; §5 a new 5.6 "Planning skills (`get-skill`)": the index, the preamble, what a skill is for the agent; §6 the table row and a section `### get-skill`; §8 the error of an unknown name or file, in the words of the message |
+| `docs/hi-mcp-server.md` | `### get-skill` in the tool reference after `get-authoring-rules`; the tool list of the example |
+| `hi-mcp/hi-mcp-server/README.md` | the tool section |
+| `docs/implementation/mcp-server.md`, `docs/implementation/tool-executors.md` | the tool tables; `skills.ts` in the module list |
+| `.agents/skills/hi-mcp-tools.md` | the "Core Tools" row, a reference section, the standard workflow (fetch the skill first) |
+| `.agents/skills/roomle-hi-concepts.md` | one sentence beside the one on `get-authoring-rules` |
+| `.agents/skills/hi-mcp-server.md` | the module `skills.ts` and the skills directory in the architecture |
+| `docs/user-guide/README.md` | "How it works": for a kitchen or a living room the assistant reads a planning skill written by HOMAG first — the zones, the sequence sink, preparation surface, hob, the dishwasher beside the sink |
+| `AGENTS.md` "Testing Tool Calls", `.github/copilot-instructions.md` (its mirror) | `get-skill` in the tool list; "Adding New Tools" unchanged |
+| `.agents/backlog/mcp-policy-issues.md` | the description of `get-skill` is exempt from the taxonomy rule by design |
+| `docs/planning-skills/README.md` | new: what the PDFs are, where the skills live |
+| `.agents/README.md`, `.agents/feature-analysis/README.md` | the status at close-out |
+| this document | §10 implementation report at close-out |
+
+### 9.6 Definition of done
+
+- [ ] The three skills are in `hi-mcp/hi-mcp-server/skills/`, byte for byte Jochen's content with LF line endings; the duplicates are gone; the Docker image lists them.
+- [ ] `get-skill` is registered, its description lists the three skills, `SKILL.md` comes with the preamble, a reference without it, an unknown name or file answers with what is available.
+- [ ] The tests of 9.4 pass; `npm run typecheck`, `npm test`, `npm run lint` and `npm run format:check` are clean.
+- [ ] `get-skill` is read-only for both chats' recovery and an information tool for the benchmark script.
+- [ ] The documents of 9.5 are updated in the same commits.
+- [ ] The live check of step 6 passes.
+- [ ] The measurement of step 7 is run when asked for, and its result is in the implementation report.

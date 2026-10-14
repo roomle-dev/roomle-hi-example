@@ -26,6 +26,10 @@ server's logic.
 
 ## 1. Served text in `hi-mcp-server.ts`
 
+The description of `get-skill` names kinds of rooms by design: it is the index of the planning
+skills, the domain knowledge served on demand (D75 of `docs/hi-mcp-behaviour.md`). It is no item of
+this list; the policy test exempts it from the no-kitchen check of the tool descriptions.
+
 The served text reaches every agent of every library, so it is the strongest place to get the
 policy right. The defect is not that it uses ordinary domain words — the policy bans *one library's*
 content, not the domain's vocabulary. The defect is that the served text bakes in **one furniture

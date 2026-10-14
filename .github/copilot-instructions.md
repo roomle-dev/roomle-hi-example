@@ -117,6 +117,8 @@ The start script (`npm start`) provides:
 │       ├── agent-facing.ts       # The plan context in the agent's words: wall names, corners, the wall of a door or window
 │       ├── plan-history.ts       # The record of the plan-changing tool calls for undo and redo
 │       ├── planner-api.ts        # The six planner methods the tools call, relayed to the page
+│       ├── skills.ts             # The planning skills: loads skills/, the index of get-skill, a skill file by name and path
+│       ├── skills/               # The planning skills in the Agent Skills format (kitchen, kitchen in France, living room)
 │       ├── page-bridge.ts        # Connected-page registry, call correlation
 │       ├── types.ts              # WebSocket message protocol
 │       ├── tests/                # Unit tests (tool-executors, plan-history, planner-api, page-bridge, hi-mcp-server)
@@ -505,6 +507,7 @@ The servers: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp`, 
 3. Connect MCP client
 4. Call tools like:
    - `get-plan-context` — Get current rooms, walls, articles, groups, docking vectors
+   - `get-skill` — Get a planning skill: how to plan a kitchen or a living room well
    - `create-or-replace-groups` — Add, modify or extend groups; position new groups (`placement`)
    - `place-group` — Move an existing group against a wall or into a room corner
    - `merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`, `swap-root-modules`, `delete-article-and-compact`, `delete-article-in-place`, `delete-group`, `change-module-attribute`, `change-group-attribute`, `merge-groups` — Edit an existing group (commands the planner performs)

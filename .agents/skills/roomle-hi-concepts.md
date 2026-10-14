@@ -422,6 +422,9 @@ posGroups[0]: needs a non-empty roots array
 Fetch the payload format with the get-authoring-rules tool.
 ```
 
+How to plan a room of one kind well — a kitchen, a living room — comes from the planning skills
+of the `get-skill` tool, fetched before planning that kind of room.
+
 ## Best Practices
 
 ### Group Design

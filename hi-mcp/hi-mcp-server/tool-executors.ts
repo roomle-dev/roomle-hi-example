@@ -6,6 +6,7 @@ import {
 import { planHistory } from './plan-history';
 import type { ToolCallRecord } from './plan-history';
 import type { PlannerApi } from './planner-api';
+import { readSkillFile, skills } from './skills';
 
 export type ToolExecutor = (
   roomDesignerApi: PlannerApi,
@@ -564,6 +565,13 @@ export const toolExecutors: Record<string, ToolExecutor> = {
   undo: oneAtATime(revertToolCall('undo')),
 
   redo: oneAtATime(revertToolCall('redo')),
+
+  'get-skill': async (_roomDesignerApi, { name, file }) =>
+    readSkillFile(
+      skills,
+      String(name),
+      file === undefined ? undefined : String(file)
+    ),
 
   'get-price': async (roomDesignerApi) => {
     return roomDesignerApi.extended.fetchPrice();

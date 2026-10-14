@@ -11,8 +11,8 @@ in [hi-mcp-behaviour.md §6](../hi-mcp-behaviour.md#6-tools) and
 
 ## Tool overview
 
-The server exposes these 20 MCP tools. Their names, input schemas and handlers are registered in
-[`hi-mcp-server.ts`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts). Nineteen handlers call the
+The server exposes these 21 MCP tools. Their names, input schemas and handlers are registered in
+[`hi-mcp-server.ts`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts). Twenty handlers call the
 matching entry in `toolExecutors`; `get-authoring-rules` returns `AUTHORING_RULES` directly from
 the server and needs no connected planner page. Parameters and result formats are in the
 [tool reference](../hi-mcp-server.md#tool-reference).
@@ -22,6 +22,7 @@ the server and needs no connected planner page. Parameters and result formats ar
 | `get-plan-context` | Read rooms, articles, groups, obstacles and optional master data | No | [Context reads and shaping](#get-plan-context) |
 | `find-attributes` | Search library attributes and their available values | No | [Attribute search](#find-attributes) |
 | `get-authoring-rules` | Read the group payload format, relations, placement rules and examples | No | [Direct server handler](../hi-mcp-server.md#get-authoring-rules) |
+| `get-skill` | Read a planning skill or one of its files | No | [`skills.ts`](#the-files), [the skills](../hi-mcp-behaviour.md#56-planning-skills-get-skill) |
 | `create-or-replace-groups` | Create groups with a placement or rebuild existing groups by id | Yes | [Creation and replacement pipeline](#create-or-replace-groups) |
 | `place-group` | Move an existing group against a wall or into a room corner | Yes | [Placement pipeline](#place-group) |
 | `change-module-attribute` | Set an attribute on selected root modules or their submodules | Yes | [Command forwarding and result wrapping](#the-command-tools) |
@@ -49,6 +50,7 @@ roomle-ui, `packages/web-sdk/packages/homag-intelligence/src/` (D71).
 | File | Main identifiers |
 | ---- | ---------------- |
 | `tool-executors.ts` | plan-context sections (`PLAN_CONTEXT_SECTIONS`, `DEFAULT_SECTIONS`); find-attributes matching (`searchWords`, `attributeMatches`, `withSharedSelectionsOnce`); concurrency and undo recording (`oneAtATime`, `countingPlannerApi`, `readGroupsKey`, `recorded`, `planChange`); undo and redo (`stepHistory`, `revertToolCall`, `changedGroupIds`, `changedGroupsOnly`); the forward of a plan-changing tool (`inPlanner`, `compactAttributeResult`); `toolExecutors`, at the end |
+| `skills.ts` | the planning skills: `SKILLS_DIR`, `loadSkills` (frontmatter, name against directory, the file list), `skillIndex`, `readSkillFile` (only a file of the list, LF line endings), `skills` — read once at module load |
 | `agent-facing.ts` | the plan context the agent sees: `agentFacingArticle` (`shortDescription`), `agentFacingRooms` (`wallName`, `roomCorners`), `agentFacingObstacles` (`wallOfOpening`) |
 | roomle-ui `hi-tool-commands.ts` | `HiToolPlanner` (what the commands read from the plan and change in it), `HiToolState`, `HI_TOOL_COMMANDS` (one command per plan-changing tool), `runToolCommand` (counts `historySteps` and `historyFollowUps`), `FOLLOW_UP_COMMANDS`, `hasFollowUp`, `placeAtWalls`, `inPlacementFrame`, `withCorrections`, `asTool`, `changedGroupsOnly` |
 | roomle-ui `hi-tool-ids.ts` | article and root id resolution: `catalogArticleId`, `catalogSpellingOf`, `resolveArticleIds`, `removeReferencesTo`, `resolveRootId`, `withPlanRoots`, `rootModulesByGroup`; group lookup: `findGroup` (a root id names the group that holds it: `groupHoldingRoot`), `groupOfRoot`; the agent's group ids: `matchResultGroups`, `resolveAgentGroupIds`, `rememberAgentGroupIds` |

@@ -801,6 +801,32 @@ describe('find-attributes', () => {
 });
 
 describe('remaining tools', () => {
+  it('returns a planning skill file without a planner call', async () => {
+    const api = createApi({});
+    const skill = (await toolExecutors['get-skill'](api, {
+      name: 'kitchen-planning',
+    })) as string;
+    expect(skill).toMatch(/^---\nname: kitchen-planning\n/);
+    expect(skill).not.toContain('\r');
+    await expect(
+      toolExecutors['get-skill'](api, {
+        name: 'kitchen-planning',
+        file: 'references/planning-reference.md',
+      })
+    ).resolves.toMatch(/^# Kitchen Planning Evidence and Constraints\n/);
+    for (const method of Object.values(api.extended)) {
+      expect(method).not.toHaveBeenCalled();
+    }
+  });
+
+  it('rejects an unknown skill naming the skills available', async () => {
+    await expect(
+      toolExecutors['get-skill'](createApi({}), { name: 'bathroom-planning' })
+    ).rejects.toThrow(
+      'the skills are kitchen-planning, kitchen-planning-fr, living-room-planning'
+    );
+  });
+
   it('returns the fetched price', async () => {
     const api = createApi({});
     await expect(toolExecutors['get-price'](api, {})).resolves.toEqual({

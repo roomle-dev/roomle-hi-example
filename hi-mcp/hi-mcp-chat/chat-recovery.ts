@@ -3,6 +3,7 @@ import type { ModelMessage, Tool, ToolSet, ToolExecutionOptions } from 'ai';
 const READ_ONLY_TOOLS = new Set([
   'get-plan-context',
   'get-authoring-rules',
+  'get-skill',
   'find-attributes',
   'get-price',
   'get-order-data',

@@ -1,7 +1,7 @@
 # Planning skills served by the HI MCP server
 
 > **Date**: 2026-10-14
-> **Status**: Open — analysis reviewed; implementation plan written 2026-10-14 (section 9)
+> **Status**: Implemented — roomle-hi-example `feat/planning-skills-tool-RML-18148`, ligna-store `feat/planning-skills-read-only-RML-18148`, not merged; the live check and the measurement (steps 6 and 7) not run (section 10)
 > **Ticket**: [RML-18148](https://roomle.atlassian.net/browse/RML-18148) — HI MCP: add kitchen planning skills
 > **Base**: roomle-hi-example `feat/planning-skills` (`5c4e81f`, the planning skills in `docs/planning-skills`, not on `master`; `master` is `154d14f`)
 > **Related**: [ADR 0003](../decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) (every chat is an MCP client), [hi-mcp-behaviour.md §2.4](../../docs/hi-mcp-behaviour.md#24-instructions) (the served text), the backlog items [library neutrality of the served text](../backlog/mcp-policy-issues.md) and [Spec Kit for the prompting](../backlog/speckit-for-the-prompting.md)
@@ -524,3 +524,38 @@ Not unit-tested, verified by hand: the Docker image carries the skills (step 1),
 - [ ] The documents of 9.5 are updated in the same commits.
 - [ ] The live check of step 6 passes.
 - [ ] The measurement of step 7 is run when asked for, and its result is in the implementation report.
+
+## 10. Implementation report
+
+> Written 2026-10-14. roomle-hi-example `feat/planning-skills-tool-RML-18148`, ligna-store
+> `feat/planning-skills-read-only-RML-18148`.
+
+### 10.1 What was built
+
+| Step | Result |
+|---|---|
+| 1. The skill files | the three skills moved with `git mv` to `hi-mcp/hi-mcp-server/skills/`, LF line endings — every file compared against `5c4e81f` with the carriage returns removed: identical; the second copy of the kitchen skill, the `.docx`, the Python builder and the `.DS_Store` files deleted; `docs/planning-skills/README.md` beside the PDFs; `.dockerignore` re-includes `hi-mcp/hi-mcp-server/skills/**` |
+| 2. The loader | `hi-mcp/hi-mcp-server/skills.ts` as planned (`loadSkills`, `skillIndex`, `readSkillFile`, `skills`); the skills sorted by name; a hidden directory beside the skills is ignored |
+| 3. The tool | `get-skill` in `tool-executors.ts` and `hi-mcp-server.ts`, the description generated from the frontmatter, `SKILL_IN_SESSION` before a `SKILL.md`, the sentence in `INSTRUCTIONS` step 2 |
+| 4. The clients and scripts | `get-skill` in `READ_ONLY_TOOLS` of `hi-mcp/hi-mcp-chat/chat-recovery.ts` and ligna-store `hi-mcp/chat-recovery.ts`, and in `INFO_TOOLS` of `.agents/scripts/benchmark-hi-mcp-runs.js` |
+| 5. The documentation | `docs/hi-mcp-behaviour.md` (§2.4, D75, §5.1, §5.3, §5.6, §6, G65 and G66 in §8.9, §9), `docs/hi-mcp-server.md`, `hi-mcp/hi-mcp-server/README.md`, `docs/implementation/mcp-server.md` and `tool-executors.md`, the skills `hi-mcp-tools.md`, `roomle-hi-concepts.md` and `hi-mcp-server.md`, the user guide, `AGENTS.md` and its Copilot mirror, the policy backlog item |
+
+Deviation from the plan: the ligna-store has no test runner, so its one-line change has no test of its
+own; the example's test covers the same code, and the two copies differ only in their formatting.
+
+### 10.2 Verification
+
+| Check | Result |
+|---|---|
+| `npm test` in `hi-mcp` | 15 files, 268 tests passed — 22 new: 16 in `tests/skills.test.ts` (with the parametrised cases), 2 in `tool-executors.test.ts`, 3 in `hi-mcp-server.test.ts`, where 2 more changed in `hi-mcp-server.test.ts`; 1 new in `hi-mcp-chat/tests/chat-stream.test.ts` |
+| `npm run typecheck` in `hi-mcp`, `npm run lint`, `npm run format:check` | clean |
+| The server over HTTP (`HI_MCP_PORT=3187`, no page) | `tools/list` carries `get-skill` with the three index lines and the schema `name`, `file?`; `get-skill` `living-room-planning` answers 18,159 characters starting with the preamble; `file` `../../server.ts` is an error naming the three files of the skill |
+| The Docker image | not built — the Docker daemon was not running; the ignore rules checked with Docker's matching (`@balena/dockerignore`, outside the repository): the six skill files and `skills.ts` are in the build context, the tests and the READMEs are not; the Dockerfile copies the whole server folder |
+| Step 6, the live check with a model | not run: a model run needs the user's go |
+| Step 7, the measurement | not run, as planned: only when asked for |
+
+### 10.3 Still open
+
+- The live check with a model (step 6) and the comparison runs (step 7).
+- A Docker build of the Cloudflare image, or the next deployment, to confirm the skills are in it.
+- The Skills extension of MCP (5.4), once a client in use supports it.

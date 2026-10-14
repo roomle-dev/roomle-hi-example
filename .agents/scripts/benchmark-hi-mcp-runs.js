@@ -30,6 +30,7 @@ const INFO_TOOLS = new Set([
   'get-plan-context',
   'find-attributes',
   'get-authoring-rules',
+  'get-skill',
   'get-plan-images',
   'get-price',
   'get-order-data',

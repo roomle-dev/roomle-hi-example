@@ -200,8 +200,8 @@ jobs:
       # the verify step posts initialize to "$MCP_SERVER_URL/mcp"
 ```
 
-**`minimal-hi-example/start.mjs:50-51`.** `CLOUDFLARE_MCP_SERVER_URL` becomes the PRD URL;
-`npm run start:cf` keeps using PRD.
+**`minimal-hi-example/start.mjs:50-51`.** `CLOUDFLARE_MCP_SERVER_URL` becomes the DEV URL;
+`npm run start:cf` uses DEV.
 
 ### 4.4 The switch, in this order
 
@@ -211,9 +211,9 @@ jobs:
    workflow would deploy `hi-mcp-poc` into the Roomle account with the new token.
 3. The change of 4.3 merged to `master`.
 4. `git push origin origin/master:refs/heads/release/cloudflare.dev` — DEV deploys. Check
-   `initialize` → 200 and a store page with `mcp_server=<DEV URL>`.
-5. `git push origin origin/master:release/cloudflare` — PRD deploys. The same checks, plus
-   `npm run start:cf`.
+   `initialize` → 200, a store page with `mcp_server=<DEV URL>` and `npm run start:cf`.
+5. `git push origin origin/master:release/cloudflare` — PRD deploys. Check `initialize` → 200 and
+   a store page with `mcp_server=<PRD URL>`.
 6. The handouts and every MCP client connector point to the PRD URL.
 7. The personal deployment is torn down, from the repository root (it has no wrangler config, so
    the variable selects the account):

@@ -193,9 +193,10 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'When a door or window determines a placement, briefly name it and explain whether the final placement ' +
         'keeps it clear, using the returned obstacle dimensions and final tool results. masterData (per library the root ' +
         'modules with their attribute ids, the attributes and the group settings) is returned only when included ' +
-        'explicitly. articleDescriptions ' +
-        '(per article its full description: purpose, placement, requirements, neighbours, restrictions, style) is ' +
-        'returned only when included explicitly. Every desc is ' +
+        'explicitly. desc - what an article is and when to pick it - is enough to choose an article; ' +
+        'articleDescriptions (per article its full description: purpose, placement, requirements, neighbours, ' +
+        'restrictions, style) is returned only when included explicitly and answers a question about one ' +
+        'article, not the planning. Every desc is ' +
         'authoritative and dimensions give the size - trust them over the catalog images (imageUrl); a colour ' +
         'code in the desc of an attribute value (#rrggbb) is the colour of that value. Use it before ' +
         'authoring or modifying groups.',
@@ -205,7 +206,8 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .optional()
           .describe(
             'The sections to include: rooms, articles, attributes, groups, obstacles, masterData, articleDescriptions. Default: rooms, articles, attributes, groups and obstacles. ' +
-              'Add masterData for the root modules of the master data, articleDescriptions for the full descriptions of the articles.'
+              'Add masterData for the root modules of the master data, articleDescriptions for a question about ' +
+              "one article's requirements and neighbours - desc is enough to pick the articles of a planning."
           ),
       },
     },

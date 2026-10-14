@@ -108,7 +108,8 @@ The rule covers only the catalog images, not the renderings of `get-plan-images`
 user attaches. It is in `get-authoring-rules` and in the descriptions of `get-plan-context` and
 `find-attributes`. The server strips every `imageUrl` from its results (D7). An article's `desc`
 in the catalog is short — of a description written in sections, its FUNCTION and AI_SELECTION_HINT
-lines; `include: ['articleDescriptions']` returns the full ones (D63).
+lines; `include: ['articleDescriptions']` returns the full ones, for a question about one article —
+the descriptions tell the agent that `desc` is enough to pick the articles of a planning (D63).
 
 **Usage**:
 ```javascript

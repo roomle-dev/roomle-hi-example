@@ -372,7 +372,8 @@ overlap according to the measured result; missing data is no assurance of cleara
   (id, name, desc) with their relevant attribute ids, the attributes as in
   `attributes` with every value list, and `groupSettings`, the attributes the
   library's group orchestrator sets on a group
-- `articleDescriptions` — only when included explicitly: per article its
+- `articleDescriptions` — only when included explicitly, for a question about
+  one article (`desc` is enough to pick the articles of a planning): per article its
   `articleId` and full `desc` (purpose, placement, requirements, neighbours,
   restrictions, style)
 

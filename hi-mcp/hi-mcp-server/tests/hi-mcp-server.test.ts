@@ -637,6 +637,23 @@ describe('hi-mcp-server tool calls', () => {
     }
   });
 
+  it('tells the agent that desc suffices to pick an article and what articleDescriptions is for', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    const planContext = tools.find((tool) => tool.name === 'get-plan-context');
+
+    expect(planContext?.description).toContain(
+      'desc - what an article is and when to pick it - is enough to choose an article'
+    );
+    expect(planContext?.description).toContain(
+      'answers a question about one article, not the planning'
+    );
+    expect(
+      (planContext?.inputSchema.properties?.include as { description?: string })
+        ?.description
+    ).toContain('desc is enough to pick the articles of a planning');
+  });
+
   it('tells the agent that one search finds every colour attribute and its values once', async () => {
     const client = await connectClient(createMockPlannerApi());
     const { tools } = await client.listTools();

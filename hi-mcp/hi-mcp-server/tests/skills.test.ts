@@ -65,6 +65,23 @@ describe('loadSkills', () => {
     ]);
   });
 
+  it('reads the YAML of Agent Skills frontmatter: block scalars, multi-line values, comments and nested fields', () => {
+    writeSkill(
+      'a',
+      'name: a\ndescription: |\n  Plan an a.\n  Use it for a rooms.\nmetadata:\n  author: x\n  version: "1"'
+    );
+    writeSkill(
+      'b',
+      '# the b skill\nname: b\ndescription: >-\n  Plan a b\n  in two lines.\n\n  A second paragraph.\nlicense: MIT'
+    );
+    writeSkill('c', 'name: c\ndescription: Plan a c\n  over two lines.');
+    expect(loadSkills(root).map((skill) => skill.description)).toEqual([
+      'Plan an a.\nUse it for a rooms.',
+      'Plan a b in two lines.\nA second paragraph.',
+      'Plan a c over two lines.',
+    ]);
+  });
+
   it('ignores a file beside the skill directories and hidden files inside a skill', () => {
     write('README.md', '# Skills\n');
     writeSkill('a', 'name: a\ndescription: Plan an a.', {
@@ -85,8 +102,13 @@ describe('loadSkills', () => {
     ['no description', 'name: a', /no description/],
     [
       'a frontmatter line that is not a field',
-      'name: a\ndescription: x\n  - y',
-      /the frontmatter line " {2}- y" is not a field/,
+      'name: a\ndescription: x\n- y',
+      /the frontmatter line "- y" is not a field/,
+    ],
+    [
+      'a nested description',
+      'name: a\ndescription:\n  en: x',
+      /no description/,
     ],
   ])('fails the load for %s and names the file', (_, frontmatter, message) => {
     writeSkill('a', frontmatter);
@@ -117,6 +139,14 @@ describe('readSkillFile', () => {
       '---\nname: a\ndescription: Plan an a.\n---\n\n# a\n'
     );
     expect(readSkillFile(skills, 'a', 'references/a.md')).toBe('# A\nline\n');
+  });
+
+  it('serves a path the way a skill links it, with a leading ./', () => {
+    const skills = loadSkills(root);
+    expect(readSkillFile(skills, 'a', './references/a.md')).toBe('# A\nline\n');
+    expect(readSkillFile(skills, 'a', './SKILL.md')).toBe(
+      readSkillFile(skills, 'a')
+    );
   });
 
   it('answers an unknown skill with the skills available', () => {
@@ -154,6 +184,21 @@ describe('the skills of the server', () => {
         ],
       }))
     );
+  });
+
+  it('serves every reference a skill links to by the path it links with', () => {
+    const skills = loadSkills();
+    for (const skill of skills) {
+      const links = [
+        ...readSkillFile(skills, skill.name).matchAll(
+          /\]\(((?:\.\/)?references\/[^)]+)\)/g
+        ),
+      ].map((link) => link[1]);
+      expect(links.length).toBeGreaterThan(0);
+      for (const link of links) {
+        expect(readSkillFile(skills, skill.name, link)).toMatch(/^# /);
+      }
+    }
   });
 
   it('lists every skill on a line of its own in the index', () => {

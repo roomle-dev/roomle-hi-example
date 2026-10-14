@@ -555,11 +555,15 @@ directory of `hi-mcp/hi-mcp-server/skills/` in the Agent Skills format: `SKILL.m
   this session the survey is the plan context and the products are the catalog; what the plan context
   does not carry — services, budget, inventory, the household — is unknown, so the agent plans a
   concept with stated assumptions and names them instead of asking first, unless the user asks to be
-  interviewed; the layout is the group it creates, checked against the returned positions and the
-  obstacles; alternatives and open checks are named in the answer, not built. A supporting file comes
-  without it.
+  interviewed; the layout is the groups it creates, one group per piece of furniture, checked against
+  the returned positions and the obstacles; alternatives and open checks are named in the answer, not
+  built. A supporting file comes without it.
+- **The frontmatter** is read as the YAML of Agent Skills: per field a plain, quoted, multi-line or
+  block scalar (`|`, `>`), comments, and fields with nested values such as `metadata`, which the
+  server does not use.
 - **The files.** The server reads only a file of the skill's list — the files below its directory,
-  hidden files left out —, with LF line endings. A skill whose `name` differs from its directory,
+  hidden files left out —, with LF line endings. A path may start with `./`, as the skills link
+  their references. A skill whose `name` differs from its directory,
   without frontmatter or description, or without `SKILL.md`, stops the server at start.
 
 ## 6. Tools

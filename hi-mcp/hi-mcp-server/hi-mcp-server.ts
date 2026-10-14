@@ -79,8 +79,9 @@ const SKILL_IN_SESSION =
   'In this planning session the survey is the plan context - the walls, the doors and windows, the obstacles - and the ' +
   'products are the article catalog. What the plan context does not carry - services, budget, inventory, the household - ' +
   'is unknown: plan a concept with stated assumptions and name them in your answer, instead of asking first, unless the ' +
-  'user asks to be interviewed. The layout is the group you create: check it against the returned positions and the ' +
-  'obstacles, and name the alternatives and the open checks in your answer instead of building them.';
+  'user asks to be interviewed. The layout is the groups you create, one group per piece of furniture: check them against ' +
+  'the returned positions and the obstacles, and name the alternatives and the open checks in your answer instead of ' +
+  'building them.';
 
 // The plan context carries a signed CDN image URL for every article, module
 // and attribute value - three quarters of its tokens, and no agent can open them.
@@ -278,7 +279,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     async ({ name, file }) => {
       const text = (await runTool('get-skill', { name, file })) as string;
       const preamble =
-        file === undefined || file === SKILL_FILE
+        file === undefined || file.replace(/^(\.\/)+/, '') === SKILL_FILE
           ? `${SKILL_IN_SESSION}\n\n`
           : '';
       return {

@@ -347,6 +347,9 @@ describe('hi-mcp-server tool calls', () => {
         /^In this planning session the survey is the plan context/
       );
       expect(skill).toContain('plan a concept with stated assumptions');
+      expect(skill).toContain(
+        'The layout is the groups you create, one group per piece of furniture'
+      );
       expect(skill).toContain('\n\n---\nname: kitchen-planning\n');
       expect(skill).toContain('# Kitchen Planning\n');
       const reference = textOf(

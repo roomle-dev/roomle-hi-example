@@ -18,24 +18,63 @@ export const SKILL_FILE = 'SKILL.md';
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
 const FIELD = /^([A-Za-z][\w-]*):\s*(.*)$/;
+const BLOCK_SCALAR = /^[|>][+-]?$/;
+
+interface Field {
+  value: string;
+  lines: string[];
+}
 
 const unquoted = (value: string): string =>
   /^'.*'$|^".*"$/.test(value) ? value.slice(1, -1) : value;
+
+const folded = (lines: string[]): string =>
+  lines
+    .join('\n')
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.split('\n').join(' '))
+    .join('\n');
+
+// The YAML of Agent Skills frontmatter: a plain, quoted, multi-line or block
+// scalar per field; a field whose value is nested (metadata) is no scalar.
+const scalarOf = ({ value, lines }: Field): string => {
+  const content = lines.filter((line) => line.trim());
+  if (BLOCK_SCALAR.test(value)) {
+    const indent = Math.min(
+      ...content.map((line) => line.length - line.trimStart().length)
+    );
+    const body = lines.map((line) => line.slice(indent));
+    return (value.startsWith('|') ? body.join('\n') : folded(body)).trim();
+  }
+  if (!value) {
+    return '';
+  }
+  return unquoted(
+    [value, ...content.map((line) => line.trim())].join(' ').trim()
+  );
+};
 
 const frontmatterOf = (text: string, file: string): Record<string, string> => {
   const block = FRONTMATTER.exec(text)?.[1];
   if (block === undefined) {
     throw new Error(`${file}: no frontmatter`);
   }
-  const fields: Record<string, string> = {};
+  const fields: Record<string, Field> = {};
+  let current: Field | undefined;
   for (const line of block.split(/\r?\n/)) {
     const field = FIELD.exec(line);
-    if (!field) {
+    if (field) {
+      current = { value: field[2].trim(), lines: [] };
+      fields[field[1]] = current;
+    } else if (current && /^(\s|$)/.test(line)) {
+      current.lines.push(line);
+    } else if (!line.startsWith('#')) {
       throw new Error(`${file}: the frontmatter line "${line}" is not a field`);
     }
-    fields[field[1]] = unquoted(field[2].trim());
   }
-  return fields;
+  return Object.fromEntries(
+    Object.entries(fields).map(([key, field]) => [key, scalarOf(field)])
+  );
 };
 
 const filesBelow = (root: string, dir = root): string[] =>
@@ -94,12 +133,13 @@ export const readSkillFile = (
       `Unknown skill "${name}" - the skills are ${skills.map((candidate) => candidate.name).join(', ')}`
     );
   }
-  if (!skill.files.includes(file)) {
+  const path = file.replace(/^(\.\/)+/, '');
+  if (!skill.files.includes(path)) {
     throw new Error(
       `Unknown file "${file}" of the skill ${name} - its files are ${skill.files.join(', ')}`
     );
   }
-  return readFileSync(join(skill.dir, file), 'utf8').replace(/\r\n/g, '\n');
+  return readFileSync(join(skill.dir, path), 'utf8').replace(/\r\n/g, '\n');
 };
 
 export const skills = loadSkills();

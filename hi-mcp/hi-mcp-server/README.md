@@ -355,6 +355,14 @@ server itself — it works even without a connected page.
 Agents should fetch this before authoring pos groups (the same text is delivered as server
 instructions at initialize, but not every client surfaces those).
 
+### get-skill
+
+`{ name, file? }`. Returns a planning skill of `skills/` as text: the description of the tool lists
+the skills with their descriptions, `file` names a supporting file (`references/planning-reference.md`),
+`SKILL.md` is the default and comes after a preamble that maps the skill onto the planning session.
+Answered by the server itself, without a connected page. An unknown name or file answers with the
+skills or the files available. Behaviour: [hi-mcp-behaviour.md §5.6](../../docs/hi-mcp-behaviour.md#56-planning-skills-get-skill).
+
 ### find-attributes
 
 Searches the attribute vocabulary of the loaded libraries by text — attribute id, name,

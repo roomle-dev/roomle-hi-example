@@ -245,6 +245,17 @@ describe('chat response recovery', () => {
     }
   );
 
+  it('counts a planning skill fetch as reading, not as a plan change', async () => {
+    const read = vi.fn(async () => mcpResult('# Kitchen Planning'));
+    mocks.tools = { 'get-skill': fakeTool(read) };
+    mocks.responsesModel = failingModel([call('get-skill')], 'error');
+    const answer = await response();
+    expect(answer).toContain('reply was interrupted');
+    expect(answer).toContain('nothing was created or changed');
+    expect(answer).not.toContain('unconfirmed');
+    expect(read).toHaveBeenCalledTimes(1);
+  });
+
   it('reports actual partial success and corrections without repeating a write', async () => {
     const write = vi.fn(async () =>
       mcpResult({

@@ -56,6 +56,10 @@ you ──> AI assistant ──> HI MCP server ──> your open planner tab
 
 - The assistant reads the plan first: the rooms with their walls, doors and windows, the furniture
   already planned, and the catalog of the library.
+- For a kitchen or a living room it reads a planning skill written by HOMAG first: the work zones,
+  the sequence sink, preparation surface, hob, the dishwasher beside the sink with the dishes within
+  a turn. It plans with assumptions where the plan does not say — the services, the budget, the
+  household — and names them in its answer.
 - It never draws furniture itself. It picks units from the catalog, says which unit stands next to,
   on or above which, and against which wall the group goes.
 - The planner arranges the units, adds the worktop and the toe kick, and calculates everything — as

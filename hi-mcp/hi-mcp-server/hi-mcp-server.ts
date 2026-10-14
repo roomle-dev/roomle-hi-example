@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { PlannerApi } from './planner-api';
+import { SKILL_FILE, skillIndex, skills } from './skills';
 import { toolExecutors } from './tool-executors';
 
 const AUTHORING_RULES = `Authoring rules for pos groups:
@@ -67,11 +68,20 @@ const INSTRUCTIONS = `This server orchestrates HOMAG Intelligence (HI) object gr
 
 Typical workflow:
 1. get-plan-context: fetch the rooms (each with a derived walls array), the article catalog (desc, category, dimensions, docking vector names, sub-modules per article), the groups currently in the plan and the obstacles (doors, windows, other furniture and the root modules of the groups, where they stand). Add masterData to include for the attribute vocabulary, or look an attribute up with find-attributes.
-2. create-or-replace-groups: author the whole piece of furniture as ONE group - article picks, each article after the first naming its neighbour with one relation (rightOf, leftOf, onTop, above or behind), a material for the whole group in the group's attributes, plus one placement for the new group ({ wall, alignment?, offsetMm? } at a wall or in a room corner - the server computes the point -, { posGroup, posRotationY } anywhere else; a plan into a room corner starts with a corner article, cornerArticle true in the catalog). One call creates, relates and positions the group; never author root positions and never split one piece of furniture into several groups. A group whose id matches an existing group in the plan completely replaces that group and keeps its position; all other groups are created. Articles next to an existing group are added to that group, docked to a free docking vector of the root module they continue - a new group is only for a free stretch of wall. The payload format, the relations, the corner rules and complete examples are returned by get-authoring-rules.
+2. For a room of a kind get-skill lists, fetch that skill first and follow it. create-or-replace-groups: author the whole piece of furniture as ONE group - article picks, each article after the first naming its neighbour with one relation (rightOf, leftOf, onTop, above or behind), a material for the whole group in the group's attributes, plus one placement for the new group ({ wall, alignment?, offsetMm? } at a wall or in a room corner - the server computes the point -, { posGroup, posRotationY } anywhere else; a plan into a room corner starts with a corner article, cornerArticle true in the catalog). One call creates, relates and positions the group; never author root positions and never split one piece of furniture into several groups. A group whose id matches an existing group in the plan completely replaces that group and keeps its position; all other groups are created. Articles next to an existing group are added to that group, docked to a free docking vector of the root module they continue - a new group is only for a free stretch of wall. The payload format, the relations, the corner rules and complete examples are returned by get-authoring-rules.
 3. Edit an existing group with the command tools: merge-article-into-group (dock one more article at the end of a row), insert-article-into-group (an article between two root modules), delete-article-and-compact (delete an article and close the gap), delete-article-in-place (delete an article, the gap stays) and delete-group, exchange-root-module (replace a root module), swap-root-modules (two root modules change places), change-module-attribute and change-group-attribute (attributes, e.g. the front colour of the whole group), merge-groups (join groups that stand next to each other); place-group moves a group to another wall or into a room corner. Resubmit a whole group with create-or-replace-groups only to rebuild it. undo reverts the last tool call that changed the plan, redo brings it back.
 4. Check the result with get-price or get-order-data, and inspect it with get-plan-images.
 
 ${AUTHORING_RULES}`;
+
+// Put before every SKILL.md: how a planning skill meets this session.
+const SKILL_IN_SESSION =
+  'In this planning session the survey is the plan context - the walls, the doors and windows, the obstacles - and the ' +
+  'products are the article catalog. What the plan context does not carry - services, budget, inventory, the household - ' +
+  'is unknown: plan a concept with stated assumptions and name them in your answer, instead of asking first, unless the ' +
+  'user asks to be interviewed. The layout is the groups you create, one group per piece of furniture: check them against ' +
+  'the returned positions and the obstacles, and name the alternatives and the open checks in your answer instead of ' +
+  'building them.';
 
 // The plan context carries a signed CDN image URL for every article, module
 // and attribute value - three quarters of its tokens, and no agent can open them.
@@ -246,6 +256,36 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     async () => ({
       content: [{ type: 'text' as const, text: AUTHORING_RULES }],
     })
+  );
+
+  server.registerTool(
+    'get-skill',
+    {
+      description:
+        'Returns a planning skill: how to plan a room of one kind well - the workflow, the zones, the dimensions and ' +
+        'the checks. Before planning a room of a kind listed here, fetch its skill and follow it; fetch the files it ' +
+        'names with file. Skills:\n' +
+        skillIndex(skills),
+      inputSchema: {
+        name: z.string().describe('The name of the skill'),
+        file: z
+          .string()
+          .optional()
+          .describe(
+            'A file of the skill by its path, e.g. references/planning-reference.md; SKILL.md by default'
+          ),
+      },
+    },
+    async ({ name, file }) => {
+      const text = (await runTool('get-skill', { name, file })) as string;
+      const preamble =
+        file === undefined || file.replace(/^(\.\/)+/, '') === SKILL_FILE
+          ? `${SKILL_IN_SESSION}\n\n`
+          : '';
+      return {
+        content: [{ type: 'text' as const, text: `${preamble}${text}` }],
+      };
+    }
   );
 
   server.registerTool(

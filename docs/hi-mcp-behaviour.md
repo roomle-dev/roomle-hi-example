@@ -125,6 +125,12 @@ server uses, because every MCP client supports it.
   information, the fix is the desc in the library data, never a served rule. The policy covers the
   served text, the results and the server's logic only: code comments, tests and markdown files are
   no violation.
+- **Planning skills are served text on demand.** How to plan a room of one kind well — a kitchen,
+  a living room — lives in skill files of the server package (`hi-mcp/hi-mcp-server/skills/`) and
+  reaches the agent only through `get-skill` (D75, [§5.6](#56-planning-skills-get-skill)). The skill
+  index in the description of `get-skill` is the one served text that names a kind of room; the
+  general served text stays neutral. A skill is domain knowledge, not library content: it never
+  names one library's article, attribute or value.
 - **Never mention internals**: `repositioningData`, the anchor frame, `rootRelPos`, `cornerPoint`,
   `externalObjectGroupOperation`. `tests/hi-mcp-server.test.ts` guards this
   ("never tells the agent how the server positions a group internally").
@@ -292,6 +298,12 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
 |---|---|---|---|
 | D74 | **The catalog carries the docking vectors and the corner flag of every article.** An article that is not in the plan has its geometry from its template, which the planner calculates outside the plan on the first catalog request, once per article until the library's article templates are loaded again — 0.75 s for a library of 111 articles, a few milliseconds per article. `cornerArticle` comes from the corner docking vectors of the calculated article only, in the planner; the server passes it through and removes `cornerPoint` (D10), and the tool commands tell a corner article by the same flag. An article whose template cannot be calculated lists no docking vectors and is no corner article. A caller of the planner API that names `articleIds` (`HiPlanContextOptions`) gets the templates of those articles only. Rejected: the word corner in the category or the module id, in the server or the tool commands — a guess, wrong for a library that names its corner unit otherwise, and library knowledge in the server; a pass over the catalog in the background after the article templates load — nothing to hide at that cost; a size derived from the docking vectors for an article without a `Dim` attribute — the agent docks it by relation, and its `desc` says what it is | 2026-10-13, user ([RML-18140](https://roomle.atlassian.net/browse/RML-18140)) | in effect — `createPlanContext`, roomle-ui `hi-plan-context.ts`; `calculateArticleTemplate`, `glue-logic.ts`; `isCornerArticle`, `hi-group-placement.ts`; `agentFacingArticle`, `agent-facing.ts`; guarded by `describe('article templates')` in roomle-ui `__tests__/hi-plan-context-test.ts`, `it('recognises a corner article by its flag')` in roomle-ui `__tests__/hi-group-placement-test.ts` and `it('passes the corner flag through as the planner reports it')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
 
+### Planning skills (2026-10-14)
+
+| # | Decision | Source | State |
+|---|---|---|---|
+| D75 | **Domain planning knowledge is served on demand by the tool `get-skill`.** The skills are files in the Agent Skills format in the server package (`hi-mcp/hi-mcp-server/skills/<name>/`: `SKILL.md` with `name` and `description` in its frontmatter, and the supporting files it names), maintained as their authors deliver them. The description of `get-skill` lists every skill by its frontmatter, so the agent of every client sees the index in the tool list; the result of a `SKILL.md` starts with a preamble that maps the skill onto the planning session — the survey is the plan context, the products are the catalog, what the plan context does not carry is an assumption to name —, never written into the files. Rejected: the skills in the chats' system prompts — two implementations and their tokens in every step of every turn; skill files in the IDE workspaces only — the server is installed at user scope, and the chats, Claude Desktop and Le Chat load no skill files; the skills in `INSTRUCTIONS` or `AUTHORING_RULES` — every agent would carry every skill, and the chats do not pass the instructions; MCP resources or prompts alone — a resource is an attachment the user adds, a prompt a command the user invokes, neither is model-driven; the Skills extension of MCP (`io.modelcontextprotocol/skills`) alone — no client in use supports it, it is the later step over the same files; one tool per skill — the tool list grows with every kind of room; a planning tool in the server — the agent declares, the planner arranges (§2.1) | 2026-10-14, user ([RML-18148](https://roomle.atlassian.net/browse/RML-18148)) | in effect — `skills.ts` (`loadSkills`, `skillIndex`, `readSkillFile`), `SKILL_IN_SESSION` and the registration of `get-skill` in `hi-mcp-server.ts`; guarded by `it('lists every planning skill with its description in the get-skill description and tells the agent to fetch it before planning')` and `it('answers get-skill as text, with the session preamble before the skill and without it before a supporting file')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`, and `describe('the skills of the server')` in `hi-mcp/hi-mcp-server/tests/skills.test.ts` |
+
 ## 4. How a tool call runs
 
 - **MCP endpoint**: `POST /mcp` — Streamable HTTP, JSON response mode, stateless (a new transport per
@@ -408,7 +420,7 @@ typical workflow followed by the full authoring rules:
 
 1. `get-plan-context` — rooms with walls, the article catalog, the groups, the obstacles; `masterData` or
    `find-attributes` for attributes.
-2. `create-or-replace-groups` — the whole piece of furniture as one group: article picks, docking,
+2. For a room of a kind `get-skill` lists, the skill first (D75). `create-or-replace-groups` — the whole piece of furniture as one group: article picks, docking,
    one placement. A matching id replaces a group and keeps its position. Units next to an existing
    group are added to it.
 3. The command tools to edit an existing group; `place-group` to move one; `undo` reverts the last
@@ -479,6 +491,7 @@ tool. It covers:
   `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`.
 - **`get-plan-images`** returns two image contents (PNG): the perspective and the top view.
 - **`get-authoring-rules`** returns the rules as plain text.
+- **`get-skill`** returns the skill file as plain text, a `SKILL.md` after the session preamble (§5.6).
 - **An error** is an error result (`isError: true`) with the message as text. A schema error reads
   "Input validation error: …".
 - Results that change the plan carry `corrections` when the server corrected the input or the
@@ -522,6 +535,37 @@ do not establish clearance.
 | Articles' `cornerPoint`, `repositioningData`, the anchor frame | Internal to the placement (D10) |
 | Parts and log messages of the groups | Not needed, and large (D9) |
 
+### 5.6 Planning skills (`get-skill`)
+
+The planning skills tell the agent how to plan a room of one kind well — the zones, the sequence,
+the dimensions with their qualification, the checks, what the answer delivers (D75). Each is a
+directory of `hi-mcp/hi-mcp-server/skills/` in the Agent Skills format: `SKILL.md` with `name` and
+`description` in its frontmatter, and the supporting files its body names by relative path.
+
+| Skill | For | Supporting files |
+|---|---|---|
+| `kitchen-planning` | a residential kitchen, Germany/EU by default | `references/planning-reference.md` (dimensions with their status, the installation and usability checklist), `references/source-catalog.md` (the sources, for a citation question only) |
+| `kitchen-planning-fr` | a residential kitchen in France | the same two, for France |
+| `living-room-planning` | a living room: seating, TV and media, storage, routes | the same two, for a living room |
+
+- **The index.** The description of `get-skill` lists every skill as `- <name>: <description>`,
+  generated from the frontmatter when the server starts, and asks the agent to fetch the skill of a
+  kind of room before planning it and the files the skill names. `INSTRUCTIONS` step 2 says the same.
+- **The preamble.** A `SKILL.md` result starts with `SKILL_IN_SESSION` (`hi-mcp-server.ts`): in
+  this session the survey is the plan context and the products are the catalog; what the plan context
+  does not carry — services, budget, inventory, the household — is unknown, so the agent plans a
+  concept with stated assumptions and names them instead of asking first, unless the user asks to be
+  interviewed; the layout is the groups it creates, one group per piece of furniture, checked against
+  the returned positions and the obstacles; alternatives and open checks are named in the answer, not
+  built. A supporting file comes without it.
+- **The frontmatter** is read as the YAML of Agent Skills: per field a plain, quoted, multi-line or
+  block scalar (`|`, `>`), comments, and fields with nested values such as `metadata`, which the
+  server does not use.
+- **The files.** The server reads only a file of the skill's list — the files below its directory,
+  hidden files left out —, with LF line endings. A path may start with `./`, as the skills link
+  their references. A skill whose `name` differs from its directory,
+  without frontmatter or description, or without `SKILL.md`, stops the server at start.
+
 ## 6. Tools
 
 | Tool | Changes the plan | Result |
@@ -529,6 +573,7 @@ do not establish clearance.
 | `get-plan-context` | no | the plan context (§5.4) |
 | `find-attributes` | no | `{ matches, total, hint? }` |
 | `get-authoring-rules` | no | the rules as text |
+| `get-skill` | no | a skill file as text (§5.6) |
 | `create-or-replace-groups` | yes | `{ loaded, groups, otherGroupIds?, groupAttributes?, hint? }` |
 | `place-group` | yes | `{ placedIn, wall, group }` |
 | `change-module-attribute`, `change-group-attribute` | yes | `{ command, groupIds, changedModuleIds?, corrections? }` (D62) |
@@ -572,6 +617,13 @@ the agent to choose a dark, a light or a blue value by it (D53).
 ### get-authoring-rules
 
 No parameters. Answered by the server without a planner call, so it works without a connected page.
+
+### get-skill
+
+`{ name, file? }` — `name` a skill of the index, `file` a path inside the skill
+(`references/planning-reference.md`), `SKILL.md` by default. Answered by the server without a planner
+call, so it works without a connected page; logged like every tool (`[hi-mcp] tool get-skill`). The
+index, the preamble and the skills: §5.6. An unknown name or file is an error result (§8.9).
 
 ### create-or-replace-groups
 
@@ -1017,6 +1069,15 @@ Nothing here is an error result: the tool answers with its name `null` and a `hi
 | the plan after the steps is not the plan before (`undo`) or after (`redo`) the call | takes the steps back, forgets the records | "Undo of … did not give back the plan before it - the plan was changed in the planner while the tool call ran. The undo was taken back and the plan is as it was; the planner's undo button reverts the changes made there." / "… could not be taken back completely - check the plan with get-plan-context." |
 | a page without `undo` on its allow-list | — | error result: the page's "Planner method not exposed: undo" (§8.7) |
 
+### 8.9 `get-skill`
+
+| ID | When | Error result |
+|---|---|---|
+| G65 | `name` is no skill of the index | "Unknown skill "<name>" - the skills are kitchen-planning, kitchen-planning-fr, living-room-planning" |
+| G66 | `file` is no file of the skill — another path, a directory, a path outside the skill | "Unknown file "<file>" of the skill <name> - its files are SKILL.md, references/planning-reference.md, references/source-catalog.md" |
+
+Both are the last resort of §2.2, an id that matches nothing; the message names what to send.
+
 ## 9. Limits
 
 | Limit | Value | Where |
@@ -1031,3 +1092,4 @@ Nothing here is an error result: the tool answers with its name `null` and a `hi
 | Wait for the history event of a planner undo or redo | 1 s | `HISTORY_EVENT_WAIT_MS` |
 | Wait in `undo` for a late follow-up reload of the last call | 2 s | `FOLLOW_UP_WAIT_MS` |
 | Comparison of the plan before and after a tool call | 0.1 mm | `groupsKey` |
+| Planning skills | the directories of `hi-mcp/hi-mcp-server/skills/`, read once at start | `SKILLS_DIR`, `loadSkills` |

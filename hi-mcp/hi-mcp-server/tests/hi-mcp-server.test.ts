@@ -6,6 +6,7 @@ import { PageBridge } from '../page-bridge';
 import { connectPlanHistory, planHistory } from '../plan-history';
 import type { PlannerApi } from '../planner-api';
 import { createPlannerApi } from '../planner-api';
+import { skills } from '../skills';
 import { attachPage } from './fake-page-socket';
 
 const EXPECTED_TOOLS = [
@@ -22,6 +23,7 @@ const EXPECTED_TOOLS = [
   'get-plan-context',
   'get-plan-images',
   'get-price',
+  'get-skill',
   'insert-article-into-group',
   'merge-article-into-group',
   'merge-groups',
@@ -307,6 +309,91 @@ describe('hi-mcp-server tool calls', () => {
       plannerApi.extended.externalObjectGroupOperation
     ).toHaveBeenCalledWith('delete-article-in-place', { rootModuleId: 'r1' });
     expect(JSON.parse(textOf(result))).toEqual(operationResult);
+  });
+
+  it('lists every planning skill with its description in the get-skill description and tells the agent to fetch it before planning', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    const description =
+      tools.find((tool) => tool.name === 'get-skill')?.description ?? '';
+    expect(skills.map((skill) => skill.name)).toEqual([
+      'kitchen-planning',
+      'kitchen-planning-fr',
+      'living-room-planning',
+    ]);
+    for (const skill of skills) {
+      expect(description).toContain(`- ${skill.name}: ${skill.description}`);
+    }
+    expect(description).toContain(
+      'Before planning a room of a kind listed here, fetch its skill and follow it'
+    );
+    expect(client.getInstructions()).toContain(
+      'For a room of a kind get-skill lists, fetch that skill first and follow it.'
+    );
+  });
+
+  it('answers get-skill as text, with the session preamble before the skill and without it before a supporting file', async () => {
+    const plannerApi = createMockPlannerApi();
+    const client = await connectClient(plannerApi);
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const skill = textOf(
+        await client.callTool({
+          name: 'get-skill',
+          arguments: { name: 'kitchen-planning' },
+        })
+      );
+      expect(skill).toMatch(
+        /^In this planning session the survey is the plan context/
+      );
+      expect(skill).toContain('plan a concept with stated assumptions');
+      expect(skill).toContain(
+        'The layout is the groups you create, one group per piece of furniture'
+      );
+      expect(skill).toContain('\n\n---\nname: kitchen-planning\n');
+      expect(skill).toContain('# Kitchen Planning\n');
+      const reference = textOf(
+        await client.callTool({
+          name: 'get-skill',
+          arguments: {
+            name: 'kitchen-planning',
+            file: 'references/planning-reference.md',
+          },
+        })
+      );
+      expect(reference).toMatch(/^# Kitchen Planning Evidence and Constraints/);
+      expect(log).toHaveBeenCalledWith('[hi-mcp] tool get-skill');
+    } finally {
+      log.mockRestore();
+    }
+    for (const method of Object.values(plannerApi.extended)) {
+      expect(method).not.toHaveBeenCalled();
+    }
+  });
+
+  it('answers an unknown skill or file with what is available', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const unknownSkill = await client.callTool({
+        name: 'get-skill',
+        arguments: { name: 'bathroom-planning' },
+      });
+      expect(unknownSkill.isError).toBe(true);
+      expect(textOf(unknownSkill)).toContain(
+        'the skills are kitchen-planning, kitchen-planning-fr, living-room-planning'
+      );
+      const unknownFile = await client.callTool({
+        name: 'get-skill',
+        arguments: { name: 'kitchen-planning', file: 'references/sizes.md' },
+      });
+      expect(unknownFile.isError).toBe(true);
+      expect(textOf(unknownFile)).toContain(
+        'its files are SKILL.md, references/planning-reference.md, references/source-catalog.md'
+      );
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it('answers get-authoring-rules without a planner call', async () => {
@@ -644,7 +731,11 @@ describe('hi-mcp-server tool calls', () => {
     // kitchens are one kind of furniture: the rules name them in the list of kinds, in the corner rules and in the
     // category example (a kitchen cabinet into a kitchen), the tool descriptions not at all
     expect((rules.match(/kitchen/gi) ?? []).length).toBeLessThanOrEqual(7);
-    expect(JSON.stringify(tools)).not.toMatch(/kitchen/i);
+    // the planning skills are the one served text that names a kind of room, by design
+    expect(
+      JSON.stringify(tools.filter((tool) => tool.name !== 'get-skill'))
+    ).not.toMatch(/kitchen/i);
+    expect(descriptionOf('get-skill')).toMatch(/kitchen/i);
     expect(served).not.toMatch(/whole kitchen/);
     expect(served).not.toMatch(/the unit\b/);
   });

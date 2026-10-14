@@ -73,6 +73,8 @@ and registers the tools.
 | `AUTHORING_RULES` | `get-authoring-rules` and the end of `INSTRUCTIONS` | the rule bullets and examples 1–6 |
 | `INSTRUCTIONS` | the `instructions` of `initialize` | the four-step workflow, then `AUTHORING_RULES` |
 | the tool descriptions | `tools/list` | one per registration |
+| `SKILL_IN_SESSION` | the start of a `SKILL.md` result of `get-skill` | how a planning skill meets the session |
+| the skill index | the description of `get-skill` | `skillIndex(skills)` of `skills.ts`, one line per skill |
 
 The rules go out twice: in `initialize` for clients that pass server instructions to the model, and
 from `get-authoring-rules` for those that do not — the chat backend does not
@@ -86,6 +88,7 @@ template string in this file; there is no separate rules file.
 | `get-plan-context` | `include?: string[]` | `oneAtATime` | `getExternalObjectPlanContext` |
 | `find-attributes` | `text`, `libraryId?` | none | `getExternalObjectPlanContext(['masterData', 'groups'])` |
 | `get-authoring-rules` | — | none: returns `AUTHORING_RULES` | — |
+| `get-skill` | `name`, `file?` | none: `readSkillFile` of `skills.ts`; the handler prepends `SKILL_IN_SESSION` to a `SKILL.md` | — |
 | `create-or-replace-groups` | `posGroups: object[]` (≥ 1) | `inPlanner` | `externalObjectGroupOperation('create-or-replace-groups', args)` |
 | `place-group` | `groupId`, `wall` (side label or index), `roomIndex?`, `alignment?`, `offsetMm?` | `inPlanner` | `externalObjectGroupOperation('place-group', args)` |
 | `change-module-attribute` | `rootModuleId`, `moduleId?`, `attributeId`, `value` | `inPlanner`, `compactAttributeResult` | `externalObjectGroupOperation(<tool>, args)` |

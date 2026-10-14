@@ -7,16 +7,6 @@ export const DEFAULT_MCP_URL = 'http://localhost:3100/mcp';
 export const DEFAULT_TURN_TIMEOUT_MS = 5 * 60_000;
 const CHAT_ROLES = ['user', 'assistant'] as const;
 
-// The model learns the server's rules only through get-authoring-rules; the
-// system prompt tells it what HI plans, how to work and to answer from the tool results.
-export const CHAT_SYSTEM_PROMPT = [
-  'You are a planning assistant for HOMAG Intelligence (HI) furniture in a Roomle planner: kitchens, wardrobes, living room and utility furniture, all made of articles.',
-  'Use the provided tools to read the plan context and to create, modify, or position object groups.',
-  'Call tools instead of describing what you would do, then summarize what you changed.',
-  'When the request names a kind of article, not an article id, take the closest article of the catalog - from the category of its neighbours where that category has one - and say which one you chose instead of asking.',
-  'Summarize what you changed in a few sentences from the last tool results only - the groups, their roots and attributes, corrections and notLoaded - never by repeating the results, and name what was asked but is not in the plan.',
-].join(' ');
-
 export class ChatRequestError extends Error {}
 
 export type ChatProvider = 'mistral' | 'anthropic' | 'google' | 'azure';
@@ -114,13 +104,17 @@ export interface ChatMessage {
   images?: string[];
 }
 
+// The prompts of the planner (getExternalObjectAgentPrompts), which the page
+// sends with every request: the system prompt of the chat, and the text of a
+// user message that carries images but no text.
+export interface ChatPrompts {
+  systemPrompt: string;
+  imagePrompt: string;
+}
+
 // Inline image data only: the AI SDK downloads an image given as a URL itself.
 const IMAGE_DATA_URL =
   /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/;
-// The text of a user message that carries images but no text.
-export const DEFAULT_IMAGE_PROMPT =
-  'Identify the furniture in the image (for example a kitchen, wardrobe, media unit, lowboard, ' +
-  'sideboard, cabinet or utility room) and create a planning as close to it as possible.';
 
 // Models of the other providers known to read images; Anthropic and Google
 // models all do. Any other model id gets no image input.
@@ -244,13 +238,35 @@ export const parseChatMessages = (body: unknown): ChatMessage[] => {
   });
 };
 
-export const toModelMessages = (messages: ChatMessage[]): ModelMessage[] =>
+export const parseChatPrompts = (body: unknown): ChatPrompts => {
+  const { prompts } = body as { prompts?: unknown };
+  const { systemPrompt, imagePrompt } = (prompts ?? {}) as {
+    systemPrompt?: unknown;
+    imagePrompt?: unknown;
+  };
+  if (
+    typeof systemPrompt !== 'string' ||
+    !systemPrompt.trim() ||
+    typeof imagePrompt !== 'string' ||
+    !imagePrompt.trim()
+  ) {
+    throw new ChatRequestError(
+      "Chat request requires prompts - the systemPrompt and imagePrompt of the planner's getExternalObjectAgentPrompts()"
+    );
+  }
+  return { systemPrompt, imagePrompt };
+};
+
+export const toModelMessages = (
+  messages: ChatMessage[],
+  imagePrompt: string
+): ModelMessage[] =>
   messages.map(({ role, content, images }) =>
     images?.length
       ? {
           role: 'user',
           content: [
-            { type: 'text', text: content.trim() || DEFAULT_IMAGE_PROMPT },
+            { type: 'text', text: content.trim() || imagePrompt },
             ...images.map((image) => ({
               type: 'file' as const,
               data: image,

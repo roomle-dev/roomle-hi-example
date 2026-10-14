@@ -1,10 +1,10 @@
 import { createServer, type Server } from 'node:http';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  CHAT_SYSTEM_PROMPT,
   DEFAULT_TURN_TIMEOUT_MS,
   getChatConfig,
   parseChatMessages,
+  parseChatPrompts,
   resolveChatModel,
   toModelMessages,
 } from '../chat-config';
@@ -12,6 +12,10 @@ import { createChatRequestHandler, type StreamChat } from '../chat-handler';
 
 const PAGE_ORIGIN = 'http://localhost:3000';
 const IMAGE = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+const PROMPTS = {
+  systemPrompt: 'You plan HI furniture.',
+  imagePrompt: 'Plan the furniture in the image.',
+};
 
 const startServer = (env: NodeJS.ProcessEnv, streamChat: StreamChat) =>
   new Promise<{ server: Server; url: string }>((resolve, reject) => {
@@ -86,22 +90,6 @@ describe('getChatConfig', () => {
     ]);
     expect(config.turnTimeoutMs).toBe(60_000);
     expect(config.reasoningEffort).toBe('medium');
-  });
-
-  it('asks the model to answer from the tool results', () => {
-    // issue 9: the answers claimed what the plan did not have
-    expect(CHAT_SYSTEM_PROMPT).toContain(
-      'Summarize what you changed in a few sentences from the last tool results only - the groups, their roots and attributes, corrections and notLoaded - never by repeating the results, and name what was asked but is not in the plan.'
-    );
-    expect(CHAT_SYSTEM_PROMPT.split('. ').length).toBe(5);
-    // every kind of HI furniture, not a kitchen: the agent took a wardrobe group for "not a kitchen"
-    expect(CHAT_SYSTEM_PROMPT).toContain(
-      'HOMAG Intelligence (HI) furniture in a Roomle planner: kitchens, wardrobes, living room and utility furniture, all made of articles'
-    );
-    expect(CHAT_SYSTEM_PROMPT).not.toContain('(HI) kitchen');
-    expect(CHAT_SYSTEM_PROMPT).toContain(
-      'take the closest article of the catalog - from the category of its neighbours where that category has one - and say which one you chose instead of asking'
-    );
   });
 
   it('resolves providers, aliases, and full model ids', () => {
@@ -328,21 +316,43 @@ describe('parseChatMessages', () => {
   });
 });
 
+describe('parseChatPrompts', () => {
+  it('keeps the system prompt and the image prompt of the request', () => {
+    expect(parseChatPrompts({ messages: [], prompts: PROMPTS })).toEqual(
+      PROMPTS
+    );
+  });
+
+  it('rejects a request without prompts or with a blank prompt, naming the planner API', () => {
+    for (const prompts of [
+      undefined,
+      null,
+      'You plan HI furniture.',
+      { systemPrompt: PROMPTS.systemPrompt },
+      { ...PROMPTS, systemPrompt: ' ' },
+      { ...PROMPTS, imagePrompt: '' },
+      { ...PROMPTS, imagePrompt: 42 },
+    ]) {
+      expect(() => parseChatPrompts({ messages: [], prompts })).toThrow(
+        "Chat request requires prompts - the systemPrompt and imagePrompt of the planner's getExternalObjectAgentPrompts()"
+      );
+    }
+  });
+});
+
 describe('toModelMessages', () => {
-  it('gives a user message with images but no text the default image prompt', () => {
+  it('gives a user message with images but no text the image prompt', () => {
     for (const content of ['', '  ']) {
       expect(
-        toModelMessages([{ role: 'user', content, images: [IMAGE] }])
+        toModelMessages(
+          [{ role: 'user', content, images: [IMAGE] }],
+          PROMPTS.imagePrompt
+        )
       ).toEqual([
         {
           role: 'user',
           content: [
-            {
-              type: 'text',
-              text:
-                'Identify the furniture in the image (for example a kitchen, wardrobe, media unit, ' +
-                'lowboard, sideboard, cabinet or utility room) and create a planning as close to it as possible.',
-            },
+            { type: 'text', text: 'Plan the furniture in the image.' },
             { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
           ],
         },
@@ -352,11 +362,14 @@ describe('toModelMessages', () => {
 
   it('turns the images of a user message into file parts', () => {
     expect(
-      toModelMessages([
-        { role: 'user', content: 'hi' },
-        { role: 'assistant', content: 'hello' },
-        { role: 'user', content: 'like this', images: [IMAGE] },
-      ])
+      toModelMessages(
+        [
+          { role: 'user', content: 'hi' },
+          { role: 'assistant', content: 'hello' },
+          { role: 'user', content: 'like this', images: [IMAGE] },
+        ],
+        PROMPTS.imagePrompt
+      )
     ).toEqual([
       { role: 'user', content: 'hi' },
       { role: 'assistant', content: 'hello' },
@@ -497,6 +510,7 @@ describe('chat request handler', () => {
           body: JSON.stringify({
             messages: [{ role: 'user', content: 'hi' }],
             clientId,
+            prompts: PROMPTS,
           }),
         });
         expect(response.status).toBe(400);
@@ -515,6 +529,7 @@ describe('chat request handler', () => {
         body: JSON.stringify({
           messages: [{ role: 'user', content: 'hi' }],
           clientId: 'page-one',
+          prompts: PROMPTS,
         }),
       });
       expect(response.status).toBe(200);
@@ -524,20 +539,46 @@ describe('chat request handler', () => {
       );
       expect(streamChat).toHaveBeenCalledWith(
         [{ role: 'user', content: 'hi' }],
-        'page-one'
+        'page-one',
+        'You plan HI furniture.'
       );
     });
   });
 
-  it('passes the images of a user message to the model as file parts', async () => {
+  it('rejects POST /chat without the prompts of the planner with 400', async () => {
+    const streamChat = vi.fn();
+    await withServer({ HI_CHAT_TOKEN: 'secret' }, streamChat, async (url) => {
+      for (const prompts of [undefined, { ...PROMPTS, systemPrompt: '' }]) {
+        const response = await fetch(`${url}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: 'hi' }],
+            clientId: 'page-one',
+            prompts,
+          }),
+        });
+        expect(response.status).toBe(400);
+        expect(await response.text()).toMatch(/getExternalObjectAgentPrompts/);
+      }
+      expect(streamChat).not.toHaveBeenCalled();
+    });
+  });
+
+  it('passes the images of a user message to the model as file parts, an image without text with the image prompt of the request', async () => {
     const streamChat = vi.fn(async () => new Response('done'));
     await withServer({ HI_CHAT_TOKEN: 'secret' }, streamChat, async (url) => {
       const response = await fetch(`${url}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: 'like this', images: [IMAGE] }],
+          messages: [
+            { role: 'user', content: 'like this', images: [IMAGE] },
+            { role: 'assistant', content: 'done' },
+            { role: 'user', content: '', images: [IMAGE] },
+          ],
           clientId: 'page-one',
+          prompts: PROMPTS,
         }),
       });
       expect(response.status).toBe(200);
@@ -550,8 +591,17 @@ describe('chat request handler', () => {
               { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
             ],
           },
+          { role: 'assistant', content: 'done' },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Plan the furniture in the image.' },
+              { type: 'file', data: IMAGE, mediaType: 'image/jpeg' },
+            ],
+          },
         ],
-        'page-one'
+        'page-one',
+        'You plan HI furniture.'
       );
     });
   });
@@ -568,6 +618,7 @@ describe('chat request handler', () => {
           body: JSON.stringify({
             messages: [{ role: 'user', content: 'like this', images: [IMAGE] }],
             clientId: 'page-one',
+            prompts: PROMPTS,
           }),
         });
         expect(response.status).toBe(400);
@@ -590,6 +641,7 @@ describe('chat request handler', () => {
         body: JSON.stringify({
           messages: [{ role: 'user', content: 'hi' }],
           clientId: 'page-one',
+          prompts: PROMPTS,
         }),
       });
       expect(response.status).toBe(500);

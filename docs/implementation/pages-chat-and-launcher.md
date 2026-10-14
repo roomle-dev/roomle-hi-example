@@ -108,7 +108,7 @@ its chat in the page.
 | `chat-stream.ts` | the model, the MCP client, `streamText`, the plain-text response |
 | `chat-recovery.ts` | recorded tool outcomes, interruption summary and completed message pairs; copied to ligna-store |
 | `chat-handler.ts` | routing, CORS, request validation |
-| `chat-config.ts` | configuration, provider and model resolution, the system prompt, images |
+| `chat-config.ts` | configuration, provider and model resolution, request validation of the messages and the prompts, images |
 | `chat-steps.ts` | the step loop and the step log |
 | `tool-result-images.ts` | the Mistral middleware for images in tool results |
 
@@ -118,10 +118,11 @@ its chat in the page.
 | ---- | ------ |
 | `GET /health` | `ok` |
 | `GET /capabilities` | `{ "imageInput": boolean }` — whether the model reads images |
-| `POST /chat` | the streamed answer; 400 for a missing `clientId` or images to a model that cannot read them, 403 for another origin, 503 without a token |
+| `POST /chat` | the streamed answer; 400 for a missing `clientId`, missing `prompts` or images to a model that cannot read them, 403 for another origin, 503 without a token |
 
-Request: `{ messages: [{ role, content, images? }], clientId }` — the whole conversation, images as
-base64 data URLs on user messages. Response: `text/plain`, streamed — the model's text, a line
+Request: `{ messages: [{ role, content, images? }], clientId, prompts: { systemPrompt, imagePrompt } }`
+— the whole conversation, images as base64 data URLs on user messages, and the prompts of the planner
+(`getExternalObjectAgentPrompts()` of roomle-ui), checked by `parseChatPrompts`. Response: `text/plain`, streamed — the model's text, a line
 `[tool] <name>` when a tool starts, and `[error] <message>` for errors and timeouts.
 
 ### A turn
@@ -133,7 +134,7 @@ base64 data URLs on user messages. Response: `text/plain`, streamed — the mode
 2. **MCP client:** a new `createMCPClient` per request, on `HI_MCP_URL` with `client=<clientId>` set —
    a `session` parameter survives. It is closed when the stream ends.
 3. **Tools:** `mcpClient.tools()`, each `execute` wrapped to write the `[tool]` line and log its time.
-4. **`streamText`** with `CHAT_SYSTEM_PROMPT` as instructions, at most `MAX_CHAT_STEPS` (16) steps; the
+4. **`streamText`** with `prompts.systemPrompt` of the request as instructions, at most `MAX_CHAT_STEPS` (16) steps; the
    last step runs with `toolChoice: 'none'`, so a turn always ends with an answer. The turn is
    aborted after `HI_CHAT_TURN_TIMEOUT_MS` (5 minutes).
 5. **Step log:** tokens in, out and reasoning, tool calls, finish reason and duration per step.
@@ -153,13 +154,16 @@ Responses. Foundry Mistral-Large-3 uses Chat Completions
 ### Images
 
 `readsImages` decides whether a model gets images: every Anthropic and Google model and the ids in
-`IMAGE_INPUT_MODELS`. User images become `file` parts. `@ai-sdk/mistral` sends tool results as JSON
+`IMAGE_INPUT_MODELS`. User images become `file` parts; a user message with images and no text gets
+`prompts.imagePrompt` of the request as its text (`toModelMessages`). `@ai-sdk/mistral` sends tool results as JSON
 text, so for Mistral `toolResultFilesAsUserMessages` moves the images of a tool result
 (`get-plan-images`) into a user message right after it.
 
 ### The page side of the chat — `index.html`
 
-With `?chat=true` the page posts to `http://localhost:<chat_port>/chat`, reads the stream
+With `?chat=true` the page requests the prompts of the chat once from the planner when the chat
+starts (`roomDesignerApi.extended.getExternalObjectAgentPrompts()`), posts them with every request to
+`http://localhost:<chat_port>/chat`, reads the stream
 incrementally, shows the last `[tool]` name in the status line, renders the answer as Markdown
 (marked + DOMPurify), and keeps the input disabled until the bridge is accepted. `GET /capabilities`
 enables image drops; `prepareImage` redraws an image as JPEG with a long side of at most 1568 px.
@@ -168,6 +172,9 @@ enables image drops; `prepareImage` redraws an image as JPEG with a long side of
 
 - **The `clientId` chain:** the page creates it, sends it in `hello`, in every chat request, and the
   chat backend in `/mcp?client=`. The server refuses a chat whose page no longer owns the planner.
+- **The prompts come from the planner:** the page and `run-hi-mcp-prompt.js` request
+  `getExternalObjectAgentPrompts()` and send the result as `prompts`; the chat backend has no prompts
+  of its own. A change of a prompt is a change in roomle-ui `hi-agent-prompts.ts`.
 - **Three bridge copies.** A protocol change touches the server's `types.ts`, the client's
   `types.ts`, the ligna-store copy and `index.html`, and raises `BRIDGE_PROTOCOL`.
 - **The page keeps only the text of earlier turns.** Tool results are not resent; images are, with

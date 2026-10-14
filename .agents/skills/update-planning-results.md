@@ -12,7 +12,7 @@ included without further change. Per kitchen it holds the plan in the ligna stor
 id, the source image and the top, perspective and perspective object image of the planning. The
 plannings are made like the image tests of [Test the MCP](hi-mcp-testing.md): the example page with
 the real MCP server, chat and planner in headless Chromium, the image sent alone (the chat gives it
-its default text) on the default room of [test-prompts.json](../../docs/test-prompts.json).
+the image prompt of the planner) on the default room of [test-prompts.json](../../docs/test-prompts.json).
 
 ## Procedure
 

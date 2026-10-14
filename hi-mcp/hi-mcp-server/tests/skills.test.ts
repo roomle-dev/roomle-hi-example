@@ -167,27 +167,31 @@ describe('readSkillFile', () => {
 });
 
 describe('the skills of the server', () => {
-  const SKILLS = [
+  const ROOM_SKILLS = [
     'kitchen-planning',
     'kitchen-planning-fr',
     'living-room-planning',
   ];
+  const SKILLS = ['image-planning', ...ROOM_SKILLS];
 
-  it('holds the kitchen, the French kitchen and the living-room skill, each with its planning reference and source catalog', () => {
-    expect(loadSkills().map(({ name, files }) => ({ name, files }))).toEqual(
-      SKILLS.map((name) => ({
+  it('holds the image skill alone and the kitchen, the French kitchen and the living-room skill, each with its planning reference and source catalog', () => {
+    expect(loadSkills().map(({ name, files }) => ({ name, files }))).toEqual([
+      { name: 'image-planning', files: ['SKILL.md'] },
+      ...ROOM_SKILLS.map((name) => ({
         name,
         files: [
           'SKILL.md',
           'references/planning-reference.md',
           'references/source-catalog.md',
         ],
-      }))
-    );
+      })),
+    ]);
   });
 
-  it('serves every reference a skill links to by the path it links with', () => {
-    const skills = loadSkills();
+  it('serves every reference a room skill links to by the path it links with', () => {
+    const skills = loadSkills().filter((skill) =>
+      ROOM_SKILLS.includes(skill.name)
+    );
     for (const skill of skills) {
       const links = [
         ...readSkillFile(skills, skill.name).matchAll(
@@ -199,6 +203,17 @@ describe('the skills of the server', () => {
         expect(readSkillFile(skills, skill.name, link)).toMatch(/^# /);
       }
     }
+  });
+
+  it('tells the agent to plan from an image as close to it as possible, with the image as the brief over the room skills', () => {
+    const skill = readSkillFile(loadSkills(), 'image-planning');
+    expect(skill).toContain('The image is the brief.');
+    expect(skill).toContain('A photo is enough for a concept.');
+    expect(skill).toContain('Plan each piece as one group.');
+    expect(skill).toContain(
+      'Do not change what the image shows for them, unless the user asks for an improved planning.'
+    );
+    expect(skill).not.toMatch(/\]\(/);
   });
 
   it('lists every skill on a line of its own in the index', () => {

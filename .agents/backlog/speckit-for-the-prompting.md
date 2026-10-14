@@ -2,8 +2,8 @@
 
 > **Type**: Backlog item (analysis; the served text of the MCP server and the chat prompt)
 > **Domain**: the instructions, the authoring rules and the tool descriptions of the MCP server
-> (`hi-mcp/hi-mcp-server/hi-mcp-server.ts`), the chat prompt (`CHAT_SYSTEM_PROMPT`,
-> `hi-mcp/hi-mcp-chat/chat-config.ts`)
+> (`hi-mcp/hi-mcp-server/hi-mcp-server.ts`), the chat prompt (the system prompt of roomle-ui
+> `homag-intelligence/src/hi-agent-prompts.ts`, served by the planner's `getExternalObjectAgentPrompts()`)
 
 ## Problem
 
@@ -29,7 +29,7 @@ or skills.
 Analyse the prompt templates of Spec Kit against the served text and the chat prompt:
 
 1. Which sections of Spec Kit's prompts have a counterpart in the instructions, the authoring rules,
-   the tool descriptions and `CHAT_SYSTEM_PROMPT`, and which are missing — e.g. checks before the
+   the tool descriptions and the chat's system prompt, and which are missing — e.g. checks before the
    first plan change, success criteria of a planning, and when the agent is done.
 2. Which of them would improve the plannings, as a proposal for the served text — in the words of the
    guidelines of [hi-mcp-behaviour.md §2](../../docs/hi-mcp-behaviour.md#2-guidelines): shorter, not

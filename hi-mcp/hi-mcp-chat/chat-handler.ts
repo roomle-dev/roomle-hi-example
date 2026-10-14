@@ -5,12 +5,14 @@ import type { ChatConfig } from './chat-config';
 import {
   ChatRequestError,
   parseChatMessages,
+  parseChatPrompts,
   toModelMessages,
 } from './chat-config';
 
 export type StreamChat = (
   messages: ModelMessage[],
-  clientId: string
+  clientId: string,
+  systemPrompt: string
 ) => Promise<Response>;
 
 const corsHeaders = (origin: string | undefined, pageOrigins: string[]) =>
@@ -85,6 +87,7 @@ export const createChatRequestHandler =
         throw new ChatRequestError('Request body must be valid JSON');
       }
       const messages = parseChatMessages(body);
+      const prompts = parseChatPrompts(body);
       const { clientId } = body as { clientId?: unknown };
       if (typeof clientId !== 'string' || !clientId.trim()) {
         throw new ChatRequestError('Chat request requires a page clientId');
@@ -94,7 +97,11 @@ export const createChatRequestHandler =
           `The model ${config.provider}:${config.modelId} does not read images`
         );
       }
-      const stream = await streamChat(toModelMessages(messages), clientId);
+      const stream = await streamChat(
+        toModelMessages(messages, prompts.imagePrompt),
+        clientId,
+        prompts.systemPrompt
+      );
       const headers = Object.fromEntries(stream.headers);
       response.writeHead(stream.status, { ...headers, ...cors });
       const nodeStream = Readable.fromWeb(

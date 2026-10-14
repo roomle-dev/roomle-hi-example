@@ -26,6 +26,9 @@ vi.mock('@ai-sdk/mcp', () => ({
   }),
 }));
 
+const SYSTEM_PROMPT = 'You plan HI furniture.';
+const IMAGE_PROMPT = 'Plan the furniture in the image.';
+
 const usage = {
   inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
   outputTokens: { total: 1, text: 1, reasoning: 0 },
@@ -71,7 +74,11 @@ const response = async (timeout = 1000, model = 'gpt-5-mini') => {
     })
   );
   return (
-    await streamChat([{ role: 'user', content: 'Add cabinets' }], 'test-page')
+    await streamChat(
+      [{ role: 'user', content: 'Add cabinets' }],
+      'test-page',
+      SYSTEM_PROMPT
+    )
   ).text();
 };
 const failingModel = (calls: Part[], mode: 'error' | 'throw' = 'error') => {
@@ -194,16 +201,20 @@ describe('azure model selection', () => {
         })
       );
       const reply = await streamChat(
-        toModelMessages([
-          {
-            role: 'user',
-            content: 'Plan the furniture in the image',
-            images: [
-              'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aCF8AAAAASUVORK5CYII=',
-            ],
-          },
-        ]),
-        'test-page'
+        toModelMessages(
+          [
+            {
+              role: 'user',
+              content: '',
+              images: [
+                'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aCF8AAAAASUVORK5CYII=',
+              ],
+            },
+          ],
+          IMAGE_PROMPT
+        ),
+        'test-page',
+        SYSTEM_PROMPT
       );
       expect(await reply.text()).toBe(
         '\n[tool] get-plan-context\nThe image and plan are ready.'
@@ -211,9 +222,13 @@ describe('azure model selection', () => {
       expect(read).toHaveBeenCalledTimes(1);
       expect(model.doStreamCalls).toHaveLength(2);
       expect(model.doStreamCalls[0].prompt).toContainEqual(
+        expect.objectContaining({ role: 'system', content: SYSTEM_PROMPT })
+      );
+      expect(model.doStreamCalls[0].prompt).toContainEqual(
         expect.objectContaining({
           role: 'user',
           content: expect.arrayContaining([
+            expect.objectContaining({ type: 'text', text: IMAGE_PROMPT }),
             expect.objectContaining({ type: 'file', mediaType: 'image/png' }),
           ]),
         })

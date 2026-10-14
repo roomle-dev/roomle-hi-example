@@ -96,7 +96,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [RML-18187: the agent prompts from the glue logic, and the planning skills they name](feature-analysis/agent-prompts-from-the-glue-logic.md) | Open — design confirmed, implementation plan in §7: a glue-logic API for the system and image prompts, requested by the page; an image-planning skill; the prompts name the skills | 2026-10-14 |
+| [RML-18187: the agent prompts from the glue logic, and the planning skills they name](feature-analysis/agent-prompts-from-the-glue-logic.md) | Implemented — a glue-logic API for the system and image prompts, requested by the page; an image-planning skill; the prompts name the skills; branches not merged | 2026-10-14 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
 ### Refactoring Analyses

@@ -6,7 +6,6 @@ import { createMistral } from '@ai-sdk/mistral';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { streamText, wrapLanguageModel } from 'ai';
 import type { ChatConfig } from './chat-config';
-import { CHAT_SYSTEM_PROMPT } from './chat-config';
 import { type StreamChat } from './chat-handler';
 import {
   chatSteps,
@@ -62,7 +61,7 @@ const TOOL_STATUS_PREFIX = '[tool] ';
 
 export const createStreamChat =
   (config: ChatConfig): StreamChat =>
-  async (messages, clientId) => {
+  async (messages, clientId, systemPrompt) => {
     const startedAt = Date.now();
     console.log(`[hi-chat] chat request: ${messages.length} messages`);
     const mcpUrl = new URL(config.mcpUrl);
@@ -126,7 +125,7 @@ export const createStreamChat =
       const options = providerOptions(config, toolNames.length > 0);
       const result = streamText({
         model,
-        instructions: CHAT_SYSTEM_PROMPT,
+        instructions: systemPrompt,
         messages,
         tools,
         // Without this the stream stops after the first step: tool calls are

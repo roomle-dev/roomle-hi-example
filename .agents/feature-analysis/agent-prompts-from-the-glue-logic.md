@@ -5,7 +5,7 @@
 > **Trigger**: [RML-18187](https://roomle.atlassian.net/browse/RML-18187) "HI MCP - validate skills" — the description of 2026-10-14 16:08, three points  
 > **Date**: 2026-10-14  
 > **Author**: AI Assistant  
-> **Status**: Open — the design is confirmed by the user (2026-10-14): the API and its delegation chain (§4.1), the prompts through the page, requested from the API in advance (§4.4); the implementation plan is §7  
+> **Status**: Implemented 2026-10-14 — §7 on the branches below, steps 1–11; beyond the plan, the debug-logging wrapper of the glue logic (`debug-logging.ts`, which implements `GlueLogic` too) forwards and logs `getAgentPrompts`. Unit tests green; the live check and "test the mcp" of §7.4 not run. Branches not merged  
 > **Branches**: roomle-hi-example `feat/validate-skills-RML-18187` (from `master`, 58b6839); roomle-ui `feat/hi-agent-prompts-RML-18187` (from `feat/hi-kitchen-from-image-improvements-RML-18164`, 7c4eafda8 — the HI commits of RML-18164 are not on `master` or `release/bo-test` yet)
 
 ## Affected repositories

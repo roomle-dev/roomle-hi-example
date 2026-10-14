@@ -8,6 +8,7 @@
 !hi-mcp/hi-mcp-server/package.json
 !hi-mcp/hi-mcp-server/tsconfig.json
 !hi-mcp/hi-mcp-server/*.ts
+!hi-mcp/hi-mcp-server/skills/**
 !hi-mcp/hi-mcp-chat/
 !hi-mcp/hi-mcp-chat/package.json
 !hi-mcp/cf/

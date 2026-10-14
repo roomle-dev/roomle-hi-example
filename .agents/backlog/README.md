@@ -84,5 +84,4 @@ Details: [deployment-and-session-issues.md](deployment-and-session-issues.md).
 
 | Item | To do | Details |
 |---|---|---|
-| The chat keeps its own prompts | `hi-mcp/chat.ts` has its own `CHAT_SYSTEM_PROMPT`, which names only a kitchen and no planning skill, and its own `DEFAULT_IMAGE_PROMPT`. Take the prompts from the planner as the example does: `Planner.vue` requests `getExternalObjectAgentPrompts()` of `instance.api` and passes them to the chat window, `streamChat` uses `systemPrompt` as instructions, `toUserMessage` uses `imagePrompt`; the two constants go. Needs a planner with the API | D44 and D80 in [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions); the example: `startChat` in `minimal-hi-example/index.html`, `hi-mcp/hi-mcp-chat/chat-config.ts` |
 | The chat lacks the Mistral image adapter | Wrap `createMistral` with `toolResultFilesAsUserMessages` (`hi-mcp-chat/tool-result-images.ts`), so the images of `get-plan-images` do not reach Mistral as base64 text | [ligna-store-chat-client.md, 1](ligna-store-chat-client.md#1-the-images-of-get-plan-images-reach-mistral-as-base64-text) |

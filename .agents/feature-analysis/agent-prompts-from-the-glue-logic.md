@@ -5,8 +5,8 @@
 > **Trigger**: [RML-18187](https://roomle.atlassian.net/browse/RML-18187) "HI MCP - validate skills" — the description of 2026-10-14 16:08, three points  
 > **Date**: 2026-10-14  
 > **Author**: AI Assistant  
-> **Status**: Implemented 2026-10-14 — §7 on the branches below, steps 1–11; beyond the plan, the debug-logging wrapper of the glue logic (`debug-logging.ts`, which implements `GlueLogic` too) forwards and logs `getAgentPrompts`. Unit tests green; the live check and "test the mcp" of §7.4 not run. Branches not merged  
-> **Branches**: roomle-hi-example `feat/validate-skills-RML-18187` (from `master`, 58b6839); roomle-ui `feat/hi-agent-prompts-RML-18187` (from `feat/hi-kitchen-from-image-improvements-RML-18164`, 7c4eafda8 — the HI commits of RML-18164 are not on `master` or `release/bo-test` yet)
+> **Status**: Implemented 2026-10-14 — §7 on the branches below, steps 1–11, and ligna-store as §4.5 describes it (`Planner.vue` requests the prompts, the chat takes them, the two constants are gone); beyond the plan, the debug-logging wrapper of the glue logic (`debug-logging.ts`, which implements `GlueLogic` too) forwards and logs `getAgentPrompts`. Unit tests green; the live check and "test the mcp" of §7.4 not run. Branches not merged  
+> **Branches**: roomle-hi-example `feat/validate-skills-RML-18187` (from `master`, 58b6839); roomle-ui `feat/hi-agent-prompts-RML-18187` (from `feat/hi-kitchen-from-image-improvements-RML-18164`, 7c4eafda8 — the HI commits of RML-18164 are not on `master` or `release/bo-test` yet); ligna-store `feat/hi-agent-prompts-RML-18187` (from `master`, a2db503)  
 
 ## Affected repositories
 

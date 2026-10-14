@@ -2,7 +2,8 @@
 > **Domain**: HI MCP Server, AI Integration, Sales Configurator  
 > **Trigger**: AI Kickoff Sales Configurator proposal  
 > **Date**: 2026-09-25  
-> **Author**: AI Assistant
+> **Author**: AI Assistant  
+> **Status**: Open — undecided product proposal for the Sales Configurator. Superseded in part: the architecture (the MCP server with its tools, ADRs 0001, 0002, 0003 and 0007), the library data as the source of article information (`desc`, the library-neutral policy) and the Azure deployment (`docs/setup/azure-mcp-server.md`). Not decided anywhere yet: the product integration, the context storage scope (§8.2), few-shot examples (§8.3), the success criteria (§11) and the roadmap (§12); the reusable bridge and the production agent loop are the backlog items `one-page-bridge-for-every-host.md` and `backend-agent-loop-with-browser-scene-tools.md`. The model recommendation (§10) is outdated.
 
 ---
 

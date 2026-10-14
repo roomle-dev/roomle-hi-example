@@ -37,7 +37,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 |---|---|---|
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | RML-18124; library #60 |
 | [Plan-context findings: affected repositories](plan-context-findings-repository-scope.md) | Open — kernel and library scope remains | Plan-context finding #4 (RML-18138); library #60 (RML-18103) |
-| [The image planning on the right wall run ends in a provider connection reset](image-planning-right-wall-connection-reset.md) | Open — analysis; transport failure, no product defect | Test run 2026-10-11, test 31 |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

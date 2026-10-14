@@ -12,6 +12,7 @@ the document a row links.
 |---|---|---|
 | 65 — A wall of floor-to-ceiling glass the user names is left out | Clarify the obstacle rule: the wall the user names is where the group goes, the free stretches are for a place the user leaves open; the answer names the openings | medium |
 | 66 — A corner group stands in front of the adjoining wall's window | The hint names the `offsetMm` along the group's wall that clears the adjoining wall's opening | low |
+| 67 — The planning skills are served by a tool only | Serve the same skill files with the Skills extension of MCP once a client in use supports it; `get-skill` stays | low |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
 
@@ -34,7 +35,7 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 | Item | To do | Priority |
 |---|---|---|
 | Served text encodes a kitchen taxonomy | `hi-mcp-server.ts`: `AUTHORING_RULES`, `INSTRUCTIONS` and the tool descriptions reason in base/wall/tall units, worktop, hood and island as if every library were a kitchen, and carry one library's concrete content and fixed measures. Rewrite so the rules speak of articles, root modules, relations and docking vectors | high |
-| Spelling correction maps library vocabulary | `tool-executors.ts`: `SPELLINGS` hard-codes search normalization for `colour`/`grey`/`worktop`; drop it or derive it from the master data | medium |
+| Spelling correction and result messages map library vocabulary | `tool-executors.ts`: `SPELLINGS` hard-codes search normalization for `colour`/`grey`/`worktop`; drop it or derive it from the master data. The result messages of the roomle-ui HI tool commands name furniture kinds; rewrite them neutrally | medium |
 
 ## Planner (roomle-ui, RoomleCore)
 
@@ -47,7 +48,7 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 
 | Item | To do | Details |
 |---|---|---|
-| Reasoning effort for the GPT chat models | gpt-5.4-mini plans without reasoning: set an effort per Foundry deployment from the measured data and verify it; further measurement only on request | [reasoning-effort-for-the-gpt-chat-models.md](reasoning-effort-for-the-gpt-chat-models.md) |
+| Reasoning effort for the GPT chat models | The ligna-store chat sends no reasoning effort, so gpt-5.4-mini plans without reasoning there: send `high` for the lightweight GPT deployments as the example chat does; further measurement only on request | [reasoning-effort-for-the-gpt-chat-models.md](reasoning-effort-for-the-gpt-chat-models.md) |
 | Strict tool schemas for the GPT models | Measure how often a GPT model's tool call fails the schema ("Input validation error") in a "test the mcp" session; only if it costs runs, try strict function calling — the chat backend sets `strict` per tool (the Azure provider sends `strict: false` otherwise). The Azure strict subset needs every field required, `additionalProperties: false` on every object, at most five nesting levels and 100 properties, and no parallel tool calls: the MCP tool schemas with optional fields do not meet it, and a change there reaches every client | [Structured outputs on Azure](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/structured-outputs) |
 | Paste and pick an image in the chat window | An image reaches the chat only by drop, which the keyboard cannot reach. Add paste from the clipboard and a file picker button, both through `prepareImage` (`minimal-hi-example/index.html`) | [Images in the chat](../../docs/ai-chat.md#images-in-the-chat) |
 | The example chat forgets its tool calls between turns | The page keeps only the text of a turn (`conversation`, `minimal-hi-example/index.html`), so a later turn does not see the tool calls and results before it — the ids of the groups it created. The ligna-store chat keeps them (`responseMessages`, ligna-store `hi-mcp/chat.ts`). Keep them in the example too, in the page or in the backend | [The chat window](../../docs/ai-chat.md#the-chat-window) |
@@ -61,6 +62,7 @@ Details: [mcp-test-infrastructure-issues.md](mcp-test-infrastructure-issues.md).
 |---|---|---|
 | [1 — The object-only perspective render draws an empty frame under software GL](mcp-test-infrastructure-issues.md#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl) | roomle-ui: find why the frame is dropped under SwiftShader | low |
 | [2 — The per-run fixed overhead of the test runner](mcp-test-infrastructure-issues.md#2-the-per-run-fixed-overhead-of-the-test-runner) | Cut the fixed cost per run (launcher typecheck, Chromium launch, launcher reuse) without endangering the sequential runs | medium |
+| [3 — `run.json` keeps only the top-level message of a failed provider step](mcp-test-infrastructure-issues.md#3-runjson-keeps-only-the-top-level-message-of-a-failed-provider-step) | Record the `[hi-chat] step n failed after … ms: …` lines with their cause chain in `run.json` | low |
 
 ## Deployment, launcher and page sessions
 
@@ -69,6 +71,7 @@ Details: [deployment-and-session-issues.md](deployment-and-session-issues.md).
 | Item | To do | Priority |
 |---|---|---|
 | [3 — The public MCP endpoint has no access control](deployment-and-session-issues.md#3-the-public-mcp-endpoint-has-no-access-control) | Decide session links, roomle.com OAuth or a shared secret before the URL goes beyond a trial | medium |
+| [4 — The personal deployment still runs and the DEV environment admits every branch](deployment-and-session-issues.md#4-the-personal-deployment-still-runs-and-the-dev-environment-admits-every-branch) | Give `cloudflare-dev` its branch policy, delete the unused `CLOUDFLARE_ACCOUNT_ID` secrets, tear down `hi-mcp-poc` in the personal account | medium |
 
 ## Architecture
 

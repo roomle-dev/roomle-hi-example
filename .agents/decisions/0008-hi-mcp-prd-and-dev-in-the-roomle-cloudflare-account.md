@@ -2,7 +2,7 @@
 
 > **Status**: Accepted
 > **Date**: 2026-10-14
-> **Analysis**: [the move of the deployment to the Roomle Cloudflare account](../feature-analysis/hi-mcp-deployment-in-roomle-cloudflare-account.md) (RML-18154); guide [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md#deploy-from-github-push-to-a-release-branch)
+> **Analysis**: the move of the deployment to the Roomle Cloudflare account, [RML-18154](https://roomle.atlassian.net/browse/RML-18154); guide [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md#deploy-from-github-push-to-a-release-branch)
 
 ## Context
 

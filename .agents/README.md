@@ -86,7 +86,6 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
-| [The image planning on the right wall run ends in a provider connection reset](bug-analysis/image-planning-right-wall-connection-reset.md) | Open — analysis; transport failure, no product defect | 2026-10-11 |
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](bug-analysis/sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | 2026-10-10 |
 | [Plan-context findings: affected repositories](bug-analysis/plan-context-findings-repository-scope.md) | Open — kernel and library scope remains | 2026-10-10 |
 
@@ -97,11 +96,6 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [The HI MCP server moves to the Roomle Cloudflare account, as a DEV and a PRD stage](feature-analysis/hi-mcp-deployment-in-roomle-cloudflare-account.md) | Open — PRD and DEV deployed by hand; scripts, `account_id` and workflow implemented; GitHub environments and token open | 2026-10-14 |
-| [The six improvements of the kitchen-from-image benchmark: implementation plan](feature-analysis/kitchen-from-image-improvements.md) | Implemented — improvements 1, 2, 4, 5 and 6 on the purpose branches, 3 evaluated (library data); measured per round in section 10 of the benchmark; branches not merged | 2026-10-14 |
-| [Planning skills served by the HI MCP server](feature-analysis/planning-skills-served-by-the-mcp-server.md) | Implemented — branches not merged; live check and measurement not run | 2026-10-14 |
-| [The group load answers per input group what the planner built](feature-analysis/group-load-result-per-input-group.md) | Implemented — roomle-ui branch not merged | 2026-10-13 |
-| [Article template geometry in the plan context](feature-analysis/article-template-geometry-in-plan-context.md) | Implemented | 2026-10-13 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
 ### Refactoring Analyses
@@ -111,7 +105,6 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Move the tool logic to the glue-logic](refactoring-analysis/move-tool-logic-to-glue-logic.md) | Open | 2026-10-13 |
 | [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-06 |
 | [Faster MCP test runs](refactoring-analysis/faster-mcp-test-runs.md) | Open | 2026-10-11 |
 
@@ -132,18 +125,18 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 
 | Document | Last touched |
 |---|---|
-| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-13 |
-| [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner detected by the MCP prompt tests, each with the module, team or repository responsible: a merge that moves a group placed in the conversation, the white worktop of a handleless kitchen | 2026-10-13 |
-| [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: sink drainer width and the restriction on a hob to its right, handleless fronts, the sizes of flip-lift wall cabinets | 2026-10-13 |
-| [Library-neutrality issues of the MCP server](backlog/mcp-policy-issues.md) — what in `hi-mcp/hi-mcp-server/` still carries library-specific content: the served text's kitchen taxonomy and the search normalization | 2026-10-11 |
-| [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — gpt-5.4-mini plans without reasoning: set an effort per Foundry deployment from the measured data and verify it; further measurement only on request | 2026-10-07 |
-| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL | 2026-10-09 |
-| [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — access control | 2026-10-09 |
-| [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-07 |
-| [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-07 |
+| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-14 |
+| [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner detected by the MCP prompt tests, each with the module, team or repository responsible: a merge that moves a group placed in the conversation, the white worktop of a handleless kitchen, glass walls and windows beside a corner group, the planning skills by the Skills extension | 2026-10-14 |
+| [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: sink drainer width and the restriction on a hob to its right, handleless fronts, the sizes of flip-lift wall cabinets | 2026-10-14 |
+| [Library-neutrality issues of the MCP server](backlog/mcp-policy-issues.md) — what in the MCP server still carries library-specific content: the served text's kitchen taxonomy, the search normalization and the result messages of the HI tool commands | 2026-10-14 |
+| [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — the ligna-store chat sends no reasoning effort; further measurement only on request | 2026-10-14 |
+| [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL, the per-run overhead, the cause chain of a failed provider step | 2026-10-14 |
+| [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — access control, the DEV branch policy and the teardown of the personal deployment | 2026-10-14 |
+| [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-14 |
+| [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-14 |
 | [A backend-controlled agent loop with browser-executed scene tools](backlog/backend-agent-loop-with-browser-scene-tools.md) — the scene tools in the browser, the agent loop and the credentials in the backend | 2026-10-07 |
 | [Analyse how Spec Kit can help with the prompting](backlog/speckit-for-the-prompting.md) — Spec Kit's prompt sections as inspiration for the served text and the chat prompt | 2026-10-07 |
-| [The ligna-store chat as a client of the HI MCP server](backlog/ligna-store-chat-client.md) — the Mistral image adapter | 2026-10-09 |
+| [The ligna-store chat as a client of the HI MCP server](backlog/ligna-store-chat-client.md) — the Mistral image adapter | 2026-10-14 |
 
 ---
 

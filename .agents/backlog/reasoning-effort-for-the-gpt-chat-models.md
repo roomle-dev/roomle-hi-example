@@ -18,9 +18,10 @@ reasoning against 7 at `low`; how they plan at `high`, and whether every turn st
 
 ## To do
 
-1. **The rest of step 2**: the same efforts in the ligna-store chat — its values `low` and `medium`
-   are replaced by `high` for the lightweight models.
-2. **Step 3, only on request**: measure the 32 tests at `high` for gpt-5.4-mini and gpt-5-mini
+1. **The ligna-store chat** sends no reasoning effort (`getLanguageModel`, ligna-store
+   `hi-mcp/chat.ts:106-111`), so gpt-5.4-mini plans at the Foundry default, without reasoning. Send
+   `high` for gpt-5.4-mini and gpt-5-mini there, as the example chat does.
+2. **Only on request**: measure the 32 tests at `high` for gpt-5.4-mini and gpt-5-mini
    (about 50 minutes each), including the turns that come close to the turn timeout; none starts
    without an explicit go.
 

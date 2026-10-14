@@ -15,8 +15,8 @@ reconnect:
 | Copy | Where | Tested |
 |---|---|---|
 | Reference client | `hi-mcp/hi-mcp-client/browser-bridge.ts` (`PLANNER_METHODS` at `:13`), `types.ts` | yes, `hi-mcp/hi-mcp-client/tests/browser-bridge.test.ts` |
-| HI presets example | `minimal-hi-example/index.html:1252-1405` (inline, `MCP_PLANNER_METHODS`) | no |
-| ligna-store | `hi-mcp/browser-bridge.ts`, `hi-mcp/types.ts`, started in `components/blocks/Planner.vue:263-264` | no |
+| HI presets example | `minimal-hi-example/index.html:1252-1402` (inline, `MCP_PLANNER_METHODS`) | no |
+| ligna-store | `hi-mcp/browser-bridge.ts`, `hi-mcp/types.ts`, started in `components/blocks/Planner.vue:260, 268` | no |
 
 The copies are kept equal by hand. A new planner method on the allow-list is a change in two repositories and three files, a protocol
 change (`BRIDGE_PROTOCOL`, `hi-mcp/hi-mcp-server/types.ts:4`) one in four — both `types.ts`, the

@@ -10,7 +10,7 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 ### Core Tools
 | Tool | Purpose |
 |---|---|
-| `get-plan-context` | Get rooms, articles, groups, obstacles, masterData |
+| `get-plan-context` | Get rooms, articles, the attribute vocabulary, groups, obstacles; masterData and the full article descriptions on request |
 | `create-or-replace-groups` | Create, modify and extend groups; position new groups |
 | `place-group` | Move an existing group against a wall or into a room corner |
 | `get-authoring-rules` | Get HI authoring rules |
@@ -56,10 +56,12 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 
 **Parameters**:
 ```typescript
-{ include?: Array<'masterData' | 'rooms' | 'articles' | 'groups' | 'obstacles'> }
+{ include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'masterData' | 'articleDescriptions'> }
 ```
 
-**Returns**: Rooms, articles, groups, obstacles, masterData (if requested). Like every JSON result of the
+**Returns**: Rooms, articles, attributes (the vocabulary: per library the customer-facing
+attributes with their values, a shared value list listed once with `sameSelectionsAs` on the later
+attributes, D76), groups, obstacles; masterData and articleDescriptions if requested. Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
 (back wall, front wall, left wall, right wall) beside its `side`, a door opening the `type`
@@ -106,7 +108,8 @@ The rule covers only the catalog images, not the renderings of `get-plan-images`
 user attaches. It is in `get-authoring-rules` and in the descriptions of `get-plan-context` and
 `find-attributes`. The server strips every `imageUrl` from its results (D7). An article's `desc`
 in the catalog is short — of a description written in sections, its FUNCTION and AI_SELECTION_HINT
-lines; `include: ['articleDescriptions']` returns the full ones (D63).
+lines; `include: ['articleDescriptions']` returns the full ones, for a question about one article —
+the descriptions tell the agent that `desc` is enough to pick the articles of a planning (D63).
 
 **Usage**:
 ```javascript
@@ -276,7 +279,9 @@ placement's attributes, including a height the library adjusts:
   after `change-module-attribute` and `change-group-attribute`, last, every other attribute the library
   changed with the one set — "with mod_FrontColor "324" (Dark marble (#404040)) the library changed
   mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (…) to "Modern" (Mitred frame fronts with
-  glass filling)" (D59)
+  glass filling)"; several root modules changed alike by article and count, "of 3 root modules
+  (OTB60 ×3)" (D59). A `notLoaded` entry has one error per cause, the root modules that failed alike
+  in one sentence (D73)
 - `hint`: after a row edit (insert, `delete-article-and-compact`, exchange, swap) — names the units above that moved with
   the unit below them by root id and article id, says when the row now reaches past a wall or into another group, and names a
   root module that now stands in front of a door or a window or on an object, with the free stretches
@@ -337,7 +342,7 @@ others by their id (D68); every group of the plan when nothing was reverted; `nu
 `hint` when there is nothing to undo or redo, the plan was changed in the planner, or the planner's
 history no longer holds the call; an undo or redo that does not give back the plan before or after
 the call (the user changed the plan in the planner while the call ran) is taken back, with a `hint`;
-`undo` waits for a late follow-up reload of the last call and says when it is still outstanding
+the planner answers a call after its last reload, so `undo` never waits for one (D77)
 
 ### find-attributes
 
@@ -353,8 +358,10 @@ the call (the user changed the plan in the planner while the call ran) is taken 
 const { matches } = await findAttributes({ text: 'front colour' });
 ```
 
-Every word of the text is matched on its own, in any order, and colour/color, grey/gray and
-worktop/countertop read alike: one search for `color` returns every colour attribute. A value
+The tool answers a question about one attribute; the `attributes` section of `get-plan-context`
+lists the whole vocabulary by default (D76), so a planning needs no search. Every word of the text
+is matched on its own, in any order, and colour/color, grey/gray and worktop/countertop read alike:
+one search for `color` returns every colour attribute. A value
 list several attributes share is listed once; the later attributes carry `sameSelectionsAs`, the
 id of the attribute that lists it (D64). Every match names the root modules that carry it,
 `rootModules: [{ id, name }]`, and the attributes the root modules in the plan carry come first —

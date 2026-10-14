@@ -209,8 +209,8 @@ counter-clockwise from above, right-hand rule).
 
 ### Attribute Groups
 
-The library's attributes come with the master data (`get-plan-context` with `masterData`, searched
-by `find-attributes`). Each attribute has an `id` (e.g. `mod_FrontColor`, `mod_Width`), a `name`,
+The library's attributes come with the plan context (the `attributes` section of
+`get-plan-context`, by default; `find-attributes` searches them for a question about one). Each attribute has an `id` (e.g. `mod_FrontColor`, `mod_Width`), a `name`,
 a `desc`, a `type` (`Text`, `Bool`, `Dim`, `Integer`), a `group` and its `selections` (value, name
 and desc). The master data's root modules name the attribute ids assigned to them; a size is an
 attribute of type `Dim`.

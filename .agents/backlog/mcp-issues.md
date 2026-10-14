@@ -24,13 +24,15 @@ never drop the agent's content silently.
 |---|---|---|---|---|---|---|
 | 62 | [`merge-article-into-group` moves a group placed in the conversation](#62-merge-article-into-group-moves-a-group-placed-in-the-conversation) | defect | roomle-ui `homag-intelligence` (`mergeArticleIntoGroup`) | high | gpt-6-astra | |
 | 63 | [The worktop of a handleless kitchen renders white](#63-the-worktop-of-a-handleless-kitchen-renders-white) | defect, not analysed | roomle-ui render or HOMAG library — to analyse | medium | gpt-6-astra | |
+| 65 | [A wall of floor-to-ceiling glass the user names is left out](#65-a-wall-of-floor-to-ceiling-glass-the-user-names-is-left-out) | hardening | roomle-hi-example served text (`AUTHORING_RULES`, `hi-mcp-server.ts`) | medium | gpt-6-astra | |
+| 66 | [A corner group stands in front of the adjoining wall's window](#66-a-corner-group-stands-in-front-of-the-adjoining-walls-window) | hardening | roomle-ui `obstacleHint` (`hi-tool-hints.ts`) | low | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
 
 ## 62. `merge-article-into-group` moves a group placed in the conversation
 
-**Problem.** On a group that `create-or-replace-groups` placed by wall earlier in the conversation,
+**Problem.** On a group that `create-or-replace-groups` placed by wall or by point earlier in the conversation,
 `merge-article-into-group` docks the new root module where asked but moves the whole group by its
 former width towards its left end: the new root module stands where the group's origin was. A
 sideboard of two cabinets centred on the back wall of the living room (x -1225 to -25) stands at
@@ -53,7 +55,7 @@ right of its last root module — the earlier root modules keep their positions;
 loaded from a snapshot. The random test `random-1-living-room-sideboard-extend-and-shrink` of the
 Reproduce session as a fixed test.
 
-**Reproduce.** `mcp-test-2026-10-13_17-19-39`: gpt-6-astra 50 (`random-1-living-room-sideboard-extend-and-shrink`, turn 2, local roomle-ui `56256a5b7`): the sideboard moves from x -1225..-25 to x -2435..-635. Without a model on the plan `default-room`: `create-or-replace-groups` with two `SB_UB600` (the second `rightOf` the first) and the placement wall `back`, alignment `center`, then `merge-article-into-group` with an `SB_UB600` docked `RightBottom` → `LeftBottom` to the second: the group moves from x 1465 to 255.
+**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 54 (`random-5-island-then-longer`, turn 2, local roomle-ui `6df952e35`): the island placed by point (`posGroup` [750, 0, 5680], rotation 90) stands at z 4480..5680 and moves to z 5090..6890 when a third `US2A60` is merged at the `RightBottom` of the second; without a model the run's two payloads (`planner-calls.json`) on the plan `open-plan-room` give the same move, and on `default-room` two `SB_UB600` placed by wall `back`, centred, then one merged `RightBottom` → `LeftBottom` to the second move from x 1465 to 255.
 
 ## 63. The worktop of a handleless kitchen renders white
 
@@ -71,4 +73,48 @@ issue).
 
 **Test.** `image-planning-right-wall`: the worktops render in the colour of `mod_CountertopColor`.
 
-**Reproduce.** `mcp-test-2026-10-13_17-19-39`: gpt-6-astra 47 (`image-planning-right-wall`, plan snapshot `ps_rquv2y2uf7eho5aobjjfumjd8vdo2dq`): white worktops in the top and object images, 324 in `order-data.json`.
+**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 47 (`image-planning-right-wall`, plan snapshot `ps_rtop4vedm8hxgx2o2an3wgyg2nm85kn`): white worktops on the wall run and the island in the object image, 324 with the program Style in `order-data.json`.
+
+## 65. A wall of floor-to-ceiling glass the user names is left out
+
+**Problem.** "Add a sideboard of three low cabinets to the front wall" of the living room creates
+nothing: the front wall is floor-to-ceiling windows and a door (every opening from `bottomMm` 0 to
+2520 mm, between them a 5 mm piece of wall), and the agent answers that the wall has no free stretch
+and asks whether to use the back wall. In a request for two groups it builds the other one and
+leaves the sideboard out. The user named the wall; a sideboard in front of glass doors is a common
+planning.
+
+**Cause.** The served text: the obstacle rule of `AUTHORING_RULES` (`hi-mcp-server.ts`) says "Put a
+new group on a stretch of wall or a spot that obstacles leaves free", which the agent reads as a
+ban when the whole wall is openings, and nothing says that the wall the user names comes first.
+
+**To do.** Clarify the rule sentence: a wall or a place the user names is where the group goes; the
+free stretches are for choosing a place the user leaves open; when the named wall is all openings,
+place the group there and say in the answer which openings it stands in front of. Served text only
+— no guard, no correction.
+
+**Test.** `sideboard-living-room-front-wall` creates the sideboard against the front wall and the
+answer names the windows; `living-room-sideboard-and-tv` creates both groups.
+
+**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 05 (`sideboard-living-room-front-wall`): no tool call that changes the plan, the answer asks for another wall.
+
+## 66. A corner group stands in front of the adjoining wall's window
+
+**Problem.** A group placed by wall into a corner (`alignment` the adjoining wall) whose adjoining
+wall has a window within 600 mm of the corner stands in the strip in front of that window; the
+create's `hint` names it, and the agent moves the group with `place-group` in the next step — one
+step and about 8 s.
+
+**Cause.** The hint names the free stretches of the root module's own wall — which the adjoining
+wall's window does not shorten — not the `offsetMm` along the group's wall that clears the window's
+strip (`WALL_STRIP_MM`, `hi-wall-placement.ts`; `obstacleHint`, `hi-tool-hints.ts`). The rules name
+the 600 mm.
+
+**To do.** Result only, no change of the placement: the hint of a root module in front of an opening
+of the adjoining wall names the `offsetMm` along its own wall that clears it.
+
+**Test.** `image-only-no-text`: the create places the left group clear of the back wall's window,
+no `place-group` after it.
+
+**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 48 (`image-only-no-text`): the left group placed with wall `left`, alignment `back`, `offsetMm` 450, then moved with `place-group` to `offsetMm` 650.
+

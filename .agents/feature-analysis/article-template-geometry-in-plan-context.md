@@ -484,4 +484,4 @@ Deviations from §9:
 
 Open: the roomle-hi-example branch is merged only after the roomle-ui change is on the planner the
 pages use (§4.3). Two backlog items still mention the anchor probe that left the server with the
-tool logic: `one-undo-step-per-tool-call.md` and `under-relation-for-tabletops.md`.
+tool logic: `under-relation-for-tabletops.md`; `one-undo-step-per-tool-call.md` was removed when RML-18164 implemented it.

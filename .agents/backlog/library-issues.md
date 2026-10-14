@@ -66,7 +66,7 @@ base unit under its drainer in three runs of gpt-6-astra; `edit-swap-hob-unit`: 
 cover the hob, and the agent identifies a swap that would put the hob immediately to the right of
 the sink as conflicting with the library's selection rule.
 
-**Reproduce.** `mcp-test-2026-10-13_17-19-39`: gpt-6-astra 29 (`edit-swap-hob-unit`): the swapped sink's drainer covers most of the hob.
+**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 29 (`edit-swap-hob-unit`): the swapped sink's top reaches 395 mm over the hob unit beside it.
 
 ## 61. Handleless fronts done with a handle attribute
 
@@ -88,7 +88,7 @@ nothing more.
 
 **Test.** The test `kitchen-conversation` turn 5 ends with handleless articles.
 
-**Reproduce.** `mcp-test-2026-10-13_17-19-39`: gpt-6-astra 49 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
+**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 49 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
 
 ## 64. Flip-lift wall cabinets with sizes the library cannot calculate
 
@@ -112,4 +112,4 @@ it (D63). Then check that the served text needs nothing more.
 
 **Test.** `image-planning-right-wall`: the first create loads every root module.
 
-**Reproduce.** `mcp-test-2026-10-13_17-19-39`: gpt-6-astra 47 (`image-planning-right-wall`, the first `create-or-replace-groups`): five flip-lift top cabinets not loaded, Error 14023.
+**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 47 (`image-planning-right-wall`, the first `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` not calculated, Error 14023, in one `notLoaded` error.

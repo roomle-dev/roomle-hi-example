@@ -3,12 +3,11 @@
 > **Type**: Benchmark and performance analysis
 > **Domain**: `hi-mcp/hi-mcp-server` (served text, tool results, `create-or-replace-groups`), `hi-mcp/hi-mcp-chat` (step loop); roomle-ui (the group attribute command)
 > **Trigger**: [RML-18064](https://roomle.atlassian.net/browse/RML-18064) "HI agent: analyse where the time goes when it plans a kitchen from an image"
-> **Date**: 2026-10-08; second measurement 2026-10-13 ([9](#9-second-measurement-2026-10-13-after-the-five-improvements))
+> **Date**: 2026-10-08; second measurement 2026-10-13 ([9](#9-second-measurement-2026-10-13-after-the-five-improvements)); third measurement 2026-10-14 ([10](#10-third-measurement-2026-10-14-the-six-improvements-one-after-another))
 > **Author**: AI Assistant
-> **Status**: Open — the runs since the five improvements landed are analysed ([9](#9-second-measurement-2026-10-13-after-the-five-improvements)): 49 s and 5.4 steps on the three baseline tests, from three builds and two planners, so not a like-for-like comparison with the baseline; six new flaws and improvements proposed, the like-for-like runs not made yet ([9.7](#97-open-runs-not-made))
+> **Status**: Measured — the six improvements of [9.6](#96-proposed-improvements) implemented one after another and measured on one build and the local planner ([10](#10-third-measurement-2026-10-14-the-six-improvements-one-after-another)): 104 s → 75 s, 8.4 → 6.8 steps, 531k → 397k input tokens per run, the saving from the vocabulary section; the second runs of the other three models stay open ([9.7](#97-open-runs-not-made))
 > **Data**: [kitchen-from-image-time/benchmark.md](kitchen-from-image-time/benchmark.md) (the baseline, every run step by step), `kitchen-from-image-time/benchmark.json`; the second measurement in [kitchen-from-image-time-2026-10-13/benchmark.md](kitchen-from-image-time-2026-10-13/benchmark.md) and its `benchmark.json`
 > **How to repeat**: [hi-mcp-benchmarking.md](../skills/hi-mcp-benchmarking.md)
-> **Plan**: [kitchen-from-image-time-implementation-plan.md](kitchen-from-image-time-implementation-plan.md) — the five improvements and their unit tests
 
 **Repositories**
 
@@ -272,7 +271,7 @@ over all 7 valid runs; the benchmark of [8](#8-the-benchmark-to-repeat) measures
 | # | Improvement | Repositories | Changes | Expected saving |
 |---|---|---|---|---|
 | 1 | **One search finds the material.** The `find-attributes` description's example in the library's words ("Front color"); a search that matches each word on its own and both spellings (colour/color, worktop/countertop); the shared colour palette once per result instead of 21 values per attribute. Better still: the group-wide material attributes (front, carcase, worktop, toe kick, handle) and their palette in `get-authoring-rules`, so a kitchen needs no search | roomle-hi-example | the `find-attributes` description in `hi-mcp-server.ts`, its search in `tool-executors.ts`, `AUTHORING_RULES` | 1–2 steps, 7–14 s; up to 2.9 steps and 20 s with the palette in the rules; 5–10k result tokens |
-| 2 | **Several group attributes in one planner command.** A roomle-ui command that sets a list of attributes on a group with one recalculation, used by `create-or-replace-groups` for the group attributes (D36) | roomle-ui, roomle-hi-example | roomle-ui: the command in `HI_GROUP_OPERATION` (`hi-plan-context.ts`); roomle-hi-example: `applyGroupWideAttributes` sends it, `docs/hi-mcp-behaviour.md` | 5–6 s per create, about 9 s per run; an undo of a create in one planner undo instead of 8–17 (see [one-undo-step-per-tool-call.md](../backlog/one-undo-step-per-tool-call.md)) |
+| 2 | **Several group attributes in one planner command.** A roomle-ui command that sets a list of attributes on a group with one recalculation, used by `create-or-replace-groups` for the group attributes (D36) | roomle-ui, roomle-hi-example | roomle-ui: the command in `HI_GROUP_OPERATION` (`hi-plan-context.ts`); roomle-hi-example: `applyGroupWideAttributes` sends it, `docs/hi-mcp-behaviour.md` | 5–6 s per create, about 9 s per run; an undo of a create in one planner undo instead of 8–17 (the backlog item "one planner undo step per tool call", implemented with RML-18164) |
 | 3 | **Edit several root modules in one call, answer with what changed.** `change-module-attribute` with a list of root modules (or of changes); command results with the changed root modules and the corrections instead of the whole group | roomle-hi-example; roomle-ui only to set several root modules in one recalculation | the schema in `hi-mcp-server.ts`, the command executors in `tool-executors.ts`; without a roomle-ui change the server sends one planner command per root module | about 1 step per run (run 6: 3–4 steps, 25 s); 6–8k tokens per avoided result |
 | 4 | **Corrections only for corrections.** The group attributes set by D36 named once and short (or not at all), not one correction each; a D59 sentence names the attribute that caused the change, not every attribute of the call; a group attribute no module of the group carries reported as a note, not a failure | roomle-hi-example | G46 and D59 in `tool-executors.ts`, `docs/hi-mcp-behaviour.md` | 1–3k tokens per create; the undo-and-rebuild of run 4 (2 steps, 29 s) |
 | 5 | **A compact catalog.** `get-plan-context` returns per article one line of description (its AI_SELECTION_HINT, 56 characters on average) instead of nine sections; the full description on request | roomle-hi-example | `get-plan-context` in `tool-executors.ts`, its description in `hi-mcp-server.ts`; the library's descriptions stay as they are | about 19k tokens per step, about a quarter of the input tokens; about 0.25 s per step (2–3 s per run) with gpt-6-astra, to be measured for the other models |
@@ -510,7 +509,7 @@ took 2,575 ms; the planner's operation answered at 445 ms, the page relayed thre
 `undo` after the create took 2,015 ms, called no planner undo and answered `undone: null`. In
 run 15 the model called `undo` twice (2.06 s each, no planner undo), then replaced the group under
 its id — 2 steps and 18 s for nothing. The 10-13 test report names the same failure in its random
-test 53; the backlog item [one-undo-step-per-tool-call.md](../backlog/one-undo-step-per-tool-call.md)
+test 53; the backlog item "one planner undo step per tool call"
 has it.
 
 **Cause**: the server's history accounting (`countingPlannerApi`, `FOLLOW_UP_WAIT_MS`,
@@ -621,3 +620,100 @@ After the next improvement: the four tests, twice each, one build, one planner;
 and compare chat seconds, steps and input tokens per test with
 [kitchen-from-image-time-2026-10-13/benchmark.md](kitchen-from-image-time-2026-10-13/benchmark.md)
 and the step kinds of [9.4.2](#942-where-the-time-goes-by-kind-of-step-gpt-6-astra-12-runs).
+
+---
+
+## 10. Third measurement, 2026-10-14: the six improvements, one after another
+
+[RML-18164](https://roomle.atlassian.net/browse/RML-18164) implements the improvements of [9.6](#96-proposed-improvements)
+in the order of the [plan](../feature-analysis/kitchen-from-image-improvements.md), and measures
+each one with the same small set: the four kitchen-from-image tests with gpt-6-astra, twice each,
+on one build and the local planner (`--dev`, roomle-ui `release/bo-test` at 56256a5b7 plus the
+improvements), two runner sessions per round. The benchmarks are in
+`kitchen-from-image-time-rml-18164/<step>/`, the sessions in `.temp/result/benchmark-rml-18164-<step>-{a,b}`.
+Every round compares with the round before it; a round is stable when every run creates the
+planning its test asks for and no correction, error or group not built is new.
+
+### 10.1 The rounds
+
+| Round | Build (roomle-hi-example / roomle-ui) | `image-kitchen-left-wall` | `image-kitchen-back-right-corner` | `image-planning-right-wall` | `image-only-no-text` | Mean |
+|---|---|---|---|---|---|---|
+| Baseline | 63970bb (master) / 56256a5b7 (`release/bo-test`) | 52 / 42 s, 5 / 5, 238k / 237k | 102 / 133 s, 10 / 12, 700k / 716k | 187 / 136 s, 9 / 9, 664k / 719k | 87 / 91 s, 9 / 8, 507k / 471k | **104 s, 8.4, 531k** |
+| 1 — the vocabulary in the plan context | eee7a6e / 56256a5b7 | 42 / 51 s, 5 / 5, 243k / 245k | 119 / 75 s, 9 / 7, 619k / 386k | 101 / 91 s, 7 / 7, 474k / 446k | 63 / 60 s, 6 / 6, 327k / 324k | **75 s, 6.5, 383k** |
+| 2 — settled commands, one undo step per tool call | 67a1097 / 740e27e67 | 50 / 42 s, 4 / 4, 181k / 179k | 70 / 116 s, 7 / 8, 392k / 478k | 77 / 124 s, 7 / 11, 465k / 891k | 54 / 59 s, 6 / 6, 328k / 325k | **74 s, 6.6, 405k** |
+| 4 — desc is enough to pick an article | 6579fb3 / 740e27e67 | 49 / 39 s, 5 / 5, 246k / 245k | 106 / 97 s, 10 / 10, 613k / 639k | 84 / 102 s, 9 / 7, 658k / 460k | 72 / 81 s, 6 / 6, 319k / 326k | **79 s, 7.3, 438k** |
+| 5 — the rule about a corner group and the adjoining wall | c77ca0c / 740e27e67 | 39 / 45 s, 4 / 4, 180k / 180k | 65 / 85 s, 7 / 7, 388k / 387k | 77 / 97 s, 9 / 11, 638k / 846k | 91 / 59 s, 9 / 6, 562k / 324k | **70 s, 7.1, 438k** |
+| 6 — shorter library-change and `notLoaded` sentences | c77ca0c / ddc2da33c | 36 / 41 s, 5 / 5, 244k / 245k | 69 / 95 s, 7 / 9, 384k / 528k | 89 / 125 s, 6 / 10, 372k / 760k | 73 / 70 s, 6 / 6, 324k / 323k | **75 s, 6.8, 397k** |
+
+Per cell: chat seconds, steps and input tokens, the two runs as "a / b".
+
+The baseline is slower than the runs of 2026-10-13 (57 s, 5.8 steps): in 5 of its 8 runs the first
+create reports a root module the library could not calculate (`notLoaded`), the agent calls `undo`
+twice — withheld, 2 s each, nothing undone (§9.5.2) — and creates again; the planner in headless
+Chromium answers a create in 4–5 s.
+
+**Round 1** (improvement 1): `find-attributes` is not called once in the 8 runs — the baseline had
+17 search steps in its 8 runs —, every create sets 7–10 group attributes with ids and values of the
+vocabulary, all 8 runs valid; 29 s, 1.9 steps and 148k input tokens less per run than the
+baseline. The spread of the corner test (75–119 s) is the first create's `notLoaded` and the
+withheld undos of 4 of the 8 runs (improvement 2).
+
+**Round 2** (improvement 2): the 4 `undo` calls of the 8 runs revert their create in 28–44 ms
+each (round 1: 3 calls of 2.0 s, two of them undoing nothing), a create takes 2.9 s in the planner
+instead of 4.3 s, and the server's own time per plan-changing call is gone. The chat time is that
+of round 1: the 2 s per call lie within the spread of the corner and right-wall tests (70–124 s).
+The first `image-only-no-text` run of session a ended in a provider stall after its first step
+(no answer to the second model call for 294 s, no tool involved) and is left out; the test was
+rerun by hand on the same build (`04-image-only-no-text.attempt-1` keeps the stalled run).
+
+**Round 4** (improvement 4): stable, 8 valid runs (one transport failure, "Failed to process
+successful response", the runner retried). Nothing to save in these runs: no first step of any
+round today — the baseline included — requested `articleDescriptions`, unlike 4 of the 12 runs of
+2026-10-13; the served text stays for the models that do. The 5 s above round 2 are the spread of
+the corner and image-only tests.
+
+**Round 5** (improvement 5): stable, 8 valid runs. No saving on this model: both `image-only-no-text`
+runs still place the tall-unit run in the back left corner and move it with `place-group` in the
+next step, as the three runs of 2026-10-13 did; the rule sentence stays as information for the
+agent, the step it was to save is still there.
+
+**Round 6** (improvement 6): stable, 8 valid runs (one provider stall after the create — no final
+answer for 260 s —, left out and rerun by hand on the same build). The correction and `notLoaded`
+text of a create fell from 2,064 to 1,245 characters on average (9 and 8 creates; a library-change
+sentence names "9 root modules (PH15L, HK260, …, OSKB60 ×3)" instead of nine ids); the create
+result as a whole stays at about 11k tokens — it is the groups —, and the chat time is that of the
+rounds before.
+
+### 10.2 Improvement 3 — evaluated, no code change
+
+The master data gives a dimension attribute no value list and no range: `mod_Height`, `mod_Width`
+and `mod_Depth` are of type Dim without `selections`, like 21 of the 24 Dim attributes
+(`mod_PlinthAreaHeight` has 9 values, `mod_IslandBackwallWidth` and `mod_GroupWidth` one each —
+these come with the vocabulary section of improvement 1). There is nothing for the catalog to
+pass through, and the sizes a flip-lift wall cabinet takes are the library's: its descs, library
+issue 64 ([library-issues.md](../backlog/library-issues.md)). The duplicated `notLoaded` sentences
+of that case are improvement 6.
+
+### 10.3 What improved
+
+| Round | Chat s | Steps | Input tokens | Against the baseline |
+|---|---|---|---|---|
+| Baseline | 104 | 8.4 | 531k | — |
+| 1 — the vocabulary in the plan context | 75 | 6.5 | 383k | −29 s, −1.9 steps, −148k |
+| 2 — settled commands, one undo step per tool call | 74 | 6.6 | 405k | −30 s, −1.8, −126k |
+| 4 — `desc` is enough to pick an article | 79 | 7.3 | 438k | −25 s, −1.1, −93k |
+| 5 — the rule about a corner group and the adjoining wall | 70 | 7.1 | 438k | −34 s, −1.3, −93k |
+| 6 — shorter library-change and `notLoaded` sentences | 75 | 6.8 | 397k | −29 s, −1.6, −134k |
+
+The saving comes from improvement 1: the vocabulary in the plan context takes every search step
+away (17 search steps in the 8 baseline runs, none since), 28 % of the chat time, 19 % of the
+steps and a quarter of the input tokens. Rounds 2–6 lie within the spread of one build (70–79 s
+means, the slowest test 77–125 s between its two runs): improvement 2 saves its 2 s per
+plan-changing call and makes `undo` work at once — the planner answers a create in 2.9 s instead of
+4.3 s, an undo in 36 ms instead of 2 s, and the user's undo button reverts a tool call in one click
+—, improvement 6 makes the corrections of a create 40 % shorter, and improvements 4 and 5 change
+nothing the runs of this model and day do (no run requested `articleDescriptions`, the image-only
+runs still move their left group after the create); their sentences stay as information. Every
+round was stable: every run built the planning its test asks for, with its materials; two
+provider stalls and one transport failure were left out and rerun or retried, no run failed on the
+planning.

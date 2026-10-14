@@ -247,14 +247,18 @@ describe('get-plan-context', () => {
       'articles',
       'groups',
       'obstacles',
+      'masterData',
     ]);
     // a planner without the obstacles section (an older roomle-ui) returns
     // none, and the context is the same
     // the plan context arrives agent-ready from the planner API; the server
-    // names the walls and lists the room corners
+    // names the walls, lists the room corners and derives the attribute
+    // vocabulary from the master data
+    const { masterData, ...sections } = planContextFixture;
     expect(result).toEqual({
-      ...planContextFixture,
+      ...sections,
       rooms: { rooms: [namedRoom] },
+      attributes: { 'lib-1': masterData['lib-1'].attributes },
     });
   });
 
@@ -343,6 +347,7 @@ describe('get-plan-context', () => {
       'articles',
       'groups',
       'obstacles',
+      'masterData',
     ]);
   });
 
@@ -556,6 +561,106 @@ describe('get-plan-context', () => {
         imageUrl: 'https://example.com/white.png',
       },
     ]);
+  });
+
+  describe('attribute vocabulary', () => {
+    const white = { value: 'white', name: 'White', desc: 'White (#ffffff)' };
+    const vocabularyMasterData = {
+      'lib-1': {
+        libraryId: 'lib-1',
+        modules: [
+          { id: 'module-1', name: 'Tall module', attributes: ['front'] },
+        ],
+        attributes: [
+          {
+            id: 'front',
+            name: 'Front color',
+            type: 'Text',
+            selections: [white],
+          },
+          {
+            id: 'carcase',
+            name: 'Carcase color',
+            type: 'Text',
+            selections: [white],
+          },
+          { id: 'b', name: 'Width', type: 'Dim' },
+        ],
+        groupSettings: ['front'],
+      },
+    };
+
+    it('returns the attribute vocabulary by default, a shared value list once, and no master data', async () => {
+      const api = createApi({
+        rooms: { rooms: [room] },
+        articles: [],
+        groups: [],
+        masterData: vocabularyMasterData,
+      });
+      const result = (await toolExecutors['get-plan-context'](api, {})) as any;
+      expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+        'rooms',
+        'articles',
+        'groups',
+        'obstacles',
+        'masterData',
+      ]);
+      expect(result.attributes).toEqual({
+        'lib-1': [
+          {
+            id: 'front',
+            name: 'Front color',
+            type: 'Text',
+            selections: [white],
+          },
+          {
+            id: 'carcase',
+            name: 'Carcase color',
+            type: 'Text',
+            sameSelectionsAs: 'front',
+          },
+          { id: 'b', name: 'Width', type: 'Dim' },
+        ],
+      });
+      expect(result.masterData).toBeUndefined();
+    });
+
+    it('returns the master data as it is beside the vocabulary when both are requested', async () => {
+      const api = createApi({ masterData: vocabularyMasterData });
+      const result = (await toolExecutors['get-plan-context'](api, {
+        include: ['masterData', 'attributes'],
+      })) as any;
+      expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledTimes(
+        1
+      );
+      expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+        'masterData',
+      ]);
+      expect(result.masterData).toEqual(vocabularyMasterData);
+      expect(result.attributes['lib-1'][1].sameSelectionsAs).toBe('front');
+    });
+
+    it('returns the vocabulary alone when only it is requested', async () => {
+      const api = createApi({ masterData: vocabularyMasterData });
+      const result = (await toolExecutors['get-plan-context'](api, {
+        include: ['attributes'],
+      })) as any;
+      expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+        'masterData',
+      ]);
+      expect(Object.keys(result)).toEqual(['attributes']);
+    });
+
+    it('keeps the vocabulary out when the request names other sections', async () => {
+      const api = createApi({ rooms: { rooms: [room] } });
+      const result = (await toolExecutors['get-plan-context'](api, {
+        include: ['rooms'],
+      })) as any;
+      expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+        'rooms',
+      ]);
+      expect(result.attributes).toBeUndefined();
+    });
   });
 });
 
@@ -1179,19 +1284,14 @@ describe('undo and redo', () => {
   };
 
   // A planner with an undo history, relaying its history events like the
-  // page. A tool runs in it as one call: every planner step of the tool - a
-  // load, a group command - is one step of the history and one event; the
-  // follow-up reload of a group command is a second event that joins its
-  // step, right after the call resolves unless followUpDelayMs or, per
-  // follow-up of the call, followUpDelaysMs say otherwise. The call returns
-  // the tool's result with its steps and follow-ups. Undo and redo fire one
-  // event, none when there is nothing to step.
+  // page. A tool runs in it as one call and one step of the history, whatever
+  // it loads and runs - one event; the reload of a group command lands before
+  // the planner answers and makes no event of its own. The call returns the
+  // tool's result with historySteps 1, and the follow-ups an older planner
+  // reports. Undo and redo fire one event, none when there is nothing to step.
   const historyPlanner = (
     options: {
-      followUpDelayMs?: number;
-      followUpDelaysMs?: number[];
       editDuringCall?: boolean;
-      gapClosed?: boolean;
       callDelayMs?: number;
       readDelayMs?: number;
       order?: string[];
@@ -1282,8 +1382,7 @@ describe('undo and redo', () => {
             roots: group.roots.filter((root: any) => root.id !== rootModuleId),
           })),
         ],
-        // a delete that left the gap has no follow-up reload
-        followUps: options.gapClosed === false ? [] : [groupId],
+        followUps: [groupId],
       }),
     };
     const api = createApi(planContextFixture, {
@@ -1306,29 +1405,24 @@ describe('undo and redo', () => {
             );
           }
           const { steps, followUps } = tools[tool](args);
-          for (const change of steps) {
-            step(change(groups));
+          if (steps.length > 0) {
+            step(steps.reduce((current, change) => change(current), groups));
           }
           if (options.editDuringCall) {
             step(groups.map((group) => ({ ...group, moved: true })));
           }
-          followUps.forEach((id, index) => {
-            setTimeout(
-              () => {
-                groups = changeGroup(id, (group) => ({
-                  ...group,
-                  pos: [0, 0, 10],
-                }))(groups);
-                planHistory.historyChanged();
-              },
-              options.followUpDelaysMs?.[index] ?? options.followUpDelayMs ?? 0
-            );
-          });
+          // the reload the kernel's position answer causes, within the step
+          for (const id of followUps) {
+            groups = changeGroup(id, (group) => ({
+              ...group,
+              pos: [0, 0, 10],
+            }))(groups);
+          }
           return {
             command: tool,
             groups,
             removedGroupIds: tool === 'delete-group' ? [args.groupId] : [],
-            historySteps: steps.length,
+            historySteps: steps.length > 0 ? 1 : 0,
             historyFollowUps: followUps.length,
           };
         }
@@ -1437,7 +1531,7 @@ describe('undo and redo', () => {
     expect(redone.removedGroupIds).toBeUndefined();
   });
 
-  it('reverts a kitchen with three materials with two planner undos', async () => {
+  it('reverts a create with materials with one planner undo', async () => {
     const planner = historyPlanner();
     await toolExecutors['create-or-replace-groups'](planner.api, {
       posGroups: [
@@ -1452,15 +1546,15 @@ describe('undo and redo', () => {
         },
       ],
     });
-    expect(planHistory.lastDone()?.steps).toBe(2);
+    expect(planHistory.lastDone()?.steps).toBe(1);
 
     const result = (await toolExecutors.undo(planner.api, {})) as any;
-    expect(planner.api.extended.undo).toHaveBeenCalledTimes(2);
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(1);
     expect(result.undone).toBe('create-or-replace-groups');
     expect(planner.groups()).toEqual([initialGroup]);
   });
 
-  it('reverts a new group placed by wall, its load and its reload, in one undo', async () => {
+  it('reverts a new group placed by wall, its load and its reload, with one planner undo', async () => {
     const planner = historyPlanner();
     await toolExecutors['create-or-replace-groups'](planner.api, {
       posGroups: [
@@ -1474,7 +1568,7 @@ describe('undo and redo', () => {
     expect(planner.groups()[1].pos).toEqual([1600, 0, -3000]);
 
     const result = (await toolExecutors.undo(planner.api, {})) as any;
-    expect(planner.api.extended.undo).toHaveBeenCalledTimes(2);
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(1);
     expect(result.undone).toBe('create-or-replace-groups');
     expect(planner.groups()).toEqual([initialGroup]);
   });
@@ -1602,154 +1696,29 @@ describe('undo and redo', () => {
     expect(again.hint).toMatch(/changed in the planner/);
   });
 
-  it('withholds undo while the follow-up reload of the last call is outstanding', async () => {
-    vi.useFakeTimers();
-    const planner = historyPlanner({ followUpDelayMs: 10_000 });
-    const changing = changeFront(planner);
-    await vi.advanceTimersByTimeAsync(2000);
-    await changing;
-    const withholding = toolExecutors.undo(planner.api, {});
-    await vi.advanceTimersByTimeAsync(2000);
-    const withheld = (await withholding) as any;
-
-    expect(withheld.undone).toBeNull();
-    expect(withheld.hint).toBe(
-      'The planner has not finished the last change yet - its follow-up reload is still outstanding. Nothing was undone; call undo again in a moment.'
-    );
-    expect(planner.api.extended.undo).not.toHaveBeenCalled();
-
-    // the late reload is the call's own, not a change in the planner
-    await vi.advanceTimersByTimeAsync(6000);
-    const result = (await toolExecutors.undo(planner.api, {})) as any;
-    expect(result.undone).toBe('change-group-attribute');
-    expect(planner.groups()).toEqual([initialGroup]);
-  });
-
-  it('undoes a call once its late follow-up reload has landed', async () => {
-    vi.useFakeTimers();
-    const planner = historyPlanner({ followUpDelayMs: 3000 });
-    const changing = changeFront(planner);
-    await vi.advanceTimersByTimeAsync(2000);
-    await changing;
-    const undoing = toolExecutors.undo(planner.api, {});
-    await vi.advanceTimersByTimeAsync(1000);
-    const result = (await undoing) as any;
-
-    expect(result.undone).toBe('change-group-attribute');
-    expect(planner.groups()).toEqual([initialGroup]);
-  });
-
-  it('waits for the follow-up reload of a delete that closed the gap, and not after one that left it', async () => {
-    const closing = historyPlanner({ followUpDelayMs: 50 });
-    await toolExecutors['delete-article-and-compact'](closing.api, {
-      groupId: 'g1',
-      rootModuleId: 'r1',
-    });
-    expect(planHistory.lastDone()?.groupsAfter).toContain('"pos":[0,0,10]');
-    expect(planHistory.lastDone()?.settled).toBe(true);
-
-    planHistory.reset();
-    const deleting = historyPlanner({ gapClosed: false });
-    const started = Date.now();
-    await toolExecutors['delete-article-and-compact'](deleting.api, {
-      groupId: 'g1',
-      rootModuleId: 'r1',
-    });
-    expect(Date.now() - started).toBeLessThan(1000);
-    expect(planHistory.lastDone()?.settled).toBe(true);
-  });
-
-  it("takes a follow-up that lands after the wait, while the call still reads the plan, as the call's own", async () => {
-    vi.useFakeTimers();
-    // the call starts after reading the plan (300 ms), the wait gives up at
-    // 2300 ms, the follow-up lands at 2400 ms, while the call reads the plan
-    // for its record (300 ms)
-    const planner = historyPlanner({ followUpDelayMs: 2100, readDelayMs: 300 });
-    const changing = changeFront(planner);
-    await vi.advanceTimersByTimeAsync(5000);
-    await changing;
-
-    expect(planHistory.lastDone()?.settled).toBe(true);
-    expect(planHistory.lastDone()?.groupsAfter).toContain('"pos":[0,0,10]');
-    expect(planHistory.lateFollowUps).toBe(0);
-
-    const undoing = toolExecutors.undo(planner.api, {});
-    await vi.advanceTimersByTimeAsync(3000);
-    const result = (await undoing) as any;
-    expect(result.undone).toBe('change-group-attribute');
-  });
-
-  it('expects every follow-up reload of a call that lands after the call', async () => {
-    const planner = historyPlanner({ followUpDelaysMs: [2500, 3000] });
-    await createRow(planner);
-    const created = planner.groups();
-    vi.useFakeTimers();
-    // one attribute on root modules of two groups: two group commands, both
-    // reloads late
-    const changing = toolExecutors['change-module-attribute'](planner.api, {
-      rootModuleIds: ['r1', 'u1'],
-      attributeId: 'front',
-      value: 'white',
-    });
-    await vi.advanceTimersByTimeAsync(2000);
-    await changing;
-    expect(planHistory.lastDone()?.steps).toBe(2);
-    expect(planHistory.lastDone()?.settled).toBe(false);
-    expect(planHistory.lateFollowUps).toBe(2);
-
-    await vi.advanceTimersByTimeAsync(500);
-    expect(planHistory.lateFollowUps).toBe(1);
-    await vi.advanceTimersByTimeAsync(500);
-    expect(planHistory.lateFollowUps).toBe(0);
-    const undoing = toolExecutors.undo(planner.api, {});
-    await vi.advanceTimersByTimeAsync(3000);
-    const result = (await undoing) as any;
-    expect(result.undone).toBe('change-module-attribute');
-    expect(planner.groups()).toEqual(created);
-  });
-
-  it('waits for the follow-up reload of an attribute change', async () => {
-    const planner = historyPlanner({ followUpDelayMs: 50 });
-    await changeFront(planner);
-    expect(planner.groups()[0].pos).toEqual([0, 0, 10]);
-    expect(planHistory.lastDone()?.groupsAfter).toContain('"pos":[0,0,10]');
-
-    const result = (await toolExecutors.undo(planner.api, {})) as any;
-    expect(result.undone).toBe('change-group-attribute');
-    expect(result.hint).toBeUndefined();
-  });
-
-  it('waits for a follow-up reload at most two seconds', async () => {
-    vi.useFakeTimers();
-    const planner = historyPlanner({ followUpDelayMs: 60_000 });
-    let settled = false;
-    const pending = changeFront(planner).then(() => {
-      settled = true;
-    });
-    await vi.advanceTimersByTimeAsync(1900);
-    expect(settled).toBe(false);
-    await vi.advanceTimersByTimeAsync(100);
-    await pending;
-    expect(settled).toBe(true);
-  });
-
-  it('does not wait after a command without a follow-up, nor on a page that relays no history', async () => {
+  it('records a call as soon as it resolves, whatever follow-ups its result reports', async () => {
+    // the planner answers after its reload; an older planner still reports
+    // the reload as a follow-up
     const planner = historyPlanner();
     const started = Date.now();
-    await toolExecutors['delete-group'](planner.api, { groupId: 'g1' });
-    await toolExecutors['change-group-attribute'](
-      createApi(planContextFixture, {
-        externalObjectGroupOperation: vi.fn(async (command: string) => ({
-          command,
-          groups: [],
-          removedGroupIds: [],
-          historySteps: 1,
-          historyFollowUps: 1,
-        })),
-      }),
-      { groupId: 'g1', attributeId: 'front', value: 'black' }
-    );
+    await changeFront(planner);
     expect(Date.now() - started).toBeLessThan(500);
+    expect(planHistory.lastDone()).toMatchObject({
+      tool: 'change-group-attribute',
+      steps: 1,
+    });
+    expect(planHistory.lastDone()?.groupsAfter).toContain('"pos":[0,0,10]');
+  });
+
+  it('reverts an attribute change right after it with one planner undo', async () => {
+    const planner = historyPlanner();
+    await changeFront(planner);
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(1);
+    expect(result.undone).toBe('change-group-attribute');
+    expect(result.hint).toBeUndefined();
+    expect(planner.groups()).toEqual([initialGroup]);
   });
 
   it('runs undo in the queue, never beside another plan change', async () => {

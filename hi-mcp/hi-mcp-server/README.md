@@ -300,7 +300,7 @@ Returns a snapshot of the HI planning session, shaped for the agent.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `include` | `('masterData' \| 'rooms' \| 'articles' \| 'groups' \| 'obstacles')[]` | no | Sections to include; `rooms`, `articles`, `groups` and `obstacles` when omitted |
+| `include` | `('rooms' \| 'articles' \| 'attributes' \| 'groups' \| 'obstacles' \| 'masterData' \| 'articleDescriptions')[]` | no | Sections to include; `rooms`, `articles`, `attributes`, `groups` and `obstacles` when omitted |
 
 - `rooms` — every room carries its contour `levels` with 3D segments (`pos: [x, level, -y]`,
   the same right-handed coordinate system as a group's `pos`, Y up) and a derived `walls` array —
@@ -335,11 +335,14 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   `groups`, per HI group the `id`, `outline` and `bottomMm`/`topMm` of every root module that is not
   generated, from the parts of the calculated group. No walls. Requested alone, the server fetches
   the rooms too for the walls of the doors and windows
+- `attributes` — the attribute vocabulary, by default: per library the attributes a customer sees
+  (`isMain` or `userRight` `Simple`) with id, name, desc, group, type and `selections` (value, name
+  and desc); a value list several attributes share is listed once, the later attributes carry
+  `sameSelectionsAs`. [find-attributes](#find-attributes) searches the same vocabulary for a question
 - `masterData` — only when included explicitly: per library the root modules (id, name,
   desc) with their relevant attribute ids — the roots the library generates (worktop
-  `mr_Countertop`, toe kick, finger grip, backsplash, …) included —, and the attributes a customer sees (`isMain` or
-  `userRight` `Simple`) with desc, type, group and `selections` (value, name and desc). The same compacted attribute vocabulary is searched by
-  [find-attributes](#find-attributes)
+  `mr_Countertop`, toe kick, finger grip, backsplash, …) included —, the attributes as in
+  `attributes` with every value list, and the group settings
 
 Example: `{ "include": ["articles", "groups"] }`
 
@@ -543,8 +546,8 @@ Group ids accept a unique prefix.
 | `merge-groups` | `targetGroupId`, `groupIds` | Merges the groups into the target group where they stand, like the planner's merge action; nothing is moved and no docking is added |
 
 `value` is a string, a number (passed on as its string) or a boolean. Attribute
-ids and their values come from the `masterData` section of `get-plan-context`
-or from `find-attributes`. The library may change a related attribute with the
+ids and their values are in the `attributes` section of `get-plan-context`;
+`find-attributes` answers a question about one attribute. The library may change a related attribute with the
 one set — a front colour the front program does not offer switches the program,
 and the fronts are built differently —; `corrections` name every attribute the
 library changed besides the one set (D59).
@@ -610,8 +613,8 @@ one rotation; the planner calculates every root position.
   Sub-modules come with the article — the agent authors articles, their attributes and their
   relations, nothing else. Everything else the calculation needs — the master-data module and the
   full input attribute set — is completed automatically from the article template. `attributes`
-  are `[{ id, value }]` overrides; attribute ids and their values come from the `masterData`
-  section (requested explicitly) or from `find-attributes`.
+  are `[{ id, value }]` overrides; attribute ids and their values are in the `attributes` section
+  of `get-plan-context`; `find-attributes` answers a question about one attribute.
 - **Fronts**: the front program says how a front is built, by its desc — chosen first, then the
   front colour. A colour the program does not offer switches the program, and a program resets a
   colour it does not offer; `corrections` name every such change. When the colour the user wants

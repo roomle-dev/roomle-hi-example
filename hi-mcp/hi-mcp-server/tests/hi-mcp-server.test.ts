@@ -596,6 +596,79 @@ describe('hi-mcp-server tool calls', () => {
     );
   });
 
+  it('tells the agent that the attribute vocabulary is in the plan context and that find-attributes answers a question', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    const { tools } = await client.listTools();
+    const toolOf = (name: string) => tools.find((tool) => tool.name === name);
+
+    expect(rules).toContain(
+      'Attribute ids and their values are in the attributes section of get-plan-context'
+    );
+    expect(rules).toContain(
+      'find-attributes answers a question about one attribute'
+    );
+    expect(client.getInstructions()).toContain(
+      'its attributes section is the attribute vocabulary'
+    );
+    expect(toolOf('get-plan-context')?.description).toContain(
+      'attributes (the attribute vocabulary: per library every customer-facing attribute'
+    );
+    const planContext = toolOf('get-plan-context');
+    expect(
+      (planContext?.inputSchema.properties?.include as { description?: string })
+        ?.description
+    ).toContain('Default: rooms, articles, attributes, groups and obstacles');
+    expect(toolOf('find-attributes')?.description).toMatch(
+      /^Answers a question about an attribute/
+    );
+    expect(toolOf('find-attributes')?.description).toContain(
+      'a planning needs no search'
+    );
+    for (const text of [
+      client.getInstructions() ?? '',
+      rules,
+      ...tools.map((tool) => tool.description ?? ''),
+    ]) {
+      expect(text).not.toContain('Add masterData');
+      expect(text).not.toContain('come from the masterData section');
+    }
+  });
+
+  it('tells the agent that a corner group reaches along the adjoining wall by its depth and that an opening there is in its way', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+
+    expect(rules).toContain(
+      'A group placed in a room corner reaches along the adjoining wall by its depth: a door or a window of the adjoining wall that begins within that depth of the corner is in its way'
+    );
+    expect(rules).toContain(
+      'or an offsetMm of at least 600 mm from that corner, which keeps the group out of the 600 mm strip in front of the opening'
+    );
+    expect(rules).not.toContain("past the opening's span");
+  });
+
+  it('tells the agent that desc suffices to pick an article and what articleDescriptions is for', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    const planContext = tools.find((tool) => tool.name === 'get-plan-context');
+
+    expect(planContext?.description).toContain(
+      'desc - what an article is and when to pick it - is enough to choose an article'
+    );
+    expect(planContext?.description).toContain(
+      'answers a question about one article, not the planning'
+    );
+    expect(
+      (planContext?.inputSchema.properties?.include as { description?: string })
+        ?.description
+    ).toContain('desc is enough to pick the articles of a planning');
+  });
+
   it('tells the agent that one search finds every colour attribute and its values once', async () => {
     const client = await connectClient(createMockPlannerApi());
     const { tools } = await client.listTools();
@@ -907,7 +980,7 @@ describe('hi-mcp-server tool calls', () => {
     expect(
       (planContext?.inputSchema.properties?.include as { description?: string })
         ?.description
-    ).toContain('Default: rooms, articles, groups and obstacles.');
+    ).toContain('Default: rooms, articles, attributes, groups and obstacles.');
   });
 
   it('hangs a range hood beside the wall units and reads a position back in the frame of the placement', async () => {

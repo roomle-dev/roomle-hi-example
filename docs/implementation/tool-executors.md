@@ -52,7 +52,7 @@ roomle-ui, `packages/web-sdk/packages/homag-intelligence/src/` (D71).
 | `tool-executors.ts` | plan-context sections (`PLAN_CONTEXT_SECTIONS`, `DEFAULT_SECTIONS`); find-attributes matching (`searchWords`, `attributeMatches`, `withSharedSelectionsOnce`); concurrency and undo recording (`oneAtATime`, `countingPlannerApi`, `readGroupsKey`, `recorded`, `planChange`); undo and redo (`stepHistory`, `revertToolCall`, `changedGroupIds`, `changedGroupsOnly`); the forward of a plan-changing tool (`inPlanner`, `compactAttributeResult`); `toolExecutors`, at the end |
 | `skills.ts` | the planning skills: `SKILLS_DIR`, `loadSkills` (frontmatter, name against directory, the file list), `skillIndex`, `readSkillFile` (only a file of the list, LF line endings), `skills` — read once at module load |
 | `agent-facing.ts` | the plan context the agent sees: `agentFacingArticle` (`shortDescription`), `agentFacingRooms` (`wallName`, `roomCorners`), `agentFacingObstacles` (`wallOfOpening`) |
-| roomle-ui `hi-tool-commands.ts` | `HiToolPlanner` (what the commands read from the plan and change in it), `HiToolState`, `HI_TOOL_COMMANDS` (one command per plan-changing tool), `runToolCommand` (counts `historySteps` and `historyFollowUps`), `FOLLOW_UP_COMMANDS`, `hasFollowUp`, `placeAtWalls`, `inPlacementFrame`, `withCorrections`, `asTool`, `changedGroupsOnly` |
+| roomle-ui `hi-tool-commands.ts` | `HiToolPlanner` (what the commands read from the plan and change in it), `HiToolState`, `HI_TOOL_COMMANDS` (one command per plan-changing tool), `runToolCommand` (reports `historySteps`: the tool call is one planner step), `placeAtWalls`, `inPlacementFrame`, `withCorrections`, `asTool`, `changedGroupsOnly` |
 | roomle-ui `hi-tool-ids.ts` | article and root id resolution: `catalogArticleId`, `catalogSpellingOf`, `resolveArticleIds`, `removeReferencesTo`, `resolveRootId`, `withPlanRoots`, `rootModulesByGroup`; group lookup: `findGroup` (a root id names the group that holds it: `groupHoldingRoot`), `groupOfRoot`; the agent's group ids: `matchResultGroups`, `resolveAgentGroupIds`, `rememberAgentGroupIds` |
 | roomle-ui `hi-tool-payload.ts` | payload preparation: `dropMalformedDocking`, `liftNestedRoots`, `completeDockingEntries`, `normalizedAttributes`, `reportUnusedFields`, `readDockToAsRelation`, `prepareGroup`; placement normalisation: `normalizePlacement`, `normalizeWallPlacement`, `isWallPlacement`; `toArticlePick`, `generatedRootAttributes`, `readLoadOutcomes`; partial loads: `NotLoadedGroup`, `keepBuildable`, `nothingLoaded` |
 | roomle-ui `hi-tool-docking.ts` | merge-article-into-group target: `articleWidth`, `unitStaysInRoom`, `dockTarget`; row edits: `neighbourTowards`, `insertBetween`; the docking graph and its completion: `sidePartnersOf` (Bottom and Top side vectors, `isSidePair`), `rowWalk`, `separateSideVectorPartners`, `breakRowRings`, `vectorFree`, `connectUnreachedRoots`, `reportUnsentRoots`, `completeDocking`; before the relations `dropUnknownDockingVectors`, `dropFloorUnitsOnBaseUnits`; places in a row: `withRowIndices` |
@@ -73,7 +73,7 @@ context, the calculated groups, the layout load, the group operations (`runGroup
 | `oneAtATime` | Chains the call onto a module-level promise (`planChanges`), so plan changes never run concurrently; a failed call does not block the next | `get-plan-context`, every plan-changing tool, `undo`, `redo` |
 | `recorded(tool, …)` | Counts the planner steps the tool command reports, for undo ([MCP server](./mcp-server.md#undo-and-redo)) | every plan-changing tool |
 | `planChange` | `oneAtATime(recorded(…))` | every plan-changing tool |
-| `inPlanner(tool, shape?)` | `planChange` around the one planner call `externalObjectGroupOperation(tool, args)`; removes `historySteps` and `historyFollowUps` from the result and raises its `error` (a tool that failed after it changed the plan); the two attribute tools shape it with `compactAttributeResult` | `create-or-replace-groups`, `place-group`, the ten command tools |
+| `inPlanner(tool, shape?)` | `planChange` around the one planner call `externalObjectGroupOperation(tool, args)`; removes `historySteps` (and an older planner's `historyFollowUps`) from the result and raises its `error` (a tool that failed after it changed the plan); the two attribute tools shape it with `compactAttributeResult` | `create-or-replace-groups`, `place-group`, the ten command tools |
 | `inPlacementFrame` (roomle-ui) | Rewrites every group `position` into the placement frame and adds `rowIndex` ([Layout and placement](./layout-and-placement.md#reading-a-group-back-positioninplacementframe)) | the plan context of the planner, every tool command and group operation |
 
 Why `oneAtATime` exists: the page runs every call it receives at once, and the undo record of a
@@ -170,8 +170,8 @@ call and is reported in `notLoaded`, the others load
 
 Result: `{ loaded, groups, otherGroupIds?, groupAttributes?, hint?, corrections?, notLoaded? }`.
 `groups` holds the groups of the call (`changedGroupsOnly`), `otherGroupIds` the other groups of the
-plan, `loaded` the ids of the groups the planner built or restored. `runToolCommand` adds `historySteps` and
-`historyFollowUps`, which the server removes.
+plan, `loaded` the ids of the groups the planner built or restored. `runToolCommand` adds `historySteps`, which
+the server removes.
 
 ### The anchor frame
 
@@ -349,6 +349,6 @@ In the tool commands of roomle-ui:
 - **Two partner maps:** `SIDE_PARTNER` is the opposite side of the same root; `PARTNER_VECTOR` is the
   vector that meets a given vector on the neighbour.
 - **Messages are contract** — quoted in the behaviour reference, read by the agents and the tests.
-- **Step counting follows roomle-ui's reloads** — a group operation that reloads twice belongs in
-  `FOLLOW_UP_COMMANDS` (`hi-tool-commands.ts`, D47), and a tool command reaches the planner only
-  through the `HiToolPlanner` it is given, or `runToolCommand` does not count its steps.
+- **A tool call is one planner step** — the planner holds one interaction step for an
+  `externalObjectGroupOperation` (`runToolCall`, D79), and a tool command reaches the planner only
+  through the `HiToolPlanner` it is given, or `runToolCommand` does not see that it changed the plan.

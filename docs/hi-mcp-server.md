@@ -312,7 +312,7 @@ overlap according to the measured result; missing data is no assurance of cleara
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `include` | `('masterData' \| 'rooms' \| 'articles' \| 'articleDescriptions' \| 'groups' \| 'obstacles')[]` | no | Sections to include; `rooms`, `articles`, `groups` and `obstacles` when omitted |
+| `include` | `('rooms' \| 'articles' \| 'attributes' \| 'groups' \| 'obstacles' \| 'masterData' \| 'articleDescriptions')[]` | no | Sections to include; `rooms`, `articles`, `attributes`, `groups` and `obstacles` when omitted |
 
 - `rooms` — every room carries its contour `levels` with 3D segments
   (`pos: [x, level, -y]`, the same right-handed coordinate system as a group's
@@ -362,13 +362,18 @@ overlap according to the measured result; missing data is no assurance of cleara
   description explain this, and the library descriptions explain article-specific overhangs.
   No walls. Requested alone, the server fetches
   the rooms too for the walls of the doors and windows
+- `attributes` — the attribute vocabulary, by default: per library the attributes a
+  customer sees (`isMain` or `userRight` `Simple`) with id, name, desc, group, type and
+  `selections` (value, name and desc); a value list several attributes share is listed
+  once, the later attributes carry `sameSelectionsAs`, the id of the attribute that lists
+  it. The ids are those of the catalog's `mainAttributes` and of the roots' `attributes`;
+  [find-attributes](#find-attributes) searches the same vocabulary for a question
 - `masterData` — only when included explicitly: per library the root modules
-  (id, name, desc) with their relevant attribute ids, and the attributes a
-  customer sees (`isMain` or `userRight` `Simple`) with desc, type, group and
-  `selections` (value, name and desc), and `groupSettings`, the attributes the
-  library's group orchestrator sets on a group. The same compacted attribute
-  vocabulary is searched by [find-attributes](#find-attributes)
-- `articleDescriptions` — only when included explicitly: per article its
+  (id, name, desc) with their relevant attribute ids, the attributes as in
+  `attributes` with every value list, and `groupSettings`, the attributes the
+  library's group orchestrator sets on a group
+- `articleDescriptions` — only when included explicitly, for a question about
+  one article (`desc` is enough to pick the articles of a planning): per article its
   `articleId` and full `desc` (purpose, placement, requirements, neighbours,
   restrictions, style)
 
@@ -400,12 +405,13 @@ files of `hi-mcp/hi-mcp-server/skills/`
 
 ### find-attributes
 
-Searches the attribute vocabulary of the loaded libraries by text — attribute
-id, name, description, group or selection name — and returns the matching
-attributes with their `selections` and the root modules that carry them. The
-vocabulary is the compacted master data of `get-plan-context` (root modules
-— the generated ones such as the worktop `mr_Countertop` included — and their
-customer-facing attributes). Every word of the text is matched on its own, in
+Answers a question about an attribute: searches the attribute vocabulary — the
+`attributes` section of `get-plan-context` — by text (attribute id, name,
+description, group or selection name) and returns the matching attributes with
+their `selections` and the root modules that carry them. The vocabulary is the
+compacted master data (root modules — the generated ones such as the worktop
+`mr_Countertop` included — and their customer-facing attributes); the section
+already lists every attribute with its values, so a planning needs no search. Every word of the text is matched on its own, in
 any order, and colour/color, grey/gray and worktop/countertop read alike: one
 search for `color` returns every colour attribute — front, carcase, countertop,
 toe kick and the others. A value list several attributes share is listed once;
@@ -603,8 +609,8 @@ its first UUID segment or in one character is read as that root and reported.
 | `merge-groups` | `targetGroupId`, `groupIds` | Merges the groups into the target group where they stand, like the planner's merge action; nothing is moved and no docking is added |
 
 `value` is a string, a number (passed on as its string) or a boolean. Attribute
-ids and their values come from the `masterData` section of `get-plan-context`
-or from `find-attributes`. A value may come only with the value of a related attribute: a front
+ids and their values are in the `attributes` section of `get-plan-context`;
+`find-attributes` answers a question about one attribute. A value may come only with the value of a related attribute: a front
 colour the front program does not offer switches the program, and the library makes that change in
 its calculation, not in the master data.
 
@@ -690,9 +696,9 @@ group one point and one rotation; the planner calculates every root position.
   authors articles, their attributes and their relations, nothing else.
   Everything else the calculation needs — the master-data module and the full
   input attribute set — is completed automatically from the article template.
-  `attributes` are `[{ id, value }]` overrides; attribute ids and allowed
-  values come from the `masterData` section (requested explicitly) or from
-  `find-attributes`. A unit's size is changed with `change-module-attribute`
+  `attributes` are `[{ id, value }]` overrides; attribute ids and their
+  values are in the `attributes` section of `get-plan-context`;
+  `find-attributes` answers a question about one attribute. A unit's size is changed with `change-module-attribute`
   and the attribute id of the dimension (e.g. `mod_Width`), never its name.
 - **Every `desc` is authoritative** — of an article, a root, a module, an
   attribute and an attribute value: the agent trusts it for what a thing is,

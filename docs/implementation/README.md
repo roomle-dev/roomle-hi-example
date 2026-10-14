@@ -89,7 +89,7 @@ ligna-store chat (runs in the page) ──────── MCP ─────
    (`calculateArticleTemplate`), loads the groups, moves the groups placed by wall, applies the
    group-wide attributes, collects corrections, hints and `notLoaded` groups, reports every group
    position in the placement frame the agent writes (`inPlacementFrame`), and answers with the result
-   and the planner steps it made (`historySteps`, `historyFollowUps`).
+   and the planner step it made (`historySteps`: the tool call is one step of the planner's history).
 8. The executor counts the steps for undo and removes them from the result; `withoutImageUrls`
    strips signed URLs.
 9. The chat backend streams the model's answer to the page, with a `[tool] <name>` line per tool call
@@ -126,7 +126,7 @@ The roomle-ui side, in `packages/web-sdk/packages/`:
 | `homag-intelligence/src/external-object-api.ts` | The interface of the planner methods the tools call, with their documentation |
 | `planner-core/src/roomle-planner.ts` | Their implementation on `RoomlePlanner` (`getExternalObjectPlanContext`, `externalObjectGroupOperation`, …) |
 | `homag-intelligence/src/hi-tools.ts` | `HiToolsImplementation`: `getPlanContext` (the groups in the placement frame), `executeGroupOperation` (a command named like a tool runs the tool command, every other command the group operation), the group operations; it implements `HiToolPlanner` in the planner itself |
-| `homag-intelligence/src/hi-tool-commands.ts` | The HI tool commands: `HI_TOOL_COMMANDS`, one per plan-changing tool, `runToolCommand` (counts `historySteps` and `historyFollowUps`), `inPlacementFrame` |
+| `homag-intelligence/src/hi-tool-commands.ts` | The HI tool commands: `HI_TOOL_COMMANDS`, one per plan-changing tool, `runToolCommand` (reports `historySteps`), `inPlacementFrame` |
 | `homag-intelligence/src/hi-tool-ids.ts`, `hi-tool-payload.ts`, `hi-tool-docking.ts`, `hi-tool-hints.ts`, `hi-tool-attributes.ts`, `hi-wall-placement.ts` | The parts of the tool commands: ids and articles, the payload, the docking, the hints, the group attributes and library changes, the wall placement |
 | `homag-intelligence/src/hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts` | Relations → docking, the anchor and its frame, the geometry ([Layout and placement](./layout-and-placement.md)) |
 | `homag-intelligence/src/hi-plan-context.ts` | The plan context: rooms with derived walls, catalog, groups, obstacles, master data, the article selector; `HI_GROUP_OPERATION`, the group operations; `HI_TOOL_COMMAND` |
@@ -189,9 +189,8 @@ the lifetime of the process:
 - **The bridge protocol has three copies** — `hi-mcp-server/types.ts`, `hi-mcp-client/types.ts` and
   the ligna-store's — plus the inline bridge of `index.html`. Change `BRIDGE_PROTOCOL` when the
   protocol changes; the server refuses calls to a page with another protocol.
-- **Undo counts roomle-ui's planner steps.** The tool command reports them (`historySteps`,
-  `historyFollowUps`); which group operations reload twice is `FOLLOW_UP_COMMANDS` in
-  `hi-tool-commands.ts`. A tool command that changes the plan outside the `HiToolPlanner` it is
+- **Undo counts roomle-ui's planner steps.** The planner runs a tool call as one step and the tool
+  command reports it (`historySteps`, `hi-tool-commands.ts`). A tool command that changes the plan outside the `HiToolPlanner` it is
   given is not counted, and the undo record breaks.
 - **Geometry exists twice in roomle-ui.** The footprint in the plan context is computed by
   `hi-plan-context.ts` (group space), the one of the placement by `hi-plan-space.ts` (room space).

@@ -192,6 +192,42 @@ const shortDescription = (desc: unknown): unknown => {
   return lines.length > 0 ? lines.join(' ') : desc;
 };
 
+// A value list several attributes share is listed once: the later attributes
+// name the attribute that lists it.
+export const withSharedSelectionsOnce = (attributes: any[]): any[] => {
+  const listedBy = new Map<string, string>();
+  return attributes.map((attribute) => {
+    if (
+      !Array.isArray(attribute.selections) ||
+      attribute.selections.length === 0
+    ) {
+      return attribute;
+    }
+    const key = `${attribute.libraryId}\n${JSON.stringify(attribute.selections, (field, value) => (field === 'imageUrl' ? undefined : value))}`;
+    const listing = listedBy.get(key);
+    if (listing === undefined) {
+      listedBy.set(key, attribute.id);
+      return attribute;
+    }
+    const shared = { ...attribute, sameSelectionsAs: listing };
+    delete shared.selections;
+    return shared;
+  });
+};
+
+// The attribute vocabulary: per library the customer-facing attributes of
+// the compacted master data with their values, a shared value list listed
+// once. The root modules and the group settings stay in masterData.
+export const agentFacingAttributes = (masterData: any) =>
+  Object.fromEntries(
+    Object.entries((masterData ?? {}) as Record<string, any>).map(
+      ([libraryId, library]) => [
+        libraryId,
+        withSharedSelectionsOnce((library?.attributes ?? []) as any[]),
+      ]
+    )
+  );
+
 // The corner point is not the agent's. The description is short; the
 // articleDescriptions section has the full one.
 export const agentFacingArticle = (article: any) => {

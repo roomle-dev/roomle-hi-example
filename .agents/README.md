@@ -96,6 +96,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
+| [The HI MCP server moves to the Roomle Cloudflare account, as a DEV and a PRD stage](feature-analysis/hi-mcp-deployment-in-roomle-cloudflare-account.md) | Open — analysis | 2026-10-14 |
 | [The group load answers per input group what the planner built](feature-analysis/group-load-result-per-input-group.md) | Implemented — roomle-ui branch not merged | 2026-10-13 |
 | [Article template geometry in the plan context](feature-analysis/article-template-geometry-in-plan-context.md) | Implemented | 2026-10-13 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |

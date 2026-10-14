@@ -40,7 +40,7 @@ perspective first:
 - [`tool-executors.ts:540-549`](../../hi-mcp/hi-mcp-server/tool-executors.ts#L540-L549) —
   `getExternalObjectSnapshot({ perspectiveImage: true, topImage: true })`, returns
   `{ perspectiveImage, topImage }`.
-- [`hi-mcp-server.ts:487-516`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L487-L516) — the
+- [`hi-mcp-server.ts:754-783`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L754-L783) — the
   description ("Renders the current plan and returns a perspective image and a top-view image, so the
   plan can be inspected visually …"), the data-URL stripping, `{ error: 'No images available' }`
   when both are missing.
@@ -130,24 +130,24 @@ options; the ligna-store does not reference the tool's result):
 | File | Change |
 |---|---|
 | [`tool-executors.ts:540-549`](../../hi-mcp/hi-mcp-server/tool-executors.ts#L540-L549) | request `perspectiveObjectImage` instead of `perspectiveImage`, return `{ perspectiveObjectImage, topImage }` |
-| [`hi-mcp-server.ts:487-516`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L487-L516) | the description (§5), the result type, the result shape: one text content naming the images, then the group view, then the top view (§5) |
+| [`hi-mcp-server.ts:754-783`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L754-L783) | the description (§5), the result type, the result shape: one text content naming the images, then the group view, then the top view (§5) |
 
 **Tests:**
 
 | File | Change |
 |---|---|
 | [`tool-executors.test.ts:966-984`](../../hi-mcp/hi-mcp-server/tests/tool-executors.test.ts#L966-L984) | the mock snapshot and the expected call `{ perspectiveObjectImage: true, topImage: true }` |
-| [`hi-mcp-server.test.ts:456-470`](../../hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts#L456-L470) | the mock snapshot keys and the expected content: the text naming the images, then the two images; **new case**: a snapshot without `perspectiveObjectImage` (no groups) returns the text saying so and one image |
-| [`hi-mcp-chat/tests/tool-result-images.test.ts`](../../hi-mcp/hi-mcp-chat/tests/tool-result-images.test.ts) | no change — a tool result with text beside images is already covered (lines 84-110): the text stays in the tool message, the images move to the next user message |
+| [`hi-mcp-server.test.ts:1261-1278`](../../hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts#L1261-L1278) | the mock snapshot keys and the expected content: the text naming the images, then the two images; **new case**: a snapshot without `perspectiveObjectImage` (no groups) returns the text saying so and one image |
+| [`hi-mcp-chat/tests/tool-result-images.test.ts`](../../hi-mcp/hi-mcp-chat/tests/tool-result-images.test.ts) | no change — a tool result with text beside images is already covered (`it('keeps the text parts of a tool result beside the note')`, lines 99-128): the text stays in the tool message, the images move to the next user message |
 
 **Documentation, in the same change:**
 
 | File | Change |
 |---|---|
-| [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md) | §3 *Information for the agent*: a new decision (§5); §5.3 result format (line 243: a text naming the images, then the images); the §6 results table ("two images", line 285); §6 *get-price, get-order-data, get-plan-images* (line 398) |
-| [`docs/hi-mcp-server.md:512-520`](../../docs/hi-mcp-server.md#L512-L520) | the tool reference entry |
-| [`hi-mcp-server/README.md:501-506`](../../hi-mcp/hi-mcp-server/README.md#L501-L506) | the tool reference entry |
-| [`.agents/skills/hi-mcp-tools.md:39, 220-226`](../skills/hi-mcp-tools.md) | the tool table and the reference block |
+| [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md) | §3 *Information for the agent*: a new decision (§5); §5.3 result format (line 501: a text naming the images, then the images); the §6 results table ("two images", line 596); §6 *get-price, get-order-data, get-plan-images* (line 797) |
+| [`docs/hi-mcp-server.md:664-673`](../../docs/hi-mcp-server.md#L664-L673) | the tool reference entry |
+| [`hi-mcp-server/README.md:586-592`](../../hi-mcp/hi-mcp-server/README.md#L586-L592) | the tool reference entry |
+| [`.agents/skills/hi-mcp-tools.md:49, 379-387`](../skills/hi-mcp-tools.md) | the tool table and the reference block |
 | [`.github/copilot-instructions.md:452`](../../.github/copilot-instructions.md#L452) | "(a perspective and a top view)" |
 | [`docs/ai-chat.md:219`](../../docs/ai-chat.md#L219), [`hi-mcp-testing.md`](../skills/hi-mcp-testing.md) | unchanged — "its two renders" stays true; the test runs store all four snapshot images themselves |
 

@@ -75,10 +75,14 @@ needs the cause chain, which only `console.log` has.
 **Cause.** The chat stream's `[error]` line carries `error.message` (`errorText` in
 `hi-mcp/hi-mcp-chat/chat-stream.ts`); the cause chain goes to the launcher's log only, in the
 `[hi-chat] step n failed after … ms: …` line (`createStepLog`, `describeStepError` in
-`hi-mcp/hi-mcp-chat/chat-steps.ts`). `run-hi-mcp-prompt.js` reads the launcher's output line by line
-(`recordToolCall`) but keeps only the `[hi-mcp] tool` lines.
+`hi-mcp/hi-mcp-chat/chat-steps.ts`), which `createStepLog` writes to stderr (`console.error`). The
+launcher starts the chat with inherited stdio, and `run-hi-mcp-prompt.js` inherits the launcher's
+stderr (`stdio: ['ignore', 'pipe', 'inherit']`, `startLauncher`): it reads only the launcher's stdout
+line by line (`recordToolCall`) and keeps the `[hi-mcp] tool` lines. The orchestrator writes both
+streams to `console.log`.
 
-**To do.** Let `run-hi-mcp-prompt.js` record the `[hi-chat] step n failed after … ms: …` lines of
+**To do.** Let `run-hi-mcp-prompt.js` pipe the launcher's stderr as well (and pass it on to its own
+stderr, so `console.log` keeps it) and record the `[hi-chat] step n failed after … ms: …` lines of
 each turn in `run.json` (the step number, the duration and the cause chain), beside `errors`. The
 chat's answer to the user stays as it is.
 

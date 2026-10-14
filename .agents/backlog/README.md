@@ -10,6 +10,8 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
+| 65 — A wall of floor-to-ceiling glass the user names is left out | Clarify the obstacle rule: the wall the user names is where the group goes, the free stretches are for a place the user leaves open; the answer names the openings | medium |
+| 66 — A corner group stands in front of the adjoining wall's window | The rule sentence names the 600 mm strip; the hint names the `offsetMm` along the group's wall that clears the adjoining wall's opening | low |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
 
@@ -39,7 +41,7 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 | Item | To do | Details |
 |---|---|---|
 | One planner undo step per tool call | roomle-ui and hi-mcp: settle completed commands so undo can run; resolve `externalObjectGroupOperation` after its follow-up, and group a tool call into one step | [one-undo-step-per-tool-call.md](one-undo-step-per-tool-call.md) |
-| 62 — `merge-article-into-group` moves a group placed in the conversation | roomle-ui `mergeArticleIntoGroup`: a merge keeps the earlier root modules of a group placed by wall in place instead of moving the group by its former width | [mcp-issues.md, 62](mcp-issues.md#62-merge-article-into-group-moves-a-group-placed-in-the-conversation) |
+| 62 — `merge-article-into-group` moves a group placed in the conversation | roomle-ui `mergeArticleIntoGroup`: a merge keeps the earlier root modules of a group placed by wall or by point in place instead of moving the group by its former width | [mcp-issues.md, 62](mcp-issues.md#62-merge-article-into-group-moves-a-group-placed-in-the-conversation) |
 | 63 — The worktop of a handleless kitchen renders white | Analyse why a countertop with a colour (324) renders white in the handleless line but not in a handled kitchen — planner render or library | [mcp-issues.md, 63](mcp-issues.md#63-the-worktop-of-a-handleless-kitchen-renders-white) |
 
 ## Chat

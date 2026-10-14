@@ -644,11 +644,12 @@ describe('hi-mcp-server tool calls', () => {
     );
 
     expect(rules).toContain(
-      'A group placed in a room corner reaches along the adjoining wall by its depth: a door or a window within that depth of the corner on the adjoining wall is in its way'
+      'A group placed in a room corner reaches along the adjoining wall by its depth: a door or a window of the adjoining wall that begins within that depth of the corner is in its way'
     );
     expect(rules).toContain(
-      "choose the other corner, or an offsetMm past the opening's span"
+      'or an offsetMm of at least 600 mm from that corner, which keeps the group out of the 600 mm strip in front of the opening'
     );
+    expect(rules).not.toContain("past the opening's span");
   });
 
   it('tells the agent that desc suffices to pick an article and what articleDescriptions is for', async () => {

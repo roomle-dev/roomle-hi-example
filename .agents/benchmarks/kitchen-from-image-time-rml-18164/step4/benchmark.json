@@ -1081,9 +1081,7 @@
       "notLoaded": 0,
       "toolErrors": 0,
       "errors": 1,
-      "chatErrors": [
-        "Failed to process successful response"
-      ],
+      "chatErrors": ["Failed to process successful response"],
       "tools": {
         "get-authoring-rules": {
           "calls": 1,

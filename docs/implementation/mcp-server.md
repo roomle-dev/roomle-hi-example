@@ -109,7 +109,7 @@ template string in this file; there is no separate rules file.
 `inPlanner(tool)` is `planChange` around the one planner call, and `planChange =
 oneAtATime(recorded(tool, executor))`: serialized and recorded for undo
 ([Undo and redo](#undo-and-redo)). roomle-ui performs the tool and answers with its result plus
-`historySteps` and `historyFollowUps`, which `inPlanner` removes. `find-attributes`, `get-price`, `get-order-data` and
+`historySteps`, which `inPlanner` removes (and a `historyFollowUps` an older planner still sends). `find-attributes`, `get-price`, `get-order-data` and
 `get-plan-images` run beside a plan change.
 
 ### Running a tool — `runTool`
@@ -216,14 +216,13 @@ made, so it counts them.
 
 ### The record — `plan-history.ts`
 
-`planHistory` keeps two stacks of `ToolCallRecord { tool, steps, groupsBefore, groupsAfter, settled }`
-(`_done`, `_undone`), a count of history events, the late follow-ups it still expects, and whether
-a tool call is in flight.
+`planHistory` keeps two stacks of `ToolCallRecord { tool, steps, groupsBefore, groupsAfter }`
+(`_done`, `_undone`), a count of history events, and whether a tool call is in flight.
 
 - **Telling tool steps from user changes** (`historyChanged`): every `historyChange` event of the
   active page is counted. While a tool call runs, the event is the call's own. Outside a call it is
-  either a late follow-up the server expects, or a change the user made in the planner — then the
-  record is forgotten and the next undo answers "changed in the planner".
+  a change the user made in the planner — the record is forgotten and the next undo answers
+  "changed in the planner".
 - `record()` pushes a call and clears the redo stack; `reset()` (on page acceptance) clears all.
 
 ### Recording a call — `recorded` in `tool-executors.ts`
@@ -243,25 +242,18 @@ counting API records them and `inPlanner` then raises the error. Before the call
 `groupsKey`: the groups sorted by id, numbers rounded to 0.1 mm. A recorded call ends redo
 (`planHistory.record`), as the planner drops its redo future with a new step.
 
-Some group operations commit a second step — the follow-up reload when the kernel reports the
-group's new position. The tool command reports them as `historyFollowUps`: one per operation of
-`FOLLOW_UP_COMMANDS` (`change-module-attribute`, `change-group-attribute`, `change-attributes`,
-`exchange-root-module`, `insert-article-into-group`, `swap-root-modules`) and per
-`remove-article-from-group` that closed the gap (`hasFollowUp`, roomle-ui `hi-tool-commands.ts`).
-The call then waits up to `FOLLOW_UP_WAIT_MS` (2 s) until the page has relayed `historySteps` plus
-`historyFollowUps` history events — only when the page relays history events at all. A follow-up
-that has not arrived by the end of the call is registered as expected (`expectLateFollowUp`) and the
-record is `settled: false`.
+The planner runs a tool call as one step of its undo history and answers after its last reload
+(D77, D79): the tool command reports `historySteps` 1, or 0 when it changed nothing, and no history
+event of the call arrives after its answer, so the call waits for none.
 
 ### Reverting — `revertToolCall(direction)`
 
 1. No record: `undone: null` / `redone: null` with a hint (nothing to undo, or changed in the planner).
-2. Undo of an unsettled call: wait up to 2 s for its late follow-ups, else answer "still finishing".
-3. The current plan must equal the call's end state (undo) or start state (redo); otherwise the
+2. The current plan must equal the call's end state (undo) or start state (redo); otherwise the
    record is forgotten — the user changed the plan.
-4. `stepHistory` calls the planner's `undo()` / `redo()` once per recorded step, each confirmed by a
+3. `stepHistory` calls the planner's `undo()` / `redo()` once per recorded step, each confirmed by a
    history event within `HISTORY_EVENT_WAIT_MS` (1 s).
-5. The plan must now equal the other state. If it does not, the steps are taken back the other way
+4. The plan must now equal the other state. If it does not, the steps are taken back the other way
    and the result says so.
 
 The behaviour and every message: [hi-mcp-behaviour.md §6 undo, redo](../hi-mcp-behaviour.md#undo-redo)
@@ -274,8 +266,8 @@ and [§8.8](../hi-mcp-behaviour.md#88-undo-and-redo).
   record breaks.
 - **A plan-changing tool must be wrapped in `planChange`** — `inPlanner` does it. Otherwise its
   history events arrive outside a call, count as user changes, and clear the undo record.
-- **Undo relies on history events.** A page that does not relay `historyChange` gets no follow-up
-  wait, and `stepHistory` times out after the first undo. Both shipped pages relay them.
+- **Undo relies on history events.** A page that does not relay `historyChange` cannot confirm an
+  undo: `stepHistory` times out after the first one. Both shipped pages relay them.
 - **The record starts over with a page.** `planHistory` resets on `hello`; the agent's group ids
   live in the planner page (roomle-ui `HiToolState`) and start over with it.
 - **A rule or a message changed here** changes the server's behaviour — update

@@ -25,7 +25,7 @@ never drop the agent's content silently.
 | 62 | [`merge-article-into-group` moves a group placed in the conversation](#62-merge-article-into-group-moves-a-group-placed-in-the-conversation) | defect | roomle-ui `homag-intelligence` (`mergeArticleIntoGroup`) | high | gpt-6-astra | |
 | 63 | [The worktop of a handleless kitchen renders white](#63-the-worktop-of-a-handleless-kitchen-renders-white) | defect, not analysed | roomle-ui render or HOMAG library — to analyse | medium | gpt-6-astra | |
 | 65 | [A wall of floor-to-ceiling glass the user names is left out](#65-a-wall-of-floor-to-ceiling-glass-the-user-names-is-left-out) | hardening | roomle-hi-example served text (`AUTHORING_RULES`, `hi-mcp-server.ts`) | medium | gpt-6-astra | |
-| 66 | [A corner group stands in front of the adjoining wall's window](#66-a-corner-group-stands-in-front-of-the-adjoining-walls-window) | hardening | roomle-hi-example served text (`AUTHORING_RULES`); roomle-ui `obstacleHint` (`hi-tool-hints.ts`) | low | gpt-6-astra | |
+| 66 | [A corner group stands in front of the adjoining wall's window](#66-a-corner-group-stands-in-front-of-the-adjoining-walls-window) | hardening | roomle-ui `obstacleHint` (`hi-tool-hints.ts`) | low | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -103,19 +103,15 @@ answer names the windows; `living-room-sideboard-and-tv` creates both groups.
 **Problem.** A group placed by wall into a corner (`alignment` the adjoining wall) whose adjoining
 wall has a window within 600 mm of the corner stands in the strip in front of that window; the
 create's `hint` names it, and the agent moves the group with `place-group` in the next step — one
-step and about 8 s. The rule sentence "a group placed in a room corner reaches along the adjoining
-wall by its depth" makes the agent keep some distance (`offsetMm` 450 instead of 150), but not
-enough: the strip the hint tests is 600 mm deep.
+step and about 8 s.
 
-**Cause.** The served text and the hint: the rule names no distance, and the hint names the free
-stretches of the root module's own wall — which the adjoining wall's window does not shorten — not
-the `offsetMm` along the group's wall that clears the window's strip (`WALL_STRIP_MM`,
-`hi-wall-placement.ts`; `obstacleHint`, `hi-tool-hints.ts`).
+**Cause.** The hint names the free stretches of the root module's own wall — which the adjoining
+wall's window does not shorten — not the `offsetMm` along the group's wall that clears the window's
+strip (`WALL_STRIP_MM`, `hi-wall-placement.ts`; `obstacleHint`, `hi-tool-hints.ts`). The rules name
+the 600 mm.
 
-**To do.** Served text and result only, no change of the placement: the rule sentence says that a
-door or window of the adjoining wall is cleared with an `offsetMm` of at least the 600 mm strip
-from that corner; the hint of a root module in front of an opening of the adjoining wall names the
-`offsetMm` along its own wall that clears it.
+**To do.** Result only, no change of the placement: the hint of a root module in front of an opening
+of the adjoining wall names the `offsetMm` along its own wall that clears it.
 
 **Test.** `image-only-no-text`: the create places the left group clear of the back wall's window,
 no `place-group` after it.

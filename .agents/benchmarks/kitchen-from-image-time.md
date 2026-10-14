@@ -684,6 +684,16 @@ sentence names "9 root modules (PH15L, HK260, …, OSKB60 ×3)" instead of nine 
 result as a whole stays at about 11k tokens — it is the groups —, and the chat time is that of the
 rounds before.
 
+### 10.2 Improvement 3 — evaluated, no code change
+
+The master data gives a dimension attribute no value list and no range: `mod_Height`, `mod_Width`
+and `mod_Depth` are of type Dim without `selections`, like 21 of the 24 Dim attributes
+(`mod_PlinthAreaHeight` has 9 values, `mod_IslandBackwallWidth` and `mod_GroupWidth` one each —
+these come with the vocabulary section of improvement 1). There is nothing for the catalog to
+pass through, and the sizes a flip-lift wall cabinet takes are the library's: its descs, library
+issue 64 ([library-issues.md](../backlog/library-issues.md)). The duplicated `notLoaded` sentences
+of that case are improvement 6.
+
 ### 10.3 What improved
 
 | Round | Chat s | Steps | Input tokens | Against the baseline |
@@ -707,14 +717,3 @@ runs still move their left group after the create); their sentences stay as info
 round was stable: every run built the planning its test asks for, with its materials; two
 provider stalls and one transport failure were left out and rerun or retried, no run failed on the
 planning.
-
-
-### 10.2 Improvement 3 — evaluated, no code change
-
-The master data gives a dimension attribute no value list and no range: `mod_Height`, `mod_Width`
-and `mod_Depth` are of type Dim without `selections`, like 21 of the 24 Dim attributes
-(`mod_PlinthAreaHeight` has 9 values, `mod_IslandBackwallWidth` and `mod_GroupWidth` one each —
-these come with the vocabulary section of improvement 1). There is nothing for the catalog to
-pass through, and the sizes a flip-lift wall cabinet takes are the library's: its descs, library
-issue 64 ([library-issues.md](../backlog/library-issues.md)). The duplicated `notLoaded` sentences
-of that case are improvement 6.

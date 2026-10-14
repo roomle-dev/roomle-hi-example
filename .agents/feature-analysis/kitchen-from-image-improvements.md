@@ -218,8 +218,10 @@ it ([6.5](#65-improvement-5)).
 **Change (served text).** The placement stays as it is. The rules' obstacle paragraph tells the
 agent what the three runs show it did not derive from the obstacles it was given: a group placed in
 a room corner reaches along the adjoining wall by its depth, so a door or a window within that depth
-of the corner on the adjoining wall is in its way — choose the other corner, or an offsetMm past
-the opening's span; base units lower than a window's sill fit below it (already there). The agent
+of the corner on the adjoining wall is in its way — choose the other corner, or an offsetMm of at
+least 600 mm from that corner, the strip in front of an opening the hint tests (corrected in the
+review: the opening's span lies along the adjoining wall, offsetMm along the group's own wall);
+base units lower than a window's sill fit below it (already there). The agent
 then places the group right in the create instead of moving it in a second step.
 
 ### 2.6 Improvement 6 — shorter create results

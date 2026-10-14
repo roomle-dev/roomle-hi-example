@@ -153,7 +153,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D38 | **The agent's undo reverts tool calls only.** The server records every tool call that changed the plan with the planner steps it made; `undo` reverts the last one while the plan is as that call left it. A history event while no tool call runs is a change in the planner: the server forgets its records, and `undo` says so — the planner's undo button serves the user's own changes | 2026-10-05 | [RML-18044](https://roomle.atlassian.net/browse/RML-18044) | in effect — `plan-history.ts`, `recorded`, `revertToolCall`, `tool-executors.ts` |
 | D47 | **Undo steps back through the planner's own history.** `undo` calls the planner's `undo()` once per step the tool call made, and checks the plan against the one before the call. Rejected: a server snapshot restored by a load — a re-created group gets new ids, the library recalculates every restored group and may discard a replace it cannot calculate, the restore adds steps the user's undo button then undoes, and the user's own edits are overwritten; and stepping back blindly by a step table without the relayed history events — nothing would tell an empty or cleared history or a user's edit. The step count comes from roomle-ui: the planner runs a tool call as one step and the tool command reports it (`historySteps` 1, or 0 when it changed nothing; D77, D79) | 2026-10-05 | [RML-18044](https://roomle.atlassian.net/browse/RML-18044) | in effect — `countingPlannerApi`, `revertToolCall`, `tool-executors.ts`; `runToolCommand`, roomle-ui `hi-tool-commands.ts` |
 | D6 | In the planner, merge, split, delete and move are always carried out, even if the result is incorrect; the errors of a previous operation never block the next one | 2026-10-01 | user rule (RML-18017, roomle-ui glue logic) | in effect (roomle-ui) |
-| D71 | **The tool logic of the plan-changing tools runs in roomle-ui, and the planner API of the tools stays at six methods.** Every tool that changes the plan is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`: roomle-ui runs a command named like a tool as that tool (`HI_TOOL_COMMANDS`) — the corrections, the id and article resolution, the docking from the relations (D72), the placement by point and by wall, the group materials, the hints, the library changes, `notLoaded`, the positions in the placement frame and `rowIndex` — and answers with the tool's result plus the planner steps it made (`historySteps`, `historyFollowUps`, D47). The commands read the plan context and the calculated groups, load layouts and calculate article templates in the planner itself. The server keeps the tool registry and the served text, the plan context in the agent's words, `find-attributes`, the serialisation of plan changes (D4) and undo and redo (D38). The tools call `getExternalObjectPlanContext`, `externalObjectGroupOperation`, `fetchPrice`, `getExternalObjectSnapshot`, `undo` and `redo`; a new plan-changing tool is a command, not a planner method. Rejected: the logic in the server with more planner methods — every need adds a method to every page allow-list, the server re-derives the geometry the planner has calculated, and an article that is not in the plan has no geometry for any other consumer; a planner method per tool — a command is cheaper than a method (D3) | 2026-10-13 | user ([RML-18147](https://roomle.atlassian.net/browse/RML-18147)) | in effect — `HI_TOOL_COMMANDS`, `runToolCommand`, roomle-ui `hi-tool-commands.ts`; `executeGroupOperation`, roomle-ui `hi-tools.ts`; `inPlanner`, `tool-executors.ts`; `planner-api.ts`, `MCP_PLANNER_METHODS` (`index.html`), `PLANNER_METHODS` (`browser-bridge.ts`); guarded by `it('calls exactly the planner methods the page bridge exposes')` in `hi-mcp/hi-mcp-server/tests/planner-api.test.ts` and `it.each(toolCalls)('runs %s in the planner with its arguments as sent and returns the result without the planner steps')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
+| D71 | **The tool logic of the plan-changing tools runs in roomle-ui, and the planner API of the tools stays at six methods.** Every tool that changes the plan is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`: roomle-ui runs a command named like a tool as that tool (`HI_TOOL_COMMANDS`) — the corrections, the id and article resolution, the docking from the relations (D72), the placement by point and by wall, the group materials, the hints, the library changes, `notLoaded`, the positions in the placement frame and `rowIndex` — and answers with the tool's result plus the planner step it made (`historySteps`, D47, D79). The commands read the plan context and the calculated groups, load layouts and calculate article templates in the planner itself. The server keeps the tool registry and the served text, the plan context in the agent's words, `find-attributes`, the serialisation of plan changes (D4) and undo and redo (D38). The tools call `getExternalObjectPlanContext`, `externalObjectGroupOperation`, `fetchPrice`, `getExternalObjectSnapshot`, `undo` and `redo`; a new plan-changing tool is a command, not a planner method. Rejected: the logic in the server with more planner methods — every need adds a method to every page allow-list, the server re-derives the geometry the planner has calculated, and an article that is not in the plan has no geometry for any other consumer; a planner method per tool — a command is cheaper than a method (D3) | 2026-10-13 | user ([RML-18147](https://roomle.atlassian.net/browse/RML-18147)) | in effect — `HI_TOOL_COMMANDS`, `runToolCommand`, roomle-ui `hi-tool-commands.ts`; `executeGroupOperation`, roomle-ui `hi-tools.ts`; `inPlanner`, `tool-executors.ts`; `planner-api.ts`, `MCP_PLANNER_METHODS` (`index.html`), `PLANNER_METHODS` (`browser-bridge.ts`); guarded by `it('calls exactly the planner methods the page bridge exposes')` in `hi-mcp/hi-mcp-server/tests/planner-api.test.ts` and `it.each(toolCalls)('runs %s in the planner with its arguments as sent and returns the result without the planner steps')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` |
 
 ### Information for the agent
 
@@ -347,8 +347,8 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
   other command as a group operation of the planner (`runGroupOperation`, D3). A tool command reads
   the plan context and the calculated groups, loads layouts, calculates article templates and runs
   group operations in the planner itself, and answers with the tool's result — its groups in the
-  placement frame (C14) — plus `historySteps` and `historyFollowUps`; the server removes both before
-  the agent sees the result. The plan context of the planner reports the groups in the placement
+  placement frame (C14) — plus `historySteps`; the server removes it before the agent sees the
+  result. The plan context of the planner reports the groups in the placement
   frame too.
 - **One plan change at a time.** The tools that change the plan wait for each other (D4): the record
   of a call for undo compares the plan before and after it, and the page runs every planner call it
@@ -475,8 +475,9 @@ tool. It covers:
   that a new group goes on a stretch of wall or a spot `obstacles` leaves free —
   a stretch by alignment `end` and `offsetMm` = the start of its `fromEndMm` —, that base units lower than a window's `bottomMm` fit
   below it, that a group placed in a room corner reaches along the adjoining wall by its depth, so
-  a door or a window within that depth of the corner on the adjoining wall is in its way (the
-  other corner, or an `offsetMm` past the opening's span; a tall-unit run in the back left corner
+  a door or a window of the adjoining wall that begins within that depth of the corner is in its
+  way (the other corner, or an `offsetMm` of at least 600 mm from that corner — the strip in front
+  of an opening the hint tests, `WALL_STRIP_MM`; a tall-unit run in the back left corner
   stood in front of a window of the back wall in three of three runs, and the agent moved it in a
   second step), and that the result's `hint` names every root module on an obstacle with the free
   stretches of its wall.
@@ -773,20 +774,17 @@ instructions on, like the HI chat (§4), shows the model only the tool list.
 
 1. No record → the tool name is `null` and a `hint` says why: nothing to undo or redo, or the plan
    was changed in the planner after the last tool call.
-2. `undo` of an unsettled call waits up to 2 s for its late follow-up reloads; while one is still
-   outstanding, nothing is undone and the `hint` says so — an undo before the reload would make
-   the reload a step of its own. Once it has arrived, the plan then is the call's plan after.
-3. The plan must be as the call left it — the groups of the plan context compared to the tenth of a
+2. The plan must be as the call left it — the groups of the plan context compared to the tenth of a
    millimetre —,
    else the records are forgotten and the result is the planner hint.
-4. One planner `undo()` or `redo()` per step of the call, each confirmed by its history event
+3. One planner `undo()` or `redo()` per step of the call, each confirmed by its history event
    within 1 s; a missing event — the planner's history was cleared, e.g. by a plan load — forgets
    the records and says so.
-5. The plan must now be the plan before (for `undo`) or after (for `redo`) the call. If it is not
+4. The plan must now be the plan before (for `undo`) or after (for `redo`) the call. If it is not
    — the user changed the plan in the planner while the call ran, so that change sits among the
    call's steps —, the same number of steps is taken back in the other direction, the records are
    forgotten, and the `hint` says so. A wrong revert is never left in place.
-6. The call moves to the other list. The result names the tool and returns the groups the call
+5. The call moves to the other list. The result names the tool and returns the groups the call
    changed — by the plan before and after it — as they are now, in the plan-context shape,
    `removedGroupIds` for the groups the revert took out of the plan, and `otherGroupIds` for the
    others (D68). A result that reverted nothing returns every group of the plan.
@@ -1100,8 +1098,6 @@ Both are the last resort of §2.2, an id that matches nothing; the message names
 | Valid article ids in G15's message | 100 | `unknownArticleMessage`, roomle-ui `hi-tool-ids.ts` |
 | Overlap tolerance of `place-group` and of the obstacle hint | 5 mm | `OVERLAP_TOLERANCE_MM`, roomle-ui `hi-wall-placement.ts` |
 | Strip along a wall: in front of a door or a window, and where a root module stands at a wall (D55) | 600 mm | `WALL_STRIP_MM`, roomle-ui `hi-wall-placement.ts` |
-| Wait for the follow-up reload of an attribute change or exchange | 2 s | `FOLLOW_UP_WAIT_MS` |
 | Wait for the history event of a planner undo or redo | 1 s | `HISTORY_EVENT_WAIT_MS` |
-| Wait in `undo` for a late follow-up reload of the last call | 2 s | `FOLLOW_UP_WAIT_MS` |
 | Comparison of the plan before and after a tool call | 0.1 mm | `groupsKey` |
 | Planning skills | the directories of `hi-mcp/hi-mcp-server/skills/`, read once at start | `SKILLS_DIR`, `loadSkills` |

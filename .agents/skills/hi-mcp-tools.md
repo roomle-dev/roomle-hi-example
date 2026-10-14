@@ -14,7 +14,7 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 | `create-or-replace-groups` | Create, modify and extend groups; position new groups |
 | `place-group` | Move an existing group against a wall or into a room corner |
 | `get-authoring-rules` | Get HI authoring rules |
-| `get-skill` | Get a planning skill (kitchen, kitchen in France, living room) or one of its files |
+| `get-skill` | Get a planning skill (planning from an image, kitchen, kitchen in France, living room) or one of its files |
 
 ### Information Tools
 | Tool | Purpose |
@@ -389,7 +389,7 @@ value carries its code — `Cloudy blue (#506080)` —, the colour of that value
 
 ### Standard Workflow
 ```javascript
-const skill = await getSkill({ name: 'kitchen-planning' }); // for a room of a kind the get-skill description lists
+const skill = await getSkill({ name: 'kitchen-planning' }); // for a room of a kind the get-skill description lists, image-planning for an image
 const context = await getPlanContext();
 const newGroup = buildGroup(context);
 await createOrReplaceGroups({ posGroups: [newGroup] });

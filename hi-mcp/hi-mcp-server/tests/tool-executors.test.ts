@@ -928,7 +928,7 @@ describe('remaining tools', () => {
     await expect(
       toolExecutors['get-skill'](createApi({}), { name: 'bathroom-planning' })
     ).rejects.toThrow(
-      'the skills are kitchen-planning, kitchen-planning-fr, living-room-planning'
+      'the skills are image-planning, kitchen-planning, kitchen-planning-fr, living-room-planning'
     );
   });
 

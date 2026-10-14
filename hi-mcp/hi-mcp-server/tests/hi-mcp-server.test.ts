@@ -317,6 +317,7 @@ describe('hi-mcp-server tool calls', () => {
     const description =
       tools.find((tool) => tool.name === 'get-skill')?.description ?? '';
     expect(skills.map((skill) => skill.name)).toEqual([
+      'image-planning',
       'kitchen-planning',
       'kitchen-planning-fr',
       'living-room-planning',
@@ -325,10 +326,13 @@ describe('hi-mcp-server tool calls', () => {
       expect(description).toContain(`- ${skill.name}: ${skill.description}`);
     }
     expect(description).toContain(
-      'Before planning a room of a kind listed here, fetch its skill and follow it'
+      'how to plan a room of one kind, or from an image the user sends, well'
+    );
+    expect(description).toContain(
+      'Before planning a room of a kind listed here, or from an image, fetch its skill and follow it'
     );
     expect(client.getInstructions()).toContain(
-      'For a room of a kind get-skill lists, fetch that skill first and follow it.'
+      'For a room of a kind get-skill lists, or for an image the user sends, fetch that skill first and follow it.'
     );
   });
 
@@ -381,7 +385,7 @@ describe('hi-mcp-server tool calls', () => {
       });
       expect(unknownSkill.isError).toBe(true);
       expect(textOf(unknownSkill)).toContain(
-        'the skills are kitchen-planning, kitchen-planning-fr, living-room-planning'
+        'the skills are image-planning, kitchen-planning, kitchen-planning-fr, living-room-planning'
       );
       const unknownFile = await client.callTool({
         name: 'get-skill',

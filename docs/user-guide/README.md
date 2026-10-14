@@ -184,6 +184,12 @@ Drop an image onto the chat window — a photo of a kitchen, a catalog page, a s
 example, *"Create a kitchen like this one in the back right corner."* All chat models of the store
 read images; in the example page the input field says "drop an image" when the model can read them.
 
+The image alone is enough: without text, the assistant plans the furniture it shows as close to it
+as possible. With an image it reads the planning skill for images: it keeps the order of the
+cabinets and their proportions, fits the furniture to a wall of the room and keeps the doors and
+windows clear, takes the closest article of the catalog where the catalog has nothing alike, and
+says what it substituted and adapted.
+
 ![A photo of a white L-shaped kitchen with a wooden worktop, given to the assistant as a reference](../images/example-2-reference-kitchen.jpg)
 
 ![The kitchen the assistant planned from the photo: white fronts, a wooden worktop, tall units at both ends](../images/example-2-result.png)

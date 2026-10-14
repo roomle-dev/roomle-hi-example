@@ -476,7 +476,7 @@ node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<pro
 |---|---|
 | `<provider>` | a chat provider of the launcher, passed through unchanged (`gpt-5.4-mini`, `mistral`, `claude`, … — see [ai-chat.md](../../docs/ai-chat.md)) |
 | `<api-key>` | the provider's API key, e.g. `"$AZURE_GPT_KEY"` |
-| `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it. `""` with `--image` sends the image alone — the chat backend gives it the text "Identify the furniture in the image (for example a kitchen, wardrobe, media unit, lowboard, sideboard, cabinet or utility room) and create a planning as close to it as possible." |
+| `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it. `""` with `--image` sends the image alone — the chat backend gives it the image prompt of the planner, which names the skill `image-planning` |
 | `--plan <id>` | the plan snapshot the page starts from (`plan_id` of the example URL), its HI groups included; without it, the page's default plan |
 | `--image <file>` | an image (PNG, JPEG, WebP, GIF) that goes along with the last prompt, as an image dropped into the chat window: redrawn as JPEG with a long side of at most 1568 px. A model that reads no images answers `HTTP 400: The model … does not read images` |
 | `--out <dir>` | the result directory (default `.temp/result/<UTC timestamp>-<provider>/`) |
@@ -494,7 +494,8 @@ The script:
    loaded) and until the HI library has loaded the plan's groups (`window.hiPosGroupsCompletelyLoaded`,
    set by the example page in `onPosGroupsCompletelyLoaded`) — the planner clears its undo history
    then, so a change of the chat made before it could not be undone in a later turn;
-4. sends the prompts to the chat backend (`POST /chat`, the chat window's system prompt and tools),
+4. sends the prompts to the chat backend (`POST /chat`, with the system prompt and the image prompt it
+   requests from the planner of its page — `getExternalObjectAgentPrompts()`, as the chat window does),
    each until the end of its stream, and records every planner call the MCP server sends to the
    page (from the bridge's WebSocket frames — the server's log cuts the arguments short);
 5. reads the rooms, groups and obstacles (`get-plan-context`), then `getExternalObjectSnapshot()` with every

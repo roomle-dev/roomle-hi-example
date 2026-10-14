@@ -110,7 +110,7 @@ The start script (`npm start`) provides:
 │       ├── plan-history.ts       # The record of the plan-changing tool calls for undo and redo
 │       ├── planner-api.ts        # The six planner methods the tools call, relayed to the page
 │       ├── skills.ts             # The planning skills: loads skills/, the index of get-skill, a skill file by name and path
-│       ├── skills/               # The planning skills in the Agent Skills format (kitchen, kitchen in France, living room)
+│       ├── skills/               # The planning skills in the Agent Skills format (planning from an image, kitchen, kitchen in France, living room)
 │       ├── page-bridge.ts        # Connected-page registry, call correlation
 │       ├── types.ts              # WebSocket message protocol
 │       ├── tests/                # Unit tests (tool-executors, plan-history, planner-api, page-bridge, hi-mcp-server)

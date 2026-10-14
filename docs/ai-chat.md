@@ -149,7 +149,11 @@ unchecked hides it.
 
 The conversation is held in the page and sent whole with every turn (the
 backend is stateless). The page sends the same per-page `clientId` in its
-WebSocket hello and each chat request. The input is disabled until the bridge
+WebSocket hello and each chat request. When the chat starts, the page requests
+the prompts of the chat from the planner once —
+`roomDesignerApi.extended.getExternalObjectAgentPrompts()`, the system prompt
+and the image prompt of the roomle-ui glue logic — and sends them as `prompts`
+with each chat request; the chat keeps no prompts of its own. The input is disabled until the bridge
 acknowledges this page, and on disconnect or when another page owns the planner.
 The chat backend requires that ID and uses `/mcp?client=<clientId>`, so a tab
 that does not own the planner cannot use the chat to change its plan. Assistant replies are rendered as **markdown** (bold,
@@ -167,8 +171,8 @@ is still working. The backend logs every request, MCP connection, tool call
 
 ### A chat turn
 
-The backend gives the model the system prompt `CHAT_SYSTEM_PROMPT`
-(`chat-config.ts`, its sentences in the
+The backend gives the model the system prompt of the request
+(`prompts.systemPrompt`, from the planner; its sentences in the
 [behaviour reference](hi-mcp-behaviour.md#4-how-a-tool-call-runs)),
 the conversation and the MCP tools, and runs `streamText` in steps
 (`chat-steps.ts`): a step is one model call and the tool calls it returns.
@@ -260,8 +264,8 @@ In the page (only when `/capabilities` answers `imageInput: true`):
 - **Preview**: the attached image is shown small above the input, with a × to
   remove it. After sending, it is shown in the user's message.
 - **Text**: an image can be sent with an empty input. The user's message then
-  shows only the image, and the chat backend gives the model the default text
-  (see below).
+  shows only the image, and the chat backend gives the model the image prompt
+  of the planner (see below).
 - The images stay in the conversation and go along with every turn, so a
   follow-up can refer to the image. Every step of a turn sends them again (up
   to 16 times), which is why the page scales them down: a larger image adds
@@ -278,11 +282,13 @@ A user message carries its images in `images`, an array of base64 data URLs
 { "role": "user", "content": "", "images": ["data:image/jpeg;base64,/9j/..."] }
 ```
 
-A user message with images and an empty (or blank) `content` gets the text
-"Identify the furniture in the image (for example a kitchen, wardrobe, media
-unit, lowboard, sideboard, cabinet or utility room) and create a planning as
-close to it as possible." (`DEFAULT_IMAGE_PROMPT` in `chat-config.ts`). The
-backend adds it for every client, the page, the test script and curl alike.
+A user message with images and an empty (or blank) `content` gets the image
+prompt of the request, `prompts.imagePrompt` — the planner's text "Plan the
+furniture in the image as close to it as possible - fetch the planning skill
+image-planning with get-skill and follow it." (`toModelMessages` in
+`chat-config.ts`). The skill `image-planning` of the MCP server says how to plan
+from an image, for an image with text too. The backend adds the image prompt for
+every client, the page, the test script and curl alike.
 
 The backend accepts no image URL, because the AI SDK would download it in the
 backend. It passes the images to the model as file parts of the user message
@@ -294,7 +300,7 @@ that reads no images is answered with `400`.
 
 ```
 [Browser: index.html]
-  ├── Chat UI (POST /chat with the message history and clientId)
+  ├── Chat UI (POST /chat with the message history, clientId and the planner's prompts)
   └── MCP browser bridge (?mcp=true, same clientId in hello)
             │ ws://localhost:3100/bridge
             ▼
@@ -352,10 +358,10 @@ A plan context with them fills half of Mistral Large's context.
 Endpoints: `GET /health` (used for smoke tests), `GET /capabilities`
 (`{ "imageInput": true }` when the model reads images — see
 [Images in the chat](#images-in-the-chat)) and `POST /chat`
-(`{ "messages": [{ "role": "user", "content": "..." }], "clientId": "<page ID>" }`
+(`{ "messages": [{ "role": "user", "content": "..." }], "clientId": "<page ID>", "prompts": { "systemPrompt": "...", "imagePrompt": "..." } }`
 → plain text stream). The prompt runner reads the page ID from the bridge hello
-before posting to chat. Errors are relayed as plain text with a matching status code: `503`
-without a configured token, `400` for invalid bodies or a missing `clientId`, `403` for disallowed
+and the prompts from the planner of its page before posting to chat. Errors are relayed as plain text with a matching status code: `503`
+without a configured token, `400` for invalid bodies, a missing `clientId` or missing `prompts`, `403` for disallowed
 origins, `500` when the chat cannot start (the MCP server is unreachable, or the provider is not
 configured, e.g. `AZURE_RESOURCE_NAME`). A failure after the stream started — a provider error, the
 turn timeout — ends the stream with an `[error] …` line.
@@ -393,6 +399,8 @@ turn timeout — ends the stream with an `[error] …` line.
 | `No API token configured` (503) | Chat backend started without a key — start with `npm start <provider> <api-key>` |
 | Chat disabled: server already has a planner connected | Close the other planner page, then reload this one |
 | `Chat request requires a page clientId` (400) | Include the browser page's bridge `clientId` in the chat request |
+| `Chat request requires prompts` (400) | Include `prompts`, the result of the planner's `getExternalObjectAgentPrompts()`, in the chat request |
+| `failed to load: HI is not available` in the debug log, no chat | The planner was created without its HI module, so it has no prompts for the chat (`getExternalObjectAgentPrompts` rejects) |
 | `AZURE_RESOURCE_NAME is required` | The `azure` provider needs the resource name env var and the deployment name in `HI_CHAT_MODEL` |
 | Reply says the tool failed with "no page connected" | The example page is not open (or not with `?mcp=true`) — the browser bridge is required for tool calls |
 | `port 3200 is already in use` | A previous chat backend is still running — `lsof -ti tcp:3200 \| xargs kill`, or pick another port with `HI_CHAT_PORT` |

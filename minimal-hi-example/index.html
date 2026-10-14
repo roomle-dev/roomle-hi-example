@@ -1413,6 +1413,11 @@
           import('https://unpkg.com/marked@18.0.14/lib/marked.esm.js'),
           import('https://unpkg.com/dompurify@3.4.16/dist/purify.es.mjs'),
         ]);
+        // The system prompt and the image prompt of the chat come from the
+        // planner, requested once and sent with every request.
+        logApiCall('getExternalObjectAgentPrompts');
+        const agentPrompts =
+          await roomDesignerApi.extended.getExternalObjectAgentPrompts();
         const chatPort = getQueryParam('chat_port') ?? '3200';
         const chatUrl = `http://localhost:${chatPort}/chat`;
         const messagesArea = document.getElementById('chat-messages');
@@ -1573,6 +1578,7 @@
               body: JSON.stringify({
                 messages: conversation,
                 clientId: mcpClientId,
+                prompts: agentPrompts,
               }),
             });
             if (!response.ok || !response.body) {

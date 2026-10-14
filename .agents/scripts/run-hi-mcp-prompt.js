@@ -385,9 +385,9 @@ const splitChatStream = (text) => {
 // node:http, not fetch: fetch ends a response after 300 s without data, and
 // a model may think that long before the chat streams its next line. What
 // came before a failure is kept.
-const postChat = (messages, clientId) =>
+const postChat = (messages, clientId, agentPrompts) =>
   new Promise((resolve) => {
-    const body = JSON.stringify({ messages, clientId });
+    const body = JSON.stringify({ messages, clientId, prompts: agentPrompts });
     const chunks = [];
     let status;
     const settle = (error) => {
@@ -421,8 +421,12 @@ const postChat = (messages, clientId) =>
     chatRequest.end(body);
   });
 
-const sendChat = async (messages, clientId) => {
-  const { status, text, error } = await postChat(messages, clientId);
+const sendChat = async (messages, clientId, agentPrompts) => {
+  const { status, text, error } = await postChat(
+    messages,
+    clientId,
+    agentPrompts
+  );
   if (status !== undefined && status >= 300) {
     return { answer: '', tools: [], errors: [`HTTP ${status}: ${text}`] };
   }
@@ -467,7 +471,7 @@ const prepareImage = (page, bytes) =>
 // The prompts are the turns of one conversation, as in the chat window: the
 // history goes along with every turn. A turn with an error ends it. The image
 // goes along with the last prompt.
-const runConversation = async (prompts, image, clientId) => {
+const runConversation = async (prompts, image, clientId, agentPrompts) => {
   const messages = [];
   const turns = [];
   for (const [index, prompt] of prompts.entries()) {
@@ -482,7 +486,7 @@ const runConversation = async (prompts, image, clientId) => {
     );
     const startedAt = Date.now();
     toolCalls.turn = index;
-    const turn = await sendChat(messages, clientId);
+    const turn = await sendChat(messages, clientId, agentPrompts);
     turns.push({
       prompt,
       ...(turnImage && { image: turnImage.file }),
@@ -571,6 +575,12 @@ const runSession = async (options, launcher, browser) => {
     'the page client ID'
   );
   await waitForLoadedPlanGroups(page);
+  // the system prompt and the image prompt of the chat, as the page requests them
+  const agentPrompts = await evaluateInPage(
+    page,
+    'getExternalObjectAgentPrompts',
+    'the agent prompts'
+  );
   plannerCalls.length = 0;
   const readyAt = Date.now();
   console.log('[run-hi-mcp-prompt] page ready');
@@ -580,7 +590,8 @@ const runSession = async (options, launcher, browser) => {
   const turns = await runConversation(
     options.prompts,
     promptImage && { file: options.image, dataUrl: promptImage },
-    clientId
+    clientId,
+    agentPrompts
   );
   toolCalls.turn = undefined;
   const chatPlannerCalls = plannerCalls.slice();

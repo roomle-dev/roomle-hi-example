@@ -393,10 +393,12 @@ surfaces those).
 
 ### get-skill
 
-`{ name, file? }`. Returns a planning skill as text — how to plan a room of one kind well: the
-workflow, the zones, the dimensions and the checks. The description lists the skills
-(`kitchen-planning`, `kitchen-planning-fr`, `living-room-planning`) with their descriptions, so
-the agent sees the index in the tool list and fetches a skill before planning that kind of room.
+`{ name, file? }`. Returns a planning skill as text — how to plan a room of one kind, or from an
+image the user sends, well: the workflow, the zones, the dimensions and the checks. The description
+lists the skills (`image-planning`, `kitchen-planning`, `kitchen-planning-fr`, `living-room-planning`)
+with their descriptions, so the agent sees the index in the tool list and fetches a skill before
+planning that kind of room or from an image. The system prompt of the chats, which comes from the
+planner (`getExternalObjectAgentPrompts()`), names the skills too.
 `file` names a supporting file the skill refers to (`references/planning-reference.md`);
 `SKILL.md` is the default and comes after a short preamble that maps the skill onto the planning
 session. Answered by the server itself — it works without a connected page. The skills are the

@@ -30,7 +30,9 @@ per session and is shared by every client.
 - The MCP server and its Cloudflare image carry no AI SDK and never see a provider key; the key is in
   no Worker or container log.
 - There are two chat implementations, the example's backend and the store's page module. A change to
-  the step policy, the system prompt or the Mistral image middleware is made in both.
+  the step policy or the Mistral image middleware is made in both. Both take their system prompt and
+  image prompt from the planner (D80 of
+  [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)).
 - The store's key is visible in the browser history, in the access logs of the store host and in the
   page. The store keeps it out of the page URL its bridge announces. This is acceptable for a demo
   only: before a production store, the key moves to a server-side secret (e.g. a Worker secret

@@ -126,11 +126,12 @@ server uses, because every MCP client supports it.
   served text, the results and the server's logic only: code comments, tests and markdown files are
   no violation.
 - **Planning skills are served text on demand.** How to plan a room of one kind well — a kitchen,
-  a living room — lives in skill files of the server package (`hi-mcp/hi-mcp-server/skills/`) and
-  reaches the agent only through `get-skill` (D75, [§5.6](#56-planning-skills-get-skill)). The skill
-  index in the description of `get-skill` is the one served text that names a kind of room; the
-  general served text stays neutral. A skill is domain knowledge, not library content: it never
-  names one library's article, attribute or value.
+  a living room — and how to plan from an image the user sends lives in skill files of the server
+  package (`hi-mcp/hi-mcp-server/skills/`) and reaches the agent only through `get-skill` (D75,
+  [§5.6](#56-planning-skills-get-skill)). The skill index in the description of `get-skill` is the
+  one served text that names a kind of room; the general served text stays neutral. A skill is
+  domain knowledge, not library content: it never names one library's article, attribute or value.
+  The system prompt of the chats, which comes from the planner, names the skills too (D80).
 - **Never mention internals**: `repositioningData`, the anchor frame, `rootRelPos`, `cornerPoint`,
   `externalObjectGroupOperation`. `tests/hi-mcp-server.test.ts` guards this
   ("never tells the agent how the server positions a group internally").
@@ -221,7 +222,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 
 | # | Decision | Source | State |
 |---|---|---|---|
-| D44 | **The served text speaks of articles and root modules, not of kitchens.** The catalog offers articles; a group is one piece of furniture made of articles — a kitchen, a wardrobe, a sideboard, a utility room —; an article placed in a group is a root module. Kitchens are named only where a rule is about them (the corner rules) and in the list of kinds; no tool description names one. `insert-article-into-group` inserts between two root modules that stand side by side, whatever the group and whatever the article — a low cabinet between two high cabinets or wardrobes too —, and a group of two root modules has one place to insert, no gap needed (the sentence that made gpt-5.4-mini reach the tool); the user decides what stands between what. An article named by its kind comes from the category of its neighbours where that category has one. The chat's system prompt names every kind of HI furniture and tells the model to take the closest article of the catalog when the request names a kind. Found with "insert a low cabinet between the high cabinets" on a wardrobe group: the agent looked for a kitchen run of high cabinets and found none | user, 2026-10-06 ([RML-18045](https://roomle.atlassian.net/browse/RML-18045)); guarded by `it('speaks of articles and root modules, not of kitchens, and inserts between any two root modules')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` and the test `edit-insert-low-between-high` of `docs/test-prompts.json` | in effect — `AUTHORING_RULES`, `INSTRUCTIONS`, the tool descriptions, `hi-mcp-server.ts`; `CHAT_SYSTEM_PROMPT`, `chat-config.ts` |
+| D44 | **The served text speaks of articles and root modules, not of kitchens.** The catalog offers articles; a group is one piece of furniture made of articles — a kitchen, a wardrobe, a sideboard, a utility room —; an article placed in a group is a root module. Kitchens are named only where a rule is about them (the corner rules) and in the list of kinds; no tool description names one. `insert-article-into-group` inserts between two root modules that stand side by side, whatever the group and whatever the article — a low cabinet between two high cabinets or wardrobes too —, and a group of two root modules has one place to insert, no gap needed (the sentence that made gpt-5.4-mini reach the tool); the user decides what stands between what. An article named by its kind comes from the category of its neighbours where that category has one. The chat's system prompt names every kind of HI furniture and tells the model to take the closest article of the catalog when the request names a kind. Found with "insert a low cabinet between the high cabinets" on a wardrobe group: the agent looked for a kitchen run of high cabinets and found none | user, 2026-10-06 ([RML-18045](https://roomle.atlassian.net/browse/RML-18045)); guarded by `it('speaks of articles and root modules, not of kitchens, and inserts between any two root modules')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` and the test `edit-insert-low-between-high` of `docs/test-prompts.json` | in effect — `AUTHORING_RULES`, `INSTRUCTIONS`, the tool descriptions, `hi-mcp-server.ts`; the system prompt of the chats, roomle-ui `hi-agent-prompts.ts` (D80) |
 | D57 | **The code of the tools speaks of groups and articles, not of kitchens.** The names of functions and variables in `tool-executors.ts` and in the HI tool commands of roomle-ui (`hi-tool-commands.ts` and its modules) do not use the word "kitchen": the MCP works with groups and articles, the products are furniture made of cabinets, and the result can be a kitchen or something else — `applyKitchenWideAttributes` became `applyGroupWideAttributes` | user, 2026-10-08 ([RML-18075](https://roomle.atlassian.net/browse/RML-18075), comment 155885) | in effect — `tool-executors.ts`; roomle-ui `hi-tool-commands.ts`, `hi-tool-attributes.ts` |
 
 ### Obstacles (2026-10-06)
@@ -303,6 +304,7 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
 | # | Decision | Source | State |
 |---|---|---|---|
 | D75 | **Domain planning knowledge is served on demand by the tool `get-skill`.** The skills are files in the Agent Skills format in the server package (`hi-mcp/hi-mcp-server/skills/<name>/`: `SKILL.md` with `name` and `description` in its frontmatter, and the supporting files it names), maintained as their authors deliver them. The description of `get-skill` lists every skill by its frontmatter, so the agent of every client sees the index in the tool list; the result of a `SKILL.md` starts with a preamble that maps the skill onto the planning session — the survey is the plan context, the products are the catalog, what the plan context does not carry is an assumption to name —, never written into the files. Rejected: the skills in the chats' system prompts — two implementations and their tokens in every step of every turn; skill files in the IDE workspaces only — the server is installed at user scope, and the chats, Claude Desktop and Le Chat load no skill files; the skills in `INSTRUCTIONS` or `AUTHORING_RULES` — every agent would carry every skill, and the chats do not pass the instructions; MCP resources or prompts alone — a resource is an attachment the user adds, a prompt a command the user invokes, neither is model-driven; the Skills extension of MCP (`io.modelcontextprotocol/skills`) alone — no client in use supports it, it is the later step over the same files; one tool per skill — the tool list grows with every kind of room; a planning tool in the server — the agent declares, the planner arranges (§2.1) | 2026-10-14, user ([RML-18148](https://roomle.atlassian.net/browse/RML-18148)) | in effect — `skills.ts` (`loadSkills`, `skillIndex`, `readSkillFile`), `SKILL_IN_SESSION` and the registration of `get-skill` in `hi-mcp-server.ts`; guarded by `it('lists every planning skill with its description in the get-skill description and tells the agent to fetch it before planning')` and `it('answers get-skill as text, with the session preamble before the skill and without it before a supporting file')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`, and `describe('the skills of the server')` in `hi-mcp/hi-mcp-server/tests/skills.test.ts` |
+| D80 | **The chat prompts come from the planner, and the system prompt names the planning skills.** The system prompt and the image prompt of an AI chat with the HI tools are text of the roomle-ui glue logic (`hi-agent-prompts.ts`): the planner's `getExternalObjectAgentPrompts()` returns them as `systemPrompt` and `imagePrompt`, an object that may carry more later; when a library says which furniture it generates, the glue logic composes the prompt from it. The page requests them once when the chat starts and sends them with every chat request (`prompts`); the chats keep no prompts of their own, and the backend answers a request without them with 400. The system prompt names the skills by their directory names — `kitchen-planning`, `kitchen-planning-fr`, `living-room-planning`, `image-planning` — and asks the agent to fetch the skill of the request with `get-skill`: a name contract between roomle-ui and the skills of the server; an unknown name gets the list of the skills (G65). Handling an image is a skill, `image-planning`, for an image with or without text: the image is the brief, a room skill supplies its checks. An image without text gets `imagePrompt`, which names it. Rejected: the prompts through the MCP server — a seventh planner method on the bridge allow-lists (D71), a server endpoint for the chats' sake, and an MCP prompt is invoked by the user; the prompts in the served text of the server — it names no library content (§2.4), the glue logic is per library; the image handling as a skill only — a message without text asks the model for nothing, and the server never sees the user's message | 2026-10-14, user ([RML-18187](https://roomle.atlassian.net/browse/RML-18187)) | in effect — `hi-agent-prompts.ts`, `GlueLogic.getAgentPrompts` and `getExternalObjectAgentPrompts` of the planner (roomle-ui); `parseChatPrompts` and `toModelMessages` in `chat-config.ts`, `startChat` in `minimal-hi-example/index.html`, `run-hi-mcp-prompt.js`; ligna-store `components/blocks/Planner.vue` and `hi-mcp/chat.ts`; `skills/image-planning/`; guarded by `describe('getAgentPrompts')` in roomle-ui `homag-intelligence/__tests__/hi-agent-prompts-test.ts`, `describe('parseChatPrompts')` and `it('rejects POST /chat without the prompts of the planner with 400')` in `hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`, and `describe('the skills of the server')` in `hi-mcp/hi-mcp-server/tests/skills.test.ts` |
 
 ### Vocabulary and results (2026-10-14)
 
@@ -381,13 +383,15 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
   without a browser `client` parameter. Cloudflare supplies `HI_MCP_STORE_URL` with the request's
   session (or `default`) before container startup, so the no-page error directs the user to the
   agent's session without requiring chat credentials.
-- **The HI chat** (`hi-mcp-chat`) is an MCP client of this server. It gives the model a
-  five-sentence system prompt (`CHAT_SYSTEM_PROMPT`, `chat-config.ts`) — the first names what HI
-  plans, "kitchens, wardrobes, living room and utility furniture, all made of articles", not "a
-  kitchen", which made a wardrobe group look foreign to the model (D44); the fourth tells it to
-  take the closest article of the catalog when the request names a kind of article, and to say
-  which one, instead of asking; the fifth asks it to summarise what it changed from the last tool
-  results only, never by repeating them, and to name what was asked but is not in the plan — and **not** the server's instructions, so the model learns the rules only when it calls
+- **The HI chat** (`hi-mcp-chat`) is an MCP client of this server. It gives the model the system
+  prompt the page sends with the request — `systemPrompt` of the planner's
+  `getExternalObjectAgentPrompts()` (D80), six sentences: the first names what HI plans, "kitchens,
+  wardrobes, living room and utility furniture, all made of articles", not "a kitchen", which made a
+  wardrobe group look foreign to the model (D44); the fourth tells it to take the closest article of
+  the catalog when the request names a kind of article, and to say which one, instead of asking; the
+  fifth asks it to summarise what it changed from the last tool results only, never by repeating
+  them, and to name what was asked but is not in the plan; the sixth names the planning skills and
+  asks it to fetch the one of the request with `get-skill` — and **not** the server's instructions, so the model learns the rules only when it calls
   `get-authoring-rules`. A chat turn has 16 steps; the last one cannot call a tool, so the turn
   reserves an answer step (`chat-steps.ts`). A turn that has not answered after
   `HI_CHAT_TURN_TIMEOUT_MS` (5 minutes) is aborted and ends with "[error] the turn took longer than
@@ -424,7 +428,7 @@ typical workflow followed by the full authoring rules:
 
 1. `get-plan-context` — rooms with walls, the article catalog, the attribute vocabulary, the groups,
    the obstacles; `find-attributes` for a question about one attribute (D76).
-2. For a room of a kind `get-skill` lists, the skill first (D75). `create-or-replace-groups` — the whole piece of furniture as one group: article picks, docking,
+2. For a room of a kind `get-skill` lists, or for an image, the skill first (D75, D80). `create-or-replace-groups` — the whole piece of furniture as one group: article picks, docking,
    one placement. A matching id replaces a group and keeps its position. Units next to an existing
    group are added to it.
 3. The command tools to edit an existing group; `place-group` to move one; `undo` reverts the last
@@ -549,20 +553,25 @@ do not establish clearance.
 
 ### 5.6 Planning skills (`get-skill`)
 
-The planning skills tell the agent how to plan a room of one kind well — the zones, the sequence,
-the dimensions with their qualification, the checks, what the answer delivers (D75). Each is a
+The planning skills tell the agent how to plan a room of one kind, or from an image the user sends,
+well — the zones, the sequence, the dimensions with their qualification, the checks, what the answer
+delivers (D75). Each is a
 directory of `hi-mcp/hi-mcp-server/skills/` in the Agent Skills format: `SKILL.md` with `name` and
 `description` in its frontmatter, and the supporting files its body names by relative path.
 
 | Skill | For | Supporting files |
 |---|---|---|
+| `image-planning` | furniture from an image or photo, with or without text: identify the pieces, read the layout, the counts and the sizes, map them onto the room and the catalog; the image is the brief, a room skill supplies its checks | none |
 | `kitchen-planning` | a residential kitchen, Germany/EU by default | `references/planning-reference.md` (dimensions with their status, the installation and usability checklist), `references/source-catalog.md` (the sources, for a citation question only) |
 | `kitchen-planning-fr` | a residential kitchen in France | the same two, for France |
 | `living-room-planning` | a living room: seating, TV and media, storage, routes | the same two, for a living room |
 
 - **The index.** The description of `get-skill` lists every skill as `- <name>: <description>`,
   generated from the frontmatter when the server starts, and asks the agent to fetch the skill of a
-  kind of room before planning it and the files the skill names. `INSTRUCTIONS` step 2 says the same.
+  kind of room, or of an image, before planning it and the files the skill names. `INSTRUCTIONS`
+  step 2 says the same.
+- **Named by the chats.** The system prompt the chats get from the planner names every skill (D80);
+  a skill of a new name needs the same name in roomle-ui `hi-agent-prompts.ts`.
 - **The preamble.** A `SKILL.md` result starts with `SKILL_IN_SESSION` (`hi-mcp-server.ts`): in
   this session the survey is the plan context and the products are the catalog; what the plan context
   does not carry — services, budget, inventory, the household — is unknown, so the agent plans a
@@ -1083,7 +1092,7 @@ Nothing here is an error result: the tool answers with its name `null` and a `hi
 
 | ID | When | Error result |
 |---|---|---|
-| G65 | `name` is no skill of the index | "Unknown skill "<name>" - the skills are kitchen-planning, kitchen-planning-fr, living-room-planning" |
+| G65 | `name` is no skill of the index | "Unknown skill "<name>" - the skills are image-planning, kitchen-planning, kitchen-planning-fr, living-room-planning" |
 | G66 | `file` is no file of the skill — another path, a directory, a path outside the skill | "Unknown file "<file>" of the skill <name> - its files are SKILL.md, references/planning-reference.md, references/source-catalog.md" |
 
 Both are the last resort of §2.2, an id that matches nothing; the message names what to send.

@@ -30,10 +30,11 @@ deliberately rejected. Read these before proposing a change to an area they cove
 | [0001 — HI MCP tool logic runs in the MCP server, pages only execute planner methods](decisions/0001-hi-mcp-tool-logic-in-the-server.md) | Superseded in part by 0007 |
 | [0002 — One MCP server for every client, configured from outside](decisions/0002-one-mcp-server-configured-from-outside.md) | Accepted |
 | [0003 — The AI chat is an MCP client beside the MCP server](decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) | Accepted |
-| [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](decisions/0004-hi-mcp-server-on-cloudflare-containers.md) | Accepted |
-| [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](decisions/0005-deploy-hi-mcp-from-release-cloudflare.md) | Accepted |
+| [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](decisions/0004-hi-mcp-server-on-cloudflare-containers.md) | Superseded in part by 0008 |
+| [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](decisions/0005-deploy-hi-mcp-from-release-cloudflare.md) | Superseded in part by 0008 |
 | [0006 — The prompt tests assess the agent, the unit tests the tools](decisions/0006-prompt-tests-assess-the-agent.md) | Accepted |
 | [0007 — The tool logic of the plan-changing HI MCP tools runs in the planner](decisions/0007-hi-mcp-tool-logic-in-the-planner.md) | Accepted |
+| [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Accepted |
 
 ---
 
@@ -96,7 +97,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [The HI MCP server moves to the Roomle Cloudflare account, as a DEV and a PRD stage](feature-analysis/hi-mcp-deployment-in-roomle-cloudflare-account.md) | Open — analysis | 2026-10-14 |
+| [The HI MCP server moves to the Roomle Cloudflare account, as a DEV and a PRD stage](feature-analysis/hi-mcp-deployment-in-roomle-cloudflare-account.md) | Open — PRD and DEV deployed by hand; scripts, `account_id` and workflow implemented; GitHub environments and token open | 2026-10-14 |
 | [The group load answers per input group what the planner built](feature-analysis/group-load-result-per-input-group.md) | Implemented — roomle-ui branch not merged | 2026-10-13 |
 | [Article template geometry in the plan context](feature-analysis/article-template-geometry-in-plan-context.md) | Implemented | 2026-10-13 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |

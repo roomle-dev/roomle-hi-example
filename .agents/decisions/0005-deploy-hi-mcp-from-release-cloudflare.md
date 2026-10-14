@@ -1,8 +1,8 @@
 # ADR 0005 — The HI MCP server is deployed by a push to `release/cloudflare`
 
-> **Status**: Accepted
+> **Status**: Accepted — superseded in part by [ADR 0008](0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md): two stages, PRD from `release/cloudflare` and DEV from `release/cloudflare.dev`, in the Roomle account
 > **Date**: 2026-10-01
-> **Analysis**: the feature analysis of the deploy workflow (git history); guide [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md#deploy-from-github-push-to-releasecloudflare)
+> **Analysis**: the feature analysis of the deploy workflow (git history); guide [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md#deploy-from-github-push-to-a-release-branch)
 
 ## Context
 

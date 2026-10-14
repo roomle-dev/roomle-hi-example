@@ -35,7 +35,7 @@ The tools work on the planning session of an open Roomle ligna-store tab — the
 
 1. Open this URL in your browser — the store connects its bridge without a chat model or API key:
    ```text
-   https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>
+   https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-planning-assistant.dashiell-bell.workers.dev&mcp_session=<name>
    ```
 2. Start planning or open an existing plan in the store.
 3. Keep this tab open — it is the session the agent works in.
@@ -47,7 +47,7 @@ The tools work on the planning session of an open Roomle ligna-store tab — the
 3. Enter your Cloudflare server details:
    - **Name:** `hi-orchestrator`
    - **Transport:** `HTTP`
-   - **URL:** `https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=<name>` — the same `<name>` as in the store URL
+   - **URL:** `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp?session=<name>` — the same `<name>` as in the store URL (DEV: `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp?session=<name>`, with the DEV store URL)
 4. Click **Save** and verify the server toggle switch is set to **Active**.
 
 > **Why not SSE?** The Cloudflare deployment exposes Streamable HTTP on `/mcp` and does not provide an SSE transport. Selecting `SSE` will fail to connect.
@@ -60,6 +60,6 @@ The tools work on the planning session of an open Roomle ligna-store tab — the
 
 ## Related Resources
 
-- MCP Server Endpoint: `https://hi-mcp-poc.hi-orchestrator.workers.dev/mcp?session=<name>`
-- Store Page: `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-mcp-poc.hi-orchestrator.workers.dev&mcp_session=<name>`
+- MCP Server Endpoint: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp?session=<name>`, DEV `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp?session=<name>`
+- Store Page: PRD `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-planning-assistant.dashiell-bell.workers.dev&mcp_session=<name>`, DEV `https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-planning-assistant-dev.dashiell-bell.workers.dev&mcp_session=<name>`
 - See also: [QUICKSTART.md](../../hi-mcp/hi-mcp-server/QUICKSTART.md) for additional setup details

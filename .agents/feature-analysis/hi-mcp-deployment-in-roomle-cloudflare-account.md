@@ -1,7 +1,7 @@
 # The HI MCP server moves to the Roomle Cloudflare account, as a DEV and a PRD stage
 
 > **Date**: 2026-10-14
-> **Status**: Open — analysis
+> **Status**: Open — deployed by hand: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp`, DEV `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp`; `account_id`, the `dev` environment, `deploy:cf:dev`, the workflow for both release branches and ADR 0008 on `ci/cludflare-deplyoment`; open: the GitHub environment `cloudflare-dev`, the Roomle API token in both environments, the first workflow runs and the teardown of `hi-mcp-poc`
 > **Ticket**: [RML-18154](https://roomle.atlassian.net/browse/RML-18154)
 > **Base**: roomle-hi-example `master` (`154d14f`), `release/cloudflare` (`29ac045`); wrangler 4.143.0 of the root `package-lock.json`
 
@@ -90,9 +90,10 @@ had that one account. The checkout `~/source/roomle_2/roomle-hi-example_2` has n
    and Containers (for example Administrator). Afterwards `npx wrangler whoami` lists the Roomle
    account; if it does not, `npx wrangler logout && npx wrangler login`.
 3. **An API token for GitHub** — section 5.
-4. **The workers.dev subdomain** of the Roomle account is the second part of both URLs (Workers &
-   Pages → overview → "Your subdomain"). It already exists if the account runs other Workers, and
-   changing it moves every Worker of the account, so the URLs take it as it is.
+4. **The workers.dev subdomain** of the Roomle account is the second part of both URLs: it is
+   `dashiell-bell`. An account has exactly one, shared by all its Workers; it also carries
+   `roomle-planner-mcp` of roomle-model-exporter, so it must not be changed, and the URLs take it
+   as it is.
 
 Nothing else is created by hand. The first `wrangler deploy` of each stage creates the Worker, its
 Durable Object namespace (migration `v1`), the container application and its image repository:
@@ -100,7 +101,7 @@ Durable Object namespace (migration `v1`), the container application and its ima
 | | DEV | PRD |
 |---|---|---|
 | Worker | `hi-planning-assistant-dev` | `hi-planning-assistant` |
-| URL | `https://hi-planning-assistant-dev.<subdomain>.workers.dev` | `https://hi-planning-assistant.<subdomain>.workers.dev` |
+| URL | `https://hi-planning-assistant-dev.dashiell-bell.workers.dev` | `https://hi-planning-assistant.dashiell-bell.workers.dev` |
 | Container application | `hi-planning-assistant-himcpcontainer-dev` | `hi-planning-assistant-himcpcontainer` |
 
 Each stage has its own containers, at most 5 each.
@@ -148,13 +149,13 @@ the existing branch `release/cloudflare`.
     "bindings": [{ "name": "HI_MCP", "class_name": "HiMcpContainer" }],
   },
   "vars": {
-    "HI_MCP_STORE_URL": "https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-planning-assistant.<subdomain>.workers.dev",
+    "HI_MCP_STORE_URL": "https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-planning-assistant.dashiell-bell.workers.dev",
   },
   "env": {
     "dev": {
       // containers and durable_objects as above
       "vars": {
-        "HI_MCP_STORE_URL": "https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-planning-assistant-dev.<subdomain>.workers.dev",
+        "HI_MCP_STORE_URL": "https://www.roomle.com/t/ligna-store-test/?store.stage=INT&mcp_server=https://hi-planning-assistant-dev.dashiell-bell.workers.dev",
       },
     },
   },
@@ -188,7 +189,7 @@ jobs:
     environment: ${{ github.ref_name == 'release/cloudflare.dev' && 'cloudflare-dev' || 'cloudflare' }}
     env:
       WRANGLER_ENV: ${{ github.ref_name == 'release/cloudflare.dev' && 'dev' || '' }}
-      MCP_SERVER_URL: ${{ github.ref_name == 'release/cloudflare.dev' && 'https://hi-planning-assistant-dev.<subdomain>.workers.dev' || 'https://hi-planning-assistant.<subdomain>.workers.dev' }}
+      MCP_SERVER_URL: ${{ github.ref_name == 'release/cloudflare.dev' && 'https://hi-planning-assistant-dev.dashiell-bell.workers.dev' || 'https://hi-planning-assistant.dashiell-bell.workers.dev' }}
     steps:
       # checkout, node, install, typecheck and tests as today
       - name: Deploy (builds and pushes the container image with Docker)

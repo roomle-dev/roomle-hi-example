@@ -65,7 +65,7 @@ for example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-o
 | -------- | ------ |
 | `<provider> <api-key>` | Also start the chat backend. The provider is one of `CHAT_PROVIDERS` or a `mistral-*`, `claude-*`, `gemini-*` model id; an unknown provider or a missing key exits with 1 |
 | `--dev` | The planner loads from `http://localhost:5173/` (`EXAMPLE_SERVER_URL` overrides) |
-| `--cf` | Use the deployed server `https://hi-mcp-poc.hi-orchestrator.workers.dev` with the OS user name as session; no local MCP server; the page must run on port 3000 |
+| `--cf` | Use the DEV server `https://hi-planning-assistant-dev.dashiell-bell.workers.dev` (PRD: `https://hi-planning-assistant.dashiell-bell.workers.dev`) with the OS user name as session; no local MCP server; the page must run on port 3000 |
 | `--no-open` | Do not open the browser |
 
 | Variable | Default | Effect |

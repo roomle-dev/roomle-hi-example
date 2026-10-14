@@ -8,7 +8,6 @@
 > **Status**: Open — the runs since the five improvements landed are analysed ([9](#9-second-measurement-2026-10-13-after-the-five-improvements)): 49 s and 5.4 steps on the three baseline tests, from three builds and two planners, so not a like-for-like comparison with the baseline; six new flaws and improvements proposed, the like-for-like runs not made yet ([9.7](#97-open-runs-not-made))
 > **Data**: [kitchen-from-image-time/benchmark.md](kitchen-from-image-time/benchmark.md) (the baseline, every run step by step), `kitchen-from-image-time/benchmark.json`; the second measurement in [kitchen-from-image-time-2026-10-13/benchmark.md](kitchen-from-image-time-2026-10-13/benchmark.md) and its `benchmark.json`
 > **How to repeat**: [hi-mcp-benchmarking.md](../skills/hi-mcp-benchmarking.md)
-> **Plan**: [kitchen-from-image-time-implementation-plan.md](kitchen-from-image-time-implementation-plan.md) — the five improvements and their unit tests
 
 **Repositories**
 

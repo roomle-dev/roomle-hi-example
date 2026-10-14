@@ -6,7 +6,7 @@
 > **Trigger**: [RML-18164](https://roomle.atlassian.net/browse/RML-18164) "hi mcp - implement performance improvements", created from [RML-18064](https://roomle.atlassian.net/browse/RML-18064)
 > **Date**: 2026-10-14
 > **Author**: AI Assistant
-> **Status**: Open — reviewed 2026-10-14: performance only, no change of the planner's behaviour (improvement 5 is a rule sentence); nothing implemented, no run made
+> **Status**: Implemented 2026-10-14 — improvements 1, 2, 4, 5 and 6 on the branches below, 3 evaluated with no code change; every round measured, section 10 of the benchmark; branches not merged
 > **Branches**: roomle-hi-example `feat/rml-18164-kitchen-from-image-improvements` (from `master`, 63970bb); roomle-ui `feat/hi-kitchen-from-image-improvements-RML-18164` (from `release/bo-test`, 56256a5b7 — the HI commits since `fix/hi-mcp-api-and-tools` are on `release/bo-test` and not on `master`)
 
 ## Affected repositories
@@ -135,6 +135,15 @@ The server's own time was 2.0 s on each of them (tool time minus planner time), 
 each waited 2.0 s and undid nothing ("has not finished the last change yet"); `place-group`, which
 reports no follow-up, was undone in 0.5 s. The hypothesis holds, for the commands outside the
 kernel-operation slot too: no command needs wrapping, roomle-ui only stops reporting follow-ups.
+
+**Measured after 2b and 2c (2026-10-14, local planner, `default-room`).** Every command answers with
+`historySteps` 1 and no `historyFollowUps`, one history event before the answer and none after it;
+the server's own time is 10–40 ms (tool time minus planner time); the create with a wall placement
+and ten group attributes makes one step and one event (three before), and `undo` reverts it with
+one planner undo in 25 ms; `undo` after `change-module-attribute`, `change-group-attribute`,
+`exchange-root-module`, `insert-article-into-group`, `swap-root-modules`,
+`delete-article-and-compact` and `place-group` reverts each with one planner undo in 0.15–0.5 s. A
+create that changes nothing (an unknown article) makes no step and no event.
 
 **Change (D77, step 2b).** The planner answers a tool command settled: every command resolves after
 its last reload — exchange, insert, swap and the gap-closing remove run in the kernel-operation

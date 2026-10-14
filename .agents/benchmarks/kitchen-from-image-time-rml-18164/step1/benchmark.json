@@ -1,0 +1,1825 @@
+{
+  "generatedAt": "2026-10-14T10:10:16.777Z",
+  "runs": [
+    {
+      "dir": ".temp/result/benchmark-rml-18164-step1-a/gpt-6-astra/01-image-kitchen-left-wall",
+      "model": "gpt-6-astra",
+      "test": "image-kitchen-left-wall",
+      "turns": 1,
+      "chatMs": 41810,
+      "steps": 5,
+      "modelMs": 37399,
+      "toolsMs": 4206,
+      "otherMs": 205,
+      "inputTokens": 243347,
+      "outputTokens": 963,
+      "reasoningTokens": 219,
+      "planChanges": 1,
+      "corrections": 3,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-authoring-rules": {
+          "calls": 1,
+          "ms": 15
+        },
+        "get-skill": {
+          "calls": 2,
+          "ms": 27
+        },
+        "get-plan-context": {
+          "calls": 2,
+          "ms": 59
+        },
+        "create-or-replace-groups": {
+          "calls": 1,
+          "ms": 4138
+        }
+      },
+      "stepLog": [
+        {
+          "turn": 1,
+          "inputTokens": 7977,
+          "outputTokens": 64,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 4334,
+          "toolsMs": 43,
+          "modelMs": 4291,
+          "resultTokens": 44487,
+          "tools": [
+            {
+              "name": "get-authoring-rules",
+              "ms": 15
+            },
+            {
+              "name": "get-skill",
+              "ms": 18
+            },
+            {
+              "name": "get-plan-context",
+              "ms": 43
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 2,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 27
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 52528,
+          "outputTokens": 30,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 5055,
+          "toolsMs": 9,
+          "modelMs": 5046,
+          "resultTokens": 3044,
+          "tools": [
+            {
+              "name": "get-skill",
+              "ms": 9
+            }
+          ],
+          "plannerCalls": []
+        },
+        {
+          "turn": 1,
+          "inputTokens": 55602,
+          "outputTokens": 678,
+          "reasoningTokens": 195,
+          "finish": "tool-calls",
+          "ms": 20220,
+          "toolsMs": 4138,
+          "modelMs": 16082,
+          "resultTokens": 6891,
+          "tools": [
+            {
+              "name": "create-or-replace-groups",
+              "ms": 4138
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 3,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 0
+            },
+            {
+              "id": 4,
+              "method": "externalObjectGroupOperation",
+              "tool": "create-or-replace-groups",
+              "ms": 2118
+            },
+            {
+              "id": 5,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 10
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 63171,
+          "outputTokens": 47,
+          "reasoningTokens": 24,
+          "finish": "tool-calls",
+          "ms": 4906,
+          "toolsMs": 16,
+          "modelMs": 4890,
+          "resultTokens": 851,
+          "tools": [
+            {
+              "name": "get-plan-context",
+              "ms": 16
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 6,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 4
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 64069,
+          "outputTokens": 144,
+          "reasoningTokens": 0,
+          "finish": "stop",
+          "ms": 7090,
+          "toolsMs": 0,
+          "modelMs": 7090,
+          "resultTokens": null,
+          "tools": [],
+          "plannerCalls": []
+        }
+      ]
+    },
+    {
+      "dir": ".temp/result/benchmark-rml-18164-step1-a/gpt-6-astra/02-image-kitchen-back-right-corner",
+      "model": "gpt-6-astra",
+      "test": "image-kitchen-back-right-corner",
+      "turns": 1,
+      "chatMs": 119074,
+      "steps": 9,
+      "modelMs": 104183,
+      "toolsMs": 14810,
+      "otherMs": 81,
+      "inputTokens": 618649,
+      "outputTokens": 2618,
+      "reasoningTokens": 691,
+      "planChanges": 4,
+      "corrections": 9,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-authoring-rules": {
+          "calls": 1,
+          "ms": 12
+        },
+        "get-skill": {
+          "calls": 2,
+          "ms": 25
+        },
+        "get-plan-context": {
+          "calls": 2,
+          "ms": 687
+        },
+        "create-or-replace-groups": {
+          "calls": 2,
+          "ms": 9523
+        },
+        "undo": {
+          "calls": 2,
+          "ms": 4070
+        },
+        "get-plan-images": {
+          "calls": 2,
+          "ms": 1163
+        }
+      },
+      "stepLog": [
+        {
+          "turn": 1,
+          "inputTokens": 6377,
+          "outputTokens": 64,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 4047,
+          "toolsMs": 45,
+          "modelMs": 4002,
+          "resultTokens": 44487,
+          "tools": [
+            {
+              "name": "get-authoring-rules",
+              "ms": 12
+            },
+            {
+              "name": "get-skill",
+              "ms": 16
+            },
+            {
+              "name": "get-plan-context",
+              "ms": 45
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 2,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 26
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 50928,
+          "outputTokens": 228,
+          "reasoningTokens": 196,
+          "finish": "tool-calls",
+          "ms": 9684,
+          "toolsMs": 9,
+          "modelMs": 9675,
+          "resultTokens": 3044,
+          "tools": [
+            {
+              "name": "get-skill",
+              "ms": 9
+            }
+          ],
+          "plannerCalls": []
+        },
+        {
+          "turn": 1,
+          "inputTokens": 54200,
+          "outputTokens": 744,
+          "reasoningTokens": 194,
+          "finish": "tool-calls",
+          "ms": 25210,
+          "toolsMs": 5401,
+          "modelMs": 19809,
+          "resultTokens": 9947,
+          "tools": [
+            {
+              "name": "create-or-replace-groups",
+              "ms": 5401
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 3,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 0
+            },
+            {
+              "id": 4,
+              "method": "externalObjectGroupOperation",
+              "tool": "create-or-replace-groups",
+              "ms": 3373
+            },
+            {
+              "id": 5,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 16
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 64891,
+          "outputTokens": 111,
+          "reasoningTokens": 96,
+          "finish": "tool-calls",
+          "ms": 9317,
+          "toolsMs": 2033,
+          "modelMs": 7284,
+          "resultTokens": 9232,
+          "tools": [
+            {
+              "name": "undo",
+              "ms": 2033
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 6,
+              "method": "getExternalObjectPlanContext",
+              "tool": "undo",
+              "ms": 23
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 74234,
+          "outputTokens": 23,
+          "reasoningTokens": 8,
+          "finish": "tool-calls",
+          "ms": 15362,
+          "toolsMs": 2037,
+          "modelMs": 13325,
+          "resultTokens": 9232,
+          "tools": [
+            {
+              "name": "undo",
+              "ms": 2037
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 7,
+              "method": "getExternalObjectPlanContext",
+              "tool": "undo",
+              "ms": 23
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 83489,
+          "outputTokens": 62,
+          "reasoningTokens": 11,
+          "finish": "tool-calls",
+          "ms": 6565,
+          "toolsMs": 649,
+          "modelMs": 5916,
+          "resultTokens": 3686,
+          "tools": [
+            {
+              "name": "get-plan-context",
+              "ms": 642
+            },
+            {
+              "name": "get-plan-images",
+              "ms": 649
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 8,
+              "method": "getExternalObjectSnapshot",
+              "tool": "get-plan-images",
+              "ms": 607
+            },
+            {
+              "id": 9,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 28
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 87237,
+          "outputTokens": 1159,
+          "reasoningTokens": 156,
+          "finish": "tool-calls",
+          "ms": 30742,
+          "toolsMs": 4122,
+          "modelMs": 26620,
+          "resultTokens": 9030,
+          "tools": [
+            {
+              "name": "create-or-replace-groups",
+              "ms": 4122
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 10,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 19
+            },
+            {
+              "id": 11,
+              "method": "externalObjectGroupOperation",
+              "tool": "create-or-replace-groups",
+              "ms": 2074
+            },
+            {
+              "id": 12,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 13
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 97426,
+          "outputTokens": 47,
+          "reasoningTokens": 30,
+          "finish": "tool-calls",
+          "ms": 6169,
+          "toolsMs": 514,
+          "modelMs": 5655,
+          "resultTokens": 2394,
+          "tools": [
+            {
+              "name": "get-plan-images",
+              "ms": 514
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 13,
+              "method": "getExternalObjectSnapshot",
+              "tool": "get-plan-images",
+              "ms": 486
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 99867,
+          "outputTokens": 180,
+          "reasoningTokens": 0,
+          "finish": "stop",
+          "ms": 11897,
+          "toolsMs": 0,
+          "modelMs": 11897,
+          "resultTokens": null,
+          "tools": [],
+          "plannerCalls": []
+        }
+      ]
+    },
+    {
+      "dir": ".temp/result/benchmark-rml-18164-step1-a/gpt-6-astra/03-image-planning-right-wall",
+      "model": "gpt-6-astra",
+      "test": "image-planning-right-wall",
+      "turns": 1,
+      "chatMs": 101301,
+      "steps": 7,
+      "modelMs": 89150,
+      "toolsMs": 11887,
+      "otherMs": 264,
+      "inputTokens": 473466,
+      "outputTokens": 2670,
+      "reasoningTokens": 608,
+      "planChanges": 3,
+      "corrections": 18,
+      "notLoaded": 1,
+      "toolErrors": 0,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-authoring-rules": {
+          "calls": 1,
+          "ms": 14
+        },
+        "get-skill": {
+          "calls": 2,
+          "ms": 26
+        },
+        "get-plan-context": {
+          "calls": 2,
+          "ms": 67
+        },
+        "create-or-replace-groups": {
+          "calls": 2,
+          "ms": 9166
+        },
+        "undo": {
+          "calls": 1,
+          "ms": 2044
+        },
+        "get-plan-images": {
+          "calls": 1,
+          "ms": 622
+        }
+      },
+      "stepLog": [
+        {
+          "turn": 1,
+          "inputTokens": 7803,
+          "outputTokens": 64,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 5166,
+          "toolsMs": 45,
+          "modelMs": 5121,
+          "resultTokens": 44487,
+          "tools": [
+            {
+              "name": "get-authoring-rules",
+              "ms": 14
+            },
+            {
+              "name": "get-skill",
+              "ms": 16
+            },
+            {
+              "name": "get-plan-context",
+              "ms": 45
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 2,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 28
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 52354,
+          "outputTokens": 485,
+          "reasoningTokens": 404,
+          "finish": "tool-calls",
+          "ms": 20903,
+          "toolsMs": 10,
+          "modelMs": 20893,
+          "resultTokens": 3044,
+          "tools": [
+            {
+              "name": "get-skill",
+              "ms": 10
+            }
+          ],
+          "plannerCalls": []
+        },
+        {
+          "turn": 1,
+          "inputTokens": 55883,
+          "outputTokens": 827,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 25153,
+          "toolsMs": 5720,
+          "modelMs": 19433,
+          "resultTokens": 16292,
+          "tools": [
+            {
+              "name": "create-or-replace-groups",
+              "ms": 5720
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 3,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 1
+            },
+            {
+              "id": 4,
+              "method": "externalObjectGroupOperation",
+              "tool": "create-or-replace-groups",
+              "ms": 3686
+            },
+            {
+              "id": 5,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 20
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 73002,
+          "outputTokens": 153,
+          "reasoningTokens": 138,
+          "finish": "tool-calls",
+          "ms": 11831,
+          "toolsMs": 2044,
+          "modelMs": 9787,
+          "resultTokens": 13709,
+          "tools": [
+            {
+              "name": "undo",
+              "ms": 2044
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 6,
+              "method": "getExternalObjectPlanContext",
+              "tool": "undo",
+              "ms": 26
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 86864,
+          "outputTokens": 954,
+          "reasoningTokens": 66,
+          "finish": "tool-calls",
+          "ms": 23250,
+          "toolsMs": 3446,
+          "modelMs": 19804,
+          "resultTokens": 9047,
+          "tools": [
+            {
+              "name": "create-or-replace-groups",
+              "ms": 3446
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 7,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 21
+            },
+            {
+              "id": 8,
+              "method": "externalObjectGroupOperation",
+              "tool": "create-or-replace-groups",
+              "ms": 1387
+            },
+            {
+              "id": 9,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 20
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 96865,
+          "outputTokens": 50,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 8074,
+          "toolsMs": 622,
+          "modelMs": 7452,
+          "resultTokens": 3780,
+          "tools": [
+            {
+              "name": "get-plan-context",
+              "ms": 22
+            },
+            {
+              "name": "get-plan-images",
+              "ms": 622
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 10,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 13
+            },
+            {
+              "id": 11,
+              "method": "getExternalObjectSnapshot",
+              "tool": "get-plan-images",
+              "ms": 575
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 100695,
+          "outputTokens": 137,
+          "reasoningTokens": 0,
+          "finish": "stop",
+          "ms": 6660,
+          "toolsMs": 0,
+          "modelMs": 6660,
+          "resultTokens": null,
+          "tools": [],
+          "plannerCalls": []
+        }
+      ]
+    },
+    {
+      "dir": ".temp/result/benchmark-rml-18164-step1-a/gpt-6-astra/04-image-only-no-text",
+      "model": "gpt-6-astra",
+      "test": "image-only-no-text",
+      "turns": 1,
+      "chatMs": 63315,
+      "steps": 6,
+      "modelMs": 58696,
+      "toolsMs": 4469,
+      "otherMs": 150,
+      "inputTokens": 326496,
+      "outputTokens": 1616,
+      "reasoningTokens": 570,
+      "planChanges": 2,
+      "corrections": 8,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-authoring-rules": {
+          "calls": 1,
+          "ms": 9
+        },
+        "get-skill": {
+          "calls": 2,
+          "ms": 24
+        },
+        "get-plan-context": {
+          "calls": 1,
+          "ms": 38
+        },
+        "create-or-replace-groups": {
+          "calls": 1,
+          "ms": 3021
+        },
+        "place-group": {
+          "calls": 1,
+          "ms": 792
+        },
+        "get-plan-images": {
+          "calls": 1,
+          "ms": 607
+        }
+      },
+      "stepLog": [
+        {
+          "turn": 1,
+          "inputTokens": 6923,
+          "outputTokens": 64,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 3940,
+          "toolsMs": 38,
+          "modelMs": 3902,
+          "resultTokens": 44487,
+          "tools": [
+            {
+              "name": "get-authoring-rules",
+              "ms": 9
+            },
+            {
+              "name": "get-skill",
+              "ms": 13
+            },
+            {
+              "name": "get-plan-context",
+              "ms": 38
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 2,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 24
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 51474,
+          "outputTokens": 504,
+          "reasoningTokens": 406,
+          "finish": "tool-calls",
+          "ms": 19353,
+          "toolsMs": 11,
+          "modelMs": 19342,
+          "resultTokens": 3044,
+          "tools": [
+            {
+              "name": "get-skill",
+              "ms": 11
+            }
+          ],
+          "plannerCalls": []
+        },
+        {
+          "turn": 1,
+          "inputTokens": 55022,
+          "outputTokens": 724,
+          "reasoningTokens": 74,
+          "finish": "tool-calls",
+          "ms": 17297,
+          "toolsMs": 3021,
+          "modelMs": 14276,
+          "resultTokens": 10393,
+          "tools": [
+            {
+              "name": "create-or-replace-groups",
+              "ms": 3021
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 3,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 1
+            },
+            {
+              "id": 4,
+              "method": "externalObjectGroupOperation",
+              "tool": "create-or-replace-groups",
+              "ms": 2874
+            },
+            {
+              "id": 5,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 115
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 66139,
+          "outputTokens": 111,
+          "reasoningTokens": 73,
+          "finish": "tool-calls",
+          "ms": 7439,
+          "toolsMs": 792,
+          "modelMs": 6647,
+          "resultTokens": 6005,
+          "tools": [
+            {
+              "name": "place-group",
+              "ms": 792
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 6,
+              "method": "getExternalObjectPlanContext",
+              "tool": "place-group",
+              "ms": 15
+            },
+            {
+              "id": 7,
+              "method": "externalObjectGroupOperation",
+              "tool": "place-group",
+              "ms": 746
+            },
+            {
+              "id": 8,
+              "method": "getExternalObjectPlanContext",
+              "tool": "place-group",
+              "ms": 12
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 72255,
+          "outputTokens": 34,
+          "reasoningTokens": 17,
+          "finish": "tool-calls",
+          "ms": 7575,
+          "toolsMs": 607,
+          "modelMs": 6968,
+          "resultTokens": 2394,
+          "tools": [
+            {
+              "name": "get-plan-images",
+              "ms": 607
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 9,
+              "method": "getExternalObjectSnapshot",
+              "tool": "get-plan-images",
+              "ms": 576
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 74683,
+          "outputTokens": 179,
+          "reasoningTokens": 0,
+          "finish": "stop",
+          "ms": 7561,
+          "toolsMs": 0,
+          "modelMs": 7561,
+          "resultTokens": null,
+          "tools": [],
+          "plannerCalls": []
+        }
+      ]
+    },
+    {
+      "dir": ".temp/result/benchmark-rml-18164-step1-b/gpt-6-astra/01-image-kitchen-left-wall",
+      "model": "gpt-6-astra",
+      "test": "image-kitchen-left-wall",
+      "turns": 1,
+      "chatMs": 51308,
+      "steps": 5,
+      "modelMs": 46560,
+      "toolsMs": 4528,
+      "otherMs": 220,
+      "inputTokens": 244699,
+      "outputTokens": 934,
+      "reasoningTokens": 217,
+      "planChanges": 1,
+      "corrections": 3,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-authoring-rules": {
+          "calls": 1,
+          "ms": 11
+        },
+        "get-skill": {
+          "calls": 2,
+          "ms": 23
+        },
+        "get-plan-context": {
+          "calls": 1,
+          "ms": 45
+        },
+        "create-or-replace-groups": {
+          "calls": 1,
+          "ms": 3862
+        },
+        "get-plan-images": {
+          "calls": 1,
+          "ms": 612
+        }
+      },
+      "stepLog": [
+        {
+          "turn": 1,
+          "inputTokens": 7977,
+          "outputTokens": 64,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 8871,
+          "toolsMs": 45,
+          "modelMs": 8826,
+          "resultTokens": 44487,
+          "tools": [
+            {
+              "name": "get-authoring-rules",
+              "ms": 11
+            },
+            {
+              "name": "get-skill",
+              "ms": 14
+            },
+            {
+              "name": "get-plan-context",
+              "ms": 45
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 2,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 27
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 52528,
+          "outputTokens": 30,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 5275,
+          "toolsMs": 9,
+          "modelMs": 5266,
+          "resultTokens": 3044,
+          "tools": [
+            {
+              "name": "get-skill",
+              "ms": 9
+            }
+          ],
+          "plannerCalls": []
+        },
+        {
+          "turn": 1,
+          "inputTokens": 55602,
+          "outputTokens": 664,
+          "reasoningTokens": 186,
+          "finish": "tool-calls",
+          "ms": 19256,
+          "toolsMs": 3862,
+          "modelMs": 15394,
+          "resultTokens": 6809,
+          "tools": [
+            {
+              "name": "create-or-replace-groups",
+              "ms": 3862
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 3,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 0
+            },
+            {
+              "id": 4,
+              "method": "externalObjectGroupOperation",
+              "tool": "create-or-replace-groups",
+              "ms": 1829
+            },
+            {
+              "id": 5,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 14
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 63075,
+          "outputTokens": 48,
+          "reasoningTokens": 31,
+          "finish": "tool-calls",
+          "ms": 10604,
+          "toolsMs": 612,
+          "modelMs": 9992,
+          "resultTokens": 2394,
+          "tools": [
+            {
+              "name": "get-plan-images",
+              "ms": 612
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 6,
+              "method": "getExternalObjectSnapshot",
+              "tool": "get-plan-images",
+              "ms": 582
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 65517,
+          "outputTokens": 128,
+          "reasoningTokens": 0,
+          "finish": "stop",
+          "ms": 7082,
+          "toolsMs": 0,
+          "modelMs": 7082,
+          "resultTokens": null,
+          "tools": [],
+          "plannerCalls": []
+        }
+      ]
+    },
+    {
+      "dir": ".temp/result/benchmark-rml-18164-step1-b/gpt-6-astra/02-image-kitchen-back-right-corner",
+      "model": "gpt-6-astra",
+      "test": "image-kitchen-back-right-corner",
+      "turns": 1,
+      "chatMs": 75356,
+      "steps": 7,
+      "modelMs": 63426,
+      "toolsMs": 11853,
+      "otherMs": 77,
+      "inputTokens": 385652,
+      "outputTokens": 1520,
+      "reasoningTokens": 438,
+      "planChanges": 3,
+      "corrections": 4,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-skill": {
+          "calls": 2,
+          "ms": 18
+        },
+        "get-authoring-rules": {
+          "calls": 1,
+          "ms": 14
+        },
+        "get-plan-context": {
+          "calls": 2,
+          "ms": 677
+        },
+        "create-or-replace-groups": {
+          "calls": 1,
+          "ms": 5243
+        },
+        "get-plan-images": {
+          "calls": 1,
+          "ms": 641
+        },
+        "change-module-attribute": {
+          "calls": 2,
+          "ms": 5921
+        }
+      },
+      "stepLog": [
+        {
+          "turn": 1,
+          "inputTokens": 6377,
+          "outputTokens": 64,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 4337,
+          "toolsMs": 42,
+          "modelMs": 4295,
+          "resultTokens": 44487,
+          "tools": [
+            {
+              "name": "get-skill",
+              "ms": 12
+            },
+            {
+              "name": "get-authoring-rules",
+              "ms": 14
+            },
+            {
+              "name": "get-plan-context",
+              "ms": 42
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 2,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 26
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 50928,
+          "outputTokens": 215,
+          "reasoningTokens": 183,
+          "finish": "tool-calls",
+          "ms": 12696,
+          "toolsMs": 6,
+          "modelMs": 12690,
+          "resultTokens": 3044,
+          "tools": [
+            {
+              "name": "get-skill",
+              "ms": 6
+            }
+          ],
+          "plannerCalls": []
+        },
+        {
+          "turn": 1,
+          "inputTokens": 54187,
+          "outputTokens": 786,
+          "reasoningTokens": 189,
+          "finish": "tool-calls",
+          "ms": 22183,
+          "toolsMs": 5243,
+          "modelMs": 16940,
+          "resultTokens": 10520,
+          "tools": [
+            {
+              "name": "create-or-replace-groups",
+              "ms": 5243
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 3,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 1
+            },
+            {
+              "id": 4,
+              "method": "externalObjectGroupOperation",
+              "tool": "create-or-replace-groups",
+              "ms": 3206
+            },
+            {
+              "id": 5,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 18
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 65493,
+          "outputTokens": 86,
+          "reasoningTokens": 34,
+          "finish": "tool-calls",
+          "ms": 6819,
+          "toolsMs": 641,
+          "modelMs": 6178,
+          "resultTokens": 3760,
+          "tools": [
+            {
+              "name": "get-plan-context",
+              "ms": 635
+            },
+            {
+              "name": "get-plan-images",
+              "ms": 641
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 6,
+              "method": "getExternalObjectSnapshot",
+              "tool": "get-plan-images",
+              "ms": 599
+            },
+            {
+              "id": 7,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 29
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 69339,
+          "outputTokens": 121,
+          "reasoningTokens": 32,
+          "finish": "tool-calls",
+          "ms": 10083,
+          "toolsMs": 2985,
+          "modelMs": 7098,
+          "resultTokens": 107,
+          "tools": [
+            {
+              "name": "change-module-attribute",
+              "ms": 2985
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 8,
+              "method": "getExternalObjectPlanContext",
+              "tool": "change-module-attribute",
+              "ms": 18
+            },
+            {
+              "id": 9,
+              "method": "externalObjectGroupOperation",
+              "tool": "change-module-attribute",
+              "ms": 934
+            },
+            {
+              "id": 10,
+              "method": "getExternalObjectPlanContext",
+              "tool": "change-module-attribute",
+              "ms": 19
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 69567,
+          "outputTokens": 87,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 12006,
+          "toolsMs": 2936,
+          "modelMs": 9070,
+          "resultTokens": 107,
+          "tools": [
+            {
+              "name": "change-module-attribute",
+              "ms": 2936
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 11,
+              "method": "getExternalObjectPlanContext",
+              "tool": "change-module-attribute",
+              "ms": 20
+            },
+            {
+              "id": 12,
+              "method": "externalObjectGroupOperation",
+              "tool": "change-module-attribute",
+              "ms": 894
+            },
+            {
+              "id": 13,
+              "method": "getExternalObjectPlanContext",
+              "tool": "change-module-attribute",
+              "ms": 11
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 69761,
+          "outputTokens": 161,
+          "reasoningTokens": 0,
+          "finish": "stop",
+          "ms": 7155,
+          "toolsMs": 0,
+          "modelMs": 7155,
+          "resultTokens": null,
+          "tools": [],
+          "plannerCalls": []
+        }
+      ]
+    },
+    {
+      "dir": ".temp/result/benchmark-rml-18164-step1-b/gpt-6-astra/03-image-planning-right-wall",
+      "model": "gpt-6-astra",
+      "test": "image-planning-right-wall",
+      "turns": 1,
+      "chatMs": 90928,
+      "steps": 7,
+      "modelMs": 80109,
+      "toolsMs": 10564,
+      "otherMs": 255,
+      "inputTokens": 445851,
+      "outputTokens": 2175,
+      "reasoningTokens": 615,
+      "planChanges": 3,
+      "corrections": 12,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-authoring-rules": {
+          "calls": 1,
+          "ms": 10
+        },
+        "get-skill": {
+          "calls": 2,
+          "ms": 19
+        },
+        "get-plan-context": {
+          "calls": 2,
+          "ms": 61
+        },
+        "create-or-replace-groups": {
+          "calls": 1,
+          "ms": 5548
+        },
+        "get-plan-images": {
+          "calls": 1,
+          "ms": 627
+        },
+        "change-module-attribute": {
+          "calls": 1,
+          "ms": 2610
+        },
+        "delete-article-in-place": {
+          "calls": 1,
+          "ms": 1735
+        }
+      },
+      "stepLog": [
+        {
+          "turn": 1,
+          "inputTokens": 7803,
+          "outputTokens": 64,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 4101,
+          "toolsMs": 39,
+          "modelMs": 4062,
+          "resultTokens": 44487,
+          "tools": [
+            {
+              "name": "get-authoring-rules",
+              "ms": 10
+            },
+            {
+              "name": "get-skill",
+              "ms": 14
+            },
+            {
+              "name": "get-plan-context",
+              "ms": 39
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 2,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 22
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 52354,
+          "outputTokens": 514,
+          "reasoningTokens": 431,
+          "finish": "tool-calls",
+          "ms": 20953,
+          "toolsMs": 5,
+          "modelMs": 20948,
+          "resultTokens": 3044,
+          "tools": [
+            {
+              "name": "get-skill",
+              "ms": 5
+            }
+          ],
+          "plannerCalls": []
+        },
+        {
+          "turn": 1,
+          "inputTokens": 55912,
+          "outputTokens": 1110,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 23581,
+          "toolsMs": 5548,
+          "modelMs": 18033,
+          "resultTokens": 19694,
+          "tools": [
+            {
+              "name": "create-or-replace-groups",
+              "ms": 5548
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 3,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 0
+            },
+            {
+              "id": 4,
+              "method": "externalObjectGroupOperation",
+              "tool": "create-or-replace-groups",
+              "ms": 3505
+            },
+            {
+              "id": 5,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 22
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 76716,
+          "outputTokens": 165,
+          "reasoningTokens": 114,
+          "finish": "tool-calls",
+          "ms": 8524,
+          "toolsMs": 627,
+          "modelMs": 7897,
+          "resultTokens": 4165,
+          "tools": [
+            {
+              "name": "get-plan-context",
+              "ms": 22
+            },
+            {
+              "name": "get-plan-images",
+              "ms": 627
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 6,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 14
+            },
+            {
+              "id": 7,
+              "method": "getExternalObjectSnapshot",
+              "tool": "get-plan-images",
+              "ms": 574
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 81046,
+          "outputTokens": 98,
+          "reasoningTokens": 41,
+          "finish": "tool-calls",
+          "ms": 9175,
+          "toolsMs": 2610,
+          "modelMs": 6565,
+          "resultTokens": 104,
+          "tools": [
+            {
+              "name": "change-module-attribute",
+              "ms": 2610
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 8,
+              "method": "getExternalObjectPlanContext",
+              "tool": "change-module-attribute",
+              "ms": 23
+            },
+            {
+              "id": 9,
+              "method": "externalObjectGroupOperation",
+              "tool": "change-module-attribute",
+              "ms": 551
+            },
+            {
+              "id": 10,
+              "method": "getExternalObjectPlanContext",
+              "tool": "change-module-attribute",
+              "ms": 23
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 81248,
+          "outputTokens": 74,
+          "reasoningTokens": 29,
+          "finish": "tool-calls",
+          "ms": 8029,
+          "toolsMs": 1735,
+          "modelMs": 6294,
+          "resultTokens": 9450,
+          "tools": [
+            {
+              "name": "delete-article-in-place",
+              "ms": 1735
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 11,
+              "method": "getExternalObjectPlanContext",
+              "tool": "delete-article-in-place",
+              "ms": 24
+            },
+            {
+              "id": 12,
+              "method": "externalObjectGroupOperation",
+              "tool": "delete-article-in-place",
+              "ms": 1663
+            },
+            {
+              "id": 13,
+              "method": "getExternalObjectPlanContext",
+              "tool": "delete-article-in-place",
+              "ms": 29
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 90772,
+          "outputTokens": 150,
+          "reasoningTokens": 0,
+          "finish": "stop",
+          "ms": 16310,
+          "toolsMs": 0,
+          "modelMs": 16310,
+          "resultTokens": null,
+          "tools": [],
+          "plannerCalls": []
+        }
+      ]
+    },
+    {
+      "dir": ".temp/result/benchmark-rml-18164-step1-b/gpt-6-astra/04-image-only-no-text",
+      "model": "gpt-6-astra",
+      "test": "image-only-no-text",
+      "turns": 1,
+      "chatMs": 60153,
+      "steps": 6,
+      "modelMs": 55706,
+      "toolsMs": 4298,
+      "otherMs": 149,
+      "inputTokens": 324159,
+      "outputTokens": 1613,
+      "reasoningTokens": 610,
+      "planChanges": 2,
+      "corrections": 8,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-authoring-rules": {
+          "calls": 1,
+          "ms": 13
+        },
+        "get-skill": {
+          "calls": 2,
+          "ms": 23
+        },
+        "get-plan-context": {
+          "calls": 1,
+          "ms": 39
+        },
+        "create-or-replace-groups": {
+          "calls": 1,
+          "ms": 2858
+        },
+        "place-group": {
+          "calls": 1,
+          "ms": 786
+        },
+        "get-plan-images": {
+          "calls": 1,
+          "ms": 606
+        }
+      },
+      "stepLog": [
+        {
+          "turn": 1,
+          "inputTokens": 6923,
+          "outputTokens": 64,
+          "reasoningTokens": 0,
+          "finish": "tool-calls",
+          "ms": 4412,
+          "toolsMs": 39,
+          "modelMs": 4373,
+          "resultTokens": 44487,
+          "tools": [
+            {
+              "name": "get-authoring-rules",
+              "ms": 13
+            },
+            {
+              "name": "get-skill",
+              "ms": 14
+            },
+            {
+              "name": "get-plan-context",
+              "ms": 39
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 2,
+              "method": "getExternalObjectPlanContext",
+              "tool": "get-plan-context",
+              "ms": 25
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 51474,
+          "outputTokens": 493,
+          "reasoningTokens": 398,
+          "finish": "tool-calls",
+          "ms": 17904,
+          "toolsMs": 9,
+          "modelMs": 17895,
+          "resultTokens": 3044,
+          "tools": [
+            {
+              "name": "get-skill",
+              "ms": 9
+            }
+          ],
+          "plannerCalls": []
+        },
+        {
+          "turn": 1,
+          "inputTokens": 55011,
+          "outputTokens": 763,
+          "reasoningTokens": 151,
+          "finish": "tool-calls",
+          "ms": 18825,
+          "toolsMs": 2858,
+          "modelMs": 15967,
+          "resultTokens": 9604,
+          "tools": [
+            {
+              "name": "create-or-replace-groups",
+              "ms": 2858
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 3,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 1
+            },
+            {
+              "id": 4,
+              "method": "externalObjectGroupOperation",
+              "tool": "create-or-replace-groups",
+              "ms": 2791
+            },
+            {
+              "id": 5,
+              "method": "getExternalObjectPlanContext",
+              "tool": "create-or-replace-groups",
+              "ms": 41
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 65378,
+          "outputTokens": 89,
+          "reasoningTokens": 51,
+          "finish": "tool-calls",
+          "ms": 7326,
+          "toolsMs": 786,
+          "modelMs": 6540,
+          "resultTokens": 6009,
+          "tools": [
+            {
+              "name": "place-group",
+              "ms": 786
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 6,
+              "method": "getExternalObjectPlanContext",
+              "tool": "place-group",
+              "ms": 14
+            },
+            {
+              "id": 7,
+              "method": "externalObjectGroupOperation",
+              "tool": "place-group",
+              "ms": 740
+            },
+            {
+              "id": 8,
+              "method": "getExternalObjectPlanContext",
+              "tool": "place-group",
+              "ms": 14
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 71476,
+          "outputTokens": 27,
+          "reasoningTokens": 10,
+          "finish": "tool-calls",
+          "ms": 4129,
+          "toolsMs": 606,
+          "modelMs": 3523,
+          "resultTokens": 2394,
+          "tools": [
+            {
+              "name": "get-plan-images",
+              "ms": 606
+            }
+          ],
+          "plannerCalls": [
+            {
+              "id": 9,
+              "method": "getExternalObjectSnapshot",
+              "tool": "get-plan-images",
+              "ms": 578
+            }
+          ]
+        },
+        {
+          "turn": 1,
+          "inputTokens": 73897,
+          "outputTokens": 177,
+          "reasoningTokens": 0,
+          "finish": "stop",
+          "ms": 7408,
+          "toolsMs": 0,
+          "modelMs": 7408,
+          "resultTokens": null,
+          "tools": [],
+          "plannerCalls": []
+        }
+      ]
+    }
+  ]
+}

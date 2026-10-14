@@ -98,7 +98,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | Document | Status | Last touched |
 |---|---|---|
 | [The HI MCP server moves to the Roomle Cloudflare account, as a DEV and a PRD stage](feature-analysis/hi-mcp-deployment-in-roomle-cloudflare-account.md) | Open — PRD and DEV deployed by hand; scripts, `account_id` and workflow implemented; GitHub environments and token open | 2026-10-14 |
-| [The six improvements of the kitchen-from-image benchmark: implementation plan](feature-analysis/kitchen-from-image-improvements.md) | Open — reviewed: performance only, no behaviour change; nothing implemented, no run made | 2026-10-14 |
+| [The six improvements of the kitchen-from-image benchmark: implementation plan](feature-analysis/kitchen-from-image-improvements.md) | Implemented — improvements 1, 2, 4, 5 and 6 on the purpose branches, 3 evaluated (library data); measured per round in section 10 of the benchmark; branches not merged | 2026-10-14 |
 | [Planning skills served by the HI MCP server](feature-analysis/planning-skills-served-by-the-mcp-server.md) | Implemented — branches not merged; live check and measurement not run | 2026-10-14 |
 | [The group load answers per input group what the planner built](feature-analysis/group-load-result-per-input-group.md) | Implemented — roomle-ui branch not merged | 2026-10-13 |
 | [Article template geometry in the plan context](feature-analysis/article-template-geometry-in-plan-context.md) | Implemented | 2026-10-13 |
@@ -124,7 +124,7 @@ folder of the same name.
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Where the time goes when the HI agent plans a kitchen from an image](benchmarks/kitchen-from-image-time.md) | Open (runs since the five improvements: 49 s on three builds and two planners, not like for like; six new improvements proposed, like-for-like runs not made) | 2026-10-13 |
+| [Where the time goes when the HI agent plans a kitchen from an image](benchmarks/kitchen-from-image-time.md) | Third measurement (RML-18164): the six improvements one after another on one build and the local planner — baseline 104 s, 8.4 steps, 531k; the vocabulary section takes the search steps away (75 s, 6.5, 383k), the rest is stable within the spread | 2026-10-14 |
 
 ### Backlog
 

@@ -279,7 +279,9 @@ placement's attributes, including a height the library adjusts:
   after `change-module-attribute` and `change-group-attribute`, last, every other attribute the library
   changed with the one set — "with mod_FrontColor "324" (Dark marble (#404040)) the library changed
   mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (…) to "Modern" (Mitred frame fronts with
-  glass filling)" (D59)
+  glass filling)"; several root modules changed alike by article and count, "of 3 root modules
+  (OTB60 ×3)" (D59). A `notLoaded` entry has one error per cause, the root modules that failed alike
+  in one sentence (D73)
 - `hint`: after a row edit (insert, `delete-article-and-compact`, exchange, swap) — names the units above that moved with
   the unit below them by root id and article id, says when the row now reaches past a wall or into another group, and names a
   root module that now stands in front of a door or a window or on an object, with the free stretches

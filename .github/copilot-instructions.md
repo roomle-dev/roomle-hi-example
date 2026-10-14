@@ -582,6 +582,8 @@ step.
 
 **NEVER create a pull request on your own.** Not with `gh pr create`, not through the GitHub API or any other tool, not as the last step of a finished task. A pull request is created only when the user explicitly asks for one in the current conversation. When the work is finished, commit it on a purpose branch and say that a pull request can be opened on request.
 
+**You are only allowed to create a pull request when the user requests it.** The rule holds in every repository the work touches — roomle-hi-example, ligna-store, roomle-ui, RoomleCore and any other — not only in this one. No saved note, memory, earlier habit or other repository's workflow makes an exception. A request covers only the pull request it names: a later branch, a follow-up change or a change in another repository needs a request of its own.
+
 ### Commit Message Format
 
 Use conventional commits: `type: lowercase description` — no trailing period.
@@ -596,6 +598,7 @@ Examples:
 
 ### Pull Requests
 
+- Create a PR only when the user requests it — see [Hard Rule: NO Automatic Pull Requests](#hard-rule-no-automatic-pull-requests)
 - Keep PRs focused and small
 - Include clear description of changes
 - Reference related documentation

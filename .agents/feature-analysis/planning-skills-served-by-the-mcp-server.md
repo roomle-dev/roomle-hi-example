@@ -3,7 +3,7 @@
 > **Date**: 2026-10-14
 > **Status**: Open
 > **Ticket**: [RML-18148](https://roomle.atlassian.net/browse/RML-18148) — HI MCP: add kitchen planning skills
-> **Base**: roomle-hi-example `master` (`5c4e81f`, the planning skills in `docs/planning-skills`)
+> **Base**: roomle-hi-example `feat/planning-skills` (`5c4e81f`, the planning skills in `docs/planning-skills`, not on `master`; `master` is `154d14f`)
 > **Related**: [ADR 0003](../decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) (every chat is an MCP client), [hi-mcp-behaviour.md §2.4](../../docs/hi-mcp-behaviour.md#24-instructions) (the served text), the backlog items [library neutrality of the served text](../backlog/mcp-policy-issues.md) and [Spec Kit for the prompting](../backlog/speckit-for-the-prompting.md)
 
 ## Affected repositories

@@ -39,6 +39,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Description |
 |---|---|---|
+| [agent-prompts-from-the-glue-logic.md](agent-prompts-from-the-glue-logic.md) | Open — design confirmed, plan in §7 | RML-18187: the system and image prompts as an API of the roomle-ui glue logic, an image-planning skill of the MCP server, and the prompts naming the skills |
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
 
 Add feature analysis documents as needed following the naming convention:

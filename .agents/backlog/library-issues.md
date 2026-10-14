@@ -29,9 +29,7 @@ the model sent; the directories are under `.temp/result/`.
 **Problem.** The sink unit `SUT60` carries a sink with its drainer, 980 mm wide, on the 600 mm unit.
 Placed as the last unit of a row, the drainer reaches 396 mm past the end of the row, into the air;
 swapped beside the hob unit, it covers part of the hob. Whether the agent puts a base unit under the
-drainer is chance: in 6 runs of the test `image-kitchen-left-wall` on the same planner, `master` and
-the branch alike, the create put the sink unit last every time; the model swapped it into the row
-afterwards in one.
+drainer is chance.
 
 **Cause.** Nothing tells the agent that the sink is wider than its unit: the catalog description of
 `SUT60` names a 60 cm sink base unit, the sink's width and the side of its drainer are not in it.
@@ -40,8 +38,7 @@ unit in the row, because the drainer reaches over that neighbour. The
 geometry is intended (the library builds the sink that way); the root module's outline in `obstacles`
 shows it, but the description does not give the article-specific meaning. `SUBA60` has the same
 missing description: its 600 mm unit spans 995.75 mm along the row in the Open-Plan Room, including
-its sink geometry. Both full live descriptions, checked on 2026-10-10, omit the sink/drainer width
-and overhang. The generic MCP text explains that outlines can extend past docking edges over a
+its sink geometry. Both descriptions omit the sink/drainer width and overhang. The generic MCP text explains that outlines can extend past docking edges over a
 neighbour in the same group; the library data still needs the article-specific information.
 
 **To do.** The library: the description of every sink unit names the width of its sink with the

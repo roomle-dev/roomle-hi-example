@@ -1,9 +1,10 @@
 # Open MCP issues
 
 > **Type**: Backlog — defects and hardening in the MCP server, chat and planner
-> **Domain**: hi-mcp — `create-or-replace-groups`, `merge-article-into-group`, the command tools
-> (`hi-mcp/hi-mcp-server/tool-executors.ts`, `group-layout.ts`, `group-placement.ts`), the served
-> text (`hi-mcp-server.ts`), the chat (`hi-mcp/hi-mcp-chat`); roomle-ui defects the runs show
+> **Domain**: hi-mcp — the served text (`hi-mcp/hi-mcp-server/hi-mcp-server.ts`), the forward of
+> the plan-changing tools (`tool-executors.ts`), the chat (`hi-mcp/hi-mcp-chat`); roomle-ui — the HI
+> tool commands (`hi-tool-commands.ts`, `hi-group-layout.ts`, `hi-group-placement.ts`,
+> `hi-wall-placement.ts`, `hi-tool-hints.ts`) and the defects the runs show
 > **Maintained by**: step 7 of [the testing skill](../skills/hi-mcp-testing.md#7-open-issues)
 
 These are issues in the MCP server, chat or planner detected by the MCP prompt tests.
@@ -26,6 +27,7 @@ never drop the agent's content silently.
 | 63 | [The worktop of a handleless kitchen renders white](#63-the-worktop-of-a-handleless-kitchen-renders-white) | defect, not analysed | roomle-ui render or HOMAG library — to analyse | medium | gpt-6-astra | |
 | 65 | [A wall of floor-to-ceiling glass the user names is left out](#65-a-wall-of-floor-to-ceiling-glass-the-user-names-is-left-out) | hardening | roomle-hi-example served text (`AUTHORING_RULES`, `hi-mcp-server.ts`) | medium | gpt-6-astra | |
 | 66 | [A corner group stands in front of the adjoining wall's window](#66-a-corner-group-stands-in-front-of-the-adjoining-walls-window) | hardening | roomle-ui `obstacleHint` (`hi-tool-hints.ts`) | low | gpt-6-astra | |
+| 67 | [The planning skills are served by a tool only](#67-the-planning-skills-are-served-by-a-tool-only) | follow-up | roomle-hi-example MCP server (`hi-mcp-server.ts`, `skills.ts`) | low | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -118,3 +120,33 @@ no `place-group` after it.
 
 **Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 48 (`image-only-no-text`): the left group placed with wall `left`, alignment `back`, `offsetMm` 450, then moved with `place-group` to `offsetMm` 650.
 
+## 67. The planning skills are served by a tool only
+
+**Problem.** The planning skills of `hi-mcp/hi-mcp-server/skills/` reach the agent only through the
+tool `get-skill` (`hi-mcp-server.ts:267-295`, `skills.ts`). The server declares no `resources`
+capability and no Skills extension, so a host that loads skills by the official MCP extension
+`io.modelcontextprotocol/skills` ([SEP-2640](https://modelcontextprotocol.io/seps/2640-skills-extension))
+finds none. No client in use supports the extension yet
+([client matrix](https://modelcontextprotocol.io/extensions/client-matrix)): Claude Code, Claude
+Desktop, Claude web, VS Code Copilot and Cursor do not; `@ai-sdk/mcp` of both chats has no skills
+API.
+
+**To do.** When a client in use supports the extension, serve the same files by it in addition,
+with no change to the files: `registerResource` per file under `skill://<name>/<path>` with
+`text/markdown`; the request handlers `skills/list` and `skills/get` answering per skill its `uri`
+(`skill://<name>/SKILL.md`), the frontmatter unchanged and the manifest of its files with the
+SHA-256 digest and the byte size computed from the bytes served; the capability
+`extensions['io.modelcontextprotocol/skills']` beside `resources` in `createHiMcpServer`
+(`hi-mcp-server.ts:128`). `get-skill` stays for the clients without the extension, the two chats
+among them. Record it in D75 of `docs/hi-mcp-behaviour.md`.
+
+**Test.** A test in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`: `skills/list` answers the
+three skills with the manifest of `loadSkills()`, and `resources/read` of every manifest entry
+answers bytes whose SHA-256 and size match it; the MCP Inspector CLI `--verify` passes against the
+local server.
+
+**Reproduce.** `tools/list` and `initialize` of the local server (`npm start`): the capabilities
+carry no `resources` and no `extensions`.
+
+**References.** [RML-18148](https://roomle.atlassian.net/browse/RML-18148), D75 and
+[§5.6](../../docs/hi-mcp-behaviour.md#56-planning-skills-get-skill) of `hi-mcp-behaviour.md`.

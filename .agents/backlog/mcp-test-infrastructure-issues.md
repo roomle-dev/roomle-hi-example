@@ -13,6 +13,7 @@ its fix is in the code.
 |---|---|---|---|
 | 1 | [The object-only perspective render draws an empty frame under software GL](#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl) | defect in the planner the test drives, roomle-ui | low — the runs need a GPU meanwhile |
 | 2 | [The per-run fixed overhead of the test runner](#2-the-per-run-fixed-overhead-of-the-test-runner) | improvement of the test runner | medium — the runs stay sequential |
+| 3 | [`run.json` keeps only the top-level message of a failed provider step](#3-runjson-keeps-only-the-top-level-message-of-a-failed-provider-step) | improvement of the test runner | low — `console.log` carries the cause |
 
 ## 1. The object-only perspective render draws an empty frame under software GL
 
@@ -25,9 +26,9 @@ a GPU gets the image; a machine without one gets an empty `perspective-object-im
 projection without NaN, layers covering the object's layers, meshes visible, synchronous draw); the
 frame is dropped inside the roomle scene renderer's per-call pipeline under SwiftShader, only on the
 isolation path (`_preparePerspectiveImage` with `runtimeIds` + `rotationY`,
-roomle-ui `planner-scene-manager.ts:3263`). The front-view rotation, the isolation
-(`hideAllExceptRuntimeIds`), the ground shadow, the clipping planes and the camera pose do not cause
-it on their own. Of the four renders of one snapshot call (top, object top, perspective, object
+roomle-ui `planner-core/src/webgl/planner-scene-manager.ts:3275`). The front-view rotation, the
+isolation (`hideAllExceptRuntimeIds`), the ground shadow, the clipping planes and the camera pose
+alone leave the frame intact. Of the four renders of one snapshot call (top, object top, perspective, object
 perspective) only the last is empty.
 
 **To do.** In roomle-ui (or the scene renderer package it wraps): instrument `_sceneRenderer.render`
@@ -37,7 +38,7 @@ render work under SwiftShader.
 **Test.** A headless page on software GL: `getExternalObjectSnapshot({ perspectiveObjectImage: true })`
 returns a non-empty image.
 
-**Reproduce.** `run-hi-mcp-prompt.js` with `CHROMIUM_ARGS` (`:66`) set to `[]` (headless on
+**Reproduce.** `run-hi-mcp-prompt.js` with `CHROMIUM_ARGS` (`:62`) set to `[]` (headless on
 SwiftShader), test `three-tall-units-right-wall`.
 
 ## 2. The per-run fixed overhead of the test runner
@@ -63,3 +64,26 @@ and the stored result shape must not change, so `report.md` and the benchmark st
 `run.json` against the 473 s / 10.8 s baseline, read by `benchmark-hi-mcp-runs.js`.
 
 **Analysis.** [faster-mcp-test-runs.md](../refactoring-analysis/faster-mcp-test-runs.md).
+
+## 3. `run.json` keeps only the top-level message of a failed provider step
+
+**Problem.** When a provider step fails, `run.json` records only the message the chat stream
+carries (`errors`: `Failed to process successful response`). The same message wraps a connection
+reset, a response the AI SDK could not validate and other provider failures; telling them apart
+needs the cause chain, which only `console.log` has.
+
+**Cause.** The chat stream's `[error]` line carries `error.message` (`errorText` in
+`hi-mcp/hi-mcp-chat/chat-stream.ts`); the cause chain goes to the launcher's log only, in the
+`[hi-chat] step n failed after … ms: …` line (`createStepLog`, `describeStepError` in
+`hi-mcp/hi-mcp-chat/chat-steps.ts`). `run-hi-mcp-prompt.js` reads the launcher's output line by line
+(`recordToolCall`) but keeps only the `[hi-mcp] tool` lines.
+
+**To do.** Let `run-hi-mcp-prompt.js` record the `[hi-chat] step n failed after … ms: …` lines of
+each turn in `run.json` (the step number, the duration and the cause chain), beside `errors`. The
+chat's answer to the user stays as it is.
+
+**Test.** A unit test in `.agents/scripts/tests/` feeds a launcher line
+`[hi-chat] step 3 failed after 63315 ms: AI_APICallError: … <- caused by TypeError: terminated <- caused by Error: read ECONNRESET`
+and expects the turn's recorded step failure with that cause chain.
+
+**Reproduce.** `.temp/result/mcp-test-2026-10-11_09-24-39/gpt-6-astra/31-image-planning-right-wall/` — `run.json` `errors` against the step-3 line of its `console.log`.

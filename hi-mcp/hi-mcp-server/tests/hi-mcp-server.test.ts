@@ -637,6 +637,20 @@ describe('hi-mcp-server tool calls', () => {
     }
   });
 
+  it('tells the agent that a corner group reaches along the adjoining wall by its depth and that an opening there is in its way', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+
+    expect(rules).toContain(
+      'A group placed in a room corner reaches along the adjoining wall by its depth: a door or a window within that depth of the corner on the adjoining wall is in its way'
+    );
+    expect(rules).toContain(
+      "choose the other corner, or an offsetMm past the opening's span"
+    );
+  });
+
   it('tells the agent that desc suffices to pick an article and what articleDescriptions is for', async () => {
     const client = await connectClient(createMockPlannerApi());
     const { tools } = await client.listTools();

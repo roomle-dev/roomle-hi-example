@@ -474,7 +474,11 @@ tool. It covers:
   edges over a neighbour in the same group — that overlap alone is not a placement error;
   that a new group goes on a stretch of wall or a spot `obstacles` leaves free —
   a stretch by alignment `end` and `offsetMm` = the start of its `fromEndMm` —, that base units lower than a window's `bottomMm` fit
-  below it, and that the result's `hint` names every root module on an obstacle with the free
+  below it, that a group placed in a room corner reaches along the adjoining wall by its depth, so
+  a door or a window within that depth of the corner on the adjoining wall is in its way (the
+  other corner, or an `offsetMm` past the opening's span; a tall-unit run in the back left corner
+  stood in front of a window of the back wall in three of three runs, and the agent moved it in a
+  second step), and that the result's `hint` names every root module on an obstacle with the free
   stretches of its wall.
 - **Extending** — at the end of a row with `merge-article-into-group`, between two root modules
   with `insert-article-into-group`; a new root module inherits from the root module it is docked

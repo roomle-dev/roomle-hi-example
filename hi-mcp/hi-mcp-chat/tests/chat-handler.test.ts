@@ -260,6 +260,10 @@ describe('getChatConfig', () => {
     expect(
       imageInput({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'my-deployment' })
     ).toBe(false);
+    // only a gpt-* deployment on the Foundry resource reads images by its name
+    expect(
+      imageInput({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'gpt-text-only' })
+    ).toBe(false);
   });
 });
 

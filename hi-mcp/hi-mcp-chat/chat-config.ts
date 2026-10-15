@@ -117,19 +117,29 @@ export interface ChatPrompts {
 const IMAGE_DATA_URL =
   /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/;
 
-// Models of the other providers known to read images; Anthropic, Google and
-// GPT models all do. Any other model id gets no image input.
+// Models of the other providers known to read images; Anthropic and Google
+// models and the gpt-* deployments on the Foundry resource all do. Any other
+// model id gets no image input, so does an Azure deployment named with
+// HI_CHAT_MODEL that is not in this list.
 export const IMAGE_INPUT_MODELS = [
   'mistral-large-latest',
   'mistral-medium-latest',
   'mistral-large-3',
   'mistral-large-4-0',
+  'gpt-4o',
+  'gpt-5-mini',
+  'gpt-5.4-mini',
+  'gpt-6-astra',
 ];
 
-export const readsImages = (provider: ChatProvider, modelId: string) =>
+export const readsImages = (
+  provider: ChatProvider,
+  modelId: string,
+  foundry = false
+) =>
   provider === 'anthropic' ||
   provider === 'google' ||
-  modelId.startsWith('gpt-') ||
+  (foundry && modelId.startsWith('gpt-')) ||
   IMAGE_INPUT_MODELS.includes(modelId);
 
 export interface ChatConfig {
@@ -162,7 +172,11 @@ export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
     provider: chatModel.provider,
     apiToken: env.HI_CHAT_TOKEN || undefined,
     modelId,
-    imageInput: readsImages(chatModel.provider, modelId),
+    imageInput: readsImages(
+      chatModel.provider,
+      modelId,
+      chatModel.baseUrl !== undefined
+    ),
     azureResourceName: env.AZURE_RESOURCE_NAME || undefined,
     azureBaseUrl: chatModel.baseUrl,
     azureChatCompletions: chatModel.chatCompletions === true,

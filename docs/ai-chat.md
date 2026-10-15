@@ -67,9 +67,9 @@ Azure AI Foundry resource and are called through its OpenAI v1 endpoint
 API key. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
 left in the shell from an `azure` run cannot redirect them. `mistral-large-3` is an
 exception to the mistral provider: it is served from the Foundry resource, not from
-the Mistral API. Other `gpt-*` names are
-not passed through: only these deployments exist on the resource, and an unknown
-name fails at the launcher instead of as a provider error in the chat. The chat
+the Mistral API. A `gpt-*` name is passed through as the deployment name
+without checking that the deployment exists: a missing deployment fails when the
+chat calls the provider, as the error of the first turn. The chat
 sets no `temperature`: the GPT deployments are reasoning models and reject it.
 Guarded by `it('resolves the Foundry deployments to the Foundry endpoint')` in
 `hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`.
@@ -237,10 +237,11 @@ summary in its conversation.
 
 The chat takes an image only when the model reads images. The chat backend
 decides this from the model id it resolved (`readsImages` in
-`hi-mcp/hi-mcp-chat/chat-config.ts`): every Anthropic, Google and `gpt-*` model, and
-from the other providers the ids in `IMAGE_INPUT_MODELS`:
-`mistral-large-latest`, `mistral-medium-latest`, `mistral-large-3` and
-`mistral-large-4-0`. Any other id gets no image input. That includes a pass-through
+`hi-mcp/hi-mcp-chat/chat-config.ts`): every Anthropic and Google model, every
+`gpt-*` deployment on the HI Azure AI Foundry resource, and from the other
+providers the ids in `IMAGE_INPUT_MODELS`: `mistral-large-latest`,
+`mistral-medium-latest`, `mistral-large-3`, `mistral-large-4-0`, `gpt-4o`,
+`gpt-5-mini`, `gpt-5.4-mini` and `gpt-6-astra`. Any other id gets no image input. That includes a pass-through
 `mistral-*` id and an Azure deployment named with `HI_CHAT_MODEL`: an unknown
 model gets no image feature rather than a provider error halfway through a
 turn. The table lives in the backend, which resolves the model — not in the

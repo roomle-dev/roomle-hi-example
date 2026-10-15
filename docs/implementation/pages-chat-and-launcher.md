@@ -64,7 +64,7 @@ for example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-o
 
 | Argument | Effect |
 | -------- | ------ |
-| `<provider> <api-key>` | Also start the chat backend. The provider is one of `CHAT_PROVIDERS` or a `mistral-*`, `claude-*`, `gemini-*` model id; an unknown provider or a missing key exits with 1 |
+| `<provider> <api-key>` | Also start the chat backend. The provider is one of `CHAT_PROVIDERS` or a `gpt-*`, `mistral-*`, `claude-*`, `gemini-*` model id; an unknown provider or a missing key exits with 1 |
 | `--dev` | The planner loads from `http://localhost:5173/` (`EXAMPLE_SERVER_URL` overrides) |
 | `--cf` | Use the DEV server `https://hi-planning-assistant-dev.dashiell-bell.workers.dev` (PRD: `https://hi-planning-assistant.dashiell-bell.workers.dev`) with the OS user name as session; no local MCP server; the page must run on port 3000 |
 | `--no-open` | Do not open the browser |
@@ -129,7 +129,7 @@ Request: `{ messages: [{ role, content, images? }], clientId, prompts: { systemP
 ### A turn
 
 1. **Model:** `resolveChatModel` maps the provider name — the Azure AI Foundry deployments
-   (`gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`), the aliases (`mistral`, `claude`, `gemini`, …) and
+   (every `gpt-*` id and `mistral-large-3`), the aliases (`mistral`, `claude`, `gemini`, …) and
    pass-through `mistral*`, `claude*`, `gemini-*` ids; `getLanguageModel` builds the provider (Mistral
    wrapped with the image middleware).
 2. **MCP client:** a new `createMCPClient` per request, on `HI_MCP_URL` with `client=<clientId>` set —
@@ -142,7 +142,7 @@ Request: `{ messages: [{ role, content, images? }], clientId, prompts: { systemP
 
 The reasoning effort is passed as `providerOptions.azure.reasoningEffort` to the Azure models:
 `HI_CHAT_REASONING_EFFORT`, else the Foundry deployment's effort in `FOUNDRY_DEPLOYMENTS` (`high`
-for gpt-5.4-mini and gpt-5-mini, the deployment default for gpt-6-astra). GPT
+for gpt-5.4-mini and gpt-5-mini, the deployment default for every other one). GPT
 Responses requests preserve this effort on tool turns, including image prompts.
 The Chat Completions path omits explicit effort when tools are available.
 

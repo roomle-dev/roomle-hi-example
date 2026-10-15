@@ -133,7 +133,6 @@ describe('getChatConfig', () => {
       provider: 'azure',
       modelId: 'gpt-4o',
     });
-    expect(() => resolveChatModel('gpt-4o')).toThrow(/Unknown chat provider/);
     expect(() => resolveChatModel('geminix')).toThrow(/Unknown chat provider/);
     expect(getChatConfig({ HI_CHAT_PROVIDER: 'claude' }).modelId).toBe(
       'claude-sonnet-4-5'
@@ -180,6 +179,13 @@ describe('getChatConfig', () => {
       baseUrl: foundryBaseUrl,
       chatCompletions: true,
     });
+    // every gpt-* name is a deployment on the Foundry resource
+    expect(resolveChatModel('GPT-6.1-sol')).toEqual({
+      provider: 'azure',
+      modelId: 'gpt-6.1-sol',
+      baseUrl: foundryBaseUrl,
+      chatCompletions: false,
+    });
     expect(resolveChatModel('openai')).toEqual({
       provider: 'azure',
       modelId: 'gpt-4o',
@@ -215,6 +221,9 @@ describe('getChatConfig', () => {
       getChatConfig({ HI_CHAT_PROVIDER: 'gpt-6-astra' }).reasoningEffort
     ).toBeUndefined();
     expect(
+      getChatConfig({ HI_CHAT_PROVIDER: 'gpt-6.1-sol' }).reasoningEffort
+    ).toBeUndefined();
+    expect(
       getChatConfig({
         HI_CHAT_PROVIDER: 'gpt-5.4-mini',
         HI_CHAT_REASONING_EFFORT: 'medium',
@@ -245,10 +254,15 @@ describe('getChatConfig', () => {
     expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-5-mini' })).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-5.4-mini' })).toBe(true);
     expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-6-astra' })).toBe(true);
+    expect(imageInput({ HI_CHAT_PROVIDER: 'gpt-6.1-sol' })).toBe(true);
 
     expect(imageInput({ HI_CHAT_PROVIDER: 'mistral-large-2411' })).toBe(false);
     expect(
       imageInput({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'my-deployment' })
+    ).toBe(false);
+    // only a gpt-* deployment on the Foundry resource reads images by its name
+    expect(
+      imageInput({ HI_CHAT_PROVIDER: 'azure', HI_CHAT_MODEL: 'gpt-text-only' })
     ).toBe(false);
   });
 });

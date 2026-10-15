@@ -19,9 +19,10 @@ export interface ChatModel {
 }
 
 // Deployments on the HI Azure AI Foundry resource, reached through its OpenAI
-// v1 endpoint: the CLI name is the deployment name. A deployment without a
-// reasoning effort runs at its Foundry default. mistral-large-3 is served from
-// the Foundry resource, so it is an exception to the mistral provider.
+// v1 endpoint: the CLI name is the deployment name, and every gpt-* name is a
+// deployment there. A deployment without a reasoning effort runs at its
+// Foundry default. mistral-large-3 is served from the Foundry resource, so it
+// is an exception to the mistral provider.
 export const FOUNDRY_BASE_URL =
   'https://dfhifoundrysweden.services.ai.azure.com/openai/v1';
 export const FOUNDRY_DEPLOYMENTS: Record<string, { reasoningEffort?: string }> =
@@ -68,7 +69,7 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
   // and the resolved model id is lowercased, since every provider model id is lowercase.
   const name = requested ?? 'mistral';
   const lower = name.toLowerCase();
-  if (Object.hasOwn(FOUNDRY_DEPLOYMENTS, lower)) {
+  if (Object.hasOwn(FOUNDRY_DEPLOYMENTS, lower) || lower.startsWith('gpt-')) {
     return {
       provider: 'azure',
       modelId: lower,
@@ -94,7 +95,7 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
     return { provider: 'google', modelId: lower };
   }
   throw new ChatRequestError(
-    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, mistral-large-4, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, gpt-5-mini, gpt-5.4-mini, gpt-6-astra, or a full mistral-*/claude-*/gemini-* model id`
+    `Unknown chat provider or model "${name}" - supported: mistral, mistral-medium, mistral-large, mistral-large-4, anthropic, claude, google, gemini, gemini-pro, gemini-flash, azure, mistral-large-3, or a full gpt-*/mistral-*/claude-*/gemini-* model id`
   );
 };
 
@@ -117,7 +118,9 @@ const IMAGE_DATA_URL =
   /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/;
 
 // Models of the other providers known to read images; Anthropic and Google
-// models all do. Any other model id gets no image input.
+// models and the gpt-* deployments on the Foundry resource all do. Any other
+// model id gets no image input, so does an Azure deployment named with
+// HI_CHAT_MODEL that is not in this list.
 export const IMAGE_INPUT_MODELS = [
   'mistral-large-latest',
   'mistral-medium-latest',
@@ -129,9 +132,14 @@ export const IMAGE_INPUT_MODELS = [
   'gpt-6-astra',
 ];
 
-export const readsImages = (provider: ChatProvider, modelId: string) =>
+export const readsImages = (
+  provider: ChatProvider,
+  modelId: string,
+  foundry = false
+) =>
   provider === 'anthropic' ||
   provider === 'google' ||
+  (foundry && modelId.startsWith('gpt-')) ||
   IMAGE_INPUT_MODELS.includes(modelId);
 
 export interface ChatConfig {
@@ -164,7 +172,11 @@ export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
     provider: chatModel.provider,
     apiToken: env.HI_CHAT_TOKEN || undefined,
     modelId,
-    imageInput: readsImages(chatModel.provider, modelId),
+    imageInput: readsImages(
+      chatModel.provider,
+      modelId,
+      chatModel.baseUrl !== undefined
+    ),
     azureResourceName: env.AZURE_RESOURCE_NAME || undefined,
     azureBaseUrl: chatModel.baseUrl,
     azureChatCompletions: chatModel.chatCompletions === true,
@@ -179,7 +191,7 @@ export const getChatConfig = (env: NodeJS.ProcessEnv): ChatConfig => {
     reasoningEffort:
       env.HI_CHAT_REASONING_EFFORT ||
       (chatModel.baseUrl
-        ? FOUNDRY_DEPLOYMENTS[modelId].reasoningEffort
+        ? FOUNDRY_DEPLOYMENTS[modelId]?.reasoningEffort
         : undefined),
   };
 };

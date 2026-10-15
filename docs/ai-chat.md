@@ -123,8 +123,8 @@ The launcher then:
 3. Starts the chat backend (`hi-mcp/hi-mcp-chat`) on :3200 with the API key
    passed as the `HI_CHAT_TOKEN` environment variable — never in the URL, never
    in the page.
-4. Opens the browser with `&chat=true` appended, so the page starts with the
-   chat window visible.
+4. Opens the browser with `&chat=true` appended, so the planner shows the
+   button of the chat window.
 
 Supported arguments: the provider name, then the API key. Both are plain
 positional arguments — no `--` needed. Start without them and everything
@@ -135,17 +135,22 @@ The provider aliases map to providers and model ids in
 
 ## The chat window
 
-With `?chat=true` the chat opens as an overlay on the left of the planner.
-The button in its header collapses the overlay to the header (**−**) and
-expands it again (**+**). The **Show panel** checkbox switches the view:
+The chat window is the **AI Planning Assistant** of the planner (roomle-ui
+`PlanningAssistantChat.vue`). With `?chat=true` the page creates the planner
+with `featureFlags.planningAssistant`, and the button with the adjust icon at
+the bottom of the planner opens the chat in the drawer, where it looks like the
+other panels of the planner. The window shows the messages and the replies; the
+page runs the turns. The window hands every message to the page with the
+planner callback `onPlanningAssistantPrompt`, and the page passes the output of
+the turn to the window with `planningAssistantOutput`, one part per call: the
+new text of the reply, the running tool, the end of the turn or its error,
+whether the input is available, and whether the window takes images (roomle-ui
+`packages/embedding-lib/docs/homag-intelligence-embedding.md`, "The AI Planning
+Assistant window"). A planner without the window gets no chat; the debug log
+says "the planner has no AI Planning Assistant window - no chat".
 
-| Checkbox | Shows |
-| -------- | ----- |
-| unchecked | the chat overlay |
-| checked | the debug panel (parameters, buttons, console log); the chat overlay is hidden |
-
-Without `chat=true` there is no chat overlay: checked shows the debug panel,
-unchecked hides it.
+The **Show panel** checkbox shows and hides the debug panel (parameters,
+buttons, console log).
 
 The conversation is held in the page and sent whole with every turn (the
 backend is stateless). The page sends the same per-page `clientId` in its
@@ -153,17 +158,18 @@ WebSocket hello and each chat request. When the chat starts, the page requests
 the prompts of the chat from the planner once —
 `roomDesignerApi.extended.getExternalObjectAgentPrompts()`, the system prompt
 and the image prompt of the roomle-ui glue logic — and sends them as `prompts`
-with each chat request; the chat keeps no prompts of its own. The input is disabled until the bridge
-acknowledges this page, and on disconnect or when another page owns the planner.
+with each chat request; the chat keeps no prompts of its own. The window's input is disabled until the bridge
+acknowledges this page, and on disconnect or when another page owns the planner;
+its status line then shows the bridge's message.
 The chat backend requires that ID and uses `/mcp?client=<clientId>`, so a tab
-that does not own the planner cannot use the chat to change its plan. Assistant replies are rendered as **markdown** (bold,
-lists, headings, code) with [marked](https://marked.js.org) and sanitized with
-[DOMPurify](https://github.com/cure53/DOMPurify), both loaded from unpkg —
-like the embedding lib, the page has no build step. Replies stream as plain
+that does not own the planner cannot use the chat to change its plan. The window
+renders the replies as **markdown** (bold, lists, headings, code) with
+[marked](https://marked.js.org) and sanitizes them with
+[DOMPurify](https://github.com/cure53/DOMPurify). Replies stream as plain
 text; while the model executes
 tools, the chat backend emits `[tool] <name>` status lines into the stream —
-the page shows the running tool in the status line ("assistant is working…
-get-plan-context") and keeps those lines out of the reply. Tools run in the
+the page passes the running tool to the window's status line ("assistant is
+working… get-plan-context") and keeps those lines out of the reply. Tools run in the
 MCP server, their planner calls in the page, and can take seconds to minutes
 (`get-plan-images` up to 120s) — the status line is what tells you the agent
 is still working. The backend logs every request, MCP connection, tool call
@@ -244,23 +250,23 @@ banner shows the result (`Images: yes` or `no`), and `GET /capabilities` gives
 it to the page. Guarded by `it('knows which models read images')` in
 `hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`.
 
-In the page (only when `/capabilities` answers `imageInput: true`):
+In the window (only when `/capabilities` answers `imageInput: true`; the page
+then enables the window's images):
 
-- **Drop**: the whole chat overlay catches a dropped file (header, messages
+- **Drop**: the whole chat window catches a dropped file (header, messages
   and input), and a dashed outline marks it while a file is dragged over it.
-  A drop on the collapsed overlay expands it. A file that is not an image, or
+  A file that is not an image, or
   that the browser cannot decode (HEIC in Chrome), is not attached; the status
   line says so. The input placeholder reads "Ask the assistant or drop an
   image...". One image per message: a new drop replaces the attached one, and
   only the latest drop is attached, even if an earlier one takes longer to
   prepare. A send waits for an image that is still being prepared, so it goes
   along with that message.
-- **The image the model gets**: the page redraws the image as a JPEG
+- **The image the model gets**: the window redraws the image as a JPEG
   (quality 0.9) with a long side of at most **1568 px**. That is the size
   Claude reads natively, and enough detail for every configured model. A
   smaller image keeps its size. The EXIF rotation of a phone photo is applied,
-  and transparent parts become white. The debug log records the result
-  (`image prepared: 1568x1276, … KB`).
+  and transparent parts become white.
 - **Preview**: the attached image is shown small above the input, with a × to
   remove it. After sending, it is shown in the user's message.
 - **Text**: an image can be sent with an empty input. The user's message then
@@ -268,12 +274,11 @@ In the page (only when `/capabilities` answers `imageInput: true`):
   of the planner (see below).
 - The images stay in the conversation and go along with every turn, so a
   follow-up can refer to the image. Every step of a turn sends them again (up
-  to 16 times), which is why the page scales them down: a larger image adds
+  to 16 times), which is why the window scales them down: a larger image adds
   little detail for any configured model, and Gemini allows 20 MB of inline
   data per request.
 
-With images off, the chat is text-only and a dropped file behaves as in any
-page (the browser opens it).
+With images off, the window takes no dropped file and the chat is text-only.
 
 A user message carries its images in `images`, an array of base64 data URLs
 (`image/jpeg`, `image/png`, `image/webp` or `image/gif`):
@@ -300,7 +305,9 @@ that reads no images is answered with `400`.
 
 ```
 [Browser: index.html]
-  ├── Chat UI (POST /chat with the message history, clientId and the planner's prompts)
+  ├── Planner with the AI Planning Assistant window (featureFlags.planningAssistant)
+  │     onPlanningAssistantPrompt ──▶ page ──▶ planningAssistantOutput
+  ├── Chat host (POST /chat with the message history, clientId and the planner's prompts)
   └── MCP browser bridge (?mcp=true, same clientId in hello)
             │ ws://localhost:3100/bridge
             ▼
@@ -400,18 +407,20 @@ turn timeout — ends the stream with an `[error] …` line.
 | Chat disabled: server already has a planner connected | Close the other planner page, then reload this one |
 | `Chat request requires a page clientId` (400) | Include the browser page's bridge `clientId` in the chat request |
 | `Chat request requires prompts` (400) | Include `prompts`, the result of the planner's `getExternalObjectAgentPrompts()`, in the chat request |
+| `the planner has no AI Planning Assistant window - no chat` in the debug log | The planner UI has no planning assistant yet — start with `npm run dev` against a roomle-ui that has it, or a server URL whose planner has it |
 | `failed to load: HI is not available` in the debug log, no chat | The planner was created without its HI module, so it has no prompts for the chat (`getExternalObjectAgentPrompts` rejects) |
 | `AZURE_RESOURCE_NAME is required` | The `azure` provider needs the resource name env var and the deployment name in `HI_CHAT_MODEL` |
 | Reply says the tool failed with "no page connected" | The example page is not open (or not with `?mcp=true`) — the browser bridge is required for tool calls |
 | `port 3200 is already in use` | A previous chat backend is still running — `lsof -ti tcp:3200 \| xargs kill`, or pick another port with `HI_CHAT_PORT` |
 | Provider error in the reply | The provider API rejected the key or the model — check the key, or set `HI_CHAT_MODEL` |
-| A dropped image opens in the tab instead of being attached | Images are off: the banner shows `Images: no` (the model is not known to read images), or the chat backend was not up yet when the page loaded the chat — the debug log says `images disabled - no capabilities`; reload the page |
+| A dropped image is not attached | Images are off: the banner shows `Images: no` (the model is not known to read images), or the chat backend was not up yet when the page loaded the chat — the debug log says `images disabled - no capabilities`; reload the page |
 | `The model … does not read images` (400) | An image was sent to a model without image input (curl, a script, or a page from an earlier backend) |
 
 ## The chat in the ligna-store
 
-The ligna-store has a chat window of its own (ligna-store `hi-mcp/chat.ts`,
-`chat-window.ts`, `chat-options.ts`), opened with the store URL parameters
+The ligna-store feeds the same chat window, the planner's AI Planning
+Assistant, from a chat of its own (ligna-store `hi-mcp/chat.ts`,
+`chat-host.ts`, `chat-options.ts`), started with the store URL parameters
 `model`, `api_key` and `mcp_server`. It runs the Vercel AI SDK in the store
 page: the model is called directly with `api_key` (Mistral and the Foundry
 endpoint allow browser CORS), and the tools come from `<mcp_server>/mcp`, which

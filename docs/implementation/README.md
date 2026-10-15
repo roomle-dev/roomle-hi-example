@@ -69,8 +69,9 @@ ligna-store chat (runs in the page) ──────── MCP ─────
 
 `create-or-replace-groups` from the built-in chat, as an example:
 
-1. The user types into the chat window of the example page. The page posts the whole conversation
-   and its bridge `clientId` to `POST /chat` of the chat backend.
+1. The user types into the chat window of the planner (the AI Planning Assistant of roomle-ui),
+   which hands the message to the example page (`onPlanningAssistantPrompt`). The page posts the
+   whole conversation and its bridge `clientId` to `POST /chat` of the chat backend.
 2. The chat backend runs one `streamText` turn with the MCP tools of `http://localhost:3100/mcp?client=<clientId>`.
    The model calls `get-plan-context`, then `create-or-replace-groups`.
 3. The MCP server handles each tool call in a fresh `McpServer` + transport (stateless). The
@@ -93,7 +94,7 @@ ligna-store chat (runs in the page) ──────── MCP ─────
 8. The executor counts the steps for undo and removes them from the result; `withoutImageUrls`
    strips signed URLs.
 9. The chat backend streams the model's answer to the page, with a `[tool] <name>` line per tool call
-   for the status line.
+   for the status line; the page passes both to the chat window (`planningAssistantOutput`).
 
 The same call from an external MCP client skips steps 1, 2 and 9 and has no `client` binding.
 [hi-mcp-behaviour.md §4](../hi-mcp-behaviour.md#4-how-a-tool-call-runs) describes the call from the
@@ -114,7 +115,7 @@ agent's side.
 | `hi-mcp/hi-mcp-client/` | The page side of the bridge (`browser-bridge.ts`), the tested reference copy of the ligna-store's bridge |
 | `hi-mcp/hi-mcp-chat/` | The chat backend (Vercel AI SDK): `POST /chat`, an MCP client of the server |
 | `hi-mcp/cf/` | Cloudflare deployment: Worker, Container, Dockerfile |
-| `minimal-hi-example/index.html` | The example page: HI presets demo, its own copy of the bridge, the chat window |
+| `minimal-hi-example/index.html` | The example page: HI presets demo, its own copy of the bridge, the host of the planner's chat window |
 | `minimal-hi-example/start.mjs` | The launcher: build gate, static serving, spawns server and chat |
 | `.agents/scripts/run-hi-mcp-prompt.js`, `run-hi-mcp-tests.js` | End-to-end runs of prompts through chat, server and a headless planner |
 | `docs/test-prompts.json` | The end-to-end test cases |

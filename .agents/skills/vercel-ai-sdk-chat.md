@@ -8,7 +8,7 @@ Load this skill when integrating an AI chat window with the HI MCP server using 
 
 The comment's three-tier architecture is implemented as:
 
-- **Browser**: the chat UI in `minimal-hi-example/index.html` — no React, so instead of `useChat` the page streams the backend's plain text response with a fetch body reader, rendering replies as sanitized markdown (marked + DOMPurify, imported dynamically only when the chat is enabled).
+- **Browser**: the chat window is the planner's AI Planning Assistant (roomle-ui `PlanningAssistantChat.vue`, `featureFlags.planningAssistant`), which renders the replies as sanitized markdown (marked + DOMPurify). The host is `minimal-hi-example/index.html` — no React, so instead of `useChat` the page takes each message from the planner callback `onPlanningAssistantPrompt`, streams the backend's plain text response with a fetch body reader, and passes the new text, the running tool and the end of the turn to the window with `planningAssistantOutput`.
 - **Backend API route**: the `hi-mcp/hi-mcp-chat` workspace package (`POST /chat`). Started by `minimal-hi-example/start.mjs` via `npm start <provider> <api-key>`; the API key goes from the CLI argument into the backend's environment (`HI_CHAT_TOKEN`), never into the page or URL.
 - **MCP server**: the existing `hi-mcp/hi-mcp-server` server, unchanged. The chat backend creates a per-request MCP client via `@ai-sdk/mcp` + `StreamableHTTPClientTransport`, fetches the tools, and passes them to `streamText`.
 

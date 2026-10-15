@@ -5,7 +5,8 @@
 > **Trigger**: [RML-18190](https://roomle.atlassian.net/browse/RML-18190) "HI MCP chat window"  
 > **Date**: 2026-10-15  
 > **Author**: AI Assistant  
-> **Status**: Open — analysis (§1–7) and implementation plan (§8), 2026-10-15; nothing implemented  
+> **Status**: Implemented 2026-10-15 — §8 on the branches below, with the deviations of §9. Unit tests, lint and type checks green; the live check (§8.2 step 3) and the prompt runner run not run. Branches not merged  
+> **Branches**: roomle-ui `feat/planning-assistant-chat-RML-18190` (from `feat/hi-agent-prompts-RML-18187`); roomle-hi-example `feat/planning-assistant-chat-RML-18190` (from `docs/planning-assistant-chat-RML-18190`); ligna-store `feat/planning-assistant-chat-RML-18190` (from `feat/hi-agent-prompts-RML-18187`)  
 > **Base branches**: roomle-ui `feat/hi-agent-prompts-RML-18187` (025489938 — the agent prompts API of RML-18187, itself on top of the HI tool commands of RML-18164; neither on `master` or `release/bo-test`); roomle-hi-example `master` (2c962d6); ligna-store `feat/hi-agent-prompts-RML-18187` (37c67b6)  
 
 ## Affected repositories
@@ -642,3 +643,45 @@ store's `overrideServerUrl` pointed at the roomle-ui dev server.
 | ligna-store | `feat: feed the planning assistant window of roomle-ui from the store chat` (steps 1–3) |
 
 No pull request is opened without a request; the branches are pushed when their steps are done.
+
+## 9. Implementation notes
+
+What the implementation does differently from §8, and why.
+
+- **An `error` part replaces the answer of the turn** instead of being appended: both original
+  windows replaced the partial answer with the error text (`assistantEntry.innerText = …`). The
+  JSDoc of `PlanningAssistantOutput`, the embedding documentation and the store test say so.
+- **The input is disabled only while the assistant is unavailable**, not while a turn runs: the
+  original windows kept the input open during a turn and ignored a send; the store's `send`
+  returns false then and the typed text stays.
+- **The window fires the prompt through a function the panel passes to the store**
+  (`planningAssistantStore.send(text, image, firePrompt)`), as `AiImageChat` passes
+  `captureScene` to `aiChatStore.sendPrompt`; the store has no access to the SDK connector.
+- **The strings** are in `src/common/translations/base.json` (the source uploaded to Loco),
+  `en.json`, a German `de.json` and the English text in the other locale files, so no locale
+  renders empty before the next Loco download. Keys: `header`, `attachment`, `remove-image`,
+  `placeholder`, `placeholder-images`, `input-hint`, `send`, `working`, `only-images`,
+  `image-unreadable`; `failed` is not needed, the host writes the error text.
+- **The button** is a component of its own, `PlanningAssistantButton.vue`, like
+  `ProductListButton.vue`.
+- **The panel test** is `tests/integration/common/components/PlanningAssistantChat.spec.ts`, beside
+  the other tests of `src/common/components`.
+- **The markdown test** checks that the rendered HTML goes through DOMPurify (a spy), not the
+  sanitizing itself: happy-dom's DOM keeps a script through DOMPurify, a browser's does not.
+- **Dependencies:** `marked` 18.0.14 and `dompurify` 3.4.16, pinned, in `package-lock.json` with
+  only their own entries and the nesting they cause (`marked` 15 under `semantic-release`,
+  `dompurify` 2 under `jspdf`, `@types/trusted-types`); `bun.lock` is not updated (no bun on the
+  machine).
+- **Both hosts start no chat on a planner without the window**
+  (`typeof extended.planningAssistantOutput !== 'function'`) and log it; without the check the
+  example's availability hook would throw inside the bridge's socket handlers.
+- **The example page's stream mapping** holds back a last line that is or may become a `[tool]`
+  line until the next chunk, so the appended text never carries a part of a tool line; checked
+  against every chunk size of a sample stream (a scratch script, not committed). With two tool
+  lines in one chunk the window shows the later one, as the original status line did.
+- **ligna-store `layouts/default.vue`:** the focus exception for `#chat-overlay` goes with the
+  overlay — the window is inside the planner iframe, whose focus events do not reach the page.
+- **Line references** into `index.html` and `Planner.vue` in the bridge backlog item are updated.
+
+Not run, as no model run is started without being asked: the live check of §8.2 step 3 and the
+`run-hi-mcp-prompt.js` regression run. The store's live check (§8.3 step 4) is not run either.

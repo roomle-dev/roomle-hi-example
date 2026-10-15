@@ -79,8 +79,9 @@ Details: [AI chat](./docs/ai-chat.md) ·
 
 ## Ask the agent
 
-**Built-in AI chat** — no external client needed; type into the chat window and
-the model drives the HI tools (`get-plan-context`, `create-or-replace-groups`, …):
+**Built-in AI chat** — no external client needed; open the chat with the button at the bottom of
+the planner, type into it, and the model drives the HI tools (`get-plan-context`,
+`create-or-replace-groups`, …):
 
 ```text
 Get the plan context of the HI session and summarize it.

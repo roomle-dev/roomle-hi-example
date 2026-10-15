@@ -40,7 +40,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 | Document | Status | Description |
 |---|---|---|
 | [agent-prompts-from-the-glue-logic.md](agent-prompts-from-the-glue-logic.md) | Implemented, branches not merged | RML-18187: the system and image prompts as an API of the roomle-ui glue logic, an image-planning skill of the MCP server, and the prompts naming the skills |
-| [planning-assistant-chat-in-roomle-ui.md](planning-assistant-chat-in-roomle-ui.md) | Open, analysed and planned | RML-18190: the Planning Assistant chat window as a drawer panel of roomle-ui behind `featureFlags.planningAssistant`, the prompt callback and the output API it needs, the example page and the store as its hosts; the implementation plan with the unit tests in §8 |
+| [planning-assistant-chat-in-roomle-ui.md](planning-assistant-chat-in-roomle-ui.md) | Implemented, branches not merged | RML-18190: the Planning Assistant chat window as a drawer panel of roomle-ui behind `featureFlags.planningAssistant`, the prompt callback and the output API it needs, the example page and the store as its hosts |
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
 
 Add feature analysis documents as needed following the naming convention:

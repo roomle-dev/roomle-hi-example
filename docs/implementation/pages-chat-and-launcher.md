@@ -41,7 +41,7 @@ The allow-list is `getExternalObjectPlanContext`, `externalObjectGroupOperation`
 | URL fallback | on an `https:` page without a server URL also `wss://localhost:3100/bridge`, rotated when a socket never opened | one URL |
 | `hello.example` / `url` | `ligna-store` / the page URL without `api_key` | `minimal-hi-example` / the full URL |
 | `clientId` | `options.clientId` (may be missing) | a `crypto.randomUUID()` per page load |
-| Status | `onStatusChange`: connecting, connected, occupied, unavailable; `retry()`, `dispose()` | `setMcpConnection` enables or disables the chat input |
+| Status | `onStatusChange`: connecting, connected, occupied, unavailable; `retry()`, `dispose()` | `setMcpConnection` passes the availability to the chat window |
 
 `resolveBridgeUrls` / `resolveBridgeUrl` turn an `http(s)` server URL into `ws(s)`, strip a trailing
 slash, and append `/bridge`.
@@ -49,7 +49,8 @@ slash, and append `/bridge`.
 The store's `Planner.vue` resolves `mcpOptions` from `mcp_server` and `mcp_session`, then starts
 the bridge when its planner is available. The resolver generates one `clientId` and uses it as
 the session when none is supplied. Optional `chatOptions` reuse that identity and add a supported
-model, API key and image support; only then is the chat window started. Missing or invalid chat
+model, API key and image support; only then does the planner show the chat window
+(`featureFlags.planningAssistant`) and `hi-mcp/chat-host.ts` feed it. Missing or invalid chat
 settings leave the bridge enabled. A page without a valid `mcp_server` starts no bridge, including
 on INT. Unmount and locale reload dispose the bridge and optional chat together.
 
@@ -161,12 +162,18 @@ text, so for Mistral `toolResultFilesAsUserMessages` moves the images of a tool 
 
 ### The page side of the chat — `index.html`
 
-With `?chat=true` the page requests the prompts of the chat once from the planner when the chat
-starts (`roomDesignerApi.extended.getExternalObjectAgentPrompts()`), posts them with every request to
-`http://localhost:<chat_port>/chat`, reads the stream
-incrementally, shows the last `[tool]` name in the status line, renders the answer as Markdown
-(marked + DOMPurify), and keeps the input disabled until the bridge is accepted. `GET /capabilities`
-enables image drops; `prepareImage` redraws an image as JPEG with a long side of at most 1568 px.
+The chat window is the planner's AI Planning Assistant (roomle-ui `PlanningAssistantChat.vue`): it
+shows the messages, renders the answer as Markdown (marked + DOMPurify), and takes the image drops,
+redrawn as JPEG with a long side of at most 1568 px. With `?chat=true` the page sets
+`featureFlags.planningAssistant` in the planner options and `startChat` hosts the window: it requests
+the prompts of the chat once from the planner (`roomDesignerApi.extended.getExternalObjectAgentPrompts()`),
+registers `onPlanningAssistantPrompt`, posts every message with the conversation and the prompts to
+`http://localhost:<chat_port>/chat`, and passes the turn to the window with
+`planningAssistantOutput`: the new part of the answer as `text` — a last line that is or may become a
+`[tool]` line waits for the next chunk —, a new `[tool]` name as `activity`, the end as `done`, a
+failed request as `error`. `onMcpConnectionChange` passes the bridge state as `availability`, the
+answer of `GET /capabilities` the `images` switch. A planner without `planningAssistantOutput` gets no
+chat, and the bridge is unaffected.
 
 ## Before you change these files
 

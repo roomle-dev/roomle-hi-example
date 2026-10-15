@@ -788,5 +788,5 @@ The PoC is deliberately self-contained — its dependencies live in this folder'
 
 - this folder (`hi-mcp/hi-mcp-server/`) and its entry in the `workspaces` array of
   `hi-mcp/package.json`
-- the `hi-mcp/` folder with the page-side bridge and the chat window in the ligna-store repository
-- the hook that starts the bridge and the chat window in `ligna-store/components/blocks/Planner.vue`
+- the `hi-mcp/` folder with the page-side bridge and the chat host in the ligna-store repository
+- the hook that starts the bridge and the chat host in `ligna-store/components/blocks/Planner.vue`

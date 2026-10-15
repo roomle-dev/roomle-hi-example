@@ -29,6 +29,9 @@ per session and is shared by every client.
 
 - The MCP server and its Cloudflare image carry no AI SDK and never see a provider key; the key is in
   no Worker or container log.
+- The chat window is one, the planner's AI Planning Assistant (roomle-ui, `featureFlags.planningAssistant`):
+  it hands every message to the host with `onPlanningAssistantPrompt` and shows what the host passes
+  to `planningAssistantOutput`. The agent loop stays in the host.
 - There are two chat implementations, the example's backend and the store's page module. A change to
   the step policy or the Mistral image middleware is made in both. Both take their system prompt and
   image prompt from the planner (D80 of

@@ -15,14 +15,16 @@ reconnect:
 | Copy | Where | Tested |
 |---|---|---|
 | Reference client | `hi-mcp/hi-mcp-client/browser-bridge.ts` (`PLANNER_METHODS` at `:13`), `types.ts` | yes, `hi-mcp/hi-mcp-client/tests/browser-bridge.test.ts` |
-| HI presets example | `minimal-hi-example/index.html:1252-1402` (inline, `MCP_PLANNER_METHODS`) | no |
-| ligna-store | `hi-mcp/browser-bridge.ts`, `hi-mcp/types.ts`, started in `components/blocks/Planner.vue:260, 268` | no |
+| HI presets example | `minimal-hi-example/index.html:930-1080` (inline, `MCP_PLANNER_METHODS`) | no |
+| ligna-store | `hi-mcp/browser-bridge.ts`, `hi-mcp/types.ts`, started in `components/blocks/Planner.vue:265, 273` | no |
 
 The copies are kept equal by hand. A new planner method on the allow-list is a change in two repositories and three files, a protocol
 change (`BRIDGE_PROTOCOL`, `hi-mcp/hi-mcp-server/types.ts:4`) one in four — both `types.ts`, the
 example page and the ligna-store's `types.ts` —, and a
 sales configurator that embeds the chat would need a fourth copy. Only the reference client's
-allow-list is checked against `planner-api.ts`.
+allow-list is checked against `planner-api.ts`. The chat window is no part of a copy: it is the
+planner's AI Planning Assistant (roomle-ui), which every host feeds through
+`onPlanningAssistantPrompt` and `planningAssistantOutput`; the bridge and the agent loop are per host.
 
 ## To do
 

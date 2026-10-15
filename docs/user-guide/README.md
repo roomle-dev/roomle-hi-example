@@ -93,8 +93,9 @@ This is the PRD server, which the store also uses when `mcp_server` is left out;
 - `<key>` — the API key of that model
 - add `&id=<plan id>` to open a saved plan; without it you start planning from the store
 
-The chat window opens on the left of the planner. Type your request and press Enter. While the
-assistant works, the status line shows what it is doing.
+The button at the bottom of the planner opens the chat, the **AI Planning Assistant**, at the side
+of the planner. Type your request and press Enter. While the assistant works, the status line
+shows what it is doing.
 
 ### 2. The example page with its chat
 
@@ -105,10 +106,10 @@ npm install
 npm start gpt-5.4-mini <api-key>
 ```
 
-The browser opens `http://localhost:3000` with the planner and the chat window on the left. Instead
-of `gpt-5.4-mini` you can start other models — `mistral`, `claude`, `gemini`, `gpt-5-mini`,
-`gpt-6-astra` and more; the [README](../../README.md#usage) lists them all. Without a model
-(`npm start`) the page opens without a chat, ready for [your own AI assistant](#3-your-own-ai-assistant).
+The browser opens `http://localhost:3000` with the planner; the button at the bottom opens the chat.
+Instead of `gpt-5.4-mini` you can start other models — `mistral`, `claude`, `gemini`,
+`gpt-5-mini`, `gpt-6-astra` and more; the [README](../../README.md#usage) lists them all. Without a
+model (`npm start`) the page opens without a chat, ready for [your own AI assistant](#3-your-own-ai-assistant).
 
 ### 3. Your own AI assistant
 
@@ -182,7 +183,7 @@ The two words do different things:
 
 Drop an image onto the chat window — a photo of a kitchen, a catalog page, a sketch — and ask, for
 example, *"Create a kitchen like this one in the back right corner."* All chat models of the store
-read images; in the example page the input field says "drop an image" when the model can read them.
+read images; the input field says "drop an image" when the model can read them.
 
 The image alone is enough: without text, the assistant plans the furniture it shows as close to it
 as possible. With an image it reads the planning skill for images: it keeps the order of the
@@ -262,9 +263,10 @@ says what it substituted and adapted.
 | ------- | ---------- |
 | The assistant says "No HI page connected" | Open the planner page and keep the tab open; with your own assistant, use the same session name in the page and in the connector |
 | "This server already has a planner connected" or "planner in use" | Another tab holds the session — close it and reload yours, or pick another session name |
-| The chat input stays disabled | The page has not reached the MCP server yet — wait a few seconds or reload the page |
+| The chat input stays disabled | The page has not reached the MCP server yet — the status line of the chat says so; wait a few seconds or reload the page |
+| There is no chat button at the bottom of the planner | The planner has no AI Planning Assistant yet — in the example page, start it against a planner that has it (`npm run dev` with the local Rubens UI) |
 | The first answer is slow | The cloud server starts on demand — send the request again after a few seconds |
-| A dropped image opens in the browser instead of the chat | The chosen model cannot read images — start a model that can; if it can, reload the page |
+| A dropped image is not attached | The chosen model cannot read images — start a model that can; if it can, reload the page |
 | The result is not what you asked for | Say what to change ("move it 50 cm along the wall", "use the other corner"), or "undo that" and rephrase |
 | Price or order data fails | In the example page no preset is selected — choose one in the top bar |
 

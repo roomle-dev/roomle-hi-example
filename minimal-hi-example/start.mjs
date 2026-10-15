@@ -19,8 +19,8 @@
 //                  npm start gemini <api-key>           (gemini-2.5-pro; gemini-flash: gemini-2.5-flash)
 //                  npm start azure <api-key>            (gpt-4o deployment; also set
 //                                                          AZURE_RESOURCE_NAME and HI_CHAT_MODEL=<deployment>)
-//                  npm start gpt-5-mini <api-key>       (gpt-5-mini / gpt-5.4-mini / gpt-6-astra deployment
-//                                                          on the HI Azure AI Foundry resource)
+//                  npm start gpt-6-astra <api-key>      (any gpt-* deployment on the HI Azure AI
+//                                                          Foundry resource, e.g. gpt-5-mini, gpt-5.4-mini)
 //                  npm start mistral-<model-id> <api-key> passes the id through
 //                  npm run dev <provider> <api-key> combines chat and local Rubens UI server.
 //                  npm run start:cf <provider> <api-key> combines chat and the Cloudflare MCP server.
@@ -56,7 +56,7 @@ const MCP_URL = useCloudflareMcp
   ? `${CLOUDFLARE_MCP_SERVER_URL}/mcp?session=${encodeURIComponent(MCP_SESSION)}`
   : `http://localhost:${MCP_PORT}/mcp`;
 // Chat providers the launcher accepts: the aliases below plus any full
-// mistral-*/claude-*/gemini-* model id. The chat backend resolves the same names
+// gpt-*/mistral-*/claude-*/gemini-* model id. The chat backend resolves the same names
 // (chat-config.ts PROVIDER_MODEL_ALIASES); azure deployments are user-named
 // and set via HI_CHAT_MODEL.
 const CHAT_PROVIDERS = [
@@ -83,6 +83,7 @@ const isChatProvider = (name) => {
   const lower = name.toLowerCase();
   return (
     CHAT_PROVIDERS.includes(lower) ||
+    lower.startsWith('gpt-') ||
     lower.startsWith('mistral-') ||
     lower.startsWith('claude-') ||
     lower.startsWith('gemini-')
@@ -100,7 +101,7 @@ const parseChatArgs = () => {
     console.error(
       `[hi-example] unsupported chat provider "${provider}" - currently supported: ${CHAT_PROVIDERS.join(
         ', '
-      )} or any mistral-*/claude-*/gemini-* model id`
+      )} or any gpt-*/mistral-*/claude-*/gemini-* model id`
     );
     process.exit(1);
   }

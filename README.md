@@ -31,6 +31,7 @@ npm start openai <api-key>
 | `npm start gpt-5-mini <api-key>` | Plus chat with the `gpt-5-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-5.4-mini <api-key>` | Plus chat with the `gpt-5.4-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-6-astra <api-key>` | Plus chat with the `gpt-6-astra` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
+| `npm start gpt-<deployment> <api-key>` | Plus chat with any other `gpt-*` deployment of that name on the HI Azure AI Foundry resource, e.g. `gpt-6.1-sol` |
 | `npm start mistral <api-key>` | Plus built-in AI chat with `mistral-large-latest` |
 | `npm start mistral-medium <api-key>` | Plus chat with `mistral-medium-latest` (also `mistral-large`, `mistral-large-4` for `mistral-large-4-0`, `mistral-large-3` for the `mistral-large-3` Foundry deployment, or any `mistral-*` model id) |
 | `npm start claude <api-key>` | Plus chat with `claude-sonnet-4-5` (also `anthropic`, `claude-sonnet`, `claude-opus`, or any `claude-*` model id) |

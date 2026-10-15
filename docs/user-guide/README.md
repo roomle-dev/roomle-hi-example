@@ -88,7 +88,7 @@ https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key
 This is the PRD server, which the store also uses when `mcp_server` is left out; the DEV server is
 `mcp_server=https://hi-planning-assistant-dev.dashiell-bell.workers.dev`.
 
-- `<model>` — one of `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, `mistral-large-latest`,
+- `<model>` — any `gpt-*` model such as `gpt-6-astra`, or one of `mistral-large-latest`,
   `mistral-medium-latest`, `mistral-large-4`, `mistral-large-3`
 - `<key>` — the API key of that model
 - add `&id=<plan id>` to open a saved plan; without it you start planning from the store

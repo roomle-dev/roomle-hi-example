@@ -44,7 +44,7 @@ The provider name selects the provider and model:
 | `gemini-flash` | Google (Gemini API) | `gemini-2.5-flash` |
 | any `gemini-*` model id | Google (Gemini API) | passed through (e.g. `gemini-3-pro-preview`) |
 | `azure` / `openai` | Azure OpenAI | `gpt-4o` (deployment name — see below) |
-| `gpt-5-mini` / `gpt-5.4-mini` / `gpt-6-astra` | Azure OpenAI (HI Azure AI Foundry resource) | the deployment of the same name |
+| any `gpt-*` model id (e.g. `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`) | Azure OpenAI (HI Azure AI Foundry resource) | the deployment of the same name |
 
 Provider names and model ids are matched case-insensitively, so `Mistral-Large-3`
 and `mistral-large-3` are the same request.
@@ -61,7 +61,7 @@ environment variable, and the **deployment name** (not the model name) via
 AZURE_RESOURCE_NAME=my-resource HI_CHAT_MODEL=my-gpt4o-deployment npm start azure <api-key>
 ```
 
-`gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra` and `mistral-large-3` need neither: they are deployments on the HI
+Every `gpt-*` model and `mistral-large-3` need neither: they are deployments on the HI
 Azure AI Foundry resource and are called through its OpenAI v1 endpoint
 `https://dfhifoundrysweden.services.ai.azure.com/openai/v1` with the resource's
 API key. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
@@ -237,11 +237,10 @@ summary in its conversation.
 
 The chat takes an image only when the model reads images. The chat backend
 decides this from the model id it resolved (`readsImages` in
-`hi-mcp/hi-mcp-chat/chat-config.ts`): every Anthropic and Google model, and
+`hi-mcp/hi-mcp-chat/chat-config.ts`): every Anthropic, Google and `gpt-*` model, and
 from the other providers the ids in `IMAGE_INPUT_MODELS`:
-`mistral-large-latest`, `mistral-medium-latest`, `mistral-large-3`,
-`mistral-large-4-0`, `gpt-4o`, `gpt-5-mini`,
-`gpt-5.4-mini` and `gpt-6-astra`. Any other id gets no image input. That includes a pass-through
+`mistral-large-latest`, `mistral-medium-latest`, `mistral-large-3` and
+`mistral-large-4-0`. Any other id gets no image input. That includes a pass-through
 `mistral-*` id and an Azure deployment named with `HI_CHAT_MODEL`: an unknown
 model gets no image feature rather than a provider error halfway through a
 turn. The table lives in the backend, which resolves the model — not in the
@@ -378,14 +377,14 @@ turn timeout — ends the stream with an `[error] …` line.
 | Variable | Default | Meaning |
 | -------- | ------- | ------- |
 | `HI_CHAT_TOKEN` | — | The provider API key (set by the launcher from the CLI argument) |
-| `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `mistral-large-3`, `mistral-large-4`, `claude`, `gemini`, `azure`, `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, or a full `mistral-*`/`claude-*`/`gemini-*` model id) |
+| `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `mistral-large-3`, `mistral-large-4`, `claude`, `gemini`, `azure`, or a full `gpt-*`/`mistral-*`/`claude-*`/`gemini-*` model id) |
 | `HI_CHAT_PORT` | `3200` | Port of the chat backend (the page reads it via the `chat_port` query parameter) |
-| `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider; ignored for the Foundry deployments `gpt-5-mini`/`gpt-5.4-mini`/`gpt-6-astra`/`mistral-large-3` |
-| `AZURE_RESOURCE_NAME` | — | Required for `azure`/`openai`: the Azure OpenAI resource name (ignored for the Foundry deployments `gpt-5-mini`/`gpt-5.4-mini`/`gpt-6-astra`/`mistral-large-3`) |
+| `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider; ignored for the Foundry deployments `gpt-*`/`mistral-large-3` |
+| `AZURE_RESOURCE_NAME` | — | Required for `azure`/`openai`: the Azure OpenAI resource name (ignored for the Foundry deployments `gpt-*`/`mistral-large-3`) |
 | `HI_MCP_URL` | `http://localhost:3100/mcp` | The MCP server the chat backend connects to |
 | `HI_CHAT_PAGE_ORIGINS` | `http://localhost:3000`, `http://127.0.0.1:3000` | Allowed CORS origins (the launcher sets it to match `EXAMPLE_PORT`) |
 | `HI_CHAT_TURN_TIMEOUT_MS` | `300000` | A turn that has not answered within this time is aborted and ends with an `[error]` line naming the limit; the plan keeps what the tools changed |
-| `HI_CHAT_REASONING_EFFORT` | per deployment | The reasoning effort sent to the GPT deployments (`gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`), e.g. `medium`; unset, `high` for gpt-5.4-mini and gpt-5-mini and the default of gpt-6-astra |
+| `HI_CHAT_REASONING_EFFORT` | per deployment | The reasoning effort sent to the GPT deployments (`gpt-*`), e.g. `medium`; unset, `high` for gpt-5.4-mini and gpt-5-mini and the deployment default of every other one |
 
 ## Security notes
 

@@ -158,9 +158,9 @@ WebSocket hello and each chat request. When the chat starts, the page requests
 the prompts of the chat from the planner once —
 `roomDesignerApi.extended.getExternalObjectAgentPrompts()`, the system prompt
 and the image prompt of the roomle-ui glue logic — and sends them as `prompts`
-with each chat request; the chat keeps no prompts of its own. The window's input is disabled until the bridge
-acknowledges this page, and on disconnect or when another page owns the planner;
-its status line then shows the bridge's message.
+with each chat request; the chat keeps no prompts of its own. The window's input is off until the
+page has registered its message handler and the bridge acknowledges this page, and on disconnect or
+when another page owns the planner; its status line then shows the bridge's message.
 The chat backend requires that ID and uses `/mcp?client=<clientId>`, so a tab
 that does not own the planner cannot use the chat to change its plan. The window
 renders the replies as **markdown** (bold, lists, headings, code) with

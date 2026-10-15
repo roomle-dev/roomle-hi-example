@@ -171,7 +171,8 @@ registers `onPlanningAssistantPrompt`, posts every message with the conversation
 `http://localhost:<chat_port>/chat`, and passes the turn to the window with
 `planningAssistantOutput`: the new part of the answer as `text` — a last line that is or may become a
 `[tool]` line waits for the next chunk —, a new `[tool]` name as `activity`, the end as `done`, a
-failed request as `error`. `onMcpConnectionChange` passes the bridge state as `availability`, the
+failed request as `error`. `onMcpConnectionChange` passes the bridge state as `availability`, first
+after `onPlanningAssistantPrompt` is registered — the window's input stays off until then —, the
 answer of `GET /capabilities` the `images` switch. A planner without `planningAssistantOutput` gets no
 chat, and the bridge is unaffected.
 

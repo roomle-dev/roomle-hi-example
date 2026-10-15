@@ -1113,14 +1113,6 @@
               logMessage('chat', `output failed: ${error.message}`)
             );
 
-        onMcpConnectionChange = () =>
-          output({
-            type: 'availability',
-            available: mcpPageAccepted,
-            text: mcpConnectionMessage,
-          });
-        onMcpConnectionChange();
-
         // The stream carries answer text and [tool] status lines; only the
         // answer belongs in the window, the tool name goes to its status
         // line. While the stream runs, a last line that is or may become a
@@ -1230,6 +1222,16 @@
         ) => {
           send(prompt);
         };
+
+        // The window's input stays off until this availability, so the
+        // handler above is in place before the first message.
+        onMcpConnectionChange = () =>
+          output({
+            type: 'availability',
+            available: mcpPageAccepted,
+            text: mcpConnectionMessage,
+          });
+        onMcpConnectionChange();
 
         // Images only when the chat backend says the model reads them;
         // otherwise the window takes no image drop.

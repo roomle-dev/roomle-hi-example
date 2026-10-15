@@ -682,6 +682,11 @@ What the implementation does differently from §8, and why.
 - **ligna-store `layouts/default.vue`:** the focus exception for `#chat-overlay` goes with the
   overlay — the window is inside the planner iframe, whose focus events do not reach the page.
 - **Line references** into `index.html` and `Planner.vue` in the bridge backlog item are updated.
+- **The input starts off**, not on as §4.1 has it, and shows "Connecting to the assistant..." until
+  the host reports availability (review of PR #117): a message sent before the host listens — while
+  the example page awaits the prompts, or when a host fails to start — opened a turn nothing ended.
+  The example page reports availability only after it registered `onPlanningAssistantPrompt`. The
+  original windows started disabled too.
 
 Not run, as no model run is started without being asked: the live check of §8.2 step 3 and the
 `run-hi-mcp-prompt.js` regression run. The store's live check (§8.3 step 4) is not run either.

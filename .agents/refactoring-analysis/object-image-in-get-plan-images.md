@@ -122,7 +122,7 @@ materials, without the room"). The plan perspective answers neither well.
 ## 4. Scope — every affected location
 
 **Code** (the pages and roomle-ui stay untouched: `getExternalObjectSnapshot` is allow-listed with
-its options passed through — `MCP_PLANNER_METHODS` in [`index.html:1275`](../../minimal-hi-example/index.html#L1275),
+its options passed through — `MCP_PLANNER_METHODS` in [`index.html:953`](../../minimal-hi-example/index.html#L953),
 `PLANNER_METHODS` in [`browser-bridge.ts:13`](../../hi-mcp/hi-mcp-client/browser-bridge.ts#L13),
 [`planner-api.ts:15`](../../hi-mcp/hi-mcp-server/planner-api.ts#L15) takes any boolean
 options; the ligna-store does not reference the tool's result):

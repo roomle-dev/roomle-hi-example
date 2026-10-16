@@ -252,7 +252,7 @@ This contract is guarded by these roomle-ui tests:
 | `delete-group` | the group (a root id: its group) | `withCorrections` |
 | `delete-article-in-place` | the root among all roots | `withPlanRoots`, `asTool` (the result names the tool, not the planner command), `withCorrections` |
 | `delete-article-and-compact` | the group — without `groupId` the group that holds the root (`groupOfRoot`) —, the root within it | `withRowHints` + `withPlanRoots`, `asTool`, `withCorrections` |
-| `merge-article-into-group` | the group, the article, the target root and side (`dockTarget`) | `withPlanRoots`, `withCorrections` |
+| `merge-article-into-group` | the group, the article, the target root and side (`dockTarget`) | `withRowHints` + both |
 | `exchange-root-module` | the group, the article, the root | `withRowHints` + both |
 | `insert-article-into-group` | the group, the article, both roots (`insertBetween`) | `withRowHints` + both |
 | `swap-root-modules` | the group, both roots (the same root twice throws) | `withRowHints` + both |
@@ -276,7 +276,7 @@ merge, insert and exchange are forwarded unchanged.
 
 ### Row edits
 
-For insert, `delete-article-and-compact`, exchange and swap the tool command does **not** rewrite the row's docking — the group
+For merge, insert, `delete-article-and-compact`, exchange and swap the tool command does **not** rewrite the row's docking — the group
 operation does: it closes or opens the gap, keeps the ends at a wall or in a corner, and moves the
 units above with their carrier (roomle-ui `hi-root-module-arrangement.ts`, `carriersOfUnitsAbove`).
 The tool command's part:
@@ -287,8 +287,7 @@ The tool command's part:
 - `withRowHints` compares the calculated groups before and after the edit and adds a `hint` when the
   row newly reaches past a wall or into a group it did not overlap before (`rowReachHints`), and names
   the wall units that moved with the unit below them (`movedUnitsAboveHint`) and the leg a corner
-  deletion turned (`turnedLegHints`). It does not apply to
-  `merge-article-into-group` and `delete-article-in-place`.
+  deletion turned (`turnedLegHints`). It does not apply to `delete-article-in-place`.
 
 ## undo, redo
 

@@ -8,7 +8,8 @@ running a prompt through the chat, checking the plan a prompt produces, comparin
 
 Runs the tests of [test-prompts.json](../../docs/test-prompts.json) with the runner
 `run-hi-mcp-tests.js` — each from its plan, with its prompt (or its turns) and image — stores every
-result under one session directory and ends with `report.md` and its PDF `report.pdf`: per test the plan snapshot id, the
+result under one session directory and ends with `report.md` and its PDF in `.temp/reports/`, named after the
+date and the models of the session ([the PDF](#the-pdf)): per test the plan snapshot id, the
 perspective, the perspective object and the top image, an evaluation and a bug verdict.
 
 The tests assess how well the agent understands the prompts and picks the right tools — not the tools
@@ -286,7 +287,7 @@ the model's directory, and every link to a run section names the model: `#<model
 the anchor GitHub and `render-report-pdf.js` make of that heading (a dot of the model is dropped:
 `gpt-5.4-mini` → `#gpt-54-mini--01-…`).
 
-A session has **exactly one report**, `report.md`, and its PDF `report.pdf` ([below](#the-pdf)). Never write a report per model or a partial
+A session has **exactly one report**, `report.md`, and one PDF of it ([below](#the-pdf)). Never write a report per model or a partial
 report file beside it — not even when the evaluation is split, e.g. one subagent per model: their
 sections go straight into `report.md`.
 
@@ -399,13 +400,21 @@ Plan: <plan name>
 #### The PDF
 
 The result of the session is the report and its PDF. Render the PDF once `report.md` is complete, and
-again whenever it changes:
+again whenever it changes, straight into `.temp/reports/` under the name of the session's date and
+models:
 
 ```bash
-node .agents/scripts/render-report-pdf.js "$SESSION/report.md"
+mkdir -p .temp/reports
+node .agents/scripts/render-report-pdf.js "$SESSION/report.md" --out ".temp/reports/mcp-test-<date>_<models>.pdf"
 ```
 
-It writes `$SESSION/report.pdf`: A4, every run section on a new page, the links of the summary
+- `<date>` is the date of the session directory: `2026-10-16` of `mcp-test-2026-10-16_11-57-20`.
+- `<models>` are the model directories of the session in the order of the summary table, joined by
+  `_`: `mcp-test-2026-10-08_gpt-5-mini_gpt-5.4-mini_gpt-6-astra.pdf`.
+- A second session of the same date and models adds the time of its directory after the date:
+  `mcp-test-2026-10-16_11-57-20_gpt-6-astra.pdf`.
+
+The session directory keeps no PDF. The PDF is A4, every run section on a new page, the links of the summary
 jumping to the run sections, the images embedded at most 640 px wide (about 3 MB for 32 runs, against
 100 MB of renders) — the PDF can be shared on its own.
 
@@ -428,7 +437,7 @@ not an archive: it holds only what is still to be done — no history of runs, f
   is no fix;
 - keep the backlog index ([README](../backlog/README.md)) in step.
 
-Then tell the user the paths of `report.md` and `report.pdf`, the verdicts and the bugs.
+Then tell the user the paths of `report.md` and of the PDF in `.temp/reports/`, the verdicts and the bugs.
 
 ## Run the tests (the runner)
 

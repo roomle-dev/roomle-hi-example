@@ -35,6 +35,7 @@ deliberately rejected. Read these before proposing a change to an area they cove
 | [0006 — The prompt tests assess the agent, the unit tests the tools](decisions/0006-prompt-tests-assess-the-agent.md) | Accepted |
 | [0007 — The tool logic of the plan-changing HI MCP tools runs in the planner](decisions/0007-hi-mcp-tool-logic-in-the-planner.md) | Accepted |
 | [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Accepted |
+| [0009 — The chat window is a panel of the planner, the agent loop stays in the host](decisions/0009-the-chat-window-is-a-panel-of-the-planner.md) | Accepted |
 
 ---
 
@@ -88,7 +89,6 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | Document | Status | Last touched |
 |---|---|---|
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](bug-analysis/sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | 2026-10-10 |
-| [Plan-context findings: affected repositories](bug-analysis/plan-context-findings-repository-scope.md) | Open — kernel and library scope remains | 2026-10-10 |
 
 ### Feature Analyses
 
@@ -97,8 +97,6 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [RML-18187: the agent prompts from the glue logic, and the planning skills they name](feature-analysis/agent-prompts-from-the-glue-logic.md) | Implemented — a glue-logic API for the system and image prompts, requested by the page; an image-planning skill; the prompts name the skills; branches not merged | 2026-10-14 |
-| [RML-18190: the Planning Assistant chat window in roomle-ui](feature-analysis/planning-assistant-chat-in-roomle-ui.md) | Implemented — the chat as a drawer panel of roomle-ui behind `featureFlags.planningAssistant`, a prompt callback and an output API with typed parts, the example page and the store as hosts; branches not merged | 2026-10-15 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
 ### Refactoring Analyses

@@ -14,6 +14,10 @@
       "apiKey": "$AZURE_GPT_KEY"
     },
     {
+      "provider": "gpt-6.1-sol",
+      "apiKey": "$AZURE_GPT_SOL_KEY"
+    },
+    {
       "provider": "Mistral-Large-3",
       "apiKey": "$AZURE_GPT_KEY"
     }

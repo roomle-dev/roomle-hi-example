@@ -179,13 +179,25 @@ describe('getChatConfig', () => {
       baseUrl: foundryBaseUrl,
       chatCompletions: true,
     });
-    // every gpt-* name is a deployment on the Foundry resource
-    expect(resolveChatModel('GPT-6.1-sol')).toEqual({
+    // every other gpt-* name is a deployment on the Foundry resource
+    expect(resolveChatModel('GPT-6-nova')).toEqual({
       provider: 'azure',
-      modelId: 'gpt-6.1-sol',
+      modelId: 'gpt-6-nova',
       baseUrl: foundryBaseUrl,
       chatCompletions: false,
     });
+    // gpt-6.1-sol is deployed on another Foundry resource
+    const solBaseUrl =
+      'https://controller-mes-resource.services.ai.azure.com/openai/v1';
+    expect(resolveChatModel('GPT-6.1-sol')).toEqual({
+      provider: 'azure',
+      modelId: 'gpt-6.1-sol',
+      baseUrl: solBaseUrl,
+      chatCompletions: false,
+    });
+    expect(
+      getChatConfig({ HI_CHAT_PROVIDER: 'gpt-6.1-sol' }).azureBaseUrl
+    ).toBe(solBaseUrl);
     expect(resolveChatModel('openai')).toEqual({
       provider: 'azure',
       modelId: 'gpt-4o',

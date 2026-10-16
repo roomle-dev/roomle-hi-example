@@ -100,6 +100,8 @@ answer names the windows; `living-room-sideboard-and-tv` creates both groups.
 
 **Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 05 (`sideboard-living-room-front-wall`): no tool call that changes the plan, the answer asks for another wall.
 
+**Analysis.** [wall-of-glass-the-user-names-left-out.md](../bug-analysis/wall-of-glass-the-user-names-left-out.md): a second cause in roomle-ui — the side label `front` resolves to the longest wall piece of type `wall` on that side (`resolveWall`, `hi-wall-placement.ts`), here the 120 mm end face of the partition in the middle of the room; the served-text change alone puts the sideboard there (the Mistral runs of `mcp-test-2026-10-12_10-23-42` and `mcp-test-2026-10-12_13-35-57`).
+
 ## 66. A corner group stands in front of the adjoining wall's window
 
 **Problem.** A group placed by wall into a corner (`alignment` the adjoining wall) whose adjoining

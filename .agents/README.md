@@ -135,7 +135,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL, the per-run overhead, the cause chain of a failed provider step | 2026-10-14 |
 | [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — access control, the DEV branch policy and the teardown of the personal deployment | 2026-10-14 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-14 |
-| [One page bridge for every host](backlog/one-page-bridge-for-every-host.md) — one bridge package instead of three hand-synced copies, later a planner option | 2026-10-14 |
+| [The HI tools in the embedding-lib instead of the Cloudflare MCP server](backlog/hi-tools-in-the-embedding-lib.md) — the page provides the MCP tools from the embedding-lib (`src/homag-intelligence`); the server, the page bridges and the Cloudflare deployment go | 2026-10-16 |
 | [A backend-controlled agent loop with browser-executed scene tools](backlog/backend-agent-loop-with-browser-scene-tools.md) — the scene tools in the browser, the agent loop and the credentials in the backend | 2026-10-07 |
 | [Analyse how Spec Kit can help with the prompting](backlog/speckit-for-the-prompting.md) — Spec Kit's prompt sections as inspiration for the served text and the chat prompt | 2026-10-07 |
 | [The ligna-store chat as a client of the HI MCP server](backlog/ligna-store-chat-client.md) — the Mistral image adapter | 2026-10-14 |

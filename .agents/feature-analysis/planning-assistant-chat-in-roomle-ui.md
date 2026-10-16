@@ -294,8 +294,8 @@ stay.
 
 ## 5. Alternatives rejected
 
-- **The window in the embedding lib or in a host-side package** (the direction of the backlog item
-  [one page bridge for every host](../backlog/one-page-bridge-for-every-host.md)): no drawer, no
+- **The window in the embedding lib or in a host-side package** (the direction of the former backlog item
+  one page bridge for every host): no drawer, no
   roomle-ui look, i18n or feature flag; the ticket asks for the planner's drawer.
 - **The agent loop in roomle-ui too** — the window calling the chat backend or the MCP server
   itself: the provider key, the model choice and the backend URL would be the planner's, and the

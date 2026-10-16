@@ -77,7 +77,7 @@ Details: [deployment-and-session-issues.md](deployment-and-session-issues.md).
 
 | Item | To do | Details |
 |---|---|---|
-| One page bridge for every host | The page bridge exists three times (reference client, example page, ligna-store), synced by hand. Publish it as a package, then move it into embedding-lib or the Rubens UI as one planner option | [one-page-bridge-for-every-host.md](one-page-bridge-for-every-host.md) |
+| The HI tools in the embedding-lib instead of the Cloudflare MCP server | The page provides the tools: the MCP server's tools, served text, skills and undo record in the embedding-lib (`src/homag-intelligence`); the AI SDK loops and their provider mappings stay in the hosts, which drop only the server, the bridge and the MCP client; the example's chat moves into its page; teardown of the Workers last | [hi-tools-in-the-embedding-lib.md](hi-tools-in-the-embedding-lib.md) |
 | A backend-controlled agent loop with browser-executed scene tools | The scene tools stay in the browser; the agent loop, the tool authorization and the provider credentials move to the backend | [backend-agent-loop-with-browser-scene-tools.md](backend-agent-loop-with-browser-scene-tools.md) |
 
 ## ligna-store

@@ -13,7 +13,7 @@ logic itself runs in the server (`../hi-mcp-server/tool-executors.ts`).
 
 The ligna-store runs a copy of these two source files in its `hi-mcp/` folder, formatted with the
 store's settings — there is no automatic sync, so copy them over after every change here
-([backlog](../../.agents/backlog/one-page-bridge-for-every-host.md)). The message protocol in
+([backlog](../../.agents/backlog/hi-tools-in-the-embedding-lib.md)). The message protocol in
 `types.ts` must match the server. `PLANNER_METHODS` must list exactly the methods of
 `../hi-mcp-server/planner-api.ts` — `tests/planner-api.test.ts` in the server fails otherwise.
 It changes only when a tool needs a new planner method.

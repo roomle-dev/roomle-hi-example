@@ -169,6 +169,8 @@ The start script (`npm start`) provides:
 
 Skills provide deep domain knowledge. Load them by reading the file when the task matches their domain. Skill files are located in `.github/skills/` for GitHub-specific workflows and `.agents/skills/` for domain knowledge.
 
+**Skills belong in `.agents/skills/`.** Every skill of this repository is a Markdown file there with a row in the table below. **Never create a `.claude/` folder in this repository** — no `.claude/skills/`, no `SKILL.md` wrappers and no other tool-specific copy of a skill.
+
 | Skill | Load when the task involves |
 |---|---|
 | [`.agents/skills/hi-mcp-server.md`](./.agents/skills/hi-mcp-server.md) | MCP server architecture, tool definitions, protocol handling, WebSocket bridge |

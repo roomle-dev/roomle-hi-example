@@ -2,7 +2,7 @@
 
 This skill cleans up `.agents/bug-analysis/`, `.agents/feature-analysis/` and
 `.agents/refactoring-analysis/` as a whole. **Triggered by "cleanup analyses"** (also "cleanup
-analysis", "clean up the analyses", "analysis cleanup"): the phrase alone means *execute this whole
+analysis", "clean up analyses", "clean up the analyses", "analysis cleanup"): the phrase alone means *execute this whole
 procedure*, without asking for the details it defines. Load it as well when the user asks to review
 or tidy the analysis folders.
 

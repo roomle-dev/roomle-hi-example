@@ -292,7 +292,18 @@ browser makes no request to workers.dev.
    are live.
 2. **Cloudflare (Roomle account):** delete the Workers `hi-planning-assistant` and
    `hi-planning-assistant-dev` and their container apps.
-3. **Cloudflare (personal account):** delete the Worker `hi-mcp-poc`.
+3. **Cloudflare (personal account):** delete the Worker `hi-mcp-poc` and, separately, its container
+   application `hi-mcp-poc-himcpcontainer`. `wrangler delete` leaves the container application
+   running and billing.
+
+   Run from the repository root, with `CLOUDFLARE_ACCOUNT_ID=<personal account id>` on every
+   command:
+   - `npx wrangler delete --name hi-mcp-poc`;
+   - `npx wrangler containers list`;
+   - `npx wrangler containers delete <id>`.
+
+   Then delete the personal API token. If nothing else runs in that account, end its Workers Paid
+   plan.
 4. **GitHub:** delete the environments `cloudflare` and `cloudflare-dev` with their secrets, and
    the branches `release/cloudflare` and `release/cloudflare.dev`.
 

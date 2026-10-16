@@ -431,7 +431,9 @@ describe('hi-mcp-server tool calls', () => {
     expect(text).toContain(
       'Looking into the corner from the room, the root modules rightOf the corner article run along the wall on the right'
     );
-    expect(text).toContain('an entry of type opening is a door');
+    expect(text).toContain(
+      'a door or a floor-to-ceiling window splits a wall into several entries of the same side and name - pieces of type wall and the openings between them'
+    );
     expect(text).toContain(
       'To move an existing group against a wall or into a room corner, call place-group'
     );
@@ -945,13 +947,36 @@ describe('hi-mcp-server tool calls', () => {
     );
   });
 
+  it('tells the agent that a group goes on the wall the user names, also a wall of glass', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    expect(rules).toContain(
+      'A group goes where the user puts it - the wall, the corner or the spot the user names, also when a door or a window is there'
+    );
+    expect(rules).toContain(
+      'a side label names the whole wall, and the server puts the group on its longest piece of wall, or across the openings when no piece is wide enough'
+    );
+    expect(rules).not.toContain('only for a free stretch of wall');
+    expect(client.getInstructions()).not.toContain(
+      'only for a free stretch of wall'
+    );
+    const { tools } = await client.listTools();
+    const placeGroup = tools.find((tool) => tool.name === 'place-group');
+    expect(
+      (placeGroup?.inputSchema.properties?.wall as { description?: string })
+        ?.description
+    ).toContain("'right' is the whole right wall");
+  });
+
   it('tells the agent what stands in the room and that the hint names a root module on an obstacle', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(
       await client.callTool({ name: 'get-authoring-rules', arguments: {} })
     );
     expect(rules).toContain(
-      "Put a new group on a stretch of wall or a spot that obstacles leaves free: fromEndMm is measured from the wall's end, so a placement with that wall, alignment end and offsetMm = the start of a free stretch puts the group on it; base units lower than a window's bottomMm fit below it."
+      "Where the user leaves the place open, choose a stretch of wall or a spot that obstacles leaves free: fromEndMm is measured from the wall's end, so a placement with that wall, alignment end and offsetMm = the start of a free stretch puts the group on it; base units lower than a window's bottomMm fit below it."
     );
     expect(rules).toContain(
       "The result's hint names every root module that overlaps an object or another group or stands in front of a door or a window, with the free stretches of its wall."
@@ -959,9 +984,7 @@ describe('hi-mcp-server tool calls', () => {
     // the server tests the outlines, not the agent (D55)
     expect(rules).not.toContain('cannot stand where');
     expect(rules).not.toContain('keep that span free');
-    expect(rules).toContain(
-      'any point on the floor that obstacles leaves free as posGroup'
-    );
+    expect(rules).toContain('any point on the floor as posGroup');
     expect(client.getInstructions()).toContain(
       'the obstacles (doors, windows, other furniture and the root modules of the groups, where they stand)'
     );

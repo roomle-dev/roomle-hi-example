@@ -562,7 +562,7 @@ position on the wall, the group is placed as asked and the overlap reported.
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `groupId` | `string` | yes | Id of the group (a unique prefix is accepted) |
-| `wall` | `'left' \| 'right' \| 'top' \| 'bottom' \| 'back' \| 'front' \| number` | yes | Side label (the longest wall of type `wall` on that side; `back` is `top`, `front` is `bottom`) or wall index |
+| `wall` | `'left' \| 'right' \| 'top' \| 'bottom' \| 'back' \| 'front' \| number` | yes | Side label (the whole wall of that side, its doors and floor-to-ceiling windows included: the group goes on its longest piece of wall where it fits, else across the wall; `back` is `top`, `front` is `bottom`) or wall index (one piece of a wall) |
 | `alignment` | `'start' \| 'center' \| 'end' \| side label` | no | Position along the wall; the side label of an adjoining wall means flush into that corner (`wall: "right"` + `alignment: "top"` is the back right corner); one parallel to the wall centres the group. Default `center` |
 | `offsetMm` | `number` | no | Extra distance along the wall. Default 0 |
 | `roomIndex` | `number` | no | Room in the `rooms` array. Default 0 |
@@ -728,8 +728,8 @@ group one point and one rotation; the planner calculates every root position.
   free `Top` vector takes the new root's `Bottom` vector) — one unit with
   [merge-article-into-group](#editing-a-group-the-command-tools), several at
   once by adding the picks, each with its relation, to the group from
-  `get-plan-context` and resubmitting it with its id. A new group is only for a free stretch of wall
-  or a free spot in the room. The other edits of an existing group — replace
+  `get-plan-context` and resubmitting it with its id. Never position a new group against an existing
+  one. The other edits of an existing group — replace
   or remove a unit, change attributes, join groups — are command tools too.
 - **Relations**: every root after the first names one neighbour of the same
   group by its id, with exactly one of these fields; the server builds the
@@ -827,9 +827,10 @@ A new group is positioned in the call that creates it, in one of two forms:
   corner article in `roots` goes into the corner; in the point form `rootId`
   names the corner article that goes into the corner `posGroup` names.
 - **Anywhere else** (an island, the middle of the room, next to a door): any
-  floor point `obstacles` leaves free as `posGroup`, any `posRotationY`.
-- **Obstacles**: a new group goes on a stretch of wall or a spot `obstacles`
-  leaves free — a stretch by alignment `end` and `offsetMm` = the start of its
+  floor point as `posGroup`, any `posRotationY`.
+- **Obstacles**: a group goes on the wall, the corner or the spot the user names, also in front of
+  a door or a window, and the answer names them (D81); where the user leaves the place open, a new
+  group goes on a stretch of wall or a spot `obstacles` leaves free — a stretch by alignment `end` and `offsetMm` = the start of its
   `fromEndMm`; base units lower than a window's
   `bottomMm` fit below it. The result's `hint` names every root module that
   overlaps an object or another group or stands in front of a door or a window,

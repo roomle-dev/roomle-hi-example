@@ -10,9 +10,9 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| 65 — A wall of floor-to-ceiling glass the user names is left out | Clarify the obstacle rule: the wall the user names is where the group goes, the free stretches are for a place the user leaves open; the answer names the openings | medium |
 | 66 — A corner group stands in front of the adjoining wall's window | The hint names the `offsetMm` along the group's wall that clears the adjoining wall's opening | low |
 | 67 — The planning skills are served by a tool only | Serve the same skill files with the Skills extension of MCP once a client in use supports it; `get-skill` stays | low |
+| 68 — The room corners leave out a corner where an opening meets a wall | Build the corners from the wall faces: a corner where one face ends and the next starts; decide whether a partition gives room corners | low |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
 
@@ -62,7 +62,7 @@ Details: [mcp-test-infrastructure-issues.md](mcp-test-infrastructure-issues.md).
 |---|---|---|
 | [1 — The object-only perspective render draws an empty frame under software GL](mcp-test-infrastructure-issues.md#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl) | roomle-ui: find why the frame is dropped under SwiftShader | low |
 | [2 — The per-run fixed overhead of the test runner](mcp-test-infrastructure-issues.md#2-the-per-run-fixed-overhead-of-the-test-runner) | Cut the fixed cost per run (launcher typecheck, Chromium launch, launcher reuse) without endangering the sequential runs | medium |
-| [3 — `run.json` keeps only the top-level message of a failed provider step](mcp-test-infrastructure-issues.md#3-runjson-keeps-only-the-top-level-message-of-a-failed-provider-step) | Record the `[hi-chat] step n failed after … ms: …` lines with their cause chain in `run.json` | low |
+| [3 — `run.json` keeps only the top-level message of a failed provider step](mcp-test-infrastructure-issues.md#3-runjson-keeps-only-the-top-level-message-of-a-failed-provider-step) | Record the `[hi-chat] step n failed after … ms: …` lines with their cause chain in `run.json`, and retry a run whose recorded step failure is a provider failure | medium |
 
 ## Deployment, launcher and page sessions
 

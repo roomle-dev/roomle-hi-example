@@ -173,6 +173,7 @@ Used by `place-group` and a placement by wall, the overlap and in-room tests of 
 | `groupHeightRange` | `[bottom, top]` in group space |
 | `groupCornerGeometry` | the corner of a corner group: root, point and the two leg directions |
 | `wallName`, `roomCorners`, `adjoiningWall`, `sharedCorner` | wall names, the room's corners with their rotation, the wall adjoining a wall at a corner |
+| `wallFaces` | the faces of a room's walls: each run of segments of one side in a straight line, its doors and floor-to-ceiling windows included, with its pieces — what a side label names (D81) |
 | `pointInsideRoom`, `roomOfPoint` | ray-cast point-in-polygon on the walls, openings included; L-shaped rooms work |
 | `placeAgainstWall` | the raw group `{ pos, rotationY: facingRotationY }` for an alignment along a wall |
 | `placeCornerAtWalls` | the raw group in a corner, flush with both walls, shifted by `offsetMm` |

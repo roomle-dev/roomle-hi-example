@@ -487,7 +487,7 @@ reported.
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `groupId` | `string` | yes | Id of the group (a unique prefix is accepted) |
-| `wall` | `'left' \| 'right' \| 'top' \| 'bottom' \| 'back' \| 'front' \| number` | yes | Side label (the longest wall of type `wall` on that side; `back` is `top`, `front` is `bottom`) or wall index |
+| `wall` | `'left' \| 'right' \| 'top' \| 'bottom' \| 'back' \| 'front' \| number` | yes | Side label (the whole wall of that side, its doors and floor-to-ceiling windows included: the group goes on its longest piece of wall where it fits, else across the wall; `back` is `top`, `front` is `bottom`) or wall index (one piece of a wall) |
 | `alignment` | `'start' \| 'center' \| 'end' \| side label` | no | Position along the wall; the side label of an adjoining wall means flush into that corner (`wall: "right"` + `alignment: "top"` is the back right corner); one parallel to the wall centres the group. Default `center` |
 | `offsetMm` | `number` | no | Extra distance along the wall. Default 0 |
 | `roomIndex` | `number` | no | Room in the `rooms` array. Default 0 |
@@ -628,8 +628,8 @@ one rotation; the planner calculates every root position.
   per root: a free `LeftBottom` takes the new root's `RightBottom`, a free `RightBottom` takes
   `LeftBottom`, a free `Top` vector takes the new root's `Bottom` vector) — one unit with
   `merge-article-into-group`, several at once by adding the picks, each with its relation, to the
-  group from `get-plan-context` and resubmitting it with its id. A new group is only for a free stretch of
-  wall or a free spot in the room. The other edits of an existing group — replace or remove a unit,
+  group from `get-plan-context` and resubmitting it with its id. Never position a new group against an
+  existing one. The other edits of an existing group — replace or remove a unit,
   change attributes, join groups — are command tools too.
 - **Relations**: every root after the first names one neighbour of the same group by its id, with
   exactly one of these fields; the server builds the docking from it (roomle-ui `hi-group-layout.ts`, D34 in the

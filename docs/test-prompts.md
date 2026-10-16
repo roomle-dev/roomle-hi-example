@@ -146,7 +146,10 @@ The plan of RML-18036: a kitchen on the right wall and a row of sideboard units 
 chairs on a rug under pendant lamps, a storage unit with lamps and plants on the left wall, a
 trolley, plants and three doors. The obstacle tests start from it: the back wall is free only
 between the side table and the door (x -1021 to 590), and the free floor lies between the dining
-table and the kitchen.
+table and the kitchen. The test `sideboard-row-one-more-cabinet` extends the sideboard row, a group
+the library generated with its countertop overhang at the group origin, so no root module stands
+there: its four cabinets keep their place (D82 in the
+[behaviour reference](hi-mcp-behaviour.md#merge-2026-10-16)).
 
 ## Test Cases
 

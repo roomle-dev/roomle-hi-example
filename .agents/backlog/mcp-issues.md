@@ -23,7 +23,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 62 | [`merge-article-into-group` moves a group placed in the conversation](#62-merge-article-into-group-moves-a-group-placed-in-the-conversation) | defect | roomle-ui `homag-intelligence` (`mergeArticleIntoGroup`) | high | gpt-6-astra | |
 | 63 | [The worktop of a handleless kitchen renders white](#63-the-worktop-of-a-handleless-kitchen-renders-white) | defect, not analysed | roomle-ui render or HOMAG library — to analyse | medium | gpt-6-astra | |
 | 66 | [A corner group stands in front of the adjoining wall's window](#66-a-corner-group-stands-in-front-of-the-adjoining-walls-window) | hardening | roomle-ui `obstacleHint` (`hi-tool-hints.ts`) | low | gpt-6-astra | |
 | 67 | [The planning skills are served by a tool only](#67-the-planning-skills-are-served-by-a-tool-only) | follow-up | roomle-hi-example MCP server (`hi-mcp-server.ts`, `skills.ts`) | low | | |
@@ -31,33 +30,6 @@ never drop the agent's content silently.
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
-
-## 62. `merge-article-into-group` moves a group placed in the conversation
-
-**Problem.** On a group that `create-or-replace-groups` placed by wall or by point earlier in the conversation,
-`merge-article-into-group` docks the new root module where asked but moves the whole group by its
-former width towards its left end: the new root module stands where the group's origin was. A
-sideboard of two cabinets centred on the back wall of the living room (x -1225 to -25) stands at
-x -2435 to -635 after one cabinet is merged on its right; on the right wall of the default room the
-group slides into the back corner. The tool result reports no move, and the agent's answer says
-nothing of it. Groups loaded from a plan snapshot keep their place under the same merge (the tests
-`two-wardrobes-add-third` and `edit-add-one-unit`).
-
-**Cause.** Not analysed. `mergeArticleIntoGroup` (roomle-ui
-`homag-intelligence/src/hi-tools.ts:625`) rebuilds the group from a copy of its `posDataJson`
-with the new root module and its docking (`createOrReplacePosGroupsFromLayout`) and loads it with
-`applyGroupPosition: true`. Which position data of a group placed by wall (`hi-wall-placement.ts`)
-puts the rebuilt group at the new root module remains to be traced.
-
-**To do.** roomle-ui: keep the earlier root modules of the group in place when a root module is
-merged; a merge only adds one.
-
-**Test.** roomle-ui `__tests__/hi-tool-commands/`: a group placed by wall, then a root module merged
-right of its last root module — the earlier root modules keep their positions; the same for a group
-loaded from a snapshot. The random test `random-1-living-room-sideboard-extend-and-shrink` of the
-Reproduce session as a fixed test.
-
-**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 54 (`random-5-island-then-longer`, turn 2, local roomle-ui `6df952e35`): the island placed by point (`posGroup` [750, 0, 5680], rotation 90) stands at z 4480..5680 and moves to z 5090..6890 when a third `US2A60` is merged at the `RightBottom` of the second; without a model the run's two payloads (`planner-calls.json`) on the plan `open-plan-room` give the same move, and on `default-room` two `SB_UB600` placed by wall `back`, centred, then one merged `RightBottom` → `LeftBottom` to the second move from x 1465 to 255.
 
 ## 63. The worktop of a handleless kitchen renders white
 

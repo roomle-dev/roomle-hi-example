@@ -322,6 +322,13 @@
       "expect": "one new group of three base units away from the walls whose root modules overlap no object (dining table, chairs, rug, plant, sofa) and no other group"
     },
     {
+      "id": "sideboard-row-one-more-cabinet",
+      "title": "One more cabinet for the sideboard row",
+      "plan": "open-plan-room",
+      "prompt": "add one more cabinet of the same kind to the sideboard row on the front wall",
+      "expect": "one merge-article-into-group that docks a fifth SB_UB600 at the door end of the sideboard row on the front wall, and no place-group: the four earlier cabinets keep their place (x 1139 to 3139, the countertop reaching the right wall) and the row runs from x 639 to 3248, clear of the door opening (x -1699 to 401)"
+    },
+    {
       "id": "order-data-kitchen",
       "title": "Order data of the kitchen",
       "plan": "three-tall-units",

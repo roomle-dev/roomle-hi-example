@@ -412,11 +412,12 @@ What runs before the work is called done.
   includes the lint; the two placement test files and `hi-plan-space-test.ts` first.
 - roomle-hi-example: `npm test` and `npm run typecheck` in `hi-mcp`, `npm run lint` and
   `npm run format:check` at the root.
-- Prompt tests, when you give the go: `sideboard-living-room-front-wall` and
-  `living-room-sideboard-and-tv` with gpt-6-astra and Mistral-Large-3 against the local roomle-ui
-  (`--dev`); then the placement tests 01 to 08, 35 to 41, 50 and 53 with every model of
-  `docs/test-prompts.json` on the same build, each compared with its reference session — a fix
-  must not break another model.
+- After the implementation — code, unit tests, documentation, the commits pushed — the work stops
+  and reports; nothing runs with a model before your go.
+- On your go: the skill "test the mcp" with all tests of `docs/test-prompts.json` and the model
+  gpt-6-astra (`$AZURE_GPT_KEY`) against the local roomle-ui (`--dev`); the report compared per
+  test with the reference session `mcp-test-2026-10-14_13-34-58` — a fix must not break another
+  test.
 
 ### Commits
 

@@ -268,6 +268,180 @@ Library-neutral as before: no article, category or measure of one library.
 3. **The free stretches of a face.** `wallOfRoot` finds no wall for a root module in front of an
    opening segment, so the hint gives no free stretches there. Along the face they could be given.
 
+## Implementation plan
+
+Written 2026-10-16 for RML-18198 after the analysis above; the implementation follows the review of
+this plan.
+
+### Branches
+
+The branches of the two repositories, roomle-ui first.
+
+- roomle-ui: `fix/wall-face-for-side-labels-RML-18198`, created from
+  `feat/planning-assistant-chat-RML-18190` (its head `3319652cc`, equal to origin); rebased onto
+  that branch's head when the implementation starts, should it have moved.
+- roomle-hi-example: `fix/wall-of-glass-the-user-names`, the branch of this analysis, continued.
+- Order: roomle-ui first. The served text that sends the agent to the glass front must not ship
+  before the face resolution, or the sideboard lands on the partition. The hi-example change is
+  tested against the local roomle-ui (`npm run dev` there, the `--dev` launcher here).
+
+### Design: the wall face
+
+A face is the wall as the user sees it: the maximal run of consecutive contour segments of one
+side that continue each other end to start in a straight line — pieces of type `wall` and openings
+alike. `wallFaces(walls)`, new in roomle-ui `hi-plan-space.ts`, builds the faces of a room from its
+walls: shared endpoints (`samePoint`), the same `side`, a parallel direction (the collinearity test
+of `roomCorners`); a run may continue across the contour's start point. A face is a `DerivedWall` —
+the `index` of its first piece, `side`, `start`, `end`, `lengthMm`, `type` `wall`,
+`facingRotationY` — plus `pieces`, so every wall function accepts it unchanged.
+
+- Living room: the bottom side has two faces, walls 3 to 9 (x −3185 to 6320, 9505 mm) and the
+  partition's wall 21 (120 mm); the right side the glass façade, walls 10 to 15 (7500 mm), and the
+  partition's wall 20 (3600 mm). A rectangular room without openings: four faces, its four walls. A
+  wall with a door: one face of three pieces.
+- The partition: no special case. Its faces compete by length and lose to every outer face of the
+  room — today its 3600 mm face wins the right side against 60 mm of wall. The kernel marks the
+  inner subpath only by its `M`; the ticket needs no rule for it.
+
+### roomle-ui
+
+The changes in `homag-intelligence/src`, by function.
+
+1. `resolveWall` (`hi-wall-placement.ts`): a side label resolves to the longest face of that side
+   (`wallFaces(walls)`); the index form stays the segment of that index. G19 stays for a label with
+   no face at all and for an index outside the room.
+2. `placeGroupAtWall`: the piece or the face. With the footprint known — the width exists after the
+   load (D23) — a center, start or end alignment goes on the face's longest piece of type `wall`
+   when the group's width fits on it (today's behaviour for a wall with a door: the group stays
+   clear of the door), else across the face. A side-label alignment, a corner, goes into the corner
+   of the face, with `adjoiningWall(wallFaces(walls), face, side)`, so that an adjoining wall of
+   glass is found too. `GroupPlacement` gets `along`, the piece or face the group was placed on;
+   `freePlacementAlongWall` (G22) moves along it.
+3. Results and corrections: the `wall` of a `place-group` result is the face without `pieces`; the
+   corrections keep naming the side ("the front wall"). No new correction, no guard: the group is
+   built where the user puts it, and the hint says what it stands in front of (D51, D55).
+4. Hints (`hi-tool-hints.ts`): `freeStretchesNote` and the `wallOf` of the row hints find the wall
+   of a root module among the faces (`wallOfRoot` over `wallFaces(walls)`), so a root module in
+   front of an opening gets its wall and its stretches along the face — "no stretch of the front
+   wall (walls 3 to 9) is free for it at its height" in the living room. A `wallLabel` names one
+   piece as "wall 9" and a face as "walls 3 to 9". The window a root module stands in front of stays
+   named by its own segment (`objectBlockers`, C21).
+5. Unchanged: `deriveWalls` and the contour, `roomCorners` and the agent-facing corners (below),
+   `wallOfOpening`, the obstacle strips, the index form.
+
+### roomle-hi-example
+
+The served text, the documentation, the test expectation and the backlog.
+
+1. Served text, `hi-mcp/hi-mcp-server/hi-mcp-server.ts`, library-neutral and shorter where it can
+   be:
+   - Line 24, replacing "use the walls of type wall (an entry of type opening is a door)": "a door
+     or a floor-to-ceiling window splits a wall into several entries of the same side and name -
+     pieces of type wall and the openings between them; a side label names the whole wall, and the
+     server puts the group on its longest piece of wall, or across the openings when no piece is
+     wide enough". The point form of the same line: "any point on the floor as posGroup, any
+     posRotationY".
+   - Line 26, before "Put a new group on a stretch of wall …", which becomes the open case: "A
+     group goes where the user puts it - the wall, the corner or the spot the user names, also when
+     a door or a window is there: the result's hint names what it stands in front of, and your
+     answer says so. Where the user leaves the place open, choose a stretch of wall or a spot that
+     obstacles leaves free: fromEndMm is measured …". The corner sentence gets "when the user leaves
+     the corner open," before "choose the other corner".
+   - Line 27, replacing "A new group is only for a free stretch of wall or a free spot in the room
+     (obstacles shows what is taken) - never position a new group against an existing one": "Never
+     position a new group against an existing one: what stands beside a group is a root module of
+     that group."
+   - Line 71, replacing "- a new group is only for a free stretch of wall": "- never a new group
+     against an existing one".
+2. `docs/hi-mcp-behaviour.md`: decision D81 "A side label names the wall face" — the face, the
+   piece, the adjoining face, the hint along the face, the partition without a special case, the
+   rejected alternatives of this analysis; G19 "a side without a wall"; the `wall` sentence of
+   §8.3; the D55 hint rows (the stretches along the face); the Placement and Obstacles paragraphs of
+   §2.4 (a group goes where the user puts it; a side label names the whole wall; a floor-to-ceiling
+   window splits a wall like a door, a window with a sill does not). `docs/hi-mcp-server.md` (the
+   `wall` row), `docs/implementation/tool-executors.md` (step 2 of place-group),
+   `docs/implementation/layout-and-placement.md` (`wallFaces` in the function table),
+   `.agents/skills/hi-mcp-tools.md` (a side label names the whole wall).
+3. `docs/test-prompts.json`: the expectation of `sideboard-living-room-front-wall` adds "the answer
+   names the windows the sideboard stands in front of".
+4. Backlog: item 65 leaves `mcp-issues.md` and the README table with the fix — the backlog holds
+   open work only. A new item 68 takes the corners: `roomCorners` lists no corner where an opening
+   meets a wall (the living room's front left and front right corners) and lists the partition's
+   corners as room corners, in roomle-ui `hi-plan-space.ts` and in the server's `agent-facing.ts`
+   alike. This analysis is deleted once its durable content is in the reference (D81, §2.4).
+
+### Unit tests
+
+The tests, by file.
+
+- roomle-ui `__tests__/hi-plan-space-test.ts`, `wallFaces`: a rectangular room gives one face per
+  wall; a wall split by a door gives one face of three pieces with the first piece's index and the
+  summed length; the living-room walls give two bottom faces, 9505 mm (walls 3 to 9) and 120 mm
+  (wall 21), and two right faces; a run across the contour's start point is one face; a face keeps
+  `side` and `facingRotationY`.
+- the same file, `adjoiningWall` over faces: a face of openings is found as the adjoining wall.
+- the same file, `wallOfRoot` over faces: a root module in front of an opening segment gets its
+  face; `freeStretchesAlongWall` of that face with the opening strips as blockers gives no stretch.
+- roomle-ui `__tests__/hi-tool-commands/create-or-replace-groups-placement-test.ts`, in
+  `describe('create-or-replace-groups wall placement')`, with a second fixture room beside `room`:
+  4000 × 3000, its front wall (z 0) a window x 0 to 1500, a door 1500 to 2500, a window 2500 to 3995
+  and a 5 mm piece, its back wall a door of 900 mm between pieces of 1500 and 1600, and a partition
+  at x 1800 to 1920, z −1000 to −2000, whose 120 mm face has the side bottom; the openings as
+  obstacles, as `windowBehindTheBackWall` builds them. The cases: wall front puts the 800 mm group
+  across the front face, centred — repositioningData posGroup [2400, 0, 0], rotation 180 — not on
+  the partition's face at z −2000, where it lands today, and not on the 5 mm piece; the hint names
+  the window the group stands in front of and "no stretch of the front wall (walls 0 to 3) is free
+  for it at its height"; wall back puts the group on the longer piece beside the door, centred on
+  it — posGroup [400, 0, −3000], today's behaviour; three picks (2400 mm, wider than every piece)
+  with wall back go across the face — posGroup [800, 0, −3000] — and the hint names the door; wall 2
+  by index centres the group on that window segment (x 2500 to 3995), unchanged; a corner article
+  with wall front and alignment right goes into the front right corner the face shares with the
+  right wall, the corner point on [4000, 0, 0].
+- roomle-ui `__tests__/hi-tool-commands/place-group-test.ts`: wall front in the fixture room moves
+  the group across the front face; the result's `wall` is the face — side bottom, start, end,
+  lengthMm — without `pieces`.
+- roomle-hi-example `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`: the rules say "A group goes
+  where the user puts it" and "a side label names the whole wall", and no longer "only for a free
+  stretch of wall".
+
+### Verification
+
+What runs before the work is called done.
+
+- roomle-ui: the homag-intelligence suite — `npm run test:unit` of `packages/web-sdk`, which
+  includes the lint; the two placement test files and `hi-plan-space-test.ts` first.
+- roomle-hi-example: `npm test` and `npm run typecheck` in `hi-mcp`, `npm run lint` and
+  `npm run format:check` at the root.
+- Prompt tests, when you give the go: `sideboard-living-room-front-wall` and
+  `living-room-sideboard-and-tv` with gpt-6-astra and Mistral-Large-3 against the local roomle-ui
+  (`--dev`); then the placement tests 01 to 08, 35 to 41, 50 and 53 with every model of
+  `docs/test-prompts.json` on the same build, each compared with its reference session — a fix
+  must not break another model.
+
+### Commits
+
+Three commits, no pull request without your request.
+
+- roomle-ui: "feat: resolve a wall side label to the wall face, openings included" — `wallFaces`,
+  `resolveWall`, `placeGroupAtWall`, `adjoiningWall` over faces, the result, the placement tests;
+  then "feat: give a root module in front of an opening its wall face in the hint" —
+  `freeStretchesNote`, `wallOf`, `wallLabel`, the hint tests.
+- roomle-hi-example: "feat: tell the agent that a group goes where the user puts it" — the served
+  text, its test, the documentation, the test expectation, the backlog.
+
+### Decisions in this plan
+
+Three decisions a reviewer may want to question.
+
+- A group wider than every solid piece goes across the face, also across a door, and the hint
+  names the door: one rule — the piece when the group fits, else the face. The alternative,
+  overhanging the longest piece, puts the group in front of the door as well, off-centre.
+- The corners stay as they are (backlog 68): the ticket's tests need no corner, and the change
+  touches the server's `agent-facing.ts` too.
+- Offsets: with a side label and alignment end, `offsetMm` counts from the end of the piece or face
+  the group lands on; an agent that computes it from the `fromEndMm` of an opening on another
+  segment uses the index form, as the rules say. Documented in D81.
+
 ## References
 
 - Run directories under `.temp/result/`: `mcp-test-2026-10-14_13-34-58/gpt-6-astra/05-…` and

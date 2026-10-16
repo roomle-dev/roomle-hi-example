@@ -20,6 +20,7 @@ development team, and how to reproduce it. MCP, chat and planner issues are trac
 | 60 | [The sink top of a sink unit reaches past the row or over the hob](#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG Furniture_Smith | HOMAG library development team | reported to the library development team | medium — the drainer in the air or over the hob |
 | 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | not reported | medium — handled articles where the user asked for handleless ones |
 | 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the cabinets are not built, the agent needs a second create |
+| 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the end panels are not built, the agent needs an undo and a second create |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -84,7 +85,7 @@ nothing more.
 
 **Test.** The test `kitchen-conversation` turn 5 ends with handleless articles.
 
-**Reproduce.** `mcp-test-2026-10-16_11-57-20`: gpt-6-astra 49 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
+**Reproduce.** `mcp-test-2026-10-16_18-18-00`: gpt-6-astra 50 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
 
 ## 64. Flip-lift wall cabinets with sizes the library cannot calculate
 
@@ -108,4 +109,33 @@ it (D63). Then check that the served text needs nothing more.
 
 **Test.** `image-planning-right-wall`: the first create loads the flip-lift wall cabinets.
 
-**Reproduce.** `mcp-test-2026-10-16_11-57-20`: gpt-6-astra 47 (`image-planning-right-wall`, the `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` not calculated, Error 14023, in one `notLoaded` error.
+**Reproduce.** `mcp-test-2026-10-16_18-18-00`: gpt-6-astra 48 (`image-planning-right-wall`, the `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` not calculated, Error 14023, in one `notLoaded` error.
+
+## 69. End panels with a plain upright colour the library cannot calculate
+
+**Problem.** A create whose group attributes set a plain `mod_UprightColor` (Snow white 192, Sunny
+white 190) without `mod_UprightProgram` does not build its end panels `W60H` and `W60U`: "Error
+14034: Could not find entry in tab_GrainDirectionSettings for input values: part_FinishPanel -
+Upright - Horizontal - NoGrain - 584 - 870"; the server builds the rest of the group and names them
+in `notLoaded`. The agent undoes the create and sends it again with `mod_UprightProgram` Classic,
+or leaves the end panels out — an undo and a second create. With `mod_UprightProgram` Classic, with
+a wood upright colour and its program, or without an upright colour the end panels load.
+
+**Cause.** The end panels keep their wood upright program ("Horizontal": `ModernNature`, "Carcase
+in wooden colors horizontal") when the group attributes give them a plain colour, for which the
+library has no grain direction. The library switches `mod_FrontProgram` itself when a front colour
+of the other kind is set (the server reports it as a correction, D59), but not `mod_UprightProgram`;
+the descs of the `mod_UprightColor` values name the colour only, not the program it needs. Only the
+program's own desc ("Classic carcase in single colors") hints at it.
+
+**To do.** The library: it switches `mod_UprightProgram` with `mod_UprightColor` as it switches the
+front program with the front colour, or the desc of `mod_UprightColor` (or of the end panels `W60H`
+and `W60U`) says that a plain colour needs `mod_UprightProgram` Classic and a wood colour `Nature` or
+`ModernNature`. Then check that the served text needs nothing more.
+
+**Status.** Not reported to the library development team.
+
+**Test.** `kitchen-conversation` turn 1 and `image-kitchen-back-right-corner`: the first create with
+a plain upright colour builds its end panels.
+
+**Reproduce.** `mcp-test-2026-10-16_18-18-00`: gpt-6-astra 50 (`kitchen-conversation`, turn 1, the first `create-or-replace-groups`): `mod_UprightColor` 192 without `mod_UprightProgram`, the end panels `W60U` and `W60H` not calculated, Error 14034; the second create with `mod_UprightProgram` Classic builds them.

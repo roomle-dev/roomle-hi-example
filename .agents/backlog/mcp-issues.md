@@ -34,8 +34,9 @@ the model sent; the directories are under `.temp/result/`.
 ## 63. The worktop of a handleless kitchen renders white
 
 **Problem.** In the handleless kitchen of the test `image-planning-right-wall` both countertops carry
-`mod_CountertopColor` 326 (Slate) with `mod_CountertopProgram` Style in the order data, but the
-planner renders a plain white worktop. In a handled kitchen a dark countertop renders dark
+a dark `mod_CountertopColor` — 326 (Slate) or 324 (Dark marble) — with `mod_CountertopProgram` Style
+in the order data, but the planner renders a plain white worktop, the local roomle-ui and bo-test
+alike. In a handled kitchen a dark countertop renders dark
 (`full-kitchen-walnut-marble-corner`, 324 Dark marble). The agent cannot see the difference.
 
 **Cause.** Not analysed — the planner's render of the countertop in the handleless line, or the
@@ -47,7 +48,7 @@ issue).
 
 **Test.** `image-planning-right-wall`: the worktops render in the colour of `mod_CountertopColor`.
 
-**Reproduce.** `mcp-test-2026-10-16_11-57-20`: gpt-6-astra 47 (`image-planning-right-wall`, plan snapshot `ps_s04glgtbh6qi0llnwzbyy4wl79vdgng`): white worktops on the wall run and the island in the object image, 326 with the program Style in `order-data.json`.
+**Reproduce.** `mcp-test-2026-10-16_18-18-00`: gpt-6-astra 48 (`image-planning-right-wall`, plan snapshot `ps_s10nlsydubooegzw0cd6fjbfzngktq9`, bo-test): white worktops on the wall run and the island in the object image, 324 with the program Style in `order-data.json`.
 
 ## 66. A corner group stands in front of the adjoining wall's window
 

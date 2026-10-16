@@ -26,6 +26,7 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 | [60 — The sink top of a sink unit reaches past the row or over the hob](library-issues.md#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG library (reported): the sink unit's description names the drainer width and side, and states that no hob may stand immediately to its right | medium |
 | [61 — Handleless fronts done with a handle attribute](library-issues.md#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG library: distinguish choosing a handleless article from setting the handle design to "No handle" on a handled article | medium |
 | [64 — Flip-lift wall cabinets with sizes the library cannot calculate](library-issues.md#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG library: the flip-lift wall cabinets' descs name the heights and depths their flap fitting supports | low |
+| [69 — End panels with a plain upright colour the library cannot calculate](library-issues.md#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG library: switch the upright program with a plain upright colour as the front program is switched, or say in the desc that a plain colour needs `mod_UprightProgram` Classic | low |
 
 ## Library neutrality of the MCP server
 
@@ -41,7 +42,7 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 
 | Item | To do | Details |
 |---|---|---|
-| 63 — The worktop of a handleless kitchen renders white | Analyse why the countertop of the handleless kitchen (326, Slate) renders white while a dark countertop renders dark in a handled kitchen — planner render or library | [mcp-issues.md, 63](mcp-issues.md#63-the-worktop-of-a-handleless-kitchen-renders-white) |
+| 63 — The worktop of a handleless kitchen renders white | Analyse why the countertop of the handleless kitchen (326 Slate, 324 Dark marble) renders white while a dark countertop renders dark in a handled kitchen — planner render or library | [mcp-issues.md, 63](mcp-issues.md#63-the-worktop-of-a-handleless-kitchen-renders-white) |
 
 ## Chat
 

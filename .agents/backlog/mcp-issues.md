@@ -34,9 +34,9 @@ the model sent; the directories are under `.temp/result/`.
 ## 63. The worktop of a handleless kitchen renders white
 
 **Problem.** In the handleless kitchen of the test `image-planning-right-wall` both countertops carry
-`mod_CountertopColor` 324 (Dark marble) with `mod_CountertopProgram` Style in the order data, but
-the planner renders a plain white worktop. The same countertop attributes render dark marble in a
-handled kitchen (`full-kitchen-walnut-marble-corner`). The agent cannot see the difference.
+`mod_CountertopColor` 326 (Slate) with `mod_CountertopProgram` Style in the order data, but the
+planner renders a plain white worktop. In a handled kitchen a dark countertop renders dark
+(`full-kitchen-walnut-marble-corner`, 324 Dark marble). The agent cannot see the difference.
 
 **Cause.** Not analysed — the planner's render of the countertop in the handleless line, or the
 library data.
@@ -89,8 +89,8 @@ SHA-256 digest and the byte size computed from the bytes served; the capability
 (`hi-mcp-server.ts:128`). `get-skill` stays for the clients without the extension, the two chats
 among them. Record it in D75 of `docs/hi-mcp-behaviour.md`.
 
-**Test.** A test in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`: `skills/list` answers the
-three skills with the manifest of `loadSkills()`, and `resources/read` of every manifest entry
+**Test.** A test in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`: `skills/list` answers every
+skill with the manifest of `loadSkills()`, and `resources/read` of every manifest entry
 answers bytes whose SHA-256 and size match it; the MCP Inspector CLI `--verify` passes against the
 local server.
 
@@ -123,4 +123,4 @@ corners.
 `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`: the living-room walls give the outer corners,
 the front left and the front right ones included.
 
-**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 05 (`sideboard-living-room-front-wall`), `rooms.rooms[0].corners` of `plan-context.json`.
+**Reproduce.** `mcp-test-2026-10-16_11-57-20`: gpt-6-astra 05 (`sideboard-living-room-front-wall`), `rooms.rooms[0].corners` of `plan-context.json`.

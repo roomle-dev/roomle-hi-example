@@ -2,7 +2,7 @@
 
 > **Type**: Backlog item (architecture)
 > **Domain**: the HI MCP server `hi-mcp/hi-mcp-server`, its Cloudflare deployment `hi-mcp/cf`, the page bridges and the chats of the three hosts; roomle-ui `packages/embedding-lib`
-> **Status**: Open — analysed 2026-10-16; the decisions of §6 are taken
+> **Status**: Open — the decisions of §6 are taken
 
 ## Affected repositories
 
@@ -20,7 +20,7 @@
 
 ## 1. Goal and scope
 
-Decided by the user on 2026-10-16:
+Decided by the user:
 
 - **Remove the hosted MCP server.** The page itself provides the HI tools.
 - **Only three consumers.** The tools are used by:
@@ -70,7 +70,7 @@ How the pieces fit together:
 - **The system prompt is the planner's.** It comes from `getExternalObjectAgentPrompts` (roomle-ui
   `homag-intelligence/src/hi-agent-prompts.ts`).
 - **The server's `INSTRUCTIONS` reach no model.** The constant (`hi-mcp-server.ts:67`) is sent
-  with `initialize`, and none of the three loops reads it. Only external MCP clients ever did.
+  with `initialize`, and none of the three loops reads it. Only external MCP clients read it.
 - **The embedding-lib runs in the host page.** The planner runs in an iframe:
   `roomDesignerApi.extended.<method>(...)` is a `postMessage` call that returns a promise
   (`packages/embedding-lib/src/connector.ts:70-109`, `packages/common/src/utils/message-handler.ts:79`).
@@ -79,8 +79,8 @@ How the pieces fit together:
 
 ### 2.2 What the server does
 
-Since ADR 0007, every plan-changing tool is a single call, `externalObjectGroupOperation(<tool>,
-<args>)`, which roomle-ui performs. The server keeps the following:
+Every plan-changing tool is a single call, `externalObjectGroupOperation(<tool>, <args>)`, which
+roomle-ui performs (ADR 0007). The server keeps the following:
 
 | Part | Where | Node or network only? |
 |---|---|---|
@@ -346,7 +346,7 @@ the server process, port 3110 and the bridge frames; they follow the runner.
 
 ## 6. Decisions
 
-Decided by the user on 2026-10-16:
+Decided by the user:
 
 - **A plain tool set.** There is no MCP protocol in the page (§3.1).
 - **Only the MCP server's tools and skills go into the embedding-lib**, under
@@ -412,8 +412,8 @@ Decided by the user on 2026-10-16:
   not reach the goal.
 - **An MCP server in the page** (in-memory transport): replaced by the plain tool set (§3.1, §6).
 - **The agent loop and the provider mapping in the embedding-lib as well** (one
-  `startPlanningAssistant` for the three hosts). Not in this step, decided by the user on
-  2026-10-16. The three loops differ:
+  `startPlanningAssistant` for the three hosts). Not in this step, decided by the user. The three
+  loops differ:
   - roomle-ui demo: 16 steps, reasoning effort per model, no recovery;
   - store: 8 steps, recovery, no Mistral image middleware;
   - example backend: steps, recovery, image middleware, step log.
@@ -451,7 +451,7 @@ planner's own `/bridge` WebSocket carries the planner calls back.
   session, its limits.
 - [ADR 0007](../decisions/0007-hi-mcp-tool-logic-in-the-planner.md) — the tool logic in the
   planner; what the server keeps.
-- [planning-assistant-chat-in-roomle-ui.md](../feature-analysis/planning-assistant-chat-in-roomle-ui.md)
-  — the chat window and the host callbacks the tools plug into.
+- [ADR 0009](../decisions/0009-the-chat-window-is-a-panel-of-the-planner.md) — the chat window and
+  the host callbacks the tools plug into.
 - [backend-agent-loop-with-browser-scene-tools.md](backend-agent-loop-with-browser-scene-tools.md)
   — the key off the browser, for a production store.

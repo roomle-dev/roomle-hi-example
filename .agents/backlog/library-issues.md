@@ -71,14 +71,13 @@ the sink as conflicting with the library's selection rule.
 `mod_HandleDesign` to the value without a handle, where the test expects the handleless articles of
 the catalog (category `Kitchen handleless`).
 
-**Cause.** The library data does not tell the two apart: the catalog has handleless articles
-("Handleless … (fingergrip)"), and the master data has a handle design value without a handle
-("No handle"); their descs do not explain how choosing a handleless article differs from setting
-that attribute value on a handled article.
+**Cause.** The handleless articles say what they are: their descs start with "Handleless …
+(fingergrip)" and select them for handleless fronts. The handle design value without a handle
+(`mod_HandleDesign` 10, `master-data.json:4158`) has the desc "No handle" only, so nothing tells
+the agent that setting it on a handled article is not the same as choosing a handleless article.
 
-**To do.** The library: the handleless articles' descs identify them as the articles for handleless
-fronts, and the desc of "No handle" explains how setting that value on a handled article differs
-from choosing a handleless article. The served text stays library-neutral; then check that it needs
+**To do.** The library: the desc of "No handle" explains how setting that value on a handled
+article differs from choosing a handleless article. The served text stays library-neutral; then check that it needs
 nothing more.
 
 **Status.** Not reported to the library development team.
@@ -90,11 +89,11 @@ nothing more.
 ## 64. Flip-lift wall cabinets with sizes the library cannot calculate
 
 **Problem.** To copy the band of cabinets above the tall units of a photo, the agent puts flip-lift
-wall cabinets (`OSKB60`, `OSKB90`) on top of the tall units with `mod_Height` 360 and `mod_Depth`
-561. The library cannot calculate them — "Error 14023: Could not find entry in
-tab_FlipliftSettings for input value: SHF - 324 - 562 - 533 - Handle" — so they are not built; the
-server builds the rest of the group and names them in `notLoaded`. The agent rebuilds them as
-resized `OTB60`, at the cost of a second create.
+wall cabinets (`OSKB90`) on top of the tall units with `mod_Height` 360 and `mod_Depth` 561. The
+library cannot calculate them — "Error 14023: Could not find entry in tab_FlipliftSettings for input
+value: SHF - 324 - 862 - 533 - Handle" — so they are not built; the server builds the rest of the
+group and names them in `notLoaded`. The agent replaces them with `O2TB90` of the same height and
+depth, at the cost of two `exchange-root-module` calls.
 
 **Cause.** The library data does not tell the agent which sizes a flip-lift wall cabinet takes: the
 descs of `OSKB60` and `OSKB90` name a swing-up flap, a wall-unit row above the worktop and clearance
@@ -107,6 +106,6 @@ it (D63). Then check that the served text needs nothing more.
 
 **Status.** Not reported to the library development team.
 
-**Test.** `image-planning-right-wall`: the first create loads every root module.
+**Test.** `image-planning-right-wall`: the first create loads the flip-lift wall cabinets.
 
 **Reproduce.** `mcp-test-2026-10-16_11-57-20`: gpt-6-astra 47 (`image-planning-right-wall`, the `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` not calculated, Error 14023, in one `notLoaded` error.

@@ -18,16 +18,17 @@ the store loses what the example already handles.
 
 ## 1. The images of `get-plan-images` reach Mistral as base64 text
 
-**Problem.** `getLanguageModel` creates the Mistral models with `createMistral({ apiKey })(model)`
-and no middleware (ligna-store `hi-mcp/chat.ts:107-110`), and `mistral-large-latest` and
-`mistral-medium-latest` are chat models with image input (`hi-mcp/chat-options.ts`).
+**Problem.** `getLanguageModel` creates the Mistral models with `createMistral({ apiKey })`
+and no middleware (ligna-store `hi-mcp/chat.ts:103-109`, the call at `:105`), and
+`mistral-large-latest`, `mistral-medium-latest` and `mistral-large-4` are chat models with image
+input (`hi-mcp/chat-options.ts:18-23`).
 `@ai-sdk/mistral` sends the content of a tool result as JSON text, while Mistral reads images only in
 user messages, so the two PNGs of `get-plan-images` reach the model as base64 and can overflow its
 context.
 
 **To do.** Wrap the Mistral model with `wrapLanguageModel` and the example's middleware
 `toolResultFilesAsUserMessages` (`hi-mcp/hi-mcp-chat/tool-result-images.ts:67`, used in
-`chat-stream.ts:52-55`), which moves the images of a tool result into a user message after the tool
+`chat-stream.ts:51-54`), which moves the images of a tool result into a user message after the tool
 message.
 
 **Test.** The example's `tests/tool-result-images.test.ts` covers the middleware; in the store, a

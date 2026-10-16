@@ -37,7 +37,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 |---|---|---|
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | RML-18124; library #60 |
 | [Plan-context findings: affected repositories](plan-context-findings-repository-scope.md) | Open — kernel and library scope remains | Plan-context finding #4 (RML-18138); library #60 (RML-18103) |
-| [A wall of floor-to-ceiling glass the user names is left out](wall-of-glass-the-user-names-left-out.md) | Open — two causes: the served rules and the side-label resolution of roomle-ui | RML-18198; backlog 65 |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

@@ -25,9 +25,9 @@ never drop the agent's content silently.
 |---|---|---|---|---|---|---|
 | 62 | [`merge-article-into-group` moves a group placed in the conversation](#62-merge-article-into-group-moves-a-group-placed-in-the-conversation) | defect | roomle-ui `homag-intelligence` (`mergeArticleIntoGroup`) | high | gpt-6-astra | |
 | 63 | [The worktop of a handleless kitchen renders white](#63-the-worktop-of-a-handleless-kitchen-renders-white) | defect, not analysed | roomle-ui render or HOMAG library — to analyse | medium | gpt-6-astra | |
-| 65 | [A wall of floor-to-ceiling glass the user names is left out](#65-a-wall-of-floor-to-ceiling-glass-the-user-names-is-left-out) | hardening | roomle-hi-example served text (`AUTHORING_RULES`, `hi-mcp-server.ts`) | medium | gpt-6-astra | |
 | 66 | [A corner group stands in front of the adjoining wall's window](#66-a-corner-group-stands-in-front-of-the-adjoining-walls-window) | hardening | roomle-ui `obstacleHint` (`hi-tool-hints.ts`) | low | gpt-6-astra | |
 | 67 | [The planning skills are served by a tool only](#67-the-planning-skills-are-served-by-a-tool-only) | follow-up | roomle-hi-example MCP server (`hi-mcp-server.ts`, `skills.ts`) | low | | |
+| 68 | [The room corners leave out a corner where an opening meets a wall](#68-the-room-corners-leave-out-a-corner-where-an-opening-meets-a-wall) | defect | roomle-ui `roomCorners` (`hi-plan-space.ts`), roomle-hi-example `roomCorners` (`agent-facing.ts`) | low | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -76,33 +76,6 @@ issue).
 **Test.** `image-planning-right-wall`: the worktops render in the colour of `mod_CountertopColor`.
 
 **Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 47 (`image-planning-right-wall`, plan snapshot `ps_rtop4vedm8hxgx2o2an3wgyg2nm85kn`): white worktops on the wall run and the island in the object image, 324 with the program Style in `order-data.json`.
-
-## 65. A wall of floor-to-ceiling glass the user names is left out
-
-**Problem.** "Add a sideboard of three low cabinets to the front wall" of the living room creates
-nothing: the front wall is floor-to-ceiling windows and a door (every opening from `bottomMm` 0 to
-2520 mm, between them a 5 mm piece of wall), and the agent answers that the wall has no free stretch
-and asks whether to use the back wall. In a request for two groups it builds the other one and
-leaves the sideboard out. The user named the wall; a sideboard in front of glass doors is a common
-planning.
-
-**Cause.** The served text: the obstacle rule of `AUTHORING_RULES` (`hi-mcp-server.ts`) says "Put a
-new group on a stretch of wall or a spot that obstacles leaves free", which the agent reads as a
-ban when the whole wall is openings, and nothing says that the wall the user names comes first.
-
-**To do.** Clarify the rule sentence: a wall or a place the user names is where the group goes; the
-free stretches are for choosing a place the user leaves open; when the named wall is all openings,
-place the group there and say in the answer which openings it stands in front of. Served text only
-— no guard, no correction.
-
-**Test.** `sideboard-living-room-front-wall` creates the sideboard against the front wall and the
-answer names the windows; `living-room-sideboard-and-tv` creates both groups.
-
-**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 05 (`sideboard-living-room-front-wall`): no tool call that changes the plan, the answer asks for another wall.
-
-**Analysis.** [wall-of-glass-the-user-names-left-out.md](../bug-analysis/wall-of-glass-the-user-names-left-out.md): a second cause in roomle-ui — the side label `front` resolves to the longest wall piece of type `wall` on that side (`resolveWall`, `hi-wall-placement.ts`), here the 120 mm end face of the partition in the middle of the room; the served-text change alone puts the sideboard there (the Mistral runs of `mcp-test-2026-10-12_10-23-42` and `mcp-test-2026-10-12_13-35-57`).
-
-**References.** [RML-18198](https://roomle.atlassian.net/browse/RML-18198).
 
 ## 66. A corner group stands in front of the adjoining wall's window
 
@@ -154,3 +127,28 @@ carry no `resources` and no `extensions`.
 
 **References.** [RML-18148](https://roomle.atlassian.net/browse/RML-18148), D75 and
 [§5.6](../../docs/hi-mcp-behaviour.md#56-planning-skills-get-skill) of `hi-mcp-behaviour.md`.
+
+## 68. The room corners leave out a corner where an opening meets a wall
+
+**Problem.** The `corners` of a room in `get-plan-context` list a corner only where two segments of
+type `wall` meet. The living room of the prompt tests has no front left corner at
+`[-3185, 0, 2235]` and no front right corner at `[6320, 0, 2235]`: a floor-to-ceiling window ends
+there. The faces of the partition inside the room are listed as room corners instead, among them a
+"front right" corner at `[1810, 0, -2550]`. An agent that reads the corners for a placement by point
+finds the wrong corner or none.
+
+**Cause.** `roomCorners` (roomle-ui `hi-plan-space.ts`, and the server's copy in
+`hi-mcp/hi-mcp-server/agent-facing.ts`) takes the walls of type `wall` only and the walls of every
+subpath of the contour as walls of the room. A placement by side label finds the corner of a wall
+face (D81); the corners list does not.
+
+**To do.** Build the corners from the faces (`wallFaces`): a corner where one face ends and the
+next starts at an angle. Decide whether the faces of an inner subpath — a partition — give room
+corners.
+
+**Test.** roomle-ui `__tests__/hi-plan-space-test.ts` (`describe('roomCorners')`) and
+`it('names the walls, marks the openings and lists the room corners')` in
+`hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`: the living-room walls give the outer corners,
+the front left and the front right ones included.
+
+**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 05 (`sideboard-living-room-front-wall`), `rooms.rooms[0].corners` of `plan-context.json`.

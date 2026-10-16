@@ -187,7 +187,10 @@ position
 
 A side label as alignment means flush into the corner with that adjoining wall (`wall: 'right'`,
 `alignment: 'top'` is the back right corner); a group with a corner article goes into that corner.
-`back` and `front` name the `top` and `bottom` wall. Groups may touch. A target that overlaps
+`back` and `front` name the `top` and `bottom` wall. A side label names the whole wall — its pieces of
+wall and the doors and floor-to-ceiling windows between them; the group goes on its longest piece of
+wall where it fits, else across the whole wall, and the result's `wall` is that whole wall. A wall
+index names one piece. Groups may touch. A target that overlaps
 another group (a root module of the one and a root module of the other overlap by more than 5 mm in
 footprint and height — the box around an L-shaped group is only the quick test) is moved along the same wall
 to the nearest free position; into a corner, or without a free position on the wall, the group is

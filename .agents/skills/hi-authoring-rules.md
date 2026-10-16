@@ -226,8 +226,10 @@ placement: {
   of its root modules. Root outlines bound the calculated parts and can extend past their docking
   edges over a neighbour in the same group; that overlap alone is not a placement error.
   Article-specific overhangs belong in the library descriptions. A door or a window lies in a wall
-  (`roomIndex`, `wall`, `fromEndMm` — its span from the wall's end). Put a new group on a stretch of wall or a spot that `obstacles` leaves
-  free: a placement with that wall, alignment `end` and `offsetMm` = the start of a free stretch
+  (`roomIndex`, `wall`, `fromEndMm` — its span from the wall's end). A group goes on the wall, the corner or
+  the spot the user names, also in front of a door or a window, and the answer names them
+  ([D81](../../docs/hi-mcp-behaviour.md#3-decisions)). Where the user leaves the place open, put a new group
+  on a stretch of wall or a spot that `obstacles` leaves free: a placement with that wall, alignment `end` and `offsetMm` = the start of a free stretch
   puts a group on it; base units lower than a window's `bottomMm` fit below it. The result's `hint`
   names every root module that overlaps an object or another group or stands in front of a door or
   a window, with the free stretches of its wall; the group is built anyway

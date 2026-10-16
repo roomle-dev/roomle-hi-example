@@ -61,7 +61,7 @@
       "title": "A sideboard on the front wall",
       "plan": "living-room",
       "prompt": "add a sideboard of three low cabinets to the front wall",
-      "expect": "one create-or-replace-groups call with a placement by wall (wall front, centred); one group of three low cabinets with its back against the front wall, inside the room"
+      "expect": "one create-or-replace-groups call with a placement by wall (wall front, centred); one group of three low cabinets with its back against the front wall, inside the room; the answer names the windows the sideboard stands in front of"
     },
     {
       "id": "wardrobe-closets-back-wall",

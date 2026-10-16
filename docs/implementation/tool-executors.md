@@ -195,7 +195,8 @@ In roomle-ui (`HI_TOOL_COMMANDS['place-group']`, `hi-tool-commands.ts`):
    defaults: alignment `center`, offset 0, room 0 (`wallPlacementSpec`, shared with a placement by
    wall).
 2. Reads `rooms`, `groups` and `obstacles`, finds the group (`findGroup`) and the wall (`resolveWall`: a side label
-   means the longest real wall on that side).
+   means the longest face of that side, `wallFaces`; the group goes on its longest piece of wall where it
+   fits, else across the face, `pieceOrFace` — D81).
 3. An alignment that runs along the wall (`alignmentRunsParallel`) becomes `center`, with a
    correction (steps 2 and 3: `resolveWallPlacement`).
 4. Reads the calculated group (`getExternalObjectGroups` of the `HiToolPlanner`: the planner's

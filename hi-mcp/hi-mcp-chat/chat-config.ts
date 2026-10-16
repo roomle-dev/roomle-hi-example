@@ -22,16 +22,22 @@ export interface ChatModel {
 // v1 endpoint: the CLI name is the deployment name, and every gpt-* name is a
 // deployment there. A deployment without a reasoning effort runs at its
 // Foundry default. mistral-large-3 is served from the Foundry resource, so it
-// is an exception to the mistral provider.
+// is an exception to the mistral provider. A deployment on another Foundry
+// resource names that resource's OpenAI v1 endpoint as its baseUrl.
 export const FOUNDRY_BASE_URL =
   'https://dfhifoundrysweden.services.ai.azure.com/openai/v1';
-export const FOUNDRY_DEPLOYMENTS: Record<string, { reasoningEffort?: string }> =
-  {
-    'gpt-5-mini': { reasoningEffort: 'high' },
-    'gpt-5.4-mini': { reasoningEffort: 'high' },
-    'gpt-6-astra': {},
-    'mistral-large-3': {},
-  };
+export const FOUNDRY_DEPLOYMENTS: Record<
+  string,
+  { reasoningEffort?: string; baseUrl?: string }
+> = {
+  'gpt-5-mini': { reasoningEffort: 'high' },
+  'gpt-5.4-mini': { reasoningEffort: 'high' },
+  'gpt-6-astra': {},
+  'gpt-6.1-sol': {
+    baseUrl: 'https://controller-mes-resource.services.ai.azure.com/openai/v1',
+  },
+  'mistral-large-3': {},
+};
 
 // CLI provider names (npm start <provider>) resolved to a provider and model.
 // Full model ids pass through: mistral-*, claude-* and gemini-* ids map to their
@@ -73,7 +79,7 @@ export const resolveChatModel = (requested: string | undefined): ChatModel => {
     return {
       provider: 'azure',
       modelId: lower,
-      baseUrl: FOUNDRY_BASE_URL,
+      baseUrl: FOUNDRY_DEPLOYMENTS[lower]?.baseUrl ?? FOUNDRY_BASE_URL,
       chatCompletions: lower === 'mistral-large-3',
     };
   }

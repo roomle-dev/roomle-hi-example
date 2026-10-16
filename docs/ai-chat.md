@@ -64,7 +64,10 @@ AZURE_RESOURCE_NAME=my-resource HI_CHAT_MODEL=my-gpt4o-deployment npm start azur
 Every `gpt-*` model and `mistral-large-3` need neither: they are deployments on the HI
 Azure AI Foundry resource and are called through its OpenAI v1 endpoint
 `https://dfhifoundrysweden.services.ai.azure.com/openai/v1` with the resource's
-API key. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
+API key. `gpt-6.1-sol` is deployed on another Foundry resource and is called through its endpoint
+`https://controller-mes-resource.services.ai.azure.com/openai/v1` with that resource's API key
+(`baseUrl` of its entry in `FOUNDRY_DEPLOYMENTS`). A base URL ends in `/openai/v1`: the AI SDK
+appends `/responses` or `/chat/completions` itself. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
 left in the shell from an `azure` run cannot redirect them. `mistral-large-3` is an
 exception to the mistral provider: it is served from the Foundry resource, not from
 the Mistral API. A `gpt-*` name is passed through as the deployment name

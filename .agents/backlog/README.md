@@ -13,6 +13,9 @@ the document a row links.
 | 66 — A corner group stands in front of the adjoining wall's window | The hint names the `offsetMm` along the group's wall that clears the adjoining wall's opening | low |
 | 67 — The planning skills are served by a tool only | Serve the same skill files with the Skills extension of MCP once a client in use supports it; `get-skill` stays | low |
 | 68 — The room corners leave out a corner where an opening meets a wall | Build the corners from the wall faces: a corner where one face ends and the next starts; decide whether a partition gives room corners | low |
+| 72 — The wall units hang at two heights after a plinth height in the group attributes | Analyse why only the wall unit beside a tall unit follows the plinth height of the group attributes; then every wall unit hung above a floor unit stays flush with the tall units | medium |
+| 73 — A wall-unit side panel beside a wall unit is moved into the floor row | Tell wall-level articles from floor articles by library data rather than a category word; keep an article the agent puts beside a wall unit there | low |
+| 74 — An island's back row of other widths lands off the front row | Say in the description of `behind` where a turned unit lines up and which way the relations run in a turned row; else an `align` the server derives the offset from | low |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
 
@@ -26,6 +29,9 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 | [60 — The sink top of a sink unit reaches past the row or over the hob](library-issues.md#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG library (reported): the sink unit's description names the drainer width and side, and states that no hob may stand immediately to its right | medium |
 | [61 — Handleless fronts done with a handle attribute](library-issues.md#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG library: distinguish choosing a handleless article from setting the handle design to "No handle" on a handled article | medium |
 | [64 — Flip-lift wall cabinets with sizes the library cannot calculate](library-issues.md#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG library: the flip-lift wall cabinets' descs name the heights and depths their flap fitting supports | low |
+| [69 — End panels with a plain upright colour the library cannot calculate](library-issues.md#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG library: switch the upright program with a plain upright colour as the front program is switched, or say in the desc that a plain colour needs `mod_UprightProgram` Classic | low |
+| [70 — Carcase side panels with a plain outside colour the library cannot calculate](library-issues.md#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG library: switch the program of the visible sides with their colour, or say in the descs that the visible sides take the outside colour and a plain one needs the program Classic | low |
+| [71 — Folding-flap wall cabinets with glass fronts the library cannot calculate](library-issues.md#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG library: the flap wall cabinets' descs name the front programs their flap takes | low |
 
 ## Library neutrality of the MCP server
 
@@ -39,9 +45,11 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 
 ## Planner (roomle-ui, RoomleCore)
 
+Defects of the planner outside the HI tool commands. Details: [roomle-ui-issues.md](roomle-ui-issues.md).
+
 | Item | To do | Details |
 |---|---|---|
-| 63 — The worktop of a handleless kitchen renders white | Analyse why the countertop of the handleless kitchen (326, Slate) renders white while a dark countertop renders dark in a handled kitchen — planner render or library | [mcp-issues.md, 63](mcp-issues.md#63-the-worktop-of-a-handleless-kitchen-renders-white) |
+| 63 — A dark worktop renders white under the top light | roomle-ui renderer: the top light overexposes the tabletop depending on the line of sight, so black appears white; render it in its material colour from every line of sight | [roomle-ui-issues.md, 63](roomle-ui-issues.md#63-a-dark-worktop-renders-white-under-the-top-light) |
 
 ## Chat
 

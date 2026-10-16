@@ -85,7 +85,7 @@ nothing more.
 
 **Test.** The test `kitchen-conversation` turn 5 ends with handleless articles.
 
-**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 49 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
+**Reproduce.** `mcp-test-2026-10-16_11-57-20`: gpt-6-astra 49 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
 
 ## 64. Flip-lift wall cabinets with sizes the library cannot calculate
 
@@ -109,4 +109,4 @@ it (D63). Then check that the served text needs nothing more.
 
 **Test.** `image-planning-right-wall`: the first create loads every root module.
 
-**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 47 (`image-planning-right-wall`, the first `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` not calculated, Error 14023, in one `notLoaded` error.
+**Reproduce.** `mcp-test-2026-10-16_11-57-20`: gpt-6-astra 47 (`image-planning-right-wall`, the `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` not calculated, Error 14023, in one `notLoaded` error.

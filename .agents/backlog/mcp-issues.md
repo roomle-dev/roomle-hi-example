@@ -75,7 +75,7 @@ issue).
 
 **Test.** `image-planning-right-wall`: the worktops render in the colour of `mod_CountertopColor`.
 
-**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 47 (`image-planning-right-wall`, plan snapshot `ps_rtop4vedm8hxgx2o2an3wgyg2nm85kn`): white worktops on the wall run and the island in the object image, 324 with the program Style in `order-data.json`.
+**Reproduce.** `mcp-test-2026-10-16_11-57-20`: gpt-6-astra 47 (`image-planning-right-wall`, plan snapshot `ps_s04glgtbh6qi0llnwzbyy4wl79vdgng`): white worktops on the wall run and the island in the object image, 326 with the program Style in `order-data.json`.
 
 ## 66. A corner group stands in front of the adjoining wall's window
 

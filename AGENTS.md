@@ -167,7 +167,9 @@ The start script (`npm start`) provides:
 
 ## On-Demand Skills
 
-Skills provide deep domain knowledge. Load them by reading the file when the task matches their domain. Skill files are located in `.github/skills/` for GitHub-specific workflows and `.agents/skills/` for domain knowledge.
+Skills provide deep domain knowledge. Load them by reading the file when the task matches their domain. Skill files are located in `.agents/skills/`.
+
+**Skills belong in `.agents/skills/`.** Every skill of this repository is a Markdown file there with a row in the table below. **Never create a `.claude/` folder in this repository** — no `.claude/skills/`, no `SKILL.md` wrappers and no other tool-specific copy of a skill.
 
 | Skill | Load when the task involves |
 |---|---|
@@ -182,7 +184,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | [`.agents/skills/hi-analysis-cleanup.md`](./.agents/skills/hi-analysis-cleanup.md) | The user says **"cleanup analyses"** / "cleanup analysis": clean up `.agents/bug-analysis/`, `.agents/feature-analysis/` and `.agents/refactoring-analysis/` — close out every analysis whose work has landed: verify it, promote its durable outcome into the living reference, decisions, ADRs and backlog, delete it, fix the links, rebuild the index |
 | [`.agents/skills/hi-backlog-cleanup.md`](./.agents/skills/hi-backlog-cleanup.md) | The user says **"cleanup backlog"**: verify every backlog item against the code, remove what landed, strip history, refresh the code references; reviewing or updating the backlog |
 | [`.agents/skills/update-planning-results.md`](./.agents/skills/update-planning-results.md) | The user says **"update planning results"**: regenerate `docs/planning-results.md` — every kitchen image of `docs/images` planned by the HI chat with `update-planning-results.js`, the plan snapshots, the ligna-store plan links and the top, perspective and perspective object images, on a new branch |
-| [`.github/skills/roomle-pr-resolution.md`](./.github/skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads. Never merge the PR |
+| [`.agents/skills/roomle-pr-resolution.md`](./.agents/skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads. Never merge the PR |
 
 ## Key Architecture Patterns
 
@@ -529,7 +531,7 @@ Examples:
 
 **NEVER merge a PR.** Not with `gh pr merge`, not by enabling auto-merge. Merging is always a human decision performed by maintainers — finish the review resolution and stop.
 
-**Load the skill** [`.github/skills/roomle-pr-resolution.md`](./.github/skills/roomle-pr-resolution.md) when resolving a PR.
+**Load the skill** [`.agents/skills/roomle-pr-resolution.md`](./.agents/skills/roomle-pr-resolution.md) when resolving a PR.
 
 **Hard Rules:**
 - **Never rewrite history.** No `git commit --amend`, no `git push --force`. Every review fix is a **new** conventional commit.

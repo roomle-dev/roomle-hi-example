@@ -1,7 +1,7 @@
 # roomle-hi-example Backlog Cleanup Skill
 
-This skill cleans up `.agents/backlog/`. **Triggered by "cleanup backlog"** (also "clean up the
-backlog", "backlog cleanup"): the phrase alone means *execute this whole procedure*, without asking
+This skill cleans up `.agents/backlog/`. **Triggered by "cleanup backlog"** (also "clean up
+backlog", "clean up the backlog", "backlog cleanup"): the phrase alone means *execute this whole procedure*, without asking
 for the details it defines. Load it as well when the user asks to review or update the backlog, or
 when work that a backlog item describes has landed. Step 7 of
 [the testing skill](hi-mcp-testing.md#7-open-issues) adds the issues of a test run by the same rules.

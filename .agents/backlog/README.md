@@ -40,9 +40,11 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 
 ## Planner (roomle-ui, RoomleCore)
 
+Defects of the planner outside the HI tool commands. Details: [roomle-ui-issues.md](roomle-ui-issues.md).
+
 | Item | To do | Details |
 |---|---|---|
-| 63 — The worktop of a handleless kitchen renders white | Analyse why the countertop of the handleless kitchen (326 Slate, 324 Dark marble) renders white while a dark countertop renders dark in a handled kitchen — planner render or library | [mcp-issues.md, 63](mcp-issues.md#63-the-worktop-of-a-handleless-kitchen-renders-white) |
+| 63 — A dark worktop renders white under the top light | roomle-ui renderer: the top light overexposes the tabletop depending on the line of sight, so black appears white; render it in its material colour from every line of sight | [roomle-ui-issues.md, 63](roomle-ui-issues.md#63-a-dark-worktop-renders-white-under-the-top-light) |
 
 ## Chat
 

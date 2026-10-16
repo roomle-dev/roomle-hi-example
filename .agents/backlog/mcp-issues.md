@@ -23,32 +23,12 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 63 | [The worktop of a handleless kitchen renders white](#63-the-worktop-of-a-handleless-kitchen-renders-white) | defect, not analysed | roomle-ui render or HOMAG library — to analyse | medium | gpt-6-astra | |
 | 66 | [A corner group stands in front of the adjoining wall's window](#66-a-corner-group-stands-in-front-of-the-adjoining-walls-window) | hardening | roomle-ui `obstacleHint` (`hi-tool-hints.ts`) | low | gpt-6-astra | |
 | 67 | [The planning skills are served by a tool only](#67-the-planning-skills-are-served-by-a-tool-only) | follow-up | roomle-hi-example MCP server (`hi-mcp-server.ts`, `skills.ts`) | low | | |
 | 68 | [The room corners leave out a corner where an opening meets a wall](#68-the-room-corners-leave-out-a-corner-where-an-opening-meets-a-wall) | defect | roomle-ui `roomCorners` (`hi-plan-space.ts`), roomle-hi-example `roomCorners` (`agent-facing.ts`) | low | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
-
-## 63. The worktop of a handleless kitchen renders white
-
-**Problem.** In the handleless kitchen of the test `image-planning-right-wall` both countertops carry
-a dark `mod_CountertopColor` — 326 (Slate) or 324 (Dark marble) — with `mod_CountertopProgram` Style
-in the order data, but the planner renders a plain white worktop, the local roomle-ui and bo-test
-alike. In a handled kitchen a dark countertop renders dark
-(`full-kitchen-walnut-marble-corner`, 324 Dark marble). The agent cannot see the difference.
-
-**Cause.** Not analysed — the planner's render of the countertop in the handleless line, or the
-library data.
-
-**To do.** Analyse: load the plan snapshot of the Reproduce run, compare the countertop material of
-the handleless kitchen with that of the handled one; fix it where it lies (roomle-ui, or a library
-issue).
-
-**Test.** `image-planning-right-wall`: the worktops render in the colour of `mod_CountertopColor`.
-
-**Reproduce.** `mcp-test-2026-10-16_18-18-00`: gpt-6-astra 48 (`image-planning-right-wall`, plan snapshot `ps_s10nlsydubooegzw0cd6fjbfzngktq9`, bo-test): white worktops on the wall run and the island in the object image, 324 with the program Style in `order-data.json`.
 
 ## 66. A corner group stands in front of the adjoining wall's window
 

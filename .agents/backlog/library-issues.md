@@ -21,6 +21,8 @@ development team, and how to reproduce it. MCP, chat and planner issues are trac
 | 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | not reported | medium — handled articles where the user asked for handleless ones |
 | 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the cabinets are not built, the agent needs a second create |
 | 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the end panels are not built, the agent needs an undo and a second create |
+| 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
+| 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -64,7 +66,7 @@ base unit under its drainer in three runs of gpt-6-astra; `edit-swap-hob-unit`: 
 cover the hob, and the agent identifies a swap that would put the hob immediately to the right of
 the sink as conflicting with the library's selection rule.
 
-**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 29 (`edit-swap-hob-unit`): the swapped sink's top reaches 395 mm over the hob unit beside it.
+**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 29 (`edit-swap-hob-unit`): the swapped sink's top reaches 396 mm over the hob unit beside it.
 
 ## 61. Handleless fronts done with a handle attribute
 
@@ -85,7 +87,7 @@ nothing more.
 
 **Test.** The test `kitchen-conversation` turn 5 ends with handleless articles.
 
-**Reproduce.** `mcp-test-2026-10-16_18-18-00`: gpt-6-astra 50 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
+**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 50 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
 
 ## 64. Flip-lift wall cabinets with sizes the library cannot calculate
 
@@ -109,7 +111,7 @@ it (D63). Then check that the served text needs nothing more.
 
 **Test.** `image-planning-right-wall`: the first create loads the flip-lift wall cabinets.
 
-**Reproduce.** `mcp-test-2026-10-16_18-18-00`: gpt-6-astra 48 (`image-planning-right-wall`, the `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` not calculated, Error 14023, in one `notLoaded` error.
+**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 48 (`image-planning-right-wall`, the first `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` not calculated, Error 14023, in one `notLoaded` error; the model undid the create and sent it again with `O2TB90`.
 
 ## 69. End panels with a plain upright colour the library cannot calculate
 
@@ -138,4 +140,62 @@ and `W60U`) says that a plain colour needs `mod_UprightProgram` Classic and a wo
 **Test.** `kitchen-conversation` turn 1 and `image-kitchen-back-right-corner`: the first create with
 a plain upright colour builds its end panels.
 
-**Reproduce.** `mcp-test-2026-10-16_18-18-00`: gpt-6-astra 50 (`kitchen-conversation`, turn 1, the first `create-or-replace-groups`): `mod_UprightColor` 192 without `mod_UprightProgram`, the end panels `W60U` and `W60H` not calculated, Error 14034; the second create with `mod_UprightProgram` Classic builds them.
+**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 50 (`kitchen-conversation`, turn 1, the first `create-or-replace-groups`): `mod_UprightColor` 192 without `mod_UprightProgram`, the end panels `W60U`, `W60H` and the wall-unit side panel `W35O` not calculated, Error 14034; the model undid the create and sent it again without the panels.
+
+## 70. Carcase side panels with a plain outside colour the library cannot calculate
+
+**Problem.** A create whose group attributes set a plain front colour (Olive green 160) and a wood
+carcase colour (`mod_CarcaseColor` Maple 230, then Walnut 215) does not build the units whose side
+panel is visible — the tall unit at the end of the row and the base units at both ends: "Error
+14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Sidepanelleft -
+TallUnitAppliance - Horizontal - NoGrain - 2100 - 561" (`part_Sidepanelright - BaseUnit` alike); the
+server builds the rest of the group and names them in `notLoaded`. A change of the carcase colour and
+a second create fail alike; only `mod_CarcaseProgram` Classic with a plain carcase colour builds
+them — three extra calls, and the carcase is no longer the wood colour the agent chose.
+
+**Cause.** With the wood carcase colour the library switches `mod_CarcaseProgram` itself to
+`ModernNature` ("Carcase in wooden colors horizontal"; the server reports it as a correction, D59),
+while the outside carcase colour of the units follows the plain front colour (`mod_CarcaseOutsideColor`
+160 in the order data). A visible side panel then has a plain colour under a wood program, for which
+the library has no grain direction — as the end panels of issue 69. The descs of `mod_CarcaseColor`,
+`mod_CarcaseOutsideColor` and `mod_CarcaseProgram` do not say which colour the visible sides take or
+which program a plain outside colour needs.
+
+**To do.** The library: it switches the program of the visible sides with their colour as it
+switches the front program with the front colour, or the descs of `mod_CarcaseColor` and
+`mod_CarcaseOutsideColor` say that the visible sides take the outside colour and that a plain outside
+colour needs `mod_CarcaseOutsideProgram` (or `mod_CarcaseProgram`) Classic. Then check that the
+served text needs nothing more.
+
+**Status.** Not reported to the library development team.
+
+**Test.** `image-kitchen-left-wall`: the first create with green fronts and a wood carcase builds
+every root module.
+
+**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 46 (`image-kitchen-left-wall`, the first `create-or-replace-groups`): `mod_FrontColor` 160 and `mod_CarcaseColor` 230 in the group attributes, `HK260`, `USTB60` and `UTB60` not calculated, Error 14034; the `change-group-attribute` with `mod_CarcaseProgram` Classic and `mod_CarcaseColor` 192 builds them.
+
+## 71. Folding-flap wall cabinets with glass fronts the library cannot calculate
+
+**Problem.** To copy the glass wall cabinets of a photo, the agent gives two folding-flap wall
+cabinets (`OFKB60`) the front program Modern ("Mitred frame fronts with glass filling"). The library
+cannot calculate them — "Error 14036: Could not find entry in tab_PanelWoodFrameConstruction for
+input values: Fliplift - ModernFrame01 - Grain - Grain - None" — and sets their front colour to
+Concrete; the server builds the rest of the group and names them in `notLoaded`. The agent sets the
+program Classic and the colour back, two `change-module-attribute` calls, and the glass fronts of the
+photo are plain.
+
+**Cause.** The library data does not tell the agent which front programs a flap front takes: the
+desc of `OFKB60` names a folding flap (two-part lift), the desc of the program Modern names a
+mitred frame with glass, neither says that a flap cannot be built as a glass frame; the glass wall
+cabinets of the catalog, if any, are not named for it.
+
+**To do.** The library: the descs of the folding-flap and flip-lift wall cabinets name the front
+programs their flap takes, in `FUNCTION` or `AI_SELECTION_HINT`, or the desc of the program Modern
+names the articles it applies to. Then check that the served text needs nothing more.
+
+**Status.** Not reported to the library development team.
+
+**Test.** `image-only-no-text`: the create builds the glass wall cabinets of the photo, or picks
+articles that take the glass front.
+
+**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 49 (`image-only-no-text`, the `create-or-replace-groups`): two `OFKB60` with `mod_FrontProgram` Modern not calculated, Error 14036, in one `notLoaded` error.

@@ -2,7 +2,7 @@
 
 > **Type**: Bug analysis
 > **Status**: Open
-> **Ticket**: none — backlog item [65](../backlog/mcp-issues.md#65-a-wall-of-floor-to-ceiling-glass-the-user-names-is-left-out) of `mcp-issues.md`
+> **Ticket**: [RML-18198](https://roomle.atlassian.net/browse/RML-18198) — backlog item [65](../backlog/mcp-issues.md#65-a-wall-of-floor-to-ceiling-glass-the-user-names-is-left-out) of `mcp-issues.md`
 > **Date**: 2026-10-16
 
 ## Affected repositories

@@ -57,6 +57,7 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [hi-backlog-cleanup.md](./skills/hi-backlog-cleanup.md) | "Cleanup backlog": the backlog as open todos only — verify every item against the code, remove what landed, strip history, refresh the code references | The user says "cleanup backlog"; reviewing or updating the backlog |
 | [update-planning-results.md](./skills/update-planning-results.md) | "Update planning results": `docs/planning-results.md` regenerated — every kitchen image of `docs/images` planned by the HI chat (default `gpt-6-astra`) with `update-planning-results.js`, the plan snapshots with their ligna-store links, the top, perspective and perspective object images | The user says "update planning results" |
 | [hi-mcp-benchmarking.md](./skills/hi-mcp-benchmarking.md) | Benchmarks of the HI agent: the chat time of test runs per model step (tokens, model time, tool time, planner calls) with `benchmark-hi-mcp-runs.js`, the analysis of where the time goes, the document in `benchmarks/` | The user asks to benchmark or measure the performance, where the time goes, or to compare the speed before and after a change |
+| [roomle-pr-resolution.md](./skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads | Resolving a PR; never merge it |
 
 ### Decisions (Architecture Decision Records)
 

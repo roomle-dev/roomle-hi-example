@@ -979,7 +979,7 @@ describe('hi-mcp-server tool calls', () => {
       "Where the user leaves the place open, choose a stretch of wall or a spot that obstacles leaves free: fromEndMm is measured from the wall's end, so a placement with that wall, alignment end and offsetMm = the start of a free stretch puts the group on it; base units lower than a window's bottomMm fit below it."
     );
     expect(rules).toContain(
-      "The result's hint names every root module that overlaps an object or another group or stands in front of a door or a window, with the free stretches of its wall."
+      "The result's hint names every root module that overlaps an object or another group or stands in front of a door or a window, with the free stretches of its wall, and for a group placed at a wall in front of a door or a window of the adjoining wall the offsetMm that keeps it clear."
     );
     // the server tests the outlines, not the agent (D55)
     expect(rules).not.toContain('cannot stand where');
@@ -998,7 +998,7 @@ describe('hi-mcp-server tool calls', () => {
       (tool) => tool.name === 'create-or-replace-groups'
     );
     expect(createGroups?.description).toContain(
-      'and hint (a root module on an obstacle, in another group or in front of a door or a window, with the free stretches of its wall)'
+      'and hint (a root module on an obstacle, in another group or in front of a door or a window, with the free stretches of its wall and the offsetMm that clears an opening of the adjoining wall)'
     );
     const placeGroup = tools.find((tool) => tool.name === 'place-group');
     expect(placeGroup?.description).toContain(

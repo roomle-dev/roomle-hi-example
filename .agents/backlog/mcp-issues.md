@@ -23,7 +23,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 66 | [A corner group stands in front of the adjoining wall's window](#66-a-corner-group-stands-in-front-of-the-adjoining-walls-window) | hardening | roomle-ui `obstacleHint` (`hi-tool-hints.ts`) | low | gpt-6-astra | |
 | 67 | [The planning skills are served by a tool only](#67-the-planning-skills-are-served-by-a-tool-only) | follow-up | roomle-hi-example MCP server (`hi-mcp-server.ts`, `skills.ts`) | low | | |
 | 68 | [The room corners leave out a corner where an opening meets a wall](#68-the-room-corners-leave-out-a-corner-where-an-opening-meets-a-wall) | defect | roomle-ui `roomCorners` (`hi-plan-space.ts`), roomle-hi-example `roomCorners` (`agent-facing.ts`) | low | | |
 | 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | roomle-ui `create-or-replace-groups` tool command (`hi-tool-commands.ts`, `hangGapOf` in `hi-group-layout.ts`) or the planner — not analysed | medium | gpt-6.1-sol | |
@@ -32,26 +31,6 @@ never drop the agent's content silently.
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
-
-## 66. A corner group stands in front of the adjoining wall's window
-
-**Problem.** A group placed by wall into a corner (`alignment` the adjoining wall) whose adjoining
-wall has a window within 600 mm of the corner stands in the strip in front of that window; the
-create's `hint` names it, and the agent moves the group with `place-group` in the next step — one
-step and about 8 s.
-
-**Cause.** The hint names the free stretches of the root module's own wall — which the adjoining
-wall's window does not shorten — not the `offsetMm` along the group's wall that clears the window's
-strip (`WALL_STRIP_MM`, `hi-wall-placement.ts`; `obstacleHint`, `hi-tool-hints.ts`). The rules name
-the 600 mm.
-
-**To do.** Result only, no change of the placement: the hint of a root module in front of an opening
-of the adjoining wall names the `offsetMm` along its own wall that clears it.
-
-**Test.** `image-only-no-text`: the create places the left group clear of the back wall's window,
-no `place-group` after it.
-
-**Reproduce.** `mcp-test-2026-10-14_13-34-58`: gpt-6-astra 48 (`image-only-no-text`): the left group placed with wall `left`, alignment `back`, `offsetMm` 450, then moved with `place-group` to `offsetMm` 650.
 
 ## 67. The planning skills are served by a tool only
 

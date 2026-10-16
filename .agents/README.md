@@ -89,7 +89,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | Document | Status | Last touched |
 |---|---|---|
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](bug-analysis/sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | 2026-10-10 |
-| [A corner group stands in front of the adjoining wall's window](bug-analysis/corner-group-in-front-of-adjoining-wall-window.md) | Open | 2026-10-16 |
+| [A corner group stands in front of the adjoining wall's window](bug-analysis/corner-group-in-front-of-adjoining-wall-window.md) | Fixed | 2026-10-16 |
 
 ### Feature Analyses
 

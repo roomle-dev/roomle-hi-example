@@ -10,7 +10,6 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| 66 — A corner group stands in front of the adjoining wall's window | The hint names the `offsetMm` along the group's wall that clears the adjoining wall's opening | low |
 | 67 — The planning skills are served by a tool only | Serve the same skill files with the Skills extension of MCP once a client in use supports it; `get-skill` stays | low |
 | 68 — The room corners leave out a corner where an opening meets a wall | Build the corners from the wall faces: a corner where one face ends and the next starts; decide whether a partition gives room corners | low |
 | 72 — The wall units hang at two heights after a plinth height in the group attributes | Analyse why only the wall unit beside a tall unit follows the plinth height of the group attributes; then every wall unit hung above a floor unit stays flush with the tall units | medium |

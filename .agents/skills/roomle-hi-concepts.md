@@ -168,7 +168,8 @@ rootId? }`, one point and one rotation.
   window names the wall it lies in and its span from the wall's end — see
   [hi-authoring-rules.md](./hi-authoring-rules.md#positioning-a-group). The result's `hint` names a
   root module that stands on an obstacle or in front of a door or a window, with the free stretches
-  of its wall; the group is built anyway.
+  of its wall and, for a group placed at a wall, the `offsetMm` that keeps it clear of a door or a window of the adjoining
+  wall; the group is built anyway.
 - It is applied once, when the group is created. A placement on a group that is already in the
   plan is not used — the group keeps its position, and `corrections` says so; a group resubmitted
   without placement keeps its position.

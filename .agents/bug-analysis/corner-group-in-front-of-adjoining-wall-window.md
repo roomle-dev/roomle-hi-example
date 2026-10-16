@@ -1,12 +1,12 @@
 # Bug analysis — a corner group stands in front of the adjoining wall's window
 
 > **Type**: Bug analysis
-> **Status**: Open
+> **Status**: Fixed
 > **Ticket**: [RML-18201](https://roomle.atlassian.net/browse/RML-18201)
 > **Date**: 2026-10-16
 > **Base**: roomle-hi-example `master` (`5e384ca`); roomle-ui `feat/configurator-planning-assistant-RML-18085`
 > (`67baffd7f`, its HI sources equal `release/bo-test` `b2dbcb202`)
-> **Backlog**: item 66 of [`../backlog/mcp-issues.md`](../backlog/mcp-issues.md#66-a-corner-group-stands-in-front-of-the-adjoining-walls-window)
+> **Backlog**: item 66 of [`../backlog/mcp-issues.md`](../backlog/mcp-issues.md), removed with the fix
 
 ## Affected repositories
 
@@ -224,6 +224,18 @@ the back wall's window, no `place-group` after it") checks the rule, not the hin
   (Guards Are a Last Resort), and the user may want it (D51).
 - **A longer served rule**: the rule names the 600 mm since `7c26d9c`; the remaining computation is
   the tool's to do.
+
+## Fix
+
+Implemented as planned on the branches `fix/corner-group-window-offset-hint-RML-18201` of roomle-ui
+(based on `feat/configurator-planning-assistant-RML-18085`) and roomle-hi-example. The hint of the
+reproduction now reads "… fromEndMm 0 to 4400. Group '…' stands clear of the window in the back
+wall at offsetMm 590 with wall left and alignment back. …" (D55 in §3 and §8 of
+[`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md)).
+
+Validation: roomle-ui homag-intelligence 1020 tests pass (12 new), `lint:types:sdk`, oxlint and
+prettier clean; roomle-hi-example `hi-mcp` 276 tests pass, `typecheck`, `lint` and `format:check`
+clean. No model run and no live check.
 
 ## Implementation plan
 

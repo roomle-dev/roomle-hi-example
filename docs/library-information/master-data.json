@@ -3446,7 +3446,7 @@
         },
         {
           "value": "Modern",
-          "desc": "Mitred frame fronts with glass filling",
+          "desc": "Mitred frame doors with glass filling, in stone decors. Drawers, pull-outs and flaps are not built with it: an article with them takes another program.",
           "name": "Modern",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/2cc264b5-1691-45a6-b9d2-3c8b4ed36232_modern.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=J2wVGGmhB8KqTvYlyIHJ9MTqvalmtpXnLXLLZHVkGLg%3D"
         },
@@ -3951,7 +3951,7 @@
         },
         {
           "value": "14",
-          "desc": "Door: vertical handle at the edge opposite the hinge, turned to the right — the place of 03, the handle turned by 180°, for a frame door with a 75 mm frame.",
+          "desc": "Door: vertical handle at the edge opposite the hinge, turned to the right — the place of 13, the handle turned by 180°, for a frame door with a 75 mm frame.",
           "name": "Position type 14",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/fbaece51-987f-4843-a9f2-a665caadd74b_14_1.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=8RCPnFQBt8nq2M9BNgz0oucFu4tjW2ln0Y0%2FI4kJJZg%3D"
         },
@@ -4143,7 +4143,7 @@
     {
       "id": "mod_HandleDesign",
       "name": "Handle design",
-      "desc": "Design of a handle",
+      "desc": "Design of the handle on the fronts of a handled article. A handleless front with a fingergrip is no handle design: it comes with the handleless articles (fingergrip).",
       "isMain": true,
       "group": "FrontOpening | Handle",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/84da45d3-4b01-40f8-bc31-36dd4d276869_e97287ce-f993-4694-8634-66b4478faf45_handleprogram.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=sYryZYLsM6Rmm943Ilq0I7A8XDdwzLSpTaTws3zxPzU%3D",
@@ -4155,7 +4155,7 @@
       "selections": [
         {
           "value": "10",
-          "desc": "No handle",
+          "desc": "Fronts without a handle and without a fingergrip. For handleless fronts, choose the handleless articles (fingergrip) where the catalog has one.",
           "name": "No handle"
         },
         {
@@ -5589,7 +5589,7 @@
     {
       "id": "mod_CarcaseColor",
       "name": "Carcase color",
-      "desc": "Color of the carcase inside and outside if not visible",
+      "desc": "Color of the carcase inside and of its sides that are not visible. The visible sides take Carcase color outside: with a wood or stone decor here, set Carcase color outside to a wood or stone decor too.",
       "isMain": true,
       "group": "Carcase | Design",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/0f37e6c8-3e26-4fd7-8337-18b56ef24bf6_carcasecolornew.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=YfmT1ZQMq1q%2BYTsLMUjq%2FcBdKCLoG5podYZvH96d3eA%3D",
@@ -5729,7 +5729,7 @@
     {
       "id": "mod_CarcaseOutsideColor",
       "name": "Carcase color outside",
-      "desc": "Outside color of the carcase",
+      "desc": "Color of the visible sides of the carcase, such as the side at the end of a row. Where it is not set, the visible sides take the front color.",
       "isMain": false,
       "group": "Carcase | Design",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/3de982ed-5fe9-4c78-8dc1-715b11b4a099_carcaseprogramoutside.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=YWd333XNK2d8g7Z650B915Y%2Feksa7pIlVd6%2BNmVS7hI%3D",
@@ -10200,7 +10200,7 @@
     {
       "id": "mod_UprightColor",
       "name": "Color",
-      "desc": "Color of the upright",
+      "desc": "Color of the end and cover panels. Set Upright Program with it: Classic for a plain decor, ModernNature or Nature for a wood or stone decor. The panels come with ModernNature.",
       "isMain": true,
       "group": "Upright",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/f940a8f7-e1f8-4cb2-8e50-519118446edf_upright.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=Z%2F60iPPVHnLO3CVibPWNHMs6CAP9%2FDX2EF7ZG9ustC0%3D",
@@ -10402,7 +10402,7 @@
     {
       "id": "mod_UprightProgram",
       "name": "Upright Program",
-      "desc": "Upright Program",
+      "desc": "How the end and cover panels are built for the kind of their color. Set it with Color.",
       "isMain": true,
       "group": "Upright",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/f940a8f7-e1f8-4cb2-8e50-519118446edf_upright.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=Z%2F60iPPVHnLO3CVibPWNHMs6CAP9%2FDX2EF7ZG9ustC0%3D",
@@ -10412,19 +10412,19 @@
       "selections": [
         {
           "value": "ModernNature",
-          "desc": "Carcase in wooden colors horizontal",
+          "desc": "Wood and stone decors, grain horizontal.",
           "name": "ModernNature",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/b4d3170c-1d26-487a-a10f-138f0acc6be1_modernnature.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=uftDVjCPAHyJInd06BYpNsZwnuBGAQDF4u%2Bwal%2Bmepw%3D"
         },
         {
           "value": "Nature",
-          "desc": "Carcase in wooden colors vertical",
+          "desc": "Wood and stone decors, grain vertical.",
           "name": "Nature",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/a7fb2c08-a7b4-4f65-946b-27e7cd10810a_nature.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=9c5nNLnql%2FIAsCxZqztjjXjIc9UQu0pEDubTvAjIbI0%3D"
         },
         {
           "value": "Classic",
-          "desc": "Classic carcase in single colors",
+          "desc": "Plain decors.",
           "name": "Classic",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/7d20b93a-f0ad-432a-8d03-0de7db464d2a_classic.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=UO2xa4wrTocllAvS1dTIzWl6szxbmgOGMb016jgoc9E%3D"
         }
@@ -11533,61 +11533,61 @@
       "selections": [
         {
           "value": "Axis_R",
-          "desc": "Axis_R",
-          "name": "Axis basin right ",
+          "desc": "Blanco Axis sink: basin on the right, drainer on the left.",
+          "name": "Axis basin right",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/f8178fb7-3068-4ada-bc8f-80fabb5e8552_axis_r(axis%20iii%206%20s-if).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=2J5aA7WPoav%2BBDD6o610bbtKg21qoLr4kPH3fImSJxQ%3D"
         },
         {
           "value": "Axis_L",
-          "desc": "Axis_L",
+          "desc": "Blanco Axis sink: basin on the left, drainer on the right.",
           "name": "Axis basin left",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/7b5a7252-84e1-48de-ac53-0bc40de8827f_axis_l(axis%20iii%206%20s-if).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=eYqJtha1PSqwJaY4eclVG3fFZO7PI73ztZiso7ZxRqQ%3D"
         },
         {
           "value": "Axia_White_R",
-          "desc": "Axia_White_R",
-          "name": "Axia color white basin right",
+          "desc": "Blanco Axia sink in white, 980 mm wide with the drainer: basin on the right, drainer on the left.",
+          "name": "Axis color white basin right",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/4b4fe8ff-9d1f-48f5-8946-139a7be0a3c8_axia_white_r(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=XYmoaf%2BTFPRl0yPyfTuU6E2wWD125z9iQV8GHwdTq0g%3D"
         },
         {
           "value": "Axia_White_L",
-          "desc": "Axia_White_L",
-          "name": "Axia color white basin left",
+          "desc": "Blanco Axia sink in white, 980 mm wide with the drainer: basin on the left, drainer on the right.",
+          "name": "Axis color white basin left",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/9e7e91e2-29bd-4c2d-8b34-957be5b0514a_axia_white_l(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=SijgB%2BMxL%2Bp7zMyD15xof%2FB0OCDuKaITH9DJZxIePcM%3D"
         },
         {
           "value": "Axia_Grey_R",
-          "desc": "Axia_Grey_R",
-          "name": "Axia color grey basin right",
+          "desc": "Blanco Axia sink in grey, 980 mm wide with the drainer: basin on the right, drainer on the left.",
+          "name": "Axis color grey basin right",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/616a5452-3b01-4c86-8728-b11191fa81d3_axia_grey_r(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=WvCqWT%2BHHvpmmYrmGHI6U2P1PfBJcnFJRff5ZOlUKEo%3D"
         },
         {
           "value": "Axia_Grey_L",
-          "desc": "Axia_Grey_L",
-          "name": "Axia color grey basin left",
+          "desc": "Blanco Axia sink in grey, 980 mm wide with the drainer: basin on the left, drainer on the right.",
+          "name": "Axis color grey basin lefft",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/c787fd28-f13a-4052-bdc2-efbab6f2f4f7_axia_grey_l(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=ASf6IVPMtwzND%2BsFdQ8JzGm7mH0rmONUnVU03UYp1zc%3D"
         },
         {
           "value": "Axia_Anthrazit_R",
-          "desc": "Axia_Anthrazit_R",
-          "name": "Axia color anthrazit basin right",
+          "desc": "Blanco Axia sink in anthracite, 980 mm wide with the drainer: basin on the right, drainer on the left.",
+          "name": "Axis color anthrazit basin right",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/589cfdb2-9a9b-46cb-871e-c33b7410bc3a_axia_anthrazit_r(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=AIrQ1%2FMOyk5O7HW7G7jhTLZSxFB%2FYj6DfdAT2okPyY8%3D"
         },
         {
           "value": "Axia_Anthrazit_L",
-          "desc": "Axia_Anthrazit_L",
-          "name": "Axia color anthrazit basin left",
+          "desc": "Blanco Axia sink in anthracite, 980 mm wide with the drainer: basin on the left, drainer on the right.",
+          "name": "Axis color anthrazit basin left",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/dc4aea0b-c335-4394-ba49-dfde30b69c5f_axia_anthrazit_l(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=kgH0eQARrOHwIj10c4q9MFNg1R%2Bl9RjdA4bpoI94tB4%3D"
         },
         {
           "value": "Dinas_L",
-          "desc": "Dinas_L",
+          "desc": "Blanco Dinas sink: basin on the left, drainer on the right.",
           "name": "Dinas basin left",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/5ceb8222-ecc2-4e76-8b9a-e3d29ea8a98c_dinas_l.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=W%2FExqx9jmpi8G8KJkjL558QKyVFYs7%2FxRQ9wbi4NCcg%3D"
         },
         {
           "value": "Dinas_R",
-          "desc": "Dinas_R",
+          "desc": "Blanco Dinas sink: basin on the right, drainer on the left.",
           "name": "Dinas basin right",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/a5a887e1-7917-4204-b53a-1dff0e2fc799_dinas_r.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=jWrv%2FvBv16ggAcgGk4GtvtMo9IGoRwVwFSQTTMj1opc%3D"
         },
@@ -11599,8 +11599,8 @@
         },
         {
           "value": "Metra_R",
-          "desc": "Metra_R",
-          "name": "Metra basing right"
+          "desc": "Blanco Metra sink: basin on the right, drainer on the left.",
+          "name": "Metra basin right"
         }
       ]
     },

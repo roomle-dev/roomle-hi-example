@@ -25,7 +25,7 @@ never drop the agent's content silently.
 |---|---|---|---|---|---|---|
 | 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | analysed: roomle-ui `create-or-replace-groups` tool command (`hi-tool-commands.ts`, `hangGapOf` in `hi-group-layout.ts`) — the wall unit's height is fixed at the load with the library's default plinth (D36, D42); the library lifts some wall units when the plinth changes, the rest stay low. Fix proposed in [the analysis](../bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md), to be based on roomle-ui `fix/room-corners-at-openings` | medium | gpt-6-astra | |
 | 73 | [A wall-level article of another category is taken for a floor unit](#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit) | defect | analysed: roomle-ui `isWallUnitArticle`, `relationsToDocking` (`hi-group-layout.ts`) — the classifier knows a wall unit by a category word only; the library data marks wall-level articles (`mod_TypeElement`, the default mounting height) and the tool does not read the marks. Fix proposed in [the analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md), to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6-astra | |
-| 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, `behind`), roomle-ui `relationsToDocking` (`hi-group-layout.ts`) | low | gpt-6.1-sol | |
+| 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, `behind`) — the description says neither where a turned unit lines up with a wider neighbour nor which way the relations run in a turned row; roomle-ui `pairOf` for `behind` (`hi-group-layout.ts`) — the compile pins the turned unit at the neighbour's left end with offset 0 and no field to name the other end. Fix proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md): the served text first, the `align` the server derives the offset from as the fallback, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6.1-sol | |
 | 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, the `notCarried` sentence of `create-or-replace-groups`) | medium | gpt-6-astra | |
 | 77 | [An edit that gives a row a new end leaves a door hinged to the outside](#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, the descriptions of the edit tools) | medium | gpt-6-astra | |
 
@@ -114,17 +114,24 @@ wall unit's side, and a wall-level article of another category `above` a floor u
 row and the others `rightOf` it. The back row lines up with the inner end of that unit and runs past
 the far end of the front row: 300 mm off at both ends, a step in the worktop.
 
-**Cause.** The served description of `behind` ("back to back with that root module, turned by 180
-degrees (an island)", `hi-mcp-server.ts`) says neither where a turned unit lines up with a wider
-neighbour nor which way `rightOf` runs in the turned row. The compile docks the back vectors to each
-other (`relationsToDocking`, `hi-group-layout.ts`): in this run the turned unit lines up with its
-neighbour's left end, seen from the neighbour's front, and `rightOf` in the turned row runs on to that
-side.
+**Cause.** Analysed in [the bug analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md).
+The served description of `behind` ("back to back with that root module, turned by 180 degrees (an
+island)", `hi-mcp-server.ts`) says neither where a turned unit lines up with a wider neighbour nor
+which way `rightOf` runs in the turned row, and the compile (`pairOf` for `behind`,
+`hi-group-layout.ts`) pins the turned unit at the neighbour's left end, seen from the neighbour's
+front, with offset 0 and no field to name the other end (`align` is read for every relation but
+ignored for `behind`, `gapMm` is ignored, G37). The agent's natural composition — the first back unit
+behind the row's end unit, the back row continuing `rightOf` — then lands the back row off the front
+row by the width difference at both ends; the mirror composition (behind the row's first unit,
+continuing `leftOf`) lands flush, which the other stored runs show.
 
-**To do.** Clarify the description of `behind` first: where a turned unit lines up and which way the
-relations run in a turned row, in library-neutral words. If that does not suffice, simplify the API:
-the server lines up a unit `behind` a wider one at the end the agent names (`align`) and derives the
-offset.
+**To do.** Fix, proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md),
+in roomle-hi-example first: clarify the description of `behind` (`hi-mcp-server.ts`) — where a turned
+unit lines up and which way the relations run in a turned row, in library-neutral words, with the
+composition that lines a back row up with the row in front of it. If that does not suffice, simplify
+the API in roomle-ui `pairOf` (`hi-group-layout.ts`, based on `fix/room-corners-at-openings`): the
+server lines up a unit `behind` a wider one at the end the agent names (`align`) and derives the
+offset from the catalog widths.
 
 **Test.** `image-planning-right-wall`: the island's two rows end flush at both ends.
 

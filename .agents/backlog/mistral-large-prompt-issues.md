@@ -40,7 +40,6 @@ which issues are this model's and which remain for Mistral's current generation.
 | 8 | [Attribute ids and values are guessed](#8-attribute-ids-and-values-are-guessed) | 6 | roomle-ui — attribute commands; served text | Resolve a value name to the value and say so; check what invites unrequested materials |
 | 9 | [Ids are guessed before the plan is read](#9-ids-are-guessed-before-the-plan-is-read) | 6 | roomle-ui — group lookup | Use the only group of the plan for an unknown group id and say so |
 | 10 | [Answers do not match the plan](#10-answers-do-not-match-the-plan) | 9 | MCP server — results | Name in the result where each group stands, in the plan context's words |
-| 11 | [Undo and redo are confused](#11-undo-and-redo-are-confused) | 2 | MCP server — tool descriptions | Open the `redo` description with the word redo |
 
 Run 50 (the seven-turn kitchen conversation) ended with Mistral's rate limit in all three attempts;
 it counts as an environment failure and is in none of the issues.
@@ -187,13 +186,3 @@ context's words — the wall, the corner, the stretch along it — so the answer
 of deriving it from coordinates.
 
 **Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 09 (`place-group-move-kitchen`).
-
-## 11. Undo and redo are confused
-
-**Problem.** "redo it" is answered with a second `undo` (53); a kitchen the model just created is
-undone by the model itself in the same turn (50).
-
-**Direction.** Open the `redo` description with the word "redo" and the user's phrasing ("redo",
-"bring it back"), as the delete tools open with theirs.
-
-**Reproduce.** `mcp-test-2026-10-17_10-50-12`, mistral-large-latest 53 (`random-2-sideboard-remove-undo-redo`).

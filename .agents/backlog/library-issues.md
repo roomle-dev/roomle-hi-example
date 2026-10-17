@@ -11,19 +11,23 @@ that data lacks information, the fix is in the library, and the issue is here. W
 is intended; an issue asks for information, not for other geometry. Each issue names the library,
 the problem, its cause, the to-do for the library, the test, whether it is reported to the library
 development team, and how to reproduce it. MCP, chat and planner issues are tracked in
-[mcp-issues.md](mcp-issues.md). An issue leaves this document when the library carries the fix.
+[mcp-issues.md](mcp-issues.md). The **Status** of an issue says what the library already carries
+of it; the issue leaves this document when the library carries all of it. The exact `desc` text
+proposed to the library is in
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md), which
+keeps every suggested change, applied in the library or not.
 
 ## Overview
 
 | # | Issue | Library | Responsible | Status | Priority |
 |---|---|---|---|---|---|
-| 60 | [The sink top of a sink unit reaches past the row or over the hob](#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG Furniture_Smith | HOMAG library development team | reported to the library development team | medium — the drainer in the air or over the hob |
+| 60 | [The sink top of a sink unit reaches past the row or over the hob](#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG Furniture_Smith | HOMAG library development team | reported; the base unit on the right done | medium — the drainer in the air or over the hob |
 | 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | not reported | medium — handled articles where the user asked for handleless ones |
 | 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the cabinets are not built, the agent needs a second create |
 | 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the end panels are not built, the agent needs one or two extra calls |
 | 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
 | 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
-| 76 | [Door direction descriptions that do not say which side a door opens to](#76-door-direction-descriptions-that-do-not-say-which-side-a-door-opens-to) | HOMAG Furniture_Smith | HOMAG library development team | not reported | medium — a door value the article does not take is not built, a handle position type leaves the handle where it is |
+| 76 | [Articles with two doors that do not say how their doors stand](#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the attribute descs done; the article descs not reported | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -35,8 +39,8 @@ Placed as the last unit of a row, the drainer reaches 396 mm past the end of the
 swapped beside the hob unit, it covers part of the hob. Whether the agent puts a base unit under the
 drainer is chance.
 
-**Cause.** Nothing tells the agent that the sink is wider than its unit: the catalog description of
-`SUT60` names a 60 cm sink base unit, the sink's width and the side of its drainer are not in it.
+**Cause.** The descriptions of the sink units say that a base unit belongs on their right, because
+the sink with its drainer is wider than the unit, but not how wide the sink with its drainer is.
 The description also lacks the rule that a hob must not stand immediately to the right of a sink
 unit in the row, because the drainer reaches over that neighbour. The
 geometry is intended (the library builds the sink that way); the root module's outline in `obstacles`
@@ -46,14 +50,18 @@ its sink geometry. Both descriptions omit the sink/drainer width and overhang. T
 neighbour in the same group; the library data still needs the article-specific information.
 
 **To do.** The library: the description of every sink unit names the width of its sink with the
-drainer and the side the drainer reaches over, and that a base unit belongs under it — including
-`SUT60` and `SUBA60`. Put this in `FUNCTION` or `AI_SELECTION_HINT` so the compact article catalog
+drainer — including `SUT60` and `SUBA60`. Put this in `FUNCTION` or `AI_SELECTION_HINT` so the compact article catalog
 carries it (D63), with any fuller detail in the other sections. State explicitly in the sink unit's
 description: "Do not place a hob immediately to the right of this sink unit: the sink drainer
 extends over the neighbouring unit on that side." This information belongs in the library data.
 Then check that the served text needs nothing more.
 
-**Status.** Reported to the HOMAG library development team.
+**Status.** Reported to the HOMAG library development team. Done in the library, change 1 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#1-the-sink-unit-descriptions-do-not-say-that-a-sink-unit-needs-an-article-on-its-right):
+the `FUNCTION` and `AI_SELECTION_HINT` lines of `SUT60`, `SUBA60`, `SUB2A90`, `ESUT60` and
+`ESUB2A90` say that a base unit belongs on the right of the sink unit, because the sink with its
+drainer is wider than the unit — the side the drainer reaches over and the article under it. Open:
+the width of the sink with its drainer, and the hob rule.
 
 **Example.** The sink unit beside the hob unit: the sink top covers part of the hob.
 
@@ -202,26 +210,34 @@ articles that take the glass front.
 
 **Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 49 (`image-only-no-text`, the `create-or-replace-groups`): two `OFKB60` with `mod_FrontProgram` Modern not calculated, Error 14036, in one `notLoaded` error.
 
-## 76. Door direction descriptions that do not say which side a door opens to
+## 76. Articles with two doors that do not say how their doors stand
 
 **Problem.** In a row, the agent hinges the doors at the two ends at the outer sides of the row
-([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17)). It finds the attribute by "Door left
-hinged" and "Door right hinged", but no desc says which values single doors and a pair of doors take,
-what `Automatic` chooses, or that `mod_HandlePosType` — "Door vertical rotation left", "… right" —
-leaves the hinge side as it is. A value the article does not take fails with error 14019 and the
-root module is not built: `U2TB90`, a pair of doors side by side, with `Left`, `Right`, `LeftLeft` or
-`RightRight`; `H2TB60`, two doors one above the other, with `LeftRight`.
+([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17)), with the value of
+`mod_DoorDirectionSelection` for single doors or for a pair of doors. The articles do not say which
+kind they have: "with 2 doors" stands for two doors one above the other (`H2TB60`, single-door
+values) and for a pair side by side (`U2TB90`, `LeftRight`). A value the article does not take fails
+with error 14019 and the root module is not built: `H2TB60` with `LeftRight`, `U2TB90` with `Left`
+or `Right`. `LeftLeft` and `RightRight` are offered for a pair but not calculated on `U2TB90`.
 
-**Cause.** The descs of `mod_DoorDirectionSelection`, its values and `mod_HandlePosType` lack the
-information, and the desc of `Automatic` names an internal table ("Setting via tab_DoorSettings").
-`LeftLeft` and `RightRight` are offered but not calculated on `U2TB90`. The article descs say "with
-2 doors" for both kinds of doors.
+**Cause.** The `FUNCTION` lines of the articles with two doors — `H2TB60`, `HWR_HB600T2`, `U2TB90`,
+`O2TB90`, `US2TB90`, `EU2TB90` — say "2 doors" for both kinds. `tab_DoorSettings` has no entry for
+`LeftLeft` and `RightRight` on `U2TB90`. The desc of the handle position type `14` names "the place
+of 03" instead of `13`.
 
-**To do.** The library: the desc changes of change 2 of
-[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#2-the-door-direction-and-handle-position-descriptions-do-not-say-which-side-a-door-opens-to).
-Then check that the served text needs nothing more.
+**To do.** The library: change 3 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#3-the-articles-with-two-doors-do-not-say-how-their-doors-stand)
+— the `FUNCTION` lines say "2 doors one above the other" or "a pair of doors side by side";
+`LeftLeft` and `RightRight` are calculated on the articles with a pair, or their descs name the
+articles that take them; the desc of `14` names the place of `13`. Then check that the served text
+needs nothing more.
 
-**Status.** Not reported to the library development team.
+**Status.** Done in the library, change 2 of the suggested library changes: the descs of
+`mod_DoorDirectionSelection` and its values — the
+hinge side as seen from the front, the handle on the other side, the values for single doors and for
+a pair, what `Automatic` chooses — and of `mod_HandlePosType` and its values — where the handle sits,
+and that it does not change the side a door opens to. Open, not reported to the library development
+team: the article descs, `LeftLeft` and `RightRight`, the desc of `14`.
 
 **Test.** `wardrobe-door-hinges` and `wardrobe-extend-door-hinge`: the doors at the ends of the row
 hinged at the outer sides, with values the library calculates.

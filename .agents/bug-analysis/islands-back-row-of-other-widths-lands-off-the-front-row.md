@@ -147,15 +147,22 @@ row — the mirror of the front row's `rightOf`. It is the composition of the fl
 **Step 2 — fallback, only if the prompt tests still land back rows off: the server lines up a unit
 `behind` a wider one at the end the agent names** (roomle-ui, based on `fix/room-corners-at-openings`).
 `behind` takes `align: "left"` (the default, today's pin) or `"right"` — which end of the neighbour
-the turned unit lines up with —, and `pairOf` derives the offset from the catalog widths:
-`[width(neighbour) - width(unit), 0, 0]` in the group's frame for `align: "right"` (the group's x is
-the row direction of a straight row, the island the text documents; the entry's mirroring at
-`hi-group-layout.ts:805-819` already negates the offset when the entry is written on the other
-root). A turned unit wider than its neighbour gets a negative offset — it overhangs the
-neighbour's left end, which is a legitimate back row. The served text gains: `align: "left"
-(default) or "right" says which end of that root module the turned unit lines up with.` With it
-the natural composition works: the first back unit behind the row's last unit with
-`align: "right"`, the back row continuing `rightOf`.
+the turned unit lines up with —, and `pairOf` derives the offset from the catalog widths: the
+displacement from the left-end pin to the named end, of magnitude `width(neighbour) -
+width(unit)`, along the neighbour's width axis in the group's frame. The offset is a group-space
+translation of the docked root (`hi-root-module-arrangement.ts:585-589`), so its direction is not
+always x: a straight row runs along the group's x, a leg after a corner article runs along the
+group's z, and a neighbour that is itself turned — a unit of a back row, facing the other way —
+has its left and right the other way round, so the sign flips. The compile derives the neighbour's
+orientation from the relation chain it already walks (each `behind` turns the row by 180 degrees,
+a corner article turns the leg by 90, the catalog's corner data, D74) or, for a replaced group,
+from the calculated docking endpoints in group space; the sign follows the named end seen from the
+neighbour's front. The entry's mirroring at `hi-group-layout.ts:805-819` stays as it is — it
+negates a group-space translation, whatever its direction. A turned unit wider than its neighbour
+gets a negative offset — it overhangs the neighbour's named end, which is a legitimate back row.
+The served text gains: `align: "left" (default) or "right" says which end of that root module the
+turned unit lines up with.` With it the natural composition works: the first back unit behind the
+row's last unit with `align: "right"`, the back row continuing `rightOf`.
 
 ## What the fix does not do
 
@@ -197,13 +204,17 @@ the natural composition works: the first back unit behind the row's last unit wi
    `it('teaches the relations for a new group instead of docking vectors')` (line 1085) with the
    new sentences.
 3. Fallback, only if the prompt tests still land back rows off: roomle-ui `hi-group-layout.ts`
-   `pairOf` (`hi-group-layout.ts:742-744`) — honor `link.align` for `behind`: offset
-   `[width(target) - width(unit), 0, 0]` for `align: "right"`, `[0, 0, 0]` for `left`, derived
-   with `rootWidth` (`hi-group-layout.ts:103`); the served text gains the `align` sentence for
-   `behind`. Based on `fix/room-corners-at-openings`.
+   `pairOf` (`hi-group-layout.ts:742-744`) — honor `link.align` for `behind`: the offset of
+   magnitude `width(target) - width(unit)` along the target's width axis in the group's frame for
+   `align: "right"`, `[0, 0, 0]` for `left` — the axis and sign derived from the target's
+   orientation in the group (the relation chain, the catalog's corner data) or its calculated
+   docking endpoints, the magnitude with `rootWidth` (`hi-group-layout.ts:103`); the served text
+   gains the `align` sentence for `behind`. Based on `fix/room-corners-at-openings`.
 4. roomle-ui `__tests__/hi-group-layout-test.ts` — the `behind` case (line 206) gains:
-   `align: "right"` derives the offset from the catalog widths; the default keeps offset 0; a unit
-   wider than its neighbour gets a negative offset; the entry written on the unit
-   (`hi-group-layout.ts:805-819`) carries the negated offset.
+   `align: "right"` derives the offset from the catalog widths along the neighbour's width axis;
+   the default keeps offset 0; a unit wider than its neighbour gets a negative offset; the entry
+   written on the unit (`hi-group-layout.ts:805-819`) carries the negated offset; a neighbour on
+   a leg turned by a corner article (90 degrees) shifts along the leg's axis; a neighbour that is
+   itself turned (180 degrees, a unit of a back row) shifts with the opposite sign.
 5. The stored test `image-planning-right-wall` of `docs/test-prompts.json` holds the outcome: the
    island's two rows end flush at both ends.

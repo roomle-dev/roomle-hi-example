@@ -405,6 +405,13 @@ session. Answered by the server itself — it works without a connected page. Th
 files of `hi-mcp/hi-mcp-server/skills/`
 ([hi-mcp-behaviour.md §5.6](hi-mcp-behaviour.md#56-planning-skills-get-skill)).
 
+The same files are served by the Skills extension of MCP (`io.modelcontextprotocol/skills`) to a
+host that loads skills itself: `skills/list` and `skills/get` answer each skill with the URI of its
+`SKILL.md` (`skill://<name>/SKILL.md`), its frontmatter and the manifest of its files with their
+SHA-256 digests and sizes, and every file is a resource under `skill://<name>/<path>` — as it is,
+without the preamble. `npx @modelcontextprotocol/inspector@2.11.0 --cli http://localhost:3100/mcp
+--transport http --method skills/list --verify` checks it against the local server.
+
 ### find-attributes
 
 Answers a question about an attribute: searches the attribute vocabulary — the

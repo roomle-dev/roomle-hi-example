@@ -23,7 +23,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 67 | [The planning skills are served by a tool only](#67-the-planning-skills-are-served-by-a-tool-only) | follow-up | roomle-hi-example MCP server (`hi-mcp-server.ts`, `skills.ts`) | low | | |
 | 68 | [The room corners leave out a corner where an opening meets a wall](#68-the-room-corners-leave-out-a-corner-where-an-opening-meets-a-wall) | defect | roomle-ui `roomCorners` (`hi-plan-space.ts`), roomle-hi-example `roomCorners` (`agent-facing.ts`) | low | | |
 | 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | roomle-ui `create-or-replace-groups` tool command (`hi-tool-commands.ts`, `hangGapOf` in `hi-group-layout.ts`) or the planner — not analysed | medium | gpt-6.1-sol | |
 | 73 | [A wall-unit side panel beside a wall unit is moved into the floor row](#73-a-wall-unit-side-panel-beside-a-wall-unit-is-moved-into-the-floor-row) | defect | roomle-ui `relationsToDocking`, `isWallUnitArticle` (`hi-group-layout.ts`) | low | gpt-6.1-sol | |
@@ -31,37 +30,6 @@ never drop the agent's content silently.
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
-
-## 67. The planning skills are served by a tool only
-
-**Problem.** The planning skills of `hi-mcp/hi-mcp-server/skills/` reach the agent only through the
-tool `get-skill` (`hi-mcp-server.ts:267-295`, `skills.ts`). The server declares no `resources`
-capability and no Skills extension, so a host that loads skills by the official MCP extension
-`io.modelcontextprotocol/skills` ([SEP-2640](https://modelcontextprotocol.io/seps/2640-skills-extension))
-finds none. No client in use supports the extension yet
-([client matrix](https://modelcontextprotocol.io/extensions/client-matrix)): Claude Code, Claude
-Desktop, Claude web, VS Code Copilot and Cursor do not; `@ai-sdk/mcp` of both chats has no skills
-API.
-
-**To do.** When a client in use supports the extension, serve the same files by it in addition,
-with no change to the files: `registerResource` per file under `skill://<name>/<path>` with
-`text/markdown`; the request handlers `skills/list` and `skills/get` answering per skill its `uri`
-(`skill://<name>/SKILL.md`), the frontmatter unchanged and the manifest of its files with the
-SHA-256 digest and the byte size computed from the bytes served; the capability
-`extensions['io.modelcontextprotocol/skills']` beside `resources` in `createHiMcpServer`
-(`hi-mcp-server.ts:128`). `get-skill` stays for the clients without the extension, the two chats
-among them. Record it in D75 of `docs/hi-mcp-behaviour.md`.
-
-**Test.** A test in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`: `skills/list` answers every
-skill with the manifest of `loadSkills()`, and `resources/read` of every manifest entry
-answers bytes whose SHA-256 and size match it; the MCP Inspector CLI `--verify` passes against the
-local server.
-
-**Reproduce.** `tools/list` and `initialize` of the local server (`npm start`): the capabilities
-carry no `resources` and no `extensions`.
-
-**References.** [RML-18148](https://roomle.atlassian.net/browse/RML-18148), D75 and
-[§5.6](../../docs/hi-mcp-behaviour.md#56-planning-skills-get-skill) of `hi-mcp-behaviour.md`.
 
 ## 68. The room corners leave out a corner where an opening meets a wall
 

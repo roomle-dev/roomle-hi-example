@@ -1,12 +1,12 @@
 # Bug analysis — the planning skills are served by a tool only
 
 > **Type**: Bug analysis
-> **Status**: Open
+> **Status**: Fixed
 > **Ticket**: none of its own — the follow-up of [RML-18148](https://roomle.atlassian.net/browse/RML-18148)
 > **Date**: 2026-10-17
 > **Base**: roomle-hi-example `fix/corner-group-window-offset-hint-RML-18201` (`ac69cda`); roomle-ui
 > `fix/corner-group-window-offset-hint-RML-18201` (`822e50fb5`)
-> **Backlog**: item 67 of [`../backlog/mcp-issues.md`](../backlog/mcp-issues.md)
+> **Backlog**: item 67 of [`../backlog/mcp-issues.md`](../backlog/mcp-issues.md), removed with the fix
 
 ## Affected repositories
 
@@ -246,6 +246,25 @@ The same files are served through the extension too, unchanged, and `get-skill` 
   the preamble in every session, and agents that use `get-skill` would read it twice.
 - **Waiting for the TypeScript SDK's skills API**: #2818 is a draft for v2. The fix would have to
   wait for the move to the SDK v2 and to revision `2026-07-28` as well.
+
+## Fix
+
+Implemented as planned on roomle-hi-example `fix/planning-skills-extension`; roomle-ui and
+ligna-store are unchanged. The server declares `resources` and `io.modelcontextprotocol/skills`,
+answers `skills/list` and `skills/get`, and serves the ten skill files as `skill://` resources (D75,
+§5.6 and G67 in [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md)). One difference from
+the plan: the date column of D75 reads "the Skills extension 2026-10-17, user", without the backlog
+item, because the item leaves the backlog with the fix.
+
+Validation:
+
+- `hi-mcp`: 290 tests pass, 14 of them new (4 in `skills.test.ts`, 10 in `hi-mcp-server.test.ts`).
+  The 10 new server tests fail against the server code of the base. `typecheck`, `lint` and
+  `format:check` are clean.
+- The MCP Inspector 2.11.0 against the server alone on port 3120 exits 0: "Verified 4 skills and 10
+  files: no conformance errors." No conformance or frontmatter issue; every digest and size is
+  verified, and the digests equal the SHA-256 of the files on disk.
+- No model run.
 
 ## Implementation plan
 

@@ -16,6 +16,10 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 | `get-authoring-rules` | Get HI authoring rules |
 | `get-skill` | Get a planning skill (planning from an image, kitchen, kitchen in France, living room) or one of its files |
 
+A host with the Skills extension of MCP (`io.modelcontextprotocol/skills`) gets the same skill files
+without a tool: `skills/list`, `skills/get` and the resources `skill://<name>/<path>`, served as they
+are, without the session preamble of `get-skill`.
+
 ### Information Tools
 | Tool | Purpose |
 |---|---|

@@ -20,7 +20,7 @@ development team, and how to reproduce it. MCP, chat and planner issues are trac
 | 60 | [The sink top of a sink unit reaches past the row or over the hob](#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG Furniture_Smith | HOMAG library development team | reported to the library development team | medium — the drainer in the air or over the hob |
 | 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | not reported | medium — handled articles where the user asked for handleless ones |
 | 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the cabinets are not built, the agent needs a second create |
-| 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the end panels are not built, the agent needs an undo and a second create |
+| 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the end panels are not built, the agent needs one or two extra calls |
 | 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
 | 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
 
@@ -66,7 +66,7 @@ base unit under its drainer in three runs of gpt-6-astra; `edit-swap-hob-unit`: 
 cover the hob, and the agent identifies a swap that would put the hob immediately to the right of
 the sink as conflicting with the library's selection rule.
 
-**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 29 (`edit-swap-hob-unit`): the swapped sink's top reaches 396 mm over the hob unit beside it.
+**Reproduce.** `mcp-test-2026-10-17_09-31-13`: gpt-6-astra 29 (`edit-swap-hob-unit`): the swapped sink's top reaches 396 mm over the hob unit beside it (sink outline z -2004 to -1008, hob unit -1404 to -804).
 
 ## 61. Handleless fronts done with a handle attribute
 
@@ -87,7 +87,7 @@ nothing more.
 
 **Test.** The test `kitchen-conversation` turn 5 ends with handleless articles.
 
-**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 50 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
+**Reproduce.** `mcp-test-2026-10-17_09-31-13`: gpt-6-astra 50 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
 
 ## 64. Flip-lift wall cabinets with sizes the library cannot calculate
 
@@ -111,7 +111,7 @@ it (D63). Then check that the served text needs nothing more.
 
 **Test.** `image-planning-right-wall`: the first create loads the flip-lift wall cabinets.
 
-**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 48 (`image-planning-right-wall`, the first `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` not calculated, Error 14023, in one `notLoaded` error; the model undid the create and sent it again with `O2TB90`.
+**Reproduce.** `mcp-test-2026-10-17_09-31-13`: gpt-6-astra 48 (`image-planning-right-wall`, the `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` not calculated, Error 14023, in one `notLoaded` error; the model exchanged them for `OTB60` 900 mm wide and 300 mm high.
 
 ## 69. End panels with a plain upright colour the library cannot calculate
 
@@ -119,8 +119,9 @@ it (D63). Then check that the served text needs nothing more.
 white 190) without `mod_UprightProgram` does not build its end panels `W60H` and `W60U`: "Error
 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_FinishPanel -
 Upright - Horizontal - NoGrain - 584 - 870"; the server builds the rest of the group and names them
-in `notLoaded`. The agent undoes the create and sends it again with `mod_UprightProgram` Classic,
-or leaves the end panels out — an undo and a second create. With `mod_UprightProgram` Classic, with
+in `notLoaded`. The agent sets `mod_UprightProgram` Classic on the end panels with
+`change-module-attribute`, or undoes the create and sends it again with that program or without the
+end panels — one or two extra calls. With `mod_UprightProgram` Classic, with
 a wood upright colour and its program, or without an upright colour the end panels load.
 
 **Cause.** The end panels keep their wood upright program ("Horizontal": `ModernNature`, "Carcase
@@ -140,7 +141,7 @@ and `W60U`) says that a plain colour needs `mod_UprightProgram` Classic and a wo
 **Test.** `kitchen-conversation` turn 1 and `image-kitchen-back-right-corner`: the first create with
 a plain upright colour builds its end panels.
 
-**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 50 (`kitchen-conversation`, turn 1, the first `create-or-replace-groups`): `mod_UprightColor` 192 without `mod_UprightProgram`, the end panels `W60U`, `W60H` and the wall-unit side panel `W35O` not calculated, Error 14034; the model undid the create and sent it again without the panels.
+**Reproduce.** `mcp-test-2026-10-17_09-31-13`: gpt-6-astra 51 (`kitchen-family-two-kids`, the `create-or-replace-groups`): `mod_UprightColor` 192 without `mod_UprightProgram`, the end panels `W60U` and `W60H` not calculated, Error 14034; the model set `mod_UprightProgram` Classic on both with `change-module-attribute`.
 
 ## 70. Carcase side panels with a plain outside colour the library cannot calculate
 

@@ -16,6 +16,10 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 | `get-authoring-rules` | Get HI authoring rules |
 | `get-skill` | Get a planning skill (planning from an image, kitchen, kitchen in France, living room) or one of its files |
 
+A host with the Skills extension of MCP (`io.modelcontextprotocol/skills`) gets the same skill files
+without a tool: `skills/list`, `skills/get` and the resources `skill://<name>/<path>`, served as they
+are, without the session preamble of `get-skill`.
+
 ### Information Tools
 | Tool | Purpose |
 |---|---|
@@ -79,7 +83,8 @@ the docking edges over a neighbour in the same group; that overlap alone is not 
 Article-specific overhangs are described by the library data. No walls. Requested alone,
 `obstacles` makes the server fetch the rooms too. The agent does not compare outlines itself: the results of
 `create-or-replace-groups` and `place-group` name every root module on an obstacle in their `hint`,
-with the free stretches of its wall (D55). When a door or window determines a placement, the tool description
+with the free stretches of its wall and, for a group placed at a wall, the `offsetMm` that keeps it clear of a door or a window
+of the adjoining wall (D55). When a door or window determines a placement, the tool description
 asks the agent to name it and explain whether the final placement keeps it clear, using the
 returned obstacle dimensions and final tool results. Below-sill placement, horizontal clearance
 and overlap are described according to the measured result; missing data is no assurance of clearance.
@@ -204,7 +209,8 @@ placed once more by that measure when it does not stand as asked (D70).
 **Returns**: `placedIn` (`'corner'` or `'wall'`), the wall, and the resulting group with its
 `position`, plus `corrections` when the server corrected the request (an overlap, a parallel
 alignment, a group that already stands there) and a `hint` when a root module stands on an object or
-in front of a door or a window after the move, with the free stretches of its wall (D55)
+in front of a door or a window after the move, with the free stretches of its wall and the `offsetMm` that keeps it clear of a
+door or a window of the adjoining wall (D55)
 
 **Usage**:
 ```javascript

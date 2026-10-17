@@ -109,7 +109,7 @@ The start script (`npm start`) provides:
 │       ├── agent-facing.ts       # The plan context in the agent's words: wall names, corners, the wall of a door or window
 │       ├── plan-history.ts       # The record of the plan-changing tool calls for undo and redo
 │       ├── planner-api.ts        # The six planner methods the tools call, relayed to the page
-│       ├── skills.ts             # The planning skills: loads skills/, the index of get-skill, a skill file by name and path
+│       ├── skills.ts             # The planning skills: loads skills/, the index of get-skill, a skill file by name and path, the manifest of the Skills extension
 │       ├── skills/               # The planning skills in the Agent Skills format (planning from an image, kitchen, kitchen in France, living room)
 │       ├── page-bridge.ts        # Connected-page registry, call correlation
 │       ├── types.ts              # WebSocket message protocol

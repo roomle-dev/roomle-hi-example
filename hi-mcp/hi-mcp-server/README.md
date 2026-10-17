@@ -366,6 +366,11 @@ the skills with their descriptions, `file` names a supporting file (`references/
 Answered by the server itself, without a connected page. An unknown name or file answers with the
 skills or the files available. Behaviour: [hi-mcp-behaviour.md §5.6](../../docs/hi-mcp-behaviour.md#56-planning-skills-get-skill).
 
+The same files go to a host with the Skills extension of MCP (`io.modelcontextprotocol/skills`):
+the server declares it beside `resources`, answers `skills/list` and `skills/get` with the frontmatter
+and the manifest of each skill (`skillManifest` of `skills.ts`: URI, SHA-256 digest and size of the
+served text), and serves every file as a resource under `skill://<name>/<path>`, without the preamble.
+
 ### find-attributes
 
 Searches the attribute vocabulary of the loaded libraries by text — attribute id, name,

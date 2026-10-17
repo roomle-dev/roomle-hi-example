@@ -1,8 +1,15 @@
+import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { loadSkills, readSkillFile, skillIndex } from '../skills';
+import {
+  loadSkills,
+  readSkillFile,
+  skillIndex,
+  skillManifest,
+  skillUri,
+} from '../skills';
 
 let root: string;
 
@@ -75,11 +82,50 @@ describe('loadSkills', () => {
       '# the b skill\nname: b\ndescription: >-\n  Plan a b\n  in two lines.\n\n  A second paragraph.\nlicense: MIT'
     );
     writeSkill('c', 'name: c\ndescription: Plan a c\n  over two lines.');
-    expect(loadSkills(root).map((skill) => skill.description)).toEqual([
+    const loaded = loadSkills(root);
+    expect(loaded.map((skill) => skill.description)).toEqual([
       'Plan an a.\nUse it for a rooms.',
       'Plan a b in two lines.\nA second paragraph.',
       'Plan a c over two lines.',
     ]);
+    expect(loaded.map((skill) => skill.frontmatter)).toEqual([
+      {
+        name: 'a',
+        description: 'Plan an a.\nUse it for a rooms.\n',
+        metadata: { author: 'x', version: '1' },
+      },
+      {
+        name: 'b',
+        description: 'Plan a b in two lines.\nA second paragraph.',
+        license: 'MIT',
+      },
+      { name: 'c', description: 'Plan a c over two lines.' },
+    ]);
+  });
+
+  it('keeps the chomping of a block scalar and a value on the line after its field, as YAML reads them', () => {
+    writeSkill(
+      'a',
+      'name: a\ndescription: >\n  Plan\n  an a.\n\n\nlicense: MIT'
+    );
+    writeSkill('b', 'name: b\ndescription: |+\n  Plan a b.\n\n\nlicense: MIT');
+    writeSkill('c', 'name: c\ndescription:\n  Plan a c\n  on the next line.');
+    expect(
+      loadSkills(root).map((skill) => skill.frontmatter.description)
+    ).toEqual([
+      'Plan an a.\n',
+      'Plan a b.\n\n\n',
+      'Plan a c on the next line.',
+    ]);
+  });
+
+  it('keeps every field of the frontmatter', () => {
+    writeSkill('a', 'name: a\ndescription: Plan an a.\nlicense: MIT');
+    expect(loadSkills(root)[0].frontmatter).toEqual({
+      name: 'a',
+      description: 'Plan an a.',
+      license: 'MIT',
+    });
   });
 
   it('ignores a file beside the skill directories and hidden files inside a skill', () => {
@@ -166,6 +212,39 @@ describe('readSkillFile', () => {
   );
 });
 
+describe('skillManifest', () => {
+  const sha256 = (text: string) =>
+    `sha256:${createHash('sha256').update(text, 'utf8').digest('hex')}`;
+
+  it('lists every file of a skill under its skill:// URI, SKILL.md first', () => {
+    writeSkill('a', 'name: a\ndescription: Plan an a.', {
+      'references/b.md': '# B\n',
+      'references/a.md': '# A\n',
+    });
+    const [skill] = loadSkills(root);
+    expect(skillManifest(skill).map((entry) => entry.uri)).toEqual([
+      'skill://a/SKILL.md',
+      'skill://a/references/a.md',
+      'skill://a/references/b.md',
+    ]);
+    expect(skillUri('a')).toBe('skill://a/SKILL.md');
+  });
+
+  it('digests and measures the text it serves: LF line endings, UTF-8 bytes', () => {
+    writeSkill('a', 'name: a\ndescription: Plan an a.', {
+      'references/a.md': '# Küche\r\nline\r\n',
+    });
+    const skills = loadSkills(root);
+    const [skillFile, reference] = skillManifest(skills[0]);
+    expect(reference).toEqual({
+      uri: 'skill://a/references/a.md',
+      digest: sha256('# Küche\nline\n'),
+      size: 14,
+    });
+    expect(skillFile.digest).toBe(sha256(readSkillFile(skills, 'a')));
+  });
+});
+
 describe('the skills of the server', () => {
   const ROOM_SKILLS = [
     'kitchen-planning',
@@ -223,5 +302,18 @@ describe('the skills of the server', () => {
     skills.forEach((skill, index) =>
       expect(lines[index]).toBe(`- ${skill.name}: ${skill.description}`)
     );
+  });
+
+  it('meets the limits of the Skills extension', () => {
+    for (const skill of loadSkills()) {
+      const manifest = skillManifest(skill);
+      expect(skill.name).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+      expect(skill.name.length).toBeLessThanOrEqual(64);
+      expect([...skill.description].length).toBeLessThanOrEqual(1024);
+      expect(manifest.length).toBeLessThanOrEqual(512);
+      expect(
+        manifest.reduce((total, entry) => total + entry.size, 0)
+      ).toBeLessThanOrEqual(16 * 1024 * 1024);
+    }
   });
 });

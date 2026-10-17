@@ -232,7 +232,8 @@ placement: {
   on a stretch of wall or a spot that `obstacles` leaves free: a placement with that wall, alignment `end` and `offsetMm` = the start of a free stretch
   puts a group on it; base units lower than a window's `bottomMm` fit below it. The result's `hint`
   names every root module that overlaps an object or another group or stands in front of a door or
-  a window, with the free stretches of its wall; the group is built anyway
+  a window, with the free stretches of its wall, and for a group placed at a wall in front of a door
+  or a window of the adjoining wall the `offsetMm` that keeps it clear; the group is built anyway
   ([D55](../../docs/hi-mcp-behaviour.md#3-decisions)).
 - **New groups only**: the placement is applied once, when the group is created. A placement on a
   group already in the plan is not used — the group keeps its position, and `corrections` says so;
@@ -296,7 +297,7 @@ built is an error. Every guard and correction:
 
 ### Returned as a hint (the group is loaded):
 - A group of the call that is still unpositioned — it sits at the plan origin; a group gets its position from the placement it is created with, or `place-group` moves it against a wall or into a corner
-- A root module that overlaps an object or a root module of another group, or stands in front of a door or a window — named with the free stretches of its wall; units that belong together are sent as one group or joined with `merge-groups`
+- A root module that overlaps an object or a root module of another group, or stands in front of a door or a window — named with the free stretches of its wall, and for a group placed at a wall in front of a door or a window of the adjoining wall with the `offsetMm` that keeps it clear; units that belong together are sent as one group or joined with `merge-groups`
 
 ## Practical Patterns
 

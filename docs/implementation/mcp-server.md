@@ -63,8 +63,9 @@ other upgrade is destroyed and logged. An accepted socket goes to `bridge.attach
 ## The MCP server — `hi-mcp-server.ts`
 
 `createHiMcpServer(roomDesignerApi)` builds
-`new McpServer({ name: 'hi-group-orchestrator', version: '0.1.0' }, { instructions: INSTRUCTIONS })`
-and registers the tools.
+`new McpServer({ name: 'hi-group-orchestrator', version: '0.1.0' }, { instructions: INSTRUCTIONS, capabilities: { extensions: { [SKILLS_EXTENSION]: {} } } })`
+and registers the tools, the skill resources and the handlers of the Skills extension
+([The Skills extension](#the-skills-extension)).
 
 ### Served text
 
@@ -75,6 +76,8 @@ and registers the tools.
 | the tool descriptions | `tools/list` | one per registration |
 | `SKILL_IN_SESSION` | the start of a `SKILL.md` result of `get-skill` | how a planning skill meets the session |
 | the skill index | the description of `get-skill` | `skillIndex(skills)` of `skills.ts`, one line per skill |
+| `SKILL_ENTRIES` | `skills/list` and `skills/get` of the Skills extension | per skill the URI of its `SKILL.md`, its frontmatter and `skillManifest(skill)` |
+| the skill files | `resources/list` and `resources/read`, under `skill://<name>/<path>` | the text of `readSkillFile`, without `SKILL_IN_SESSION` |
 
 The rules go out twice: in `initialize` for clients that pass server instructions to the model, and
 from `get-authoring-rules` for those that do not — the chat backend does not
@@ -111,6 +114,28 @@ oneAtATime(recorded(tool, executor))`: serialized and recorded for undo
 ([Undo and redo](#undo-and-redo)). roomle-ui performs the tool and answers with its result plus
 `historySteps`, which `inPlanner` removes (and a `historyFollowUps` an older planner still sends). `find-attributes`, `get-price`, `get-order-data` and
 `get-plan-images` run beside a plan change.
+
+### The Skills extension
+
+The skill files also go to a host that loads skills itself by the MCP extension
+`io.modelcontextprotocol/skills` (SEP-2640) — the same files `get-skill` serves, as they are
+([hi-mcp-behaviour.md §5.6](../hi-mcp-behaviour.md#56-planning-skills-get-skill)):
+
+- `SKILL_ENTRIES` is built once when the module loads, like the skill index; the server itself is
+  created per request.
+- Every file of every skill is a resource, `server.registerResource('<name>/<path>',
+  skillUri(name, path), { mimeType: 'text/markdown' }, …)`, answered with `readSkillFile`; the
+  first registration declares `resources`.
+- `skills/list` and `skills/get` are handlers on the low-level server,
+  `server.server.setRequestHandler` with a zod request schema; the SDK checks only the methods of
+  the core specification, so an extension method is accepted. `skills/get` leaves `uri` optional in
+  its schema and answers anything but the URI of a `SKILL.md` with `McpError(ErrorCode.InvalidParams)`
+  (G67) — a schema that requires `uri` would answer a missing one with an internal error.
+- The SDK (1.x) speaks protocol `2025-11-25`: the extension is declared in `initialize`, and the
+  results carry no `resultType`, `ttlMs` or `cacheScope`. The skills API of the TypeScript SDK
+  replaces the handlers when the server moves to it.
+- The log lines are `[hi-mcp] skills/list`, `[hi-mcp] skills/get <uri>` and
+  `[hi-mcp] resources/read <uri>`; they do not go through `runTool`.
 
 ### Running a tool — `runTool`
 

@@ -405,6 +405,13 @@ session. Answered by the server itself — it works without a connected page. Th
 files of `hi-mcp/hi-mcp-server/skills/`
 ([hi-mcp-behaviour.md §5.6](hi-mcp-behaviour.md#56-planning-skills-get-skill)).
 
+The same files are served by the Skills extension of MCP (`io.modelcontextprotocol/skills`) to a
+host that loads skills itself: `skills/list` and `skills/get` answer each skill with the URI of its
+`SKILL.md` (`skill://<name>/SKILL.md`), its frontmatter and the manifest of its files with their
+SHA-256 digests and sizes, and every file is a resource under `skill://<name>/<path>` — as it is,
+without the preamble. `npx @modelcontextprotocol/inspector@2.11.0 --cli http://localhost:3100/mcp
+--transport http --method skills/list --verify` checks it against the local server.
+
 ### find-attributes
 
 Answers a question about an attribute: searches the attribute vocabulary — the
@@ -494,7 +501,8 @@ group and roots). `index` names the original input group; diagnostic ids are the
 `get-plan-context` reports them. A group id you gave an earlier group of the session replaces that group. A `hint`
 names each root module of the call's groups that overlaps an object or a root module of another
 group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm`
-ranges; the group is built anyway (D55).
+ranges and, for a group placed at a wall in front of a door or a window of the adjoining wall,
+the `offsetMm` that keeps it clear; the group is built anyway (D55).
 
 Example — a row of three tall units along the right wall of a 4000 × 3000 mm
 room, from the back right corner, one call, placed at the right wall flush
@@ -570,7 +578,8 @@ position on the wall, the group is placed as asked and the overlap reported.
 Returns `placedIn` (`corner` or `wall`), the wall, and the resulting group
 with its `position`, plus `corrections` when the server corrected the request
 and a `hint` when a root module stands on an object or in front of a door or a
-window after the move, with the free stretches of its wall (D55). The group keeps its height, so a group of wall units only stays at its
+window after the move, with the free stretches of its wall and the `offsetMm` that keeps it clear of a door or a window of the
+adjoining wall (D55). The group keeps its height, so a group of wall units only stays at its
 mounting height.
 
 Example: `{ "groupId": "a1b2c3", "wall": "right", "alignment": "top" }`
@@ -834,7 +843,8 @@ A new group is positioned in the call that creates it, in one of two forms:
   `fromEndMm`; base units lower than a window's
   `bottomMm` fit below it. The result's `hint` names every root module that
   overlaps an object or another group or stands in front of a door or a window,
-  with the free stretches of its wall (D55).
+  with the free stretches of its wall, and for a group placed at a wall in front of a door or a
+  window of the adjoining wall the `offsetMm` that keeps it clear (D55).
 - **New groups only**: the placement is applied once, when the group is
   created. A placement on a group that is already in the plan is not used —
   the group keeps its position, and `corrections` says so; a group

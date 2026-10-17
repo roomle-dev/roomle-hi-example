@@ -321,6 +321,64 @@ describe('get-plan-context', () => {
     ]);
   });
 
+  it('lists the room corners where a window meets a wall, and none of the partition', async () => {
+    // the living room of the prompt tests: a window reaches the front left,
+    // the front right and the back right corner; the inner corner of the L and
+    // the partition turn away from the room
+    const livingRoomWall = (
+      index: number,
+      side: string,
+      [x1, z1]: [number, number],
+      [x2, z2]: [number, number],
+      facingRotationY: number,
+      type: string | null = 'wall'
+    ) => ({
+      index,
+      side,
+      start: [x1, 0, z1],
+      end: [x2, 0, z2],
+      lengthMm: Math.hypot(x2 - x1, z2 - z1),
+      type,
+      facingRotationY,
+    });
+    const walls = [
+      livingRoomWall(0, 'left', [1935, -5265], [1935, -3765], 90),
+      livingRoomWall(1, 'top', [1935, -3765], [-3185, -3765], 0),
+      livingRoomWall(2, 'left', [-3185, -3765], [-3185, 2235], 90),
+      livingRoomWall(3, 'bottom', [-3185, 2235], [-1705, 2235], 180, null),
+      livingRoomWall(4, 'bottom', [-1705, 2235], [315, 2235], 180, null),
+      livingRoomWall(5, 'bottom', [315, 2235], [1815, 2235], 180, null),
+      livingRoomWall(6, 'bottom', [1815, 2235], [3315, 2235], 180, null),
+      livingRoomWall(7, 'bottom', [3315, 2235], [4815, 2235], 180, null),
+      livingRoomWall(8, 'bottom', [4815, 2235], [6315, 2235], 180, null),
+      livingRoomWall(9, 'bottom', [6315, 2235], [6320, 2235], 180),
+      livingRoomWall(10, 'right', [6320, 2235], [6320, 735], 270, null),
+      livingRoomWall(11, 'right', [6320, 735], [6320, -765], 270, null),
+      livingRoomWall(12, 'right', [6320, -765], [6320, -2265], 270, null),
+      livingRoomWall(13, 'right', [6320, -2265], [6320, -3765], 270, null),
+      livingRoomWall(14, 'right', [6320, -3765], [6320, -3825], 270),
+      livingRoomWall(15, 'right', [6320, -3825], [6320, -5265], 270, null),
+      livingRoomWall(16, 'top', [6320, -5265], [5030, -5265], 0),
+      livingRoomWall(17, 'top', [5030, -5265], [3230, -5265], 0, null),
+      livingRoomWall(18, 'top', [3230, -5265], [1935, -5265], 0),
+      livingRoomWall(20, 'right', [1810, 1050], [1810, -2550], 270),
+      livingRoomWall(21, 'bottom', [1810, -2550], [1930, -2550], 180),
+      livingRoomWall(22, 'left', [1930, -2550], [1930, 1050], 90),
+      livingRoomWall(23, 'top', [1930, 1050], [1810, 1050], 0),
+    ];
+    const api = createApi({ rooms: { rooms: [{ ...room, walls }] } });
+    const result = (await toolExecutors['get-plan-context'](api, {
+      include: ['rooms'],
+    })) as Record<string, any>;
+    expect(result.rooms.rooms[0].corners).toEqual([
+      { name: 'back left', point: [-3185, 0, -3765], posRotationY: 0 },
+      { name: 'front left', point: [-3185, 0, 2235], posRotationY: 90 },
+      { name: 'front right', point: [6320, 0, 2235], posRotationY: 180 },
+      { name: 'back right', point: [6320, 0, -5265], posRotationY: 270 },
+      { name: 'back left', point: [1935, 0, -5265], posRotationY: 0 },
+    ]);
+  });
+
   it('passes only the explicitly requested sections through', async () => {
     const masterDataOnly = { masterData: masterDataFixture };
     const api = createApi(masterDataOnly);

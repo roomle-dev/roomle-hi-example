@@ -1,13 +1,25 @@
+import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+/** A frontmatter field as YAML reads it: a scalar, or a nested field (metadata) as an object of scalars. */
+export type FrontmatterValue = string | Record<string, string>;
 
 /** A planning skill in the Agent Skills format: a directory with SKILL.md and supporting files. */
 export interface Skill {
   name: string;
   description: string;
+  frontmatter: Record<string, FrontmatterValue>;
   dir: string;
   files: string[];
+}
+
+/** A file of a skill as the Skills extension of MCP lists it: its URI, the digest and the size of the served text. */
+export interface SkillManifestEntry {
+  uri: string;
+  digest: string;
+  size: number;
 }
 
 export const SKILLS_DIR = join(
@@ -18,7 +30,8 @@ export const SKILL_FILE = 'SKILL.md';
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
 const FIELD = /^([A-Za-z][\w-]*):\s*(.*)$/;
-const BLOCK_SCALAR = /^[|>][+-]?$/;
+const NESTED_FIELD = /^\s+([A-Za-z][\w-]*):\s*(.*)$/;
+const BLOCK_SCALAR = /^([|>])([+-]?)$/;
 
 interface Field {
   value: string;
@@ -36,25 +49,47 @@ const folded = (lines: string[]): string =>
     .join('\n');
 
 // The YAML of Agent Skills frontmatter: a plain, quoted, multi-line or block
-// scalar per field; a field whose value is nested (metadata) is no scalar.
-const scalarOf = ({ value, lines }: Field): string => {
+// scalar per field, a block scalar with its chomping (clip, - strip, + keep),
+// and a nested field (metadata) as an object of scalars.
+const valueOf = ({ value, lines }: Field): FrontmatterValue => {
   const content = lines.filter((line) => line.trim());
-  if (BLOCK_SCALAR.test(value)) {
+  const block = BLOCK_SCALAR.exec(value);
+  if (block) {
+    const [, style, chomping] = block;
     const indent = Math.min(
       ...content.map((line) => line.length - line.trimStart().length)
     );
     const body = lines.map((line) => line.slice(indent));
-    return (value.startsWith('|') ? body.join('\n') : folded(body)).trim();
+    let end = body.length;
+    while (end > 0 && !body[end - 1].trim()) {
+      end--;
+    }
+    const core = body.slice(0, end);
+    const text = style === '|' ? core.join('\n') : folded(core);
+    if (chomping === '-') {
+      return text;
+    }
+    return text + '\n'.repeat(chomping === '+' ? body.length - end + 1 : 1);
   }
-  if (!value) {
-    return '';
+  const nested = content.map((line) => NESTED_FIELD.exec(line));
+  if (
+    !value &&
+    nested.length > 0 &&
+    nested.every((field): field is RegExpExecArray => field !== null)
+  ) {
+    return Object.fromEntries(
+      nested.map(([, key, nestedValue]) => [key, unquoted(nestedValue.trim())])
+    );
   }
   return unquoted(
     [value, ...content.map((line) => line.trim())].join(' ').trim()
   );
 };
 
-const frontmatterOf = (text: string, file: string): Record<string, string> => {
+const frontmatterOf = (
+  text: string,
+  file: string
+): Record<string, FrontmatterValue> => {
   const block = FRONTMATTER.exec(text)?.[1];
   if (block === undefined) {
     throw new Error(`${file}: no frontmatter`);
@@ -73,7 +108,7 @@ const frontmatterOf = (text: string, file: string): Record<string, string> => {
     }
   }
   return Object.fromEntries(
-    Object.entries(fields).map(([key, field]) => [key, scalarOf(field)])
+    Object.entries(fields).map(([key, field]) => [key, valueOf(field)])
   );
 };
 
@@ -93,16 +128,14 @@ export const loadSkills = (dir = SKILLS_DIR): Skill[] =>
     .map((entry) => {
       const skillDir = join(dir, entry.name);
       const file = join(skillDir, SKILL_FILE);
-      const { name, description } = frontmatterOf(
-        readFileSync(file, 'utf8'),
-        file
-      );
+      const frontmatter = frontmatterOf(readFileSync(file, 'utf8'), file);
+      const { name, description } = frontmatter;
       if (name !== entry.name) {
         throw new Error(
           `${file}: the name "${name}" differs from its directory "${entry.name}"`
         );
       }
-      if (!description) {
+      if (typeof description !== 'string' || !description.trim()) {
         throw new Error(`${file}: no description`);
       }
       const supporting = filesBelow(skillDir)
@@ -110,7 +143,8 @@ export const loadSkills = (dir = SKILLS_DIR): Skill[] =>
         .sort();
       return {
         name,
-        description,
+        description: description.trim(),
+        frontmatter,
         dir: skillDir,
         files: [SKILL_FILE, ...supporting],
       };
@@ -120,6 +154,24 @@ export const loadSkills = (dir = SKILLS_DIR): Skill[] =>
 /** One line per skill: its name and its description. */
 export const skillIndex = (skills: Skill[]): string =>
   skills.map((skill) => `- ${skill.name}: ${skill.description}`).join('\n');
+
+const skillFileText = (skill: Skill, path: string): string =>
+  readFileSync(join(skill.dir, path), 'utf8').replace(/\r\n/g, '\n');
+
+/** The URI of a file of a skill in the skill:// scheme of the Skills extension of MCP. */
+export const skillUri = (name: string, file: string = SKILL_FILE): string =>
+  `skill://${name}/${file}`;
+
+/** Per file of a skill, SKILL.md first: its URI, the SHA-256 digest and the byte size of the text it is served with. */
+export const skillManifest = (skill: Skill): SkillManifestEntry[] =>
+  skill.files.map((file) => {
+    const bytes = Buffer.from(skillFileText(skill, file), 'utf8');
+    return {
+      uri: skillUri(skill.name, file),
+      digest: `sha256:${createHash('sha256').update(bytes).digest('hex')}`,
+      size: bytes.byteLength,
+    };
+  });
 
 /** A file of a skill by its path; only a file of the skill's list is read. */
 export const readSkillFile = (
@@ -139,7 +191,7 @@ export const readSkillFile = (
       `Unknown file "${file}" of the skill ${name} - its files are ${skill.files.join(', ')}`
     );
   }
-  return readFileSync(join(skill.dir, path), 'utf8').replace(/\r\n/g, '\n');
+  return skillFileText(skill, path);
 };
 
 export const skills = loadSkills();

@@ -108,10 +108,12 @@ export const createStepLog = (
     } catch {}
     startedAt = Date.now();
   };
+  // One line per failed step: a test run reads the log line by line, and a
+  // message or a body may break lines.
   const onError = (error: unknown) => {
     try {
       logError(
-        `[hi-chat] step ${step + 1} failed after ${Date.now() - startedAt} ms: ${describeStepError(error)}`
+        `[hi-chat] step ${step + 1} failed after ${Date.now() - startedAt} ms: ${describeStepError(error).replace(/\s*\n\s*/g, ' ')}`
       );
     } catch {}
   };

@@ -28,9 +28,9 @@
     "closets": "ps_n9zrz89zsyy46l34mkf5pd52cx2ea2y",
     "utility-room": "ps_mq3m2wuhq6w23ry742eh50nb2vub5ej",
     "room-and-attic": "ps_qn012p0tjux6dabt6oym0bzngmqex70u",
-    "three-tall-units": "ps_qply732i7knwtkfjm1z86sa8vrt00ms",
-    "corner-kitchen-wall-units": "ps_r081k1nfl8nmtzget0sug199vhudbtd",
-    "two-wardrobes-right-wall": "ps_r22qpwv9ks87lz1gnrcz1ewv7q8uq3v",
+    "three-tall-units": "ps_s3p5hmscmmsnshopj2tybjwmt7ijy5o",
+    "corner-kitchen-wall-units": "ps_s3q15s937nezvvjuyq0rdl4vecu6rsjp",
+    "two-wardrobes-right-wall": "ps_s3qfqirqsvfwrr8em4d344h0c4sk8po",
     "open-plan-room": "ps_qwm5odi6tyflyqwpdcxz1la791ho633"
   },
   "tests": [
@@ -108,6 +108,13 @@
       "plan": "closets",
       "prompt": "put two wardrobes into the back right corner",
       "expect": "one create-or-replace-groups call with a placement by wall and alignment into the corner (wall right, alignment back); one group of two tall wardrobe units flush in the back right corner"
+    },
+    {
+      "id": "wardrobe-door-hinges",
+      "title": "Door hinges at the ends of a wardrobe",
+      "plan": "closets",
+      "prompt": "add a wardrobe of four cabinets with one door each to the back wall",
+      "expect": "one create-or-replace-groups call with a placement by wall (wall back); one group of four single-door wardrobe cabinets in a row; mod_DoorDirectionSelection Left in the attributes of the root module at the left end and Right in those of the root module at the right end, the two in the middle unchanged; no handle on the outside of the row"
     },
     {
       "id": "utility-room-washer-and-sink",
@@ -254,6 +261,16 @@
         "swap the first and the last unit"
       ],
       "expect": "turn 1: change-module-attribute: mod_Width 900 on the last unit; turn 2: swap-root-modules: the 900 mm unit stands in the back corner, the row stays 2100 mm and its back end at z -3765"
+    },
+    {
+      "id": "wardrobe-extend-door-hinge",
+      "title": "A new end of a wardrobe",
+      "plan": "closets",
+      "prompt": [
+        "add a wardrobe of three cabinets with one door each to the back wall",
+        "add one more cabinet at its right end"
+      ],
+      "expect": "turn 1: one create-or-replace-groups call with a placement by wall (wall back); three single-door wardrobe cabinets in a row, mod_DoorDirectionSelection Left on the root module at the left end and Right on the one at the right end; turn 2: one edit that adds a single-door cabinet at the right end of the group (merge-article-into-group, or a replace of the group); the new end has mod_DoorDirectionSelection Right, the former end keeps Right; no handle on the outside of the row"
     },
     {
       "id": "undo-last-change",

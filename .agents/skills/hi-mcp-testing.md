@@ -216,6 +216,7 @@ jq '{planSnapshotId, errors, turns: [.turns[] | {prompt, answer: (.answer | .[0:
 jq -c '.groups[]? | {group: .id[0:8], pos: .position.pos, rotationY: .position.rotationY, sizeMm: [.position.footprint.widthMm, .position.footprint.depthMm], roots: [.roots[]? | .desc]}' "$R/plan-context.json"
 jq -c '.[] | select(.method == "externalObjectGroupOperation") | {tool: .args[0], ok, error, placement: [.args[1] | objects | .posGroups[]?.placement | select(.)], args: (if .args[0] == "create-or-replace-groups" then null else .args[1] end)}' "$R/planner-calls.json"
 jq -c '[.[] | select(.method == "externalObjectGroupOperation" and .args[0] == "create-or-replace-groups")][-1].args[1].posGroups[].roots[] | {id, articleId, attributes: [.attributes[]? | "\(.id)=\(.value)"], relation: ([to_entries[] | select(.key | IN("rightOf", "leftOf", "onTop", "above", "behind")) | "\(.key) \(.value)"] | join(","))}' "$R/planner-calls.json"
+jq -c '.groups[]? | {group: .id[0:8], doors: [.roots[]? | select(.isGenerated != true) | {row: .rowIndex, articleId, desc: (.desc // "" | .[0:60]), door: ([.attributes[]? | select(.id == "mod_DoorDirectionSelection") | .value][0] // "Automatic")}] | sort_by(.row)}' "$R/plan-context.json"
 ```
 
 Check:
@@ -232,6 +233,16 @@ Check:
   room, not through a wall, window or door, not overlapping another group;
 - the docking graph is sound — every root reachable from the placed root, at most one root per
   docking vector, wall units docked to `*Top` vectors;
+- the doors open to the outside of every row the run creates or gives a new end
+  ([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17)) — the door at the left end of a row
+  (`rowIndex` 1) hinged on the left, the door at the right end on the right, a pair of doors side by
+  side at its two outer sides; floor units and wall units form rows of their own. A row of the
+  starting plan keeps its doors as the plan has them while an edit leaves its ends. Read the hinge side from the roots' input attributes in `plan-context.json`
+  (the last `jq` command; Furniture_Smith: `mod_DoorDirectionSelection`, and a root without it has
+  the library's `Automatic` — a single door hinged on the left, a pair `LeftRight`), and check the
+  handles in `perspective-object-image.png`. A handle on the outside of a row is a model finding,
+  unless the model sent the right side and the plan lacks it (then a bug, as below); it recurring
+  across runs is a hardening candidate for the rule sentence of D84;
 - the answer matches the plan (models claim materials, connections and corners they did not
   author).
 
@@ -249,7 +260,7 @@ correction reporting it is a **bug** of the MCP server, not a model finding.
 | Verdict | When |
 |---|---|
 | pass | everything asked for is in the plan and placed correctly, no errors |
-| partial | the plan is usable but misses part of the request (an appliance, a material, a unit count) |
+| partial | the plan is usable but misses part of the request (an appliance, a material, a unit count), or a handle is on the outside of a row |
 | fail | the main request is not in the plan — nothing created, the edit not applied, the wrong wall, outside the room — or the run ended with an error |
 
 #### Bug
@@ -366,6 +377,7 @@ Plan: <plan name>
 - **Plan snapshot**: `ps_…`
 - **Tools**: <per turn, in order>
 - **Corrections**: <per tool, the corrections, groups not loaded and errors of `toolCalls`, or none>
+- **Doors**: <per row with doors, the hinge side of the door at its left and at its right end, and whether a handle is on the outside of the row; or no doors>
 - **Answer**: <the model's final answer, shortened>
 
 | Perspective | Perspective object | Top |
@@ -435,7 +447,11 @@ not an archive: it holds only what is still to be done — no history of runs, f
   agent lacks about a library goes into the descs of the library data
   ([library-neutral](../../docs/hi-mcp-behaviour.md#24-instructions));
 - describe a library issue only in [library-issues.md](../backlog/library-issues.md), including its
-  overview, with the library and whether it is reported to the library development team;
+  overview, with the library and whether it is reported to the library development team; the exact
+  `desc` text proposed to the library goes into
+  [suggested-library-changes.md](../../docs/library-information/suggested-library-changes.md), which
+  keeps every suggested change with its status — applied in the library or not — and the issue's
+  to-do names its change there;
 - name in every overview row the module, team or repository responsible for the fix (**Responsible**);
 - for a listed issue that showed again, replace its **Reproduce** line with the latest run — one line,
   never a list of runs;

@@ -229,6 +229,28 @@ results wait for that calculation and report the retained value, including libra
 The contract is guarded by `returns the position height after the kernel callback and follow-up load (%s)`
 in roomle-ui `glue-logic-test.ts`.
 
+**Door direction** (Furniture_Smith). The side a door is hinged on is `mod_DoorDirectionSelection`,
+carried by the root modules `mr_StorageunitSingle` and `mr_CornerunitStraight` and by the front
+modules `mf_Door`, `mf_Fridge`, `mf_FillerFront` and `mf_BaseunitFridge`. The library resolves it
+into `mod_DoorDirection` of the door module, which the master data does not list. Every article
+comes with `Automatic`: a single door is hinged on the left (`Left`, the handle on the right),
+wherever it stands in a row; a pair of doors side by side (`U2TB90`) gets `LeftRight`, the handles in
+the middle. Single doors take `Left` and `Right` — two doors one above the other (`H2TB60`) both
+together —, a pair takes `LeftRight`. Any other combination has no entry in `tab_DoorSettings`: the
+calculation fails with error 14019 and the root module is not built (`U2TB90` with `Left`, `Right`,
+`LeftLeft` or `RightRight`, `H2TB60` with `LeftRight`). The door direction is not `implicitRelevant`,
+so a root module added beside another gets `Automatic`. A value set on a root module reaches its
+doors — in the root's `attributes` and with `change-module-attribute` — and the plan context lists it
+among the root's input attributes; `Automatic` and the resolved side are not shown.
+`mod_HandlePosType` places and turns the handle and leaves the hinge side as it is: `03` and `04` put
+a vertical handle at the edge opposite the hinge, turned by 180° against each other, `05` and `06` in
+the middle of the door's width. The descs of both attributes say this; the articles with two doors
+say "with 2 doors" for both kinds of doors
+([`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md),
+changes 2 and 3).
+The agent hinges the doors at the ends of a row by the served rule of
+[D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17).
+
 ### Article Parameters
 
 Parameters are user-configurable properties of articles.

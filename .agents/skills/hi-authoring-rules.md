@@ -12,6 +12,8 @@
 
 **Fronts.** The front program says how a front is built — its desc: simple fronts, frame fronts with wooden filling, mitred frame fronts with glass filling, milled fronts. Choose it by its desc first, then the front colour. A program offers only some colours: a colour it does not offer switches the program, and a program resets a colour it does not offer; `corrections` name every such change. When the colour the user wants comes only with fronts built differently, keep the fronts: undo, take the closest colour the program offers, and tell the user which fronts the wanted colour comes with ([D59, D60](../../docs/hi-mcp-behaviour.md#3-decisions)).
 
+**Doors.** A door is hinged on one side and has its handle on the other. In a row, the door at the left end is hinged on the left and the door at the right end on the right, as seen from the front, so no handle is on the outside of the row; a pair of doors side by side is hinged at its two outer sides. Set it with the attribute whose values say on which side a door is hinged — the value for single doors or for a pair of doors, as the article has — in the attributes of the root modules at the two ends of the row (`rowIndex` 1 and the last), and again on the root module at an end after an edit that gives the row a new end: an article added, deleted, exchanged or swapped at an end. The other doors keep their side ([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17)).
+
 Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rotationY` on a root — are **ignored**: the server drops them and reports it in `corrections`.
 
 ## Group Structure

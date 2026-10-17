@@ -11,9 +11,10 @@ the document a row links.
 | Item | To do | Priority |
 |---|---|---|
 | 72 — The wall units hang at two heights after a plinth height in the group attributes | Analyse why some wall units follow the plinth height of the group attributes and others do not; then every wall unit hung above a floor unit stays flush with the tall units | medium |
-| 73 — A wall-unit side panel beside a wall unit is moved into the floor row | Tell wall-level articles from floor articles by library data rather than a category word; keep an article the agent puts beside a wall unit there | low |
+| 73 — A wall-level article of another category is taken for a floor unit | Tell wall-level articles from floor articles by library data rather than a category word; keep an article the agent puts beside a wall unit there | low |
 | 74 — An island's back row of other widths lands off the front row | Say in the description of `behind` where a turned unit lines up and which way the relations run in a turned row; else an `align` the server derives the offset from | low |
 | 75 — The backsplash of an image kitchen is reported as not buildable | Say in the `notCarried` sentence of `create-or-replace-groups`, library-neutrally, that a generated part may wait for an attribute of the units that switches it on, and drop its kitchen example | medium |
+| 77 — An edit that gives a row a new end leaves a door hinged to the outside | Name the door rule of D84 in the descriptions of the tools that can give a row a new end (swap, delete, exchange, merge) | medium |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Where Mistral Large falls short of the prompts](mistral-large-prompt-issues.md) | Improvement candidates from the `mistral-large-latest` test run: declare the payload fields in the input schema, merge groups that name each other's roots, act on obstacle hints, describe the walls, open the edit tools with the user's words | medium |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
@@ -25,12 +26,13 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 
 | Item | To do | Priority |
 |---|---|---|
-| [60 — The sink top of a sink unit reaches past the row or over the hob](library-issues.md#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG library (reported): the sink unit's description names the drainer width and side, and states that no hob may stand immediately to its right | medium |
+| [60 — The sink top of a sink unit reaches past the row or over the hob](library-issues.md#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG library (reported): the sink unit's description names the width of the sink with its drainer, and states that no hob may stand immediately to its right | medium |
 | [61 — Handleless fronts done with a handle attribute](library-issues.md#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG library: distinguish choosing a handleless article from setting the handle design to "No handle" on a handled article | medium |
 | [64 — Flip-lift wall cabinets with sizes the library cannot calculate](library-issues.md#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG library: the flip-lift wall cabinets' descs name the heights and depths their flap fitting supports | low |
 | [69 — End panels with a plain upright colour the library cannot calculate](library-issues.md#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG library: switch the upright program with a plain upright colour as the front program is switched, or say in the desc that a plain colour needs `mod_UprightProgram` Classic | low |
 | [70 — Carcase side panels with a plain outside colour the library cannot calculate](library-issues.md#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG library: switch the program of the visible sides with their colour, or say in the descs that the visible sides take the outside colour and a plain one needs the program Classic | low |
 | [71 — Folding-flap wall cabinets with glass fronts the library cannot calculate](library-issues.md#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG library: the flap wall cabinets' descs name the front programs their flap takes | low |
+| [76 — Articles with two doors that do not say how their doors stand](library-issues.md#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG library: the articles with two doors say one above the other or side by side; `LeftLeft`, `RightRight` and the desc of `14` | low |
 
 ## Library neutrality of the MCP server
 

@@ -68,7 +68,16 @@ node .agents/scripts/generate-article-catalog.js
 - Writes the full description of every article below the table, one `### {articleId}` section with one bullet per description section
 - Saves to `docs/library-information/articles.md` and prints `Generated docs/library-information/articles.md with 111 articles`
 
-### Step 3: Commit Changes
+### Step 3: Check the suggested library changes
+
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md) keeps
+every `desc` change suggested to the library, applied or not, with its status. Compare each change
+that is not applied yet with the fetched articles and master data. When the library carries it, set
+its status to applied and name what differs from the proposal; never delete the change. Then update
+the **Status** of its issue in [`library-issues.md`](../backlog/library-issues.md), and remove the
+issue when the library carries all of it.
+
+### Step 4: Commit Changes
 
 ```bash
 cd /Users/gernotsteinegger/source/roomle/roomle-hi-example

@@ -328,6 +328,12 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
 |---|---|---|---|
 | D82 | **A merge is a row edit.** `merge-article-into-group` arranges the group against the group before the merge and loads it once, as the insert does (D39): the earlier root modules keep their place, the row grows at its free end, and a root module docked on the side at a wall moves the group away from that wall (D41). The arrangement starts from the root module nearest the group origin; the new root module starts where the root module it docks to stands, so the arrangement never starts from it, also in a group with no root module at its origin — a group the library generated with a part there, or one placed by wall or by point, whose roots the reload re-anchors. The result carries the row hints (D43). Rejected: the arrangement starting from a root module of the group before the change — the insert's start position is enough and leaves the arrangement as it is | user, 2026-10-16 | in effect — `mergeArticleIntoGroup`, roomle-ui `hi-tools.ts`; `merge-article-into-group` with `withRowHints`, roomle-ui `hi-tool-commands.ts`; guarded by `describe('mergeArticleIntoGroup')` under `row edits` in roomle-ui `__tests__/hi-tools-test.ts`, `it('tells when a merge makes the row reach past a wall')` in roomle-ui `__tests__/hi-tool-commands/group-commands-test.ts` and the test `sideboard-row-one-more-cabinet` of `docs/test-prompts.json` |
 
+### Doors (2026-10-17)
+
+| # | Decision | Source | State |
+|---|---|---|---|
+| D84 | **The doors at the two ends of a row are hinged at its outer sides.** No handle is on the outside of a row: the door at the left end is hinged on the left, the door at the right end on the right, as seen from the front; a pair of doors side by side is hinged at its two outer sides. The agent sets it with the library's door direction — the value for single doors or for a pair of doors, as the article has — on the root modules at the two ends, `rowIndex` 1 and the last (a corner article joins the legs into one row, D66), and again on the root module at an end after an edit that gives the row a new end: an article added, deleted, exchanged or swapped at an end, because a library need not pass the door direction on between neighbours (D56; Furniture_Smith does not). The other doors keep their side, the former end after the row grows too. The rule names no attribute and no value; the library data says which (§2.4). Rejected: the server setting or correcting the side of the ends by `rowIndex` — it needs the library's door direction attribute and its values, library information in the server's logic | user, 2026-10-17 | in effect — `AUTHORING_RULES`, `hi-mcp-server.ts`; guarded by `it('tells the agent to hinge the doors at the two ends of a row at its outer sides')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` and the tests `wardrobe-door-hinges` and `wardrobe-extend-door-hinge` of `docs/test-prompts.json` |
+
 ## 4. How a tool call runs
 
 - **MCP endpoint**: `POST /mcp` — Streamable HTTP, JSON response mode, stateless (a new transport per
@@ -478,6 +484,12 @@ tool. It covers:
   colour it does not offer, and `corrections` name every such change; when the wanted colour comes
   only with fronts built differently, the agent keeps the fronts, takes the closest colour and tells
   the user.
+- **Doors** (D84): in a row, the door at the left end is hinged on the left and the door at the right
+  end on the right, as seen from the front, a pair of doors side by side at its two outer sides; the
+  agent sets it with the attribute whose values say the hinge side — the value for single doors or
+  for a pair, as the article has — on the root modules at the two ends (`rowIndex` 1 and the last),
+  and again on the root module at an end after an edit that gives the row a new end; the other doors
+  keep their side.
 - **Relations**: every root after the first names one neighbour — `rightOf`, `leftOf`, `onTop`
   (`align`, `gapMm`), `above` (`gapMm`), `behind`; wall units beside a tall unit, corner kitchens,
   and the default for a root without a relation (D34).

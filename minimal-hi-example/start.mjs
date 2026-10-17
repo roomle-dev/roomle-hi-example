@@ -7,6 +7,7 @@
 //
 // Start it with:  npm start   (from the repository root or this directory)
 // No browser:     npm start -- --no-open
+// No typecheck:   npm start -- --no-typecheck  (the test runner, after its first run)
 // Other page port: EXAMPLE_PORT=3101 npm start
 // Local Rubens UI: npm run dev  (server_url=http://localhost:5173/, override via EXAMPLE_SERVER_URL)
 // Cloudflare MCP: npm run start:cf  (the deployed MCP server instead of the local one,
@@ -149,6 +150,9 @@ const buildHiMcp = () => {
   if (!existsSync(join(HI_MCP_DIR, 'node_modules'))) {
     console.log('[hi-example] installing the hi-mcp workspace (first run)');
     runNpm(['install']);
+  }
+  if (process.argv.includes('--no-typecheck')) {
+    return;
   }
   console.log('[hi-example] typechecking the MCP server');
   runNpm(['run', 'typecheck']);

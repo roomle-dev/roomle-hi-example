@@ -4,10 +4,12 @@
  *
  *   node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...]
  *     [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]
+ *     [--no-typecheck]
  *
  * Starts the launcher (minimal-hi-example/start.mjs <provider> <api-key>) with
  * the MCP server on its own port, opens the example page in Playwright
- * Chromium (headless unless --headed; --dev is passed to the launcher) on
+ * Chromium (headless unless --headed; --dev and --no-typecheck, which skips the
+ * launcher's typecheck, are passed to the launcher) on
  * --plan, waits until get-plan-context lists articles and the HI library has
  * loaded the plan's groups, then sends the prompts to the chat backend as
  * consecutive turns of one conversation, each until the end of its stream. --image goes along with the last prompt, prepared as the chat
@@ -81,7 +83,7 @@ const SNAPSHOT_REQUEST = Object.fromEntries(
   ])
 );
 const USAGE =
-  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]';
+  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed] [--no-typecheck]';
 
 const parseOptions = () => {
   try {
@@ -93,6 +95,7 @@ const parseOptions = () => {
         out: { type: 'string' },
         dev: { type: 'boolean', default: false },
         headed: { type: 'boolean', default: false },
+        'no-typecheck': { type: 'boolean', default: false },
       },
     });
     const [provider, apiKey, ...prompts] = positionals;
@@ -200,10 +203,22 @@ const recordStepFailure = (line) => {
   }
 };
 
-const startLauncher = ({ provider, apiKey, dev }) => {
+const startLauncher = ({
+  provider,
+  apiKey,
+  dev,
+  'no-typecheck': noTypecheck,
+}) => {
   const launcher = spawn(
     process.execPath,
-    [LAUNCHER, provider, apiKey, '--no-open', ...(dev ? ['--dev'] : [])],
+    [
+      LAUNCHER,
+      provider,
+      apiKey,
+      '--no-open',
+      ...(dev ? ['--dev'] : []),
+      ...(noTypecheck ? ['--no-typecheck'] : []),
+    ],
     {
       cwd: REPO_DIR,
       detached: true,

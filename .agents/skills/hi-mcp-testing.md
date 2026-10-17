@@ -166,6 +166,11 @@ node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" 
   first attempt has an interrupted capture, a transport failure or no `run.json` and still has
   retries available.
 - Exit code 1 of a run is a result like any other (the model or the chat reported an error).
+- Every run starts its own launcher and Chromium. The launcher typechecks the `hi-mcp` workspace
+  until a run of the session has stored its `run.json`; the later runs skip it (`--no-typecheck`,
+  ~2 s each). Of the ~11 s before the chat (`durationsMs.ready`), the launcher boot takes ~0.35 s
+  and the Chromium launch ~0.1 s; the rest is the page, the HI library and the plan load, so the
+  runs reuse neither the launcher nor the browser.
 - The runner repeats a run without `run.json`, a capture interrupted by navigation, or a provider
   or transport failure, up to three attempts. A navigation interruption is no saved snapshot id
   with a destroyed-context/navigation error, or `snapshotCaptured: false` with frame navigation

@@ -241,6 +241,19 @@ test('preserves missing-run.json attempts and keeps the retry limit across resum
   assert.equal((await f.calls()).length, 3);
 });
 
+test('typechecks until a run of the session has stored its run.json', async (t) => {
+  const f = await fixture(t, [
+    { exitCode: 1 },
+    { run: transportFailure },
+    { run: success },
+  ]);
+  await f.run();
+  assert.deepEqual(
+    (await f.calls()).map(({ typecheck }) => typecheck),
+    [true, true, false]
+  );
+});
+
 test('retries a transport failure and preserves the failed attempt', async (t) => {
   const f = await fixture(t, [
     { run: transportFailure, firstOnly: true },

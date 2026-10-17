@@ -28,6 +28,7 @@ npm start openai <api-key>
 | `npm start` | Example page on :3000, MCP server on :3100, browser opens |
 | `npm run mcp-server` | MCP server only on :3100; no page or chat backend |
 | `npm start -- --no-open` | Same, without opening the browser |
+| `npm start -- --no-typecheck` | Same, without the typecheck of the `hi-mcp` workspace (the MCP test runner after the first run of a session) |
 | `npm start gpt-5-mini <api-key>` | Plus chat with the `gpt-5-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-5.4-mini <api-key>` | Plus chat with the `gpt-5.4-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-6-astra <api-key>` | Plus chat with the `gpt-6-astra` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |

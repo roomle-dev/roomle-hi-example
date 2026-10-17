@@ -17,7 +17,8 @@
  * writes --out (default .temp/result/<UTC timestamp>-<provider>/): run.json
  * (with every call of a plan-changing MCP tool per turn:
  * what the model sent, and the corrections, groups not loaded or error it got
- * back), plan-context.json (rooms and groups after the chat),
+ * back; and every failed provider step of the turn with its cause chain),
+ * plan-context.json (rooms and groups after the chat),
  * planner-calls.json (the chat's, each with the page's time in ms), prompt-image.jpg (the image sent) and every
  * snapshot field as a file of its own. Exits 1 when the chat or the snapshot
  * reported an error or no snapshot or plan snapshot id came back;
@@ -33,7 +34,7 @@ import { constants } from 'node:os';
 import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { recordNavigations } from './mcp-test-navigation.js';
+import { parseStepFailure, recordNavigations } from './mcp-test-navigation.js';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAUNCHER = join(REPO_DIR, 'minimal-hi-example', 'start.mjs');
@@ -188,6 +189,17 @@ const recordToolCall = (line) => {
   }
 };
 
+// The failed provider steps of the turn that is running, from the chat's
+// error output.
+const stepFailures = [];
+
+const recordStepFailure = (line) => {
+  const failure = parseStepFailure(line);
+  if (failure && toolCalls.turn !== undefined) {
+    stepFailures.push({ turn: toolCalls.turn, ...failure });
+  }
+};
+
 const startLauncher = ({ provider, apiKey, dev }) => {
   const launcher = spawn(
     process.execPath,
@@ -195,7 +207,7 @@ const startLauncher = ({ provider, apiKey, dev }) => {
     {
       cwd: REPO_DIR,
       detached: true,
-      stdio: ['ignore', 'pipe', 'inherit'],
+      stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, HI_MCP_PORT: MCP_PORT, HI_CHAT_PORT: CHAT_PORT },
     }
   );
@@ -205,6 +217,13 @@ const startLauncher = ({ provider, apiKey, dev }) => {
     const lines = (pendingLine + chunk).split('\n');
     pendingLine = lines.pop();
     lines.forEach(recordToolCall);
+  });
+  let pendingErrorLine = '';
+  launcher.stderr.on('data', (chunk) => {
+    process.stderr.write(chunk);
+    const lines = (pendingErrorLine + chunk).split('\n');
+    pendingErrorLine = lines.pop();
+    lines.forEach(recordStepFailure);
   });
   const exampleUrl = new Promise((resolve) => {
     let output = '';
@@ -494,6 +513,9 @@ const runConversation = async (prompts, image, clientId, agentPrompts) => {
       toolCalls: toolCalls.entries
         .filter((entry) => entry.turn === index)
         .map(({ turn: _turn, open: _open, ...entry }) => entry),
+      stepFailures: stepFailures
+        .filter((entry) => entry.turn === index)
+        .map(({ turn: _turn, ...entry }) => entry),
       durationMs: Date.now() - startedAt,
     });
     if (turn.errors.length > 0) {

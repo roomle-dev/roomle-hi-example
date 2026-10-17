@@ -149,6 +149,33 @@ test('retries a lost render after recorded planner-frame navigation and a timeou
   assert.equal((await f.calls()).length, 2);
 });
 
+test('retries a failed provider step its errors do not name', async (t) => {
+  const f = await fixture(t, [
+    {
+      run: {
+        planSnapshotId: 'ps_partial',
+        errors: ["Item with id 'rs_1' not found."],
+        snapshotCaptured: true,
+        turns: [
+          {
+            stepFailures: [
+              {
+                step: 3,
+                durationMs: 1200,
+                causes:
+                  "AI_APICallError: Item with id 'rs_1' not found., status 400",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    { run: success },
+  ]);
+  assert.equal((await f.run()).planSnapshotId, 'ps_fixture');
+  assert.equal((await f.calls()).length, 2);
+});
+
 test('keeps three navigation failures without retrying again on resume', async (t) => {
   const f = await fixture(t, [
     { run: navigationFailure },

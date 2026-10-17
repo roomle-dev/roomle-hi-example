@@ -784,6 +784,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         "Reverts the plan change of the last tool call that changed the plan, as the planner's undo does. " +
         'Use it when that result is not what was asked - the user says it was the wrong article, wall or group, or a ' +
         'merge or delete went wrong - and then send the corrected call; call it again to revert the call before. ' +
+        'To bring back what an undo reverted, call redo, not undo. ' +
         'Returns the reverted tool, the groups it changed back as they are now, removedGroupIds - the groups it took out ' +
         'of the plan - and otherGroupIds, the groups it left as they were; when there is nothing to undo, the result says so.',
       inputSchema: {},
@@ -795,7 +796,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'redo',
     {
       description:
-        'Brings back the tool call the last undo reverted. A new change of the plan ends redo. Returns the ' +
+        'Brings back the tool call the last undo reverted - the tool when the user asks to redo or to bring back ' +
+        'what was undone ("redo it", "bring it back"); undo would revert one more call instead. ' +
+        'A new change of the plan ends redo. Returns the ' +
         'restored tool, the groups it changed as they are now, removedGroupIds - the groups it took out of the plan - ' +
         'and otherGroupIds, the groups it left as they were; when there is nothing to redo, the result says so.',
       inputSchema: {},

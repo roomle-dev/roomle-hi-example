@@ -336,6 +336,9 @@ await changeGroupAttribute({ groupId: 'group-1', attributeId: 'front', value: 'w
 
 **Purpose**: Revert the last tool call that changed the plan, or bring it back
 
+**When**: `undo` for a result that is not what was asked, then the corrected call; `redo` when the
+user asks to redo or to bring back what was undone — another `undo` reverts one more call
+
 **Parameters**: none
 
 **How**: the server records every tool call that changed the plan with the planner steps it made

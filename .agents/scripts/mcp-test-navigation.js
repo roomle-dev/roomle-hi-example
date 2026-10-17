@@ -54,6 +54,30 @@ export const parseStepFailure = (line) => {
   );
 };
 
+// The failed provider steps of a session by turn. The chat logs a failure on
+// its error output, which arrives independently of the turn's response, so a
+// record that comes after the response still belongs to the turn last started:
+// a failed step ends the conversation.
+export const recordStepFailures = () => {
+  const entries = [];
+  let turn;
+  return {
+    startTurn: (index) => {
+      turn = index;
+    },
+    read: (line) => {
+      const failure = parseStepFailure(line);
+      if (failure && turn !== undefined) {
+        entries.push({ turn, ...failure });
+      }
+    },
+    ofTurn: (index) =>
+      entries
+        .filter((entry) => entry.turn === index)
+        .map(({ turn: _turn, ...entry }) => entry),
+  };
+};
+
 const TRANSPORT_FAILURE =
   /Failed to process successful response|ECONNRESET|socket hang up|fetch failed|terminated|AI_APICallError/i;
 

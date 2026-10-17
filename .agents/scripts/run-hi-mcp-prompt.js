@@ -36,7 +36,10 @@ import { constants } from 'node:os';
 import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { parseStepFailure, recordNavigations } from './mcp-test-navigation.js';
+import {
+  recordNavigations,
+  recordStepFailures,
+} from './mcp-test-navigation.js';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAUNCHER = join(REPO_DIR, 'minimal-hi-example', 'start.mjs');
@@ -192,16 +195,7 @@ const recordToolCall = (line) => {
   }
 };
 
-// The failed provider steps of the turn that is running, from the chat's
-// error output.
-const stepFailures = [];
-
-const recordStepFailure = (line) => {
-  const failure = parseStepFailure(line);
-  if (failure && toolCalls.turn !== undefined) {
-    stepFailures.push({ turn: toolCalls.turn, ...failure });
-  }
-};
+const stepFailures = recordStepFailures();
 
 const startLauncher = ({
   provider,
@@ -238,7 +232,7 @@ const startLauncher = ({
     process.stderr.write(chunk);
     const lines = (pendingErrorLine + chunk).split('\n');
     pendingErrorLine = lines.pop();
-    lines.forEach(recordStepFailure);
+    lines.forEach(stepFailures.read);
   });
   const exampleUrl = new Promise((resolve) => {
     let output = '';
@@ -520,6 +514,7 @@ const runConversation = async (prompts, image, clientId, agentPrompts) => {
     );
     const startedAt = Date.now();
     toolCalls.turn = index;
+    stepFailures.startTurn(index);
     const turn = await sendChat(messages, clientId, agentPrompts);
     turns.push({
       prompt,
@@ -528,9 +523,6 @@ const runConversation = async (prompts, image, clientId, agentPrompts) => {
       toolCalls: toolCalls.entries
         .filter((entry) => entry.turn === index)
         .map(({ turn: _turn, open: _open, ...entry }) => entry),
-      stepFailures: stepFailures
-        .filter((entry) => entry.turn === index)
-        .map(({ turn: _turn, ...entry }) => entry),
       durationMs: Date.now() - startedAt,
     });
     if (turn.errors.length > 0) {
@@ -676,7 +668,11 @@ const runSession = async (options, launcher, browser) => {
   const run = {
     provider: options.provider,
     plan: options.plan ?? null,
-    turns,
+    // after the snapshot, so a failure logged after its turn's response is in
+    turns: turns.map((turn, index) => ({
+      ...turn,
+      stepFailures: stepFailures.ofTurn(index),
+    })),
     errors,
     planSnapshotId,
     snapshotCaptured: !!snapshot,

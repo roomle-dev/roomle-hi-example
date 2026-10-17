@@ -17,13 +17,13 @@ heading of each. Every text stays here once the library carries it, with its sta
 | [1.2 Articles with two doors](#12-articles-with-two-doors) | `H2TB60`, `HWR_HB600T2`, `U2TB90`, `O2TB90`, `US2TB90`, `EU2TB90` | applied |
 | [1.3 Flap wall cabinets](#13-flap-wall-cabinets) | `OSKB60`, `OSKB90`, `OFKB60`, `OFKB90` | applied |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
-| [2.2 Front program](#22-front-program) | `mod_FrontProgram` | open |
-| [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | open |
-| [2.4 Upright colour and program](#24-upright-colour-and-program) | `mod_UprightColor`, `mod_UprightProgram` | open |
-| [2.5 Handle design](#25-handle-design) | `mod_HandleDesign` | open |
+| [2.2 Front program](#22-front-program) | `mod_FrontProgram` | applied |
+| [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
+| [2.4 Upright colour and program](#24-upright-colour-and-program) | `mod_UprightColor`, `mod_UprightProgram` | applied; the program values of `mod_CarcaseProgram` and `mod_CarcaseOutsideProgram` keep their old descs |
+| [2.5 Handle design](#25-handle-design) | `mod_HandleDesign` | applied |
 | [2.6 Door direction](#26-door-direction) | `mod_DoorDirectionSelection` | applied |
-| [2.7 Handle position type](#27-handle-position-type) | `mod_HandlePosType` | applied, except `14` |
-| [2.8 Sink](#28-sink) | `mod_SinkId` | open |
+| [2.7 Handle position type](#27-handle-position-type) | `mod_HandlePosType` | applied |
+| [2.8 Sink](#28-sink) | `mod_SinkId` | applied |
 
 ## 1. Article descriptions
 
@@ -287,7 +287,7 @@ AI_SELECTION_HINT: Select for a wide wall cabinet with a folding upward flap, at
 
 **Attribute.** `mod_FrontProgram` (Front program).
 
-| Value | Name | `desc` in the library | Proposed `desc` |
+| Value | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
 | `Modern` | Modern | Mitred frame fronts with glass filling | Mitred frame doors with glass filling, in stone decors. Drawers, pull-outs and flaps are not built with it: an article with them takes another program. |
 
@@ -295,7 +295,7 @@ AI_SELECTION_HINT: Select for a wide wall cabinet with a folding upward flap, at
 
 **Attributes.** `mod_CarcaseColor` (Carcase color), `mod_CarcaseOutsideColor` (Carcase color outside).
 
-| Attribute | Name | `desc` in the library | Proposed `desc` |
+| Attribute | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
 | `mod_CarcaseColor` | Carcase color | Color of the carcase inside and outside if not visible | Color of the carcase inside and of its sides that are not visible. The visible sides take Carcase color outside: with a wood or stone decor here, set Carcase color outside to a wood or stone decor too. |
 | `mod_CarcaseOutsideColor` | Carcase color outside | Outside color of the carcase | Color of the visible sides of the carcase, such as the side at the end of a row. Where it is not set, the visible sides take the front color. |
@@ -306,7 +306,7 @@ AI_SELECTION_HINT: Select for a wide wall cabinet with a folding upward flap, at
 — the end and cover panels `W60H`, `W60U` and `W35O`. The three program values are the same for
 `mod_CarcaseProgram` and `mod_CarcaseOutsideProgram`; the proposed value descs fit all three.
 
-| Attribute or value | Name | `desc` in the library | Proposed `desc` |
+| Attribute or value | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
 | `mod_UprightColor` | Color | Color of the upright | Color of the end and cover panels. Set Upright Program with it: Classic for a plain decor, ModernNature or Nature for a wood or stone decor. The panels come with ModernNature. |
 | `mod_UprightProgram` | Upright Program | Upright Program | How the end and cover panels are built for the kind of their color. Set it with Color. |
@@ -318,7 +318,7 @@ AI_SELECTION_HINT: Select for a wide wall cabinet with a folding upward flap, at
 
 **Attribute.** `mod_HandleDesign` (Handle design).
 
-| Attribute or value | Name | `desc` in the library | Proposed `desc` |
+| Attribute or value | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
 | `mod_HandleDesign` | Handle design | Design of a handle | Design of the handle on the fronts of a handled article. A handleless front with a fingergrip is no handle design: it comes with the handleless articles (fingergrip). |
 | `10` | No handle | No handle | Fronts without a handle and without a fingergrip. For handleless fronts, choose the handleless articles (fingergrip) where the catalog has one. |
@@ -341,7 +341,7 @@ AI_SELECTION_HINT: Select for a wide wall cabinet with a folding upward flap, at
 
 **Attribute.** `mod_HandlePosType` (Handle position type).
 
-| Value | Name | `desc` in the library | Proposed `desc` |
+| Value | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
 | `14` | Position type 14 | Door: vertical handle at the edge opposite the hinge, turned to the right — the place of 03, the handle turned by 180°, for a frame door with a 75 mm frame. | Door: vertical handle at the edge opposite the hinge, turned to the right — the place of 13, the handle turned by 180°, for a frame door with a 75 mm frame. |
 
@@ -361,7 +361,7 @@ In the library, as proposed:
 
 **Attribute.** `mod_SinkId` (Article code of the sink).
 
-| Value | Name | `desc` in the library | Proposed `desc` |
+| Value | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
 | `Axia_Grey_L` | Axia color grey basin left | Axia_Grey_L | Blanco Axia sink in grey, 980 mm wide with the drainer: basin on the left, drainer on the right. |
 | `Axia_Grey_R` | Axia color grey basin right | Axia_Grey_R | Blanco Axia sink in grey, 980 mm wide with the drainer: basin on the right, drainer on the left. |

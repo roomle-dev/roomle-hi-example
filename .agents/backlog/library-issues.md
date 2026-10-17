@@ -37,13 +37,13 @@ keeps every suggested text, applied in the library or not.
 
 | # | Issue | Library | Responsible | Status | Solved by descriptions | Priority |
 |---|---|---|---|---|---|---|
-| 60 | [The sink top of a sink unit reaches past the row or over the hob](#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG Furniture_Smith | HOMAG library development team | the sink unit descs done; the sink value descs not reported | yes | medium — the drainer in the air or over the hob |
-| 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | not reported | yes | medium — handled articles where the user asked for handleless ones |
+| 60 | [The sink top of a sink unit reaches past the row or over the hob](#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG Furniture_Smith | HOMAG library development team | the sink unit and sink value descs done; the basin-right sinks and the sink widths to confirm | yes | medium — the drainer in the air or over the hob |
+| 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | the handle design descs done | yes | medium — handled articles where the user asked for handleless ones |
 | 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; the size ranges not reported | yes | low — the cabinets are not built, the agent needs a second create |
-| 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | yes | low — the end panels are not built, the agent needs one or two extra calls |
-| 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | partly | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
-| 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; the front program and colour descs not reported | partly | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
-| 76 | [Articles with two doors that do not say how their doors stand](#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft`, `RightRight` and `14` not reported | yes | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
+| 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the upright descs done; the colour value descs not done | yes | low — the end panels are not built, the agent needs one or two extra calls |
+| 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the carcase colour descs done; the colour value descs and the outside program not done | partly | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
+| 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet and front program descs done; the colour value descs not done | partly | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
+| 76 | [Articles with two doors that do not say how their doors stand](#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | yes | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
 
 **Solved by descriptions**: with the descriptions the agent builds at the first attempt what it
 wants, without a call the library cannot calculate; "partly" names in the issue what only the
@@ -84,8 +84,9 @@ text needs nothing more.
 
 **Status.** Done in the library: the descriptions of `SUT60`, `SUBA60`, `SUB2A90`, `ESUT60` and
 `ESUB2A90` (section 1.1) — the width of the sink with its drainer, how far it reaches past the
-right side, a base unit and not a hob unit on the right. Open, not reported: the value descs of
-`mod_SinkId`.
+right side, a base unit and not a hob unit on the right — and the value descs of `mod_SinkId`
+(section 2.8). Open: the library team confirms the basin-right sinks and the widths of the Axis,
+Dinas and Metra sinks.
 
 **Example.** The sink unit beside the hob unit: the sink top covers part of the hob.
 
@@ -126,7 +127,7 @@ attribute".
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#25-handle-design).
 Then check that the served text needs nothing more.
 
-**Status.** Not reported to the library development team.
+**Status.** Done in the library: the descs of `mod_HandleDesign` and its value `10` (section 2.5).
 
 **Test.** The test `kitchen-conversation` turn 5 ends with handleless articles.
 
@@ -213,7 +214,9 @@ Optional: the library switches `mod_UprightProgram` with `mod_UprightColor`, as 
 with the front colour; the agent then needs no second attribute, and the desc of `mod_UprightColor`
 keeps its first sentence. Then check that the served text needs nothing more.
 
-**Status.** Not reported to the library development team.
+**Status.** Done in the library: the descs of `mod_UprightColor`, `mod_UprightProgram` and its values
+(section 2.4). Open: the kind in the colour value descs (section 2.1); the program values of
+`mod_CarcaseProgram` and `mod_CarcaseOutsideProgram` keep their old descs.
 
 **Test.** `kitchen-conversation` turn 1 and `image-kitchen-back-right-corner`: the first create with
 a plain upright colour builds its end panels.
@@ -263,7 +266,9 @@ colour; the desc of `mod_CarcaseColor` then keeps its first two sentences. The l
 whether `mod_CarcaseOutsideProgram` Classic builds such sides today. Then check that the served text
 needs nothing more.
 
-**Status.** Not reported to the library development team.
+**Status.** Done in the library: the descs of `mod_CarcaseColor` and `mod_CarcaseOutsideColor`
+(section 2.3). Open: the kind in the colour value descs (section 2.1), and the switch of
+`mod_CarcaseOutsideProgram` with `mod_CarcaseOutsideColor`.
 
 **Test.** `image-kitchen-left-wall`: the first create with green fronts and a wood carcase builds
 every root module.
@@ -304,8 +309,9 @@ the library, if it wants to offer them: entries for `Fliplift` and `Drawer` with
 `tab_PanelWoodFrameConstruction`. Then check that the served text needs nothing more.
 
 **Status.** Done in the library: the `AI_SELECTION_HINT` of the flap wall cabinets sends the agent to
-a wall cabinet with doors for glass fronts (section 1.3). Open, not reported: the descs of Modern and
-of the stone decors.
+a wall cabinet with doors for glass fronts (section 1.3), and the desc of Modern (section 2.2).
+Open: the stone decors in the colour value descs (section 2.1); glass flaps and glass drawer fronts,
+if the library wants to offer them.
 
 **Test.** `image-only-no-text`: the create builds the glass wall cabinets of the photo, or picks
 articles that take the glass front.
@@ -347,8 +353,9 @@ Then check that the served text needs nothing more.
 
 **Status.** Done in the library: the `FUNCTION` lines of the articles with two doors say "2 doors one
 above the other" or "a pair of doors side by side" (section 1.2), and the descs of
-`mod_DoorDirectionSelection` and `mod_HandlePosType` and their values (sections 2.6 and 2.7). Open,
-not reported to the library development team: `LeftLeft` and `RightRight`, the desc of `14`.
+`mod_DoorDirectionSelection` and `mod_HandlePosType` and their values, `14` with the place of `13`
+(sections 2.6 and 2.7). Open, not reported to the library development team: `LeftLeft` and
+`RightRight`.
 
 **Test.** `wardrobe-door-hinges` and `wardrobe-extend-door-hinge`: the doors at the ends of the row
 hinged at the outer sides, with values the library calculates.

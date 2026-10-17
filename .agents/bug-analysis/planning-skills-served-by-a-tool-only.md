@@ -188,9 +188,9 @@ The same files are served through the extension too, unchanged, and `get-skill` 
    - `skills/get` answers `{ skill }` for the `uri` of a `SKILL.md`.
    - Following draft PR #2818 for the legacy revision, the results carry no `resultType`, `ttlMs`
      or `cacheScope`.
-5. **An unknown URI in `skills/get`** answers `-32602` with the URIs of the skills: "Unknown skill
-   "<uri>" - the skills are skill://image-planning/SKILL.md, …". Like G65, this is the last resort,
-   an id that matches nothing. It goes into §8.9 as G67.
+5. **An unknown URI in `skills/get`** answers `-32602` with the URIs of the skills:
+   `Unknown skill "<uri>" - the skills are skill://image-planning/SKILL.md, …`. Like G65, this is
+   the last resort, an id that matches nothing. It goes into §8.9 as G67.
 6. **Documentation.**
    - D75: the extension serves the same files in addition to `get-skill`; the decision date and the
      state.
@@ -246,3 +246,202 @@ The same files are served through the extension too, unchanged, and `get-skill` 
   the preamble in every session, and agents that use `get-skill` would read it twice.
 - **Waiting for the TypeScript SDK's skills API**: #2818 is a draft for v2. The fix would have to
   wait for the move to the SDK v2 and to revision `2026-07-28` as well.
+
+## Implementation plan
+
+Branches: roomle-hi-example `fix/planning-skills-extension` (this branch, created from
+`fix/corner-group-window-offset-hint-RML-18201`, `ac69cda`). roomle-ui gets no branch and no
+change. The plan serves the files as they are, without the preamble, as the RML-18148 plan decided.
+
+A probe of SDK 1.30.0 with zod 4.6.5 confirmed the building blocks:
+
+- `capabilities.extensions` in the `McpServer` options reaches the `initialize` result next to the
+  `resources` and `tools` the SDK adds;
+- a `skill://` resource is listed and read under its URI unchanged;
+- a custom handler answers `skills/list`;
+- an `McpError` with `InvalidParams` reaches the client as `-32602`. If the request schema
+  requires `uri`, a request without one answers `-32603` from the schema instead, so the schema
+  leaves `uri` optional and the handler rejects it.
+
+### 1. The manifest — `hi-mcp/hi-mcp-server/skills.ts`
+
+- `Skill` gets `frontmatter: Record<string, string>`: every field of the `SKILL.md` frontmatter as
+  `frontmatterOf` reads it. `loadSkills` already parses that record and keeps only `name` and
+  `description` from it; both stay as they are.
+- The file read of `readSkillFile` (`skills.ts:142`, the text with LF line endings) becomes a private
+  `skillFileText(skill, path)`. `readSkillFile` keeps its signature, its checks and its errors, and
+  calls it.
+- `skillUri(name, file = SKILL_FILE)`, exported: `skill://<name>/<file>`.
+- `skillManifest(skill)`, exported, returns `{ uri, digest, size }[]` in the order of
+  `skill.files`, `SKILL.md` first. Per file:
+  - `bytes` is `Buffer.from(skillFileText(skill, file), 'utf8')`;
+  - `digest` is `sha256:` plus `createHash('sha256').update(bytes).digest('hex')`, with
+    `createHash` from `node:crypto`;
+  - `size` is `bytes.byteLength`.
+
+→ verify: the new cases of `tests/skills.test.ts` pass, and the existing ones still pass.
+
+### 2. The extension — `hi-mcp/hi-mcp-server/hi-mcp-server.ts`
+
+- **Module constants.** `SKILLS_EXTENSION = 'io.modelcontextprotocol/skills'` and `SKILL_ENTRIES`,
+  per skill `{ uri: skillUri(skill.name), frontmatter: skill.frontmatter, resources:
+  skillManifest(skill) }`. They are computed once when the module loads, like the skill index;
+  the server itself is created per request (`server.ts:72`).
+- **Declaration.** `createHiMcpServer` passes `{ instructions: INSTRUCTIONS, capabilities:
+  { extensions: { [SKILLS_EXTENSION]: {} } } }` to the `McpServer`.
+- **Resources.** After the registration of `get-skill`, every file of every skill is registered
+  with `server.registerResource(name, skillUri(skill.name, file), { mimeType: 'text/markdown' }, read)`,
+  where `name` is `<skill>/<file>`. `read` logs `[hi-mcp] resources/read <uri>` and returns
+  `{ contents: [{ uri, mimeType: 'text/markdown', text: readSkillFile(skills, skill.name, file) }] }`.
+  The SDK declares `resources` with the first registration.
+- **`skills/list`.** `server.server.setRequestHandler(z.object({ method: z.literal('skills/list') }), …)`
+  logs `[hi-mcp] skills/list` and returns `{ skills: SKILL_ENTRIES }`. There is no cursor.
+- **`skills/get`.** `server.server.setRequestHandler(z.object({ method: z.literal('skills/get'),
+  params: z.object({ uri: z.string().optional() }).optional() }), …)` logs
+  `[hi-mcp] skills/get <uri>` and returns `{ skill }`, the entry whose `uri` matches. Any other
+  `uri` — an unknown skill, a supporting file, none — throws an `McpError` with
+  `ErrorCode.InvalidParams` and the message
+  `Unknown skill "<uri>" - the skills are skill://image-planning/SKILL.md, …`, the list built from
+  `SKILL_ENTRIES`.
+- **What stays out.** No result carries `resultType`, `ttlMs` or `cacheScope` (protocol
+  `2025-11-25`), and the extension object has no `directoryRead`.
+- **Imports.** `ErrorCode` and `McpError` from `@modelcontextprotocol/sdk/types.js`;
+  `readSkillFile`, `skillManifest` and `skillUri` from `./skills`.
+- **Unchanged.** `get-skill`, `SKILL_IN_SESSION`, `INSTRUCTIONS` and the tool list.
+
+A skill file changed while the server runs needs a restart, as the index of `get-skill` does: the
+manifest is computed at start.
+
+→ verify: the new cases of `tests/hi-mcp-server.test.ts` pass; `npm test` and `npm run typecheck`
+in `hi-mcp`.
+
+### 3. Documentation — roomle-hi-example
+
+`docs/hi-mcp-behaviour.md`:
+
+- **§2.4** (lines 128-134): the skills reach the agent through `get-skill` and, in a host with the
+  Skills extension of MCP, as that host's skills.
+- **D75**:
+  - the decision text gets the second path over the same files: the declaration, `skills/list`,
+    `skills/get`, the resources under `skill://`, the manifest of the served text, no preamble,
+    protocol `2025-11-25`;
+  - its rejected list keeps "the Skills extension alone";
+  - the date column adds "extended 2026-10-17, user (backlog item 67)";
+  - the state column names `skillManifest`, `skillUri`, the registrations and the new tests.
+- **§5.6**: a bullet "The Skills extension" with the same content. The heading stays, because five
+  documents link its anchor.
+- **§8.9**: G67, `skills/get` with a `uri` that is no `SKILL.md` of the index, answered with
+  `-32602` and its message. The paragraph below the table names it as the same last resort as G65.
+
+The other documents:
+
+- **`docs/hi-mcp-server.md`** (lines 396-406), **`hi-mcp/hi-mcp-server/README.md`** (lines
+  363-367) and **`docs/planning-skills/README.md`** (line 7): the skills are also served through
+  the extension.
+- **`docs/implementation/mcp-server.md`**: the served-text table (line 77) gets the skill resources
+  and the `skills/list` entries; a short paragraph after the tool table names the two handlers.
+- **`.agents/skills/hi-mcp-server.md`** (line 64) and **`.agents/skills/hi-mcp-tools.md`** (after
+  the tool table): one sentence each.
+- **`AGENTS.md`** (line 112) and **`.github/copilot-instructions.md`** (line 120): the description
+  of `skills.ts` adds "the manifest of the Skills extension".
+- **Backlog**: item 67 leaves `.agents/backlog/mcp-issues.md` (its overview row and its section)
+  and `.agents/backlog/README.md` (line 13).
+
+→ verify: `npm run lint` and `npm run format:check` at the root.
+
+### 4. The check against the local server
+
+1. Start the server alone, which needs no page:
+   `cd hi-mcp && HI_MCP_PORT=3120 npm start`. Port 3120 leaves port 3100 to the user's servers.
+2. Run the check:
+   `npx @modelcontextprotocol/inspector@2.11.0 --cli http://localhost:3120/mcp --transport http --method skills/list --verify`.
+   It exits 0 with one report per skill and no error. This check also compares the listed
+   frontmatter with the served `SKILL.md` parsed by a YAML parser, which the unit tests cannot do
+   without a YAML dependency.
+3. Stop the server by its PID.
+
+No model run, because no client in use loads skills through the extension.
+
+### 5. Commits
+
+1. `feat: serve the planning skills by the skills extension of mcp`: `skills.ts`,
+   `hi-mcp-server.ts` and their tests.
+2. `docs: describe the skills extension of the mcp server`: the documentation, the backlog, and
+   this analysis set to Fixed with the fix and its verification.
+
+Push the branch and open no pull request. "Cleanup analyses" deletes the analysis later.
+
+## Unit tests
+
+### `hi-mcp/hi-mcp-server/tests/skills.test.ts`
+
+In `describe('loadSkills')`:
+
+- `it('keeps every field of the frontmatter')`: `writeSkill('a', 'name: a\ndescription: Plan an
+  a.\nlicense: MIT')`, so `frontmatter` equals `{ name: 'a', description: 'Plan an a.', license:
+  'MIT' }`.
+
+A new `describe('skillManifest')`:
+
+- `it('lists every file of a skill under its skill:// URI, SKILL.md first')`: skill `a` with
+  `references/b.md` and `references/a.md`. The URIs are `skill://a/SKILL.md`,
+  `skill://a/references/a.md` and `skill://a/references/b.md`; `skillUri('a')` is the first one.
+- `it('digests and measures the text it serves: LF line endings, UTF-8 bytes')`: `references/a.md`
+  holds `'# Küche\r\nline\r\n'`. The entry has `size` 14, the bytes of `'# Küche\nline\n'` and not
+  its 13 characters, and `digest` equals `sha256:` plus the hex SHA-256 of `'# Küche\nline\n'`.
+  The `SKILL.md` entry digests `readSkillFile(skills, 'a')`.
+
+In `describe('the skills of the server')`:
+
+- `it('meets the limits of the Skills extension')`, the checks of the Inspector's `--verify` in
+  CI:
+  - every name matches `^[a-z0-9]+(-[a-z0-9]+)*$` and has at most 64 characters;
+  - every description has at most 1024 code points;
+  - every skill has at most 512 files;
+  - the sizes of a skill's manifest add up to at most 16 MiB.
+
+The existing `readSkillFile` cases guard that its checks and errors stay the same.
+
+### `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`
+
+A new `describe('hi-mcp-server skills extension')` with `connectClient(createMockPlannerApi())`
+and a helper that sends `skills/list` or `skills/get` with `client.request(…, z.looseObject({}))`:
+
+- `it('declares the resources capability and the Skills extension')`: `getServerCapabilities()`
+  has `resources` and `tools`, and `extensions` equals
+  `{ 'io.modelcontextprotocol/skills': {} }`.
+- `it('lists every skill with the URI of its SKILL.md, its frontmatter and the manifest of its files')`:
+  - the result has the one key `skills`, so no `resultType`, `ttlMs`, `cacheScope` or `nextCursor`;
+  - `skills` equals, per skill of `skills`, `{ uri: 'skill://<name>/SKILL.md', frontmatter:
+    skill.frontmatter, resources }`;
+  - `resources` holds per file `{ uri: 'skill://<name>/<file>', digest:
+    expect.stringMatching(/^sha256:[0-9a-f]{64}$/), size: expect.any(Number) }`.
+- `it('answers every manifest entry by resources/read with text that matches its digest and size, without a planner call')`:
+  per entry, `readResource({ uri })` answers one content with that `uri`, `mimeType`
+  `text/markdown` and the text of `readSkillFile`. The SHA-256 of its UTF-8 bytes is the
+  digest, and their length is the size. No method of the mocked planner API is called.
+- `it('serves SKILL.md as the file, without the session preamble that get-skill puts before it')`:
+  the resource `skill://kitchen-planning/SKILL.md` starts with `---\nname: kitchen-planning\n`. The
+  `get-skill` text of `kitchen-planning` starts with "In this planning session the survey is the
+  plan context" and ends with the resource text.
+- `it('lists every skill file as a resource, named by its skill and path')`: `listResources()`
+  answers the ten files as `{ name: '<name>/<file>', uri, mimeType: 'text/markdown' }`, in the
+  order of `skills` and their files.
+- `it('answers skills/get with the entry skills/list lists for that SKILL.md')`: per skill, the
+  result has the one key `skill`, which equals its `skills/list` entry.
+- `it.each` over `['an unknown skill', 'skill://bathroom-planning/SKILL.md']`,
+  `['a supporting file', 'skill://kitchen-planning/references/planning-reference.md']` and
+  `['no URI', undefined]`:
+  `'answers skills/get for %s with invalid params and the URIs of the skills'`. The request
+  rejects with code `-32602`, and the message contains "the skills are
+  skill://image-planning/SKILL.md, skill://kitchen-planning/SKILL.md,
+  skill://kitchen-planning-fr/SKILL.md, skill://living-room-planning/SKILL.md".
+- `it('logs skills/list, skills/get and resources/read')`: with `console.log` spied on, the calls
+  log `[hi-mcp] skills/list`, `[hi-mcp] skills/get skill://kitchen-planning/SKILL.md` and
+  `[hi-mcp] resources/read skill://kitchen-planning/SKILL.md`.
+
+These existing tests guard that the rest stays as it is:
+
+- `it('exposes exactly the expected tools')`: no new tool;
+- the three `get-skill` tests (lines 314-401): index, preamble, G65 and G66;
+- `describe('the skills of the server')` in `skills.test.ts`.

@@ -12,8 +12,8 @@
 
 - **roomle-hi-example**: the fix the agent sees. `roomCorners` in
   `hi-mcp/hi-mcp-server/agent-facing.ts` builds the `corners` of `get-plan-context`. The work also
-  changes its test in `tests/tool-executors.test.ts`, D12 and §5.4 of
-  [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md), and removes backlog item 68.
+  changes its test in `tests/tool-executors.test.ts`, adds a new decision D83 and updates §5.4 and
+  C18 of [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md), and removes backlog item 68.
 - **roomle-ui**: the same change in its copy of `roomCorners`
   (`packages/web-sdk/packages/homag-intelligence/src/hi-plan-space.ts`) and its test in
   `__tests__/hi-plan-space-test.ts`. No tool command calls this copy, only its test does. It still
@@ -170,46 +170,18 @@ a vector.
 **roomle-ui**: the same change in `roomCorners` of `hi-plan-space.ts`.
 
 **Decision for the review:** a partition and the inner corner of an L-shaped room give no room
-corners. The proposal is to record this in D12 of `docs/hi-mcp-behaviour.md`, with the rejected
-alternative: listing the corners of the partition. These corners are what the backlog asked to
-decide.
+corners. These corners are what the backlog asked to decide. The proposal is a new decision D83
+in `docs/hi-mcp-behaviour.md`, with its rejected alternatives. D12 keeps its date and its text.
 
 **Documentation**, in the same change:
 
-- §5.4 of `docs/hi-mcp-behaviour.md`, the `corners` of `rooms`: "where the contour turns into the
-  room, also where a door or a floor-to-ceiling window reaches the corner".
+- D83 in §3, and the `corners` of `rooms` in §5.4 and C18 in §8 of `docs/hi-mcp-behaviour.md`.
 - `.agents/skills/hi-mcp-tools.md:72`, `docs/hi-mcp-server.md:326` and
   `hi-mcp/hi-mcp-server/README.md:312` stay as they are. They say "per room corner" and make no
   claim about the walls.
 - No served text changes.
 - Backlog item 68 leaves `.agents/backlog/mcp-issues.md` (overview row and section) and
   `.agents/backlog/README.md`.
-
-## Tests of the fix
-
-- roomle-ui `__tests__/hi-plan-space-test.ts`: a new test in `describe('roomCorners')`,
-  `it('lists the corners where the contour turns into the room, also at a window, and none of the partition')`.
-  It runs on `LIVING_ROOM_WALLS` (line 1047, referenced inside the `it`) and expects, in contour
-  order:
-  - back left `[-3185, 0, -3765]` 0
-  - front left `[-3185, 0, 2235]` 90
-  - front right `[6320, 0, 2235]` 180
-  - back right `[6320, 0, -5265]` 270
-  - back left `[1935, 0, -5265]` 0
-
-  The rectangle, door and split tests stay as they are.
-- roomle-hi-example `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`: beside
-  `it('names the walls, marks the openings and lists the room corners')` (line 265), a test with
-  the living room's walls (built with a small `wall` helper, openings without a type) that expects
-  the same five corners from `get-plan-context`.
-
-Verify with:
-
-- roomle-ui: `UNIT_TEST=true npx vitest run --no-cache --config vite.build.config.mts
-  packages/homag-intelligence` in `packages/web-sdk`, then `npm run lint:types:sdk` and
-  `npm run lint:code:sdk`.
-- roomle-hi-example: `npm test` and `npm run typecheck` in `hi-mcp`, then `npm run lint` and
-  `npm run format:check`.
 
 ## What the fix does not do
 
@@ -228,3 +200,145 @@ Verify with:
   of a hole that is not convex.
 - **List the corners that turn away from the room with a flag.** No placement uses them, and the
   agent would have to learn to skip them.
+
+## Implementation plan
+
+Branches, both named `fix/room-corners-at-openings`:
+
+- roomle-ui, from `fix/corner-group-window-offset-hint-RML-18201` (`822e50fb5`). If a ticket is
+  created for this item, its key goes into the branch name.
+- roomle-hi-example: this branch, from `fix/planning-skills-extension`.
+
+The paths of roomle-ui are under `packages/web-sdk/packages/homag-intelligence/`.
+
+### 1. The corners — roomle-ui `src/hi-plan-space.ts`
+
+In `roomCorners` (lines 510-547):
+
+- Drop `const real = walls.filter((wall) => wall.type === 'wall');`. Both loops run over `walls`.
+- Add the turn test as the last condition of the `continue`, after the straight-line test:
+  `along[1] * next[0] - along[0] * next[1] <= 0`.
+- Replace the comment above the function:
+
+  ```ts
+  // The corners of a room: where a wall or an opening ends and the next starts
+  // at an angle that turns into the room - towards the side the ending one
+  // faces, as the room lies left of the contour (D61). A partition and the inner
+  // corner of an L-shaped room turn away from it and give none. The name is
+  // back/front plus left/right, and posRotationY is the facingRotationY of the
+  // wall that ends in the corner - the rotation of a corner kitchen there, for
+  // both hands of corner article (D13, D33, D83).
+  ```
+
+The names, the `point`, the `posRotationY` and the `RoomCorner` interface stay as they are.
+
+→ verify: the new `hi-plan-space-test.ts` test passes, and the three existing tests of
+`describe('roomCorners')` pass unchanged.
+
+### 2. The corners the agent sees — roomle-hi-example `hi-mcp/hi-mcp-server/agent-facing.ts`
+
+Make the same change in `roomCorners` (lines 75-112), with the same comment. The server's walls
+carry the type `opening` (`agentFacingRooms`), which the loop no longer reads. `agentFacingRooms`
+stays as it is.
+
+→ verify: the new `tool-executors.test.ts` test passes, and
+`it('names the walls, marks the openings and lists the room corners')` and the test that compares
+the whole plan context (`namedRoom`) pass unchanged.
+
+### 3. Documentation — roomle-hi-example
+
+- `docs/hi-mcp-behaviour.md` §3, in the table "Information for the agent", after D12, add:
+
+  > | D83 | **A room corner is where the contour turns into the room.** The `corners` of a room list
+  > every point where a wall or an opening ends and the next starts at an angle that turns into the
+  > room — to the side the ending one faces, as the room lies on the left of the contour (D61). A
+  > door or a floor-to-ceiling window that reaches a corner keeps it. The corners of a partition and
+  > the inner corner of an L-shaped room turn away from the room and are none: no group stands in
+  > them as in a room corner. Rejected: the corners of a partition in the list — no placement uses
+  > them, and the agent would take them for room corners; corners built from the wall faces
+  > (`wallFaces`) — the same corners, with a copy of the faces in the server; leaving out the
+  > subpaths after the first of the contour — it keeps the inner corner of an L-shaped room and the
+  > free end of a partition joined to a wall | 2026-10-17 | user | in effect — `roomCorners`,
+  > `agent-facing.ts`, and its copy in roomle-ui `hi-plan-space.ts`; guarded by
+  > `it('lists the room corners where a window meets a wall, and none of the partition')` in
+  > `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` and
+  > `it('lists the corners where the contour turns into the room, also at a window, and none of the partition')`
+  > in roomle-ui `__tests__/hi-plan-space-test.ts` |
+
+  The date and "user" stand for the decision the review of this plan confirms.
+- §5.4, line 538, the `corners` of `rooms`: "… and `posRotationY` — the rotation of a corner
+  kitchen in that corner" gets ", where the contour turns into the room, also where a door or a
+  floor-to-ceiling window reaches the corner (D83)".
+- §8, C18 (line 933): "every room its `corners` (`name`, `point`, `posRotationY`)" becomes
+  "every room its `corners` (`name`, `point`, `posRotationY`; D83)".
+- Backlog: item 68 leaves `.agents/backlog/mcp-issues.md` (the overview row at line 26 and the
+  section at lines 34-58) and `.agents/backlog/README.md` (line 13).
+- This analysis: status Fixed and a Fix section with the validation, as for
+  [the corner group analysis](corner-group-in-front-of-adjoining-wall-window.md#fix). The cleanup
+  of the analyses deletes it later.
+
+The served text (`hi-mcp-server.ts`) and its tests stay as they are. The rule "every room of
+get-plan-context carries a corners list" (line 33) holds for the corrected list.
+
+→ verify: `npm test` and `npm run typecheck` in `hi-mcp`, then `npm run lint` and
+`npm run format:check` at the root.
+
+### 4. Commits
+
+- roomle-ui: one commit with the change and its test,
+  `fix(hi): list the room corners where an opening meets a wall, none that turn away from the room`.
+- roomle-hi-example: one commit with the change, its test, the documentation and the backlog,
+  `fix: list the room corners where an opening meets a wall`. A second commit closes this analysis.
+
+Both branches are pushed, and no pull request is opened. There is no model run and no live check:
+the corners depend on the walls only.
+
+## Unit tests
+
+### roomle-ui `__tests__/hi-plan-space-test.ts`
+
+In `describe('roomCorners')`, after the door and split test (it ends at line 899), add
+`it('lists the corners where the contour turns into the room, also at a window, and none of the partition')`.
+
+- **Input:** `LIVING_ROOM_WALLS` (line 1047, the living room of the prompt tests built by
+  `deriveWalls`). The `it` callback references it, so its later declaration is no problem.
+- **Expected,** `toEqual` in contour order:
+
+  | name | point | posRotationY | What it guards |
+  |---|---|---|---|
+  | back left | `[-3185, 0, -3765]` | 0 | a corner between two walls |
+  | front left | `[-3185, 0, 2235]` | 90 | a window starts at the corner (wall 3) |
+  | front right | `[6320, 0, 2235]` | 180 | a window starts at the corner (wall 10), after the 5 mm piece of wall |
+  | back right | `[6320, 0, -5265]` | 270 | a window ends at the corner (wall 15) |
+  | back left | `[1935, 0, -5265]` | 0 | the corner of the deeper part, across the start of the contour |
+
+  The list has no entry for the inner corner of the L (`[1935, 0, -3765]`) or for the four
+  corners of the partition (x 1810 to 1930, z −2550 to 1050). `toEqual` on the whole list guards
+  both.
+
+The three existing tests stay as they are:
+
+- `it('lists the four corners of a rectangular room with their names and rotations')`
+- `it('still lists four corners when a door splits a wall, and none between collinear walls')`
+- `it('names the walls in the words of the top view')`
+
+A probe of the new function on these fixtures gives their current expectations.
+
+### roomle-hi-example `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`
+
+After `it('names the walls, marks the openings and lists the room corners')` (it ends at line 322),
+add `it('lists the room corners where a window meets a wall, and none of the partition')`.
+
+- **Walls:** the living room's 23 walls as the planner returns them for the test
+  `sideboard-living-room-front-wall`. Build them with a local helper
+  `livingRoomWall(index, side, [x1, z1], [x2, z2], facingRotationY, type = 'wall')` that returns
+  `start`/`end` as `[x, 0, z]` and `lengthMm` from the points. Openings get the type `null`, as the
+  planner sends them. Use one line per wall, with the indices 0 to 18 and 20 to 23 of the plan
+  context.
+- **Call:** `createApi({ rooms: { rooms: [{ ...room, walls }] } })` and
+  `toolExecutors['get-plan-context'](api, { include: ['rooms'] })`, as the test before it does.
+- **Expected:** `result.rooms.rooms[0].corners` equals the five corners of the roomle-ui test, in
+  the same order.
+
+The existing test with the door in the right wall, and the plan-context test with the corners of
+`namedRoom`, stay as they are. The probe gives their current corners.

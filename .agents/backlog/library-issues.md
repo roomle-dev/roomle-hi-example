@@ -56,8 +56,8 @@ description: "Do not place a hob immediately to the right of this sink unit: the
 extends over the neighbouring unit on that side." This information belongs in the library data.
 Then check that the served text needs nothing more.
 
-**Status.** Reported to the HOMAG library development team. Done in the library, change 1 of
-[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#1-the-sink-unit-descriptions-do-not-say-that-a-sink-unit-needs-an-article-on-its-right):
+**Status.** Reported to the HOMAG library development team. Done in the library, part of section 2.1 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#21-sink-base-units):
 the `FUNCTION` and `AI_SELECTION_HINT` lines of `SUT60`, `SUBA60`, `SUB2A90`, `ESUT60` and
 `ESUB2A90` say that a base unit belongs on the right of the sink unit, because the sink with its
 drainer is wider than the unit — the side the drainer reaches over and the article under it. Open:
@@ -225,14 +225,14 @@ or `Right`. `LeftLeft` and `RightRight` are offered for a pair but not calculate
 `LeftLeft` and `RightRight` on `U2TB90`. The desc of the handle position type `14` names "the place
 of 03" instead of `13`.
 
-**To do.** The library: change 3 of
-[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#3-the-articles-with-two-doors-do-not-say-how-their-doors-stand)
+**To do.** The library: sections 2.2 and 3.7 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#22-articles-with-two-doors)
 — the `FUNCTION` lines say "2 doors one above the other" or "a pair of doors side by side";
 `LeftLeft` and `RightRight` are calculated on the articles with a pair, or their descs name the
 articles that take them; the desc of `14` names the place of `13`. Then check that the served text
 needs nothing more.
 
-**Status.** Done in the library, change 2 of the suggested library changes: the descs of
+**Status.** Done in the library, sections 3.6 and 3.7 of the suggested library changes: the descs of
 `mod_DoorDirectionSelection` and its values — the
 hinge side as seen from the front, the handle on the other side, the values for single doors and for
 a pair, what `Automatic` chooses — and of `mod_HandlePosType` and its values — where the handle sits,

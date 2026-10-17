@@ -247,7 +247,7 @@ a vertical handle at the edge opposite the hinge, turned by 180° against each o
 the middle of the door's width. The descs of both attributes say this; the articles with two doors
 say "with 2 doors" for both kinds of doors
 ([`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md),
-changes 2 and 3).
+sections 2.2, 3.6 and 3.7).
 The agent hinges the doors at the ends of a row by the served rule of
 [D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17).
 

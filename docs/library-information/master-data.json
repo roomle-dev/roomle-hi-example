@@ -3446,7 +3446,7 @@
         },
         {
           "value": "Modern",
-          "desc": "Mitred frame fronts with glass filling",
+          "desc": "Mitred frame fronts with glass filling | Mitred frame doors with glass filling, in stone decors. Drawers, pull-outs and flaps are not built with it: an article with them takes another program.",
           "name": "Modern",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/2cc264b5-1691-45a6-b9d2-3c8b4ed36232_modern.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=J2wVGGmhB8KqTvYlyIHJ9MTqvalmtpXnLXLLZHVkGLg%3D"
         },
@@ -5589,7 +5589,7 @@
     {
       "id": "mod_CarcaseColor",
       "name": "Carcase color",
-      "desc": "Color of the carcase inside and outside if not visible",
+      "desc": "Carcase color | Color of the carcase inside and outside if not visible | Color of the carcase inside and of its sides that are not visible. The visible sides take Carcase color outside: with a wood or stone decor here, set Carcase color outside to a wood or stone decor too.",
       "isMain": true,
       "group": "Carcase | Design",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/0f37e6c8-3e26-4fd7-8337-18b56ef24bf6_carcasecolornew.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=YfmT1ZQMq1q%2BYTsLMUjq%2FcBdKCLoG5podYZvH96d3eA%3D",
@@ -5729,7 +5729,7 @@
     {
       "id": "mod_CarcaseOutsideColor",
       "name": "Carcase color outside",
-      "desc": "Outside color of the carcase",
+      "desc": "Carcase color outside | Outside color of the carcase | Color of the visible sides of the carcase, such as the side at the end of a row. Where it is not set, the visible sides take the front color.",
       "isMain": false,
       "group": "Carcase | Design",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/3de982ed-5fe9-4c78-8dc1-715b11b4a099_carcaseprogramoutside.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=YWd333XNK2d8g7Z650B915Y%2Feksa7pIlVd6%2BNmVS7hI%3D",
@@ -10200,7 +10200,7 @@
     {
       "id": "mod_UprightColor",
       "name": "Color",
-      "desc": "Color of the upright",
+      "desc": "Color of the end and cover panels. Set Upright Program with it: Classic for a plain decor, ModernNature or Nature for a wood or stone decor. The panels come with ModernNature.",
       "isMain": true,
       "group": "Upright",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/f940a8f7-e1f8-4cb2-8e50-519118446edf_upright.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=Z%2F60iPPVHnLO3CVibPWNHMs6CAP9%2FDX2EF7ZG9ustC0%3D",
@@ -10402,7 +10402,7 @@
     {
       "id": "mod_UprightProgram",
       "name": "Upright Program",
-      "desc": "Upright Program",
+      "desc": "How the end and cover panels are built for the kind of their color. Set it with Color.",
       "isMain": true,
       "group": "Upright",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/f940a8f7-e1f8-4cb2-8e50-519118446edf_upright.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=Z%2F60iPPVHnLO3CVibPWNHMs6CAP9%2FDX2EF7ZG9ustC0%3D",
@@ -10412,19 +10412,19 @@
       "selections": [
         {
           "value": "ModernNature",
-          "desc": "Carcase in wooden colors horizontal",
+          "desc": "Carcase in wooden colors horizontal | Wood and stone decors, grain horizontal.",
           "name": "ModernNature",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/b4d3170c-1d26-487a-a10f-138f0acc6be1_modernnature.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=uftDVjCPAHyJInd06BYpNsZwnuBGAQDF4u%2Bwal%2Bmepw%3D"
         },
         {
           "value": "Nature",
-          "desc": "Carcase in wooden colors vertical",
+          "desc": "Wood and stone decors, grain vertical.",
           "name": "Nature",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/a7fb2c08-a7b4-4f65-946b-27e7cd10810a_nature.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=9c5nNLnql%2FIAsCxZqztjjXjIc9UQu0pEDubTvAjIbI0%3D"
         },
         {
           "value": "Classic",
-          "desc": "Classic carcase in single colors",
+          "desc": "Plain decors.",
           "name": "Classic",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/7d20b93a-f0ad-432a-8d03-0de7db464d2a_classic.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=UO2xa4wrTocllAvS1dTIzWl6szxbmgOGMb016jgoc9E%3D"
         }

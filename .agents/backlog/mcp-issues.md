@@ -24,9 +24,10 @@ never drop the agent's content silently.
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
 | 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | roomle-ui `create-or-replace-groups` tool command (`hi-tool-commands.ts`, `hangGapOf` in `hi-group-layout.ts`) or the planner — not analysed | medium | gpt-6-astra | |
-| 73 | [A wall-unit side panel beside a wall unit is moved into the floor row](#73-a-wall-unit-side-panel-beside-a-wall-unit-is-moved-into-the-floor-row) | defect | roomle-ui `relationsToDocking`, `isWallUnitArticle` (`hi-group-layout.ts`) | low | gpt-6.1-sol | |
+| 73 | [A wall-level article of another category is taken for a floor unit](#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit) | defect | roomle-ui `relationsToDocking`, `isWallUnitArticle` (`hi-group-layout.ts`) | low | gpt-6-astra | |
 | 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, `behind`), roomle-ui `relationsToDocking` (`hi-group-layout.ts`) | low | gpt-6.1-sol | |
 | 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, the `notCarried` sentence of `create-or-replace-groups`) | medium | gpt-6-astra | |
+| 77 | [An edit that gives a row a new end leaves a door hinged to the outside](#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, the descriptions of the edit tools) | medium | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -54,15 +55,21 @@ after the group attributes change the plinth height — no change of the served 
 attributes (`__tests__/hi-tool-commands/create-or-replace-groups-input-test.ts`), and
 `kitchen-back-right-corner`: every wall unit's top at the tall units' top.
 
-**Reproduce.** `mcp-test-2026-10-17_09-31-13`: gpt-6-astra 35 (`kitchen-back-right-corner`): `mod_PlinthAreaHeight` 150 in the group attributes; the two `O2TB90` at 1480 to 2200, the hood at 1530 and the fridge-freezer `HK260` to 2250 (`obstacles.groups` of `plan-context.json`); the corrections name no wall unit.
+**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 49 (`image-kitchen-back-right-corner`, the second `create-or-replace-groups`): `mod_PlinthAreaHeight` 150 in the group attributes; the two `OTB45` above the base unit at 1480 to 2200, the floor units at 870 and the fridge-freezer `HK260` to 2250 (`obstacles.groups` of `plan-context.json`); the corrections name no wall unit.
 
-## 73. A wall-unit side panel beside a wall unit is moved into the floor row
+## 73. A wall-level article of another category is taken for a floor unit
 
 **Problem.** The agent puts the wall-unit side panel `W35O` ("Wall-unit side / cover panel",
 category "Kitchen / Cover Panels / Side Panels") `rightOf` a wall unit to close the wall-unit row.
 The tool command takes it for a floor unit — "floor unit 'wallend' cannot stand rightOf the wall unit
 'cups' - it continues the floor row" —, drops the relation, puts it `rightOf` the last root by
 default and docks it at the free end of the floor leg, where a wall-unit panel stands on the floor.
+
+The same happens to `above`: the open utility wall units `HWR_WR600V1` (category "Utility",
+`mod_TypeElement` WallUnit in the library data) `above` a base unit are taken for floor units and put
+`rightOf` it — "root 'openwall1' is no wall unit - it stands rightOf … instead of above it" —; the agent
+needs an undo and two `merge-article-into-group` calls with `mod_PlacementLevels` WallHanging to hang
+them.
 
 **Cause.** `isWallUnitArticle` (`hi-group-layout.ts`) knows a wall unit by the words "Wall Units" in
 the category, or a hood; a wall-level article of another category counts as a floor unit, and the
@@ -76,9 +83,9 @@ its default mounting height or its docking vectors — rather than by a category
 there and report it, rather than moving it to the floor row.
 
 **Test.** `__tests__/hi-group-layout-test.ts`: a wall-level panel `rightOf` a wall unit docks to the
-wall unit's side.
+wall unit's side, and a wall-level article of another category `above` a floor unit hangs above it.
 
-**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 50 (`kitchen-conversation`, turn 1, the first `create-or-replace-groups`): `wallend` (`W35O`) `rightOf` the wall unit `cups` (`OFKB60`), the three corrections on `wallend`.
+**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 54 (`random-1-utility-room-right-wall-with-wall-units`, turn 2, the `create-or-replace-groups`): `openwall1` and `openwall2` (`HWR_WR600V1`) `above` the two `HWR_UB600`, the corrections "is no wall unit - it stands rightOf …" on both.
 
 ## 74. An island's back row of other widths lands off the front row
 
@@ -132,4 +139,29 @@ master data), so the agent looks for its switch.
 `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the image's backsplash
 is in the plan (`mod_CreateBacksplash` true and a backsplash root in `order-data.json`).
 
-**Reproduce.** `mcp-test-2026-10-17_09-31-13`: gpt-6-astra 46 (`image-kitchen-left-wall`, the `create-or-replace-groups`): `mod_BacksplashColor` 326 and `mod_BacksplashHeight` 650 in the group attributes, no `mod_CreateBacksplash` (`mod_CreateBacksplash=false` on every root of `order-data.json`); the answer: "the dark backsplash could not be built and is not included".
+**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 51 (`image-only-no-text`, the `create-or-replace-groups`): `mod_BacksplashColor` 216 and `mod_BacksplashHeight` 500 and 300 in the group attributes, no `mod_CreateBacksplash` (`mod_CreateBacksplash=false` on every root of `order-data.json`); the answer: "the photo's wood backsplash … not built".
+
+## 77. An edit that gives a row a new end leaves a door hinged to the outside
+
+**Problem.** In a conversation of edits the agent swaps the end units of a row or deletes the end
+unit, and the new end keeps the door side the library chose — the right end of the row has its
+handle on the outside ([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17)). The agent did not call
+`get-authoring-rules` in these conversations; in the conversations that read the rules, a merge at an
+end carries `mod_DoorDirectionSelection` for the new end, and every create sets both ends.
+
+**Cause.** The rule of D84 is only in `AUTHORING_RULES` (`hi-mcp-server.ts`), which reaches the chats
+only through `get-authoring-rules` — they pass no server instructions (§4 of
+[`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs)) —, and a
+conversation of edits fetches no rules. The descriptions of the tools that can give a row a new end —
+`swap-root-modules`, `delete-article-in-place`, `delete-article-and-compact`, `exchange-root-module`,
+`merge-article-into-group` — do not name it.
+
+**To do.** One library-neutral sentence in the descriptions of these tools: after an edit that gives
+a row a new end, the door at that end is hinged at the outer side of the row — set it. The rule in
+`AUTHORING_RULES` stays as it is.
+
+**Test.** A unit test in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` checks the sentence in the
+five descriptions; `edit-swap-units` and `undo-a-wrong-command`: the new ends hinged at the outer
+sides.
+
+**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 32 (`edit-swap-units`, turn 2): `swap-root-modules` on the first and the last unit, no `get-authoring-rules` in the conversation; the new right end `0010443c` keeps `Automatic` (left), its handle on the outside of the row (`perspective-object-image.png`).

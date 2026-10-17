@@ -75,7 +75,7 @@ base unit under its drainer in three runs of gpt-6-astra; `edit-swap-hob-unit`: 
 cover the hob, and the agent identifies a swap that would put the hob immediately to the right of
 the sink as conflicting with the library's selection rule.
 
-**Reproduce.** `mcp-test-2026-10-17_09-31-13`: gpt-6-astra 29 (`edit-swap-hob-unit`): the swapped sink's top reaches 396 mm over the hob unit beside it (sink outline z -2004 to -1008, hob unit -1404 to -804).
+**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 30 (`edit-swap-hob-unit`): the swapped sink's top reaches 396 mm over the hob unit on its right; the sink descs carry the base unit on the right, not the hob rule.
 
 ## 61. Handleless fronts done with a handle attribute
 
@@ -96,7 +96,7 @@ nothing more.
 
 **Test.** The test `kitchen-conversation` turn 5 ends with handleless articles.
 
-**Reproduce.** `mcp-test-2026-10-17_09-31-13`: gpt-6-astra 50 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
+**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 52 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
 
 ## 64. Flip-lift wall cabinets with sizes the library cannot calculate
 
@@ -120,7 +120,7 @@ it (D63). Then check that the served text needs nothing more.
 
 **Test.** `image-planning-right-wall`: the first create loads the flip-lift wall cabinets.
 
-**Reproduce.** `mcp-test-2026-10-17_09-31-13`: gpt-6-astra 48 (`image-planning-right-wall`, the `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` not calculated, Error 14023, in one `notLoaded` error; the model exchanged them for `OTB60` 900 mm wide and 300 mm high.
+**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 50 (`image-planning-right-wall`, the `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` with `mod_Height` 360 not calculated, Error 14023 (`tab_FlipliftSettings`); the model exchanged them for `O2TB90`.
 
 ## 69. End panels with a plain upright colour the library cannot calculate
 
@@ -150,7 +150,7 @@ and `W60U`) says that a plain colour needs `mod_UprightProgram` Classic and a wo
 **Test.** `kitchen-conversation` turn 1 and `image-kitchen-back-right-corner`: the first create with
 a plain upright colour builds its end panels.
 
-**Reproduce.** `mcp-test-2026-10-17_09-31-13`: gpt-6-astra 51 (`kitchen-family-two-kids`, the `create-or-replace-groups`): `mod_UprightColor` 192 without `mod_UprightProgram`, the end panels `W60U` and `W60H` not calculated, Error 14034; the model set `mod_UprightProgram` Classic on both with `change-module-attribute`.
+**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 53 (`kitchen-family-two-kids`, the `create-or-replace-groups`): `mod_UprightColor` 190 without `mod_UprightProgram`, the end panels `W60U` and `W60H` not calculated, Error 14034; the model set `mod_UprightProgram` Classic.
 
 ## 70. Carcase side panels with a plain outside colour the library cannot calculate
 

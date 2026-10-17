@@ -233,10 +233,11 @@ Check:
   room, not through a wall, window or door, not overlapping another group;
 - the docking graph is sound — every root reachable from the placed root, at most one root per
   docking vector, wall units docked to `*Top` vectors;
-- the doors open to the outside of every row ([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17))
-  — the door at the left end of a row (`rowIndex` 1) hinged on the left, the door at the right end
-  on the right, a pair of doors side by side at its two outer sides; floor units and wall units form
-  rows of their own. Read the hinge side from the roots' input attributes in `plan-context.json`
+- the doors open to the outside of every row the run creates or gives a new end
+  ([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17)) — the door at the left end of a row
+  (`rowIndex` 1) hinged on the left, the door at the right end on the right, a pair of doors side by
+  side at its two outer sides; floor units and wall units form rows of their own. A row of the
+  starting plan keeps its doors as the plan has them while an edit leaves its ends. Read the hinge side from the roots' input attributes in `plan-context.json`
   (the last `jq` command; Furniture_Smith: `mod_DoorDirectionSelection`, and a root without it has
   the library's `Automatic` — a single door hinged on the left, a pair `LeftRight`), and check the
   handles in `perspective-object-image.png`. A handle on the outside of a row is a model finding,

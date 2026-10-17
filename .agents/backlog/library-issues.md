@@ -23,6 +23,7 @@ development team, and how to reproduce it. MCP, chat and planner issues are trac
 | 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the end panels are not built, the agent needs one or two extra calls |
 | 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
 | 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | not reported | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
+| 76 | [Door direction descriptions that do not say which side a door opens to](#76-door-direction-descriptions-that-do-not-say-which-side-a-door-opens-to) | HOMAG Furniture_Smith | HOMAG library development team | not reported | medium — a door value the article does not take is not built, a handle position type leaves the handle where it is |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -200,3 +201,29 @@ names the articles it applies to. Then check that the served text needs nothing 
 articles that take the glass front.
 
 **Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 49 (`image-only-no-text`, the `create-or-replace-groups`): two `OFKB60` with `mod_FrontProgram` Modern not calculated, Error 14036, in one `notLoaded` error.
+
+## 76. Door direction descriptions that do not say which side a door opens to
+
+**Problem.** In a row, the agent hinges the doors at the two ends at the outer sides of the row
+([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17)). It finds the attribute by "Door left
+hinged" and "Door right hinged", but no desc says which values single doors and a pair of doors take,
+what `Automatic` chooses, or that `mod_HandlePosType` — "Door vertical rotation left", "… right" —
+leaves the hinge side as it is. A value the article does not take fails with error 14019 and the
+root module is not built: `U2TB90`, a pair of doors side by side, with `Left`, `Right`, `LeftLeft` or
+`RightRight`; `H2TB60`, two doors one above the other, with `LeftRight`.
+
+**Cause.** The descs of `mod_DoorDirectionSelection`, its values and `mod_HandlePosType` lack the
+information, and the desc of `Automatic` names an internal table ("Setting via tab_DoorSettings").
+`LeftLeft` and `RightRight` are offered but not calculated on `U2TB90`. The article descs say "with
+2 doors" for both kinds of doors.
+
+**To do.** The library: the desc changes of change 2 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#2-the-door-direction-and-handle-position-descriptions-do-not-say-which-side-a-door-opens-to).
+Then check that the served text needs nothing more.
+
+**Status.** Not reported to the library development team.
+
+**Test.** `wardrobe-door-hinges` and `wardrobe-extend-door-hinge`: the doors at the ends of the row
+hinged at the outer sides, with values the library calculates.
+
+**Reproduce.** The planner probe of [RML-18203](https://roomle.atlassian.net/browse/RML-18203), without a model, on the bo-test planner: `create-or-replace-groups` with `U2TB90` and `mod_DoorDirectionSelection` `Left`, `Right`, `LeftLeft` or `RightRight`, or `H2TB60` with `LeftRight` — error 14019 in `notLoaded`.

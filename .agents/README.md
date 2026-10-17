@@ -88,7 +88,6 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
-| [The door at the right end of a row is hinged on the left](bug-analysis/door-at-row-end-hinged-on-the-wrong-side.md) | Open | 2026-10-17 |
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](bug-analysis/sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | 2026-10-10 |
 | [A corner group stands in front of the adjoining wall's window](bug-analysis/corner-group-in-front-of-adjoining-wall-window.md) | Fixed | 2026-10-16 |
 | [The planning skills are served by a tool only](bug-analysis/planning-skills-served-by-a-tool-only.md) | Fixed | 2026-10-17 |

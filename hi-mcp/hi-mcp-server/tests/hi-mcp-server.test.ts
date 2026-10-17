@@ -899,6 +899,36 @@ describe('hi-mcp-server tool calls', () => {
     expect(served).not.toContain('allowed values');
   });
 
+  it('tells the agent to hinge the doors at the two ends of a row at its outer sides', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    const instructions = client.getInstructions() ?? '';
+    const { tools } = await client.listTools();
+    const served = [instructions, rules, JSON.stringify(tools)].join('\n');
+    const ends =
+      'In a row, the door at the left end is hinged on the left and the door at the right end on the right, as seen from the front, so no handle is on the outside of the row';
+
+    expect(rules).toContain(ends);
+    expect(instructions).toContain(ends);
+    expect(rules).toContain(
+      'a pair of doors side by side is hinged at its two outer sides'
+    );
+    expect(rules).toContain(
+      'the value for single doors or for a pair of doors, as the article has'
+    );
+    expect(rules).toContain(
+      'the root modules at the two ends of the row (rowIndex 1 and the last)'
+    );
+    expect(rules).toContain(
+      'again on the root module at an end after an edit that gives the row a new end'
+    );
+    expect(rules).toContain('The other doors keep their side.');
+    expect(served).not.toContain('mod_DoorDirection');
+    expect(served).not.toContain('mod_HandlePosType');
+  });
+
   it('describes how to succeed instead of what is rejected, and where the corrections are', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(

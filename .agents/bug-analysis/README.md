@@ -35,7 +35,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [The door at the right end of a row is hinged on the left](door-at-row-end-hinged-on-the-wrong-side.md) | Open | RML-18203 |
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | RML-18124; library #60 |
 | [A corner group stands in front of the adjoining wall's window](corner-group-in-front-of-adjoining-wall-window.md) | Fixed | RML-18201; backlog #66 |
 | [The planning skills are served by a tool only](planning-skills-served-by-a-tool-only.md) | Fixed | RML-18148 (follow-up); backlog #67 |

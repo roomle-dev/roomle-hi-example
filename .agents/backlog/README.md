@@ -31,6 +31,7 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 | [69 — End panels with a plain upright colour the library cannot calculate](library-issues.md#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG library: switch the upright program with a plain upright colour as the front program is switched, or say in the desc that a plain colour needs `mod_UprightProgram` Classic | low |
 | [70 — Carcase side panels with a plain outside colour the library cannot calculate](library-issues.md#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG library: switch the program of the visible sides with their colour, or say in the descs that the visible sides take the outside colour and a plain one needs the program Classic | low |
 | [71 — Folding-flap wall cabinets with glass fronts the library cannot calculate](library-issues.md#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG library: the flap wall cabinets' descs name the front programs their flap takes | low |
+| [76 — Door direction descriptions that do not say which side a door opens to](library-issues.md#76-door-direction-descriptions-that-do-not-say-which-side-a-door-opens-to) | HOMAG library: the descs of the door direction and the handle position type say the hinge side, the values per kind of door and what Automatic chooses | medium |
 
 ## Library neutrality of the MCP server
 

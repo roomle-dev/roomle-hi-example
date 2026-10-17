@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 | [The planning skills are served by a tool only](planning-skills-served-by-a-tool-only.md) | Fixed | RML-18148 (follow-up); backlog #67 |
 | [The room corners leave out a corner where an opening meets a wall](room-corners-left-out-at-openings.md) | Fixed | backlog #68 |
 | [The wall units hang at two heights after a plinth height in the group attributes](wall-units-hang-at-two-heights-after-plinth-change.md) | Open — fix proposed (roomle-ui, based on `fix/room-corners-at-openings`) | backlog #72 |
+| [A wall-level article of another category is taken for a floor unit](wall-level-article-of-another-category-taken-for-floor-unit.md) | Open — fix proposed (roomle-ui, based on `fix/room-corners-at-openings`) | backlog #73 |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

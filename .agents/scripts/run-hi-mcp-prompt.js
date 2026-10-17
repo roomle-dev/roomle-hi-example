@@ -4,10 +4,12 @@
  *
  *   node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...]
  *     [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]
+ *     [--no-typecheck]
  *
  * Starts the launcher (minimal-hi-example/start.mjs <provider> <api-key>) with
  * the MCP server on its own port, opens the example page in Playwright
- * Chromium (headless unless --headed; --dev is passed to the launcher) on
+ * Chromium (headless unless --headed; --dev and --no-typecheck, which skips the
+ * launcher's typecheck, are passed to the launcher) on
  * --plan, waits until get-plan-context lists articles and the HI library has
  * loaded the plan's groups, then sends the prompts to the chat backend as
  * consecutive turns of one conversation, each until the end of its stream. --image goes along with the last prompt, prepared as the chat
@@ -17,7 +19,8 @@
  * writes --out (default .temp/result/<UTC timestamp>-<provider>/): run.json
  * (with every call of a plan-changing MCP tool per turn:
  * what the model sent, and the corrections, groups not loaded or error it got
- * back), plan-context.json (rooms and groups after the chat),
+ * back; and every failed provider step of the turn with its cause chain),
+ * plan-context.json (rooms and groups after the chat),
  * planner-calls.json (the chat's, each with the page's time in ms), prompt-image.jpg (the image sent) and every
  * snapshot field as a file of its own. Exits 1 when the chat or the snapshot
  * reported an error or no snapshot or plan snapshot id came back;
@@ -33,7 +36,10 @@ import { constants } from 'node:os';
 import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { recordNavigations } from './mcp-test-navigation.js';
+import {
+  recordNavigations,
+  recordStepFailures,
+} from './mcp-test-navigation.js';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAUNCHER = join(REPO_DIR, 'minimal-hi-example', 'start.mjs');
@@ -80,7 +86,7 @@ const SNAPSHOT_REQUEST = Object.fromEntries(
   ])
 );
 const USAGE =
-  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]';
+  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed] [--no-typecheck]';
 
 const parseOptions = () => {
   try {
@@ -92,6 +98,7 @@ const parseOptions = () => {
         out: { type: 'string' },
         dev: { type: 'boolean', default: false },
         headed: { type: 'boolean', default: false },
+        'no-typecheck': { type: 'boolean', default: false },
       },
     });
     const [provider, apiKey, ...prompts] = positionals;
@@ -188,14 +195,28 @@ const recordToolCall = (line) => {
   }
 };
 
-const startLauncher = ({ provider, apiKey, dev }) => {
+const stepFailures = recordStepFailures();
+
+const startLauncher = ({
+  provider,
+  apiKey,
+  dev,
+  'no-typecheck': noTypecheck,
+}) => {
   const launcher = spawn(
     process.execPath,
-    [LAUNCHER, provider, apiKey, '--no-open', ...(dev ? ['--dev'] : [])],
+    [
+      LAUNCHER,
+      provider,
+      apiKey,
+      '--no-open',
+      ...(dev ? ['--dev'] : []),
+      ...(noTypecheck ? ['--no-typecheck'] : []),
+    ],
     {
       cwd: REPO_DIR,
       detached: true,
-      stdio: ['ignore', 'pipe', 'inherit'],
+      stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, HI_MCP_PORT: MCP_PORT, HI_CHAT_PORT: CHAT_PORT },
     }
   );
@@ -205,6 +226,13 @@ const startLauncher = ({ provider, apiKey, dev }) => {
     const lines = (pendingLine + chunk).split('\n');
     pendingLine = lines.pop();
     lines.forEach(recordToolCall);
+  });
+  let pendingErrorLine = '';
+  launcher.stderr.on('data', (chunk) => {
+    process.stderr.write(chunk);
+    const lines = (pendingErrorLine + chunk).split('\n');
+    pendingErrorLine = lines.pop();
+    lines.forEach(stepFailures.read);
   });
   const exampleUrl = new Promise((resolve) => {
     let output = '';
@@ -486,6 +514,7 @@ const runConversation = async (prompts, image, clientId, agentPrompts) => {
     );
     const startedAt = Date.now();
     toolCalls.turn = index;
+    stepFailures.startTurn(index);
     const turn = await sendChat(messages, clientId, agentPrompts);
     turns.push({
       prompt,
@@ -639,7 +668,11 @@ const runSession = async (options, launcher, browser) => {
   const run = {
     provider: options.provider,
     plan: options.plan ?? null,
-    turns,
+    // after the snapshot, so a failure logged after its turn's response is in
+    turns: turns.map((turn, index) => ({
+      ...turn,
+      stepFailures: stepFailures.ofTurn(index),
+    })),
     errors,
     planSnapshotId,
     snapshotCaptured: !!snapshot,

@@ -15,6 +15,7 @@ the document a row links.
 | 74 — An island's back row of other widths lands off the front row | Say in the description of `behind` where a turned unit lines up and which way the relations run in a turned row; else an `align` the server derives the offset from | low |
 | 75 — The backsplash of an image kitchen is reported as not buildable | Say in the `notCarried` sentence of `create-or-replace-groups`, library-neutrally, that a generated part may wait for an attribute of the units that switches it on, and drop its kitchen example | medium |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
+| [Where Mistral Large falls short of the prompts](mistral-large-prompt-issues.md) | Improvement candidates from the `mistral-large-latest` test run: declare the payload fields in the input schema, merge groups that name each other's roots, act on obstacle hints, describe the walls, open the edit tools with the user's words | medium |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
 
 ## Libraries
@@ -66,8 +67,6 @@ Details: [mcp-test-infrastructure-issues.md](mcp-test-infrastructure-issues.md).
 | Item | To do | Priority |
 |---|---|---|
 | [1 — The object-only perspective render draws an empty frame under software GL](mcp-test-infrastructure-issues.md#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl) | roomle-ui: find why the frame is dropped under SwiftShader | low |
-| [2 — The per-run fixed overhead of the test runner](mcp-test-infrastructure-issues.md#2-the-per-run-fixed-overhead-of-the-test-runner) | Cut the fixed cost per run (launcher typecheck, Chromium launch, launcher reuse) without endangering the sequential runs | medium |
-| [3 — `run.json` keeps only the top-level message of a failed provider step](mcp-test-infrastructure-issues.md#3-runjson-keeps-only-the-top-level-message-of-a-failed-provider-step) | Record the `[hi-chat] step n failed after … ms: …` lines with their cause chain in `run.json`, and retry a run whose recorded step failure is a provider failure | medium |
 
 ## Deployment, launcher and page sessions
 
@@ -84,9 +83,3 @@ Details: [deployment-and-session-issues.md](deployment-and-session-issues.md).
 |---|---|---|
 | The HI tools in the embedding-lib instead of the Cloudflare MCP server | The page provides the tools: the MCP server's tools, served text, skills and undo record in the embedding-lib (`src/homag-intelligence`); the AI SDK loops and their provider mappings stay in the hosts, which drop only the server, the bridge and the MCP client; the example's chat moves into its page; teardown of the Workers last | [hi-tools-in-the-embedding-lib.md](hi-tools-in-the-embedding-lib.md) |
 | A backend-controlled agent loop with browser-executed scene tools | The scene tools stay in the browser; the agent loop, the tool authorization and the provider credentials move to the backend | [backend-agent-loop-with-browser-scene-tools.md](backend-agent-loop-with-browser-scene-tools.md) |
-
-## ligna-store
-
-| Item | To do | Details |
-|---|---|---|
-| The chat lacks the Mistral image adapter | Wrap `createMistral` with `toolResultFilesAsUserMessages` (`hi-mcp-chat/tool-result-images.ts`), so the images of `get-plan-images` do not reach Mistral as base64 text | [ligna-store-chat-client.md, 1](ligna-store-chat-client.md#1-the-images-of-get-plan-images-reach-mistral-as-base64-text) |

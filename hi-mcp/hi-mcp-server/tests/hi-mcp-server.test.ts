@@ -957,6 +957,17 @@ describe('hi-mcp-server tool calls', () => {
     );
   });
 
+  it('tells the agent to bring back what was undone with redo, not with another undo', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    expect(tools.find((tool) => tool.name === 'redo')?.description).toContain(
+      'the tool when the user asks to redo or to bring back what was undone ("redo it", "bring it back")'
+    );
+    expect(tools.find((tool) => tool.name === 'undo')?.description).toContain(
+      'To bring back what an undo reverted, call redo, not undo.'
+    );
+  });
+
   it('tells the agent that a group goes on the wall the user names, also a wall of glass', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(

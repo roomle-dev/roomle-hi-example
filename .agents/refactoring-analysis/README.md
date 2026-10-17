@@ -44,7 +44,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 | Document | Status | Description |
 |---|---|---|
 | [object-image-in-get-plan-images.md](object-image-in-get-plan-images.md) | Open | Use an object perspective image and label each returned view in get-plan-images |
-| [faster-mcp-test-runs.md](faster-mcp-test-runs.md) | Open | Cut the per-run fixed overhead of the MCP test runner (launcher typecheck, Chromium launch, launcher reuse) without endangering the sequential runs |
+| [faster-mcp-test-runs.md](faster-mcp-test-runs.md) | Done | Cut the per-run fixed overhead of the MCP test runner (launcher typecheck, Chromium launch, launcher reuse) without endangering the sequential runs |
 
 Add refactoring analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `mcp-bridge-simplification.md`).

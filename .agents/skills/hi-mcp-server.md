@@ -39,7 +39,7 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 ### Key Components
 
 #### 1. Launcher (`minimal-hi-example/start.mjs`)
-- **Build gate**: installs the `hi-mcp` workspace when `node_modules` is missing and runs the typecheck (`npm run typecheck` at the `hi-mcp` root) before anything starts. There is no compiled artifact: `vite-node` runs the TypeScript.
+- **Build gate**: installs the `hi-mcp` workspace when `node_modules` is missing and runs the typecheck (`npm run typecheck` at the `hi-mcp` root) before anything starts; `--no-typecheck` skips the typecheck (the MCP test runner, after the first run of a session). There is no compiled artifact: `vite-node` runs the TypeScript.
 - **Static serving**: serves `minimal-hi-example/` on port 3000 (configurable via `EXAMPLE_PORT`).
 - **Server spawn**: Node invokes the installed `vite-node` CLI with `server.ts` directly in the `hi-mcp-server` workspace, with `HI_MCP_STORE_URL` pointing the "no page connected" error at the example URL and, unless set, `HI_MCP_PAGE_ORIGINS` naming the page's origin (`localhost` and `127.0.0.1` on the page port, plus `https://www.roomle.com`) — another `EXAMPLE_PORT` needs no extra configuration. `HI_MCP_PORT` moves the server and is passed to the page as `mcp_port`.
 - **Browser auto-open**, skipped with `--no-open`.

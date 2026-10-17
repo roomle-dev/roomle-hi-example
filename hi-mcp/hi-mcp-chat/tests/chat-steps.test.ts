@@ -182,6 +182,11 @@ describe('chatSteps', () => {
     expect(logError).toHaveBeenCalledTimes(1);
     const line = logError.mock.calls[0][0] as string;
     expect(line).toMatch(/^\[hi-chat\] step 2 failed after \d+ ms: /);
+    // the type validation message breaks lines; the log keeps it on one
+    expect(line).not.toContain('\n');
+    expect(line).toContain(
+      '. Error message: Error: Invalid input: expected string'
+    );
     expect(line).toContain(
       'AI_APICallError: Failed to process successful response, status 200, ' +
         'url https://provider.example/chat/completions, request req-42'

@@ -653,7 +653,7 @@ Examples:
 No parameters. `undo` reverts the plan change of the last tool call that
 changed the plan — the planner steps that one call made, e.g. a kitchen and its
 material — and `redo` brings it back. Call `undo` again to revert the call
-before. Both return the reverted tool (`undone` / `redone`), the groups it changed as
+before; what an undo reverted comes back with `redo`, not with another `undo`. Both return the reverted tool (`undone` / `redone`), the groups it changed as
 they are now, `removedGroupIds` for the groups it took out of the plan and
 `otherGroupIds` for the others. Nothing to undo or redo is a normal result with `undone: null` and a
 `hint`; so is a plan the user changed in the planner after the last tool call

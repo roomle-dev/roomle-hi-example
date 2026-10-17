@@ -26,7 +26,7 @@ never drop the agent's content silently.
 | 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | analysed: roomle-ui `create-or-replace-groups` tool command (`hi-tool-commands.ts`, `hangGapOf` in `hi-group-layout.ts`) — the wall unit's height is fixed at the load with the library's default plinth (D36, D42); the library lifts some wall units when the plinth changes, the rest stay low. Fix proposed in [the analysis](../bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md), to be based on roomle-ui `fix/room-corners-at-openings` | medium | gpt-6-astra | |
 | 73 | [A wall-level article of another category is taken for a floor unit](#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit) | defect | analysed: roomle-ui `isWallUnitArticle`, `relationsToDocking` (`hi-group-layout.ts`) — the classifier knows a wall unit by a category word only; the library data marks wall-level articles (`mod_TypeElement`, the default mounting height) and the tool does not read the marks. Fix proposed in [the analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md), to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6-astra | |
 | 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, `behind`) — the description says neither where a turned unit lines up with a wider neighbour nor which way the relations run in a turned row; roomle-ui `pairOf` for `behind` (`hi-group-layout.ts`) — the compile pins the turned unit at the neighbour's left end with offset 0 and no field to name the other end. Fix proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md): the served text first, the `align` the server derives the offset from as the fallback, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6.1-sol | |
-| 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, the `notCarried` sentence of `create-or-replace-groups`) | medium | gpt-6-astra | |
+| 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the `notCarried` sentence of `create-or-replace-groups`) — the sentence presents a not-carried attribute as a part the library will not build and asks the agent to report it; roomle-ui `compactMasterData` (`hi-plan-context.ts`) — the attribute that switches the generated part on is not customer-facing, so the vocabulary and `find-attributes` do not serve it and the agent cannot find it. Fix proposed in [the analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md): the served sentence and the served vocabulary (roomle-ui, based on `fix/room-corners-at-openings`); the library data (the switch's `userRight`) as the smaller alternative | medium | gpt-6-astra | |
 | 77 | [An edit that gives a row a new end leaves a door hinged to the outside](#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, the descriptions of the edit tools) | medium | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
@@ -146,20 +146,29 @@ backsplash and also starts generating the backsplashes"). No root module carries
 the result lists them in `groupAttributes.notCarried` (D65), and the agent tells the user that the
 backsplash cannot be built. The same agent switches the worktop on with `mod_CreateCountertop`.
 
-**Cause.** The `notCarried` sentence of the `create-or-replace-groups` description
+**Cause.** Analysed in [the bug analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md).
+Two causes compound. The `notCarried` sentence of the `create-or-replace-groups` description
 (`hi-mcp-server.ts`): "the library builds no part for them in this group, a backsplash or an end
 panel for example, so the group stands without them, nothing to undo; say in the answer which
-material is not built". It presents the missing part as final and asks the agent to report it; it
-does not say that a part the library generates may wait for an attribute of the units that switches
-it on.
+material is not built" — presents the missing part as final and asks the agent to report it; it does
+not say that a part the library generates may wait for an attribute of the units that switches it
+on. And the switch itself is not served: `compactMasterData` (roomle-ui `hi-plan-context.ts`) keeps
+only customer-facing attributes, and the library marks the generation switch `mod_CreateBacksplash`
+Advanced while its sibling `mod_CreateCountertop` is Simple — so neither the attributes section of
+`get-plan-context` nor `find-attributes` shows it. The agent sets the backsplash's material
+attributes (Simple, carried by the generated root module), they are carried by no unit of the group,
+the result lists them in `notCarried`, and the agent reports the backsplash as not built.
 
-**To do.** Clarify the sentence first, in library-neutral words: an attribute no unit carries can
-belong to a part the library generates only when an attribute of the units switches it on; look for
-that attribute (`find-attributes`) and set it, and say in the answer only what still is not built.
-Leave out the example "a backsplash or an end panel" (kitchen vocabulary, see the library neutrality
-item in [mcp-policy-issues.md](mcp-policy-issues.md)). If that does not suffice, the result names per
-attribute in `notCarried` the generated root module that carries it (`assignedAttributes` of the
-master data), so the agent looks for its switch.
+**To do.** Fix, proposed in [the analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md),
+in two parts. roomle-hi-example: clarify the `notCarried` sentence in library-neutral words — an
+attribute no unit carries can belong to a part the library generates only when an attribute of the
+units switches it on; look for that attribute and set it; say in the answer only what still is not
+built — and leave out the example "a backsplash or an end panel" (kitchen vocabulary, see the library
+neutrality item in [mcp-policy-issues.md](mcp-policy-issues.md)). roomle-ui (based on
+`fix/room-corners-at-openings`): serve the generation switches — `compactMasterData` keeps also the
+Bool attributes the root modules carry — so the switch is in the vocabulary and `find-attributes`
+finds it. The smaller alternative is the library data: the switch's `userRight` Simple, like
+`mod_CreateCountertop` (a library issue, [library-issues.md](library-issues.md)).
 
 **Test.** `it('asks the agent to say which group material the library does not build')` in
 `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` checks the new sentence, and

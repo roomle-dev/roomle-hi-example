@@ -42,6 +42,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 | [The wall units hang at two heights after a plinth height in the group attributes](wall-units-hang-at-two-heights-after-plinth-change.md) | Open — fix proposed (roomle-ui, based on `fix/room-corners-at-openings`) | backlog #72 |
 | [A wall-level article of another category is taken for a floor unit](wall-level-article-of-another-category-taken-for-floor-unit.md) | Open — fix proposed (roomle-ui, based on `fix/room-corners-at-openings`) | backlog #73 |
 | [An island's back row of other widths lands off the front row](islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — fix proposed (roomle-hi-example served text; roomle-ui fallback, based on `fix/room-corners-at-openings`) | backlog #74 |
+| [The backsplash of an image kitchen is reported as not buildable](backsplash-of-an-image-kitchen-reported-as-not-buildable.md) | Open — fix proposed (roomle-hi-example served text; roomle-ui, based on `fix/room-corners-at-openings`) | backlog #75 |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

@@ -82,10 +82,40 @@ describe('loadSkills', () => {
       '# the b skill\nname: b\ndescription: >-\n  Plan a b\n  in two lines.\n\n  A second paragraph.\nlicense: MIT'
     );
     writeSkill('c', 'name: c\ndescription: Plan a c\n  over two lines.');
-    expect(loadSkills(root).map((skill) => skill.description)).toEqual([
+    const loaded = loadSkills(root);
+    expect(loaded.map((skill) => skill.description)).toEqual([
       'Plan an a.\nUse it for a rooms.',
       'Plan a b in two lines.\nA second paragraph.',
       'Plan a c over two lines.',
+    ]);
+    expect(loaded.map((skill) => skill.frontmatter)).toEqual([
+      {
+        name: 'a',
+        description: 'Plan an a.\nUse it for a rooms.\n',
+        metadata: { author: 'x', version: '1' },
+      },
+      {
+        name: 'b',
+        description: 'Plan a b in two lines.\nA second paragraph.',
+        license: 'MIT',
+      },
+      { name: 'c', description: 'Plan a c over two lines.' },
+    ]);
+  });
+
+  it('keeps the chomping of a block scalar and a value on the line after its field, as YAML reads them', () => {
+    writeSkill(
+      'a',
+      'name: a\ndescription: >\n  Plan\n  an a.\n\n\nlicense: MIT'
+    );
+    writeSkill('b', 'name: b\ndescription: |+\n  Plan a b.\n\n\nlicense: MIT');
+    writeSkill('c', 'name: c\ndescription:\n  Plan a c\n  on the next line.');
+    expect(
+      loadSkills(root).map((skill) => skill.frontmatter.description)
+    ).toEqual([
+      'Plan an a.\n',
+      'Plan a b.\n\n\n',
+      'Plan a c on the next line.',
     ]);
   });
 

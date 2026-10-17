@@ -598,8 +598,13 @@ directory of `hi-mcp/hi-mcp-server/skills/` in the Agent Skills format: `SKILL.m
   the returned positions and the obstacles; alternatives and open checks are named in the answer, not
   built. A supporting file comes without it.
 - **The frontmatter** is read as the YAML of Agent Skills: per field a plain, quoted, multi-line or
-  block scalar (`|`, `>`), comments, and fields with nested values such as `metadata`, which the
-  server does not use; `skills/list` carries every field as read, a nested one as an empty string.
+  block scalar (`|`, `>`, with the chomping `-` and `+`), comments, and fields with nested values
+  such as `metadata`, which the server does not use. `skills/list` carries every field with the
+  value a YAML parser reads from the served `SKILL.md` — a block scalar with its final line break, a
+  nested field as an object of its fields —, so a host's frontmatter check finds them equal; the
+  index of `get-skill` takes the description without its final line break. Guarded by
+  `it('keeps the chomping of a block scalar and a value on the line after its field, as YAML reads them')`
+  in `hi-mcp/hi-mcp-server/tests/skills.test.ts`.
 - **The files.** The server reads only a file of the skill's list — the files below its directory,
   hidden files left out —, with LF line endings. A path may start with `./`, as the skills link
   their references. A skill whose `name` differs from its directory,

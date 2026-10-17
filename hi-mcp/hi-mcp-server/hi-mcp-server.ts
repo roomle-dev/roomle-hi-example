@@ -1,7 +1,15 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import type { PlannerApi } from './planner-api';
-import { SKILL_FILE, skillIndex, skills } from './skills';
+import {
+  readSkillFile,
+  SKILL_FILE,
+  skillIndex,
+  skillManifest,
+  skills,
+  skillUri,
+} from './skills';
 import { toolExecutors } from './tool-executors';
 
 const AUTHORING_RULES = `Authoring rules for pos groups:
@@ -83,6 +91,16 @@ const SKILL_IN_SESSION =
   'the returned positions and the obstacles, and name the alternatives and the open checks in your answer instead of ' +
   'building them.';
 
+// The Skills extension of MCP (SEP-2640) serves the same skill files to a
+// host that loads skills itself, as they are - without SKILL_IN_SESSION.
+const SKILLS_EXTENSION = 'io.modelcontextprotocol/skills';
+
+const SKILL_ENTRIES = skills.map((skill) => ({
+  uri: skillUri(skill.name),
+  frontmatter: skill.frontmatter,
+  resources: skillManifest(skill),
+}));
+
 // The plan context carries a signed CDN image URL for every article, module
 // and attribute value - three quarters of its tokens, and no agent can open them.
 const withoutImageUrls = (key: string, value: unknown) =>
@@ -127,7 +145,10 @@ const stripDataUrlPrefix = (image: string): string =>
 export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
   const server = new McpServer(
     { name: 'hi-group-orchestrator', version: '0.1.0' },
-    { instructions: INSTRUCTIONS }
+    {
+      instructions: INSTRUCTIONS,
+      capabilities: { extensions: { [SKILLS_EXTENSION]: {} } },
+    }
   );
 
   // What the agent sent to a tool that changes the plan, and the feedback it
@@ -291,6 +312,56 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       return {
         content: [{ type: 'text' as const, text: `${preamble}${text}` }],
       };
+    }
+  );
+
+  for (const skill of skills) {
+    for (const file of skill.files) {
+      server.registerResource(
+        `${skill.name}/${file}`,
+        skillUri(skill.name, file),
+        { mimeType: 'text/markdown' },
+        async (uri) => {
+          console.log(`[hi-mcp] resources/read ${uri.href}`);
+          return {
+            contents: [
+              {
+                uri: uri.href,
+                mimeType: 'text/markdown',
+                text: readSkillFile(skills, skill.name, file),
+              },
+            ],
+          };
+        }
+      );
+    }
+  }
+
+  server.server.setRequestHandler(
+    z.object({ method: z.literal('skills/list') }),
+    async () => {
+      console.log('[hi-mcp] skills/list');
+      return { skills: SKILL_ENTRIES };
+    }
+  );
+
+  // uri stays optional in the schema: a request without one is answered
+  // with invalid params by the handler, not with an internal error.
+  server.server.setRequestHandler(
+    z.object({
+      method: z.literal('skills/get'),
+      params: z.object({ uri: z.string().optional() }).optional(),
+    }),
+    async ({ params }) => {
+      console.log(`[hi-mcp] skills/get ${params?.uri}`);
+      const skill = SKILL_ENTRIES.find((entry) => entry.uri === params?.uri);
+      if (!skill) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          `Unknown skill "${params?.uri}" - the skills are ${SKILL_ENTRIES.map((entry) => entry.uri).join(', ')}`
+        );
+      }
+      return { skill };
     }
   );
 

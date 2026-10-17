@@ -1,4 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from 'vitest';
+import { z } from 'zod';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createHiMcpServer } from '../hi-mcp-server';
@@ -6,7 +16,7 @@ import { PageBridge } from '../page-bridge';
 import { connectPlanHistory, planHistory } from '../plan-history';
 import type { PlannerApi } from '../planner-api';
 import { createPlannerApi } from '../planner-api';
-import { skills } from '../skills';
+import { readSkillFile, skills } from '../skills';
 import { attachPage } from './fake-page-socket';
 
 const EXPECTED_TOOLS = [
@@ -1313,6 +1323,169 @@ describe('hi-mcp-server tool calls', () => {
     expect(JSON.parse(textOf(result))).toEqual({
       error: 'No images available',
     });
+  });
+});
+
+describe('hi-mcp-server skills extension', () => {
+  const SKILL_URIS =
+    'the skills are skill://image-planning/SKILL.md, skill://kitchen-planning/SKILL.md, skill://kitchen-planning-fr/SKILL.md, skill://living-room-planning/SKILL.md';
+
+  interface SkillEntry {
+    uri: string;
+    resources: { uri: string; digest: string; size: number }[];
+  }
+
+  const sendSkillsRequest = (
+    client: Client,
+    method: 'skills/list' | 'skills/get',
+    params: Record<string, unknown> = {}
+  ) => client.request({ method, params } as never, z.looseObject({}));
+
+  const listSkills = async (client: Client) =>
+    (
+      (await sendSkillsRequest(client, 'skills/list')) as {
+        skills: SkillEntry[];
+      }
+    ).skills;
+
+  const sha256 = (text: string) =>
+    `sha256:${createHash('sha256').update(text, 'utf8').digest('hex')}`;
+
+  let log: MockInstance;
+  beforeEach(() => {
+    log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  });
+  afterEach(() => {
+    log.mockRestore();
+  });
+
+  it('declares the resources capability and the Skills extension', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const capabilities = client.getServerCapabilities();
+    expect(capabilities?.resources).toBeDefined();
+    expect(capabilities?.tools).toBeDefined();
+    expect(capabilities?.extensions).toEqual({
+      'io.modelcontextprotocol/skills': {},
+    });
+  });
+
+  it('lists every skill with the URI of its SKILL.md, its frontmatter and the manifest of its files', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    expect(await sendSkillsRequest(client, 'skills/list')).toEqual({
+      skills: skills.map((skill) => ({
+        uri: `skill://${skill.name}/SKILL.md`,
+        frontmatter: skill.frontmatter,
+        resources: skill.files.map((file) => ({
+          uri: `skill://${skill.name}/${file}`,
+          digest: expect.stringMatching(/^sha256:[0-9a-f]{64}$/),
+          size: expect.any(Number),
+        })),
+      })),
+    });
+  });
+
+  it('answers every manifest entry by resources/read with text that matches its digest and size, without a planner call', async () => {
+    const plannerApi = createMockPlannerApi();
+    const client = await connectClient(plannerApi);
+    const entries = await listSkills(client);
+    for (const [skillIndex, skill] of skills.entries()) {
+      for (const [fileIndex, file] of skill.files.entries()) {
+        const entry = entries[skillIndex].resources[fileIndex];
+        const { contents } = await client.readResource({ uri: entry.uri });
+        const text = readSkillFile(skills, skill.name, file);
+        expect(contents).toEqual([
+          { uri: entry.uri, mimeType: 'text/markdown', text },
+        ]);
+        expect(entry.digest).toBe(sha256(text));
+        expect(entry.size).toBe(Buffer.byteLength(text, 'utf8'));
+      }
+    }
+    for (const method of Object.values(plannerApi.extended)) {
+      expect(method).not.toHaveBeenCalled();
+    }
+  });
+
+  it('serves SKILL.md as the file, without the session preamble that get-skill puts before it', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { contents } = await client.readResource({
+      uri: 'skill://kitchen-planning/SKILL.md',
+    });
+    const file = (contents[0] as { text: string }).text;
+    expect(file).toMatch(/^---\nname: kitchen-planning\n/);
+    const skill = textOf(
+      await client.callTool({
+        name: 'get-skill',
+        arguments: { name: 'kitchen-planning' },
+      })
+    );
+    expect(skill).toMatch(
+      /^In this planning session the survey is the plan context/
+    );
+    expect(skill.slice(-file.length)).toBe(file);
+  });
+
+  it('lists every skill file as a resource, named by its skill and path', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { resources } = await client.listResources();
+    expect(resources).toHaveLength(10);
+    expect(resources).toEqual(
+      skills.flatMap((skill) =>
+        skill.files.map((file) => ({
+          name: `${skill.name}/${file}`,
+          uri: `skill://${skill.name}/${file}`,
+          mimeType: 'text/markdown',
+        }))
+      )
+    );
+  });
+
+  it('answers skills/get with the entry skills/list lists for that SKILL.md', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    for (const entry of await listSkills(client)) {
+      expect(
+        await sendSkillsRequest(client, 'skills/get', { uri: entry.uri })
+      ).toEqual({ skill: entry });
+    }
+  });
+
+  it.each([
+    ['an unknown skill', 'skill://bathroom-planning/SKILL.md'],
+    [
+      'a supporting file',
+      'skill://kitchen-planning/references/planning-reference.md',
+    ],
+    ['no URI', undefined],
+  ])(
+    'answers skills/get for %s with invalid params and the URIs of the skills',
+    async (_, uri) => {
+      const client = await connectClient(createMockPlannerApi());
+      await expect(
+        sendSkillsRequest(
+          client,
+          'skills/get',
+          uri === undefined ? {} : { uri }
+        )
+      ).rejects.toMatchObject({
+        code: -32602,
+        message: expect.stringContaining(SKILL_URIS),
+      });
+    }
+  );
+
+  it('logs skills/list, skills/get and resources/read', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    await sendSkillsRequest(client, 'skills/list');
+    await sendSkillsRequest(client, 'skills/get', {
+      uri: 'skill://kitchen-planning/SKILL.md',
+    });
+    await client.readResource({ uri: 'skill://kitchen-planning/SKILL.md' });
+    expect(log).toHaveBeenCalledWith('[hi-mcp] skills/list');
+    expect(log).toHaveBeenCalledWith(
+      '[hi-mcp] skills/get skill://kitchen-planning/SKILL.md'
+    );
+    expect(log).toHaveBeenCalledWith(
+      '[hi-mcp] resources/read skill://kitchen-planning/SKILL.md'
+    );
   });
 });
 

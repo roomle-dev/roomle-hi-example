@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,8 +7,16 @@ import { fileURLToPath } from 'node:url';
 export interface Skill {
   name: string;
   description: string;
+  frontmatter: Record<string, string>;
   dir: string;
   files: string[];
+}
+
+/** A file of a skill as the Skills extension of MCP lists it: its URI, the digest and the size of the served text. */
+export interface SkillManifestEntry {
+  uri: string;
+  digest: string;
+  size: number;
 }
 
 export const SKILLS_DIR = join(
@@ -93,10 +102,8 @@ export const loadSkills = (dir = SKILLS_DIR): Skill[] =>
     .map((entry) => {
       const skillDir = join(dir, entry.name);
       const file = join(skillDir, SKILL_FILE);
-      const { name, description } = frontmatterOf(
-        readFileSync(file, 'utf8'),
-        file
-      );
+      const frontmatter = frontmatterOf(readFileSync(file, 'utf8'), file);
+      const { name, description } = frontmatter;
       if (name !== entry.name) {
         throw new Error(
           `${file}: the name "${name}" differs from its directory "${entry.name}"`
@@ -111,6 +118,7 @@ export const loadSkills = (dir = SKILLS_DIR): Skill[] =>
       return {
         name,
         description,
+        frontmatter,
         dir: skillDir,
         files: [SKILL_FILE, ...supporting],
       };
@@ -120,6 +128,24 @@ export const loadSkills = (dir = SKILLS_DIR): Skill[] =>
 /** One line per skill: its name and its description. */
 export const skillIndex = (skills: Skill[]): string =>
   skills.map((skill) => `- ${skill.name}: ${skill.description}`).join('\n');
+
+const skillFileText = (skill: Skill, path: string): string =>
+  readFileSync(join(skill.dir, path), 'utf8').replace(/\r\n/g, '\n');
+
+/** The URI of a file of a skill in the skill:// scheme of the Skills extension of MCP. */
+export const skillUri = (name: string, file: string = SKILL_FILE): string =>
+  `skill://${name}/${file}`;
+
+/** Per file of a skill, SKILL.md first: its URI, the SHA-256 digest and the byte size of the text it is served with. */
+export const skillManifest = (skill: Skill): SkillManifestEntry[] =>
+  skill.files.map((file) => {
+    const bytes = Buffer.from(skillFileText(skill, file), 'utf8');
+    return {
+      uri: skillUri(skill.name, file),
+      digest: `sha256:${createHash('sha256').update(bytes).digest('hex')}`,
+      size: bytes.byteLength,
+    };
+  });
 
 /** A file of a skill by its path; only a file of the skill's list is read. */
 export const readSkillFile = (
@@ -139,7 +165,7 @@ export const readSkillFile = (
       `Unknown file "${file}" of the skill ${name} - its files are ${skill.files.join(', ')}`
     );
   }
-  return readFileSync(join(skill.dir, path), 'utf8').replace(/\r\n/g, '\n');
+  return skillFileText(skill, path);
 };
 
 export const skills = loadSkills();

@@ -145,14 +145,23 @@ D35 `hangGapOf` (which puts its top flush with the tall units). The command reco
 links while it compiles them (`relationsToDocking` returns the hang links: wall unit, carrier,
 gap), reads the group after `applyGroupWideAttributes`, and where a hung wall unit's bottom is
 off the target — because the library left it at the old plinth's absolute height — it sets the
-wall unit's insertion height to the target with one `change-attributes` entry on that root
-module and reports it as a correction, in library-neutral words: the group attributes lifted
-the floor units by so many mm, the wall unit did not follow, it was lifted to hang at its gap
-above its carrier again. The insertion height is the input attribute the kernel wrote at the
-load (in Furniture_Smith `mod_HeightPosInsertion`, "Position height — height position of the
-element from the floor"): the command reads it off the loaded wall unit — the input attribute
-whose value is the unit's position height from the floor — so no library-specific id enters the
-code.
+wall unit's insertion height to the target bottom minus the unit's insertion-to-geometry offset
+with one `change-attributes` entry on that root module and reports it as a correction, in
+library-neutral words: the group attributes lifted the floor units by so many mm, the wall unit
+did not follow, it was lifted to hang at its gap above its carrier again.
+
+The insertion-to-geometry offset is read off the loaded unit — its bottom minus its insertion
+height: 0 on the `OTB45` (bottom 1480, insertion 1480), 20 on the hood `DU` of the reproduce
+(bottom 1520, insertion 1500, calculated). The attribute is the one the loaded unit carries
+whose value is its position height from the floor — the input attribute the kernel wrote at the
+load on a wall unit, the calculated one the library computes on the hood (in Furniture_Smith
+both are `mod_HeightPosInsertion`, "Position height — height position of the element from the
+floor"); `change-attributes` targets any attribute the module carries (`hi-tools.ts:456`), input
+or calculated alike — so no library-specific id enters the code. This is the supported path
+after the group attributes: a reload there would send the values before them (D36; the comment
+at `hi-tool-commands.ts:538-540`). Verification: the unit test pins the sent value on a
+calculated insertion height; whether the library honors a set on the hood's calculated attribute
+is held by the stored test.
 
 This makes the outcome independent of the library's partial plinth-following and needs no change
 of the served text: the agent sends a legitimate plinth height, and the tool builds the plan the
@@ -169,6 +178,9 @@ D35 rule describes.
   carrier, so the agent learns what happened without a rule change.
 - It does not move wall units the agent hung with an explicit `gapMm` beyond re-asserting that
   gap above the carrier's new top — the agent's gap is kept, not overridden.
+- It does not assume the insertion height is the unit's bottom: the offset between them is read
+  off the loaded unit per unit (20 mm on the hood of the reproduce), so a unit whose insertion
+  point is not its bottom is lifted by the same geometry, not by the attribute's face value.
 
 ## Rejected approaches
 
@@ -205,14 +217,21 @@ D35 rule describes.
    top + gap, from the obstacles), and collects the wall units whose bottom is off by more than
    a tolerance.
 3. For the off wall units the command sends one `change-attributes` entry per group
-   (`rootModuleIds`, the insertion-height attribute read off the wall unit, value = target) and
-   pushes a correction naming the lift, the wall unit and its carrier. Open detail: whether the
-   planner counts this second `change-attributes` as its own undo step beside the material
-   command (D47 counts the two loads and the material command together) — the unit test pins the
-   planner steps the command sends.
+   (`rootModuleIds`, the insertion-height attribute read off the wall unit, value = target
+   bottom − insertion-to-geometry offset, the offset the wall unit's current bottom minus its
+   current insertion height) and pushes a correction naming the lift, the wall unit and its
+   carrier. Open details: whether the planner counts this second `change-attributes` as its own
+   undo step beside the material command (D47 counts the two loads and the material command
+   together), and whether the library honors a set on a calculated insertion height — the unit
+   test pins the planner steps the command sends.
 4. Tests in `__tests__/hi-tool-commands/create-or-replace-groups-input-test.ts`: a create with a
    plinth height in the group attributes whose mock planner lifts the floor units and leaves one
    hung wall unit at the old insertion height — the command lifts it to carrier top + gap and
    reports the correction; a wall unit the library already lifted is not touched again; a wall
-   unit with an explicit `gapMm` keeps that gap. The stored test `kitchen-back-right-corner` of
-   `docs/test-prompts.json` then holds: every wall unit's top at the tall units' top.
+   unit with an explicit `gapMm` keeps that gap; a hood the mock planner leaves at the old
+   insertion height — a calculated insertion height 20 mm below its bottom, as the reproduce's
+   `DU` — is lifted to the carrier's new top + `gapMm` with the value target − 20, and the
+   correction names it (the regression case for a hood that did not follow the plinth; trace 4
+   names the stored runs where the library leaves one). The stored test
+   `kitchen-back-right-corner` of `docs/test-prompts.json` then holds: every wall unit's top at
+   the tall units' top, the hood at its `gapMm` above the hob's new top.

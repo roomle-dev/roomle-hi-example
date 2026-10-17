@@ -12,9 +12,11 @@
   (`hi-mcp/hi-mcp-server/hi-mcp-server.ts:19`) and its unit test, `docs/hi-mcp-behaviour.md`, two
   test prompts in `docs/test-prompts.json`, a library issue in `.agents/backlog/library-issues.md`.
   This is where the fix belongs.
-- **HOMAG library (Furniture_Smith)** — the descs of the attribute `mod_DoorDirectionSelection` and
-  of its value `Automatic` lack information. A library issue for the library development team; the
-  library keeps its behaviour.
+- **HOMAG library (Furniture_Smith)** — the descs of the attributes `mod_DoorDirectionSelection` and
+  `mod_HandlePosType` and of their values lack information. A library issue for the library
+  development team, proposed as change 2 of
+  [`docs/library-information/suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#2-the-door-direction-and-handle-position-descriptions-do-not-say-which-side-a-door-opens-to);
+  the library keeps its behaviour.
 - **roomle-ui** — no change. The plan context lists the attribute, and the tool commands set it on a
   root module and on its door.
 - **ligna-store** — no change. Its chat gets the served text from the MCP server.
@@ -61,7 +63,18 @@ Left: the closed wardrobe as created — every door hinged left, the handle of t
 outside. Right: after `change-module-attribute` with `Right` on the right end — its handle beside its
 neighbour's.
 
-Not checked: articles with two doors, whose values are `LeftRight`, `LeftLeft` and `RightRight`.
+Articles with two doors, and the handle position, in a second probe of the same kind:
+
+- `U2TB90`, a pair of doors side by side: `Automatic` resolves to `LeftRight`, the handles meet in
+  the middle of the cabinet, and `LeftRight` is calculated. `Left`, `Right`, `LeftLeft` and
+  `RightRight` fail with "Error 14019: Could not find entry in tab_DoorSettings", and the root module
+  is not built.
+- `H2TB60`, two doors one above the other: `Automatic` resolves to `Left` on both doors, `Right`
+  hinges both on the right, `LeftRight` fails with error 14019.
+- `mod_HandlePosType` on `KS_HT600K`, hinged left and hinged right: `03` and `04` put the vertical
+  handle at the edge opposite the hinge, at the same place, the handle turned by 180° against each
+  other; `05` and `06` put it in the middle of the door's width. None changes the hinge side, though
+  "Door vertical rotation right" reads like one.
 
 ## Investigation trace
 
@@ -131,7 +144,8 @@ outside — after a create, and again on every root module an edit adds at the r
 
 The library data adds to it. Neither the attribute's desc "Direction of the door" nor the desc of
 `Automatic`, "Setting via tab_DoorSettings", tells the agent what it gets when it leaves the value
-alone. What the library does with `Automatic` is intended.
+alone, or which values single doors and a pair of doors take. `mod_HandlePosType` reads like a door
+direction and is none. What the library does with `Automatic` is intended.
 
 ## Proposed fix
 
@@ -140,19 +154,10 @@ instructions. No guard and no correction.
 
 ### 1. The served rule (roomle-hi-example)
 
-One library-neutral sentence in the front rule of `AUTHORING_RULES` — no attribute id, no value.
-For example:
-
-> A door is hinged on one side and has its handle on the other. In a row, the door at the left end
-> is hinged on the left and the door at the right end on the right, as seen from the front, so no
-> handle is on the outside of the row: set the attribute of the vocabulary that says on which side a
-> door is hinged in the attributes of those two root modules, and on the new end after an edit that
-> gives the row a new end.
-
+A library-neutral rule for doors beside the front rule of `AUTHORING_RULES` — no attribute id, no
+value; the exact text is step 1 of the [implementation plan](#implementation-plan).
 `AUTHORING_RULES` reaches every agent: at initialize, and through `get-authoring-rules`, which the
-description of `create-or-replace-groups` names, in the chats. A unit test in
-`hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` guards the sentence, beside
-`it('tells the agent that the front program says how a front is built and that a colour can switch it')`.
+description of `create-or-replace-groups` names, in the chats. A unit test guards it.
 
 ### 2. Not proposed: the server sets the side
 
@@ -164,11 +169,13 @@ there is no correction.
 
 ### 3. The library issue
 
-The desc of `mod_DoorDirectionSelection` says that left and right are seen from the front and that
-the handle is on the other side; the desc of `Automatic` says what it chooses — a single door hinged
-on the left — instead of naming an internal table. A new item of
-[`.agents/backlog/library-issues.md`](../backlog/library-issues.md), not reported yet. The served
-rule works without it: the agent sets both ends.
+The descs of `mod_DoorDirectionSelection` and its values say the hinge side as seen from the front,
+that the handle is on the other side, which values single doors and a pair of doors take, and what
+`Automatic` chooses; the descs of `mod_HandlePosType` say that it places and turns the handle and
+does not change the side a door opens to. The exact text is change 2 of
+[`docs/library-information/suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#2-the-door-direction-and-handle-position-descriptions-do-not-say-which-side-a-door-opens-to),
+tracked as a new item of [`.agents/backlog/library-issues.md`](../backlog/library-issues.md), not
+reported yet. The served rule works without it: the agent sets both ends.
 
 ### 4. Documentation and tests
 
@@ -179,13 +186,119 @@ rule works without it: the agent sets both ends.
   back wall — the left end hinged left, the right end right; a cabinet added at the right end of a
   row — the new end hinged right.
 
-## Open points
+## Decisions
 
-1. **The former end after an extension.** After a cabinet is added at the right end, the former end
-   keeps `Right`, its handle now beside its left neighbour's. The rule names the ends only, so it
-   stays — or should the agent set it back?
-2. **A row with a corner article.** An L-shaped group has two free ends; the rule takes them as the
-   ends of the row, and the corner article stands inside it. Confirm.
+Gernot Steinegger, 2026-10-17:
+
+1. **The former end after an extension keeps its side.** After a cabinet is added at the right end,
+   the former end keeps `Right`, its handle beside its left neighbour's. The rule names the ends
+   only; the agent does not set the former end back.
+2. **A row with a corner article: its two free ends are the ends of the row.** The corner article
+   stands inside the row. This is how `rowIndex` counts already — a corner article joins the two
+   legs into one row (D66) —, so the ends are the root modules with `rowIndex` 1 and the last one,
+   and the rule needs no words of its own for a corner.
+
+## Implementation plan
+
+Only roomle-hi-example changes; roomle-ui and ligna-store stay as they are. No guard, no correction,
+no new tool parameter: the tools already set the side (D54), the agent is told to.
+
+### 1. The served rule
+
+`hi-mcp/hi-mcp-server/hi-mcp-server.ts`: a new bullet **Doors** in `AUTHORING_RULES`, right after
+the **Fronts** bullet (line 19). `INSTRUCTIONS` embed `AUTHORING_RULES` (line 83), so the rule
+reaches the agent at initialize and through `get-authoring-rules`:
+
+> - Doors: a door is hinged on one side and has its handle on the other. In a row, the door at the
+>   left end is hinged on the left and the door at the right end on the right, as seen from the
+>   front, so no handle is on the outside of the row; a pair of doors side by side is hinged at its
+>   two outer sides. Set it with the attribute whose values say on which side a door is hinged - the
+>   value for single doors or for a pair of doors, as the article has - in the attributes of the root
+>   modules at the two ends of the row (rowIndex 1 and the last), and again on the root module at an
+>   end after an edit that gives the row a new end: an article added, deleted, exchanged or swapped
+>   at an end. The other doors keep their side.
+
+Why each part:
+
+- No attribute id, no value: the server is library-neutral (§2.4). Which attribute and which value
+  the library data says — today by "Door left hinged" and "Door right hinged", better with change 2
+  of the suggested library changes.
+- "the value for single doors or for a pair of doors": the library calculates a single-door value
+  only on single doors and a pair value only on a pair; any other value fails with error 14019 and
+  the root module is not built.
+- "rowIndex 1 and the last": decision 2 — a corner article joins the legs into one row (D66).
+- "The other doors keep their side": decision 1.
+- "an article added, deleted, exchanged or swapped at an end": the door direction is not passed on
+  between neighbours (D56). `merge-article-into-group` and `exchange-root-module` take `attributes`,
+  so the side goes into the same call; after a delete or a swap the agent calls
+  `change-module-attribute`.
+
+The tool descriptions stay as they are.
+
+**Risk.** `H2TB60` says "with 2 doors" for two doors one above the other. An agent that takes them
+for a pair sets the pair value, the library cannot calculate it, and the result names the root
+module in `notLoaded` with error 14019 and "change the failing values" — the agent recovers with a
+second call. The article descs of change 2 remove the doubt.
+
+### 2. The unit test
+
+`hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`, after
+`it('tells the agent that the front program says how a front is built and that a colour can switch it')`
+(line 865), with the same setup — `connectClient(createMockPlannerApi())`, the rules from
+`get-authoring-rules`, the instructions and the tool list:
+
+`it('tells the agent to hinge the doors at the two ends of a row at its outer sides')`
+
+- The rules and the instructions contain "In a row, the door at the left end is hinged on the left
+  and the door at the right end on the right, as seen from the front, so no handle is on the outside
+  of the row".
+- The rules contain "a pair of doors side by side is hinged at its two outer sides", "the root
+  modules at the two ends of the row (rowIndex 1 and the last)", "again on the root module at an end
+  after an edit that gives the row a new end" and "The other doors keep their side".
+- The served text — instructions, rules and tool list — contains neither `mod_DoorDirection` nor
+  `mod_HandlePosType`: the rule stays library-neutral.
+
+Checks: `npm test` and `npm run typecheck` in `hi-mcp/`, `npm run lint` and `npm run format:check`
+at the root.
+
+### 3. The documentation
+
+- `docs/hi-mcp-behaviour.md` §3: a new subsection **Doors (2026-10-17)** after **Merge
+  (2026-10-16)**, with D84 — the doors at the two ends of a row are hinged at its outer sides, and
+  the agent sets it with the library's door direction on the root modules at the ends, also after an
+  edit that gives the row a new end; the other doors keep their side; the ends are `rowIndex` 1 and
+  the last, a corner article inside the row (D66). Rejected: the server sets the side by `rowIndex`,
+  or corrects it — library information in the server's logic (§2.4). Source: user, 2026-10-17. State:
+  in effect — `AUTHORING_RULES`, guarded by the new test.
+- `docs/hi-mcp-behaviour.md` §5.2: a bullet **Doors** (D84) after **Fronts**.
+- `.agents/skills/hi-authoring-rules.md`: a **Doors.** paragraph after **Fronts.** (line 13).
+
+### 4. The test prompts
+
+`docs/test-prompts.json`, two tests on the plan `closets`, in user words without tool names
+(ADR 0006):
+
+| id | title | prompt | expect |
+|---|---|---|---|
+| `wardrobe-door-hinges` | Door hinges at the ends of a wardrobe | "add a wardrobe of four cabinets with one door each to the back wall" | one create-or-replace-groups call with a placement by wall (wall back); one group of four single-door wardrobe cabinets in a row; the root module at the left end hinged on the left and the one at the right end hinged on the right, set in their attributes; no handle on the outside of the row |
+| `wardrobe-extend-door-hinge` | A new end of a wardrobe | "add a wardrobe of three cabinets with one door each to the back wall", then "add one more cabinet at its right end" | turn 1: as `wardrobe-door-hinges`, with three cabinets; turn 2: one edit that adds a cabinet at the right end of the group; the new end hinged on the right; the former end keeps its side |
+
+The first goes after `closets-two-wardrobes-corner` (single groups), the second among the edits over
+two or three turns.
+
+### 5. The library issue
+
+`.agents/backlog/library-issues.md`: item 76, "Door direction descriptions that do not say which
+side a door opens to" — problem, cause, the to-do (change 2 of
+`docs/library-information/suggested-library-changes.md`), status not reported, test
+`wardrobe-door-hinges`, reproduce: the probe of this analysis — and its overview row (HOMAG
+Furniture_Smith, HOMAG library development team, medium — a handle on the outside of every row).
+
+### Not part of the change
+
+- No model run: the new test prompts run when "test the mcp" is asked.
+- roomle-ui: the tool commands set the attribute on the root module and on its doors (D54), checked
+  in the probe.
 
 ## Acceptance criteria (from the ticket)
 

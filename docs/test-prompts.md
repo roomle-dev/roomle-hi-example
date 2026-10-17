@@ -52,7 +52,7 @@ plan snapshot id: `ps_qqukcsmwk16q8crynogzctsv1hgbhy6`
 
 ### Three Tall Units
 
-plan snapshot id: `ps_qply732i7knwtkfjm1z86sa8vrt00ms`
+plan snapshot id: `ps_s3p5hmscmmsnshopj2tybjwmt7ijy5o`
 
 ![Three Tall Units](./images/three-tall-units.png)
 
@@ -81,7 +81,7 @@ group editing tests start from it. It was built with `create-or-replace-groups` 
 
 ### Corner Kitchen with Wall Units
 
-plan snapshot id: `ps_r081k1nfl8nmtzget0sug199vhudbtd`
+plan snapshot id: `ps_s3q15s937nezvvjuyq0rdl4vecu6rsjp`
 
 ![Corner Kitchen with Wall Units](./images/corner-kitchen-wall-units.png)
 
@@ -118,7 +118,7 @@ group `031ee57a-65f1-4cac-837c-a19c769ddce7`
 
 ### Two Wardrobes on the Right Wall
 
-plan snapshot id: `ps_r22qpwv9ks87lz1gnrcz1ewv7q8uq3v`
+plan snapshot id: `ps_s3qfqirqsvfwrr8em4d344h0c4sk8po`
 
 ![Two Wardrobes on the Right Wall](./images/two-wardrobes-right-wall.png)
 

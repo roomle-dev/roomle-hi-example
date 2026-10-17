@@ -1,7 +1,7 @@
 # Bug analysis — the room corners leave out a corner where an opening meets a wall
 
 > **Type**: Bug analysis
-> **Status**: Open
+> **Status**: Fixed
 > **Ticket**: none
 > **Date**: 2026-10-17
 > **Base**: roomle-hi-example `fix/planning-skills-extension` (`40a88f6`); roomle-ui
@@ -200,6 +200,29 @@ in `docs/hi-mcp-behaviour.md`, with its rejected alternatives. D12 keeps its dat
   of a hole that is not convex.
 - **List the corners that turn away from the room with a flag.** No placement uses them, and the
   agent would have to learn to skip them.
+
+## Fix
+
+Implemented as planned on the branches `fix/room-corners-at-openings`:
+
+- roomle-ui `a008be42d`, based on `fix/corner-group-window-offset-hint-RML-18201`.
+- roomle-hi-example, based on `fix/planning-skills-extension`.
+
+`roomCorners` in both repositories runs over all walls and skips a corner that turns away from the
+room. The living room now lists its five room corners: back left `[-3185, 0, -3765]`, front left
+`[-3185, 0, 2235]`, front right `[6320, 0, 2235]`, back right `[6320, 0, -5265]` and back left
+`[1935, 0, -5265]`. It lists no corner of the partition and none at the inner corner of the L.
+D83 records the rule in §3 of [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md), and
+backlog item 68 is removed.
+
+Validation:
+
+- roomle-ui: homag-intelligence 1021 tests pass (1 new). `lint:types:sdk`, oxlint and prettier
+  are clean.
+- roomle-hi-example: `hi-mcp` 291 tests pass (1 new). `typecheck`, `lint` and `format:check` are
+  clean.
+- Without the source change, both new tests fail.
+- No model run and no live check.
 
 ## Implementation plan
 

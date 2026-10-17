@@ -10,9 +10,10 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| 72 — The wall units hang at two heights after a plinth height in the group attributes | Analyse why only the wall unit beside a tall unit follows the plinth height of the group attributes; then every wall unit hung above a floor unit stays flush with the tall units | medium |
+| 72 — The wall units hang at two heights after a plinth height in the group attributes | Analyse why some wall units follow the plinth height of the group attributes and others do not; then every wall unit hung above a floor unit stays flush with the tall units | medium |
 | 73 — A wall-unit side panel beside a wall unit is moved into the floor row | Tell wall-level articles from floor articles by library data rather than a category word; keep an article the agent puts beside a wall unit there | low |
 | 74 — An island's back row of other widths lands off the front row | Say in the description of `behind` where a turned unit lines up and which way the relations run in a turned row; else an `align` the server derives the offset from | low |
+| 75 — The backsplash of an image kitchen is reported as not buildable | Say in the `notCarried` sentence of `create-or-replace-groups`, library-neutrally, that a generated part may wait for an attribute of the units that switches it on, and drop its kitchen example | medium |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
 

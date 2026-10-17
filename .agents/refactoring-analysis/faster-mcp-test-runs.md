@@ -5,13 +5,35 @@
 > **Trigger**: "the mcp test take very long to run / I know this is partially caused by the fact that the process of planning a kitchen in the mcp takes its time - however this is out of scope now, improving the performance of the mcp is a separate task / but is there anything in the test script `.agents/scripts/run-hi-mcp-tests.js`, that could be improved to make the tests run faster? / the tests run almost stale, this should not be put in danger / analyse if there is something that can be improved"
 > **Date**: 2026-10-11
 > **Author**: AI Assistant
-> **Status**: Open
+> **Status**: Done
 > **Branch**: `test/test-suite-improvements` (from `master`)
 
 ## Repositories
 
 - **roomle-hi-example** — the test runner and its child change; the launcher gains a flag to skip its build gate. No other repository changes.
 - **roomle-ui**, **RoomleCore**, **ligna-store**, **roomle-model-exporter** — unchanged. The MCP planning time itself is explicitly out of scope.
+
+## Outcome
+
+Measured on 2026-10-17 before the change (warm, three repetitions each, no model):
+
+| Part of `ready` | Time |
+|---|---|
+| `npm run typecheck` in the launcher's build gate | 2.2–2.3 s |
+| launcher boot without the typecheck, to the chat's `/health` | 0.33–0.37 s |
+| Chromium launch and first page (`chromium.launch`) | 0.13 s |
+| the same with a shared browser server (`chromium.connect`) | 0.03–0.07 s |
+
+- **A — implemented.** `start.mjs` skips the typecheck with `--no-typecheck`;
+  `run-hi-mcp-prompt.js` passes the flag on, and `run-hi-mcp-tests.js` passes it once a run of the
+  session has stored its `run.json` (the launcher of that run has passed the typecheck). The first
+  run of a session keeps the build gate. Guarded by
+  `test('typechecks until a run of the session has stored its run.json')` in
+  `.agents/scripts/tests/suite-runner.test.js`.
+- **B — rejected.** A shared Chromium saves ~0.1 s per run.
+- **C — rejected.** A shared launcher saves ~0.35 s per run against the risk the analysis names.
+- The rest of `ready`, ~8 s, is the page, the HI library and the plan load, which every run needs
+  in a fresh page.
 
 ## Verdict
 

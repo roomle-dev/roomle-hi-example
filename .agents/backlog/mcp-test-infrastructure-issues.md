@@ -12,7 +12,6 @@ its fix is in the code.
 | # | Issue | Kind | Priority |
 |---|---|---|---|
 | 1 | [The object-only perspective render draws an empty frame under software GL](#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl) | defect in the planner the test drives, roomle-ui | low — the runs need a GPU meanwhile |
-| 2 | [The per-run fixed overhead of the test runner](#2-the-per-run-fixed-overhead-of-the-test-runner) | improvement of the test runner | medium — the runs stay sequential |
 
 ## 1. The object-only perspective render draws an empty frame under software GL
 
@@ -39,27 +38,3 @@ returns a non-empty image.
 
 **Reproduce.** `run-hi-mcp-prompt.js` with `CHROMIUM_ARGS` (`:62`) set to `[]` (headless on
 SwiftShader), test `three-tall-units-right-wall`.
-
-## 2. The per-run fixed overhead of the test runner
-
-**Problem.** A "test the mcp" session pays a fixed cost per run that does not depend on the prompt:
-the launcher typechecks the whole `hi-mcp` workspace, a fresh Chromium starts, and a fresh launcher
-boots (page, MCP server, chat backend). Over 44 runs the `ready` phase was 473 s — 24 % of the
-session — beside the chat phase (63 %, the model and the planner) and the snapshot phase (13 %).
-
-**Cause.** `start.mjs` runs `npm run typecheck` (three sequential `tsc` processes) on every launcher
-start, on source that does not change between the runs of a session; `run-hi-mcp-prompt.js` launches
-a fresh Playwright Chromium per run; and each run starts and stops its own launcher.
-
-**To do.** Cut the fixed cost without touching the chat phase and without endangering the sequential
-runs (fixed ports 3110/3200, one child at a time). In payoff order: (A) a `--no-typecheck` flag on
-`start.mjs`, passed by the child, so a test session skips the redundant typecheck; (B) reuse one
-Chromium across runs — the orchestrator owns a browser (`launchServer`), the child connects over CDP
-and opens a fresh context per run; (C) reuse one launcher across runs (largest change, most risk —
-the child owns the launcher lifetime and `aborted()` depends on it exiting). The retry/resume logic
-and the stored result shape must not change, so `report.md` and the benchmark stay comparable.
-
-**Test.** `node --test .agents/scripts/tests/*.test.js`; then a session's `durationsMs.ready` in
-`run.json` against the 473 s / 10.8 s baseline, read by `benchmark-hi-mcp-runs.js`.
-
-**Analysis.** [faster-mcp-test-runs.md](../refactoring-analysis/faster-mcp-test-runs.md).

@@ -67,7 +67,6 @@ Details: [mcp-test-infrastructure-issues.md](mcp-test-infrastructure-issues.md).
 |---|---|---|
 | [1 — The object-only perspective render draws an empty frame under software GL](mcp-test-infrastructure-issues.md#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl) | roomle-ui: find why the frame is dropped under SwiftShader | low |
 | [2 — The per-run fixed overhead of the test runner](mcp-test-infrastructure-issues.md#2-the-per-run-fixed-overhead-of-the-test-runner) | Cut the fixed cost per run (launcher typecheck, Chromium launch, launcher reuse) without endangering the sequential runs | medium |
-| [3 — `run.json` keeps only the top-level message of a failed provider step](mcp-test-infrastructure-issues.md#3-runjson-keeps-only-the-top-level-message-of-a-failed-provider-step) | Record the `[hi-chat] step n failed after … ms: …` lines with their cause chain in `run.json`, and retry a run whose recorded step failure is a provider failure | medium |
 
 ## Deployment, launcher and page sessions
 

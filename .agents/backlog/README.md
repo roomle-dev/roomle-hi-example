@@ -10,7 +10,6 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| 68 — The room corners leave out a corner where an opening meets a wall | Build the corners from the wall faces: a corner where one face ends and the next starts; decide whether a partition gives room corners | low |
 | 72 — The wall units hang at two heights after a plinth height in the group attributes | Analyse why only the wall unit beside a tall unit follows the plinth height of the group attributes; then every wall unit hung above a floor unit stays flush with the tall units | medium |
 | 73 — A wall-unit side panel beside a wall unit is moved into the floor row | Tell wall-level articles from floor articles by library data rather than a category word; keep an article the agent puts beside a wall unit there | low |
 | 74 — An island's back row of other widths lands off the front row | Say in the description of `behind` where a turned unit lines up and which way the relations run in a turned row; else an `align` the server derives the offset from | low |

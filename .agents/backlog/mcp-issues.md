@@ -23,38 +23,12 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 68 | [The room corners leave out a corner where an opening meets a wall](#68-the-room-corners-leave-out-a-corner-where-an-opening-meets-a-wall) | defect | roomle-ui `roomCorners` (`hi-plan-space.ts`), roomle-hi-example `roomCorners` (`agent-facing.ts`) | low | | |
 | 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | roomle-ui `create-or-replace-groups` tool command (`hi-tool-commands.ts`, `hangGapOf` in `hi-group-layout.ts`) or the planner — not analysed | medium | gpt-6.1-sol | |
 | 73 | [A wall-unit side panel beside a wall unit is moved into the floor row](#73-a-wall-unit-side-panel-beside-a-wall-unit-is-moved-into-the-floor-row) | defect | roomle-ui `relationsToDocking`, `isWallUnitArticle` (`hi-group-layout.ts`) | low | gpt-6.1-sol | |
 | 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, `behind`), roomle-ui `relationsToDocking` (`hi-group-layout.ts`) | low | gpt-6.1-sol | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
-
-## 68. The room corners leave out a corner where an opening meets a wall
-
-**Problem.** The `corners` of a room in `get-plan-context` list a corner only where two segments of
-type `wall` meet. The living room of the prompt tests has no front left corner at
-`[-3185, 0, 2235]` and no front right corner at `[6320, 0, 2235]`: a floor-to-ceiling window ends
-there. The faces of the partition inside the room are listed as room corners instead, among them a
-"front right" corner at `[1810, 0, -2550]`. An agent that reads the corners for a placement by point
-finds the wrong corner or none.
-
-**Cause.** `roomCorners` (roomle-ui `hi-plan-space.ts`, and the server's copy in
-`hi-mcp/hi-mcp-server/agent-facing.ts`) takes the walls of type `wall` only and the walls of every
-subpath of the contour as walls of the room. A placement by side label finds the corner of a wall
-face (D81); the corners list does not.
-
-**To do.** Build the corners from the faces (`wallFaces`): a corner where one face ends and the
-next starts at an angle. Decide whether the faces of an inner subpath — a partition — give room
-corners.
-
-**Test.** roomle-ui `__tests__/hi-plan-space-test.ts` (`describe('roomCorners')`) and
-`it('names the walls, marks the openings and lists the room corners')` in
-`hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`: the living-room walls give the outer corners,
-the front left and the front right ones included.
-
-**Reproduce.** `mcp-test-2026-10-16_11-57-20`: gpt-6-astra 05 (`sideboard-living-room-front-wall`), `rooms.rooms[0].corners` of `plan-context.json`.
 
 ## 72. The wall units hang at two heights after a plinth height in the group attributes
 

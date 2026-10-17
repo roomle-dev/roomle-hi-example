@@ -72,18 +72,19 @@ export interface RoomCorner {
   posRotationY: number;
 }
 
-// The corners of a room: where a wall ends and another wall starts at an
-// angle (the contour runs counter-clockwise; collinear walls split by a door
-// form no corner). The name is back/front plus left/right, and posRotationY is
-// the facingRotationY of the wall that ends in the corner - the rotation of a
-// corner kitchen there, for both hands of corner article (D13, D33).
+// The corners of a room: where a wall or an opening ends and the next starts
+// at an angle that turns into the room - towards the side the ending one
+// faces, as the room lies left of the contour (D61). A partition and the inner
+// corner of an L-shaped room turn away from it and give none. The name is
+// back/front plus left/right, and posRotationY is the facingRotationY of the
+// wall that ends in the corner - the rotation of a corner kitchen there, for
+// both hands of corner article (D13, D33, D83).
 export const roomCorners = (walls: DerivedWall[]): RoomCorner[] => {
-  const real = walls.filter((wall) => wall.type === 'wall');
   const corners: RoomCorner[] = [];
-  for (const ending of real) {
+  for (const ending of walls) {
     const [endingStart, endPoint] = wallFloorPoints(ending);
     const along = unitDirection(endingStart, endPoint);
-    for (const starting of real) {
+    for (const starting of walls) {
       const [startPoint, startingEnd] = wallFloorPoints(starting);
       const next = unitDirection(startPoint, startingEnd);
       if (
@@ -91,7 +92,8 @@ export const roomCorners = (walls: DerivedWall[]): RoomCorner[] => {
         !samePoint(endPoint, startPoint) ||
         !along ||
         !next ||
-        Math.abs(along[0] * next[0] + along[1] * next[1]) > 0.999
+        Math.abs(along[0] * next[0] + along[1] * next[1]) > 0.999 ||
+        along[1] * next[0] - along[0] * next[1] <= 0
       ) {
         continue;
       }

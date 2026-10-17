@@ -84,9 +84,3 @@ Details: [deployment-and-session-issues.md](deployment-and-session-issues.md).
 |---|---|---|
 | The HI tools in the embedding-lib instead of the Cloudflare MCP server | The page provides the tools: the MCP server's tools, served text, skills and undo record in the embedding-lib (`src/homag-intelligence`); the AI SDK loops and their provider mappings stay in the hosts, which drop only the server, the bridge and the MCP client; the example's chat moves into its page; teardown of the Workers last | [hi-tools-in-the-embedding-lib.md](hi-tools-in-the-embedding-lib.md) |
 | A backend-controlled agent loop with browser-executed scene tools | The scene tools stay in the browser; the agent loop, the tool authorization and the provider credentials move to the backend | [backend-agent-loop-with-browser-scene-tools.md](backend-agent-loop-with-browser-scene-tools.md) |
-
-## ligna-store
-
-| Item | To do | Details |
-|---|---|---|
-| The chat lacks the Mistral image adapter | Wrap `createMistral` with `toolResultFilesAsUserMessages` (`hi-mcp-chat/tool-result-images.ts`), so the images of `get-plan-images` do not reach Mistral as base64 text | [ligna-store-chat-client.md, 1](ligna-store-chat-client.md#1-the-images-of-get-plan-images-reach-mistral-as-base64-text) |

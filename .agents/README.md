@@ -140,7 +140,6 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [The HI tools in the embedding-lib instead of the Cloudflare MCP server](backlog/hi-tools-in-the-embedding-lib.md) — the page provides the MCP tools from the embedding-lib (`src/homag-intelligence`); the server, the page bridges and the Cloudflare deployment go | 2026-10-16 |
 | [A backend-controlled agent loop with browser-executed scene tools](backlog/backend-agent-loop-with-browser-scene-tools.md) — the scene tools in the browser, the agent loop and the credentials in the backend | 2026-10-07 |
 | [Analyse how Spec Kit can help with the prompting](backlog/speckit-for-the-prompting.md) — Spec Kit's prompt sections as inspiration for the served text and the chat prompt | 2026-10-07 |
-| [The ligna-store chat as a client of the HI MCP server](backlog/ligna-store-chat-client.md) — the Mistral image adapter | 2026-10-14 |
 
 ---
 

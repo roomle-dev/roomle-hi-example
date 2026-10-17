@@ -383,8 +383,7 @@ Decided by the user:
 
 - **Backlog items:** [deployment-and-session-issues.md](deployment-and-session-issues.md) #3 (no
   public endpoint left) and #4 (part of the teardown in §4.4).
-  [ligna-store-chat-client.md](ligna-store-chat-client.md) #1 stays: the Mistral image
-  middleware is part of the host's loop.
+  The Mistral image middleware stays: it is part of the host's loop.
 - **ADRs:** 0001 (rest), 0002 and 0004 are superseded. 0003, 0005 and 0008 are superseded in part
   (the server, the deployment, the accounts).
 - **Docs:**

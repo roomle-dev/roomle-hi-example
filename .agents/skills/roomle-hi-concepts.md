@@ -244,8 +244,8 @@ doors — in the root's `attributes` and with `change-module-attribute` — and 
 among the root's input attributes; `Automatic` and the resolved side are not shown.
 `mod_HandlePosType` places and turns the handle and leaves the hinge side as it is: `03` and `04` put
 a vertical handle at the edge opposite the hinge, turned by 180° against each other, `05` and `06` in
-the middle of the door's width. The descs of both attributes say this; the articles with two doors
-say "with 2 doors" for both kinds of doors
+the middle of the door's width. The descs of both attributes say this, and the articles with two
+doors say whether their doors stand one above the other or side by side
 ([`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md),
 sections 1.2, 2.6 and 2.7).
 The agent hinges the doors at the ends of a row by the served rule of

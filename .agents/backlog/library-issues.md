@@ -60,9 +60,9 @@ swapped beside the hob unit, it covers part of the hob. Whether the agent puts a
 drainer is chance.
 
 **Cause.** The geometry is intended (the library builds the sink that way); the root module's
-outline in `obstacles` shows it, and the descriptions of the sink units name it. Every sink unit
-comes with the sink `mod_SinkId` `Axia_Grey_L`, whose value desc is its code: nothing in the
-attribute vocabulary says on which side its drainer is.
+outline in `obstacles` shows it, and the descriptions of the sink units and of the `mod_SinkId`
+values name it. Not known: whether the basin-right sinks put the drainer on the left and whether the
+sink units take them, and the widths of the Axis, Dinas and Metra sinks.
 
 **How the library behaves.** All five sink units come with `mod_SinkId` `Axia_Grey_L` (Blanco),
 basin on the left, drainer on the right, 980 mm wide with the drainer. The outlines of the root
@@ -287,8 +287,8 @@ photo are plain. A stone decor as front colour leads there too: it comes only wi
 library switches the program. Drawers and pull-outs with Modern fail alike: "Drawer - ModernFrame01 -
 NoGrain - NoGrain - Glass".
 
-**Cause.** The library builds Modern on doors only, and the library data does not say so: the desc
-of the program Modern names a mitred frame with glass, the stone decors name their colour only. The
+**Cause.** The library builds Modern on doors only, and the desc of Modern says so; the stone decors
+name their colour only, not that a front in them is a Modern door. The
 kitchen catalog has no wall cabinet with glass fronts; the glass display cabinets `SM_WT300S` and
 `SM_HT600S` are living-room articles.
 
@@ -327,8 +327,7 @@ take fails with error 14019 and the root module is not built: `H2TB60` with `Lef
 with `Left` or `Right`. `LeftLeft` and `RightRight` are offered for a pair but not calculated on
 `U2TB90`.
 
-**Cause.** `tab_DoorSettings` has no entry for `LeftLeft` and `RightRight` on `U2TB90`. The desc of
-the handle position type `14` names "the place of 03" instead of `13`.
+**Cause.** `tab_DoorSettings` has no entry for `LeftLeft` and `RightRight` on `U2TB90`.
 
 **How the library behaves.** Checked on the bo-test planner on 2026-10-17, without a model, through
 the MCP tools:
@@ -346,9 +345,8 @@ put a vertical handle at the edge opposite the hinge, at the same place, turned 
 other; `05` and `06` put it in the middle of the door's width. None changes the hinge side.
 
 **To do.** The library: `LeftLeft` and `RightRight` are calculated on the articles with a pair of
-doors, or their descs name the articles that take them; the desc of `14` names the place of `13` —
-section 2.7 of
-[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#27-handle-position-type).
+doors, or their descs name the articles that take them — section 2.6 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#26-door-direction).
 Then check that the served text needs nothing more.
 
 **Status.** Done in the library: the `FUNCTION` lines of the articles with two doors say "2 doors one

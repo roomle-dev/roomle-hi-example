@@ -23,7 +23,7 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | roomle-ui `create-or-replace-groups` tool command (`hi-tool-commands.ts`, `hangGapOf` in `hi-group-layout.ts`) or the planner — not analysed | medium | gpt-6-astra | |
+| 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | analysed: roomle-ui `create-or-replace-groups` tool command (`hi-tool-commands.ts`, `hangGapOf` in `hi-group-layout.ts`) — the wall unit's height is fixed at the load with the library's default plinth (D36, D42); the library lifts some wall units when the plinth changes, the rest stay low. Fix proposed in [the analysis](../bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md), to be based on roomle-ui `fix/room-corners-at-openings` | medium | gpt-6-astra | |
 | 73 | [A wall-level article of another category is taken for a floor unit](#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit) | defect | roomle-ui `relationsToDocking`, `isWallUnitArticle` (`hi-group-layout.ts`) | low | gpt-6-astra | |
 | 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, `behind`), roomle-ui `relationsToDocking` (`hi-group-layout.ts`) | low | gpt-6.1-sol | |
 | 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, the `notCarried` sentence of `create-or-replace-groups`) | medium | gpt-6-astra | |
@@ -42,14 +42,27 @@ of the old plinth, 50 or 20 mm below the tall units that D35 hangs them flush wi
 stay low is tied neither to the article (`O2TB90`, `OTB60` and `OTB30` stay low in one run and rise in
 another) nor to standing beside a tall unit.
 
-**Cause.** Not analysed. The hang gap of a wall unit `above` a floor unit is relative to the floor
-unit (D35, `hangGapOf`: the plinth cancels out); the group attributes are set after the load (D36);
-after a reload the kernel's docking no longer links a wall unit to the floor unit it was placed above
-(D42). A wall unit placed above a floor unit may therefore keep its height when the floor unit rises.
+**Cause.** Analysed in [the bug analysis](../bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md).
+The height of a wall unit is fixed at the load as an absolute insertion height computed with the
+library's default plinth: the group attributes — which carry the plinth height — are applied only
+after the load (D36), and the docking that hung the wall unit above its carrier (Bottom on Top plus
+the hang gap) does not survive the load as a link (D42: the docking context links only touching
+vectors). When the plinth attribute then lifts the floor and tall units, the kernel moves only the
+wall units whose vectors still touch a risen unit (stacks `onTop`, wall units beside tall units),
+and the library's recalculation lifts some of the wall units hung above floor units by the same
+delta (D59 names them) and leaves the others at the load-time height — 50 or 20 mm below the tall
+units' top that D35 hangs them flush with. Which wall units the library lifts is its server-side
+calculation logic: across the stored runs the same article above the same carrier rises in one run
+and stays in another, so the split cannot be predicted from the served data.
 
-**To do.** Analyse where the height of the wall units is fixed and why some wall units follow the
-plinth and others do not. Then every wall unit hung above a floor unit stays flush with the tall units
-after the group attributes change the plinth height — no change of the served text.
+**To do.** Fix, proposed in [the analysis](../bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md),
+in roomle-ui `create-or-replace-groups` (based on `fix/room-corners-at-openings`): after the group
+attributes are applied, re-assert the hang of every wall unit hung above a floor unit — its bottom
+at its carrier's new top plus the compiled gap (`gapMm`, else the D35 `hangGapOf`) — and report the
+lift as a correction. Then every wall unit hung above a floor unit stays flush with the tall units
+after the group attributes change the plinth height — no change of the served text. The kernel
+(RoomleCore) and the library (HOMAG, server-side calculation) are the root-cause alternatives named
+in the analysis.
 
 **Test.** A roomle-ui test of `create-or-replace-groups` with `mod_PlinthAreaHeight` in the group
 attributes (`__tests__/hi-tool-commands/create-or-replace-groups-input-test.ts`), and

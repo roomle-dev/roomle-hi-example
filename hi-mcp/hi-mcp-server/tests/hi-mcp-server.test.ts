@@ -85,6 +85,45 @@ describe('hi-mcp-server tool registration', () => {
 });
 
 describe('hi-mcp-server tool calls', () => {
+  it('explains mounting from library descriptions and continuing a wall row', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const rules = textOf(
+      await client.callTool({ name: 'get-authoring-rules', arguments: {} })
+    );
+    const { tools } = await client.listTools();
+    const descriptionOf = (name: string) =>
+      tools.find((tool) => tool.name === name)?.description ?? '';
+    for (const text of [
+      client.getInstructions() ?? '',
+      rules,
+      descriptionOf('get-plan-context'),
+      descriptionOf('create-or-replace-groups'),
+    ]) {
+      expect(text).toContain(
+        'mounting settings from their descriptions and attributes'
+      );
+      expect(text).toContain('categories organize the catalog');
+    }
+    expect(descriptionOf('create-or-replace-groups')).toContain(
+      'including its finishing parts'
+    );
+    expect(descriptionOf('merge-article-into-group')).toContain(
+      'an explicit zero stays zero'
+    );
+    const mergeSchema = tools.find(
+      (tool) => tool.name === 'merge-article-into-group'
+    )?.inputSchema as any;
+    const offsetDescription: string | undefined =
+      mergeSchema?.properties?.dockTo?.properties?.offset?.description;
+    expect(offsetDescription).toContain(
+      'omit offset to let the server set the hang gap'
+    );
+    expect(offsetDescription).toContain(
+      'a supplied y value sets the clearance, including zero'
+    );
+    expect(offsetDescription).not.toContain('when y is 0');
+  });
+
   it('points the agent to the command tools for editing an existing group', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(
@@ -795,7 +834,7 @@ describe('hi-mcp-server tool calls', () => {
       'the catalog offers articles - cabinets, wardrobes, appliances, panels',
       'A group is one piece of furniture made of articles: a kitchen, a wardrobe, a sideboard, a utility room',
       'An article placed in a group is a root module',
-      'a high or tall cabinet or a wardrobe is about 2000 mm high, a low cabinet or base cabinet about 720 mm high',
+      'The description says what an article is and dimensions give its size',
       'The user decides which articles stand next to each other: a low cabinet between two high cabinets is an order like any other',
       'A desc says what an article is, not where the user may put it',
       'take the article of that kind from the category of its neighbours where that category has one (a kitchen cabinet into a kitchen, a wardrobe into a wardrobe), else the closest kind of another category',

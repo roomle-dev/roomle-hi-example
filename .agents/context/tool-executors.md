@@ -119,13 +119,17 @@ call and is reported in `notLoaded`, the others load
 4. **Resolve article ids** against the catalog (`resolveArticleIds`): another spelling is read as the
    catalog's; an unknown article drops that root and every reference to it, and the group still
    loads — only a group without any known article fails.
-5. **Relations to docking** (`relationsToDocking`, [Layout and placement](./layout-and-placement.md#relations-to-docking--hi-group-layoutts)).
+5. **Retained mounting and relations to docking** (`relationsToDocking`, [Layout and placement](./layout-and-placement.md#relations-to-docking--hi-group-layoutts)).
    Docking written as `contextData` is checked first: a vector the article does not have, where the
    catalog knows its vectors (`dropUnknownDockingVectors`, G62), and a floor unit on a Top vector of
-   a base unit (`dropFloorUnitsOnBaseUnits`, G63).
+   a base unit (`dropFloorUnitsOnBaseUnits`, G63), only with affirmative floor-category evidence.
+   Pre-context and `resolveAgentGroupIds` precede this stage. Replacements read calculated groups
+   once; roots with unchanged ids/articles and no new relation retain measured carrier links
+   through `withUnitsAboveDocked`. Supplied carrier docking takes priority. `wallRootsOf` resolves
+   upper membership from relations, docking and retained calculated carriers.
 6. **Move attribute overrides** meant for generated roots (`moveGeneratedRootOverrides`).
-7. **Group ids:** a group id the agent invented for a new group in an earlier call is mapped to the id
-   the planner gave it (`resolveAgentGroupIds`), so resending it replaces instead of duplicating.
+7. **Group ids:** the mapping to planner ids is resolved before mounting, so a retained group's
+   geometry and its replace refer to the same group.
 8. **Complete the docking** of new groups (`completeDocking`): a second unit on an occupied side —
    also a second wall unit on a Top side vector of a tall unit — goes to the free end of the row
    (`separateSideVectorPartners`, `rowWalk`); an entry that closes a row into a ring is dropped
@@ -273,8 +277,11 @@ merge, insert and exchange are forwarded unchanged.
   width past the root's footprint) wins; if none does, the first.
 - **A vector the article does not have** becomes the partner of `ownDockingVector`
   (`PARTNER_VECTOR`).
-- **A wall unit on a floor unit** (not a tall unit): `Top → Top` becomes `Top → Bottom`, and the y
-  offset is the hang gap of the wall units (`hangGapOf`) unless the agent gave one.
+- **A wall unit on a floor unit** (not a tall unit): its `Top → Top` becomes `Top → Bottom`.
+  A known wall article or unknown-category article explicitly merged `Top → Bottom` receives
+  `hangGapOf` only when the y offset is omitted; supplied numeric offsets, including zero, stay.
+- **Upper-row feedback:** measured carriers and side docking identify moved upper articles outside
+  wall-unit categories. Room-space poses distinguish movement from a group-frame change.
 
 ### Row edits
 

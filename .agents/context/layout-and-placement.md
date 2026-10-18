@@ -45,7 +45,7 @@ docking directly.
 
 ### Unit kinds
 
-The kind of a unit comes from its catalog article (`catalogArticleOf`):
+Catalog recognition supplies the following initial hints (`catalogArticleOf`):
 
 | Kind | Rule |
 | ---- | ---- |
@@ -55,20 +55,35 @@ The kind of a unit comes from its catalog article (`catalogArticleOf`):
 | base unit | category `/\bbase ?units?\b/i`, not tall, not wall — carries the worktop, nothing stands on it |
 | corner | `isCornerArticle` (`hi-group-placement.ts`) |
 
+`isFloorUnitArticle` requires an explicit base/tall category match. An unmatched category supplies
+no affirmative floor evidence. `wallRootsOf` resolves upper roots for each layout from wall/hood
+recognition, valid upper relations, Top-to-Bottom docking read both ways, and measured retained
+carriers. Side relations and Bottom-to-Bottom docking continue upper rows through unknown
+articles; floor articles and unseeded tall junctions stop propagation. An explicit upper seed
+overrides that root's numeric tall-height heuristic. No catalog metadata is written.
+
+For a replace, group-id resolution precedes mounting. The calculated group is read once and
+`withUnitsAboveDocked` restores missing carrier links at measured offsets for roots retaining
+their id/article with no new relation. Supplied carrier docking is kept. Incomplete calculated
+vectors supply no measured box. Upper membership also drives completion and edit hints.
+
 `hangGapOf` gives the gap between a floor unit and the wall unit above it, so the wall units' tops are
 flush with the tall units: tall height − wall unit height − floor unit height (e.g. 2100 − 720 − 720
-= 660). The tall height is the first tall root's, else the library's usual one (D35).
+= 660). The tall height is the first tall root outside the resolved upper row, else the library's
+usual one (D35). Explicit `gapMm`, including zero, takes precedence.
 
 ### The pipeline
 
 1. **Read each root's relation** and delete the relation fields. Corrections: `align`/`gapMm` without
-   a relation, several relations (the first wins), unknown or self target, a non-wall unit `above`
+   a relation, several relations (the first wins), unknown or self target, a recognized floor unit `above`
    (→ `rightOf`), a wall unit `onTop` a base unit (→ `above`), a floor unit `onTop` a base unit (→
    `rightOf`), a wall unit beside a floor unit that is not tall (→ `above`), a floor unit beside a
    wall unit (dropped), `behind` with a corner article (dropped).
 2. **Tall units:** a unit `above` a tall unit, or a hood beside one, goes above the floor unit next
    to it; if there is none, beside the tall unit with the tops flush.
 3. **Rings:** a relation that would close a ring is dropped (union-find over links and relations).
+   This validation also runs before deriving row membership and correcting relations. Unknown
+   upper articles retain their requested relation and gap; unknown stacking retains its alignment.
 4. **A floor unit goes first:** the first non-wall root moves to `roots[0]` — the planner arranges
    from the first root.
 5. **Default links** for units that name no neighbour: a floor unit right of the previous floor unit,

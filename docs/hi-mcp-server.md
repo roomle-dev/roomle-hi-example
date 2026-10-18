@@ -685,6 +685,8 @@ image, `top` at the upper edge. The description tells the agent that the
 images show how the plan looks, while what an article is and how big it is
 come from `desc` and `dimensions` (see [Authoring pos groups](#authoring-pos-groups)).
 
+For mounting, choose from article and attribute descriptions. Categories organize the catalog; an unknown category supplies no floor-mounting evidence. An article used at wall level hangs `above` its carrier, and finishing parts continue that row `rightOf` or `leftOf`. Explicit `gapMm`, including zero, sets clearance. A replace preserves measured carrier offsets of retained roots even when a non-touching link is absent; a new relation or changed article supersedes that inference. A merged upper article receives the default hang gap only when its y offset is omitted; an explicit zero remains zero.
+
 ## Authoring pos groups
 
 The guiding principle: **the agent declares what and where, the planner

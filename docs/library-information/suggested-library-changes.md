@@ -16,6 +16,7 @@ heading of each. Every text stays here once the library carries it, with its sta
 | [1.1 Sink base units](#11-sink-base-units) | `SUT60`, `SUBA60`, `SUB2A90`, `ESUT60`, `ESUB2A90` | applied |
 | [1.2 Articles with two doors](#12-articles-with-two-doors) | `H2TB60`, `HWR_HB600T2`, `U2TB90`, `O2TB90`, `US2TB90`, `EU2TB90` | applied |
 | [1.3 Flap wall cabinets](#13-flap-wall-cabinets) | `OSKB60`, `OSKB90`, `OFKB60`, `OFKB90` | applied |
+| [1.4 Wall units with a single door](#14-wall-units-with-a-single-door) | `OTB30`, `OTB45`, `OTB60` | open |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
 | [2.2 Front program](#22-front-program) | `mod_FrontProgram` | applied |
 | [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
@@ -24,6 +25,7 @@ heading of each. Every text stays here once the library carries it, with its sta
 | [2.6 Door direction](#26-door-direction) | `mod_DoorDirectionSelection` | applied |
 | [2.7 Handle position type](#27-handle-position-type) | `mod_HandlePosType` | applied |
 | [2.8 Sink](#28-sink) | `mod_SinkId` | applied |
+| [2.9 Width](#29-width) | `mod_Width` | open |
 
 ## 1. Article descriptions
 
@@ -251,6 +253,52 @@ SEARCH_KEYWORDS: folding flap wall unit, lift-up cabinet, bi-fold flap
 AI_SELECTION_HINT: Select for a wide wall cabinet with a folding upward flap, at the height and depth it comes with. For glass fronts or another height or depth, choose a wall cabinet with doors.
 ```
 
+### 1.4 Wall units with a single door
+
+**Changed line.** `AI_SELECTION_HINT`.
+
+`OTB30` (OTB30) — 801 characters:
+
+```
+FUNCTION: Wall cabinet, 30 cm wide, with 1 door and adjustable shelves.
+PURPOSE: Wall-hung closed storage for crockery, glasses and dry goods.
+TYPICAL_PLACEMENT: Wall-unit row above the worktop.
+REQUIREMENTS: Wall-mounted unit; requires a load-bearing wall and suspension rail.
+RECOMMENDED_NEIGHBOURS: Further wall units, extractor hood, open wall shelves.
+RESTRICTIONS: Wall mounting only; not floor-standing; no appliances.
+STYLE_COMPATIBILITY: Modern handled kitchen. Also suits classic, Scandinavian and country-house designs.
+SEARCH_KEYWORDS: wall cabinet, wall unit, upper cabinet, door wall unit
+AI_SELECTION_HINT: Select for a narrow wall-hung kitchen cabinet behind a single door, at the width it comes with. For a wider cabinet, choose one with a pair of doors or two narrower units.
+```
+
+`OTB45` (OTB45) — 813 characters:
+
+```
+FUNCTION: Wall cabinet, 45 cm wide, with 1 door and adjustable shelves.
+PURPOSE: Wall-hung closed storage for crockery, glasses and dry goods.
+TYPICAL_PLACEMENT: Wall-unit row above the worktop.
+REQUIREMENTS: Wall-mounted unit; requires a load-bearing wall and suspension rail.
+RECOMMENDED_NEIGHBOURS: Further wall units, extractor hood, open wall shelves.
+RESTRICTIONS: Wall mounting only; not floor-standing; no appliances.
+STYLE_COMPATIBILITY: Modern handled kitchen. Also suits classic, Scandinavian and country-house designs.
+SEARCH_KEYWORDS: wall cabinet, wall unit, upper cabinet, door wall unit, oberschrank
+AI_SELECTION_HINT: Select for a 45 cm wall-hung kitchen cabinet behind a single door, at the width it comes with. For a wider cabinet, choose one with a pair of doors or two narrower units.
+```
+
+`OTB60` (OTB60) — 803 characters:
+
+```
+FUNCTION: Wall cabinet, 60 cm wide, with 1 door and adjustable shelves.
+PURPOSE: Wall-hung closed storage for crockery, glasses and dry goods.
+TYPICAL_PLACEMENT: Wall-unit row above the worktop.
+REQUIREMENTS: Wall-mounted unit; requires a load-bearing wall and suspension rail.
+RECOMMENDED_NEIGHBOURS: Further wall units, extractor hood, open wall shelves.
+RESTRICTIONS: Wall mounting only; not floor-standing; no appliances.
+STYLE_COMPATIBILITY: Modern handled kitchen. Also suits classic, Scandinavian and country-house designs.
+SEARCH_KEYWORDS: wall cabinet, wall unit, upper cabinet, door wall unit
+AI_SELECTION_HINT: Select for a standard wall-hung kitchen cabinet behind a single door, at the width it comes with. For a wider cabinet, choose one with a pair of doors or two narrower units.
+```
+
 ## 2. Attribute descriptions
 
 ### 2.1 Colour values
@@ -374,3 +422,11 @@ In the library, as proposed:
 | `Dinas_L` | Dinas basin left | Dinas_L | Blanco Dinas sink: basin on the left, drainer on the right. |
 | `Dinas_R` | Dinas basin right | Dinas_R | Blanco Dinas sink: basin on the right, drainer on the left. |
 | `Metra_R` | Metra basing right | Metra_R | Blanco Metra sink: basin on the right, drainer on the left. |
+
+### 2.9 Width
+
+**Attribute.** `mod_Width` (Width).
+
+| Attribute | Name | `desc` before | Proposed `desc` |
+|---|---|---|---|
+| `mod_Width` | Width | Width of the element | Width of the element. Set it to a width the library calculates for the article. Under 300 mm, the library does not calculate the plinth of a base unit: fill the gap with a filler panel (15 cm) or a pull-out unit. |

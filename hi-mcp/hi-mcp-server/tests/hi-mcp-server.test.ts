@@ -110,6 +110,18 @@ describe('hi-mcp-server tool calls', () => {
     expect(descriptionOf('merge-article-into-group')).toContain(
       'an explicit zero stays zero'
     );
+    const mergeSchema = tools.find(
+      (tool) => tool.name === 'merge-article-into-group'
+    )?.inputSchema as any;
+    const offsetDescription: string | undefined =
+      mergeSchema?.properties?.dockTo?.properties?.offset?.description;
+    expect(offsetDescription).toContain(
+      'omit offset to let the server set the hang gap'
+    );
+    expect(offsetDescription).toContain(
+      'a supplied y value sets the clearance, including zero'
+    );
+    expect(offsetDescription).not.toContain('when y is 0');
   });
 
   it('points the agent to the command tools for editing an existing group', async () => {

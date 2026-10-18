@@ -681,7 +681,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
               .tuple([z.number(), z.number(), z.number()])
               .optional()
               .describe(
-                '[x, y, z] in millimetres added after docking; a wall unit above a floor-standing root module gets its hang gap from the server when y is 0. Default [0, 0, 0].'
+                '[x, y, z] in millimetres added after docking. For an article mounted above a floor-standing root module, omit offset to let the server set the hang gap; a supplied y value sets the clearance, including zero. Otherwise the default is [0, 0, 0].'
               ),
           })
           .describe('Where the new root module docks.'),

@@ -10,7 +10,7 @@
 
 - Run `git status` and `git diff` to see every change.
 - Confirm every change is intentional and related to the current task.
-- Discard or stash anything unrelated.
+- Leave unrelated changes untouched and unstaged. Require explicit user approval before discarding or stashing anything.
 
 ### Step 2 — Stage only related changes
 

@@ -647,8 +647,8 @@ Examples:
 
 ### Refactoring Rules
 
-1. Execute aggressively — do not revert when tests fail; adapt tests instead.
-2. Changed outputs are typically the desired result.
+1. Execute aggressively — investigate failing tests and fix unintended regressions before adapting expectations; update test assertions only for explicitly approved behavior changes.
+2. Changed outputs are typically the desired result, but confirm each change is intended.
 3. Apply completely — no mix of old and new patterns in the same code path.
 4. Every refactoring produces a report — in the pull request description.
 

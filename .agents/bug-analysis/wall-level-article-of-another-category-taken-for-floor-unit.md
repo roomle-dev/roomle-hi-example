@@ -1,8 +1,9 @@
 # Bug analysis — a wall-level article of another category is taken for a floor unit
 
 > **Type**: Bug analysis
-> **Status**: Open — cause reproduced; revised fix proposed, not implemented
+> **Status**: Open — cause reproduced; implementation and unit-test plan ready, not implemented
 > **Date**: 2026-10-17; revalidated 2026-10-18
+> **Implementation and unit-test plan**: 2026-10-18
 > **Base**: roomle-hi-example `1881ca4`, analysis branch `docs/revalidate-wall-level-articles`;
 > roomle-ui `fix/wall-unit-heights-after-plinth-change` (`8cfd98e71`)
 > **Backlog**: item 73 of [mcp-issues.md](../backlog/mcp-issues.md#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit)
@@ -12,8 +13,9 @@
 - **roomle-hi-example** — explain the existing library descriptions and mounting relations in
   the served rules and tool descriptions; test that contract and document it. This revision
   changes the analysis, backlog and their indexes only.
-- **roomle-ui** — correct the interpretation of mounting intent in `hi-group-layout.ts` and
-  matching docking cleanup in `hi-tool-docking.ts`, with regression tests, based on
+- **roomle-ui** — correct mounting interpretation in `hi-group-layout.ts`, docking cleanup and
+  completion in `hi-tool-docking.ts`, orchestration in `hi-tool-commands.ts` and edit feedback
+  in `hi-tool-hints.ts`, with regression tests, based on
   `fix/wall-unit-heights-after-plinth-change` and preserving its arrangement fix.
 
 **The HOMAG Furniture_Smith library stays as it is.** No change to its calculation, API,
@@ -195,29 +197,181 @@ The stored utility defaults give `2100 - 1280 - 820 = 0`. That does not establis
 `gapMm: 500`, measure the result and library adjustments, and preserve the base branch's
 clearance behaviour. Replacing the general height heuristics is outside this minimum fix.
 
-## Implementation and acceptance checks
+## Implementation plan
 
-1. Branch roomle-ui from `fix/wall-unit-heights-after-plinth-change` (`8cfd98e71`). Add failing
-   regressions with unchanged library facts: no fabricated insert levels or moved categories.
-   Compile a panel beside a wall unit, a utility unit above a base, and the utility unit with an
-   explicit gap. Assert retained neighbours, vectors, gap and absence of false floor corrections.
-2. Correct unknown mounting in the compiler and docking cleanup. Test a returned group resubmitted
-   unchanged, reciprocal docking, chains of finishing parts, and existing docking with new
-   relations. Keep known floor-unit correction tests as controls. An unrelated article without a
-   relation must not acquire wall mounting merely because it has a positive height attribute.
-3. Verify completion and edit feedback. Keep the existing arrangement fix. The panel must stay
-   beside its wall neighbour and the utility unit must keep its clearance after a carrier/plinth
-   height change, including when a non-touching docking link is lost.
-4. Integrate the served wording and tests in roomle-hi-example. Update
-   [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md) (D34, D35, G34, G40, G63 and affected
-   completion/feedback), [hi-mcp-server.md](../../docs/hi-mcp-server.md), authoring/tool skills
-   and relevant [implementation context](../context/README.md) with the implementation.
-   Do not describe the proposal as current behaviour yet.
-5. Replay both scenarios against the local UI branch and existing library. Isolate the panel-colour
-   failure from placement; inspect the first create/replace result and measured heights, not only
-   the final image after agent recovery. Add a stable utility-room prompt regression: the stored
-   random prompt is not a durable test identifier. Success needs neither an undo-and-merge
-   workaround nor a library change.
+**Scope and branches.** Keep the planning work on roomle-hi-example
+`docs/revalidate-wall-level-articles`. At implementation time create roomle-ui
+`fix/wall-level-article-relations` directly from `fix/wall-unit-heights-after-plinth-change`
+(`8cfd98e71`). The library is used unchanged. A successful fix retains the requested neighbour,
+mounting and explicit clearance through create, replace and carrier edits.
+
+### 1. Make the floor/unknown distinction concrete
+
+In `hi-group-layout.ts`, add one affirmative floor predicate using the **existing explicit**
+base-unit and tall-unit category matches, excluding the existing wall/hood matches. Do not use
+the numeric-height fallback of `isTallUnitArticle` as proof of floor mounting. A category such as
+Utility or Cover Panels remains unknown to that predicate. Reuse the existing category patterns;
+add no library-specific names, ids, values or height cutoffs.
+
+The affirmative predicate limits the existing G34, G40, G43 and G63 corrections. This is a
+narrowing of when those corrections apply; their behaviour and messages for positively recognized
+floor units stay. Unknown articles without a relation or mounting evidence keep the current
+default-row fallback, reported as a default rather than a claim about their capabilities.
+
+### 2. Resolve wall rows once per layout
+
+Keep the layout reasoning in `hi-group-layout.ts`, with one shared resolver returning a
+`Set<string>` of root ids used at wall level in the supplied layout. Its consumers are the
+relation compiler, docking completion and edit hints. It is recomputed from current input; it
+is neither a catalog field nor persistent state.
+
+- Seed it from existing wall/hood recognition and valid `above` relations on articles that are
+  not affirmatively floor units. Validate the named neighbour and select the one relation the
+  existing parser accepts before it contributes evidence. Self-links and missing neighbours
+  supply no evidence.
+- Seed unknown articles on the Bottom end of valid Top-to-Bottom docking, including reverse-only
+  entries. This identifies the upper root, never its carrier. An unknown article's `onTop`
+  remains a stacking request with its own gap; membership in an upper row must not rewrite
+  that explicit request to the default hanging gap.
+- For existing retained roots without new layout instructions, also accept carrier evidence
+  from the planner's calculated group using `carriersOfUnitsAbove`. Use only matching retained
+  root ids and article ids. A changed article or an explicit new relation supersedes the old
+  placement. An arbitrary positive origin or input height is insufficient evidence.
+- Spread membership across side relations and Bottom-to-Bottom side docking in both directions
+  through unknown articles. Stop at recognized floor units and tall-unit junctions, so a wall
+  row cannot turn a tall carrier or a neighbouring base row into wall units. Walk the graph
+  with a visited set so ordering, reciprocal entries and cycles cannot cause repeated work.
+- Leave structural cycle rejection and occupied-side correction with the existing algorithms.
+  Only links retained by structural validation may establish row membership; recompute after
+  a correction that changes the relevant links. Inferred defaults do not manufacture evidence
+  for unrelated unknown articles.
+
+Use the resolved membership consistently for anchoring on a floor root, defaults, wall-side
+alignment, wall-row collision handling and the Top/Bottom choice in `pairOf`. A root already
+resolved into a wall row is not a tall carrier merely because its height exceeds the old tall
+height threshold. Keep `hangGapOf`'s existing formula and library fallback; exclude resolved
+upper roots from the current group's tall-carrier candidates.
+
+### 3. Integrate creation, replacement and merging
+
+In `hi-tool-commands.ts`, move the existing pre-context read and agent-group-id resolution ahead
+of mounting interpretation. For replacements read the calculated groups once before the load,
+so retained wall roots with a non-touching link have geometry evidence. Supply that evidence
+only internally; introduce no planner method, bridge field, calculation or probe load.
+
+In `hi-group-layout.ts`, replace negative wall tests in G34/G40/G43 with affirmative floor
+tests and resolved row membership. Unknown `above` keeps its gap; unknown side continuations
+keep their neighbour. Existing known-wall corrections and positively known-floor controls stay.
+
+In `hi-tool-docking.ts`:
+
+- Narrow `dropFloorUnitsOnBaseUnits` to affirmatively recognized floor articles. Unknown upper
+  roots retain their docking and offset, including reciprocal entries.
+- Replace `connectUnreachedRoots`' direct category-only wall check with the shared layout
+  result, preserving an upper component's row during connection.
+- In `dockTarget`, an unknown article explicitly merged Bottom-to-Top above a floor carrier
+  uses the same hanging-gap derivation when the y offset is omitted. Keep Top-to-Top partner
+  correction limited to cases the existing wall recognition establishes. A supplied numeric
+  y offset, including zero, stays as requested; absence and zero are distinct.
+- Keep the occupied-side, free-vector and article-resolution algorithms; assert their existing
+  results in the regression suite.
+
+Using the existing hood recognition in completion also changes the current no-relation hood
+test: it must hang above a carrier instead of joining the floor row. Treat that as an explicit
+expected effect of removing the inconsistent category-only check.
+
+### 4. Cover edit feedback without changing arrangement
+
+In `hi-tool-hints.ts`, use the same resolved membership for the raw before/after groups.
+Seed unknown upper roots from `carriersOfUnitsAbove` and spread through their side docking.
+Use the existing room-space pose comparison for movement. Name a moved utility wall root or
+panel in the upper-row hint and keep it out of the floor-leg list. Preserve catalog recognition
+as a fallback for existing fixtures without calculated docking geometry.
+
+Keep `hi-root-module-arrangement.ts`'s carrier detection and clearance-preserving implementation
+from `8cfd98e71`. Add a regression using its real geometry path; do not create another movement
+or height-correction mechanism.
+
+### 5. Ship the served contract and reference together
+
+In roomle-hi-example `hi-mcp-server.ts`, integrate the wording under
+[Explain the existing library and the relations](#explain-the-existing-library-and-the-relations)
+into the authoring rules and the two tool descriptions. Keep the existing short catalog
+descriptions and the on-demand full descriptions. Update the merge description's omitted versus
+explicit offset contract too.
+
+Update `docs/hi-mcp-behaviour.md` (D34/D35 and G31/G34/G40/G43/G63, completion and affected
+feedback), `docs/hi-mcp-server.md`, `.agents/skills/hi-authoring-rules.md`,
+`.agents/skills/hi-mcp-tools.md`, and `.agents/context/layout-and-placement.md` /
+`tool-executors.md` with the implemented behaviour. In roomle-ui update the touched HI guidelines
+in the same change. Close out this analysis only after the fix and its checks are complete;
+remove issue 73 from the backlog after local verification.
+
+## Unit-test plan
+
+Use the existing fixture builders and test files. Add the smallest catalog fixtures representing
+the relevant facts: a wall panel in Cover Panels, an open wall unit in Utility, a recognized wall
+unit, a recognized base unit and a tall unit. Keep the actual 720/1280/820/2100 mm heights where
+used in expectations. Use neutral article ids in an additional variant. Mounting must work
+without descriptions being parsed, type attributes, insertion-height markers or insert levels;
+dimension ids continue to follow the existing `hangGapOf` contract.
+
+The tests assert docking sent to the planner, preserved offsets, measured geometry and agent
+feedback. They must not merely inspect the resolver's set.
+
+| Case | Existing test file, under `homag-intelligence/__tests__/` | Expected result |
+|---|---|---|
+| Panel at either end of a wall row | `hi-group-layout-test.ts` | Parameterize `rightOf`/`leftOf`: the wall neighbour's Bottom side meets the panel's opposite Bottom side at offset zero. No floor correction or fallback neighbour. |
+| Utility unit above a base | `hi-group-layout-test.ts` | Parameterize omitted gap, 0 and 500: Top-to-Bottom docking survives, y offsets are respectively 0 (2100 − 1280 − 820), 0 and 500. No “is no wall unit” or discarded-gap feedback. |
+| Chained unknown finishing parts and root order | `hi-group-layout-test.ts` | Two unknown side continuations keep their wall neighbours even when listed before the wall seed; mixed retained docking and a new relation give the same chain. |
+| Positive floor controls and false markers | `hi-group-layout-test.ts` | Retain the existing known base-above/base-beside-wall/onTop-base correction tests. A marker on a root or an empty insertion list does not change a known floor unit's treatment; unknown units without mounting evidence keep default fallback. Invalid/self relations do not seed a wall row. |
+| Unknown article stacked on a tall unit | `hi-group-layout-test.ts` | `onTop`, its alignment and explicit gap remain stacking. A tall carrier beside a wall chain remains in the floor row. |
+| Returned docking on replace | `hi-tool-commands/create-or-replace-groups-input-test.ts` | Through the actual tool pipeline, unknown upper docking on a recognized base keeps its offset. Parameterize forward-only, reverse-only and reciprocal context. The known-floor control still removes its docking and reports the pair once. |
+| Retained detached wall row plus a new panel | `hi-tool-commands/create-or-replace-groups-input-test.ts` | The fake planner supplies raw vectors/positions with no vertical docking link. On replace, existing utility roots stay upper roots, the new panel joins their row, and a newly explicit instruction or changed article is not overwritten by stale geometry. Include the agent's group-id alias path. |
+| Completion of a disconnected upper component | `hi-tool-commands/create-or-replace-groups-input-test.ts` | A component containing a utility wall seed and a panel connects at the upper row's free end, not a base-row end. The hood-without-a-relation test expects its derived hang instead of floor continuation. |
+| Merge above a carrier | `hi-tool-commands/group-commands-test.ts` | An unknown-category article with known 720 mm height and explicit Top-to-Bottom pairing gets 660 mm when y is omitted against a 720 mm base and 2100 mm tall reference. Explicit 0 and 500 stay. Existing known wall/hood partner correction tests still pass. |
+| Edit feedback for moved upper roots | `hi-tool-commands/group-commands-test.ts` | Give raw before/after docking geometry for a utility unit and its side panel. A carrier edit moves them: hint names both root/article ids. A floor unit or mere group-frame change is not reported as an upper-row move; a turned-leg hint excludes the upper roots. |
+| Clearance after carrier/plinth change | `hi-root-module-arrangement-test.ts`, `glue-logic-test.ts` | Extend the existing detached-carrier cases with a 1280 mm utility article and explicit 500 mm clearance; carrier docking top +50 makes upper docking bottom +50, preserves 500 and moves once. Existing connected/detached, disabled-arrangement and no-double-move controls stay green. No claim that a side panel follows without an actual side docking link. |
+
+In roomle-hi-example `hi-mcp-server/tests/hi-mcp-server.test.ts`, test the served contract through
+the MCP client: instructions/`get-authoring-rules` and `tools/list` expose the mounting guidance,
+the create description explains wall-row finishing parts, and merge describes an omitted versus
+explicit offset. Use a focused set of assertions for meaning; do not snapshot all descriptions.
+Retain the existing library-neutrality and no-internals tests. Existing
+`tool-executors.test.ts` description-compaction tests already cover FUNCTION/AI_SELECTION_HINT
+and full descriptions; add no duplicate compaction tests.
+
+### Test execution and definition of done
+
+1. Add the compiler and tool-pipeline reproductions first and run them against `8cfd98e71`.
+   Panel/utility relation, replace cleanup and missing upper-root feedback cases must fail for
+   their expected reason. Controls protecting current behaviour may pass already.
+2. Implement the shared interpretation and run the targeted cases to green. Add the served-text
+   contract assertions before editing that text; verify those assertions fail on current text.
+3. Run the complete affected HI suites through the repository scripts. From roomle-ui
+   `packages/web-sdk`:
+
+   ```sh
+   npm run test -- --run packages/homag-intelligence/__tests__/hi-group-layout-test.ts packages/homag-intelligence/__tests__/hi-tool-commands/create-or-replace-groups-input-test.ts packages/homag-intelligence/__tests__/hi-tool-commands/group-commands-test.ts packages/homag-intelligence/__tests__/hi-root-module-arrangement-test.ts packages/homag-intelligence/__tests__/glue-logic-test.ts
+   ```
+
+   Use the repository's supported Node runtime (its Volta pin), then run SDK type/lint and
+   formatting checks through the configured scripts. The earlier Node 23 workaround records a
+   completed baseline run; it is not the implementation's required runtime.
+4. From roomle-hi-example `hi-mcp`, run `npm test` and `npm run typecheck`; from its root run
+   `npm run lint`, `npm run format`, `npm run format:check`, and the Markdown link checker on
+   touched documents. Run all HI tests once after the focused suites pass to cover placement and
+   other consumers; broaden further only for a concrete failure or changed dependency.
+5. Unit tests cannot establish the library's retained mounting or appearance. As the separate
+   acceptance check, replay the two stored scenarios against the local UI branch and unchanged
+   library, inspect the first result before model recovery and measure heights/docking.
+   Isolate the panel-colour failure from placement. Add a stable utility-room prompt regression
+   using the testing skill when that acceptance work is run.
+
+The implementation is ready when new regressions pass, known-floor and existing arrangement
+controls remain green, returned docking survives replace, feedback names the actual moved upper
+roots, and the served rules describe the same behaviour. This plan contains no code change or
+new test execution; the baseline results below remain the earlier validation evidence.
 
 ## Validation performed for this revision
 

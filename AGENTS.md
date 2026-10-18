@@ -181,6 +181,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | [`.agents/skills/vercel-ai-sdk-chat.md`](./.agents/skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: providers, server-side auth, @ai-sdk/mcp, streamText |
 | [`.agents/skills/hi-mcp-testing.md`](./.agents/skills/hi-mcp-testing.md) | The user asks to **"test the mcp"** (runs the tests of `docs/test-prompts.json` with `run-hi-mcp-tests.js`, writes an evaluated report); testing the HI MCP end to end: running a prompt through the chat with a real model and planner, the stored snapshot result |
 | [`.agents/skills/hi-mcp-benchmarking.md`](./.agents/skills/hi-mcp-benchmarking.md) | Benchmarking the HI agent: measuring the performance, where the time goes, why the agent is slow, comparing the speed before and after a change — `benchmark-hi-mcp-runs.js` over test runs, the analysis and its document in `.agents/benchmarks/` |
+| [`.agents/skills/hi-analysis.md`](./.agents/skills/hi-analysis.md) | The user asks to **"analyse the bug"** / "analyze the bug" / "bug analysis", **"analyse the feature"** / "feature analysis" or **"analyse the refactoring"** / "refactoring analysis": writing the analysis — what it must cover, the affected repositories it names first, where the fix lives (never the library's calculation) |
 | [`.agents/skills/hi-analysis-cleanup.md`](./.agents/skills/hi-analysis-cleanup.md) | The user says **"cleanup analyses"** / "cleanup analysis": clean up `.agents/bug-analysis/`, `.agents/feature-analysis/` and `.agents/refactoring-analysis/` — close out every analysis whose work has landed: verify it, promote its durable outcome into the living reference, decisions, ADRs and backlog, delete it, fix the links, rebuild the index |
 | [`.agents/skills/hi-backlog-cleanup.md`](./.agents/skills/hi-backlog-cleanup.md) | The user says **"cleanup backlog"**: verify every backlog item against the code, remove what landed, strip history, refresh the code references; reviewing or updating the backlog |
 | [`.agents/skills/update-planning-results.md`](./.agents/skills/update-planning-results.md) | The user says **"update planning results"**: regenerate `docs/planning-results.md` — every kitchen image of `docs/images` planned by the HI chat with `update-planning-results.js`, the plan snapshots, the ligna-store plan links and the top, perspective and perspective object images, on a new branch |
@@ -357,7 +358,7 @@ Every change to productive code should be accompanied by analysis documents:
 | Feature Analysis | `.agents/feature-analysis/` | "analyse the feature", "analyze the feature", "feature analysis" | Open, Implemented, Rejected |
 | Refactoring Analysis | `.agents/refactoring-analysis/` | "analyse the refactoring", "analyze the refactoring", "refactoring analysis" | Open, Done |
 
-Each analysis document follows the same lifecycle: written **before** the work, closed out **after** the work.
+Each analysis document follows the same lifecycle: written **before** the work, closed out **after** the work. Writing one follows [the analysis skill](./.agents/skills/hi-analysis.md).
 
 **Every analysis names the affected repositories first.** A bug, feature or refactoring analysis
 starts, right after its header block, with a short list of the repositories the work changes, one

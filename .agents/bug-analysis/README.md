@@ -18,6 +18,11 @@ Point-in-time, investigation-driving write-ups. The document must cover:
 ## What does not belong here
 
 A symptom-level fix or workaround. All bug fixes must address the root cause, not hide the symptom.
+A fix proposal that changes the library's calculation — a library API change, a change of process
+in the library, or a change in the data the library calculates. The MCP deals with the library as
+it is and explains its behaviour and capabilities to the AI agent; the fix belongs in the MCP
+server and the tools and API of roomle-ui. Valid library fixes are description updates (an article,
+an attribute, a value) and real bugs in the library's code that work against its overall intention.
 
 ## Close-out
 
@@ -44,6 +49,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 | [An island's back row of other widths lands off the front row](islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — fix proposed (roomle-hi-example served text; roomle-ui fallback, based on `fix/room-corners-at-openings`) | backlog #74 |
 | [The backsplash of an image kitchen is reported as not buildable](backsplash-of-an-image-kitchen-reported-as-not-buildable.md) | Open — fix proposed (roomle-hi-example served text; roomle-ui, based on `fix/room-corners-at-openings`) | backlog #75 |
 | [An edit that gives a row a new end leaves a door hinged to the outside](edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md) | Open — fix proposed (roomle-hi-example served text) | backlog #77 |
+| [A swap of a widened unit is refused for want of a docking vector](swap-of-widened-unit-refused-for-want-of-docking-vector.md) | Open — fix proposed (roomle-ui, based on `fix/room-corners-at-openings`) | backlog #78 |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

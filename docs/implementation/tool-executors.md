@@ -156,7 +156,9 @@ call and is reported in `notLoaded`, the others load
     with one group operation, `change-attributes` (`applyGroupWideAttributes`) —
     every group attribute but the library's group settings, which `groupSettingIdsOf` takes from the
     master data's `groupSettings`, the programs first (`programsFirst`), and a root module's own value
-    of one after it (`rootValuesOf`, `loadedRootOf`) —, and read the groups again. Remember the
+    of one after it (`rootValuesOf`, `loadedRootOf`) —, and read the groups again. During that
+    attribute load, roomle-ui's carrier follower preserves the docking clearance of wall units
+    above floor units whose docking tops change, including detached wall-unit rows (D42). Remember the
     agent's group ids (`rememberAgentGroupIds`); hint at unpositioned groups. The
     reads after the load take `groups`, `obstacles` and `rooms`. The final calculated groups are read
     for calculation diagnostics; roots with `Error` or `Fatal` logs get a `notLoaded` entry with the

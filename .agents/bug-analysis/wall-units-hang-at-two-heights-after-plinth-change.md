@@ -1,237 +1,229 @@
 # Bug analysis — the wall units hang at two heights after a plinth height in the group attributes
 
 > **Type**: Bug analysis
-> **Status**: Open — fix proposed, not implemented
-> **Date**: 2026-10-17
-> **Base**: roomle-hi-example `master` (`6b9a981`); roomle-ui `fix/room-corners-at-openings`
-> (`a008be42d`) — the branch every roomle-ui change for this bug must be based on
-> **Backlog**: item 72 of [`../backlog/mcp-issues.md`](../backlog/mcp-issues.md)
+> **Status**: Open — implemented and locally verified on working branches; not landed
+> **Date**: 2026-10-17; validation 2026-10-18
+> **Bases**: roomle-hi-example `master` (`6b7e7fc3`); roomle-ui
+> `fix/room-corners-at-openings` (`a008be42d`)
+> **Working branches**: `fix/wall-unit-heights-after-plinth-change` in both repositories
+> **Issue**: MCP issue 72
 
 ## Affected repositories
 
-- **roomle-ui** — the proposed fix: the `create-or-replace-groups` tool command
-  (`packages/web-sdk/packages/homag-intelligence/src/hi-tool-commands.ts`), the relation compile
-  that records the hangs (`relationsToDocking`, `hangGapOf`, `hi-group-layout.ts`), the group
-  attributes step (`applyGroupWideAttributes`, `hi-tool-attributes.ts`) and the unit tests in
-  `__tests__/hi-tool-commands/create-or-replace-groups-input-test.ts`. The fix is based on
-  `fix/room-corners-at-openings`.
-- **roomle-hi-example** — this analysis and backlog item 72 (the cause and the responsible
-  updated with the analysis). No code change: the issue rules out a change of the served text,
-  and the stored test `kitchen-back-right-corner` of `docs/test-prompts.json` already covers the
-  outcome.
-- **RoomleCore (the planner kernel)** — no change for the proposed fix. Named because the
-  root-cause alternative lives here: keep the docking link of a wall unit to the floor unit it
-  hangs above across the load, or re-apply the group's docking entries (with their offsets) when
-  the group is recalculated (`src/planner/configurable/external/`, the docking context). The
-  touching-vectors rule is load-bearing for the row edits and snapping (D42), so this is the
-  option with the widest blast radius.
-- **The library (HOMAG Furniture_Smith, server-side calculation)** — no repository change here.
-  The ultimate fix: when the plinth height changes, lift every wall unit hung above a floor
-  unit by the same delta. Reported to the HOMAG library development team like the items of
-  [`../backlog/library-issues.md`](../backlog/library-issues.md).
-- **ligna-store** — no change: the store runs the same roomle-ui and planner and holds no copy
-  of the tool command.
+- **roomle-ui** — fix the existing carrier-following geometry in
+  `packages/web-sdk/packages/homag-intelligence/src/hi-root-module-arrangement.ts` and test its
+  integration with the attribute calculation and load. Based on `fix/room-corners-at-openings`.
+- **roomle-hi-example** — this analysis, issue 72, their indexes, the behaviour reference
+  and relevant living documentation. No served-text or tool-schema change.
 
-## Symptom
+## Validation verdict
 
-A `create-or-replace-groups` whose group attributes set a plinth height other than the library's
-(`mod_PlinthAreaHeight` 150 or 120 against the default 100) hangs the wall units of one kitchen at
-two heights. Reproduce: `mcp-test-2026-10-17_13-28-41`, gpt-6-astra 49
-(`image-kitchen-back-right-corner`, the second `create-or-replace-groups`, planner call 11 of the
-run directory `.temp/result/mcp-test-2026-10-17_13-28-41/gpt-6-astra/49-image-kitchen-back-right-corner/`).
-The payload puts `mod_PlinthAreaHeight` 150 into the group attributes and hangs two `OTB45`
-(`display1`, `display2`) `above` the base unit `prep` (`UTB60`), a range hood `DU` `above` the hob
-with `gapMm` 650 and an open shelf `ORFB60` `above` the dishwasher with `gapMm` 600.
+The symptom, the after-load application of group attributes, and the loss of non-touching
+docking links are confirmed. **The original attribution to inconsistent backend library logic
+and the proposed second insertion-height attribute command are not supported.** There is a
+smaller fix in the existing roomle-ui arrangement path: follow the change of the carrier's
+**docking top**, which can rise while its root position stays at y = 0.
 
-The final geometry (`obstacles.groups` of `plan-context.json`, `bottomMm`/`topMm`):
+The validated plan below replaces the original create-only re-hang proposal. The implemented
+change also reaches existing-group attribute changes through their shared calculation path,
+without another tool-specific implementation.
 
-| Root | Article | Bottom | Top | Verdict |
-|---|---|---|---|---|
-| `prep` and the other floor units | `UTB60`, … | 0.5 | 870 | rose 50 with the plinth (100 → 150) |
-| `fridge` | `HK260` (tall) | 0.5 | 2250 | rose 50 |
-| `display1`, `display2` | `OTB45` | 1480 | 2200 | **stayed** — 50 below the tall units' top 2250 that D35 hangs them flush with |
-| `shelf` | `ORFB60` | 1470 | 1830 | rose 50 (1420 → 1470), kept its `gapMm` 600 above the dishwasher (top 870) |
-| `hood` | `DU` | 1520 | 2648 | rose 50 (1470 → 1520), kept its `gapMm` 650 above the hob's carcase top (870) |
+## Reproduction and measured evidence
 
-The corrections of the call name the floor and tall units — "with its group attributes the library
-changed `mod_HeightPosInsertion` of 7 root modules (UTB60, UKS2A60, US2A30, HK260, SUT60, H2TB60,
-HOTS2AB60) from \"100\" to \"150\"" — and the shelf — "… `mod_HeightPosInsertion` of root module
-'…' (ORFB60) from \"1420\" to \"1470\"" — and no `OTB45`: the two wall cabinets the D35 gap hung
-flush with the tall units kept the height of the old plinth. The order data (`order-data.json`)
-shows the wall units carry their height as an absolute input attribute: `mod_HeightPosInsertion`
-1480 (`isInput: true`) on both `OTB45`, 1470 on the `ORFB60`, 1500 on the hood (not an input — the
-library computes it).
+Saved run: `.temp/result/mcp-test-2026-10-17_13-28-41/gpt-6-astra/49-image-kitchen-back-right-corner/`.
+Inspect `planner-calls.json` call 11, the second `create-or-replace-groups`; `run.json` records its
+corrections. Its group attributes include `mod_PlinthAreaHeight: 150`, against the default 100.
+The wall row starts with `display1` (`OTB45`) `above: prep`; `display2` is `rightOf: display1`.
+The hood is above the hob with `gapMm: 650`, and the shelf above the dishwasher with `gapMm: 600`.
 
-## Investigation trace
+The raw group is JSON in the XML-escaped `externalConfiguration` of `plan.xml`. Unlike the compact
+plan context, it retains root positions and docking-vector coordinates. `order-data.json` gives
+the same root positions and attributes; `plan-context.json` supplies rendered bounds.
 
-1. **The height of a wall unit is fixed at the load, with the library's default plinth.** The
-   `create-or-replace-groups` tool command compiles the agent's relations into docking entries
-   (`relationsToDocking`, roomle-ui `hi-group-layout.ts:170`, called at
-   `hi-tool-commands.ts:338`): a wall unit `above` a floor unit docks its `LeftBottom` on the
-   carrier's `LeftTop` with the offset `[0, gap, 0]`, where `gap` is the agent's `gapMm` or the
-   D35 hang gap (`hangGapOf`, `hi-group-layout.ts:141`: tall-unit height − wall-unit height −
-   carrier height; "base and tall units stand on the same plinth, so the plinth cancels out",
-   `hi-group-layout.ts:747`). The load (`planner.loadExternalObjectGroupLayout`,
-   `hi-tool-commands.ts:502`) resolves the docking and writes each wall unit's absolute insertion
-   height into an input attribute — 1480 = 100 (default plinth) + 720 (carrier) + 660 (D35 gap) on
-   the `OTB45`, 1420 = 100 + 720 + 600 on the shelf. The before-values of the D59 corrections and
-   the order data agree.
-2. **The group attributes are applied only after the load.** `applyGroupWideAttributes`
-   (`hi-tool-attributes.ts:363`, called at `hi-tool-commands.ts:543`, after the wall placement
-   reload at `hi-tool-commands.ts:533`) sends the attributes that are not the library's group
-   settings with one `change-attributes` group operation (D36). `mod_PlinthAreaHeight` is not a
-   group setting (it is assigned to root modules, not to a group orchestrator module), so the
-   plinth changes only in this after-load command — the correction's "from \"100\" to \"150\""
-   proves the floor units were still at the default plinth after the load.
-3. **The docking that hung the wall unit does not survive the load as a link.** D35's design hangs
-   the wall unit relative to its carrier, so the plinth cancels out — but the kernel's docking
-   context links only vectors that touch, and a wall unit hanging with a gap is no longer docked
-   to its floor unit after a load (D42, [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md)).
-   Nothing ties the wall unit's height to its carrier's height anymore; the wall unit's height is
-   the absolute number written at the load.
-4. **When the plinth changes, the floor and tall units rise, and only some wall units follow.**
-   The `change-attributes` recalculation lifts the floor and tall units (their insertion height
-   becomes the new plinth — the first correction). The kernel moves the wall units whose docking
-   vectors still touch a risen unit: stacks `onTop` another unit (the `OSKB90`/`O2TB90` bridges
-   of `image-planning-right-wall`, bumped 2200 → 2250 / 2140 → 2190 in the same delta) and wall
-   units docked by the Top vectors beside a tall unit (D34; the `OFKB60` pair `rightOf` the
-   fridge in `image-only-no-text`, bumped 1480 → 1500). Of the wall units hung above floor units —
-   no touching link — the library's own recalculation lifts some by the same delta and leaves the
-   others: the shelf above the dishwasher in the reproduce (1420 → 1470, named), but not the two
-   `OTB45` above the base unit.
-5. **Which wall units the library lifts is its server-side calculation logic, and it is not
-   derivable from the served data.** Across the stored runs the same article above the same
-   carrier rises in one run and stays in another: an `OTB60` above a `US2A60` is lifted in
-   `mcp-test-2026-10-16_19-30-19` run 35 (1480 → 1530) and left in `mcp-test-2026-10-17_09-31-13`
-   run 35 (no wall unit named at all); an `OTB45` above a base unit is left in
-   `mcp-test-2026-10-17_13-28-41` run 49 and lifted in run 48 of both earlier sessions (1480 → 1530
-   and 1420 → 1470); the range hood above the hob rises in run 49 of `…_13-28-41` (to 1520, the
-   hob's carcase top 870 + `gapMm` 650) and stays in run 35 of `…_10-16_19-30-19` (1480, the
-   height of the old plinth) and run 49 of the same session (1540, the old hob top 840 +
-   `gapMm` 700). The split follows neither the article, nor the carrier, nor the gap, nor the
-   position beside a corner (`OFKB60` above a unit beside a corner is lifted in
-   `…_10-16_19-30-19` run 50 and `…_18-40-40` run 49, while an `OTB60` beside a corner is left in
-   `…_10-16_19-30-19` run 51). It is the HOMAG calculation on the backend, not reachable from
-   these repositories.
+| Root/article | Root y after the change | Docking bottom / top in group space | Relevant result |
+|---|---:|---:|---|
+| `prep` / `UTB60` | 0 | 0 / 870 | Top rises with the plinth; root stays on the floor |
+| `fridge` / `HK260` | 0 | 0 / 2250 | Tall-unit top is 2250 |
+| `display1`, `display2` / `OTB45` | 1480 | 1480 / 2200 | Both are 50 mm too low; target bottom 1530 |
+| `hood` / `DU` | 1520 | 1520 / 2648 | Keeps the 650 gap above the hob's docking top 870 |
+| `shelf` / `ORFB60` | 1470 | 1470 / 1830 | Keeps the 600 gap above the dishwasher's docking top 870 |
 
-## Root cause
+The final docking explains the differing outcomes without assuming different library rules:
 
-The wall unit's height is fixed at the load as an absolute insertion height computed with the
-library's default plinth, because the group attributes — which carry the plinth height — are
-applied only after the load (D36), and the docking entry that hung the wall unit above its
-carrier does not survive the load as a link (D42: the docking context links only touching
-vectors). When the plinth attribute then lifts the floor and tall units, the kernel has no link
-to move the wall units hung above them, and the library's recalculation lifts only some of them
-by the same delta — its server-side rule, inconsistent across runs. The wall units it leaves keep
-the load-time height: 50 or 20 mm below the tall units' top that D35 hangs them flush with.
+- The two `OTB45` roots are docked only to each other, a separate cluster. Neither retains a
+  link to the floor row.
+- The hood retains its own reverse entry to the hob: `LeftBottom` → `LeftTop`, offset
+  `[0, -650, 0]`. A lone unit can keep this entry when the kernel does not report a replacement
+  context. The arrangement already tests this case.
+- The shelf's `RightTop` touches the shorter tall unit's `LeftTop`; that surviving link explains
+  its rise to top 1830. Its rise is not evidence of a library rule for shelves.
 
-## Why the current code produces this
+**Rendered bounds are not docking heights.** The hob's rendered top is 890 and the sink's 1233,
+but their docking tops are both 870. Taking `obstacles.groups[].roots[].topMm + gapMm`, as the
+original fix proposed, would incorrectly lift this correctly placed hood another 20 mm.
 
-`create-or-replace-groups` hangs the wall units at the load (step 1) and changes the plinth
-afterwards (step 2), in the only order the planner allows: a reload after the attribute command
-would send the values before it, because the planner answers an attribute command before the
-calculated group carries the new values (D36, the comment at `hi-tool-commands.ts:538`). The D35
-hang gap is relative to the carrier precisely so the plinth cancels out — but that only holds
-while the docking link lives, and the link dies at the load because the hang gap keeps the
-vectors apart (D42). The tool command then trusts the library to keep the wall row at the height
-of the wall units, and the library does so only for some wall units (step 4).
+## Investigation trace and root cause
 
-## Proposed fix
+Paths below are relative to roomle-ui's `packages/web-sdk/packages/homag-intelligence/`, at
+`a008be42d`.
 
-In roomle-ui's `create-or-replace-groups` tool command, **re-assert the hang of every wall unit
-the command hung above a floor unit, after the group attributes are applied**: the wall unit's
-bottom must sit at its carrier's new top plus the compiled gap — the agent's `gapMm`, else the
-D35 `hangGapOf` (which puts its top flush with the tall units). The command records the above
-links while it compiles them (`relationsToDocking` returns the hang links: wall unit, carrier,
-gap), reads the group after `applyGroupWideAttributes`, and where a hung wall unit's bottom is
-off the target — because the library left it at the old plinth's absolute height — it sets the
-wall unit's insertion height to the target bottom minus the unit's insertion-to-geometry offset
-with one `change-attributes` entry on that root module and reports it as a correction, in
-library-neutral words: the group attributes lifted the floor units by so many mm, the wall unit
-did not follow, it was lifted to hang at its gap above its carrier again.
+1. `src/hi-group-layout.ts:141` (`hangGapOf`) computes the default gap from the tall, wall and
+   base heights. Here it is 2100 − 720 − 720 = 660. `relationsToDocking` at line 170 compiles the
+   relations. The initial base docking top 820 therefore hangs the cabinets at 1480.
+2. `src/hi-tool-commands.ts:502` loads the group, places it at its wall, then calls
+   `applyGroupWideAttributes` at line 543. `src/hi-tool-attributes.ts:363` applies non-group-setting
+   attributes through `change-attributes`. The recorded corrections confirm insertion values
+   of floor/tall units changing from 100 to 150.
+3. `src/hi-tools.ts:456` (`changeAttributes`) calls `modifyAttributesOfModules`
+   (`src/glue-logic.ts:2650`), which requests arrangement when the existing
+   `enableArrangementCorrection` option is enabled. `_runGroupCalculation` at line 2014 calculates
+   first, then `_arrangeRootModulesAndCalculateIfChanged` at line 3083 arranges, follows carriers,
+   and recalculates if geometry moved. Arrangement ownership is already in this glue layer.
+4. `src/hi-root-module-arrangement.ts:1011` arranges disconnected docking clusters independently,
+   retaining the position of each cluster's seed. The wall pair therefore keeps its old height.
+5. `carriersOfUnitsAbove` at line 141 recovers the carrier geometrically even without a touching
+   link. On the saved group it finds display1 → prep, display2 → the corner root, hood → hob,
+   and shelf → dishwasher. The two relevant floor tops have the same plinth delta.
+6. **The missing part is in `moveUnitsAboveWithTheirCarriers`, line 216, especially line 277.**
+   For a unit the arrangement left in place, it adds the carrier's root-position delta to the
+   unit's root position. The base and corner roots remain at y = 0 when their docking tops rise
+   by 50. The computed vertical delta is therefore zero. The helper knows which units should
+   follow but does not account for the carrier's geometry changing above its origin.
 
-The insertion-to-geometry offset is read off the loaded unit — its bottom minus its insertion
-height: 0 on the `OTB45` (bottom 1480, insertion 1480), 20 on the hood `DU` of the reproduce
-(bottom 1520, insertion 1500, calculated). The attribute is the one the loaded unit carries
-whose value is its position height from the floor — the input attribute the kernel wrote at the
-load on a wall unit, the calculated one the library computes on the hood (in Furniture_Smith
-both are `mod_HeightPosInsertion`, "Position height — height position of the element from the
-floor"); `change-attributes` targets any attribute the module carries (`hi-tools.ts:456`), input
-or calculated alike — so no library-specific id enters the code. This is the supported path
-after the group attributes: a reload there would send the values before them (D36; the comment
-at `hi-tool-commands.ts:538-540`). Verification: the unit test pins the sent value on a
-calculated insertion height; whether the library honors a set on the hood's calculated attribute
-is held by the stored test.
+This is a reproducible gap in shared arrangement logic, not an invalid agent payload. Different
+surviving docking graphs can produce different outcomes for the same article. The saved run does
+not isolate every library calculation stage, so it cannot establish the cause of every other
+run cited in the original analysis. It does establish the wall-pair defect above.
 
-This makes the outcome independent of the library's partial plinth-following and needs no change
-of the served text: the agent sends a legitimate plinth height, and the tool builds the plan the
-D35 rule describes.
+## Corrections to the original analysis
 
-## What the fix does not do
+- The library calculation is invoked locally as `libraryExports.calc(groupData)` in
+  `src/homag-intelligence.ts:159`. Calling this an unreachable server-side recalculation was
+  inaccurate; the library supplies the calculation code.
+- An insertion-height attribute is not a portable API capability. `PosModuleAttribute` and
+  `BaseMDAttributeInfo` (`src/model/oc-scripts-domain.model.ts:113,403`) contain no semantic role
+  identifying one. Matching a library's id or description would introduce library knowledge.
+  Accepting a calculated attribute in `changeAttributes` does not prove the library will honor it.
+- The claim that an attribute command necessarily answers before its load is stale on this
+  base: `changeAttributes` awaits `loadWithChangedAttributes`, which awaits `loadPosGroups`
+  (`src/glue-logic.ts:2178`). The comment at `hi-tool-commands.ts:538` still gives that rationale;
+  it is not evidence for adding another attribute command. Keep the current load/placement/material
+  order for this fix; verify final geometry through the existing completion path.
+- Undo is not an open step-count design question: `runToolCommand` at line 1262 reports one
+  `historySteps` entry for a mutating tool, with the planner interaction holding the single step
+  (D77/D79). The fix should introduce no extra tool command.
+- `kitchen-back-right-corner` is not a deterministic regression: it asks for a kitchen and has
+  neither a forced plinth value nor a height expectation. The recorded failing case is
+  `image-kitchen-back-right-corner`. Neither prompt alone guarantees this payload.
 
-- It does not cover `change-group-attribute` with a plinth height on an existing group: the same
-  `change-attributes` mechanism lifts the floor units and some wall units there too, and the
-  same two heights appear. The kernel fix (below) covers both paths; the roomle-ui fix is scoped
-  to the create's group attributes as the issue asks. Extending the re-hang to
-  `change-group-attribute` is a follow-up once the create path is proven.
-- It does not teach the agent anything new: the correction names the lift, the wall unit and its
-  carrier, so the agent learns what happened without a rule change.
-- It does not move wall units the agent hung with an explicit `gapMm` beyond re-asserting that
-  gap above the carrier's new top — the agent's gap is kept, not overridden.
-- It does not assume the insertion height is the unit's bottom: the offset between them is read
-  off the loaded unit per unit (20 mm on the hood of the reproduce), so a unit whose insertion
-  point is not its bottom is lifted by the same geometry, not by the attribute's face value.
+## Fix plan
 
-## Rejected approaches
+1. **Add the failing geometry regression first** in `__tests__/hi-root-module-arrangement-test.ts`,
+   beside `describe('units above')`. Model a detached wall pair above floor roots whose positions
+   stay fixed while their docking tops rise from 820 to 870. Require both cabinet bottoms to
+   become 1530 and tops 2250. Confirm failure on the new branch before changing implementation.
+2. **Extend the existing follower calculation in `hi-root-module-arrangement.ts`.** For a unit
+   eligible for carrier following, preserve its measured docking clearance:
 
-- **Apply the plinth before or at the load.** The group attributes travel with the load, but the
-  planner lets the library set a group's attributes on a create only, and `mod_PlinthAreaHeight`
-  is not one of the library's group settings — the reproduce proves the floor units were still at
-  100 after the load. Making it a group setting is a library-data and planner change, not a
-  roomle-ui one.
-- **Reload the group after the attributes, so the docking re-hangs the wall units.** A reload
-  after the attribute command sends the values before it (D36); a reload from the changed group
-  would replace the group and lose the just-set plinth again, because the plinth is not applied
-  at the load. The wall placement reload already ran before the materials for the same reason.
-- **A served-text change or a guard.** The issue rules out a text change, and the agent's payload
-  is legitimate — a plinth height in the group attributes is a correct request ([Guards Are a
-  Last Resort](../../AGENTS.md#guards-are-a-last-resort)). The wrong height is the tool's
-  product, not the agent's input.
-- **Fix it in the kernel (RoomleCore): keep the wall-unit→carrier link across the load, or
-  re-apply the group's docking entries with their offsets on recalculation.** This is the
-  root-cause fix and covers every path (create, `change-group-attribute`, future tools), but the
-  touching-vectors rule of the docking context is load-bearing for the row edits and snapping
-  (D42: the planner finds the unit below by position), so the blast radius is the whole planner.
-  Kept as the alternative; the roomle-ui fix is the surgical one this issue asks for.
-- **Fix it in the library (HOMAG server-side calculation): lift every wall unit hung above a
-  floor unit by the plinth delta.** The ultimate fix, but it lives in the HOMAG calculation,
-  outside these repositories; report it to the library development team.
+   ```text
+   oldGap = oldUnitDockingBottom - oldReferenceDockingTop
+   targetBottom = newCarrierDockingTop + oldGap
+   targetRootY = currentRootY + targetBottom - currentUnitDockingBottom
+   ```
 
-## Implementation plan (sketch, roomle-ui, based on `fix/room-corners-at-openings`)
+   Use `getDockingVectorBox` in the same group frame. This incorporates both root translation
+   and geometry change, and does not assume a unit's origin is its bottom. Keep the existing
+   horizontal movement, rotation, bottom-up ordering, carrier overrides, rounding and tolerance.
+   Preserve the rule that a unit already moved by docking keeps that placement; explicitly test
+   geometry-only movement too so it cannot be lifted twice or undo an intentional height edit.
+   Missing carrier/docking data supplies no invented height. Do not add attribute-id lookup,
+   hang-link bookkeeping in the tool command, timers, or a second re-hang path.
+3. **Verify the complete attribute operation** in `__tests__/glue-logic-test.ts`: a library fixture
+   raises carrier docking tops without translating their roots, the real arrangement moves the
+   wall pair, and the normal recalculation/load retains those positions. Assert loaded and returned
+   geometry, retained group/root attributes, and unchanged horizontal placement. Keep the
+   arrangement option's existing contract. Change glue logic only if this test demonstrates a
+   necessary integration change; the expected productive change is the follower function.
+4. **Verify the entry point and feedback.** The create path must still apply group attributes once
+   after placement. Its regression belongs with the material tests in
+   `__tests__/hi-tool-commands/create-or-replace-groups-placement-test.ts`, not the input-validation
+   suite. Reuse the existing D59 comparison to report insertion-height changes when the library
+   exposes them as inputs; do not promise or fabricate a correction for a calculated-only attribute.
+   Check an existing-group attribute operation through the same shared path. Preserve one undo step.
+5. **Replay the failing payload with the actual planner/library** and inspect the saved raw group,
+   final plan context and images. Verify after the final callback/recalculation, then undo and redo.
+   Only then mark the fix verified and update D35/D42/D59 and the relevant implementation reference
+   in `docs/hi-mcp-behaviour.md`/`docs/implementation/`, plus roomle-ui's HI guidance. Describe the
+   new invariant and guarding tests there; keep the investigation here until the fix lands.
 
-1. `hi-group-layout.ts` — `relationsToDocking` returns the hang links it compiles (wall unit id,
-   carrier id, gap: `gapMm` or the D35 `hangGapOf`), beside the docking entries it writes.
-2. `hi-tool-commands.ts` — `create-or-replace-groups` keeps the hang links per call group; after
-   `applyGroupWideAttributes` (and the plan-context read that follows it), for each hang link it
-   finds the wall unit and its carrier in the loaded group, computes the target bottom (carrier
-   top + gap, from the obstacles), and collects the wall units whose bottom is off by more than
-   a tolerance.
-3. For the off wall units the command sends one `change-attributes` entry per group
-   (`rootModuleIds`, the insertion-height attribute read off the wall unit, value = target
-   bottom − insertion-to-geometry offset, the offset the wall unit's current bottom minus its
-   current insertion height) and pushes a correction naming the lift, the wall unit and its
-   carrier. Open details: whether the planner counts this second `change-attributes` as its own
-   undo step beside the material command (D47 counts the two loads and the material command
-   together), and whether the library honors a set on a calculated insertion height — the unit
-   test pins the planner steps the command sends.
-4. Tests in `__tests__/hi-tool-commands/create-or-replace-groups-input-test.ts`: a create with a
-   plinth height in the group attributes whose mock planner lifts the floor units and leaves one
-   hung wall unit at the old insertion height — the command lifts it to carrier top + gap and
-   reports the correction; a wall unit the library already lifted is not touched again; a wall
-   unit with an explicit `gapMm` keeps that gap; a hood the mock planner leaves at the old
-   insertion height — a calculated insertion height 20 mm below its bottom, as the reproduce's
-   `DU` — is lifted to the carrier's new top + `gapMm` with the value target − 20, and the
-   correction names it (the regression case for a hood that did not follow the plinth; trace 4
-   names the stored runs where the library leaves one). The stored test
-   `kitchen-back-right-corner` of `docs/test-prompts.json` then holds: every wall unit's top at
-   the tall units' top, the hood at its `gapMm` above the hob's new top.
+This repairs the shared ownership point. It also benefits `change-group-attribute` and module
+attribute edits that use the same arrangement path. It requires no change in RoomleCore,
+HOMAG library data or ligna-store, and no change to `relationsToDocking`/`hangGapOf` or the served text.
+
+## Unit-test plan
+
+| Test | Fixture / assertion | Purpose |
+|---|---|---|
+| Detached wall row, fixed carrier origins | Two side-linked wall units at 1480; base/corner docking tops 820 → 870 at unchanged root y = 0; resulting bottoms 1530, tops 2250; x/z and rotation unchanged | Red regression for this bug |
+| Smaller and negative changes | Parameterize carrier top changes +20 and −50, plus zero; move by exactly that delta, zero reports no movement | Prevent hard-coded 50 mm or lift-only behavior |
+| Explicit clearances and nonzero local bottom | Clearances 600 and 650; a unit whose local docking bottom is 20; assert the resulting docking gap, not an insertion attribute | Preserve authored gaps and arbitrary origins |
+| Already followed / deliberate placement | A surviving Top/Bottom link, a unit beside a tall unit, and an already moved unit; include a geometry-only lift | No double movement or override of a deliberate placement |
+| Stacks and other operations | Bottom-up stacked units; keep existing translation, rotation and replacement-carrier cases; no carrier and generated-root cases | Guard shared arrangement behavior |
+| Attribute operation with real arrangement | Fake only library calculation and kernel load; invoke the actual attribute operation, then assert the final loaded and returned group, including after recalculation; preserve attributes and option behavior | A helper-only fix must survive the glue path |
+| Create routing and history | One material command after wall placement; final heights from the integration fixture; `historySteps: 1`; retain existing D59 reporting assertions | Keep tool result/undo semantics without a new correction command |
+
+Use small anonymous geometry fixtures for the unit tests; a full saved kitchen is unnecessary.
+The integration fixture must not move the wall row itself: that is the production function's job.
+The first and attribute-operation regressions must fail before the fix. Mocked success of a
+second `change-attributes` call would not test the cause or prove library support.
+
+Acceptance for the recorded kitchen is specific: the **two default-hung cabinets** reach top
+2250, the hood keeps its docking gap 650 and bottom 1520, and the shelf keeps gap 600 and bottom
+1470. Explicit-gap units are not all required to share the tallest unit's top.
+
+## Validation performed and remaining checks
+
+- Confirmed both working branches; roomle-ui HEAD, its requested base and its local remote-tracking
+  base all identify `a008be42d3dd01c3b1de563e112e0b8079b5f66d`. No fetch, merge or history rewrite.
+- Read the recorded payload, corrections, raw `plan.xml`, `plan-context.json` and order data.
+- Ran the actual `carriersOfUnitsAbove` and `moveUnitsAboveWithTheirCarriers` exports on a controlled
+  before/after reconstruction from the saved raw group: lower the floor-root top vectors by 50
+  for the before-state, lower the already-following hood/shelf by 50, leave the wall pair at 1480.
+  The helper returns `false` and leaves both wall bottoms at 1480, where the expected result is
+  1530. This is a deterministic geometry diagnostic, **not a fresh live planner reproduction**.
+- Baseline: **3 test files, 190 tests passed**, using Node **24.12.0** (the repository pin):
+
+  ```sh
+  # roomle-ui/packages/web-sdk, with Node 24.12.0 on PATH
+  npm run test -- --run \
+    packages/homag-intelligence/__tests__/hi-root-module-arrangement-test.ts \
+    packages/homag-intelligence/__tests__/hi-tool-commands/create-or-replace-groups-placement-test.ts \
+    packages/homag-intelligence/__tests__/hi-tool-commands/run-tool-command-test.ts
+  ```
+
+  The first launch under the shell's Node 20.10.0 failed before collection because `styleText`
+  was unavailable; rerunning with the repository pin passed. No dependency change was needed.
+## Implementation and verification on the working branches
+
+- Added the docking-clearance calculation to roomle-ui's existing
+  `moveUnitsAboveWithTheirCarriers` path. The helper uses the old carrier top and wall-unit bottom,
+  the new carrier top and wall-unit bottom, and retains the previous horizontal/rotation handling.
+  It leaves a unit already moved by docking alone. No glue or tool-command code changed.
+- Added the detached-pair regression and parameterized +50, +20, −50 and zero changes; explicit
+  600/650 mm gaps, a nonzero local bottom, a stack, an already moved unit and a unit whose docking
+  geometry already followed. The new regressions failed before the fix and passed after it. The
+  actual `modifyAttribute` path is tested with library calculation moving only the carrier's
+  docking top, including the arrangement option disabled. The existing create material test
+  checks one group-attribute command after placement; the command tests check one history step.
+- Full roomle-ui HI package suite: 18 files, 1,033 tests passed under Node 24.12.0. SDK lint:
+  zero errors, one pre-existing unused-variable warning in `planner-core/__tests__/plan-view-model.ts`.
+  SDK TypeScript and required format check passed.
+- Replayed planner call 11 from the saved run against the local roomle-ui branch and the actual
+  library. The raw plan and final context put both `OTB45` roots at 1530–2250, level with the
+  `HK260` top 2250. The hood remains at bottom 1520, 650 above its carrier docking top 870;
+  the shelf remains at bottom 1470, 600 above docking top 870. The top image was inspected.
+  Undo removes the group; redo restores both cabinet tops at 2250. The create result reported
+  the library's insertion-height changes through existing D59 feedback. D35 hang-gap
+  derivation and D59 feedback needed no change; only the D42 behaviour text was updated.
+
+The branch fix is locally verified. Merge and release verification remain pending until the roomle-ui fix lands.

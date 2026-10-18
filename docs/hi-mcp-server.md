@@ -459,6 +459,9 @@ generated worktop carries is moved to the group, and a resubmitted group keeps t
 of its worktop and toe kick. A root module a replace adds inherits the attributes the
 library passes on between neighbours (fronts, handles, carcase) from the root module it is
 docked to; its own `attributes` override them.
+When an attribute changes a floor unit's docking height, wall units hanging above it follow that
+height while keeping their authored gap. The planner derives the height from the docking vectors,
+so the gap is independent of a rendered worktop or appliance overhang.
 
 A new group is positioned with `placement: { wall, alignment?, offsetMm?,
 roomIndex? }` at a wall or in a room corner, or with `placement: { posGroup,

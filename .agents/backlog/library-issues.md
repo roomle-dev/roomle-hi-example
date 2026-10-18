@@ -37,7 +37,6 @@ keeps every suggested text, applied in the library or not.
 
 | # | Issue | Library | Responsible | Status | Solved by descriptions | Priority |
 |---|---|---|---|---|---|---|
-| 60 | [The sink top of a sink unit reaches past the row or over the hob](#60-the-sink-top-of-a-sink-unit-reaches-past-the-row-or-over-the-hob) | HOMAG Furniture_Smith | HOMAG library development team | the sink unit and sink value descs done; the basin-right sinks and the sink widths to confirm | yes | medium — the drainer in the air or over the hob |
 | 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | the handle design descs done | yes | medium — handled articles where the user asked for handleless ones |
 | 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; the size ranges not reported | yes | low — the cabinets are not built, the agent needs a second create |
 | 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the upright descs done; the colour value descs not done | yes | low — the end panels are not built, the agent needs one or two extra calls |
@@ -53,56 +52,6 @@ library's logic or data can do.
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
-
-## 60. The sink top of a sink unit reaches past the row or over the hob
-
-**Problem.** The sink unit `SUT60` carries a sink with its drainer, 980 mm wide, on the 600 mm unit.
-Placed as the last unit of a row, the drainer reaches 396 mm past the end of the row, into the air;
-swapped beside the hob unit, it covers part of the hob. Whether the agent puts a base unit under the
-drainer is chance.
-
-**Cause.** The geometry is intended (the library builds the sink that way); the root module's
-outline in `obstacles` shows it, and the descriptions of the sink units and of the `mod_SinkId`
-values name it. Not known: whether the basin-right sinks put the drainer on the left and whether the
-sink units take them, and the widths of the Axis, Dinas and Metra sinks.
-
-**How the library behaves.** All five sink units come with `mod_SinkId` `Axia_Grey_L` (Blanco),
-basin on the left, drainer on the right, 980 mm wide with the drainer. The outlines of the root
-modules in the plan contexts of the stored runs overlap the root module at the next `rowIndex`, the
-unit on the right:
-
-| Articles | Unit width | Outline along the row | Reaches past the right side |
-|---|---|---|---|
-| `SUT60`, `SUBA60`, `ESUT60` | 600 mm | 995.75 mm | 396 mm |
-| `SUB2A90`, `ESUB2A90` | 900 mm | 1145.75 mm | 246 mm |
-
-**To do.** The library: the value descs of `mod_SinkId` name the basin side and the drainer side —
-section 2.8 of
-[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#28-sink).
-The library team confirms the drainer side of the basin-right sinks, whether the sink units take
-them — the drainer then reaches over the unit on the left, and the sink unit descriptions name the
-side by the sink —, and the widths of the Axis, Dinas and Metra sinks. Then check that the served
-text needs nothing more.
-
-**Status.** Done in the library: the descriptions of `SUT60`, `SUBA60`, `SUB2A90`, `ESUT60` and
-`ESUB2A90` (section 1.1) — the width of the sink with its drainer, how far it reaches past the
-right side, a base unit and not a hob unit on the right — and the value descs of `mod_SinkId`
-(section 2.8). Open: the library team confirms the basin-right sinks and the widths of the Axis,
-Dinas and Metra sinks.
-
-**Example.** The sink unit beside the hob unit: the sink top covers part of the hob.
-
-![A sink unit beside the hob unit: the sink top covers part of the hob](../images/sink-top-over-hob.png)
-
-- [The plan in the HI presets example](https://rubens.alpha.roomle.com/examples/index.html?example=hi-presets-example&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith&plan_id=ps_rcc154z2tb6cs0yl4sq2g3f38rh13tfb)
-- [The order in the HOMAG order manager](https://ordermanager-preview.homag.cloud/#/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/orders/dad09fbf-7dca-41c6-b0bb-d101c1befec6)
-
-**Test.** The test `image-kitchen-left-wall` of `docs/test-prompts.json`: the sink unit stands with a
-base unit under its drainer in three runs of gpt-6-astra; `edit-swap-hob-unit`: the drainer does not
-cover the hob, and the agent identifies a swap that would put the hob immediately to the right of
-the sink as conflicting with the library's selection rule.
-
-**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 30 (`edit-swap-hob-unit`): the swapped sink's top reaches 396 mm over the hob unit on its right; the sink descs carry the base unit on the right, not the hob rule.
 
 ## 61. Handleless fronts done with a handle attribute
 

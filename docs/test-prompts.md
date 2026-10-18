@@ -81,7 +81,7 @@ group editing tests start from it. It was built with `create-or-replace-groups` 
 
 ### Corner Kitchen with Wall Units
 
-plan snapshot id: `ps_s3q15s937nezvvjuyq0rdl4vecu6rsjp`
+plan snapshot id: `ps_s7hy5nqvtts37wl79u6q8tq67bc12s2`
 
 ![Corner Kitchen with Wall Units](./images/corner-kitchen-wall-units.png)
 

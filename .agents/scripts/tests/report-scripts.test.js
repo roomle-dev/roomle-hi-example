@@ -238,7 +238,16 @@ const singleModelSession = async (t) => {
                   index: 0,
                   id: 'bbbb',
                   rootIds: ['cccc'],
-                  errors: ['A'.repeat(295) + ' BCDEFGH'],
+                  errors: [
+                    'A'.repeat(295) + ' BCDEFGH',
+                    'first group, second error',
+                  ],
+                },
+                {
+                  index: 1,
+                  id: 'dddd',
+                  rootIds: ['eeee'],
+                  errors: ['second group, only error'],
                 },
               ],
               error: null,
@@ -506,7 +515,11 @@ test('extracts the facts of a single-model session', async (t) => {
   assert.equal(r2.nn, '02');
   assert.equal(r2.random, true);
   assert.equal(r2.turns[0].answer, 'B'.repeat(480) + ' …');
-  assert.equal(r2.turns[0].toolCalls[0].notLoaded, 'A'.repeat(295) + ' …');
+  assert.deepEqual(r2.turns[0].toolCalls[0].notLoaded, [
+    'A'.repeat(295) + ' …',
+    'first group, second error',
+    'second group, only error',
+  ]);
 
   assert.equal(r3.nn, '03');
   assert.equal(r3.random, false);
@@ -573,7 +586,7 @@ test('builds the report of a single-model session', async (t) => {
   );
   assert.ok(
     report.includes(
-      `- **Corrections**: \`create-or-replace-groups\`, notLoaded: ${'A'.repeat(295)} …`
+      `- **Corrections**: \`create-or-replace-groups\`, notLoaded: ${'A'.repeat(295)} …; \`create-or-replace-groups\`, notLoaded: first group, second error; \`create-or-replace-groups\`, notLoaded: second group, only error`
     )
   );
   assert.ok(report.includes(`- **Answer**: ${'B'.repeat(480)} …`));
@@ -672,6 +685,83 @@ test('extracts and builds a multi-model session', async (t) => {
 
   assert.equal((report.match(/^## .+ — \d{2} /gm) || []).length, 4);
   assert.deepEqual(brokenLinks(report), []);
+});
+
+test('fails explicitly when a required session file is missing', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'report-scripts-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const session = join(root, 'mcp-test-2099-01-03_00-00');
+  await mkdir(session, { recursive: true });
+  const tests = {
+    models: [{ provider: 'gpt-test-a' }],
+    tests: [{ id: 'alpha', title: 'Alpha', plan: 'default-room', prompt: 'p' }],
+  };
+  const results = {
+    startedAt: '2099-01-03T00:00:00.000Z',
+    finishedAt: '2099-01-03T00:10:00.000Z',
+    runs: [],
+  };
+  const factsFile = join(session, 'facts.json');
+  const expectFailure = async (pattern, breakFile) => {
+    await breakFile();
+    await assert.rejects(
+      exec(process.execPath, [extract, session, factsFile]),
+      (err) => {
+        assert.equal(err.code, 1);
+        assert.match(err.stderr, pattern);
+        return true;
+      }
+    );
+    assert.equal(existsSync(factsFile), false);
+  };
+
+  await writeJson(session, 'tests.json', tests);
+  await writeJson(session, 'results.json', results);
+  await expectFailure(/cannot read .*tests\.json/, () =>
+    rm(join(session, 'tests.json'))
+  );
+  await writeJson(session, 'tests.json', tests);
+  await expectFailure(/cannot read .*results\.json/, () =>
+    rm(join(session, 'results.json'))
+  );
+  await writeJson(session, 'results.json', results);
+  await expectFailure(/cannot read .*tests\.json/, () =>
+    writeFile(join(session, 'tests.json'), '{ nope')
+  );
+});
+
+test('keeps the startup errors of a run whose run.json is missing', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'report-scripts-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const session = join(root, 'mcp-test-2099-01-04_00-00');
+  await mkdir(join(session, 'gpt-test-a/01-alpha'), { recursive: true });
+  await writeJson(session, 'tests.json', {
+    models: [{ provider: 'gpt-test-a' }],
+    tests: [{ id: 'alpha', title: 'Alpha', plan: 'default-room', prompt: 'p' }],
+  });
+  await writeJson(session, 'results.json', {
+    startedAt: '2099-01-04T00:00:00.000Z',
+    finishedAt: '2099-01-04T00:10:00.000Z',
+    runs: [
+      {
+        model: 'gpt-test-a',
+        test: 'alpha',
+        title: 'Alpha',
+        random: false,
+        dir: 'gpt-test-a/01-alpha',
+        attempts: ['gpt-test-a/01-alpha'],
+        exitCode: 1,
+        planSnapshotId: null,
+        errors: ['no run.json - see console.log'],
+        durationMs: 100,
+      },
+    ],
+  });
+  await exec(process.execPath, [extract, session, join(session, 'facts.json')]);
+  const facts = JSON.parse(await readFile(join(session, 'facts.json'), 'utf8'));
+  assert.equal(facts.runs.length, 1);
+  assert.deepEqual(facts.runs[0].runErrors, ['no run.json - see console.log']);
+  assert.deepEqual(facts.runs[0].turns, []);
 });
 
 test('fails without a write when an evaluation is missing or unknown', async (t) => {

@@ -9,9 +9,10 @@
  * outFile, or to stdout without one. The facts are the working file of the
  * evaluation (skill hi-mcp-testing, section 5) and the input of
  * build-test-report.js: per run the test, the turns with their tools and tool
- * calls (corrections, notLoaded, error) and the shortened answer, the groups
- * after the chat and the planner calls the server sent. A multi-model session
- * is keyed by model and test, so every model's run of a test is kept.
+ * calls (corrections, the notLoaded errors, error) and the shortened answer,
+ * the groups after the chat and the planner calls the server sent. A
+ * multi-model session is keyed by model and test, so every model's run of a
+ * test is kept.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -29,14 +30,18 @@ const short = (s, n) => {
     : norm;
 };
 
-const notLoadedText = (notLoaded) => {
-  if (!notLoaded) return null;
-  const first = Array.isArray(notLoaded)
-    ? notLoaded[0]?.errors?.[0]
-    : typeof notLoaded === 'object'
-      ? notLoaded.errors?.[0]
-      : notLoaded;
-  return short(first ?? '', 300);
+const notLoadedTexts = (notLoaded) => {
+  if (!notLoaded) return [];
+  const entries = Array.isArray(notLoaded) ? notLoaded : [notLoaded];
+  return entries.flatMap((entry) => {
+    if (typeof entry === 'string') return [short(entry, 300)];
+    const errors = Array.isArray(entry?.errors)
+      ? entry.errors
+      : entry?.errors
+        ? [entry.errors]
+        : [];
+    return errors.filter(Boolean).map((error) => short(error, 300));
+  });
 };
 
 const session = process.argv[2];
@@ -54,8 +59,17 @@ const readJson = (path, fallback) => {
   }
 };
 
-const suite = readJson(join(session, 'tests.json'), {});
-const results = readJson(join(session, 'results.json'), {});
+const readRequiredJson = (path) => {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch (error) {
+    console.error(`extract-run-facts: cannot read ${path} (${error.message})`);
+    process.exit(1);
+  }
+};
+
+const suite = readRequiredJson(join(session, 'tests.json'));
+const results = readRequiredJson(join(session, 'results.json'));
 const runsByModelAndTest = new Map(
   (results.runs || []).map((r) => [`${r.model}/${r.test}`, r])
 );
@@ -88,14 +102,14 @@ for (const model of models) {
       planSnapshotId: run.planSnapshotId || runJson.planSnapshotId || null,
       exitCode: run.exitCode ?? null,
       attempts: Array.isArray(run.attempts) ? run.attempts.length : 1,
-      runErrors: runJson.errors || [],
+      runErrors: runJson.errors || run.errors || [],
       turns: (runJson.turns || []).map((turn) => ({
         prompt: turn.prompt,
         tools: turn.tools,
         toolCalls: (turn.toolCalls || []).map((c) => ({
           tool: c.tool,
           corrections: (c.corrections || []).filter(Boolean),
-          notLoaded: notLoadedText(c.notLoaded),
+          notLoaded: notLoadedTexts(c.notLoaded),
           error: c.error || null,
         })),
         answer: short(turn.answer, 480),

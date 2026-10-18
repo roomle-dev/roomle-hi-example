@@ -150,8 +150,8 @@ const correctionsLine = (r) => {
           `${prefix}\`${c.tool}\`: ${short(stripToolPrefix(c.tool, corr), 240)}`
         );
       }
-      if (c.notLoaded) {
-        entries.push(`${prefix}\`${c.tool}\`, notLoaded: ${c.notLoaded}`);
+      for (const notLoaded of c.notLoaded || []) {
+        entries.push(`${prefix}\`${c.tool}\`, notLoaded: ${notLoaded}`);
       }
       if (c.error) entries.push(`${prefix}\`${c.tool}\`, error: ${c.error}`);
     }

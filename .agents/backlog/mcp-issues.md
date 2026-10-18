@@ -23,11 +23,11 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | roomle-ui `create-or-replace-groups` tool command (`hi-tool-commands.ts`, `hangGapOf` in `hi-group-layout.ts`) or the planner — not analysed | medium | gpt-6-astra | |
-| 73 | [A wall-level article of another category is taken for a floor unit](#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit) | defect | roomle-ui `relationsToDocking`, `isWallUnitArticle` (`hi-group-layout.ts`) | low | gpt-6-astra | |
-| 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, `behind`), roomle-ui `relationsToDocking` (`hi-group-layout.ts`) | low | gpt-6.1-sol | |
-| 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, the `notCarried` sentence of `create-or-replace-groups`) | medium | gpt-6-astra | |
-| 77 | [An edit that gives a row a new end leaves a door hinged to the outside](#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside) | hardening | roomle-hi-example served text (`hi-mcp-server.ts`, the descriptions of the edit tools) | medium | gpt-6-astra | |
+| 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | analysed: roomle-ui `create-or-replace-groups` tool command (`hi-tool-commands.ts`, `hangGapOf` in `hi-group-layout.ts`) — the wall unit's height is fixed at the load with the library's default plinth (D36, D42); the library lifts some wall units when the plinth changes, the rest stay low. Fix proposed in [the analysis](../bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md), to be based on roomle-ui `fix/room-corners-at-openings` | medium | gpt-6-astra | |
+| 73 | [A wall-level article of another category is taken for a floor unit](#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit) | defect | analysed: roomle-ui `isWallUnitArticle`, `relationsToDocking` (`hi-group-layout.ts`) — the classifier knows a wall unit by a category word only; the kernel's insert levels reach the tool and the tool does not read them, and the stored templates carry none. Fix proposed in [the analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md): the classifier reads the insert levels, the library fills them if the planner does not, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6-astra | |
+| 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, `behind`) — the description says neither where a turned unit lines up with a wider neighbour nor which way the relations run in a turned row; roomle-ui `pairOf` for `behind` (`hi-group-layout.ts`) — the compile pins the turned unit at the neighbour's left end with offset 0 and no field to name the other end. Fix proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md): the served text first, the `align` the server derives the offset from along the neighbour's width axis as the fallback, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6.1-sol | |
+| 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the `notCarried` sentence of `create-or-replace-groups`) — the sentence presents a not-carried attribute as a part the library will not build and asks the agent to report it; roomle-ui `compactMasterData` (`hi-plan-context.ts`) — the attribute that switches the generated part on is not customer-facing, so the vocabulary and `find-attributes` do not serve it and the agent cannot find it. Fix proposed in [the analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md): the served sentence and the served vocabulary (roomle-ui, based on `fix/room-corners-at-openings`); the library data (the switch's `userRight`) as the smaller alternative | medium | gpt-6-astra | |
+| 77 | [An edit that gives a row a new end leaves a door hinged to the outside](#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the descriptions of the edit tools) — the rule of D84 reaches the chats only through `get-authoring-rules`, which a conversation of edits fetches not, and the descriptions of the five tools that can give a row a new end do not name it. Fix proposed in [the analysis](../bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md): one sentence in the five descriptions, in roomle-hi-example only | medium | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -42,14 +42,27 @@ of the old plinth, 50 or 20 mm below the tall units that D35 hangs them flush wi
 stay low is tied neither to the article (`O2TB90`, `OTB60` and `OTB30` stay low in one run and rise in
 another) nor to standing beside a tall unit.
 
-**Cause.** Not analysed. The hang gap of a wall unit `above` a floor unit is relative to the floor
-unit (D35, `hangGapOf`: the plinth cancels out); the group attributes are set after the load (D36);
-after a reload the kernel's docking no longer links a wall unit to the floor unit it was placed above
-(D42). A wall unit placed above a floor unit may therefore keep its height when the floor unit rises.
+**Cause.** Analysed in [the bug analysis](../bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md).
+The height of a wall unit is fixed at the load as an absolute insertion height computed with the
+library's default plinth: the group attributes — which carry the plinth height — are applied only
+after the load (D36), and the docking that hung the wall unit above its carrier (Bottom on Top plus
+the hang gap) does not survive the load as a link (D42: the docking context links only touching
+vectors). When the plinth attribute then lifts the floor and tall units, the kernel moves only the
+wall units whose vectors still touch a risen unit (stacks `onTop`, wall units beside tall units),
+and the library's recalculation lifts some of the wall units hung above floor units by the same
+delta (D59 names them) and leaves the others at the load-time height — 50 or 20 mm below the tall
+units' top that D35 hangs them flush with. Which wall units the library lifts is its server-side
+calculation logic: across the stored runs the same article above the same carrier rises in one run
+and stays in another, so the split cannot be predicted from the served data.
 
-**To do.** Analyse where the height of the wall units is fixed and why some wall units follow the
-plinth and others do not. Then every wall unit hung above a floor unit stays flush with the tall units
-after the group attributes change the plinth height — no change of the served text.
+**To do.** Fix, proposed in [the analysis](../bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md),
+in roomle-ui `create-or-replace-groups` (based on `fix/room-corners-at-openings`): after the group
+attributes are applied, re-assert the hang of every wall unit hung above a floor unit — its bottom
+at its carrier's new top plus the compiled gap (`gapMm`, else the D35 `hangGapOf`) — and report the
+lift as a correction. Then every wall unit hung above a floor unit stays flush with the tall units
+after the group attributes change the plinth height — no change of the served text. The kernel
+(RoomleCore) and the library (HOMAG, server-side calculation) are the root-cause alternatives named
+in the analysis.
 
 **Test.** A roomle-ui test of `create-or-replace-groups` with `mod_PlinthAreaHeight` in the group
 attributes (`__tests__/hi-tool-commands/create-or-replace-groups-input-test.ts`), and
@@ -71,16 +84,22 @@ The same happens to `above`: the open utility wall units `HWR_WR600V1` (category
 needs an undo and two `merge-article-into-group` calls with `mod_PlacementLevels` WallHanging to hang
 them.
 
-**Cause.** `isWallUnitArticle` (`hi-group-layout.ts`) knows a wall unit by the words "Wall Units" in
+**Cause.** Analysed in [the bug analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md).
+`isWallUnitArticle` (`hi-group-layout.ts`) knows a wall unit by the words "Wall Units" in
 the category, or a hood; a wall-level article of another category counts as a floor unit, and the
 correction for a floor unit beside a wall unit moves it. The correction changes what the agent
 asked for instead of carrying it out ([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort):
-correct only where the intent is clear).
+correct only where the intent is clear). The kernel's neutral mounting data — the insert levels
+of the root modules — reaches the tool and the classifier does not read it; the stored templates
+carry none, so no neutral signal exists today.
 
-**To do.** Tell wall-level articles from floor articles by data the library gives every article —
-its default mounting height or its docking vectors — rather than by a category word, so an article
-`rightOf` a wall unit docks beside it; until then, keep an article the agent puts beside a wall unit
-there and report it, rather than moving it to the floor row.
+**To do.** Fix, proposed in [the analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md),
+in roomle-ui `isWallUnitArticle` (`hi-group-layout.ts`, based on `fix/room-corners-at-openings`):
+tell wall-level articles from floor articles by the kernel's neutral mounting data — an insert
+level above the floor on the article's root modules — rather than by a category word; the library
+data fills the insert levels if the planner does not. An article `rightOf` a wall unit docks
+beside it and a wall-level article `above` a floor unit hangs above it. The corrections stay for
+genuine floor units, where moving them to the floor row is right.
 
 **Test.** `__tests__/hi-group-layout-test.ts`: a wall-level panel `rightOf` a wall unit docks to the
 wall unit's side, and a wall-level article of another category `above` a floor unit hangs above it.
@@ -94,17 +113,24 @@ wall unit's side, and a wall-level article of another category `above` a floor u
 row and the others `rightOf` it. The back row lines up with the inner end of that unit and runs past
 the far end of the front row: 300 mm off at both ends, a step in the worktop.
 
-**Cause.** The served description of `behind` ("back to back with that root module, turned by 180
-degrees (an island)", `hi-mcp-server.ts`) says neither where a turned unit lines up with a wider
-neighbour nor which way `rightOf` runs in the turned row. The compile docks the back vectors to each
-other (`relationsToDocking`, `hi-group-layout.ts`): in this run the turned unit lines up with its
-neighbour's left end, seen from the neighbour's front, and `rightOf` in the turned row runs on to that
-side.
+**Cause.** Analysed in [the bug analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md).
+The served description of `behind` ("back to back with that root module, turned by 180 degrees (an
+island)", `hi-mcp-server.ts`) says neither where a turned unit lines up with a wider neighbour nor
+which way `rightOf` runs in the turned row, and the compile (`pairOf` for `behind`,
+`hi-group-layout.ts`) pins the turned unit at the neighbour's left end, seen from the neighbour's
+front, with offset 0 and no field to name the other end (`align` is read for every relation but
+ignored for `behind`, `gapMm` is ignored, G37). The agent's natural composition — the first back unit
+behind the row's end unit, the back row continuing `rightOf` — then lands the back row off the front
+row by the width difference at both ends; the mirror composition (behind the row's first unit,
+continuing `leftOf`) lands flush, which the other stored runs show.
 
-**To do.** Clarify the description of `behind` first: where a turned unit lines up and which way the
-relations run in a turned row, in library-neutral words. If that does not suffice, simplify the API:
-the server lines up a unit `behind` a wider one at the end the agent names (`align`) and derives the
-offset.
+**To do.** Fix, proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md),
+in roomle-hi-example first: clarify the description of `behind` (`hi-mcp-server.ts`) — where a turned
+unit lines up and which way the relations run in a turned row, in library-neutral words, with the
+composition that lines a back row up with the row in front of it. If that does not suffice, simplify
+the API in roomle-ui `pairOf` (`hi-group-layout.ts`, based on `fix/room-corners-at-openings`): the
+server lines up a unit `behind` a wider one at the end the agent names (`align`) and derives the
+offset from the catalog widths along the neighbour's width axis in the group's frame.
 
 **Test.** `image-planning-right-wall`: the island's two rows end flush at both ends.
 
@@ -119,20 +145,29 @@ backsplash and also starts generating the backsplashes"). No root module carries
 the result lists them in `groupAttributes.notCarried` (D65), and the agent tells the user that the
 backsplash cannot be built. The same agent switches the worktop on with `mod_CreateCountertop`.
 
-**Cause.** The `notCarried` sentence of the `create-or-replace-groups` description
+**Cause.** Analysed in [the bug analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md).
+Two causes compound. The `notCarried` sentence of the `create-or-replace-groups` description
 (`hi-mcp-server.ts`): "the library builds no part for them in this group, a backsplash or an end
 panel for example, so the group stands without them, nothing to undo; say in the answer which
-material is not built". It presents the missing part as final and asks the agent to report it; it
-does not say that a part the library generates may wait for an attribute of the units that switches
-it on.
+material is not built" — presents the missing part as final and asks the agent to report it; it does
+not say that a part the library generates may wait for an attribute of the units that switches it
+on. And the switch itself is not served: `compactMasterData` (roomle-ui `hi-plan-context.ts`) keeps
+only customer-facing attributes, and the library marks the generation switch `mod_CreateBacksplash`
+Advanced while its sibling `mod_CreateCountertop` is Simple — so neither the attributes section of
+`get-plan-context` nor `find-attributes` shows it. The agent sets the backsplash's material
+attributes (Simple, carried by the generated root module), they are carried by no unit of the group,
+the result lists them in `notCarried`, and the agent reports the backsplash as not built.
 
-**To do.** Clarify the sentence first, in library-neutral words: an attribute no unit carries can
-belong to a part the library generates only when an attribute of the units switches it on; look for
-that attribute (`find-attributes`) and set it, and say in the answer only what still is not built.
-Leave out the example "a backsplash or an end panel" (kitchen vocabulary, see the library neutrality
-item in [mcp-policy-issues.md](mcp-policy-issues.md)). If that does not suffice, the result names per
-attribute in `notCarried` the generated root module that carries it (`assignedAttributes` of the
-master data), so the agent looks for its switch.
+**To do.** Fix, proposed in [the analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md),
+in two parts. roomle-hi-example: clarify the `notCarried` sentence in library-neutral words — an
+attribute no unit carries can belong to a part the library generates only when an attribute of the
+units switches it on; look for that attribute and set it; say in the answer only what still is not
+built — and leave out the example "a backsplash or an end panel" (kitchen vocabulary, see the library
+neutrality item in [mcp-policy-issues.md](mcp-policy-issues.md)). roomle-ui (based on
+`fix/room-corners-at-openings`): serve the generation switches — `compactMasterData` keeps also the
+Bool attributes the root modules carry — so the switch is in the vocabulary and `find-attributes`
+finds it. The smaller alternative is the library data: the switch's `userRight` Simple, like
+`mod_CreateCountertop` (a library issue, [library-issues.md](library-issues.md)).
 
 **Test.** `it('asks the agent to say which group material the library does not build')` in
 `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` checks the new sentence, and
@@ -149,16 +184,18 @@ handle on the outside ([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17)). 
 `get-authoring-rules` in these conversations; in the conversations that read the rules, a merge at an
 end carries `mod_DoorDirectionSelection` for the new end, and every create sets both ends.
 
-**Cause.** The rule of D84 is only in `AUTHORING_RULES` (`hi-mcp-server.ts`), which reaches the chats
+**Cause.** Analysed in [the bug analysis](../bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md).
+The rule of D84 is only in `AUTHORING_RULES` (`hi-mcp-server.ts`), which reaches the chats
 only through `get-authoring-rules` — they pass no server instructions (§4 of
 [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs)) —, and a
 conversation of edits fetches no rules. The descriptions of the tools that can give a row a new end —
 `swap-root-modules`, `delete-article-in-place`, `delete-article-and-compact`, `exchange-root-module`,
 `merge-article-into-group` — do not name it.
 
-**To do.** One library-neutral sentence in the descriptions of these tools: after an edit that gives
-a row a new end, the door at that end is hinged at the outer side of the row — set it. The rule in
-`AUTHORING_RULES` stays as it is.
+**To do.** Fix, proposed in [the analysis](../bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md),
+in roomle-hi-example: one library-neutral sentence in the descriptions of these tools: after an edit
+that gives a row a new end, the door at that end is hinged at the outer side of the row — set it. The
+rule in `AUTHORING_RULES` stays as it is.
 
 **Test.** A unit test in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` checks the sentence in the
 five descriptions; `edit-swap-units` and `undo-a-wrong-command`: the new ends hinged at the outer

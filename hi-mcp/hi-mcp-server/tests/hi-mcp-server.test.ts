@@ -500,7 +500,7 @@ describe('hi-mcp-server tool calls', () => {
     );
   });
 
-  it('asks the agent to say which group material the library does not build', async () => {
+  it('explains how to enable a requested generated part before reporting what remains missing', async () => {
     const client = await connectClient(createMockPlannerApi());
     const { tools } = await client.listTools();
     const description =
@@ -508,11 +508,14 @@ describe('hi-mcp-server tool calls', () => {
         ?.description ?? '';
 
     expect(description).toContain(
-      'notCarried: those no unit of the group has - the library builds no part for them in this group'
+      'notCarried: attributes no current module carries.'
     );
     expect(description).toContain(
-      'say in the answer which material is not built'
+      "For a requested part the library generates, use find-attributes to look for an enabling attribute on the units; if available, enable it, then set the part's attributes after it is generated."
     );
+    expect(description).toContain('Report only what is still missing.');
+    expect(description).not.toContain('the library builds no part');
+    expect(description).not.toContain('a backsplash or an end panel');
   });
 
   it('places a new group by wall and alignment and leaves the point to the server', async () => {

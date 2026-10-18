@@ -376,7 +376,7 @@
       "plan": "default-room",
       "prompt": "create a kitchen like the one in the image on the left-hand wall of the room",
       "image": "docs/images/kitchen-1.png",
-      "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the kitchen of the image on the left-hand wall, in the order of the image"
+      "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the kitchen of the image on the left-hand wall, in the order of the image; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
     },
     {
       "id": "image-kitchen-back-right-corner",
@@ -390,14 +390,15 @@
       "title": "Image: planning on the right-hand wall",
       "plan": "default-room",
       "prompt": "create a planning as to the one shown in the picture on the right-hand wall of the room.",
-      "image": "docs/images/kitchen-3.jpeg"
+      "image": "docs/images/kitchen-3.jpeg",
+      "expect": "the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
     },
     {
       "id": "image-only-no-text",
       "title": "Image only, no text",
       "plan": "default-room",
       "image": "docs/images/kitchen-4.png",
-      "expect": "the model decides what to plan; the chat sends the image with the image prompt of the planner, which names the skill image-planning; the model fetches image-planning, and the kitchen skill for its checks, and plans the kitchen as close to the image as possible"
+      "expect": "the model decides what to plan; the chat sends the image with the image prompt of the planner, which names the skill image-planning; the model fetches image-planning, and the kitchen skill for its checks, and plans the kitchen as close to the image as possible; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
     },
     {
       "id": "kitchen-conversation",

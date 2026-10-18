@@ -217,7 +217,7 @@ export const withSharedSelectionsOnce = (attributes: any[]): any[] => {
   });
 };
 
-// The attribute vocabulary: per library the customer-facing attributes of
+// The attribute vocabulary: per library the customer-facing or Bool attributes of
 // the compacted master data with their values, a shared value list listed
 // once. The root modules and the group settings stay in masterData.
 export const agentFacingAttributes = (masterData: any) =>

@@ -362,8 +362,8 @@ overlap according to the measured result; missing data is no assurance of cleara
   description explain this, and the library descriptions explain article-specific overhangs.
   No walls. Requested alone, the server fetches
   the rooms too for the walls of the doors and windows
-- `attributes` — the attribute vocabulary, by default: per library the attributes a
-  customer sees (`isMain` or `userRight` `Simple`) with id, name, desc, group, type and
+- `attributes` — the attribute vocabulary, by default: per library the root-assigned attributes that are
+  main, Simple or Bool with id, name, desc, group, type and
   `selections` (value, name and desc); a value list several attributes share is listed
   once, the later attributes carry `sameSelectionsAs`, the id of the attribute that lists
   it. The ids are those of the catalog's `mainAttributes` and of the roots' `attributes`;
@@ -419,7 +419,7 @@ Answers a question about an attribute: searches the attribute vocabulary — the
 description, group or selection name) and returns the matching attributes with
 their `selections` and the root modules that carry them. The vocabulary is the
 compacted master data (root modules — the generated ones such as the worktop
-`mr_Countertop` included — and their customer-facing attributes); the section
+`mr_Countertop` included — and their customer-facing or Bool attributes); the section
 already lists every attribute with its values, so a planning needs no search. Every word of the text is matched on its own, in
 any order, and colour/color, grey/gray and worktop/countertop read alike: one
 search for `color` returns every colour attribute — front, carcase, countertop,
@@ -490,8 +490,7 @@ Returns `loaded`, the ids of the groups the planner built or restored, and the g
 ids, `pos`, `rotationY`, `footprint`) and `otherGroupIds`, the other groups of
 the plan, unchanged, plus a hint when a group of this call
 is still unpositioned, `groupAttributes` (`[{ index, id, set, notCarried?, rootValues? }]`: per group the
-group attributes set on every unit, those no unit of the group carries — the group stands
-without them —, and the root modules that keep their own value of one), `corrections` (what the server changed in the input, and what the
+group attributes set on every unit, those no current module carries — for a requested generated part, find an enabling attribute with `find-attributes`, enable it when available, then set the part's attributes after generation; report only what remains missing —, and the root modules that keep their own value of one), `corrections` (what the server changed in the input, and what the
 library changed with the group attributes — a front colour reset by a front program)
 and `notLoaded` (`[{ index, id?, rootIds?, errors }]`, the groups it could not build or the planner
 left out, with the reason, a replace the planner restored because the library could not calculate the

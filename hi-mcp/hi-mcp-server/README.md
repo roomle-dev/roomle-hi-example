@@ -335,8 +335,8 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   `groups`, per HI group the `id`, `outline` and `bottomMm`/`topMm` of every root module that is not
   generated, from the parts of the calculated group. No walls. Requested alone, the server fetches
   the rooms too for the walls of the doors and windows
-- `attributes` — the attribute vocabulary, by default: per library the attributes a customer sees
-  (`isMain` or `userRight` `Simple`) with id, name, desc, group, type and `selections` (value, name
+- `attributes` — the attribute vocabulary, by default: per library the root-assigned attributes that are
+  main, Simple or Bool with id, name, desc, group, type and `selections` (value, name
   and desc); a value list several attributes share is listed once, the later attributes carry
   `sameSelectionsAs`. [find-attributes](#find-attributes) searches the same vocabulary for a question
 - `masterData` — only when included explicitly: per library the root modules (id, name,
@@ -373,10 +373,16 @@ served text), and serves every file as a resource under `skill://<name>/<path>`,
 
 ### find-attributes
 
+Root-assigned Bool attributes are included alongside main and Simple attributes, so generation
+switches reach the vocabulary. When `notCarried` names the attributes of a requested generated
+part, find an enabling attribute, enable it when available, then set the part's attributes after
+generation. Report only what remains missing; group-level switches and their generated part's
+materials can require separate calls because attribute targets are resolved before recalculation.
+
 Searches the attribute vocabulary of the loaded libraries by text — attribute id, name,
 description, group or selection name — and returns the matching attributes with their
 `selections` and the root modules that carry them. The vocabulary is the compacted master data of
-`get-plan-context` (root modules and their customer-facing attributes): the worktop colour, for
+`get-plan-context` (root modules and their customer-facing or Bool attributes): the worktop colour, for
 example, is `mod_CountertopColor` of the generated root `mr_Countertop`, set on the whole group with
 `change-group-attribute`. Every match names its root modules with id and name, and the attributes
 the root modules in the plan carry come first. At most 20 matches are returned; narrow the text

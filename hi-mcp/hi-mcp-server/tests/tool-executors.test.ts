@@ -683,6 +683,51 @@ describe('get-plan-context', () => {
       expect(result.masterData).toBeUndefined();
     });
 
+    it('exposes a Bool generation switch without selections in the vocabulary and attribute search', async () => {
+      const toggle = {
+        id: 'generate-trim',
+        name: 'Generate trim',
+        desc: 'Enables generation of the trim on this unit',
+        group: 'Generation',
+        type: 'Bool',
+      };
+      const material = {
+        id: 'trim-color',
+        name: 'Trim color',
+        desc: 'Color of the generated trim',
+        type: 'Text',
+        selections: [white],
+      };
+      const unit = { id: 'unit', name: 'Unit' };
+      const trim = { id: 'trim', name: 'Trim' };
+      const api = createApi({
+        groups: [],
+        masterData: {
+          'lib-1': {
+            libraryId: 'lib-1',
+            modules: [
+              { ...unit, attributes: [toggle.id] },
+              { ...trim, attributes: [material.id] },
+            ],
+            attributes: [toggle, material],
+          },
+        },
+      });
+
+      const context = (await toolExecutors['get-plan-context'](api, {})) as any;
+      expect(context.attributes['lib-1']).toEqual([toggle, material]);
+      expect(context.masterData).toBeUndefined();
+      expect(
+        await toolExecutors['find-attributes'](api, { text: 'trim' })
+      ).toEqual({
+        matches: [
+          { libraryId: 'lib-1', ...toggle, rootModules: [unit] },
+          { libraryId: 'lib-1', ...material, rootModules: [trim] },
+        ],
+        total: 2,
+      });
+    });
+
     it('returns the master data as it is beside the vocabulary when both are requested', async () => {
       const api = createApi({ masterData: vocabularyMasterData });
       const result = (await toolExecutors['get-plan-context'](api, {

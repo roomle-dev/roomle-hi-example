@@ -24,7 +24,7 @@ never drop the agent's content silently.
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
 | 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, `behind`) — the description says neither where a turned unit lines up with a wider neighbour nor which way the relations run in a turned row; roomle-ui `pairOf` for `behind` (`hi-group-layout.ts`) — the compile pins the turned unit at the neighbour's left end with offset 0 and no field to name the other end. Fix proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md): the served text first, the `align` the server derives the offset from along the neighbour's width axis as the fallback, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6.1-sol | |
-| 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | verified; fix and unit-test plan in [the analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md): roomle-hi-example clarifies conditional generation/material recovery in the `notCarried` description; roomle-ui `compactMasterData` retains root-assigned Bool attributes (61 → 73 in the stored library), based on `fix/wall-level-article-relations`. Test compaction boundaries, served guidance and discovery through both tools; verify actual generation and material values with the library | medium | gpt-6-astra | |
+| 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | open recovery path: a requested generated part in `notLoaded` can build after its material attributes are set in a separate call, even when the create reported them set. Clarify that recovery in the served guidance; the exact replay and follow-up plan are in [the analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md) | medium | gpt-6-astra | |
 | 77 | [An edit that gives a row a new end leaves a door hinged to the outside](#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the descriptions of the edit tools) — the rule of D84 reaches the chats only through `get-authoring-rules`, which a conversation of edits fetches not, and the descriptions of the five tools that can give a row a new end do not name it. Fix proposed in [the analysis](../bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md): one sentence in the five descriptions, in roomle-hi-example only | medium | gpt-6-astra | |
 | 78 | [A swap of a widened unit is refused for want of a docking vector](#78-a-swap-of-a-widened-unit-is-refused-for-want-of-a-docking-vector) | defect | analysed: roomle-ui `modifyAttributesOfModules` and `_takeOverPropertiesFromOriginalGroup` (`glue-logic.ts:2650,3287`) — the recalculation behind `change-module-attribute` returns the width-changed root without its dockInfos and the take-over restores every root property but them; the swap's `handOver` (`hi-tools.ts:954-972`) then drops the side docking with the correction at :967. Fix proposed in [the analysis](../bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md): the take-over keeps the original root's dockInfos with the points recomputed from the calculated geometry, to be based on roomle-ui `fix/room-corners-at-openings` | medium | gpt-6-astra | |
 
@@ -63,41 +63,36 @@ offset from the catalog widths along the neighbour's width axis in the group's f
 
 ## 75. The backsplash of an image kitchen is reported as not buildable
 
-**Problem.** For a kitchen image with a backsplash, the agent sends `mod_BacksplashColor` and
-`mod_BacksplashHeight` in the group attributes of `create-or-replace-groups`, but not the attribute
-that generates the backsplash. The materials have no current carrier and appear in
-`groupAttributes.notCarried` (D65); the answer reports the part as not included instead of using
-the available generation path.
+**Problem.** The agent enables a requested backsplash and sends its colour and height in the
+group attributes, but the generated root is reported in `notLoaded` with Error 14034
+(`tab_GrainDirectionSettings`, undefined inputs). The answer says the part could not be generated.
+Replaying the same create and applying the same material values with a separate
+`change-group-attribute` builds it. The create's `groupAttributes.set` alone does not establish
+that the part calculated successfully.
 
-**Cause.** Verified in [the analysis and implementation/unit-test plan](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md).
-The `notCarried` clause (`hi-mcp-server.ts:405–406`) presents missing carriers as final and asks
-the agent to report an unbuilt material. In roomle-ui, `compactMasterData`
-(`hi-plan-context.ts:276–280`) retains root-assigned attributes only when main or Simple.
-The library's `mod_CreateBacksplash` is an Advanced Bool, so neither the default vocabulary nor
-`find-attributes` can reveal it. The material attributes are Simple and remain visible; the
-worktop's enabling switch is also Simple.
+**Cause.** The `create-or-replace-groups` description explains generated-part recovery under
+`notCarried`; a generated-root diagnostic in `notLoaded` gets generic advice to check/change
+values or replace the article (roomle-ui `hi-tool-commands.ts:680–682`). That advice does not
+identify the separate material call as a recovery when the requested values were already reported
+set. The generation switch is in the root-assigned Bool vocabulary; the remaining gap is this
+diagnostic recovery. See [the analysis and follow-up plan](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md).
 
-**To do.** In roomle-hi-example, replace the final-omission clause with conditional,
-library-neutral recovery: for a requested generated part, find an enabling attribute, enable it
-when available, then set the part's attributes after generation; report what remains missing.
-In roomle-ui, based on **`fix/wall-level-article-relations`**, keep root-assigned attributes that
-are customer-facing **or Bool** in `compactMasterData`, preserving module assignments.
-This adds 12 attributes in the stored library (61 → 73). Keep `isCustomerFacingAttribute`
-unchanged. A library-only alternative is to mark the switch Simple; the recommended fix does not
-depend on that metadata change. Materials sent alongside a group-level enabling switch can still
-be skipped because targeting precedes recalculation, so the follow-up applies them after the part
-exists. Keep the existing `notCarried` reporting and add no guard or automatic generation.
+**To do.** Extend the existing library-neutral guidance to a requested generated part in
+`notLoaded`: with generation enabled and the part's intended attributes known, apply those
+attributes in a separate settled call before declaring the part unbuildable. Keep the diagnostic
+visible. Investigate the combined-attribute calculation before proposing an automatic correction;
+do not add a blind retry or change the library's calculation to hide it. Any roomle-ui follow-up
+must retain `fix/wall-level-article-relations` as an ancestor.
 
-**Test.** Unit tests: Advanced/Master Bools assigned to roots survive with their carrier ids and
-metadata; unassigned/submodule-only Bools and internal non-Bools stay excluded. Replace the
-final-omission description test at `hi-mcp-server.test.ts:503`; test Bool discovery through the
-default vocabulary and `find-attributes` in `tool-executors.test.ts`. Reuse the existing
-skipped-attribute/`notCarried` tests. Real-library acceptance must verify generation and requested
-colour/height for root-level creation and group-level recovery, then evaluate
-`image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text` with both fixes
-loaded. A true switch alone does not prove the part was built.
+**Test.** A description regression covers recovery from a generated-part diagnostic as well as
+`notCarried`; a diagnostic-message change also needs a tool-command test. The exact replay
+must generate the part with colour 240 and height 635, and `image-planning-right-wall` must
+recover it before the final answer.
 
-**Reproduce.** `mcp-test-2026-10-18_14-48-28`: gpt-6-astra 51 (`image-only-no-text`, the `create-or-replace-groups`): `mod_BacksplashColor` 216 and `mod_BacksplashHeight` 600 and 300 in the group attributes, no `mod_CreateBacksplash` (`mod_CreateBacksplash=false` on all 14 modules carrying it in `order-data.json`, no backsplash root); the answer: "The wood backsplash and connecting window ledge are not included".
+**Reproduce.** `backsplash-generation-2026-10-18`: gpt-6-astra
+`02-image-planning-right-wall`, final create: switch true, group material 240 / 635, generated root
+in `notLoaded`, no backsplash in order data. `library-replay/create.json` reproduces it;
+a separate call with those same values produces the root in `library-replay/order.json`.
 
 ## 77. An edit that gives a row a new end leaves a door hinged to the outside
 

@@ -11,7 +11,7 @@ the document a row links.
 | Item | To do | Priority |
 |---|---|---|
 | 74 — An island's back row of other widths lands off the front row | Say in the description of `behind` where a turned unit lines up and which way the relations run in a turned row; else an `align` the server derives the offset from | low |
-| 75 — The backsplash of an image kitchen is reported as not buildable | Clarify conditional generation/material recovery in `notCarried`; expose root-assigned Bool switches in roomle-ui, based on `fix/wall-level-article-relations`; verify the generated part and its values | medium |
+| 75 — The backsplash of an image kitchen is reported as not buildable | Extend generated-part recovery to `notLoaded`: a separate material call can build the part even when the create reported those values set | medium |
 | 77 — An edit that gives a row a new end leaves a door hinged to the outside | Name the door rule of D84 in the descriptions of the tools that can give a row a new end (swap, delete, exchange, merge) | medium |
 | 78 — A swap of a widened unit is refused for want of a docking vector | roomle-ui: keep the docking vectors of the root module the attribute change recalculates, so the following swap applies without a correction | medium |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |

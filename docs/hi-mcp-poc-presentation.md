@@ -68,8 +68,8 @@ The agent gets a small set of tools:
   list of walls), the article catalog (with descriptions, dimensions, docking
   vector names and sub-modules per article), the groups currently in the
   plan, and on request the master data reduced to the root modules and the
-  customer-facing attributes
-- find-attributes — looks an attribute up by text in the full master data,
+  customer-facing or Bool attributes
+- find-attributes — looks an attribute up by text in the compacted master data,
   e.g. the attribute behind "front colour" with its allowed values
 - create-or-replace-groups — creates or replaces groups; a root module is
   just an article pick plus its docking relation to a neighbouring module,

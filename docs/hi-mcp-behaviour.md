@@ -333,7 +333,7 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
 
 | # | Decision | Source | State |
 |---|---|---|---|
-| D84 | **The doors at the two ends of a row are hinged at its outer sides.** No handle is on the outside of a row: the door at the left end is hinged on the left, the door at the right end on the right, as seen from the front; a pair of doors side by side is hinged at its two outer sides. The agent sets it with the library's door direction — the value for single doors or for a pair of doors, as the article has — on the root modules at the two ends, `rowIndex` 1 and the last (a corner article joins the legs into one row, D66), and again on the root module at an end after an edit that gives the row a new end: an article added, deleted, exchanged or swapped at an end, because a library need not pass the door direction on between neighbours (D56; Furniture_Smith does not). The other doors keep their side, the former end after the row grows too. The rule names no attribute and no value; the library data says which (§2.4). Rejected: the server setting or correcting the side of the ends by `rowIndex` — it needs the library's door direction attribute and its values, library information in the server's logic | user, 2026-10-17 | in effect — `AUTHORING_RULES`, `hi-mcp-server.ts`; guarded by `it('tells the agent to hinge the doors at the two ends of a row at its outer sides')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` and the tests `wardrobe-door-hinges` and `wardrobe-extend-door-hinge` of `docs/test-prompts.json` |
+| D84 | **The doors at the two ends of a row are hinged at its outer sides.** No handle is on the outside of a row: the door at the left end is hinged on the left, the door at the right end on the right, as seen from the front; a pair of doors side by side is hinged at its two outer sides. The agent sets it with the library's door direction — the value for single doors or for a pair of doors, as the article has — on the root modules at the two ends, `rowIndex` 1 and the last (a corner article joins the legs into one row, D66), and again on the root module at an end after an edit that gives the row a new end: an article added, deleted, exchanged or swapped at an end, because a library need not pass the door direction on between neighbours (D56; Furniture_Smith does not). The other doors keep their side, the former end after the row grows too. The rule names no attribute and no value; the library data says which (§2.4). Rejected: the server setting or correcting the side of the ends by `rowIndex` — it needs the library's door direction attribute and its values, library information in the server's logic | user, 2026-10-17 | in effect — `AUTHORING_RULES` and the new-end reminder in the description of `get-plan-context`, delivered in both chats' tool lists (`hi-mcp-server.ts`); guarded by `it('tells the agent to hinge the doors at the two ends of a row at its outer sides')` and `it('tells the agent to hinge new row ends through the tool list without fetching authoring rules')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` and the tests `wardrobe-door-hinges` and `wardrobe-extend-door-hinge` of `docs/test-prompts.json` |
 
 ## 4. How a tool call runs
 
@@ -412,8 +412,10 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
   the catalog when the request names a kind of article, and to say which one, instead of asking; the
   fifth asks it to summarise what it changed from the last tool results only, never by repeating
   them, and to name what was asked but is not in the plan; the sixth names the planning skills and
-  asks it to fetch the one of the request with `get-skill` — and **not** the server's instructions, so the model learns the rules only when it calls
-  `get-authoring-rules`. A chat turn has 16 steps; the last one cannot call a tool, so the turn
+  asks it to fetch the one of the request with `get-skill` — and **not** the server's initialize
+  instructions. The model receives the full authoring rules through `get-authoring-rules`;
+  reminders in tool descriptions, including the D84 end-door trigger in `get-plan-context`, reach
+  it through the tool list on every request. A chat turn has 16 steps; the last one cannot call a tool, so the turn
   reserves an answer step (`chat-steps.ts`). A turn that has not answered after
   `HI_CHAT_TURN_TIMEOUT_MS` (5 minutes) is aborted and ends with "[error] the turn took longer than
   … minutes and was ended - the plan holds what the tools changed so far" and a readable
@@ -665,6 +667,14 @@ reports the groups in the placement frame with the `rowIndex` of every root (C14
 docking vectors and `cornerArticle` of every article, of an article that is not in the plan from its
 template (D74); a caller that names `articleIds` (`getExternalObjectPlanContext(include, { articleIds })`)
 gets the templates of those articles only, and `get-plan-context` names none.
+
+The tool description reminds the agent to hinge doors at new row ends at the outer sides after
+an edit: left at the left end, right at the right end, as seen from the front. The library's
+descriptions supply the attribute and value for single or paired doors; other door directions
+stay unchanged (D84). Both chats send this description in their tool list, including when the
+agent does not fetch the authoring rules. Guarded by `it('tells the agent to hinge new row ends
+through the tool list without fetching authoring rules')` in
+`hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`.
 
 ### find-attributes
 

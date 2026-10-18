@@ -95,6 +95,11 @@ own, and a corner article joins the two legs into one row. The roots are listed 
 were added, an inserted one last, so "the middle unit" is read from `rowIndex` (D66). Every group a
 tool returns carries it; a resubmitted group's `rowIndex` is ignored.
 
+**Doors after an edit**: the description reminds the agent to hinge new row ends at the outer
+sides, left at the left end and right at the right end as seen from the front. Attribute and value
+come from the library's descriptions for single or paired doors; other directions stay unchanged
+(D84). Both chats send this reminder in every tool list, also without fetching the authoring rules.
+
 **Article size**: per root module of an article, `dimensions` lists the size attributes with id,
 name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels
 `mod_UprightDepth`, `mod_UprightHeight`; the range hood `DU` and the TV `SM_TV` have none). A root

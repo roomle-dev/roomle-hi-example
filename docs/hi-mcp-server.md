@@ -310,6 +310,12 @@ and explain whether the final placement keeps it clear, using the returned obsta
 and final tool results. The answer describes horizontal clearance, cabinets below a sill, or an
 overlap according to the measured result; missing data is no assurance of clearance.
 
+After an edit gives a row a new end, the description asks the agent to hinge its end doors at
+the outer sides: left at the left end, right at the right end, as seen from the front. The agent
+chooses the attribute and value from the library's descriptions for single or paired doors and
+keeps other door directions unchanged. Both chats send this reminder in the tool list even when
+the agent does not fetch the authoring rules.
+
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `include` | `('rooms' \| 'articles' \| 'attributes' \| 'groups' \| 'obstacles' \| 'masterData' \| 'articleDescriptions')[]` | no | Sections to include; `rooms`, `articles`, `attributes`, `groups` and `obstacles` when omitted |

@@ -1,13 +1,14 @@
 # Bug analysis — an edit that gives a row a new end leaves a door hinged to the outside
 
 > **Type**: Bug analysis
-> **Status**: Open — verified; fix and unit tests planned, not implemented
+> **Status**: Open — implementation and unit verification complete; live model acceptance awaiting approval
 > **Date**: 2026-10-17
 > **Verified**: 2026-10-18
 > **Base**: roomle-hi-example `master` (`e9d996f`)
 > **Required roomle-ui base**: `fix/generated-part-switch-discovery` (`cf377cfd4`),
 > verified as the current local branch; any roomle-ui implementation must branch from it
-> **Backlog**: [MCP issue 77](../backlog/mcp-issues.md#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside)
+> **Implementation branch**: `fix/mcp-row-end-hinge-guidance`
+> **Former backlog**: MCP issue 77; the served-text implementation is complete, acceptance remains recorded here
 
 ## Affected repositories
 
@@ -196,4 +197,51 @@ that is not carried or built is a failed acceptance even if the answer claims su
   traces and order/context data above. No live model or planner replay is claimed.
 - Ran `npm test -- hi-mcp-server/tests/hi-mcp-server.test.ts`: **77 tests passed**, including
   existing D84 assertions. Those check the full rules, so they can pass with this delivery gap.
-- The new regression, description change and prompt cases remain planned only.
+- The following implementation record supersedes the planned-only status of the original analysis.
+
+## Implementation and local verification — 2026-10-18
+
+The planned reminder was added once to `get-plan-context.description`. It explains the edit
+trigger, left/right hinge sides as seen from the front, selection through library descriptions
+for single or paired doors, and preservation of other door directions. The full D84 rule and
+tool schemas were kept. No planner or library logic was changed.
+
+The new regression reads only `listTools()`, without fetching rules or using initialize
+instructions. It failed before the description change and passed afterwards. The existing D84
+neutrality assertions also passed; the new description excludes the library token `LeftRight`.
+
+Six fixed prompt cases were added: an isolated swap without resizing, a swap from a correctly
+hinged wardrobe, a middle deletion leaving two multi-unit rows, an exchanged end, paired-door
+ends and a drawer-only replacement. The width-changing swap and undo/delete expectations were
+extended. D84, the tool references and the implementation context were updated with the delivery
+contract. The served-text backlog item was removed; acceptance remains open in this analysis.
+
+| Check | Result |
+|---|---|
+| New tool-list regression before implementation | Failed on the missing reminder, as expected |
+| Targeted server test file after implementation | 78 passed |
+| Full MCP unit suite | 297 passed across 15 files |
+| MCP typecheck | Passed |
+| Root lint, format and format check | Passed |
+| Changed-document links and whitespace | Passed |
+| Prompt fixture validation | Eight changed cases have valid plans and expectations; all 60 ids are unique |
+
+The first full-suite attempt was stopped after the sandbox denied its loopback listeners with
+`EPERM`. The full suite passed with loopback access; those integration tests use mock local
+provider servers and do not call a real model.
+
+### Live acceptance awaiting approval
+
+The eight-case session is prepared in
+`.temp/result/row-end-hinges-2026-10-18_19-35-27/tests.json`, using the testing skill's default
+`gpt-5-mini` and no random tests. It covers the six new cases, `wardrobe-extend-door-hinge` and
+`undo-a-wrong-command`.
+
+Automatic approval review rejected the runner before it started: the live tests would send
+repository test prompts and planner/session data to the configured external model, and the review
+requires explicit authorization for that transfer. No live model test ran and no acceptance plan
+snapshot was saved. Rendered door behaviour and model compliance remain unverified.
+
+The local planner was started from `fix/generated-part-switch-discovery` (`cf377cfd4`) and
+stopped after the blocked run. roomle-ui remains unchanged. After approval, restart that planner
+and resume the prepared session with `run-hi-mcp-tests.js --dev`; do not regenerate its cases.

@@ -52,6 +52,9 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [hi-authoring-rules.md](./skills/hi-authoring-rules.md) | HI authoring patterns, docking vectors, group creation, positioning new groups with a placement | Creating or modifying HI groups, docking patterns, article selection |
 | [hi-mcp-tools.md](./skills/hi-mcp-tools.md) | Complete MCP tool reference with parameters, examples, error handling | Using MCP tools, tool implementation, error diagnosis |
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
+| [hi-furniture-smith-article-catalog.md](./skills/hi-furniture-smith-article-catalog.md) | Furniture Smith article catalog | Article catalog reference |
+| [hi-furniture-smith-attributes.md](./skills/hi-furniture-smith-attributes.md) | Furniture Smith attributes | Attribute reference |
+| [hi-furniture-smith-materials.md](./skills/hi-furniture-smith-materials.md) | Furniture Smith materials | Materials reference |
 | [vercel-ai-sdk-chat.md](./skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: provider selection, server-side auth, @ai-sdk/mcp, streamText route | Implementing the AI chat window (RML-17984), Vercel AI SDK, MCP client integration |
 | [hi-mcp-testing.md](./skills/hi-mcp-testing.md) | "Test the MCP": a temporary subset of `docs/test-prompts.json` (default every test, `gpt-5-mini`) run by `run-hi-mcp-tests.js` into `.temp/result/<session>/<model>/`, `report.md` with plan snapshot ids, images, evaluation and bug verdicts; the run script `run-hi-mcp-prompt.js` (a plan, operations, prompts and an image in headless Chromium, snapshot, plan snapshot id, planner calls) | The user asks to "test the mcp"; testing prompts or models against the real planner |
 | [hi-analysis.md](./skills/hi-analysis.md) | "Analyse the bug" / "analyse the feature" / "analyse the refactoring": writing the analysis in `bug-analysis/`, `feature-analysis/` or `refactoring-analysis/` — what it must cover, the affected repositories it names first, where the fix lives (never the library's calculation) | The user asks to "analyse the bug", "analyze the bug", "bug analysis", "analyse the feature", "feature analysis", "analyse the refactoring" or "refactoring analysis"; investigating a defect, a feature or a refactoring |
@@ -60,6 +63,41 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [update-planning-results.md](./skills/update-planning-results.md) | "Update planning results": `docs/planning-results.md` regenerated — every kitchen image of `docs/images` planned by the HI chat (default `gpt-6-astra`) with `update-planning-results.js`, the plan snapshots with their ligna-store links, the top, perspective and perspective object images | The user says "update planning results" |
 | [hi-mcp-benchmarking.md](./skills/hi-mcp-benchmarking.md) | Benchmarks of the HI agent: the chat time of test runs per model step (tokens, model time, tool time, planner calls) with `benchmark-hi-mcp-runs.js`, the analysis of where the time goes, the document in `benchmarks/` | The user asks to benchmark or measure the performance, where the time goes, or to compare the speed before and after a change |
 | [roomle-pr-resolution.md](./skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads | Resolving a PR; never merge it |
+| [hi-plan-implementation.md](./skills/hi-plan-implementation.md) | Planning a task or implementation — the plan must include unit tests | Planning a task or implementation |
+| [hi-analysis-closeout.md](./skills/hi-analysis-closeout.md) | Closing out a single analysis document once its work has landed: verify it landed, promote the durable outcome, delete the analysis | Work with an analysis document is being committed |
+| [hi-github-workflow.md](./skills/hi-github-workflow.md) | Git staging rules, conventional commit format, pre-commit verification checklist, PR guidelines | Before every commit, push, or pull request |
+
+### Scripts
+
+Agent utility scripts for automating repository tasks. Full index in [`scripts/README.md`](scripts/README.md).
+
+| Script | Description |
+|---|---|
+| [run-hi-mcp-prompt.js](scripts/run-hi-mcp-prompt.js) | Run a single prompt through the chat with a real model and planner |
+| [run-hi-mcp-tests.js](scripts/run-hi-mcp-tests.js) | Run the tests of `docs/test-prompts.json` and write an evaluated report |
+| [update-planning-results.js](scripts/update-planning-results.js) | Regenerate `docs/planning-results.md` from kitchen images |
+| [benchmark-hi-mcp-runs.js](scripts/benchmark-hi-mcp-runs.js) | Benchmark test runs: per-step timing, token counts, model and tool time |
+| [check-markdown-links.js](scripts/check-markdown-links.js) | Check markdown links across the repository |
+
+### Context
+
+Living reference of the implementation: how the code is built today. Full index in [`context/README.md`](context/README.md).
+
+| Document | Covers |
+|---|---|
+| [mcp-server.md](context/mcp-server.md) | `server.ts`, tool registration, the page bridge, the planner methods, undo and redo |
+| [tool-executors.md](context/tool-executors.md) | Overview of all MCP tools, `tool-executors.ts`, `agent-facing.ts`, the tool commands of roomle-ui |
+| [layout-and-placement.md](context/layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
+| [pages-chat-and-launcher.md](context/pages-chat-and-launcher.md) | The page side of the bridge, `start.mjs`, the chat backend `hi-mcp-chat` |
+| [deployment-and-testing.md](context/deployment-and-testing.md) | Cloudflare, the workspaces and scripts, the unit tests, the end-to-end test runs |
+
+### Wiki
+
+Durable answers to recurring questions. Full index in [`wiki/README.md`](wiki/README.md).
+
+| Page | Covers |
+|---|---|
+| — | No wiki pages yet |
 
 ### Decisions (Architecture Decision Records)
 
@@ -219,8 +257,10 @@ Every analysis document should include:
 | **Living reference** — how things work now | `.agents/skills/` or `docs/` | Updated when behaviour changes; says what holds today — never what was wrong, when something was solved, or a ticket number |
 | **Implementation context** — how the code is built | `.agents/context/` | Living reference; every new feature is documented and added here, every change requires an update here |
 | **Historical record** — analysis, benchmark, refactoring | `.agents/<analysis-type>/` | Never updated after close-out; deleted by ["cleanup analyses"](skills/hi-analysis-cleanup.md) once the work has landed |
-| **Decision** — why code is shaped this way | `.agents/decisions/` (create folder if needed) | Living reference |
+| **Decision** — why code is shaped this way | `.agents/decisions/` | Living reference |
 | **ADR** — architecture decision record | `.agents/decisions/` | Living reference |
+| **Wiki page** — a durable answer to a recurring question | `.agents/wiki/` | Living reference, no lifecycle |
+| **Open work** | `.agents/backlog/` | Removed when done |
 
 ## Adding New Documentation
 
@@ -231,7 +271,8 @@ Every analysis document should include:
 3. **Feature Analysis**: Add to `.agents/feature-analysis/` before implementing
 4. **Refactoring Analysis**: Add to `.agents/refactoring-analysis/` before refactoring
 5. **Implementation context**: Add to `.agents/context/` when a feature is added or the implementation changes
-6. **Update this index**: Add a line to the appropriate table
+6. **Wiki page**: Add to `.agents/wiki/` for a durable answer to a recurring question
+7. **Update this index**: Add a line to the appropriate table
 
 ### For End Users
 

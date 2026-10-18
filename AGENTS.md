@@ -133,14 +133,22 @@ The start script (`npm start`) provides:
 │   │   └── README.md
 │   ├── feature-analysis/         # Feature investigations
 │   │   └── README.md
+│   ├── decisions/               # Architecture Decision Records (ADRs)
+│   │   └── README.md
 │   ├── images/                   # Images of the backlog and the analyses
+│   │   └── README.md
 │   ├── refactoring-analysis/     # Refactoring analyses with reports
 │   │   └── README.md
-│   └── skills/                  # On-demand domain knowledge
-│       ├── hi-authoring-rules.md   # HI authoring patterns
-│       ├── hi-mcp-server.md       # MCP server domain knowledge
-│       ├── hi-mcp-tools.md         # MCP tool reference
-│       └── roomle-hi-concepts.md  # Core HI concepts
+│   ├── scripts/                  # Utility scripts (JavaScript only)
+│   │   └── README.md
+│   ├── skills/                   # On-demand domain knowledge
+│   │   ├── README.md
+│   │   ├── hi-authoring-rules.md   # HI authoring patterns
+│   │   ├── hi-mcp-server.md       # MCP server domain knowledge
+│   │   ├── hi-mcp-tools.md         # MCP tool reference
+│   │   └── roomle-hi-concepts.md  # Core HI concepts
+│   └── wiki/                     # Living-reference pages for recurring questions
+│       └── README.md
 ├── docs/
 │   ├── hi-mcp-behaviour.md       # MCP server behaviour: guidelines, decisions, tools, information, guards, corrections, feedback
 │   ├── hi-mcp-server.md          # Reference: the example page, the MCP server, its tools and clients
@@ -177,6 +185,9 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | [`.agents/skills/hi-authoring-rules.md`](./.agents/skills/hi-authoring-rules.md) | HI authoring rules, docking patterns, group creation, article catalog |
 | [`.agents/skills/hi-mcp-tools.md`](./.agents/skills/hi-mcp-tools.md) | MCP tool reference, get-plan-context, create-or-replace-groups |
 | [`.agents/skills/roomle-hi-concepts.md`](./.agents/skills/roomle-hi-concepts.md) | HI concepts: rooms, walls, articles, groups, docking vectors, positioning |
+| [`.agents/skills/hi-furniture-smith-article-catalog.md`](./.agents/skills/hi-furniture-smith-article-catalog.md) | Furniture Smith article catalog reference |
+| [`.agents/skills/hi-furniture-smith-attributes.md`](./.agents/skills/hi-furniture-smith-attributes.md) | Furniture Smith attributes reference |
+| [`.agents/skills/hi-furniture-smith-materials.md`](./.agents/skills/hi-furniture-smith-materials.md) | Furniture Smith materials reference |
 | [`.agents/skills/vercel-ai-sdk-chat.md`](./.agents/skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: providers, server-side auth, @ai-sdk/mcp, streamText |
 | [`.agents/skills/hi-mcp-testing.md`](./.agents/skills/hi-mcp-testing.md) | The user asks to **"test the mcp"** (runs the tests of `docs/test-prompts.json` with `run-hi-mcp-tests.js`, writes an evaluated report); testing the HI MCP end to end: running a prompt through the chat with a real model and planner, the stored snapshot result |
 | [`.agents/skills/hi-mcp-benchmarking.md`](./.agents/skills/hi-mcp-benchmarking.md) | Benchmarking the HI agent: measuring the performance, where the time goes, why the agent is slow, comparing the speed before and after a change — `benchmark-hi-mcp-runs.js` over test runs, the analysis and its document in `.agents/benchmarks/` |
@@ -185,6 +196,55 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | [`.agents/skills/hi-backlog-cleanup.md`](./.agents/skills/hi-backlog-cleanup.md) | The user says **"cleanup backlog"**: verify every backlog item against the code, remove what landed, strip history, refresh the code references; reviewing or updating the backlog |
 | [`.agents/skills/update-planning-results.md`](./.agents/skills/update-planning-results.md) | The user says **"update planning results"**: regenerate `docs/planning-results.md` — every kitchen image of `docs/images` planned by the HI chat with `update-planning-results.js`, the plan snapshots, the ligna-store plan links and the top, perspective and perspective object images, on a new branch |
 | [`.agents/skills/roomle-pr-resolution.md`](./.agents/skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads. Never merge the PR |
+| [`.agents/skills/hi-plan-implementation.md`](./.agents/skills/hi-plan-implementation.md) | Planning a task or implementation — the plan must include unit tests |
+| [`.agents/skills/hi-analysis-closeout.md`](./.agents/skills/hi-analysis-closeout.md) | Closing out a single analysis document once its work has landed: verify it landed, promote the durable outcome into living reference, ADRs, tests, skills and the backlog, then delete the analysis |
+| [`.agents/skills/hi-github-workflow.md`](./.agents/skills/hi-github-workflow.md) | Before every commit, push, or pull request — git staging rules, conventional commit format, pre-commit verification checklist, pull request guidelines |
+
+### Analysis Triggers
+
+These phrases are shorthand for a full, mandatory workflow. When the user's message contains one, load the skill and execute it in full, without asking for the details it defines.
+
+- **"analyse the bug"** / **"analyze the bug"** / **"bug analysis"** → [`hi-analysis`](./.agents/skills/hi-analysis.md): deep root-cause analysis, written before the fix, in `.agents/bug-analysis/`.
+- **"analyse the feature"** / **"analyze the feature"** / **"feature analysis"** → [`hi-analysis`](./.agents/skills/hi-analysis.md): feature investigation, written before the work, in `.agents/feature-analysis/`.
+- **"analyse the refactoring"** / **"analyze the refactoring"** / **"refactoring analysis"** → [`hi-analysis`](./.agents/skills/hi-analysis.md): refactoring analysis, written before the work, in `.agents/refactoring-analysis/`.
+- **"cleanup backlog"** / **"clean up the backlog"** / **"backlog cleanup"** → [`hi-backlog-cleanup`](./.agents/skills/hi-backlog-cleanup.md).
+- **"cleanup analyses"** / **"clean up the analyses"** / **"analysis cleanup"** → [`hi-analysis-cleanup`](./.agents/skills/hi-analysis-cleanup.md).
+
+Analysis is analysis-only: do not modify productive code unless the user also asks for the change.
+
+### Living Reference vs Historical Records
+
+Everything in `.agents/` is one of two kinds:
+
+- **Living reference** describes how the code works *now*. Present tense. No "was fixed", "previously", "no longer", "the old code". No ticket numbers. Updated in the same commit that changes the behaviour it describes. This includes: `.agents/context/`, `.agents/wiki/`, `.agents/skills/`, `.agents/decisions/` (ADRs), all README indexes, and `docs/`.
+- **Historical record** is a point-in-time write-up. Written at one moment and never updated after close-out. Deleted when the work it describes has landed and its durable outcome has been promoted. This includes: `.agents/bug-analysis/`, `.agents/feature-analysis/`, `.agents/refactoring-analysis/`, `.agents/backlog/`, and `.agents/benchmarks/`.
+
+### Instructions Home
+
+- `AGENTS.md` is the canonical instruction file.
+- `CLAUDE.md` contains exactly `@AGENTS.md` — a one-line redirect so Claude Code picks up the same instructions.
+- Do not create `.github/copilot-instructions.md` — Copilot automatically reads `AGENTS.md`.
+- The repository root contains a `.temp` folder for temporary and scratch files; the folder is git-ignored (`.gitignore` lists `.temp`), so it is created locally and never committed.
+
+### Infrastructure
+
+- `.agents/skills/` is the only place for skills. Never create a `.claude/` folder, no `SKILL.md` wrappers outside `.agents/skills/`, no tool-specific copies of a skill.
+- Every skill is a single markdown file in `.agents/skills/` with a row in the skills table of this file.
+- Scripts in `.agents/scripts/` must be written in the repository's primary scripting language (JavaScript/Node.js).
+- Temporary and scratch files go in a git-ignored `.temp/` folder, never in `.agents/`.
+- Files prefixed with `__` in test resources are temporary and git-ignored; never commit them and never reference them from unit tests.
+
+### Jira / Ticketing
+
+When the repository uses Atlassian Jira:
+
+- **The `jira` CLI is the primary and always-available way to read and write Jira.** Never conclude that Jira is unavailable because an MCP connector needs authorization — the CLI is the source of truth. Always prefix commands with `PAGER=cat`.
+- **Never declare Jira unavailable** without first trying the CLI: `PAGER=cat jira issue view <KEY> --plain` and `PAGER=cat jira issue comment add <KEY> --template <file> --no-input`.
+- **Never delete a Jira ticket.** No exception.
+- **Create a ticket only when the user explicitly asks for it to be created in Jira.** "Write a ticket" or "draft a ticket" asks for the ticket text in the chat.
+- **Ticket preflight:** Analyse the ticket before changing code. Tickets often contain only IDs or URLs instead of the actual data. Download the data automatically before investigating. If the ticket is missing required information, add a Jira comment explaining what is missing instead of starting implementation.
+- **What must be written back to the ticket:** Analyses (bug, feature, refactoring) and implementation plans. Everything else lives in the repository.
+- **Never comment these:** What was implemented (that belongs in the PR description). That a pull request was created. Progress, status, or completion notes.
 
 ## Key Architecture Patterns
 
@@ -339,11 +399,13 @@ The `.agents/` folder serves as the "digital brain" for roomle-hi-example, conta
 ├── benchmarks/                   # Benchmarks and performance analyses
 ├── bug-analysis/                 # Bug root-cause analyses (written before fix)
 ├── context/                      # The digital brain for the implementation in this repository
+├── decisions/                    # Architecture Decision Records (ADRs)
 ├── feature-analysis/             # Feature investigations and decisions
 ├── images/                       # Images of the backlog and the analyses
 ├── refactoring-analysis/         # Refactoring analyses with reports
 ├── scripts/                      # Utility scripts (JavaScript only)
-└── skills/                      # On-demand domain knowledge (skills)
+├── skills/                       # On-demand domain knowledge (skills)
+└── wiki/                         # Living-reference pages for recurring questions
 ```
 
 **IMPORTANT**: All scripts in `.agents/scripts/` MUST be JavaScript (Node.js), not Python. This ensures consistency with the repository's primary language and tooling.
@@ -380,7 +442,9 @@ change.
 | New feature capability | Update `docs/hi-mcp-server.md` or create new file in `docs/` |
 | MCP server behaviour — a tool, a served rule, a result, a guard, a correction, feedback, a decision | `docs/hi-mcp-behaviour.md`, in the same change |
 | MCP tool reference updates | `.agents/skills/hi-mcp-tools.md` |
-| Architecture decisions | Create ADR in `.agents/decisions/` (if needed) |
+| Architecture decisions | Create ADR in `.agents/decisions/` |
+| Wiki page — a durable answer to a recurring question | `.agents/wiki/` |
+| Open work | `.agents/backlog/` |
 | Living reference | `docs/` for user-facing documentation |
 
 **Important**: Analysis documents in `.agents/bug-analysis/`, `.agents/feature-analysis/`, and `.agents/refactoring-analysis/` are **historical records** — they document the analysis process and decisions, but the durable knowledge should be promoted to living-reference documentation in `docs/` or the skill files.
@@ -580,6 +644,13 @@ Examples:
 3. **Implement** — Write clean, focused fix
 4. **Validate** — Test the fix thoroughly
 5. **Document** — Update documentation if needed
+
+### Refactoring Rules
+
+1. Execute aggressively — do not revert when tests fail; adapt tests instead.
+2. Changed outputs are typically the desired result.
+3. Apply completely — no mix of old and new patterns in the same code path.
+4. Every refactoring produces a report — in the pull request description.
 
 ## Performance Considerations
 

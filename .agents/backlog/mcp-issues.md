@@ -24,8 +24,6 @@ never drop the agent's content silently.
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
 | 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, `behind`) — the description says neither where a turned unit lines up with a wider neighbour nor which way the relations run in a turned row; roomle-ui `pairOf` for `behind` (`hi-group-layout.ts`) — the compile pins the turned unit at the neighbour's left end with offset 0 and no field to name the other end. Fix proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md): the served text first, the `align` the server derives the offset from along the neighbour's width axis as the fallback, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6.1-sol | |
-| 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | open recovery path: a requested generated part in `notLoaded` can build after its material attributes are set in a separate call, even when the create reported them set. Clarify that recovery in the served guidance; the exact replay and follow-up plan are in [the analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md) | medium | gpt-6-astra | |
-| 77 | [An edit that gives a row a new end leaves a door hinged to the outside](#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the descriptions of the edit tools) — the rule of D84 reaches the chats only through `get-authoring-rules`, which a conversation of edits fetches not, and the descriptions of the five tools that can give a row a new end do not name it. Fix proposed in [the analysis](../bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md): one sentence in the five descriptions, in roomle-hi-example only | medium | gpt-6-astra | |
 | 78 | [A swap of a widened unit is refused for want of a docking vector](#78-a-swap-of-a-widened-unit-is-refused-for-want-of-a-docking-vector) | defect | analysed: roomle-ui `modifyAttributesOfModules` and `_takeOverPropertiesFromOriginalGroup` (`glue-logic.ts:2650,3287`) — the recalculation behind `change-module-attribute` returns the width-changed root without its dockInfos and the take-over restores every root property but them; the swap's `handOver` (`hi-tools.ts:954-972`) then drops the side docking with the correction at :967. Fix proposed in [the analysis](../bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md): the take-over keeps the original root's dockInfos with the points recomputed from the calculated geometry, to be based on roomle-ui `fix/room-corners-at-openings` | medium | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
@@ -60,66 +58,6 @@ offset from the catalog widths along the neighbour's width axis in the group's f
 **Test.** `image-planning-right-wall`: the island's two rows end flush at both ends.
 
 **Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 48 (`image-planning-right-wall`, the second `create-or-replace-groups`, the island group): `rear1` (`EUTB60`) `behind` `islandright` (`EUS2A90`), `rear2` to `rear4` `rightOf`; back row z -3240 to -840 against the front row z -2940 to -540.
-
-## 75. The backsplash of an image kitchen is reported as not buildable
-
-**Problem.** The agent enables a requested backsplash and sends its colour and height in the
-group attributes, but the generated root is reported in `notLoaded` with Error 14034
-(`tab_GrainDirectionSettings`, undefined inputs). The answer says the part could not be generated.
-Replaying the same create and applying the same material values with a separate
-`change-group-attribute` builds it. The create's `groupAttributes.set` alone does not establish
-that the part calculated successfully.
-
-**Cause.** The `create-or-replace-groups` description explains generated-part recovery under
-`notCarried`; a generated-root diagnostic in `notLoaded` gets generic advice to check/change
-values or replace the article (roomle-ui `hi-tool-commands.ts:680–682`). That advice does not
-identify the separate material call as a recovery when the requested values were already reported
-set. The generation switch is in the root-assigned Bool vocabulary; the remaining gap is this
-diagnostic recovery. See [the analysis and follow-up plan](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md).
-
-**To do.** Extend the existing library-neutral guidance to a requested generated part in
-`notLoaded`: with generation enabled and the part's intended attributes known, apply those
-attributes in a separate settled call before declaring the part unbuildable. Keep the diagnostic
-visible. Investigate the combined-attribute calculation before proposing an automatic correction;
-do not add a blind retry or change the library's calculation to hide it. Any roomle-ui follow-up
-must retain `fix/wall-level-article-relations` as an ancestor.
-
-**Test.** A description regression covers recovery from a generated-part diagnostic as well as
-`notCarried`; a diagnostic-message change also needs a tool-command test. The exact replay
-must generate the part with colour 240 and height 635, and `image-planning-right-wall` must
-recover it before the final answer.
-
-**Reproduce.** `backsplash-generation-2026-10-18`: gpt-6-astra
-`02-image-planning-right-wall`, final create: switch true, group material 240 / 635, generated root
-in `notLoaded`, no backsplash in order data. `library-replay/create.json` reproduces it;
-a separate call with those same values produces the root in `library-replay/order.json`.
-
-## 77. An edit that gives a row a new end leaves a door hinged to the outside
-
-**Problem.** In a conversation of edits the agent swaps the end units of a row or deletes the end
-unit, and the new end keeps the door side the library chose — the right end of the row has its
-handle on the outside ([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17)). The agent did not call
-`get-authoring-rules` in these conversations; in the conversations that read the rules, a merge at an
-end carries `mod_DoorDirectionSelection` for the new end, and every create sets both ends.
-
-**Cause.** Analysed in [the bug analysis](../bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md).
-The rule of D84 is only in `AUTHORING_RULES` (`hi-mcp-server.ts`), which reaches the chats
-only through `get-authoring-rules` — they pass no server instructions (§4 of
-[`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs)) —, and a
-conversation of edits fetches no rules. The descriptions of the tools that can give a row a new end —
-`swap-root-modules`, `delete-article-in-place`, `delete-article-and-compact`, `exchange-root-module`,
-`merge-article-into-group` — do not name it.
-
-**To do.** Fix, proposed in [the analysis](../bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md),
-in roomle-hi-example: one library-neutral sentence in the descriptions of these tools: after an edit
-that gives a row a new end, the door at that end is hinged at the outer side of the row — set it. The
-rule in `AUTHORING_RULES` stays as it is.
-
-**Test.** A unit test in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` checks the sentence in the
-five descriptions; `edit-swap-units` and `undo-a-wrong-command`: the new ends hinged at the outer
-sides.
-
-**Reproduce.** `mcp-test-2026-10-18_14-48-28`: gpt-6-astra 36 (`undo-a-wrong-command`, turn 2): `delete-article-in-place` of the last unit `8774cac2-8b83-405d-b88c-f0e5cd2452fb`, no `get-authoring-rules` in the conversation; the new right end `a7271f1b-50d5-4b50-97ca-7a5bf75f77fa` keeps `Automatic` (left), its handle on the outside of the row (`perspective-object-image.png`).
 
 ## 78. A swap of a widened unit is refused for want of a docking vector
 

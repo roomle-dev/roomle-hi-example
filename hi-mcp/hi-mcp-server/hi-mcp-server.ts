@@ -218,6 +218,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'room, in the coordinates of the walls: objects - doors, windows, other furniture - with kind, outline ' +
         "(floor points [x, 0, z]) and bottomMm/topMm, a door or a window also with roomIndex, wall and fromEndMm (its span along that wall from the wall's end); " +
         'and per group its root modules with id, outline and bottomMm/topMm). ' +
+        'When an edit gives a row a new end, hinge its end doors at the outer sides: left at the left end, ' +
+        "right at the right end, as seen from the front. Choose the attribute and value from the library's " +
+        'descriptions for single or paired doors, and keep other door directions unchanged. ' +
         'Root outlines bound the calculated parts and can extend past the docking edges over a neighbour in the same group; ' +
         'that overlap alone is not a placement error. ' +
         'When a door or window determines a placement, briefly name it and explain whether the final placement ' +

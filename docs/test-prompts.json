@@ -260,7 +260,64 @@
         "make the last unit 900 mm wide",
         "swap the first and the last unit"
       ],
-      "expect": "turn 1: change-module-attribute: mod_Width 900 on the last unit; turn 2: swap-root-modules: the 900 mm unit stands in the back corner, the row stays 2100 mm and its back end at z -3765"
+      "expect": "turn 1: change-module-attribute: mod_Width 900 on the last unit; turn 2: swap-root-modules: the 900 mm unit stands in the back corner, the row stays 2100 mm and its back end at z -3765; the new left-end door is hinged left and the new right-end door right, with unrelated door settings unchanged; a refused or undone swap does not pass"
+    },
+    {
+      "id": "edit-swap-door-hinges",
+      "title": "Door hinges after swapping the ends without resizing",
+      "plan": "three-tall-units",
+      "prompt": "swap the first and the last unit",
+      "expect": "swap-root-modules completes without a preceding width change: the former last unit is first and the former first unit last; the row stays 1800 mm with its back end at z -3765; the new left-end single door is hinged left and the right-end door right, with unrelated inputs unchanged; check final attributes and handles, including when get-authoring-rules is not called"
+    },
+    {
+      "id": "wardrobe-swap-door-hinges",
+      "title": "Swap the ends of a correctly hinged wardrobe",
+      "plan": "closets",
+      "prompt": [
+        "add a wardrobe of three cabinets with one door each, 400 mm wide each, to the back wall",
+        "swap the first and the last cabinet"
+      ],
+      "expect": "turn 1: one row of three 400 mm single-door wardrobe cabinets, left end hinged left and right end right; turn 2: the end cabinets change places and their door settings are corrected for their new ends; the row stays 1200 mm and the middle cabinet keeps its door input; verify both turns rather than inferring the initial hinges from the final plan"
+    },
+    {
+      "id": "wardrobe-split-door-hinges",
+      "title": "Door hinges at both ends exposed by a middle deletion",
+      "plan": "closets",
+      "prompt": [
+        "add a wardrobe of five cabinets with one door each, 400 mm wide each, to the back wall",
+        "delete the middle cabinet and leave the gap"
+      ],
+      "expect": "turn 1: five 400 mm single-door wardrobe cabinets in one row with outer hinges; turn 2: delete-article-in-place splits it into two two-cabinet rows where they stand, with a 400 mm gap; the newly exposed right end of the left row hinges right and the new left end of the right row hinges left; unchanged original outer ends keep their settings; evaluate each row separately"
+    },
+    {
+      "id": "wardrobe-exchange-end-door-hinge",
+      "title": "Door hinge after replacing a wardrobe end",
+      "plan": "closets",
+      "prompt": [
+        "add a wardrobe of three cabinets with one door each, 400 mm wide each, to the back wall",
+        "replace the last cabinet with a single-door kitchen pantry cabinet of the same width"
+      ],
+      "expect": "turn 1: three 400 mm single-door wardrobe cabinets, left end hinged left and right end right; turn 2: exchange-root-module replaces the right end with a single-door pantry article at 400 mm; its door hinges right through an explicit override or a targeted follow-up, and the first two cabinets keep their inputs and positions"
+    },
+    {
+      "id": "edit-swap-paired-door-hinges",
+      "title": "Keep paired-door arrangements when swapping ends",
+      "plan": "default-room",
+      "prompt": [
+        "add three base cabinets, each with a pair of doors side by side, to the left wall",
+        "swap the first and the last cabinet"
+      ],
+      "expect": "turn 1: one row of three cabinets with paired doors hinged at their two outer sides; turn 2: the end cabinets change places and retain the library-valid paired-door arrangement (Furniture_Smith LeftRight), with handles meeting in the middle; no single-door Left or Right input on a paired-door article, no calculation failure"
+    },
+    {
+      "id": "edit-exchange-drawer-end",
+      "title": "A drawer-only end receives no invented door setting",
+      "plan": "default-room",
+      "prompt": [
+        "add three base cabinets with one door each to the left wall",
+        "replace the last cabinet with a cabinet with only drawers, of the same width"
+      ],
+      "expect": "turn 1: one row of three single-door cabinets with outer hinges; turn 2: exchange-root-module replaces the right end with a drawer-only article of the same width; no door-direction input is invented for the drawer-only root, and the other cabinets keep their door settings and positions"
     },
     {
       "id": "wardrobe-extend-door-hinge",
@@ -294,7 +351,7 @@
         "delete the middle unit",
         "that was the wrong unit - remove the last unit, not the middle one"
       ],
-      "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: undo, then delete-article-and-compact or delete-article-in-place on the last unit: one group of the first two units"
+      "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: undo, then delete-article-and-compact or delete-article-in-place on the last unit: one group of the first two units; the newly exposed right-end single door is hinged right, and the left end keeps its input setting"
     },
     {
       "id": "kitchen-back-right-corner",

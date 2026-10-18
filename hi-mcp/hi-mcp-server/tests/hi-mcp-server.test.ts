@@ -971,6 +971,25 @@ describe('hi-mcp-server tool calls', () => {
     expect(served).not.toContain('mod_HandlePosType');
   });
 
+  it('tells the agent to hinge new row ends through the tool list without fetching authoring rules', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    const description =
+      tools.find((tool) => tool.name === 'get-plan-context')?.description ?? '';
+
+    expect(description).toContain(
+      'When an edit gives a row a new end, hinge its end doors at the outer sides'
+    );
+    expect(description).toContain(
+      'left at the left end, right at the right end, as seen from the front'
+    );
+    expect(description).toContain(
+      "Choose the attribute and value from the library's descriptions for single or paired doors"
+    );
+    expect(description).toContain('keep other door directions unchanged');
+    expect(description).not.toContain('LeftRight');
+  });
+
   it('describes how to succeed instead of what is rejected, and where the corrections are', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(

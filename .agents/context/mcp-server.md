@@ -84,6 +84,13 @@ from `get-authoring-rules` for those that do not — the chat backend does not
 ([hi-mcp-behaviour.md §5](../../docs/hi-mcp-behaviour.md#5-information-the-server-provides)). The text is a
 template string in this file; there is no separate rules file.
 
+Both chats send every tool description to the model. The `get-plan-context` description carries
+shared guidance on mounting, openings and doors at new row ends (D84), so those reminders reach
+an edit conversation even without a call to `get-authoring-rules`. The full D84 rule stays in
+`AUTHORING_RULES`; its reminder uses library descriptions to select the attribute and value and
+leaves other door directions unchanged. The tool-list regression reads only `listTools()` in
+`hi-mcp-server/tests/hi-mcp-server.test.ts`.
+
 ### Tools
 
 | Tool | Input (zod, short) | Executor wrapper | Planner methods |

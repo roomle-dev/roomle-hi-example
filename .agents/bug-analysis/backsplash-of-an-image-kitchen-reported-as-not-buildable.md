@@ -1,24 +1,32 @@
 # Bug analysis — the backsplash of an image kitchen is reported as not buildable
 
 > **Type**: Bug analysis
-> **Status**: Open — approved changes implemented; image acceptance 2/3, generated-part recovery remains
+> **Status**: Fixed — closed as resolved at the user's direction on 2026-10-18; roomle-ui change pending landing
 > **Date**: 2026-10-17
 > **Verified and implemented**: 2026-10-18
 > **Implementation branches**: `fix/generated-part-switch-discovery` in both repositories
 > **Base**: roomle-hi-example plan commit `2f52c50`; roomle-ui
 > `fix/wall-level-article-relations` (`e4989a862`)
 > **roomle-ui implementation**: `cf377cfd4`, directly based on the required branch
-> **Backlog**: [MCP issue 75](../backlog/mcp-issues.md#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable)
+> **Former backlog**: MCP issue 75, removed as resolved
 
 ## Affected repositories
 
 - **roomle-hi-example** — implemented the approved `notCarried` recovery guidance and its
   description/discovery tests; updated the behaviour, tool documentation, implementation context
-  and image-test expectations. The remaining work is guidance for a generated part reported in
-  `notLoaded` after its requested attributes were reported set.
+  and image-test expectations. The acceptance record below includes the generated-part diagnostic
+  and recovery proposal recorded before closure.
 - **roomle-ui** — implemented root-assigned Bool retention in `compactMasterData`, three
   regression cases and HI documentation on a branch based on `fix/wall-level-article-relations`.
   The predicate change is locally verified. No further planner correction is implemented.
+
+## Closure
+
+The user declared this issue resolved on 2026-10-18 and requested its removal from the backlog.
+The MCP implementation is on `master` (`e9d996f`); the roomle-ui implementation remains on the
+local `fix/generated-part-switch-discovery` branch (`cf377cfd4`). The earlier acceptance results
+and follow-up proposal below are historical evidence, not remaining backlog work. No new image
+acceptance run was performed for this closure.
 
 ## Original symptom and verified causes
 
@@ -164,7 +172,7 @@ remaining instruction/feedback gap is the recovery from `notLoaded`, not missing
 The evidence does not yet identify why the combined attribute calculation leaves the generated
 part incomplete; no library calculation change is proposed.
 
-### Follow-up fix and tests to review
+### Follow-up proposal recorded before closure
 
 1. Extend the existing library-neutral generated-part recovery guidance to a requested generated
    part in `notLoaded`, not only attributes in `notCarried`: when generation is enabled and
@@ -179,8 +187,8 @@ part incomplete; no library calculation change is proposed.
 
 The original plan required reopening the analysis on a generation/material acceptance failure
 before adding further code. That gate is respected: the approved code is implemented and tested,
-the new reproduction and follow-up plan are recorded, and **MCP issue 75 remains open**.
-Neither repository's changes are merged or deployed.
+the new reproduction and follow-up plan were recorded before the user closed MCP issue 75.
+The MCP changes are merged; the roomle-ui change remains on its local branch.
 
 ## Alternatives considered
 

@@ -26,7 +26,8 @@ never drop the agent's content silently.
 | 73 | [A wall-level article of another category is taken for a floor unit](#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit) | defect | analysed: roomle-ui `isWallUnitArticle`, `relationsToDocking` (`hi-group-layout.ts`) — the classifier knows a wall unit by a category word only; the kernel's insert levels reach the tool and the tool does not read them, and the stored templates carry none. Fix proposed in [the analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md): the classifier reads the insert levels, the library fills them if the planner does not, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6-astra | |
 | 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, `behind`) — the description says neither where a turned unit lines up with a wider neighbour nor which way the relations run in a turned row; roomle-ui `pairOf` for `behind` (`hi-group-layout.ts`) — the compile pins the turned unit at the neighbour's left end with offset 0 and no field to name the other end. Fix proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md): the served text first, the `align` the server derives the offset from along the neighbour's width axis as the fallback, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6.1-sol | |
 | 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the `notCarried` sentence of `create-or-replace-groups`) — the sentence presents a not-carried attribute as a part the library will not build and asks the agent to report it; roomle-ui `compactMasterData` (`hi-plan-context.ts`) — the attribute that switches the generated part on is not customer-facing, so the vocabulary and `find-attributes` do not serve it and the agent cannot find it. Fix proposed in [the analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md): the served sentence and the served vocabulary (roomle-ui, based on `fix/room-corners-at-openings`); the library data (the switch's `userRight`) as the smaller alternative | medium | gpt-6-astra | |
-| 77 | [An edit that gives a row a new end leaves a door hinged to the outside](#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the descriptions of the edit tools) — the rule of D84 reaches the chats only through `get-authoring-rules`, which a conversation of edits fetches not, and the descriptions of the five tools that can give a row a new end do not name it. Fix proposed in [the analysis](../bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md): one sentence in the five descriptions, in roomle-hi-example only | medium | gpt-6-astra | |
+| 77 | [An edit that gives a row a new end leaves a door hinged to the outside](#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the descriptions of the edit tools) — the rule of D84 reaches the chats only through `get-authoring-rules`, which a conversation of edits fetches not, and the descriptions of the five tools that can give a row a new end do not name it. Fix proposed in [the analysis](../bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md): one sentence in the five descriptions, in roomle-hi-example only | medium | gpt-6.1-sol | |
+| 78 | [A swap of a widened unit is refused for want of a docking vector](#78-a-swap-of-a-widened-unit-is-refused-for-want-of-a-docking-vector) | defect | roomle-ui — the group operation behind `change-module-attribute` (`changeAttributes`, `hi-tools.ts:456`) and the swap (`swapRootModules`, `hi-tools.ts`, `handOver` at :962-968 with the correction at :967); shown by the deployed bo-test planner, the kernel's part not analysed, to be based on roomle-ui `fix/room-corners-at-openings` | medium | gpt-6.1-sol | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -162,4 +163,37 @@ rule in `AUTHORING_RULES` stays as it is.
 five descriptions; `edit-swap-units` and `undo-a-wrong-command`: the new ends hinged at the outer
 sides.
 
-**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 32 (`edit-swap-units`, turn 2): `swap-root-modules` on the first and the last unit, no `get-authoring-rules` in the conversation; the new right end `0010443c` keeps `Automatic` (left), its handle on the outside of the row (`perspective-object-image.png`).
+**Reproduce.** `mcp-test-2026-10-18_08-45-09`: gpt-6.1-sol 36 (`undo-a-wrong-command`, turn 2): `delete-article-in-place` of the last unit `8774cac2-8b83-405d-b88c-f0e5cd2452fb`, no `get-authoring-rules` in the conversation; the new right end `a7271f1b-50d5-4b50-97ca-7a5bf75f77fa` keeps `Automatic` (left), its handle on the outside of the row (`perspective-object-image.png`).
+
+## 78. A swap of a widened unit is refused for want of a docking vector
+
+**Problem.** `change-module-attribute` `mod_Width` 900 on the last `HTB60` of the three-tall-units
+row leaves the recalculated root module without docking vectors (`dockingVectors: []` in
+`get-plan-context`); the following `swap-root-modules` drops the docking ("'8774cac2…' has no docking
+vector 'RightBottom' - its docking to 'a7271f1b…' was dropped") and does not apply; the model undoes
+it and the plan keeps the original order. In `mcp-test-2026-10-17_18-40-40` (gpt-5-mini 32) the same
+defect also removed the unit's front and left two overlapping units. The same article at width 900
+has its six docking vectors when created (`edit-replace-unit-wider`) or when the row's first unit's
+width is changed (`edit-change-one-unit`), and the same two calls kept the vectors in
+`mcp-test-2026-10-17_13-28-41` (gpt-6-astra 32) — not every time.
+
+**Cause.** `changeAttributes` (`hi-tools.ts:456`) changes the attribute and reloads the group
+(`glue-logic.ts` `loadWithChangedAttributes` :2178, `designerRequests.loadPosGroups` with
+`HI_LOAD_OBJECT_REASON.CHANGE_ATTRIBUTE`); the recalculated root module comes back without its
+dockInfos (`dockingVectorNames`, `hi-plan-context.ts:311`); the swap hands the side docking over and
+drops it where the new owner has no matching vector. Where the empty dockInfos come from (the
+kernel's recalculation or the reload) is not analysed.
+
+**To do.** Analyse in roomle-ui where the recalculated root module loses its docking vectors across
+`changeAttributes` and keep them; the swap then applies without a correction.
+
+**Test.** `edit-swap-units`: after `change-module-attribute` `mod_Width` 900 on the last unit, the
+widened root keeps its six docking vectors and `swap-root-modules` swaps without a correction — the
+row is 2100 mm with the 900 mm unit in the back corner; a unit test in roomle-ui
+`__tests__/hi-tool-commands/`.
+
+**Reproduce.** `mcp-test-2026-10-18_08-45-09`: gpt-6.1-sol 32 (`edit-swap-units`, turn 2):
+`change-module-attribute` `mod_Width` 900 on `8774cac2-8b83-405d-b88c-f0e5cd2452fb`, then
+`swap-root-modules` on `0010443c-519a-437b-8fe5-364f13887ca4` and `8774cac2…`; the correction
+"'8774cac2…' has no docking vector 'RightBottom' - its docking to 'a7271f1b…' was dropped";
+`dockingVectors: []` of `8774cac2` in `plan-context.json`.

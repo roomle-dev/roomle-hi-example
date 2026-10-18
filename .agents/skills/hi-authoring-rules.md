@@ -6,7 +6,7 @@
 
 **Never author root positions.** Roots are positioned by their relation — each unit names its neighbour, and the server builds the docking; a new group is positioned by its `placement` — a wall with an alignment, or one point and one rotation.
 
-**Words.** The catalog offers articles; a group is one piece of furniture made of articles (a kitchen, a wardrobe, a sideboard, a utility room); an article placed in a group is a root module. A high or tall cabinet or a wardrobe is about 2000 mm high, a low cabinet or base cabinet 720 mm. The user decides which articles stand next to each other; an article named by its kind comes from the category of its neighbours where that category has one.
+**Words.** The catalog offers articles; a group is one piece of furniture made of articles (a kitchen, a wardrobe, a sideboard, a utility room); an article placed in a group is a root module. The description says what an article is and dimensions give its size. The user decides which articles stand next to each other; an article named by its kind comes from the category of its neighbours where that category has one.
 
 **One piece of furniture is one group.** Every article standing beside, above or back to back with another article is a related root module of the same group; the group carries one placement. Never split one piece of furniture into several positioned groups.
 
@@ -73,6 +73,12 @@ attribute — and, when its template cannot be calculated, without docking vecto
 unknown, not undockable. The server docks such an article like any other (G7).
 
 ## Relations
+
+Mounting follows the existing article and attribute descriptions. Categories organize the
+catalog. Use `above` for an article used at wall level and continue its row with `rightOf` or
+`leftOf`, including finishing parts. Unknown mounting retains explicit upper relations and gaps.
+Floor corrections require affirmative base/tall category recognition. A replace preserves a
+retained upper root's measured carrier offset; new relations and changed articles take precedence.
 
 Every root after the first names one neighbour of the same group by its id, with exactly one
 relation; the server compiles the docking (`contextData`) from it

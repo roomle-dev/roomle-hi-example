@@ -137,6 +137,11 @@ gap of a wall unit above a floor unit — see the
 [authoring rules skill](./hi-authoring-rules.md#relations). `contextData` is still accepted; a group
 from `get-plan-context` carries it.
 
+**Mounting**: choose articles and settings from the library descriptions and attributes; categories
+organize the catalog. Unknown categories retain explicit `above` and `gapMm`; finishing parts
+continue the wall row `rightOf` / `leftOf`. A replace restores missing carrier links at measured
+offsets for retained roots with unchanged articles and no new relation.
+
 **Materials**: a root's `attributes` are overrides of that root module. A material for the whole group
 (fronts, worktop, carcase) goes into the group's `attributes`; the server sets every group attribute
 that is not one of the library's group settings (`groupSettings` of the master data) on every unit and
@@ -256,8 +261,9 @@ the root's `freeDockingVectors`; the pairs are the docking pairs of the
 to a taken side vector to the named root's free other side, else to the root at the free end of
 that row (a corner article ends a row: the unit then goes to the free end of the leg in the other
 direction), and a `dockingVector` the article does not have becomes the partner of `ownDockingVector`. A wall
-unit or a range hood merged `*Top -> *Bottom` on a floor unit without a y offset gets the hang gap
-of the wall units (D35), reported.
+unit, range hood or unknown-category upper article merged `*Top -> *Bottom` on a floor unit gets
+the hang gap (D35) only when its y offset is omitted. Supplied numeric offsets, including zero,
+remain the requested clearance.
 
 `change-module-attribute` sets the value on every root module of `rootModuleIds` — one group or
 several, one planner command per group (`change-attributes`); a single `rootModuleId` is read as a

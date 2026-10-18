@@ -23,7 +23,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 73 | [A wall-level article of another category is taken for a floor unit](#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit) | defect | [Implementation and unit-test plan](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md#implementation-plan): roomle-hi-example served rules; roomle-ui affirmative floor recognition, shared layout interpretation, docking cleanup/completion and edit feedback. Existing library unchanged; based on roomle-ui `fix/wall-unit-heights-after-plinth-change` | low | gpt-6-astra | |
 | 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, `behind`) — the description says neither where a turned unit lines up with a wider neighbour nor which way the relations run in a turned row; roomle-ui `pairOf` for `behind` (`hi-group-layout.ts`) — the compile pins the turned unit at the neighbour's left end with offset 0 and no field to name the other end. Fix proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md): the served text first, the `align` the server derives the offset from along the neighbour's width axis as the fallback, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6.1-sol | |
 | 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the `notCarried` sentence of `create-or-replace-groups`) — the sentence presents a not-carried attribute as a part the library will not build and asks the agent to report it; roomle-ui `compactMasterData` (`hi-plan-context.ts`) — the attribute that switches the generated part on is not customer-facing, so the vocabulary and `find-attributes` do not serve it and the agent cannot find it. Fix proposed in [the analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md): the served sentence and the served vocabulary (roomle-ui, based on `fix/room-corners-at-openings`); the library data (the switch's `userRight`) as the smaller alternative | medium | gpt-6-astra | |
 | 77 | [An edit that gives a row a new end leaves a door hinged to the outside](#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the descriptions of the edit tools) — the rule of D84 reaches the chats only through `get-authoring-rules`, which a conversation of edits fetches not, and the descriptions of the five tools that can give a row a new end do not name it. Fix proposed in [the analysis](../bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md): one sentence in the five descriptions, in roomle-hi-example only | medium | gpt-6.1-sol | |
@@ -31,44 +30,6 @@ never drop the agent's content silently.
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
-
-## 73. A wall-level article of another category is taken for a floor unit
-
-**Problem.** The agent puts the wall-unit side panel `W35O` ("Wall-unit side / cover panel",
-category "Kitchen / Cover Panels / Side Panels") `rightOf` a wall unit to close the wall-unit row.
-The tool command takes it for a floor unit — "floor unit 'wallend' cannot stand rightOf the wall unit
-'cups' - it continues the floor row" —, drops the relation, puts it `rightOf` the last root by
-default and docks it at the free end of the floor leg, where a wall-unit panel stands on the floor.
-
-The same happens to `above`: the open utility wall units `HWR_WR600V1` (category "Utility",
-`mod_TypeElement` WallUnit in the library data) `above` a base unit are taken for floor units and put
-`rightOf` it — "root 'openwall1' is no wall unit - it stands rightOf … instead of above it" —; the agent
-recovers with an undo and two `merge-article-into-group` calls using explicit Top-to-Bottom docking,
-a 500 mm gap and attribute overrides. The recovery does not establish which overrides are necessary.
-
-**Cause.** [The analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md)
-traces `isWallUnitArticle` (`hi-group-layout.ts:70`) and the corrections at `:244` and `:270`:
-a category not recognized as wall mounting is treated as proof of floor mounting. The library
-descriptions already identify both articles correctly. `dropFloorUnitsOnBaseUnits`
-(`hi-tool-docking.ts:982`) makes the same assumption for returned docking on a later replace.
-
-**To do.** In roomle-hi-example, explain choosing mounting from the existing descriptions and
-attributes, with `above` for hanging and `rightOf` / `leftOf` for continuing that wall row,
-including its finishing parts. In roomle-ui, based on `fix/wall-unit-heights-after-plinth-change`
-(`8cfd98e71`), preserve those relations and returned docking when mounting is unknown to the
-category classifier; retain floor corrections only with affirmative floor evidence. Check the
-row completion and edit hints too. No change to the library's calculation, templates, categories
-or insert-level output. Preserve the base branch's measured-clearance arrangement behaviour.
-
-**Test.** [The unit-test plan](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md#unit-test-plan)
-maps the cases to the existing compiler, command, arrangement and served-contract suites.
-With the unchanged catalog and no insert levels: a panel beside a wall unit retains
-that neighbour; a utility wall unit `above` a base retains its relation and explicit `gapMm`;
-a replace retains returned Top-to-Bottom docking. Cover chained finishing parts, known floor
-units, and clearance after a carrier/plinth height change. Verify the default gap separately:
-the stored utility heights produce zero, which does not establish the recovery's 500 mm gap.
-
-**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 54 (`random-1-utility-room-right-wall-with-wall-units`, turn 2, the `create-or-replace-groups`): `openwall1` and `openwall2` (`HWR_WR600V1`) `above` the two `HWR_UB600`, the corrections "is no wall unit - it stands rightOf …" on both.
 
 ## 74. An island's back row of other widths lands off the front row
 

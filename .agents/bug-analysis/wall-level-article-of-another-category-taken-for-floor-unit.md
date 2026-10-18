@@ -1,18 +1,18 @@
 # Bug analysis — a wall-level article of another category is taken for a floor unit
 
 > **Type**: Bug analysis
-> **Status**: Open — cause reproduced; implementation and unit-test plan ready, not implemented
+> **Status**: Fixed — implemented and locally verified on branches; pending landing
 > **Date**: 2026-10-17; revalidated 2026-10-18
-> **Implementation and unit-test plan**: 2026-10-18
+> **Implementation and verification**: 2026-10-18
 > **Base**: roomle-hi-example `1881ca4`, analysis branch `docs/revalidate-wall-level-articles`;
 > roomle-ui `fix/wall-unit-heights-after-plinth-change` (`8cfd98e71`)
-> **Backlog**: item 73 of [mcp-issues.md](../backlog/mcp-issues.md#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit)
+> **Origin**: MCP backlog issue 73; removed from the open backlog after local verification
 
 ## Affected repositories
 
 - **roomle-hi-example** — explain the existing library descriptions and mounting relations in
-  the served rules and tool descriptions; test that contract and document it. This revision
-  changes the analysis, backlog and their indexes only.
+  the served rules and tool descriptions; test that contract, add a stable prompt regression
+  and document the implemented behaviour.
 - **roomle-ui** — correct mounting interpretation in `hi-group-layout.ts`, docking cleanup and
   completion in `hi-tool-docking.ts`, orchestration in `hi-tool-commands.ts` and edit feedback
   in `hi-tool-hints.ts`, with regression tests, based on
@@ -199,6 +199,8 @@ clearance behaviour. Replacing the general height heuristics is outside this min
 
 ## Implementation plan
 
+The approved plan below is completed; the implementation and verification record follows it.
+
 **Scope and branches.** Keep the planning work on roomle-hi-example
 `docs/revalidate-wall-level-articles`. At implementation time create roomle-ui
 `fix/wall-level-article-relations` directly from `fix/wall-unit-heights-after-plinth-change`
@@ -368,12 +370,12 @@ and full descriptions; add no duplicate compaction tests.
    Isolate the panel-colour failure from placement. Add a stable utility-room prompt regression
    using the testing skill when that acceptance work is run.
 
-The implementation is ready when new regressions pass, known-floor and existing arrangement
+The implementation's acceptance criteria were that new regressions pass, known-floor and existing arrangement
 controls remain green, returned docking survives replace, feedback names the actual moved upper
-roots, and the served rules describe the same behaviour. This plan contains no code change or
-new test execution; the baseline results below remain the earlier validation evidence.
+roots, and the served rules describe the same behaviour. The implementation results below meet
+those criteria; the baseline results record the earlier cause validation.
 
-## Validation performed for this revision
+## Baseline validation before implementation
 
 - Read the stored catalog and both run payloads. Executed the actual `compactArticle`,
   `isWallUnitArticle`, `relationsToDocking` and `dropFloorUnitsOnBaseUnits` from roomle-ui
@@ -391,6 +393,77 @@ new test execution; the baseline results below remain the earlier validation evi
 
   The initial repository-selected runtime failed before tests started because `node:util` did
   not export `styleText`; the explicit installed runtime above ran successfully.
-- This validates the cause and required branch's baseline, **not an implemented fix**. No new
-  model/planner session or visual verification was run. The acceptance checks remain implementation
-  work.
+- These baseline checks validated the cause and required branch, before implementation or a
+  live planner check.
+
+## Implemented result and verification
+
+The implementation follows the approved plan. roomle-ui branch
+`fix/wall-level-article-relations` contains implementation commit `dea55382a` and the final
+turned-leg regression in `6077f56c9`. It starts directly at `8cfd98e71`, the required
+`fix/wall-unit-heights-after-plinth-change` base. roomle-hi-example changes are on
+`docs/revalidate-wall-level-articles`. Both branches still require landing; retain this analysis
+until then. The durable contract is in D85 and the affected corrections of
+[hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md).
+
+- `isFloorUnitArticle` supplies affirmative category evidence; `wallRootsOf` resolves upper
+  membership from validated relations, existing docking and retained calculated carriers.
+  Unknown side panels and utility articles keep their upper row. Known floor corrections,
+  structural cycle handling and tall-junction separation remain covered.
+- Replacement resolves group ids before reading retained geometry, and restores missing
+  carrier docking at the measured offset for unchanged roots without new instructions.
+  An explicit carrier link, new relation or changed article takes precedence.
+- Completion and edit feedback share the same upper-row interpretation. Merge derives a gap
+  only for an omitted y offset; explicit zero and other numeric offsets remain unchanged.
+- Served instructions explain selecting mounting from existing descriptions and attributes.
+  The fixed-height/category sentence was replaced by description and dimension guidance.
+  `utility-room-open-wall-units` is a stable two-turn case in
+  [test-prompts.json](../../docs/test-prompts.json).
+- The base branch's carrier movement and measured-clearance algorithm is unchanged. Its new
+  callers exposed an existing diagnostic fixture with incomplete docking vectors:
+  `getDockingVectorBox` now skips roots lacking vector endpoints instead of throwing during
+  inference. The calculation-failure feedback test covers that path.
+
+### Automated checks
+
+New compiler/command regressions first produced **12 failures** on the old behaviour; the new
+served-contract assertion also failed before changing the served text. The moved-unknown-root
+hint test failed against the original hint implementation, while its frame-only control passed.
+The turned-leg regression likewise reproduced utility wall units and panels appearing in the
+floor-leg list with the original hint implementation.
+Detached replacement was reproduced before measured carrier links were restored.
+
+roomle-ui checks used Node **24.12.0** and npm **11.6.2** through Volta:
+
+- roomle-ui: all **18 HI test files, 1,061 tests passed**, including compiler, create/replace,
+  merge, hints, placement, arrangement and glue-logic controls. SDK type check, SDK lint and
+  formatting passed. Lint reports one existing unused `isCeilingShown` helper in
+  `planner-core/__tests__/plan-view-model.ts:46`, outside this change.
+- roomle-hi-example: all **15 test files, 295 tests passed**; type check, lint and formatting
+  passed. The mounting contract is checked through MCP instructions, `get-authoring-rules`
+  and `tools/list`; the existing library-neutrality tests remain green.
+- Markdown links and both repositories' whitespace checks passed.
+
+### Live planner acceptance with the unchanged library
+
+The local UI branch and HI example were run against Furniture_Smith. Representative tool
+payloads replayed the panel and utility mounting cases directly through the real HI tool-command
+path, without model recovery or mounting-attribute overrides. Every requested article calculated;
+both creates returned empty `notLoaded` and correction lists. Screenshots were inspected.
+
+| Measured case | Result in millimetres |
+|---|---|
+| `W35O` side panel beside `OFKB60`, both above `US2A60` | Panel and wall cabinet both span **1320–2040**; base top **820**, clearance **500** |
+| Two `HWR_WR600V1` above two `HWR_UB600` | Both upper units span **1420–2700**; bases top **920**, clearance **500** |
+| Resubmit returned utility group | Both upper bottoms remain **1420**; clearance **500** |
+| Utility plinth height 100 → 150 | Bases top **970**, upper units span **1470–2750**; clearance remains **500** |
+
+Local evidence is in ignored `.temp/issue73-acceptance/`: `check.mjs`, `results.json`, before,
+replacement and after-edit JSON, and `panel.png` / `utility.png`. These are local artifacts,
+not portable fixtures. Acceptance used direct tool payloads; the new model-driven prompt case
+and the original full multi-turn model conversations were not run. The panel case used the
+library's default material, isolating placement from the separate panel-colour failure in the
+stored conversation.
+
+No library, RoomleCore or ligna-store change was made. The rejected library-calculation proposal
+is not a prerequisite, follow-up or fallback for this fix.

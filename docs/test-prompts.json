@@ -419,6 +419,16 @@
       "title": "Kitchen for a family with two kids",
       "plan": "default-room",
       "prompt": "create a kitchen for a family with 2 kids"
+    },
+    {
+      "id": "utility-room-open-wall-units",
+      "title": "Utility base row and open wall units",
+      "plan": "utility-room",
+      "prompt": [
+        "Plan the utility room on the right wall: a tall unit with one door and two base units with one door each.",
+        "Add an open wall unit above each of the two base units, with 500 mm of clear space below each wall unit."
+      ],
+      "expect": "One group retains its right-wall floor row. Two open utility wall units are added above the two base units with 500 mm clearance, without being put into the floor row or requiring undo and merge recovery. Their actual bottom heights and returned docking determine mounting; category alone does not."
     }
   ]
 }

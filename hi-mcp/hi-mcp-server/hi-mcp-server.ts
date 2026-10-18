@@ -12,8 +12,15 @@ import {
 } from './skills';
 import { toolExecutors } from './tool-executors';
 
+const MOUNTING_GUIDANCE =
+  'Choose articles and mounting settings from their descriptions and attributes; categories organize the catalog. ' +
+  'For an article used at wall level, above names the root module below it and gapMm sets the clearance; ' +
+  'rightOf or leftOf continues that wall row, including its finishing parts. ' +
+  'Fetch articleDescriptions when its mounting requirements are unclear.';
+
 const AUTHORING_RULES = `Authoring rules for pos groups:
-- Words: the catalog offers articles - cabinets, wardrobes, appliances, panels. A group is one piece of furniture made of articles: a kitchen, a wardrobe, a sideboard, a utility room, a row of cabinets. An article placed in a group is a root module (root for short); the user may call it a cabinet, a unit or a module. The kind of an article follows the catalog's category and dimensions: a high or tall cabinet or a wardrobe is about 2000 mm high, a low cabinet or base cabinet about 720 mm high and stands on the floor, a wall cabinet hangs on the wall. The user decides which articles stand next to each other: a low cabinet between two high cabinets is an order like any other. When the user names a kind, not an article, take the article of that kind from the category of its neighbours where that category has one (a kitchen cabinet into a kitchen, a wardrobe into a wardrobe), else the closest kind of another category.
+- ${MOUNTING_GUIDANCE}
+- Words: the catalog offers articles - cabinets, wardrobes, appliances, panels. A group is one piece of furniture made of articles: a kitchen, a wardrobe, a sideboard, a utility room, a row of cabinets. An article placed in a group is a root module (root for short); the user may call it a cabinet, a unit or a module. The description says what an article is and dimensions give its size. The user decides which articles stand next to each other: a low cabinet between two high cabinets is an order like any other. When the user names a kind, not an article, take the article of that kind from the category of its neighbours where that category has one (a kitchen cabinet into a kitchen, a wardrobe into a wardrobe), else the closest kind of another category.
 - A group is { id?, libraryId?, placement?, roots: [...] }. A root module is an article pick and nothing else: { id, articleId, attributes? } plus one relation that names its neighbour (rightOf, leftOf, onTop, above or behind - see Relations below). The server ignores every other field - a position on a root or a group included - and drops roots marked isGenerated (worktop, toe kick - the library regenerates them). Every root position comes from its relation; the position of a new group comes from its placement. Groups returned by get-plan-context carry their docking as contextData instead - resubmit them as they are. Use a unique id of your choice for new roots (the planner regenerates it and remaps your docking references); keep the real ids of roots that already exist in a replaced group. Choose the articleId from the article catalog of get-plan-context: desc and category say what an article is and what it is for, dimensions give its size (per size attribute its id, its name - e.g. Width, Depth, Height - and its value in millimetres; a root in groups carries the same attribute ids among its attributes, and change-module-attribute with that attribute id, never its name, changes the size of a root module; an article of another size - "a 900 mm cabinet" - is the same article with that attribute set, which merge-article-into-group, insert-article-into-group and exchange-root-module take in their attributes), dockingVectors the names of its docking vectors, subModules its fronts and appliances, cornerArticle true marks an article made for a room corner. Sub-modules come with the article - you author articles, their attributes and their relations, nothing else. attributes is an optional list of { id, value } overrides of that root module; a material for the whole group - the fronts, the worktop, the carcase - goes into the group's attributes ({ id, value } entries beside roots), and the server sets it on every root module and on the worktop; a root module that names its own value of it in its attributes keeps that value - an accent, e.g. dark wall units in a light group. Attribute ids and their values are in the attributes section of get-plan-context - every customer-facing attribute with its values; a value list several attributes share is listed once, sameSelectionsAs names the attribute that lists it; the desc of a colour value carries its code. find-attributes answers a question about one attribute. Everything else the calculation needs is completed automatically from the article template.
 - Every desc - of an article, a root, a module, an attribute and an attribute value - is authoritative: trust it for what that article, module or value is, and trust dimensions for how big an article is. A colour code in the desc of an attribute value - Cloudy blue (#506080) - is the colour of that value: take it as it is, and tell light from dark and one hue from another by it, not by the name. All of them are authoritative over the catalog images of the master data (imageUrl): never take the kind or the size of an article, or the colour of a value, from a catalog image. A desc says what an article is, not where the user may put it.
 - Fronts: the front program says how a front is built - by its desc: simple fronts, frame fronts with wooden filling, mitred frame fronts with glass filling, milled fronts. Choose it by its desc first, then the front colour. A program offers only some colours: a colour it does not offer switches the program to one that does, and the fronts are then built as that program says; a program resets a colour it does not offer. corrections name every such change. When the colour the user wants comes only with fronts built differently, keep the fronts the user wants: undo a switched program, take the closest colour their program offers, and tell the user which fronts the wanted colour comes with.
@@ -188,7 +195,8 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'get-plan-context',
     {
       description:
-        'Returns a snapshot of the HI planning session, agent-ready as the planner API provides it - one coordinate ' +
+        MOUNTING_GUIDANCE +
+        ' Returns a snapshot of the HI planning session, agent-ready as the planner API provides it - one coordinate ' +
         'system throughout: 3D, right-handed, Y up (group pos and room contours use pos: [x, level, -y]). Default ' +
         'sections: rooms (every room carries its contour levels with 3D segments and a derived walls array - per ' +
         'wall: a side label (left/right/top/bottom as seen in the top-view image), start/end [x, 0, z] in millimetres ' +
@@ -370,7 +378,8 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'create-or-replace-groups',
     {
       description:
-        'Creates or replaces HI object groups in the plan from an array of pos groups. Roots are article picks ' +
+        MOUNTING_GUIDANCE +
+        ' Creates or replaces HI object groups in the plan from an array of pos groups. Roots are article picks ' +
         '({ id, articleId, attributes? }) - the server completes them from the article template -, and every root ' +
         'after the first names its neighbour with one relation: rightOf, leftOf, onTop, above or behind with the ' +
         'id of the neighbour; the server builds the docking from it, and the planner arranges the root modules; never author root ' +
@@ -633,7 +642,8 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         "names the root module the article continues, that root module's free vector (one of its freeDockingVectors in " +
         "get-plan-context) and the new root module's vector: RightBottom -> LeftBottom puts it to the right, " +
         'LeftBottom -> RightBottom to the left, LeftTop -> LeftBottom hangs a wall unit or a range hood above ' +
-        'a floor-standing root module at the height of the wall units (the server sets the gap). The new root module inherits ' +
+        'a floor-standing root module at the height of the wall units. For an article mounted above a floor unit, ' +
+        'the server sets the gap when offset has no y value; a supplied y value is the clearance, and an explicit zero stays zero. The new root module inherits ' +
         'the attributes the library passes on between neighbours - fronts, handles, carcase - from the root module of dockTo, as in the planner; attributes override them. ' +
         'To put an article between two root modules, use insert-article-into-group. The group keeps its position. Returns the changed group.',
       inputSchema: {

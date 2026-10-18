@@ -402,8 +402,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'the attributes the library passes on between neighbours - fronts, handles, carcase - from the root module it is docked to, and its attributes override them); ' +
         'all other groups are created with regenerated ids. Returns the loaded object ids, the groups of the call - ' +
         'check their pos and footprint - and otherGroupIds, the other groups of the plan, unchanged; plus groupAttributes (per group the group attributes set on every unit, ' +
-        'notCarried: those no unit of the group has - the library builds no part for them in this group, a backsplash or an end panel for example, so the group stands ' +
-        'without them, nothing to undo; say in the answer which material is not built -, and rootValues: the root modules that keep their own value of one), corrections (what ' +
+        'notCarried: attributes no current module carries. For a requested part the library generates, use find-attributes to look for an enabling attribute on the units; ' +
+        "if available, enable it, then set the part's attributes after it is generated. Report only what is still missing. " +
+        'rootValues: the root modules that keep their own value of one), corrections (what ' +
         'the server changed in the input, and what the library ' +
         'changed beyond the attributes sent - a front colour reset by a front program), notLoaded (the groups it ' +
         'could not build or roots it could not fully calculate, with what to send instead) and hint (a root module on an obstacle, in another group or in front of ' +

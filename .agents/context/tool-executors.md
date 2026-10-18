@@ -90,6 +90,10 @@ halfway through a change.
    root (`HiToolsImplementation.getPlanContext`, `inPlacementFrame`).
 4. Adds the agent's vocabulary ([The plan context the agent sees](#the-plan-context-the-agent-sees)).
 
+The vocabulary comes from compacted master data: article and generated roots with assigned
+attributes that are main, Simple or Bool. The server preserves Bool descriptions and optional
+selections; `find-attributes` uses the retained module assignments to identify their carriers.
+
 ## find-attributes
 
 Reads the master data fresh on every call, filters by `libraryId`, and matches the text
@@ -178,6 +182,13 @@ Result: `{ loaded, groups, otherGroupIds?, groupAttributes?, hint?, corrections?
 `groups` holds the groups of the call (`changedGroupsOnly`), `otherGroupIds` the other groups of the
 plan, `loaded` the ids of the groups the planner built or restored. `runToolCommand` adds `historySteps`, which
 the server removes.
+
+`groupAttributes.notCarried` names attributes without current targets. For a requested generated
+part, the description asks the agent to find an enabling attribute, enable it when available,
+then set the part's attributes after generation and report only what remains missing. Targeting
+precedes recalculation, so a group-level enabling switch and its generated part's materials can
+require separate calls. A root-level switch reaches the initial load and permits group materials
+to target the generated root in the same create call.
 
 ### The anchor frame
 

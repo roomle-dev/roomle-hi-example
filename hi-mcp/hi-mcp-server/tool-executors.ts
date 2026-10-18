@@ -465,8 +465,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       if (libraryId && id !== libraryId) {
         continue;
       }
-      // the master data arrives compacted: root modules and customer-facing
-      // attributes only
+      // The master data arrives compacted: root modules and their
+      // customer-facing or Bool attributes.
       const rootModules = (masterData.modules ?? []) as any[];
       for (const attribute of masterData.attributes ?? []) {
         if (!attributeMatches(attribute, words)) {

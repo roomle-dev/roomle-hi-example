@@ -66,6 +66,14 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 - A tool command reaches the planner through `HiToolPlanner`, which `HiToolsImplementation` implements in the planner itself: the plan context, the calculated groups, the layout load, the group operations and `calculateArticleTemplate`. The command tools resolve group id prefixes and check article ids against the catalog (an id in another spelling is read in the catalog's spelling; `merge-article-into-group` also moves a taken side to the free end of the row and derives a missing partner vector — all reported in `corrections`) and run the group operation, which answers with the affected groups in the plan-context shape once the planner has loaded them. Deletions and merges are performed by the kernel: the group operation waits for the kernel's report of the group (`removedGroup`, `deleteRootModule`, `mergeGroups`), and a root module deletion the kernel does not report within the request is rejected as refused
 - The executors call the planner through `PlannerApi` (`planner-api.ts`): the six planner methods the tools need (`getExternalObjectPlanContext`, `externalObjectGroupOperation`, `fetchPrice`, `getExternalObjectSnapshot`, `undo`, `redo`), each forwarded over the bridge with positional arguments. All parameters are required — the call travels as JSON, which turns `undefined` into `null`
 
+The plan-context master data retains article and generated roots with their assigned customer-facing
+or Bool attributes. `get-plan-context` lists this vocabulary by default and `find-attributes`
+searches it, including enabling switches described by the library. For a requested generated part
+whose attributes are `notCarried`, the tool description directs the agent to find an enabling
+attribute, enable it when available, then set the part's attributes after generation and report
+only what remains missing. Group-level enabling and generated-part materials can require two
+calls because targeting precedes recalculation.
+
 #### 5. Group placement (internal)
 
 Internal to the tool commands: not part of the tool interface and never mentioned to the agent — the served rules, the tool descriptions, the tool reference and the authoring skills only know `placement`. `tests/hi-mcp-server.test.ts` guards the served text. All files below are in roomle-ui `packages/web-sdk/packages/homag-intelligence/src/`.

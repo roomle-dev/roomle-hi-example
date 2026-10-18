@@ -44,6 +44,8 @@ keeps every suggested text, applied in the library or not.
 | 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the carcase colour descs done; the colour value descs and the outside program not done | partly | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
 | 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet and front program descs done; the colour value descs not done | partly | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
 | 76 | [Articles with two doors that do not say how their doors stand](#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | yes | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
+| 79 | [Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate](#79-base-units-narrowed-to-150-mm-with-a-150-mm-plinth-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the unit is not built, the agent needs a second create |
+| 80 | [Wall units at 900 mm with a single door the library cannot calculate](#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the cabinets are not built, the agent needs a second create |
 
 **Solved by descriptions**: with the descriptions the agent builds at the first attempt what it
 wants, without a call the library cannot calculate; "partly" names in the issue what only the
@@ -359,3 +361,90 @@ above the other" or "a pair of doors side by side" (section 1.2), and the descs 
 hinged at the outer sides, with values the library calculates.
 
 **Reproduce.** The planner probe of [RML-18203](https://roomle.atlassian.net/browse/RML-18203), without a model, on the bo-test planner: `create-or-replace-groups` with `U2TB90` and `mod_DoorDirectionSelection` `Left`, `Right`, `LeftLeft` or `RightRight`, or `H2TB60` with `LeftRight` — error 14019 in `notLoaded`.
+
+## 79. Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate
+
+**Problem.** To copy the narrow unit at the end of a row of a photo, the agent narrows a base
+storage unit to 150 mm (`UTB30` with `mod_Width` 150) in a group whose plinth height is 150 mm.
+The library cannot calculate it — "Error 14011: Could not find entry in tab_PlinthAreaSettings for
+input values: BaseUnit - 30 - LCF - RCF - BCF - FCR - 150 - 150 - 50" — so the unit is not built;
+the server builds the rest of the group and names it in `notLoaded`. The agent undoes the create and
+sends it again with the filler panel `PU15L` for the narrow space.
+
+**Cause.** `tab_PlinthAreaSettings` has no entry for a 150 mm wide base unit of the 30 cm class
+with the plinth height of the group. The descs of the base units and of `mod_Width` name no width
+limit, so nothing tells the agent that a base unit narrowed under the narrowest catalog unit
+(300 mm) is not calculated with the plinth of the row.
+
+**How the library behaves.** Checked in the stored runs:
+
+| Article | Width | Plinth height | Built | Runs |
+|---|---|---|---|---|
+| `UTB60` | 450 mm, narrower | the library's default | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 07 |
+| `UTB30` | 150 mm, narrower | 150 mm | no: Error 14011 (`tab_PlinthAreaSettings`) | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 49 |
+| `H2TB60` (tall unit) | 300 mm, narrower | 150 mm | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 49, the second create |
+| `PU15L` (filler panel, 15 cm) | 150 mm, as it comes | 150 mm | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 49, the second create |
+
+Not known: which widths and plinth heights `tab_PlinthAreaSettings` takes per base unit class —
+whether the 150 mm width alone fails or with the 150 mm plinth height, and whether the wider classes
+take 150 mm.
+
+**To do.** The library: the width and plinth height ranges of `tab_PlinthAreaSettings` per base
+unit class; with them the `desc` of `mod_Width` can name the widths the library calculates —
+section 2.9 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#29-width).
+Then check that the served text needs nothing more.
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `image-kitchen-back-right-corner`: the first create builds the narrow unit of the photo,
+or the agent fills the narrow space with a filler panel or a pull-out at the first attempt.
+
+**Reproduce.** `mcp-test-2026-10-18_14-48-28`: gpt-6-astra 49 (`image-kitchen-back-right-corner`,
+the first `create-or-replace-groups`): root `narrow` `UTB30` with `mod_Width` 150
+(`19281da8-e040-449b-af89-63a7a66f7d87`) in the group `dfba02de-cd07-4be7-9189-9c9c33ef82bc`
+with `mod_PlinthAreaHeight` 150 in the group attributes, not calculated, Error 14011; the model
+undid and sent the create again with `PU15L`.
+
+## 80. Wall units at 900 mm with a single door the library cannot calculate
+
+**Problem.** To copy the wide light band above the tall units of a photo, the agent widens two
+wall units to 900 mm (`OTB60` with `mod_Width` 900, `mod_DoorDirectionSelection` `Left` and
+`Right`) bridging over the dark cabinets. The library cannot calculate them — "Error 14019: Could
+not find entry in tab_DoorSettings for input value: WallUnit - All - Standard - 190 -
+mr_StorageunitSingle - 900 - Automatic - Left - Automatic" (and the `Right` variant) — so they are
+not built; the server builds the rest of the group and names them in `notLoaded`. The agent undoes
+the create and sends it again with four `OTB45` and two `O2TB90`.
+
+**Cause.** `tab_DoorSettings` has no entry for a single door at 900 mm. Widened, the wall unit
+keeps the single door its article defines (`mr_StorageunitSingle` with one `mf_Door`); the wall
+cabinet with a pair of doors `O2TB90` calculates at 900 mm. The descs of the single-door wall
+cabinets (`OTB30`, `OTB45`, `OTB60`) and of `mod_Width` name no width limit for a single door.
+
+**How the library behaves.** Checked in the stored runs:
+
+| Article | Doors | Width | Built | Runs |
+|---|---|---|---|---|
+| `OTB30`, `OTB45`, `OTB60` | a single door | as they come (300, 450, 600 mm) | yes | every run that plans them |
+| `OTB60` | a single door | 900 mm, widened | no: Error 14019 (`tab_DoorSettings`) | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 50 |
+| `O2TB90` | a pair of doors side by side | 900 mm, as it comes | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 50, the second create |
+
+Not known: the widths a single door takes between 600 and 900 mm, and whether a single-door wall
+cabinet narrowed under its own width calculates.
+
+**To do.** The library: the width ranges a single door takes in `tab_DoorSettings`, or entries for
+a single door at 900 mm; with them the `AI_SELECTION_HINT` of the single-door wall cabinets can
+name the widths — section 1.4 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#14-wall-units-with-a-single-door).
+Then check that the served text needs nothing more.
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `image-planning-right-wall`: the first create builds the widened wall units, or the
+agent picks the articles that take the width at the first attempt.
+
+**Reproduce.** `mcp-test-2026-10-18_14-48-28`: gpt-6-astra 50 (`image-planning-right-wall`, the
+first `create-or-replace-groups`): roots `bridge1` and `bridge2` `OTB60` with `mod_Width` 900
+(`207d9e11-1c13-4958-bcf9-6282e3782624`, `78feb95d-e6b0-4cbe-8f87-6fa656572525`) in the group
+`176aaf97-0133-4b90-80c8-8537cdf010f3`, not calculated, Error 14019; the model undid and sent the
+create again with `OTB45` ×4 and `O2TB90` ×2.

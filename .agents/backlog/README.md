@@ -32,6 +32,8 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 | [70 — Carcase side panels with a plain outside colour the library cannot calculate](library-issues.md#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG library: switch the program of the visible sides with their colour, or say in the descs that the visible sides take the outside colour and a plain one needs the program Classic | low |
 | [71 — Folding-flap wall cabinets with glass fronts the library cannot calculate](library-issues.md#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG library: the flap wall cabinets' descs name the front programs their flap takes | low |
 | [76 — Articles with two doors that do not say how their doors stand](library-issues.md#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG library: the articles with two doors say one above the other or side by side; `LeftLeft`, `RightRight` and the desc of `14` | low |
+| [79 — Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate](library-issues.md#79-base-units-narrowed-to-150-mm-with-a-150-mm-plinth-the-library-cannot-calculate) | HOMAG library: the desc of `mod_Width` names the widths the plinth takes; under 300 mm, a filler panel or pull-out fills the gap | low |
+| [80 — Wall units at 900 mm with a single door the library cannot calculate](library-issues.md#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG library: the single-door wall cabinets' descs name the widths a single door takes; wider, a cabinet with a pair of doors | low |
 
 ## Library neutrality of the MCP server
 

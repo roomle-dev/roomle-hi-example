@@ -94,6 +94,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [The planning skills are served by a tool only](bug-analysis/planning-skills-served-by-a-tool-only.md) | Fixed | 2026-10-17 |
 | [The wall units hang at two heights after a plinth height in the group attributes](bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md) | Open — implemented and locally verified on branch; pending landing | 2026-10-18 |
 | [A wall-level article of another category is taken for a floor unit](bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md) | Fixed — locally verified on branches; pending landing | 2026-10-18 |
+| [The backsplash of an image kitchen is reported as not buildable](bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md) | Open — verified; implementation and unit-test plan, roomle-ui based on `fix/wall-level-article-relations` | 2026-10-18 |
 
 ### Feature Analyses
 

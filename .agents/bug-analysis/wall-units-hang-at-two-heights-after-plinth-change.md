@@ -6,7 +6,7 @@
 > **Bases**: roomle-hi-example `master` (`6b7e7fc3`); roomle-ui
 > `fix/room-corners-at-openings` (`a008be42d`)
 > **Working branches**: `fix/wall-unit-heights-after-plinth-change` in both repositories
-> **Backlog**: [MCP issue 72](../backlog/mcp-issues.md#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes)
+> **Issue**: MCP issue 72
 
 ## Affected repositories
 
@@ -226,4 +226,4 @@ Acceptance for the recorded kitchen is specific: the **two default-hung cabinets
   the library's insertion-height changes through existing D59 feedback. D35 hang-gap
   derivation and D59 feedback needed no change; only the D42 behaviour text was updated.
 
-The branch fix is locally verified. Issue 72 stays open until the roomle-ui fix lands.
+The branch fix is locally verified. Merge and release verification remain pending until the roomle-ui fix lands.

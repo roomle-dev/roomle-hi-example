@@ -23,7 +23,7 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | roomle-ui `moveUnitsAboveWithTheirCarriers` (`hi-root-module-arrangement.ts`) follows carrier root movement but misses a docking top rising at a fixed root position; [validated analysis and test plan](../bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md), based on `fix/room-corners-at-openings` | medium | gpt-6-astra | |
+| 72 | [The wall units hang at two heights after a plinth height in the group attributes](#72-the-wall-units-hang-at-two-heights-after-a-plinth-height-in-the-group-attributes) | defect | roomle-ui `moveUnitsAboveWithTheirCarriers` fix and tests implemented and locally verified on `fix/wall-unit-heights-after-plinth-change`, based on `fix/room-corners-at-openings`; [analysis](../bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md). Pending landing. | medium | gpt-6-astra | |
 | 73 | [A wall-level article of another category is taken for a floor unit](#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit) | defect | analysed: roomle-ui `isWallUnitArticle`, `relationsToDocking` (`hi-group-layout.ts`) — the classifier knows a wall unit by a category word only; the kernel's insert levels reach the tool and the tool does not read them, and the stored templates carry none. Fix proposed in [the analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md): the classifier reads the insert levels, the library fills them if the planner does not, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6-astra | |
 | 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, `behind`) — the description says neither where a turned unit lines up with a wider neighbour nor which way the relations run in a turned row; roomle-ui `pairOf` for `behind` (`hi-group-layout.ts`) — the compile pins the turned unit at the neighbour's left end with offset 0 and no field to name the other end. Fix proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md): the served text first, the `align` the server derives the offset from along the neighbour's width axis as the fallback, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6.1-sol | |
 | 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the `notCarried` sentence of `create-or-replace-groups`) — the sentence presents a not-carried attribute as a part the library will not build and asks the agent to report it; roomle-ui `compactMasterData` (`hi-plan-context.ts`) — the attribute that switches the generated part on is not customer-facing, so the vocabulary and `find-attributes` do not serve it and the agent cannot find it. Fix proposed in [the analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md): the served sentence and the served vocabulary (roomle-ui, based on `fix/room-corners-at-openings`); the library data (the switch's `userRight`) as the smaller alternative | medium | gpt-6-astra | |
@@ -47,19 +47,19 @@ while its root stays at y = 0. A wall row without a surviving link therefore rec
 [validated analysis](../bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md) for the
 raw saved group and the distinction between docking heights and rendered bounds.
 
-**To do.** In roomle-ui, based on `fix/room-corners-at-openings`, extend the existing follower
-calculation to preserve the gap from the carrier's docking top when that top changes at a fixed
-root position. Keep units that already followed in place, explicit clearances, horizontal layout,
-rotation and the existing arrangement option. This shared path covers the create's group
-attributes and existing-group attribute changes. No insertion-height attribute lookup, extra
-attribute command or served-text change; rendered obstacle tops are not docking tops.
+**Implementation on branch.** The existing roomle-ui follower now preserves the docking gap
+when the carrier top changes at a fixed root position. It retains explicit clearances, horizontal
+layout, rotation, units already moved by docking and the arrangement option. The shared path covers
+the create's group attributes and existing-group attribute changes. No insertion-height attribute
+lookup, extra attribute command or served-text change was needed. The fix is locally verified;
+landing remains.
 
-**Test.** Add a red regression beside `describe('units above')` in
-`__tests__/hi-root-module-arrangement-test.ts`, then verify final loaded geometry through the
-actual attribute operation in `glue-logic-test.ts`. Cover a detached pair, +50/+20/negative and
-zero top changes, already-followed units, explicit gaps, nonzero local bottoms, stacks and one
-undo step. Replay the recorded payload: the two default-hung cabinets top out at 2250, the hood
-keeps its 650 gap and bottom 1520, and the shelf its 600 gap and bottom 1470. The general
+**Test.** The red regression was added beside `describe('units above')` in
+`__tests__/hi-root-module-arrangement-test.ts`, and final loaded geometry was verified through the
+actual attribute operation in `glue-logic-test.ts`. Coverage includes a detached pair, +50/+20/negative and
+zero top changes, already-followed units, explicit gaps, nonzero local bottoms and stacks. Existing
+command tests cover one undo step. The recorded payload replay put both default-hung cabinets at
+top 2250, with the hood at bottom 1520 and gap 650, and the shelf at bottom 1470 and gap 600. The general
 `kitchen-back-right-corner` prompt does not force a plinth change and is not a deterministic
 regression.
 

@@ -1,7 +1,7 @@
 # Bug analysis — the wall units hang at two heights after a plinth height in the group attributes
 
 > **Type**: Bug analysis
-> **Status**: Open — validated; revised fix and unit-test plan, not implemented
+> **Status**: Open — implemented and locally verified on working branches; not landed
 > **Date**: 2026-10-17; validation 2026-10-18
 > **Bases**: roomle-hi-example `master` (`6b7e7fc3`); roomle-ui
 > `fix/room-corners-at-openings` (`a008be42d`)
@@ -13,8 +13,8 @@
 - **roomle-ui** — fix the existing carrier-following geometry in
   `packages/web-sdk/packages/homag-intelligence/src/hi-root-module-arrangement.ts` and test its
   integration with the attribute calculation and load. Based on `fix/room-corners-at-openings`.
-- **roomle-hi-example** — this analysis, issue 72 and their indexes now; the behaviour reference
-  and relevant living documentation with the implementation. No served-text or tool-schema change.
+- **roomle-hi-example** — this analysis, issue 72, their indexes, the behaviour reference
+  and relevant living documentation. No served-text or tool-schema change.
 
 ## Validation verdict
 
@@ -24,9 +24,9 @@ and the proposed second insertion-height attribute command are not supported.** 
 smaller fix in the existing roomle-ui arrangement path: follow the change of the carrier's
 **docking top**, which can rise while its root position stays at y = 0.
 
-No productive code or tests were changed during validation. The plan below replaces the original
-create-only re-hang proposal. It also reaches existing-group attribute changes through their
-shared calculation path, without another tool-specific implementation.
+The validated plan below replaces the original create-only re-hang proposal. The implemented
+change also reaches existing-group attribute changes through their shared calculation path,
+without another tool-specific implementation.
 
 ## Reproduction and measured evidence
 
@@ -203,11 +203,27 @@ Acceptance for the recorded kitchen is specific: the **two default-hung cabinets
 
   The first launch under the shell's Node 20.10.0 failed before collection because `styleText`
   was unavailable; rerunning with the repository pin passed. No dependency change was needed.
-- Implementation verification: run the new regression red, implement, run it green, then
-  `npm run test -- --run packages/homag-intelligence/__tests__` from `packages/web-sdk`; from
-  roomle-ui's root run `npm run lint:code:sdk`, `npm run lint:types:sdk` and the required formatting
-  check. Replay the fixed payload against the local roomle-ui branch, including undo/redo.
+## Implementation and verification on the working branches
 
-The final library calculation retaining the new y positions and the live rendered outcome remain
-implementation acceptance checks. The current green baseline has no test for a carrier top rising
-at a fixed root position. The bug remains open.
+- Added the docking-clearance calculation to roomle-ui's existing
+  `moveUnitsAboveWithTheirCarriers` path. The helper uses the old carrier top and wall-unit bottom,
+  the new carrier top and wall-unit bottom, and retains the previous horizontal/rotation handling.
+  It leaves a unit already moved by docking alone. No glue or tool-command code changed.
+- Added the detached-pair regression and parameterized +50, +20, −50 and zero changes; explicit
+  600/650 mm gaps, a nonzero local bottom, a stack, an already moved unit and a unit whose docking
+  geometry already followed. The new regressions failed before the fix and passed after it. The
+  actual `modifyAttribute` path is tested with library calculation moving only the carrier's
+  docking top, including the arrangement option disabled. The existing create material test
+  checks one group-attribute command after placement; the command tests check one history step.
+- Full roomle-ui HI package suite: 18 files, 1,033 tests passed under Node 24.12.0. SDK lint:
+  zero errors, one pre-existing unused-variable warning in `planner-core/__tests__/plan-view-model.ts`.
+  SDK TypeScript and required format check passed.
+- Replayed planner call 11 from the saved run against the local roomle-ui branch and the actual
+  library. The raw plan and final context put both `OTB45` roots at 1530–2250, level with the
+  `HK260` top 2250. The hood remains at bottom 1520, 650 above its carrier docking top 870;
+  the shelf remains at bottom 1470, 600 above docking top 870. The top image was inspected.
+  Undo removes the group; redo restores both cabinet tops at 2250. The create result reported
+  the library's insertion-height changes through existing D59 feedback. D35 hang-gap
+  derivation and D59 feedback needed no change; only the D42 behaviour text was updated.
+
+The branch fix is locally verified. Issue 72 stays open until the roomle-ui fix lands.

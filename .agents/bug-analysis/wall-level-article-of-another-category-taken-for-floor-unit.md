@@ -1,290 +1,242 @@
 # Bug analysis — a wall-level article of another category is taken for a floor unit
 
 > **Type**: Bug analysis
-> **Status**: Open — fix proposed, not implemented
-> **Date**: 2026-10-17
-> **Base**: roomle-hi-example `analysis/mcp-72-wall-units-two-heights-plinth` (`09c5ee2`);
-> roomle-ui `fix/room-corners-at-openings` (`a008be42d`) — the branch every roomle-ui change for
-> this bug must be based on
-> **Backlog**: item 73 of [`../backlog/mcp-issues.md`](../backlog/mcp-issues.md)
+> **Status**: Open — cause reproduced; revised fix proposed, not implemented
+> **Date**: 2026-10-17; revalidated 2026-10-18
+> **Base**: roomle-hi-example `1881ca4`, analysis branch `docs/revalidate-wall-level-articles`;
+> roomle-ui `fix/wall-unit-heights-after-plinth-change` (`8cfd98e71`)
+> **Backlog**: item 73 of [mcp-issues.md](../backlog/mcp-issues.md#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit)
 
 ## Affected repositories
 
-- **roomle-ui** — the proposed fix: `isWallUnitArticle`
-  (`packages/web-sdk/packages/homag-intelligence/src/hi-group-layout.ts:70`), the two correction
-  branches of `relationsToDocking` that rewrite or drop the agent's relation
-  (`hi-group-layout.ts:244-249` and `hi-group-layout.ts:273-279`), and the unit tests in
-  `__tests__/hi-group-layout-test.ts`. The fix is based on `fix/room-corners-at-openings`. The
-  other users of the classifier — `hi-tool-docking.ts:187-204` (the merge docking gap) and
-  `hi-tool-docking.ts:982` (`dropFloorUnitsOnBaseUnits`), `hi-tool-hints.ts:153` and
-  `hi-tool-hints.ts:195` — inherit the wider classification without a change of their own; their
-  tests may gain a case each.
-- **roomle-hi-example** — this analysis and backlog item 73 (the cause and the responsible
-  updated with the analysis). No code change: the issue rules out a change of the served text —
-  the agent's payload is legitimate, the tool misclassifies it — and the stored tests already
-  cover the outcomes (`kitchen-conversation`; the random test
-  `random-1-utility-room-right-wall-with-wall-units` of the reproduce run).
-- **RoomleCore (the planner kernel)** — no change expected. The catalog compaction already passes
-  the insert levels through (`hi-plan-context.ts:654`); whether the planner fills
-  `insertLevelInfos` when it calculates the catalog templates is the open question of
-  implementation-plan step 1. Named because the alternative — the planner teaching the tool
-  which articles mount on the wall — would be a kernel change for data the catalog already
-  carries.
-- **The library (HOMAG Furniture_Smith, server-side calculation)** — the interface change that
-  exposes the neutral data, if the planner does not fill it: `insertLevelInfos` with the mounting
-  height on the wall-level article templates (trace 2). The categories "Cover Panels" and
-  "Utility" are the library's taxonomy and stay. A library change is also the fallback for a
-  wall-level article whose templates carry no insert levels at all.
-- **ligna-store** — no change: the store runs the same roomle-ui and planner and holds no copy
-  of the tool command.
+- **roomle-hi-example** — explain the existing library descriptions and mounting relations in
+  the served rules and tool descriptions; test that contract and document it. This revision
+  changes the analysis, backlog and their indexes only.
+- **roomle-ui** — correct the interpretation of mounting intent in `hi-group-layout.ts` and
+  matching docking cleanup in `hi-tool-docking.ts`, with regression tests, based on
+  `fix/wall-unit-heights-after-plinth-change` and preserving its arrangement fix.
 
-## Symptom
+**The HOMAG Furniture_Smith library stays as it is.** No change to its calculation, API,
+templates, categories or insert-level output is a prerequisite or fallback. RoomleCore and
+ligna-store need no change for this proposal: the MCP interface and its roomle-ui tool commands
+must explain and use the capabilities the library already offers.
 
-A `create-or-replace-groups` whose roots put a wall-level article of a category other than "Wall
-Units" beside a wall unit or above a floor unit has the article taken for a floor unit: its
-relation is rewritten or dropped, and it lands in the floor row.
+## Verdict on the previous proposal
 
-**Case 1 — a wall-level panel beside a wall unit.** The agent puts the wall-unit side panel
-`W35O` ("Wall-unit side / cover panel", category "Kitchen | Cover Panels | Side Panels") `rightOf`
-the wall unit `cups` (`OFKB60`) to close the wall-unit row. Reproduce:
-`mcp-test-2026-10-16_19-30-19`, gpt-6.1-sol 50 (`kitchen-conversation`, the first
-`create-or-replace-groups`, planner call in the run directory
-`.temp/result/mcp-test-2026-10-16_19-30-19/gpt-6.1-sol/50-kitchen-conversation/`). The payload:
-`{"id":"wallend","articleId":"W35O","rightOf":"cups"}` with `cups` `above` the base unit `return`.
+The relation rewrites and their immediate cause are reproducible. The proposed fix is rejected:
+reading insert levels absent from the supplied templates cannot fix these cases, and requiring
+HOMAG to supply them moves responsibility to the wrong component.
 
-The corrections of the call:
+A category that does not identify a wall unit is **unknown mounting information**, not evidence
+of floor mounting. The compiler turns a lack of recognition into a positive claim and overrides
+a meaningful relation.
 
-```
-posGroups[0]: floor unit 'wallend' cannot stand rightOf the wall unit 'cups' - it continues the floor row
-posGroups[0]: root 'wallend' names no neighbour - it was put rightOf 'endtall'
-posGroups[0]: roots 'fridge', 'wallend' were docked to the RightBottom of root 'endtall' at the same place - 'wallend' was docked to the LeftBottom of 'endtall', the free end of its leg (the RightBottom row ends at the corner article 'corner')
+The dismissal of a served-text change is also wrong. The MCP must explain how the agent selects
+and mounts articles using existing library data. Text alone cannot repair these reproductions:
+the agent already chose the right articles and relations, which the tool then changed.
+
+## Symptom and reproduction
+
+**Wall-row finishing panel.** In `mcp-test-2026-10-16_19-30-19`, gpt-6.1-sol,
+`50-kitchen-conversation`, the first `create-or-replace-groups` sends:
+
+```json
+{ "id": "wallend", "articleId": "W35O", "rightOf": "cups" }
 ```
 
-The relation is dropped, the default link puts the panel `rightOf` `endtall` (a `W60H` tall end
-panel of the floor row), and the wall-unit panel stands on the floor at the end of the floor leg.
-(The same call also fails to calculate the panel for an unrelated library reason — Error 14034,
-the plain upright colour of backlog item 69 — but the misplacement is this bug: had the relation
-survived, the panel would dock beside `cups` at the wall-unit height.)
+`cups` is `OFKB60`, hanging `above` the base unit `return`. The tool reports:
 
-**Case 2 — a wall unit of another category above a floor unit.** The agent puts the utility-room
-open wall units `openwall1` and `openwall2` (`HWR_WR600V1`, category "Utility") `above` the base
-units `HWR_UB600`. Reproduce: `mcp-test-2026-10-17_13-28-41`, gpt-6-astra 54
-(`random-1-utility-room-right-wall-with-wall-units`, turn 2, the second `create-or-replace-groups`,
-planner call 6 of the run directory
-`.temp/result/mcp-test-2026-10-17_13-28-41/gpt-6-astra/54-random-1-utility-room-right-wall-with-wall-units/`).
-
-The corrections of the call:
-
-```
-posGroups[0]: root 'openwall1' is no wall unit - it stands rightOf 'b82d67ff-…' instead of above it
-posGroups[0]: root 'openwall2' is no wall unit - it stands rightOf '25f6650f-…' instead of above it
-posGroups[0]: roots '25f6650f-…', 'openwall1' were docked to the RightBottom of root 'b82d67ff-…' at the same place - 'openwall1' was docked to the RightBottom of 'openwall2', the free end of that row
+```text
+floor unit 'wallend' cannot stand rightOf the wall unit 'cups' - it continues the floor row
+root 'wallend' names no neighbour - it was put rightOf 'endtall'
 ```
 
-Both units land in the floor row. The agent then undoes the call (planner call 9) and hangs the
-two units with two `merge-article-into-group` calls (planner calls 13 and 16) that set
-`mod_TypeElement` `WallUnit`, `mod_HeightPosInsertion` 1420, `mod_PlacementLevels` `WallHanging`
-and `mod_CreateToekick` false, docked by a Top vector with the offset `[0,500,0]` — three calls
-and an undo for what one create should have built.
+Side-vector conflict completion subsequently moves the panel to the free end of the floor leg.
+The same payload also has a panel-colour calculation error. That is separate evidence: retaining
+the intended docking does not prove that every material combination of this payload calculates.
+
+**Utility wall units.** In `mcp-test-2026-10-17_13-28-41`, gpt-6-astra,
+`54-random-1-utility-room-right-wall-with-wall-units`, turn 2 asks for an open wall unit above
+each of two base units. The second create call (`planner-calls.json`, bridge call id 8) sends
+two `HWR_WR600V1` roots `above` the existing `HWR_UB600` roots. Both become `rightOf`:
+
+```text
+root 'openwall1' is no wall unit - it stands rightOf 'b82d67ff-…' instead of above it
+root 'openwall2' is no wall unit - it stands rightOf '25f6650f-…' instead of above it
+```
+
+The agent undoes the result and uses two merge calls with explicit Top-to-Bottom docking and a
+500 mm gap, plus attribute overrides. That recovery shows the existing planning path can mount
+the articles; it does not establish that all those overrides are necessary.
+
+The run directories under `.temp/result/` contain `run.json`, `planner-calls.json` and the final
+plan context. They are local evidence, not portable links or fixtures.
 
 ## Investigation trace
 
-1. **The classifier knows a wall unit by a category word only.** `isWallUnitArticle`
-   (`hi-group-layout.ts:70-71`) is `WALL_UNIT.test(category) || isHoodArticle(article)`, with
-   `WALL_UNIT = /\bwall ?units?\b/i` (`hi-group-layout.ts:11`). The regex catches "Kitchen | Wall
-   Units | …" and "Living | Wallunits" (the test `counts the Living wall units as wall units`,
-   `__tests__/hi-group-layout-test.ts:651`), but not "Kitchen | Cover Panels | Side Panels"
-   (`W35O`) or "Utility" (`HWR_WR600V1`). Neither article is a hood. Both count as floor units
-   everywhere the tool classifies: `relationsToDocking` (`hi-group-layout.ts:191-194`),
-   `hi-tool-docking.ts`, `hi-tool-hints.ts`.
-2. **The kernel's neutral mounting data reaches the tool; the library's own marks do too, and the
-   tool reads neither.** The compacted catalog carries the insert levels of every root module —
-   `insertLevels` (`PosInsertLevelInfo[]`, `{ height, isDefault? }`,
-   `oc-scripts-domain.model.ts:148-152`: "The insert level is suggested in the following list; if
-   no list is present, the default height is the floor"), in the compacted type
-   (`hi-plan-context.ts:129`) and passed through from the article template
-   (`hi-plan-context.ts:654`). The stored Furniture_Smith templates carry none (surveyed over
-   `docs/library-information/article.json`, `docs/library-information/master-data.json`), so the
-   catalog's insert levels are empty for every article today. The library marks its wall-level
-   articles in its own data as well:
-   - `mod_TypeElement` (master data: `isMain: true`, type Text, "Type Element") sits on the root
-     module of all 21 wall-unit-typed articles — the Kitchen wall units, the Utility
-     `HWR_WR600V1`, `HWR_WR600V2`, `HWR_WR600V3`, `HWR_WT600` and the Living `SM_WK900`, `SM_WR900`,
-     `SM_WT300`, `SM_WT600`, `SM_WT300S`, `SM_WR300` — with the value `WallUnit`. The library's
-     values are `BaseUnit` (9 articles), `BaseUnitSink` (5), `TallUnit` (33), `TallUnitAppliance`
-     (2) and `WallUnit` (21); the storage-unit module assigns the attribute to every unit
-     (`mr_StorageunitSingle`, `mr_Upright` and `mr_Hood` carry it in `assignedAttributes`).
-   - `mod_HeightPosInsertion` (master data: type Dim, "Position height", `isMain: false`) is the
-     default mounting height, carried by exactly the 14 wall-level articles that hang: the
-     Kitchen wall units (1380; `OTB45` 1580), the wall fillers `PO15L`/`PO15R` (1380) and the
-     wall side panel `W35O` (1380). No floor, tall or end-panel article carries it in the catalog.
-   - Neither is a neutral signal: they are one library's attribute ids and values, and equivalent
-     data under another library's identifiers would be ignored (§2.4 of
-     [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md)).
-   - `mod_PlacementLevels` `WallHanging` is **not** a marker: the floor-standing `HWR_WM700`
-     (Utility, 920 mm, `mod_TypeElement` `BaseUnit`) carries it too, and `W35O` does not.
-   - The docking vectors do **not** discriminate: the calculated roots of floor and wall units
-     carry the same vector set (`LeftBottom`, `LeftTop`, `RightBottom`, `RightTop`, `BackBottom`,
-     `BackTop` — the plan contexts of the stored runs).
-   - The marks reach the tool: the catalog compaction puts `mod_TypeElement` into `mainAttributes`
-     and `mod_HeightPosInsertion` into `dimensions` of the article's root modules
-     (`hi-plan-context.ts:616-655`), and `relationsToDocking` classifies by
-     `catalogArticleOf(articles, root)` (`hi-group-layout.ts:190`), the catalog article.
-3. **The corrections then change what the agent asked for.** In `relationsToDocking`:
-   - `above` a floor unit with `!isWall(root)` is rewritten to `rightOf`
-     (`hi-group-layout.ts:244-249`) — case 2.
-   - `rightOf`/`leftOf` a wall unit with `!isWall(root)` drops the relation entirely
-     (`hi-group-layout.ts:273-279`, `continue`) — case 1. The default link
-     (`hi-group-layout.ts:398-476`) then puts the root `rightOf` the last floor unit of the main
-     chain ("names no neighbour - it was put rightOf …", `hi-group-layout.ts:474`) and the row
-     compiler docks it to the free end of the floor leg.
-   Both corrections fight the agent's intent instead of carrying it out ([Guards Are a Last
-   Resort](../../AGENTS.md#guards-are-a-last-resort)).
-4. **The classification must read the catalog, never the agent's payload.** In the reproduce run
-   the agent sent `mod_HeightPosInsertion` 100 on the floor units and `mod_TypeElement` values
-   itself (planner call 6 of the run directory). A classifier that read the root's attributes
-   would take the agent's word; `isWallUnitArticle` receives the catalog article, and the fix
-   keeps it that way.
-5. **With the article recognized as a wall unit, the existing compile does the right thing.**
-   - `W35O` `rightOf` `cups` docks by the Bottom vectors (`pairOf`, `hi-group-layout.ts:734`:
-     `edge = isWall(unit) && isTall(target) ? 'Top' : 'Bottom'`), the same docking two wall units
-     get (the test `docks wall units and the range hood beside each other by the Bottom vectors`,
-     `__tests__/hi-group-layout-test.ts:116`). The panel keeps its catalog default mounting
-     height 1380 — the wall units' height — so it hangs beside the wall unit.
-   - `HWR_WR600V1` `above` the base unit keeps `above` and gets the D35 gap
-     (`hangGapOf`, `hi-group-layout.ts:141-168`): tall 2100 − unit 1280 − carrier 820 = 0, the
-     open wall unit hangs with its top flush with the tall unit's top.
-   - `W35O` carries no `mod_Height` dimension (its height is `mod_UprightHeight`), so
-     `rootHeight` falls back to the usual wall-unit height of the library (720) in `hangGapOf`
-     — the D35 gap for a panel above a floor unit is the gap of a 720 wall unit, which is what
-     the panel is.
+roomle-ui source references below are relative to
+`packages/web-sdk/packages/homag-intelligence/src/` at `8cfd98e71`.
+
+1. **The library already describes the intended use.** The stored
+   [article catalog](../../docs/library-information/article.json) says:
+
+   | Article | Category | Existing description |
+   |---|---|---|
+   | `W35O` | Kitchen / Cover Panels / Side Panels | FUNCTION: “Wall-unit side / cover panel.” AI_SELECTION_HINT: “Select to finish the exposed side of a wall unit.” |
+   | `HWR_WR600V1` | Utility | FUNCTION: “Utility-room open wall unit, 60 cm wide, with full-height shelves.” AI_SELECTION_HINT: “Select for fully open wall shelving in a utility room.” |
+
+   Both signals survive `shortDescription` (`hi-mcp/hi-mcp-server/agent-facing.ts:185`), which
+   retains FUNCTION and AI_SELECTION_HINT. Full placement and requirements are available through
+   `articleDescriptions`. Missing descriptive data is not the cause of these choices; expanding
+   every catalog description is unnecessary for this fix.
+
+2. **The classifier ignores that meaning.** `isWallUnitArticle` (`hi-group-layout.ts:70`)
+   tests the category for “Wall Units”/“Wallunits” or recognizes a hood module. It returns false
+   for both articles. This is a recognition heuristic, not a complete mounting-capability model.
+   `relationsToDocking` (`:190`) reads the catalog article, then uses that boolean as though it
+   described every article's allowed mounting.
+
+3. **The explicit relation is destroyed.** `above && !isWall(root)` becomes `rightOf`
+   (`hi-group-layout.ts:244`). A non-recognized article beside a recognized wall unit loses its
+   relation (`:270`), then the default-link pass (`:398`) places it in the floor row. Sending
+   `gapMm` cannot rescue `above`: after the rewrite the gap is discarded as invalid for a side
+   relation (`:288`). The tool changes the intent before the library calculates the group.
+
+4. **A replace can repeat the mistake through docking cleanup.**
+   `dropFloorUnitsOnBaseUnits` (`hi-tool-docking.ts:982`) drops Top-to-Bottom docking to a base
+   article when the other article is not recognized as a wall unit (`:1010`). It runs before
+   `relationsToDocking` (`hi-tool-commands.ts:335`). A corrected create alone is insufficient:
+   resubmitting returned `contextData` must retain the mounting too.
+
+5. **Insert levels are neither available here nor an exclusive capability declaration.**
+   `compactArticle` copies `root.insertLevelInfos` to `insertLevels`
+   (`hi-plan-context.ts:654`). All 111 stored articles lack a nonempty insert-level list. The
+   model describes suggested insertion heights and separately has `insertLevelFixed`
+   (`model/oc-scripts-domain.model.ts:152`); default floor insertion does not prove that an
+   article cannot be docked above another. The previous claim that any positive suggested
+   height uniquely identifies a wall article was not established.
+
+6. **Library attributes are evidence for the agent, not new classifier constants.** The utility
+   article carries `mod_TypeElement: WallUnit`; the panel carries `mod_HeightPosInsertion: 1380`.
+   These reach the catalog through `mainAttributes` and `dimensions`. Conversely the
+   washing-machine article `HWR_WM700` carries `mod_PlacementLevels: WallHanging` while belonging
+   to the base/appliance row. Neither a hardcoded attribute/value test nor “positive height means
+   wall unit” is a sound replacement. Returned floor roots also carry positive insertion heights
+   from their plinth. Attribute overrides configure an article; they are not proof of a
+   catalog-wide capability.
+
+7. **The required base branch solves a different stage.** Commit `8cfd98e71` changes
+   `moveUnitsAboveWithTheirCarriers` (`hi-root-module-arrangement.ts:216`): after a carrier's
+   docking top changes, an unchanged unit above it follows while keeping measured clearance.
+   It changes neither the classifier nor the offending corrections. This issue needs that fix
+   underneath it, but must first produce the mounting for the arrangement to preserve.
 
 ## Root cause
 
-`isWallUnitArticle` recognizes a wall unit by the words "Wall Units" in the article's category (or
-by a hood module), so a wall-level article of another category — a cover panel, a utility wall
-unit — counts as a floor unit. The correction branches of `relationsToDocking` then rewrite
-(`above` → `rightOf`) or drop (`rightOf`/`leftOf` a wall unit) the agent's relation, and the
-default link places the article at the free end of the floor row. The kernel's neutral mounting
-data reaches the tool but is not read: the insert levels of the root modules
-(`hi-plan-context.ts:129,654`) are empty in the stored templates, so no neutral signal exists
-today (trace 2).
+The MCP promises relations expressing layout intent, while its implementation uses an incomplete
+category classifier to overrule them. In particular, `!isWallUnitArticle` is used as proof of
+floor mounting. The library and agent already supply enough meaning for these requests; the
+tool discards it. This is an MCP contract and correction problem, not a missing library feature.
 
-## Why the current code produces this
+## Revised fix direction
 
-The category word was the first signal the compiler had, and it covers the Kitchen and Living
-wall units; the kernel's insert levels are the neutral mounting signal the classifier could
-read, but the stored templates carry none, so no neutral signal exists today (trace 2). The
-corrections were written for a genuine floor unit beside a wall unit — docking it to the wall
-unit's Bottom vector would lift it to the wall-unit height — so they reroute the unit to the
-floor row; with the misclassification they reroute the agent's wall-level article too, and the
-`continue` drops the relation before the default link runs, so the agent's intent is lost
-silently apart from the correction sentence.
+### Explain the existing library and the relations
 
-## Proposed fix
+Integrate this contract into the authoring rules and descriptions of `get-plan-context` and
+`create-or-replace-groups` (`hi-mcp/hi-mcp-server/hi-mcp-server.ts:17`, `:190`, `:372`).
+Proposed wording:
 
-In roomle-ui's `hi-group-layout.ts`, **tell wall-level articles from floor articles by the
-kernel's neutral mounting data**, beside the category word:
+> Choose an article and its mounting settings from its descriptions and attributes. Categories
+> organize the catalog. For an article used at wall level, `above` names the unit below it and
+> `gapMm` sets the clearance; `rightOf` or `leftOf` continues that wall row, including its
+> finishing parts. Fetch `articleDescriptions` when its mounting requirements are unclear.
 
-`isWallUnitArticle` (`hi-group-layout.ts:70`) also returns true when the catalog article's root
-modules carry an insert level above the floor — an `insertLevels` entry with height > 0
-(`hi-plan-context.ts:129,654`; `oc-scripts-domain.model.ts:148-152`: "if no list is present, the
-default height is the floor"). No attribute id, value or measure enters the check.
+Retain the automatic hang-gap explanation. No article ids, attribute ids, value names or fixed
+mounting heights enter the served rules. The two short descriptions suffice; the full description
+remains available for a question about requirements. Ship this wording with the tool correction,
+so it describes behaviour the agent can use.
 
-Interface change: verify first whether the planner fills `insertLevelInfos` when it calculates
-the catalog templates (D74); if it does not, the library fills them — the mounting height on the
-wall-level templates (the 21 wall-unit-typed articles and the hanging panels and fillers of
-trace 2) — reported like the items of
-[`../backlog/library-issues.md`](../backlog/library-issues.md).
+### Preserve mounting intent when category recognition is incomplete
 
-The check scans every root module of the article, reads the catalog article, never the agent's
-payload (trace 4); the category word and the hood check stay as the fallback.
+Change the correction decision rather than requiring more library output:
 
-With the wider classification the corrections fire only for genuine floor units, where they are
-right: a floor unit `rightOf` a wall unit still continues the floor row (docking it to the wall
-unit's Bottom vector would float it at the wall-unit height), and a floor unit `above` a base
-unit still stands `rightOf` it. The keep-and-report interim the backlog names is covered by the
-same data: an article the agent puts beside a wall unit stays there exactly when the library's
-data mounts it above the floor, which is what the extended classifier recognizes — there is
-no third class of article the interim would catch that the classifier does not.
+- Distinguish recognized floor mounting from mounting the classifier does not establish.
+  Absence of a wall-category match, an empty insert-level list and a height threshold alone
+  are not affirmative floor evidence.
+- Preserve explicit `above` for an article of unknown mounting, including `gapMm`. Preserve
+  its `rightOf` / `leftOf` link into an established wall row, including a chain of finishing or
+  utility articles. Determine the row from relations before applying defaults, so root order
+  does not change that interpretation.
+- Treat those relations as mounting intent for **this layout**, not a mutation of the catalog
+  article's global type. Retain floor corrections only where floor mounting is positively
+  identified; do not blanket-classify every unknown article as a wall unit.
+- Apply the same distinction to `dropFloorUnitsOnBaseUnits`, so an unknown category does not
+  erase returned Top-to-Bottom docking on the next replace. Read reciprocal docking too.
+- Check completion and hints against that distinction. `connectUnreachedRoots`
+  (`hi-tool-docking.ts:681`) tests the category directly, while moved-wall and turned-leg hints
+  (`hi-tool-hints.ts:153`, `:195`) use `isWallUnitArticle`. They do not automatically inherit a
+  layout-specific mounting decision. Existing groups provide actual docking and arrangement
+  evidence; their position must not become a permanent catalog classification.
 
-This needs no change of the served text: the agent sends a legitimate payload — a wall-level
-article beside a wall unit, a wall unit above a floor unit — and the tool builds what the D34
-relations describe.
+Use the existing relations and docking first. These reproductions justify no new agent field,
+metadata schema, English-prose classifier or library adapter. Where the tool cannot establish
+that explicit mounting is wrong, it must not reroute it to the floor and report its guess as
+fact. Actual calculation failures retain existing `notLoaded` feedback and other buildable
+content. No new guard is proposed.
 
-## What the fix does not do
+## Heights and limits of the evidence
 
-- It does not change `hi-tool-docking.ts` or `hi-tool-hints.ts`: they call `isWallUnitArticle`
-  and inherit the wider classification — a merged wall-level panel above a floor unit gets the
-  D35 gap (`hi-tool-docking.ts:187-204`), a wall-level panel docked `onTop` a base unit via
-  `contextData` stays instead of being dropped (`dropFloorUnitsOnBaseUnits`,
-  `hi-tool-docking.ts:982`), and the hints treat the panel as part of the wall row
-  (`hi-tool-hints.ts:153,195`). Their behaviour for the new class is the consistent one; their
-  tests gain a case each.
-- It does not teach the agent anything new: no correction fires for a recognized wall-level
-  article, so the agent's next payload is unchanged.
-- It does not reclassify a floor unit: no floor, tall or end-panel article of the library carries
-  an insert level, and the agent's own mounting attributes on a root are not read (trace 4).
-- It does not cover a wall-level article of a library whose templates carry no insert levels and
-  whose category says no wall units: the category word and the hood check stay as the fallback.
-  The library fix for that is the insert levels in its data, reported like the items of
-  [`../backlog/library-issues.md`](../backlog/library-issues.md).
+Bottom-to-Bottom docking aligns a panel with its actual wall neighbour. Its catalog insertion
+height does not guarantee its final height, particularly after a plinth change.
 
-## Rejected approaches
+The existing `hangGapOf` (`hi-group-layout.ts:141`) computes a default from catalog/root heights.
+The stored utility defaults give `2100 - 1280 - 820 = 0`. That does not establish the recovery's
+500 mm clearance or prove the desired visual result. Test the default separately from explicit
+`gapMm: 500`, measure the result and library adjustments, and preserve the base branch's
+clearance behaviour. Replacing the general height heuristics is outside this minimum fix.
 
-- **Keep an article the agent puts beside a wall unit there and report it, without the
-  classification** (the backlog's interim). Docking aligns vectors: a floor unit docked to a wall
-  unit's Bottom vector is lifted to the wall-unit height and floats, so the tool cannot keep every
-  article beside a wall unit; and the articles it may keep are exactly the ones the insert levels
-  mount above the floor — which is the classifier fix. The interim is a subset of the fix, not an
-  alternative.
-- **Classify by `mod_PlacementLevels` `WallHanging`.** The floor-standing `HWR_WM700` carries it
-  and `W35O` does not; it marks a placement suggestion, not a level.
-- **Classify by the docking vectors.** The calculated roots of floor and wall units carry the same
-  vector set; the vectors say where a unit docks, not at which height it lives.
-- **Classify by the library's attribute ids (`mod_TypeElement` `WallUnit`,
-  `mod_HeightPosInsertion` above a 500 mm cutoff).** Reading the values from the catalog does
-  not make the checks library-neutral: the ids, the value and the cutoff are one library's
-  attribute, value and measure in the shared tool logic (§2.4 of
-  [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md)), and equivalent data under
-  another library's identifiers would be ignored. The kernel's insert levels carry the same
-  information neutrally (the fix above).
-- **Classify by the root's attributes.** The agent sends `mod_HeightPosInsertion` and
-  `mod_TypeElement` itself (the reproduce run); the root payload is not library data.
-- **A served-text change or a guard.** The agent's payload is legitimate — a wall-level article
-  belongs beside a wall unit and above a floor unit ([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort));
-  the misclassification is the tool's product, not the agent's input.
-- **A library change (move the articles into a "Wall Units" category).** The categories "Cover
-  Panels" and "Utility" are the library's taxonomy; the library already gives the mounting data,
-  and the tool should read it. Reported to the library development team only for a wall-level
-  article whose templates carry no insert levels.
-- **A kernel change (RoomleCore).** The catalog compaction already passes the insert levels
-  through (`hi-plan-context.ts:654`); whether the planner fills them for the catalog templates
-  is the verification of implementation-plan step 1, not a change.
+## Implementation and acceptance checks
 
-## Implementation plan (sketch, roomle-ui, based on `fix/room-corners-at-openings`)
+1. Branch roomle-ui from `fix/wall-unit-heights-after-plinth-change` (`8cfd98e71`). Add failing
+   regressions with unchanged library facts: no fabricated insert levels or moved categories.
+   Compile a panel beside a wall unit, a utility unit above a base, and the utility unit with an
+   explicit gap. Assert retained neighbours, vectors, gap and absence of false floor corrections.
+2. Correct unknown mounting in the compiler and docking cleanup. Test a returned group resubmitted
+   unchanged, reciprocal docking, chains of finishing parts, and existing docking with new
+   relations. Keep known floor-unit correction tests as controls. An unrelated article without a
+   relation must not acquire wall mounting merely because it has a positive height attribute.
+3. Verify completion and edit feedback. Keep the existing arrangement fix. The panel must stay
+   beside its wall neighbour and the utility unit must keep its clearance after a carrier/plinth
+   height change, including when a non-touching docking link is lost.
+4. Integrate the served wording and tests in roomle-hi-example. Update
+   [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md) (D34, D35, G34, G40, G63 and affected
+   completion/feedback), [hi-mcp-server.md](../../docs/hi-mcp-server.md), authoring/tool skills
+   and relevant [implementation context](../context/README.md) with the implementation.
+   Do not describe the proposal as current behaviour yet.
+5. Replay both scenarios against the local UI branch and existing library. Isolate the panel-colour
+   failure from placement; inspect the first create/replace result and measured heights, not only
+   the final image after agent recovery. Add a stable utility-room prompt regression: the stored
+   random prompt is not a durable test identifier. Success needs neither an undo-and-merge
+   workaround nor a library change.
 
-1. Verify whether the planner's calculated catalog templates carry `insertLevels` (the
-   compaction already passes them through, `hi-plan-context.ts:654` — no compaction change).
-2. `hi-group-layout.ts` — `isWallUnitArticle` gains the insert-level check (a helper reads
-   `insertLevels` off the catalog article's root modules, across all, any height > 0; the
-   category word and the hood check stay).
-3. The library (HOMAG), if the planner does not fill them: `insertLevelInfos` with the mounting
-   height on the wall-level templates — a library issue like the items of
-   [`../backlog/library-issues.md`](../backlog/library-issues.md).
-4. `__tests__/hi-group-layout-test.ts` — the `article` fixture gains `insertLevels`; new tests:
-   a wall-level panel of another category (`W35O`-like, an insert level, no category word)
-   `rightOf` a wall unit docks to the wall unit's side by the Bottom vectors with no correction;
-   a wall-level article of another category (`HWR_WR600V1`-like, an insert level, no type
-   attribute) `above` a floor unit hangs above it with the D35 gap and no correction; a floor
-   unit that sends a mounting-height attribute in its root overrides is still taken for a floor
-   unit (the catalog is read, never the payload — trace 4); a library whose articles carry no
-   insert levels falls back to the category word; a genuine floor unit `rightOf` a wall unit
-   still continues the floor row (the existing test
-   `puts a floor unit that names a wall unit into the floor row` pins it).
-5. Tests in `__tests__/hi-tool-docking-test.ts` and `__tests__/hi-tool-hints-test.ts` for the
-   inherited behaviour: a wall-level panel merged above a floor unit gets the D35 gap; the hints
-   name a moved wall-level panel with the wall row.
-6. The stored tests then hold: `kitchen-conversation` — the `W35O` at the end of the wall-unit row
-   docked beside `cups` at the wall-unit height; the random utility-room test — the `HWR_WR600V1`
-   hung above the base units by the first create, no undo and no `merge-article-into-group`.
+## Validation performed for this revision
+
+- Read the stored catalog and both run payloads. Executed the actual `compactArticle`,
+  `isWallUnitArticle`, `relationsToDocking` and `dropFloorUnitsOnBaseUnits` from roomle-ui
+  `8cfd98e71`, bundled in memory with the installed esbuild, against the stored catalog and
+  master data. Production source was unchanged.
+- Reproduced the panel moving to the base row; utility `above` becoming `rightOf`; explicit
+  `gapMm: 500` being discarded; and raw Top-to-Bottom docking with that gap being dropped on
+  a kitchen base unit. Confirmed zero nonempty insert-level lists across 111 compacted articles.
+- Existing layout and arrangement suites: **2 files, 139 tests passed**. Command from roomle-ui
+  `packages/web-sdk`:
+
+  ```sh
+  volta run --node 23.5.0 npm run test -- --run packages/homag-intelligence/__tests__/hi-group-layout-test.ts packages/homag-intelligence/__tests__/hi-root-module-arrangement-test.ts
+  ```
+
+  The initial repository-selected runtime failed before tests started because `node:util` did
+  not export `styleText`; the explicit installed runtime above ran successfully.
+- This validates the cause and required branch's baseline, **not an implemented fix**. No new
+  model/planner session or visual verification was run. The acceptance checks remain implementation
+  work.

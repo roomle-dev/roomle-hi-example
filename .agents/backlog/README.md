@@ -10,7 +10,7 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| 73 — A wall-level article of another category is taken for a floor unit | Tell wall-level articles from floor articles by library data rather than a category word; keep an article the agent puts beside a wall unit there | low |
+| 73 — A wall-level article of another category is taken for a floor unit | Explain mounting from the existing library descriptions; preserve explicit wall-row relations and returned docking when category recognition is incomplete. Library unchanged; roomle-ui based on `fix/wall-unit-heights-after-plinth-change` | low |
 | 74 — An island's back row of other widths lands off the front row | Say in the description of `behind` where a turned unit lines up and which way the relations run in a turned row; else an `align` the server derives the offset from | low |
 | 75 — The backsplash of an image kitchen is reported as not buildable | Say in the `notCarried` sentence of `create-or-replace-groups`, library-neutrally, that a generated part may wait for an attribute of the units that switches it on, and drop its kitchen example | medium |
 | 77 — An edit that gives a row a new end leaves a door hinged to the outside | Name the door rule of D84 in the descriptions of the tools that can give a row a new end (swap, delete, exchange, merge) | medium |

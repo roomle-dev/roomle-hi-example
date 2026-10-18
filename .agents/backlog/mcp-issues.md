@@ -23,7 +23,7 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 73 | [A wall-level article of another category is taken for a floor unit](#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit) | defect | analysed: roomle-ui `isWallUnitArticle`, `relationsToDocking` (`hi-group-layout.ts`) — the classifier knows a wall unit by a category word only; the kernel's insert levels reach the tool and the tool does not read them, and the stored templates carry none. Fix proposed in [the analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md): the classifier reads the insert levels, the library fills them if the planner does not, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6-astra | |
+| 73 | [A wall-level article of another category is taken for a floor unit](#73-a-wall-level-article-of-another-category-is-taken-for-a-floor-unit) | defect | analysed: roomle-hi-example served rules and tool descriptions; roomle-ui relation interpretation and docking cleanup. [The analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md) proposes preserving mounting intent when category recognition is incomplete, using the existing library unchanged; based on roomle-ui `fix/wall-unit-heights-after-plinth-change` | low | gpt-6-astra | |
 | 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, `behind`) — the description says neither where a turned unit lines up with a wider neighbour nor which way the relations run in a turned row; roomle-ui `pairOf` for `behind` (`hi-group-layout.ts`) — the compile pins the turned unit at the neighbour's left end with offset 0 and no field to name the other end. Fix proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md): the served text first, the `align` the server derives the offset from along the neighbour's width axis as the fallback, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6.1-sol | |
 | 75 | [The backsplash of an image kitchen is reported as not buildable](#75-the-backsplash-of-an-image-kitchen-is-reported-as-not-buildable) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the `notCarried` sentence of `create-or-replace-groups`) — the sentence presents a not-carried attribute as a part the library will not build and asks the agent to report it; roomle-ui `compactMasterData` (`hi-plan-context.ts`) — the attribute that switches the generated part on is not customer-facing, so the vocabulary and `find-attributes` do not serve it and the agent cannot find it. Fix proposed in [the analysis](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md): the served sentence and the served vocabulary (roomle-ui, based on `fix/room-corners-at-openings`); the library data (the switch's `userRight`) as the smaller alternative | medium | gpt-6-astra | |
 | 77 | [An edit that gives a row a new end leaves a door hinged to the outside](#77-an-edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, the descriptions of the edit tools) — the rule of D84 reaches the chats only through `get-authoring-rules`, which a conversation of edits fetches not, and the descriptions of the five tools that can give a row a new end do not name it. Fix proposed in [the analysis](../bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md): one sentence in the five descriptions, in roomle-hi-example only | medium | gpt-6.1-sol | |
@@ -43,28 +43,28 @@ default and docks it at the free end of the floor leg, where a wall-unit panel s
 The same happens to `above`: the open utility wall units `HWR_WR600V1` (category "Utility",
 `mod_TypeElement` WallUnit in the library data) `above` a base unit are taken for floor units and put
 `rightOf` it — "root 'openwall1' is no wall unit - it stands rightOf … instead of above it" —; the agent
-needs an undo and two `merge-article-into-group` calls with `mod_PlacementLevels` WallHanging to hang
-them.
+recovers with an undo and two `merge-article-into-group` calls using explicit Top-to-Bottom docking,
+a 500 mm gap and attribute overrides. The recovery does not establish which overrides are necessary.
 
-**Cause.** Analysed in [the bug analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md).
-`isWallUnitArticle` (`hi-group-layout.ts`) knows a wall unit by the words "Wall Units" in
-the category, or a hood; a wall-level article of another category counts as a floor unit, and the
-correction for a floor unit beside a wall unit moves it. The correction changes what the agent
-asked for instead of carrying it out ([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort):
-correct only where the intent is clear). The kernel's neutral mounting data — the insert levels
-of the root modules — reaches the tool and the classifier does not read it; the stored templates
-carry none, so no neutral signal exists today.
+**Cause.** [The analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md)
+traces `isWallUnitArticle` (`hi-group-layout.ts:70`) and the corrections at `:244` and `:270`:
+a category not recognized as wall mounting is treated as proof of floor mounting. The library
+descriptions already identify both articles correctly. `dropFloorUnitsOnBaseUnits`
+(`hi-tool-docking.ts:982`) makes the same assumption for returned docking on a later replace.
 
-**To do.** Fix, proposed in [the analysis](../bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md),
-in roomle-ui `isWallUnitArticle` (`hi-group-layout.ts`, based on `fix/room-corners-at-openings`):
-tell wall-level articles from floor articles by the kernel's neutral mounting data — an insert
-level above the floor on the article's root modules — rather than by a category word; the library
-data fills the insert levels if the planner does not. An article `rightOf` a wall unit docks
-beside it and a wall-level article `above` a floor unit hangs above it. The corrections stay for
-genuine floor units, where moving them to the floor row is right.
+**To do.** In roomle-hi-example, explain choosing mounting from the existing descriptions and
+attributes, with `above` for hanging and `rightOf` / `leftOf` for continuing that wall row,
+including its finishing parts. In roomle-ui, based on `fix/wall-unit-heights-after-plinth-change`
+(`8cfd98e71`), preserve those relations and returned docking when mounting is unknown to the
+category classifier; retain floor corrections only with affirmative floor evidence. Check the
+row completion and edit hints too. No change to the library's calculation, templates, categories
+or insert-level output. Preserve the base branch's measured-clearance arrangement behaviour.
 
-**Test.** `__tests__/hi-group-layout-test.ts`: a wall-level panel `rightOf` a wall unit docks to the
-wall unit's side, and a wall-level article of another category `above` a floor unit hangs above it.
+**Test.** With the unchanged catalog and no insert levels: a panel beside a wall unit retains
+that neighbour; a utility wall unit `above` a base retains its relation and explicit `gapMm`;
+a replace retains returned Top-to-Bottom docking. Cover chained finishing parts, known floor
+units, and clearance after a carrier/plinth height change. Verify the default gap separately:
+the stored utility heights produce zero, which does not establish the recovery's 500 mm gap.
 
 **Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 54 (`random-1-utility-room-right-wall-with-wall-units`, turn 2, the `create-or-replace-groups`): `openwall1` and `openwall2` (`HWR_WR600V1`) `above` the two `HWR_UB600`, the corrections "is no wall unit - it stands rightOf …" on both.
 

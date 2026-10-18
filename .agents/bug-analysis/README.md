@@ -42,8 +42,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 |---|---|---|
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | RML-18124; library #60 |
 | [A corner group stands in front of the adjoining wall's window](corner-group-in-front-of-adjoining-wall-window.md) | Fixed | RML-18201; backlog #66 |
-| [The planning skills are served by a tool only](planning-skills-served-by-a-tool-only.md) | Fixed | RML-18148 (follow-up); backlog #67 |
-| [The room corners leave out a corner where an opening meets a wall](room-corners-left-out-at-openings.md) | Fixed | backlog #68 |
 | [The wall units hang at two heights after a plinth height in the group attributes](wall-units-hang-at-two-heights-after-plinth-change.md) | Open — validated; shared arrangement fix and unit-test plan (roomle-ui, based on `fix/room-corners-at-openings`) | backlog #72 |
 | [A wall-level article of another category is taken for a floor unit](wall-level-article-of-another-category-taken-for-floor-unit.md) | Fixed — locally verified on branches; pending landing (roomle-ui based on `fix/wall-unit-heights-after-plinth-change`) | former backlog #73 |
 | [An island's back row of other widths lands off the front row](islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — fix proposed (roomle-hi-example served text; roomle-ui fallback, based on `fix/room-corners-at-openings`) | backlog #74 |

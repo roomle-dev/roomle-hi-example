@@ -91,11 +91,12 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 |---|---|---|
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](bug-analysis/sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | 2026-10-10 |
 | [A corner group stands in front of the adjoining wall's window](bug-analysis/corner-group-in-front-of-adjoining-wall-window.md) | Fixed | 2026-10-16 |
-| [The planning skills are served by a tool only](bug-analysis/planning-skills-served-by-a-tool-only.md) | Fixed | 2026-10-17 |
 | [The wall units hang at two heights after a plinth height in the group attributes](bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md) | Open — implemented and locally verified on branch; pending landing | 2026-10-18 |
 | [A wall-level article of another category is taken for a floor unit](bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md) | Fixed — locally verified on branches; pending landing | 2026-10-18 |
 | [The backsplash of an image kitchen is reported as not buildable](bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md) | Fixed — closed as resolved by the user; roomle-ui change pending landing | 2026-10-18 |
 | [An edit that gives a row a new end leaves a door hinged to the outside](bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md) | Open — implemented and unit verified; live model acceptance awaiting approval | 2026-10-18 |
+| [An island's back row of other widths lands off the front row](bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — reproduced; served-text fix first, endpoint-mode alignment as fallback | 2026-10-18 |
+| [A swap of a widened unit is refused for want of a docking vector](bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md) | Open — verified; calculation-error feedback and width-dependent door descriptions proposed | 2026-10-18 |
 
 ### Feature Analyses
 
@@ -114,7 +115,6 @@ done. The analysis and the report are the same document — the report is append
 | Document | Status | Last touched |
 |---|---|---|
 | [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-06 |
-| [Faster MCP test runs](refactoring-analysis/faster-mcp-test-runs.md) | Done | 2026-10-17 |
 
 ### Benchmarks & Performance Analyses
 

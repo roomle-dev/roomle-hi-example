@@ -8,7 +8,6 @@
 2. **Read [`docs/hi-mcp-server.md`](./docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the comprehensive reference for the HI MCP server implementation and usage. **Read [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md)** before changing a tool, a served rule, a guard or a correction — the single reference for how the MCP server behaves towards an agent, with every decision, guard, correction and feedback message.
 3. **Read [`.agents/README.md`](./.agents/README.md)** for the complete digital brain index, separating living reference from historical records.
 4. **Treat documentation as part of the task, not a follow-up.** Every analysis produces a document, and every change to productive code updates one — see [Where Documentation Goes](#where-documentation-goes).
-5. **For GitHub Copilot users:** See [`.github/copilot-instructions.md`](./.github/copilot-instructions.md) for Copilot-specific guidance.
 
 ## 1. Think Before Coding
 
@@ -161,7 +160,6 @@ The start script (`npm start`) provides:
 │   ├── library-information/      # Generated library data: articles, attributes, materials
 │   └── images/                   # Test plan and example screenshots
 └── .github/
-    ├── copilot-instructions.md   # GitHub Copilot specific instructions
     └── workflows/
         └── deploy-cloudflare.yml # Deploys hi-mcp to Cloudflare: PRD on release/cloudflare, DEV on release/cloudflare.dev
 ```

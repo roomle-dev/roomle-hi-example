@@ -361,8 +361,8 @@ The other documents:
   and the `skills/list` entries; a short paragraph after the tool table names the two handlers.
 - **`.agents/skills/hi-mcp-server.md`** (line 64) and **`.agents/skills/hi-mcp-tools.md`** (after
   the tool table): one sentence each.
-- **`AGENTS.md`** (line 112) and **`.github/copilot-instructions.md`** (line 120): the description
-  of `skills.ts` adds "the manifest of the Skills extension".
+- **`AGENTS.md`** (line 112): the description of `skills.ts` adds "the manifest of the Skills
+  extension".
 - **Backlog**: item 67 leaves `.agents/backlog/mcp-issues.md` (its overview row and its section)
   and `.agents/backlog/README.md` (line 13).
 

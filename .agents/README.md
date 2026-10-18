@@ -235,4 +235,3 @@ Add to `docs/` folder and update the main README.md if appropriate.
 ## See Also
 
 - [AGENTS.md](../AGENTS.md) — AI assistant instructions and workflow
-- [.github/copilot-instructions.md](../.github/copilot-instructions.md) — GitHub Copilot specific guidance

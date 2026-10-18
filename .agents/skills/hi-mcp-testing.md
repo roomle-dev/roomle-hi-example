@@ -310,6 +310,36 @@ sections go straight into `report.md`.
 
 The session folder is shared as it is, e.g. zipped: `report.md` links only files inside it.
 
+#### The report scripts
+
+Two scripts build `report.md` from the session, for a single-model and a multi-model run alike:
+`extract-run-facts.js` reads `tests.json`, `results.json` and every run's `run.json`,
+`plan-context.json` and `planner-calls.json` into `$SESSION/facts.json` — per run the test, the
+turns with the tool calls' corrections, `notLoaded` and errors, the shortened answers, the groups
+after the chat and the planner calls the server sent. `build-test-report.js` renders the report from
+the facts and the evaluation, `$SESSION/evals.json` — the content that cannot be derived from the
+runs:
+
+```bash
+node .agents/scripts/extract-run-facts.js "$SESSION" > "$SESSION/facts.json"
+node .agents/scripts/build-test-report.js "$SESSION" # reads facts.json and evals.json, writes report.md
+```
+
+`evals.json`:
+
+| Field | Content |
+|---|---|
+| `runs` | per run, keyed `<model>\|<NN>` (`gpt-6.1-sol\|01`): `verdict`, `bug`, `bugText`, `doors`, `evaluation` |
+| `header.planner` | the planner cell of the header row |
+| `header.reasoningEffort` | optional, per model; its presence adds the Reasoning effort column |
+| `frontSections` | the sections between the random tests and the run sections, in order, `{ heading, body }`; a body links a run as `[[01]]`, with more than one model as `[[gpt-5-mini 01]]` |
+| `randomKeep` | per random test (`"36"`): why to keep it as a fixed test |
+| `skipped` | optional, one line per skipped test, for the Skipped section at the end |
+
+The builder checks the evaluation against the runs and the `[[…]]` refs and writes nothing when they
+do not resolve. The template below is the content spec: when the script's rendering and the template
+disagree, the template wins; fix the script.
+
 The header row counts fixed and random tests separately. Preserve the `Random:` titles in the
 summary and run headings. Each random run names its origin; the "Random tests" section lists the
 random cases with their JSON. A random case worth keeping can be copied from there into

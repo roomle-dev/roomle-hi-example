@@ -6,7 +6,7 @@ one anchor root (`hi-group-placement.ts`), and `place-group` and a placement by 
 or corner position from the group's geometry (`hi-plan-space.ts`, `hi-wall-placement.ts`). All files
 are in roomle-ui, `packages/web-sdk/packages/homag-intelligence/src/`; the relations are translated
 there because the translation needs the calculated plan (D72). The rules the agent is given are in
-[hi-mcp-behaviour.md §7](../hi-mcp-behaviour.md#7-positioning). [Back to the overview](./README.md).
+[hi-mcp-behaviour.md §7](../../docs/hi-mcp-behaviour.md#7-positioning). [Back to the overview](./README.md).
 
 ## Coordinate conventions
 

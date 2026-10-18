@@ -148,7 +148,6 @@ options; the ligna-store does not reference the tool's result):
 | [`docs/hi-mcp-server.md:664-673`](../../docs/hi-mcp-server.md#L664-L673) | the tool reference entry |
 | [`hi-mcp-server/README.md:586-592`](../../hi-mcp/hi-mcp-server/README.md#L586-L592) | the tool reference entry |
 | [`.agents/skills/hi-mcp-tools.md:49, 379-387`](../skills/hi-mcp-tools.md) | the tool table and the reference block |
-| [`.github/copilot-instructions.md:452`](../../.github/copilot-instructions.md#L452) | "(a perspective and a top view)" |
 | [`docs/ai-chat.md:219`](../../docs/ai-chat.md#L219), [`hi-mcp-testing.md`](../skills/hi-mcp-testing.md) | unchanged — "its two renders" stays true; the test runs store all four snapshot images themselves |
 
 ## 5. Target shape

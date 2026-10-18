@@ -820,7 +820,7 @@ shape, and for `delete-article-and-compact` whether the gap was closed — plus 
 Attribute commands wait for their load's kernel planning-situation callbacks and calculated follow-up
 loads. An unrelated user move does not complete the command. Their planner result and the server's
 library-change feedback therefore read attributes derived from the actual placement, including an
-insertion height the library adjusts. The [command implementation](implementation/tool-executors.md#the-command-tools)
+insertion height the library adjusts. The [command implementation](../.agents/context/tool-executors.md#the-command-tools)
 describes callback ownership, operation-slot lifetime and the guarding planner tests.
 
 ### undo, redo

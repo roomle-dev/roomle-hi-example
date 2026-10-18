@@ -54,6 +54,7 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
 | [vercel-ai-sdk-chat.md](./skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: provider selection, server-side auth, @ai-sdk/mcp, streamText route | Implementing the AI chat window (RML-17984), Vercel AI SDK, MCP client integration |
 | [hi-mcp-testing.md](./skills/hi-mcp-testing.md) | "Test the MCP": a temporary subset of `docs/test-prompts.json` (default every test, `gpt-5-mini`) run by `run-hi-mcp-tests.js` into `.temp/result/<session>/<model>/`, `report.md` with plan snapshot ids, images, evaluation and bug verdicts; the run script `run-hi-mcp-prompt.js` (a plan, operations, prompts and an image in headless Chromium, snapshot, plan snapshot id, planner calls) | The user asks to "test the mcp"; testing prompts or models against the real planner |
+| [hi-analysis.md](./skills/hi-analysis.md) | "Analyse the bug" / "analyse the feature" / "analyse the refactoring": writing the analysis in `bug-analysis/`, `feature-analysis/` or `refactoring-analysis/` — what it must cover, the affected repositories it names first, where the fix lives (never the library's calculation) | The user asks to "analyse the bug", "analyze the bug", "bug analysis", "analyse the feature", "feature analysis", "analyse the refactoring" or "refactoring analysis"; investigating a defect, a feature or a refactoring |
 | [hi-analysis-cleanup.md](./skills/hi-analysis-cleanup.md) | "Cleanup analyses": clean up `bug-analysis/`, `feature-analysis/` and `refactoring-analysis/` — verify every analysis, promote the durable outcome of the landed ones into the living reference, decisions, ADRs, backlog and skills, delete them, fix the links, rebuild this index | The user says "cleanup analyses" or "cleanup analysis"; reviewing or tidying the analysis folders |
 | [hi-backlog-cleanup.md](./skills/hi-backlog-cleanup.md) | "Cleanup backlog": the backlog as open todos only — verify every item against the code, remove what landed, strip history, refresh the code references | The user says "cleanup backlog"; reviewing or updating the backlog |
 | [update-planning-results.md](./skills/update-planning-results.md) | "Update planning results": `docs/planning-results.md` regenerated — every kitchen image of `docs/images` planned by the HI chat (default `gpt-6-astra`) with `update-planning-results.js`, the plan snapshots with their ligna-store links, the top, perspective and perspective object images | The user says "update planning results" |
@@ -211,6 +212,7 @@ Every analysis document should include:
 | What you produced | Where it goes | Lifecycle |
 |---|---|---|
 | **Living reference** — how things work now | `.agents/skills/` or `docs/` | Updated when behaviour changes; says what holds today — never what was wrong, when something was solved, or a ticket number |
+| **Implementation context** — how the code is built | `.agents/context/` | Living reference; every new feature is documented and added here, every change requires an update here |
 | **Historical record** — analysis, benchmark, refactoring | `.agents/<analysis-type>/` | Never updated after close-out; deleted by ["cleanup analyses"](skills/hi-analysis-cleanup.md) once the work has landed |
 | **Decision** — why code is shaped this way | `.agents/decisions/` (create folder if needed) | Living reference |
 | **ADR** — architecture decision record | `.agents/decisions/` | Living reference |
@@ -223,7 +225,8 @@ Every analysis document should include:
 2. **Bug Analysis**: Add to `.agents/bug-analysis/` before fixing
 3. **Feature Analysis**: Add to `.agents/feature-analysis/` before implementing
 4. **Refactoring Analysis**: Add to `.agents/refactoring-analysis/` before refactoring
-5. **Update this index**: Add a line to the appropriate table
+5. **Implementation context**: Add to `.agents/context/` when a feature is added or the implementation changes
+6. **Update this index**: Add a line to the appropriate table
 
 ### For End Users
 
@@ -232,4 +235,3 @@ Add to `docs/` folder and update the main README.md if appropriate.
 ## See Also
 
 - [AGENTS.md](../AGENTS.md) — AI assistant instructions and workflow
-- [.github/copilot-instructions.md](../.github/copilot-instructions.md) — GitHub Copilot specific guidance

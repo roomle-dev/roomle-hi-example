@@ -8,7 +8,6 @@
 2. **Read [`docs/hi-mcp-server.md`](./docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the comprehensive reference for the HI MCP server implementation and usage. **Read [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md)** before changing a tool, a served rule, a guard or a correction — the single reference for how the MCP server behaves towards an agent, with every decision, guard, correction and feedback message.
 3. **Read [`.agents/README.md`](./.agents/README.md)** for the complete digital brain index, separating living reference from historical records.
 4. **Treat documentation as part of the task, not a follow-up.** Every analysis produces a document, and every change to productive code updates one — see [Where Documentation Goes](#where-documentation-goes).
-5. **For GitHub Copilot users:** See [`.github/copilot-instructions.md`](./.github/copilot-instructions.md) for Copilot-specific guidance.
 
 ## 1. Think Before Coding
 
@@ -130,6 +129,8 @@ The start script (`npm start`) provides:
 │   │   └── README.md
 │   ├── bug-analysis/             # Bug root-cause analyses
 │   │   └── README.md
+│   ├── context/                  # The digital brain for the implementation: architecture, server, tool executors, layout and placement, pages and chat, deployment and tests
+│   │   └── README.md
 │   ├── feature-analysis/         # Feature investigations
 │   │   └── README.md
 │   ├── images/                   # Images of the backlog and the analyses
@@ -146,7 +147,6 @@ The start script (`npm start`) provides:
 │   ├── ai-chat.md                # The AI chat of the example: providers, models, images
 │   ├── hi-mcp-poc-presentation.md # Proof of concept presentation
 │   ├── user-guide/README.md      # User guide: what the HI MCP does, the ways to use it, prompts, limits
-│   ├── implementation/           # Implementation: architecture, server, tool executors, layout and placement, pages and chat, deployment and tests
 │   ├── setup/                    # Setup guides
 │   │   ├── local-mcp-server.md   # Install the local MCP server and connect the MCP clients
 │   │   ├── cloudflare-mcp-server.md # Deploy the MCP server to Cloudflare Containers
@@ -160,7 +160,6 @@ The start script (`npm start`) provides:
 │   ├── library-information/      # Generated library data: articles, attributes, materials
 │   └── images/                   # Test plan and example screenshots
 └── .github/
-    ├── copilot-instructions.md   # GitHub Copilot specific instructions
     └── workflows/
         └── deploy-cloudflare.yml # Deploys hi-mcp to Cloudflare: PRD on release/cloudflare, DEV on release/cloudflare.dev
 ```
@@ -181,6 +180,7 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 | [`.agents/skills/vercel-ai-sdk-chat.md`](./.agents/skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: providers, server-side auth, @ai-sdk/mcp, streamText |
 | [`.agents/skills/hi-mcp-testing.md`](./.agents/skills/hi-mcp-testing.md) | The user asks to **"test the mcp"** (runs the tests of `docs/test-prompts.json` with `run-hi-mcp-tests.js`, writes an evaluated report); testing the HI MCP end to end: running a prompt through the chat with a real model and planner, the stored snapshot result |
 | [`.agents/skills/hi-mcp-benchmarking.md`](./.agents/skills/hi-mcp-benchmarking.md) | Benchmarking the HI agent: measuring the performance, where the time goes, why the agent is slow, comparing the speed before and after a change — `benchmark-hi-mcp-runs.js` over test runs, the analysis and its document in `.agents/benchmarks/` |
+| [`.agents/skills/hi-analysis.md`](./.agents/skills/hi-analysis.md) | The user asks to **"analyse the bug"** / "analyze the bug" / "bug analysis", **"analyse the feature"** / "feature analysis" or **"analyse the refactoring"** / "refactoring analysis": writing the analysis — what it must cover, the affected repositories it names first, where the fix lives (never the library's calculation) |
 | [`.agents/skills/hi-analysis-cleanup.md`](./.agents/skills/hi-analysis-cleanup.md) | The user says **"cleanup analyses"** / "cleanup analysis": clean up `.agents/bug-analysis/`, `.agents/feature-analysis/` and `.agents/refactoring-analysis/` — close out every analysis whose work has landed: verify it, promote its durable outcome into the living reference, decisions, ADRs and backlog, delete it, fix the links, rebuild the index |
 | [`.agents/skills/hi-backlog-cleanup.md`](./.agents/skills/hi-backlog-cleanup.md) | The user says **"cleanup backlog"**: verify every backlog item against the code, remove what landed, strip history, refresh the code references; reviewing or updating the backlog |
 | [`.agents/skills/update-planning-results.md`](./.agents/skills/update-planning-results.md) | The user says **"update planning results"**: regenerate `docs/planning-results.md` — every kitchen image of `docs/images` planned by the HI chat with `update-planning-results.js`, the plan snapshots, the ligna-store plan links and the top, perspective and perspective object images, on a new branch |
@@ -338,6 +338,7 @@ The `.agents/` folder serves as the "digital brain" for roomle-hi-example, conta
 ├── README.md                     # Digital brain index (this file)
 ├── benchmarks/                   # Benchmarks and performance analyses
 ├── bug-analysis/                 # Bug root-cause analyses (written before fix)
+├── context/                      # The digital brain for the implementation in this repository
 ├── feature-analysis/             # Feature investigations and decisions
 ├── images/                       # Images of the backlog and the analyses
 ├── refactoring-analysis/         # Refactoring analyses with reports
@@ -346,6 +347,11 @@ The `.agents/` folder serves as the "digital brain" for roomle-hi-example, conta
 ```
 
 **IMPORTANT**: All scripts in `.agents/scripts/` MUST be JavaScript (Node.js), not Python. This ensures consistency with the repository's primary language and tooling.
+
+`.agents/context/` is the digital brain for the implementation in this repository — how the code
+is built: the processes, the modules and their responsibilities, the protocols between them.
+Every new feature is documented and added to `.agents/context/`; every change to the
+implementation requires an update in `.agents/context/`.
 
 ### Analysis Documents
 
@@ -357,7 +363,7 @@ Every change to productive code should be accompanied by analysis documents:
 | Feature Analysis | `.agents/feature-analysis/` | "analyse the feature", "analyze the feature", "feature analysis" | Open, Implemented, Rejected |
 | Refactoring Analysis | `.agents/refactoring-analysis/` | "analyse the refactoring", "analyze the refactoring", "refactoring analysis" | Open, Done |
 
-Each analysis document follows the same lifecycle: written **before** the work, closed out **after** the work.
+Each analysis document follows the same lifecycle: written **before** the work, closed out **after** the work. Writing one follows [the analysis skill](./.agents/skills/hi-analysis.md).
 
 **Every analysis names the affected repositories first.** A bug, feature or refactoring analysis
 starts, right after its header block, with a short list of the repositories the work changes, one

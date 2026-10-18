@@ -81,7 +81,7 @@ and registers the tools, the skill resources and the handlers of the Skills exte
 
 The rules go out twice: in `initialize` for clients that pass server instructions to the model, and
 from `get-authoring-rules` for those that do not — the chat backend does not
-([hi-mcp-behaviour.md §5](../hi-mcp-behaviour.md#5-information-the-server-provides)). The text is a
+([hi-mcp-behaviour.md §5](../../docs/hi-mcp-behaviour.md#5-information-the-server-provides)). The text is a
 template string in this file; there is no separate rules file.
 
 ### Tools
@@ -119,7 +119,7 @@ oneAtATime(recorded(tool, executor))`: serialized and recorded for undo
 
 The skill files also go to a host that loads skills itself by the MCP extension
 `io.modelcontextprotocol/skills` (SEP-2640) — the same files `get-skill` serves, as they are
-([hi-mcp-behaviour.md §5.6](../hi-mcp-behaviour.md#56-planning-skills-get-skill)):
+([hi-mcp-behaviour.md §5.6](../../docs/hi-mcp-behaviour.md#56-planning-skills-get-skill)):
 
 - `SKILL_ENTRIES` is built once when the module loads, like the skill index; the server itself is
   created per request.
@@ -231,7 +231,7 @@ request cannot reach another page after a reconnect.
 
 The arguments travel as JSON, which turns `undefined` into `null` — pass every parameter explicitly
 (`moduleId: args.moduleId ?? null`). Which tool uses which method, and why:
-[hi-mcp-behaviour.md §4](../hi-mcp-behaviour.md#4-how-a-tool-call-runs).
+[hi-mcp-behaviour.md §4](../../docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs).
 
 ## Undo and redo
 
@@ -281,8 +281,8 @@ event of the call arrives after its answer, so the call waits for none.
 4. The plan must now equal the other state. If it does not, the steps are taken back the other way
    and the result says so.
 
-The behaviour and every message: [hi-mcp-behaviour.md §6 undo, redo](../hi-mcp-behaviour.md#undo-redo)
-and [§8.8](../hi-mcp-behaviour.md#88-undo-and-redo).
+The behaviour and every message: [hi-mcp-behaviour.md §6 undo, redo](../../docs/hi-mcp-behaviour.md#undo-redo)
+and [§8.8](../../docs/hi-mcp-behaviour.md#88-undo-and-redo).
 
 ## Before you change these files
 
@@ -296,4 +296,4 @@ and [§8.8](../hi-mcp-behaviour.md#88-undo-and-redo).
 - **The record starts over with a page.** `planHistory` resets on `hello`; the agent's group ids
   live in the planner page (roomle-ui `HiToolState`) and start over with it.
 - **A rule or a message changed here** changes the server's behaviour — update
-  [hi-mcp-behaviour.md](../hi-mcp-behaviour.md) in the same commit.
+  [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md) in the same commit.

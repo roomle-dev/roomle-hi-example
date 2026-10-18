@@ -196,7 +196,7 @@ The same files are served through the extension too, unchanged, and `get-skill` 
      state.
    - §5.6 and §8.9 of `docs/hi-mcp-behaviour.md`.
    - The server and skill references: `docs/hi-mcp-server.md`,
-     `docs/implementation/mcp-server.md`, `.agents/skills/hi-mcp-server.md`,
+     `.agents/context/mcp-server.md`, `.agents/skills/hi-mcp-server.md`,
      `.agents/skills/hi-mcp-tools.md` and `hi-mcp/hi-mcp-server/README.md`.
    - Backlog item 67 is removed.
 
@@ -357,7 +357,7 @@ The other documents:
 - **`docs/hi-mcp-server.md`** (lines 396-406), **`hi-mcp/hi-mcp-server/README.md`** (lines
   363-367) and **`docs/planning-skills/README.md`** (line 7): the skills are also served through
   the extension.
-- **`docs/implementation/mcp-server.md`**: the served-text table (line 77) gets the skill resources
+- **`.agents/context/mcp-server.md`**: the served-text table (line 77) gets the skill resources
   and the `skills/list` entries; a short paragraph after the tool table names the two handlers.
 - **`.agents/skills/hi-mcp-server.md`** (line 64) and **`.agents/skills/hi-mcp-tools.md`** (after
   the tool table): one sentence each.

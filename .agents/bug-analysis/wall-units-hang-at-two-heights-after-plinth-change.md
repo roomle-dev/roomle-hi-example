@@ -153,7 +153,7 @@ run cited in the original analysis. It does establish the wall-pair defect above
 5. **Replay the failing payload with the actual planner/library** and inspect the saved raw group,
    final plan context and images. Verify after the final callback/recalculation, then undo and redo.
    Only then mark the fix verified and update D35/D42/D59 and the relevant implementation reference
-   in `docs/hi-mcp-behaviour.md`/`docs/implementation/`, plus roomle-ui's HI guidance. Describe the
+   in `docs/hi-mcp-behaviour.md`/`.agents/context/`, plus roomle-ui's HI guidance. Describe the
    new invariant and guarding tests there; keep the investigation here until the fix lands.
 
 This repairs the shared ownership point. It also benefits `change-group-attribute` and module

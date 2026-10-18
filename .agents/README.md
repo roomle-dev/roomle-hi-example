@@ -212,6 +212,7 @@ Every analysis document should include:
 | What you produced | Where it goes | Lifecycle |
 |---|---|---|
 | **Living reference** — how things work now | `.agents/skills/` or `docs/` | Updated when behaviour changes; says what holds today — never what was wrong, when something was solved, or a ticket number |
+| **Implementation context** — how the code is built | `.agents/context/` | Living reference; every new feature is documented and added here, every change requires an update here |
 | **Historical record** — analysis, benchmark, refactoring | `.agents/<analysis-type>/` | Never updated after close-out; deleted by ["cleanup analyses"](skills/hi-analysis-cleanup.md) once the work has landed |
 | **Decision** — why code is shaped this way | `.agents/decisions/` (create folder if needed) | Living reference |
 | **ADR** — architecture decision record | `.agents/decisions/` | Living reference |
@@ -224,7 +225,8 @@ Every analysis document should include:
 2. **Bug Analysis**: Add to `.agents/bug-analysis/` before fixing
 3. **Feature Analysis**: Add to `.agents/feature-analysis/` before implementing
 4. **Refactoring Analysis**: Add to `.agents/refactoring-analysis/` before refactoring
-5. **Update this index**: Add a line to the appropriate table
+5. **Implementation context**: Add to `.agents/context/` when a feature is added or the implementation changes
+6. **Update this index**: Add a line to the appropriate table
 
 ### For End Users
 

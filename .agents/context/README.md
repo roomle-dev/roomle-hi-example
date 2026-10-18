@@ -4,11 +4,14 @@ How the HI MCP is built: the processes, the modules and their responsibilities, 
 between them, and what to know before changing them. Written for developers who change or extend
 the code.
 
+This folder is the digital brain for the implementation in this repository: every new feature is
+documented and added here, and every change to the implementation requires an update here.
+
 This documentation describes **how** the code works. **What** the server does towards an agent and
 **why** — the rules it serves, every decision, guard, correction and feedback message — is in
-[hi-mcp-behaviour.md](../hi-mcp-behaviour.md); this documentation links to it instead of repeating
-it. How to use the HI MCP is in the [user guide](../user-guide/README.md), how to install and
-deploy it in [setup](../setup/).
+[hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md); this documentation links to it instead of repeating
+it. How to use the HI MCP is in the [user guide](../../docs/user-guide/README.md), how to install and
+deploy it in [setup](../../docs/setup/).
 
 | Page | Covers |
 | ---- | ------ |
@@ -44,7 +47,7 @@ ligna-store chat (runs in the page) ──────── MCP ─────
 - **A tool that changes the plan is one planner call.** The server sends
   `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`, and roomle-ui performs the
   whole tool as a tool command: corrections, ids, docking, placement, materials, hints (D71 of
-  [hi-mcp-behaviour.md](../hi-mcp-behaviour.md#3-decisions)).
+  [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)).
 - **The page executes only allow-listed methods** — the ones `planner-api.ts` calls. Nothing else of
   the planner API (placing an order, overwriting the plan) is reachable from the server.
 - **The planner does the planning.** No tool computes root-module positions. The tool commands turn
@@ -97,7 +100,7 @@ ligna-store chat (runs in the page) ──────── MCP ─────
    for the status line; the page passes both to the chat window (`planningAssistantOutput`).
 
 The same call from an external MCP client skips steps 1, 2 and 9 and has no `client` binding.
-[hi-mcp-behaviour.md §4](../hi-mcp-behaviour.md#4-how-a-tool-call-runs) describes the call from the
+[hi-mcp-behaviour.md §4](../../docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs) describes the call from the
 agent's side.
 
 ## Repository map
@@ -183,7 +186,7 @@ the lifetime of the process:
 - **The served text is the server's interface.** The instructions, `AUTHORING_RULES` and the tool
   descriptions in `hi-mcp-server.ts`, and every correction, hint and error message — those of the
   tool commands in roomle-ui —, are read by the agents, quoted in
-  [hi-mcp-behaviour.md](../hi-mcp-behaviour.md), and checked by tests. Change both in the same
+  [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md), and checked by tests. Change both in the same
   change: a message of a tool command with the behaviour reference that quotes it.
 - **The log format is parsed.** `[hi-mcp] tool <name> args|feedback|error <json>` is read by
   `run-hi-mcp-prompt.js` to collect the tool calls of a turn.

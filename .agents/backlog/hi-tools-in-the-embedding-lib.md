@@ -282,7 +282,7 @@ browser makes no request to workers.dev.
      the server;
    - a new decision row in `docs/hi-mcp-behaviour.md` §3, and its §4 rewritten (how a tool call
      runs);
-   - `docs/implementation/`, `docs/hi-mcp-server.md`, the skills, `AGENTS.md`,
+   - `.agents/context/`, `docs/hi-mcp-server.md`, the skills, `AGENTS.md`,
      `.github/copilot-instructions.md` and the READMEs.
 
 ### 4.4 Teardown (last)
@@ -393,7 +393,7 @@ Decided by the user:
   - the "Connecting an MCP client" sections of `docs/hi-mcp-server.md` and
     `hi-mcp/hi-mcp-server/README.md`;
   - the cloud and session parts of `docs/user-guide/README.md`;
-  - the bridge and launcher parts of `docs/implementation/`;
+  - the bridge and launcher parts of `.agents/context/`;
   - `hi-mcp/QUICKSTART.md` and `hi-mcp/hi-mcp-server/QUICKSTART.md`.
 - **Skills:** `.agents/skills/hi-mcp-cloudflare-deployment.md` goes;
   `.agents/skills/hi-mcp-server.md` is rewritten for the embedding-lib.

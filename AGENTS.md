@@ -130,6 +130,8 @@ The start script (`npm start`) provides:
 │   │   └── README.md
 │   ├── bug-analysis/             # Bug root-cause analyses
 │   │   └── README.md
+│   ├── context/                  # The digital brain for the implementation: architecture, server, tool executors, layout and placement, pages and chat, deployment and tests
+│   │   └── README.md
 │   ├── feature-analysis/         # Feature investigations
 │   │   └── README.md
 │   ├── images/                   # Images of the backlog and the analyses
@@ -146,7 +148,6 @@ The start script (`npm start`) provides:
 │   ├── ai-chat.md                # The AI chat of the example: providers, models, images
 │   ├── hi-mcp-poc-presentation.md # Proof of concept presentation
 │   ├── user-guide/README.md      # User guide: what the HI MCP does, the ways to use it, prompts, limits
-│   ├── implementation/           # Implementation: architecture, server, tool executors, layout and placement, pages and chat, deployment and tests
 │   ├── setup/                    # Setup guides
 │   │   ├── local-mcp-server.md   # Install the local MCP server and connect the MCP clients
 │   │   ├── cloudflare-mcp-server.md # Deploy the MCP server to Cloudflare Containers
@@ -339,6 +340,7 @@ The `.agents/` folder serves as the "digital brain" for roomle-hi-example, conta
 ├── README.md                     # Digital brain index (this file)
 ├── benchmarks/                   # Benchmarks and performance analyses
 ├── bug-analysis/                 # Bug root-cause analyses (written before fix)
+├── context/                      # The digital brain for the implementation in this repository
 ├── feature-analysis/             # Feature investigations and decisions
 ├── images/                       # Images of the backlog and the analyses
 ├── refactoring-analysis/         # Refactoring analyses with reports
@@ -347,6 +349,11 @@ The `.agents/` folder serves as the "digital brain" for roomle-hi-example, conta
 ```
 
 **IMPORTANT**: All scripts in `.agents/scripts/` MUST be JavaScript (Node.js), not Python. This ensures consistency with the repository's primary language and tooling.
+
+`.agents/context/` is the digital brain for the implementation in this repository — how the code
+is built: the processes, the modules and their responsibilities, the protocols between them.
+Every new feature is documented and added to `.agents/context/`; every change to the
+implementation requires an update in `.agents/context/`.
 
 ### Analysis Documents
 

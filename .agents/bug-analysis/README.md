@@ -46,10 +46,10 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 | [The room corners leave out a corner where an opening meets a wall](room-corners-left-out-at-openings.md) | Fixed | backlog #68 |
 | [The wall units hang at two heights after a plinth height in the group attributes](wall-units-hang-at-two-heights-after-plinth-change.md) | Open — validated; shared arrangement fix and unit-test plan (roomle-ui, based on `fix/room-corners-at-openings`) | backlog #72 |
 | [A wall-level article of another category is taken for a floor unit](wall-level-article-of-another-category-taken-for-floor-unit.md) | Fixed — locally verified on branches; pending landing (roomle-ui based on `fix/wall-unit-heights-after-plinth-change`) | former backlog #73 |
-| [An island's back row of other widths lands off the front row](islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — fix proposed (roomle-hi-example served text; roomle-ui fallback, based on `fix/room-corners-at-openings`) | backlog #74 |
+| [An island's back row of other widths lands off the front row](islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — reproduced; served-text fix first, endpoint-mode alignment as fallback | backlog #74 |
 | [The backsplash of an image kitchen is reported as not buildable](backsplash-of-an-image-kitchen-reported-as-not-buildable.md) | Fixed — closed as resolved by the user; roomle-ui change pending landing | former backlog #75 |
 | [An edit that gives a row a new end leaves a door hinged to the outside](edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md) | Open — implemented and unit verified; live model acceptance awaiting approval | former backlog #77 |
-| [A swap of a widened unit is refused for want of a docking vector](swap-of-widened-unit-refused-for-want-of-docking-vector.md) | Open — fix proposed (roomle-ui, based on `fix/room-corners-at-openings`) | backlog #78 |
+| [A swap of a widened unit is refused for want of a docking vector](swap-of-widened-unit-refused-for-want-of-docking-vector.md) | Open — verified; incompatible width / hinge inputs cause a calculation error that attribute-tool feedback omits | backlog #78 |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

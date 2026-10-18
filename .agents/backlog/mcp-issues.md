@@ -23,76 +23,75 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | analysed: roomle-hi-example served text (`hi-mcp-server.ts`, `behind`) — the description says neither where a turned unit lines up with a wider neighbour nor which way the relations run in a turned row; roomle-ui `pairOf` for `behind` (`hi-group-layout.ts`) — the compile pins the turned unit at the neighbour's left end with offset 0 and no field to name the other end. Fix proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md): the served text first, the `align` the server derives the offset from along the neighbour's width axis as the fallback, to be based on roomle-ui `fix/room-corners-at-openings` | low | gpt-6.1-sol | |
-| 78 | [A swap of a widened unit is refused for want of a docking vector](#78-a-swap-of-a-widened-unit-is-refused-for-want-of-a-docking-vector) | defect | analysed: roomle-ui `modifyAttributesOfModules` and `_takeOverPropertiesFromOriginalGroup` (`glue-logic.ts:2650,3287`) — the recalculation behind `change-module-attribute` returns the width-changed root without its dockInfos and the take-over restores every root property but them; the swap's `handOver` (`hi-tools.ts:954-972`) then drops the side docking with the correction at :967. Fix proposed in [the analysis](../bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md): the take-over keeps the original root's dockInfos with the points recomputed from the calculated geometry, to be based on roomle-ui `fix/room-corners-at-openings` | medium | gpt-6-astra | |
+| 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | roomle-hi-example `AUTHORING_RULES` (`hi-mcp-server.ts:30-34`): explain the endpoint and turned-row viewpoint. Conditional roomle-ui fallback: explicit end alignment through endpoint modes in `pairOf` (`hi-group-layout.ts:846-860`), with reciprocal modes when the entry changes owner. [Analysis and verification](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md) | low | gpt-6.1-sol | |
+| 78 | [A swap of a widened unit is refused for want of a docking vector](#78-a-swap-of-a-widened-unit-is-refused-for-want-of-a-docking-vector) | defect | roomle-ui attribute-tool feedback (`hi-tool-attributes.ts:231`): expose the library calculation error behind the missing vectors; HI library descriptions: explain the width-dependent door arrangement. [Analysis and verification](../bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md) | medium | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
-the model sent; the directories are under `.temp/result/`.
+the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
+`externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
 
 ## 74. An island's back row of other widths lands off the front row
 
-**Problem.** For an island with a front row of 900, 600 and 900 mm units and a back row of four
-600 mm units, the agent docks the first back unit `behind` the 900 mm unit at the end of the front
-row and the others `rightOf` it. The back row lines up with the inner end of that unit and runs past
-the far end of the front row: 300 mm off at both ends, a step in the worktop.
+**Problem.** An island with a front row of 900, 600 and 900 mm units and a back row of four
+600 mm units has a 300 mm step at both ends. The first rear unit is `behind` the last front unit,
+and its row continues `rightOf`.
 
-**Cause.** Analysed in [the bug analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md).
-The served description of `behind` ("back to back with that root module, turned by 180 degrees (an
-island)", `hi-mcp-server.ts`) says neither where a turned unit lines up with a wider neighbour nor
-which way `rightOf` runs in the turned row, and the compile (`pairOf` for `behind`,
-`hi-group-layout.ts`) pins the turned unit at the neighbour's left end, seen from the neighbour's
-front, with offset 0 and no field to name the other end (`align` is read for every relation but
-ignored for `behind`, `gapMm` is ignored, G37). The agent's natural composition — the first back unit
-behind the row's end unit, the back row continuing `rightOf` — then lands the back row off the front
-row by the width difference at both ends; the mirror composition (behind the row's first unit,
-continuing `leftOf`) lands flush, which the other stored runs show.
+**Cause.** The served `behind` description (`hi-mcp-server.ts:34`) omits the aligned end and the
+viewpoint of side relations in the turned row. `pairOf` (`hi-group-layout.ts:859-860`) emits the
+back-vector pair with no mode and zero offset. Its reversed partner frame aligns the turned
+cabinet to the target's left end; `rightOf` in the rear row runs towards the front row's left.
+For this composition the local extents are front `[0,2400]`, back `[-300,2100]`. An omitted mode
+is different from explicit `StartStart` for back vectors. `align` is parsed but ignored for
+`behind`. See [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md).
 
-**To do.** Fix, proposed in [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md),
-in roomle-hi-example first: clarify the description of `behind` (`hi-mcp-server.ts`) — where a turned
-unit lines up and which way the relations run in a turned row, in library-neutral words, with the
-composition that lines a back row up with the row in front of it. If that does not suffice, simplify
-the API in roomle-ui `pairOf` (`hi-group-layout.ts`, based on `fix/room-corners-at-openings`): the
-server lines up a unit `behind` a wider one at the end the agent names (`align`) and derives the
-offset from the catalog widths along the neighbour's width axis in the group's frame.
+**To do.** Clarify `AUTHORING_RULES` (`hi-mcp-server.ts:30-34`): side relations use the named
+neighbour's front; for equal-length flush rows, put the first rear unit behind the first front
+unit and continue `leftOf`. Verify model acceptance. If needed, let `behind` name an end in
+roomle-ui: retain the default, use `EndStart` for right alignment and mirror it to `StartEnd`
+when the unit owns the entry (`hi-group-layout.ts:922-937`). Actual endpoints supply the
+geometry without catalog-width offsets or orientation tracking. Update served-text tests and
+references; roomle-ui work retains `fix/room-corners-at-openings` ancestry.
 
-**Test.** `image-planning-right-wall`: the island's two rows end flush at both ends.
+**Test.** `image-planning-right-wall`: the island's equal-length rows end flush at both ends.
+Permanent geometry tests cover different unit widths and preserve deliberate steps; a fallback
+also covers rotated targets, wider rear units and reciprocal mode ownership.
 
-**Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 48 (`image-planning-right-wall`, the second `create-or-replace-groups`, the island group): `rear1` (`EUTB60`) `behind` `islandright` (`EUS2A90`), `rear2` to `rear4` `rightOf`; back row z -3240 to -840 against the front row z -2940 to -540.
+**Reproduce.** `mcp-test-2026-10-16_19-30-19`, gpt-6.1-sol 48 (`image-planning-right-wall`, the
+second `create-or-replace-groups`, the island): `rear1` (`EUTB60`) `behind` `islandright`
+(`EUS2A90`), `rear2` to `rear4` `rightOf`; back row z −3240 to −840 against front z −2940 to −540.
 
 ## 78. A swap of a widened unit is refused for want of a docking vector
 
-**Problem.** `change-module-attribute` `mod_Width` 900 on the last `HTB60` of the three-tall-units
-row leaves the recalculated root module without docking vectors (`dockingVectors: []` in
-`get-plan-context`); the following `swap-root-modules` drops the docking ("'8774cac2…' has no docking
-vector 'RightBottom' - its docking to 'a7271f1b…' was dropped") and does not apply; the model undoes
-it and the plan keeps the original order. In `mcp-test-2026-10-17_18-40-40` (gpt-5-mini 32) the same
-defect also removed the unit's front and left two overlapping units. The same article at width 900
-has its six docking vectors when created (`edit-replace-unit-wider`) or when the row's first unit's
-width is changed (`edit-change-one-unit`), and the same two calls kept the vectors in
-`mcp-test-2026-10-17_13-28-41` (gpt-6-astra 32) — not every time.
+**Problem.** Widening the last `HTB60` of `three-tall-units` to 900 mm retains its explicit
+`mod_DoorDirectionSelection: Right`. The library cannot calculate that configuration; the root
+loses docking vectors and its front has no generated parts, but the attribute result reports no
+calculation problem. The following swap applies with a dropped `RightBottom` link, then the
+model undoes it. This is a successful tool response with broken content, not a refused call.
 
-**Cause.** Analysed in [the bug analysis](../bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md).
-The recalculation behind `change-module-attribute` (`changeAttributes`, `hi-tools.ts:456` →
-`modifyAttributesOfModules`, `glue-logic.ts:2650` → `_takeOverPropertiesFromOriginalGroup`,
-`glue-logic.ts:3287`) returns the width-changed root module without its dockInfos — the take-over
-restores position, rotation, contextData and article info but not the dockInfos — and the swap's
-`handOver` (`hi-tools.ts:954-972`) drops the side docking where the new owner has no matching vector
-(the correction at :967). Where exactly the dockInfos are dropped (the library's calc.js or a step
-between the calc and the store) is the analysis' open question; the roomle-ui fix stands regardless.
+**Cause.** The saved root has Error 14019: no `tab_DoorSettings` entry for the 900 mm tall unit
+with `Right`. The successful 900 mm control uses `Automatic`, resolves its door to `LeftRight`
+and keeps six vectors. The article description says one door without describing its
+width-dependent configuration. `withLibraryChanges` (`hi-tool-attributes.ts:231-251`, called
+at `hi-tool-commands.ts:957,1013`) reports attribute adjustments but omits raw root Error/Fatal
+messages; `shapeRoot` (`hi-plan-context.ts:689-710`) omits them too. The swap's `handOver`
+(`hi-tools.ts:954-972`) then reports the downstream missing-vector symptom. See
+[the analysis](../bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md).
 
-**To do.** Fix, proposed in [the analysis](../bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md),
-in roomle-ui `_takeOverPropertiesFromOriginalGroup` (`glue-logic.ts:3287`, based on
-`fix/room-corners-at-openings`): keep the original root's dockInfos across the recalculation when
-the calculated root has none, with the start/end points recomputed from the calculated root's
-geometry. The swap then applies without a correction.
+**To do.** In roomle-ui, include root-specific calculation diagnostics and recovery guidance in
+both attribute tools' results, keeping the applied edits and valid roots. Follow the feedback
+pattern of `create-or-replace-groups` (`hi-tool-commands.ts:654-689`); use `corrections`, retained
+by the MCP `compactAttributeResult` (`tool-executors.ts:344-352`). Clarify the library's
+width-dependent door descriptions, then recover valid hinge inputs before the swap. Keep
+library-specific facts in data. Do not restore old `dockInfos` over a failed calculation or
+silently reset hinge settings. Roomle-ui work retains `fix/room-corners-at-openings` ancestry.
 
-**Test.** `edit-swap-units`: after `change-module-attribute` `mod_Width` 900 on the last unit, the
-widened root keeps its six docking vectors and `swap-root-modules` swaps without a correction — the
-row is 2100 mm with the 900 mm unit in the back corner; a unit test in roomle-ui
-`__tests__/hi-tool-commands/`.
+**Test.** Unit coverage through the tool/glue path: a failed attribute calculation keeps the edit
+and returns the affected root and diagnostic; MCP compaction retains it. Live `edit-swap-units`:
+recover a supported 900 mm paired-door configuration, then swap with complete front geometry,
+six docking vectors and a contiguous 2100 mm row, its back end at z −3765. Match outer hinges
+to the calculated single or paired doors; a dropped docking followed by undo fails.
 
-**Reproduce.** `mcp-test-2026-10-18_14-48-28`: gpt-6-astra 32 (`edit-swap-units`, turn 2):
-`change-module-attribute` `mod_Width` 900 on `8774cac2-8b83-405d-b88c-f0e5cd2452fb`, then
-`swap-root-modules` on `0010443c-519a-437b-8fe5-364f13887ca4` and `8774cac2…`; the correction
-"'8774cac2…' has no docking vector 'RightBottom' - its docking to 'a7271f1b…' was dropped";
-`dockingVectors: []` of `8774cac2` in `plan-context.json`.
+**Reproduce.** `mcp-test-2026-10-18_14-48-28`, gpt-6-astra 32 (`edit-swap-units`, local planner
+`e4989a862`): widen `8774cac2-8b83-405d-b88c-f0e5cd2452fb`, then swap it with `0010443c…`;
+`run.json` records the dropped `RightBottom` link and undo, while `plan.xml` records Error 14019
+and the retained `Right` input on the widened root.

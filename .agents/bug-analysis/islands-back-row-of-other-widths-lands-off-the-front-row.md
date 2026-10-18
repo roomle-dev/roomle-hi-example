@@ -1,220 +1,175 @@
 # Bug analysis — an island's back row of other widths lands off the front row
 
 > **Type**: Bug analysis
-> **Status**: Open — fix proposed, not implemented
-> **Date**: 2026-10-17
-> **Base**: roomle-hi-example `analysis/mcp-72-wall-units-two-heights-plinth` (`6feaff7`);
-> roomle-ui `fix/room-corners-at-openings` (`a008be42d`) — the branch every roomle-ui change for
-> this bug must be based on
-> **Backlog**: item 74 of [`../backlog/mcp-issues.md`](../backlog/mcp-issues.md)
+> **Status**: Open — reproduced; served-text fix proposed, not implemented
+> **Date**: 2026-10-18
+> **Base**: roomle-hi-example `master` (`65c66f8`), verified on `docs/verify-mcp-74-78`;
+> roomle-ui `fix/generated-part-switch-discovery` (`cf377cfd4`), descended from
+> `fix/room-corners-at-openings` (`a008be42d`)
+> **Backlog**: [item 74](../backlog/mcp-issues.md#74-an-islands-back-row-of-other-widths-lands-off-the-front-row)
 
 ## Affected repositories
 
-- **roomle-hi-example** — the proposed fix: the served description of `behind` and of the relation
-  directions in a turned row in `AUTHORING_RULES` (`hi-mcp/hi-mcp-server/hi-mcp-server.ts:27`,
-  served by `get-authoring-rules` and the session `INSTRUCTIONS` at `hi-mcp-server.ts:84`), in
-  library-neutral words; the test `it('teaches the relations for a new group instead of docking
-  vectors')` (`hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts:1085`) pins the new sentences. The
-  fallback fix below adds one served sentence for a new `align` field on `behind`, in the same
-  place. No change of the server's logic: the payload the agent sends is legitimate.
-- **roomle-ui** — the fallback fix, only if the clarified text does not suffice: `pairOf` for
-  `behind` (`packages/web-sdk/packages/homag-intelligence/src/hi-group-layout.ts:742-744`) honors
-  `align` and derives the offset from the catalog widths (`rootWidth`, `hi-group-layout.ts:103`);
-  the tests in `__tests__/hi-group-layout-test.ts` (the `behind` case at line 206). The fix is
-  based on `fix/room-corners-at-openings`.
-- **RoomleCore (the planner kernel)** — no change: a docking entry with the mode `StartStart` and a
-  group-frame offset already exists and is applied (the re-dock of a unit above another root before
-  a reload writes offsets in the group's frame, C24 of
-  [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md)).
-- **ligna-store** — no change: the store runs the same MCP server and the same roomle-ui and holds
-  no copy of the served text or of the relation compile.
-- **The library (HOMAG Furniture_Smith, server-side calculation)** — no change: the fix is
-  library-neutral; the served text names no article, category, attribute, value or measure of a
-  library.
+- **roomle-hi-example** — clarify `behind` and the directions in a turned row in
+  `AUTHORING_RULES` (`hi-mcp/hi-mcp-server/hi-mcp-server.ts:30-34`); update its served-text test,
+  behaviour reference, tool and authoring references. No executor change is needed.
+- **roomle-ui** — only if prompt acceptance still fails after the text change: implement an
+  explicit end alignment for `behind` in `pairOf`
+  (`packages/web-sdk/packages/homag-intelligence/src/hi-group-layout.ts:846-860`), using docking
+  endpoint modes and their reciprocal when the entry changes owner. Add geometry coverage.
+  Any implementation retains `fix/room-corners-at-openings` as its required ancestry.
 
-## Symptom
+## Symptom and reproduction
 
-An island whose front row is 900, 600 and 900 mm wide and whose back row is four 600 mm units
-comes out with the back row 300 mm off the front row at both ends — a step in the worktop the
-library generates over the two rows. Reproduce: `mcp-test-2026-10-16_19-30-19`, gpt-6.1-sol 48
-(`image-planning-right-wall`, the second `create-or-replace-groups`, the island group; planner call
-index 9, the second `externalObjectGroupOperation`, of the run directory
-`.temp/result/mcp-test-2026-10-16_19-30-19/gpt-6.1-sol/48-image-planning-right-wall/`). The payload:
+An island has a front row of 900, 600 and 900 mm units and a back row of four 600 mm units.
+Both rows total 2400 mm, but the back row stands 300 mm off at both ends, producing a step in
+the generated worktop.
 
-```
-islandleft (EUS2A90, 900); islandhob (EUKS2A60, 600) rightOf islandleft; islandright (EUS2A90, 900) rightOf islandhob
-rear1 (EUTB60, 600) behind islandright; rear2, rear3, rear4 (EUTB60, 600) rightOf the one before
+**Reproduce.** `mcp-test-2026-10-16_19-30-19`, gpt-6.1-sol 48,
+`image-planning-right-wall`, the island of the second `create-or-replace-groups`; artifacts in
+`.temp/result/mcp-test-2026-10-16_19-30-19/gpt-6.1-sol/48-image-planning-right-wall/`.
+
+```text
+islandleft (900)
+islandhob (600) rightOf islandleft
+islandright (900) rightOf islandhob
+rear1 (600) behind islandright
+rear2, rear3, rear4 (600) rightOf the preceding rear unit
 ```
 
-Both rows are 2400 mm wide — the agent lines the back row up with the front row. The final
-geometry (`obstacles.groups` of `plan-context.json`):
+Read the call from `run.json` / `planner-calls.json`, then compare the non-generated root
+outlines in `plan-context.json`:
 
-| Row | Roots | Extent along the row | Depth |
-|---|---|---|---|
-| front | `islandleft`, `islandhob`, `islandright` | z -2940 to -540 (2400) | x 1818 to 2400 |
-| back | `rear1` … `rear4` | z -3240 to -840 (2400) | x 2400 to 2982 |
+| Row | Extent along the row | Depth |
+|---|---|---|
+| Front | z −2940 to −540 (2400 mm) | x 1818 to 2400 |
+| Back | z −3240 to −840 (2400 mm) | x 2400 to 2982 |
 
-`rear1` (600) shares `islandright`'s (900) left end, seen from the front row's front (z -1440), and
-covers 600 of the 900 from that end; `rear2` to `rear4` continue past the front row's far end. The
-back row is shifted 300 mm along the row against the front row: 300 past at one end, 300 short at
-the other.
-
-The same compile lands flush for the mirror composition. `mcp-test-2026-10-17_13-28-41`,
-gpt-6-astra 52 (`kitchen-conversation`): front row `islandprep` (US2A90, 900), `islandcooking`
-(UHS60, 600), `islanddishes` (US2A60, 600), z -2619 to -519; back row `reverse1` (U2TB90, 900)
-`behind` `islandprep` — the row's first unit —, `reverse2`, `reverse3` `leftOf` the one before:
-z -2619 to -519, flush at both ends.
+The successful comparison is `mcp-test-2026-10-17_13-28-41`, gpt-6-astra 52,
+`kitchen-conversation`: the first rear unit stands `behind` the first front unit, and its row
+continues `leftOf`. Both rows span z −2619 to −519. This is a different composition, not a
+different outcome from identical input.
 
 ## Investigation trace
 
-1. **The served description of `behind` says neither where a turned unit lines up nor which way
-   the relations run in a turned row.** `hi-mcp-server.ts:27`: `behind: "<id>" - back to back with
-   that root module, turned by 180 degrees (an island).` The `rightOf`/`leftOf` line
-   (`hi-mcp-server.ts:24`) says "right and left as seen from the front" without naming whose
-   front; in a turned row the two readings run opposite ways along the row. The agent composes the
-   back row it cannot predict.
-2. **The compile pins the turned unit at the neighbour's left end.** `pairOf` for `behind`
-   (`hi-group-layout.ts:742-744`): `BackBottom -> BackBottom`, no mode — the planner's default
-   `StartStart` —, offset `[0,0,0]`. The mode chooses which endpoints of the two vectors meet (the
-   own anchor in group space meets the rotated other anchor,
-   `hi-root-module-arrangement.ts:530-546`); with the turned unit's 180° rotation the pin lands the
-   turned unit at the neighbour's LEFT end, seen from the neighbour's front. The reproduce proves
-   it: `rear1` (600) behind `islandright` (900) shares its left end (z -1440) and covers 600 of the
-   900 from that end.
-3. **`rightOf` in the turned row runs the other way round.** `pairOf` for `rightOf`/`leftOf`
-   (`hi-group-layout.ts:731-740`): `RightBottom -> LeftBottom` (mirrored), `StartStart` — the side
-   vectors of the turned unit, so the relation follows the turned unit's own front. `rear2`
-   `rightOf` `rear1` stands at `rear1`'s right, which is the neighbour's left direction: the back
-   row grows away from the front row's extent (`rear2` to `rear4` at z -2040 to -1440, -2640 to
-   -2040, -3240 to -2640).
-4. **The agent has no field to name the end.** `align` is read for every relation
-   (`hi-group-layout.ts:238-243`, default `left`, kept when it is `left`, `right` or `back` at
-   `hi-group-layout.ts:297-298`) but `pairOf` ignores it for `behind`; `gapMm` on `behind` is
-   ignored with a correction (`hi-group-layout.ts:288-293`, G37 of
-   [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md): the planner applies an offset in
-   the group's frame, where x is not the direction of a turned leg, so only a vertical gap is
-   derived). The pos-group schema is free-form (`z.record(z.unknown())`, `hi-mcp-server.ts:405-413`),
-   so an `align` on a `behind` root reaches the compile untouched.
-5. **The planner's own docking after the load confirms the geometry.** The `contextData` of the
-   calculated group links `islandright`'s `BackBottom` to `rear1`'s `BackBottom` and `rear1`'s
-   `RightBottom` to `rear2`'s `LeftBottom`: the rows stand as the compile put them; nothing
-   re-aligns a back row with the row in front of it.
-6. **The outcome turns on a choice the served text does not cover** — not on the articles, not on
-   the library: the mirror composition (symptom, last paragraph) lands flush with the same compile,
-   and the one-behind-each style of the other stored runs (`50-kitchen-conversation`: one back unit
-   behind each front unit, equal widths) is immune to the pin.
+Code references below are in roomle-ui `packages/web-sdk/packages/homag-intelligence/src/`
+unless prefixed with a repository path.
+
+1. **The served text leaves the endpoint and viewpoint unspecified.**
+   `hi-mcp/hi-mcp-server/hi-mcp-server.ts:30` says `rightOf` / `leftOf` are seen "from the front"
+   without naming whose front. Line 34 describes `behind` only as back to back, turned by 180°.
+   Neither sentence tells the agent which ends coincide or how to grow the turned row.
+2. **The relation compiler emits no mode for `behind`.** `pairOf`
+   (`hi-group-layout.ts:859-860`) emits `BackBottom → BackBottom`, offset `[0,0,0]`, with no
+   `mode`. `rightOf` / `leftOf` explicitly use `StartStart` (`:848-857`). `align` is parsed at
+   `:330-340`, but the `behind` branch does not use it; sending `align: "right"` has no effect.
+3. **An omitted mode is not explicit `StartStart` for this vector pair.**
+   `isVectorPairOnlyValidIfReverse` (`hi-root-module-arrangement.ts:505-523`) reverses the
+   partner frame for two back vectors. `setModulePositionFromDocking` (`:582-614`) composes
+   those frames, and applies `applyDockModeAnchor` (`:563`) only when a mode was supplied.
+   With the entry on the named target, as in this reproduce, and conventional cabinet back
+   vectors, the omitted-mode placement coincides with
+   `StartEnd`: the target's back-vector start meets the turned unit's back-vector end. The
+   turned cabinet therefore occupies the target's left end, as seen from the target's front.
+   The earlier analysis's claim that omission defaults to `StartStart` is incorrect here.
+4. **The side relation follows the turned neighbour's front.** After the 180° turn, `rightOf`
+   grows towards the front row's left. With the front row at local x `[0,2400]`, `rear1` behind
+   its last unit occupies `[1500,2100]`; the next three units grow to x −300. The back row
+   occupies `[-300,2100]`. This matches the saved room-space geometry after rotation.
+5. **The mirrored composition is sufficient for equal total lengths.** Put `rear1` behind
+   the first front unit and continue `leftOf`: the back row occupies `[0,2400]`. A temporary
+   test through the real `relationsToDocking` and `HiRootModuleArrangementOperator`
+   reproduces both layouts and confirms that `align: "right"` is currently ignored.
+6. **The compiler can use existing endpoint modes if an explicit end is needed.**
+   `applyDockModeAnchor` selects actual endpoints in the calculated geometry, without changing
+   the back-to-back rotation. For a docking entry owned by the target, `EndStart` aligns the
+   turned unit with the target's right end. The reproduce then occupies `[0,2400]` for both
+   rows. This works with target rotations 0°, 90°, 180° and 270°, and with a wider turned unit.
 
 ## Root cause
 
-The description of `behind` does not say where a turned unit lines up with a wider neighbour nor
-which way `rightOf`/`leftOf` run in a turned row, and the compile pins the turned unit at the
-neighbour's left end (seen from the neighbour's front) with offset 0 and no field to name the other
-end. The agent's natural composition — the first back unit behind the row's end unit, the back row
-continuing `rightOf` like the front row — then lands the back row off the front row by the width
-difference at both ends.
+The omission is in the relation instructions (`hi-mcp-server.ts:30-34`): the agent must compose a
+reversed row without being told its viewpoint or which end `behind` aligns. The compiler's
+legitimate left-end alignment (`hi-group-layout.ts:859-860`) combines with `rightOf` in that
+turned row to shift this equal-length back row by the first pair's width difference.
 
-## Why the current code produces this
-
-`pairOf` writes the back-to-back docking as the two back vectors, start on start, offset 0
-(`hi-group-layout.ts:742-744`). For equal widths the pin is invisible; for a turned unit narrower
-than its neighbour it leaves the width difference on the far side of the neighbour, and the turned
-row's `rightOf` grows away from the row, so the whole back row shifts by the width difference — 300
-mm at both ends in the reproduce. Nothing in the tool result tells the agent: the groups come back
-with their positions, and no correction, `notLoaded` or `hint` names the misalignment (the rows do
-not overlap; every unit stands in the room).
+The library follows the supplied docking. No automatic row alignment runs after compilation,
+and no result hint identifies the step: the two rows touch back to back, remain inside the room
+and do not collide with other groups. Acceptance of the payload is not the cause.
 
 ## Proposed fix
 
-Two steps; the first is served text only, in roomle-hi-example.
+### First step: explain the existing composition
 
-**Step 1 — clarify the description of `behind`** (`hi-mcp-server.ts:27`), in library-neutral words:
-where a turned unit lines up and which way the relations run in a turned row, and the composition
-that lines a back row up with the row in front of it. For example:
+Clarify the existing sentences in `AUTHORING_RULES`, in library-neutral words:
 
-> `behind: "<id>" - back to back with that root module, turned by 180 degrees (an island): the
-> turned unit lines up with the left end of that root module, seen from its front, and in the
-> turned row rightOf and leftOf run as seen from the turned unit's own front, the other way round
-> than in the row it stands behind. To line a back row up with the row in front of it, put its
-> first unit behind the first unit of that row and continue the back row leftOf.`
+> `rightOf` and `leftOf` are seen from the named neighbour's front. `behind` turns the unit by
+> 180°. For two rows of equal total length to end flush, start the group with the front row,
+> put the first rear unit behind its first unit, and continue the rear row `leftOf`: the rear
+> row starts at the front row's left end, seen from the front row's front.
 
-With the pin at the neighbour's left end, that composition lands flush: the front row's first unit
-is the row's left end ("a row is each root module rightOf the one before", `hi-mcp-server.ts:24`),
-so the first back unit pins at the row's left end, and `leftOf` in the turned row runs along the
-row — the mirror of the front row's `rightOf`. It is the composition of the flush run
-(`mcp-test-2026-10-17_13-28-41` run 52), and it lands the reproduce's island flush unchanged:
-`rear1` behind `islandleft`, `rear2` to `rear4` `leftOf` — z -2940 to -540 at both rows.
+This states both the viewpoint and the composition. It does not promise flush ends for rows
+of different total lengths. Update
+`it('teaches the relations for a new group instead of docking vectors')`
+(`hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts:1146`) and the matching documentation:
+`docs/hi-mcp-behaviour.md` (D34 / relations), `docs/hi-mcp-server.md`,
+`.agents/skills/hi-authoring-rules.md`, `.agents/skills/hi-mcp-tools.md`, and the implementation
+reference in `.agents/context/`.
 
-**Step 2 — fallback, only if the prompt tests still land back rows off: the server lines up a unit
-`behind` a wider one at the end the agent names** (roomle-ui, based on `fix/room-corners-at-openings`).
-`behind` takes `align: "left"` (the default, today's pin) or `"right"` — which end of the neighbour
-the turned unit lines up with —, and `pairOf` derives the offset from the catalog widths: the
-displacement from the left-end pin to the named end, of magnitude `width(neighbour) -
-width(unit)`, along the neighbour's width axis in the group's frame. The offset is a group-space
-translation of the docked root (`hi-root-module-arrangement.ts:585-589`), so its direction is not
-always x: a straight row runs along the group's x, a leg after a corner article runs along the
-group's z, and a neighbour that is itself turned — a unit of a back row, facing the other way —
-has its left and right the other way round, so the sign flips. The compile derives the neighbour's
-orientation from the relation chain it already walks (each `behind` turns the row by 180 degrees,
-a corner article turns the leg by 90, the catalog's corner data, D74) or, for a replaced group,
-from the calculated docking endpoints in group space; the sign follows the named end seen from the
-neighbour's front. The entry's mirroring at `hi-group-layout.ts:805-819` stays as it is — it
-negates a group-space translation, whatever its direction. A turned unit wider than its neighbour
-gets a negative offset — it overhangs the neighbour's named end, which is a legitimate back row.
-The served text gains: `align: "left" (default) or "right" says which end of that root module the
-turned unit lines up with.` With it the natural composition works: the first back unit behind the
-row's last unit with `align: "right"`, the back row continuing `rightOf`.
+Run `image-planning-right-wall` through a model and planner after the change. The deterministic
+geometry check verifies the composition, not whether the model follows the proposed sentence.
 
-## What the fix does not do
+### Conditional second step: expose the end using endpoint modes
 
-- It does not change the compile's default: existing payloads and stored plans keep the left pin;
-  `align: "right"` is opt-in (step 2).
-- It does not teach library content: the sentences name ends, fronts and rows — no article,
-  category, attribute, value or measure of a library (the library-neutrality rule, §2.4 of
-  [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md)).
-- Step 1 alone leaves the natural composition ("behind the row's last unit, continue `rightOf`")
-  unavailable; the agent uses the mirrored composition. That is why step 2 exists as the fallback.
-- It does not move a back row the agent placed deliberately off the front row — the server cannot
-  tell that from a mistake, and it does not try
-  ([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort)).
+If prompt acceptance still fails, let `behind` take `align: "left"` (existing default) or
+`"right"`, seen from the named neighbour's front. Preserve the omitted-mode default for existing
+payloads. For `right`, compile `BackBottom → BackBottom` with `EndStart` and zero offset when
+the target owns the entry. When breadth-first ordering writes the entry on the unit instead
+(`hi-group-layout.ts:922-937`), mirror `EndStart` to `StartEnd`; the current compiler copies
+modes unchanged because its explicit modes are symmetric `StartStart`.
 
-## Rejected approaches
+The planner already supports these modes and mirrors mixed modes in reciprocal contexts
+(`mirrorDockMode`, `hi-root-module-arrangement.ts:530`). Actual vector endpoints supply the
+geometry, so there is no need to read catalog widths, infer a corner leg's orientation, walk
+the relation chain for angles, or construct a group-space offset. The earlier width-derived
+offset proposal is superseded by this simpler candidate. It still needs permanent compiler
+and planner acceptance tests before implementation is declared complete.
 
-- **A guard that rejects a `behind` of other widths.** A guard fights the symptom: the agent's
-  payload is a legitimate island, and the wrong alignment is the tool's product, not the agent's
-  input.
-- **Change the compile's default pin to the neighbour's right end.** It would silently move the
-  back rows of existing payloads and stored plans — the flush island of `mcp-test-2026-10-17_13-28-41`
-  run 52 would land off —, and the served text cannot announce a default change retroactively.
-- **Teach only the pin, not the turned-row directions.** The agent still cannot tell which way
-  `rightOf` runs behind a turned unit; the two facts come together or the composition stays a
-  puzzle.
-- **Derive the alignment in the MCP server instead of roomle-ui.** The relations are compiled in
-  roomle-ui's tool command (D72); a second compile in the server would fork the relation logic.
-- **Fix it in the kernel (RoomleCore): re-align a back row with the row in front of it after the
-  load.** The planner cannot tell a deliberate step (a wider back row, a deeper row behind) from a
-  mistake; it would fight legitimate plans. No kernel change is needed for the proposed fix.
+RoomleCore, the library calculation and ligna-store require no change: the fallback uses the
+existing roomle-ui endpoint machinery and both clients share the served text.
 
-## Implementation plan (sketch)
+## Constraints and rejected approaches
 
-1. roomle-hi-example `hi-mcp/hi-mcp-server/hi-mcp-server.ts` — extend the `behind` line of
-   `AUTHORING_RULES` (line 27) with the pin, the turned-row directions and the flush composition,
-   in library-neutral words (step 1 above). The sentence reaches `get-authoring-rules` and the
-   session `INSTRUCTIONS` (`hi-mcp-server.ts:84`).
-2. roomle-hi-example `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` — extend
-   `it('teaches the relations for a new group instead of docking vectors')` (line 1085) with the
-   new sentences.
-3. Fallback, only if the prompt tests still land back rows off: roomle-ui `hi-group-layout.ts`
-   `pairOf` (`hi-group-layout.ts:742-744`) — honor `link.align` for `behind`: the offset of
-   magnitude `width(target) - width(unit)` along the target's width axis in the group's frame for
-   `align: "right"`, `[0, 0, 0]` for `left` — the axis and sign derived from the target's
-   orientation in the group (the relation chain, the catalog's corner data) or its calculated
-   docking endpoints, the magnitude with `rootWidth` (`hi-group-layout.ts:103`); the served text
-   gains the `align` sentence for `behind`. Based on `fix/room-corners-at-openings`.
-4. roomle-ui `__tests__/hi-group-layout-test.ts` — the `behind` case (line 206) gains:
-   `align: "right"` derives the offset from the catalog widths along the neighbour's width axis;
-   the default keeps offset 0; a unit wider than its neighbour gets a negative offset; the entry
-   written on the unit (`hi-group-layout.ts:805-819`) carries the negated offset; a neighbour on
-   a leg turned by a corner article (90 degrees) shifts along the leg's axis; a neighbour that is
-   itself turned (180 degrees, a unit of a back row) shifts with the opposite sign.
-5. The stored test `image-planning-right-wall` of `docs/test-prompts.json` holds the outcome: the
-   island's two rows end flush at both ends.
+- Do not reject different-width back-to-back units or silently align complete rows. A deliberate
+  overhang or step is legitimate; the tool cannot infer otherwise.
+- Do not change the default pin. Existing payloads, including the successful mirrored
+  composition, keep their layout.
+- Do not substitute explicit `StartStart` for an absent mode on back vectors; the numerical
+  check gives different positions.
+- Do not derive width offsets or add orientation tracking when actual endpoints express the
+  alignment. Mixed modes must be mirrored when the entry owner changes.
+- Do not change the library's worktop calculation to conceal the step or duplicate the relation
+  compiler in the MCP server (D72).
+
+## Verification and acceptance
+
+On 2026-10-18, the saved failure and successful comparison were checked against the current
+source. Local verification passed:
+
+- 453 existing roomle-ui tests across `hi-group-layout-test.ts`,
+  `hi-root-module-arrangement-test.ts`, `hi-tools-test.ts` and `glue-logic-test.ts`.
+- 11 temporary geometry checks: the 300 mm step, flush mirrored composition, ignored `align`,
+  right alignment with `EndStart`, four target rotations, absent mode versus `StartStart`, a
+  wider turned unit, and the reciprocal `StartEnd` entry. The fixture and logs are retained
+  locally in `.temp/verify-mcp-74-78/`; no production or permanent test code is changed.
+- 78 MCP server registration / served-text tests.
+
+The SDK command is `PATH=/opt/homebrew/opt/node/bin:$PATH npm run test -- --run <test paths>`
+from roomle-ui `packages/web-sdk`. Homebrew Node 25.6.1 is used because the default SDK shell
+selects Node 20.10.0, whose `node:util` lacks the `styleText` export required by the installed
+runner. The MCP command is `npm test -- hi-mcp-server/tests/hi-mcp-server.test.ts` in `hi-mcp`.
+
+No new live model/planner run was performed. The text change remains unimplemented. Permanent
+regressions should compare both rows' endpoint extents with unequal unit widths, preserve the
+default and a deliberate step, and, if the fallback is needed, cover mixed-mode entry ownership
+and a target on a turned corner leg.

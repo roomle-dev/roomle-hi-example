@@ -52,6 +52,9 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [hi-authoring-rules.md](./skills/hi-authoring-rules.md) | HI authoring patterns, docking vectors, group creation, positioning new groups with a placement | Creating or modifying HI groups, docking patterns, article selection |
 | [hi-mcp-tools.md](./skills/hi-mcp-tools.md) | Complete MCP tool reference with parameters, examples, error handling | Using MCP tools, tool implementation, error diagnosis |
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
+| [hi-furniture-smith-article-catalog.md](./skills/hi-furniture-smith-article-catalog.md) | Furniture Smith article catalog | Article catalog reference |
+| [hi-furniture-smith-attributes.md](./skills/hi-furniture-smith-attributes.md) | Furniture Smith attributes | Attribute reference |
+| [hi-furniture-smith-materials.md](./skills/hi-furniture-smith-materials.md) | Furniture Smith materials | Materials reference |
 | [vercel-ai-sdk-chat.md](./skills/vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration: provider selection, server-side auth, @ai-sdk/mcp, streamText route | Implementing the AI chat window (RML-17984), Vercel AI SDK, MCP client integration |
 | [hi-mcp-testing.md](./skills/hi-mcp-testing.md) | "Test the MCP": a temporary subset of `docs/test-prompts.json` (default every test, `gpt-5-mini`) run by `run-hi-mcp-tests.js` into `.temp/result/<session>/<model>/`, `report.md` with plan snapshot ids, images, evaluation and bug verdicts; the run script `run-hi-mcp-prompt.js` (a plan, operations, prompts and an image in headless Chromium, snapshot, plan snapshot id, planner calls) | The user asks to "test the mcp"; testing prompts or models against the real planner |
 | [hi-analysis.md](./skills/hi-analysis.md) | "Analyse the bug" / "analyse the feature" / "analyse the refactoring": writing the analysis in `bug-analysis/`, `feature-analysis/` or `refactoring-analysis/` — what it must cover, the affected repositories it names first, where the fix lives (never the library's calculation) | The user asks to "analyse the bug", "analyze the bug", "bug analysis", "analyse the feature", "feature analysis", "analyse the refactoring" or "refactoring analysis"; investigating a defect, a feature or a refactoring |
@@ -60,6 +63,41 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 | [update-planning-results.md](./skills/update-planning-results.md) | "Update planning results": `docs/planning-results.md` regenerated — every kitchen image of `docs/images` planned by the HI chat (default `gpt-6-astra`) with `update-planning-results.js`, the plan snapshots with their ligna-store links, the top, perspective and perspective object images | The user says "update planning results" |
 | [hi-mcp-benchmarking.md](./skills/hi-mcp-benchmarking.md) | Benchmarks of the HI agent: the chat time of test runs per model step (tokens, model time, tool time, planner calls) with `benchmark-hi-mcp-runs.js`, the analysis of where the time goes, the document in `benchmarks/` | The user asks to benchmark or measure the performance, where the time goes, or to compare the speed before and after a change |
 | [roomle-pr-resolution.md](./skills/roomle-pr-resolution.md) | Resolving a pull request: verifying suggested changes, applying them, replying to every review comment, resolving threads | Resolving a PR; never merge it |
+| [hi-plan-implementation.md](./skills/hi-plan-implementation.md) | Planning a task or implementation — the plan must include unit tests | Planning a task or implementation |
+| [hi-analysis-closeout.md](./skills/hi-analysis-closeout.md) | Closing out a single analysis document once its work has landed: verify it landed, promote the durable outcome, delete the analysis | Work with an analysis document is being committed |
+| [hi-github-workflow.md](./skills/hi-github-workflow.md) | Git staging rules, conventional commit format, pre-commit verification checklist, PR guidelines | Before every commit, push, or pull request |
+
+### Scripts
+
+Agent utility scripts for automating repository tasks. Full index in [`scripts/README.md`](scripts/README.md).
+
+| Script | Description |
+|---|---|
+| [run-hi-mcp-prompt.js](scripts/run-hi-mcp-prompt.js) | Run a single prompt through the chat with a real model and planner |
+| [run-hi-mcp-tests.js](scripts/run-hi-mcp-tests.js) | Run the tests of `docs/test-prompts.json` and write an evaluated report |
+| [update-planning-results.js](scripts/update-planning-results.js) | Regenerate `docs/planning-results.md` from kitchen images |
+| [benchmark-hi-mcp-runs.js](scripts/benchmark-hi-mcp-runs.js) | Benchmark test runs: per-step timing, token counts, model and tool time |
+| [check-markdown-links.js](scripts/check-markdown-links.js) | Check markdown links across the repository |
+
+### Context
+
+Living reference of the implementation: how the code is built today. Full index in [`context/README.md`](context/README.md).
+
+| Document | Covers |
+|---|---|
+| [mcp-server.md](context/mcp-server.md) | `server.ts`, tool registration, the page bridge, the planner methods, undo and redo |
+| [tool-executors.md](context/tool-executors.md) | Overview of all MCP tools, `tool-executors.ts`, `agent-facing.ts`, the tool commands of roomle-ui |
+| [layout-and-placement.md](context/layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
+| [pages-chat-and-launcher.md](context/pages-chat-and-launcher.md) | The page side of the bridge, `start.mjs`, the chat backend `hi-mcp-chat` |
+| [deployment-and-testing.md](context/deployment-and-testing.md) | Cloudflare, the workspaces and scripts, the unit tests, the end-to-end test runs |
+
+### Wiki
+
+Durable answers to recurring questions. Full index in [`wiki/README.md`](wiki/README.md).
+
+| Page | Covers |
+|---|---|
+| — | No wiki pages yet |
 
 ### Decisions (Architecture Decision Records)
 
@@ -91,11 +129,12 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 |---|---|---|
 | [The sink unit descriptions do not say that a sink unit needs an article on its right](bug-analysis/sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | 2026-10-10 |
 | [A corner group stands in front of the adjoining wall's window](bug-analysis/corner-group-in-front-of-adjoining-wall-window.md) | Fixed | 2026-10-16 |
-| [The planning skills are served by a tool only](bug-analysis/planning-skills-served-by-a-tool-only.md) | Fixed | 2026-10-17 |
 | [The wall units hang at two heights after a plinth height in the group attributes](bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md) | Open — implemented and locally verified on branch; pending landing | 2026-10-18 |
 | [A wall-level article of another category is taken for a floor unit](bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md) | Fixed — locally verified on branches; pending landing | 2026-10-18 |
 | [The backsplash of an image kitchen is reported as not buildable](bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md) | Fixed — closed as resolved by the user; roomle-ui change pending landing | 2026-10-18 |
 | [An edit that gives a row a new end leaves a door hinged to the outside](bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md) | Open — implemented and unit verified; live model acceptance awaiting approval | 2026-10-18 |
+| [An island's back row of other widths lands off the front row](bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — reproduced; served-text fix first, endpoint-mode alignment as fallback | 2026-10-18 |
+| [A swap of a widened unit is refused for want of a docking vector](bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md) | Open — verified; calculation-error feedback and width-dependent door descriptions proposed | 2026-10-18 |
 
 ### Feature Analyses
 
@@ -114,7 +153,6 @@ done. The analysis and the report are the same document — the report is append
 | Document | Status | Last touched |
 |---|---|---|
 | [The object perspective image in get-plan-images instead of the plan perspective](refactoring-analysis/object-image-in-get-plan-images.md) | Open | 2026-10-06 |
-| [Faster MCP test runs](refactoring-analysis/faster-mcp-test-runs.md) | Done | 2026-10-17 |
 
 ### Benchmarks & Performance Analyses
 
@@ -134,7 +172,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | Document | Last touched |
 |---|---|
 | [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-18 |
-| [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner: island back-row alignment, docking vectors after resizing | 2026-10-18 |
+| [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner: island back-row alignment, calculation-error feedback after resizing | 2026-10-18 |
 | [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: sink drainer width and the restriction on a hob to its right, handleless fronts, the sizes of flip-lift wall cabinets, end panels with a plain upright colour | 2026-10-16 |
 | [Open issues of roomle-ui](backlog/roomle-ui-issues.md) — defects of the planner outside the HI tool commands that the MCP prompt tests show: a dark worktop the renderer's top light makes look white | 2026-10-16 |
 | [Where Mistral Large falls short of the prompts](backlog/mistral-large-prompt-issues.md) — improvement candidates from the `mistral-large-latest` test run: where the MCP server could give a weaker model better information or hints | 2026-10-17 |
@@ -217,8 +255,10 @@ Every analysis document should include:
 | **Living reference** — how things work now | `.agents/skills/` or `docs/` | Updated when behaviour changes; says what holds today — never what was wrong, when something was solved, or a ticket number |
 | **Implementation context** — how the code is built | `.agents/context/` | Living reference; every new feature is documented and added here, every change requires an update here |
 | **Historical record** — analysis, benchmark, refactoring | `.agents/<analysis-type>/` | Never updated after close-out; deleted by ["cleanup analyses"](skills/hi-analysis-cleanup.md) once the work has landed |
-| **Decision** — why code is shaped this way | `.agents/decisions/` (create folder if needed) | Living reference |
+| **Decision** — why code is shaped this way | `.agents/decisions/` | Living reference |
 | **ADR** — architecture decision record | `.agents/decisions/` | Living reference |
+| **Wiki page** — a durable answer to a recurring question | `.agents/wiki/` | Living reference, no lifecycle |
+| **Open work** | `.agents/backlog/` | Removed when done |
 
 ## Adding New Documentation
 
@@ -229,7 +269,8 @@ Every analysis document should include:
 3. **Feature Analysis**: Add to `.agents/feature-analysis/` before implementing
 4. **Refactoring Analysis**: Add to `.agents/refactoring-analysis/` before refactoring
 5. **Implementation context**: Add to `.agents/context/` when a feature is added or the implementation changes
-6. **Update this index**: Add a line to the appropriate table
+6. **Wiki page**: Add to `.agents/wiki/` for a durable answer to a recurring question
+7. **Update this index**: Add a line to the appropriate table
 
 ### For End Users
 

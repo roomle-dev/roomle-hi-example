@@ -1,285 +1,207 @@
 # Bug analysis — a swap of a widened unit is refused for want of a docking vector
 
 > **Type**: Bug analysis
-> **Status**: Open — fix proposed, not implemented
+> **Status**: Open — verified; diagnosis and fix proposal corrected, not implemented
 > **Date**: 2026-10-18
-> **Base**: roomle-hi-example `feat/mcp-test-report-scripts` (`980b506`); roomle-ui
-> `fix/wall-unit-heights-after-plinth-change` (`8cfd98e71`), one commit on
-> `fix/room-corners-at-openings` (`a008be42d`) — the branch every roomle-ui change for this bug
-> must be based on
-> **Backlog**: item 78 of [`../backlog/mcp-issues.md`](../backlog/mcp-issues.md)
+> **Base**: roomle-hi-example `master` (`65c66f8`), verified on `docs/verify-mcp-74-78`;
+> roomle-ui `fix/generated-part-switch-discovery` (`cf377cfd4`), descended from
+> `fix/room-corners-at-openings` (`a008be42d`)
+> **Backlog**: [item 78](../backlog/mcp-issues.md#78-a-swap-of-a-widened-unit-is-refused-for-want-of-a-docking-vector)
 
 ## Affected repositories
 
-- **roomle-ui** — the proposed fix: `_takeOverPropertiesFromOriginalGroup`
-  (`packages/web-sdk/packages/homag-intelligence/src/glue-logic.ts:3287`), the one step that
-  rebuilds a recalculated root's properties, takes over the original root's `dockInfos` when the
-  calculated root has none — with the start/end points recomputed from the calculated root's
-  geometry (trace 3, the caveat of the fix). Unit tests in `__tests__/hi-tool-commands/`. The fix
-  is based on `fix/room-corners-at-openings`. `swapRootModules` (`hi-tools.ts:908`) and the plan
-  context (`hi-plan-context.ts:311,704`) read the inventory correctly once it is kept; they need
-  no change.
-- **roomle-hi-example** — this analysis and backlog item 78 (the cause and the responsible
-  updated with the analysis). No code change: the agent's two calls are legitimate planning, and
-  the stored test `edit-swap-units` already covers the outcome.
-- **RoomleCore (the planner kernel)** — no change expected. The kernel's C++ reads `dockInfos`
-  only on the way in (`src/configurator/external/deserializer/external-module-group-deserializer.cpp:112`)
-  and writes none; the vectors it derives for docking are computed fresh from the root module's
-  docking vector definitions
-  (`src/configurator/external/docking/external-module-group-docking-vectors.cpp`). Named because
-  the open question below — whether the recalculated group loses the dockInfos in the kernel's
-  calculation or in the library's calc.js — is kernel-adjacent, and because the fix's caveat
-  names the kernel's derivation as the neutral source for the vector points.
-- **The library (HOMAG Furniture_Smith, server-side calculation)** — no change proposed. The
-  tempting library-side fix — the calc.js re-attaching the docking vector definitions to its
-  recalculated roots — changes the data the library calculates, and suggesting a change of the
-  library's calculation is not a valid bug fix (Rejected approaches). Named because open question
-  1 asks whether the calc.js's returned group is where the dockInfos are dropped; if the answer
-  traces a real defect in the library's own calculation — code that works against its overall
-  intention — it is reported like the items of
-  [`../backlog/library-issues.md`](../backlog/library-issues.md), not proposed as this bug's fix.
-- **ligna-store** — no change: the store runs the same roomle-ui and planner and holds no copy of
-  the tool command.
+- **roomle-ui** — surface library calculation errors after attribute edits, at the tool-result
+  boundary (`packages/web-sdk/packages/homag-intelligence/src/hi-tool-attributes.ts:231`,
+  `withLibraryChanges`, called by both attribute tools in `hi-tool-commands.ts:957,1013`).
+  Keep the applied changes and name the affected roots, the diagnostic and the recovery action.
+  Add tests through the tool commands backed by the glue logic. Any implementation retains
+  `fix/room-corners-at-openings` as its required ancestry.
+- **roomle-hi-example** — update the attribute-tool result contract in
+  `docs/hi-mcp-behaviour.md`, `docs/hi-mcp-server.md`, the tool skill and implementation context
+  when the fix is implemented; test that feedback survives the MCP result compaction. Adjust
+  `edit-swap-units` acceptance to distinguish a widened paired-door unit from the remaining
+  single-door units. This task changes the analysis and backlog only.
 
-## Symptom
+The **HI library data** also needs a description follow-up: resizing this article can change
+its door configuration, so an article described as having one door cannot justify forcing a
+single-door hinge value at every width. This is descriptive data, not a calculation change.
 
-`change-module-attribute` `mod_Width` 900 on the last unit of a row leaves the recalculated root
-module without docking vectors (`dockingVectors: []` in `get-plan-context`); the following
-`swap-root-modules` drops the side docking with a correction ("'…' has no docking vector
-'RightBottom' - its docking to '…' was dropped"), applies undocked, and the model undoes the swap,
-so the plan keeps the original order.
+## Symptom and reproduction
 
-**Reproduce.** `mcp-test-2026-10-18_08-45-09`, gpt-6.1-sol 32 (`edit-swap-units`, plan
-three-tall-units, the prompts "make the last unit 900 mm wide" and "swap the first and the last
-unit"; run directory
-`.temp/result/mcp-test-2026-10-18_08-45-09/gpt-6.1-sol/32-edit-swap-units/`). The row is group
-`064a7d91-b583-4883-b71b-95c324d3d824` with the `HTB60` roots `0010443c-519a-437b-8fe5-364f13887ca4`
-(first), `a7271f1b-50d5-4b50-97ca-7a5bf75f77fa` (middle) and `8774cac2-8b83-405d-b88c-f0e5cd2452fb`
-(last, against the wall).
+Widen the last `HTB60` of `three-tall-units` to 900 mm, then swap the first and last units.
+The widened root has no docking vectors, and the swap reports a dropped `RightBottom` docking.
+The swap returns successfully with a correction and changes the plan; the model then undoes it.
+The title describes the user-visible outcome, not a server guard or refusal.
 
-Turn 1, `change-module-attribute` `{"rootModuleId":"8774cac2…","attributeId":"mod_Width","value":900}`
-— no correction, no error.
+**Reproduce.** `mcp-test-2026-10-18_14-48-28`, gpt-6-astra 32, `edit-swap-units`:
+`.temp/result/mcp-test-2026-10-18_14-48-28/gpt-6-astra/32-edit-swap-units/`.
+The session report identifies the local planner as roomle-ui `e4989a862` on :5173.
 
-Turn 2, `swap-root-modules`
-`{"groupId":"064a7d91…","rootModuleIds":["0010443c…","8774cac2…"]}` — the correction:
+Group `064a7d91-b583-4883-b71b-95c324d3d824` has the roots:
 
-```
+| Place before the edit | Root id prefix | Article | Initial width |
+|---|---|---|---|
+| First | `0010443c` | `HTB60` | 600 mm |
+| Middle | `a7271f1b` | `HTB60` | 600 mm |
+| Last, at the wall | `8774cac2` | `HTB60` | 600 mm |
+
+1. `change-module-attribute` on `8774cac2-8b83-405d-b88c-f0e5cd2452fb`,
+   `attributeId: "mod_Width"`, `value: 900`: the answer claims success with no calculation warning.
+2. `swap-root-modules` on `0010443c-519a-437b-8fe5-364f13887ca4` and `8774cac2…`:
+
+```text
 swap-root-modules: '8774cac2-8b83-405d-b88c-f0e5cd2452fb' has no docking vector 'RightBottom' - its docking to 'a7271f1b-50d5-4b50-97ca-7a5bf75f77fa' was dropped
 ```
 
-followed by `undo`. The model's answer: "I couldn't complete the swap: the 900 mm unit lacks the
-connection needed in the first position, and the result extended past the room wall. I undid the
-change, so the original order and 900 mm width are preserved."
+3. The model calls `undo`. The final `plan-context.json` has the original order with the last
+   root at width 900 and `dockingVectors: []`. `planner-calls.json` records `ok: true` for the
+   width change and the swap, followed by `undo`.
 
-The final `plan-context.json` — the state after the undo, that is the state turn 1 produced — has
-the widened root `8774cac2` with `dockingVectors: []` and `freeDockingVectors: []`, while the other
-two `HTB60` roots carry all six vectors (`LeftBottom`, `LeftTop`, `RightBottom`, `RightTop`,
-`BackBottom`, `BackTop`).
+The decisive evidence is in the root's `logMessages` inside `plan.xml`'s
+`externalConfiguration`, which the compact plan context does not expose:
 
-In `mcp-test-2026-10-17_18-40-40` (gpt-5-mini 32) the same defect is worse: the same correction,
-the widened root with zero docking vectors, no undo — the applied swap also removed the unit's
-front and left two overlapping units.
+```text
+Error 14019: Could not find entry in tab_DoorSettings for input value: TallUnit - All - Standard - 240 - mr_StorageunitSingle - 900 - Automatic - Right - Automatic
+```
+
+It is followed by a `RealDoorDirection` exception and downstream JSON errors. The root keeps
+`mod_DoorDirectionSelection: "Right"` as an input, has no `dockInfos`, and its `mf_Door` has no
+parts. This is a failed library calculation, not just missing docking metadata.
 
 ## Investigation trace
 
-1. **The empty dockInfos predate the swap — two independent proofs.** The undo of turn 2 restores
-   the group to its turn-1 state; the final plan context is that state, and it shows
-   `dockingVectors: []` on the widened root — the width change (turn 1) left them empty. The swap's
-   own correction proves it independently: `handOver` (`hi-tools.ts:954-972`) builds the correction
-   from `dockingVectorNames(newOwner)` — the dockInfos of `groupItem.posDataJson` read before any
-   swap mutation (the contextData rewrite at `hi-tools.ts:978-990` runs before the articlePos swap
-   and before `arrangeAndLoad`), and `swapRootModules` never mutates `dockInfos`. The correction
-   names 'RightBottom' missing on `8774cac2`, so its dockInfos were already empty when the swap
-   started.
-2. **The recalculation chain of turn 1, and the one step that rebuilds the root.** The
-   `change-module-attribute` tool command (`hi-tool-commands.ts:774`) builds one `change-attributes`
-   command per group (no moduleId in the call) with the payload
-   `{groupId, attributes:[{attributeId, value, rootModuleIds}]}`. `changeAttributes`
-   (`hi-tools.ts:456`) resolves the attribute targets and runs the group operation;
-   `modifyAttributesOfModules` (`glue-logic.ts:2650`) solves the attribute conflict, sets the value
-   (`_setAttribute`, `isInput = true`) and calls `_calculateAndUpdateGroupMap`
-   (`glue-logic.ts:2682` → `:1983`), which runs `_runGroupCalculation` (`glue-logic.ts:2014`):
-   `recalculatedGroup = this._calculate(groupData.posDataJson)` (`:2019`) → `_calculate`
-   (`:3065`) → `_updatePosData` → `libraryData.calculateGroup(posGroup)` (`:3069`) — which is the
-   library's calc.js (`homag-intelligence.ts:159-161`:
-   `calculateGroup: (groupData) => libraryExports.calc(groupData)`; loaded from the Roomle
-   backend via `libLoadCalcScript`, `minimal-hi-example/index.html`) — and then
-   `_takeOverPropertiesFromOriginalGroup` (`:3272` call, `:3287` definition). That step takes over
-   the position and rotation, the contextData (only when the calculated root lacks it),
-   libraryId, articleName/articleId, imageUrl, desc, category, additionalText and canBeDeleted —
-   **but not `dockInfos`**. The arrangement may run a second `_calculate`
-   (`_arrangeRootModulesAndCalculateIfChanged`, `glue-logic.ts:3083`, second calculation at
-   `:3116` when the arrangement moved something). `_storeCalculatedGroup` (`:2049`, definition
-   `:2063`) stores the result in the group map; `loadWithChangedAttributes` (`:2178`) loads it into
-   the planner with `HI_LOAD_OBJECT_REASON.CHANGE_ATTRIBUTE`. `glue-logic.ts` mentions `dockInfos`
-   only at `:336` (`uniqueDockingVectorIndex`) and `:352` (the `transferDockingContext` comment) —
-   nothing in the recalculation chain restores them.
-3. **The swap reads the inventory and drops the docking.** `swapRootModules` (`hi-tools.ts:908`)
-   checks the corner pair, removes the top side links (`removeDockingEntries`), re-aims the bottom
-   side dockings at the other root, then hands the side contexts over (`handOver`,
-   `hi-tools.ts:954`): a dockedContext survives only if
-   `dockingVectorNames(newOwner).includes(dockedContext.ownDockingVector)`, where
-   `dockingVectorNames` (`hi-plan-context.ts:311-315`) maps `root.dockInfos` to ids, excluding
-   `CollisionBox`. `firstSideContexts` = [RightBottom→a7271f1b, RightTop→a7271f1b] handed to
-   `second` (`8774cac2`): `dockingVectorNames(8774cac2)` = [] → 'RightBottom' not included → the
-   correction at `hi-tools.ts:967`, the docking dropped. The swap then applies undocked
-   (`arrangeAndLoad`) — a correction, not a guard. The plan context serves the same inventory
-   (`dockingVectors: dockingVectorNames(root)`, `hi-plan-context.ts:704`), hence
-   `dockingVectors: []` in `get-plan-context`.
-4. **The planner's docking re-resolution half-docks the row.** Run 32's `plan.xml`: `8774cac2` has
-   `dockInfos: []` but keeps its own `dockedRoots` [LeftBottom→a7271f1b, LeftTop→a7271f1b];
-   `a7271f1b`'s `dockedRoots` lost the Right*→`8774cac2` entries. In run 16's `plan.xml` (widening
-   the first unit, trace 5) all three roots have six dockInfos and the full dockedRoots. So the
-   scene and the group map disagree after the failing call: the widened root keeps its left
-   docking, the middle root loses its right docking — the half-docked row behind the
-   overlapping-units result of the 18-40-40 run.
-5. **The controls isolate the width change on the last unit.** Same session, same build:
-   - Run 16 (`edit-change-one-unit`, "make the first unit 900 mm wide"):
-     `change-module-attribute` `mod_Width` 900 on the FIRST unit `0010443c` — the final plan
-     context has all three `HTB60` roots with six docking vectors.
-   - Run 24 (`edit-replace-unit-wider`, "replace the middle unit with a 900 mm wide tall cabinet
-     with drawers"): `exchange-root-module` creating an `HTS2AB60` w900 — fine.
-   Within one build, widening the first unit keeps the vectors and widening the last loses them;
-   the two calls differ only in which root carries the new width. Hypothesis, not traced further
-   (the calc.js is server-side library code): the arrangement's second `_calculate`
-   (`glue-logic.ts:3116`) fires for the wall-side unit — `keepWallDistances` repositions the row
-   when the last unit grows into the wall distance — and not for the first.
-   - Across sessions: `mcp-test-2026-10-17_13-28-41` (gpt-6-astra 32, planner build `b2dbcb202`):
-     the same two calls, no correction, the swap succeeded, all roots keep six vectors.
-     `mcp-test-2026-10-17_18-40-40` (gpt-5-mini 32) and the reproduce run lose them. The roomle-ui
-     sources of both operations (`glue-logic.ts`, `hi-tools.ts`, `hi-plan-context.ts`) are
-     identical between `b2dbcb202` and the investigation checkout `8cfd98e71`; the kernel WASM pin
-     is identical (`packages/web-sdk/package.json` has no diff between them); roomle-hi-example
-     between the sessions differs only in docs. The deployed planner build of the failing sessions
-     is not recorded in the runs — the difference is in the deployed library calc.js or kernel
-     build, or nondeterminism in the calc.
-6. **Empty dockInfos are a tolerated state, so the loss went unnoticed.** `getDockingVectorBox`
-   (`hi-root-module-arrangement.ts:104-126`) skips roots without dockInfos, and the docking setter
-   logs "dockInfos is missing for root …" and returns (`hi-root-module-arrangement.ts:843-846`).
-   Generated roots legitimately have none (the `mr_Toekick` of the same group), so nothing flags a
-   calculated article root that lost them.
+Code references below are in roomle-ui `packages/web-sdk/packages/homag-intelligence/src/`
+unless prefixed with a repository path.
+
+1. **The width / hinge combination explains the controls.** Decoding the saved plan XML gives:
+
+   | Run | Widened root's hinge input | Calculated door direction | Docking vectors | Result |
+   |---|---|---|---|---|
+   | 2026-10-17 13:28, gpt-6-astra 32 | `Automatic` | `LeftRight` | 6 | Swap succeeds |
+   | 2026-10-17 18:40, gpt-5-mini 32 | `Right` | Calculation fails | 0 | Swap applies with dropped docking; no undo |
+   | 2026-10-18 08:45, gpt-6.1-sol 32 | `Right` | Calculation fails | 0 | Swap followed by undo |
+   | 2026-10-18 14:48, gpt-6-astra 32 | `Right` | Calculation fails | 0 | Swap followed by undo |
+   | 2026-10-18 08:45, gpt-6.1-sol 16, first unit widened | `Automatic` | `LeftRight` | 6 | Width change succeeds |
+
+   In the last control the untouched final 600 mm unit keeps `Right` and six vectors. These
+   cases do not isolate position: they differ in the hinge input of the widened unit. The
+   successful 900 mm article uses paired-door direction despite its description saying one
+   door. The former theories of random vector loss or a wall-side second calculation are not
+   supported by this comparison.
+2. **The authoring information permits resizing without describing this configuration change.**
+   `hi-mcp/hi-mcp-server/hi-mcp-server.ts:24` explains that a different size is the same article
+   with its size attribute changed. The saved `HTB60.desc` says "with 1 door" and "behind one
+   door" without a width qualification. The door-direction description distinguishes single
+   from paired doors, but does not tell the agent that this resize changes that distinction.
+   A legitimate size request retains a now-incompatible existing hinge input.
+3. **The library calculation returns the failed root and its diagnostics.**
+   `changeAttributes` (`hi-tools.ts:456`) calls `modifyAttributesOfModules`
+   (`glue-logic.ts:2650`); `_runGroupCalculation` (`:2014`) uses `_calculate` (`:3065`),
+   `_updatePosData` (`:3255`) and `libraryData.calculateGroup`. The library export is wired in
+   `homag-intelligence.ts:159-161`. `_takeOverPropertiesFromOriginalGroup` (`glue-logic.ts:3287`)
+   restores position, context and article information; it does not invent vectors or front
+   geometry after a failed calculation. `_logFailedRootModules` (`:2073`) logs errors to the
+   browser console, and `_storeCalculatedGroup` (`:2063`) stores the calculated result.
+4. **The attribute tool hides the useful diagnostic.** `change-module-attribute`
+   (`hi-tool-commands.ts:859-965`) calls `withLibraryChanges`
+   (`hi-tool-attributes.ts:231-251`). That helper compares attribute values and reports library
+   adjustments; it does not read raw root `logMessages`. `shapeRoot`
+   (`hi-plan-context.ts:689-710`) omits those messages. The MCP server's
+   `compactAttributeResult` (`hi-mcp/hi-mcp-server/tool-executors.ts:344-352`) then returns
+   command, group ids, changed-module ids and corrections. Neither the first result nor the
+   next compact context tells the agent why the root is incomplete.
+5. **The swap reports a downstream symptom.** `swapRootModules` (`hi-tools.ts:908`) calls
+   `handOver` (`:954-972`), which reads `dockingVectorNames(newOwner)`
+   (`hi-plan-context.ts:310`) and drops the side link at `hi-tools.ts:967` when no vector exists.
+   It still calls `arrangeAndLoad` (`:997`). It does not refuse or fabricate the missing
+   inventory. The correction proves the inventory was already missing when the swap began.
+6. **There is an existing feedback pattern to follow.** `create-or-replace-groups`
+   (`hi-tool-commands.ts:654-689`) reads raw groups after the operation, reports a root's first
+   Error/Fatal diagnostic and asks for corrected values or another article, while retaining
+   loaded content. Attribute edits need that information too. The existing test
+   `keeps the change and logs the root module the library reports an error for`
+   (`__tests__/glue-logic-test.ts:2699`) deliberately models a root losing its `dockInfos` on a
+   door-settings error. Its expectation is to keep the applied edit, not restore old geometry.
 
 ## Root cause
 
-The recalculation behind `change-module-attribute` — `changeAttributes` (`hi-tools.ts:456`) →
-`modifyAttributesOfModules` (`glue-logic.ts:2650`) → `_runGroupCalculation` (`glue-logic.ts:2014`)
-→ `_calculate` (`glue-logic.ts:3065`) → the library's calc.js (`homag-intelligence.ts:159-161`),
-possibly twice via `_arrangeRootModulesAndCalculateIfChanged` (`glue-logic.ts:3083`, `:3116`) —
-can return the width-changed root module without its `dockInfos`, and the one step that rebuilds
-the root's properties, `_takeOverPropertiesFromOriginalGroup` (`glue-logic.ts:3287`), restores
-position, rotation, contextData and article info but not the dockInfos. The group map then holds
-the widened root without docking vectors (`glue-logic.ts:2049,2063`), the plan context serves
-`dockingVectors: []` (`hi-plan-context.ts:311,704`), the planner's docking re-resolution drops the
-neighbour's side dockings to it (trace 4), and the swap's `handOver` (`hi-tools.ts:954-972`) drops
-the side docking with the correction at `:967` and applies undocked.
+The stored failing configuration is width 900 with an explicit single-side hinge input `Right`;
+the library cannot calculate that door-settings combination. The saved successful configuration
+at the same width uses `Automatic` and resolves to `LeftRight` with complete geometry.
 
-## Why the current code produces wrong results
+The tool-level defect is missing feedback about the failed calculation at
+`hi-tool-attributes.ts:231-251` / `hi-tool-commands.ts:957`. It leaves the agent treating the
+width change as complete, until the subsequent swap reports the absent docking vector. The
+article description also describes only its nominal single-door configuration, which gives the
+agent no basis to revise the hinge input after resizing.
 
-`_takeOverPropertiesFromOriginalGroup` was written for recalculations that legitimately change
-root properties; the dockInfos were simply not in its list, and nothing else in the chain
-restores them (trace 2). The swap trusts `dockInfos` as the root's vector inventory and reads a
-missing vector as "this docking cannot exist on the new owner" — right when the vectors genuinely
-differ (a corner article carries different vectors), wrong when the inventory was lost. And
-because a correction is not a guard, the swap applies in the broken state; the planner's
-re-resolution then half-docks the row (the widened root keeps its left docking, the middle root
-loses its right), which is the overlapping-units result of the 18-40-40 run. The model reads the
-correction, cannot repair the payload — the width change is legitimate — and undoes.
+The absence of a `dockInfos` copy in `_takeOverPropertiesFromOriginalGroup` is not established as
+a defect. Restoring those vectors would conceal the error while leaving the front unbuilt.
 
-## Proposed fix
+## Proposed clean fix
 
-Keep the docking vectors across the recalculation, in roomle-ui: `_takeOverPropertiesFromOriginalGroup`
-(`glue-logic.ts:3287`) takes over the original root's `dockInfos` when the calculated root has none
-— the same take-over step that already restores the contextData, one property earlier in the same
-loop.
+1. **Expose the calculation diagnostic in the attribute result.** Extend the existing shared
+   attribute-result path (`withLibraryChanges`, both attribute tools) to read the settled raw
+   groups and name affected roots with Error/Fatal messages. Report the first diagnostic line
+   and ask the agent to check the requested value and retained overrides against the library
+   data, correct the incompatible values or replace the article. Keep the edit and other roots;
+   report partial calculation through `corrections`, which already survives MCP compaction.
+   Cover group-attribute changes too, and verify errors from a final follow-up calculation are
+   included. The create/replace pattern supplies the existing wording and retention contract.
+2. **Clarify the library descriptions.** The article and door-direction descriptions must say
+   how the door arrangement depends on size and which input a paired configuration takes.
+   The stored result establishes `Automatic → LeftRight` at width 900; an explicit `LeftRight`
+   recovery remains a live-library acceptance check. Put library-specific facts in data, never
+   in a served rule or an automatic tool correction that hard-codes this attribute or width.
+3. **Recover the requested plan through valid inputs.** The agent uses the diagnostic and data
+   to correct the hinge setting, verifies complete calculation, then swaps the units. Keep the
+   outer-hinge requirement for the actual door arrangement: a paired unit has two outer hinges;
+   it must not receive a single-side value just because it is now the row's first unit (D84).
+   `edit-swap-units` acceptance needs that distinction after the resize.
 
-The caveat the implementation must settle: a dockInfo's start/end points are geometry, and a width
-change moves them (the Right* vectors of a 600 mm unit start at x=600, of a 900 mm unit at x=900).
-A wholesale take-over would serve stale endpoints to `getDockingVectorBox`
-(`hi-root-module-arrangement.ts:104-126`, the group's docking box for placement), the `rootPoints`
-fallback (`hi-plan-context.ts:466`) and `cornerPointOfRoot` (`hi-plan-context.ts:338`, corner
-articles only). The clean fix therefore re-derives the points from the calculated root's geometry
-— the docking vector definitions are per-module and unchanged by a width change, and RoomleCore
-derives fresh vectors from `rootModule->getProperties().dockingVectors.vectors`
-(`src/configurator/external/docking/external-module-group-docking-vectors.cpp`), which is the
-neutral source to read.
-
-The fix is the roomle-ui take-over alone; no library-side alternative is proposed (Rejected
-approaches).
-
-## What the fix does not do
-
-- It does not change `handOver` (`hi-tools.ts:954-972`) or the plan context: they read the
-  inventory correctly once it is kept.
-- It does not change the served text: the agent's two calls are legitimate — widen the last unit,
-  swap the first and the last — and the tool must build both.
-- It does not touch the planner's checks: the docking re-resolution on load stays as it is.
-- It does not give generated roots docking vectors: the take-over fires only when the calculated
-  root lost vectors the original had — a generated root has none in either (trace 6).
+No new guard is proposed. The planner continues to keep valid changes and lets the agent repair
+the failing configuration. `swapRootModules`, the kernel and ligna-store need no special case.
 
 ## Rejected approaches
 
-- **Make `handOver` keep the docking despite the missing vector** (`hi-tools.ts:954-972`). Hides
-  the symptom: the plan context would still serve `dockingVectors: []`, the planner's
-  re-resolution would still drop the neighbour's side dockings (trace 4), and the next edit would
-  hit the same wall. The root cause is the lost inventory, not the swap's reading of it.
-- **A guard that refuses the swap.** The agent's swap is legitimate; the missing vector is the
-  tool's product, not the agent's input ([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort)).
-- **A served-text change.** Nothing in the instructions misleads the agent; both calls are correct
-  planning.
-- **A RoomleCore change.** The kernel only reads `dockInfos`
-  (`external-module-group-deserializer.cpp:112`) and derives the docking vectors fresh from the
-  root module's definitions (`external-module-group-docking-vectors.cpp`); the loss is not in the
-  kernel's sources.
-- **A change in the library's calculation** — the calc.js re-attaching the docking vector
-  definitions to its recalculated roots. It changes the data the library calculates, and the MCP
-  deals with the library as it is: it explains the library's behaviour and capabilities to the
-  agent, so the fix belongs in the MCP server and the tools and API of roomle-ui. This is not a
-  hard rule — the library has code, and a real bug in it that works against its overall intention
-  (a calculation formula that computes the wrong thing) is a valid library fix, reported like the
-  items of [`../backlog/library-issues.md`](../backlog/library-issues.md) — but "make the calc keep
-  the dockInfos" asks the library to calculate differently so the MCP stops seeing the defect.
+- **Copy or reconstruct old `dockInfos` after any empty result.** A library error removed the
+  front as well as the vectors. Old endpoints are also stale after resizing. Supplying vectors
+  would make an incomplete article appear dockable without fixing the failed calculation.
+- **Keep the swap link despite the absent vector, or refuse all swaps with missing vectors.**
+  Both address the symptom after the width edit; neither exposes its actual cause.
+- **Silently reset the hinge setting.** It may be a deliberate user input. The server must not
+  encode this library's attribute, width threshold or door-settings combinations.
+- **Change the library calculation to accept every combination or return old geometry.**
+  This analysis does not establish a library formula bug. The supported configurations belong
+  in descriptions, and calculation feedback belongs in the tools.
+- **Require every attribute edit to return the entire raw group.** A short root-specific
+  diagnostic preserves the compact result contract (D62) and gives the agent the missing fact.
 
-## Test
+## Verification and acceptance
 
-`edit-swap-units`: after `change-module-attribute` `mod_Width` 900 on the last unit, the widened
-root keeps its six docking vectors and `swap-root-modules` swaps without a correction — the row is
-2100 mm with the 900 mm unit in the back corner. A unit test in roomle-ui
-`__tests__/hi-tool-commands/`.
+On 2026-10-18 the five cases above were extracted from their saved `plan.xml` files, including
+root inputs, vector counts, first calculation diagnostics and resolved `mf_Door` direction.
+The failing gpt-6-astra run also has zero `mf_Door.parts`; the successful control has generated
+front parts. A compact evidence extract is retained locally under `.temp/verify-mcp-74-78/`.
 
-## Implementation plan (sketch, roomle-ui, based on `fix/room-corners-at-openings`)
+453 existing SDK tests passed across `hi-group-layout-test.ts`,
+`hi-root-module-arrangement-test.ts`, `hi-tools-test.ts` and `glue-logic-test.ts`; this includes
+the calculation-error retention test, not a test of the proposed feedback fix. The 78 MCP
+server registration / served-text tests passed. Run the SDK via its npm script with Homebrew
+Node 25.6.1; the default Node 20.10.0 cannot start the installed runner (`node:util.styleText`).
 
-1. Reproduce in a roomle-ui unit test: a three-root row, `changeAttributes` `mod_Width` 900 on the
-   last root, assert the widened root keeps its six dockInfos. The test's library stub returns a
-   root without dockInfos, mirroring the deployed calc — this pins the loss inside roomle-ui's
-   chain, independent of the deployed calc.js.
-2. `_takeOverPropertiesFromOriginalGroup` (`glue-logic.ts:3287`): when the calculated root has no
-   `dockInfos` and the original root has some, take them over — with the start/end points
-   recomputed from the calculated root's geometry. Settle in implementation whether the points
-   are recomputed in roomle-ui or re-derived from the calculated root's docking vector definitions
-   (the kernel's derivation, trace 2).
-3. `__tests__/hi-tool-commands/` — the `edit-swap-units` scenario end to end: widen the last unit,
-   swap the first and the last, no correction, the row 2100 mm with the 900 mm unit in the back
-   corner; plus a case that widening the first unit still keeps the vectors (the run-16 control,
-   trace 5).
-4. If a run still shows the loss after the take-over, trace open question 1 (where the dockInfos
-   are dropped). A real defect in the library's own calculation — code that works against its
-   overall intention — is reported like the items of
-   [`../backlog/library-issues.md`](../backlog/library-issues.md); the fix of this bug stays in
-   roomle-ui either way.
+No production code was changed, and no new live library/model run was performed. Required
+regressions and acceptance before closing:
 
-## Open questions
+- Through the actual tool/glue path, apply an attribute to a root whose calculation fails:
+  retain the edit, report its diagnostic and root id, preserve the other roots, and do not
+  invent `dockInfos`. Verify the final calculation's messages and both attribute tools.
+- At the MCP boundary, retain the diagnostic through `compactAttributeResult`.
+- On the real library, replay the failing width / hinge inputs, recover with a supported
+  paired-door input, then swap. Require built front geometry, docking vectors, a contiguous
+  2100 mm row, the 900 mm unit in the back corner and appropriate outer hinges. A dropped link
+  followed by undo is a failure.
 
-- **Where exactly the dockInfos are dropped** — in the library calc.js's returned group, or in a
-  step between the calc and the store — is not traced to the line. The calc.js is server-side
-  library code (loaded from the Roomle backend via `libLoadCalcScript`,
-  `minimal-hi-example/index.html`); RoomleCore's C++ only reads dockInfos
-  (`external-module-group-deserializer.cpp:112`) and writes none. The roomle-ui fix stands
-  regardless: the take-over step is the one place that rebuilds the root's properties, and it
-  skips dockInfos.
-- **Why the same payload keeps the vectors in `mcp-test-2026-10-17_13-28-41` (planner build
-  `b2dbcb202`) and loses them in the two later sessions** (trace 5): the deployed planner build of
-  the failing sessions is not recorded in the runs; the difference is in the deployed library
-  calc.js or kernel build, or nondeterminism in the calc.
-- **Why widening the first unit keeps the vectors and widening the last loses them within one
-  build** (trace 5): hypothesis — the arrangement's second `_calculate` (`glue-logic.ts:3116`)
-  fires for the wall-side unit and not for the first; not traced into the calc.js.
+The saved inputs explain the pass/fail difference; they do not establish why the seed plan's
+hinge input differed between sessions. The exact library source branch that omits the vectors
+is not needed to diagnose the observed Error 14019, but a live recovery still needs checking.

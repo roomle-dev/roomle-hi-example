@@ -10,7 +10,7 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| 72 — The wall units hang at two heights after a plinth height in the group attributes | Analyse why some wall units follow the plinth height of the group attributes and others do not; then every wall unit hung above a floor unit stays flush with the tall units | medium |
+| 72 — The wall units hang at two heights after a plinth height in the group attributes | Make the shared carrier-following arrangement track a rising docking top at a fixed root position; preserve explicit gaps and units that already followed | medium |
 | 73 — A wall-level article of another category is taken for a floor unit | Tell wall-level articles from floor articles by library data rather than a category word; keep an article the agent puts beside a wall unit there | low |
 | 74 — An island's back row of other widths lands off the front row | Say in the description of `behind` where a turned unit lines up and which way the relations run in a turned row; else an `align` the server derives the offset from | low |
 | 75 — The backsplash of an image kitchen is reported as not buildable | Say in the `notCarried` sentence of `create-or-replace-groups`, library-neutrally, that a generated part may wait for an attribute of the units that switches it on, and drop its kitchen example | medium |

@@ -11,7 +11,7 @@ the document a row links.
 | Item | To do | Priority |
 |---|---|---|
 | 74 — An island's back row of other widths lands off the front row | Say in the description of `behind` where a turned unit lines up and which way the relations run in a turned row; else an `align` the server derives the offset from | low |
-| 77 — An edit that gives a row a new end leaves a door hinged to the outside | Name the door rule of D84 in the descriptions of the tools that can give a row a new end (swap, delete, exchange, merge) | medium |
+| 77 — An edit that gives a row a new end leaves a door hinged to the outside | Put the D84 end-door reminder in the `get-plan-context` description sent in every tool list; verify it without fetching the authoring rules | medium |
 | 78 — A swap of a widened unit is refused for want of a docking vector | roomle-ui: keep the docking vectors of the root module the attribute change recalculates, so the following swap applies without a correction | medium |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Where Mistral Large falls short of the prompts](mistral-large-prompt-issues.md) | Improvement candidates from the `mistral-large-latest` test run: declare the payload fields in the input schema, merge groups that name each other's roots, act on obstacle hints, describe the walls, open the edit tools with the user's words | medium |

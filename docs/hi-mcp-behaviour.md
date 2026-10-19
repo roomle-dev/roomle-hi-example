@@ -847,7 +847,7 @@ insertion height the library adjusts. The [command implementation](../.agents/co
 describes callback ownership, operation-slot lifetime and the guarding planner tests.
 
 Both attribute commands read the settled raw groups they changed and append calculation
-diagnostics to `corrections` (C24). Each root's first Error/Fatal message contributes its first
+diagnostics to `corrections` (C25). Each root's first Error/Fatal message contributes its first
 line; roots with the same diagnostic are grouped within their group. The message names the
 group, root ids and articles and asks the agent to check group attributes and retained root
 overrides against the library data, then change the failing values or replace the article.
@@ -1109,7 +1109,7 @@ has its own corrections, G31–G45 and G64. The tests named here without a file 
 | G15 | an article id the catalog does not have | nothing | error with the valid article ids |
 | D29 | `merge-article-into-group` on a taken side vector | docks the unit to the root at the free end of that row in the named direction — when that row ends at a corner article, to the free end of the leg in the other direction —, or to the named root's free other side when the unit would stand outside the room at that end (the calculated group and the contour of the room the group stands in decide, not the bounding box of its walls) | correction, naming the end it skipped |
 | P7 | a `dockingVector` the new article does not have (by the catalog) | uses the partner of `ownDockingVector` when the article has it | correction |
-| C24 | an Error/Fatal diagnostic on a root in a group changed by either attribute command, after its final follow-up calculation | keeps the applied changes and other roots | `corrections`, after library-change feedback: "<tool>: the library could not calculate root module '<root id>' (<article id>) of group '<group id>' - <first diagnostic line>. Check the group's attributes and the root's attribute overrides against the library data; change the failing values or replace the article. The applied changes and other roots were kept." Roots with the same cause are grouped per group; warnings and unrelated groups are omitted. Guarded in roomle-ui `hi-tool-commands/group-commands-test.ts` and `hi-tools-test.ts`, and the MCP `tool-executors.test.ts`. |
+| C25 | an Error/Fatal diagnostic on a root in a group changed by either attribute command, after its final follow-up calculation | keeps the applied changes and other roots | `corrections`, after library-change feedback: "<tool>: the library could not calculate root module '<root id>' (<article id>) of group '<group id>' - <first diagnostic line>. Check the group's attributes and the root's attribute overrides against the library data; change the failing values or replace the article. The applied changes and other roots were kept." Roots with the same cause are grouped per group; warnings and unrelated groups are omitted. Guarded in roomle-ui `hi-tool-commands/group-commands-test.ts` and `hi-tools-test.ts`, and the MCP `tool-executors.test.ts`. |
 | D35 | a wall unit or range hood docked Top-to-Top above a floor unit is corrected to Top-to-Bottom; a known wall article or unknown-category article explicitly docked Top-to-Bottom receives the default only when its y offset is omitted | sets the y offset to the hang gap of the wall units (`hangGapOf`) | correction: "'OTB60' hangs 660 mm above '…', at the height of the wall units" |
 
 **In the planner's group operations** (roomle-ui `hi-tools.ts`, `hi-plan-context.ts`). These checks

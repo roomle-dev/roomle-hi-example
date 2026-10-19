@@ -6,6 +6,8 @@
 > **Base**: roomle-hi-example `master` (`65c66f8`), verified on `docs/verify-mcp-74-78`;
 > roomle-ui `fix/generated-part-switch-discovery` (`cf377cfd4`), descended from
 > `fix/room-corners-at-openings` (`a008be42d`)
+> **Implementation base**: roomle-ui `origin/release/bo-test` (`f15c22cc3`, checked
+> 2026-10-19); the earlier branch names above record investigation context, not the required base
 > **Backlog**: [item 78](../backlog/mcp-issues.md#78-a-swap-of-a-widened-unit-is-refused-for-want-of-a-docking-vector)
 
 ## Affected repositories
@@ -14,8 +16,8 @@
   boundary (`packages/web-sdk/packages/homag-intelligence/src/hi-tool-attributes.ts:231`,
   `withLibraryChanges`, called by both attribute tools in `hi-tool-commands.ts:957,1013`).
   Keep the applied changes and name the affected roots, the diagnostic and the recovery action.
-  Add tests through the tool commands backed by the glue logic. Any implementation retains
-  `fix/room-corners-at-openings` as its required ancestry.
+  Add tests through the tool commands backed by the glue logic. The implementation branch
+  starts directly from `origin/release/bo-test`, as required by the user.
 - **roomle-hi-example** — update the attribute-tool result contract in
   `docs/hi-mcp-behaviour.md`, `docs/hi-mcp-server.md`, the tool skill and implementation context
   when the fix is implemented; test that feedback survives the MCP result compaction. Adjust
@@ -205,3 +207,48 @@ regressions and acceptance before closing:
 The saved inputs explain the pass/fail difference; they do not establish why the seed plan's
 hinge input differed between sessions. The exact library source branch that omits the vectors
 is not needed to diagnose the observed Error 14019, but a live recovery still needs checking.
+
+## Independent validation — 2026-10-19
+
+**Verdict: the diagnosis and proposed feedback boundary are supported.** Reviewed against
+roomle-hi-example `master` (`29c6d22`) and roomle-ui `feat/hi-mcp-api-refactoring`
+(`6771dc7e1`). The roomle-ui checkout retains `a008be42d` as an ancestor. The relevant
+attribute-result, calculation and swap implementations still match the investigation above.
+
+Decoded all five saved XML configurations again and asserted their values directly, rather
+than relying on the previous evidence extract. Both 900 mm `Automatic` controls have six
+docking vectors, `LeftRight` door direction, 73 door parts and no Error/Fatal diagnostics.
+All three 900 mm `Right` cases have Error 14019, zero docking vectors and zero door parts.
+The planner-call records mark the width edits and swaps successful; the two later failing
+runs then undo the swap. The local gpt-6-astra console log also records empty attribute-tool
+feedback followed by the swap's dropped-link correction.
+
+The code confirms the proposed fix location: `withLibraryChanges` compares shaped attribute
+values, `shapeRoot` omits `logMessages`, and `compactAttributeResult` retains `corrections`.
+The existing create/replace path reads raw root Error/Fatal messages after the operation and
+keeps the loaded roots. Reusing that diagnostic policy for both attribute tools fits the
+current compact result contract. Copying old docking vectors would leave the missing door
+geometry unresolved.
+
+Existing regression suites run for this review:
+
+- **481 SDK tests passed** across `hi-tools-test.ts`, `glue-logic-test.ts`,
+  `hi-tool-commands/group-commands-test.ts` and
+  `hi-tool-commands/create-or-replace-groups-placement-test.ts`.
+- **147 MCP tests passed** across `tool-executors.test.ts` and `hi-mcp-server.test.ts`.
+- **Five saved-case assertions passed.** The independent extract is local scratch evidence
+  at `.temp/validate-mcp-78/evidence.json`; test logs are
+  `.temp/validate-mcp-78-sdk-tests.log` and `.temp/validate-mcp-78-mcp-tests.log`.
+
+These checks validate the diagnosis and existing behaviour, not the unimplemented feedback
+fix. Cross-session controls do not replace a controlled replay on one live library version.
+Recovery from the failing state with `Automatic`, an explicit `LeftRight` input, the final
+swap geometry and the agent's response to the new feedback remain acceptance work. The
+current `edit-swap-units.expect` still requires a left-hinged new left-end door without
+distinguishing paired doors; the proposed acceptance update is necessary. No productive
+code, library data or prompt expectations were changed by this validation.
+
+The implementation base required by the user is checked against the fetched
+`origin/release/bo-test` (`f15c22cc3`) on 2026-10-19. Its `hi-tool-attributes.ts`,
+`hi-tool-commands.ts`, `hi-tools.ts` and `glue-logic.ts` match the independently validated
+checkout, so the diagnosis and proposed feedback boundary apply on that base too.

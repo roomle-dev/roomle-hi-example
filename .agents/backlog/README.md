@@ -11,7 +11,7 @@ the document a row links.
 | Item | To do | Priority |
 |---|---|---|
 | 74 — An island's back row of other widths lands off the front row | Explain the aligned end and the turned-row viewpoint of `behind`; if needed, expose end alignment using docking endpoint modes | low |
-| 78 — A swap of a widened unit is refused for want of a docking vector | roomle-ui: report the attribute calculation error; library descriptions: explain width-dependent door configurations so the agent can recover valid inputs before swapping | medium |
+| 78 — A swap of a widened unit is refused for want of a docking vector | roomle-ui, based on `release/bo-test`: report the attribute calculation error; library descriptions: explain width-dependent door configurations so the agent can recover valid inputs before swapping | medium |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Where Mistral Large falls short of the prompts](mistral-large-prompt-issues.md) | Improvement candidates from the `mistral-large-latest` test run: declare the payload fields in the input schema, merge groups that name each other's roots, act on obstacle hints, describe the walls, open the edit tools with the user's words | medium |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |

@@ -83,7 +83,8 @@ pattern of `create-or-replace-groups` (`hi-tool-commands.ts:654-689`); use `corr
 by the MCP `compactAttributeResult` (`tool-executors.ts:344-352`). Clarify the library's
 width-dependent door descriptions, then recover valid hinge inputs before the swap. Keep
 library-specific facts in data. Do not restore old `dockInfos` over a failed calculation or
-silently reset hinge settings. Roomle-ui work retains `fix/room-corners-at-openings` ancestry.
+silently reset hinge settings. The roomle-ui implementation branch starts from
+`origin/release/bo-test`.
 
 **Test.** Unit coverage through the tool/glue path: a failed attribute calculation keeps the edit
 and returns the affected root and diagnostic; MCP compaction retains it. Live `edit-swap-units`:

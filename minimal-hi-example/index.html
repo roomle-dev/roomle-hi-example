@@ -447,9 +447,9 @@
         url.searchParams.set('backendId', backendId);
         url.searchParams.set('library_id', selectedLibraryId);
         if (planId) {
-          url.searchParams.set('plan_id', planId);
+          url.searchParams.set('id', planId);
         } else {
-          url.searchParams.delete('plan_id');
+          url.searchParams.delete('id');
         }
         window.location.href = url.toString();
       };
@@ -484,8 +484,7 @@
       };
       const chatEnabled = getQueryParam('chat') === 'true';
       const options = {
-        id:
-          getQueryParam('plan_id') ?? selectedPreset?.planId ?? DEFAULT_PLAN_ID,
+        id: getQueryParam('id') ?? selectedPreset?.planId ?? DEFAULT_PLAN_ID,
         overrideServerUrl: getQueryParam('server_url') ?? DEFAULT_SERVER_URL,
         moc: true,
         saveToIdb: true,

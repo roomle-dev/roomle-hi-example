@@ -538,7 +538,7 @@ node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<pro
 | `<provider>` | a chat provider of the launcher, passed through unchanged (`gpt-5.4-mini`, `mistral`, `claude`, … — see [ai-chat.md](../../docs/ai-chat.md)) |
 | `<api-key>` | the provider's API key, e.g. `"$AZURE_GPT_KEY"` |
 | `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it. `""` with `--image` sends the image alone — the chat backend gives it the image prompt of the planner, which names the skill `image-planning` |
-| `--plan <id>` | the plan snapshot the page starts from (`plan_id` of the example URL), its HI groups included; without it, the page's default plan |
+| `--plan <id>` | the plan snapshot the page starts from (`id` of the example URL), its HI groups included; without it, the page's default plan |
 | `--image <file>` | an image (PNG, JPEG, WebP, GIF) that goes along with the last prompt, as an image dropped into the chat window: redrawn as JPEG with a long side of at most 1568 px. A model that reads no images answers `HTTP 400: The model … does not read images` |
 | `--out <dir>` | the result directory (default `.temp/result/<UTC timestamp>-<provider>/`) |
 | `--dev` | the planner from the local Rubens UI dev server (`npm run dev` in roomle-ui, :5173) |
@@ -549,7 +549,7 @@ The script:
 1. starts the launcher (`minimal-hi-example/start.mjs <provider> <api-key> --no-open`) with the MCP
    server on port **3110**, not 3100 — example tabs of an interactive session reconnect to 3100 and
    would take the bridge away from the run's page;
-2. opens the example URL the launcher prints, with `plan_id` of `--plan`, in Playwright Chromium, a
+2. opens the example URL the launcher prints, with `id` of `--plan`, in Playwright Chromium, a
    fresh browser each run, so every run starts from its plan (no IndexedDB state);
 3. waits until the MCP tool `get-plan-context` lists articles (server up, page connected, HI library
    loaded) and until the HI library has loaded the plan's groups (`window.hiPosGroupsCompletelyLoaded`,

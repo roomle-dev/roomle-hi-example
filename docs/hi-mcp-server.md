@@ -52,7 +52,7 @@ parameters:
 | `mcp_session` | The session on that server — its container on Cloudflare (set by `npm run start:cf`) |
 | `backendId` | Selects the HI backend |
 | `library_id` | Overrides the preset's library |
-| `plan_id` | Selects the plan loaded at startup |
+| `id` | Selects the plan loaded at startup |
 | `language` | Selects the HI and planner locale |
 | `user_right` | Accepts `Simple`, `Advanced`, or `Master` |
 | `server_url` | Overrides the Rubens UI server the planner is loaded from. Defaults to `https://www.roomle.com/t/bo-test/` |

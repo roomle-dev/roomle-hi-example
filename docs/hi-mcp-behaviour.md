@@ -342,7 +342,7 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
   container. Browser chats include `?client=<page ID>`; requests with an ID other than the active
   page's are refused with HTTP 409, including `tools/list`. External MCP clients without a page ID
   can still call tools against the currently connected page.
-- **Page bridge**: the page connects to the WebSocket `/bridge` (origins in `HI_MCP_PAGE_ORIGINS`),
+- **Page bridge**: the page connects to the WebSocket `/bridge` (from any origin),
   announces bridge protocol 2, and executes the planner methods the tools send on
   `roomDesignerApi.extended`. Its `hello` may carry a browser chat ID; the server sends `ready`
   only after accepting the page. A second page is closed with code 4409 without replacing the
@@ -1152,7 +1152,7 @@ validation error: …".
 
 ### 8.7 Connection and bridge messages
 
-Infrastructure checks, kept. The page allow-list and the origin check are security boundaries.
+Infrastructure checks, kept. The page allow-list is the security boundary.
 
 | Message | When |
 |---|---|

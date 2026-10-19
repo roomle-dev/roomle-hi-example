@@ -497,7 +497,7 @@ This starts:
 - Opens browser to http://localhost:3000/?mcp=true
 
 `npm run start:cf` starts the same page against the MCP server deployed on Cloudflare instead
-(no local MCP server; session = the OS user name; page port 3000 only).
+(no local MCP server; session = the OS user name).
 
 ### Deploying to Cloudflare
 

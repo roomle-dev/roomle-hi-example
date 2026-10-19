@@ -40,7 +40,7 @@ npm start openai <api-key>
 | `npm start gemini <api-key>` | Plus chat with `gemini-2.5-pro` via the Gemini API, key from Google AI Studio (also `google`, `gemini-pro`, `gemini-flash` for `gemini-2.5-flash`, or any `gemini-*` model id) |
 | `npm start azure <api-key>` | Plus chat with Azure OpenAI (also `openai`; needs `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL=<deployment-name>`) |
 | `npm run dev <same arguments>` | Same as the matching `npm start` variant, but the planner loads from the local Rubens UI dev server (:5173) |
-| `npm run start:cf <same arguments>` | Same as the matching `npm start` variant, but with the MCP server deployed on Cloudflare instead of a local one (session = your OS user name, page port 3000 only) |
+| `npm run start:cf <same arguments>` | Same as the matching `npm start` variant, but with the MCP server deployed on Cloudflare instead of a local one (session = your OS user name) |
 | `EXAMPLE_SERVER_URL=<url> npm start <same arguments>` | Same as the matching `npm start` variant, but the planner loads from `<url>` (passed to the page as `server_url`) |
 
 The root `start`, `dev` and `start:cf` scripts run the launcher directly. Put launcher flags after

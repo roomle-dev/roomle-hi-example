@@ -84,7 +84,7 @@ https://<worker name>.<account subdomain>.workers.dev/mcp
    (no chat model or key needed) → `npx wrangler tail` shows `page connected`;
    `get-plan-context` on `/mcp?session=<name>` returns that planner's context
 3. or, without the store: `npm run start:cf` opens the HI example against the deployment
-   (session = the OS user name, page port 3000 only) → the page log shows
+   (session = the OS user name) → the page log shows
    `MCP connected to the MCP server`, and `get-plan-context` on the printed MCP URL returns the
    articles
 

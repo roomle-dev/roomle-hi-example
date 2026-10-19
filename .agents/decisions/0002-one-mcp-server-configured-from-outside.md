@@ -16,8 +16,7 @@ tool fix had to be made twice, and only one of the two was tested and deployed.
 
 - `hi-mcp/hi-mcp-server` is the only MCP server. It carries no client-specific code: it serves
   `/mcp` and `/bridge` only, and every client wires itself to it through environment variables —
-  `HI_MCP_PORT`/`PORT`, `HI_MCP_PAGE_ORIGINS` (the WebSocket and CORS origin allow-list) and
-  `HI_MCP_STORE_URL` (the URL the "no page connected" error names).
+  `HI_MCP_PORT`/`PORT` and `HI_MCP_STORE_URL` (the URL the "no page connected" error names).
 - The example page is served and opened by its own launcher, `minimal-hi-example/start.mjs`, as
   the store's dev server serves the store: static files on port 3000, the server spawned on port
   3100 with those variables set, the browser opened.
@@ -33,8 +32,7 @@ tool fix had to be made twice, and only one of the two was tested and deployed.
 - `npm start` runs two processes and needs a one-time `npm install` of the `hi-mcp` workspace
   (the build gate does it); the example URL is on port 3000, the MCP endpoint stays
   `http://localhost:3100/mcp`.
-- Port 3000 is also the ligna-store dev server's port; `EXAMPLE_PORT` moves the example, and the
-  launcher sets the origin allow-list for it.
+- Port 3000 is also the ligna-store dev server's port; `EXAMPLE_PORT` moves the example.
 - The example page talks to the server over the same WebSocket protocol as every other page.
 
 ## Rejected

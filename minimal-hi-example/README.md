@@ -25,8 +25,7 @@ To use the MCP server deployed on Cloudflare instead of a local one, run
 `npm run start:cf` (with the chat: `npm run start:cf mistral <api-key>`). No
 local MCP server starts. The page connects to the deployment in a session
 named after your OS user name, and the launcher prints the matching MCP URL
-for external clients. It needs page port 3000, because that is the only local
-origin the deployed server accepts.
+for external clients.
 
 **3. The example opens** at <http://localhost:3000/?mcp=true> (pass
 `--no-open` to skip that). Select a preset in the top bar, keep the tab

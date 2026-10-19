@@ -242,14 +242,11 @@ Close the test pages and stop polling their sessions after the checks so their c
 
 Besides server-side MCP clients, a browser page may call `/mcp` directly: the ligna-store chat
 window (`?store.stage=INT&model=…&api_key=…&mcp_server=<this URL>`) runs the Vercel AI SDK in the
-page and takes its tools from here. The server answers such cross-origin calls only for the page
-origins in `HI_MCP_PAGE_ORIGINS` (default `http://localhost:3000`, `http://127.0.0.1:3000`,
-`https://www.roomle.com`) — the same list that guards the `/bridge` WebSocket. Allowed origins get
-the CORS headers and a `204` preflight; any other origin gets no CORS headers and a `403` preflight,
-so the browser blocks it. The container does not set the variable, so the default applies; a store
-on another origin needs it in the container's `envVars` (`cf/src/container.ts`).
+page and takes its tools from here, as does the planning assistant of the roomle-ui HI presets
+example. The server answers cross-origin calls from every origin: `Access-Control-Allow-Origin: *`,
+the MCP headers and a `204` preflight. The `/bridge` WebSocket accepts every origin as well.
 
-Check after a deploy (expect `204` and the origin echoed back):
+Check after a deploy (expect `204` and `access-control-allow-origin: *`):
 
 ```bash
 curl -s -o /dev/null -D - -X OPTIONS https://hi-planning-assistant.dashiell-bell.workers.dev/mcp \
@@ -266,9 +263,7 @@ From the repository root, `npm run start:cf` opens the HI presets example connec
 deployment. `npm run start:cf mistral <api-key>` also starts the built-in chat. No local MCP
 server starts. The page connects to `wss://hi-planning-assistant-dev.dashiell-bell.workers.dev/bridge?session=<OS user name>`,
 and the launcher prints `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp?session=<OS user name>` for
-external MCP clients. The example has to run on port 3000, because `http://localhost:3000` is the
-only local origin in the server's default `HI_MCP_PAGE_ORIGINS`, and the launcher refuses another
-`EXAMPLE_PORT`. The OS user name keeps the session the same across restarts and networks, so an
+external MCP clients. The OS user name keeps the session the same across restarts and networks, so an
 external connector is set up once; two machines with the same user name share the container. The
 example always talks to the last deployed image, so deploy first to try server changes from a
 branch. The Worker URL is the constant `CLOUDFLARE_MCP_SERVER_URL` in
@@ -350,7 +345,7 @@ npx wrangler containers delete <ID>  # stop and remove the container application
 | deploy: "already an application … different durable object namespace" | orphaned container app from an earlier `wrangler delete` — `wrangler containers list` + `wrangler containers delete <ID>` |
 | deploy rejects the config | `instance_type` naming — use `standard-1`; or Containers require the Workers Paid plan |
 | First request is slow (~10 s) | the container boots on demand after sleeping — expected, not an error |
-| `page connected` never appears in `wrangler tail` | (a) the store URL lacks a valid `mcp_server` or its planner is not started, (b) the page origin is not in `HI_MCP_PAGE_ORIGINS`, (c) the WebSocket upgrade does not pass the Worker — the fallback is in the [Cloudflare ADR](../../.agents/decisions/0004-hi-mcp-server-on-cloudflare-containers.md) |
+| `page connected` never appears in `wrangler tail` | (a) the store URL lacks a valid `mcp_server` or its planner is not started, (b) the WebSocket upgrade does not pass the Worker — the fallback is in the [Cloudflare ADR](../../.agents/decisions/0004-hi-mcp-server-on-cloudflare-containers.md) |
 | Tool error `No HI page connected` | no page is connected to this session — open the suggested store URL and start planning; its `mcp_session` matches the client's `?session=<name>` or `default` when absent. Keep the tab open |
 | The store chat reports the planner in use (WebSocket close 4409) | another page holds this session's planner (two pages with the same `mcp_session`) — the first page keeps it; close it or drop `mcp_session` |
 | Tool error `... is not a function` | the `bo-test` UI lacks the HI planner APIs — same as in every other setup |

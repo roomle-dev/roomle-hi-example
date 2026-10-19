@@ -17,7 +17,6 @@ record.
 | -------- | ------ | ------- |
 | `HI_MCP_PORT`, then `PORT` | Listening port | 3100 (`HI_MCP_PORT` in `types.ts`) |
 | `HOST` | Bind address | all interfaces |
-| `HI_MCP_PAGE_ORIGINS` | Comma-separated origins allowed for `/bridge` and for CORS on `/mcp` | `http://localhost:3000`, `http://127.0.0.1:3000`, `https://www.roomle.com` |
 | `HI_MCP_TLS_CERT` + `HI_MCP_TLS_KEY` | Serve HTTPS and WSS instead of HTTP and WS | off |
 | `HI_MCP_STORE_URL` | The page URL named in the "No HI page connected" error | `http://localhost:3000/?store.stage=INT&mcp_server=http://localhost:3100`; the MCP port and HTTP/TLS scheme follow the server configuration |
 
@@ -30,11 +29,9 @@ A stray `PORT` in the environment moves the server — the launcher and the page
 
 - **Only `/mcp`.** Any URL that does not start with `/mcp` gets 404 `Not found - the MCP endpoint is
   /mcp`. There is no health route on the MCP server (the chat backend has one).
-- **CORS.** An `Origin` in `HI_MCP_PAGE_ORIGINS` gets `Access-Control-Allow-Origin` with that origin,
-  `Vary: Origin` and the MCP headers (`MCP_CORS_HEADERS`); a preflight from it gets 204, from any
-  other origin 403. A non-preflight request from another origin is not refused — it only gets no
-  CORS headers, so a browser cannot read the answer. Requests without `Origin` (server-side MCP
-  clients) pass.
+- **CORS.** Every response of `/mcp` carries `Access-Control-Allow-Origin: *` and the MCP headers
+  (`MCP_CORS_HEADERS`), and every preflight gets 204: a page on any origin may call the tools from
+  the browser.
 - **Client binding.** With `?client=<id>`, the request is refused with 409 `This chat is not connected
   to its planner page` unless `bridge.isClientActive(id)` — the id of the page that owns the planner.
   Requests without `client` (Claude Code, Claude desktop, the test scripts) drive whichever page is
@@ -51,8 +48,7 @@ container of its own ([Deployment](./deployment-and-testing.md#cloudflare)).
 ### WebSocket
 
 A `WebSocketServer({ noServer: true })` takes the HTTP upgrade only for the pathname `/bridge`
-(query parameters allowed) and, when the request has an `Origin`, only for an allowed origin; any
-other upgrade is destroyed and logged. An accepted socket goes to `bridge.attachPage(socket)`.
+(query parameters allowed), from any origin; any other upgrade is destroyed and logged. An accepted socket goes to `bridge.attachPage(socket)`.
 
 ### Lifecycle
 

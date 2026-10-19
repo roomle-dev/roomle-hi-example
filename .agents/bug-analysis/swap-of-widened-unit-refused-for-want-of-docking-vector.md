@@ -1,12 +1,14 @@
 # Bug analysis — a swap of a widened unit is refused for want of a docking vector
 
 > **Type**: Bug analysis
-> **Status**: Open — verified; diagnosis and fix proposal corrected, not implemented
+> **Status**: Open — feedback and recovery implemented and unit verified; final live replay, library descriptions and agent acceptance pending
 > **Date**: 2026-10-18
 > **Base**: roomle-hi-example `master` (`65c66f8`), verified on `docs/verify-mcp-74-78`;
 > roomle-ui `fix/generated-part-switch-discovery` (`cf377cfd4`), descended from
 > `fix/room-corners-at-openings` (`a008be42d`)
-> **Backlog**: [item 78](../backlog/mcp-issues.md#78-a-swap-of-a-widened-unit-is-refused-for-want-of-a-docking-vector)
+> **Implementation base**: roomle-ui `origin/release/bo-test` (`f15c22cc3`, checked
+> 2026-10-19); the earlier branch names above record investigation context, not the required base
+> **Backlog**: [item 78](../backlog/library-issues.md#78-tall-unit-descriptions-omit-width-dependent-door-arrangements)
 
 ## Affected repositories
 
@@ -14,13 +16,15 @@
   boundary (`packages/web-sdk/packages/homag-intelligence/src/hi-tool-attributes.ts:231`,
   `withLibraryChanges`, called by both attribute tools in `hi-tool-commands.ts:957,1013`).
   Keep the applied changes and name the affected roots, the diagnostic and the recovery action.
-  Add tests through the tool commands backed by the glue logic. Any implementation retains
-  `fix/room-corners-at-openings` as its required ancestry.
+  Add tests through the tool commands backed by the glue logic. The implementation branch
+  starts directly from `origin/release/bo-test`, as required by the user.
+  Recovery also changes `hi-root-module-arrangement.ts`: tolerate absent original vectors
+  when selecting a mode and require complete article-root bounds for wall-distance adjustment.
 - **roomle-hi-example** — update the attribute-tool result contract in
   `docs/hi-mcp-behaviour.md`, `docs/hi-mcp-server.md`, the tool skill and implementation context
   when the fix is implemented; test that feedback survives the MCP result compaction. Adjust
   `edit-swap-units` acceptance to distinguish a widened paired-door unit from the remaining
-  single-door units. This task changes the analysis and backlog only.
+  single-door units. The remaining library-data work is tracked separately in backlog item 78.
 
 The **HI library data** also needs a description follow-up: resizing this article can change
 its door configuration, so an article described as having one door cannot justify forcing a
@@ -205,3 +209,106 @@ regressions and acceptance before closing:
 The saved inputs explain the pass/fail difference; they do not establish why the seed plan's
 hinge input differed between sessions. The exact library source branch that omits the vectors
 is not needed to diagnose the observed Error 14019, but a live recovery still needs checking.
+
+## Independent validation — 2026-10-19
+
+**Verdict: the diagnosis and proposed feedback boundary are supported.** Reviewed against
+roomle-hi-example `master` (`29c6d22`) and roomle-ui `feat/hi-mcp-api-refactoring`
+(`6771dc7e1`). The roomle-ui checkout retains `a008be42d` as an ancestor. The relevant
+attribute-result, calculation and swap implementations still match the investigation above.
+
+Decoded all five saved XML configurations again and asserted their values directly, rather
+than relying on the previous evidence extract. Both 900 mm `Automatic` controls have six
+docking vectors, `LeftRight` door direction, 73 door parts and no Error/Fatal diagnostics.
+All three 900 mm `Right` cases have Error 14019, zero docking vectors and zero door parts.
+The planner-call records mark the width edits and swaps successful; the two later failing
+runs then undo the swap. The local gpt-6-astra console log also records empty attribute-tool
+feedback followed by the swap's dropped-link correction.
+
+The code confirms the proposed fix location: `withLibraryChanges` compares shaped attribute
+values, `shapeRoot` omits `logMessages`, and `compactAttributeResult` retains `corrections`.
+The existing create/replace path reads raw root Error/Fatal messages after the operation and
+keeps the loaded roots. Reusing that diagnostic policy for both attribute tools fits the
+current compact result contract. Copying old docking vectors would leave the missing door
+geometry unresolved.
+
+Existing regression suites run for this review:
+
+- **481 SDK tests passed** across `hi-tools-test.ts`, `glue-logic-test.ts`,
+  `hi-tool-commands/group-commands-test.ts` and
+  `hi-tool-commands/create-or-replace-groups-placement-test.ts`.
+- **147 MCP tests passed** across `tool-executors.test.ts` and `hi-mcp-server.test.ts`.
+- **Five saved-case assertions passed.** The independent extract is local scratch evidence
+  at `.temp/validate-mcp-78/evidence.json`; test logs are
+  `.temp/validate-mcp-78-sdk-tests.log` and `.temp/validate-mcp-78-mcp-tests.log`.
+
+These checks validate the diagnosis and existing behaviour, not the unimplemented feedback
+fix. Cross-session controls do not replace a controlled replay on one live library version.
+Recovery from the failing state with `Automatic`, an explicit `LeftRight` input, the final
+swap geometry and the agent's response to the new feedback remain acceptance work. The
+current `edit-swap-units.expect` still requires a left-hinged new left-end door without
+distinguishing paired doors; the proposed acceptance update is necessary. No productive
+code, library data or prompt expectations were changed by this validation.
+
+The implementation base required by the user is checked against the fetched
+`origin/release/bo-test` (`f15c22cc3`) on 2026-10-19. Its `hi-tool-attributes.ts`,
+`hi-tool-commands.ts`, `hi-tools.ts` and `glue-logic.ts` match the independently validated
+checkout, so the diagnosis and proposed feedback boundary apply on that base too.
+
+## Recovery finding — 2026-10-19
+
+The direct live replay with the feedback change returns Error 14019 on the width edit as
+expected, but correcting the retained hinge to `Automatic` throws before the recovered group
+loads. `HiRootModuleArrangementOperator._getDockMode` in roomle-ui
+`hi-root-module-arrangement.ts:990-995` reads `originalRoot?.dockInfos.filter` and
+`originalOtherRoot?.dockInfos.filter`: the original root exists, but its failed calculation
+left `dockInfos` absent. The newly calculated root has valid vectors; the comparison against
+the previous root is what fails.
+
+Recovery therefore also requires optional access to the original roots' vector arrays in
+those two expressions. The existing mode fallback already handles an unavailable original
+vector pair and retains the requested docking mode. This uses the recovered calculation's
+geometry, keeps the failed original intact and adds no refusal or fabricated vectors. A
+regression must cover either endpoint missing its original vectors and verify the recovered
+row's positions. The live recovery and swap are rerun after that change.
+
+The next replay recovers complete geometry but moves the group 600 mm on each recovery.
+`keepWallDistances` (`hi-root-module-arrangement.ts:412`) compares a partial original box
+that omits the failed root with the full recovered box, then treats their difference as a
+layout change. A partial box cannot establish the whole group's distance to a wall. The
+wall-distance adjustment must therefore require docking geometry for every article root in
+both groups; when either measurement is incomplete, it keeps the group transform rather than
+deriving a translation from partial bounds. This is the same unavailable-measurement fallback
+as the existing missing-box case, not an agent refusal. Regressions cover either incomplete
+measurement and require the live recovered and swapped row to keep its original wall position.
+
+## Implementation and verification — 2026-10-19
+
+The changes are implemented on `fix/attribute-calculation-feedback` in both repositories;
+roomle-ui starts from `release/bo-test` (`f15c22cc3`), with implementation commit `a2046b72b`.
+
+- `withLibraryChanges` appends settled raw Error/Fatal diagnostics for the groups the command
+  changed, using the existing cause grouping and root labels. The edit and other roots remain,
+  existing corrections stay first, and the MCP attribute-result compaction retains the feedback.
+- `_getDockMode` tolerates absent original docking vectors and keeps the requested mode.
+  `keepWallDistances` requires complete article-root docking bounds in both states before
+  deriving a translation. Generated roots without vectors do not prevent measurement.
+- The tool reference, behaviour, implementation context and SDK reference describe these
+  contracts. The prompt expectation distinguishes the widened paired doors from a single
+  door at the other row end. Library-description proposals are prepared, not applied; the
+  remaining description work is library backlog item 78.
+
+The feedback regressions failed before the change; both missing-original-vector tests and
+both incomplete-footprint tests independently reproduced their recovery defects before their
+fixes. **1,085 tests pass across all 18 HI SDK test files**, and **297 tests pass across all
+15 MCP workspace test files**. Both repository typechecks, SDK/MCP lint, formatting and local
+Markdown-link checks pass. Test logs are local scratch files under `.temp/attribute-feedback-*`.
+
+The live replay confirms that width 900 with retained `Right` returns Error 14019 through
+MCP `corrections`, and correcting the hinge to `Automatic` or explicit `LeftRight` rebuilds
+six vectors and paired-door parts. The swap then keeps all links. That replay exposes the
+wall-distance defect above before its fix. Subsequent final acceptance attempts stall while
+the example awaits an external HI proxy request during initial planner setup, before a page
+connects to MCP. The final wall-position replay and the model's response to the feedback remain
+unverified; unit tests cover the corrected incomplete-footprint behaviour. No model run or
+remote library-data update is performed.

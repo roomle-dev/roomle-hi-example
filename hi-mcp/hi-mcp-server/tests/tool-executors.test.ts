@@ -1254,6 +1254,9 @@ describe('tools that change the plan', () => {
       const sent = structuredClone(args);
       const corrections = [
         "mod_FrontProgram was changed to 'Modern' by the library",
+        `${tool}: the library could not calculate root module 'r1' (article-1) of group 'g1' - Unsupported configuration. ` +
+          "Check the group's attributes and the root's attribute overrides against the library data; change the failing values or replace the article. " +
+          'The applied changes and other roots were kept.',
       ];
       const api = createApi(planContextFixture, {
         externalObjectGroupOperation: vi.fn(async () => ({

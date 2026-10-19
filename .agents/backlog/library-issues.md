@@ -43,6 +43,7 @@ keeps every suggested text, applied in the library or not.
 | 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the carcase colour descs done; the colour value descs and the outside program not done | partly | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
 | 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet and front program descs done; the colour value descs not done | partly | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
 | 76 | [Articles with two doors that do not say how their doors stand](#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | yes | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
+| 78 | [Tall-unit descriptions omit width-dependent door arrangements](#78-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | medium — a widened unit keeps an incompatible single-door hinge input |
 | 79 | [Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate](#79-base-units-narrowed-to-150-mm-with-a-150-mm-plinth-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the unit is not built, the agent needs a second create |
 | 80 | [Wall units at 900 mm with a single door the library cannot calculate](#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the cabinets are not built, the agent needs a second create |
 
@@ -310,6 +311,31 @@ above the other" or "a pair of doors side by side" (section 1.2), and the descs 
 hinged at the outer sides, with values the library calculates.
 
 **Reproduce.** The planner probe of [RML-18203](https://roomle.atlassian.net/browse/RML-18203), without a model, on the bo-test planner: `create-or-replace-groups` with `U2TB90` and `mod_DoorDirectionSelection` `Left`, `Right`, `LeftLeft` or `RightRight`, or `H2TB60` with `LeftRight` — error 14019 in `notLoaded`.
+
+## 78. Tall-unit descriptions omit width-dependent door arrangements
+
+**Problem.** The description of `HTB60` says one door without qualifying its width. At
+900 mm, the calculated article has paired doors with `Automatic` or `LeftRight`;
+retaining `mod_DoorDirectionSelection: Right` gives Error 14019 and an incomplete root.
+The attribute tools report the calculation diagnostic, but the article description does not
+explain which retained setting the agent needs to correct after resizing.
+
+**To do.** Apply the complete `HTB60` description in
+[section 1.5](../../docs/library-information/suggested-library-changes.md#15-width-dependent-tall-unit-doors)
+and the proposed resize guidance in
+[section 2.6](../../docs/library-information/suggested-library-changes.md#26-door-direction).
+Keep the facts in library data; the verified nominal and widened configurations do not
+establish an intermediate-width threshold.
+
+**Status.** Open, description proposals prepared; not reported to the library development team.
+
+**Test.** `edit-swap-units`: the agent corrects incompatible retained input after resizing,
+then swaps the complete paired-door unit into the back corner. The row is contiguous at
+2100 mm, back end z −3765, with appropriate single/paired outer hinges.
+
+**Reproduce.** `mcp-test-2026-10-18_14-48-28`, gpt-6-astra 32: the last `HTB60`
+widened to 900 mm retains `Right`; the saved XML carries Error 14019 and zero door parts.
+See [the analysis](../bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md).
 
 ## 79. Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate
 

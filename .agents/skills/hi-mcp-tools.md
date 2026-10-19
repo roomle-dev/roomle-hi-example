@@ -313,6 +313,13 @@ placement's attributes, including a height the library adjusts:
   when known, with the ids and article ids of its roots together (D52). Before/after room positions
   and rotations distinguish a rotation in place from a change of group frame
 
+Both attribute tools append the settled raw roots' first Error/Fatal diagnostic line to
+`corrections`, naming group/root ids and articles and asking for corrected attribute values or
+another article. Roots with the same cause are grouped per group. Applied edits and other
+roots remain; warnings and unrelated groups are omitted. Recovery uses newly calculated
+geometry, retains the requested mode when original vectors are absent, and keeps the group
+transform when either whole docking footprint cannot be measured.
+
 - `delete-article-in-place`: deletes the unit and leaves the gap: units no longer docked together become
   separate groups where they stand; deleting the only unit deletes the group; generated roots
   (worktop, toe kick) cannot be deleted

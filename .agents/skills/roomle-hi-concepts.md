@@ -5,7 +5,7 @@
 ## When to Load This Skill
 
 Load this skill when working with:
-- HI data structures (rooms, walls, articles, groups, obstacles)
+- HI data structures (rooms, walls, articles, groups, obstacles, installation elements)
 - Docking vectors and docking relationships
 - Positioning new groups with a `placement`
 - Article catalog and module selection
@@ -170,6 +170,10 @@ rootId? }`, one point and one rotation.
   root module that stands on an obstacle or in front of a door or a window, with the free stretches
   of its wall and, for a group placed at a wall, the `offsetMm` that keeps it clear of a door or a window of the adjoining
   wall; the group is built anyway.
+- The supplies of the plan are no obstacles: the `installationElements` section of `get-plan-context`
+  lists the electric plugs and the water connections with their positions (`type`,
+  `position: [x, level, z]`), so a group may stand on one — plan a sink at the water connection and
+  a hob beside a plug.
 - It is applied once, when the group is created. A placement on a group that is already in the
   plan is not used — the group keeps its position, and `corrections` says so; a group resubmitted
   without placement keeps its position.

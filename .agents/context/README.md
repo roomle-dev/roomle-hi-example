@@ -133,7 +133,7 @@ The roomle-ui side, in `packages/web-sdk/packages/`:
 | `homag-intelligence/src/hi-tool-commands.ts` | The HI tool commands: `HI_TOOL_COMMANDS`, one per plan-changing tool, `runToolCommand` (reports `historySteps`), `inPlacementFrame` |
 | `homag-intelligence/src/hi-tool-ids.ts`, `hi-tool-payload.ts`, `hi-tool-docking.ts`, `hi-tool-hints.ts`, `hi-tool-attributes.ts`, `hi-wall-placement.ts` | The parts of the tool commands: ids and articles, the payload, the docking, the hints, the group attributes and library changes, the wall placement |
 | `homag-intelligence/src/hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts` | Relations → docking, the anchor and its frame, the geometry ([Layout and placement](./layout-and-placement.md)) |
-| `homag-intelligence/src/hi-plan-context.ts` | The plan context: rooms with derived walls, catalog, groups, obstacles, master data, the article selector; `HI_GROUP_OPERATION`, the group operations; `HI_TOOL_COMMAND` |
+| `homag-intelligence/src/hi-plan-context.ts` | The plan context: rooms with derived walls, catalog, groups, obstacles, installation elements, master data, the article selector; `HI_GROUP_OPERATION`, the group operations; `HI_TOOL_COMMAND` |
 | `homag-intelligence/src/glue-logic.ts` | The layout loading and `calculateArticleTemplate`, the article template calculated outside the plan |
 | `homag-intelligence/src/hi-root-module-arrangement.ts` | Row edits: the units above and their carriers (`carriersOfUnitsAbove`) |
 

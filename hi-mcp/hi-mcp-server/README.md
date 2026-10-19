@@ -2,7 +2,7 @@
 
 A proof-of-concept [MCP](https://modelcontextprotocol.io/) server that lets an AI agent orchestrate
 HOMAG Intelligence (HI) object groups in a live planning session of the **ligna-store**. The agent
-retrieves the plan context (master data, rooms, articles, existing groups, obstacles) and creates or modifies
+retrieves the plan context (master data, rooms, articles, existing groups, obstacles, installation elements) and creates or modifies
 HI object groups from a single JSON pos-group payload — without computing root-module positions
 itself ("poc-json": the whole kitchen comes from one `posGroups` JSON).
 
@@ -299,7 +299,7 @@ Returns a snapshot of the HI planning session, shaped for the agent.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `include` | `('rooms' \| 'articles' \| 'attributes' \| 'groups' \| 'obstacles' \| 'masterData' \| 'articleDescriptions')[]` | no | Sections to include; `rooms`, `articles`, `attributes`, `groups` and `obstacles` when omitted |
+| `include` | `('rooms' \| 'articles' \| 'attributes' \| 'groups' \| 'obstacles' \| 'installationElements' \| 'masterData' \| 'articleDescriptions')[]` | no | Sections to include; `rooms`, `articles`, `attributes`, `groups`, `obstacles` and `installationElements` when omitted |
 
 - `rooms` — every room carries its contour `levels` with 3D segments (`pos: [x, level, -y]`,
   the same right-handed coordinate system as a group's `pos`, Y up) and a derived `walls` array —
@@ -332,8 +332,12 @@ Returns a snapshot of the HI planning session, shaped for the agent.
   `[x, 0, z]`) and `bottomMm`/`topMm` — a door or a window also with `roomIndex`, `wall` (its index
   in the walls array) and `fromEndMm`, its span along that wall measured from the wall's end —, and
   `groups`, per HI group the `id`, `outline` and `bottomMm`/`topMm` of every root module that is not
-  generated, from the parts of the calculated group. No walls. Requested alone, the server fetches
-  the rooms too for the walls of the doors and windows
+  generated, from the parts of the calculated group. No walls, no supplies. Requested alone, the
+  server fetches the rooms too for the walls of the doors and windows
+- `installationElements` — the electric plugs and the water connections of the plan: per element
+  its `type` (`ElectricPlug` or `WaterConnection`) and its `position` (`[x, level, z]` in the
+  coordinates of the walls) — a position only, no size. They are no obstacles: a group may stand
+  on a supply
 - `attributes` — the attribute vocabulary, by default: per library the root-assigned attributes that are
   main, Simple or Bool with id, name, desc, group, type and `selections` (value, name
   and desc); a value list several attributes share is listed once, the later attributes carry

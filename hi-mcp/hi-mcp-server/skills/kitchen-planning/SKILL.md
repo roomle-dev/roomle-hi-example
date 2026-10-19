@@ -84,6 +84,10 @@ Trace these distinct workflows:
 
 Keep through-traffic outside the principal work area. The refrigerator-sink-hob triangle is a diagnostic, not a mandatory geometry or a substitute for these workflows. A one-wall kitchen can work without a triangle. Mixed-handed or multi-cook households need task trials, not automatic mirroring.
 
+### Placing the Kitchen in the Room
+
+When the user does not name a place for the kitchen, plan it so that the sink stands near a water connection of the plan, if the room has one. The installation elements of the plan context list the water connections with their positions.
+
 ### Sink, Preparation Surface, and Hob
 
 Prefer `sink -> continuous preparation surface -> hob`, or the mirror image. Blum recommends approximately 900 mm of preparation width, with 800 mm as its lower ergonomic recommendation [S3]. These are not German legal minimums. More space may be needed for two cooks or extensive baking.

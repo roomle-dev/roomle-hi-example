@@ -99,6 +99,8 @@ Do not invent a universal French 600 mm sink-to-hob prohibition. Assess splashin
 
 Keep grocery-to-fridge, washing-to-preparation, cooking-to-serving, and dirty-dish routes short and unobstructed. A triangle is an optional analytical aid, not a rule; a linear kitchen can work well. Separate through-traffic from hot work where feasible.
 
+When the user does not name a place for the kitchen, plan it so that the sink stands near a water connection of the plan, if the room has one. The installation elements of the plan context list the water connections with their positions.
+
 ### 5. Design dishwasher unloading and storage together
 
 Start with the dishwasher near the sink, subject to verified connection limits and usable access. Decide which side by actual unloading and loading tests, not handedness alone.

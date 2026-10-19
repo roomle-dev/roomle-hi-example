@@ -22,7 +22,7 @@ These results were generated using the Claude app and the Opus 5 model.
 
 `ps_p804rz7o2flaq4kdlvs7ubgjrmmm7c6`
 
-<https://rubens.alpha.roomle.com/examples/index.html?example=hi-presets-example&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith&plan_id=ps_p804rz7o2flaq4kdlvs7ubgjrmmm7c6>
+<https://rubens.alpha.roomle.com/examples/index.html?example=hi-presets-example&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith&id=ps_p804rz7o2flaq4kdlvs7ubgjrmmm7c6>
 
 ![L-shaped kitchen around the back right corner, walnut fronts and a dark stone worktop](./images/example-1-result.png)
 
@@ -35,7 +35,7 @@ These results were generated using the Claude app and the Opus 5 model.
 
 `ps_p90kkxti16e1z9mpxayzll76mogt62z`
 
-<https://rubens.alpha.roomle.com/examples/index.html?example=hi-presets-example&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith&plan_id=ps_p90kkxti16e1z9mpxayzll76mogt62z>
+<https://rubens.alpha.roomle.com/examples/index.html?example=hi-presets-example&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith&id=ps_p90kkxti16e1z9mpxayzll76mogt62z>
 
 ![L-shaped kitchen recreated from the reference image, white fronts and a wooden worktop](./images/example-2-result.png)
 

@@ -247,6 +247,7 @@ describe('get-plan-context', () => {
       'articles',
       'groups',
       'obstacles',
+      'installationElements',
       'masterData',
     ]);
     // a planner without the obstacles section (an older roomle-ui) returns
@@ -405,6 +406,38 @@ describe('get-plan-context', () => {
       'articles',
       'groups',
       'obstacles',
+      'installationElements',
+      'masterData',
+    ]);
+  });
+
+  it('passes the installation elements through unchanged', async () => {
+    // the section arrives agent-ready from the planner API - the server
+    // names the walls of the obstacles, the installation elements it
+    // returns as they are
+    const installationElements = [
+      { type: 'ElectricPlug', position: [1500, 1100, -2000] },
+      { type: 'WaterConnection', position: [3000, 0, -500] },
+    ];
+    const api = createApi({ installationElements });
+    const result = (await toolExecutors['get-plan-context'](api, {
+      include: ['installationElements'],
+    })) as Record<string, any>;
+    expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+      'installationElements',
+    ]);
+    expect(result).toEqual({ installationElements });
+  });
+
+  it('fetches the default sections for an empty include, like for none', async () => {
+    const api = createApi(planContextFixture);
+    await toolExecutors['get-plan-context'](api, { include: [] });
+    expect(api.extended.getExternalObjectPlanContext).toHaveBeenCalledWith([
+      'rooms',
+      'articles',
+      'groups',
+      'obstacles',
+      'installationElements',
       'masterData',
     ]);
   });
@@ -661,6 +694,7 @@ describe('get-plan-context', () => {
         'articles',
         'groups',
         'obstacles',
+        'installationElements',
         'masterData',
       ]);
       expect(result.attributes).toEqual({

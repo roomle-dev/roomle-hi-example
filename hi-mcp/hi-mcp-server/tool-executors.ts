@@ -20,7 +20,8 @@ type PlanContextSection =
   | 'rooms'
   | 'articles'
   | 'groups'
-  | 'obstacles';
+  | 'obstacles'
+  | 'installationElements';
 
 const PLAN_CONTEXT_SECTIONS: unknown[] = [
   'masterData',
@@ -28,6 +29,7 @@ const PLAN_CONTEXT_SECTIONS: unknown[] = [
   'articles',
   'groups',
   'obstacles',
+  'installationElements',
 ];
 
 // The sections of the server: the full descriptions of the catalog's
@@ -43,6 +45,7 @@ const DEFAULT_SECTIONS: unknown[] = [
   ATTRIBUTES,
   'groups',
   'obstacles',
+  'installationElements',
 ];
 
 const MAX_ATTRIBUTE_MATCHES = 20;

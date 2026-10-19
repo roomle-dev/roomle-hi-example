@@ -100,7 +100,7 @@ Look at, in this order:
 
 The size of what the server serves can be measured without a model: start the launcher on spare
 ports (`EXAMPLE_PORT=3001 HI_MCP_PORT=3110 node minimal-hi-example/start.mjs --no-open`), open the
-example URL with `&mcp_port=3110&plan_id=<plan snapshot id>` in headless Chromium (Playwright from
+example URL with `&mcp_port=3110&id=<plan snapshot id>` in headless Chromium (Playwright from
 `.agents/scripts/node_modules`), call the tools with the MCP SDK client
 (`node_modules/@modelcontextprotocol/sdk`) and measure the text of each result and each section.
 Stop the processes on both ports afterwards. Details: the live check in

@@ -92,8 +92,10 @@ ${AUTHORING_RULES}`;
 
 // Put before every SKILL.md: how a planning skill meets this session.
 const SKILL_IN_SESSION =
-  'In this planning session the survey is the plan context - the walls, the doors and windows, the obstacles - and the ' +
-  'products are the article catalog. What the plan context does not carry - services, budget, inventory, the household - ' +
+  'In this planning session the survey is the plan context - the walls, the doors and windows, the obstacles, the ' +
+  'installation elements with the positions of the electric plugs and the water connections - and the products are the ' +
+  'article catalog. What the plan context does not carry - services beyond those connection positions, budget, ' +
+  'inventory, the household - ' +
   'is unknown: plan a concept with stated assumptions and name them in your answer, instead of asking first, unless the ' +
   'user asks to be interviewed. The layout is the groups you create, one group per piece of furniture: check them against ' +
   'the returned positions and the obstacles, and name the alternatives and the open checks in your answer instead of ' +
@@ -217,7 +219,10 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
         'no geometry; a returned group is a valid create-or-replace-groups payload) and obstacles (what stands in the ' +
         'room, in the coordinates of the walls: objects - doors, windows, other furniture - with kind, outline ' +
         "(floor points [x, 0, z]) and bottomMm/topMm, a door or a window also with roomIndex, wall and fromEndMm (its span along that wall from the wall's end); " +
-        'and per group its root modules with id, outline and bottomMm/topMm). ' +
+        'and per group its root modules with id, outline and bottomMm/topMm), ' +
+        'and installationElements (the electric plugs and the water connections of the plan: per element its type - ' +
+        'ElectricPlug or WaterConnection - and its position [x, level, z] in the coordinates of the walls; a ' +
+        'position only, no size, and no obstacle: a group may stand on a supply). ' +
         'When an edit gives a row a new end, hinge its end doors at the outer sides: left at the left end, ' +
         "right at the right end, as seen from the front. Choose the attribute and value from the library's " +
         'descriptions for single or paired doors, and keep other door directions unchanged. ' +
@@ -238,7 +243,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
           .array(z.string())
           .optional()
           .describe(
-            'The sections to include: rooms, articles, attributes, groups, obstacles, masterData, articleDescriptions. Default: rooms, articles, attributes, groups and obstacles. ' +
+            'The sections to include: rooms, articles, attributes, groups, obstacles, installationElements, masterData, articleDescriptions. Default: rooms, articles, attributes, groups, obstacles and installationElements. ' +
               'Add masterData for the root modules of the master data, articleDescriptions for a question about ' +
               "one article's requirements and neighbours - desc is enough to pick the articles of a planning."
           ),

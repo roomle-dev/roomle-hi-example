@@ -10,7 +10,7 @@ them — is [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md).
 ### Core Tools
 | Tool | Purpose |
 |---|---|
-| `get-plan-context` | Get rooms, articles, the attribute vocabulary, groups, obstacles; masterData and the full article descriptions on request |
+| `get-plan-context` | Get rooms, articles, the attribute vocabulary, groups, obstacles, installation elements; masterData and the full article descriptions on request |
 | `create-or-replace-groups` | Create, modify and extend groups; position new groups |
 | `place-group` | Move an existing group against a wall or into a room corner |
 | `get-authoring-rules` | Get HI authoring rules |
@@ -60,12 +60,12 @@ are, without the session preamble of `get-skill`.
 
 **Parameters**:
 ```typescript
-{ include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'masterData' | 'articleDescriptions'> }
+{ include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'installationElements' | 'masterData' | 'articleDescriptions'> }
 ```
 
 **Returns**: Rooms, articles, attributes (the vocabulary: per library the root-assigned customer-facing or Bool
 attributes with their values, a shared value list listed once with `sameSelectionsAs` on the later
-attributes, D76), groups, obstacles; masterData and articleDescriptions if requested. Like every JSON result of the
+attributes, D76), groups, obstacles, installationElements; masterData and articleDescriptions if requested. Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
 (back wall, front wall, left wall, right wall) beside its `side`, a door opening the `type`
@@ -88,6 +88,12 @@ of the adjoining wall (D55). When a door or window determines a placement, the t
 asks the agent to name it and explain whether the final placement keeps it clear, using the
 returned obstacle dimensions and final tool results. Below-sill placement, horizontal clearance
 and overlap are described according to the measured result; missing data is no assurance of clearance.
+
+**Installation elements**: `installationElements` lists the electric plugs and the water
+connections of the plan — per element its `type` (`ElectricPlug` or `WaterConnection`) and its
+`position` (`[x, level, z]` in the coordinates of the walls); a position only, no size. They are
+no obstacles: a group may stand on a supply, and the `hint` of `create-or-replace-groups` and
+`place-group` reports no overlap for one (D86).
 
 **Rows**: every root module docked side by side with another one carries `rowIndex`, its place in
 its row — 1 at the left end as seen from the front; floor units and wall units form rows of their

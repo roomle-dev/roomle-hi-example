@@ -586,7 +586,7 @@ const runSession = async (options, launcher, browser) => {
     'the chat backend'
   );
   const pageUrl = options.plan
-    ? `${exampleUrl}&plan_id=${encodeURIComponent(options.plan)}`
+    ? `${exampleUrl}&id=${encodeURIComponent(options.plan)}`
     : exampleUrl;
   const page = await browser.newPage();
   const navigation = recordNavigations(page);

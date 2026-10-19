@@ -30,6 +30,9 @@ never drop the agent's content silently.
 | 84 | [The find-attributes answer lists the values without naming the attribute](#84-the-find-attributes-answer-lists-the-values-without-naming-the-attribute) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:252-268`, the `find-attributes` description) | low | gpt-6-astra | |
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
 | 86 | [A swapped row of different unit widths stands through the wall](#86-a-swapped-row-of-different-unit-widths-stands-through-the-wall) | bug | roomle-ui `hi-tools.ts:908` (`swapRootModules`) with `glue-logic.ts:2593` (`arrangeAndLoad`) and `hi-root-module-arrangement.ts:412` (`keepWallDistances`) | medium | gpt-6-astra | |
+| 87 | [The model asks instead of building when the user's reference does not match the plan](#87-the-model-asks-instead-of-building-when-the-users-reference-does-not-match-the-plan) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) and the test (`docs/test-prompts.json`, the expect of `installation-elements-supplies`) | low | gpt-6-astra | |
+| 88 | [The model conflates an oven and a hob into one cabinet](#88-the-model-conflates-an-oven-and-a-hob-into-one-cabinet) | hardening | roomle-hi-example served text (the kitchen skill, `hi-mcp/hi-mcp-server/skills/kitchen-planning/SKILL.md`) | low | gpt-6-astra | |
+| 89 | [Wall units do not follow a base row an edit shifted under them](#89-wall-units-do-not-follow-a-base-row-an-edit-shifted-under-them) | hardening | roomle-hi-example served text (the rules or the edit tools' descriptions: wall units are separate groups an edit leaves behind, move them with `place-group`) | low | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -84,13 +87,13 @@ accuracy, not a guard: nothing is refused, the agent's content is built.
 **Test.** `edit-remove-corner-unit`: the turned leg's wall units turn with it, or the correction
 names them as staying on the back wall.
 
-**Reproduce.** `mcp-test-2026-10-19_10-57-22`, gpt-6-astra 29 (`edit-remove-corner-unit`, plan
-snapshot `ps_s9y162bxst2sdc4zlray7ksynbotkskm`, local roomle-ui :5173): the
+**Reproduce.** `mcp-test-2026-10-19_19-42-59`, gpt-6-astra 29 (`edit-remove-corner-unit`, plan
+snapshot `ps_sb65gx8cnnic18lb3gxenhqd3zsogq1`, local roomle-ui :5173): the
 `delete-article-and-compact` of UERTB90 `814c6854-af4a-4370-807b-b1c0526dc1a0` answers the
 correction quoted above; the final plan has the main group `031ee57a` as one straight row of
 4200 mm along the right wall (x 4198..4815, z −3765..435) while the wall-unit group `85510a7e`
-(wl1+wl2) stays on the back wall (x 2954..4154, z −3765..−3359, rotationY 0.03). The run also
-ended with an error (the chat's 5-minute turn cap).
+(wl1+wl2) stays on the back wall (x 2954..4154, z −3765..−3359, rotationY 0.03) and the
+right-leg wall-unit group `afbe92eb` also stays, so the hood is no longer above the hob.
 
 ## 82. The model asks instead of building the group the user asked for on a wall of floor-to-ceiling windows
 
@@ -121,9 +124,9 @@ cabinet in front of floor-to-ceiling windows and discloses it. Local roomle-ui :
 
 **Problem.** On the closets back wall, where no free stretch fits the requested row, the model places
 the wardrobes over existing objects and reports the overlap: four wardrobes over two objects (12),
-five wardrobes over the low cabinet by 568 mm (35); smaller overlaps are disclosed as well (34, 36,
-39). The obstacle test builds the group anyway and names what a root stands on and the free stretches
-of its wall (D55).
+five wardrobes over a low object by 568 × 570 mm (35); smaller overlaps are disclosed as well (34,
+36, 39). The obstacle test builds the group anyway and names what a root stands on and the free
+stretches of its wall (D55).
 
 **Cause.** The placement rule (`hi-mcp-server.ts:42`) says to choose a stretch of wall that obstacles
 leaves free only "where the user leaves the place open"; when the user names a wall whose free
@@ -137,11 +140,10 @@ so. Verify model acceptance.
 **Test.** `wardrobe-door-hinges`, `wardrobe-split-door-hinges`: the model asks or places in a free
 stretch instead of overlapping the furniture.
 
-**Reproduce.** `mcp-test-2026-10-19_10-57-22`, gpt-6-astra 12 (`wardrobe-door-hinges`): four
-wardrobes over two objects on the closets back wall (240 mm over the 1170 mm unit x −430..3050,
-568 mm over the low cabinet x 3506..4074), the answer reports the overlap; 35
-(`wardrobe-split-door-hinges`): five wardrobes over the low cabinet by 568 × 570 mm. Local
-roomle-ui :5173.
+**Reproduce.** `mcp-test-2026-10-19_19-42-59`, gpt-6-astra 12 (`wardrobe-door-hinges`, local
+roomle-ui :5173): four wardrobes over two objects on the closets back wall (240 mm over the
+1170 mm unit x −430..3050, 568 mm over the low cabinet x 3506..4074), the answer discloses the
+overlap; the runs pass — their expects cover the door hinges only.
 
 ## 84. The find-attributes answer lists the values without naming the attribute
 
@@ -157,8 +159,9 @@ answer names the attribute id with its values.
 
 **Test.** `attributes-find-front-colour`: the answer names the attribute id with the front colours.
 
-**Reproduce.** `mcp-test-2026-10-19_10-57-22`, gpt-6-astra 18 (`attributes-find-front-colour`): the
-answer lists the 21 front colours in a table, never names the attribute id. Local roomle-ui :5173.
+**Reproduce.** `mcp-test-2026-10-19_19-42-59`, gpt-6-astra 18 (`attributes-find-front-colour`,
+local roomle-ui :5173): the answer lists the 21 front colours in a table, never names the
+attribute id (`mod_FrontColor`).
 
 ## 85. insert-article-into-group takes a between-pair whose root modules do not stand side by side
 
@@ -177,7 +180,9 @@ not stand side by side, the result says so and where the article landed — feed
 side means (two root modules that name each other's side docking vectors). Verify model acceptance.
 
 **Test.** `edit-insert-below-wall-units`: the insert lands between the two root modules that stand
-side by side, or the result says the named pair does not stand side by side.
+side by side, or the result says the named pair does not stand side by side. The test's premise is
+stale: `docs/test-prompts.md` describes the corner kitchen with the sink on the right leg, the saved
+plan of `corner-kitchen-wall-units` has it on the back leg (27).
 
 **Reproduce.** `mcp-test-2026-10-19_07-42-07`, gpt-6-astra 27 (`edit-insert-below-wall-units`): the
 model named the sink and a base unit (adjacent in the docking chain, not side by side in space); the
@@ -217,3 +222,87 @@ geometry test swaps different-width roots at a wall and asserts the wall-side en
 corrected the door to `LeftRight`), turn 2 `swap-root-modules` of
 `0010443c-519a-437b-8fe5-364f13887ca4` and `8774cac2` — the final row runs z −4365..−2265 (group
 `064a7d91` at pos [4815, 0, −4365]) against the back wall at z −3765.
+
+## 87. The model asks instead of building when the user's reference does not match the plan
+
+**Problem.** When the user's reference does not match the plan, the model asks a clarifying question
+instead of creating the group the user asked for (50): the user asks for a base cabinet on the back
+wall in front of the plug, the plan has no plug on the back wall (the plug is on the left wall), and
+the model lists the supplies correctly, states there is no plug on the back wall, then asks whether
+to place the cabinet in front of the left-wall plug or on the back wall — nothing is created. The
+same class shows where the request needs a choice the served text leaves open (60, turn 7): the user
+says "Add a pull-out larder unit", the model answers "Nothing added yet" and asks which wall has
+full-height space.
+
+**Cause.** The placement rule (`hi-mcp-server.ts:42`) states when a placement is legitimate (D51)
+but not that a group the user asks for is built where the user points; when the user's reference
+names a supply that is elsewhere, no served sentence says to name where it is and build at the
+nearest matching place, so the model reads the legitimacy as a permission it may decline and stops
+to ask (the issue-82 class). And the test adds a second cause: the expect of
+`installation-elements-supplies` (`docs/test-prompts.json`) asks for "a base cabinet against the
+back wall standing on the plug", but the plan it loads (`room-with-supplies`) has no plug on the
+back wall — the model cannot meet the expect by building.
+
+**To do.** roomle-hi-example served text (`hi-mcp-server.ts:42`): say that a group the user asks
+for is built where the user points, and when the user's reference names a supply that is elsewhere,
+the answer names where it is and builds at the nearest matching place — one sentence. And the test:
+fix the expect of `installation-elements-supplies` to the plan it loads (the plug is on the left
+wall), or load a plan with a plug on the back wall. Verify model acceptance.
+
+**Test.** `installation-elements-supplies`: the model builds the base cabinet and the answer names
+where the plug is; `kitchen-conversation` turn 7: the model adds the pull-out larder unit.
+
+**Reproduce.** `mcp-test-2026-10-19_19-42-59`, gpt-6-astra 50 (`installation-elements-supplies`,
+plan snapshot `ps_sb7ea5wes24sjuq3t9q6eptgjo8e4cu`, local roomle-ui :5173): no planner call that
+changes the plan — the model asks "Should I place the base cabinet in front of the confirmed
+left-wall plug, or on the back wall beneath that small object? I haven't added the cabinet yet."
+
+## 88. The model conflates an oven and a hob into one cabinet
+
+**Problem.** Where the user asks for an oven and a hob, the model sends the hob cabinet as an
+"oven-and-hob" unit and claims the oven in its answer: no oven article is in the plan (44, 45, 46).
+In the other kitchen runs the model used the oven article correctly (57, 58, 60, 61).
+
+**Cause.** The kitchen skill (`hi-mcp/hi-mcp-server/skills/kitchen-planning/SKILL.md`) lists the
+cooking zone as "hob, oven, heat-safe landing surfaces, and cookware" but never says that an oven
+and a hob are two appliances planned with two articles; the model reads "oven, hob" as one unit,
+picks the hob cabinet and stretches its answer over both.
+
+**To do.** roomle-hi-example served text: one library-neutral sentence in the kitchen skill's
+cooking zone — an oven and a hob are two appliances, plan an article for each the user names.
+Verify model acceptance.
+
+**Test.** `kitchen-oven-fridge-sink-corner`, `kitchen-oven-hood-sink-fridge-corner`,
+`full-kitchen-walnut-marble-corner`: the plan has an oven article and a hob article, and the answer
+does not claim one cabinet is both.
+
+**Reproduce.** `mcp-test-2026-10-19_19-42-59`, gpt-6-astra 45
+(`kitchen-oven-hood-sink-fridge-corner`, local roomle-ui :5173): the model sent the hob cabinet
+UHS60 as the oven-and-hob unit; the answer says "Oven and hob: combined in the 600 mm UHS60
+cabinet" and "All five requested items are included" — no oven article is in the plan.
+
+## 89. Wall units do not follow a base row an edit shifted under them
+
+**Problem.** When an edit shifts a base row under wall units, the wall-unit groups stay where they
+are: after `swap-root-modules` exchanged the hob and the sink unit, the hood group stayed on the
+right leg — no longer above the hob — and the wall unit above the sink stayed on the back wall; the
+answer discloses both (30). After `insert-article-into-group` shifted the sink, the wall unit above
+it did not move with it and the answer does not name it (27). Where the model moved the wall-unit
+group itself with `place-group`, the alignment held (28).
+
+**Cause.** Wall units are separate groups in the plan; the edit tools shift only the edited group,
+and no served sentence says that an edit which shifts a base row under wall units leaves the wall
+units behind — move them with `place-group`. The model has to know this to keep the hood above the
+hob.
+
+**To do.** roomle-hi-example served text: one sentence in the rules or the edit tools' descriptions
+— wall units are separate groups, an edit that shifts the base row under them leaves them, move them
+with `place-group`. Verify model acceptance.
+
+**Test.** `edit-swap-hob-unit`, `edit-insert-below-wall-units`: the wall units above the shifted
+row keep their alignment with it, or the answer names the wall units that stayed.
+
+**Reproduce.** `mcp-test-2026-10-19_19-42-59`, gpt-6-astra 27 (`edit-insert-below-wall-units`,
+local roomle-ui :5173): the insert shifted the sink and the dishwasher 600 mm along the back leg,
+the wall unit above the sink (group `85510a7e`) did not move with it and the answer does not name
+it.

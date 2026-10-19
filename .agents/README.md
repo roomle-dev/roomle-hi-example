@@ -145,6 +145,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 |---|---|---|
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 | [Installation elements in the HI plan context](feature-analysis/installation-elements-in-hi-plan-context.md) | Open — RML-18023: type and position for electric plugs and water connections; roomle-ui `feat/water-connection` and HI MCP changes | 2026-10-19 |
+| [Interior Design: editing HI sub-articles through MCP](feature-analysis/interior-design-sub-articles.md) | Open — feature and API contract analysis | 2026-10-19 |
 
 ### Refactoring Analyses
 

@@ -84,8 +84,7 @@ AI agent (any MCP client) --Streamable HTTP--> http://localhost:3100/mcp
 Two processes started by one launcher: `start.mjs` serves `index.html` on
 port 3000 and spawns the MCP server (`hi-mcp/hi-mcp-server/server.ts`) on
 port 3100, pointing its "no page connected" error at the example URL
-(`HI_MCP_STORE_URL`) and its WebSocket origin allow-list (`HI_MCP_PAGE_ORIGINS`)
-at the page's origin — another page port (`EXAMPLE_PORT`) needs no extra
+(`HI_MCP_STORE_URL`) — another page port (`EXAMPLE_PORT`) needs no extra
 configuration. The page cannot listen
 on a port, so it connects **outward** to the server: it opens a WebSocket
 (`ws://localhost:3100/bridge`), receives planner method calls over it, and
@@ -147,9 +146,7 @@ points the chat at `…/mcp?session=<OS user name>` and prints that URL for
 external MCP clients. Each OS user name gets a container of its own. Two
 machines with the same user name share it: the first page keeps the planner,
 and the server refuses the other one (WebSocket close 4409), which then shows
-"This server already has a planner connected". The example
-has to run on port 3000, because `http://localhost:3000` is the only local origin
-the deployed server accepts, and the launcher refuses another `EXAMPLE_PORT`.
+"This server already has a planner connected".
 The deployment runs the last deployed image, so server changes on a branch
 need a deploy of DEV first: a push to `release/cloudflare.dev`, or `npm run deploy:cf:dev`. Details:
 [cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md).

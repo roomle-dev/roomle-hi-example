@@ -41,7 +41,7 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 #### 1. Launcher (`minimal-hi-example/start.mjs`)
 - **Build gate**: installs the `hi-mcp` workspace when `node_modules` is missing and runs the typecheck (`npm run typecheck` at the `hi-mcp` root) before anything starts; `--no-typecheck` skips the typecheck (the MCP test runner, after the first run of a session). There is no compiled artifact: `vite-node` runs the TypeScript.
 - **Static serving**: serves `minimal-hi-example/` on port 3000 (configurable via `EXAMPLE_PORT`).
-- **Server spawn**: Node invokes the installed `vite-node` CLI with `server.ts` directly in the `hi-mcp-server` workspace, with `HI_MCP_STORE_URL` pointing the "no page connected" error at the example URL and, unless set, `HI_MCP_PAGE_ORIGINS` naming the page's origin (`localhost` and `127.0.0.1` on the page port, plus `https://www.roomle.com`) — another `EXAMPLE_PORT` needs no extra configuration. `HI_MCP_PORT` moves the server and is passed to the page as `mcp_port`.
+- **Server spawn**: Node invokes the installed `vite-node` CLI with `server.ts` directly in the `hi-mcp-server` workspace, with `HI_MCP_STORE_URL` pointing the "no page connected" error at the example URL. `HI_MCP_PORT` moves the server and is passed to the page as `mcp_port`.
 - **Browser auto-open**, skipped with `--no-open`.
 - Exits when a server child exits; SIGINT/SIGTERM stop the direct MCP and optional chat children and exit, releasing their ports with the page port. The POSIX process regression in `hi-mcp-server/tests/example-launcher.test.ts` signals only the launcher PID and verifies all three ports can be bound again.
 
@@ -49,8 +49,8 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 - **Port**: 3100 (`HI_MCP_PORT` / `PORT` env)
 - **Routes**: `POST /mcp` (Streamable HTTP, JSON response mode, stateless — a new `McpServer` + transport per request); everything else is 404
 - **Protocol**: `@modelcontextprotocol/sdk`, tools registered with zod schemas in `hi-mcp-server.ts`
-- **Origin allow-list**: `HI_MCP_PAGE_ORIGINS` (default: `http://localhost:3000`, `http://127.0.0.1:3000`, `https://www.roomle.com`) — applies to the `/bridge` upgrade and to browser calls of `/mcp`: these origins get CORS headers (`OPTIONS` preflight 204), every other origin gets none (preflight 403). Requests without an `Origin` (curl, server-side MCP clients) are unaffected
-- **Env**: `HI_MCP_PORT`, `HOST`, `HI_MCP_PAGE_ORIGINS`, `HI_MCP_STORE_URL`, `HI_MCP_TLS_CERT`/`HI_MCP_TLS_KEY` (optional TLS)
+- **Origins**: any — the `/bridge` upgrade is accepted from every origin, and `/mcp` answers every origin with `Access-Control-Allow-Origin: *` (`OPTIONS` preflight 204)
+- **Env**: `HI_MCP_PORT`, `HOST`, `HI_MCP_STORE_URL`, `HI_MCP_TLS_CERT`/`HI_MCP_TLS_KEY` (optional TLS)
 - Orphan guard: shuts down with the dev script when its stdin pipe ends
 
 #### 3. WebSocket bridge
@@ -145,7 +145,7 @@ The ligna-store runs the same protocol via `hi-mcp/hi-mcp-client/` (browser-brid
 | Issue | Solution |
 |---|---|
 | Page not connecting | Open `http://localhost:3000/?mcp=true` and keep the tab open |
-| Port 3000 in use | `EXAMPLE_PORT=3101 npm start` (the launcher sets `HI_MCP_PAGE_ORIGINS` for the chosen origin; `npm run start:cf` needs port 3000) |
+| Port 3000 in use | `EXAMPLE_PORT=3101 npm start` (also with `npm run start:cf`) |
 | Port 3100 in use | The server names the fix (`lsof -ti tcp:3100 \| xargs kill`) |
 | Tools timing out | Expensive operation — check the snapshot timeout class of the tool |
 | Invalid parameters | Validated against the zod schema by the SDK |

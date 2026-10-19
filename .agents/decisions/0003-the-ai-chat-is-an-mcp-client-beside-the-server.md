@@ -22,8 +22,8 @@ per session and is shared by every client.
   page or a URL. The backend connects to `/mcp?client=<clientId>` of the page that sent the prompt.
 - The ligna-store: the AI SDK runs in the store page (ligna-store `hi-mcp/chat.ts`). It calls
   Mistral and the HI Azure AI Foundry endpoint directly (both allow browser CORS) with the key of the
-  store URL (`api_key`), and takes the tools from `<mcp_server>/mcp`. The server answers the store
-  origin for `/mcp` (`HI_MCP_PAGE_ORIGINS`, the list that guards `/bridge`).
+  store URL (`api_key`), and takes the tools from `<mcp_server>/mcp`, which answers browser calls
+  from any origin.
 
 ## Consequences
 

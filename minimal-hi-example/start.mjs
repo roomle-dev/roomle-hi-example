@@ -1,7 +1,6 @@
 // Starts the HI example page and the hi-mcp-server MCP server together:
 //   - installs and typechecks the hi-mcp workspace before anything starts
-//   - serves this directory (the example page) on port 3000 - the port the
-//     MCP server's default origin allow-list already contains
+//   - serves this directory (the example page) on port 3000
 //   - spawns the MCP server (vite-node hi-mcp/hi-mcp-server/server.ts) on
 //     port 3100 and points its "no page connected" error at the example URL
 //
@@ -11,7 +10,7 @@
 // Other page port: EXAMPLE_PORT=3101 npm start
 // Local Rubens UI: npm run dev  (server_url=http://localhost:5173/, override via EXAMPLE_SERVER_URL)
 // Cloudflare MCP: npm run start:cf  (the deployed MCP server instead of the local one,
-//                  session = the OS user name; page port 3000 only)
+//                  session = the OS user name)
 // AI chat:        npm start mistral <api-key>          (mistral-large-latest)
 //                  npm start mistral-medium <api-key>   (mistral-medium-latest)
 //                  npm start mistral-large-3 <api-key>  (mistral-large-3 deployment
@@ -46,11 +45,9 @@ const DEV_SERVER_URL = 'http://localhost:5173/';
 const EXAMPLE_SERVER_URL =
   process.env.EXAMPLE_SERVER_URL ??
   (process.argv.includes('--dev') ? DEV_SERVER_URL : undefined);
-// The deployed server accepts the page only from its default origins
-// (http://localhost:3000), and routes every session to its own container.
+// The deployed server routes every session to its own container.
 const CLOUDFLARE_MCP_SERVER_URL =
   'https://hi-planning-assistant-dev.dashiell-bell.workers.dev';
-const CLOUDFLARE_PAGE_PORT = 3000;
 const useCloudflareMcp = process.argv.includes('--cf');
 const MCP_SESSION = useCloudflareMcp ? userInfo().username : undefined;
 const MCP_URL = useCloudflareMcp
@@ -204,9 +201,6 @@ const startServer = (workspace, entrypoint, env) => {
 
 const startMcpServer = () => {
   const childEnv = { ...process.env, HI_MCP_STORE_URL: EXAMPLE_URL };
-  if (!childEnv.HI_MCP_PAGE_ORIGINS) {
-    childEnv.HI_MCP_PAGE_ORIGINS = `http://localhost:${STATIC_PORT},http://127.0.0.1:${STATIC_PORT},https://www.roomle.com`;
-  }
   const mcpServer = startServer('hi-mcp-server', 'server.ts', childEnv);
   mcpServer.on('exit', (code) => {
     if (!shuttingDown) {
@@ -249,12 +243,6 @@ const openInBrowser = (url) => {
 };
 
 const main = async () => {
-  if (useCloudflareMcp && STATIC_PORT !== CLOUDFLARE_PAGE_PORT) {
-    console.error(
-      `[hi-example] --cf needs the example on port ${CLOUDFLARE_PAGE_PORT} - the Cloudflare MCP server accepts the page only from http://localhost:${CLOUDFLARE_PAGE_PORT}`
-    );
-    process.exit(1);
-  }
   buildHiMcp();
   try {
     await startExampleServer();

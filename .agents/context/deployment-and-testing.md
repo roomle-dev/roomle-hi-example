@@ -60,9 +60,7 @@ subdomain `dashiell-bell` is shared with `roomle-planner-mcp` and is not changed
   to `/bridge?session=`; MCP clients use `/mcp?session=`. A container keeps the page, the pending
   calls and the undo record in memory; they are lost when it sleeps or restarts, and the page's
   bridge reconnects.
-- **Origins:** the container runs with the default page origins (`http://localhost:3000`,
-  `http://127.0.0.1:3000`, `https://www.roomle.com`) — which is why `npm run start:cf` needs page
-  port 3000.
+- **Origins:** the server accepts the page bridge and browser calls of `/mcp` from any origin.
 - **Deploy:** a push to `release/cloudflare` (PRD) or `release/cloudflare.dev` (DEV) runs
   `.github/workflows/deploy-cloudflare.yml` — Node 22, `npm ci` at the root, the typecheck, the `cf`
   typecheck, `npm test`, `wrangler deploy --env=""` or `--env="dev"` with the `CLOUDFLARE_API_TOKEN`

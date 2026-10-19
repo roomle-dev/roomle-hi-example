@@ -428,8 +428,8 @@ Assistant, from a chat of its own (ligna-store `hi-mcp/chat.ts`,
 `model`, `api_key` and `mcp_server`. It runs the Vercel AI SDK in the store
 page: the model is called directly with `api_key` (Mistral and the Foundry
 endpoint allow browser CORS), and the tools come from `<mcp_server>/mcp`, which
-answers the store origin (`HI_MCP_PAGE_ORIGINS`,
-[cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md#browser-clients-cors)).
+answers every origin
+([cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md#browser-clients-cors)).
 The store keeps `api_key` out of the page URL its bridge announces. Its
 reference is the ligna-store's `hi-mcp/README.md`; why neither chat is served
 by the MCP server, and why a key in the store URL is for a demo only:

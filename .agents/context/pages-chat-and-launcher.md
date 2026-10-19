@@ -66,7 +66,7 @@ for example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-o
 | -------- | ------ |
 | `<provider> <api-key>` | Also start the chat backend. The provider is one of `CHAT_PROVIDERS` or a `gpt-*`, `mistral-*`, `claude-*`, `gemini-*` model id; an unknown provider or a missing key exits with 1 |
 | `--dev` | The planner loads from `http://localhost:5173/` (`EXAMPLE_SERVER_URL` overrides) |
-| `--cf` | Use the DEV server `https://hi-planning-assistant-dev.dashiell-bell.workers.dev` (PRD: `https://hi-planning-assistant.dashiell-bell.workers.dev`) with the OS user name as session; no local MCP server; the page must run on port 3000 |
+| `--cf` | Use the DEV server `https://hi-planning-assistant-dev.dashiell-bell.workers.dev` (PRD: `https://hi-planning-assistant.dashiell-bell.workers.dev`) with the OS user name as session; no local MCP server |
 | `--no-open` | Do not open the browser |
 
 | Variable | Default | Effect |
@@ -75,7 +75,7 @@ for example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-o
 | `HI_MCP_PORT` | 3100 | MCP port; adds `&mcp_port=` to the page URL only when set |
 | `HI_CHAT_PORT` | 3200 | chat port; adds `&chat_port=` only when set |
 | `EXAMPLE_SERVER_URL` | — | the planner's Rubens UI, passed as `server_url` |
-| `HI_MCP_PAGE_ORIGINS`, `HI_CHAT_PAGE_ORIGINS` | the page's localhost origins (+ `https://www.roomle.com` for MCP) | set on the children when unset |
+| `HI_CHAT_PAGE_ORIGINS` | the page's localhost origins | set on the chat child when unset |
 
 ### What it does
 

@@ -14,23 +14,13 @@ const bridge = new PageBridge();
 connectPlanHistory(bridge, planHistory);
 
 // Azure App Service injects PORT and expects HOST=0.0.0.0; locally the
-// defaults keep the single-user setup: port 3100, all interfaces, the local
-// dev server plus the deployed store pages as allowed origins.
+// defaults keep the single-user setup: port 3100, all interfaces.
 const serverPort =
   Number(process.env.HI_MCP_PORT ?? process.env.PORT) || HI_MCP_PORT;
-const pageOrigins = process.env.HI_MCP_PAGE_ORIGINS
-  ? process.env.HI_MCP_PAGE_ORIGINS.split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean)
-  : [
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      'https://www.roomle.com',
-    ];
-
-// The ligna-store chat window calls the tools from the browser, so the page
-// origins may reach /mcp cross-origin.
+// The chat windows call the tools from the browser, so every origin may reach
+// /mcp cross-origin.
 const MCP_CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
   'Access-Control-Allow-Headers':
     'Content-Type, Accept, Authorization, Mcp-Session-Id, Mcp-Protocol-Version, Mcp-Method, Mcp-Name, Last-Event-ID',
@@ -47,16 +37,11 @@ const requestHandler = async (
     response.end('Not found - the MCP endpoint is /mcp');
     return;
   }
-  const { origin } = request.headers;
-  if (origin && pageOrigins.includes(origin)) {
-    response.setHeader('Access-Control-Allow-Origin', origin);
-    response.setHeader('Vary', 'Origin');
-    for (const [name, value] of Object.entries(MCP_CORS_HEADERS)) {
-      response.setHeader(name, value);
-    }
+  for (const [name, value] of Object.entries(MCP_CORS_HEADERS)) {
+    response.setHeader(name, value);
   }
   if (request.method === 'OPTIONS') {
-    response.writeHead(origin && pageOrigins.includes(origin) ? 204 : 403);
+    response.writeHead(204);
     response.end();
     return;
   }
@@ -106,14 +91,11 @@ const httpServer = tlsOptions
 
 const webSocketServer = new WebSocketServer({ noServer: true });
 httpServer.on('upgrade', (request, socket, head) => {
-  const { origin } = request.headers;
   // query parameters are allowed on /bridge (the Cloudflare session routing
   // appends ?session=…)
   const { pathname } = new URL(request.url ?? '', 'http://localhost');
-  if (pathname !== '/bridge' || (origin && !pageOrigins.includes(origin))) {
-    console.error(
-      `[hi-mcp] rejected websocket upgrade (url: ${request.url}, origin: ${origin})`
-    );
+  if (pathname !== '/bridge') {
+    console.error(`[hi-mcp] rejected websocket upgrade (url: ${request.url})`);
     socket.destroy();
     return;
   }

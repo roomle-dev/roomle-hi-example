@@ -29,6 +29,7 @@ never drop the agent's content silently.
 | 83 | [Where no free stretch of the wall fits the group, it is placed over existing furniture and reported](#83-where-no-free-stretch-of-the-wall-fits-the-group-it-is-placed-over-existing-furniture-and-reported) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 84 | [The find-attributes answer lists the values without naming the attribute](#84-the-find-attributes-answer-lists-the-values-without-naming-the-attribute) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:252-268`, the `find-attributes` description) | low | gpt-6-astra | |
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
+| 86 | [A swapped row of different unit widths stands through the wall](#86-a-swapped-row-of-different-unit-widths-stands-through-the-wall) | bug | roomle-ui `hi-tools.ts:908` (`swapRootModules`) with `glue-logic.ts:2593` (`arrangeAndLoad`) and `hi-root-module-arrangement.ts:412` (`keepWallDistances`) | medium | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -83,12 +84,13 @@ accuracy, not a guard: nothing is refused, the agent's content is built.
 **Test.** `edit-remove-corner-unit`: the turned leg's wall units turn with it, or the correction
 names them as staying on the back wall.
 
-**Reproduce.** `mcp-test-2026-10-19_07-42-07`, gpt-6-astra 29 (`edit-remove-corner-unit`, plan
-snapshot `ps_s9hcu3u3kv21brhbudhjx88qqcmahy5`, local roomle-ui :5173): the
+**Reproduce.** `mcp-test-2026-10-19_10-57-22`, gpt-6-astra 29 (`edit-remove-corner-unit`, plan
+snapshot `ps_s9y162bxst2sdc4zlray7ksynbotkskm`, local roomle-ui :5173): the
 `delete-article-and-compact` of UERTB90 `814c6854-af4a-4370-807b-b1c0526dc1a0` answers the
 correction quoted above; the final plan has the main group `031ee57a` as one straight row of
 4200 mm along the right wall (x 4198..4815, z −3765..435) while the wall-unit group `85510a7e`
-(wl1+wl2) stays on the back wall (x 2954..4154, z −3765..−3359, rotationY 0.03).
+(wl1+wl2) stays on the back wall (x 2954..4154, z −3765..−3359, rotationY 0.03). The run also
+ended with an error (the chat's 5-minute turn cap).
 
 ## 82. The model asks instead of building the group the user asked for on a wall of floor-to-ceiling windows
 
@@ -135,9 +137,11 @@ so. Verify model acceptance.
 **Test.** `wardrobe-door-hinges`, `wardrobe-split-door-hinges`: the model asks or places in a free
 stretch instead of overlapping the furniture.
 
-**Reproduce.** `mcp-test-2026-10-19_07-42-07`, gpt-6-astra 12 (`wardrobe-door-hinges`): four
-wardrobes over two objects on the closets back wall, the answer reports the overlap; 35
-(`wardrobe-split-door-hinges`): five wardrobes over the low cabinet by 568 mm. Local roomle-ui :5173.
+**Reproduce.** `mcp-test-2026-10-19_10-57-22`, gpt-6-astra 12 (`wardrobe-door-hinges`): four
+wardrobes over two objects on the closets back wall (240 mm over the 1170 mm unit x −430..3050,
+568 mm over the low cabinet x 3506..4074), the answer reports the overlap; 35
+(`wardrobe-split-door-hinges`): five wardrobes over the low cabinet by 568 × 570 mm. Local
+roomle-ui :5173.
 
 ## 84. The find-attributes answer lists the values without naming the attribute
 
@@ -153,8 +157,8 @@ answer names the attribute id with its values.
 
 **Test.** `attributes-find-front-colour`: the answer names the attribute id with the front colours.
 
-**Reproduce.** `mcp-test-2026-10-19_07-42-07`, gpt-6-astra 18 (`attributes-find-front-colour`): the
-answer lists the 21 front colours, never names the attribute id. Local roomle-ui :5173.
+**Reproduce.** `mcp-test-2026-10-19_10-57-22`, gpt-6-astra 18 (`attributes-find-front-colour`): the
+answer lists the 21 front colours in a table, never names the attribute id. Local roomle-ui :5173.
 
 ## 85. insert-article-into-group takes a between-pair whose root modules do not stand side by side
 
@@ -178,3 +182,38 @@ side by side, or the result says the named pair does not stand side by side.
 **Reproduce.** `mcp-test-2026-10-19_07-42-07`, gpt-6-astra 27 (`edit-insert-below-wall-units`): the
 model named the sink and a base unit (adjacent in the docking chain, not side by side in space); the
 insert landed beside the sink. Local roomle-ui :5173.
+
+## 86. A swapped row of different unit widths stands through the wall
+
+**Problem.** `swap-root-modules` of two root modules of different widths in a row against a wall
+moves the whole row behind its place: after widening the last of three tall units to 900 mm and
+swapping it with the first, the row's back end stands 600 mm through the back wall (32). The row is
+contiguous and its doors are correct — only its place is wrong.
+
+**Cause.** `swapRootModules` (`packages/web-sdk/packages/homag-intelligence/src/hi-tools.ts:908` in
+roomle-ui) exchanges the two roots' bottom-side docking links, article positions and rotations, then
+re-arranges the group with `REARRANGED_ROW_LOAD` (`hi-tools.ts:65-72`, `applyGroupPosition: true` —
+"the glue logic dictates the group position"). `keepWallDistances`
+(`packages/web-sdk/packages/homag-intelligence/src/hi-root-module-arrangement.ts:412`) translates
+the group so the arranged docking box's wall-facing side keeps its room position. With swapped roots
+of different widths (600 ↔ 900 mm) the arranged box is offset 600 mm from the original's, so the
+whole row translates 600 mm backwards through the wall. The doc of `arrangeAndLoad`
+(`glue-logic.ts:2588-2592`) — "the side at a wall keeps its place" — and the doc of
+`swapRootModules` (`hi-tools.ts:905-906`) — "the row keeps its length, and its side at a wall keeps
+its place" — are both broken for this case. An equal-width swap keeps the row in place
+(`edit-swap-hob-unit` passes).
+
+**To do.** roomle-ui: keep the row's wall-side end in place when the swapped roots have different
+widths — anchor the wall-side end of the arranged row, or clamp the translated group into the room.
+This is a planner defect, not a guard: the agent's input is valid and the planner builds impossible
+geometry.
+
+**Test.** `edit-swap-units`: after the swap the row's back end stays at z −3765. A permanent
+geometry test swaps different-width roots at a wall and asserts the wall-side end keeps its place.
+
+**Reproduce.** `mcp-test-2026-10-19_10-57-22`, gpt-6-astra 32 (`edit-swap-units`, plan snapshot
+`ps_s9yhi76jypo1d6qhe3tfpgsv80rfpj8`, local roomle-ui :5173): turn 1 `change-module-attribute`
+`mod_Width` 900 on `8774cac2-8b83-405d-b88c-f0e5cd2452fb` (error 14019 diagnostic, the model
+corrected the door to `LeftRight`), turn 2 `swap-root-modules` of
+`0010443c-519a-437b-8fe5-364f13887ca4` and `8774cac2` — the final row runs z −4365..−2265 (group
+`064a7d91` at pos [4815, 0, −4365]) against the back wall at z −3765.

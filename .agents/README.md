@@ -134,7 +134,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | [The backsplash of an image kitchen is reported as not buildable](bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md) | Fixed — closed as resolved by the user; roomle-ui change pending landing | 2026-10-18 |
 | [An edit that gives a row a new end leaves a door hinged to the outside](bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md) | Open — implemented and unit verified; live model acceptance awaiting approval | 2026-10-18 |
 | [An island's back row of other widths lands off the front row](bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — reproduced; served-text fix first, endpoint-mode alignment as fallback | 2026-10-18 |
-| [A swap of a widened unit is refused for want of a docking vector](bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md) | Open — validated; calculation-error feedback proposed; roomle-ui based on `release/bo-test` | 2026-10-19 |
+| [A swap of a widened unit is refused for want of a docking vector](bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md) | Open — feedback and recovery implemented on a branch based on `release/bo-test`; live acceptance and library descriptions pending | 2026-10-19 |
 
 ### Feature Analyses
 
@@ -172,8 +172,8 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | Document | Last touched |
 |---|---|
 | [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-18 |
-| [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner: island back-row alignment, calculation-error feedback after resizing | 2026-10-18 |
-| [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: sink drainer width and the restriction on a hob to its right, handleless fronts, the sizes of flip-lift wall cabinets, end panels with a plain upright colour | 2026-10-16 |
+| [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner: island back-row alignment | 2026-10-19 |
+| [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right, with the status of the report to the library development team: sink drainer width and the restriction on a hob to its right, handleless fronts, the sizes of flip-lift wall cabinets, end panels with a plain upright colour, width-dependent tall-unit doors | 2026-10-19 |
 | [Open issues of roomle-ui](backlog/roomle-ui-issues.md) — defects of the planner outside the HI tool commands that the MCP prompt tests show: a dark worktop the renderer's top light makes look white | 2026-10-16 |
 | [Where Mistral Large falls short of the prompts](backlog/mistral-large-prompt-issues.md) — improvement candidates from the `mistral-large-latest` test run: where the MCP server could give a weaker model better information or hints | 2026-10-17 |
 | [Library-neutrality issues of the MCP server](backlog/mcp-policy-issues.md) — what in the MCP server still carries library-specific content: the served text's kitchen taxonomy, the search normalization and the result messages of the HI tool commands | 2026-10-14 |

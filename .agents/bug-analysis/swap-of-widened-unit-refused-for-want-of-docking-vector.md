@@ -1,14 +1,14 @@
 # Bug analysis — a swap of a widened unit is refused for want of a docking vector
 
 > **Type**: Bug analysis
-> **Status**: Open — verified; diagnosis and fix proposal corrected, not implemented
+> **Status**: Open — feedback and recovery implemented and unit verified; final live replay, library descriptions and agent acceptance pending
 > **Date**: 2026-10-18
 > **Base**: roomle-hi-example `master` (`65c66f8`), verified on `docs/verify-mcp-74-78`;
 > roomle-ui `fix/generated-part-switch-discovery` (`cf377cfd4`), descended from
 > `fix/room-corners-at-openings` (`a008be42d`)
 > **Implementation base**: roomle-ui `origin/release/bo-test` (`f15c22cc3`, checked
 > 2026-10-19); the earlier branch names above record investigation context, not the required base
-> **Backlog**: [item 78](../backlog/mcp-issues.md#78-a-swap-of-a-widened-unit-is-refused-for-want-of-a-docking-vector)
+> **Backlog**: [item 78](../backlog/library-issues.md#78-tall-unit-descriptions-omit-width-dependent-door-arrangements)
 
 ## Affected repositories
 
@@ -18,11 +18,13 @@
   Keep the applied changes and name the affected roots, the diagnostic and the recovery action.
   Add tests through the tool commands backed by the glue logic. The implementation branch
   starts directly from `origin/release/bo-test`, as required by the user.
+  Recovery also changes `hi-root-module-arrangement.ts`: tolerate absent original vectors
+  when selecting a mode and require complete article-root bounds for wall-distance adjustment.
 - **roomle-hi-example** — update the attribute-tool result contract in
   `docs/hi-mcp-behaviour.md`, `docs/hi-mcp-server.md`, the tool skill and implementation context
   when the fix is implemented; test that feedback survives the MCP result compaction. Adjust
   `edit-swap-units` acceptance to distinguish a widened paired-door unit from the remaining
-  single-door units. This task changes the analysis and backlog only.
+  single-door units. The remaining library-data work is tracked separately in backlog item 78.
 
 The **HI library data** also needs a description follow-up: resizing this article can change
 its door configuration, so an article described as having one door cannot justify forcing a
@@ -252,3 +254,61 @@ The implementation base required by the user is checked against the fetched
 `origin/release/bo-test` (`f15c22cc3`) on 2026-10-19. Its `hi-tool-attributes.ts`,
 `hi-tool-commands.ts`, `hi-tools.ts` and `glue-logic.ts` match the independently validated
 checkout, so the diagnosis and proposed feedback boundary apply on that base too.
+
+## Recovery finding — 2026-10-19
+
+The direct live replay with the feedback change returns Error 14019 on the width edit as
+expected, but correcting the retained hinge to `Automatic` throws before the recovered group
+loads. `HiRootModuleArrangementOperator._getDockMode` in roomle-ui
+`hi-root-module-arrangement.ts:990-995` reads `originalRoot?.dockInfos.filter` and
+`originalOtherRoot?.dockInfos.filter`: the original root exists, but its failed calculation
+left `dockInfos` absent. The newly calculated root has valid vectors; the comparison against
+the previous root is what fails.
+
+Recovery therefore also requires optional access to the original roots' vector arrays in
+those two expressions. The existing mode fallback already handles an unavailable original
+vector pair and retains the requested docking mode. This uses the recovered calculation's
+geometry, keeps the failed original intact and adds no refusal or fabricated vectors. A
+regression must cover either endpoint missing its original vectors and verify the recovered
+row's positions. The live recovery and swap are rerun after that change.
+
+The next replay recovers complete geometry but moves the group 600 mm on each recovery.
+`keepWallDistances` (`hi-root-module-arrangement.ts:412`) compares a partial original box
+that omits the failed root with the full recovered box, then treats their difference as a
+layout change. A partial box cannot establish the whole group's distance to a wall. The
+wall-distance adjustment must therefore require docking geometry for every article root in
+both groups; when either measurement is incomplete, it keeps the group transform rather than
+deriving a translation from partial bounds. This is the same unavailable-measurement fallback
+as the existing missing-box case, not an agent refusal. Regressions cover either incomplete
+measurement and require the live recovered and swapped row to keep its original wall position.
+
+## Implementation and verification — 2026-10-19
+
+The changes are implemented on `fix/attribute-calculation-feedback` in both repositories;
+roomle-ui starts from `release/bo-test` (`f15c22cc3`), with implementation commit `a2046b72b`.
+
+- `withLibraryChanges` appends settled raw Error/Fatal diagnostics for the groups the command
+  changed, using the existing cause grouping and root labels. The edit and other roots remain,
+  existing corrections stay first, and the MCP attribute-result compaction retains the feedback.
+- `_getDockMode` tolerates absent original docking vectors and keeps the requested mode.
+  `keepWallDistances` requires complete article-root docking bounds in both states before
+  deriving a translation. Generated roots without vectors do not prevent measurement.
+- The tool reference, behaviour, implementation context and SDK reference describe these
+  contracts. The prompt expectation distinguishes the widened paired doors from a single
+  door at the other row end. Library-description proposals are prepared, not applied; the
+  remaining description work is library backlog item 78.
+
+The feedback regressions failed before the change; both missing-original-vector tests and
+both incomplete-footprint tests independently reproduced their recovery defects before their
+fixes. **1,085 tests pass across all 18 HI SDK test files**, and **297 tests pass across all
+15 MCP workspace test files**. Both repository typechecks, SDK/MCP lint, formatting and local
+Markdown-link checks pass. Test logs are local scratch files under `.temp/attribute-feedback-*`.
+
+The live replay confirms that width 900 with retained `Right` returns Error 14019 through
+MCP `corrections`, and correcting the hinge to `Automatic` or explicit `LeftRight` rebuilds
+six vectors and paired-door parts. The swap then keeps all links. That replay exposes the
+wall-distance defect above before its fix. Subsequent final acceptance attempts stall while
+the example awaits an external HI proxy request during initial planner setup, before a page
+connects to MCP. The final wall-position replay and the model's response to the feedback remain
+unverified; unit tests cover the corrected incomplete-footprint behaviour. No model run or
+remote library-data update is performed.

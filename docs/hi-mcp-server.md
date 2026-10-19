@@ -637,6 +637,15 @@ Attribute commands wait for the kernel's position callback and its follow-up cal
 The returned corrections use the final attributes, including a position height derived from the
 actual placement or adjusted by the library.
 
+Both attribute tools append root-specific calculation errors to `corrections`: the first
+Error/Fatal diagnostic line, with affected group/root ids and articles, and guidance to check
+group attributes and retained overrides against the library data, correct values or replace
+the article. Roots failing alike are grouped per group. The tools keep the applied edits and
+other roots; warnings and unrelated groups are omitted. Feedback uses the final follow-up
+calculation and survives result compaction. Recovery uses the newly calculated vectors; when
+the previous vectors or a complete docking footprint are unavailable, the arrangement retains
+the requested docking mode and group transform.
+
 In a row edit — insert, `delete-article-and-compact`, exchange, swap — the end of the row at a wall
 or in a corner keeps its place and the other end moves; wall units and the
 range hood move with the unit they hang from. The result's `hint` names those

@@ -278,6 +278,16 @@ This contract is guarded by these roomle-ui tests:
 `attributeValue` turns a number into a string for the two attribute commands; the `attributes` of
 merge, insert and exchange are forwarded unchanged.
 
+`withLibraryChanges` also reads the settled raw groups named by the attribute command's
+result. It appends each root's first Error/Fatal diagnostic through `byCause` and
+`rootModulesLabel`: one first-line cause per group, with root ids/article labels and recovery
+guidance. Existing corrections and library-change feedback retain their order. Warnings and
+unrelated groups are omitted. The command keeps its edits and other roots, and the server's
+`compactAttributeResult` preserves these diagnostics in `corrections`. Tool/glue integration
+tests in `hi-tools-test.ts` cover retained changes and diagnostics appearing or clearing in
+the final follow-up calculation; `hi-tool-commands/group-commands-test.ts` covers targeting
+and grouping, and the MCP `tool-executors.test.ts` covers compaction.
+
 ### merge-article-into-group: where the unit goes
 
 `dockTarget` decides the docking the planner gets:

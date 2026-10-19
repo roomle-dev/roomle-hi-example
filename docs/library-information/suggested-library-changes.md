@@ -17,12 +17,13 @@ heading of each. Every text stays here once the library carries it, with its sta
 | [1.2 Articles with two doors](#12-articles-with-two-doors) | `H2TB60`, `HWR_HB600T2`, `U2TB90`, `O2TB90`, `US2TB90`, `EU2TB90` | applied |
 | [1.3 Flap wall cabinets](#13-flap-wall-cabinets) | `OSKB60`, `OSKB90`, `OFKB60`, `OFKB90` | applied |
 | [1.4 Wall units with a single door](#14-wall-units-with-a-single-door) | `OTB30`, `OTB45`, `OTB60` | open |
+| [1.5 Width-dependent tall-unit doors](#15-width-dependent-tall-unit-doors) | `HTB60` | open |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
 | [2.2 Front program](#22-front-program) | `mod_FrontProgram` | applied |
 | [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
 | [2.4 Upright colour and program](#24-upright-colour-and-program) | `mod_UprightColor`, `mod_UprightProgram` | applied; the program values of `mod_CarcaseProgram` and `mod_CarcaseOutsideProgram` keep their old descs |
 | [2.5 Handle design](#25-handle-design) | `mod_HandleDesign` | applied |
-| [2.6 Door direction](#26-door-direction) | `mod_DoorDirectionSelection` | applied |
+| [2.6 Door direction](#26-door-direction) | `mod_DoorDirectionSelection` | applied; resize guidance open |
 | [2.7 Handle position type](#27-handle-position-type) | `mod_HandlePosType` | applied |
 | [2.8 Sink](#28-sink) | `mod_SinkId` | applied |
 | [2.9 Width](#29-width) | `mod_Width` | open |
@@ -299,6 +300,25 @@ SEARCH_KEYWORDS: wall cabinet, wall unit, upper cabinet, door wall unit
 AI_SELECTION_HINT: Select for a standard wall-hung kitchen cabinet behind a single door, at the width it comes with. For a wider cabinet, choose one with a pair of doors or two narrower units.
 ```
 
+### 1.5 Width-dependent tall-unit doors
+
+**Status.** Proposed, not applied. The text states the verified 600 and 900 mm configurations;
+it does not infer a transition width or supported intermediate widths.
+
+`HTB60` (TDS60) — 885 characters:
+
+```
+FUNCTION: Tall cabinet with adjustable shelves, one door at its nominal width of 600 mm and two doors side by side at 900 mm.
+PURPOSE: Full-height pantry / larder storage for food and supplies.
+TYPICAL_PLACEMENT: Tall-unit block, at the end of a run or between other tall units.
+REQUIREMENTS: Tall unit: carcase height approx. 2016-2160 mm, depth 561 mm.
+RECOMMENDED_NEIGHBOURS: Fridge/oven tall units, pantry tall units.
+RESTRICTIONS: No appliance, sink or water installation.
+STYLE_COMPATIBILITY: Modern handled kitchen. Also suits classic, Scandinavian and country-house designs.
+SEARCH_KEYWORDS: tall cabinet, larder unit, pantry cabinet, food storage cupboard.
+AI_SELECTION_HINT: Select for tall closed pantry storage. At 900 mm set Door direction to Automatic or Left & Right; a retained Left or Right is a single-door setting and cannot calculate this paired-door configuration.
+```
+
 ## 2. Attribute descriptions
 
 ### 2.1 Colour values
@@ -384,6 +404,10 @@ AI_SELECTION_HINT: Select for a standard wall-hung kitchen cabinet behind a sing
 | `LeftLeft` | Left & Left | A pair of doors side by side, both hinged on the left, as seen from the front. |
 | `RightRight` | Right & Right | A pair of doors side by side, both hinged on the right, as seen from the front. |
 | `Automatic` | Automatic | Setting via tab_DoorSettings. The library chooses: a single door hinged on the left, a pair of doors side by side left and right — wherever the cabinet stands in a row. |
+
+Additional proposed `mod_DoorDirectionSelection.desc` for resizing (not applied):
+
+> The side a door is hinged on, as seen from the front: the handle is on the other side. Left and Right are for single doors, also two doors one above the other; Left & Right is for a pair of doors side by side. Resizing can change the door arrangement: use the arrangement at the requested size, not the nominal article description. Automatic selects that arrangement's default: a single door hinged left, a side-by-side pair hinged at both outer sides. A single door at a row's right end needs Right; a paired unit keeps both outer hinges at either end.
 
 ### 2.7 Handle position type
 

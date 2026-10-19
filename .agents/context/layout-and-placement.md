@@ -121,6 +121,16 @@ The module uses fixed vector names; it never reads an article's `dockingVectors`
 an article does not have is done in `dockTarget` (merge-article-into-group); dropping positions in
 `prepareGroup` ([Tool executors](./tool-executors.md#create-or-replace-groups)).
 
+## Recovering an attribute calculation
+
+For attribute recovery, `HiRootModuleArrangementOperator._getDockMode` compares against
+original vectors only when both original roots carry the required vectors. Otherwise it
+retains the requested mode and arranges with the recovered vectors. `keepWallDistances`
+requires a complete docking footprint for every article root before and after; a partial
+footprint supplies no wall-distance translation, so the group transform stays. Generated
+roots without vectors do not prevent measurement. The recovery-mode and incomplete-footprint
+cases are covered in `hi-root-module-arrangement-test.ts`.
+
 ## Placing a new group — hi-group-placement.ts
 
 A new group placed by point comes with a `placement { posGroup, posRotationY, rootId? }`: the room

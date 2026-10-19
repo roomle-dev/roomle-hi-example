@@ -24,7 +24,6 @@ never drop the agent's content silently.
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
 | 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | hardening | roomle-hi-example `AUTHORING_RULES` (`hi-mcp-server.ts:30-34`): explain the endpoint and turned-row viewpoint. Conditional roomle-ui fallback: explicit end alignment through endpoint modes in `pairOf` (`hi-group-layout.ts:846-860`), with reciprocal modes when the entry changes owner. [Analysis and verification](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md) | low | gpt-6.1-sol | |
-| 78 | [A swap of a widened unit is refused for want of a docking vector](#78-a-swap-of-a-widened-unit-is-refused-for-want-of-a-docking-vector) | defect | roomle-ui attribute-tool feedback (`hi-tool-attributes.ts:231`): expose the library calculation error behind the missing vectors; HI library descriptions: explain the width-dependent door arrangement. [Analysis and verification](../bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md) | medium | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -59,40 +58,3 @@ also covers rotated targets, wider rear units and reciprocal mode ownership.
 **Reproduce.** `mcp-test-2026-10-16_19-30-19`, gpt-6.1-sol 48 (`image-planning-right-wall`, the
 second `create-or-replace-groups`, the island): `rear1` (`EUTB60`) `behind` `islandright`
 (`EUS2A90`), `rear2` to `rear4` `rightOf`; back row z −3240 to −840 against front z −2940 to −540.
-
-## 78. A swap of a widened unit is refused for want of a docking vector
-
-**Problem.** Widening the last `HTB60` of `three-tall-units` to 900 mm retains its explicit
-`mod_DoorDirectionSelection: Right`. The library cannot calculate that configuration; the root
-loses docking vectors and its front has no generated parts, but the attribute result reports no
-calculation problem. The following swap applies with a dropped `RightBottom` link, then the
-model undoes it. This is a successful tool response with broken content, not a refused call.
-
-**Cause.** The saved root has Error 14019: no `tab_DoorSettings` entry for the 900 mm tall unit
-with `Right`. The successful 900 mm control uses `Automatic`, resolves its door to `LeftRight`
-and keeps six vectors. The article description says one door without describing its
-width-dependent configuration. `withLibraryChanges` (`hi-tool-attributes.ts:231-251`, called
-at `hi-tool-commands.ts:957,1013`) reports attribute adjustments but omits raw root Error/Fatal
-messages; `shapeRoot` (`hi-plan-context.ts:689-710`) omits them too. The swap's `handOver`
-(`hi-tools.ts:954-972`) then reports the downstream missing-vector symptom. See
-[the analysis](../bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md).
-
-**To do.** In roomle-ui, include root-specific calculation diagnostics and recovery guidance in
-both attribute tools' results, keeping the applied edits and valid roots. Follow the feedback
-pattern of `create-or-replace-groups` (`hi-tool-commands.ts:654-689`); use `corrections`, retained
-by the MCP `compactAttributeResult` (`tool-executors.ts:344-352`). Clarify the library's
-width-dependent door descriptions, then recover valid hinge inputs before the swap. Keep
-library-specific facts in data. Do not restore old `dockInfos` over a failed calculation or
-silently reset hinge settings. The roomle-ui implementation branch starts from
-`origin/release/bo-test`.
-
-**Test.** Unit coverage through the tool/glue path: a failed attribute calculation keeps the edit
-and returns the affected root and diagnostic; MCP compaction retains it. Live `edit-swap-units`:
-recover a supported 900 mm paired-door configuration, then swap with complete front geometry,
-six docking vectors and a contiguous 2100 mm row, its back end at z −3765. Match outer hinges
-to the calculated single or paired doors; a dropped docking followed by undo fails.
-
-**Reproduce.** `mcp-test-2026-10-18_14-48-28`, gpt-6-astra 32 (`edit-swap-units`, local planner
-`e4989a862`): widen `8774cac2-8b83-405d-b88c-f0e5cd2452fb`, then swap it with `0010443c…`;
-`run.json` records the dropped `RightBottom` link and undo, while `plan.xml` records Error 14019
-and the retained `Right` input on the widened root.

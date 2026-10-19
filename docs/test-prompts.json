@@ -260,7 +260,7 @@
         "make the last unit 900 mm wide",
         "swap the first and the last unit"
       ],
-      "expect": "turn 1: change-module-attribute: mod_Width 900 on the last unit; turn 2: swap-root-modules: the 900 mm unit stands in the back corner, the row stays 2100 mm and its back end at z -3765; the new left-end door is hinged left and the new right-end door right, with unrelated door settings unchanged; a refused or undone swap does not pass"
+      "expect": "turn 1: change-module-attribute: mod_Width 900 on the last unit; a calculation diagnostic requires correcting incompatible retained attributes before proceeding, with built front geometry and docking vectors; turn 2: swap-root-modules: the 900 mm unit stands in the back corner, the row stays contiguous at 2100 mm and its back end at z -3765; the widened paired-door unit has both outer hinges, the single door at the new right end is hinged right, with unrelated door settings unchanged; a dropped docking, refused or undone swap does not pass"
     },
     {
       "id": "edit-swap-door-hinges",

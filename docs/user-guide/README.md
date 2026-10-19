@@ -293,3 +293,7 @@ says what it substituted and adapted.
   in detail
 - [Example and MCP server reference](../hi-mcp-server.md) — for
   developers: the tools and how the server works
+
+## Interior Design
+
+Ask to add a shelf or drawer inside a cabinet, move a specific fitting higher, transfer it within the same furniture group, delete identified fittings, or replace one with an available alternative. The assistant first discovers what the loaded library supports. It may ask which fitting you mean when several are alike. Actual placement and retained settings depend on the library; the tool result reports adjustments and changed instance IDs. Undo and redo apply to each completed edit. See [the tool contract](../hi-mcp-behaviour.md#interior-design-tools).

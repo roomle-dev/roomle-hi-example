@@ -31,6 +31,7 @@
     "three-tall-units": "ps_s3p5hmscmmsnshopj2tybjwmt7ijy5o",
     "corner-kitchen-wall-units": "ps_s7hy5nqvtts37wl79u6q8tq67bc12s2",
     "two-wardrobes-right-wall": "ps_s3qfqirqsvfwrr8em4d344h0c4sk8po",
+    "three-open-wardrobes-with-shelves": "ps_sbga21bftgc6paechjqf8x5qbk538sp",
     "open-plan-room": "ps_qwm5odi6tyflyqwpdcxz1la791ho633",
     "room-with-supplies": "ps_sa6laqmrrczr6wmo8jfk7pdyz36omon",
     "empty-room-with-water-connection": "ps_sau169slquuapnhdz3fdmc0u24eplrcf"
@@ -166,6 +167,27 @@
       "plan": "three-tall-units",
       "prompt": "add a cabinet with drawers to the right of the kitchen",
       "expect": "merge-article-into-group: a drawer cabinet at the front end of the row"
+    },
+    {
+      "id": "edit-add-subarticle",
+      "title": "Add a shelf sub-article to the middle wardrobe",
+      "plan": "three-open-wardrobes-with-shelves",
+      "prompt": "add one fixed shelf sub-article inside the middle open wardrobe; keep its existing shelf and leave all three cabinets, their positions, finishes and other shelves unchanged",
+      "expect": "get-interior-design-options discovers a compatible FixedShelf article and current destination in middle root 7b8bd635-7f19-4e3c-b280-95b91d4c4916 of group ce854b3e-90d6-4e65-ba7b-461e125cc8da; add-interior-fitting adds exactly one new installed instance there. Four shelf sub-articles remain: one in the left wardrobe, two in the middle, one in the right. All three original shelves, cabinet identities, placement, finishes and docking remain unchanged; the result reports the new instance ID and actual placement."
+    },
+    {
+      "id": "edit-delete-subarticle",
+      "title": "Delete the shelf sub-article from the left wardrobe",
+      "plan": "three-open-wardrobes-with-shelves",
+      "prompt": "delete the shelf sub-article from the leftmost open wardrobe; keep the cabinet and leave the other two wardrobes and their shelves unchanged",
+      "expect": "get-interior-design-options identifies installed FixedShelf instance 037ab69e-8475-4418-b6db-df6738b91df1 in left root ab0737ab-a681-48ed-995b-46ee788a2329; delete-interior-fittings removes only that instance. The group still contains all three wardrobe cabinets at their original positions with unchanged finishes and docking, with no shelf in the left wardrobe and the original shelf in each of the middle and right wardrobes. No cabinet or whole group is deleted."
+    },
+    {
+      "id": "edit-move-subarticle",
+      "title": "Move a shelf sub-article between wardrobes",
+      "plan": "three-open-wardrobes-with-shelves",
+      "prompt": "move the shelf sub-article from the leftmost open wardrobe into the rightmost open wardrobe; keep the shelf already in the right wardrobe, leave the middle wardrobe unchanged and keep all three cabinets where they are",
+      "expect": "get-interior-design-options identifies source FixedShelf instance 037ab69e-8475-4418-b6db-df6738b91df1 and a compatible current destination in right root 22e7519d-4218-46e4-b1a5-5c92934ad420 of the same group ce854b3e-90d6-4e65-ba7b-461e125cc8da; move-interior-fitting transfers it in one command. Three shelf sub-articles remain: none in the left wardrobe, the original one in the middle, and the original right shelf plus the transferred shelf in the right. Recreation may change the moved instance ID; use the returned identity and actual placement. Compatible source settings are retained or resets reported. Cabinet identities, placement, finishes, docking and the two unrelated shelf instances remain unchanged; no separate delete/add commands or whole-cabinet move."
     },
     {
       "id": "edit-remove-unit",

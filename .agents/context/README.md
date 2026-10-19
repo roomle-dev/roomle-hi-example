@@ -201,3 +201,5 @@ the lifetime of the process:
   Keep them in step.
 - **Guards are a last resort.** Before a check refuses agent input, read
   [Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort).
+
+- [Interior fittings](interior-fittings.md) — discovery, fitting commands, identity, completion and history.

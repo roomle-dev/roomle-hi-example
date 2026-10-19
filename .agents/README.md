@@ -145,6 +145,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 |---|---|---|
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 | [Installation elements in the HI plan context](feature-analysis/installation-elements-in-hi-plan-context.md) | Open — RML-18023: type and position for electric plugs and water connections; roomle-ui `feat/water-connection` and HI MCP changes | 2026-10-19 |
+| [Interior Design: editing HI sub-articles through MCP](feature-analysis/interior-design-sub-articles.md) | Implemented on feature branches — direct acceptance and limited AI smoke test | 2026-10-19 |
 
 ### Refactoring Analyses
 
@@ -280,3 +281,5 @@ Add to `docs/` folder and update the main README.md if appropriate.
 ## See Also
 
 - [AGENTS.md](../AGENTS.md) — AI assistant instructions and workflow
+
+- [Interior fitting implementation](context/interior-fittings.md) — scoped discovery and fitting edits through the existing planner bridge.

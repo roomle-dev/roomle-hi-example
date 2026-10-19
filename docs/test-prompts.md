@@ -135,6 +135,37 @@ height than its neighbours (D44 in the [behaviour reference](hi-mcp-behaviour.md
 | wardrobe towards the back wall | `65866076-3967-40a1-a9c1-217a13bc21a0` |
 | wardrobe towards the door | `3b4bdb6f-36b1-4324-9c79-1509dee9ec36` |
 
+### Three Open Wardrobes with Shelves
+
+plan snapshot id: `ps_sbga21bftgc6paechjqf8x5qbk538sp`
+
+One Furniture_Smith group of three `KS_OF600` open wardrobes against the back wall, each
+600 mm wide and 2100 mm high, with one installed `FixedShelf` sub-article each and a generated
+toe kick. The group is `ce854b3e-90d6-4e65-ba7b-461e125cc8da`, at
+`[2199.97, 0, -3765]`, rotation 0. Left, middle and right mean as seen from the front;
+their root-local x positions are 0, 600 and 1200 mm.
+
+| Wardrobe | Root instance id | Installed shelf instance id |
+|---|---|---|
+| Left | `ab0737ab-a681-48ed-995b-46ee788a2329` | `037ab69e-8475-4418-b6db-df6738b91df1` |
+| Middle | `7b8bd635-7f19-4e3c-b280-95b91d4c4916` | `19d07551-c89b-43ee-8caa-e4c2bef10fb6` |
+| Right | `22e7519d-4218-46e4-b1a5-5c92934ad420` | `c585292d-26f7-41da-92ff-50a278161f95` |
+
+The sub-article edit tests start independently from this snapshot. They discover exact installed
+instance IDs and current compatible destinations through the Interior Design tools; generated
+container IDs are not fixture constants. These tests edit shelves inside the cabinets and retain
+all cabinet identities, placement, finishes and docking.
+
+| Test | Requested edit | Shelf counts after the edit: left / middle / right |
+|---|---|---|
+| `edit-add-subarticle` | Add one fixed shelf to the middle wardrobe, retaining its existing shelf. | 1 / 2 / 1 |
+| `edit-delete-subarticle` | Remove only the left wardrobe's shelf. | 0 / 1 / 1 |
+| `edit-move-subarticle` | Transfer the left shelf into the right wardrobe, retaining the existing right shelf. | 0 / 1 / 2 |
+
+The move test transfers between cabinets rather than asking to change the height of a fixed
+shelf. A recreated fitting can have a new instance ID; its returned identity, owning root,
+parent and actual calculated placement determine the result.
+
 ### Open-Plan Room
 
 plan snapshot id: `ps_qwm5odi6tyflyqwpdcxz1la791ho633`

@@ -300,3 +300,7 @@ and [§8.8](../../docs/hi-mcp-behaviour.md#88-undo-and-redo).
   live in the planner page (roomle-ui `HiToolState`) and start over with it.
 - **A rule or a message changed here** changes the server's behaviour — update
   [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md) in the same commit.
+
+## Interior fitting transport
+
+The interior discovery tool forwards `getExternalObjectPlanContext(['interiorDesign'], { interiorDesign: scope })`. Legacy context reads keep one argument. Four fitting mutations forward through `externalObjectGroupOperation`; no seventh planner method or page-side business logic is added. See [Interior fittings](interior-fittings.md) for ownership and completion.

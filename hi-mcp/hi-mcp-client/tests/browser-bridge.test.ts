@@ -52,6 +52,28 @@ const repliesOf = (socket: FakeWebSocket) =>
     .filter((message) => message.kind === 'result');
 
 describe('startMcpBrowserBridge', () => {
+  it('transmits interior scope and fitting results through the existing context method', async () => {
+    const result = {
+      interiorDesign: {
+        fittings: [{ instanceId: 's1', position: [0, 200, 0] }],
+      },
+    };
+    const getExternalObjectPlanContext = vi.fn(async () => result);
+    const socket = startBridge({ getExternalObjectPlanContext });
+    const options = { interiorDesign: { groupId: 'g' } };
+    await receive(socket, { kind: 'ready' });
+    await receive(socket, {
+      kind: 'call',
+      id: 'interior',
+      method: 'getExternalObjectPlanContext',
+      args: [['interiorDesign'], options],
+    });
+    expect(getExternalObjectPlanContext).toHaveBeenCalledWith(
+      ['interiorDesign'],
+      options
+    );
+    expect(repliesOf(socket)[0]).toMatchObject({ result });
+  });
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();

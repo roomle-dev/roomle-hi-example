@@ -21,7 +21,7 @@ const MOUNTING_GUIDANCE =
 const AUTHORING_RULES = `Authoring rules for pos groups:
 - ${MOUNTING_GUIDANCE}
 - Words: the catalog offers articles - cabinets, wardrobes, appliances, panels. A group is one piece of furniture made of articles: a kitchen, a wardrobe, a sideboard, a utility room, a row of cabinets. An article placed in a group is a root module (root for short); the user may call it a cabinet, a unit or a module. The description says what an article is and dimensions give its size. The user decides which articles stand next to each other: a low cabinet between two high cabinets is an order like any other. When the user names a kind, not an article, take the article of that kind from the category of its neighbours where that category has one (a kitchen cabinet into a kitchen, a wardrobe into a wardrobe), else the closest kind of another category.
-- A group is { id?, libraryId?, placement?, roots: [...] }. A root module is an article pick and nothing else: { id, articleId, attributes? } plus one relation that names its neighbour (rightOf, leftOf, onTop, above or behind - see Relations below). The server ignores every other field - a position on a root or a group included - and drops roots marked isGenerated (worktop, toe kick - the library regenerates them). Every root position comes from its relation; the position of a new group comes from its placement. Groups returned by get-plan-context carry their docking as contextData instead - resubmit them as they are. Use a unique id of your choice for new roots (the planner regenerates it and remaps your docking references); keep the real ids of roots that already exist in a replaced group. Choose the articleId from the article catalog of get-plan-context: desc and category say what an article is and what it is for, dimensions give its size (per size attribute its id, its name - e.g. Width, Depth, Height - and its value in millimetres; a root in groups carries the same attribute ids among its attributes, and change-module-attribute with that attribute id, never its name, changes the size of a root module; an article of another size - "a 900 mm cabinet" - is the same article with that attribute set, which merge-article-into-group, insert-article-into-group and exchange-root-module take in their attributes), dockingVectors the names of its docking vectors, subModules its fronts and appliances, cornerArticle true marks an article made for a room corner. Sub-modules come with the article - you author articles, their attributes and their relations, nothing else. attributes is an optional list of { id, value } overrides of that root module; a material for the whole group - the fronts, the worktop, the carcase - goes into the group's attributes ({ id, value } entries beside roots), and the server sets it on every root module and on the worktop; a root module that names its own value of it in its attributes keeps that value - an accent, e.g. dark wall units in a light group. Attribute ids and their values are in the attributes section of get-plan-context - every customer-facing attribute with its values; a value list several attributes share is listed once, sameSelectionsAs names the attribute that lists it; the desc of a colour value carries its code. find-attributes answers a question about one attribute. Everything else the calculation needs is completed automatically from the article template.
+- A group is { id?, libraryId?, placement?, roots: [...] }. A root module is an article pick and nothing else: { id, articleId, attributes? } plus one relation that names its neighbour (rightOf, leftOf, onTop, above or behind - see Relations below). The server ignores every other field - a position on a root or a group included - and drops roots marked isGenerated (worktop, toe kick - the library regenerates them). Every root position comes from its relation; the position of a new group comes from its placement. Groups returned by get-plan-context carry their docking as contextData instead - resubmit them as they are. Use a unique id of your choice for new roots (the planner regenerates it and remaps your docking references); keep the real ids of roots that already exist in a replaced group. Choose the articleId from the article catalog of get-plan-context: desc and category say what an article is and what it is for, dimensions give its size (per size attribute its id, its name - e.g. Width, Depth, Height - and its value in millimetres; a root in groups carries the same attribute ids among its attributes, and change-module-attribute with that attribute id, never its name, changes the size of a root module; an article of another size - "a 900 mm cabinet" - is the same article with that attribute set, which merge-article-into-group, insert-article-into-group and exchange-root-module take in their attributes), dockingVectors the names of its docking vectors, subModules its fronts and appliances, cornerArticle true marks an article made for a room corner. Sub-modules come with the article. For Interior Design, interior fittings or sub-articles use get-interior-design-options and the interior fitting tools; never author nested module trees. Ask for clarification when the requested interior change or installed instance is ambiguous. Identify an upper/lower fitting from its measured position in the same parent, never its array order. attributes is an optional list of { id, value } overrides of that root module; a material for the whole group - the fronts, the worktop, the carcase - goes into the group's attributes ({ id, value } entries beside roots), and the server sets it on every root module and on the worktop; a root module that names its own value of it in its attributes keeps that value - an accent, e.g. dark wall units in a light group. Attribute ids and their values are in the attributes section of get-plan-context - every customer-facing attribute with its values; a value list several attributes share is listed once, sameSelectionsAs names the attribute that lists it; the desc of a colour value carries its code. find-attributes answers a question about one attribute. Everything else the calculation needs is completed automatically from the article template.
 - Every desc - of an article, a root, a module, an attribute and an attribute value - is authoritative: trust it for what that article, module or value is, and trust dimensions for how big an article is. A colour code in the desc of an attribute value - Cloudy blue (#506080) - is the colour of that value: take it as it is, and tell light from dark and one hue from another by it, not by the name. All of them are authoritative over the catalog images of the master data (imageUrl): never take the kind or the size of an article, or the colour of a value, from a catalog image. A desc says what an article is, not where the user may put it.
 - Fronts: the front program says how a front is built - by its desc: simple fronts, frame fronts with wooden filling, mitred frame fronts with glass filling, milled fronts. Choose it by its desc first, then the front colour. A program offers only some colours: a colour it does not offer switches the program to one that does, and the fronts are then built as that program says; a program resets a colour it does not offer. corrections name every such change. When the colour the user wants comes only with fronts built differently, keep the fronts the user wants: undo a switched program, take the closest colour their program offers, and tell the user which fronts the wanted colour comes with.
 - Doors: a door is hinged on one side and has its handle on the other. In a row, the door at the left end is hinged on the left and the door at the right end on the right, as seen from the front, so no handle is on the outside of the row; a pair of doors side by side is hinged at its two outer sides. Set it with the attribute whose values say on which side a door is hinged - the value for single doors or for a pair of doors, as the article has - in the attributes of the root modules at the two ends of the row (rowIndex 1 and the last), and again on the root module at an end after an edit that gives the row a new end: an article added, deleted, exchanged or swapped at an end. The other doors keep their side.
@@ -126,6 +126,10 @@ const textResult = (result: unknown) => ({
 });
 
 const PLAN_CHANGING_TOOLS = [
+  'add-interior-fitting',
+  'move-interior-fitting',
+  'delete-interior-fittings',
+  'replace-interior-fitting',
   'create-or-replace-groups',
   'place-group',
   'change-module-attribute',
@@ -192,6 +196,88 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       throw error;
     }
   };
+
+  const fittingId = z.string().min(1);
+  const insertion = z
+    .tuple([z.number().finite(), z.number().finite(), z.number().finite()])
+    .optional()
+    .describe(
+      'Millimetres x right, y up, z front, relative to parentModuleId. Omit for the library default on add, or retain actual placement on move/replace. Read calculated result for adjustments.'
+    );
+  const destination = z.object({
+    rootId: fittingId,
+    containerModuleId: fittingId,
+    parentModuleId: fittingId,
+  });
+  server.registerTool(
+    'get-interior-design-options',
+    {
+      description:
+        'Inspect Interior Design / interior fittings / sub-articles of one loaded HI group without selecting it. Returns unique installed instance IDs, parent-local calculated positions, compatible additions with destination tuples and fittings[].replacementArticles for each occupied parent. Choose replacements from that installed fitting, even when no additions fit. articleId filters addition/replacement candidates. Discover before editing; clarify ambiguous instances or unspecified interior changes. Empty options differ from unsupported or failed discovery.',
+      inputSchema: {
+        groupId: fittingId,
+        rootId: fittingId.optional(),
+        containerModuleId: fittingId.optional(),
+        articleId: fittingId.optional(),
+      },
+    },
+    async (args) =>
+      textResult(await runTool('get-interior-design-options', args))
+  );
+  server.registerTool(
+    'add-interior-fitting',
+    {
+      description:
+        'Add a compatible Interior Design fitting inside a group, using an article and destination returned by get-interior-design-options. Waits for final calculation/load and returns actual instance IDs, placement and corrections. One undoable action when changed.',
+      inputSchema: {
+        groupId: fittingId,
+        articleId: fittingId,
+        destination,
+        insertPosition: insertion,
+      },
+    },
+    async (args) => textResult(await runTool('add-interior-fitting', args))
+  );
+  server.registerTool(
+    'move-interior-fitting',
+    {
+      description:
+        'Reposition one installed interior fitting or transfer it to a compatible container/root within the SAME group. Use its unique instanceId from discovery. Omitted destination keeps the current parent. Supply a destination and/or insertion point. Recreation may change the instance ID; use returned IDs.',
+      inputSchema: {
+        groupId: fittingId,
+        instanceId: fittingId,
+        destination: destination.optional(),
+        insertPosition: insertion,
+      },
+    },
+    async (args) => textResult(await runTool('move-interior-fitting', args))
+  );
+  server.registerTool(
+    'delete-interior-fittings',
+    {
+      description:
+        'Delete the explicitly identified installed interior fittings of one group, preserving the cabinet and unrelated contents. Validates the entire batch before changing anything, deduplicates IDs with a correction, and makes one undoable action.',
+      inputSchema: {
+        groupId: fittingId,
+        instanceIds: z.array(fittingId).min(1),
+      },
+    },
+    async (args) => textResult(await runTool('delete-interior-fittings', args))
+  );
+  server.registerTool(
+    'replace-interior-fitting',
+    {
+      description:
+        'Atomically replace one installed interior fitting with an article from its replacementArticles in get-interior-design-options, in its current parent, retaining actual placement and compatible settings. An explicit insertion point overrides placement. Failure restores the original; lost settings and new IDs are returned. Never implement replacement as separate delete and add calls.',
+      inputSchema: {
+        groupId: fittingId,
+        instanceId: fittingId,
+        articleId: fittingId,
+        insertPosition: insertion,
+      },
+    },
+    async (args) => textResult(await runTool('replace-interior-fitting', args))
+  );
 
   server.registerTool(
     'get-plan-context',

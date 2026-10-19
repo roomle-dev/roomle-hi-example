@@ -20,6 +20,11 @@ import { readSkillFile, skills } from '../skills';
 import { attachPage } from './fake-page-socket';
 
 const EXPECTED_TOOLS = [
+  'add-interior-fitting',
+  'delete-interior-fittings',
+  'get-interior-design-options',
+  'move-interior-fitting',
+  'replace-interior-fitting',
   'change-group-attribute',
   'change-module-attribute',
   'create-or-replace-groups',
@@ -80,7 +85,9 @@ describe('hi-mcp-server tool registration', () => {
   it('exposes exactly the expected tools', async () => {
     const client = await connectClient(createMockPlannerApi());
     const { tools } = await client.listTools();
-    expect(tools.map((tool) => tool.name).sort()).toEqual(EXPECTED_TOOLS);
+    expect(tools.map((tool) => tool.name).sort()).toEqual(
+      [...EXPECTED_TOOLS].sort()
+    );
   });
 });
 

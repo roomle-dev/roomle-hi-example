@@ -31,8 +31,7 @@ never drop the agent's content silently.
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
 | 86 | [A swapped row of different unit widths stands through the wall](#86-a-swapped-row-of-different-unit-widths-stands-through-the-wall) | bug | roomle-ui `hi-tools.ts:908` (`swapRootModules`) with `glue-logic.ts:2593` (`arrangeAndLoad`) and `hi-root-module-arrangement.ts:412` (`keepWallDistances`) | medium | gpt-6-astra | |
 | 87 | [The model asks instead of building when the user's reference does not match the plan](#87-the-model-asks-instead-of-building-when-the-users-reference-does-not-match-the-plan) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) and the test (`docs/test-prompts.json`, the expect of `installation-elements-supplies`) | low | gpt-6-astra | |
-| 88 | [The model conflates an oven and a hob into one cabinet](#88-the-model-conflates-an-oven-and-a-hob-into-one-cabinet) | hardening | roomle-hi-example served text (the kitchen skill, `hi-mcp/hi-mcp-server/skills/kitchen-planning/SKILL.md`) | low | gpt-6-astra | |
-| 89 | [Wall units do not follow a base row an edit shifted under them](#89-wall-units-do-not-follow-a-base-row-an-edit-shifted-under-them) | hardening | roomle-hi-example served text (the rules or the edit tools' descriptions: wall units are separate groups an edit leaves behind, move them with `place-group`) | low | gpt-6-astra | |
+| 89 | [Wall units in separate groups do not follow their edited carriers](#89-wall-units-in-separate-groups-do-not-follow-their-edited-carriers) | bug | roomle-ui `hi-tools.ts` (`insertArticleIntoGroup`, `swapRootModules`), `glue-logic.ts` (`arrangeAndLoad`), `hi-root-module-arrangement.ts` (`carriersOfUnitsAbove`, `moveUnitsAboveWithTheirCarriers`) | medium | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -257,52 +256,42 @@ plan snapshot `ps_sb7ea5wes24sjuq3t9q6eptgjo8e4cu`, local roomle-ui :5173): no p
 changes the plan — the model asks "Should I place the base cabinet in front of the confirmed
 left-wall plug, or on the back wall beneath that small object? I haven't added the cabinet yet."
 
-## 88. The model conflates an oven and a hob into one cabinet
+## 89. Wall units in separate groups do not follow their edited carriers
 
-**Problem.** Where the user asks for an oven and a hob, the model sends the hob cabinet as an
-"oven-and-hob" unit and claims the oven in its answer: no oven article is in the plan (44, 45, 46).
-In the other kitchen runs the model used the oven article correctly (57, 58, 60, 61).
+**Problem.** After an insert shifts the sink and dishwasher, the separate wall-unit group above
+that row stays on the back wall in its old place; the answer does not name the lost alignment
+(27). After a swap exchanges the hob and sink across the corner, the separate hood group stays on
+the right leg instead of following the hob; the answer discloses it (30). A wall unit can also be
+a root of the edited group: the saved main group `031ee57a` contains `OTB60` root `5b754b36`.
+Separate groups are the failing case, not the shape of every wall-unit row.
 
-**Cause.** The kitchen skill (`hi-mcp/hi-mcp-server/skills/kitchen-planning/SKILL.md`) lists the
-cooking zone as "hob, oven, heat-safe landing surfaces, and cookware" but never says that an oven
-and a hob are two appliances planned with two articles; the model reads "oven, hob" as one unit,
-picks the hob cabinet and stretches its answer over both.
+**Cause.** The rules (`hi-mcp-server.ts:45`), insert description (`:710-711`) and swap description
+(`:762`) promise that units above move with their carriers.
+[D42](../../docs/hi-mcp-behaviour.md#3-decisions) explicitly finds carriers by position when a
+reload loses the docking across a gap. The planner implements that position lookup only within
+one group: `insertArticleIntoGroup` and `swapRootModules` (`hi-tools.ts:717,941` in roomle-ui)
+pass the edited group's before/after state to `arrangeAndLoad` (`glue-logic.ts:2604`), which calls
+`moveUnitsAboveWithTheirCarriers` (`glue-logic.ts:3256`). Both `carriersOfUnitsAbove`
+(`hi-root-module-arrangement.ts:144`) and its follower maps (`:219-242`) enumerate only that
+group's roots. Units in the separate groups `85510a7e` and `afbe92eb` never enter the lookup.
+This is a planner failure against D42, not a missing instruction to call `place-group`.
 
-**To do.** roomle-hi-example served text: one library-neutral sentence in the kitchen skill's
-cooking zone — an oven and a hob are two appliances, plan an article for each the user names.
-Verify model acceptance.
+**To do.** roomle-ui: find the units above the edited carriers across the scene groups before the
+edit, using their room-space positions, and apply their carrier's displacement and rotation after
+the edit, including after a reload loses the docking link. Preserve the existing same-group
+following and leave unrelated wall units in place; a separate wall row can span several carriers,
+so moving its whole group blindly is not sufficient. Keep the served promise and D42 consistent
+with the planner; do not prescribe an extra `place-group` for every base-row edit.
 
-**Test.** `kitchen-oven-fridge-sink-corner`, `kitchen-oven-hood-sink-fridge-corner`,
-`full-kitchen-walnut-marble-corner`: the plan has an oven article and a hob article, and the answer
-does not claim one cabinet is both.
-
-**Reproduce.** `mcp-test-2026-10-19_19-42-59`, gpt-6-astra 45
-(`kitchen-oven-hood-sink-fridge-corner`, local roomle-ui :5173): the model sent the hob cabinet
-UHS60 as the oven-and-hob unit; the answer says "Oven and hob: combined in the 600 mm UHS60
-cabinet" and "All five requested items are included" — no oven article is in the plan.
-
-## 89. Wall units do not follow a base row an edit shifted under them
-
-**Problem.** When an edit shifts a base row under wall units, the wall-unit groups stay where they
-are: after `swap-root-modules` exchanged the hob and the sink unit, the hood group stayed on the
-right leg — no longer above the hob — and the wall unit above the sink stayed on the back wall; the
-answer discloses both (30). After `insert-article-into-group` shifted the sink, the wall unit above
-it did not move with it and the answer does not name it (27). Where the model moved the wall-unit
-group itself with `place-group`, the alignment held (28).
-
-**Cause.** Wall units are separate groups in the plan; the edit tools shift only the edited group,
-and no served sentence says that an edit which shifts a base row under wall units leaves the wall
-units behind — move them with `place-group`. The model has to know this to keep the hood above the
-hob.
-
-**To do.** roomle-hi-example served text: one sentence in the rules or the edit tools' descriptions
-— wall units are separate groups, an edit that shifts the base row under them leaves them, move them
-with `place-group`. Verify model acceptance.
-
-**Test.** `edit-swap-hob-unit`, `edit-insert-below-wall-units`: the wall units above the shifted
-row keep their alignment with it, or the answer names the wall units that stayed.
+**Test.** `edit-swap-hob-unit` and `edit-insert-below-wall-units`: the hood and affected wall
+units follow their original carriers without an extra placement call. Permanent planner tests
+cover followers within the edited group and in separate groups, including a reloaded gap with no
+docking link, a carrier turning across a corner, and unrelated wall units that stay in place.
+Disclosure alone does not satisfy the movement promised by D42.
 
 **Reproduce.** `mcp-test-2026-10-19_19-42-59`, gpt-6-astra 27 (`edit-insert-below-wall-units`,
-local roomle-ui :5173): the insert shifted the sink and the dishwasher 600 mm along the back leg,
-the wall unit above the sink (group `85510a7e`) did not move with it and the answer does not name
-it.
+local roomle-ui :5173): an insert in group `031ee57a` shifts the sink and dishwasher 600 mm along
+the back leg, while group `85510a7e` stays at [2953.91, 1480, −3764.81]. In run 30
+(`edit-swap-hob-unit`), swapping hob `379fa7a9` with sink `31616143` leaves the hood in
+group `afbe92eb` at [4815, 1480, −2604], rotationY 270, on the right leg. The saved
+`plan-context.json` and `plan.xml` retain the group membership and resulting positions.

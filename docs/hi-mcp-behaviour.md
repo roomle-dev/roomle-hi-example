@@ -1220,6 +1220,8 @@ All three are the last resort of §2.2, an id that matches nothing; the message 
 
 Interior Design, interior fittings and sub-articles refer to supported fittings inside an existing HI group. Read `get-interior-design-options` with `groupId` and optional `rootId`, `containerModuleId`, `articleId` filters. It returns unique installed instance IDs, parent-local measured positions, explicit settings and compatible library articles with destination tuples. It uses the existing context read with a scoped `interiorDesign` section; it waits behind writes, changes no selection and creates no history entry. Unsupported capability, no available additions and a discovery error have different outcomes.
 
+`articles` lists compatible additions in currently free containers. Each scoped fitting also carries `replacementArticles` for its current parent: discovery removes that source on a copy, calculates the freed capacity and asks the same library for compatible articles. A full cabinet can therefore have no additions but still offer replacements. `articleId` filters addition and replacement candidates; installed sources that can take that replacement remain visible. `status: available` includes either kind of choice. Use a fitting's replacement article IDs with its installed instance ID; generated containers on the copy are not add destinations. Normal group/history context remains compact and does not calculate these choices.
+
 | Tool | Required arguments beyond groupId |
 | --- | --- |
 | `add-interior-fitting` | `articleId`, `destination: { rootId, containerModuleId, parentModuleId }` |

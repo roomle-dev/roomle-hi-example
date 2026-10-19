@@ -213,7 +213,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'get-interior-design-options',
     {
       description:
-        'Inspect Interior Design / interior fittings / sub-articles of one loaded HI group without selecting it. Returns unique installed instance IDs, parent-local calculated positions and compatible library articles with destination tuples. Discover before editing; clarify ambiguous instances or unspecified interior changes. An empty catalog differs from unsupported or failed discovery.',
+        'Inspect Interior Design / interior fittings / sub-articles of one loaded HI group without selecting it. Returns unique installed instance IDs, parent-local calculated positions, compatible additions with destination tuples and fittings[].replacementArticles for each occupied parent. Choose replacements from that installed fitting, even when no additions fit. articleId filters addition/replacement candidates. Discover before editing; clarify ambiguous instances or unspecified interior changes. Empty options differ from unsupported or failed discovery.',
       inputSchema: {
         groupId: fittingId,
         rootId: fittingId.optional(),
@@ -268,7 +268,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'replace-interior-fitting',
     {
       description:
-        'Atomically replace one installed interior fitting with a compatible library article in its current parent, retaining actual placement and compatible settings. An explicit insertion point overrides placement. Failure restores the original; lost settings and new IDs are returned. Never implement replacement as separate delete and add calls.',
+        'Atomically replace one installed interior fitting with an article from its replacementArticles in get-interior-design-options, in its current parent, retaining actual placement and compatible settings. An explicit insertion point overrides placement. Failure restores the original; lost settings and new IDs are returned. Never implement replacement as separate delete and add calls.',
       inputSchema: {
         groupId: fittingId,
         instanceId: fittingId,

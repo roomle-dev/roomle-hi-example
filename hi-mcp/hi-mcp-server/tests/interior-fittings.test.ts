@@ -36,12 +36,19 @@ describe('interior fitting tools', () => {
   it('forwards scoped read options and never enters the edit route', async () => {
     const planner = api();
     const options = { groupId: 'g', rootId: 'r', articleId: 'shelf' };
+    const result = {
+      status: 'available',
+      articles: [],
+      fittings: [
+        { instanceId: 's1', replacementArticles: [{ articleId: 'shelf' }] },
+      ],
+    };
     vi.mocked(planner.extended.getExternalObjectPlanContext).mockResolvedValue({
-      interiorDesign: { status: 'empty', fittings: [] },
+      interiorDesign: result,
     });
     expect(
       await toolExecutors['get-interior-design-options'](planner, options)
-    ).toEqual({ status: 'empty', fittings: [] });
+    ).toEqual(result);
     expect(planner.extended.getExternalObjectPlanContext).toHaveBeenCalledWith(
       ['interiorDesign'],
       { interiorDesign: options }

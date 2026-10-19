@@ -504,4 +504,4 @@ is one call, which roomle-ui performs:
 
 ## Interior Design tools
 
-Use `get-interior-design-options` for a loaded group before adding, moving, deleting or replacing interior fittings. Four command tools implement those edits through the existing planner route. Use installed instance IDs and newly discovered destination tuples; clarify ambiguous instances. See [the complete contract](../../docs/hi-mcp-behaviour.md#interior-design-tools) and [implementation ownership](../context/interior-fittings.md).
+Use `get-interior-design-options` for a loaded group before adding, moving, deleting or replacing interior fittings. Four command tools implement those edits through the existing planner route. Use installed instance IDs and newly discovered destination tuples; choose replacements from that fitting's `replacementArticles`, including when no additions fit. `articleId` filters addition and replacement candidates. Clarify ambiguous instances. See [the complete contract](../../docs/hi-mcp-behaviour.md#interior-design-tools) and [implementation ownership](../context/interior-fittings.md).

@@ -315,7 +315,7 @@ the agent does not fetch the authoring rules.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `include` | `('rooms' \| 'articles' \| 'attributes' \| 'groups' \| 'obstacles' \| 'masterData' \| 'articleDescriptions')[]` | no | Sections to include; `rooms`, `articles`, `attributes`, `groups` and `obstacles` when omitted |
+| `include` | `('rooms' \| 'articles' \| 'attributes' \| 'groups' \| 'obstacles' \| 'installationElements' \| 'masterData' \| 'articleDescriptions')[]` | no | Sections to include; `rooms`, `articles`, `attributes`, `groups`, `obstacles` and `installationElements` when omitted |
 
 - `rooms` — every room carries its contour `levels` with 3D segments
   (`pos: [x, level, -y]`, the same right-handed coordinate system as a group's
@@ -363,8 +363,12 @@ the agent does not fetch the authoring rules.
   parts of the calculated group. A root outline can extend past its docking edges over a neighbour
   in the same group; that overlap alone is not a placement error. The authoring rules and tool
   description explain this, and the library descriptions explain article-specific overhangs.
-  No walls. Requested alone, the server fetches
+  No walls, no supplies. Requested alone, the server fetches
   the rooms too for the walls of the doors and windows
+- `installationElements` — the electric plugs and the water connections of the
+  plan: per element its `type` (`ElectricPlug` or `WaterConnection`) and its
+  `position` (`[x, level, z]` in the coordinates of the walls) — a position
+  only, no size. They are no obstacles: a group may stand on a supply
 - `attributes` — the attribute vocabulary, by default: per library the root-assigned attributes that are
   main, Simple or Bool with id, name, desc, group, type and
   `selections` (value, name and desc); a value list several attributes share is listed

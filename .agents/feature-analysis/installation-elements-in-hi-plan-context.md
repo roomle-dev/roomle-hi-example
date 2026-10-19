@@ -1,7 +1,7 @@
 # Installation elements in the HI plan context
 
 > **Type**: Feature Analysis\
-> **Status**: Open\
+> **Status**: Implemented\
 > **Date**: 2026-10-19\
 > **Base**: roomle-hi-example `master` at `1e7f6d31`; roomle-ui `feat/water-connection` at `07feaafa2`; RoomleCore `master` at `7bcda8c89`\
 > **Source**: [RML-18023, comment 156276](https://roomle.atlassian.net/browse/RML-18023?focusedCommentId=156276)

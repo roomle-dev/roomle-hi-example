@@ -335,6 +335,12 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
 |---|---|---|---|
 | D84 | **The doors at the two ends of a row are hinged at its outer sides.** No handle is on the outside of a row: the door at the left end is hinged on the left, the door at the right end on the right, as seen from the front; a pair of doors side by side is hinged at its two outer sides. The agent sets it with the library's door direction — the value for single doors or for a pair of doors, as the article has — on the root modules at the two ends, `rowIndex` 1 and the last (a corner article joins the legs into one row, D66), and again on the root module at an end after an edit that gives the row a new end: an article added, deleted, exchanged or swapped at an end, because a library need not pass the door direction on between neighbours (D56; Furniture_Smith does not). The other doors keep their side, the former end after the row grows too. The rule names no attribute and no value; the library data says which (§2.4). Rejected: the server setting or correcting the side of the ends by `rowIndex` — it needs the library's door direction attribute and its values, library information in the server's logic | user, 2026-10-17 | in effect — `AUTHORING_RULES` and the new-end reminder in the description of `get-plan-context`, delivered in both chats' tool lists (`hi-mcp-server.ts`); guarded by `it('tells the agent to hinge the doors at the two ends of a row at its outer sides')` and `it('tells the agent to hinge new row ends through the tool list without fetching authoring rules')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` and the tests `wardrobe-door-hinges` and `wardrobe-extend-door-hinge` of `docs/test-prompts.json` |
 
+### Installation elements (2026-10-19)
+
+| # | Decision | Source | State |
+|---|---|---|---|
+| D86 | **Electric plugs and water connections are installation elements, not obstacles.** The plan context carries them in a default section `installationElements`: per element its `type` — `ElectricPlug` or `WaterConnection` — and its `position` `[x, level, z]` in the coordinates of the walls; a position only, no size. They leave `obstacles` (D45): a group may stand on a supply, so the placement feedback (D55) reports no overlap for it, while a light switch and the other plan objects stay obstacle objects. The HI layer gathers the elements from the live plan objects — one entry per placed supply assembly, hidden owners omitted — and the planner adapter stays generic. The session preamble of the skills names the known connection positions and keeps the other services unknown. Rejected: leaving the supplies in `obstacles` — a group in front of a plug would be told it stands on an object | [RML-18023](https://roomle.atlassian.net/browse/RML-18023) comment 156276 | in effect — roomle-ui `api.ts` (`_gatherInstallationElements`), `shapeInstallationElements` and the supply exclusion of `shapeObstacles` (roomle-ui `hi-plan-context.ts`); `installationElements` in `DEFAULT_SECTIONS` and the description of `get-plan-context`, `SKILL_IN_SESSION` (`hi-mcp-server.ts`); guarded by `describe('shapeInstallationElements')` and the installation-element tests of `describe('getPlanContext')` in roomle-ui `__tests__/hi-plan-context-test.ts`, `describe('RoomDesignerApi.getPlanObstacles')` in roomle-ui `__tests__/api-test.ts`, `it('passes the installation elements through unchanged')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`, `it('returns the installation elements of the plan context as JSON')` and the description assertions of `it('tells the agent what stands in the room and that the hint names a root module on an obstacle')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`, and the supply tests `it('does not report an overlap with a supply the group stands on')` in roomle-ui `__tests__/hi-tool-commands/place-group-test.ts` and `it('does not name a supply the group stands on')` in roomle-ui `__tests__/hi-tool-commands/create-or-replace-groups-placement-test.ts` |
+
 ## 4. How a tool call runs
 
 - **MCP endpoint**: `POST /mcp` — Streamable HTTP, JSON response mode, stateless (a new transport per
@@ -556,9 +562,10 @@ One coordinate system throughout: 3D, right-handed, Y up, millimetres. A contour
 | `groups` | Per group: `id`, `libraryId`, `attributes`, read-only `position` (`pos`, `rotationY`, `footprint` with `x`, `z`, `widthMm`, `depthMm`), and `roots`. `pos` and `rotationY` are what a placement would name for the group where it stands: `pos` the room point of its back left bottom corner — the docking corner of its anchor root — and `rotationY` the rotation of the placement; the footprint is measured from `pos`. A group with two corner articles also carries `rootId`, the corner article `pos` belongs to, as in a placement (D17): the planner regenerates root ids, so the corner a placement named cannot be told after the load. roomle-ui derives them from the calculated groups, wherever the planner keeps the group origin (D33); a group the planner has not positioned keeps the planner's `position`. Per root: the article pick (`id`, `articleId`, input `attributes`, `contextData` with vector names only) and read-only facts (`articleName`, `desc`, `category`, `isGenerated`, `dockingVectors`, `freeDockingVectors`, `subModules` with their id, and `rowIndex` — its place in its row, 1 at the left end as seen from the front, D66). The roots are listed in the order they were added. No root positions, no geometry |
 | `masterData` | Only when requested. Per library id: the root modules (`id`, `name`, `desc`, assigned attribute ids) — the article roots and the roots the library generates (worktop `mr_Countertop`, toe kick, finger grip, backsplash, …: the sub modules of the master data's `Root` group), so the worktop colour `mod_CountertopColor` is found — and the customer-facing or Bool attributes (`id`, `name`, `desc`, `type`, `group`, `selections` with value, name and desc; the desc of a colour value carries its code, e.g. `Cloudy blue (#506080)`, D53) — and `groupSettings`, the attributes the library's group orchestrator sets on a group (D36; planned, D48) |
 | `articleDescriptions` | Only when requested. Per article `articleId` and its full `desc` (D63) |
-| `obstacles` | `{ objects, groups }`. `objects`: every plan object that is not an HI group — `kind` (`door`, `window`, `object`), `outline` (floor points `[x, 0, z]`) and `bottomMm`/`topMm`; a door or a window also `roomIndex`, `wall` (its index in the walls array) and `fromEndMm`, its span along that wall measured from the wall's end (C21). `groups`: per HI group its `id` and per root module that is not generated its `id`, `outline` (four floor points in room space) and `bottomMm`/`topMm`, from the parts of the calculated group (D45). No walls |
+| `obstacles` | `{ objects, groups }`. `objects`: every plan object that is not an HI group — `kind` (`door`, `window`, `object`), `outline` (floor points `[x, 0, z]`) and `bottomMm`/`topMm`; a door or a window also `roomIndex`, `wall` (its index in the walls array) and `fromEndMm`, its span along that wall measured from the wall's end (C21). `groups`: per HI group its `id` and per root module that is not generated its `id`, `outline` (four floor points in room space) and `bottomMm`/`topMm`, from the parts of the calculated group (D45). No walls, no supplies — electric plugs and water connections are installation elements (D86) |
+| `installationElements` | The electric plugs and the water connections of the plan: per element its `type` (`ElectricPlug` or `WaterConnection`) and its `position` `[x, level, z]` in the coordinates of the walls — a position only, no size. They are no obstacles: a group may stand on a supply (D86) |
 
-Default sections: `rooms`, `articles`, `attributes`, `groups`, `obstacles`. Requested without `rooms`, `obstacles` makes the server fetch
+Default sections: `rooms`, `articles`, `attributes`, `groups`, `obstacles`, `installationElements`. Requested without `rooms`, `obstacles` makes the server fetch
 the rooms too, for the walls of the doors and windows, and return only `obstacles`; `attributes`
 makes it fetch `masterData` too and return the vocabulary derived from it, `masterData` requested
 beside it as it is.
@@ -605,12 +612,14 @@ directory of `hi-mcp/hi-mcp-server/skills/` in the Agent Skills format: `SKILL.m
 - **Named by the chats.** The system prompt the chats get from the planner names every skill (D80);
   a skill of a new name needs the same name in roomle-ui `hi-agent-prompts.ts`.
 - **The preamble.** A `SKILL.md` result starts with `SKILL_IN_SESSION` (`hi-mcp-server.ts`): in
-  this session the survey is the plan context and the products are the catalog; what the plan context
-  does not carry — services, budget, inventory, the household — is unknown, so the agent plans a
-  concept with stated assumptions and names them instead of asking first, unless the user asks to be
-  interviewed; the layout is the groups it creates, one group per piece of furniture, checked against
-  the returned positions and the obstacles; alternatives and open checks are named in the answer, not
-  built. A supporting file comes without it.
+  this session the survey is the plan context — the walls, the doors and windows, the obstacles, the
+  installation elements with the positions of the electric plugs and the water connections — and the
+  products are the catalog; what the plan context does not carry — services beyond those connection
+  positions, budget, inventory, the household — is unknown, so the agent plans a concept with stated
+  assumptions and names them instead of asking first, unless the user asks to be interviewed; the
+  layout is the groups it creates, one group per piece of furniture, checked against the returned
+  positions and the obstacles; alternatives and open checks are named in the answer, not built. A
+  supporting file comes without it.
 - **The frontmatter** is read as the YAML of Agent Skills: per field a plain, quoted, multi-line or
   block scalar (`|`, `>`, with the chomping `-` and `+`), comments, and fields with nested values
   such as `metadata`, which the server does not use. `skills/list` carries every field with the
@@ -657,7 +666,7 @@ directory of `hi-mcp/hi-mcp-server/skills/` in the Agent Skills format: `SKILL.m
 
 | Parameter | Type | Default |
 |---|---|---|
-| `include` | `('rooms' \| 'articles' \| 'attributes' \| 'groups' \| 'obstacles' \| 'masterData' \| 'articleDescriptions')[]` | rooms, articles, attributes, groups, obstacles |
+| `include` | `('rooms' \| 'articles' \| 'attributes' \| 'groups' \| 'obstacles' \| 'installationElements' \| 'masterData' \| 'articleDescriptions')[]` | rooms, articles, attributes, groups, obstacles, installationElements |
 
 The server passes the planner's plan context through. In the articles it removes `cornerPoint`
 (D10) and shortens a sectioned description (D63); `articleDescriptions` carries the full ones, read

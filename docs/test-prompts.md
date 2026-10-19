@@ -151,6 +151,16 @@ the library generated with its countertop overhang at the group origin, so no ro
 there: its four cabinets keep their place (D82 in the
 [behaviour reference](hi-mcp-behaviour.md#merge-2026-10-16)).
 
+### Room with Supplies
+
+plan snapshot id: `ps_sa6laqmrrczr6wmo8jfk7pdyz36omon`
+
+The example plan of [RML-18023](https://roomle.atlassian.net/browse/RML-18023) comment 156276: one
+electric plug, one water connection, one light switch, one door, one window and three HI groups.
+The light switch is the negative control of the installation-element tests: it stays an obstacle
+object, the plug and the water connection are installation elements (D86 in the
+[behaviour reference](hi-mcp-behaviour.md#installation-elements-2026-10-19)).
+
 ## Test Cases
 
 [test-prompts.json](./test-prompts.json) holds:

@@ -19,7 +19,7 @@ the server and needs no connected planner page. Parameters and result formats ar
 
 | Tool | Purpose | Changes the plan | Implementation details |
 | ---- | ------- | ---------------- | ---------------------- |
-| `get-plan-context` | Read rooms, articles, groups, obstacles and optional master data | No | [Context reads and shaping](#get-plan-context) |
+| `get-plan-context` | Read rooms, articles, groups, obstacles, installation elements and optional master data | No | [Context reads and shaping](#get-plan-context) |
 | `find-attributes` | Search library attributes and their available values | No | [Attribute search](#find-attributes) |
 | `get-authoring-rules` | Read the group payload format, relations, placement rules and examples | No | [Direct server handler](../../docs/hi-mcp-server.md#get-authoring-rules) |
 | `get-skill` | Read a planning skill or one of its files | No | [`skills.ts`](#the-files), [the skills](../../docs/hi-mcp-behaviour.md#56-planning-skills-get-skill) |
@@ -82,7 +82,8 @@ halfway through a change.
 
 ## get-plan-context
 
-1. Keeps the `include` sections that exist; none left means `DEFAULT_SECTIONS` (all but `masterData`).
+1. Keeps the `include` sections that exist; none left means `DEFAULT_SECTIONS` (all but `masterData`
+   and `articleDescriptions`).
 2. `obstacles` needs `rooms` to assign doors and windows to walls; it fetches them and removes them
    again if they were not asked for.
 3. One `getExternalObjectPlanContext(sections)` call — roomle-ui shapes the context
@@ -336,7 +337,8 @@ explain that this overlap alone is not a placement error; the executor passes th
 
 roomle-ui returns the plan context agent-ready (D48), with the group positions in the placement
 frame and the `rowIndex` of every root (`inPlacementFrame`); the server adds its vocabulary
-(`agent-facing.ts`):
+(`agent-facing.ts`). The `installationElements` section passes through unchanged — a position
+list needs no agent-facing function (D86):
 
 | Function | Adds |
 | -------- | ---- |

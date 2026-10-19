@@ -359,7 +359,7 @@ built is an error. Every guard and correction:
 
 ## Workflow
 
-1. Get context: `get-plan-context()` — the default sections rooms, articles, groups, obstacles
+1. Get context: `get-plan-context()` — the default sections rooms, articles, groups, obstacles, installation elements
 2. Review rooms, articles, existing groups and what stands in the room
 3. Create the group with proper docking and a placement
 4. Submit: `create-or-replace-groups({ posGroups: [group] })`

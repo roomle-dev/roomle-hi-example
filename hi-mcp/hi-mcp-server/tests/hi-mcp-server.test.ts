@@ -399,6 +399,10 @@ describe('hi-mcp-server tool calls', () => {
       expect(skill).toMatch(
         /^In this planning session the survey is the plan context/
       );
+      expect(skill).toContain(
+        'the installation elements with the positions of the electric plugs and the water connections'
+      );
+      expect(skill).toContain('services beyond those connection positions');
       expect(skill).toContain('plan a concept with stated assumptions');
       expect(skill).toContain(
         'The layout is the groups you create, one group per piece of furniture'
@@ -678,7 +682,9 @@ describe('hi-mcp-server tool calls', () => {
     expect(
       (planContext?.inputSchema.properties?.include as { description?: string })
         ?.description
-    ).toContain('Default: rooms, articles, attributes, groups and obstacles');
+    ).toContain(
+      'Default: rooms, articles, attributes, groups, obstacles and installationElements'
+    );
     expect(toolOf('find-attributes')?.description).toMatch(
       /^Answers a question about an attribute/
     );
@@ -1106,6 +1112,12 @@ describe('hi-mcp-server tool calls', () => {
       'obstacles (what stands in the room, in the coordinates of the walls'
     );
     expect(planContext?.description).toContain('roomIndex, wall and fromEndMm');
+    expect(planContext?.description).toContain(
+      'installationElements (the electric plugs and the water connections of the plan'
+    );
+    expect(planContext?.description).toContain(
+      'a position only, no size, and no obstacle: a group may stand on a supply'
+    );
     const createGroups = tools.find(
       (tool) => tool.name === 'create-or-replace-groups'
     );
@@ -1119,7 +1131,13 @@ describe('hi-mcp-server tool calls', () => {
     expect(
       (planContext?.inputSchema.properties?.include as { description?: string })
         ?.description
-    ).toContain('Default: rooms, articles, attributes, groups and obstacles.');
+    ).toContain(
+      'Default: rooms, articles, attributes, groups, obstacles and installationElements.'
+    );
+    expect(
+      (planContext?.inputSchema.properties?.include as { description?: string })
+        ?.description
+    ).toContain('obstacles, installationElements, masterData');
   });
 
   it('hangs a range hood beside the wall units and reads a position back in the frame of the placement', async () => {
@@ -1318,6 +1336,27 @@ describe('hi-mcp-server tool calls', () => {
       plannerApi.extended.getExternalObjectPlanContext
     ).toHaveBeenCalledWith(['articles']);
     expect(JSON.parse(textOf(result))).toEqual({ rooms: [], articles: [] });
+  });
+
+  it('returns the installation elements of the plan context as JSON', async () => {
+    const installationElements = [
+      { type: 'ElectricPlug', position: [1500, 1100, -2000] },
+      { type: 'WaterConnection', position: [3000, 0, -500] },
+    ];
+    const plannerApi = createMockPlannerApi({
+      getExternalObjectPlanContext: vi.fn(async () => ({
+        installationElements,
+      })),
+    });
+    const client = await connectClient(plannerApi);
+    const result = await client.callTool({
+      name: 'get-plan-context',
+      arguments: { include: ['installationElements'] },
+    });
+    expect(
+      plannerApi.extended.getExternalObjectPlanContext
+    ).toHaveBeenCalledWith(['installationElements']);
+    expect(JSON.parse(textOf(result))).toEqual({ installationElements });
   });
 
   it('returns tool results as compact JSON without image URLs', async () => {

@@ -31,7 +31,8 @@
     "three-tall-units": "ps_s3p5hmscmmsnshopj2tybjwmt7ijy5o",
     "corner-kitchen-wall-units": "ps_s7hy5nqvtts37wl79u6q8tq67bc12s2",
     "two-wardrobes-right-wall": "ps_s3qfqirqsvfwrr8em4d344h0c4sk8po",
-    "open-plan-room": "ps_qwm5odi6tyflyqwpdcxz1la791ho633"
+    "open-plan-room": "ps_qwm5odi6tyflyqwpdcxz1la791ho633",
+    "room-with-supplies": "ps_sa6laqmrrczr6wmo8jfk7pdyz36omon"
   },
   "tests": [
     {
@@ -398,6 +399,13 @@
       "plan": "open-plan-room",
       "prompt": "add a kitchen island of three base cabinets in a free spot of the room",
       "expect": "one new group of three base units away from the walls whose root modules overlap no object (dining table, chairs, rug, plant, sofa) and no other group"
+    },
+    {
+      "id": "installation-elements-supplies",
+      "title": "The supplies of the room are installation elements",
+      "plan": "room-with-supplies",
+      "prompt": "which electric plugs and water connections are in the room? add a base cabinet on the back wall in front of the plug",
+      "expect": "the answer lists the plug and the water connection with the positions of the installationElements section and none in the obstacles; one base cabinet group against the back wall standing on the plug, with no overlap hint - a supply is no obstacle - while the light switch stays an obstacle object"
     },
     {
       "id": "sideboard-row-one-more-cabinet",

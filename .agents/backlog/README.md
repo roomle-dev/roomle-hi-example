@@ -11,6 +11,11 @@ the document a row links.
 | Item | To do | Priority |
 |---|---|---|
 | 74 — An island's back row of other widths lands off the front row | Explain the aligned end and the turned-row viewpoint of `behind`; if needed, expose end alignment using docking endpoint modes | low |
+| 81 — The corner-removal correction reports wall units as turned that stay on the back wall | roomle-ui: turn the separate group's wall units with the turned leg, or make the correction name only what turned and the wall units that stayed | medium |
+| 82 — The model asks instead of building the group the user asked for on a wall of floor-to-ceiling windows | Served text: say that a group the user asks for on a wall of windows is built and the answer names the windows | low |
+| 83 — Where no free stretch of the wall fits the group, it is placed over existing furniture and reported | Served text: say what to do when the wall the user names has no free stretch of the requested width | low |
+| 84 — The find-attributes answer lists the values without naming the attribute | Served text: the `find-attributes` description says the answer names the attribute id | low |
+| 85 — insert-article-into-group takes a between-pair whose root modules do not stand side by side | roomle-ui: the insert's result says when the named pair does not stand side by side; or the served description says what side by side means | low |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Where Mistral Large falls short of the prompts](mistral-large-prompt-issues.md) | Improvement candidates from the `mistral-large-latest` test run: declare the payload fields in the input schema, merge groups that name each other's roots, act on obstacle hints, describe the walls, open the edit tools with the user's words | medium |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |

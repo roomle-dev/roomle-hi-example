@@ -161,6 +161,16 @@ The light switch is the negative control of the installation-element tests: it s
 object, the plug and the water connection are installation elements (D86 in the
 [behaviour reference](hi-mcp-behaviour.md#installation-elements-2026-10-19)).
 
+### Empty Room with a Water Connection
+
+plan snapshot id: `ps_sau169slquuapnhdz3fdmc0u24eplrcf`
+
+One empty room and one water connection: the connection is an installation element (D86 in the
+[behaviour reference](hi-mcp-behaviour.md#installation-elements-2026-10-19)) — its position in the
+`installationElements` section, no obstacle. The tests `sink-cabinet-at-water-connection` and
+`kitchen-oven-hood-sink-fridge-corner` start from it: the first adds a sink cabinet, the second
+plans a kitchen with a sink.
+
 ## Test Cases
 
 [test-prompts.json](./test-prompts.json) holds:

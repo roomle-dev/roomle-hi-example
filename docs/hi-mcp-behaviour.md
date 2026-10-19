@@ -341,6 +341,12 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
 |---|---|---|---|
 | D86 | **Electric plugs and water connections are installation elements, not obstacles.** The plan context carries them in a default section `installationElements`: per element its `type` — `ElectricPlug` or `WaterConnection` — and its `position` `[x, level, z]` in the coordinates of the walls; a position only, no size. They leave `obstacles` (D45): a group may stand on a supply, so the placement feedback (D55) reports no overlap for it, while a light switch and the other plan objects stay obstacle objects. The HI layer gathers the elements from the live plan objects — one entry per placed supply assembly, hidden owners omitted — and the planner adapter stays generic. The session preamble of the skills names the known connection positions and keeps the other services unknown. Rejected: leaving the supplies in `obstacles` — a group in front of a plug would be told it stands on an object | [RML-18023](https://roomle.atlassian.net/browse/RML-18023) comment 156276 | in effect — roomle-ui `api.ts` (`_gatherInstallationElements`), `shapeInstallationElements` and the supply exclusion of `shapeObstacles` (roomle-ui `hi-plan-context.ts`); `installationElements` in `DEFAULT_SECTIONS` and the description of `get-plan-context`, `SKILL_IN_SESSION` (`hi-mcp-server.ts`); guarded by `describe('shapeInstallationElements')` and the installation-element tests of `describe('getPlanContext')` in roomle-ui `__tests__/hi-plan-context-test.ts`, `describe('RoomDesignerApi.getPlanObstacles')` in roomle-ui `__tests__/api-test.ts`, `it('passes the installation elements through unchanged')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts`, `it('returns the installation elements of the plan context as JSON')` and the description assertions of `it('tells the agent what stands in the room and that the hint names a root module on an obstacle')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`, and the supply tests `it('does not report an overlap with a supply the group stands on')` in roomle-ui `__tests__/hi-tool-commands/place-group-test.ts` and `it('does not name a supply the group stands on')` in roomle-ui `__tests__/hi-tool-commands/create-or-replace-groups-placement-test.ts` |
 
+### Kitchen placement (2026-10-19)
+
+| # | Decision | Source | State |
+|---|---|---|---|
+| D87 | **A kitchen without a named place is planned with its sink near a water connection.** The kitchen skills state the rule: when the user does not name a place for the kitchen, plan it so that the sink stands near a water connection of the plan, if the room has one; the installation elements of the plan context list the water connections with their positions (D86). The rule lives in the kitchen skills, not the general served text, which stays neutral between the kinds of rooms (§2.4) | user, 2026-10-19 | in effect — the kitchen skills `kitchen-planning/SKILL.md` and `kitchen-planning-fr/SKILL.md`; guarded by `it('tells the agent to plan a kitchen without a named place with its sink near a water connection')` in `hi-mcp/hi-mcp-server/tests/skills.test.ts` |
+
 ## 4. How a tool call runs
 
 - **MCP endpoint**: `POST /mcp` — Streamable HTTP, JSON response mode, stateless (a new transport per
@@ -601,8 +607,8 @@ directory of `hi-mcp/hi-mcp-server/skills/` in the Agent Skills format: `SKILL.m
 | Skill | For | Supporting files |
 |---|---|---|
 | `image-planning` | furniture from an image or photo, with or without text: identify the pieces, read the layout, the counts and the sizes, map them onto the room and the catalog; the image is the brief, a room skill supplies its checks | none |
-| `kitchen-planning` | a residential kitchen, Germany/EU by default | `references/planning-reference.md` (dimensions with their status, the installation and usability checklist), `references/source-catalog.md` (the sources, for a citation question only) |
-| `kitchen-planning-fr` | a residential kitchen in France | the same two, for France |
+| `kitchen-planning` | a residential kitchen, Germany/EU by default; a kitchen without a named place is planned with its sink near a water connection (D87) | `references/planning-reference.md` (dimensions with their status, the installation and usability checklist), `references/source-catalog.md` (the sources, for a citation question only) |
+| `kitchen-planning-fr` | a residential kitchen in France; the same rule for the sink (D87) | the same two, for France |
 | `living-room-planning` | a living room: seating, TV and media, storage, routes | the same two, for a living room |
 
 - **The index.** The description of `get-skill` lists every skill as `- <name>: <description>`,

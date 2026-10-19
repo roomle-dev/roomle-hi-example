@@ -295,6 +295,15 @@ describe('the skills of the server', () => {
     expect(skill).not.toMatch(/\]\(/);
   });
 
+  it('tells the agent to plan a kitchen without a named place with its sink near a water connection', () => {
+    for (const name of ['kitchen-planning', 'kitchen-planning-fr']) {
+      const skill = readSkillFile(loadSkills(), name);
+      expect(skill).toContain(
+        'When the user does not name a place for the kitchen, plan it so that the sink stands near a water connection of the plan, if the room has one.'
+      );
+    }
+  });
+
   it('lists every skill on a line of its own in the index', () => {
     const skills = loadSkills();
     const lines = skillIndex(skills).split('\n');

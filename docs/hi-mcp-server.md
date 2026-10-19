@@ -936,3 +936,7 @@ operations:
 | `get-price` / `get-order-data` fail | No preset selected in the top bar, or the HI test proxy rejected the credentials |
 | Page reloaded | The bridge reconnects automatically — no restart needed |
 | Empty `articles`/`masterData` | No library loaded yet — select a preset or enter a library id in the top bar |
+
+## Interior Design tools
+
+The server exposes `get-interior-design-options`, `add-interior-fitting`, `move-interior-fitting`, `delete-interior-fittings` and `replace-interior-fitting`. Discovery reads one loaded group through scoped context options; edits use the existing command route and report exact fitting IDs, actual change and library adjustments. [Arguments, coordinates and failure/history semantics](hi-mcp-behaviour.md#interior-design-tools).

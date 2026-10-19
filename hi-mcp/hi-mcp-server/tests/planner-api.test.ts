@@ -8,6 +8,18 @@ const createMockBridge = () =>
   ({ call: vi.fn(async () => ({ from: 'page' })) }) as unknown as PageBridge;
 
 describe('createPlannerApi', () => {
+  it('forwards scoped interior discovery without adding undefined arguments to legacy calls', async () => {
+    const bridge = createMockBridge();
+    const options = { interiorDesign: { groupId: 'g' } };
+    await createPlannerApi(bridge).extended.getExternalObjectPlanContext(
+      ['interiorDesign'],
+      options
+    );
+    expect(bridge.call).toHaveBeenCalledWith('getExternalObjectPlanContext', [
+      ['interiorDesign'],
+      options,
+    ]);
+  });
   it('forwards undo and redo without arguments and with the default timeout', async () => {
     const bridge = createMockBridge();
     const { extended } = createPlannerApi(bridge);

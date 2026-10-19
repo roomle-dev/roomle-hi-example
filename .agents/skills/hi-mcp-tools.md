@@ -501,3 +501,7 @@ is one call, which roomle-ui performs:
 3. Use free docking vectors when extending
 4. Position every new group with a placement — at a wall or in a room corner by `wall`, `alignment` and `offsetMm`, anywhere else by `posGroup` and `posRotationY`
 5. Edit existing groups with the command tools; resubmit a whole group only to rebuild it
+
+## Interior Design tools
+
+Use `get-interior-design-options` for a loaded group before adding, moving, deleting or replacing interior fittings. Four command tools implement those edits through the existing planner route. Use installed instance IDs and newly discovered destination tuples; clarify ambiguous instances. See [the complete contract](../../docs/hi-mcp-behaviour.md#interior-design-tools) and [implementation ownership](../context/interior-fittings.md).

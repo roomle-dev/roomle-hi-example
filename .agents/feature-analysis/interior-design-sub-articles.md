@@ -1,7 +1,7 @@
 # Interior Design: editing HI sub-articles through MCP
 
 > **Type:** Feature analysis  
-> **Status:** Open — capabilities exist interactively; the tools and their completion/result contracts are not implemented  
+> **Status:** Open — implementation on feature branches; SDK/MCP implementation and direct planner validation pass; live AI acceptance awaits authorization
 > **Date:** 2026-10-19  
 > **Ticket:** [RML-18205](https://roomle.atlassian.net/browse/RML-18205)  
 > **Base:** roomle-hi-example `master` at `1e7f6d3`; roomle-ui `feat/assistant-chat` at `361e9233b`; RoomleCore `master` at `f744024ca`
@@ -173,4 +173,15 @@ No plan, configuration or item ID, attachment, or library selection is supplied 
 
 **Conditional kernel work:** RoomleCore external-object loading/history/persistence tests and `documentation/homag-intelligence/hi-object/externalObjects.md` only if the integration check demonstrates a missing contract. The existing insertion-coordinate conversion is the contract to reuse.
 
+The implementation is described in [the living reference](../context/interior-fittings.md). This analysis stays open until required acceptance validation is complete and the feature has landed.
+
 This is a feature analysis, not an implementation plan. The tool spellings, precise placement/result schema and compatible-setting transfer rules remain design work within the ticket's acceptance criteria. Productive code and the ticket description are unchanged.
+
+## Implementation evidence — 2026-10-19
+
+- Both implementations are on `feat/interior-fittings`. The roomle-ui branch starts at `feat/water-connection`, commit `d6c08f2ed`. No RoomleCore API change was needed: the library already supplies `positionRelativeToRoot`, which is now typed by the UI.
+- SDK: 2,762 tests passed; 24 tests skipped. MCP: 309 tests passed. Embedding bridge: 3 tests passed. UI, SDK, embedding and MCP type checks pass; code lint, MCP formatting and changed-document link checks pass.
+- The UI aggregate lint remains blocked by 22 existing TypeDoc warnings. Its separate SDK documentation check fails in `bun-webgpu/src/structs_ffi.ts:703` with TS2345. Both failures were reproduced in an isolated checkout of the exact water-connection base with the same dependencies.
+- Direct Chromium/planner/MCP acceptance passed 21 tool calls against two Furniture_Smith H60M cabinets in one group rotated by 90 degrees. The calls exercised scoped discovery, explicit and default insertion, an unchanged higher-position request, transfer to the second root, FRVAR-to-FSVAR replacement, batch deletion with a repeated ID, undo/redo, price and order data, and XML serialization/reload with two installed fittings. Assertions preserved the cabinet group position/rotation, root identities, input attributes and docking; reloaded fitting IDs, parentage, settings and positions matched. The footprint can grow when a front or drawer protrudes; it is not a furniture-placement invariant.
+- Backend/library: `HI_PRE_Roomle_Milestone_2` / `Furniture_Smith`, calculation script downloaded on 2026-10-19, SHA-256 `1366abd409201b04fc8002bf1719be4e8590049b68d2b5f9b35e32113a7ead20`; master data exposes no version field. The live library regenerates container IDs. Its modular front inserts can ignore requested height; an unchanged move preserves the original instance and reports no change. The library rejected FKVAR with hinge calculation errors 15003/22032 before publication; FSVAR and FTVAR calculated successfully.
+- Required live AI interpretation remains unverified. Automatic approval review rejected sending the example plan/tool data to the external GPT provider without specific authorization for that payload and destination. Prompt/served-text and interrupted-feedback unit tests pass, but they do not establish actual model interpretation. Keep this analysis open until that acceptance check is resolved and the feature lands.

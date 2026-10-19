@@ -470,6 +470,50 @@ describe('chat response recovery', () => {
     messages.forEach((message) => modelMessageSchema.parse(message));
   });
 
+  it('treats interior discovery as read-only and preserves confirmed fitting IDs across interruption', async () => {
+    const recovery = createChatRecovery({
+      'get-interior-design-options': fakeTool(async () =>
+        mcpResult({ fittings: [{ instanceId: 's1' }] })
+      ),
+      'replace-interior-fitting': fakeTool(async () =>
+        mcpResult({
+          changed: true,
+          addedInstanceIds: ['s2'],
+          removedInstanceIds: ['s1'],
+        })
+      ),
+      'move-interior-fitting': fakeTool(() => new Promise(() => {})),
+    });
+    const options = { toolCallId: 'read', messages: [], context: {} };
+    await recovery.tools['get-interior-design-options'].execute!({}, options);
+    expect(recovery.summary()).toContain('No plan-changing tool ran');
+    await recovery.tools['replace-interior-fitting'].execute!(
+      {},
+      { ...options, toolCallId: 'write' }
+    );
+    void recovery.tools['move-interior-fitting'].execute!(
+      {},
+      { ...options, toolCallId: 'pending' }
+    );
+    expect(recovery.summary()).toContain('s2');
+    expect(recovery.summary()).toContain('removedInstanceIds');
+    expect(recovery.summary()).toContain('Unconfirmed Move interior fitting');
+  });
+
+  it('describes a fitting no-op as unchanged', async () => {
+    const recovery = createChatRecovery({
+      'move-interior-fitting': fakeTool(async () =>
+        mcpResult({ changed: false, addedInstanceIds: [] })
+      ),
+    });
+    await recovery.tools['move-interior-fitting'].execute!(
+      {},
+      { toolCallId: 'no-op', messages: [], context: {} }
+    );
+    expect(recovery.summary()).toContain('Unchanged Move interior fitting');
+    expect(recovery.summary()).not.toContain('Completed Move interior fitting');
+  });
+
   it('keeps the actual result in valid history when tool output conversion fails', async () => {
     const recovery = createChatRecovery({
       'create-or-replace-groups': {

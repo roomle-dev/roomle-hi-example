@@ -281,3 +281,5 @@ Add to `docs/` folder and update the main README.md if appropriate.
 ## See Also
 
 - [AGENTS.md](../AGENTS.md) — AI assistant instructions and workflow
+
+- [Interior fitting implementation](context/interior-fittings.md) — scoped discovery and fitting edits through the existing planner bridge.

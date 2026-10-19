@@ -11,8 +11,8 @@ in [hi-mcp-behaviour.md §6](../../docs/hi-mcp-behaviour.md#6-tools) and
 
 ## Tool overview
 
-The server exposes these 21 MCP tools. Their names, input schemas and handlers are registered in
-[`hi-mcp-server.ts`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts). Twenty handlers call the
+The server exposes these 26 MCP tools. Their names, input schemas and handlers are registered in
+[`hi-mcp-server.ts`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts). Twenty-five handlers call the
 matching entry in `toolExecutors`; `get-authoring-rules` returns `AUTHORING_RULES` directly from
 the server and needs no connected planner page. Parameters and result formats are in the
 [tool reference](../../docs/hi-mcp-server.md#tool-reference).
@@ -384,3 +384,7 @@ In the tool commands of roomle-ui:
 - **A tool call is one planner step** — the planner holds one interaction step for an
   `externalObjectGroupOperation` (`runToolCall`, D79), and a tool command reaches the planner only
   through the `HiToolPlanner` it is given, or `runToolCommand` does not see that it changed the plan.
+
+## Interior Design tools
+
+`get-interior-design-options` uses `oneAtATime` and forwards the scoped `interiorDesign` context read. Four fitting mutations use `inPlanner`, preserving fitting results, corrections and error/history handling. Compact `groups[].interiorFittings` makes the existing history comparison detect interior-only changes. No new queue or bridge method is introduced. See [Interior fittings](interior-fittings.md).

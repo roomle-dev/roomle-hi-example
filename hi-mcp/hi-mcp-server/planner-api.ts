@@ -6,7 +6,17 @@ import { SNAPSHOT_CALL_TIMEOUT_MS } from './page-bridge';
 // JSON, which turns an undefined argument into null.
 export interface PlannerApi {
   extended: {
-    getExternalObjectPlanContext(include: string[]): Promise<any>;
+    getExternalObjectPlanContext(
+      include: string[],
+      options?: {
+        interiorDesign: {
+          groupId: string;
+          rootId?: string;
+          containerModuleId?: string;
+          articleId?: string;
+        };
+      }
+    ): Promise<any>;
     externalObjectGroupOperation(
       command: string,
       payload: Record<string, unknown>
@@ -30,8 +40,11 @@ export const createPlannerApi = (
         : bridge.call(method, args, timeoutMs);
   return {
     extended: {
-      getExternalObjectPlanContext: (include) =>
-        call('getExternalObjectPlanContext', [include]),
+      getExternalObjectPlanContext: (include, options) =>
+        call(
+          'getExternalObjectPlanContext',
+          options === undefined ? [include] : [include, options]
+        ),
       externalObjectGroupOperation: (command, payload) =>
         call(
           'externalObjectGroupOperation',

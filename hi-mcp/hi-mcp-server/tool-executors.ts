@@ -378,6 +378,25 @@ const inPlanner = (
   });
 
 export const toolExecutors: Record<string, ToolExecutor> = {
+  'add-interior-fitting': inPlanner('add-interior-fitting'),
+  'move-interior-fitting': inPlanner('move-interior-fitting'),
+  'delete-interior-fittings': inPlanner('delete-interior-fittings'),
+  'replace-interior-fitting': inPlanner('replace-interior-fitting'),
+  'get-interior-design-options': oneAtATime(async (api, args) => {
+    const { groupId, rootId, containerModuleId, articleId } = args;
+    if (typeof groupId !== 'string' || !groupId.trim())
+      throw new Error('groupId is required for interior discovery.');
+    return (
+      await api.extended.getExternalObjectPlanContext(['interiorDesign'], {
+        interiorDesign: {
+          groupId,
+          ...(typeof rootId === 'string' && { rootId }),
+          ...(typeof containerModuleId === 'string' && { containerModuleId }),
+          ...(typeof articleId === 'string' && { articleId }),
+        },
+      })
+    ).interiorDesign;
+  }),
   // The plan context arrives agent-ready from the planner API (compacted
   // sections, 3D room contours with derived walls, the groups in the frame a
   // placement names); the executor names the walls and leaves out the

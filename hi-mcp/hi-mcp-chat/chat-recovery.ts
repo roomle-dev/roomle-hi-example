@@ -2,6 +2,7 @@ import type { ModelMessage, Tool, ToolSet, ToolExecutionOptions } from 'ai';
 
 const READ_ONLY_TOOLS = new Set([
   'get-plan-context',
+  'get-interior-design-options',
   'get-authoring-rules',
   'get-skill',
   'find-attributes',
@@ -11,6 +12,10 @@ const READ_ONLY_TOOLS = new Set([
 ]);
 
 const TOOL_LABELS: Record<string, string> = {
+  'add-interior-fitting': 'Add interior fitting',
+  'move-interior-fitting': 'Move interior fitting',
+  'delete-interior-fittings': 'Delete interior fittings',
+  'replace-interior-fitting': 'Replace interior fitting',
   'create-or-replace-groups': 'Create or replace groups',
   'place-group': 'Move group',
   'change-module-attribute': 'Change module attribute',
@@ -81,6 +86,10 @@ const resultDetails = (data: any): string[] => {
     'removedGroupIds',
     'rootModuleId',
     'changedModuleIds',
+    'changed',
+    'addedInstanceIds',
+    'removedInstanceIds',
+    'fittings',
     'attributeId',
     'value',
     'attributes',
@@ -161,9 +170,12 @@ export const createChatRecovery = (tools: ToolSet) => {
       for (const outcome of writes) {
         const label = TOOL_LABELS[outcome.toolName] ?? outcome.toolName;
         if (outcome.status === 'returned' && !outcome.result?.isError) {
-          const details = resultDetails(resultData(outcome.result));
+          const data = resultData(outcome.result);
+          const details = resultDetails(data);
+          const completion =
+            data?.changed === false ? 'Unchanged' : 'Completed';
           lines.push(
-            `- Completed ${label}: ${details.length ? details.join('; ') : 'the tool returned successfully.'}`
+            `- ${completion} ${label}: ${details.length ? details.join('; ') : 'the tool returned successfully.'}`
           );
         } else {
           const detail =

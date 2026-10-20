@@ -17,7 +17,7 @@ the document a row links.
 | 84 — The find-attributes answer lists the values without naming the attribute | Served text: the `find-attributes` description says the answer names the attribute id | low |
 | 85 — insert-article-into-group takes a between-pair whose root modules do not stand side by side | roomle-ui: the insert's result says when the named pair does not stand side by side; or the served description says what side by side means | low |
 | 86 — A swapped row of different unit widths stands through the wall | roomle-ui: keep the row's wall-side end in place when the swapped roots have different widths (anchor the wall-side end or clamp the row into the room) | medium |
-| 87 — The model asks instead of building when the user's reference does not match the plan | Served text: say a group the user asks for is built where the user points, and name where a mismatched reference is; and fix the expect of `installation-elements-supplies` to the plan it loads | low |
+| 87 — The model asks instead of building when the user's reference does not match the plan | Served text: say a group the user asks for is built where the user points, and name where a mismatched reference is | low |
 | 89 — Wall units in separate groups do not follow their edited carriers | roomle-ui: apply D42 across scene groups as well as within the edited group; follow the moved carrier and leave unrelated wall units in place | medium |
 | 90 — A group placed over existing objects is not disclosed | Served text: the answer names every object a group stands over, also where the user leaves the place open | low |
 | 91 — The answer describes the two legs of the L-shaped kitchen swapped | Served text: the answer describes the plan as it stands, naming the wall of each group | low |

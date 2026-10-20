@@ -278,17 +278,17 @@ them (`.agents/scripts/run-hi-mcp-prompt.js`).
 
 ## The chat in the ligna-store
 
-The ligna-store feeds the same chat window, the planner's AI Planning
-Assistant, from a chat of its own (ligna-store `hi-mcp/chat.ts`,
-`chat-host.ts`, `chat-options.ts`), started with the store URL parameters
-`model`, `api_key` and `mcp_server`. It runs the Vercel AI SDK in the store
-page: the model is called directly with `api_key` (Mistral and the Foundry
-endpoint allow browser CORS), and the tools come from `<mcp_server>/mcp`, which
-answers every origin
-([cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md#browser-clients-cors)).
-The store keeps `api_key` out of the page URL its bridge announces. Its
-reference is the ligna-store's `hi-mcp/README.md`; why a key in the store URL is
-for a demo only:
+The ligna-store runs the same planning assistant of the embedding-lib in the
+planner's AI Planning Assistant window: `startPlanningAssistant` of
+`@roomle/embedding-lib/hi`, with the HI MCP tools of the embedding-lib
+(`createHiMcpTools`, D94 of the
+[behaviour reference](hi-mcp-behaviour.md#3-decisions)), which call the planner of
+the store page directly — no MCP server, no page bridge and no MCP client. The
+store URL parameters `model` (default `gpt-6-astra`) and `api_key` turn into the
+`PlanningAssistantConfig` (ligna-store `hi-mcp/chat-options.ts`), and the browser
+calls the model with `api_key` directly (Mistral and the Foundry endpoint allow
+browser CORS). Its reference is the ligna-store's `hi-mcp/README.md`; why a key
+in the store URL is for a demo only:
 [ADR 0003](../.agents/decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md).
 Where the store's chat differs from this one is open in the
 [backlog](../.agents/backlog/README.md#chat).

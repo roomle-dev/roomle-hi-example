@@ -39,11 +39,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Description |
 |---|---|---|
-| [installation-elements-in-hi-plan-context.md](installation-elements-in-hi-plan-context.md) | Open | RML-18023: separate electric plugs and water connections from obstacles, with their type and position; scope across Core, roomle-ui `feat/water-connection` and HI MCP |
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
-| [hi-mcp-open-and-close-cabinets.md](hi-mcp-open-and-close-cabinets.md) | Open | RML-18232: MCP tools that open and close a group or an article through `externalObjectGroupOperation` (operations in roomle-ui `hi-tools.ts`), and a snapshot property that renders open doors and drawers as they are |
-| [hi-mcp-tools-in-the-embedding-lib-first-step.md](hi-mcp-tools-in-the-embedding-lib-first-step.md) | Open | RML-18196, first step: the MCP server's tools copied into roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/` as `createHiMcpTools` of `src/hi.ts`, the HI presets demo on the tool set; the model-facing surface kept by MCP-shaped results |
-| [interior-design-sub-articles.md](interior-design-sub-articles.md) | Implemented on feature branches | Interior-fitting discovery, add, move, delete and replace through the roomle-ui HI API, MCP and AI assistant; completion, identity and history contracts |
 
 Add feature analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `group-adjustment-to-wall-width.md`).

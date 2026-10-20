@@ -180,9 +180,13 @@ rootId? }`, one point and one rotation.
 - The supplies of the plan are no obstacles: the `installationElements` section of `get-plan-context`
   lists the electric plugs and the water connections with their positions (`type`,
   `position: [x, level, z]`), so a group may stand on one — plan a sink at the water connection and
-  a hob beside a plug. The planner classifies a plan object by its catalog level — exactly 27 is an
-  `ElectricPlug`, 28 a `WaterConnection`; no other level, article id or name counts — and reports one
-  entry per placed supply assembly, its children included, without hidden ones. `position` is the
+  a hob beside a plug. The planner classifies a plan object by the level it has in the planner —
+  exactly 27 is an `ElectricPlug`, 28 a `WaterConnection`; no other level, article id or name counts.
+  The catalog lists the wall water connections (`room_designer:water_connections`) at level 43; the
+  planner sets them to 28 when it loads them (roomle-ui `planner-kernel-access.ts`,
+  [roomle-ui-issues 94](../backlog/roomle-ui-issues.md#94-the-water-connection-is-an-installation-element-only-through-a-planner-override)).
+  The planner reports one entry per placed supply assembly, its children included, without hidden
+  ones. `position` is the
   bottom centre of the element's bounding box (the kernel's `getCenter`) in mm with two decimals, not
   a socket or pipe contact point. Guarded by `it('classifies the levels 27 and 28 as electric plug and
   water connection')`, `it('ignores the other service levels')` and `it('converts the kernel center to

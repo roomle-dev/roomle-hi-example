@@ -144,7 +144,8 @@ One Furniture_Smith group of three `KS_OF600` open wardrobes against the back wa
 600 mm wide and 2100 mm high, with one installed `FixedShelf` sub-article each and a generated
 toe kick. The group is `ce854b3e-90d6-4e65-ba7b-461e125cc8da`, at
 `[2199.97, 0, -3765]`, rotation 0. Left, middle and right mean as seen from the front;
-their root-local x positions are 0, 600 and 1200 mm.
+their root-local x positions are 0, 600 and 1200 mm. The prompts call the group "the wardrobe"
+and its three units carcasses or cabinets.
 
 | Wardrobe | Root instance id | Installed shelf instance id |
 |---|---|---|
@@ -157,18 +158,20 @@ instance IDs and current compatible destinations through the Interior Design too
 container IDs are not fixture constants. These tests edit shelves inside the cabinets and retain
 all cabinet identities, placement, finishes and docking.
 
-| Test | Requested edit | Shelf counts after the edit: left / middle / right |
+| Test | Requested edit | Shelf counts after each edit: left / middle / right |
 |---|---|---|
-| `edit-add-subarticle` | Add one fixed shelf to the middle wardrobe, retaining its existing shelf. | 1 / 2 / 1 |
+| `edit-add-subarticle` | Add one fixed shelf at half the height of the right wardrobe, retaining its existing shelf. | 1 / 1 / 2 |
 | `edit-delete-subarticle` | Remove only the left wardrobe's shelf. | 0 / 1 / 1 |
-| `edit-move-subarticle` | Transfer the left shelf into the right wardrobe, retaining the existing right shelf. | 0 / 1 / 2 |
+| `edit-move-subarticle` | Move the middle wardrobe's shelf 500 mm down inside its cabinet. | 1 / 1 / 1 |
+| `edit-add-move-delete-subarticle` | Three turns: add one fixed shelf at half the height of the left wardrobe, move the right wardrobe's shelf 500 mm down, delete the middle wardrobe's shelf. | 2 / 1 / 1, 2 / 1 / 1, 2 / 0 / 1 |
 
 The test `open-cabinet-without-doors` starts from this plan too: the open wardrobes have no doors,
 so `open-or-close-article` names the wardrobe in its corrections and the agent says so.
 
-The move test transfers between cabinets rather than asking to change the height of a fixed
-shelf. A recreated fitting can have a new instance ID; its returned identity, owning root,
-parent and actual calculated placement determine the result.
+The move edits change the height of a shelf inside its cabinet: one `move-interior-fitting` keeps
+the shelf in its parent and takes an insertion point 500 mm lower than its measured position, x
+and z unchanged. A recreated fitting can have a new instance ID; its returned identity, owning
+root, parent and actual calculated placement determine the result.
 
 ### Open-Plan Room
 

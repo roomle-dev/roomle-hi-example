@@ -170,24 +170,35 @@
     },
     {
       "id": "edit-add-subarticle",
-      "title": "Add a shelf sub-article to the middle wardrobe",
+      "title": "Add a shelf sub-article to the right wardrobe",
       "plan": "three-open-wardrobes-with-shelves",
-      "prompt": "add one fixed shelf sub-article inside the middle open wardrobe; keep its existing shelf and leave all three cabinets, their positions, finishes and other shelves unchanged",
-      "expect": "get-interior-design-options discovers a compatible FixedShelf article and current destination in middle root 7b8bd635-7f19-4e3c-b280-95b91d4c4916 of group ce854b3e-90d6-4e65-ba7b-461e125cc8da; add-interior-fitting adds exactly one new installed instance there. Four shelf sub-articles remain: one in the left wardrobe, two in the middle, one in the right. All three original shelves, cabinet identities, placement, finishes and docking remain unchanged; the result reports the new instance ID and actual placement."
+      "prompt": "add a shelf to the middle of the right-most carcass of the wardrobe",
+      "expect": "get-interior-design-options discovers a compatible FixedShelf article and current destination in right root 22e7519d-4218-46e4-b1a5-5c92934ad420 of group ce854b3e-90d6-4e65-ba7b-461e125cc8da; add-interior-fitting adds exactly one new installed instance there, at about half the height of the cabinet's interior (an insertPosition, or the library default when it already stands there). Four shelf sub-articles remain: one in the left wardrobe, one in the middle, two in the right. All three original shelves, cabinet identities, placement, finishes and docking remain unchanged; the result reports the new instance ID and actual placement."
     },
     {
       "id": "edit-delete-subarticle",
       "title": "Delete the shelf sub-article from the left wardrobe",
       "plan": "three-open-wardrobes-with-shelves",
-      "prompt": "delete the shelf sub-article from the leftmost open wardrobe; keep the cabinet and leave the other two wardrobes and their shelves unchanged",
+      "prompt": "delete the shelf from the leftmost cabinet",
       "expect": "get-interior-design-options identifies installed FixedShelf instance 037ab69e-8475-4418-b6db-df6738b91df1 in left root ab0737ab-a681-48ed-995b-46ee788a2329; delete-interior-fittings removes only that instance. The group still contains all three wardrobe cabinets at their original positions with unchanged finishes and docking, with no shelf in the left wardrobe and the original shelf in each of the middle and right wardrobes. No cabinet or whole group is deleted."
     },
     {
       "id": "edit-move-subarticle",
-      "title": "Move a shelf sub-article between wardrobes",
+      "title": "Move a shelf sub-article down in the middle wardrobe",
       "plan": "three-open-wardrobes-with-shelves",
-      "prompt": "move the shelf sub-article from the leftmost open wardrobe into the rightmost open wardrobe; keep the shelf already in the right wardrobe, leave the middle wardrobe unchanged and keep all three cabinets where they are",
-      "expect": "get-interior-design-options identifies source FixedShelf instance 037ab69e-8475-4418-b6db-df6738b91df1 and a compatible current destination in right root 22e7519d-4218-46e4-b1a5-5c92934ad420 of the same group ce854b3e-90d6-4e65-ba7b-461e125cc8da; move-interior-fitting transfers it in one command. Three shelf sub-articles remain: none in the left wardrobe, the original one in the middle, and the original right shelf plus the transferred shelf in the right. Recreation may change the moved instance ID; use the returned identity and actual placement. Compatible source settings are retained or resets reported. Cabinet identities, placement, finishes, docking and the two unrelated shelf instances remain unchanged; no separate delete/add commands or whole-cabinet move."
+      "prompt": "move the shelf inside the middle cabinet down by 500 mm",
+      "expect": "get-interior-design-options identifies installed FixedShelf instance 19d07551-c89b-43ee-8caa-e4c2bef10fb6 and its measured position in middle root 7b8bd635-7f19-4e3c-b280-95b91d4c4916 of group ce854b3e-90d6-4e65-ba7b-461e125cc8da; one move-interior-fitting keeps it in its current parent (destination omitted or the same) with an insertPosition 500 mm lower in y than the measured position, x and z unchanged. The returned actual placement is 500 mm lower; a library adjustment of the height is reported in the corrections. Three shelf sub-articles remain, one in each wardrobe. Recreation may change the moved instance ID; use the returned identity. Compatible settings are retained or resets reported. Cabinet identities, placement, finishes, docking and the left and right shelves remain unchanged; no transfer to another cabinet, no separate delete/add commands or whole-cabinet move."
+    },
+    {
+      "id": "edit-add-move-delete-subarticle",
+      "title": "Add, move and delete shelf sub-articles over three turns",
+      "plan": "three-open-wardrobes-with-shelves",
+      "prompt": [
+        "add a shelf to the middle of the left-most carcass of the wardrobe",
+        "move the shelf inside the right-most cabinet down by 500 mm",
+        "delete the shelf from the middle cabinet"
+      ],
+      "expect": "turn 1: get-interior-design-options on group ce854b3e-90d6-4e65-ba7b-461e125cc8da, then one add-interior-fitting of a compatible FixedShelf into left root ab0737ab-a681-48ed-995b-46ee788a2329, at about half the height of the cabinet's interior; the original left shelf 037ab69e-8475-4418-b6db-df6738b91df1 stays; shelves left / middle / right 2 / 1 / 1. turn 2: one move-interior-fitting of right shelf c585292d-26f7-41da-92ff-50a278161f95 in right root 22e7519d-4218-46e4-b1a5-5c92934ad420, in its current parent, with an insertPosition 500 mm lower in y than its measured position, x and z unchanged; the returned actual placement is 500 mm lower, a library adjustment is reported; shelves 2 / 1 / 1. turn 3: one delete-interior-fittings of only middle shelf 19d07551-c89b-43ee-8caa-e4c2bef10fb6 in middle root 7b8bd635-7f19-4e3c-b280-95b91d4c4916; shelves 2 / 0 / 1, the two left shelves and the moved right shelf where turns 1 and 2 put them. Recreation may change instance IDs; the agent uses the returned IDs or discovers them again. Every turn keeps the three cabinets, their placement, finishes and docking; no cabinet or whole group is deleted, no separate delete/add commands for the move."
     },
     {
       "id": "edit-remove-unit",

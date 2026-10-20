@@ -13,7 +13,7 @@ embedding-lib (`createHiMcpTools`) — the tools of
 reference is roomle-ui `packages/embedding-lib/docs/homag-intelligence-embedding.md`,
 "The AI Planning Assistant agent" and "HI MCP tools for an AI agent". The page
 loads the embedding-lib from unpkg; until a release has these functions, it is
-the dev version `0.0.0-dev-60bc7cd` ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
+the dev version `0.0.0-dev-a40887e` ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
 Supported providers: **Mistral**, **Anthropic (Claude)**, **Google (Gemini)** and
 **Azure OpenAI**.
 

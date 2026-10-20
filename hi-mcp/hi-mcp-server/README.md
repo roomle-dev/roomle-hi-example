@@ -435,7 +435,9 @@ attributes — a front colour reset by a front program) and `notLoaded` (`[{ ind
 errors }]`, the groups it could not build and, with `rootIds`, the roots of a loaded group it could
 not build — one unknown article id drops that root, not the group). The `hint` also names each root
 module of the call's groups that overlaps an object or a root module of another group, or stands in
-front of a door or a window, with the free stretches of its wall; the group is built anyway (D55). A group attribute that is not
+front of a door or a window, with the free stretches of its wall and, for a group placed at a wall
+in front of a door or a window of the adjoining wall, the `offsetMm` that keeps it clear; the group
+is built anyway (D55). A group attribute that is not
 one of the library's group settings — a material for the whole group — is set on every root module after
 the load and reported.
 
@@ -506,7 +508,8 @@ reported.
 
 Returns `placedIn` (`corner` or `wall`), the wall, and the resulting group with its `position`,
 plus `corrections` when the server corrected the request and a `hint` when a root module stands on
-an object or in front of a door or a window after the move (D55). The group keeps its height, so a group
+an object or in front of a door or a window after the move, with the free stretches of its wall and
+the `offsetMm` that keeps the group clear of a door or a window of the adjoining wall (D55). The group keeps its height, so a group
 of wall units only stays at its mounting height.
 
 Example: `{ "groupId": "a1b2c3", "wall": "right", "alignment": "top" }`

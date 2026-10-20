@@ -138,13 +138,20 @@ The **docking** relates the roots of a group; the planner derives every root pos
 
 **Arrangement** (roomle-ui `hi-root-module-arrangement.ts`): the planner puts the first root at the
 group origin and places every other root breadth-first along the docking; a root docked to a
-corner article's `LeftBottom` is turned by 90°.
+corner article's `LeftBottom` is turned by 90°. Roots without a docking path to the others — a wall
+row whose link to the floor units did not survive a load — are arranged as a cluster of their own
+that keeps its position; a unit above follows the root below it by position instead
+([D42](../../docs/hi-mcp-behaviour.md#row-edits-2026-10-05)). An attribute can change a root's
+docking geometry without moving the root: a plinth height raises the docking top of a floor unit
+while its root stays at y = 0, and the units above keep their clearance to that docking top
+(guarded by `keeps both detached wall units above carriers whose docking tops change by %i mm` in
+roomle-ui `hi-root-module-arrangement-test.ts`).
 
 **Origin and docking corner**: a root's origin is usually the back left bottom corner of its docking
 vectors, but not always — a range hood is centred on its origin, the corner point of a corner
 article lies off its origin, and a right-handed corner article (`mod_CarcaseDirection` Right) is
 turned. The server places and reports every group by the docking corner
-([hi-mcp-server.md §5](./hi-mcp-server.md#5-group-placement-internal)).
+([hi-mcp-server.md §4](./hi-mcp-server.md#4-group-placement-internal)).
 
 ### 5. Positioning
 
@@ -242,8 +249,15 @@ wherever it stands in a row; a pair of doors side by side (`U2TB90`) gets `LeftR
 the middle. Single doors take `Left` and `Right` — two doors one above the other (`H2TB60`) both
 together —, a pair takes `LeftRight`. Any other combination has no entry in `tab_DoorSettings`: the
 calculation fails with error 14019 and the root module is not built (`U2TB90` with `Left`, `Right`,
-`LeftLeft` or `RightRight`, `H2TB60` with `LeftRight`). The door direction is not `implicitRelevant`,
-so a root module added beside another gets `Automatic`. A value set on a root module reaches its
+`LeftLeft` or `RightRight`, `H2TB60` with `LeftRight`). The door arrangement can follow the size:
+`HTB60` widened to 900 mm has a pair of doors — `Automatic` resolves to `LeftRight` —, and a `Right`
+it keeps from its single door fails with error 14019. A root module the library cannot calculate has
+no docking vectors and no front parts; its diagnostic is in the root's `logMessages`, which the
+attribute tools report ([D95](../../docs/hi-mcp-behaviour.md#calculation-errors-2026-10-19)). The
+door direction is not `implicitRelevant`, so a root module added beside another gets `Automatic`. A
+swap or a delete keeps the value with its root module: the root module that becomes an end keeps the
+side it had (roomle-ui `it('keeps the attributes and the hung units with their roots')`,
+`hi-tools-test.ts`). A value set on a root module reaches its
 doors — in the root's `attributes` and with `change-module-attribute` — and the plan context lists it
 among the root's input attributes; `Automatic` and the resolved side are not shown.
 `mod_HandlePosType` places and turns the handle and leaves the hinge side as it is: `03` and `04` put

@@ -291,7 +291,7 @@ reference is the ligna-store's `hi-mcp/README.md`; why a key in the store URL is
 for a demo only:
 [ADR 0003](../.agents/decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md).
 Where the store's chat differs from this one is open in the
-[backlog](../.agents/backlog/README.md#ligna-store).
+[backlog](../.agents/backlog/README.md#chat).
 
 ## Open follow-ups
 

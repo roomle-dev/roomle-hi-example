@@ -336,7 +336,6 @@ then swaps the complete paired-door unit into the back corner. The row is contig
 
 **Reproduce.** `mcp-test-2026-10-18_14-48-28`, gpt-6-astra 32: the last `HTB60`
 widened to 900 mm retains `Right`; the saved XML carries Error 14019 and zero door parts.
-See [the analysis](../bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md).
 
 ## 79. Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate
 
@@ -441,9 +440,10 @@ generated when the library supports it").
 **Cause.** Not established. Every failure looks up `tab_GrainDirectionSettings` with the three
 values after `part_Backsplash` undefined — whether the colour and height come with the create or in
 a separate call — and no entry matches. The same separate call built the backsplash on 2026-10-18 on
-the local roomle-ui of `fix/generated-part-switch-discovery` (`cf377cfd4`,
-[deterministic checks](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md#deterministic-checks));
-whether the library data or the planner changed since is open. The descs of `mod_CreateBacksplash`
+the local roomle-ui commit `cf377cfd4` (the last row of the table below); that commit is on no branch
+any more, only in the reflog of the local roomle-ui checkout, and its Bool retention is on roomle-ui
+`master` and `release/bo-test` in `1db06b18c`. Whether the library data or the planner changed since
+is open. The descs of `mod_CreateBacksplash`
 and `mod_BacksplashColor` invite generating the backsplash and name no limit.
 
 **How the library behaves.**
@@ -456,7 +456,9 @@ and `mod_BacksplashColor` invite generating the backsplash and name no limit.
 | The switch on a lone `UTB60`, then a separate call with 216 / 500; on a lone `EUTB60`, then 240 / 635; on two `UTB60`, then 240 / 635; the create of run 59, then 240 / 635 | no: Error 14034 after the create and after the separate call (`620 - 500`, `620 - 635`, `1220 - 635`, `1200 - 635`) | bo-test planner, 2026-10-20, without a model |
 | The switch on a lone `UTB60`, then a separate call with 216 / 500; on a lone `EUTB60`, then 240 / 635; the right-wall image payload, then 240 / 635 | yes, after the separate call | local roomle-ui `cf377cfd4`, 2026-10-18 |
 
-**To do.** Establish which side changed: replay the lone `UTB60` check on roomle-ui `cf377cfd4`.
+**To do.** Establish which side changed: replay the lone `UTB60` check on roomle-ui `cf377cfd4`
+(recover it from the reflog before it expires). `cf377cfd4` has no C25 feedback after an attribute
+command, so the replay reads the `mr_Backsplash` root's log messages, not only the tool result.
 Built there, the cause is in roomle-ui and the issue moves to
 [roomle-ui-issues.md](roomle-ui-issues.md); not built, the library: the backsplash's entries in
 `tab_GrainDirectionSettings` or the inputs of its lookup. Meanwhile the proposed desc in

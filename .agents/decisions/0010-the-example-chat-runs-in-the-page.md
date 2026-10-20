@@ -25,8 +25,10 @@ the launcher, as in ADR 0003.
   `chat=true`.
 - The prompt runner sends the prompts through the page (`onPlanningAssistantPrompt`) and reads the
   tool calls from the page console and the planner calls from the page.
-- The MCP server, the reference client `hi-mcp-client` and the Cloudflare deployment stay for the
-  ligna-store and external MCP clients.
+- The ligna-store runs the same planning assistant in its planner page, with the model and the key
+  of its URL (ligna-store `hi-mcp/chat-options.ts`); it has no MCP bridge either.
+- The MCP server, the reference client `hi-mcp-client` and the Cloudflare deployment stay for
+  external MCP clients.
 
 ## Consequences
 
@@ -35,8 +37,8 @@ the launcher, as in ADR 0003.
 - The key is in the page: it is read from the launcher and sent to the provider by the browser. It
   is in no URL, browser history or log; anyone with the page open on this machine can read it. The
   provider must allow browser calls (CORS).
-- External MCP clients reach a planner only through the ligna-store (`npm run mcp-server` and the
-  store with `mcp_server=http://localhost:3100`).
+- External MCP clients reach a planner only through a page that runs the page bridge; neither the
+  example nor the ligna-store does.
 - The planning assistant has no image middleware for Mistral, so a Mistral model fails on a turn
   that calls `get-plan-images` ([ai-chat.md](../../docs/ai-chat.md#images-in-tool-results)).
 - The prompt runs log no step data (tokens, duration per step); the turn is what the window shows.

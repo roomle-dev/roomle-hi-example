@@ -467,14 +467,14 @@
       "title": "Images of the kitchen",
       "plan": "three-tall-units",
       "prompt": "show me the kitchen from above and in perspective",
-      "expect": "one get-plan-images call; the answer shows the perspective and the top view of the plan"
+      "expect": "one get-plan-images call; the answer shows the group view - the kitchen alone, seen from its front - and the top view of the plan"
     },
     {
       "id": "open-cabinet-look-inside",
       "title": "Open one cabinet to look inside",
       "plan": "three-tall-units",
       "prompt": "open the middle cabinet and show me what is inside",
-      "expect": "one open-or-close-article call on the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa with open true, then get-plan-images: the perspective image shows the middle cabinet with its door open and its shelves inside, the first and the last cabinet closed; the plan is unchanged - no plan-changing tool call, undo has nothing to revert"
+      "expect": "one open-or-close-article call on the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa with open true, then get-plan-images: the group view shows the middle cabinet with its door open and its shelves inside, the first and the last cabinet closed; the plan is unchanged - no plan-changing tool call, undo has nothing to revert"
     },
     {
       "id": "open-whole-kitchen",
@@ -491,7 +491,7 @@
       "title": "Add a shelf and look at it",
       "plan": "three-tall-units",
       "prompt": "add one more shelf inside the middle cabinet and show me the inside of the cabinet",
-      "expect": "get-interior-design-options on group 064a7d91-b583-4883-b71b-95c324d3d824 for the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa; one add-interior-fitting of a compatible shelf article into the middle unit; open-or-close-article on the middle unit with open true before get-plan-images; the perspective image shows the open middle cabinet with the added shelf; the three cabinets keep their place, finishes and docking"
+      "expect": "get-interior-design-options on group 064a7d91-b583-4883-b71b-95c324d3d824 for the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa; one add-interior-fitting of a compatible shelf article into the middle unit; open-or-close-article on the middle unit with open true before get-plan-images; the group view shows the open middle cabinet with the added shelf; the three cabinets keep their place, finishes and docking"
     },
     {
       "id": "open-cabinet-without-doors",

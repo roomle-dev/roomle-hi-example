@@ -19,6 +19,8 @@ its fix is in the code.
 transparent PNG when the planner runs on software WebGL (SwiftShader — headless Chromium without GPU
 access). Every other snapshot image renders. The run script passes `--enable-gpu`, so a machine with
 a GPU gets the image; a machine without one gets an empty `perspective-object-image.png` in every run.
+`get-plan-images` shows the agent this image as its group view (D97), so an agent on a page without
+GPU access gets an empty group view and the top view alone carries the plan.
 
 **Cause.** Not identified in the planner. The render's inputs are correct (camera placed at the group,
 projection without NaN, layers covering the object's layers, meshes visible, synchronous draw); the
@@ -36,5 +38,5 @@ render work under SwiftShader.
 **Test.** A headless page on software GL: `getExternalObjectSnapshot({ perspectiveObjectImage: true })`
 returns a non-empty image.
 
-**Reproduce.** `run-hi-mcp-prompt.js` with `CHROMIUM_ARGS` (`:62`) set to `[]` (headless on
+**Reproduce.** `run-hi-mcp-prompt.js` with `CHROMIUM_ARGS` (`:65`) set to `[]` (headless on
 SwiftShader), test `three-tall-units-right-wall`.

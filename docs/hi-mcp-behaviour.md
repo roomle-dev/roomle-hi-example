@@ -172,6 +172,7 @@ Decisions about the behaviour towards the agent. **State**: *in effect* (impleme
 | D83 | **A room corner is where the contour turns into the room.** The `corners` of a room list every point where a wall or an opening ends and the next starts at an angle that turns into the room — to the side the ending one faces, as the room lies on the left of the contour (D61). A door or a floor-to-ceiling window that reaches a corner keeps it. The corners of a partition and the inner corner of an L-shaped room turn away from the room and are none: no group stands in them as in a room corner. Rejected: the corners of a partition in the list — no placement uses them, and the agent would take them for room corners; corners built from the wall faces (`wallFaces`) — the same corners, with a copy of the faces in the server; leaving out the subpaths after the first of the contour — it keeps the inner corner of an L-shaped room and the free end of a partition joined to a wall | 2026-10-17 | user | in effect — `roomCorners`, `agent-facing.ts`, and its copy in roomle-ui `hi-plan-space.ts`; guarded by `it('lists the room corners where a window meets a wall, and none of the partition')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` and `it('lists the corners where the contour turns into the room, also at a window, and none of the partition')` in roomle-ui `__tests__/hi-plan-space-test.ts` |
 | D61 | **The walls follow the kernel's room contour as it is.** The `ROOM` and `PLAN` contour of RoomleCore runs counter-clockwise with the room on its left, and an opening splits only the wall piece it overlaps, so the points along a wall face follow its direction, also with several doors and windows in one wall. roomle-ui (`deriveWalls`) takes each wall's `side` and `facingRotationY` from the direction of its segment; the server names the walls and builds the corners from them (C18). A wall entry with the wrong side is corrected in the kernel's contour. Rejected: a side test in `deriveWalls` or in the server — it hides the defect: the wrong entry still spans the openings, the same contour reaches the HOMAG library and the order data, and the server cannot tell a wall that runs back from the wall of a room that bulges; and a further query of the kernel — the contour carries everything the walls need | 2026-10-07 | user | in effect — RoomleCore `ObjectSurroundings::addOpeningToContour`, roomle-ui `deriveWalls`; guarded by `TEST_CASE("object surroundings split only the wall piece an opening lies on")` in RoomleCore `test/planner/geometry/object-surrounding-geometry-test.cpp` |
 | D13 | Rotations are counter-clockwise as seen from above; a group against the right wall has 270, against the left wall 90. Not clockwise, as the ticket comment assumed: RoomleCore passes the angle through a proper rotation from HI space (Y up) to kernel space (Z up), and the golden Furniture_Smith L-shape at 270 stands in the back right corner ([rotation sense](../.agents/skills/roomle-hi-concepts.md#rotation-sense)) | 2026-09-29 | [RML-17966](https://roomle.atlassian.net/browse/RML-17966) comment 155478 (its clockwise values rejected), D1 of the repositioning refactoring | in effect |
+| D97 | **`get-plan-images` shows the groups alone from their front and the top view of the plan, and names its images in a text.** The first image is the planner's object perspective (`perspectiveObjectImage`): the HI groups alone, framed on them and turned to their fronts, the room and every other object hidden, on a transparent background; the second is the top view of the whole plan, which carries the room context — where a group stands, its footprint, a gap to a wall. One text content before the images names them in order; without groups the planner renders no group view, and the text says so before the top view alone. One camera serves all groups: where fronts face opposite directions one side is seen from behind, and root modules can hide one another — the description says that a root module not seen is not missing. One text before the images, not a label beside each: a provider can join the text parts of a tool result ahead of its images (Gemini 3), and numbered names keep their meaning there. Rejected: the plan perspective — its camera stands at a fixed world angle above the room's front left corner, so a group is seen from the side or from behind, or hidden by other objects; all three images — one image more per call for a view of the room the agent does not act on; a parameter to choose the views — the agent would have to learn what to request; the plan perspective as a fallback without groups — the top view of an empty room is enough to plan into it | 2026-10-04 | user | in effect — `get-plan-images` in `tool-executors.ts` and `hi-mcp-server.ts` of the HI tools (roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/`); guarded by `it('returns the plan images of the external object snapshot')` in roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-mcp/tool-executors.spec.ts`, `it('shapes get-plan-images into a text naming the images, then the group view and the top view without the data-url prefix')` and `it('returns the top view alone and says so when the plan has no groups')` in `hi-mcp-server.spec.ts` there, and `test('renders the object perspective and the top view, without the plan perspective, with the geometry as it is')` in roomle-ui `planner-core/__tests__/roomle-planner.ts` |
 
 ### Authoring and positioning
 
@@ -553,7 +554,9 @@ tool. It covers:
 - **JSON results** are one text content with compact JSON. Every `imageUrl` is removed at any depth
   (D7). Guarded by `it('returns tool results as compact JSON without image URLs')` in
   `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`.
-- **`get-plan-images`** returns two image contents (PNG): the perspective and the top view.
+- **`get-plan-images`** returns one text content that names the images, then two image contents (PNG):
+  the group view and the top view. Without groups in the plan the text says so, and the top view comes
+  alone (D97).
 - **`get-authoring-rules`** returns the rules as plain text.
 - **`get-skill`** returns the skill file as plain text, a `SKILL.md` after the session preamble (§5.6).
 - **An error** is an error result (`isError: true`) with the message as text. A schema error reads
@@ -674,7 +677,7 @@ directory of `hi-mcp/hi-mcp-server/skills/` in the Agent Skills format: `SKILL.m
 | `open-or-close-group`, `open-or-close-article` | no — the view only (D88) | `{ command, groups: [], removedGroupIds: [], changed: false, corrections? }` |
 | `get-price` | no | the planner's price result |
 | `get-order-data` | no | the order data, or `null` |
-| `get-plan-images` | no | two images |
+| `get-plan-images` | no | a text naming the images, the group view and the top view |
 
 ### get-plan-context
 
@@ -932,8 +935,10 @@ history no longer holds the call, though a configurator step may have been undon
 - **`get-price`** returns the planner's price calculation (`fetchPrice`).
 - **`get-order-data`** returns the order data of the current plan without placing an order, or
   `null`.
-- **`get-plan-images`** renders a perspective and a top view, with the doors and drawers as they are
-  in the planner (`keepOpenGeometry`, D88). It waits for a plan change or an opening that runs
+- **`get-plan-images`** renders the groups alone, seen from their front without the room (the
+  planner's object perspective), and the top view of the whole plan, with the doors and drawers as
+  they are in the planner (`keepOpenGeometry`, D88). A text before the images names them; without
+  groups the top view comes alone (D97). It waits for a plan change or an opening that runs
   (`oneAtATime`, D4), so the images show its result. The top view matches the wall side labels. Without
   images, the result is `{ "error": "No images available" }`.
 

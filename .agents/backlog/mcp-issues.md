@@ -35,7 +35,6 @@ never drop the agent's content silently.
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
 | 92 | [The answer names a supply without its position](#92-the-answer-names-a-supply-without-its-position) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
-| 95 | [The tool copy of the embedding-lib lacks the fitting-offset descriptions](#95-the-tool-copy-of-the-embedding-lib-lacks-the-fitting-offset-descriptions) | defect | roomle-ui embedding-lib `hi-mcp/hi-mcp-server.ts:199`, `:210` (the copy of D94) | medium | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -372,30 +371,3 @@ the answer names where the user's reference is. Verify model acceptance.
 **Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 54 (`sink-cabinet-at-water-connection`,
 local roomle-ui :5173): one `create-or-replace-groups`, the sink cabinet spanning x 2990..3590 over
 the connection at x 3280; the answer names the connection without its position.
-
-## 95. The tool copy of the embedding-lib lacks the fitting-offset descriptions
-
-**Problem.** The example page and the ligna-store run the tool copy of the roomle-ui embedding-lib
-(D94, dev build `0.0.0-dev-a4754cb`). Its `insertPosition` description (roomle-ui
-`packages/embedding-lib/src/homag-intelligence/hi-mcp/hi-mcp-server.ts:199`) does not say that the
-point is in the frame of a discovered fitting `position` and that a move adds the offset to it, and
-its `get-interior-design-options` description (`:210`) says "parent-local calculated positions"
-instead of "parent-local positions where each fitting starts" — the server's text at
-`hi-mcp/hi-mcp-server/hi-mcp-server.ts:205` and `:216` (D89).
-
-**Cause.** The two descriptions of the server are newer than the copy; the copy and its fixture do
-not carry them (the two-copies rule of D94).
-
-**To do.** roomle-ui embedding-lib: take both descriptions into the copy's `hi-mcp-server.ts`, port
-`it('tells the agent that a fitting moves by an offset added to its discovered position')` of
-`hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts`, export the fixture again
-(`npm run export:fixture -- <roomle-ui>/tests/unit/embedding-lib/homag-intelligence/hi-mcp/fixtures/hi-mcp-fixture.json`
-in `hi-mcp/`), publish an embedding-lib dev build and raise its version in
-`minimal-hi-example/index.html` and the ligna-store `package.json`.
-
-**Test.** roomle-ui `hi-mcp-fixture.spec.ts`
-(`it('serves the tools of the server with their names, descriptions and input schemas')`) against
-the fixture exported from roomle-hi-example `master`; the ported offset test.
-
-**Reproduce.** `git show origin/feat/hi-mcp-tools-in-embedding-lib-RML-18196:packages/embedding-lib/src/homag-intelligence/hi-mcp/hi-mcp-server.ts | grep -n "relative to parentModuleId"`
-in roomle-ui: the description ends without the offset sentence.

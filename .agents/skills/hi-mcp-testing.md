@@ -199,7 +199,7 @@ Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json`
 | File | Look at |
 |---|---|
 | `top-image.png`, `perspective-image.png` | where the group stands, what it consists of — with the doors and drawers as the agent left them |
-| `turn-<n>-plan-images-<k>-perspective.png`, `-top.png` | what the agent saw: the images of its k-th `get-plan-images` call in turn n (listed in the turn's `planImages` in `run.json`) — an opened cabinet, or the first turn of a conversation that later closes it again |
+| `turn-<n>-plan-images-<k>-perspective-object.png`, `-top.png` | what the agent saw: the group view and the top view of its k-th `get-plan-images` call in turn n (listed in the turn's `planImages` in `run.json`) — an opened cabinet, or the first turn of a conversation that later closes it again; an embedding-lib whose tools return the plan perspective gives `-perspective.png` instead of the group view |
 | `perspective-object-image.png` | the group alone — its fronts, appliances and materials, without the room |
 | `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
 | `run.json` | `plan`; per turn the answer, the tools, `planImages` and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId`; `snapshotCaptured`; `navigations` (timestamp, phase, main frame, URL, `fragmentOnly`) |

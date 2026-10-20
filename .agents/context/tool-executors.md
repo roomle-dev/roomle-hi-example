@@ -39,7 +39,7 @@ the tool set and calls no planner method. Parameters and result formats are in t
 | `redo` | Reapply the tool call reverted by undo | Yes | [Tool-call history](#undo-redo) |
 | `get-price` | Calculate the plan's price | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
 | `get-order-data` | Read order data from a plan snapshot | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
-| `get-plan-images` | Render perspective and top-view images of the plan | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
+| `get-plan-images` | Render the groups alone from their front and the top view of the plan | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
 | `open-or-close-group` | Open or close every door and drawer of a group | No — the view only | [Doors and drawers](#doors-and-drawers) |
 | `open-or-close-article` | Open or close the doors and drawers of one root module | No — the view only | [Doors and drawers](#doors-and-drawers) |
 
@@ -376,7 +376,8 @@ and [§8.8](../../docs/hi-mcp-behaviour.md#88-undo-and-redo).
 ## get-price, get-order-data, get-plan-images
 
 Thin forwards: `fetchPrice()`; `getExternalObjectSnapshot({ orderData: true })` returning `orderData`;
-`getExternalObjectSnapshot({ perspectiveImage, topImage, keepOpenGeometry })` returning both images,
+`getExternalObjectSnapshot({ perspectiveObjectImage, topImage, keepOpenGeometry })` returning the group
+view and the top view (no group view without groups in the plan),
 with the doors and drawers as they are in the planner — without `keepOpenGeometry` the planner
 closes them for the snapshot. `get-plan-images` waits in `oneAtATime`, so an opening or a plan
 change the agent sent at the same time is in the images.

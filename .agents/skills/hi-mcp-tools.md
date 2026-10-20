@@ -50,7 +50,7 @@ are, without the session preamble of `get-skill`.
 |---|---|
 | `get-price` | Calculate pricing |
 | `get-order-data` | Get order information |
-| `get-plan-images` | Render plan images, with the doors and drawers as they are |
+| `get-plan-images` | Render the groups alone from their front and the top view of the plan, with the doors and drawers as they are |
 
 ### View Tools
 | Tool | Purpose |
@@ -431,8 +431,12 @@ value carries its code — `Cloudy blue (#506080)` —, the colour of that value
 **Timeout**: 30 seconds for `get-price`; 2 minutes for `get-order-data` and `get-plan-images`
 (snapshots)
 
-`get-plan-images` asks the snapshot for `keepOpenGeometry`: the images show the doors and drawers
-as they are in the planner.
+`get-plan-images` returns one text content that names the images, then the group view — the
+groups alone, seen from their front without the room (`perspectiveObjectImage`) — and the top view
+of the whole plan; without groups the text says so and the top view comes alone. It asks the
+snapshot for `keepOpenGeometry`: the images show the doors and drawers as they are in the planner.
+One camera serves all groups: where fronts face opposite directions one side is seen from behind,
+and a root module not seen is not missing — `get-plan-context` lists them.
 
 ### open-or-close-group, open-or-close-article
 

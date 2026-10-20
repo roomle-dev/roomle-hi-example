@@ -2,6 +2,7 @@
 // answers to getExternalObjectSnapshot within a turn, as files named by their
 // turn and their order in it, so the evaluation sees what the agent saw.
 const VIEWS = [
+  ['perspectiveObjectImage', 'perspective-object'],
   ['perspectiveImage', 'perspective'],
   ['topImage', 'top'],
 ];

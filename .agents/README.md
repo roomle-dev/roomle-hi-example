@@ -128,14 +128,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
-| [The sink unit descriptions do not say that a sink unit needs an article on its right](bug-analysis/sink-unit-description-missing-right-neighbour.md) | Open — library change proposed | 2026-10-10 |
-| [A corner group stands in front of the adjoining wall's window](bug-analysis/corner-group-in-front-of-adjoining-wall-window.md) | Fixed | 2026-10-16 |
-| [The wall units hang at two heights after a plinth height in the group attributes](bug-analysis/wall-units-hang-at-two-heights-after-plinth-change.md) | Open — implemented and locally verified on branch; pending landing | 2026-10-18 |
-| [A wall-level article of another category is taken for a floor unit](bug-analysis/wall-level-article-of-another-category-taken-for-floor-unit.md) | Fixed — locally verified on branches; pending landing | 2026-10-18 |
-| [The backsplash of an image kitchen is reported as not buildable](bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md) | Fixed — closed as resolved by the user; roomle-ui change pending landing | 2026-10-18 |
-| [An edit that gives a row a new end leaves a door hinged to the outside](bug-analysis/edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md) | Open — implemented and unit verified; live model acceptance awaiting approval | 2026-10-18 |
 | [An island's back row of other widths lands off the front row](bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — reproduced; served-text fix first, endpoint-mode alignment as fallback | 2026-10-18 |
-| [A swap of a widened unit is refused for want of a docking vector](bug-analysis/swap-of-widened-unit-refused-for-want-of-docking-vector.md) | Open — feedback and recovery implemented on a branch based on `release/bo-test`; live acceptance and library descriptions pending | 2026-10-19 |
 
 ### Feature Analyses
 

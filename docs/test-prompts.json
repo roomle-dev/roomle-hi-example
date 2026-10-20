@@ -459,6 +459,37 @@
       "expect": "one get-plan-images call; the answer shows the perspective and the top view of the plan"
     },
     {
+      "id": "open-cabinet-look-inside",
+      "title": "Open one cabinet to look inside",
+      "plan": "three-tall-units",
+      "prompt": "open the middle cabinet and show me what is inside",
+      "expect": "one open-or-close-article call on the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa with open true, then get-plan-images: the perspective image shows the middle cabinet with its door open and its shelves inside, the first and the last cabinet closed; the plan is unchanged - no plan-changing tool call, undo has nothing to revert"
+    },
+    {
+      "id": "open-whole-kitchen",
+      "title": "Open every door of the kitchen",
+      "plan": "three-tall-units",
+      "prompt": [
+        "open all doors of the kitchen and show it to me",
+        "close them again"
+      ],
+      "expect": "turn 1: one open-or-close-group call on group 064a7d91-b583-4883-b71b-95c324d3d824 with open true, then get-plan-images: all three doors are open in the images; turn 2: one open-or-close-group call on the same group with open false, all doors closed; no plan-changing tool call in either turn"
+    },
+    {
+      "id": "edit-add-subarticle-look-inside",
+      "title": "Add a shelf and look at it",
+      "plan": "three-tall-units",
+      "prompt": "add one more shelf inside the middle cabinet and show me the inside of the cabinet",
+      "expect": "get-interior-design-options on group 064a7d91-b583-4883-b71b-95c324d3d824 for the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa; one add-interior-fitting of a compatible shelf article into the middle unit; open-or-close-article on the middle unit with open true before get-plan-images; the perspective image shows the open middle cabinet with the added shelf; the three cabinets keep their place, finishes and docking"
+    },
+    {
+      "id": "open-cabinet-without-doors",
+      "title": "Open a wardrobe that has no doors",
+      "plan": "three-open-wardrobes-with-shelves",
+      "prompt": "open the doors of the left wardrobe",
+      "expect": "one open-or-close-article call on the left wardrobe ab0737ab-a681-48ed-995b-46ee788a2329 (or open-or-close-group on group ce854b3e-90d6-4e65-ba7b-461e125cc8da); the result's corrections name it as having no doors or drawers that open, and the answer tells the user that the open wardrobe has no doors; no plan-changing tool call"
+    },
+    {
       "id": "image-only-tall-units",
       "title": "Image only, no text: tall units",
       "plan": "default-room",

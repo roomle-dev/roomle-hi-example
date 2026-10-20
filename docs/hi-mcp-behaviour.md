@@ -347,6 +347,12 @@ Decided with the analysis of [RML-18140](https://roomle.atlassian.net/browse/RML
 |---|---|---|---|
 | D87 | **A kitchen without a named place is planned with its sink near a water connection.** The kitchen skills state the rule: when the user does not name a place for the kitchen, plan it so that the sink stands near a water connection of the plan, if the room has one; the installation elements of the plan context list the water connections with their positions (D86). The rule lives in the kitchen skills, not the general served text, which stays neutral between the kinds of rooms (§2.4) | user, 2026-10-19 | in effect — the kitchen skills `kitchen-planning/SKILL.md` and `kitchen-planning-fr/SKILL.md`; guarded by `it('tells the agent to plan a kitchen without a named place with its sink near a water connection')` in `hi-mcp/hi-mcp-server/tests/skills.test.ts` |
 
+### Doors and drawers (2026-10-20)
+
+| # | Decision | Source | State |
+|---|---|---|---|
+| D88 | **The agent opens doors and drawers to look inside, and the images show them as they are.** `open-or-close-group` (`groupId`, `open`) and `open-or-close-article` (`rootModuleId`, `open`) are tool commands of roomle-ui, sent through `externalObjectGroupOperation` (D71): group operations of `hi-tools.ts` that call the planner's `openOrCloseGeometryOfExternalObject`. They switch at once, without animation, so an image right after shows the final state. A root module opens without the root modules docked to it. They change the view, not the plan: `changed: false` and `historySteps` 0, so the planner makes no undo step and the server records nothing for `undo` (D38, D47). A target without doors or drawers is named in `corrections`. `get-plan-images` requests the snapshot with `keepOpenGeometry`, so its images show the doors and drawers as they are; without that property the planner's snapshot closes them, as for an order. Rejected: the planner method as a seventh method of the page allow-lists (D71); the flying-menu path `setAnimationValueOfPlanObject`, which acts on the user's selection and runs in a plan interaction; one tool with an optional root module; a toggle — the agent does not see the current state | user, 2026-10-20 | in effect — `open-or-close-group` and `open-or-close-article` in `hi-mcp-server.ts` and `tool-executors.ts`, `get-plan-images` in `tool-executors.ts`; roomle-ui `hi-tools.ts`, `roomle-planner.ts`; guarded by `it('keeps the undo record of the last plan change when a cabinet is opened after it')` in `hi-mcp/hi-mcp-server/tests/tool-executors.test.ts` and `it('tells the agent to open a cabinet before it looks inside with get-plan-images')` in `hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts` |
+
 ## 4. How a tool call runs
 
 - **MCP endpoint**: `POST /mcp` — Streamable HTTP, JSON response mode, stateless (a new transport per
@@ -468,7 +474,8 @@ typical workflow followed by the full authoring rules:
    group are added to it.
 3. The command tools to edit an existing group; `place-group` to move one; `undo` reverts the last
    tool call that changed the plan, `redo` brings it back.
-4. `get-price` / `get-order-data` to check, `get-plan-images` to inspect.
+4. `get-price` / `get-order-data` to check, `get-plan-images` to inspect; to look inside a cabinet,
+   `open-or-close-article` (a whole group: `open-or-close-group`) right before `get-plan-images` (D88).
 
 Not every client passes these instructions to the model; the HI chat does not (§4).
 
@@ -664,6 +671,7 @@ directory of `hi-mcp/hi-mcp-server/skills/` in the Agent Skills format: `SKILL.m
 | `change-module-attribute`, `change-group-attribute` | yes | `{ command, groupIds, changedModuleIds?, corrections? }` (D62) |
 | `delete-group`, `delete-article-in-place`, `delete-article-and-compact`, `merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`, `swap-root-modules`, `merge-groups` | yes | `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed?, corrections?, hint? }` |
 | `undo`, `redo` | yes | `{ undone \| redone, groups, removedGroupIds?, otherGroupIds?, hint? }` |
+| `open-or-close-group`, `open-or-close-article` | no — the view only (D88) | `{ command, groups: [], removedGroupIds: [], changed: false, corrections? }` |
 | `get-price` | no | the planner's price result |
 | `get-order-data` | no | the order data, or `null` |
 | `get-plan-images` | no | two images |
@@ -903,13 +911,25 @@ start over when a page is accepted. Not covered: the planner's configurator mode
 acts on the configurator's history — the tool then sees no history event and answers that the
 history no longer holds the call, though a configurator step may have been undone.
 
+### open-or-close-group, open-or-close-article
+
+- **`open-or-close-group`** opens (`open: true`) or closes every door and drawer of a group,
+  **`open-or-close-article`** those of one root module, without the root modules docked to it.
+- They switch at once and change the view only: not saved, no undo step, no change of the price or
+  the order (D88). A group or root module without doors or drawers is named in `corrections`; an
+  unknown id rejects (P11).
+- The served text tells the agent to open a cabinet right before `get-plan-images` when it wants
+  to look inside — in rule 4 of the instructions (§5.1) and in the descriptions of
+  `get-plan-images` and `get-interior-design-options`.
+
 ### get-price, get-order-data, get-plan-images
 
 - **`get-price`** returns the planner's price calculation (`fetchPrice`).
 - **`get-order-data`** returns the order data of the current plan without placing an order, or
   `null`.
-- **`get-plan-images`** renders a perspective and a top view. The top view matches the wall side
-  labels. Without images, the result is `{ "error": "No images available" }`.
+- **`get-plan-images`** renders a perspective and a top view, with the doors and drawers as they are
+  in the planner (`keepOpenGeometry`, D88). The top view matches the wall side labels. Without
+  images, the result is `{ "error": "No images available" }`.
 
 Mounting settings and article selection come from the existing library descriptions and attributes; categories organize the catalog. The authoring rules and the descriptions of `get-plan-context` and `create-or-replace-groups` explain `above`, explicit clearance and continuing an upper row with finishing parts (D85). Short descriptions retain FUNCTION and AI_SELECTION_HINT; full requirements remain available through `articleDescriptions`. Unknown categories keep explicit upper relations and gaps, including stacking requests.
 
@@ -1149,6 +1169,7 @@ result.
 | P14 | "Root modules '…' and '…' are not docked side by side - the side neighbours of '…': …" — reached only when the plan context and the planner disagree, since the server corrects non-neighbours (C19) |
 | P15 | "A corner article and a straight unit cannot change places: '…' is a corner article." — no result keeps the corner |
 | P16 | "Article '…' has n root modules - an article of exactly one root module is inserted." |
+| P17 | correction, not an error: "Group '…' has no doors or drawers that open." / "Root module '…' has no doors or drawers that open." — `open-or-close-group`, `open-or-close-article`; nothing is switched |
 | — | "The planner did not delete …" (a refused deletion) |
 
 ### 8.6 Schema checks

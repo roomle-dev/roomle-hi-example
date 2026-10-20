@@ -40,6 +40,8 @@ the server and needs no connected planner page. Parameters and result formats ar
 | `get-price` | Calculate the plan's price | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
 | `get-order-data` | Read order data from a plan snapshot | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
 | `get-plan-images` | Render perspective and top-view images of the plan | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
+| `open-or-close-group` | Open or close every door and drawer of a group | No — the view only | [Doors and drawers](#doors-and-drawers) |
+| `open-or-close-article` | Open or close the doors and drawers of one root module | No — the view only | [Doors and drawers](#doors-and-drawers) |
 
 ## The files
 
@@ -327,7 +329,17 @@ The tool command's part:
 ## get-price, get-order-data, get-plan-images
 
 Thin forwards: `fetchPrice()`; `getExternalObjectSnapshot({ orderData: true })` returning `orderData`;
-`getExternalObjectSnapshot({ perspectiveImage, topImage })` returning both images.
+`getExternalObjectSnapshot({ perspectiveImage, topImage, keepOpenGeometry })` returning both images,
+with the doors and drawers as they are in the planner — without `keepOpenGeometry` the planner
+closes them for the snapshot.
+
+## Doors and drawers
+
+`open-or-close-group` and `open-or-close-article` are `inPlanner` forwards like the command
+tools: roomle-ui runs them as tool commands (`hi-tools.ts`) and answers with `changed: false`
+and `historySteps` 0, because opening a door changes the view, not the plan. `recorded` therefore
+keeps no record, and the next `undo` still reverts the last plan change. They are not in
+`PLAN_CHANGING_TOOLS` (`hi-mcp-server.ts`), so the log keeps no argument line for them.
 
 ## The plan context the agent sees
 

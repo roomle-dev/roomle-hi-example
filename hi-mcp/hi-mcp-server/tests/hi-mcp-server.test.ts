@@ -42,6 +42,8 @@ const EXPECTED_TOOLS = [
   'insert-article-into-group',
   'merge-article-into-group',
   'merge-groups',
+  'open-or-close-article',
+  'open-or-close-group',
   'place-group',
   'redo',
   'swap-root-modules',
@@ -161,6 +163,9 @@ describe('hi-mcp-server tool calls', () => {
     ['insert-article-into-group', { groupId: 'g1', articleId: 'a1' }],
     ['swap-root-modules', { groupId: 'g1', rootModuleIds: ['r1'] }],
     ['delete-article-and-compact', { groupId: 'g1' }],
+    ['open-or-close-group', { groupId: 'g1' }],
+    ['open-or-close-article', { open: true }],
+    ['open-or-close-article', { rootModuleId: 'r1', open: 'yes' }],
   ])(
     'rejects %s without a required argument before any planner call',
     async (name, args) => {
@@ -623,6 +628,29 @@ describe('hi-mcp-server tool calls', () => {
     expect(descriptionOf('get-plan-images')).not.toContain(
       'evaluate the images only'
     );
+  });
+
+  it('tells the agent to open a cabinet before it looks inside with get-plan-images', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    const descriptionOf = (name: string) =>
+      tools.find((tool) => tool.name === name)?.description;
+
+    expect(client.getInstructions()).toContain(
+      'to look inside a cabinet, open it with open-or-close-article (a whole group with open-or-close-group) right before get-plan-images'
+    );
+    expect(descriptionOf('get-plan-images')).toContain(
+      'Doors and drawers are shown as they are'
+    );
+    expect(descriptionOf('get-interior-design-options')).toContain(
+      'open the cabinet with open-or-close-article first'
+    );
+    for (const tool of ['open-or-close-group', 'open-or-close-article']) {
+      expect(descriptionOf(tool)).toContain(
+        'It is a view of the planner: it changes nothing in the plan'
+      );
+      expect(descriptionOf(tool)).toContain('named in corrections');
+    }
   });
 
   it('limits the desc-over-image rule to the catalog images', async () => {

@@ -86,7 +86,7 @@ Typical workflow:
 1. get-plan-context: fetch the rooms (each with a derived walls array), the article catalog (desc, category, dimensions, docking vector names, sub-modules per article), the groups currently in the plan and the obstacles (doors, windows, other furniture and the root modules of the groups, where they stand); its attributes section is the attribute vocabulary - every attribute with its values, for the group attributes and the overrides; find-attributes answers a question about one attribute.
 2. For a room of a kind get-skill lists, or for an image the user sends, fetch that skill first and follow it. create-or-replace-groups: author the whole piece of furniture as ONE group - article picks, each article after the first naming its neighbour with one relation (rightOf, leftOf, onTop, above or behind), a material for the whole group in the group's attributes, plus one placement for the new group ({ wall, alignment?, offsetMm? } at a wall or in a room corner - the server computes the point -, { posGroup, posRotationY } anywhere else; a plan into a room corner starts with a corner article, cornerArticle true in the catalog). One call creates, relates and positions the group; never author root positions and never split one piece of furniture into several groups. A group whose id matches an existing group in the plan completely replaces that group and keeps its position; all other groups are created. Articles next to an existing group are added to that group, docked to a free docking vector of the root module they continue - never a new group against an existing one. The payload format, the relations, the corner rules and complete examples are returned by get-authoring-rules.
 3. Edit an existing group with the command tools: merge-article-into-group (dock one more article at the end of a row), insert-article-into-group (an article between two root modules), delete-article-and-compact (delete an article and close the gap), delete-article-in-place (delete an article, the gap stays) and delete-group, exchange-root-module (replace a root module), swap-root-modules (two root modules change places), change-module-attribute and change-group-attribute (attributes, e.g. the front colour of the whole group), merge-groups (join groups that stand next to each other); place-group moves a group to another wall or into a room corner. Resubmit a whole group with create-or-replace-groups only to rebuild it. undo reverts the last tool call that changed the plan, redo brings it back.
-4. Check the result with get-price or get-order-data, and inspect it with get-plan-images.
+4. Check the result with get-price or get-order-data, and inspect it with get-plan-images; to look inside a cabinet, open it with open-or-close-article (a whole group with open-or-close-group) right before get-plan-images.
 
 ${AUTHORING_RULES}`;
 
@@ -213,7 +213,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'get-interior-design-options',
     {
       description:
-        'Inspect Interior Design / interior fittings / sub-articles of one loaded HI group without selecting it. Returns unique installed instance IDs, parent-local calculated positions, compatible additions with destination tuples and fittings[].replacementArticles for each occupied parent. Choose replacements from that installed fitting, even when no additions fit. articleId filters addition/replacement candidates. Discover before editing; clarify ambiguous instances or unspecified interior changes. Empty options differ from unsupported or failed discovery.',
+        'Inspect Interior Design / interior fittings / sub-articles of one loaded HI group without selecting it. Returns unique installed instance IDs, parent-local calculated positions, compatible additions with destination tuples and fittings[].replacementArticles for each occupied parent. Choose replacements from that installed fitting, even when no additions fit. articleId filters addition/replacement candidates. Discover before editing; clarify ambiguous instances or unspecified interior changes. Empty options differ from unsupported or failed discovery. To see the fittings in get-plan-images, open the cabinet with open-or-close-article first.',
       inputSchema: {
         groupId: fittingId,
         rootId: fittingId.optional(),
@@ -277,6 +277,44 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       },
     },
     async (args) => textResult(await runTool('replace-interior-fitting', args))
+  );
+  const VIEW_ONLY =
+    'It is a view of the planner: it changes nothing in the plan, is not saved, is not part of undo and changes ' +
+    'neither the price nor the order.';
+  server.registerTool(
+    'open-or-close-group',
+    {
+      description:
+        'Opens (open true) or closes (open false) every door and drawer of a group at once, so get-plan-images ' +
+        'shows the group as it is - open it to look inside its cabinets. ' +
+        VIEW_ONLY +
+        ' A group without doors or drawers is named in corrections.',
+      inputSchema: {
+        groupId: z
+          .string()
+          .describe('The id of the group, as get-plan-context shows it.'),
+        open: z.boolean().describe('true opens, false closes.'),
+      },
+    },
+    async (args) => textResult(await runTool('open-or-close-group', args))
+  );
+  server.registerTool(
+    'open-or-close-article',
+    {
+      description:
+        'Opens (open true) or closes (open false) the doors and drawers of one root module at once, none of the ' +
+        'root modules next to it, so get-plan-images shows the cabinet as it is - open it to look inside, at its ' +
+        'interior fittings for example. ' +
+        VIEW_ONLY +
+        ' A root module without doors or drawers is named in corrections.',
+      inputSchema: {
+        rootModuleId: z
+          .string()
+          .describe('The id of the root module, as get-plan-context shows it.'),
+        open: z.boolean().describe('true opens, false closes.'),
+      },
+    },
+    async (args) => textResult(await runTool('open-or-close-article', args))
   );
 
   server.registerTool(
@@ -938,7 +976,9 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
       description:
         'Renders the current plan and returns a perspective image and a top-view image, so the plan can be ' +
         'inspected visually. The top-view orientation matches the wall side labels of get-plan-context: a wall ' +
-        "with side 'right' is at the right edge of the top image, 'top' at the upper edge.",
+        "with side 'right' is at the right edge of the top image, 'top' at the upper edge. Doors and drawers are " +
+        'shown as they are: to look inside a cabinet, open it with open-or-close-article (a whole group with ' +
+        'open-or-close-group) right before this tool.',
       inputSchema: {},
     },
     async () => {

@@ -521,7 +521,8 @@ The servers: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp`, 
    - `undo`, `redo` — Revert the last tool call that changed the plan, or bring it back
    - `get-price` — Calculate pricing
    - `get-order-data` — Get order information
-   - `get-plan-images` — Render plan images
+   - `get-plan-images` — Render plan images, with the doors and drawers as they are
+   - `open-or-close-group`, `open-or-close-article` — Open or close the doors and drawers of a group or of one root module, to look inside (the view only, no plan change)
 
 ### Adding New Tools
 

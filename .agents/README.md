@@ -125,7 +125,6 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
-| [An island's back row of other widths lands off the front row](bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — reproduced; `behind` takes an explicit endpoint mode from the turned unit's row (roomle-ui `feat/hi-mcp-improvements`) | 2026-10-20 |
 
 ### Feature Analyses
 

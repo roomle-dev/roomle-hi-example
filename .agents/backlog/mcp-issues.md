@@ -23,7 +23,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 74 | [An island's back row of other widths lands off the front row](#74-an-islands-back-row-of-other-widths-lands-off-the-front-row) | bug | roomle-ui `relationsToDocking` on `feat/hi-mcp-improvements` (`hi-group-layout.ts:872-887`, `:946-962`): `behind` takes an explicit endpoint mode from the turned unit's own row, mirrored when the unit owns the entry. [Analysis and verification](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md) | low | gpt-6.1-sol | |
 | 81 | [The corner-removal correction reports wall units as turned that stay on the back wall](#81-the-corner-removal-correction-reports-wall-units-as-turned-that-stay-on-the-back-wall) | bug | roomle-ui `hi-tool-commands.ts` (the corner-article correction), `hi-root-module-arrangement.ts` (`moveUnitsAboveWithTheirCarriers`) | medium | gpt-6-astra | |
 | 82 | [The model asks instead of building the group the user asked for on a wall of floor-to-ceiling windows](#82-the-model-asks-instead-of-building-the-group-the-user-asked-for-on-a-wall-of-floor-to-ceiling-windows) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 83 | [Where no free stretch of the wall fits the group, it is placed over existing furniture and reported](#83-where-no-free-stretch-of-the-wall-fits-the-group-it-is-placed-over-existing-furniture-and-reported) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
@@ -39,37 +38,6 @@ never drop the agent's content silently.
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 74. An island's back row of other widths lands off the front row
-
-**Problem.** An island with a front row of 900, 600 and 900 mm units and a back row of four
-600 mm units has a 300 mm step at both ends. The first rear unit is `behind` the last front unit,
-and its row continues `rightOf`.
-
-**Cause.** `pairOf` (`hi-group-layout.ts:885-887`) emits the back-vector pair without a mode. An
-absent mode on back vectors puts the entry owner's start on the partner's end, and the owner is the
-root the breadth-first walk from the first root reaches first (C16, `:946-962`). The turned unit
-therefore aligns at the left end of the root listed first: with the front row first, the rear row
-`rightOf` it runs past the island by the first pair's width difference (front 0..2400, back
-−300..2100). The same relations end flush with the rear row first; the `leftOf` composition steps
-with the rear row first. See [the analysis](../bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md).
-
-**To do.** In roomle-ui on `feat/hi-mcp-improvements`, `behind` aligns the turned unit with the end
-of its neighbour where its own row starts: `EndStart` on the target's entry when the row continues
-to the right only, else `StartEnd`; the entry writer mirrors the mode when it writes the entry on
-the unit. The served text stays. Update C16 and a correction row in `docs/hi-mcp-behaviour.md`, the
-vector-pair table of `.agents/context/layout-and-placement.md` and the authoring references; the
-example page and the ligna-store get it with a new embedding-lib pin.
-
-**Test.** `hi-group-layout-test.ts`: the mode per row direction and entry owner (replaces
-`it('docks behind by the back vectors, without a mode')`); geometry: both compositions in both root
-orders end flush, a wider turned unit, rows of different total lengths keep their step at the far
-end. `image-planning-right-wall`: the island's equal-length rows end flush.
-
-**Reproduce.** `.temp/verify-mcp-74/tmp-island-74-test.ts` through `relationsToDocking` and
-`HiRootModuleArrangementOperator`: front 900/600/900, `rear1` (600) `behind` the last front unit,
-`rear2` to `rear4` (600) `rightOf` — back −300..2100 against front 0..2400; first seen in
-`mcp-test-2026-10-16_19-30-19`, gpt-6.1-sol 48 (`image-planning-right-wall`).
 
 ## 81. The corner-removal correction reports wall units as turned that stay on the back wall
 

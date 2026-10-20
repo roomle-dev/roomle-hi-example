@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [corner-removal-reports-separate-wall-units-as-turned.md](corner-removal-reports-separate-wall-units-as-turned.md) | Open | [MCP backlog 81](../backlog/mcp-issues.md#81-the-corner-removal-correction-reports-wall-units-as-turned-that-stay-on-the-back-wall) — wall units in separate groups do not turn with the leg of a removed corner unit, and the correction claims they did |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

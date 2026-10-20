@@ -339,7 +339,9 @@ transform when either whole docking footprint cannot be measured.
   other, the end of the row at a wall stays, a unit hung on it hangs on the neighbour that moves into
   the gap; a unit at a row end is deleted and nothing else moves; a corner article between two legs
   is deleted and the gap closed by turning one leg by 90° with the units above it, and the
-  `corrections` name the roots of the leg that turned, and `hint` names its original and destination wall when known (D52); the only unit is deleted with its group
+  `corrections` name the roots of the leg that turned, and `hint` names its original and destination wall when known (D52); a group
+  of wall units of its own moves with the units below its units and is returned beside the edited
+  group, or keeps its place, named in `corrections`, when they moved differently (D42); the only unit is deleted with its group
   (`gapClosed: false`). `delete-article-and-compact` never splits a group
 - `exchange-root-module`: the article has one root module; the new unit keeps the position and
   the docking of the replaced one; `attributes` override attributes of the new unit (`mod_Width` for

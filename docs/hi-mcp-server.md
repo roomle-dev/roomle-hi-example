@@ -22,7 +22,7 @@ For the shortest path to a first chat turn in the example, see the
 A standalone, copy-paste version of the embedding-lib HI presets demo. It
 contains the complete interface and browser JavaScript in one
 [`index.html`](../minimal-hi-example/index.html), requires no build step, and loads only
-`@roomle/embedding-lib` and its `hi.js` from unpkg — the dev version `0.0.0-dev-345824f` until a
+`@roomle/embedding-lib` and its `hi.js` from unpkg — the dev version `0.0.0-dev-60bc7cd` until a
 release has the planning assistant ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
 
 The preset dropdown is filled from `GET <HI_SERVER_BASE_URL>/backends/list`,
@@ -615,7 +615,7 @@ group one point and one rotation; the planner calculates every root position.
   | `rightOf` / `leftOf` | right / left of that unit, as seen from the front | `RightBottom → LeftBottom` / `LeftBottom → RightBottom`; a wall unit beside a tall unit `RightTop → LeftTop` / `LeftTop → RightTop` — the tops are flush |
   | `onTop` | stands on top of that unit (stacking on a tall unit or a wall unit, several levels); `align` `left` (default), `right`, `back`; `gapMm` lifts it. On a kitchen base unit nothing stands: a wall unit hangs `above` it, a floor unit continues the row (both reported) | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
   | `above` | a wall unit hanging above that floor unit; `gapMm` sets the gap | `LeftTop → LeftBottom` with the gap that puts the wall unit's top at the top of the tall units (D35) |
-  | `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom` |
+  | `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom`, flush with that unit at the end where the turned unit's own row starts (D98) |
 
   Wall units continue `rightOf` or `leftOf` each other, and so does the range
   hood. A corner kitchen starts with a corner article (`cornerArticle: true`)

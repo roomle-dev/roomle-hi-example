@@ -125,7 +125,6 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
-| [An island's back row of other widths lands off the front row](bug-analysis/islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — reproduced; served-text fix first, endpoint-mode alignment as fallback | 2026-10-18 |
 
 ### Feature Analyses
 

@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [An island's back row of other widths lands off the front row](islands-back-row-of-other-widths-lands-off-the-front-row.md) | Open — reproduced; served-text fix first, endpoint-mode alignment as fallback | backlog #74 |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

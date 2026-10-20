@@ -89,7 +89,7 @@ relation; the server compiles the docking (`contextData`) from it
 | `rightOf` / `leftOf` | right / left of that unit, as seen from the front | `RightBottom → LeftBottom` / `LeftBottom → RightBottom`; a wall unit beside a tall unit: `RightTop → LeftTop` / `LeftTop → RightTop`, tops flush |
 | `onTop` | stands on that unit — a tall unit or a wall unit, any depth; `align` `left` (default), `right`, `back`; `gapMm` lifts it. On a kitchen base unit a wall unit hangs `above` it and a floor unit continues the row, reported | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
 | `above` | a wall unit hanging above that floor unit; `gapMm` sets the gap | `LeftTop → LeftBottom` with the gap that puts its top at the top of the tall units (D35: tall − wall − base `mod_Height`, Furniture_Smith 660) |
-| `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom` |
+| `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom`, flush with that unit at the end where the turned unit's own row starts (D98) |
 
 - Wall units and the range hood continue `rightOf` / `leftOf` each other; a hood without wall units
   hangs `above` the hob unit. A hood beside a tall unit is hung `above` the floor unit on that side,
@@ -124,7 +124,7 @@ The relations compile to these docking vectors. Groups from `get-plan-context` s
 | Left | LeftBottom | RightBottom | StartStart | 0 |
 | Above | LeftTop/RightTop/BackTop | LeftBottom/RightBottom/BackBottom | StartStart | the gap below a wall unit (660 in Furniture_Smith) |
 | Wall unit beside a tall unit | RightTop / LeftTop of the tall unit | LeftTop / RightTop | StartStart | 0 — tops flush |
-| Behind | BackBottom | BackBottom | (none) | 0 |
+| Behind | BackBottom | BackBottom | `EndStart` when the units that name the turned unit continue its row to its right only, else `StartEnd`; mirrored when the entry is on the turned unit (D98) | 0 |
 | Range hood in a gap between wall units | RightBottom of the wall unit left of the gap | LeftBottom of the hood | StartStart | 0 |
 
 ### Mode Options

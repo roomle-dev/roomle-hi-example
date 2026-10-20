@@ -222,15 +222,17 @@
     </div>
 
     <script type="module">
-      import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@7.1.0';
+      import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-a4754cb';
       import {
+        createHiMcpTools,
         libLoadArticleCatalog,
         libLoadCalcScript,
         libLoadMasterData,
         omGetRequest,
         omPostRequest,
         setupHi,
-      } from 'https://unpkg.com/@roomle/embedding-lib@7.1.0/hi.js';
+        startPlanningAssistant,
+      } from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-a4754cb/hi.js';
 
       const DEFAULT_PLAN_ID = 'ps_8jjg0zezlblb48vzn8qas9vwwn7fqbg';
       const DEFAULT_SERVER_URL = 'https://www.roomle.com/t/bo-test/';
@@ -926,30 +928,15 @@
           }
         });
 
-      // MCP bridge - active only with the mcp=true query parameter. The page
-      // connects out via WebSocket to the MCP server in
-      // hi-mcp/hi-mcp-server (started by start.mjs, or deployed: mcp_server
-      // and mcp_session as in the ligna-store), executes the planner
-      // calls the server's tools make against roomDesignerApi.extended, and
-      // sends the results back. The tool logic itself runs in the server.
+      // AI chat - active with the chat=true query parameter, which the
+      // launcher sets for `npm start <model> <api-key>`. The planner shows the
+      // AI Planning Assistant window (featureFlags.planningAssistant), and the
+      // planning assistant of the embedding-lib runs the agent in this page:
+      // the HI MCP tools, the planner's prompts and the model the launcher
+      // serves at /planning-assistant-config.json, to this machine only.
 
-      const MCP_BRIDGE_PROTOCOL = 2;
-      const mcpClientId = crypto.randomUUID();
-      let mcpPageAccepted = false;
-      let mcpConnectionMessage =
-        getQueryParam('mcp') === 'true'
-          ? 'Connecting to the planner...'
-          : 'Planner connection unavailable. Open this page with ?mcp=true.';
-      let onMcpConnectionChange = () => {};
-      const setMcpConnection = (accepted, message) => {
-        mcpPageAccepted = accepted;
-        mcpConnectionMessage = message;
-        onMcpConnectionChange();
-      };
-
-      // The planner methods the MCP server may call on this page - nothing
-      // else (no orders, no plan overwrites) is reachable from the server.
-      const MCP_PLANNER_METHODS = [
+      // The planner methods the HI MCP tools call.
+      const PLANNER_METHODS = [
         'getExternalObjectPlanContext',
         'externalObjectGroupOperation',
         'fetchPrice',
@@ -958,133 +945,76 @@
         'redo',
       ];
 
-      const resolveBridgeUrl = () => {
-        const mcpServer = getQueryParam('mcp_server')
-          ?.trim()
-          .replace(/\/+$/, '')
-          .replace(/^http/, 'ws');
-        const mcpSession = getQueryParam('mcp_session');
-        const serverUrl =
-          mcpServer || `ws://localhost:${getQueryParam('mcp_port') ?? '3100'}`;
-        const bridgeUrl = serverUrl.endsWith('/bridge')
-          ? serverUrl
-          : `${serverUrl}/bridge`;
-        return mcpSession
-          ? `${bridgeUrl}?session=${encodeURIComponent(mcpSession)}`
-          : bridgeUrl;
+      // The planner API the planning assistant runs on. For the test runner,
+      // it records the planner calls of the tools in window.hiPlannerCalls -
+      // with the answer of a snapshot, which holds the images get-plan-images
+      // shows the agent - and the output of the window in
+      // window.hiPlanningAssistantOutput.
+      window.hiPlannerCalls = [];
+      window.hiPlanningAssistantOutput = [];
+      const recordedPlannerApi = (api) => ({
+        extended: new Proxy(api.extended, {
+          get: (extended, name) => {
+            const member = extended[name];
+            if (name === 'planningAssistantOutput') {
+              return (part) => {
+                window.hiPlanningAssistantOutput.push(part);
+                return Promise.resolve(member.call(extended, part)).catch(
+                  (error) =>
+                    logMessage('chat', `output failed: ${error.message}`)
+                );
+              };
+            }
+            if (!PLANNER_METHODS.includes(name)) {
+              return member;
+            }
+            return async (...args) => {
+              const call = {
+                id: window.hiPlannerCalls.length + 1,
+                method: name,
+                args,
+              };
+              window.hiPlannerCalls.push(call);
+              logApiCall(`MCP ${name}`);
+              const startedAt = performance.now();
+              try {
+                const result = await member.apply(extended, args);
+                Object.assign(call, {
+                  ms: Math.round(performance.now() - startedAt),
+                  ok: true,
+                  ...(name === 'getExternalObjectSnapshot' && { result }),
+                });
+                return result;
+              } catch (error) {
+                Object.assign(call, {
+                  ms: Math.round(performance.now() - startedAt),
+                  ok: false,
+                  error: error instanceof Error ? error.message : String(error),
+                });
+                throw error;
+              }
+            };
+          },
+        }),
+      });
+
+      // The plan context in the agent's words, as the tool get-plan-context
+      // answers it, for the test runner.
+      window.hiAgentPlanContext = async (include) => {
+        const tools = await createHiMcpTools(roomDesignerApi);
+        const result = await tools['get-plan-context'].execute({ include });
+        const text = result.content[0].text;
+        if (result.isError) {
+          throw new Error(text);
+        }
+        return JSON.parse(text);
       };
 
-      const startMcpBrowserBridge = (api) => {
-        const bridgeUrl = resolveBridgeUrl();
-        const reply = (socket, result) => socket.send(JSON.stringify(result));
-        // The planner's history events tell the server its own planner steps
-        // from the changes the user makes in the planner.
-        let acceptedSocket;
-        const hostHistoryChange = api.extended.callbacks.onHistoryChange;
-        api.extended.callbacks.onHistoryChange = (undo, redo) => {
-          hostHistoryChange?.call(api.extended.callbacks, undo, redo);
-          acceptedSocket?.send(
-            JSON.stringify({ kind: 'event', name: 'historyChange', undo, redo })
-          );
-        };
-        const connect = () => {
-          const socket = new WebSocket(bridgeUrl);
-          let accepted = false;
-          socket.onopen = () => {
-            socket.send(
-              JSON.stringify({
-                kind: 'hello',
-                example: 'minimal-hi-example',
-                url: window.location.href,
-                protocol: MCP_BRIDGE_PROTOCOL,
-                clientId: mcpClientId,
-              })
-            );
-          };
-          socket.onmessage = async (event) => {
-            let message;
-            try {
-              message = JSON.parse(event.data);
-            } catch {
-              return;
-            }
-            if (message.kind === 'ready') {
-              accepted = true;
-              acceptedSocket = socket;
-              setMcpConnection(true, '');
-              logMessage('MCP', 'connected to the MCP server');
-              return;
-            }
-            if (message.kind !== 'call') {
-              return;
-            }
-            if (!accepted) {
-              return;
-            }
-            if (!MCP_PLANNER_METHODS.includes(message.method)) {
-              reply(socket, {
-                kind: 'result',
-                id: message.id,
-                ok: false,
-                error: `Planner method not exposed: ${message.method}`,
-              });
-              return;
-            }
-            logApiCall(`MCP ${message.method}`);
-            try {
-              const result = await api.extended[message.method](
-                ...message.args
-              );
-              reply(socket, {
-                kind: 'result',
-                id: message.id,
-                ok: true,
-                result,
-              });
-            } catch (error) {
-              console.error(
-                '[hi-mcp] planner call failed',
-                message.method,
-                error
-              );
-              reply(socket, {
-                kind: 'result',
-                id: message.id,
-                ok: false,
-                error: error instanceof Error ? error.message : String(error),
-              });
-            }
-          };
-          socket.onclose = (event) => {
-            if (acceptedSocket === socket) {
-              acceptedSocket = undefined;
-            }
-            if (event.code === 4409) {
-              setMcpConnection(
-                false,
-                'This server already has a planner connected. Close that page and reload to retry.'
-              );
-              logMessage('MCP', 'this server already has a planner connected');
-              return;
-            }
-            setMcpConnection(false, 'Planner disconnected. Reconnecting...');
-            setTimeout(connect, 3000);
-          };
-        };
-        connect();
-      };
+      // Ends the running turn of the planning assistant, for the test runner
+      // when a turn takes too long.
+      const chatAbort = new AbortController();
+      window.hiPlanningAssistantAbort = () => chatAbort.abort();
 
-      if (getQueryParam('mcp') === 'true') {
-        startMcpBrowserBridge(roomDesignerApi);
-      }
-
-      // AI chat - active with the chat=true query parameter. The planner shows
-      // the AI Planning Assistant window (featureFlags.planningAssistant) and
-      // hands every message to this page with onPlanningAssistantPrompt. The
-      // page streams the turn from the hi-mcp-chat backend (spawned by
-      // start.mjs for `npm start mistral <api-key>`), which calls the HI tools
-      // through the MCP server via the bridge above, and passes the output to
-      // the window with planningAssistantOutput.
       const startChat = async () => {
         if (
           typeof roomDesignerApi.extended.planningAssistantOutput !== 'function'
@@ -1095,163 +1025,24 @@
           );
           return;
         }
-        // The system prompt and the image prompt of the chat come from the
-        // planner, requested once and sent with every request.
-        logApiCall('getExternalObjectAgentPrompts');
-        const agentPrompts =
-          await roomDesignerApi.extended.getExternalObjectAgentPrompts();
-        const chatPort = getQueryParam('chat_port') ?? '3200';
-        const chatUrl = `http://localhost:${chatPort}/chat`;
-        const TOOL_STATUS_PREFIX = '[tool] ';
-        const conversation = [];
-
-        const output = (part) =>
-          roomDesignerApi.extended
-            .planningAssistantOutput(part)
-            .catch((error) =>
-              logMessage('chat', `output failed: ${error.message}`)
-            );
-
-        // The stream carries answer text and [tool] status lines; only the
-        // answer belongs in the window, the tool name goes to its status
-        // line. While the stream runs, a last line that is or may become a
-        // [tool] line waits for the next chunk.
-        const splitStreamText = (raw, complete) => {
-          const lines = raw.split('\n');
-          const lastLine = lines[lines.length - 1];
-          if (
-            !complete &&
-            (TOOL_STATUS_PREFIX.startsWith(lastLine) ||
-              lastLine.startsWith(TOOL_STATUS_PREFIX))
-          ) {
-            lines.pop();
-          }
-          const toolLines = lines.filter((line) =>
-            line.startsWith(TOOL_STATUS_PREFIX)
-          );
-          return {
-            answer: lines
-              .filter((line) => !line.startsWith(TOOL_STATUS_PREFIX))
-              .join('\n'),
-            lastTool: toolLines.length
-              ? toolLines[toolLines.length - 1].slice(TOOL_STATUS_PREFIX.length)
-              : '',
-          };
-        };
-
-        const send = async ({ text, images }) => {
-          if (!mcpPageAccepted) {
-            output({ type: 'error', text: mcpConnectionMessage });
-            return;
-          }
-          conversation.push(
-            images.length
-              ? { role: 'user', content: text, images }
-              : { role: 'user', content: text }
-          );
-          logApiCall('chat');
-          const startedAt = performance.now();
-          logMessage('chat', `request sent (${conversation.length} messages)`);
-          let sentAnswer = '';
-          let lastTool = '';
-          // Passes the new part of the answer and a new tool to the window.
-          const emit = (raw, complete) => {
-            const { answer, lastTool: tool } = splitStreamText(raw, complete);
-            if (
-              answer.length > sentAnswer.length &&
-              answer.startsWith(sentAnswer)
-            ) {
-              output({ type: 'text', text: answer.slice(sentAnswer.length) });
-              sentAnswer = answer;
-            }
-            if (tool && tool !== lastTool) {
-              lastTool = tool;
-              output({ type: 'activity', text: tool });
-            }
-            return answer;
-          };
-          try {
-            const response = await fetch(chatUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                messages: conversation,
-                clientId: mcpClientId,
-                prompts: agentPrompts,
-              }),
-            });
-            if (!response.ok || !response.body) {
-              const errorText = await response.text().catch(() => '');
-              logMessage(
-                'chat',
-                `failed (HTTP ${response.status}): ${errorText || 'no details'}`
-              );
-              output({
-                type: 'error',
-                text: errorText || `Chat failed (HTTP ${response.status})`,
-              });
-              return;
-            }
-            logMessage('chat', 'stream started');
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let raw = '';
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) {
-                break;
-              }
-              raw += decoder.decode(value, { stream: true });
-              emit(raw, false);
-            }
-            conversation.push({ role: 'assistant', content: emit(raw, true) });
-            logMessage(
-              'chat',
-              `finished in ${Math.round(performance.now() - startedAt)}ms`
-            );
-            output({ type: 'done' });
-          } catch (error) {
-            logMessage('chat', `failed: ${error.message}`);
-            output({ type: 'error', text: `Chat failed: ${error.message}` });
-          }
-        };
-
-        roomDesignerApi.extended.callbacks.onPlanningAssistantPrompt = (
-          prompt
-        ) => {
-          send(prompt);
-        };
-
-        // The window's input stays off until this availability, so the
-        // handler above is in place before the first message.
-        onMcpConnectionChange = () =>
-          output({
+        const response = await fetch('/planning-assistant-config.json');
+        if (!response.ok) {
+          const text = `No model for the planning assistant (HTTP ${response.status}) - start the example with npm start <model> <api-key>`;
+          logMessage('chat', text);
+          roomDesignerApi.extended.planningAssistantOutput({
             type: 'availability',
-            available: mcpPageAccepted,
-            text: mcpConnectionMessage,
+            available: false,
+            text,
           });
-        onMcpConnectionChange();
-
-        // Images only when the chat backend says the model reads them;
-        // otherwise the window takes no image drop.
-        try {
-          const response = await fetch(
-            `http://localhost:${chatPort}/capabilities`
-          );
-          const imageInput = (await response.json()).imageInput === true;
-          logMessage(
-            'chat',
-            imageInput
-              ? 'images enabled'
-              : 'images disabled - the model reads no images'
-          );
-          output({ type: 'images', enabled: imageInput });
-        } catch (error) {
-          logMessage(
-            'chat',
-            `images disabled - no capabilities: ${error.message}`
-          );
+          return;
         }
+        const config = await response.json();
+        logMessage('chat', `${config.provider} ${config.model}`);
+        await startPlanningAssistant(
+          recordedPlannerApi(roomDesignerApi),
+          config,
+          chatAbort.signal
+        );
       };
 
       if (chatEnabled) {

@@ -136,8 +136,8 @@ export class PageBridge {
     if (this._pageProtocol !== BRIDGE_PROTOCOL) {
       throw new Error(
         `The connected page (${this._pageUrl}) runs an outdated HI MCP page bridge that expects tool calls. ` +
-          `Have the user update the page bridge to protocol ${BRIDGE_PROTOCOL} (ligna-store hi-mcp/browser-bridge.ts, ` +
-          'minimal-hi-example/index.html) and reload the page.'
+          `Have the user update the page bridge to protocol ${BRIDGE_PROTOCOL} (ligna-store hi-mcp/browser-bridge.ts) ` +
+          'and reload the page.'
       );
     }
     const id = this._nextCallId++;

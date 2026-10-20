@@ -3,10 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Standalone HI presets example page started together with the hi-mcp-server MCP server",
+  "description": "Standalone HI presets example page with the AI chat of the embedding-lib",
   "scripts": {
     "start": "node start.mjs",
-    "dev": "node start.mjs --dev",
-    "start:cf": "node start.mjs --cf"
+    "dev": "node start.mjs --dev"
   }
 }

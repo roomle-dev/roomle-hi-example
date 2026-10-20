@@ -48,17 +48,17 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
 - A subset of the tests the user names: filter `.tests` by `id` the same way.
 - A run limited to named tests keeps that scope: generate no extra cases unless the user asks
   for them. Set the session's `randomTests` to 0 in that case.
-- Tests with an `image` stay only for models that read images. The chat backend decides that for
-  the model the provider name resolves to: `readsImages(resolveChatModel(<provider>))` in
-  [chat-config.ts](../../hi-mcp/hi-mcp-chat/chat-config.ts).
+- Tests with an `image` stay only for models that read images. The launcher decides that for
+  the model the name resolves to: `readsImages` of `planningAssistantConfig` in
+  [start.mjs](../../minimal-hi-example/start.mjs).
   - Every alias of the launcher reads images: `claude`, `anthropic`, `gemini`, `gemini-pro`,
     `gemini-flash`, `google`, `mistral`, `mistral-large`, `mistral-medium`, `mistral-large-3`,
     `mistral-large-4`, `azure`, `openai`, and
-    the deployments `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`; so does every full `claude-*` and
-    `gemini-*` id.
+    every `gpt-*` deployment, e.g. `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`, `gpt-6.1-sol`; so
+    does every full `claude-*` and `gemini-*` id.
   - A full `mistral-*` id, or an Azure deployment named by `HI_CHAT_MODEL`, reads images only if it
     is in `IMAGE_INPUT_MODELS`.
-  - The launcher prints `Images: yes` or `no` at its start.
+  - A running launcher answers the config at `/planning-assistant-config.json`, with `readsImages`.
   - For a model without images, leave the image tests out of the file and list them in the report
     as skipped.
 
@@ -166,17 +166,15 @@ node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" 
   first attempt has an interrupted capture, a transport failure or no `run.json` and still has
   retries available.
 - Exit code 1 of a run is a result like any other (the model or the chat reported an error).
-- Every run starts its own launcher and Chromium. The launcher typechecks the `hi-mcp` workspace
-  until a run of the session has stored its `run.json`; the later runs skip it (`--no-typecheck`,
-  ~2 s each). Of the ~11 s before the chat (`durationsMs.ready`), the launcher boot takes ~0.35 s
-  and the Chromium launch ~0.1 s; the rest is the page, the HI library and the plan load, so the
-  runs reuse neither the launcher nor the browser.
+- Every run starts its own launcher and Chromium. The launcher boot takes ~0.35 s and the Chromium
+  launch ~0.1 s; the rest of the time before the chat (`durationsMs.ready`) is the page, the HI
+  library, the plan load and the planning assistant (the embedding-lib loads the AI SDK from
+  esm.sh), so the runs reuse neither the launcher nor the browser.
 - The runner repeats a run without `run.json`, a capture interrupted by navigation, or a provider
   or transport failure, up to three attempts. A navigation interruption is no saved snapshot id
   with a destroyed-context/navigation error, or `snapshotCaptured: false` with frame navigation
   during `chat` or `snapshot`; initial loading, fragment-only URL changes and a missing saved
-  snapshot id alone do not trigger that retry. A transport failure is an error, or the cause chain
-  of a failed provider step of a turn (`stepFailures`), matching
+  snapshot id alone do not trigger that retry. A transport failure is an error matching
   `Failed to process successful response`, `ECONNRESET`, `socket hang up`, `fetch failed`,
   `terminated` or `AI_APICallError` — the model call or the connection dropped mid-stream, so the
   run says nothing about the planning. A run that completed without errors is never retried, and a
@@ -204,11 +202,11 @@ Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json`
 | `turn-<n>-plan-images-<k>-perspective.png`, `-top.png` | what the agent saw: the images of its k-th `get-plan-images` call in turn n (listed in the turn's `planImages` in `run.json`) — an opened cabinet, or the first turn of a conversation that later closes it again |
 | `perspective-object-image.png` | the group alone — its fronts, appliances and materials, without the room |
 | `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
-| `run.json` | `plan`; per turn the answer, the tools, `planImages` and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back — and `stepFailures` — per failed provider step the `step`, `durationMs` and the cause chain `causes`; `errors`; `planSnapshotId`; `snapshotCaptured`; `navigations` (timestamp, phase, main frame, URL, `fragmentOnly`) |
+| `run.json` | `plan`; per turn the answer, the tools, `planImages` and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId`; `snapshotCaptured`; `navigations` (timestamp, phase, main frame, URL, `fragmentOnly`) |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
 | `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) and what stands in the room (`obstacles.objects[]`: `kind`, `outline`, `bottomMm`/`topMm`, a door or window with `wall` and `fromEndMm`; `obstacles.groups[].roots[]`: the room-space outline and height range of every root module) |
-| `planner-calls.json` | what the MCP server sent to the planner during the chat: `externalObjectGroupOperation` — `args` = the tool and the arguments the model sent (for `create-or-replace-groups` `args[1].posGroups[]` with the roots, their relations and attributes, and the `placement`), the result's `corrections`, `notLoaded`, `historySteps`; `ok: false` with the page's `error`. The docking the relations became is in `plan-context.json` (`groups[].roots[].contextData`) |
-| `console.log` | `[hi-mcp]` and `[hi-chat]` errors; `[run-hi-mcp-prompt] navigation` events |
+| `planner-calls.json` | what the HI MCP tools of the page sent to the planner during the chat: `externalObjectGroupOperation` — `args` = the tool and the arguments the model sent (for `create-or-replace-groups` `args[1].posGroups[]` with the roots, their relations and attributes, and the `placement`), the result's `corrections`, `notLoaded`, `historySteps`; `ok: false` with the page's `error`. The docking the relations became is in `plan-context.json` (`groups[].roots[].contextData`) |
+| `console.log` | the `[hi-mcp]` lines of the tools during the chat — every tool call and every planner call — and the `[planning-assistant]` errors; `[run-hi-mcp-prompt] navigation` events |
 
 The evidence at a glance:
 
@@ -247,9 +245,9 @@ Check:
 - the answer matches the plan (models claim materials, connections and corners they did not
   author).
 
-Tool results are not in the chat stream; `toolCalls` of `run.json`, read from the MCP server's log,
-holds per call of a plan-changing tool what the model sent (`args`, copied before the server
-corrected it) and what it got back: the corrections, the groups not built, the error. A schema
+Tool results are not in the chat window's output; `toolCalls` of `run.json`, read from the log of
+the tools in the page console, holds per call of a plan-changing tool what the model sent (`args`,
+copied before the tool corrected it) and what it got back: the corrections, the groups not built, the error. A schema
 error ("Input validation error") is not in it — it shows only as a tool call without planner calls.
 
 Before calling a result a model finding, compare the model's `args` with what reached the planner
@@ -257,6 +255,10 @@ Before calling a result a model finding, compare the model's `args` with what re
 correction reporting it is a **bug** of the MCP server, not a model finding.
 
 #### Verdict
+
+The MCP server in the rules below is the HI MCP tools: the example runs the copy of the roomle-ui
+embedding-lib (`packages/embedding-lib/src/homag-intelligence/hi-mcp/`), and a fix goes into both
+copies (D94 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md)).
 
 | Verdict | When |
 |---|---|
@@ -272,7 +274,7 @@ A result is a bug when the system, not the model, is at fault:
 |---|---|
 | a planner call fails with `api.extended[message.method] is not a function` | **environment**, no bug: the planner build the page loaded lacks that method (the command tools need `externalObjectGroupOperation`); test against a planner that has it, e.g. with `--dev` |
 | a tool or planner call fails or is rejected although the request is valid | **bug** — in the MCP server (tool error) or the planner (the page's error), by where the error comes from |
-| the chat fails on the system's own data, e.g. a tool result larger than the model's context | **bug** — chat backend / MCP server |
+| the chat fails on the system's own data, e.g. a tool result larger than the model's context | **bug** — the planning assistant of the embedding-lib or the MCP server; for a Mistral model and `get-plan-images` a known limitation ([images in tool results](../../docs/ai-chat.md#images-in-tool-results)) |
 | the placement the server sent is right (`repositioningData.posGroup` at the wall's `end` or the corner point, `posRotationY` the wall's `facingRotationY`), but the group stands elsewhere; or valid input yields impossible geometry (outside the room, through a wall, overlapping another group) | **bug** — MCP server placement or planner |
 | the plan contradicts what the tools reported (success, but the group is missing or unchanged) | **bug** |
 | a correction of the server is wrong for the request, or the server changed the input without reporting it in `corrections` | **bug** — MCP server correction |
@@ -520,57 +522,59 @@ The runner:
    selected result; resumes with the same `--out` and never exceeds three attempts; other stored
    results are skipped;
 4. rewrites `<out>/results.json` after each run and prints one line per run;
-5. passes Ctrl+C (SIGINT/SIGTERM) on to the running run, which stops its servers, and ends.
+5. passes Ctrl+C (SIGINT/SIGTERM) on to the running run, which stops its launcher, and ends.
 
 A run takes about 40 s for the launcher, the page and the snapshot, plus the model's chat time
 (gpt-5.4-mini 5–15 s, gpt-5-mini 30–60 s, gpt-6-astra up to 150 s per turn). The session duration
 depends on the selected models, fixed and generated case counts, and conversation turns.
-A fix committed while the runner goes on takes effect from the next run, because every run
-starts a fresh server and chat; the report then says which runs ran with which build.
+A fix committed while the runner goes on takes effect from the next run, because every run starts
+a fresh launcher and page; the report then says which runs ran with which build. A fix of the tools
+or the planning assistant takes effect only with the embedding-lib version the page imports.
 
 ## Run a prompt (the script)
 
 ```bash
-node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]
+node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]
 ```
 
 | Argument | Meaning |
 |---|---|
-| `<provider>` | a chat provider of the launcher, passed through unchanged (`gpt-5.4-mini`, `mistral`, `claude`, … — see [ai-chat.md](../../docs/ai-chat.md)) |
+| `<model>` | a model name of the launcher, passed through unchanged (`gpt-5.4-mini`, `mistral`, `claude`, … — see [ai-chat.md](../../docs/ai-chat.md)); `provider` in `run.json` and the test file |
 | `<api-key>` | the provider's API key, e.g. `"$AZURE_GPT_KEY"` |
-| `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it. `""` with `--image` sends the image alone — the chat backend gives it the image prompt of the planner, which names the skill `image-planning` |
+| `"<prompt>" …` | the user messages: consecutive turns of one conversation (the history goes along, as in the chat window); a turn with an error ends it. `""` with `--image` sends the image alone — the planning assistant gives it the image prompt of the planner, which names the skill `image-planning` |
 | `--plan <id>` | the plan snapshot the page starts from (`id` of the example URL), its HI groups included; without it, the page's default plan |
-| `--image <file>` | an image (PNG, JPEG, WebP, GIF) that goes along with the last prompt, as an image dropped into the chat window: redrawn as JPEG with a long side of at most 1568 px. A model that reads no images answers `HTTP 400: The model … does not read images` |
+| `--image <file>` | an image (PNG, JPEG, WebP, GIF) that goes along with the last prompt, as an image dropped into the chat window: redrawn as JPEG with a long side of at most 1568 px. Only for a model that reads images: the planning assistant passes the image on without checking |
 | `--out <dir>` | the result directory (default `.temp/result/<UTC timestamp>-<provider>/`) |
 | `--dev` | the planner from the local Rubens UI dev server (`npm run dev` in roomle-ui, :5173) |
 | `--headed` | shows the browser window |
 
 The script:
 
-1. starts the launcher (`minimal-hi-example/start.mjs <provider> <api-key> --no-open`) with the MCP
-   server on port **3110**, not 3100 — example tabs of an interactive session reconnect to 3100 and
-   would take the bridge away from the run's page;
+1. starts the launcher (`minimal-hi-example/start.mjs <model> <api-key> --no-open`), which serves the
+   page and the model of its chat (port 3000, or `EXAMPLE_PORT`);
 2. opens the example URL the launcher prints, with `id` of `--plan`, in Playwright Chromium, a
    fresh browser each run, so every run starts from its plan (no IndexedDB state);
-3. waits until the MCP tool `get-plan-context` lists articles (server up, page connected, HI library
-   loaded) and until the HI library has loaded the plan's groups (`window.hiPosGroupsCompletelyLoaded`,
-   set by the example page in `onPosGroupsCompletelyLoaded`) — the planner clears its undo history
-   then, so a change of the chat made before it could not be undone in a later turn;
-4. sends the prompts to the chat backend (`POST /chat`, with the system prompt and the image prompt it
-   requests from the planner of its page — `getExternalObjectAgentPrompts()`, as the chat window does),
-   each until the end of its stream, and records every planner call the MCP server sends to the
-   page (from the bridge's WebSocket frames — the server's log cuts the arguments short);
-5. reads the rooms, groups and obstacles (`get-plan-context`), then `getExternalObjectSnapshot()` with every
+3. waits until the plan context of the page lists articles (HI library loaded), until the HI library
+   has loaded the plan's groups (`window.hiPosGroupsCompletelyLoaded`, set by the example page in
+   `onPosGroupsCompletelyLoaded`) — the planner clears its undo history then, so a change of the
+   chat made before it could not be undone in a later turn — and until the planning assistant of the
+   page reports itself available;
+4. sends the prompts to the planning assistant of the page (`onPlanningAssistantPrompt`, as the chat
+   window does), each until the turn ends, and reads the turn from the output of the window
+   (`window.hiPlanningAssistantOutput`), the tool calls from the `[hi-mcp]` lines of the page console
+   and the planner calls with their full arguments from `window.hiPlannerCalls`;
+5. reads the rooms, groups and obstacles in the agent's words (`window.hiAgentPlanContext`, as
+   `get-plan-context` answers), then `getExternalObjectSnapshot()` with every
    field it stores and without the object GLB (the GLB is not generated), then saves
    the plan with `saveExternalObjectSnapshot()` for its plan snapshot id — **every run saves one
    plan snapshot in the Roomle backend**, as the example's "Save snapshot" button does;
-6. stops the browser and every server process, also after an error or Ctrl+C.
+6. stops the browser and the launcher, also after an error or Ctrl+C.
 
 ### The result
 
 | File | Content |
 |---|---|
-| `run.json` | provider; `plan`; `turns` (per turn the prompt, the `image` file it carried, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` —, `stepFailures` — per failed provider step the `step`, `durationMs` and the cause chain `causes` — errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
+| `run.json` | provider; `plan`; `turns` (per turn the prompt, the `image` file it carried, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` —, errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
 | `plan-context.json` | `get-plan-context` with rooms and groups after the chat — the walls and where the groups stand |
 | `planner-calls.json` | every planner call during the chat: method, full arguments, `ok`, the page's `error`, and `ms` — how long the page took from the call to its result |
 | `prompt-image.jpg` | with `--image` only: the image as the model got it |
@@ -585,7 +589,7 @@ directory is written in both cases, after an error the snapshot shows the plan a
 it. A failed planner call the model reports in its answer is not an error of the run: it is in
 `planner-calls.json`. A run that fails before the prompt (launcher, readiness timeout) writes no
 result directory, and neither does a stopped run (Ctrl+C: exit 130, SIGTERM: 143) — it only stops
-the browser and the servers.
+the browser and the launcher.
 
 A run takes about 10 s until the page is ready, the model's time for the chat (gpt-5.4-mini: 5–15 s
 per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the snapshot and the save.
@@ -601,8 +605,8 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
   software GL headless Chromium falls back to without it, the planner's object-only perspective
   render draws an empty frame and every run's `perspective-object-image.png` is empty. Why:
   [mcp-test-infrastructure-issues.md](../backlog/mcp-test-infrastructure-issues.md), issue 1
-- ports 3000, 3110 and 3200 free — stop an interactive `npm start` first; one run (and one runner)
-  at a time
+- port 3000 free (or another one in `EXAMPLE_PORT`) — stop an interactive `npm start` first; one
+  run (and one runner) at a time
 - to stop a run, press Ctrl+C in its terminal. With Volta, `node` is a shim that does not pass
   signals on: a `kill -INT <pid>` from another shell reaches the shim, not the script — send it to
   the real Node process (started via `$(node -p process.execPath)`) instead
@@ -612,21 +616,22 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 
 | Symptom | Cause |
 |---|---|
-| `the launcher exited with code 1` right after the start | unknown provider, a missing key, a busy port or a failed typecheck — the launcher's message is printed above |
-| `timed out … waiting for the page and the HI library` | the page did not connect or the HI library did not load — run with `--headed` and look at the page |
+| `the launcher exited with code 1` right after the start | unknown model, a missing key or a busy port — the launcher's message is printed above |
+| `timed out … waiting for the page and the HI library` | the page did not load or the HI library did not load — run with `--headed` and look at the page |
+| `the planning assistant is not available: …` | the planning assistant of the page could not start — the AI SDK or the provider package did not load from esm.sh, the model has no config, or the planner has no HI module; the message says which |
 | every `perspective-object-image.png` is fully transparent, the other images render | no GPU: headless Chromium fell back to SwiftShader, under which the planner's object-only perspective render draws an empty frame — the run script passes `--enable-gpu` for this; on a machine without a GPU the image stays empty until the planner defect is fixed ([backlog](../backlog/mcp-test-infrastructure-issues.md), issue 1) |
 | `errors` in `run.json` with the provider's message | invalid key or a provider failure; the snapshot is still stored |
-| `Failed to process successful response` in `errors` | the provider answered with HTTP 200 and the AI SDK failed while it handled the response — a transport error, a response it could not validate, or another failure. The cause chain is in the turn's `stepFailures` in `run.json`, and in `console.log` in the line `[hi-chat] step n failed after … ms: …` that stands where the step's `step n:` line would be. Only a cause chain that ends in a transport error — `TypeError: terminated <- caused by Error: read ECONNRESET`, a connection reset by the provider or the network — is an **environment** failure, which the runner retries as a transport failure; any other cause is analysed like a provider error |
-| `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context — a **bug**. The chat sends the images of a tool result to Mistral as a user message ([images in tool results](../../docs/ai-chat.md#images-in-tool-results)), and the server returns compact JSON without `imageUrl` ([result format](../../docs/hi-mcp-behaviour.md#53-result-format)); look for the result that is still large |
+| `Failed to process successful response` in `errors` | the provider answered with HTTP 200 and the AI SDK failed while it handled the response — a transport error, a response it could not validate, or another failure. The message is the turn's error in `run.json` (`The planning assistant failed: …`) and the `[planning-assistant]` line in `console.log`. Only a failure from a transport error — `TypeError: terminated <- caused by Error: read ECONNRESET`, a connection reset by the provider or the network — is an **environment** failure, which the runner retries as a transport failure; any other cause is analysed like a provider error |
+| `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context. For a Mistral model after `get-plan-images` a known limitation: the planning assistant sends the images of a tool result to Mistral as JSON text ([images in tool results](../../docs/ai-chat.md#images-in-tool-results)). Otherwise a **bug** — the tools return compact JSON without `imageUrl` ([result format](../../docs/hi-mcp-behaviour.md#53-result-format)); look for the result that is still large |
 | `api.extended[message.method] is not a function` in `planner-calls.json` | the planner build lacks the method (see the bug rules above) |
-| `the turn took longer than 5 minutes and was ended …` in `errors` | the chat backend's turn timeout (`HI_CHAT_TURN_TIMEOUT_MS`): the model did not answer in time — the chat streams nothing while a model reasons; the plan keeps what the tools changed |
-| `chat request failed: aborted after 600s` | the run script's own chat timeout (10 minutes); reached only when `HI_CHAT_TURN_TIMEOUT_MS` is set above it — the turn keeps the tools and the text the chat streamed before |
+| `chat turn failed: timed out after 600s waiting for the chat turn` | the run script's chat timeout (10 minutes): the model did not answer in time — the chat shows nothing while a model reasons. The runner aborts the turn and waits until it and its planner calls have ended; the turn keeps the tools and the text of the window before, and the plan what the tools changed |
+| `the aborted chat turn did not end - the plan was not captured` | the aborted turn or a planner call of its tools did not end within 3 minutes, so the plan could still change: the run has no snapshot, plan context or plan snapshot id |
 | the runner names problems of the test file and runs nothing | an empty key variable, an unknown plan name, a missing image, a duplicate id — fix the file or the environment |
 
 ## See also
 
 - [hi-mcp-tools.md](./hi-mcp-tools.md) — the tools the model calls
-- [ai-chat.md](../../docs/ai-chat.md) — the chat backend and its providers
+- [ai-chat.md](../../docs/ai-chat.md) — the chat of the example and its models
 - [test-prompts.md](../../docs/test-prompts.md) — the plans and the format of the test file
 - [mcp-test-infrastructure-issues.md](../backlog/mcp-test-infrastructure-issues.md) — what is open
   about running the tests

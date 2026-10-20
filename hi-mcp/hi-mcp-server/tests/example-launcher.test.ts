@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { request } from 'node:http';
 import { createServer } from 'node:net';
 import { setTimeout } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
@@ -9,27 +10,15 @@ const launcherPath = fileURLToPath(
   new URL('../../../minimal-hi-example/start.mjs', import.meta.url)
 );
 
-const unusedPorts = async () => {
-  const servers = Array.from({ length: 3 }, () => createServer());
-  await Promise.all(
-    servers.map(
-      (server) =>
-        new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
-    )
-  );
-  const ports = servers.map((server) => {
-    const address = server.address();
-    if (!address || typeof address === 'string') {
-      throw new Error('Expected a TCP address');
-    }
-    return address.port;
-  });
-  await Promise.all(
-    servers.map(
-      (server) => new Promise<void>((resolve) => server.close(() => resolve()))
-    )
-  );
-  return ports;
+const unusedPort = async () => {
+  const server = createServer();
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  if (!address || typeof address === 'string') {
+    throw new Error('Expected a TCP address');
+  }
+  await new Promise<void>((resolve) => server.close(() => resolve()));
+  return address.port;
 };
 
 const waitUntil = async (
@@ -53,89 +42,127 @@ const canBind = (port: number) =>
     server.listen(port, '127.0.0.1', () => server.close(() => resolve(true)));
   });
 
-describe.skipIf(process.platform === 'win32')(
-  'example launcher shutdown',
-  () => {
-    it.each(['SIGTERM', 'SIGINT'] as const)(
-      'releases the page, MCP and chat ports when only the launcher receives %s',
-      async (signal) => {
-        const ports = await unusedPorts();
-        const [pagePort, mcpPort, chatPort] = ports;
-        const launcher = spawn(
-          process.execPath,
-          [launcherPath, '--no-open', 'mistral', 'test-key'],
-          {
-            detached: true,
-            stdio: ['ignore', 'pipe', 'pipe'],
-            env: {
-              ...process.env,
-              EXAMPLE_PORT: String(pagePort),
-              HI_MCP_PORT: String(mcpPort),
-              HI_CHAT_PORT: String(chatPort),
-            },
-          }
-        );
-        let output = '';
-        launcher.stdout.on('data', (chunk) => {
-          output += chunk;
-        });
-        launcher.stderr.on('data', (chunk) => {
-          output += chunk;
-        });
-        const exited = once(launcher, 'exit');
-        try {
-          await waitUntil(
-            async () => {
-              try {
-                const responses = await Promise.all([
-                  fetch(`http://127.0.0.1:${pagePort}/`, {
-                    signal: AbortSignal.timeout(1000),
-                  }),
-                  fetch(`http://127.0.0.1:${mcpPort}/`, {
-                    signal: AbortSignal.timeout(1000),
-                  }),
-                  fetch(`http://127.0.0.1:${chatPort}/health`, {
-                    signal: AbortSignal.timeout(1000),
-                  }),
-                ]);
-                await Promise.all(
-                  responses.map((response) => response.arrayBuffer())
-                );
-                return (
-                  responses[0].ok &&
-                  responses[1].status === 404 &&
-                  responses[2].ok
-                );
-              } catch {
-                return false;
-              }
-            },
-            () => `servers did not become ready\n${output}`
-          );
+// The status of a request to this machine that names another site as its
+// Host, as a page of a DNS-rebinding site sends it (fetch cannot set Host).
+const statusWithHost = (port: number, path: string, host: string) =>
+  new Promise<number | undefined>((resolve, reject) => {
+    request(
+      { host: '127.0.0.1', port, path, headers: { host } },
+      (response) => {
+        response.resume();
+        resolve(response.statusCode);
+      }
+    )
+      .on('error', reject)
+      .end();
+  });
 
-          launcher.kill(signal);
-          await waitUntil(
-            async () =>
-              launcher.exitCode !== null || launcher.signalCode !== null,
-            () => `launcher did not exit\n${output}`
-          );
-          expect(await exited).toEqual([0, null]);
-          await waitUntil(
-            async () => (await Promise.all(ports.map(canBind))).every(Boolean),
-            () => `server ports still occupied\n${output}`
-          );
-          expect(await Promise.all(ports.map(canBind))).toEqual([
-            true,
-            true,
-            true,
-          ]);
-        } finally {
-          try {
-            process.kill(-launcher.pid!, 'SIGKILL');
-          } catch {}
+// Starts the launcher with the arguments on an unused page port and waits
+// until it serves the page.
+const startLauncher = async (args: string[]) => {
+  const port = await unusedPort();
+  const launcher = spawn(
+    process.execPath,
+    [launcherPath, '--no-open', ...args],
+    {
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, EXAMPLE_PORT: String(port) },
+    }
+  );
+  let output = '';
+  launcher.stdout.on('data', (chunk) => {
+    output += chunk;
+  });
+  launcher.stderr.on('data', (chunk) => {
+    output += chunk;
+  });
+  const exited = once(launcher, 'exit');
+  const fetchPath = (path: string) =>
+    fetch(`http://127.0.0.1:${port}${path}`, {
+      signal: AbortSignal.timeout(1000),
+    });
+  const kill = () => {
+    try {
+      process.kill(-launcher.pid!, 'SIGKILL');
+    } catch {}
+  };
+  try {
+    await waitUntil(
+      async () => {
+        try {
+          return (await fetchPath('/')).ok;
+        } catch {
+          return false;
         }
       },
-      90_000
+      () => `the page was not served\n${output}`
     );
+  } catch (error) {
+    kill();
+    throw error;
   }
-);
+  return { launcher, port, exited, fetchPath, kill, output: () => output };
+};
+
+describe.skipIf(process.platform === 'win32')('example launcher', () => {
+  it('serves the planning assistant config of the model to this machine', async () => {
+    const withModel = await startLauncher(['gpt-6-astra', 'test-key']);
+    const withoutModel = await startLauncher([]);
+    try {
+      const config = await withModel.fetchPath(
+        '/planning-assistant-config.json'
+      );
+      expect(config.headers.get('cache-control')).toBe('no-store');
+      expect(await config.json()).toEqual({
+        provider: 'azure',
+        model: 'gpt-6-astra',
+        apiKey: 'test-key',
+        baseUrl: 'https://dfhifoundrysweden.services.ai.azure.com/openai/v1',
+        chatCompletions: false,
+        readsImages: true,
+      });
+      expect(withModel.output()).toContain('&chat=true');
+      expect(withModel.output()).not.toContain('test-key');
+      expect(
+        (await withoutModel.fetchPath('/planning-assistant-config.json')).status
+      ).toBe(404);
+      expect(
+        await statusWithHost(
+          withModel.port,
+          '/planning-assistant-config.json',
+          `rebinding.example:${withModel.port}`
+        )
+      ).toBe(403);
+    } finally {
+      withModel.kill();
+      withoutModel.kill();
+    }
+  }, 90_000);
+
+  it.each(['SIGTERM', 'SIGINT'] as const)(
+    'releases the page port when only the launcher receives %s',
+    async (signal) => {
+      const { launcher, port, exited, kill, output } = await startLauncher([
+        'mistral',
+        'test-key',
+      ]);
+      try {
+        launcher.kill(signal);
+        await waitUntil(
+          async () =>
+            launcher.exitCode !== null || launcher.signalCode !== null,
+          () => `launcher did not exit\n${output()}`
+        );
+        expect(await exited).toEqual([0, null]);
+        await waitUntil(
+          () => canBind(port),
+          () => `the page port is still occupied\n${output()}`
+        );
+      } finally {
+        kill();
+      }
+    },
+    90_000
+  );
+});

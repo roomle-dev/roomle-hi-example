@@ -34,13 +34,17 @@ and their analyses live in [`.agents/benchmarks/`](../benchmarks/README.md).
 ## 1. The runs
 
 Existing runs: `.temp/result/<session>/<model>/<NN>-<test id>/`. A run is usable when its
-`console.log` has `[hi-chat] step` lines:
+`console.log` has `[hi-chat] step` lines — the step log of the former chat backend. The planning
+assistant of the embedding-lib, which the example page runs
+([ADR 0010](../decisions/0010-the-example-chat-runs-in-the-page.md)), logs no steps, so new runs
+carry none and can be benchmarked only by their chat time and tool calls until it does
+([backlog](../backlog/README.md#chat)):
 
 ```bash
 for d in .temp/result/*/*/*-<test id>; do echo "$d $(grep -c '\[hi-chat\] step' $d/console.log) steps"; done
 ```
 
-New runs, after the go: [Test the MCP](./hi-mcp-testing.md#test-the-mcp) steps 1, 2 and 4 with a
+New runs, after the go (without a step breakdown, see above): [Test the MCP](./hi-mcp-testing.md#test-the-mcp) steps 1, 2 and 4 with a
 test file of the chosen tests, no random tests, and no evaluation unless asked. One session per
 repetition:
 
@@ -98,12 +102,12 @@ Look at, in this order:
 | What do the tools do? | tool time per call and its planner calls (`[hi-mcp] call N: method` in `console.log`, `ms` in `planner-calls.json`) |
 | What did the model get back? | `toolCalls` of `run.json`: `corrections`, `notLoaded`, `error` — and the step that follows them |
 
-The size of what the server serves can be measured without a model: start the launcher on spare
-ports (`EXAMPLE_PORT=3001 HI_MCP_PORT=3110 node minimal-hi-example/start.mjs --no-open`), open the
-example URL with `&mcp_port=3110&id=<plan snapshot id>` in headless Chromium (Playwright from
-`.agents/scripts/node_modules`), call the tools with the MCP SDK client
-(`node_modules/@modelcontextprotocol/sdk`) and measure the text of each result and each section.
-Stop the processes on both ports afterwards. Details: the live check in
+The size of what the tools serve can be measured without a model: start the launcher on a spare
+port (`EXAMPLE_PORT=3001 node minimal-hi-example/start.mjs --no-open`), open the example URL with
+`&id=<plan snapshot id>` in headless Chromium (Playwright from `.agents/scripts/node_modules`), and
+measure the text of each result and each section: the plan context with
+`window.hiAgentPlanContext(include)`, every other tool with the `execute` of `createHiMcpTools(window.instance)`,
+imported in the page from the `hi.js` that `index.html` imports. Stop the launcher afterwards. Details: the live check in
 [hi-mcp-testing.md](./hi-mcp-testing.md#run-a-prompt-the-script) starts the same way.
 
 Every improvement names what it changes and what it is expected to save — steps, seconds and input

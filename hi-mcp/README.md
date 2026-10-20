@@ -6,9 +6,8 @@ npm workspace folder per PoC.
 
 | PoC | Description |
 | --- | ----------- |
-| [hi-mcp-server](./hi-mcp-server/) | HI object groups (kitchens) generated from a single JSON pos-group payload; clients are the HI presets example (`minimal-hi-example`) and the ligna-store chat window |
+| [hi-mcp-server](./hi-mcp-server/) | HI object groups (kitchens) generated from a single JSON pos-group payload; its planner page is the ligna-store, its clients the store's chat window and external MCP clients |
 | [hi-mcp-client](./hi-mcp-client/) | Page side of hi-mcp-server: the browser bridge that executes the allow-listed planner methods, with its unit tests; the ligna-store runs a copy in `hi-mcp/` |
-| [hi-mcp-chat](./hi-mcp-chat/) | AI chat backend of the HI presets example (Vercel AI SDK): `POST /chat` on :3200, an MCP client of hi-mcp-server — see [ai-chat.md](../docs/ai-chat.md) |
 | [cf](./cf/) | Cloudflare deployment of the hi-mcp-server: Worker + Container, one `wrangler deploy` |
 
 ## Quick Access

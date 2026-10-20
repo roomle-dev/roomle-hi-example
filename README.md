@@ -1,8 +1,8 @@
 # roomle-hi-example
 
-Standalone HI presets example (one `minimal-hi-example/index.html`) with the
-HI MCP server (`hi-mcp/hi-mcp-server`): an AI agent plans HOMAG Intelligence
-object groups in a live Roomle room-planner session.
+Standalone HI presets example (one `minimal-hi-example/index.html`) with the AI chat of the roomle-ui
+embedding-lib, and the HI MCP server (`hi-mcp/hi-mcp-server`) of the ligna-store: an AI agent plans
+HOMAG Intelligence object groups in a live Roomle room-planner session.
 
 New to the HI MCP? The [user guide](./docs/user-guide/README.md) explains what it does, the three
 ways to use it, and how to talk to the assistant. How it is built — the processes, modules,
@@ -25,10 +25,9 @@ npm start openai <api-key>
 
 | Invocation | What you get |
 | ---------- | ------------ |
-| `npm start` | Example page on :3000, MCP server on :3100, browser opens |
-| `npm run mcp-server` | MCP server only on :3100; no page or chat backend |
+| `npm start` | Example page on :3000, browser opens; no chat |
+| `npm run mcp-server` | The MCP server on :3100, for the ligna-store (`mcp_server=http://localhost:3100`) and external MCP clients |
 | `npm start -- --no-open` | Same, without opening the browser |
-| `npm start -- --no-typecheck` | Same, without the typecheck of the `hi-mcp` workspace (the MCP test runner after the first run of a session) |
 | `npm start gpt-5-mini <api-key>` | Plus chat with the `gpt-5-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-5.4-mini <api-key>` | Plus chat with the `gpt-5.4-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-6-astra <api-key>` | Plus chat with the `gpt-6-astra` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
@@ -40,14 +39,13 @@ npm start openai <api-key>
 | `npm start gemini <api-key>` | Plus chat with `gemini-2.5-pro` via the Gemini API, key from Google AI Studio (also `google`, `gemini-pro`, `gemini-flash` for `gemini-2.5-flash`, or any `gemini-*` model id) |
 | `npm start azure <api-key>` | Plus chat with Azure OpenAI (also `openai`; needs `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL=<deployment-name>`) |
 | `npm run dev <same arguments>` | Same as the matching `npm start` variant, but the planner loads from the local Rubens UI dev server (:5173) |
-| `npm run start:cf <same arguments>` | Same as the matching `npm start` variant, but with the MCP server deployed on Cloudflare instead of a local one (session = your OS user name) |
 | `EXAMPLE_SERVER_URL=<url> npm start <same arguments>` | Same as the matching `npm start` variant, but the planner loads from `<url>` (passed to the page as `server_url`) |
 
-The root `start`, `dev` and `start:cf` scripts run the launcher directly. Put launcher flags after
-`--`, for example `npm run dev -- --no-open` or `npm run start:cf -- --no-open`. Provider/key
+The root `start` and `dev` scripts run the launcher directly. Put launcher flags after
+`--`, for example `npm run dev -- --no-open`. Model/key
 arguments can be combined with flags: `npm start -- mistral <api-key> --no-open`.
 
-Start the example, the MCP server and the chat against any Rubens UI, e.g. the local
+Start the example and the chat against any Rubens UI, e.g. the local
 dev server:
 
 ```bash
@@ -62,16 +60,12 @@ the production API:
 EXAMPLE_SERVER_URL='https://test.roomle.com/t/cp/3087/?customApiUrl=https://www.roomle.com/api/v2' npm start gpt-5.4-mini "$AZURE_GPT_KEY"
 ```
 
-Deploy the MCP server to Cloudflare: push to `release/cloudflare` (PRD) or
-`release/cloudflare.dev` (DEV); the GitHub workflow `.github/workflows/deploy-cloudflare.yml` tests
-and deploys it. By hand, for testing, debugging and emergencies (`npx wrangler deploy` in
-`hi-mcp/cf`; needs Node 22+ and a one-time `npx wrangler login`):
+Deploy the MCP server to Cloudflare by hand (`npx wrangler deploy` in `hi-mcp/cf`; needs Node 22+
+and a one-time `npx wrangler login`):
 
 ```bash
-git push origin origin/master:release/cloudflare.dev   # release master to DEV
-git push origin origin/master:release/cloudflare   # release master to PRD
-npm run deploy:cf                                  # by hand, PRD
-npm run deploy:cf:dev                              # by hand, DEV
+npm run deploy:cf        # PRD
+npm run deploy:cf:dev    # DEV
 ```
 
 The servers: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp`, DEV `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp`.
@@ -92,7 +86,8 @@ Add a group of three tall units to the wall on the right.
 ```
 
 **External MCP clients** — Claude Code, Claude desktop app, GitHub Copilot,
-Cursor, … connect to `http://localhost:3100/mcp`:
+Cursor, … connect to `http://localhost:3100/mcp` of `npm run mcp-server`, with the ligna-store as
+the planner page (`mcp_server=http://localhost:3100`):
 [connecting an MCP client](./docs/hi-mcp-server.md#connecting-an-mcp-client) ·
 [example prompts](./docs/hi-mcp-server.md#example-prompts)
 

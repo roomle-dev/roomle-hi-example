@@ -1,44 +1,39 @@
-# Quickstart — HI Presets Example & MCP Server
+# Quickstart — HI Presets Example
 
 Shortest path to a working session: the standalone HI presets example in one
-[`index.html`](./index.html), started together with the MCP server from
-[`hi-mcp/hi-mcp-server`](../hi-mcp/hi-mcp-server/) — the single MCP server
-implementation of this repository — by the [`start.mjs`](./start.mjs) launcher.
-Every detail and alternative: [docs/hi-mcp-server.md](../docs/hi-mcp-server.md).
+[`index.html`](./index.html) with the AI chat of the roomle-ui embedding-lib, started by the
+[`start.mjs`](./start.mjs) launcher. Every detail and alternative:
+[docs/hi-mcp-server.md](../docs/hi-mcp-server.md) and [docs/ai-chat.md](../docs/ai-chat.md).
 
-**1. Once:** install Node 20+. The first `npm start` installs the `hi-mcp`
-workspace and typechecks the server (the build gate) before anything starts.
+**1. Once:** install Node 20+. The example needs no build and no install.
 
-**2. Start everything** (the launcher serves the example page on :3000 and
-starts the MCP server on :3100):
+**2. Start the example with a model** (the launcher serves the example page on :3000 and the model
+of its chat to this machine):
 
 ```bash
-npm start          # or directly: node start.mjs
+npm start gpt-6-astra <api-key>      # or directly: node start.mjs gpt-6-astra <api-key>
 ```
+
+`gpt-6-astra` is a deployment on the HI Azure AI Foundry resource; the key is that resource's.
+
+Without a model, `npm start` serves the example without the chat.
 
 To develop against a local Rubens UI dev server (start it first on
 <http://localhost:5173/>), run `npm run dev` instead — it opens the example
 with `server_url=http://localhost:5173/` so the planner loads from the local
 UI instead of `https://www.roomle.com/t/bo-test/`.
 
-To use the MCP server deployed on Cloudflare instead of a local one, run
-`npm run start:cf` (with the chat: `npm run start:cf mistral <api-key>`). No
-local MCP server starts. The page connects to the deployment in a session
-named after your OS user name, and the launcher prints the matching MCP URL
-for external clients.
+**3. The example opens** at
+<http://localhost:3000/?backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith&chat=true>
+(pass `--no-open` to skip that).
 
-**3. The example opens** at <http://localhost:3000/?mcp=true> (pass
-`--no-open` to skip that). Select a preset in the top bar, keep the tab
-open — the server terminal logs `page connected`.
-
-**4. Ask the agent** — the repository root [README](../README.md) lists every
-`npm start` variant (including the built-in AI chat with Mistral, Anthropic, or
-Azure) and the agent prompts. External MCP clients (Claude Code, Copilot,
-Cursor, …) connect to `http://localhost:3100/mcp`.
+**4. Ask the agent** — open the chat with the button at the bottom of the planner. The repository
+root [README](../README.md) lists every `npm start` variant (Mistral, Anthropic, Google and the
+Azure AI Foundry deployments) and the agent prompts.
 
 Port 3000 taken (e.g. by the ligna-store dev server)? Start with
 `EXAMPLE_PORT=3101 npm start`. More: [example prompts](../docs/hi-mcp-server.md#example-prompts) ·
 [configuring the example](../docs/hi-mcp-server.md#the-example) ·
 [tool reference](../docs/hi-mcp-server.md#tool-reference) ·
-[troubleshooting](../docs/hi-mcp-server.md#troubleshooting) ·
+[troubleshooting](../docs/ai-chat.md#troubleshooting) ·
 [PoC presentation with demo results](../docs/hi-mcp-poc-presentation.md)

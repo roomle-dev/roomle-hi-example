@@ -1,21 +1,25 @@
 # HI Presets Example & MCP Server — Reference
 
-The complete documentation of `minimal-hi-example/`: the standalone HI presets
-example ([`index.html`](../minimal-hi-example/index.html)) and the start launcher
-([`start.mjs`](../minimal-hi-example/start.mjs)) that serves it and starts the repository's single
-MCP server implementation, [`hi-mcp/hi-mcp-server`](../hi-mcp/hi-mcp-server/),
-so an AI agent can orchestrate HOMAG Intelligence (HI) object groups in a live
-planning session. The agent retrieves the plan context (master data, rooms,
-articles, existing groups) and creates or modifies HI object groups — without
-computing root-module positions itself.
+The documentation of `minimal-hi-example/` — the standalone HI presets example
+([`index.html`](../minimal-hi-example/index.html)) and its start launcher
+([`start.mjs`](../minimal-hi-example/start.mjs)) — and of the repository's single MCP server
+implementation, [`hi-mcp/hi-mcp-server`](../hi-mcp/hi-mcp-server/). With both, an AI agent
+orchestrates HOMAG Intelligence (HI) object groups in a live planning session: the agent retrieves
+the plan context (master data, rooms, articles, existing groups) and creates or modifies HI object
+groups — without computing root-module positions itself.
+
+The example page needs no MCP server. It runs the HI MCP tools of the embedding-lib
+(`createHiMcpTools`) in the page, and the planning assistant of the embedding-lib
+(`startPlanningAssistant`) chats with them in the AI Planning Assistant window
+([ai-chat.md](ai-chat.md)).
 
 The MCP server is the TypeScript implementation from
 `hi-mcp/hi-mcp-server` (the copy of the roomle-ui PoC
 [RML-17693](https://roomle.atlassian.net/browse/RML-17693)): the MCP protocol
 layer is `@modelcontextprotocol/sdk` with zod tool schemas, and the page bridge
-is a WebSocket. It is used as-is; the launcher only wires environment
+is a WebSocket. It is used as-is and configured from outside through environment
 variables ([ADR 0002](../.agents/decisions/0002-one-mcp-server-configured-from-outside.md)).
-The same server also serves the ligna-store as its client — its bridge starts with a valid
+Its planner page is the ligna-store — its bridge starts with a valid
 `mcp_server` query parameter; `model` and `api_key` add the optional chat window — and it is
 the one deployed to Cloudflare ([cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md));
 [azure-mcp-server.md](setup/azure-mcp-server.md) is the runbook for Azure App Service.
@@ -25,7 +29,7 @@ MCP client with Streamable HTTP transport support can connect (Claude Code,
 the Claude desktop app, Cursor, VS Code Copilot agent mode, Gemini CLI,
 custom clients built with an MCP SDK).
 
-For the shortest path to a first successful tool call, see the
+For the shortest path to a first chat turn in the example, see the
 [README](../minimal-hi-example/README.md) of `minimal-hi-example/`.
 
 ## The example
@@ -33,7 +37,8 @@ For the shortest path to a first successful tool call, see the
 A standalone, copy-paste version of the embedding-lib HI presets demo. It
 contains the complete interface and browser JavaScript in one
 [`index.html`](../minimal-hi-example/index.html), requires no build step, and loads only
-`@roomle/embedding-lib@7.1.0` from unpkg.
+`@roomle/embedding-lib` and its `hi.js` from unpkg — the dev version `0.0.0-dev-a4754cb` until a
+release has the planning assistant ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
 
 The preset dropdown is filled from `GET <HI_SERVER_BASE_URL>/backends/list`,
 the same endpoint the source presets demo uses. There is no hardcoded preset
@@ -46,10 +51,7 @@ parameters:
 
 | Parameter | Effect |
 | --------- | ------ |
-| `mcp=true` | Enables the MCP browser bridge (without it the example behaves as a plain demo) |
-| `mcp_port` | The MCP server port the bridge connects to (default 3100; the launcher appends it when `HI_MCP_PORT` is set) |
-| `mcp_server` | Base URL of a deployed MCP server; the bridge connects to its `/bridge` instead of `ws://localhost:<mcp_port>` (set by `npm run start:cf`) |
-| `mcp_session` | The session on that server — its container on Cloudflare (set by `npm run start:cf`) |
+| `chat` | `true` shows the AI Planning Assistant window and starts the chat with the model the launcher serves (the launcher appends it when it is started with a model) |
 | `backendId` | Selects the HI backend |
 | `library_id` | Overrides the preset's library |
 | `id` | Selects the plan loaded at startup |
@@ -70,59 +72,65 @@ demo; it must not be reused as a production credential.
 ## Architecture
 
 ```text
+the example page (index.html, served by the launcher on :3000)
+  AI Planning Assistant window
+    |  onPlanningAssistantPrompt
+    v
+  startPlanningAssistant (embedding-lib) --streamText--> the model of /planning-assistant-config.json
+    |  the HI MCP tools of the embedding-lib (createHiMcpTools)
+    v
+  roomDesignerApi.extended: the six planner methods;
+  roomle-ui performs the plan-changing tools (HI tool commands)
+
 AI agent (any MCP client) --Streamable HTTP--> http://localhost:3100/mcp
                                                hi-mcp/hi-mcp-server/server.ts (vite-node)
                                                runs the tools; a plan-changing tool is one
                                                planner call
                                                |  WebSocket /bridge: planner method calls
                                                v
-                                   the example page (index.html, served by the launcher on :3000)
-                                   executes the allow-listed methods on roomDesignerApi.extended;
-                                   roomle-ui performs the plan-changing tools (HI tool commands)
+                                   the ligna-store page (mcp_server=http://localhost:3100)
+                                   executes the allow-listed methods on roomDesignerApi.extended
 ```
 
-Two processes started by one launcher: `start.mjs` serves `index.html` on
-port 3000 and spawns the MCP server (`hi-mcp/hi-mcp-server/server.ts`) on
-port 3100, pointing its "no page connected" error at the example URL
-(`HI_MCP_STORE_URL`) — another page port (`EXAMPLE_PORT`) needs no extra
-configuration. The page cannot listen
-on a port, so it connects **outward** to the server: it opens a WebSocket
-(`ws://localhost:3100/bridge`), receives planner method calls over it, and
-sends each result back over the same socket. The tools themselves run in the
-server; each tool calls one or more planner methods, which the page executes
-against `roomDesignerApi.extended`. A tool that changes the plan is one call,
+The example is one process: `start.mjs` serves `index.html` on port 3000 and, when it is started
+with a model, the `PlanningAssistantConfig` of that model at `/planning-assistant-config.json`. The
+tools run in the page; each tool calls one or more planner methods of `roomDesignerApi.extended`. A
+tool that changes the plan is one call,
 `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`: roomle-ui
 performs the whole tool as an HI tool command (`hi-tool-commands.ts`) — the
 corrections, the docking from the relations, the placement, the group
-materials, the hints — and answers with the tool's result. The page executes
-only the methods on its allow-list (`getExternalObjectPlanContext`,
-`externalObjectGroupOperation` — every tool that changes the plan,
-`fetchPrice`, `getExternalObjectSnapshot`, `undo`, `redo`; see the server
-skill) — nothing else of the planner API, such as placing an order, is
-reachable from the server. The allow-list is `MCP_PLANNER_METHODS` in
-`index.html` and lists exactly the methods of `planner-api.ts`, as the
-reference client's `PLANNER_METHODS` does — guarded for that copy by
-`it('calls exactly the planner methods the page bridge exposes')` in
-`hi-mcp/hi-mcp-server/tests/planner-api.test.ts`; the inline copy is kept equal by hand.
+materials, the hints — and answers with the tool's result.
 
-To start only the MCP server from the repository root, run `npm run mcp-server`.
-It serves `/mcp` and `/bridge` on port 3100 without starting the example page
-or the chat backend. A second page trying to join an occupied server is refused
-without disconnecting the first (WebSocket close 4409); the example page reports
-this in its MCP log and stops reconnecting. Guarded by
+The MCP server runs the same tools in Node — the embedding-lib's tools are its port
+([RML-18196](https://roomle.atlassian.net/browse/RML-18196)) — and reaches the planner of a page
+through its `/bridge`. The page cannot listen on a port, so it connects **outward** to the server:
+it opens a WebSocket (`ws://localhost:3100/bridge`), receives planner method calls over it, and
+sends each result back over the same socket. The page executes only the methods on its allow-list
+(`getExternalObjectPlanContext`, `externalObjectGroupOperation` — every tool that changes the plan,
+`fetchPrice`, `getExternalObjectSnapshot`, `undo`, `redo`; see the server skill) — nothing else of
+the planner API, such as placing an order, is reachable from the server. The allow-list is
+`PLANNER_METHODS` of the reference client `hi-mcp/hi-mcp-client/browser-bridge.ts` and lists
+exactly the methods of `planner-api.ts` — guarded by
+`it('calls exactly the planner methods the page bridge exposes')` in
+`hi-mcp/hi-mcp-server/tests/planner-api.test.ts`; the ligna-store copy is kept equal by hand.
+
+To start the MCP server from the repository root, run `npm run mcp-server`.
+It serves `/mcp` and `/bridge` on port 3100. A second page trying to join an occupied server is
+refused without disconnecting the first (WebSocket close 4409); the page reports
+this and stops reconnecting. Guarded by
 `it('rejects a second page without disrupting the active planner call')` in
 `hi-mcp/hi-mcp-server/tests/page-bridge.test.ts`.
 
 | File | Responsibility |
 | ---- | -------------- |
-| `start.mjs` | The launcher: build gate (`npm install` + typecheck of the `hi-mcp` workspace), static file server for `minimal-hi-example/` on :3000, spawns the MCP server with `HI_MCP_STORE_URL` set, opens the browser |
-| `hi-mcp/hi-mcp-server/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), tool definitions with zod schemas, the tool executors (`tool-executors.ts`: the plan context in the agent's words, `find-attributes`, the forward of the plan-changing tools, undo and redo), the planner methods it calls (`planner-api.ts`), the WebSocket page bridge with call correlation and timeouts, server instructions and authoring rules — unchanged, shared with the ligna-store client and the cloud deployments |
-| `index.html` | The example itself, plus the MCP section at the end: the WebSocket browser bridge that executes the allow-listed planner methods |
-| `package.json` | The `start` script that runs the launcher, `dev` which adds `server_url=http://localhost:5173/`, and `start:cf` which uses the MCP server deployed on Cloudflare |
+| `minimal-hi-example/start.mjs` | The launcher: static file server for `minimal-hi-example/` on :3000, the model of the chat at `/planning-assistant-config.json` (to this machine only), opens the browser |
+| `minimal-hi-example/index.html` | The example itself, plus the chat at the end: `startPlanningAssistant` with the model of the launcher, on a planner API that records the planner calls for the test scripts |
+| `minimal-hi-example/package.json` | The `start` script that runs the launcher and `dev` which adds `server_url=http://localhost:5173/` |
+| `hi-mcp/hi-mcp-server/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), tool definitions with zod schemas, the tool executors (`tool-executors.ts`: the plan context in the agent's words, `find-attributes`, the forward of the plan-changing tools, undo and redo), the planner methods it calls (`planner-api.ts`), the WebSocket page bridge with call correlation and timeouts, server instructions and authoring rules — shared with the ligna-store client and the cloud deployments |
 
 ## Prerequisites
 
-- Node 20+ (the first start installs the `hi-mcp` workspace and typechecks the server)
+- Node 20+ for the launcher; the MCP server needs the `hi-mcp` workspace installed (`npm install`)
 
 ## Running
 
@@ -138,39 +146,21 @@ that URL; override it with `EXAMPLE_SERVER_URL=<url> npm run dev`. The URL lives
 in `start.mjs` behind `--dev`, not as an inline variable of the npm script, so
 the script runs under Windows `cmd` as well.
 
-To use the MCP server deployed on Cloudflare instead of a local one, run
-`npm run start:cf` (`--cf`; it can be combined with the chat arguments and with
-`--dev`). The launcher then starts no local MCP server. It opens the example with
-`mcp_server=https://hi-planning-assistant-dev.dashiell-bell.workers.dev&mcp_session=<OS user name>` (the DEV server; PRD is `https://hi-planning-assistant.dashiell-bell.workers.dev`),
-points the chat at `…/mcp?session=<OS user name>` and prints that URL for
-external MCP clients. Each OS user name gets a container of its own. Two
-machines with the same user name share it: the first page keeps the planner,
-and the server refuses the other one (WebSocket close 4409), which then shows
-"This server already has a planner connected".
-The deployment runs the last deployed image, so server changes on a branch
-need a deploy of DEV first: a push to `release/cloudflare.dev`, or `npm run deploy:cf:dev`. Details:
-[cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md).
+The launcher serves the example and opens it in the default browser at
+`http://localhost:3000/?backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`
+(`npm start -- --no-open` skips that). If port 3000 is taken (the ligna-store dev server uses it
+too), start with another page port: `EXAMPLE_PORT=3101 npm start`. Ctrl+C or SIGTERM to the
+launcher stops the page server.
 
-The launcher installs and typechecks the `hi-mcp` workspace (the build gate),
-serves the example, starts the MCP server, and opens the example in the
-default browser at `http://localhost:3000/?mcp=true` (`npm start -- --no-open`
-skips that). If port 3000 is taken (the ligna-store dev server uses it too),
-start with another page port: `EXAMPLE_PORT=3101 npm start`.
+Without the chat the example can still be served by any static file
+server (e.g. `npx http-server -c-1 -p 39485`); only the chat needs the model the launcher serves.
 
-Ctrl+C or SIGTERM to the launcher stops the example page, the local MCP server and the optional
-chat backend. The launcher starts each server directly through Node and the workspace's installed
-`vite-node` CLI, so termination reaches the server process itself and releases its port.
+The chat: `npm start <model> <api-key>` (for example `npm start mistral <api-key>`) opens the
+example with `chat=true` and serves the model to the page — see [ai-chat.md](./ai-chat.md).
 
-Select a preset (or enter a library id) in the top bar and keep the tab
-open — the server terminal logs `page connected`.
-
-Without the MCP part the example can still be served by any static file
-server (e.g. `npx http-server -c-1 -p 39485`); only the `mcp=true` bridge
-requires the MCP server started by the launcher.
-
-The launcher also supports a built-in AI chat (Mistral) that drives the same
-MCP tools without an external client: `npm start mistral <api-key>` — see
-[ai-chat.md](./ai-chat.md).
+The MCP server runs on its own: `npm run mcp-server`, then open the ligna-store with
+`mcp_server=http://localhost:3100` (the URL its "No HI page connected" error names) and connect a
+client as described below. The deployed servers on Cloudflare: [cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md).
 
 ## Connecting an MCP client
 
@@ -285,7 +275,7 @@ The behaviour reference — guidelines, decisions, every guard, correction and f
 the information the server provides — is [../../docs/hi-mcp-behaviour.md](hi-mcp-behaviour.md).
 
 The tools run in the server, but every planner call they make executes in the
-example page, so a tool is only as fast as the page. The timeout applies per
+planner page, so a tool is only as fast as the page. The timeout applies per
 planner call: 30 s by default, 120 s for `externalObjectGroupOperation`
 (`create-or-replace-groups`, `place-group`, the
 [command tools](#editing-a-group-the-command-tools)) and
@@ -888,7 +878,7 @@ A new group is positioned in the call that creates it, in one of two forms:
 
 ## Demo walkthrough
 
-With a connected agent, this sequence exercises the whole example:
+With a connected agent, this sequence exercises every kind of tool:
 
 1. `get-plan-context` — rooms (with walls), compact articles (with docking
    vectors and dimensions), current groups; `find-attributes` for the
@@ -942,13 +932,13 @@ operations:
 
 | Symptom | Cause / fix |
 | ------- | ----------- |
-| Tool error `No HI page connected` | Open `http://localhost:3000/?mcp=true` (the URL the error names) and keep the tab open |
+| Tool error `No HI page connected` | Open the ligna-store at the URL the error names (`http://localhost:3000/?store.stage=INT&mcp_server=http://localhost:3100`) and keep the tab open |
 | Tool error `... is not a function` | The page targets a Rubens UI whose web-sdk does not contain the plan-context APIs — override `server_url` to a deployment (or local UI dev server) that does |
 | Port 3100 already in use | The server names the fix itself (`lsof -ti tcp:3100 \| xargs kill`) |
-| Several example tabs open | The first connected tab keeps the server; a further tab reports "This server already has a planner connected" and stops reconnecting — close the first tab and reload the other |
-| `get-price` / `get-order-data` fail | No preset selected in the top bar, or the HI test proxy rejected the credentials |
+| Several store tabs open | The first connected tab keeps the server; a further tab reports "This server already has a planner connected" and stops reconnecting — close the first tab and reload the other |
+| `get-price` / `get-order-data` fail | No HI library loaded on the page, or the HI proxy rejected the credentials |
 | Page reloaded | The bridge reconnects automatically — no restart needed |
-| Empty `articles`/`masterData` | No library loaded yet — select a preset or enter a library id in the top bar |
+| Empty `articles`/`masterData` | No library loaded on the page yet |
 
 ## Interior Design tools
 

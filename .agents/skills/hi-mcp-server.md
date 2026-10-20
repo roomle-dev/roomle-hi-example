@@ -1,24 +1,16 @@
 # HI MCP Server Skill
 
-**Load this skill when the task involves:** MCP server architecture, HTTP handling, the WebSocket bridge, Model Context Protocol implementation, tool registration, or server-side logic in `minimal-hi-example` / `hi-mcp/hi-mcp-server`.
+**Load this skill when the task involves:** MCP server architecture, HTTP handling, the WebSocket bridge, Model Context Protocol implementation, tool registration, or server-side logic in `hi-mcp/hi-mcp-server`.
 
 ## Overview
 
-The HI MCP Server lets AI agents orchestrate HOMAG Intelligence (HI) object groups in live Roomle room-planner sessions. There is **one MCP server implementation** in this repository: the TypeScript server in `hi-mcp/hi-mcp-server` (`@modelcontextprotocol/sdk` + `ws` + zod, run via `vite-node`). It carries no client-specific code and serves no page: every client wires itself to it through environment variables, and the example page is served and opened by the launcher `minimal-hi-example/start.mjs` ([ADR 0002](../decisions/0002-one-mcp-server-configured-from-outside.md)).
+The HI MCP Server lets AI agents orchestrate HOMAG Intelligence (HI) object groups in live Roomle room-planner sessions. There is **one MCP server implementation** in this repository: the TypeScript server in `hi-mcp/hi-mcp-server` (`@modelcontextprotocol/sdk` + `ws` + zod, run via `vite-node`). It carries no client-specific code and serves no page: every client wires itself to it through environment variables ([ADR 0002](../decisions/0002-one-mcp-server-configured-from-outside.md)). `npm run mcp-server` starts it from the repository root.
 
-Clients of the same server: the standalone HI presets example (`minimal-hi-example/index.html`, started by the launcher) and the ligna-store, whose bridge starts on any stage with a valid `mcp_server` query parameter. `model` and `api_key` add its optional chat window; missing or invalid chat settings leave the bridge enabled. The store resolves one client/session identity for bridge and chat, using `mcp_session` or a fresh per-page ID (its page-side bridge is a copy of `hi-mcp/hi-mcp-client/`).
+Its planner page is the ligna-store, whose bridge starts on any stage with a valid `mcp_server` query parameter. `model` and `api_key` add its optional chat window; missing or invalid chat settings leave the bridge enabled. The store resolves one client/session identity for bridge and chat, using `mcp_session` or a fresh per-page ID (its page-side bridge is a copy of `hi-mcp/hi-mcp-client/`). The standalone HI presets example (`minimal-hi-example/`) is no client: it runs the copy of the tools in the embedding-lib in the page ([pages-chat-and-launcher.md](../context/pages-chat-and-launcher.md)).
 
 ### Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│              start.mjs launcher (port 3000)              │
-│  - build gate: npm install + typecheck of hi-mcp         │
-│  - serves minimal-hi-example/ (the example page)         │
-│  - spawns the MCP server, opens the browser              │
-└────────────────────────┬────────────────────────────────┘
-                         │ spawn
-                         ▼
 ┌─────────────────────────────────────────────────────────┐
 │        hi-mcp/hi-mcp-server/server.ts (port 3100)         │
 │                                                          │
@@ -31,21 +23,14 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
                          │  WebSocket
                          ▼
               ┌──────────────────────┐
-              │  Example page (index.html, :3000)  │
+              │  ligna-store page (mcp_server)     │
               │  roomDesignerApi.extended          │
               └──────────────────────┘
 ```
 
 ### Key Components
 
-#### 1. Launcher (`minimal-hi-example/start.mjs`)
-- **Build gate**: installs the `hi-mcp` workspace when `node_modules` is missing and runs the typecheck (`npm run typecheck` at the `hi-mcp` root) before anything starts; `--no-typecheck` skips the typecheck (the MCP test runner, after the first run of a session). There is no compiled artifact: `vite-node` runs the TypeScript.
-- **Static serving**: serves `minimal-hi-example/` on port 3000 (configurable via `EXAMPLE_PORT`).
-- **Server spawn**: Node invokes the installed `vite-node` CLI with `server.ts` directly in the `hi-mcp-server` workspace, with `HI_MCP_STORE_URL` pointing the "no page connected" error at the example URL. `HI_MCP_PORT` moves the server and is passed to the page as `mcp_port`.
-- **Browser auto-open**, skipped with `--no-open`.
-- Exits when a server child exits; SIGINT/SIGTERM stop the direct MCP and optional chat children and exit, releasing their ports with the page port. The POSIX process regression in `hi-mcp-server/tests/example-launcher.test.ts` signals only the launcher PID and verifies all three ports can be bound again.
-
-#### 2. MCP server (`hi-mcp/hi-mcp-server/server.ts`)
+#### 1. MCP server (`hi-mcp/hi-mcp-server/server.ts`)
 - **Port**: 3100 (`HI_MCP_PORT` / `PORT` env)
 - **Routes**: `POST /mcp` (Streamable HTTP, JSON response mode, stateless — a new `McpServer` + transport per request); everything else is 404
 - **Protocol**: `@modelcontextprotocol/sdk`, tools registered with zod schemas in `hi-mcp-server.ts`
@@ -53,14 +38,14 @@ Clients of the same server: the standalone HI presets example (`minimal-hi-examp
 - **Env**: `HI_MCP_PORT`, `HOST`, `HI_MCP_STORE_URL`, `HI_MCP_TLS_CERT`/`HI_MCP_TLS_KEY` (optional TLS)
 - Orphan guard: shuts down with the dev script when its stdin pipe ends
 
-#### 3. WebSocket bridge
+#### 2. WebSocket bridge
 - `GET ws://…/bridge` (WebSocket upgrade, origin-checked) connects the page
 - The page sends `{kind:'hello', example, url, protocol: 2}`; the server relays planner method calls `{kind:'call', id, method, args: [...]}` and the page answers `{kind:'result', id, ok, result|error}` (`types.ts`, `BRIDGE_PROTOCOL`)
 - A page whose hello carries no `protocol: 2` (an outdated, tool-level bridge) stays connected, but every call fails with an "update the page bridge" error
 - The server takes a result only from the active page — every call goes there — and ignores a frame that is not a JSON object, so a stray socket cannot answer a call or end the server
 - The server correlates calls by id, with per-method timeouts (`planner-api.ts`: 120 s for `externalObjectGroupOperation` and `getExternalObjectSnapshot`, 30 s otherwise) and a single-page policy: an OPEN owner rejects a new page (close 4409, "Planner session in use"; the page stops reconnecting); a CLOSING owner gives way after its pending calls are rejected — guarded by `it('rejects a second page without disrupting the active planner call')` and `it('accepts a replacement when the previous socket is closing')` in `hi-mcp/hi-mcp-server/tests/page-bridge.test.ts`
 
-#### 4. Tool logic (`tool-executors.ts`, `agent-facing.ts`, `planner-api.ts`; roomle-ui `hi-tool-commands.ts`)
+#### 3. Tool logic (`tool-executors.ts`, `agent-facing.ts`, `planner-api.ts`; roomle-ui `hi-tool-commands.ts`)
 - The tool handlers in `hi-mcp-server.ts` run the executors in `tool-executors.ts`. The server keeps the tool registry and the served text, `get-plan-context` in the agent's words (`agent-facing.ts`: wall names, room corners, the wall of a door or a window, `cornerPoint` left out, short descriptions), `find-attributes`, the planning skills of `get-skill` (`skills.ts`, the files of `skills/`) — the same files also as resources under `skill://<name>/<path>` with `skills/list` and `skills/get` of the Skills extension of MCP (`skillManifest`, §5.6 of `docs/hi-mcp-behaviour.md`) —, the compaction of the two attribute tools' results (`compactAttributeResult`), one plan change at a time (`oneAtATime`) and the undo record (`recorded`, `countingPlannerApi`, `revertToolCall`)
 - Every plan-changing tool (`create-or-replace-groups`, `place-group`, `change-module-attribute`, `change-group-attribute`, `delete-group`, `delete-article-in-place`, `delete-article-and-compact`, `merge-article-into-group`, `exchange-root-module`, `insert-article-into-group`, `swap-root-modules`, `merge-groups`) is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's arguments>)` (`inPlanner`). roomle-ui performs the whole tool (D71): `HiToolsImplementation.executeGroupOperation` (`hi-tools.ts`) runs a command named like a tool through `runToolCommand` and `HI_TOOL_COMMANDS` (`hi-tool-commands.ts`), every other command as a group operation (`runGroupOperation` in `hi-plan-context.ts`). A tool command validates and corrects the input, resolves ids and articles (`hi-tool-ids.ts`), normalises the payload (`hi-tool-payload.ts`), translates the relations into docking (`hi-group-layout.ts`, D72) and completes it (`hi-tool-docking.ts`), places a new group by point or by wall (`hi-group-placement.ts`, `hi-wall-placement.ts`, `hi-plan-space.ts`), sets the group materials and names the library's changes (`hi-tool-attributes.ts`), adds the hints (`hi-tool-hints.ts`), reports what it could not build in `notLoaded`, and reports every group in the placement frame with `rowIndex` (`inPlacementFrame`). The result carries `historySteps` — the planner runs a tool call as one step and answers after its last reload (D77, D79) —, which the server counts for undo and removes
 - A tool command reaches the planner through `HiToolPlanner`, which `HiToolsImplementation` implements in the planner itself: the plan context, the calculated groups, the layout load, the group operations and `calculateArticleTemplate`. The command tools resolve group id prefixes and check article ids against the catalog (an id in another spelling is read in the catalog's spelling; `merge-article-into-group` also moves a taken side to the free end of the row and derives a missing partner vector — all reported in `corrections`) and run the group operation, which answers with the affected groups in the plan-context shape once the planner has loaded them. Deletions and merges are performed by the kernel: the group operation waits for the kernel's report of the group (`removedGroup`, `deleteRootModule`, `mergeGroups`), and a root module deletion the kernel does not report within the request is rejected as refused
@@ -74,7 +59,7 @@ attribute, enable it when available, then set the part's attributes after genera
 only what remains missing. Group-level enabling and generated-part materials can require two
 calls because targeting precedes recalculation.
 
-#### 5. Group placement (internal)
+#### 4. Group placement (internal)
 
 Internal to the tool commands: not part of the tool interface and never mentioned to the agent — the served rules, the tool descriptions, the tool reference and the authoring skills only know `placement`. `tests/hi-mcp-server.test.ts` guards the served text. All files below are in roomle-ui `packages/web-sdk/packages/homag-intelligence/src/`.
 
@@ -88,24 +73,21 @@ Internal to the tool commands: not part of the tool interface and never mentione
 - `place-group` works on the calculated group, not on the anchor walk: `hi-plan-space.ts` derives the footprint from part boxes, docking vector points or the `b`/`t` attributes and the corner geometry from the `LeftBack*`/`RightBack*` vectors, puts the corner point into the shared corner by matching the two back edges to the walls (`placeCornerAtWalls`) or the footprint against the wall (`placeAgainstWall`), and yields the group transform. `repositioningFromPlacement` turns it into the room transform of the first article root from that root's transform in the group; the planner's `G = T · R_root⁻¹` reverses exactly that, so the result is exact for any root and needs no corner offset. The group keeps its y (wall units). Groups may touch; a target that overlaps another group — footprints (separating axis test) and height ranges overlap by more than 5 mm (`OVERLAP_TOLERANCE_MM`, `volumesOverlap`) — is moved along the same wall to the nearest free position (`freePlacementAlongWall`) before the one reload, and `corrections` names the group and the distance; into a corner, or without a free position on the wall, the group is placed as asked and the overlap reported. The reload sends the calculated roots without `articlePos`/`rotationY` and docking indices, with `reason: 'adjusted'`. The result reports `placedIn` (`corner` or `wall`) and never the internal fields.
 - A corner article is recognised by the catalog's `cornerArticle` flag (`isCornerArticle`, roomle-ui `hi-group-placement.ts`). roomle-ui derives the flag and the `cornerPoint` from the corner docking vectors of the calculated article — a root of it in the plan, or else its template, which the plan context calculates once per article (D74) —, so the catalog carries them on an empty plan too; `get-plan-context` passes the flag through. Without the flag the anchor walk would treat the corner article as a plain unit, walk along its turned left arm and anchor the arm's end, which turns the kitchen by 90°.
 
-### Bridge — page side (minimal-hi-example/index.html)
+### Bridge — page side (hi-mcp/hi-mcp-client/browser-bridge.ts)
 
-- Active only with the `mcp=true` query parameter
-- Connects a `WebSocket` to `ws://localhost:<mcp_port, default 3100>/bridge`, or to the `/bridge` of `mcp_server` with `?session=<mcp_session>`; reconnects every 3 s on close, but not after the close 4409 of an occupied server
-- Sends a per-page `clientId` in hello; the example chat sends the same ID to `/chat` and can submit only after the bridge acknowledges ownership with `ready`
-- Executes the planner methods on its allow-list (`MCP_PLANNER_METHODS`, including `undo` and `redo`, D37) against `roomDesignerApi.extended`, rejects every other method, sends results back over the socket — the bridge holds no tool logic; the tool commands are part of roomle-ui
+- The reference copy of the ligna-store's bridge; the store starts it with a valid `mcp_server`
+- Connects a `WebSocket` to the `/bridge` of `mcp_server` with `?session=<mcp_session>`; reconnects every 3 s on close, but not after the close 4409 of an occupied server
+- Sends a per-page `clientId` in hello; the store chat uses the same ID and can submit only after the bridge acknowledges ownership with `ready`
+- Executes the planner methods on its allow-list (`PLANNER_METHODS`, including `undo` and `redo`, D37) against `roomDesignerApi.extended`, rejects every other method, sends results back over the socket — the bridge holds no tool logic; the tool commands are part of roomle-ui
 - Relays the planner's `extended.callbacks.onHistoryChange` as `{ kind: 'event', name: 'historyChange', undo, redo }` once accepted, calling a handler the host page set first; the server's `plan-history.ts` counts these events to tell its own planner steps from the user's changes
 
-The ligna-store runs the same protocol via `hi-mcp/hi-mcp-client/` (browser-bridge with `PLANNER_METHODS`, types) — no automatic sync, copy after changes. The allow-lists change only when a tool needs a new planner method; `tests/planner-api.test.ts` fails when the server's planner methods and the client allow-list diverge.
+The ligna-store runs the same protocol with its copy, `ligna-store/hi-mcp/browser-bridge.ts` — no automatic sync, copy after changes. The allow-lists change only when a tool needs a new planner method; `tests/planner-api.test.ts` fails when the server's planner methods and the client allow-list diverge.
 
 ## Server Lifecycle
 
-1. Launcher: build gate (install + typecheck)
-2. Launcher: static server listens on :3000
-3. Launcher: spawns the MCP server (vite-node server.ts) with env vars
-4. Server listens on :3100 and waits for a page
-5. Launcher opens the browser at the example URL (unless `--no-open`)
-6. Page with `mcp=true` connects via WebSocket; server logs `page connected`
+1. `npm run mcp-server` runs `server.ts` through vite-node, with the env vars it is given
+2. Server listens on :3100 and waits for a page
+3. The ligna-store with `mcp_server=http://localhost:3100` connects via WebSocket; server logs `page connected`
 
 ## Tool Execution Flow
 
@@ -128,10 +110,11 @@ The ligna-store runs the same protocol via `hi-mcp/hi-mcp-client/` (browser-brid
 1. Register the tool in `hi-mcp/hi-mcp-server/hi-mcp-server.ts` (zod schema, handler via `runTool`)
 2. Implement the executor in `hi-mcp/hi-mcp-server/tool-executors.ts` — no page changes
 3. A plan-changing tool is a tool command in roomle-ui (`HI_TOOL_COMMAND` in `hi-plan-context.ts`, the command in `HI_TOOL_COMMANDS` of `hi-tool-commands.ts`, its unit tests in `homag-intelligence/__tests__/hi-tool-commands/`) and a forwarder here, `inPlanner('<tool name>')` — no page change. An edit the planner does not offer yet is a group operation the tool command runs (`HI_GROUP_OPERATION`, a payload type and a handler in `hi-plan-context.ts`, an operation in `hi-tools.ts`)
-4. Only if the tool needs a planner method not exposed yet: add it to `planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts`, then copy to the ligna-store). Keep methods that place orders or overwrite the plan out unless explicitly decided
+4. Only if the tool needs a planner method not exposed yet: add it to `planner-api.ts` and to the page allow-list (`PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts`, then copy to the ligna-store), and to the planner API of the example page (`PLANNER_METHODS` in `minimal-hi-example/index.html`, the methods its test recording proxies). Keep methods that place orders or overwrite the plan out unless explicitly decided
 5. Update documentation (`docs/hi-mcp-behaviour.md`, `docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`)
 6. Add/extend unit tests in `hi-mcp/hi-mcp-server/tests/`
 7. `npm test` + `npm run typecheck` at the `hi-mcp` root
+8. Make the same change in the copy of the tools in roomle-ui (`packages/embedding-lib/src/homag-intelligence/hi-mcp/`, D94 of `docs/hi-mcp-behaviour.md`) and export its fixture again: `npm run export:fixture -- <roomle-ui>/tests/unit/embedding-lib/homag-intelligence/hi-mcp/fixtures/hi-mcp-fixture.json` in `hi-mcp/`
 
 ## Modifying Existing Tools
 
@@ -139,25 +122,21 @@ The ligna-store runs the same protocol via `hi-mcp/hi-mcp-client/` (browser-brid
 2. Maintain backward compatibility; update the zod schema if needed
 3. Deploy the server, or release roomle-ui for a tool command — the pages need no change unless the planner methods change
 4. Test with existing clients
+5. Make the same change in the roomle-ui copy and export its fixture again (step 8 of Adding New Tools)
 
 ## Common Issues and Solutions
 
 | Issue | Solution |
 |---|---|
-| Page not connecting | Open `http://localhost:3000/?mcp=true` and keep the tab open |
-| Port 3000 in use | `EXAMPLE_PORT=3101 npm start` (also with `npm run start:cf`) |
+| Page not connecting | Open the ligna-store at the URL of the "No HI page connected" error (`mcp_server=http://localhost:3100`) and keep the tab open |
 | Port 3100 in use | The server names the fix (`lsof -ti tcp:3100 \| xargs kill`) |
 | Tools timing out | Expensive operation — check the snapshot timeout class of the tool |
 | Invalid parameters | Validated against the zod schema by the SDK |
-| First start is slow | Build gate: workspace install + typecheck run first |
 
 ## Useful Commands
 
 ```bash
-npm start                          # from the repository root: page + MCP server
-npm start -- --no-open             # same, without opening a browser
-EXAMPLE_PORT=3101 npm start         # other page port
-npm run start:cf                    # page + the Cloudflare-hosted MCP server, no local server
+npm run mcp-server                  # from the repository root: the MCP server on :3100
 cd hi-mcp && npm test               # unit tests
-cd hi-mcp && npm run typecheck      # typecheck used by the build gate
+cd hi-mcp && npm run typecheck      # typecheck
 ```

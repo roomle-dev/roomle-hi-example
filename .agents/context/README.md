@@ -18,14 +18,13 @@ deploy it in [setup](../../docs/setup/).
 | [MCP server](./mcp-server.md) | `server.ts`, tool registration, the page bridge, the planner methods, undo and redo |
 | [Tool executors](./tool-executors.md#tool-overview) | Overview table of all MCP tools; `tool-executors.ts`, `agent-facing.ts` and the tool commands of roomle-ui (`hi-tool-commands.ts`): tool pipelines, the plan context the agent sees, corrections, row edits |
 | [Layout and placement](./layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
-| [Pages, chat and launcher](./pages-chat-and-launcher.md) | the page side of the bridge, `start.mjs`, the chat backend `hi-mcp-chat` |
+| [Pages, chat and launcher](./pages-chat-and-launcher.md) | the page side of the bridge, `start.mjs`, the chat of the example page |
 | [Deployment and testing](./deployment-and-testing.md) | Cloudflare, the workspaces and scripts, the unit tests, the end-to-end test runs |
 
 ## The system
 
 ```text
 AI agent (any MCP client) ───────────────── MCP ──────────────┐
-example page chat ──> hi-mcp-chat (:3200) ── MCP ─────────────┤
 ligna-store chat (runs in the page) ──────── MCP ─────────────┤
                                                               ▼
                                   hi-mcp-server (:3100)   POST /mcp — Streamable HTTP, stateless
@@ -33,11 +32,16 @@ ligna-store chat (runs in the page) ──────── MCP ─────
                                     words, undo and redo; a plan-changing tool is one planner call
                                                               ▲
                                                               │ WS /bridge — the page connects out
-                                  planner page: minimal-hi-example/index.html (:3000) or the store
+                                  planner page: the ligna-store
                                     runs allow-listed methods on roomDesignerApi.extended
                                                               │
                                   roomle-ui web-sdk (homag-intelligence): the HI tool commands,
                                     plan context, group operations, undo history, HI calculation
+                                                              ▲
+                                                              │ roomDesignerApi.extended
+                                  example page: minimal-hi-example/index.html (:3000)
+                                    the planning assistant and the HI MCP tools of the
+                                    embedding-lib, both in the page — no MCP server
 ```
 
 - **The server holds the tools, the page holds the planner.** A browser page cannot accept
@@ -53,29 +57,32 @@ ligna-store chat (runs in the page) ──────── MCP ─────
 - **The planner does the planning.** No tool computes root-module positions. The tool commands turn
   the agent's relations into docking and derive a placement transform; the glue logic and the HI
   calculation arrange the units exactly as for interactive planning.
-- **One server, many clients.** The same server serves the example page, the ligna-store, the chat
-  backend and external MCP clients, locally and on Cloudflare; clients wire themselves to it through
-  URL parameters and environment variables
+- **One server, many clients.** The same server serves the ligna-store, its chat and external MCP
+  clients, locally and on Cloudflare; clients wire themselves to it through URL parameters and
+  environment variables
   ([ADR 0002](../../.agents/decisions/0002-one-mcp-server-configured-from-outside.md)).
+- **The example page needs no server.** It runs the copy of the tools in the embedding-lib of
+  roomle-ui (`createHiMcpTools`, `packages/embedding-lib/src/homag-intelligence/hi-mcp/`) and its
+  planning assistant (`startPlanningAssistant`) in the page, on the same planner methods
+  ([Pages, chat and launcher](./pages-chat-and-launcher.md#the-chat-of-the-example-page)).
 
 ### Processes and ports
 
 | Process | Started by | Port | Code |
 | ------- | ---------- | ---- | ---- |
-| Example page (static files) | `npm start` (`minimal-hi-example/start.mjs`) | 3000 (`EXAMPLE_PORT`) | `minimal-hi-example/index.html` |
-| MCP server | the launcher, `npm run mcp-server`, or the Cloudflare container | 3100 (`HI_MCP_PORT`, else `PORT`) | `hi-mcp/hi-mcp-server/` |
-| Chat backend | the launcher, with `npm start <provider> <api-key>` | 3200 (`HI_CHAT_PORT`), bound to 127.0.0.1 | `hi-mcp/hi-mcp-chat/` |
+| Example page (static files, the model of its chat) | `npm start` (`minimal-hi-example/start.mjs`) | 3000 (`EXAMPLE_PORT`) | `minimal-hi-example/index.html` |
+| MCP server | `npm run mcp-server`, or the Cloudflare container | 3100 (`HI_MCP_PORT`, else `PORT`) | `hi-mcp/hi-mcp-server/` |
 | ligna-store dev server | `npm run dev` in the ligna-store | 3000 | `ligna-store/hi-mcp/` (bridge and chat in the store) |
 | Cloudflare Worker + Container | `wrangler deploy` | — | `hi-mcp/cf/` |
 
 ## A tool call from end to end
 
-`create-or-replace-groups` from the built-in chat, as an example:
+`create-or-replace-groups` from the chat of the ligna-store, as an example:
 
 1. The user types into the chat window of the planner (the AI Planning Assistant of roomle-ui),
-   which hands the message to the example page (`onPlanningAssistantPrompt`). The page posts the
-   whole conversation and its bridge `clientId` to `POST /chat` of the chat backend.
-2. The chat backend runs one `streamText` turn with the MCP tools of `http://localhost:3100/mcp?client=<clientId>`.
+   which hands the message to the store page (`onPlanningAssistantPrompt`).
+2. The store's chat runs one `streamText` turn in the page with the MCP tools of
+   `<mcp_server>/mcp`, sending its bridge `clientId` as the `client` of every request.
    The model calls `get-plan-context`, then `create-or-replace-groups`.
 3. The MCP server handles each tool call in a fresh `McpServer` + transport (stateless). The
    `client` parameter binds the request to the page that owns the planner; another page gets 409.
@@ -96,10 +103,12 @@ ligna-store chat (runs in the page) ──────── MCP ─────
    and the planner step it made (`historySteps`: the tool call is one step of the planner's history).
 8. The executor counts the steps for undo and removes them from the result; `withoutImageUrls`
    strips signed URLs.
-9. The chat backend streams the model's answer to the page, with a `[tool] <name>` line per tool call
-   for the status line; the page passes both to the chat window (`planningAssistantOutput`).
+9. The store's chat passes the model's answer and the tool activity to the chat window
+   (`planningAssistantOutput`).
 
-The same call from an external MCP client skips steps 1, 2 and 9 and has no `client` binding.
+The same call from an external MCP client skips steps 1, 2 and 9 and has no `client` binding. In
+the example page, the tools of the embedding-lib run steps 4, 5 and 8 in the page and call the
+planner method directly, without the bridge of step 6.
 [hi-mcp-behaviour.md §4](../../docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs) describes the call from the
 agent's side.
 
@@ -116,11 +125,10 @@ agent's side.
 | `hi-mcp/hi-mcp-server/page-bridge.ts` | The connected page, call correlation, timeouts, protocol check |
 | `hi-mcp/hi-mcp-server/types.ts` | The bridge message protocol, `BRIDGE_PROTOCOL` |
 | `hi-mcp/hi-mcp-client/` | The page side of the bridge (`browser-bridge.ts`), the tested reference copy of the ligna-store's bridge |
-| `hi-mcp/hi-mcp-chat/` | The chat backend (Vercel AI SDK): `POST /chat`, an MCP client of the server |
 | `hi-mcp/cf/` | Cloudflare deployment: Worker, Container, Dockerfile |
-| `minimal-hi-example/index.html` | The example page: HI presets demo, its own copy of the bridge, the host of the planner's chat window |
-| `minimal-hi-example/start.mjs` | The launcher: build gate, static serving, spawns server and chat |
-| `.agents/scripts/run-hi-mcp-prompt.js`, `run-hi-mcp-tests.js` | End-to-end runs of prompts through chat, server and a headless planner |
+| `minimal-hi-example/index.html` | The example page: HI presets demo, the planning assistant of the embedding-lib in the planner's chat window |
+| `minimal-hi-example/start.mjs` | The launcher: static serving, the model of the chat at `/planning-assistant-config.json` |
+| `.agents/scripts/run-hi-mcp-prompt.js`, `run-hi-mcp-tests.js` | End-to-end runs of prompts through the chat of the example page in a headless planner |
 | `docs/test-prompts.json` | The end-to-end test cases |
 
 The roomle-ui side, in `packages/web-sdk/packages/`:
@@ -173,10 +181,11 @@ the lifetime of the process:
    `hi-tool-commands.ts`), which reports its planner steps through `runToolCommand`. A new edit the
    planner does not offer yet is a group operation (`HI_GROUP_OPERATION`, executed in `hi-tools.ts`)
    the tool command runs.
-4. Only a tool that needs a new planner method extends `planner-api.ts` **and** every page
-   allow-list: `MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in
-   `hi-mcp/hi-mcp-client/browser-bridge.ts`, and the ligna-store copy. `tests/planner-api.test.ts`
-   checks that the client allow-list matches the planner API.
+4. Only a tool that needs a new planner method extends `planner-api.ts` **and** the page
+   allow-list: `PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts` and the ligna-store
+   copy, plus `PLANNER_METHODS` in `minimal-hi-example/index.html`, the methods the example page
+   records for the test scripts. `tests/planner-api.test.ts` checks that the client allow-list
+   matches the planner API.
 5. Unit tests in the matching `tests/` folder — a tool command's in roomle-ui
    `homag-intelligence/__tests__/hi-tool-commands/`; then the behaviour reference, the tool reference
    in `docs/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`.
@@ -188,10 +197,11 @@ the lifetime of the process:
   tool commands in roomle-ui —, are read by the agents, quoted in
   [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md), and checked by tests. Change both in the same
   change: a message of a tool command with the behaviour reference that quotes it.
-- **The log format is parsed.** `[hi-mcp] tool <name> args|feedback|error <json>` is read by
+- **The log format is parsed.** `[hi-mcp] tool <name> args|feedback|error <json>` — logged by the
+  copy of the tools in the embedding-lib to the console of the example page — is read by
   `run-hi-mcp-prompt.js` to collect the tool calls of a turn.
 - **The bridge protocol has three copies** — `hi-mcp-server/types.ts`, `hi-mcp-client/types.ts` and
-  the ligna-store's — plus the inline bridge of `index.html`. Change `BRIDGE_PROTOCOL` when the
+  the ligna-store's. Change `BRIDGE_PROTOCOL` when the
   protocol changes; the server refuses calls to a page with another protocol.
 - **Undo counts roomle-ui's planner steps.** The planner runs a tool call as one step and the tool
   command reports it (`historySteps`, `hi-tool-commands.ts`). A tool command that changes the plan outside the `HiToolPlanner` it is

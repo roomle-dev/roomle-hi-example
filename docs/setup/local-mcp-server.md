@@ -7,7 +7,8 @@ The server runs the tools of any connected AI agent and relays their planner cal
 ligna-store page (local or deployed), where they execute against the planner.
 
 > Note: [`docs/hi-mcp-server.md`](../hi-mcp-server.md) documents the standalone HI presets
-> example, which uses this same server (started by `minimal-hi-example/start.mjs`) as its client.
+> example, which runs the copy of the tools in the roomle-ui embedding-lib in its page and is no
+> client of this server.
 > Tool reference and authoring rules live in the
 > [PoC README](../../hi-mcp/hi-mcp-server/README.md).
 

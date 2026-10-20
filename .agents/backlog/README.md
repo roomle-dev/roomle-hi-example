@@ -67,10 +67,11 @@ Defects of the planner outside the HI tool commands. Details: [roomle-ui-issues.
 | Item | To do | Details |
 |---|---|---|
 | Reasoning effort for the GPT chat models | The ligna-store chat sends no reasoning effort, so gpt-5.4-mini plans without reasoning there: send `high` for the lightweight GPT deployments as the example chat does; further measurement only on request | [reasoning-effort-for-the-gpt-chat-models.md](reasoning-effort-for-the-gpt-chat-models.md) |
-| Strict tool schemas for the GPT models | Measure how often a GPT model's tool call fails the schema ("Input validation error") in a "test the mcp" session; only if it costs runs, try strict function calling — the chat backend sets `strict` per tool (the Azure provider sends `strict: false` otherwise). The Azure strict subset needs every field required, `additionalProperties: false` on every object, at most five nesting levels and 100 properties, and no parallel tool calls: the MCP tool schemas with optional fields do not meet it, and a change there reaches every client | [Structured outputs on Azure](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/structured-outputs) |
+| Strict tool schemas for the GPT models | Measure how often a GPT model's tool call fails the schema ("Input validation error") in a "test the mcp" session; only if it costs runs, try strict function calling: set `strict` per tool in the tool set of the embedding-lib (the Azure provider sends `strict: false` otherwise). The Azure strict subset needs every field required, `additionalProperties: false` on every object, at most five nesting levels and 100 properties, and no parallel tool calls: the MCP tool schemas with optional fields do not meet it, and a change there reaches every client | [Structured outputs on Azure](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/structured-outputs) |
 | Paste and pick an image in the chat window | An image reaches the chat only by drop, which the keyboard cannot reach. Add paste from the clipboard and a file picker button to the AI Planning Assistant window, both through `prepareImage` (roomle-ui `PlanningAssistantChat.vue`, `src/common/utils/planning-assistant-image.ts`) | [Images in the chat](../../docs/ai-chat.md#images-in-the-chat) |
-| The example chat forgets its tool calls between turns | The page keeps only the text of a turn (`conversation`, `minimal-hi-example/index.html`), so a later turn does not see the tool calls and results before it — the ids of the groups it created. The ligna-store chat keeps them (`responseMessages`, ligna-store `hi-mcp/chat.ts`). Keep them in the example too, in the page or in the backend | [The chat window](../../docs/ai-chat.md#the-chat-window) |
-| Per-tool status in the chat window | The backend streams plain text with `[tool] <name>` lines, and the window shows the tool name as an `activity` part. The AI SDK's UI message stream would carry each tool call's input and result to the page, which then needs a parser (the page has no build step), and the window a part that shows them | [The chat window](../../docs/ai-chat.md#the-chat-window) |
+| Per-tool status in the chat window | The planning assistant of the embedding-lib passes only the tool name of a call to the window, as an `activity` part. Pass each tool call's input and result as well (roomle-ui `hi-planning-assistant.ts`), and give the window a part that shows them | [The chat window](../../docs/ai-chat.md#the-chat-window) |
+| Images of a tool result for Mistral | `@ai-sdk/mistral` writes the images of `get-plan-images` into the tool result as JSON text, which overflows the context, so a Mistral model fails on such a turn in the example. Move them into a user message for Mistral models in the planning assistant of the embedding-lib (roomle-ui `hi-planning-assistant.ts`, a `wrapLanguageModel` middleware) | [Images in tool results](../../docs/ai-chat.md#images-in-tool-results) |
+| A step log for the benchmark | The planning assistant of the embedding-lib logs no steps, so the runs of the example carry no tokens and durations per step, and `benchmark-hi-mcp-runs.js` reads only runs made with the former chat backend. Log every step to the page console (tokens in, out and reasoning, tool calls, duration) in the format the benchmark reads | [hi-mcp-benchmarking.md](../skills/hi-mcp-benchmarking.md#1-the-runs) |
 
 ## Test infrastructure
 
@@ -79,19 +80,3 @@ Details: [mcp-test-infrastructure-issues.md](mcp-test-infrastructure-issues.md).
 | Item | To do | Priority |
 |---|---|---|
 | [1 — The object-only perspective render draws an empty frame under software GL](mcp-test-infrastructure-issues.md#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl) | roomle-ui: find why the frame is dropped under SwiftShader | low |
-
-## Deployment, launcher and page sessions
-
-Details: [deployment-and-session-issues.md](deployment-and-session-issues.md).
-
-| Item | To do | Priority |
-|---|---|---|
-| [3 — The public MCP endpoint has no access control](deployment-and-session-issues.md#3-the-public-mcp-endpoint-has-no-access-control) | Decide session links, roomle.com OAuth or a shared secret before the URL goes beyond a trial | medium |
-| [4 — The personal deployment still runs and the DEV environment admits every branch](deployment-and-session-issues.md#4-the-personal-deployment-still-runs-and-the-dev-environment-admits-every-branch) | Give `cloudflare-dev` its branch policy, delete the unused `CLOUDFLARE_ACCOUNT_ID` secrets, tear down `hi-mcp-poc` in the personal account | medium |
-
-## Architecture
-
-| Item | To do | Details |
-|---|---|---|
-| The HI tools in the embedding-lib instead of the Cloudflare MCP server | The page provides the tools: the MCP server's tools, served text, skills and undo record in the embedding-lib (`src/homag-intelligence`); the AI SDK loops and their provider mappings stay in the hosts, which drop only the server, the bridge and the MCP client; the example's chat moves into its page; teardown of the Workers last | [hi-tools-in-the-embedding-lib.md](hi-tools-in-the-embedding-lib.md) |
-| A backend-controlled agent loop with browser-executed scene tools | The scene tools stay in the browser; the agent loop, the tool authorization and the provider credentials move to the backend | [backend-agent-loop-with-browser-scene-tools.md](backend-agent-loop-with-browser-scene-tools.md) |

@@ -193,7 +193,6 @@ the tools while a page is connected. For the PoC:
   ```
 
 A shared-secret header check on `/mcp` or App Service Easy Auth are the follow-up options once the
-PoC becomes a shared setup; the access control of the public endpoint is an open decision in the
-[backlog](../../.agents/backlog/deployment-and-session-issues.md#3-the-public-mcp-endpoint-has-no-access-control).
+PoC becomes a shared setup; the access control of the public endpoint is an open decision.
 The server holds **one connected page at a time** — a second page is refused (WebSocket close 4409)
 while the first is connected.

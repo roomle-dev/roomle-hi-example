@@ -28,14 +28,15 @@ deliberately rejected. Read these before proposing a change to an area they cove
 | ADR | Status |
 |---|---|
 | [0001 — HI MCP tool logic runs in the MCP server, pages only execute planner methods](decisions/0001-hi-mcp-tool-logic-in-the-server.md) | Superseded in part by 0007 |
-| [0002 — One MCP server for every client, configured from outside](decisions/0002-one-mcp-server-configured-from-outside.md) | Accepted |
-| [0003 — The AI chat is an MCP client beside the MCP server](decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) | Accepted |
+| [0002 — One MCP server for every client, configured from outside](decisions/0002-one-mcp-server-configured-from-outside.md) | Superseded in part by 0010 |
+| [0003 — The AI chat is an MCP client beside the MCP server](decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) | Superseded in part by 0010 |
 | [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](decisions/0004-hi-mcp-server-on-cloudflare-containers.md) | Superseded in part by 0008 |
-| [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](decisions/0005-deploy-hi-mcp-from-release-cloudflare.md) | Superseded in part by 0008 |
+| [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](decisions/0005-deploy-hi-mcp-from-release-cloudflare.md) | Superseded (the deploy workflow is removed) |
 | [0006 — The prompt tests assess the agent, the unit tests the tools](decisions/0006-prompt-tests-assess-the-agent.md) | Accepted |
 | [0007 — The tool logic of the plan-changing HI MCP tools runs in the planner](decisions/0007-hi-mcp-tool-logic-in-the-planner.md) | Accepted |
-| [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Accepted |
+| [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Superseded in part (deployed by hand) |
 | [0009 — The chat window is a panel of the planner, the agent loop stays in the host](decisions/0009-the-chat-window-is-a-panel-of-the-planner.md) | Accepted |
+| [0010 — The example's chat runs in the page, with the planning assistant of the embedding-lib](decisions/0010-the-example-chat-runs-in-the-page.md) | Accepted |
 
 ---
 
@@ -88,7 +89,7 @@ Living reference of the implementation: how the code is built today. Full index 
 | [mcp-server.md](context/mcp-server.md) | `server.ts`, tool registration, the page bridge, the planner methods, undo and redo |
 | [tool-executors.md](context/tool-executors.md) | Overview of all MCP tools, `tool-executors.ts`, `agent-facing.ts`, the tool commands of roomle-ui |
 | [layout-and-placement.md](context/layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
-| [pages-chat-and-launcher.md](context/pages-chat-and-launcher.md) | The page side of the bridge, `start.mjs`, the chat backend `hi-mcp-chat` |
+| [pages-chat-and-launcher.md](context/pages-chat-and-launcher.md) | The page side of the bridge, `start.mjs`, the chat of the example page |
 | [deployment-and-testing.md](context/deployment-and-testing.md) | Cloudflare, the workspaces and scripts, the unit tests, the end-to-end test runs |
 
 ### Wiki
@@ -147,6 +148,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | [Installation elements in the HI plan context](feature-analysis/installation-elements-in-hi-plan-context.md) | Open — RML-18023: type and position for electric plugs and water connections; roomle-ui `feat/water-connection` and HI MCP changes | 2026-10-19 |
 | [Interior Design: editing HI sub-articles through MCP](feature-analysis/interior-design-sub-articles.md) | Implemented on feature branches — direct acceptance and limited AI smoke test | 2026-10-19 |
 | [HI MCP: open and close cabinets](feature-analysis/hi-mcp-open-and-close-cabinets.md) | Open — RML-18232: open/close tools for groups and articles through `externalObjectGroupOperation`, snapshot property for open doors and drawers | 2026-10-20 |
+| [HI MCP in the embedding-lib, first step](feature-analysis/hi-mcp-tools-in-the-embedding-lib-first-step.md) | Open — RML-18196: the MCP server's tools copied into the embedding-lib as `createHiMcpTools`, the roomle-ui HI presets demo on them; the server stays for the store and the example | 2026-10-20 |
 
 ### Refactoring Analyses
 
@@ -182,10 +184,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [Library-neutrality issues of the MCP server](backlog/mcp-policy-issues.md) — what in the MCP server still carries library-specific content: the served text's kitchen taxonomy, the search normalization and the result messages of the HI tool commands | 2026-10-14 |
 | [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — the ligna-store chat sends no reasoning effort; further measurement only on request | 2026-10-14 |
 | [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL | 2026-10-17 |
-| [Deployment, launcher and page sessions](backlog/deployment-and-session-issues.md) — access control, the DEV branch policy and the teardown of the personal deployment | 2026-10-14 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-14 |
-| [The HI tools in the embedding-lib instead of the Cloudflare MCP server](backlog/hi-tools-in-the-embedding-lib.md) — the page provides the MCP tools from the embedding-lib (`src/homag-intelligence`); the server, the page bridges and the Cloudflare deployment go | 2026-10-16 |
-| [A backend-controlled agent loop with browser-executed scene tools](backlog/backend-agent-loop-with-browser-scene-tools.md) — the scene tools in the browser, the agent loop and the credentials in the backend | 2026-10-07 |
 | [Analyse how Spec Kit can help with the prompting](backlog/speckit-for-the-prompting.md) — Spec Kit's prompt sections as inspiration for the served text and the chat prompt | 2026-10-07 |
 
 ---

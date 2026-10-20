@@ -2,13 +2,20 @@
 
 The example page has a built-in AI chat that plans with the HI tools: the model
 reads the plan context and creates, modifies, or positions object groups by
-calling the same MCP tools an external MCP client would call. It turns the
-example into a self-contained demo — no Claude Code or Copilot needed.
+calling the HI MCP tools. It turns the example into a self-contained demo — no
+Claude Code or Copilot needed.
 
-The chat uses the [Vercel AI SDK](https://sdk.vercel.ai) with **Mistral**,
-**Anthropic (Claude)**, **Google (Gemini)**, and **Azure OpenAI** as supported providers, and reuses
-the MCP server from
-[`hi-mcp/hi-mcp-server`](../hi-mcp/hi-mcp-server/) unchanged.
+The chat runs in the page with the planning assistant of the roomle-ui
+embedding-lib: `startPlanningAssistant` of `@roomle/embedding-lib/hi`, a
+[Vercel AI SDK](https://sdk.vercel.ai) loop with the HI MCP tools of the
+embedding-lib (`createHiMcpTools`) — the tools of
+[`hi-mcp/hi-mcp-server`](../hi-mcp/hi-mcp-server/) without an MCP server. Its
+reference is roomle-ui `packages/embedding-lib/docs/homag-intelligence-embedding.md`,
+"The AI Planning Assistant agent" and "HI MCP tools for an AI agent". The page
+loads the embedding-lib from unpkg; until a release has these functions, it is
+the dev version `0.0.0-dev-a4754cb` ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
+Supported providers: **Mistral**, **Anthropic (Claude)**, **Google (Gemini)** and
+**Azure OpenAI**.
 
 ## Running it
 
@@ -22,14 +29,14 @@ npm start azure <api-key>            # gpt-4o deployment (see below)
 npm start gpt-5-mini <api-key>       # gpt-5-mini on the HI Azure AI Foundry resource
 npm start gpt-5.4-mini <api-key>     # gpt-5.4-mini on the HI Azure AI Foundry resource
 npm start gpt-6-astra <api-key>      # gpt-6-astra on the HI Azure AI Foundry resource
-npm run dev <provider> <api-key>     # same, planner from the local Rubens UI dev server (:5173)
-npm run start:cf <provider> <api-key> # same, MCP server deployed on Cloudflare instead of a local one
+npm start gpt-6.1-sol <api-key>      # gpt-6.1-sol on its own Foundry resource (the key of that resource)
+npm run dev <model> <api-key>        # same, planner from the local Rubens UI dev server (:5173)
 ```
 
-The provider name selects the provider and model:
+The model name selects the provider and the model:
 
-| CLI provider | Provider | Model |
-| ------------ | -------- | ----- |
+| Model name | Provider | Model |
+| ---------- | -------- | ----- |
 | `mistral` | Mistral | `mistral-large-latest` (default) |
 | `mistral-medium` | Mistral | `mistral-medium-latest` |
 | `mistral-large` | Mistral | `mistral-large-latest` |
@@ -45,13 +52,21 @@ The provider name selects the provider and model:
 | any `gemini-*` model id | Google (Gemini API) | passed through (e.g. `gemini-3-pro-preview`) |
 | `azure` / `openai` | Azure OpenAI | `gpt-4o` (deployment name — see below) |
 | any `gpt-*` model id (e.g. `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`) | Azure OpenAI (HI Azure AI Foundry resource) | the deployment of the same name |
+| `gpt-6.1-sol` | Azure OpenAI (its own Foundry resource) | the `gpt-6.1-sol` deployment |
 
-Provider names and model ids are matched case-insensitively, so `Mistral-Large-3`
-and `mistral-large-3` are the same request.
+Model names and ids are matched case-insensitively, so `Mistral-Large-3` and
+`mistral-large-3` are the same request.
 
-Node 20+ (the repository's minimum). The Vercel AI SDK packages declare
-`engines: node >= 22`; the chat is verified on Node 20, but stay on Node 22+
-to remain inside the SDK's declared support range.
+The launcher (`minimal-hi-example/start.mjs`) turns the model name and the key
+into the `PlanningAssistantConfig` of the embedding-lib — a JSON object with the
+provider, the model, the key and, for an Azure deployment, the endpoint of its
+resource, the API and the reasoning effort, and whether the model reads images
+(`planningAssistantConfig` in `start.mjs`). It serves the config to the page at
+`/planning-assistant-config.json`, to this machine only, and opens the page with
+`&chat=true`, so the planner shows the button of the chat window. Without a model
+the page has no chat. Guarded by
+`it('serves the planning assistant config of the model to this machine')` in
+`hi-mcp/hi-mcp-server/tests/example-launcher.test.ts`.
 
 Azure needs two extra pieces: the resource name via the `AZURE_RESOURCE_NAME`
 environment variable, and the **deployment name** (not the model name) via
@@ -61,12 +76,15 @@ environment variable, and the **deployment name** (not the model name) via
 AZURE_RESOURCE_NAME=my-resource HI_CHAT_MODEL=my-gpt4o-deployment npm start azure <api-key>
 ```
 
+`HI_CHAT_MODEL` replaces the model of every provider other than the Foundry
+deployments.
+
 Every `gpt-*` model and `mistral-large-3` need neither: they are deployments on the HI
 Azure AI Foundry resource and are called through its OpenAI v1 endpoint
 `https://dfhifoundrysweden.services.ai.azure.com/openai/v1` with the resource's
 API key. `gpt-6.1-sol` is deployed on another Foundry resource and is called through its endpoint
 `https://controller-mes-resource.services.ai.azure.com/openai/v1` with that resource's API key
-(`baseUrl` of its entry in `FOUNDRY_DEPLOYMENTS`). A base URL ends in `/openai/v1`: the AI SDK
+(`baseUrl` of its entry in `FOUNDRY_DEPLOYMENTS` of `start.mjs`). A base URL ends in `/openai/v1`: the AI SDK
 appends `/responses` or `/chat/completions` itself. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
 left in the shell from an `azure` run cannot redirect them. `mistral-large-3` is an
 exception to the mistral provider: it is served from the Foundry resource, not from
@@ -74,37 +92,28 @@ the Mistral API. A `gpt-*` name is passed through as the deployment name
 without checking that the deployment exists: a missing deployment fails when the
 chat calls the provider, as the error of the first turn. The chat
 sets no `temperature`: the GPT deployments are reasoning models and reject it.
-Guarded by `it('resolves the Foundry deployments to the Foundry endpoint')` in
-`hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`.
 
-**API per deployment.** The Foundry GPT deployments use the Responses API
-(`azure(deployment)` in `chat-stream.ts`), which supports image input, function
-tools and reasoning together. GPT-6 Astra tool calls require Responses;
-omitting reasoning effort retains the deployment default and does not make
-Chat Completions compatible. [Official OpenAI documentation](https://developers.openai.com/api/docs/guides/latest-model).
-Foundry `mistral-large-3` uses Chat Completions (`azure.chat(deployment)`): its
-Responses endpoint rejects image input. `chatCompletions` in `chat-config.ts`
-selects that API only for Mistral. Configuration tests cover all Foundry
-deployments; `chat-stream.test.ts` verifies image/tool turns through Responses
-and retains the Mistral Chat Completions selection.
+**API per deployment.** The Foundry GPT deployments use the Responses API, which
+supports image input, function tools and reasoning together. GPT-6 Astra tool
+calls require Responses; omitting reasoning effort retains the deployment default
+and does not make Chat Completions compatible.
+[Official OpenAI documentation](https://developers.openai.com/api/docs/guides/latest-model).
+Foundry `mistral-large-3` uses Chat Completions (`chatCompletions: true` in its
+config): its Responses endpoint rejects image input.
 
-**Reasoning effort.** The chat sends the lightweight deployments gpt-5.4-mini and gpt-5-mini the
-reasoning effort `high` (`providerOptions.azure.reasoningEffort`, from `FOUNDRY_DEPLOYMENTS` in
-`chat-config.ts`): accuracy goes over speed, and they plan worse than gpt-6-astra. gpt-6-astra runs
-at its default. `HI_CHAT_REASONING_EFFORT` overrides the effort of every GPT deployment; Mistral,
-Anthropic and Google models get none. GPT Responses turns carry the configured
-reasoning effort alongside the MCP tools, including when the prompt has an image.
-The Chat Completions path omits explicit effort on tool turns. Guarded by
-`it('gives the lightweight GPT deployments reasoning effort high')` in
-`hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`. The defaults measured on the Foundry resource
-(2026-10-07): gpt-5.4-mini does not reason (0 reasoning tokens in every step), gpt-5-mini and
-gpt-6-astra reason as at `medium`. The step log ([a chat turn](#a-chat-turn)) shows the reasoning
-tokens of every step. gpt-5-mini and gpt-5.4-mini read images and have a 400k context window. The
-reasoning effort is set by the chat client, not by the MCP server. Measuring the planning quality
-at `high` is open: [backlog](../.agents/backlog/reasoning-effort-for-the-gpt-chat-models.md).
+**Reasoning effort.** The launcher gives the lightweight deployments gpt-5.4-mini and gpt-5-mini the
+reasoning effort `high` (`reasoningEffort` of the config, from `FOUNDRY_DEPLOYMENTS` in
+`start.mjs`): accuracy goes over speed, and they plan worse than gpt-6-astra. gpt-6-astra and
+gpt-6.1-sol run at their default. `HI_CHAT_REASONING_EFFORT` overrides the effort of every Azure
+model reached through the Responses API; Mistral, Anthropic and Google models get none, and neither
+does a deployment on Chat Completions. The defaults measured on the Foundry resource (2026-10-07):
+gpt-5.4-mini does not reason (0 reasoning tokens in every step), gpt-5-mini and gpt-6-astra reason
+as at `medium`. gpt-5-mini and gpt-5.4-mini read images and have a 400k context window. Measuring
+the planning quality at `high` is open:
+[backlog](../.agents/backlog/reasoning-effort-for-the-gpt-chat-models.md).
 
 The effort was chosen from the 32 tests of `docs/test-prompts.json`, one run each, evaluated as
-"test the mcp" does (2026-10-07):
+"test the mcp" does (2026-10-07, with the chat backend of that time):
 
 | Effort | Pass / partial / fail | Shortfalls from its own planning | Chat median / max | Reasoning tokens (32 runs) |
 |---|---|---|---|---|
@@ -113,28 +122,7 @@ The effort was chosen from the 32 tests of `docs/test-prompts.json`, one run eac
 | `medium` | not evaluated | — | 24 s / 240 s | 117,414 |
 
 At `low`, tests 01, 02, 04, 16, 18, 19, 24 and 26 pass that failed without reasoning; 12 (a new
-group instead of a merge) got worse. `low`'s slowest turn (142 s) waited on a `get-plan-images`
-call that timed out; `medium`'s slowest turn took 240 s, close to the 5-minute turn timeout. The
-runs at `high` are not evaluated.
-
-The launcher then:
-
-1. Runs the build gate (install + typecheck of the `hi-mcp` workspace, which
-   now includes the `hi-mcp-chat` package).
-2. Serves the example page on :3000 and starts the MCP server on :3100 as
-   usual.
-3. Starts the chat backend (`hi-mcp/hi-mcp-chat`) on :3200 with the API key
-   passed as the `HI_CHAT_TOKEN` environment variable — never in the URL, never
-   in the page.
-4. Opens the browser with `&chat=true` appended, so the planner shows the
-   button of the chat window.
-
-Supported arguments: the provider name, then the API key. Both are plain
-positional arguments — no `--` needed. Start without them and everything
-behaves exactly as before (no chat backend, no chat window).
-
-The provider aliases map to providers and model ids in
-`hi-mcp/hi-mcp-chat/chat-config.ts` (`PROVIDER_MODEL_ALIASES`).
+group instead of a merge) got worse. The runs at `high` are not evaluated.
 
 ## The chat window
 
@@ -143,119 +131,62 @@ The chat window is the **AI Planning Assistant** of the planner (roomle-ui
 with `featureFlags.planningAssistant`, and the button with the adjust icon at
 the bottom of the planner opens the chat in the drawer, where it looks like the
 other panels of the planner. The window shows the messages and the replies; the
-page runs the turns. The window hands every message to the page with the
-planner callback `onPlanningAssistantPrompt`, and the page passes the output of
-the turn to the window with `planningAssistantOutput`, one part per call: the
-new text of the reply, the running tool, the end of the turn or its error,
-whether the input is available, and whether the window takes images (roomle-ui
+planning assistant in the page runs the turns. The window hands every message to
+the page with the planner callback `onPlanningAssistantPrompt`, and the planning
+assistant passes the output of the turn to the window with
+`planningAssistantOutput`, one part per call: the new text of the reply, the
+running tool, the end of the turn or its error, whether the input is available,
+and whether the window takes images (roomle-ui
 `packages/embedding-lib/docs/homag-intelligence-embedding.md`, "The AI Planning
 Assistant window"). A planner without the window gets no chat; the debug log
-says "the planner has no AI Planning Assistant window - no chat".
+says "the planner has no AI Planning Assistant window - no chat". A page opened
+with `?chat=true` without a model from the launcher shows the window unavailable,
+with the message to start the example with `npm start <model> <api-key>`.
 
 The **Show panel** checkbox shows and hides the debug panel (parameters,
 buttons, console log).
 
-The conversation is held in the page and sent whole with every turn (the
-backend is stateless). The page sends the same per-page `clientId` in its
-WebSocket hello and each chat request. When the chat starts, the page requests
-the prompts of the chat from the planner once —
+The planning assistant keeps the conversation in the page. It requests the
+prompts of the chat from the planner once —
 `roomDesignerApi.extended.getExternalObjectAgentPrompts()`, the system prompt
-and the image prompt of the roomle-ui glue logic — and sends them as `prompts`
-with each chat request; the chat keeps no prompts of its own. The window's input is off until the
-page has registered its message handler and the bridge acknowledges this page, and on disconnect or
-when another page owns the planner; its status line then shows the bridge's message.
-The chat backend requires that ID and uses `/mcp?client=<clientId>`, so a tab
-that does not own the planner cannot use the chat to change its plan. The window
-renders the replies as **markdown** (bold, lists, headings, code) with
-[marked](https://marked.js.org) and sanitizes them with
-[DOMPurify](https://github.com/cure53/DOMPurify). Replies stream as plain
-text; while the model executes
-tools, the chat backend emits `[tool] <name>` status lines into the stream —
-the page passes the running tool to the window's status line ("assistant is
-working… get-plan-context") and keeps those lines out of the reply. Tools run in the
-MCP server, their planner calls in the page, and can take seconds to minutes
-(`get-plan-images` up to 120s) — the status line is what tells you the agent
-is still working. The backend logs every request, MCP connection, tool call
-(with duration), stream error, and finish to its terminal.
+and the image prompt of the roomle-ui glue logic. The window renders the replies
+as **markdown** (bold, lists, headings, code) with [marked](https://marked.js.org)
+and sanitizes them with [DOMPurify](https://github.com/cure53/DOMPurify). While
+the model runs tools, the window's status line names the running tool
+("assistant is working… get-plan-context"). Tools run in the page and can take
+seconds to minutes (`get-plan-images` up to 120 s) — the status line is what
+tells you the agent is still working. The tools log every call and every planner
+call to the page console (`[hi-mcp] tool …`, `[hi-mcp] call …`).
 
 ### A chat turn
 
-The backend gives the model the system prompt of the request
-(`prompts.systemPrompt`, from the planner; its sentences in the
-[behaviour reference](hi-mcp-behaviour.md#4-how-a-tool-call-runs)),
-the conversation and the MCP tools, and runs `streamText` in steps
-(`chat-steps.ts`): a step is one model call and the tool calls it returns.
+The planning assistant gives the model the system prompt of the planner (its
+sentences in the [behaviour reference](hi-mcp-behaviour.md#4-how-a-tool-call-runs)),
+the conversation and the HI MCP tools, and runs `streamText` in steps: a step is
+one model call and the tool calls it returns.
 
-- A turn has at most 16 steps (`MAX_CHAT_STEPS`). The last one runs with
-  `toolChoice: 'none'`, so a turn that uses every step still ends with the
-  model's answer instead of a tool result. Without `stopWhen` the SDK stops
-  after the first step and never runs the tools. Guarded by
-  `it('ends a turn that uses every step with the model answer')` in
-  `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`.
-- A turn that has not answered within `HI_CHAT_TURN_TIMEOUT_MS` is aborted
-  and ends with an `[error]` line naming the limit and a readable interruption
-  summary; the plan keeps what the tools changed.
-- A provider error or thrown stream error ends with one interruption summary
-  derived from the recorded tool outcomes (`chat-recovery.ts`). Completed
-  writes name the returned groups, articles, corrections and omissions. A
-  returned tool error, thrown write or pending write is unconfirmed: read the
-  plan before trying that operation again. With only read-only calls, the
-  answer says that nothing was created or changed. Partial text stays visible
-  and is marked incomplete. The chat makes no recovery model call, repeats no
-  operation and performs no automatic undo. These paths are covered by
-  `hi-mcp/hi-mcp-chat/tests/chat-stream.test.ts`.
-- Every step logs its tokens (in, out, reasoning), its tool calls and its
-  duration (`[hi-chat] step n: …`); "out" counts the reasoning tokens too.
-  Guarded by `it('logs the reasoning tokens of a step')` in
-  `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`.
-- A step that fails is logged with its number and what the provider answered,
-  on one line — line breaks of a message or a body become spaces
-  (`[hi-chat] step n failed after … ms: …`): per cause the error, the HTTP
-  status, the url, the provider's request id and the body, text or value the
-  AI SDK could not process — "Failed to process successful response" carries
-  the status of the answer, its cause what in the answer failed
-  (`createStepLog`, `describeStepError` in `chat-steps.ts`). Guarded by
-  `it('logs the step that failed with what the provider answered')` in
-  `hi-mcp/hi-mcp-chat/tests/chat-steps.test.ts`. Diagnostics are best effort;
-  unserialisable details or a throwing logger cannot stop recovery. A throwing tool-completion
-  logger also leaves the successful MCP result intact for the next model step, guarded by
-  `it('keeps a completed write successful when its completion log throws')` in
-  `hi-mcp/hi-mcp-chat/tests/chat-stream.test.ts`.
-
-The ligna-store browser chat has at most eight model steps (`MAX_CHAT_STEPS` in
-its `hi-mcp/chat.ts`). It reserves the eighth step for an answer with
-`prepareStep` and `toolChoice: 'none'`; the first seven steps may call tools.
-The final model call receives the preceding tool results. The model can answer
-earlier and finish without using the full budget. This policy applies to both
-Azure and Mistral and is owned by the chat client.
-
-The ligna-store uses the same `chat-recovery.ts` implementation in its browser
-chat. Keep the two copies in sync. An interrupted turn returns complete
-assistant/tool message pairs and the interruption summary, so the window
-retains the evidence for the next turn. Pending calls have no fabricated tool
-result. If a tool's model-output conversion fails, the history keeps its
-actual result as text. The example's plain-text chat stores the readable
-summary in its conversation.
+- A turn has at most 16 steps. The last one runs with `toolChoice: 'none'`, so a
+  turn that uses every step still ends with the model's answer instead of a tool
+  result.
+- A turn that fails ends with an error in the window (`The planning assistant
+  failed: …`) and is left out of the conversation of later turns; the plan keeps
+  what the tools changed.
+- Invalid tool input and a failing tool reach the model as the tool's result
+  with the text the MCP server would send, so the model can correct the call.
 
 ## Images in the chat
 
-The chat takes an image only when the model reads images. The chat backend
-decides this from the model id it resolved (`readsImages` in
-`hi-mcp/hi-mcp-chat/chat-config.ts`): every Anthropic and Google model, every
-`gpt-*` deployment on the HI Azure AI Foundry resource, and from the other
-providers the ids in `IMAGE_INPUT_MODELS`: `mistral-large-latest`,
+The chat takes an image only when the model reads images: `readsImages` of the
+config, which the launcher sets for every Anthropic and Google model, every
+`gpt-*` deployment on a Foundry resource, and from the other providers the ids in
+`IMAGE_INPUT_MODELS` of `start.mjs`: `mistral-large-latest`,
 `mistral-medium-latest`, `mistral-large-3`, `mistral-large-4-0`, `gpt-4o`,
-`gpt-5-mini`, `gpt-5.4-mini` and `gpt-6-astra`. Any other id gets no image input. That includes a pass-through
-`mistral-*` id and an Azure deployment named with `HI_CHAT_MODEL`: an unknown
-model gets no image feature rather than a provider error halfway through a
-turn. The table lives in the backend, which resolves the model — not in the
-launcher, and not in a provider query (only Mistral reports vision). The startup
-banner shows the result (`Images: yes` or `no`), and `GET /capabilities` gives
-it to the page. Guarded by `it('knows which models read images')` in
-`hi-mcp/hi-mcp-chat/tests/chat-handler.test.ts`.
+`gpt-5-mini`, `gpt-5.4-mini` and `gpt-6-astra`. Any other id gets no image input.
+That includes a pass-through `mistral-*` id and an Azure deployment named with
+`HI_CHAT_MODEL`: an unknown model gets no image feature rather than a provider
+error halfway through a turn.
 
-In the window (only when `/capabilities` answers `imageInput: true`; the page
-then enables the window's images):
+In the window (only when the model reads images):
 
 - **Drop**: the whole chat window catches a dropped file (header, messages
   and input), and a dashed outline marks it while a file is dragged over it.
@@ -274,151 +205,76 @@ then enables the window's images):
 - **Preview**: the attached image is shown small above the input, with a × to
   remove it. After sending, it is shown in the user's message.
 - **Text**: an image can be sent with an empty input. The user's message then
-  shows only the image, and the chat backend gives the model the image prompt
-  of the planner (see below).
+  shows only the image, and the model gets the image prompt of the planner: "Plan
+  the furniture in the image as close to it as possible - fetch the planning
+  skill image-planning with get-skill and follow it."
 - The images stay in the conversation and go along with every turn, so a
   follow-up can refer to the image. Every step of a turn sends them again (up
-  to 16 times), which is why the window scales them down: a larger image adds
-  little detail for any configured model, and Gemini allows 20 MB of inline
-  data per request.
+  to 16 times), which is why the window scales them down.
 
 With images off, the window takes no dropped file and the chat is text-only.
 
-A user message carries its images in `images`, an array of base64 data URLs
-(`image/jpeg`, `image/png`, `image/webp` or `image/gif`):
+### Images in tool results
 
-```json
-{ "role": "user", "content": "", "images": ["data:image/jpeg;base64,/9j/..."] }
-```
+`get-plan-images` returns its two renders as file parts of the tool result.
+Anthropic, Google and Azure send those to the model as images. `@ai-sdk/mistral`
+writes a tool result's content as JSON text — two renders were 1.5 to 2.1
+million tokens of base64 against Mistral Large's 262k context. The planning
+assistant of the embedding-lib does not move the images of a Mistral tool result
+into a user message, so a Mistral model fails on a turn that calls
+`get-plan-images`. Use a GPT, Claude or Gemini
+model for plannings that look at the plan.
 
-A user message with images and an empty (or blank) `content` gets the image
-prompt of the request, `prompts.imagePrompt` — the planner's text "Plan the
-furniture in the image as close to it as possible - fetch the planning skill
-image-planning with get-skill and follow it." (`toModelMessages` in
-`chat-config.ts`). The skill `image-planning` of the MCP server says how to plan
-from an image, for an image with text too. The backend adds the image prompt for
-every client, the page, the test script and curl alike.
-
-The backend accepts no image URL, because the AI SDK would download it in the
-backend. It passes the images to the model as file parts of the user message
-(`toModelMessages`), and every provider reads them there. The Mistral
-middleware moves only the images of tool results. An image sent to a model
-that reads no images is answered with `400`.
+The tools keep their results small for every model: compact JSON without the
+signed `imageUrl` of the master data
+([behaviour reference §5.3](hi-mcp-behaviour.md#53-result-format)).
 
 ## Architecture
 
 ```
+[Launcher: minimal-hi-example/start.mjs]
+  ├── serves the example page on :3000
+  └── serves the PlanningAssistantConfig (model, key, endpoint) at
+      /planning-assistant-config.json, to this machine only
+            │
+            ▼
 [Browser: index.html]
   ├── Planner with the AI Planning Assistant window (featureFlags.planningAssistant)
-  │     onPlanningAssistantPrompt ──▶ page ──▶ planningAssistantOutput
-  ├── Chat host (POST /chat with the message history, clientId and the planner's prompts)
-  └── MCP browser bridge (?mcp=true, same clientId in hello)
-            │ ws://localhost:3100/bridge
-            ▼
-[Chat backend: hi-mcp/hi-mcp-chat on :3200]
-  ├── Mistral / Anthropic / Google / Azure via the @ai-sdk provider packages (key from HI_CHAT_TOKEN)
-  ├── MCP client via @ai-sdk/mcp → http://localhost:3100/mcp?client=<clientId>
-  └── streamText(tools) → plain text stream
-            │ Streamable HTTP /mcp
-            ▼
-[hi-mcp/hi-mcp-server] → page bridge → roomDesignerApi.extended
+  │     onPlanningAssistantPrompt ──▶ planning assistant ──▶ planningAssistantOutput
+  └── startPlanningAssistant of @roomle/embedding-lib/hi
+        ├── the model via the @ai-sdk provider packages (from esm.sh)
+        └── streamText with createHiMcpTools ──▶ roomDesignerApi.extended (six planner methods)
 ```
 
-The chain keeps the MCP server untouched: the chat backend is just another MCP
-client, so every HI tool (`get-plan-context`, `create-or-replace-groups`,
-`get-plan-images`, …) works in the chat exactly as it does for Claude or
-Copilot. A new group is positioned by the `placement` it is created with.
-
-### The chat backend package
-
-| File | Role |
-| ---- | ---- |
-| `chat-config.ts` | Environment parsing and request body validation |
-| `chat-handler.ts` | HTTP handler factory: CORS, `/health`, `/capabilities`, `POST /chat`, error relay |
-| `chat-server.ts` | Entry point: listen on the chat port |
-| `chat-stream.ts` | Provider model (Mistral/Anthropic/Google/Azure), per-turn MCP client, `streamText` and plain-text response |
-| `chat-recovery.ts` | Record tool execution, summarise interrupted turns and retain completed message pairs; copied to ligna-store |
-| `chat-steps.ts` | The step loop of a turn (16 steps, the last without tools), the step log, the turn timeout message |
-| `tool-result-images.ts` | Mistral middleware: the images of a tool result go to the model as a user message |
-| `tests/chat-handler.test.ts` | Unit tests (config, validation, CORS, error relay, streaming) |
-| `tests/chat-steps.test.ts` | Unit tests of the step loop, the step log and the turn timeout (`MockLanguageModelV3`) |
-| `tests/tool-result-images.test.ts` | Unit tests of the Mistral middleware |
-
-### Images in tool results
-
-`get-plan-images` returns its two renders as MCP image blocks; `@ai-sdk/mcp`
-turns them into image parts of the tool result. Anthropic, Google and Azure
-send those to the model as images. `@ai-sdk/mistral` writes a tool result's
-content as JSON text — two renders were 1.5 to 2.1 million tokens of base64
-against Mistral Large's 262k context. The Mistral model is therefore wrapped
-with a middleware (`tool-result-images.ts`) that moves the images of every
-tool result into a user message right after the tool message; Mistral reads
-them there (about 1.3k tokens per image). The tool result keeps its text parts
-and a note that the images follow. Smaller renders would not help: base64 text
-costs about one token per character, and no model reads an image from it. Only
-the Mistral model is wrapped; the other providers keep their native image
-handling. Guarded by
-`it('moves the images of a tool result into a user message after the tool message')`
-in `hi-mcp/hi-mcp-chat/tests/tool-result-images.test.ts`.
-
-The MCP server keeps its results small for every client: compact JSON without
-the signed `imageUrl` of the master data
-([behaviour reference §5.3](hi-mcp-behaviour.md#53-result-format)).
-A plan context with them fills half of Mistral Large's context.
-
-Endpoints: `GET /health` (used for smoke tests), `GET /capabilities`
-(`{ "imageInput": true }` when the model reads images — see
-[Images in the chat](#images-in-the-chat)) and `POST /chat`
-(`{ "messages": [{ "role": "user", "content": "..." }], "clientId": "<page ID>", "prompts": { "systemPrompt": "...", "imagePrompt": "..." } }`
-→ plain text stream). The prompt runner reads the page ID from the bridge hello
-and the prompts from the planner of its page before posting to chat. Errors are relayed as plain text with a matching status code: `503`
-without a configured token, `400` for invalid bodies, a missing `clientId` or missing `prompts`, `403` for disallowed
-origins, `500` when the chat cannot start (the MCP server is unreachable, or the provider is not
-configured, e.g. `AZURE_RESOURCE_NAME`). A failure after the stream started — a provider error, the
-turn timeout — ends the stream with an `[error] …` line.
-
-### Environment variables
-
-| Variable | Default | Meaning |
-| -------- | ------- | ------- |
-| `HI_CHAT_TOKEN` | — | The provider API key (set by the launcher from the CLI argument) |
-| `HI_CHAT_PROVIDER` | `mistral` | The CLI provider name (`mistral`, `mistral-medium`, `mistral-large-3`, `mistral-large-4`, `claude`, `gemini`, `azure`, or a full `gpt-*`/`mistral-*`/`claude-*`/`gemini-*` model id) |
-| `HI_CHAT_PORT` | `3200` | Port of the chat backend (the page reads it via the `chat_port` query parameter) |
-| `HI_CHAT_MODEL` | from the provider name | Overrides the model id (mainly Azure deployment names) without changing the provider; ignored for the Foundry deployments `gpt-*`/`mistral-large-3` |
-| `AZURE_RESOURCE_NAME` | — | Required for `azure`/`openai`: the Azure OpenAI resource name (ignored for the Foundry deployments `gpt-*`/`mistral-large-3`) |
-| `HI_MCP_URL` | `http://localhost:3100/mcp` | The MCP server the chat backend connects to |
-| `HI_CHAT_PAGE_ORIGINS` | `http://localhost:3000`, `http://127.0.0.1:3000` | Allowed CORS origins (the launcher sets it to match `EXAMPLE_PORT`) |
-| `HI_CHAT_TURN_TIMEOUT_MS` | `300000` | A turn that has not answered within this time is aborted and ends with an `[error]` line naming the limit; the plan keeps what the tools changed |
-| `HI_CHAT_REASONING_EFFORT` | per deployment | The reasoning effort sent to the GPT deployments (`gpt-*`), e.g. `medium`; unset, `high` for gpt-5.4-mini and gpt-5-mini and the deployment default of every other one |
+The page passes `startPlanningAssistant` a planner API that records the planner
+calls of the tools in `window.hiPlannerCalls` and the output of the window in
+`window.hiPlanningAssistantOutput`; `window.hiAgentPlanContext(include)` answers
+the plan context in the agent's words. The prompt runner of "test the mcp" reads
+them (`.agents/scripts/run-hi-mcp-prompt.js`).
 
 ## Security notes
 
-- The API key travels: CLI argument → environment variable of the chat
-  backend. It is never written into the page, the URL, or the launcher log.
+- The API key travels: CLI argument → launcher → `/planning-assistant-config.json`
+  → the page, which calls the provider with it. The launcher serves the config to
+  requests from this machine only, under a `localhost` or loopback Host, so a site
+  whose name resolves to this machine (DNS rebinding) cannot read it (403
+  otherwise), and keeps the key out of the page URL and its log.
 - A CLI argument is visible in `ps` for the lifetime of the process — accepted
-  for a local dev example. `HI_CHAT_TOKEN` works as an alternative without
-  that exposure.
-- CORS is restricted to the example page origins; requests without an origin
-  (curl) are allowed for local debugging, but must include the connected page's `clientId`.
-- The chat backend listens on loopback (`127.0.0.1`) only: it holds the key and
-  accepts requests without an origin, so no other device can reach it.
+  for a local dev example.
+- The key is in the page: anyone with the page open can read it in the browser.
+  Acceptable for a local example on this machine, not for a hosted page.
 
 ## Troubleshooting
 
 | Symptom | Cause and fix |
 | ------- | ------------- |
-| `No API token configured` (503) | Chat backend started without a key — start with `npm start <provider> <api-key>` |
-| Chat disabled: server already has a planner connected | Close the other planner page, then reload this one |
-| `Chat request requires a page clientId` (400) | Include the browser page's bridge `clientId` in the chat request |
-| `Chat request requires prompts` (400) | Include `prompts`, the result of the planner's `getExternalObjectAgentPrompts()`, in the chat request |
+| The window says there is no model for the planning assistant | The page was opened with `?chat=true` without a model — start with `npm start <model> <api-key>` |
+| `unsupported model` when starting | The model name is not known — see the table above |
 | `the planner has no AI Planning Assistant window - no chat` in the debug log | The planner UI has no planning assistant yet — start with `npm run dev` against a roomle-ui that has it, or a server URL whose planner has it |
 | `failed to load: HI is not available` in the debug log, no chat | The planner was created without its HI module, so it has no prompts for the chat (`getExternalObjectAgentPrompts` rejects) |
 | `AZURE_RESOURCE_NAME is required` | The `azure` provider needs the resource name env var and the deployment name in `HI_CHAT_MODEL` |
-| Reply says the tool failed with "no page connected" | The example page is not open (or not with `?mcp=true`) — the browser bridge is required for tool calls |
-| `port 3200 is already in use` | A previous chat backend is still running — `lsof -ti tcp:3200 \| xargs kill`, or pick another port with `HI_CHAT_PORT` |
-| Provider error in the reply | The provider API rejected the key or the model — check the key, or set `HI_CHAT_MODEL` |
-| A dropped image is not attached | Images are off: the banner shows `Images: no` (the model is not known to read images), or the chat backend was not up yet when the page loaded the chat — the debug log says `images disabled - no capabilities`; reload the page |
-| `The model … does not read images` (400) | An image was sent to a model without image input (curl, a script, or a page from an earlier backend) |
+| `The planning assistant failed: …` in the window | The provider rejected the key or the model, or a Mistral model got the images of `get-plan-images` — check the key, or set `HI_CHAT_MODEL` |
+| A dropped image is not attached | Images are off: the model is not known to read images |
 
 ## The chat in the ligna-store
 
@@ -431,8 +287,8 @@ endpoint allow browser CORS), and the tools come from `<mcp_server>/mcp`, which
 answers every origin
 ([cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md#browser-clients-cors)).
 The store keeps `api_key` out of the page URL its bridge announces. Its
-reference is the ligna-store's `hi-mcp/README.md`; why neither chat is served
-by the MCP server, and why a key in the store URL is for a demo only:
+reference is the ligna-store's `hi-mcp/README.md`; why a key in the store URL is
+for a demo only:
 [ADR 0003](../.agents/decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md).
 Where the store's chat differs from this one is open in the
 [backlog](../.agents/backlog/README.md#ligna-store).

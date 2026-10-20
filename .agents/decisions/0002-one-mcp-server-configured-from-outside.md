@@ -1,6 +1,6 @@
 # ADR 0002 — One MCP server for every client, configured from outside
 
-> **Status**: Accepted
+> **Status**: Superseded in part by [0010](0010-the-example-chat-runs-in-the-page.md) — the launcher starts no MCP server and has no build gate
 > **Date**: 2026-09-27
 > **Analysis**: the refactoring analysis of pull request [#13](https://github.com/roomle-dev/roomle-hi-example/pull/13) (git history); the server copied from the roomle-ui PoC [RML-17693](https://roomle.atlassian.net/browse/RML-17693) in pull request [#12](https://github.com/roomle-dev/roomle-hi-example/pull/12)
 

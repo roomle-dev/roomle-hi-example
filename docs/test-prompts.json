@@ -116,8 +116,8 @@
       "id": "wardrobe-door-hinges",
       "title": "Door hinges at the ends of a wardrobe",
       "plan": "closets",
-      "prompt": "add a wardrobe of four cabinets with one door each to the back wall",
-      "expect": "one create-or-replace-groups call with a placement by wall (wall back); one group of four single-door wardrobe cabinets in a row; mod_DoorDirectionSelection Left in the attributes of the root module at the left end and Right in those of the root module at the right end, the two in the middle unchanged; no handle on the outside of the row"
+      "prompt": "add a wardrobe of four cabinets with one door each to the right wall",
+      "expect": "one create-or-replace-groups call with a placement by wall (wall right); one group of four single-door wardrobe cabinets in a row; mod_DoorDirectionSelection Left in the attributes of the root module at the left end and Right in those of the root module at the right end, the two in the middle unchanged; no handle on the outside of the row"
     },
     {
       "id": "utility-room-washer-and-sink",
@@ -253,8 +253,8 @@
       "id": "edit-insert-below-wall-units",
       "title": "Insert a unit below wall units",
       "plan": "corner-kitchen-wall-units",
-      "prompt": "insert a base unit with drawers between the hob unit and the sink unit",
-      "expect": "insert-article-into-group between the hob unit and the sink unit: the corner unit stays in the corner, the right leg grows to the front by 600 mm, the range hood stays above the hob unit, the wall unit above the sink moves with it; the answer names the moved wall unit"
+      "prompt": "insert a narrow base unit with drawers between the hob unit and the drawer unit next to the fridge",
+      "expect": "insert-article-into-group of a narrow drawer unit (e.g. US2A30) between the hob unit and the drawer unit next to the tall fridge unit on the right leg: the corner unit stays in the corner, the right leg grows to the front by the new unit's width and the tall fridge unit stays clear of the door, the range hood stays above the hob unit, the wall unit above the shifted drawer unit moves with it; the answer names the moved wall unit"
     },
     {
       "id": "edit-remove-next-to-corner",
@@ -309,7 +309,7 @@
       "title": "Swap the ends of a correctly hinged wardrobe",
       "plan": "closets",
       "prompt": [
-        "add a wardrobe of three cabinets with one door each, 400 mm wide each, to the back wall",
+        "add a wardrobe of three cabinets with one door each, 400 mm wide each, to the right wall",
         "swap the first and the last cabinet"
       ],
       "expect": "turn 1: one row of three 400 mm single-door wardrobe cabinets, left end hinged left and right end right; turn 2: the end cabinets change places and their door settings are corrected for their new ends; the row stays 1200 mm and the middle cabinet keeps its door input; verify both turns rather than inferring the initial hinges from the final plan"
@@ -319,7 +319,7 @@
       "title": "Door hinges at both ends exposed by a middle deletion",
       "plan": "closets",
       "prompt": [
-        "add a wardrobe of five cabinets with one door each, 400 mm wide each, to the back wall",
+        "add a wardrobe of five cabinets with one door each, 400 mm wide each, to the right wall",
         "delete the middle cabinet and leave the gap"
       ],
       "expect": "turn 1: five 400 mm single-door wardrobe cabinets in one row with outer hinges; turn 2: delete-article-in-place splits it into two two-cabinet rows where they stand, with a 400 mm gap; the newly exposed right end of the left row hinges right and the new left end of the right row hinges left; unchanged original outer ends keep their settings; evaluate each row separately"
@@ -329,7 +329,7 @@
       "title": "Door hinge after replacing a wardrobe end",
       "plan": "closets",
       "prompt": [
-        "add a wardrobe of three cabinets with one door each, 400 mm wide each, to the back wall",
+        "add a wardrobe of three cabinets with one door each, 400 mm wide each, to the right wall",
         "replace the last cabinet with a single-door kitchen pantry cabinet of the same width"
       ],
       "expect": "turn 1: three 400 mm single-door wardrobe cabinets, left end hinged left and right end right; turn 2: exchange-root-module replaces the right end with a single-door pantry article at 400 mm; its door hinges right through an explicit override or a targeted follow-up, and the first two cabinets keep their inputs and positions"
@@ -359,10 +359,10 @@
       "title": "A new end of a wardrobe",
       "plan": "closets",
       "prompt": [
-        "add a wardrobe of three cabinets with one door each to the back wall",
+        "add a wardrobe of three cabinets with one door each to the right wall",
         "add one more cabinet at its right end"
       ],
-      "expect": "turn 1: one create-or-replace-groups call with a placement by wall (wall back); three single-door wardrobe cabinets in a row, mod_DoorDirectionSelection Left on the root module at the left end and Right on the one at the right end; turn 2: one edit that adds a single-door cabinet at the right end of the group (merge-article-into-group, or a replace of the group); the new end has mod_DoorDirectionSelection Right, the former end keeps Right; no handle on the outside of the row"
+      "expect": "turn 1: one create-or-replace-groups call with a placement by wall (wall right); three single-door wardrobe cabinets in a row, mod_DoorDirectionSelection Left on the root module at the left end and Right on the one at the right end; turn 2: one edit that adds a single-door cabinet at the right end of the group (merge-article-into-group, or a replace of the group); the new end has mod_DoorDirectionSelection Right, the former end keeps Right; no handle on the outside of the row"
     },
     {
       "id": "undo-last-change",
@@ -438,8 +438,8 @@
       "id": "installation-elements-supplies",
       "title": "The supplies of the room are installation elements",
       "plan": "room-with-supplies",
-      "prompt": "which electric plugs and water connections are in the room? add a base cabinet on the back wall in front of the plug",
-      "expect": "the answer lists the plug and the water connection with the positions of the installationElements section and none in the obstacles; one base cabinet group against the back wall standing on the plug, with no overlap hint - a supply is no obstacle - while the light switch stays an obstacle object"
+      "prompt": "which electric plugs and water connections are in the room? add a base cabinet in front of the plug",
+      "expect": "the answer lists the plug and the water connection, both on the left wall, with the positions of the installationElements section and none in the obstacles; one base cabinet group against the left wall standing on the plug, with no overlap hint - a supply is no obstacle - while the light switch on the back wall stays an obstacle object"
     },
     {
       "id": "sink-cabinet-at-water-connection",
@@ -544,13 +544,13 @@
       "prompt": [
         "Plan a modern L-shaped kitchen for a family of four.",
         "Replace all fronts with natural oak.",
-        "Add a pull-out larder unit on the left.",
-        "3.8 m wide wall, cooking island, country-house style, budget €15,000",
+        "Add a pull-out larder unit on the left wall.",
+        "Change the kitchen to a 3.8 m row along one wall with a cooking island, country-house style, budget €15,000",
         "Only handleless fronts and dark colors",
         "I have a room with a sloping ceiling and need a lot of storage space",
         "Add a pull-out larder unit"
       ],
-      "expect": "turn 1: one kitchen group around a corner, a leg on each of two walls, with sink, hob and range hood, oven, fridge, dishwasher and storage for four (drawer units, wall units, a tall unit), modern fronts; turn 2: change-group-attribute, an oak mod_FrontColor (Oak 222) on every unit; turn 3: merge-article-into-group, a tall unit with pull-outs (e.g. HT2AB60 or HTS2AB60) at the left end of the kitchen, overlapping neither the window nor the door; turn 4: a kitchen row of at most 3800 mm on one wall and a separate island group that carries the hob, country-house fronts (e.g. Oak), get-price is called and the answer compares the total with the €15,000 budget and says whether it replaced the L-shaped kitchen; turn 5: handleless units (the Kitchen handleless articles, e.g. US2A60 to EUS2A60, where a variant exists) and a dark mod_FrontColor on every unit; turn 6: the room has no sloping ceiling - the answer says so or asks where it is, and any storage it adds fits the walls; turn 7: one more tall unit with pull-outs at a free end of a row"
+      "expect": "turn 1: one kitchen group around a corner, a leg on each of two walls, with sink, hob and range hood, oven, fridge, dishwasher and storage for four (drawer units, wall units, a tall unit), modern fronts; turn 2: change-group-attribute, an oak mod_FrontColor (Oak 222) on every unit; turn 3: a tall unit with pull-outs (e.g. HT2AB60 or HTS2AB60) against the left wall - merge-article-into-group at the end of the kitchen's leg where the kitchen reaches the left wall, otherwise a group of its own - overlapping neither the window nor the door; turn 4: the L-shaped kitchen is replaced by a kitchen row of at most 3800 mm on one wall and a separate island group that carries the hob, country-house fronts (e.g. Oak), get-price is called and the answer compares the total with the €15,000 budget; turn 5: handleless units (the Kitchen handleless articles, e.g. US2A60 to EUS2A60, where a variant exists) and a dark mod_FrontColor on every unit; turn 6: the room has no sloping ceiling - the answer says so or asks where it is, and any storage it adds fits the walls; turn 7: one more tall unit with pull-outs at a free end of a row"
     },
     {
       "id": "kitchen-family-two-kids",

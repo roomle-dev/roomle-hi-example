@@ -6,6 +6,7 @@
   "description": "Standalone HI presets example page with the AI chat of the embedding-lib",
   "scripts": {
     "start": "node start.mjs",
-    "dev": "node start.mjs --dev"
+    "dev": "node start.mjs --dev",
+    "test": "node --test tests/*.test.js"
   }
 }

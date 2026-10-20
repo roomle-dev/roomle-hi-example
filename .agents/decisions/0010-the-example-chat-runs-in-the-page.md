@@ -1,6 +1,6 @@
 # ADR 0010 — The example's chat runs in the page, with the planning assistant of the embedding-lib
 
-> **Status**: Accepted
+> **Status**: Accepted — the clause that keeps the MCP server is superseded by [ADR 0011](0011-the-hi-tools-live-in-the-embedding-lib.md)
 > **Date**: 2026-10-20
 > **Ticket**: [RML-18196](https://roomle.atlassian.net/browse/RML-18196); supersedes the example's part of [ADR 0003](0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) and the launcher part of [ADR 0002](0002-one-mcp-server-configured-from-outside.md)
 

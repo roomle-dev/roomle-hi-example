@@ -225,7 +225,7 @@ plans a kitchen with a sink.
 **Decision** ([ADR 0006](../.agents/decisions/0006-prompt-tests-assess-the-agent.md)): the tests
 assess how well the agent understands the prompts and picks the right tools; they do not test the
 tools. A test never calls a tool itself — the tools are tested by the unit tests in
-[`hi-mcp/hi-mcp-server/tests`](../hi-mcp/hi-mcp-server/tests). A test that needs a changed plan
+roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-mcp/`. A test that needs a changed plan
 asks for the change in an earlier turn — "join groups" first asks to delete the middle unit; `undo-last-change`, `redo-last-change` and `undo-a-wrong-command`
 first ask to delete the middle unit of the Three Tall Units — `redo-last-change` also to undo it —
 and the last turn asks the agent to undo, redo or correct that change. Every turn is evaluated.
@@ -268,18 +268,17 @@ and run section.
 
 ## Testing Guidelines
 
-When testing a prompt by hand with the MCP server:
+When testing a prompt by hand:
 
-1. **Start the server** using `npm start` from the repository root
-2. **Open the example page** at http://localhost:3000
-3. **Connect your MCP client** to http://localhost:3100/mcp
-4. **Use the tools** to execute the prompts:
+1. **Start the example with a model** using `npm start <model> <api-key>` from the repository root
+2. **Open the chat** of the example page at http://localhost:3000 with the button at the bottom of the planner
+3. **Send the prompt**; the agent uses the tools, e.g.:
    - `get-plan-context` - Retrieve current room and article information
    - `create-or-replace-groups` - Create new groups with specified articles
    - `place-group` - Position groups against walls or in corners
    - the command tools - Edit an existing group (the tests on the Three Tall Units plan)
 
-5. **Verify results** by checking:
+4. **Verify results** by checking:
    - Groups are created with correct articles
    - Groups are positioned at the specified locations (right wall, back wall, back right corner)
    - Material specifications are applied correctly

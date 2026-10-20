@@ -1,8 +1,8 @@
 # roomle-hi-example
 
 Standalone HI presets example (one `minimal-hi-example/index.html`) with the AI chat of the roomle-ui
-embedding-lib, and the HI MCP server (`hi-mcp/hi-mcp-server`) of the ligna-store: an AI agent plans
-HOMAG Intelligence object groups in a live Roomle room-planner session.
+embedding-lib: its planning assistant runs the HI tools in the page, and an AI agent plans HOMAG
+Intelligence object groups in a live Roomle room-planner session.
 
 New to the HI MCP? The [user guide](./docs/user-guide/README.md) explains what it does, the three
 ways to use it, and how to talk to the assistant. How it is built — the processes, modules,
@@ -26,7 +26,6 @@ npm start openai <api-key>
 | Invocation | What you get |
 | ---------- | ------------ |
 | `npm start` | Example page on :3000, browser opens; no chat |
-| `npm run mcp-server` | The MCP server on :3100, for the ligna-store (`mcp_server=http://localhost:3100`) and external MCP clients |
 | `npm start -- --no-open` | Same, without opening the browser |
 | `npm start gpt-5-mini <api-key>` | Plus chat with the `gpt-5-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-5.4-mini <api-key>` | Plus chat with the `gpt-5.4-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
@@ -60,36 +59,20 @@ the production API:
 EXAMPLE_SERVER_URL='https://test.roomle.com/t/cp/3087/?customApiUrl=https://www.roomle.com/api/v2' npm start gpt-5.4-mini "$AZURE_GPT_KEY"
 ```
 
-Deploy the MCP server to Cloudflare by hand (`npx wrangler deploy` in `hi-mcp/cf`; needs Node 22+
-and a one-time `npx wrangler login`):
-
-```bash
-npm run deploy:cf        # PRD
-npm run deploy:cf:dev    # DEV
-```
-
-The servers: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp`, DEV `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp`.
-
 Details: [AI chat](./docs/ai-chat.md) ·
-[example and MCP server reference](./docs/hi-mcp-server.md) ·
-[hi-mcp PoCs](./hi-mcp/README.md)
+[example and tool reference](./docs/hi-mcp-server.md)
 
 ## Ask the agent
 
-**Built-in AI chat** — no external client needed; open the chat with the button at the bottom of
-the planner, type into it, and the model drives the HI tools (`get-plan-context`,
-`create-or-replace-groups`, …):
+Open the chat with the button at the bottom of the planner, type into it, and the model drives the
+HI tools (`get-plan-context`, `create-or-replace-groups`, …):
 
 ```text
 Get the plan context of the HI session and summarize it.
 Add a group of three tall units to the wall on the right.
 ```
 
-**External MCP clients** — Claude Code, Claude desktop app, GitHub Copilot,
-Cursor, … connect to `http://localhost:3100/mcp` of `npm run mcp-server`, with the ligna-store as
-the planner page (`mcp_server=http://localhost:3100`):
-[connecting an MCP client](./docs/hi-mcp-server.md#connecting-an-mcp-client) ·
-[example prompts](./docs/hi-mcp-server.md#example-prompts)
+More: [example prompts](./docs/hi-mcp-server.md#example-prompts)
 
 ## Links
 

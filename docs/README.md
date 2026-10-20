@@ -9,7 +9,6 @@ User-facing documentation for this repository.
 | [hi-mcp-behaviour.md](hi-mcp-behaviour.md) | How the MCP server behaves towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback |
 | [hi-mcp-server.md](hi-mcp-server.md) | Complete MCP server documentation: the example page, the server, its tools and clients |
 | [ai-chat.md](ai-chat.md) | The AI chat of the example: providers, models, images |
-| [hi-mcp-poc-presentation.md](hi-mcp-poc-presentation.md) | Proof of concept presentation |
 | [user-guide/README.md](user-guide/README.md) | User guide: what the HI MCP does, the ways to use it, prompts, limits |
 | [setup/](setup/) | Setup guides: local MCP server, Cloudflare, Azure, Ollama, Jan AI |
 | [setup/unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md) | Using an unreleased embedding-lib in the example page: the source of a local roomle-ui checkout, a dev version on npm, and what does not work |

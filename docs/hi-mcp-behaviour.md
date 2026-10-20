@@ -1,6 +1,7 @@
-# HI MCP server — behaviour
+# HI tools — behaviour
 
-> **Living reference.** It describes how the HI MCP server (`hi-mcp/hi-mcp-server`) behaves towards an
+> **Living reference.** It describes how the HI tools of the roomle-ui embedding-lib
+> (`createHiMcpTools`, `packages/embedding-lib/src/homag-intelligence/hi-mcp/`) behave towards an
 > agent: the guidelines and decisions it follows, its tools, the information it provides, and every
 > guard, automatic correction and feedback message. Every change to a tool, a served rule, a guard, a
 > correction or a result updates this document in the same change.
@@ -18,10 +19,8 @@
 > the guards ([RML-18033](https://roomle.atlassian.net/browse/RML-18033)).
 > A decision that is not implemented yet is marked **planned**; every other one is in effect.
 >
-> **Not covered here**: setup, clients and deployment. See
-> [hi-mcp-server.md](hi-mcp-server.md) (the example page and MCP
-> clients), [hi-mcp-server/README.md](../hi-mcp/hi-mcp-server/README.md) (server setups and environment
-> variables) and [cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md).
+> **Not covered here**: the example page and its setup. See
+> [hi-mcp-server.md](hi-mcp-server.md) and [ai-chat.md](ai-chat.md).
 
 ## Contents
 

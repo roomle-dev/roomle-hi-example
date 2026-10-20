@@ -1,89 +1,34 @@
-# Deployment and Testing
+# Scripts and Testing
 
-The workspaces and scripts, the Cloudflare deployment, the unit tests, and the end-to-end runs with
-real models. How to deploy step by step is in [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md)
-and the [deployment skill](../../.agents/skills/hi-mcp-cloudflare-deployment.md); how to run and
-evaluate the MCP tests in the [testing skill](../../.agents/skills/hi-mcp-testing.md).
+The workspaces and scripts, the unit tests, and the end-to-end runs with real models. How to run and
+evaluate the MCP tests is in the [testing skill](../../.agents/skills/hi-mcp-testing.md).
 [Back to the overview](./README.md).
 
 ## Workspaces and scripts
 
-The repository root is an npm workspace root over `hi-mcp`, `hi-mcp/hi-mcp-server`, `hi-mcp/cf`
-and `minimal-hi-example`; `hi-mcp/` is a workspace root of its own over `hi-mcp-server` and `cf`. `hi-mcp-client` has no `package.json` — it is covered
-by the typecheck and the tests only.
-
-The root `package-lock.json` pins all four workspaces for CI, local installs and the Docker image.
-The image copies every workspace manifest and installs only the production dependencies of
-`hi-mcp/hi-mcp-server`. The root `.dockerignore` limits the build context to those manifests,
-the lockfile, the shared TypeScript config and the server source.
+The repository root is an npm workspace root over `minimal-hi-example`.
 
 | Where | Script | Runs |
 | ----- | ------ | ---- |
 | root | `start`, `dev` | the launcher, plain / `--dev` |
-| root | `mcp-server` | the MCP server alone |
+| root | `test` | the tests of the launcher (`minimal-hi-example/tests/`, `node --test`) |
 | root | `plan:mistral`, `plan:gpt5`, `plan:gpt5.4`, `plan:gpt6` | the launcher with a chat model and its key from the environment |
-| root | `deploy:cf`, `deploy:cf:dev` | `wrangler deploy` in `hi-mcp/cf`, PRD / DEV (`--env dev`) — for testing, debugging and emergencies |
 | root | `format`, `format:check`, `lint`, `lint:fix` | Prettier, oxlint |
-| `hi-mcp/` | `start` | the MCP server |
-| `hi-mcp/` | `export:fixture -- <file>` | `hi-mcp-server/export-fixture.ts`: writes the answers of `tools/list` and `skills/list` to the file — the fixture of the tool copy in the roomle-ui embedding-lib (D94) |
-| `hi-mcp/` | `test` | vitest across the server, the client and `cf` |
-| `hi-mcp/` | `typecheck` | `tsc --noEmit` for the server and the client (not `cf`) |
 
-Main dependencies: `@modelcontextprotocol/sdk`, `ws`, `zod`, run with `vite-node` (pinned to 3.2.4
-with `vite` 6.4.3 — newer `vite-node` needs `vite` 8 and Node 20.19). The chat of the example page
-loads the AI SDK from esm.sh in the page and needs no dependency here. Node 20 or later; CI and wrangler use Node 22.
-
-## Cloudflare
-
-```text
-client ── https://hi-planning-assistant[-dev].dashiell-bell.workers.dev/mcp?session=<name> ──┐
-page   ── wss://…/bridge?session=<name> ─────────────────────────────────────────────────────┤
-                                                                                             ▼
-                          Worker (src/worker.ts): /mcp and /bridge only, else 404
-                            env.HI_MCP.getByName(session ?? 'default').fetch(request)
-                                                                                             ▼
-                          Container (src/container.ts): one per session, the MCP server
-                            on port 3000, asleep after 15 minutes
-```
-
-PRD runs at `https://hi-planning-assistant.dashiell-bell.workers.dev`, DEV at `https://hi-planning-assistant-dev.dashiell-bell.workers.dev` — the Roomle account, whose workers.dev
-subdomain `dashiell-bell` is shared with `roomle-planner-mcp` and is not changed.
-
-| File | Content |
-| ---- | ------- |
-| `hi-mcp/cf/wrangler.jsonc` | `account_id` of the Roomle account; Worker `hi-planning-assistant` (PRD, top level) and `hi-planning-assistant-dev` (DEV, environment `dev`, which repeats the containers, the Durable Object binding and the vars); container `HiMcpContainer` built from `./Dockerfile` with the repository root as build context, instance type `basic`, at most 5 instances; Durable Object binding `HI_MCP`; `HI_MCP_STORE_URL` |
-| `hi-mcp/cf/src/worker.ts` | routes `/mcp` and `/bridge` to the container of the `session` query parameter (`default` without one) |
-| `hi-mcp/cf/src/container.ts` | `defaultPort` 3000, `sleepAfter` 15 minutes, passes `PORT` and `HI_MCP_STORE_URL` with `mcp_session` selected from the request or `default`; sets the link before SDK `containerFetch` handles startup and forwarding, including 503 for exhausted capacity and 429 for startup throttling |
-| `hi-mcp/cf/Dockerfile` | `node:20-slim`; installs from the root lockfile with `npm ci --workspace hi-mcp/hi-mcp-server --omit=dev`, copies the server sources, `npm start --workspace hi-mcp/hi-mcp-server` |
-
-- **One session, one container, one page.** The page passes its session as `mcp_session`, appended
-  to `/bridge?session=`; MCP clients use `/mcp?session=`. A container keeps the page, the pending
-  calls and the undo record in memory; they are lost when it sleeps or restarts, and the page's
-  bridge reconnects.
-- **Origins:** the server accepts the page bridge and browser calls of `/mcp` from any origin.
-- **Deploy:** by hand, `npm run deploy:cf` (PRD) or `npm run deploy:cf:dev` (DEV) —
-  `wrangler deploy` in `hi-mcp/cf` with Node 22, into the Roomle account
-  ([ADR 0008](../../.agents/decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md)).
-  Verify a lockfile change on Linux first
-  ([how](../../.agents/skills/hi-mcp-cloudflare-deployment.md#verifying-a-lockfile-change-on-linux)).
+The chat of the example page loads the embedding-lib and the AI SDK from unpkg and esm.sh in the
+page and needs no dependency here. Node 20 or later.
 
 ## Unit tests
 
-`npm test` in `hi-mcp/` runs vitest over every workspace (`hi-mcp/vitest.config.ts`; `cloudflare:workers`
-is aliased to a stub).
-
 | File | Covers |
 | ---- | ------ |
-| `hi-mcp-server/tests/tool-executors.test.ts` | every tool executor against a fake planner: the plan context in the agent's words, `find-attributes`, the forward of the plan-changing tools, one plan change at a time, undo and redo |
-| `hi-mcp-server/tests/hi-mcp-server.test.ts` | the tool registrations and descriptions, tool calls through the MCP server, the server with a page bridge |
-| `hi-mcp-server/tests/plan-history.test.ts` | the undo record and history events |
-| `hi-mcp-server/tests/page-bridge.test.ts` | handshake, one page, call correlation, timeouts, disconnect (with `fake-page-socket.ts`) |
-| `hi-mcp-server/tests/planner-api.test.ts` | the methods and timeouts; the client allow-list matches |
-| `hi-mcp-server/tests/example-launcher.test.ts` | starts the real launcher on unused ports, with a model and a dummy key and without a model: the planning assistant config of the model, `no-store`, the 404 without a model, the 403 for a foreign Host; SIGTERM/SIGINT to only the launcher PID release the page port (POSIX; no model request) |
-| `hi-mcp-client/tests/browser-bridge.test.ts` | the page side of the bridge |
-| `cf/tests/worker.test.ts` | the Worker's routing |
-| `cf/tests/container.test.ts` | the named/default store link is set before container startup and preserved across bridge reconnects |
-| `cf/tests/container-startup-errors.test.ts` | the installed container SDK returns 503/429/500 for startup failures through the wrapper; startup errors do not escape as Worker exceptions |
+| `minimal-hi-example/tests/start.test.js` | starts the real launcher on unused ports, with a model and a dummy key and without a model: the planning assistant config of the model, `no-store`, the 404 without a model, the 403 for a foreign Host; SIGTERM/SIGINT to only the launcher PID release the page port (POSIX; no model request) |
+| `.agents/scripts/tests/*.test.js` | the test tooling (`node --test`) |
+
+The HI tools are tested in roomle-ui, in `tests/unit/embedding-lib/homag-intelligence/hi-mcp/`
+(`tool-executors`, `hi-mcp-server`, `plan-history`, `skills`, `interior-fittings`, `mcp-tool`,
+`hi-mcp-tools`, `hi-mcp-stream-text`), with
+`npx vitest run tests/unit/embedding-lib/homag-intelligence/hi-mcp --config config/vite.config.ui.mts`.
 
 The tool commands of the plan-changing tools are tested in roomle-ui, with `npm run test` in
 `packages/web-sdk` (`packages/web-sdk/packages/homag-intelligence/__tests__/`):

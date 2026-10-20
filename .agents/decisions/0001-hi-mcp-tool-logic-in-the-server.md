@@ -1,6 +1,6 @@
 # ADR 0001 — HI MCP tool logic runs in the MCP server, pages only execute planner methods
 
-> **Status**: Superseded in part by [ADR 0007](0007-hi-mcp-tool-logic-in-the-planner.md) — the tool logic of the plan-changing tools runs in the planner; the bridge protocol and the allow-list stand
+> **Status**: Superseded by [ADR 0011](0011-the-hi-tools-live-in-the-embedding-lib.md) — the tools live only in the roomle-ui embedding-lib; in part before by [ADR 0007](0007-hi-mcp-tool-logic-in-the-planner.md)
 > **Date**: 2026-09-29
 > **Analysis**: the refactoring analysis of pull request [#23](https://github.com/roomle-dev/roomle-hi-example/pull/23) (git history, commit `20b20a0`)
 

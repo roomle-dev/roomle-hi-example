@@ -23,10 +23,10 @@ A document counts as done only when all of these hold:
 - The fix or implementation commit is on `origin/master`: `git merge-base --is-ancestor <sha>
   origin/master`. A status such as "Implemented (locally)" or "Fixed (roomle-ui branch, not
   deployed)" names a branch; find the commit that actually landed (`git log --oneline origin/master
-  --grep=<TICKET>`, `git log --oneline origin/master -S<symbol> -- hi-mcp minimal-hi-example`).
+  --grep=<TICKET>`, `git log --oneline origin/master -S<symbol> -- minimal-hi-example`; the tools: roomle-ui).
 - The behaviour is still in the code at HEAD — the key condition, the function, the sentence of the
   served text.
-- The guarding test exists: an `it('…')` in `hi-mcp/<package>/tests/*.test.ts`; for served text, a
+- The guarding test exists: an `it('…')` in roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-mcp/*.spec.ts` or a tool command's test; for served text, a
   test of [`docs/test-prompts.json`](../../docs/test-prompts.json) can guard it as well.
 - roomle-ui work is on roomle-ui `origin/release/bo-test`, the planner the example page loads
   (`DEFAULT_SERVER_URL`, `minimal-hi-example/index.html`), or on `origin/master`:
@@ -53,15 +53,15 @@ its home already states it; add it only where it does not.
 
 | What | Where it goes |
 |---|---|
-| How the MCP server behaves towards an agent — a tool, a served rule, a result, a guard, a correction, a feedback message | [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md), in the section of that tool or rule |
+| How the HI tools behave towards an agent — a tool, a served rule, a result, a guard, a correction, a feedback message | [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md), in the section of that tool or rule |
 | A decision about that behaviour, or a rejected approach someone could plausibly re-propose | a numbered decision `D<n>` in §3 of `hi-mcp-behaviour.md`, with its date, source and state |
-| An architecture decision — where the logic runs, the page bridge, the deployment | a numbered ADR in [`.agents/decisions/`](../decisions/) |
-| How a feature works — the server, the tools, the chat, the pages, a deployment | the living-reference document of the area: [`hi-mcp-server.md`](../../docs/hi-mcp-server.md), [`ai-chat.md`](../../docs/ai-chat.md), [`hi-mcp/hi-mcp-server/README.md`](../../hi-mcp/hi-mcp-server/README.md), [`docs/`](../../docs/) — a new document for a new feature |
+| An architecture decision — where the logic runs, how the page runs the tools | a numbered ADR in [`.agents/decisions/`](../decisions/) |
+| How a feature works — the tools, the chat, the pages | the living-reference document of the area: [`hi-mcp-server.md`](../../docs/hi-mcp-server.md), [`ai-chat.md`](../../docs/ai-chat.md), [`docs/`](../../docs/) — a new document for a new feature |
 | A tool's parameters and examples | [`hi-mcp-tools.md`](hi-mcp-tools.md) |
 | HI domain knowledge — rooms, walls, articles, docking, positioning | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), [`hi-authoring-rules.md`](hi-authoring-rules.md) |
-| How the planner or the library behaves, as a root-cause investigation found it — what a load report replaces, how the arrangement docks, what an attribute switches | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), or the planner section of `hi-mcp-behaviour.md` where it explains the server's behaviour; written as today's behaviour |
-| The regression test | it exists; name it next to the invariant: guarded by `it('…')` in `hi-mcp/hi-mcp-server/tests/….test.ts`, or by the test `<id>` of `docs/test-prompts.json` |
-| A debugging or test recipe — a run script, a headless check, a deployment step | the matching skill in `.agents/skills/` ([`hi-mcp-testing.md`](hi-mcp-testing.md), [`hi-mcp-cloudflare-deployment.md`](hi-mcp-cloudflare-deployment.md)) |
+| How the planner or the library behaves, as a root-cause investigation found it — what a load report replaces, how the arrangement docks, what an attribute switches | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), or the planner section of `hi-mcp-behaviour.md` where it explains the tools' behaviour; written as today's behaviour |
+| The regression test | it exists; name it next to the invariant: guarded by `it('…')` in roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-mcp/….spec.ts`, or by the test `<id>` of `docs/test-prompts.json` |
+| A debugging or test recipe — a run script, a headless check | the matching skill in `.agents/skills/` ([`hi-mcp-testing.md`](hi-mcp-testing.md)) |
 | Model comparisons and before/after numbers that later work compares against | `.agents/benchmarks/`, with a row in the benchmarks table of [`.agents/README.md`](../README.md) |
 | A deferred item, a follow-up or an open finding | a todo in [`.agents/backlog/`](../backlog/README.md), written as [the backlog cleanup](hi-backlog-cleanup.md#what-the-backlog-is) defines it |
 | The refactoring report (summary, changed files, before/after, test adaptations, risks) | the pull request description |
@@ -119,9 +119,9 @@ A split along the living reference of this repository:
 
 | Group | Owns |
 |---|---|
-| MCP server behaviour — tools, placement, docking, guards, plan context, undo | `docs/hi-mcp-behaviour.md`, `hi-mcp/hi-mcp-server/README.md`, `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md` |
+| HI tool behaviour — tools, placement, docking, guards, plan context, undo | `docs/hi-mcp-behaviour.md`, `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md` |
 | Chat, models and testing | `docs/ai-chat.md`, `docs/test-prompts.md`, `.agents/skills/vercel-ai-sdk-chat.md`, `hi-mcp-testing.md` |
-| Architecture, pages and deployment | `docs/hi-mcp-server.md`, the other documents of `docs/`, the READMEs, `.agents/skills/hi-mcp-server.md`, `hi-mcp-cloudflare-deployment.md` |
+| Architecture and pages | `docs/hi-mcp-server.md`, the other documents of `docs/`, the READMEs |
 
 The coordinator keeps `.agents/README.md`, `.agents/decisions/` and the existing backlog documents.
 
@@ -180,7 +180,7 @@ documents. In [`.agents/backlog/README.md`](../backlog/README.md), no row links 
 - No past defect in the living reference: over the living-reference files the cleanup touched,
 
   ```bash
-  git diff origin/master -- docs .agents/skills hi-mcp/hi-mcp-server/README.md | grep '^+' | grep -n -i -E "was fixed|fixed in|previously|no longer|used to|the old |found (in|with|by)|lost its|dropped|before the fix|after the fix|since the|amended|confirmed|20[0-9]{2}-[0-9]{2}-[0-9]{2}|RML-[0-9]+"
+  git diff origin/master -- docs .agents/skills | grep '^+' | grep -n -i -E "was fixed|fixed in|previously|no longer|used to|the old |found (in|with|by)|lost its|dropped|before the fix|after the fix|since the|amended|confirmed|20[0-9]{2}-[0-9]{2}-[0-9]{2}|RML-[0-9]+"
   ```
 
   A remaining hit is acceptable only as a description of today's behaviour, or as the date column

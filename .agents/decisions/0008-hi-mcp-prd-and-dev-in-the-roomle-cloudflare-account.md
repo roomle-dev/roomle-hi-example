@@ -1,8 +1,8 @@
 # ADR 0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV
 
-> **Status**: Accepted — superseded in part: the deploy workflow is removed, both stages are deployed by hand (`npm run deploy:cf`, `npm run deploy:cf:dev`)
+> **Status**: Superseded by [ADR 0011](0011-the-hi-tools-live-in-the-embedding-lib.md) — there is no MCP server to deploy
 > **Date**: 2026-10-14
-> **Analysis**: the move of the deployment to the Roomle Cloudflare account, [RML-18154](https://roomle.atlassian.net/browse/RML-18154); guide [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md)
+> **Analysis**: the move of the deployment to the Roomle Cloudflare account, [RML-18154](https://roomle.atlassian.net/browse/RML-18154); guide cloudflare-mcp-server.md
 
 ## Context
 

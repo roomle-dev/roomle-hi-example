@@ -1,6 +1,6 @@
 # ADR 0003 — The AI chat is an MCP client beside the MCP server
 
-> **Status**: Superseded in part by [0010](0010-the-example-chat-runs-in-the-page.md) — the example's chat
+> **Status**: Superseded by [ADR 0011](0011-the-hi-tools-live-in-the-embedding-lib.md) — the chats run the planning assistant in the page; in part before by [0010](0010-the-example-chat-runs-in-the-page.md)
 > **Date**: 2026-09-30
 > **Analysis**: [RML-17984](https://roomle.atlassian.net/browse/RML-17984) (the chat in the example); the ligna-store chat window: [PR #37](https://github.com/roomle-dev/roomle-hi-example/pull/37) and ligna-store `6043ce3`
 

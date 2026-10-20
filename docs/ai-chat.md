@@ -9,7 +9,7 @@ The chat runs in the page with the planning assistant of the roomle-ui
 embedding-lib: `startPlanningAssistant` of `@roomle/embedding-lib/hi`, a
 [Vercel AI SDK](https://sdk.vercel.ai) loop with the HI MCP tools of the
 embedding-lib (`createHiMcpTools`) — the tools of
-[`hi-mcp/hi-mcp-server`](../hi-mcp/hi-mcp-server/) without an MCP server. Its
+`hi-mcp-server` without an MCP server. Its
 reference is roomle-ui `packages/embedding-lib/docs/homag-intelligence-embedding.md`,
 "The AI Planning Assistant agent" and "HI MCP tools for an AI agent". The page
 loads the embedding-lib from unpkg; until a release has these functions, it is
@@ -66,7 +66,7 @@ resource, the API and the reasoning effort, and whether the model reads images
 `&chat=true`, so the planner shows the button of the chat window. Without a model
 the page has no chat. Guarded by
 `it('serves the planning assistant config of the model to this machine')` in
-`hi-mcp/hi-mcp-server/tests/example-launcher.test.ts`.
+`minimal-hi-example/tests/start.test.js`.
 
 Azure needs two extra pieces: the resource name via the `AZURE_RESOURCE_NAME`
 environment variable, and the **deployment name** (not the model name) via

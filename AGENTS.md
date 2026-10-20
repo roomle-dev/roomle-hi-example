@@ -5,7 +5,7 @@
 ## Always Do This First
 
 1. **Load matching skills.** Check the [On-Demand Skills](#on-demand-skills) catalog and read every skill file whose domain matches the task *before* taking action. Multiple skills may apply to one task.
-2. **Read [`docs/hi-mcp-server.md`](./docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the comprehensive reference for the HI MCP server implementation and usage. **Read [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md)** before changing a tool, a served rule, a guard or a correction — the single reference for how the MCP server behaves towards an agent, with every decision, guard, correction and feedback message.
+2. **Read [`docs/hi-mcp-server.md`](./docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the reference of the example page and the HI tools. **Read [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md)** before changing a tool, a served rule, a guard or a correction — the single reference for how the HI tools behave towards an agent, with every decision, guard, correction and feedback message.
 3. **Read [`.agents/README.md`](./.agents/README.md)** for the complete digital brain index, separating living reference from historical records.
 4. **Treat documentation as part of the task, not a follow-up.** Every analysis produces a document, and every change to productive code updates one — see [Where Documentation Goes](#where-documentation-goes).
 
@@ -72,14 +72,13 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - **Default branch**: `master`
 - **Current branch**: `feat/hi-mcp`
 - **Language**: JavaScript/TypeScript (Node.js 20+), HTML
-- **Purpose**: Standalone HI presets example with MCP server for orchestrating HOMAG Intelligence object groups in Roomle room-planner sessions
+- **Purpose**: Standalone HI presets example with the planning assistant of the roomle-ui embedding-lib, which orchestrates HOMAG Intelligence object groups in Roomle room-planner sessions; the behaviour reference and the prompt tests of the HI tools
 
 ## Project Overview
 
 roomle-hi-example is a demonstration and development environment for:
 
 1. **HI Presets Example** — A standalone HTML page (`index.html`) that demonstrates HOMAG Intelligence (HI) room planning with preset configurations, with the AI chat of the roomle-ui embedding-lib: its planning assistant (`startPlanningAssistant`) runs the HI MCP tools (`createHiMcpTools`) in the page
-2. **MCP Server** — The TypeScript MCP server (`hi-mcp/hi-mcp-server`) that provides Model Context Protocol (MCP) tools for AI agents to orchestrate HI object groups in live Roomle sessions; its planner page is the ligna-store, and `npm run mcp-server` starts it
 
 The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) provides:
 - Static file serving for the example HTML page on port 3000
@@ -93,29 +92,6 @@ The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) prov
 ├── minimal-hi-example/         # Minimal standalone HI example
 │   ├── index.html              # HI presets example page (single file, inline JS)
 │   └── start.mjs               # Launcher: static serving (:3000), the model of the chat
-├── hi-mcp/                       # TypeScript MCP server PoCs (npm workspaces, vitest)
-│   ├── README.md                 # Project overview and PoC list
-│   ├── package.json              # Workspace root: test/typecheck/start scripts
-│   ├── tsconfig.base.json        # Shared compiler options for all PoCs
-│   ├── vitest.config.ts          # Unit tests across all PoCs
-│   └── hi-mcp-server/            # PoC 1: HI groups from a single JSON pos-group payload
-│       ├── server.ts             # Entry point: /mcp + WebSocket bridge on :3100
-│       ├── hi-mcp-server.ts      # McpServer setup + tool registrations (zod)
-│       ├── tool-executors.ts     # Tool executors: plan context, find-attributes, the forward of the plan-changing tools, undo/redo
-│       ├── agent-facing.ts       # The plan context in the agent's words: wall names, corners, the wall of a door or window
-│       ├── plan-history.ts       # The record of the plan-changing tool calls for undo and redo
-│       ├── planner-api.ts        # The six planner methods the tools call, relayed to the page
-│       ├── skills.ts             # The planning skills: loads skills/, the index of get-skill, a skill file by name and path, the manifest of the Skills extension
-│       ├── skills/               # The planning skills in the Agent Skills format (planning from an image, kitchen, kitchen in France, living room)
-│       ├── export-fixture.ts     # Writes tools/list and skills/list, the fixture of the tool copy in the roomle-ui embedding-lib
-│       ├── page-bridge.ts        # Connected-page registry, call correlation
-│       ├── types.ts              # WebSocket message protocol
-│       ├── tests/                # Unit tests (tool-executors, plan-history, planner-api, page-bridge, hi-mcp-server)
-│       ├── README.md             # Complete PoC documentation (clients: ligna-store chat window, HI presets example)
-│       └── QUICKSTART.md         # Shortest path to a first tool call
-│   ├── hi-mcp-client/            # Page side of the server (reference copy; the store runs its own)
-│       ├── browser-bridge.ts     # WebSocket client: executes allow-listed planner methods, replies
-│       └── tests/                # Unit tests (browser-bridge)
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # This file - AI assistant instructions
@@ -126,7 +102,7 @@ The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) prov
 │   │   └── README.md
 │   ├── bug-analysis/             # Bug root-cause analyses
 │   │   └── README.md
-│   ├── context/                  # The digital brain for the implementation: architecture, server, tool executors, layout and placement, pages and chat, deployment and tests
+│   ├── context/                  # The digital brain for the implementation: tool executors, layout and placement, interior fittings, pages and chat, tests
 │   │   └── README.md
 │   ├── feature-analysis/         # Feature investigations
 │   │   └── README.md
@@ -141,24 +117,17 @@ The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) prov
 │   ├── skills/                   # On-demand domain knowledge
 │   │   ├── README.md
 │   │   ├── hi-authoring-rules.md   # HI authoring patterns
-│   │   ├── hi-mcp-server.md       # MCP server domain knowledge
 │   │   ├── hi-mcp-tools.md         # MCP tool reference
 │   │   └── roomle-hi-concepts.md  # Core HI concepts
 │   └── wiki/                     # Living-reference pages for recurring questions
 │       └── README.md
 ├── docs/
-│   ├── hi-mcp-behaviour.md       # MCP server behaviour: guidelines, decisions, tools, information, guards, corrections, feedback
-│   ├── hi-mcp-server.md          # Reference: the example page, the MCP server, its tools and clients
+│   ├── hi-mcp-behaviour.md       # Behaviour of the HI tools: guidelines, decisions, tools, information, guards, corrections, feedback
+│   ├── hi-mcp-server.md          # Reference: the example page and the HI tools
 │   ├── ai-chat.md                # The AI chat of the example: providers, models, images
-│   ├── hi-mcp-poc-presentation.md # Proof of concept presentation
 │   ├── user-guide/README.md      # User guide: what the HI MCP does, the ways to use it, prompts, limits
 │   ├── setup/                    # Setup guides
-│   │   ├── local-mcp-server.md   # Install the local MCP server and connect the MCP clients
-│   │   ├── cloudflare-mcp-server.md # Deploy the MCP server to Cloudflare Containers
-│   │   ├── azure-mcp-server.md   # Deploy the MCP server to Azure App Service
-│   │   ├── connect-agent-to-cloud-mcp.md # Connect an agent to the cloud MCP server
-│   │   ├── ollama-vscode-mcp-setup.md # Local Ollama models with VS Code and the MCP server
-│   │   └── jan-ai-setup.md       # Jan AI with Ollama and the MCP server
+│   │   └── unreleased-embedding-lib.md # Run the example with an unreleased embedding-lib
 │   ├── test-prompts.json         # MCP test cases (prompt, plan, expectations)
 │   ├── test-prompts.md           # The test plans and how the tests run
 │   ├── planning-results.md       # The plannings of the kitchen images (generated by "update planning results")
@@ -174,8 +143,6 @@ Skills provide deep domain knowledge. Load them by reading the file when the tas
 
 | Skill | Load when the task involves |
 |---|---|
-| [`.agents/skills/hi-mcp-server.md`](./.agents/skills/hi-mcp-server.md) | MCP server architecture, tool definitions, protocol handling, WebSocket bridge |
-| [`.agents/skills/hi-mcp-cloudflare-deployment.md`](./.agents/skills/hi-mcp-cloudflare-deployment.md) | Updating/deploying the Cloudflare-hosted hi-mcp server: wrangler deploy, URL anatomy, container cleanup, teardown |
 | [`.agents/skills/hi-authoring-rules.md`](./.agents/skills/hi-authoring-rules.md) | HI authoring rules, docking patterns, group creation, article catalog |
 | [`.agents/skills/hi-mcp-tools.md`](./.agents/skills/hi-mcp-tools.md) | MCP tool reference, get-plan-context, create-or-replace-groups |
 | [`.agents/skills/roomle-hi-concepts.md`](./.agents/skills/roomle-hi-concepts.md) | HI concepts: rooms, walls, articles, groups, docking vectors, positioning |
@@ -242,14 +209,11 @@ When the repository uses Atlassian Jira:
 
 ## Key Architecture Patterns
 
-### MCP Server Architecture
+### HI Tools Architecture
 
-1. **Single MCP Server Implementation** — The TypeScript server in `hi-mcp/hi-mcp-server` (`@modelcontextprotocol/sdk`, `ws`, zod, run via `vite-node`) is the only MCP server; clients (example page, ligna-store) wire themselves to it via environment variables
-2. **Streamable HTTP** — MCP protocol handled by the MCP SDK, JSON response mode, stateless (a new transport per request)
-3. **WebSocket Bridge** — The `/bridge` WebSocket connects the MCP server to the browser page
-4. **Tools in the Server, Planner Calls in the Page** — The tools run in the server (`tool-executors.ts`); the planner methods they call (`planner-api.ts`) are relayed to `roomDesignerApi.extended` in the page, which executes only the methods on its allow-list
-5. **Plan-Changing Tools Run in roomle-ui** — Every tool that changes the plan is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`; roomle-ui performs the whole tool as an HI tool command (`hi-tool-commands.ts` in `packages/web-sdk/packages/homag-intelligence/src/`): corrections, ids, docking from the relations, placement, group materials, hints. It answers with the tool's result and the planner steps it made, which the server counts for undo (D71 of [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md#3-decisions))
-6. **A Copy of the Tools in the roomle-ui Embedding-Lib** — `createHiMcpTools` (roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/`) runs the same tools in the page, without the MCP protocol (D94). Until the server is deleted, **a tool change goes into both copies in the same task**: the tool, its description and schema, the served text and the skills. Then export the fixture of the roomle-ui tests again: `npm run export:fixture -- <roomle-ui>/tests/unit/embedding-lib/homag-intelligence/hi-mcp/fixtures/hi-mcp-fixture.json` in `hi-mcp/`
+1. **The Tools in the roomle-ui Embedding-Lib** — `createHiMcpTools` of `@roomle/embedding-lib/hi` (roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/`) is the only implementation of the HI tools: tools in the shape of MCP tools, without the MCP protocol (D94, [ADR 0011](./.agents/decisions/0011-the-hi-tools-live-in-the-embedding-lib.md))
+2. **The Planning Assistant in the Page** — `startPlanningAssistant` of the embedding-lib runs the agent loop in the page of the example and of the ligna-store; the tools call the planner of the page directly (`instance.extended`, six planner methods)
+3. **Plan-Changing Tools Run in roomle-ui** — Every tool that changes the plan is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`; roomle-ui performs the whole tool as an HI tool command (`hi-tool-commands.ts` in `packages/web-sdk/packages/homag-intelligence/src/`): corrections, ids, docking from the relations, placement, group materials, hints. It answers with the tool's result and the planner steps it made, which the tool set counts for undo (D71 of [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md#3-decisions))
 
 ### HI Data Model
 
@@ -277,7 +241,7 @@ When the repository uses Atlassian Jira:
 - **TypeScript Types** — Use JSDoc comments for type annotations when needed
 - **Async/Await** — Prefer async/await over Promise chains
 - **Error Handling** — Use try/catch for synchronous errors, .catch() for promises
-- **No new dependencies without reason** — The MCP server is the `hi-mcp` workspace package with its own locked dependencies; do not add dependencies to it or to the launcher without need
+- **No new dependencies without reason** — do not add dependencies to the launcher or the scripts without need
 
 ### Naming Conventions
 
@@ -295,14 +259,7 @@ When the repository uses Atlassian Jira:
 - **No header comments** — No file-level author/license headers
 - **No section dividers** — No `// ===` or `// ---` lines
 
-## MCP Server Specific Rules
-
-### Protocol Compliance
-
-- Support multiple MCP protocol versions as needed
-- Implement the required MCP endpoint: `POST /mcp` (Streamable HTTP, JSON response mode)
-- Validate tool call parameters before processing
-- Return proper error responses for invalid inputs
+## HI Tool Rules
 
 ### Tool Implementation
 
@@ -312,30 +269,23 @@ When the repository uses Atlassian Jira:
 - Tools should log their operations for debugging
 - Tools correct agent input whose intent is clear rather than reject it — see [Guards Are a Last Resort](#guards-are-a-last-resort)
 
-### Bridge Communication
-
-- WebSocket connections must be properly managed with cleanup
-- Bridge messages should be validated before processing
-- Error responses from the page should be relayed back to the MCP client
-- Connection state should be tracked and logged
-
 ### Library-Neutral
 
-The MCP server serves every HI library, not only Furniture_Smith. The served rules, the tool
-descriptions, the results and the server's logic contain no information about a specific library —
+The HI tools serve every HI library, not only Furniture_Smith. The served rules, the tool
+descriptions, the results and the tools' logic contain no information about a specific library —
 no article, category, attribute, value or measure of one library, not even as an example. The only
 source of library information is the library data: the master data and the article list, and in
 them the `desc` properties. When an agent picks the wrong library content because it lacks
 information, the fix is the desc in the library data, never a served rule. See §2.4 of
 [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md#24-instructions).
 
-The policy covers the served text, the results and the server's logic only. Code comments, tests
+The policy covers the served text, the results and the tools' logic only. Code comments, tests
 and markdown files are no violation: a comment, a test fixture or a README example may name a
 library's content freely.
 
 ### Guards Are a Last Resort
 
-A **guard** is a check in the MCP server that refuses an agent's input because it identifies the
+A **guard** is a check in the HI tools that refuses an agent's input because it identifies the
 input as wrong: the call fails and nothing is created. A guard fights the symptom, not the cause, and it hinders the agent from creating the
 planning: every refusal costs the agent a step of its turn, and one wrong group discards every
 group of the call.
@@ -344,7 +294,7 @@ When an agent creates wrong content, the root cause is the MCP instructions: a r
 description or an example misleads the agent, asks it to combine more than it can, or the tool
 API makes the wrong payload easy to write. That is where the fix belongs.
 
-This is about the MCP server and the HI tool commands its plan-changing tools run in roomle-ui
+This is about the HI tools and the HI tool commands their plan-changing tools run in roomle-ui
 (`hi-tool-commands.ts`). The planner's checks (the group operations of roomle-ui) protect the planner
 from breaking and stay as they are; the tool command corrects the input before it runs an operation,
 where it can.
@@ -435,7 +385,7 @@ change.
 | Refactoring analysis | new file in `.agents/refactoring-analysis/` with kebab-case slug |
 | Benchmark and performance analysis | new file in `.agents/benchmarks/` with kebab-case slug, its benchmark in a folder of the same name — see [`.agents/skills/hi-mcp-benchmarking.md`](./.agents/skills/hi-mcp-benchmarking.md) |
 | New feature capability | Update `docs/hi-mcp-server.md` or create new file in `docs/` |
-| MCP server behaviour — a tool, a served rule, a result, a guard, a correction, feedback, a decision | `docs/hi-mcp-behaviour.md`, in the same change |
+| HI tool behaviour — a tool, a served rule, a result, a guard, a correction, feedback, a decision | `docs/hi-mcp-behaviour.md`, in the same change |
 | MCP tool reference updates | `.agents/skills/hi-mcp-tools.md` |
 | Architecture decisions | Create ADR in `.agents/decisions/` |
 | Wiki page — a durable answer to a recurring question | `.agents/wiki/` |
@@ -462,71 +412,39 @@ change.
 `release/bo-test` or `master` — ["cleanup analyses"](./.agents/skills/hi-analysis-cleanup.md) promotes the valuable content and
 deletes the document, and the bug's item leaves the backlog.
 
-## MCP Client Connection
-
-The server provides MCP endpoint at `http://localhost:3100/mcp` when running.
-
-### Supported Clients
-
-| Client | Connection Command |
-|---|---|
-| Claude Code | `claude mcp add --transport http --scope user hi-orchestrator http://localhost:3100/mcp` |
-| Claude Desktop | Register in `claude_desktop_config.json` |
-| GitHub Copilot VS Code | MCP: Open User Configuration → add server |
-
-**Note**: Copilot in the browser cannot reach localhost servers.
-
 ## Development Workflow
 
-### Starting the Server
-
-```bash
-npm run mcp-server   # or: npm start in hi-mcp/
-```
-
-This starts the MCP server (hi-mcp/hi-mcp-server) with its MCP endpoint at /mcp and the WebSocket
-bridge at /bridge, on port 3100. Its planner page is the ligna-store with
-`mcp_server=http://localhost:3100`.
+### Starting the Example
 
 ```bash
 npm start          # or: node minimal-hi-example/start.mjs
 ```
 
 This serves the example page `minimal-hi-example/index.html` on port 3000 and opens it;
-`npm start <model> <api-key>` adds the chat ([docs/ai-chat.md](./docs/ai-chat.md)).
+`npm start <model> <api-key>` adds the chat ([docs/ai-chat.md](./docs/ai-chat.md)), whose planning
+assistant runs the HI tools.
 
-### Deploying to Cloudflare
+### The Tools
 
-`npm run deploy:cf` (PRD) and `npm run deploy:cf:dev` (DEV) deploy by hand into the Roomle account (`account_id` in `hi-mcp/cf/wrangler.jsonc`).
-The servers: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp`, DEV `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp`. Details:
-[`.agents/skills/hi-mcp-cloudflare-deployment.md`](./.agents/skills/hi-mcp-cloudflare-deployment.md).
-
-### Testing Tool Calls
-
-1. Start the MCP server
-2. Open the ligna-store with `mcp_server=http://localhost:3100` in the browser
-3. Connect MCP client
-4. Call tools like:
-   - `get-plan-context` — Get current rooms, articles, groups and obstacles
-   - `get-skill` — Get a planning skill: how to plan a kitchen or a living room well
-   - `create-or-replace-groups` — Add, modify or extend groups; position new groups
-   - `place-group` — Move an existing group against a wall or into a room corner
-   - `merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`, `swap-root-modules`, `delete-article-and-compact`, `delete-article-in-place`, `delete-group`, `change-module-attribute`, `change-group-attribute`, `merge-groups` — Edit an existing group (commands the planner performs)
-   - `undo`, `redo` — Revert the last tool call that changed the plan, or bring it back
-   - `get-price` — Calculate pricing
-   - `get-order-data` — Get order information
-   - `get-plan-images` — Render plan images, with the doors and drawers as they are
-   - `open-or-close-group`, `open-or-close-article` — Open or close the doors and drawers of a group or of one root module, to look inside (the view only, no plan change)
+- `get-plan-context` — Get current rooms, articles, groups and obstacles
+- `get-skill` — Get a planning skill: how to plan a kitchen or a living room well
+- `create-or-replace-groups` — Add, modify or extend groups; position new groups
+- `place-group` — Move an existing group against a wall or into a room corner
+- `merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`, `swap-root-modules`, `delete-article-and-compact`, `delete-article-in-place`, `delete-group`, `change-module-attribute`, `change-group-attribute`, `merge-groups` — Edit an existing group (commands the planner performs)
+- `undo`, `redo` — Revert the last tool call that changed the plan, or bring it back
+- `get-price` — Calculate pricing
+- `get-order-data` — Get order information
+- `get-plan-images` — Render plan images, with the doors and drawers as they are
+- `open-or-close-group`, `open-or-close-article` — Open or close the doors and drawers of a group or of one root module, to look inside (the view only, no plan change)
 
 ### Adding New Tools
 
-1. Register the tool in `hi-mcp/hi-mcp-server/hi-mcp-server.ts` (zod schema + handler)
-2. Implement the executor in `hi-mcp/hi-mcp-server/tool-executors.ts` — the pages stay untouched. A tool that changes the plan is a tool command in roomle-ui (`HI_TOOL_COMMAND` in `homag-intelligence/src/hi-plan-context.ts`, the command in `HI_TOOL_COMMANDS` of `hi-tool-commands.ts`) plus a forwarder here, `inPlanner('<tool name>')`, which sends it through `externalObjectGroupOperation` and wraps it in `oneAtATime`, so it never runs beside another plan change, and in the undo record
-3. An edit the planner does not offer yet is a group operation the tool command runs (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`, executed in `hi-tools.ts`) — no new planner method. Only if a tool needs a planner method the pages do not expose yet: add it to `hi-mcp/hi-mcp-server/planner-api.ts` and to the page allow-list (`PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts`, then copy to the ligna-store), and to the methods the example page records (`PLANNER_METHODS` in `minimal-hi-example/index.html`)
-4. Add or extend unit tests in the matching `tests/` folder — a tool command's in roomle-ui `homag-intelligence/__tests__/hi-tool-commands/`
+1. Register the tool in roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/hi-mcp-server.ts` (zod schema + handler)
+2. Implement the executor in `tool-executors.ts` there. A tool that changes the plan is a tool command in roomle-ui (`HI_TOOL_COMMAND` in `homag-intelligence/src/hi-plan-context.ts`, the command in `HI_TOOL_COMMANDS` of `hi-tool-commands.ts`) plus a forwarder, `inPlanner('<tool name>')`, which sends it through `externalObjectGroupOperation` and wraps it in `oneAtATime`, so it never runs beside another plan change, and in the undo record
+3. An edit the planner does not offer yet is a group operation the tool command runs (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`, executed in `hi-tools.ts`) — no new planner method. Only if a tool needs a planner method the tools do not call yet: add it to `planner-api.ts` of the tools and to the methods the example page records (`PLANNER_METHODS` in `minimal-hi-example/index.html`)
+4. Add or extend unit tests in roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-mcp/` — a tool command's in `homag-intelligence/__tests__/hi-tool-commands/`
 5. Update `docs/hi-mcp-behaviour.md`, the `docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
-6. Test with MCP client
-7. Make the same change in the roomle-ui copy of the tools and export its fixture again (item 6 of [MCP Server Architecture](#mcp-server-architecture), D94)
+6. The example page and the ligna-store get the tool with a new embedding-lib version — built only after asking ([Hard Rule](#hard-rule-no-embedding-lib-build-without-asking))
 
 ## Suggested Change Workflow
 
@@ -654,8 +572,7 @@ Examples:
 
 ## Performance Considerations
 
-- MCP calls have timeout limits (default 30s, snapshots 120s)
+- The planner calls of the tools have timeouts (30 s; plan changes and snapshots 120 s)
 - Tool implementations should be efficient
-- Bridge communication uses a WebSocket with auto-reconnect
 - Large plan contexts should be handled efficiently
 - Image generation can be expensive — use appropriate timeouts

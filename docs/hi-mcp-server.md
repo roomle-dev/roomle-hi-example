@@ -1,33 +1,18 @@
-# HI Presets Example & MCP Server — Reference
+# HI Presets Example & HI Tools — Reference
 
 The documentation of `minimal-hi-example/` — the standalone HI presets example
 ([`index.html`](../minimal-hi-example/index.html)) and its start launcher
-([`start.mjs`](../minimal-hi-example/start.mjs)) — and of the repository's single MCP server
-implementation, [`hi-mcp/hi-mcp-server`](../hi-mcp/hi-mcp-server/). With both, an AI agent
+([`start.mjs`](../minimal-hi-example/start.mjs)) — and of the HI tools it runs, the tools of the
+roomle-ui embedding-lib (`createHiMcpTools`, `packages/embedding-lib/src/homag-intelligence/hi-mcp/`,
+[ADR 0011](../.agents/decisions/0011-the-hi-tools-live-in-the-embedding-lib.md)). With both, an AI agent
 orchestrates HOMAG Intelligence (HI) object groups in a live planning session: the agent retrieves
 the plan context (master data, rooms, articles, existing groups) and creates or modifies HI object
 groups — without computing root-module positions itself.
 
-The example page needs no MCP server. It runs the HI MCP tools of the embedding-lib
+The example page runs the HI MCP tools of the embedding-lib
 (`createHiMcpTools`) in the page, and the planning assistant of the embedding-lib
 (`startPlanningAssistant`) chats with them in the AI Planning Assistant window
 ([ai-chat.md](ai-chat.md)).
-
-The MCP server is the TypeScript implementation from
-`hi-mcp/hi-mcp-server` (the copy of the roomle-ui PoC
-[RML-17693](https://roomle.atlassian.net/browse/RML-17693)): the MCP protocol
-layer is `@modelcontextprotocol/sdk` with zod tool schemas, and the page bridge
-is a WebSocket. It is used as-is and configured from outside through environment
-variables ([ADR 0002](../.agents/decisions/0002-one-mcp-server-configured-from-outside.md)).
-Its planner page is the ligna-store — its bridge starts with a valid
-`mcp_server` query parameter; `model` and `api_key` add the optional chat window — and it is
-the one deployed to Cloudflare ([cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md));
-[azure-mcp-server.md](setup/azure-mcp-server.md) is the runbook for Azure App Service.
-
-The server is **agent-agnostic**: it contains no client-specific code. Any
-MCP client with Streamable HTTP transport support can connect (Claude Code,
-the Claude desktop app, Cursor, VS Code Copilot agent mode, Gemini CLI,
-custom clients built with an MCP SDK).
 
 For the shortest path to a first chat turn in the example, see the
 [README](../minimal-hi-example/README.md) of `minimal-hi-example/`.
@@ -81,15 +66,6 @@ the example page (index.html, served by the launcher on :3000)
     v
   roomDesignerApi.extended: the six planner methods;
   roomle-ui performs the plan-changing tools (HI tool commands)
-
-AI agent (any MCP client) --Streamable HTTP--> http://localhost:3100/mcp
-                                               hi-mcp/hi-mcp-server/server.ts (vite-node)
-                                               runs the tools; a plan-changing tool is one
-                                               planner call
-                                               |  WebSocket /bridge: planner method calls
-                                               v
-                                   the ligna-store page (mcp_server=http://localhost:3100)
-                                   executes the allow-listed methods on roomDesignerApi.extended
 ```
 
 The example is one process: `start.mjs` serves `index.html` on port 3000 and, when it is started
@@ -101,36 +77,16 @@ performs the whole tool as an HI tool command (`hi-tool-commands.ts`) — the
 corrections, the docking from the relations, the placement, the group
 materials, the hints — and answers with the tool's result.
 
-The MCP server runs the same tools in Node — the embedding-lib's tools are its port
-([RML-18196](https://roomle.atlassian.net/browse/RML-18196)) — and reaches the planner of a page
-through its `/bridge`. The page cannot listen on a port, so it connects **outward** to the server:
-it opens a WebSocket (`ws://localhost:3100/bridge`), receives planner method calls over it, and
-sends each result back over the same socket. The page executes only the methods on its allow-list
-(`getExternalObjectPlanContext`, `externalObjectGroupOperation` — every tool that changes the plan,
-`fetchPrice`, `getExternalObjectSnapshot`, `undo`, `redo`; see the server skill) — nothing else of
-the planner API, such as placing an order, is reachable from the server. The allow-list is
-`PLANNER_METHODS` of the reference client `hi-mcp/hi-mcp-client/browser-bridge.ts` and lists
-exactly the methods of `planner-api.ts` — guarded by
-`it('calls exactly the planner methods the page bridge exposes')` in
-`hi-mcp/hi-mcp-server/tests/planner-api.test.ts`; the ligna-store copy is kept equal by hand.
-
-To start the MCP server from the repository root, run `npm run mcp-server`.
-It serves `/mcp` and `/bridge` on port 3100. A second page trying to join an occupied server is
-refused without disconnecting the first (WebSocket close 4409); the page reports
-this and stops reconnecting. Guarded by
-`it('rejects a second page without disrupting the active planner call')` in
-`hi-mcp/hi-mcp-server/tests/page-bridge.test.ts`.
-
 | File | Responsibility |
 | ---- | -------------- |
 | `minimal-hi-example/start.mjs` | The launcher: static file server for `minimal-hi-example/` on :3000, the model of the chat at `/planning-assistant-config.json` (to this machine only), opens the browser |
 | `minimal-hi-example/index.html` | The example itself, plus the chat at the end: `startPlanningAssistant` with the model of the launcher, on a planner API that records the planner calls for the test scripts |
 | `minimal-hi-example/package.json` | The `start` script that runs the launcher and `dev` which adds `server_url=http://localhost:5173/` |
-| `hi-mcp/hi-mcp-server/*` | The MCP server: `/mcp` (SDK Streamable HTTP: initialize, tools/list, tools/call), tool definitions with zod schemas, the tool executors (`tool-executors.ts`: the plan context in the agent's words, `find-attributes`, the forward of the plan-changing tools, undo and redo), the planner methods it calls (`planner-api.ts`), the WebSocket page bridge with call correlation and timeouts, server instructions and authoring rules — shared with the ligna-store client and the cloud deployments |
+| roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/*` | The HI tools: tool definitions with zod schemas and the served text (`hi-mcp-server.ts`), the tool executors (`tool-executors.ts`: the plan context in the agent's words, `find-attributes`, the forward of the plan-changing tools, undo and redo), the planner methods they call (`planner-api.ts`), the planning skills — shared with the ligna-store |
 
 ## Prerequisites
 
-- Node 20+ for the launcher; the MCP server needs the `hi-mcp` workspace installed (`npm install`)
+- Node 20+ for the launcher
 
 ## Running
 
@@ -157,117 +113,6 @@ server (e.g. `npx http-server -c-1 -p 39485`); only the chat needs the model the
 
 The chat: `npm start <model> <api-key>` (for example `npm start mistral <api-key>`) opens the
 example with `chat=true` and serves the model to the page — see [ai-chat.md](./ai-chat.md).
-
-The MCP server runs on its own: `npm run mcp-server`, then open the ligna-store with
-`mcp_server=http://localhost:3100` (the URL its "No HI page connected" error names) and connect a
-client as described below. The deployed servers on Cloudflare: [cloudflare-mcp-server.md](setup/cloudflare-mcp-server.md).
-
-## Connecting an MCP client
-
-Prefer the **user scope**: the server is installed once and available in
-every folder, so the agent session does not have to run in this repository.
-
-### Claude Code
-
-Via CLI (user scope):
-
-```bash
-claude mcp add --transport http --scope user hi-orchestrator http://localhost:3100/mcp
-```
-
-Without the CLI on the PATH (e.g. VS Code extension only): merge the
-`mcpServers` entry into the **top level** of the existing `~/.claude.json` —
-do not replace the file, it holds other state:
-
-```json
-{ "mcpServers": { "hi-orchestrator": { "type": "http", "url": "http://localhost:3100/mcp" } } }
-```
-
-Project-scoped alternative: the same object in a `.mcp.json` file in the
-folder the session runs in.
-
-### Claude desktop app
-
-A pure chat client — nothing of the code is visible, which makes it a good
-fit for audience demos.
-
-Register the server in the desktop config file via the
-[`mcp-remote`](https://www.npmjs.com/package/mcp-remote) bridge (the app's
-Connectors settings offer no way to add a custom localhost server):
-
-| OS | Config file |
-| -- | ----------- |
-| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
-
-```json
-{
-  "mcpServers": {
-    "hi-orchestrator": {
-      "command": "/absolute/path/to/npx",
-      "args": ["mcp-remote", "http://localhost:3100/mcp"]
-    }
-  }
-}
-```
-
-Use the **absolute** path to `npx` (find it with `which npx` on macOS/Linux,
-`where npx` on Windows) — GUI apps do not see your shell PATH, so a bare
-`npx` fails silently. If the file already exists, merge the `mcpServers`
-entry into it. Fully quit and reopen the app afterwards; the tools appear
-behind the tools icon of the chat input.
-
-### GitHub Copilot (VS Code agent mode)
-
-User scope (works in every folder): Command Palette → _MCP: Open User
-Configuration_ and add the server to the `mcp.json` that opens — note VS
-Code's own schema with the `servers` key:
-
-```json
-{ "servers": { "hi-orchestrator": { "type": "http", "url": "http://localhost:3100/mcp" } } }
-```
-
-Workspace-scoped alternative: the same JSON in a `.vscode/mcp.json` in the
-folder the session runs in. Then open Copilot Chat, switch to **Agent** mode,
-and check the tools picker — the `hi-orchestrator` tools appear there (a
-trust prompt is shown on first use).
-
-### GitHub Copilot CLI
-
-Register the server in `~/.copilot/mcp-config.json`
-(`%USERPROFILE%\.copilot\mcp-config.json` on Windows) — the CLI uses the
-common `mcpServers` schema, **not** VS Code's `servers` key:
-
-```json
-{ "mcpServers": { "hi-orchestrator": { "type": "http", "url": "http://localhost:3100/mcp" } } }
-```
-
-### Copilot on github.com
-
-Copilot web chat, the cloud coding agent, and a repository-level
-`.github/mcp.json` all run on GitHub's servers and cannot reach
-`http://localhost:3100`. Using them would require exposing the server through
-a public tunnel (e.g. ngrok) — out of scope for this example; use the local
-VS Code agent mode or the Copilot CLI instead.
-
-### Other clients
-
-Cursor and most other clients use the common `mcpServers` schema:
-
-```json
-{ "mcpServers": { "hi-orchestrator": { "url": "http://localhost:3100/mcp" } } }
-```
-
-Clients that only support the stdio transport can bridge via
-[`mcp-remote`](https://www.npmjs.com/package/mcp-remote):
-
-```json
-{ "mcpServers": { "hi-orchestrator": { "command": "npx", "args": ["mcp-remote", "http://localhost:3100/mcp"] } } }
-```
-
-At initialize, the server delivers **instructions** to the agent: the
-workflow, the pos-group authoring rules, and the docking semantics (see
-[Authoring pos groups](#authoring-pos-groups)).
 
 ## Tool reference
 
@@ -398,16 +243,9 @@ planning that kind of room or from an image. The system prompt of the chats, whi
 planner (`getExternalObjectAgentPrompts()`), names the skills too.
 `file` names a supporting file the skill refers to (`references/planning-reference.md`);
 `SKILL.md` is the default and comes after a short preamble that maps the skill onto the planning
-session. Answered by the server itself — it works without a connected page. The skills are the
-files of `hi-mcp/hi-mcp-server/skills/`
+session. Answered by the tool set itself, without a planner call. The skills are the
+files of roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/skills/`
 ([hi-mcp-behaviour.md §5.6](hi-mcp-behaviour.md#56-planning-skills-get-skill)).
-
-The same files are served by the Skills extension of MCP (`io.modelcontextprotocol/skills`) to a
-host that loads skills itself: `skills/list` and `skills/get` answer each skill with the URI of its
-`SKILL.md` (`skill://<name>/SKILL.md`), its frontmatter and the manifest of its files with their
-SHA-256 digests and sizes, and every file is a resource under `skill://<name>/<path>` — as it is,
-without the preamble. `npx @modelcontextprotocol/inspector@2.11.0 --cli http://localhost:3100/mcp
---transport http --method skills/list --verify` checks it against the local server.
 
 ### find-attributes
 
@@ -932,14 +770,10 @@ operations:
 
 | Symptom | Cause / fix |
 | ------- | ----------- |
-| Tool error `No HI page connected` | Open the ligna-store at the URL the error names (`http://localhost:3000/?store.stage=INT&mcp_server=http://localhost:3100`) and keep the tab open |
 | Tool error `... is not a function` | The page targets a Rubens UI whose web-sdk does not contain the plan-context APIs — override `server_url` to a deployment (or local UI dev server) that does |
-| Port 3100 already in use | The server names the fix itself (`lsof -ti tcp:3100 \| xargs kill`) |
-| Several store tabs open | The first connected tab keeps the server; a further tab reports "This server already has a planner connected" and stops reconnecting — close the first tab and reload the other |
 | `get-price` / `get-order-data` fail | No HI library loaded on the page, or the HI proxy rejected the credentials |
-| Page reloaded | The bridge reconnects automatically — no restart needed |
 | Empty `articles`/`masterData` | No library loaded on the page yet |
 
 ## Interior Design tools
 
-The server exposes `get-interior-design-options`, `add-interior-fitting`, `move-interior-fitting`, `delete-interior-fittings` and `replace-interior-fitting`. Discovery reads one loaded group through scoped context options; edits use the existing command route and report exact fitting IDs, actual change and library adjustments. A fitting's position is where its parts start, in its parent's frame; an edit places a fitting at the requested point in that frame. [Arguments, coordinates and failure/history semantics](hi-mcp-behaviour.md#interior-design-tools).
+The tools include `get-interior-design-options`, `add-interior-fitting`, `move-interior-fitting`, `delete-interior-fittings` and `replace-interior-fitting`. Discovery reads one loaded group through scoped context options; edits use the existing command route and report exact fitting IDs, actual change and library adjustments. A fitting's position is where its parts start, in its parent's frame; an edit places a fitting at the requested point in that frame. [Arguments, coordinates and failure/history semantics](hi-mcp-behaviour.md#interior-design-tools).

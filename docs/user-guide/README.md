@@ -6,7 +6,7 @@ the assistant builds it in the planner while you watch. In the same conversation
 add a unit, swap two cabinets, change a colour, move the whole kitchen to another wall.
 
 This guide is for everyone who wants to plan with the HI MCP. You need no programming knowledge for
-the [store chat](#1-the-store-chat); the other two ways need a terminal or an AI app of your own.
+the [store chat](#1-the-store-chat); the example page needs a terminal.
 
 > **A proof of concept.** The HI MCP plans with the HOMAG Intelligence (HI) test backend and one
 > furniture library, Furniture_Smith. It is meant for demos and for trying out what AI-assisted
@@ -16,7 +16,7 @@ the [store chat](#1-the-store-chat); the other two ways need a terminal or an AI
 
 - [What you can do](#what-you-can-do)
 - [How it works](#how-it-works)
-- [Three ways to use it](#three-ways-to-use-it)
+- [Two ways to use it](#two-ways-to-use-it)
 - [Talking to the assistant](#talking-to-the-assistant)
 - [Example prompts](#example-prompts)
 - [What to expect](#what-to-expect)
@@ -50,8 +50,8 @@ This prompt planned the kitchen below:
 ## How it works
 
 ```text
-you ──> AI assistant ──> HI MCP server ──> your open planner tab
-        (chat)           (the planning tools)  (the kitchen appears here)
+you ──> AI assistant ──> HI planning tools ──> your open planner tab
+        (chat)           (in the page)          (the kitchen appears here)
 ```
 
 - The assistant reads the plan first: the rooms with their walls, doors and windows, the furniture
@@ -67,13 +67,12 @@ you ──> AI assistant ──> HI MCP server ──> your open planner tab
 - Every change happens in the planner tab you have open. **Keep that tab open** while you work with
   the assistant.
 
-## Three ways to use it
+## Two ways to use it
 
 | Way | You need | Best for |
 | --- | -------- | -------- |
 | [1. The store chat](#1-the-store-chat) | a browser and an API key for the chat model | trying it out, demos |
 | [2. The example page with its chat](#2-the-example-page-with-its-chat) | the repository, Node.js and an API key | developers, demos with other models |
-| [3. Your own AI assistant](#3-your-own-ai-assistant) | Claude, Le Chat, Copilot, Cursor or another MCP-capable app | using the assistant you already work with |
 
 Ask the team that runs the HI MCP for the API key of a chat model.
 
@@ -82,11 +81,8 @@ Ask the team that runs the HI MCP for the API key of a chat model.
 Open the store test page with these parameters:
 
 ```text
-https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>&mcp_server=https://hi-planning-assistant.dashiell-bell.workers.dev
+https://www.roomle.com/t/ligna-store-test/?store.stage=INT&model=<model>&api_key=<key>
 ```
-
-This is the PRD server, which the store also uses when `mcp_server` is left out; the DEV server is
-`mcp_server=https://hi-planning-assistant-dev.dashiell-bell.workers.dev`.
 
 - `<model>` — any `gpt-*` model such as `gpt-6-astra`, or one of `mistral-large-latest`,
   `mistral-medium-latest`, `mistral-large-4`, `mistral-large-3`
@@ -109,27 +105,7 @@ npm start gpt-5.4-mini <api-key>
 The browser opens `http://localhost:3000` with the planner; the button at the bottom opens the chat.
 Instead of `gpt-5.4-mini` you can start other models — `mistral`, `claude`, `gemini`,
 `gpt-5-mini`, `gpt-6-astra` and more; the [README](../../README.md#usage) lists them all. Without a
-model (`npm start`) the page opens without a chat. The chat runs in the page and needs no MCP
-server, so [your own AI assistant](#3-your-own-ai-assistant) cannot reach this page.
-
-### 3. Your own AI assistant
-
-Any AI app that can connect to an MCP server over HTTP works — Claude (desktop app or Claude Code),
-Mistral Le Chat, GitHub Copilot in VS Code, Cursor and others.
-
-1. Open the planner first and keep the tab open:
-   - **locally:** `npm run mcp-server` in the repository, then the ligna-store with
-     `&mcp_server=http://localhost:3100` — the MCP address is `http://localhost:3100/mcp`
-   - **in the cloud:** the [store page](#1-the-store-chat) with `&mcp_session=<name>` appended, where
-     `<name>` is a short word of your choice, e.g. your first name — the MCP address is
-     `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp?session=<name>` (DEV: `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp?session=<name>`) with the same name
-2. Add the MCP address to your app as a connector (or "MCP server"), e.g. named `hi-orchestrator`.
-3. Start a new conversation and ask: *"Get the plan context of the HI session and summarize it."*
-
-The session name keeps you apart from other users: your assistant works only in your tab.
-Step-by-step instructions for each app:
-[connecting an agent to the cloud MCP server](../setup/connect-agent-to-cloud-mcp.md) and
-[the local MCP server](../setup/local-mcp-server.md).
+model (`npm start`) the page opens without a chat. The chat runs in the page.
 
 ## Talking to the assistant
 
@@ -252,22 +228,14 @@ says what it substituted and adapted.
   an order.
 - **Undo covers the assistant's changes.** "Undo that" takes back what the assistant did. For a
   change you made yourself, use the undo button of the planner.
-- **One planner tab per session.** The assistant works in one tab. A second tab on the same session
-  is refused; close the first one, or use another session name.
 - **Outside the room.** If you ask for furniture outside the room — on a terrace, for example — the
   assistant builds it there. It does not stop you.
-- **Cloud start-up.** On the cloud server the first request after a pause takes about 10 seconds
-  longer.
 
 ## Troubleshooting
 
 | Problem | What to do |
 | ------- | ---------- |
-| The assistant says "No HI page connected" | Open the planner page and keep the tab open; with your own assistant, use the same session name in the page and in the connector |
-| "This server already has a planner connected" or "planner in use" | Another tab holds the session — close it and reload yours, or pick another session name |
-| The chat input stays disabled | The page has not reached the MCP server yet — the status line of the chat says so; wait a few seconds or reload the page |
 | There is no chat button at the bottom of the planner | The planner has no AI Planning Assistant yet — in the example page, start it against a planner that has it (`npm run dev` with the local Rubens UI) |
-| The first answer is slow | The cloud server starts on demand — send the request again after a few seconds |
 | A dropped image is not attached | The chosen model cannot read images — start a model that can; if it can, reload the page |
 | The result is not what you asked for | Say what to change ("move it 50 cm along the wall", "use the other corner"), or "undo that" and rephrase |
 | Price or order data fails | In the example page no preset is selected — choose one in the top bar |
@@ -277,24 +245,20 @@ says what it substituted and adapted.
 | Word | Meaning |
 | ---- | ------- |
 | **HI** | HOMAG Intelligence — calculates the furniture: sizes, fronts, worktops, prices |
-| **MCP** | Model Context Protocol — the standard way AI assistants use tools; the HI MCP server offers the planning tools |
+| **MCP** | Model Context Protocol — the standard way AI assistants use tools; the planning tools follow its shape |
 | **Unit** | One piece of furniture from the catalog: a base cabinet, a tall unit, a wardrobe (also called an article) |
 | **Group** | Units that stand together and are calculated together: a kitchen row, a corner kitchen, a wall of wardrobes. The worktop and the toe kick belong to the group |
 | **Library** | The furniture catalog the assistant plans with — here Furniture_Smith |
 | **Plan** | The room or flat in the planner, with everything planned in it |
-| **Session** | The connection between one planner tab and the assistant; a session name keeps users apart on the cloud server |
 
 ## Further reading
 
 - [Article catalog](../library-information/articles.md) and [materials](../library-information/materials.md)
   of the Furniture_Smith library
-- [Connecting an agent to the cloud MCP server](../setup/connect-agent-to-cloud-mcp.md) — Le Chat
-  step by step, Claude, Cursor, VS Code
-- [Local MCP server](../setup/local-mcp-server.md) — install it and connect every app to it
 - [AI chat in the example](../ai-chat.md) — the chat window and its models
   in detail
-- [Example and MCP server reference](../hi-mcp-server.md) — for
-  developers: the tools and how the server works
+- [Example and tool reference](../hi-mcp-server.md) — for
+  developers: the example page and the tools
 
 ## Interior Design
 

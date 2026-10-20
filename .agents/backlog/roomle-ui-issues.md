@@ -16,6 +16,7 @@ the code.
 | # | Issue | Kind | Responsible | Priority |
 |---|---|---|---|---|
 | 63 | [A dark worktop renders white under the top light](#63-a-dark-worktop-renders-white-under-the-top-light) | defect, known | roomle-ui renderer | medium |
+| 94 | [The water connection is an installation element only through a planner override](#94-the-water-connection-is-an-installation-element-only-through-a-planner-override) | catalog data, PoC override | Rubens Admin catalog (`room_designer`); roomle-ui `planner-kernel-access.ts` | medium |
 
 The run directories named under **Reproduce** are under `.temp/result/`.
 
@@ -36,3 +37,28 @@ without the overexposure of the top light.
 `mod_CountertopColor`.
 
 **Reproduce.** `mcp-test-2026-10-16_18-18-00`: gpt-6-astra 48 (`image-planning-right-wall`, plan snapshot `ps_s10nlsydubooegzw0cd6fjbfzngktq9`, bo-test): white worktops on the wall run and the island in the object image, 324 with the program Style in `order-data.json`.
+
+## 94. The water connection is an installation element only through a planner override
+
+**Problem.** The plan context lists a water connection in `installationElements` only because
+roomle-ui sets level 28 for every catalog item whose `externalIdentifier` is `water_connections`
+(`planner-core/src/services/planner-kernel-access.ts:637`, marked as a PoC to be removed). The
+catalog item `room_designer:water_connections` carries level 43. A planner without the override
+reports the water connection as an obstacle object, and `installationElements` lacks it.
+
+**Cause.** Rubens Admin has no water-connection level on the wall water connection items
+([RML-18023](https://roomle.atlassian.net/browse/RML-18023), steps 1 and 2). The planner classifies
+installation elements by the exact catalog levels 27 and 28 (roomle-ui `api.ts`,
+`PLAN_INSTALLATION_ELEMENT_LEVELS`). Level 43 is a general height level other objects share, so it
+cannot classify.
+
+**To do.** Rubens Admin: set level 28 on the water connection items mounted on a wall. An item
+configured as a floor connection (`connectionType = 'floor'`) does not get the wall level; its level
+is decided with RML-18023. Then remove the override in roomle-ui `planner-kernel-access.ts`.
+
+**Test.** Without the override, `installation-elements-supplies` and `sink-cabinet-at-water-connection`
+list the water connection in `installationElements` and not in `obstacles`; roomle-ui
+`it('classifies the levels 27 and 28 as electric plug and water connection')` holds.
+
+**Reproduce.** `GET https://api.roomle.com/v2/items/room_designer:water_connections` answers `layer`
+43; roomle-ui `release/bo-test` `planner-kernel-access.ts:637` sets 28.

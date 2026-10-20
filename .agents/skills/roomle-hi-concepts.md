@@ -180,7 +180,13 @@ rootId? }`, one point and one rotation.
 - The supplies of the plan are no obstacles: the `installationElements` section of `get-plan-context`
   lists the electric plugs and the water connections with their positions (`type`,
   `position: [x, level, z]`), so a group may stand on one — plan a sink at the water connection and
-  a hob beside a plug.
+  a hob beside a plug. The planner classifies a plan object by its catalog level — exactly 27 is an
+  `ElectricPlug`, 28 a `WaterConnection`; no other level, article id or name counts — and reports one
+  entry per placed supply assembly, its children included, without hidden ones. `position` is the
+  bottom centre of the element's bounding box (the kernel's `getCenter`) in mm with two decimals, not
+  a socket or pipe contact point. Guarded by `it('classifies the levels 27 and 28 as electric plug and
+  water connection')`, `it('ignores the other service levels')` and `it('converts the kernel center to
+  pos space and rounds to two decimals')` in roomle-ui `homag-intelligence/__tests__/api-test.ts`.
 - It is applied once, when the group is created. A placement on a group that is already in the
   plan is not used — the group keeps its position, and `corrections` says so; a group resubmitted
   without placement keeps its position.

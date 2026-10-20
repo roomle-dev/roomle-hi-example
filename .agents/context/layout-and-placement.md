@@ -106,7 +106,7 @@ usual one (D35). Explicit `gapMm`, including zero, takes precedence.
 | `rightOf` | `RightBottom → LeftBottom` | `StartStart` | `[0, 0, 0]` |
 | `leftOf` | `LeftBottom → RightBottom` | `StartStart` | `[0, 0, 0]` |
 | wall unit beside a tall unit | `RightTop → LeftTop` / `LeftTop → RightTop` | `StartStart` | `[0, 0, 0]` |
-| `behind` | `BackBottom → BackBottom` | — | `[0, 0, 0]` |
+| `behind` | `BackBottom → BackBottom` | `EndStart` when the side relations that name the turned unit continue its row to its right only, else `StartEnd` — flush at the end where its row starts (D98) | `[0, 0, 0]` |
 | `onTop` / `above`, align left / right / back | `LeftTop → LeftBottom` / `RightTop → RightBottom` / `BackTop → BackBottom` | `StartStart` | `[0, gap, 0]` |
 
 `gap` is `gapMm`, else for `above` a floor unit the hang gap, else 0 with a note.
@@ -115,7 +115,7 @@ usual one (D35). Explicit `gapMm`, including zero, takes precedence.
 offset only in the direction of the entry. The entry is written on whichever root a breadth-first
 search from `roots[0]` reaches first: on the target as
 `contextData.dockedRoots[{ ownDockingVector, dockedRoots: [{ id, dockingVector, mode, offset }] }]`,
-or mirrored onto the unit with the vectors swapped and the y offset negated.
+or mirrored onto the unit with the vectors swapped, the mode mirrored (`StartEnd` ↔ `EndStart`) and the y offset negated.
 
 The module uses fixed vector names; it never reads an article's `dockingVectors`. Replacing a vector
 an article does not have is done in `dockTarget` (merge-article-into-group); dropping positions in

@@ -54,7 +54,7 @@ the 403 for a foreign Host, and that the page port can be bound again after sign
 ## The chat of the example page
 
 `index.html` imports `@roomle/embedding-lib` and its `hi.js` from unpkg — the dev version
-`0.0.0-dev-345824f` until a release has the planning assistant
+`0.0.0-dev-60bc7cd` until a release has the planning assistant
 ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`
 the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
 

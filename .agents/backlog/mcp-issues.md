@@ -124,10 +124,11 @@ cabinet in front of floor-to-ceiling windows and discloses it. Local roomle-ui :
 
 ## 83. Where no free stretch of the wall fits the group, it is placed over existing furniture and reported
 
-**Problem.** On the closets back wall, where no free stretch fits the requested row, the model asks
-instead of building (12, 37, 39, 42) or places the wardrobes over existing objects and reports the
-overlap (38: five 400 mm wardrobes over the low object x 3506..4074, 568 × 570 mm). The obstacle test
-builds the group anyway and names what a root stands on and the free stretches of its wall (D55).
+**Problem.** On the closets back wall, where no free stretch fits the requested row, the model places
+the wardrobes over existing objects and reports the overlap (38: five 400 mm wardrobes over the low
+object x 3506..4074, 568 × 570 mm). In the other tests on that wall it asks instead (12, 37, 39, 42)
+— an answer the To do accepts. The obstacle test builds the group anyway and names what a root stands
+on and the free stretches of its wall (D55).
 
 **Cause.** The placement rule (`hi-mcp-server.ts:42`) says to choose a stretch of wall that obstacles
 leaves free only "where the user leaves the place open"; when the user names a wall whose free
@@ -138,14 +139,14 @@ builds over the furniture and reports.
 user names has no free stretch of the requested width — ask, or place where a stretch fits and say
 so. Verify model acceptance.
 
-**Test.** `wardrobe-door-hinges`, `wardrobe-swap-door-hinges`, `wardrobe-exchange-end-door-hinge`,
-`wardrobe-extend-door-hinge`: the model asks or places in a free stretch instead of overlapping the
-furniture.
+**Test.** `wardrobe-split-door-hinges`, `wardrobe-door-hinges`, `wardrobe-swap-door-hinges`,
+`wardrobe-exchange-end-door-hinge`, `wardrobe-extend-door-hinge`: the model asks or places in a free
+stretch instead of overlapping the furniture.
 
-**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 12 (`wardrobe-door-hinges`, local
-roomle-ui :5173): the model computed the request correctly (four KS_HT600 single-door wardrobes,
-2400 mm) but found no clear stretch of the back wall wide enough (the free stretch is 1186 mm,
-x 4074..5260) and asked whether to clear space or use another wall — "Nothing has been added yet."
+**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 38 (`wardrobe-split-door-hinges`, local
+roomle-ui :5173): five 400 mm single-door wardrobes (2000 mm) on the closets back wall over the low
+object x 3506..4074 (568 × 570 mm), the answer discloses the overlap; the run passes — its expect
+covers the door hinges only.
 
 ## 84. The find-attributes answer lists the values without naming the attribute
 
@@ -168,9 +169,8 @@ attribute id (`mod_FrontColor`).
 ## 85. insert-article-into-group takes a between-pair whose root modules do not stand side by side
 
 **Problem.** `insert-article-into-group` inserts between two root modules that are adjacent in the
-docking chain but do not stand side by side in space; the insert lands beside one of them (30: the
-sink and the hob stand on different legs of the L-shape in the saved plan — the pair the prompt
-names is not side by side; the model asks instead of building).
+docking chain but do not stand side by side in space; the insert lands beside one of them (27: the
+sink and a base unit on the back leg of the L-shape; the insert landed beside the sink).
 
 **Cause.** The `insert-article-into-group` description (`hi-mcp-server.ts:700-708,720`) says "between
 two root modules that stand side by side", but the payload's between-ids are not tested against the
@@ -185,14 +185,13 @@ side means (two root modules that name each other's side docking vectors). Verif
 **Test.** `edit-insert-below-wall-units`: the insert lands between the two root modules that stand
 side by side, or the result says the named pair does not stand side by side. The test's premise is
 stale: `docs/test-prompts.md` describes the corner kitchen with the sink on the right leg, the saved
-plan of `corner-kitchen-wall-units` has it on the back leg (30).
+plan of `corner-kitchen-wall-units` has it on the back leg (`mcp-test-2026-10-20_06-45-46`
+gpt-6-astra 30: the prompt's hob unit and sink unit stand on different legs of the L, the model asks
+which side to insert on and builds nothing).
 
-**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 30 (`edit-insert-below-wall-units`,
-local roomle-ui :5173): the prompt asks for the insert between the hob unit and the sink unit, which
-stand on different legs of the L in the saved plan (the hob UKS2A60 `379fa7a9` on the right leg, the
-sink SUT60 `31616143` on the back leg) — literally unfulfillable as posed; the model asked whether
-to insert beside the sink or beside the hob toward the corner instead of building; nothing was
-created.
+**Reproduce.** `mcp-test-2026-10-19_07-42-07`, gpt-6-astra 27 (`edit-insert-below-wall-units`): the
+model named the sink and a base unit (adjacent in the docking chain, not side by side in space); the
+insert landed beside the sink. Local roomle-ui :5173.
 
 ## 86. A swapped row of different unit widths stands through the wall
 

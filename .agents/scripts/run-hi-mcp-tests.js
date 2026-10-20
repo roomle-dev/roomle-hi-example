@@ -18,9 +18,7 @@
  * that completed without errors is never retried. Other stored results and an
  * exhausted retry are skipped on resume with the same --out. <out>/results.json
  * lists the runs and is rewritten after each one (default out:
- * .temp/result/mcp-test-<local time>/). The launcher typechecks the hi-mcp
- * workspace until a run of the session has stored its run.json; the later runs
- * skip the typecheck (--no-typecheck).
+ * .temp/result/mcp-test-<local time>/).
  */
 
 import { spawn } from 'node:child_process';
@@ -205,7 +203,6 @@ const main = async () => {
   const writeResults = () =>
     writeFile(join(outDir, 'results.json'), JSON.stringify(results, null, 2));
   const total = suite.models.length * suite.tests.length;
-  let typechecked = false;
   for (const model of suite.models) {
     for (const [index, test] of suite.tests.entries()) {
       if (stopped) {
@@ -251,12 +248,8 @@ const main = async () => {
             attempt++
           ) {
             await mkdir(dir, { recursive: true });
-            exitCode = await runOnce(
-              typechecked ? [...args, '--no-typecheck'] : args,
-              join(dir, 'console.log')
-            );
+            exitCode = await runOnce(args, join(dir, 'console.log'));
             run = await readRun(dir);
-            typechecked ||= run !== undefined;
             if (!shouldRetry(run) || attempt === MAX_ATTEMPTS - 1 || stopped) {
               break;
             }

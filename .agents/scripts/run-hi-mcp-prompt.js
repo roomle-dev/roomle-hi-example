@@ -2,69 +2,61 @@
 /**
  * Runs prompts through the HI example chat and stores the resulting plan:
  *
- *   node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...]
+ *   node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt>" ...]
  *     [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]
- *     [--no-typecheck]
  *
- * Starts the launcher (minimal-hi-example/start.mjs <provider> <api-key>) with
- * the MCP server on its own port, opens the example page in Playwright
- * Chromium (headless unless --headed; --dev and --no-typecheck, which skips the
- * launcher's typecheck, are passed to the launcher) on
- * --plan, waits until get-plan-context lists articles and the HI library has
- * loaded the plan's groups, then sends the prompts to the chat backend as
- * consecutive turns of one conversation, each until the end of its stream. --image goes along with the last prompt, prepared as the chat
- * window prepares a dropped image. Then it reads
+ * Starts the launcher (minimal-hi-example/start.mjs <model> <api-key>), opens
+ * the example page in Playwright Chromium (headless unless --headed; --dev is
+ * passed to the launcher) on --plan, waits until the plan context lists
+ * articles, the HI library has loaded the plan's groups and the planning
+ * assistant of the page is available, then sends the prompts to the planning
+ * assistant as consecutive turns of one conversation, each until the turn
+ * ends - as the chat window sends them. --image goes along with the last
+ * prompt, prepared as the chat window prepares a dropped image. Then it reads
  * roomDesignerApi.extended.getExternalObjectSnapshot() without the object GLB,
  * saves the plan with saveExternalObjectSnapshot() for its plan snapshot id and
- * writes --out (default .temp/result/<UTC timestamp>-<provider>/): run.json
- * (with every call of a plan-changing MCP tool per turn:
- * what the model sent, and the corrections, groups not loaded or error it got
- * back; and every failed provider step of the turn with its cause chain),
- * plan-context.json (rooms and groups after the chat),
+ * writes --out (default .temp/result/<UTC timestamp>-<model>/): run.json
+ * (with every call of a plan-changing MCP tool per turn: what the model sent,
+ * and the corrections, groups not loaded or error it got back, read from the
+ * [hi-mcp] lines the tools log in the page console),
+ * plan-context.json (rooms and groups after the chat, in the agent's words),
  * planner-calls.json (the chat's, each with the page's time in ms), prompt-image.jpg (the image sent),
  * turn-<n>-plan-images-<k>-perspective.png and -top.png (the images the k-th
  * get-plan-images call of turn n showed the agent, listed in the turn's
  * planImages) and every snapshot field as a file of its own; the snapshot
  * keeps the doors and drawers as the agent left them. Exits 1 when the chat or the snapshot
  * reported an error or no snapshot or plan snapshot id came back;
- * a stopped run (Ctrl+C) stops every server and stores nothing.
+ * a stopped run (Ctrl+C) stops the launcher and stores nothing.
  *
  * Requires Playwright: npm install in .agents/scripts.
  */
 
 import { spawn } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { request } from 'node:http';
 import { constants } from 'node:os';
 import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import {
-  recordNavigations,
-  recordStepFailures,
-} from './mcp-test-navigation.js';
+import { recordNavigations } from './mcp-test-navigation.js';
 import { planImageFiles } from './plan-images.js';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAUNCHER = join(REPO_DIR, 'minimal-hi-example', 'start.mjs');
 const RESULT_DIR = join(REPO_DIR, '.temp', 'result');
-// Not the launcher's 3100: example tabs of an interactive session reconnect
-// to 3100 and would take the bridge away from this run's page.
-const MCP_PORT = process.env.HI_MCP_PORT ?? '3110';
-const CHAT_PORT = process.env.HI_CHAT_PORT ?? '3200';
-const MCP_URL = `http://127.0.0.1:${MCP_PORT}/mcp`;
-const CHAT_URL = `http://127.0.0.1:${CHAT_PORT}`;
 const LAUNCHER_READY_TIMEOUT_MS = 3 * 60_000;
 const PAGE_READY_TIMEOUT_MS = 2 * 60_000;
 const CHAT_TIMEOUT_MS = 10 * 60_000;
 const SNAPSHOT_TIMEOUT_MS = 2 * 60_000;
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 const POLL_INTERVAL_MS = 1000;
-const TOOL_PREFIX = '[tool] ';
-// The MCP server logs what a tool was sent and the feedback it gave as one
-// JSON line each.
+// The HI MCP tools of the page log what a tool was sent and the feedback it
+// gave as one JSON line each, in the page console.
 const TOOL_CALL_LINE = /^\[hi-mcp\] tool (\S+) (args|feedback|error) (.+)$/;
-const ERROR_PREFIX = '[error] ';
+// The lines of the page console that go to the run's output while a turn
+// runs: the tool calls, the planner calls of the tools and the errors of the
+// planning assistant. The plan context read after the chat uses tools of its
+// own, whose planner calls are not the chat's.
+const PAGE_CONSOLE_LINE = /^\[(hi-mcp|planning-assistant)\] /;
 // Headless Chromium falls back to SwiftShader (software GL) without this -
 // and the planner's object-only perspective render (the HI objects of the
 // snapshot) comes back empty under SwiftShader. --enable-gpu makes headless
@@ -94,7 +86,7 @@ const SNAPSHOT_REQUEST = {
   keepOpenGeometry: true,
 };
 const USAGE =
-  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed] [--no-typecheck]';
+  'usage: node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]';
 
 const parseOptions = () => {
   try {
@@ -106,7 +98,6 @@ const parseOptions = () => {
         out: { type: 'string' },
         dev: { type: 'boolean', default: false },
         headed: { type: 'boolean', default: false },
-        'no-typecheck': { type: 'boolean', default: false },
       },
     });
     const [provider, apiKey, ...prompts] = positionals;
@@ -155,7 +146,7 @@ const loadChromium = async () => {
   }
 };
 
-// The tool calls of the turn that is running, from the launcher's output. The
+// The tool calls of the turn that is running, from the page console. The
 // plan-changing tools run one after another in the order of their calls, and
 // each call ends with one feedback or error line, so feedback belongs to the
 // first open call of its tool - also when the agent calls a tool twice at
@@ -203,45 +194,27 @@ const recordToolCall = (line) => {
   }
 };
 
-const stepFailures = recordStepFailures();
+const recordPageConsole = (page) =>
+  page.on('console', (message) => {
+    const text = message.text();
+    if (toolCalls.turn !== undefined && PAGE_CONSOLE_LINE.test(text)) {
+      console.log(text);
+      recordToolCall(text);
+    }
+  });
 
-const startLauncher = ({
-  provider,
-  apiKey,
-  dev,
-  'no-typecheck': noTypecheck,
-}) => {
+const startLauncher = ({ provider, apiKey, dev }) => {
   const launcher = spawn(
     process.execPath,
-    [
-      LAUNCHER,
-      provider,
-      apiKey,
-      '--no-open',
-      ...(dev ? ['--dev'] : []),
-      ...(noTypecheck ? ['--no-typecheck'] : []),
-    ],
+    [LAUNCHER, provider, apiKey, '--no-open', ...(dev ? ['--dev'] : [])],
     {
       cwd: REPO_DIR,
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, HI_MCP_PORT: MCP_PORT, HI_CHAT_PORT: CHAT_PORT },
     }
   );
   const exited = new Promise((resolve) => launcher.on('exit', resolve));
-  let pendingLine = '';
-  launcher.stdout.on('data', (chunk) => {
-    const lines = (pendingLine + chunk).split('\n');
-    pendingLine = lines.pop();
-    lines.forEach(recordToolCall);
-  });
-  let pendingErrorLine = '';
-  launcher.stderr.on('data', (chunk) => {
-    process.stderr.write(chunk);
-    const lines = (pendingErrorLine + chunk).split('\n');
-    pendingErrorLine = lines.pop();
-    lines.forEach(stepFailures.read);
-  });
+  launcher.stderr.on('data', (chunk) => process.stderr.write(chunk));
   const exampleUrl = new Promise((resolve) => {
     let output = '';
     launcher.stdout.on('data', (chunk) => {
@@ -282,7 +255,7 @@ const startLauncher = ({
 };
 
 // Rejects when the run has to end early: the launcher exited (unknown
-// provider, busy port, failed typecheck) or the script was stopped.
+// model, busy port) or the script was stopped.
 const aborted = (launcher) =>
   new Promise((_, reject) => {
     const abort = (message, exitCode) =>
@@ -296,35 +269,6 @@ const aborted = (launcher) =>
       );
     }
   });
-
-const callMcpTool = async (name, args) => {
-  const response = await fetch(MCP_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json, text/event-stream',
-    },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'tools/call',
-      params: { name, arguments: args },
-    }),
-  });
-  const { result, error } = await response.json();
-  if (error) {
-    throw new Error(error.message);
-  }
-  const text = result.content[0].text;
-  if (result.isError) {
-    throw new Error(text);
-  }
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
-};
 
 // The planner clears its undo history when the HI library has loaded the
 // plan's groups (the example page sets hiPosGroupsCompletelyLoaded then).
@@ -344,148 +288,72 @@ const waitForLoadedPlanGroups = async (page) => {
   }
 };
 
-const planContextHasArticles = async () => {
-  const context = await callMcpTool('get-plan-context', {
-    include: ['articles'],
-  });
-  return context?.articles?.length > 0;
-};
-
-const parseFrame = (payload) => {
-  try {
-    return JSON.parse(String(payload));
-  } catch {
-    return undefined;
-  }
-};
-
-// The planner calls the MCP server relays to the page, read from the bridge's
-// WebSocket frames: the server's own log cuts the arguments short.
-const recordPlannerCalls = (page) => {
-  const calls = [];
-  const startedAt = new Map();
-  // the snapshots the MCP server asked for during a turn, with their answers
-  const snapshotTurns = new Map();
-  const snapshotAnswers = [];
-  let resolveClientId;
-  const clientId = new Promise((resolve) => {
-    resolveClientId = resolve;
-  });
-  page.on('websocket', (socket) => {
-    socket.on('framereceived', ({ payload }) => {
-      const message = parseFrame(payload);
-      if (message?.kind === 'call') {
-        calls.push({
-          id: message.id,
-          method: message.method,
-          args: message.args,
-        });
-        startedAt.set(message.id, Date.now());
-        if (
-          message.method === 'getExternalObjectSnapshot' &&
-          toolCalls.turn !== undefined
-        ) {
-          snapshotTurns.set(message.id, toolCalls.turn);
-        }
-      }
-    });
-    socket.on('framesent', ({ payload }) => {
-      const message = parseFrame(payload);
-      if (message?.kind === 'hello' && message.clientId) {
-        resolveClientId(message.clientId);
-      }
-      const call =
-        message?.kind === 'result' && calls.find(({ id }) => id === message.id);
-      if (call) {
-        call.ms = Date.now() - startedAt.get(call.id);
-        call.ok = message.ok;
-        if (!message.ok) {
-          call.error = message.error;
-        }
-        if (message.ok && snapshotTurns.has(message.id)) {
-          snapshotAnswers.push({
-            turn: snapshotTurns.get(message.id),
-            result: message.result,
-          });
-        }
-      }
-    });
-  });
-  return { calls, clientId, snapshotAnswers };
-};
-
-const splitChatStream = (text) => {
-  const lines = text.split('\n');
-  return {
-    answer: lines
-      .filter(
-        (line) =>
-          !line.startsWith(TOOL_PREFIX) && !line.startsWith(ERROR_PREFIX)
-      )
-      .join('\n')
-      .trim(),
-    tools: lines
-      .filter((line) => line.startsWith(TOOL_PREFIX))
-      .map((line) => line.slice(TOOL_PREFIX.length)),
-    errors: lines
-      .filter((line) => line.startsWith(ERROR_PREFIX))
-      .map((line) => line.slice(ERROR_PREFIX.length)),
-  };
-};
-
-// node:http, not fetch: fetch ends a response after 300 s without data, and
-// a model may think that long before the chat streams its next line. What
-// came before a failure is kept.
-const postChat = (messages, clientId, agentPrompts) =>
-  new Promise((resolve) => {
-    const body = JSON.stringify({ messages, clientId, prompts: agentPrompts });
-    const chunks = [];
-    let status;
-    const settle = (error) => {
-      clearTimeout(timer);
-      resolve({ status, text: Buffer.concat(chunks).toString('utf8'), error });
-    };
-    const chatRequest = request(
-      `${CHAT_URL}/chat`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(body),
-        },
-      },
-      (response) => {
-        status = response.statusCode;
-        response.on('data', (chunk) => chunks.push(chunk));
-        response.on('end', () => settle());
-        response.on('error', settle);
-      }
-    );
-    const timer = setTimeout(
-      () =>
-        chatRequest.destroy(
-          new Error(`aborted after ${CHAT_TIMEOUT_MS / 1000}s`)
-        ),
-      CHAT_TIMEOUT_MS
-    );
-    chatRequest.on('error', settle);
-    chatRequest.end(body);
+const planContextHasArticles = (page) =>
+  page.evaluate(async () => {
+    const context =
+      await window.instance?.extended.getExternalObjectPlanContext([
+        'articles',
+      ]);
+    return context?.articles?.length > 0;
   });
 
-const sendChat = async (messages, clientId, agentPrompts) => {
-  const { status, text, error } = await postChat(
-    messages,
-    clientId,
-    agentPrompts
+// The planning assistant of the page is in place once it reports its
+// availability to the chat window.
+const waitForPlanningAssistant = async (page) => {
+  await page.waitForFunction(
+    () =>
+      window.hiPlanningAssistantOutput?.some(
+        (part) => part.type === 'availability'
+      ),
+    null,
+    { timeout: PAGE_READY_TIMEOUT_MS }
   );
-  if (status !== undefined && status >= 300) {
-    return { answer: '', tools: [], errors: [`HTTP ${status}: ${text}`] };
+  const availability = await page.evaluate(() =>
+    window.hiPlanningAssistantOutput.findLast(
+      (part) => part.type === 'availability'
+    )
+  );
+  if (!availability.available) {
+    throw new Error(
+      `the planning assistant is not available: ${availability.text}`
+    );
   }
-  const turn = splitChatStream(text);
-  if (error) {
-    turn.errors.push(`chat request failed: ${error.message}`);
+};
+
+// A turn as the chat window sends it: the prompt and the image go to the
+// planning assistant of the page, which answers in the output of the window.
+const sendPrompt = async (page, text, image) => {
+  const outputStart = await page.evaluate(
+    () => window.hiPlanningAssistantOutput.length
+  );
+  let failure;
+  try {
+    await withTimeout(
+      page.evaluate(
+        (prompt) =>
+          window.instance.extended.callbacks.onPlanningAssistantPrompt(prompt),
+        { text, images: image ? [image] : [] }
+      ),
+      CHAT_TIMEOUT_MS,
+      'the chat turn'
+    );
+  } catch (error) {
+    failure = error;
   }
-  return turn;
+  const parts = await page.evaluate(
+    (start) => window.hiPlanningAssistantOutput.slice(start),
+    outputStart
+  );
+  const texts = (type) =>
+    parts.filter((part) => part.type === type).map((part) => part.text);
+  return {
+    answer: texts('text').join('').trim(),
+    tools: texts('activity'),
+    errors: [
+      ...texts('error'),
+      ...(failure ? [`chat turn failed: ${failure.message}`] : []),
+    ],
+  };
 };
 
 // Redrawn in the page as JPEG on white with the EXIF rotation applied, the
@@ -520,25 +388,29 @@ const prepareImage = (page, bytes) =>
   );
 
 // The prompts are the turns of one conversation, as in the chat window: the
-// history goes along with every turn. A turn with an error ends it. The image
-// goes along with the last prompt.
-const runConversation = async (prompts, image, clientId, agentPrompts) => {
-  const messages = [];
+// planning assistant keeps the history. A turn with an error ends it. The
+// image goes along with the last prompt. The planner calls of a turn are the
+// ones the page recorded while it ran.
+const runConversation = async (page, prompts, image) => {
   const turns = [];
+  const plannerCallTurns = [];
   for (const [index, prompt] of prompts.entries()) {
     const turnImage = index === prompts.length - 1 ? image : undefined;
     console.log(
       `[run-hi-mcp-prompt] turn ${index + 1}/${prompts.length}: ${prompt}${turnImage ? ` [image: ${turnImage.file}]` : ''}`
     );
-    messages.push(
-      turnImage
-        ? { role: 'user', content: prompt, images: [turnImage.dataUrl] }
-        : { role: 'user', content: prompt }
-    );
     const startedAt = Date.now();
     toolCalls.turn = index;
-    stepFailures.startTurn(index);
-    const turn = await sendChat(messages, clientId, agentPrompts);
+    const plannerCallsBefore = await page.evaluate(
+      () => window.hiPlannerCalls.length
+    );
+    const turn = await sendPrompt(page, prompt, turnImage?.dataUrl);
+    const plannerCallsAfter = await page.evaluate(
+      () => window.hiPlannerCalls.length
+    );
+    plannerCallTurns.push(
+      ...Array(plannerCallsAfter - plannerCallsBefore).fill(index)
+    );
     turns.push({
       prompt,
       ...(turnImage && { image: turnImage.file }),
@@ -551,9 +423,8 @@ const runConversation = async (prompts, image, clientId, agentPrompts) => {
     if (turn.errors.length > 0) {
       break;
     }
-    messages.push({ role: 'assistant', content: turn.answer });
   }
-  return turns;
+  return { turns, plannerCallTurns };
 };
 
 const evaluateInPage = (page, method, description, argument) =>
@@ -606,53 +477,43 @@ const runSession = async (options, launcher, browser) => {
     LAUNCHER_READY_TIMEOUT_MS,
     'the launcher'
   );
-  await pollUntil(
-    async () => (await fetch(`${CHAT_URL}/health`)).ok,
-    LAUNCHER_READY_TIMEOUT_MS,
-    'the chat backend'
-  );
   const pageUrl = options.plan
     ? `${exampleUrl}&id=${encodeURIComponent(options.plan)}`
     : exampleUrl;
   const page = await browser.newPage();
   const navigation = recordNavigations(page);
-  const {
-    calls: plannerCalls,
-    clientId: pageClientId,
-    snapshotAnswers,
-  } = recordPlannerCalls(page);
+  recordPageConsole(page);
   await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
   await pollUntil(
-    planContextHasArticles,
+    () => planContextHasArticles(page),
     PAGE_READY_TIMEOUT_MS,
     'the page and the HI library'
   );
-  const clientId = await withTimeout(
-    pageClientId,
-    PAGE_READY_TIMEOUT_MS,
-    'the page client ID'
-  );
   await waitForLoadedPlanGroups(page);
-  // the system prompt and the image prompt of the chat, as the page requests them
-  const agentPrompts = await evaluateInPage(
-    page,
-    'getExternalObjectAgentPrompts',
-    'the agent prompts'
-  );
-  plannerCalls.length = 0;
+  await waitForPlanningAssistant(page);
   const readyAt = Date.now();
   console.log('[run-hi-mcp-prompt] page ready');
   const promptImage =
     options.imageBytes && (await prepareImage(page, options.imageBytes));
   navigation.setPhase('chat');
-  const turns = await runConversation(
+  const { turns, plannerCallTurns } = await runConversation(
+    page,
     options.prompts,
-    promptImage && { file: options.image, dataUrl: promptImage },
-    clientId,
-    agentPrompts
+    promptImage && { file: options.image, dataUrl: promptImage }
   );
   toolCalls.turn = undefined;
-  const chatPlannerCalls = plannerCalls.slice();
+  const recordedPlannerCalls = await page.evaluate(() => window.hiPlannerCalls);
+  const chatPlannerCalls = recordedPlannerCalls.map(
+    ({ result: _result, ...call }) => call
+  );
+  // the snapshots the tools asked for during a turn, with their answers
+  const snapshotAnswers = recordedPlannerCalls.flatMap((call, index) =>
+    call.method === 'getExternalObjectSnapshot' &&
+    call.ok &&
+    plannerCallTurns[index] !== undefined
+      ? [{ turn: plannerCallTurns[index], result: call.result }]
+      : []
+  );
   const planImages = planImageFiles(snapshotAnswers);
   const errors = turns.flatMap((turn) => turn.errors);
   const chatDoneAt = Date.now();
@@ -660,9 +521,14 @@ const runSession = async (options, launcher, browser) => {
   console.log('[run-hi-mcp-prompt] chat done, reading and saving the snapshot');
   let planContext;
   try {
-    planContext = await callMcpTool('get-plan-context', {
-      include: ['rooms', 'groups', 'obstacles'],
-    });
+    planContext = await withTimeout(
+      page.evaluate(
+        (include) => window.hiAgentPlanContext(include),
+        ['rooms', 'groups', 'obstacles']
+      ),
+      SNAPSHOT_TIMEOUT_MS,
+      'the plan context'
+    );
   } catch (error) {
     errors.push(`plan context failed: ${error.message}`);
   }
@@ -704,7 +570,6 @@ const runSession = async (options, launcher, browser) => {
       planImages: planImages
         .filter((image) => image.turn === index)
         .map(({ file }) => file),
-      stepFailures: stepFailures.ofTurn(index),
     })),
     errors,
     planSnapshotId,

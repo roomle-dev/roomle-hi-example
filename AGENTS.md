@@ -78,15 +78,12 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 roomle-hi-example is a demonstration and development environment for:
 
-1. **HI Presets Example** — A standalone HTML page (`index.html`) that demonstrates HOMAG Intelligence (HI) room planning with preset configurations
-2. **MCP Server** — The TypeScript MCP server (`hi-mcp/hi-mcp-server`) that provides Model Context Protocol (MCP) tools for AI agents to orchestrate HI object groups in live Roomle sessions, started together with the example page by the launcher `minimal-hi-example/start.mjs`
+1. **HI Presets Example** — A standalone HTML page (`index.html`) that demonstrates HOMAG Intelligence (HI) room planning with preset configurations, with the AI chat of the roomle-ui embedding-lib: its planning assistant (`startPlanningAssistant`) runs the HI MCP tools (`createHiMcpTools`) in the page
+2. **MCP Server** — The TypeScript MCP server (`hi-mcp/hi-mcp-server`) that provides Model Context Protocol (MCP) tools for AI agents to orchestrate HI object groups in live Roomle sessions; its planner page is the ligna-store, and `npm run mcp-server` starts it
 
-The start script (`npm start`) provides:
-- A build gate: installs and typechecks the `hi-mcp` workspace before starting
+The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) provides:
 - Static file serving for the example HTML page on port 3000
-- The MCP server on port 3100 with its MCP endpoint (`POST /mcp`, Streamable HTTP)
-- A page bridge (WebSocket `/bridge`) relaying the tools' planner method calls to the Roomle planner API via `roomDesignerApi.extended`
-- With `npm start <provider> <api-key>` (providers: `mistral`/`mistral-medium`/`mistral-large`/`mistral-large-3`/`mistral-large-4`, `claude`/`anthropic`, `azure`, or any `gpt-*` (HI Azure AI Foundry), `mistral-*`/`claude-*` model id): the AI chat backend on port 3200 (Vercel AI SDK) and the page opened with the chat window visible
+- With `npm start <model> <api-key>` (models: `mistral`/`mistral-medium`/`mistral-large`/`mistral-large-3`/`mistral-large-4`, `claude`/`anthropic`, `gemini`/`google`, `azure`, or any `gpt-*` (HI Azure AI Foundry), `mistral-*`/`claude-*`/`gemini-*` model id): the model of the chat for the page (`/planning-assistant-config.json`, to this machine only) and the page opened with the chat window visible
 - Browser auto-open at the example URL
 
 ## Repository Structure
@@ -95,7 +92,7 @@ The start script (`npm start`) provides:
 .
 ├── minimal-hi-example/         # Minimal standalone HI example
 │   ├── index.html              # HI presets example page (single file, inline JS)
-│   └── start.mjs               # Launcher: build gate, static serving (:3000), spawns the MCP server
+│   └── start.mjs               # Launcher: static serving (:3000), the model of the chat
 ├── hi-mcp/                       # TypeScript MCP server PoCs (npm workspaces, vitest)
 │   ├── README.md                 # Project overview and PoC list
 │   ├── package.json              # Workspace root: test/typecheck/start scripts
@@ -119,7 +116,6 @@ The start script (`npm start`) provides:
 │   ├── hi-mcp-client/            # Page side of the server (reference copy; the store runs its own)
 │       ├── browser-bridge.ts     # WebSocket client: executes allow-listed planner methods, replies
 │       └── tests/                # Unit tests (browser-bridge)
-│   ├── hi-mcp-chat/              # AI chat backend (Vercel AI SDK, Mistral): POST /chat on :3200, MCP client of hi-mcp-server, started by the launcher with `npm start mistral <api-key>`
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # This file - AI assistant instructions
@@ -488,18 +484,19 @@ The server provides MCP endpoint at `http://localhost:3100/mcp` when running.
 ### Starting the Server
 
 ```bash
+npm run mcp-server   # or: npm start in hi-mcp/
+```
+
+This starts the MCP server (hi-mcp/hi-mcp-server) with its MCP endpoint at /mcp and the WebSocket
+bridge at /bridge, on port 3100. Its planner page is the ligna-store with
+`mcp_server=http://localhost:3100`.
+
+```bash
 npm start          # or: node minimal-hi-example/start.mjs
 ```
 
-This starts:
-- The build gate: `npm install` (first run) + typecheck of the `hi-mcp` workspace
-- Static file serving for minimal-hi-example/index.html on port 3000
-- The MCP server (hi-mcp/hi-mcp-server) with its MCP endpoint at /mcp on port 3100
-- WebSocket bridge at /bridge
-- Opens browser to http://localhost:3000/?mcp=true
-
-`npm run start:cf` starts the same page against the MCP server deployed on Cloudflare instead
-(no local MCP server; session = the OS user name).
+This serves the example page `minimal-hi-example/index.html` on port 3000 and opens it;
+`npm start <model> <api-key>` adds the chat ([docs/ai-chat.md](./docs/ai-chat.md)).
 
 ### Deploying to Cloudflare
 
@@ -511,8 +508,8 @@ The servers: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp`, 
 
 ### Testing Tool Calls
 
-1. Start the server
-2. Open the page in browser
+1. Start the MCP server
+2. Open the ligna-store with `mcp_server=http://localhost:3100` in the browser
 3. Connect MCP client
 4. Call tools like:
    - `get-plan-context` — Get current rooms, articles, groups and obstacles
@@ -530,7 +527,7 @@ The servers: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp`, 
 
 1. Register the tool in `hi-mcp/hi-mcp-server/hi-mcp-server.ts` (zod schema + handler)
 2. Implement the executor in `hi-mcp/hi-mcp-server/tool-executors.ts` — the pages stay untouched. A tool that changes the plan is a tool command in roomle-ui (`HI_TOOL_COMMAND` in `homag-intelligence/src/hi-plan-context.ts`, the command in `HI_TOOL_COMMANDS` of `hi-tool-commands.ts`) plus a forwarder here, `inPlanner('<tool name>')`, which sends it through `externalObjectGroupOperation` and wraps it in `oneAtATime`, so it never runs beside another plan change, and in the undo record
-3. An edit the planner does not offer yet is a group operation the tool command runs (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`, executed in `hi-tools.ts`) — no new planner method. Only if a tool needs a planner method the pages do not expose yet: add it to `hi-mcp/hi-mcp-server/planner-api.ts` and to every page allow-list (`MCP_PLANNER_METHODS` in `minimal-hi-example/index.html`, `PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts`, then copy to the ligna-store)
+3. An edit the planner does not offer yet is a group operation the tool command runs (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`, executed in `hi-tools.ts`) — no new planner method. Only if a tool needs a planner method the pages do not expose yet: add it to `hi-mcp/hi-mcp-server/planner-api.ts` and to the page allow-list (`PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts`, then copy to the ligna-store), and to the methods the example page records (`PLANNER_METHODS` in `minimal-hi-example/index.html`)
 4. Add or extend unit tests in the matching `tests/` folder — a tool command's in roomle-ui `homag-intelligence/__tests__/hi-tool-commands/`
 5. Update `docs/hi-mcp-behaviour.md`, the `docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
 6. Test with MCP client

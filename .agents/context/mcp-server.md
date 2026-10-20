@@ -20,15 +20,15 @@ record.
 | `HI_MCP_TLS_CERT` + `HI_MCP_TLS_KEY` | Serve HTTPS and WSS instead of HTTP and WS | off |
 | `HI_MCP_STORE_URL` | The page URL named in the "No HI page connected" error | `http://localhost:3000/?store.stage=INT&mcp_server=http://localhost:3100`; the MCP port and HTTP/TLS scheme follow the server configuration |
 
-A stray `PORT` in the environment moves the server — the launcher and the pages assume 3100 unless
-`HI_MCP_PORT` is set.
+A stray `PORT` in the environment moves the server — the pages assume 3100 unless `HI_MCP_PORT` is
+set.
 
 ### HTTP
 
 `requestHandler` serves one route:
 
 - **Only `/mcp`.** Any URL that does not start with `/mcp` gets 404 `Not found - the MCP endpoint is
-  /mcp`. There is no health route on the MCP server (the chat backend has one).
+  /mcp`. There is no health route.
 - **CORS.** Every response of `/mcp` carries `Access-Control-Allow-Origin: *` and the MCP headers
   (`MCP_CORS_HEADERS`), and every preflight gets 204: a page on any origin may call the tools from
   the browser.
@@ -76,7 +76,7 @@ and registers the tools, the skill resources and the handlers of the Skills exte
 | the skill files | `resources/list` and `resources/read`, under `skill://<name>/<path>` | the text of `readSkillFile`, without `SKILL_IN_SESSION` |
 
 The rules go out twice: in `initialize` for clients that pass server instructions to the model, and
-from `get-authoring-rules` for those that do not — the chat backend does not
+from `get-authoring-rules` for those that do not — the chat of the ligna-store does not
 ([hi-mcp-behaviour.md §5](../../docs/hi-mcp-behaviour.md#5-information-the-server-provides)). The text is a
 template string in this file; there is no separate rules file.
 

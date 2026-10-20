@@ -28,14 +28,15 @@ deliberately rejected. Read these before proposing a change to an area they cove
 | ADR | Status |
 |---|---|
 | [0001 — HI MCP tool logic runs in the MCP server, pages only execute planner methods](decisions/0001-hi-mcp-tool-logic-in-the-server.md) | Superseded in part by 0007 |
-| [0002 — One MCP server for every client, configured from outside](decisions/0002-one-mcp-server-configured-from-outside.md) | Accepted |
-| [0003 — The AI chat is an MCP client beside the MCP server](decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) | Accepted |
+| [0002 — One MCP server for every client, configured from outside](decisions/0002-one-mcp-server-configured-from-outside.md) | Superseded in part by 0010 |
+| [0003 — The AI chat is an MCP client beside the MCP server](decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) | Superseded in part by 0010 |
 | [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](decisions/0004-hi-mcp-server-on-cloudflare-containers.md) | Superseded in part by 0008 |
 | [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](decisions/0005-deploy-hi-mcp-from-release-cloudflare.md) | Superseded in part by 0008 |
 | [0006 — The prompt tests assess the agent, the unit tests the tools](decisions/0006-prompt-tests-assess-the-agent.md) | Accepted |
 | [0007 — The tool logic of the plan-changing HI MCP tools runs in the planner](decisions/0007-hi-mcp-tool-logic-in-the-planner.md) | Accepted |
 | [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Accepted |
 | [0009 — The chat window is a panel of the planner, the agent loop stays in the host](decisions/0009-the-chat-window-is-a-panel-of-the-planner.md) | Accepted |
+| [0010 — The example's chat runs in the page, with the planning assistant of the embedding-lib](decisions/0010-the-example-chat-runs-in-the-page.md) | Accepted |
 
 ---
 
@@ -88,7 +89,7 @@ Living reference of the implementation: how the code is built today. Full index 
 | [mcp-server.md](context/mcp-server.md) | `server.ts`, tool registration, the page bridge, the planner methods, undo and redo |
 | [tool-executors.md](context/tool-executors.md) | Overview of all MCP tools, `tool-executors.ts`, `agent-facing.ts`, the tool commands of roomle-ui |
 | [layout-and-placement.md](context/layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
-| [pages-chat-and-launcher.md](context/pages-chat-and-launcher.md) | The page side of the bridge, `start.mjs`, the chat backend `hi-mcp-chat` |
+| [pages-chat-and-launcher.md](context/pages-chat-and-launcher.md) | The page side of the bridge, `start.mjs`, the chat of the example page |
 | [deployment-and-testing.md](context/deployment-and-testing.md) | Cloudflare, the workspaces and scripts, the unit tests, the end-to-end test runs |
 
 ### Wiki

@@ -16,7 +16,6 @@ export default defineConfig({
     include: [
       'hi-mcp-server/tests/**/*.test.ts',
       'hi-mcp-client/tests/**/*.test.ts',
-      'hi-mcp-chat/tests/**/*.test.ts',
       'cf/tests/**/*.test.ts',
     ],
   },

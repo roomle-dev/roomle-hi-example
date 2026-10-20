@@ -257,19 +257,6 @@ curl -s -o /dev/null -D - -X OPTIONS https://hi-planning-assistant.dashiell-bell
 A browser that cached a page from before the deploy may keep failing with "Failed to fetch" —
 reload without cache.
 
-## Trying it with the HI example (no store)
-
-From the repository root, `npm run start:cf` opens the HI presets example connected to this
-deployment. `npm run start:cf mistral <api-key>` also starts the built-in chat. No local MCP
-server starts. The page connects to `wss://hi-planning-assistant-dev.dashiell-bell.workers.dev/bridge?session=<OS user name>`,
-and the launcher prints `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp?session=<OS user name>` for
-external MCP clients. The OS user name keeps the session the same across restarts and networks, so an
-external connector is set up once; two machines with the same user name share the container. The
-example always talks to the last deployed image, so deploy first to try server changes from a
-branch. The Worker URL is the constant `CLOUDFLARE_MCP_SERVER_URL` in
-`minimal-hi-example/start.mjs`, so a changed worker name needs it updated as well, together with
-`MCP_SERVER_URL` in `.github/workflows/deploy-cloudflare.yml`.
-
 ## Updating after code changes
 
 Push to the release branch of the stage ([Deploy from GitHub](#deploy-from-github-push-to-a-release-branch)).

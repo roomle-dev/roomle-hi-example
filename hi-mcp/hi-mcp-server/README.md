@@ -10,9 +10,8 @@ The server is **agent-agnostic**: it contains no client-specific code. Any MCP c
 Streamable HTTP transport support can connect (Claude Code, the Claude desktop app, Cursor,
 VS Code Copilot agent mode, Gemini CLI, custom clients built with an MCP SDK).
 
-Besides the ligna-store, the standalone HI presets example of this repository is a client of
-the same server: `minimal-hi-example/start.mjs` serves it on port 3000, spawns this server,
-and its inline page bridge uses the same WebSocket protocol. See
+The standalone HI presets example of this repository is no client of this server: it runs the
+copy of the tools in the roomle-ui embedding-lib in its page. See
 [`docs/hi-mcp-server.md`](../../docs/hi-mcp-server.md).
 
 Copied from the roomle-ui repository's
@@ -49,7 +48,7 @@ page-side bridge lives in the store repository (`ligna-store/hi-mcp/`), its test
 
 | Port | Process |
 | ---- | ------- |
-| 3000 | the client page — ligna-store dev server (`npm run dev`) or the HI presets example launcher (`minimal-hi-example/start.mjs`) |
+| 3000 | the client page — ligna-store dev server (`npm run dev`) |
 | 3100 | this MCP server (`npm start`) — MCP endpoint `/mcp` + WebSocket bridge |
 
 | File | Responsibility |
@@ -132,7 +131,6 @@ or `mcp_session=default` for a client using `/mcp` without a session.
 | deployed (`https://www.roomle.com/…`) | local server URL | — | `ws://localhost:3100/bridge` (loopback is not mixed content); `wss://localhost:3100/bridge` with `mcp_server=https://localhost:3100` and the TLS variant — the **local server on the user's machine** | one local page per machine; second sees an occupied error |
 | deployed | Cloudflare Worker URL | — | a fresh container for the page's generated `?session=` | each page gets an independent planner |
 | deployed | Cloudflare Worker URL | a session name | the Worker's container for `?session=<name>` | shared with an external client using the same name; a second page is refused |
-| HI example (`npm run start:cf`, `http://localhost:3000`) | Cloudflare Worker URL (set by the launcher) | the OS user name (set by the launcher) | the Worker's container for `?session=<user name>` | one container per OS user name; two machines with the same user name share it |
 
 External MCP clients connect to `http://localhost:3100/mcp` for local setups and to
 `https://<server>/mcp` for cloud setups. To reach a specific store page's Cloudflare container,

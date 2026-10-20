@@ -472,7 +472,7 @@ try {
   await createOrReplaceGroups({ posGroups: [group] });
 } catch (error) {
   if (error.message.includes('No HI page connected')) {
-    console.log('Open page with ?mcp=true');
+    console.log('Open the ligna-store with mcp_server');
   }
 }
 ```
@@ -481,7 +481,7 @@ try {
 
 | Error | Cause | Solution |
 |---|---|---|
-| No HI page connected | No planner page on the bridge | Open the page (the example with `?mcp=true`, or the store) and keep it open |
+| No HI page connected | No planner page on the bridge | Open the ligna-store with `mcp_server` (the URL the error names) and keep it open |
 | Invalid pos groups - nothing was loaded | No group of the `create-or-replace-groups` call can be built | Fix the listed errors — each names what to send instead |
 | articleId '…' is not in the article catalog | Article not in catalog (another spelling of a catalog id is read in the catalog's spelling and reported in `corrections`) | Use a valid articleId from context (the message lists them). In `create-or-replace-groups` the group is in `notLoaded`; a command tool fails |
 | roots '…' are not docked to a placed root (in `notLoaded`) | A part the docking does not connect to the first root, which the server cannot dock to the free end of a row: no free row end, a wall unit without a wall-unit row | Dock it to a placed root (the error names the placed roots and the entry to send). Only for docking written as `contextData`: with relations, such a root continues the row of its kind |

@@ -1,19 +1,20 @@
 # Pages, Chat and Launcher
 
-The page side of the bridge, the launcher that starts the example, and the chat backend. How the
-chat behaves for the user, with its models and the image feature, is described in
+The page side of the bridge, the launcher that starts the example, and the chat of the example
+page. How the chat behaves for the user, with its models and the image feature, is described in
 [ai-chat.md](../../docs/ai-chat.md); this page describes the code.
 [Back to the overview](./README.md).
 
 ## The page side of the bridge
 
-Three copies of the same client exist:
+The MCP server reaches a planner page through its `/bridge`. The example page has no bridge any
+more: it runs the HI MCP tools of the embedding-lib itself ([The chat of the example
+page](#the-chat-of-the-example-page)). Two copies of the same client exist:
 
 | Copy | Used by | Tests |
 | ---- | ------- | ----- |
 | `hi-mcp/hi-mcp-client/browser-bridge.ts` + `types.ts` | the reference copy of the ligna-store's bridge | `hi-mcp-client/tests/browser-bridge.test.ts` |
 | `ligna-store/hi-mcp/browser-bridge.ts` + `types.ts` | the store page | — (synced by hand from the reference copy) |
-| inline in `minimal-hi-example/index.html` | the example page, with `?mcp=true` | — |
 
 ### What every copy does
 
@@ -30,21 +31,14 @@ Three copies of the same client exist:
 
 The allow-list is `getExternalObjectPlanContext`, `externalObjectGroupOperation`, `fetchPrice`,
 `getExternalObjectSnapshot`, `undo`, `redo` — the methods of `planner-api.ts`
-(`tests/planner-api.test.ts` checks that the client list matches). The example page keeps
-`removeExternalObject` for its own UI, outside the allow-list.
+(`tests/planner-api.test.ts` checks that the client list matches).
 
-### Differences
-
-| | `browser-bridge.ts` | `index.html` |
-| - | ------------------- | ------------ |
-| Server URL | `options.serverUrl`, `options.sessionId` | query parameters `mcp_server`, `mcp_port`, `mcp_session` |
-| URL fallback | on an `https:` page without a server URL also `wss://localhost:3100/bridge`, rotated when a socket never opened | one URL |
-| `hello.example` / `url` | `ligna-store` / the page URL without `api_key` | `minimal-hi-example` / the full URL |
-| `clientId` | `options.clientId` (may be missing) | a `crypto.randomUUID()` per page load |
-| Status | `onStatusChange`: connecting, connected, occupied, unavailable; `retry()`, `dispose()` | `setMcpConnection` passes the availability to the chat window |
-
-`resolveBridgeUrls` / `resolveBridgeUrl` turn an `http(s)` server URL into `ws(s)`, strip a trailing
-slash, and append `/bridge`.
+`browser-bridge.ts` takes the server URL and the session from `options.serverUrl` and
+`options.sessionId`; on an `https:` page without a server URL it also tries
+`wss://localhost:3100/bridge`, rotated when a socket never opened. `resolveBridgeUrls` turns an
+`http(s)` server URL into `ws(s)`, strips a trailing slash, and appends `/bridge`. It reports
+connecting, connected, occupied and unavailable through `onStatusChange` and has `retry()` and
+`dispose()`; `hello` carries `ligna-store` and the page URL without `api_key`.
 
 The store's `Planner.vue` resolves `mcpOptions` from `mcp_server` and `mcp_session`, then starts
 the bridge when its planner is available. The resolver generates one `clientId` and uses it as
@@ -56,136 +50,90 @@ on INT. Unmount and locale reload dispose the bridge and optional chat together.
 
 ## The launcher — `minimal-hi-example/start.mjs`
 
-The root `start`, `dev` and `start:cf` scripts invoke `node minimal-hi-example/start.mjs` directly,
-with `--dev` or `--cf` for those modes. npm forwards positional arguments and flags after `--`,
-for example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`.
+The root `start` and `dev` scripts invoke `node minimal-hi-example/start.mjs` directly, with
+`--dev` for the local Rubens UI. npm forwards positional arguments and flags after `--`, for
+example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`.
 
 ### Arguments
 
 | Argument | Effect |
 | -------- | ------ |
-| `<provider> <api-key>` | Also start the chat backend. The provider is one of `CHAT_PROVIDERS` or a `gpt-*`, `mistral-*`, `claude-*`, `gemini-*` model id; an unknown provider or a missing key exits with 1 |
+| `<model> <api-key>` | Also serve the model of the page's chat and open the page with the chat window. The model is a name of `MODEL_ALIASES`, a deployment of `FOUNDRY_DEPLOYMENTS` or a `gpt-*`, `mistral-*`, `claude-*`, `gemini-*` model id; an unknown model or a missing key exits with 1 |
 | `--dev` | The planner loads from `http://localhost:5173/` (`EXAMPLE_SERVER_URL` overrides) |
-| `--cf` | Use the DEV server `https://hi-planning-assistant-dev.dashiell-bell.workers.dev` (PRD: `https://hi-planning-assistant.dashiell-bell.workers.dev`) with the OS user name as session; no local MCP server |
 | `--no-open` | Do not open the browser |
 
 | Variable | Default | Effect |
 | -------- | ------- | ------ |
 | `EXAMPLE_PORT` | 3000 | page port |
-| `HI_MCP_PORT` | 3100 | MCP port; adds `&mcp_port=` to the page URL only when set |
-| `HI_CHAT_PORT` | 3200 | chat port; adds `&chat_port=` only when set |
 | `EXAMPLE_SERVER_URL` | — | the planner's Rubens UI, passed as `server_url` |
-| `HI_CHAT_PAGE_ORIGINS` | the page's localhost origins | set on the chat child when unset |
+| `HI_CHAT_MODEL` | — | replaces the model of every provider other than the Foundry deployments (an Azure deployment name for `azure`) |
+| `AZURE_RESOURCE_NAME` | — | required for `azure` / `openai`: the resource of that deployment |
+| `HI_CHAT_REASONING_EFFORT` | per deployment | the reasoning effort of an Azure model on the Responses API |
 
 ### What it does
 
-1. **Build gate:** `npm install` in `hi-mcp/` when `node_modules` is missing, then always
-   `npm run typecheck`; a failure stops the launcher.
+1. **Model:** `planningAssistantConfig` turns the model name and the key into the
+   `PlanningAssistantConfig` of the embedding-lib — `{ provider, model, apiKey, baseUrl?,
+   chatCompletions?, reasoningEffort?, readsImages }`. Every `gpt-*` id and the names of
+   `FOUNDRY_DEPLOYMENTS` are Azure deployments on the HI Foundry resource (`FOUNDRY_BASE_URL`), or
+   on the resource their entry names (`gpt-6.1-sol`); `mistral-large-3` uses Chat Completions;
+   gpt-5-mini and gpt-5.4-mini get the reasoning effort `high`. The aliases map to Mistral,
+   Anthropic, Google and an Azure deployment on `AZURE_RESOURCE_NAME`, whose base URL is the one the
+   AI SDK builds from a resource name. `readsImages` holds for every Anthropic and Google model,
+   every `gpt-*` deployment on a Foundry resource and the ids of `IMAGE_INPUT_MODELS`.
 2. **Static server** for `minimal-hi-example/` (`/` → `index.html`; only `.html`, `.js`, `.md`, `.json`).
-3. **MCP server:** Node runs the workspace's installed `vite-node` CLI with `server.ts`, with
-   `HI_MCP_STORE_URL` set to the example URL.
-4. **Chat backend** (with a provider): Node runs the same CLI with `chat-server.ts`, with `HI_CHAT_TOKEN`,
-   `HI_CHAT_PROVIDER` and `HI_MCP_URL`.
-5. **Prints** `Example:`, `MCP:` and `Chat:` lines — the test scripts parse the `Example:` line — and
-   opens `http://localhost:3000/?mcp=true&backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`
-   plus `chat=true`, ports, `server_url` or the Cloudflare parameters.
+3. **Config:** `/planning-assistant-config.json` answers the config as JSON with
+   `Cache-Control: no-store`, to a request from this machine only (`127.0.0.1`, `::1`; 403
+   otherwise), and 404 without a model.
+4. **Prints** `Example:` and, with a model, `Model:` (provider and model, never the key) — the test
+   scripts parse the `Example:` line — and opens
+   `http://localhost:3000/?backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`, plus
+   `chat=true` with a model and `server_url`.
 
-When a child exits, the launcher exits with its code; SIGINT and SIGTERM stop both children.
-Each server is a direct child of the launcher, running in its workspace directory with inherited
-stdio. Signals reach the servers without depending on npm or shell forwarding. The static
-page server stops with the launcher. The POSIX process regression in
-`hi-mcp-server/tests/example-launcher.test.ts` verifies that all three ports can be bound again
-after signalling only the launcher PID.
+SIGINT and SIGTERM end the launcher with 0, and the page server stops with it.
+`hi-mcp-server/tests/example-launcher.test.ts` checks the config of a model, the 404 without one,
+and that the page port can be bound again after signalling only the launcher PID (POSIX).
 
-## The chat backend — `hi-mcp/hi-mcp-chat`
+## The chat of the example page
 
-A small HTTP server on 127.0.0.1 (`HI_CHAT_PORT`, 3200) that runs one model turn per request with the
-Vercel AI SDK and the MCP tools of the server. Only the example page uses it; the ligna-store runs
-its chat in the page.
+`index.html` imports `@roomle/embedding-lib` and its `hi.js` from unpkg — the dev version
+`0.0.0-dev-a4754cb` until a release has the planning assistant
+([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`
+the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
 
-| File | Responsibility |
-| ---- | -------------- |
-| `chat-server.ts` | the HTTP server |
-| `chat-stream.ts` | the model, the MCP client, `streamText`, the plain-text response |
-| `chat-recovery.ts` | recorded tool outcomes, interruption summary and completed message pairs; copied to ligna-store |
-| `chat-handler.ts` | routing, CORS, request validation |
-| `chat-config.ts` | configuration, provider and model resolution, request validation of the messages and the prompts, images |
-| `chat-steps.ts` | the step loop and the step log |
-| `tool-result-images.ts` | the Mistral middleware for images in tool results |
+1. leaves the chat off, with a line in the debug log, when the planner has no
+   `planningAssistantOutput` (no AI Planning Assistant window);
+2. fetches `/planning-assistant-config.json` from the launcher; without it, it reports the window
+   unavailable with the message to start the example with a model;
+3. calls `startPlanningAssistant(recordedPlannerApi(roomDesignerApi), config, signal)` of the
+   embedding-lib, which loads the AI SDK and the provider from esm.sh, requests the prompts of the
+   planner (`getExternalObjectAgentPrompts()`), creates the HI MCP tools, registers
+   `onPlanningAssistantPrompt` and runs every turn with `streamText` (at most 16 steps, the last
+   without tools).
 
-### Endpoints
-
-| Path | Answer |
-| ---- | ------ |
-| `GET /health` | `ok` |
-| `GET /capabilities` | `{ "imageInput": boolean }` — whether the model reads images |
-| `POST /chat` | the streamed answer; 400 for a missing `clientId`, missing `prompts` or images to a model that cannot read them, 403 for another origin, 503 without a token |
-
-Request: `{ messages: [{ role, content, images? }], clientId, prompts: { systemPrompt, imagePrompt } }`
-— the whole conversation, images as base64 data URLs on user messages, and the prompts of the planner
-(`getExternalObjectAgentPrompts()` of roomle-ui), checked by `parseChatPrompts`. Response: `text/plain`, streamed — the model's text, a line
-`[tool] <name>` when a tool starts, and `[error] <message>` for errors and timeouts.
-
-### A turn
-
-1. **Model:** `resolveChatModel` maps the provider name — the Azure AI Foundry deployments
-   (every `gpt-*` id and `mistral-large-3`), the aliases (`mistral`, `claude`, `gemini`, …) and
-   pass-through `mistral*`, `claude*`, `gemini-*` ids; `getLanguageModel` builds the provider (Mistral
-   wrapped with the image middleware).
-2. **MCP client:** a new `createMCPClient` per request, on `HI_MCP_URL` with `client=<clientId>` set —
-   a `session` parameter survives. It is closed when the stream ends.
-3. **Tools:** `mcpClient.tools()`, each `execute` wrapped to write the `[tool]` line and log its time.
-4. **`streamText`** with `prompts.systemPrompt` of the request as instructions, at most `MAX_CHAT_STEPS` (16) steps; the
-   last step runs with `toolChoice: 'none'`, so a turn always ends with an answer. The turn is
-   aborted after `HI_CHAT_TURN_TIMEOUT_MS` (5 minutes).
-5. **Step log:** tokens in, out and reasoning, tool calls, finish reason and duration per step.
-
-The reasoning effort is passed as `providerOptions.azure.reasoningEffort` to the Azure models:
-`HI_CHAT_REASONING_EFFORT`, else the Foundry deployment's effort in `FOUNDRY_DEPLOYMENTS` (`high`
-for gpt-5.4-mini and gpt-5-mini, the deployment default for every other one). GPT
-Responses requests preserve this effort on tool turns, including image prompts.
-The Chat Completions path omits explicit effort when tools are available.
-
-The Foundry GPT deployments use Responses (`azure(deployment)`), which supports
-images, function tools and reasoning together. GPT-6 Astra tool calls require
-Responses. Foundry Mistral-Large-3 uses Chat Completions
-(`azure.chat(deployment)`), because its Responses endpoint rejects image input.
-`chatCompletions` in `chat-config.ts` selects the API per deployment.
-
-### Images
-
-`readsImages` decides whether a model gets images: every Anthropic and Google model and the ids in
-`IMAGE_INPUT_MODELS`. User images become `file` parts; a user message with images and no text gets
-`prompts.imagePrompt` of the request as its text (`toModelMessages`). `@ai-sdk/mistral` sends tool results as JSON
-text, so for Mistral `toolResultFilesAsUserMessages` moves the images of a tool result
-(`get-plan-images`) into a user message right after it.
-
-### The page side of the chat — `index.html`
-
-The chat window is the planner's AI Planning Assistant (roomle-ui `PlanningAssistantChat.vue`): it
-shows the messages, renders the answer as Markdown (marked + DOMPurify), and takes the image drops,
-redrawn as JPEG with a long side of at most 1568 px. With `?chat=true` the page sets
-`featureFlags.planningAssistant` in the planner options and `startChat` hosts the window: it requests
-the prompts of the chat once from the planner (`roomDesignerApi.extended.getExternalObjectAgentPrompts()`),
-registers `onPlanningAssistantPrompt`, posts every message with the conversation and the prompts to
-`http://localhost:<chat_port>/chat`, and passes the turn to the window with
-`planningAssistantOutput`: the new part of the answer as `text` — a last line that is or may become a
-`[tool]` line waits for the next chunk —, a new `[tool]` name as `activity`, the end as `done`, a
-failed request as `error`. `onMcpConnectionChange` passes the bridge state as `availability`, first
-after `onPlanningAssistantPrompt` is registered — the window's input stays off until then —, the
-answer of `GET /capabilities` the `images` switch. A planner without `planningAssistantOutput` gets no
-chat, and the bridge is unaffected.
+`recordedPlannerApi` is the planner API the planning assistant runs on: a proxy of
+`roomDesignerApi.extended` that records every call of the six planner methods in
+`window.hiPlannerCalls` (`id`, `method`, `args`, `ms`, `ok`, `error`, and the answer of a
+snapshot, which holds the images `get-plan-images` shows the agent) and every output part of the
+window in `window.hiPlanningAssistantOutput`. Its `callbacks` are the planner's own, so the
+assistant's `onPlanningAssistantPrompt` and the tools' `onHistoryChange` land there.
+`window.hiAgentPlanContext(include)` creates a tool set of its own and answers the plan context in
+the agent's words, as the tool `get-plan-context` does. The tools log every tool call and planner
+call to the page console (`[hi-mcp] tool …`, `[hi-mcp] call <n>: …`), the planning assistant its
+errors (`[planning-assistant] …`).
 
 ## Before you change these files
 
-- **The `clientId` chain:** the page creates it, sends it in `hello`, in every chat request, and the
-  chat backend in `/mcp?client=`. The server refuses a chat whose page no longer owns the planner.
-- **The prompts come from the planner:** the page and `run-hi-mcp-prompt.js` request
-  `getExternalObjectAgentPrompts()` and send the result as `prompts`; the chat backend has no prompts
-  of its own. A change of a prompt is a change in roomle-ui `hi-agent-prompts.ts`.
-- **Three bridge copies.** A protocol change touches the server's `types.ts`, the client's
-  `types.ts`, the ligna-store copy and `index.html`, and raises `BRIDGE_PROTOCOL`.
-- **The page keeps only the text of earlier turns.** Tool results are not resent; images are, with
-  every later turn.
-- **The test scripts use page globals** — `window.instance` and `window.hiPosGroupsCompletelyLoaded`
-  of `index.html` ([Deployment and testing](./deployment-and-testing.md#end-to-end-runs)).
+- **The chat is the embedding-lib's.** The loop, the tools, the served text and the planning skills
+  live in roomle-ui `packages/embedding-lib`; the page only hands it the model and the planner API.
+  A new embedding-lib version means raising the version in the two imports of `index.html`.
+- **The prompts come from the planner:** the planning assistant requests
+  `getExternalObjectAgentPrompts()`; a change of a prompt is a change in roomle-ui
+  `hi-agent-prompts.ts`.
+- **The model names are the launcher's.** A new model or deployment is an entry in `start.mjs`
+  (`FOUNDRY_DEPLOYMENTS`, `MODEL_ALIASES`, `IMAGE_INPUT_MODELS`).
+- **Two bridge copies.** A protocol change touches the server's `types.ts`, the client's
+  `types.ts` and the ligna-store copy, and raises `BRIDGE_PROTOCOL`.
+- **The test scripts use page globals** — `window.instance`, `window.hiPosGroupsCompletelyLoaded`,
+  `window.hiPlannerCalls`, `window.hiPlanningAssistantOutput` and `window.hiAgentPlanContext` of
+  `index.html` ([Deployment and testing](./deployment-and-testing.md#end-to-end-runs)).

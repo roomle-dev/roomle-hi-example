@@ -53,8 +53,7 @@ account (`npx wrangler whoami`); without it the deploy fails instead of going to
   A re-login (`wrangler logout && wrangler login`) is only the one-time recovery when a deploy
   fails with `Unauthorized` (see pitfalls below)
 - a changed worker name requires editing `"name"` in `hi-mcp/cf/wrangler.jsonc` first, and then
-  the URL in `HI_MCP_STORE_URL` (the `vars` of the same file), in `CLOUDFLARE_MCP_SERVER_URL`
-  (`minimal-hi-example/start.mjs`, used by `npm run start:cf`) and in the verify step of
+  the URL in `HI_MCP_STORE_URL` (the `vars` of the same file) and in the verify step of
   `.github/workflows/deploy-cloudflare.yml`
 
 ## URL anatomy (where the public URL comes from)
@@ -83,10 +82,6 @@ https://<worker name>.<account subdomain>.workers.dev/mcp
 2. open the store with `store.stage=INT&mcp_server=<the URL>&mcp_session=<name>` and start planning
    (no chat model or key needed) → `npx wrangler tail` shows `page connected`;
    `get-plan-context` on `/mcp?session=<name>` returns that planner's context
-3. or, without the store: `npm run start:cf` opens the HI example against the deployment
-   (session = the OS user name) → the page log shows
-   `MCP connected to the MCP server`, and `get-plan-context` on the printed MCP URL returns the
-   articles
 
 The page's WebSocket upgrade passes through the Worker into the container; the fallback, should it
 ever stop passing, is in the [Cloudflare ADR](../decisions/0004-hi-mcp-server-on-cloudflare-containers.md).

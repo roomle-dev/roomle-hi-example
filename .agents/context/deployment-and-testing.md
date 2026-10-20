@@ -8,31 +8,30 @@ evaluate the MCP tests in the [testing skill](../../.agents/skills/hi-mcp-testin
 
 ## Workspaces and scripts
 
-The repository root is an npm workspace root over `hi-mcp`, `hi-mcp/hi-mcp-server`,
-`hi-mcp/hi-mcp-chat`, `hi-mcp/cf` and `minimal-hi-example`; `hi-mcp/` is a workspace root of its own
-over `hi-mcp-server`, `hi-mcp-chat` and `cf`. `hi-mcp-client` has no `package.json` — it is covered
+The repository root is an npm workspace root over `hi-mcp`, `hi-mcp/hi-mcp-server`, `hi-mcp/cf`
+and `minimal-hi-example`; `hi-mcp/` is a workspace root of its own over `hi-mcp-server` and `cf`. `hi-mcp-client` has no `package.json` — it is covered
 by the typecheck and the tests only.
 
-The root `package-lock.json` pins all five workspaces for CI, local installs and the Docker image.
+The root `package-lock.json` pins all four workspaces for CI, local installs and the Docker image.
 The image copies every workspace manifest and installs only the production dependencies of
 `hi-mcp/hi-mcp-server`. The root `.dockerignore` limits the build context to those manifests,
 the lockfile, the shared TypeScript config and the server source.
 
 | Where | Script | Runs |
 | ----- | ------ | ---- |
-| root | `start`, `dev`, `start:cf` | the launcher, plain / `--dev` / `--cf` |
+| root | `start`, `dev` | the launcher, plain / `--dev` |
 | root | `mcp-server` | the MCP server alone |
 | root | `plan:mistral`, `plan:gpt5`, `plan:gpt5.4`, `plan:gpt6` | the launcher with a chat model and its key from the environment |
 | root | `deploy:cf`, `deploy:cf:dev` | `wrangler deploy` in `hi-mcp/cf`, PRD / DEV (`--env dev`) — for testing, debugging and emergencies |
 | root | `format`, `format:check`, `lint`, `lint:fix` | Prettier, oxlint |
 | `hi-mcp/` | `start` | the MCP server |
 | `hi-mcp/` | `export:fixture -- <file>` | `hi-mcp-server/export-fixture.ts`: writes the answers of `tools/list` and `skills/list` to the file — the fixture of the tool copy in the roomle-ui embedding-lib (D89) |
-| `hi-mcp/` | `test` | vitest across the server, the client, the chat and `cf` |
-| `hi-mcp/` | `typecheck` | `tsc --noEmit` for the server, the client and the chat (not `cf`) |
+| `hi-mcp/` | `test` | vitest across the server, the client and `cf` |
+| `hi-mcp/` | `typecheck` | `tsc --noEmit` for the server and the client (not `cf`) |
 
 Main dependencies: `@modelcontextprotocol/sdk`, `ws`, `zod`, run with `vite-node` (pinned to 3.2.4
-with `vite` 6.4.3 — newer `vite-node` needs `vite` 8 and Node 20.19); the chat: `ai` and the
-`@ai-sdk/*` providers and `@ai-sdk/mcp`. Node 20 or later; CI and wrangler use Node 22.
+with `vite` 6.4.3 — newer `vite-node` needs `vite` 8 and Node 20.19). The chat of the example page
+loads the AI SDK from esm.sh in the page and needs no dependency here. Node 20 or later; CI and wrangler use Node 22.
 
 ## Cloudflare
 
@@ -83,9 +82,8 @@ is aliased to a stub).
 | `hi-mcp-server/tests/plan-history.test.ts` | the undo record and history events |
 | `hi-mcp-server/tests/page-bridge.test.ts` | handshake, one page, call correlation, timeouts, disconnect (with `fake-page-socket.ts`) |
 | `hi-mcp-server/tests/planner-api.test.ts` | the methods and timeouts; the client allow-list matches |
-| `hi-mcp-server/tests/example-launcher.test.ts` | starts the real page, MCP and chat with a dummy key on unused ports; SIGTERM/SIGINT to only the launcher PID release every port (POSIX; no model request) |
+| `hi-mcp-server/tests/example-launcher.test.ts` | starts the real launcher on unused ports, with a model and a dummy key and without a model: the planning assistant config of the model, `no-store`, the 404 without a model; SIGTERM/SIGINT to only the launcher PID release the page port (POSIX; no model request) |
 | `hi-mcp-client/tests/browser-bridge.test.ts` | the page side of the bridge |
-| `hi-mcp-chat/tests/*.test.ts` | provider resolution, request handling, the step loop, the Mistral image middleware |
 | `cf/tests/worker.test.ts` | the Worker's routing |
 | `cf/tests/container.test.ts` | the named/default store link is set before container startup and preserved across bridge reconnects |
 | `cf/tests/container-startup-errors.test.ts` | the installed container SDK returns 503/429/500 for startup failures through the wrapper; startup errors do not escape as Worker exceptions |
@@ -109,29 +107,32 @@ a message — a renamed test breaks those references.
 
 ## End-to-end runs
 
-The scripts in `.agents/scripts/` run real prompts through a real model, the chat backend, the MCP
-server and a headless planner. They need Playwright (`npm install` in `.agents/scripts`).
+The scripts in `.agents/scripts/` run real prompts through a real model, the chat of the example
+page — the planning assistant and the HI MCP tools of the embedding-lib — and a headless planner. They need Playwright (`npm install` in `.agents/scripts`).
 
 ### One run — `run-hi-mcp-prompt.js`
 
 ```bash
-node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" …] \
+node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt>" …] \
   [--plan <ps_id>] [--image <file>] [--out <dir>] [--dev] [--headed]
 ```
 
-1. Starts the launcher with `--no-open`, the MCP server on 3110 (so open interactive tabs, which
-   reconnect to 3100, cannot take the bridge), and parses its `Example:` line and the server's
-   `[hi-mcp] tool <name> args|feedback|error` lines.
+1. Starts the launcher with the model, the key and `--no-open`, and parses its `Example:` line.
 2. Opens the example page in headless Chromium (`--enable-gpu`: the software renderer draws the
-   object-only image empty) with the plan, and waits until `get-plan-context` returns articles.
+   object-only image empty) with the plan, and waits until the plan context of the planner
+   (`getExternalObjectPlanContext`) has articles.
 3. Waits until the planner has loaded the plan's groups (`window.hiPosGroupsCompletelyLoaded`; it
-   clears its undo history then), takes the page's `clientId` from its `hello` frame.
-4. Sends each prompt as one chat turn with the whole history (over `node:http`, because `fetch` ends a
-   response after 300 s without data).
-5. Reads the plan context and takes a snapshot in the page (`window.instance.extended`): images,
-   plan XML, order data, and a saved plan snapshot id.
+   clears its undo history then) and the planning assistant reports the chat available
+   (`window.hiPlanningAssistantOutput`).
+4. Sends each prompt as one chat turn through the page (`onPlanningAssistantPrompt`; the planning
+   assistant keeps the history) and waits up to 10 minutes for the turn to end. The answer, the tool
+   activity and the errors are the output parts of the turn; the tool calls are the
+   `[hi-mcp] tool <name> args|feedback|error` lines of the page console.
+5. Reads the plan context (`window.hiAgentPlanContext`) and takes a snapshot in the page
+   (`window.instance.extended`): images, plan XML, order data, and a saved plan snapshot id. The
+   planner calls of the chat come from `window.hiPlannerCalls`.
 
-Output in `--out` or `.temp/result/<time>-<provider>/`: `run.json` (turns, answers, tool calls,
+Output in `--out` or `.temp/result/<time>-<model>/`: `run.json` (turns, answers, tool calls,
 errors, the snapshot id, `snapshotCaptured` and `navigations`), the plan context, the planner calls,
 the images, the plan XML and the order data. Exit code 1 on an error or without a snapshot id.
 Frame navigation is logged to `console.log` and stored with its timestamp, URL, main-frame flag,
@@ -214,5 +215,4 @@ Playwright and intercepted test pages to navigate the main page and planner fram
 is pending. They make no model requests and require the existing Playwright installation in
 `.agents/scripts/`; the generated-case tests also require `jq`.
 
-When an interactive `npm start` holds ports 3000 and 3200, run with `EXAMPLE_PORT` and `HI_CHAT_PORT`
-set to free ports.
+When an interactive `npm start` holds port 3000, run with `EXAMPLE_PORT` set to a free port.

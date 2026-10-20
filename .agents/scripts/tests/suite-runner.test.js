@@ -149,33 +149,6 @@ test('retries a lost render after recorded planner-frame navigation and a timeou
   assert.equal((await f.calls()).length, 2);
 });
 
-test('retries a failed provider step its errors do not name', async (t) => {
-  const f = await fixture(t, [
-    {
-      run: {
-        planSnapshotId: 'ps_partial',
-        errors: ["Item with id 'rs_1' not found."],
-        snapshotCaptured: true,
-        turns: [
-          {
-            stepFailures: [
-              {
-                step: 3,
-                durationMs: 1200,
-                causes:
-                  "AI_APICallError: Item with id 'rs_1' not found., status 400",
-              },
-            ],
-          },
-        ],
-      },
-    },
-    { run: success },
-  ]);
-  assert.equal((await f.run()).planSnapshotId, 'ps_fixture');
-  assert.equal((await f.calls()).length, 2);
-});
-
 test('keeps three navigation failures without retrying again on resume', async (t) => {
   const f = await fixture(t, [
     { run: navigationFailure },
@@ -239,19 +212,6 @@ test('preserves missing-run.json attempts and keeps the retry limit across resum
     'attempt-3'
   );
   assert.equal((await f.calls()).length, 3);
-});
-
-test('typechecks until a run of the session has stored its run.json', async (t) => {
-  const f = await fixture(t, [
-    { exitCode: 1 },
-    { run: transportFailure },
-    { run: success },
-  ]);
-  await f.run();
-  assert.deepEqual(
-    (await f.calls()).map(({ typecheck }) => typecheck),
-    [true, true, false]
-  );
 });
 
 test('retries a transport failure and preserves the failed attempt', async (t) => {

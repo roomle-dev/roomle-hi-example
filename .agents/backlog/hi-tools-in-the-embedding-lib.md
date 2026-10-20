@@ -2,7 +2,7 @@
 
 > **Type**: Backlog item (architecture)
 > **Domain**: the HI MCP server `hi-mcp/hi-mcp-server`, its Cloudflare deployment `hi-mcp/cf`, the page bridges and the chats of the three hosts; roomle-ui `packages/embedding-lib`
-> **Status**: Open — the decisions of §6 are taken; the first step (roomle-ui) is analysed in [hi-mcp-tools-in-the-embedding-lib-first-step.md](../feature-analysis/hi-mcp-tools-in-the-embedding-lib-first-step.md)
+> **Status**: Open — the decisions of §6 are taken; the first step (roomle-ui) is analysed in [hi-mcp-tools-in-the-embedding-lib-first-step.md](../feature-analysis/hi-mcp-tools-in-the-embedding-lib-first-step.md). The example page runs the planning assistant of the embedding-lib, with the key served by the launcher instead of the page URL ([ADR 0010](../decisions/0010-the-example-chat-runs-in-the-page.md)); its Mistral image middleware and step log are open in the [Chat section](README.md#chat)
 
 ## Affected repositories
 

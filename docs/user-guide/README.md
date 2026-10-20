@@ -109,7 +109,8 @@ npm start gpt-5.4-mini <api-key>
 The browser opens `http://localhost:3000` with the planner; the button at the bottom opens the chat.
 Instead of `gpt-5.4-mini` you can start other models — `mistral`, `claude`, `gemini`,
 `gpt-5-mini`, `gpt-6-astra` and more; the [README](../../README.md#usage) lists them all. Without a
-model (`npm start`) the page opens without a chat, ready for [your own AI assistant](#3-your-own-ai-assistant).
+model (`npm start`) the page opens without a chat. The chat runs in the page and needs no MCP
+server, so [your own AI assistant](#3-your-own-ai-assistant) cannot reach this page.
 
 ### 3. Your own AI assistant
 
@@ -117,7 +118,8 @@ Any AI app that can connect to an MCP server over HTTP works — Claude (desktop
 Mistral Le Chat, GitHub Copilot in VS Code, Cursor and others.
 
 1. Open the planner first and keep the tab open:
-   - **locally:** `npm start` in the repository — the MCP address is `http://localhost:3100/mcp`
+   - **locally:** `npm run mcp-server` in the repository, then the ligna-store with
+     `&mcp_server=http://localhost:3100` — the MCP address is `http://localhost:3100/mcp`
    - **in the cloud:** the [store page](#1-the-store-chat) with `&mcp_session=<name>` appended, where
      `<name>` is a short word of your choice, e.g. your first name — the MCP address is
      `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp?session=<name>` (DEV: `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp?session=<name>`) with the same name

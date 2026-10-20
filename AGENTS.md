@@ -572,6 +572,10 @@ step.
 
 **You are only allowed to create a pull request when the user requests it.** The rule holds in every repository the work touches — roomle-hi-example, ligna-store, roomle-ui, RoomleCore and any other — not only in this one. No saved note, memory, earlier habit or other repository's workflow makes an exception. A request covers only the pull request it names: a later branch, a follow-up change or a change in another repository needs a request of its own.
 
+### Hard Rule: NO Embedding-Lib Build Without Asking
+
+**NEVER build or publish the roomle-ui embedding-lib without asking the user first.** Not by starting the workflow `CD - GCP - rubens.*` (`gh workflow run cd-gcp-rubens-stage-roomle-com.yaml`, the manual run that publishes `@roomle/embedding-lib` as `0.0.0-dev-<sha>`), not with `npm publish`, not by any other way that builds a new embedding-lib version. A published version cannot be taken back. When a change needs a new embedding-lib version — the example page and the ligna-store load a pinned `0.0.0-dev-<sha>` — finish and push the code, stop, and ask before the build. A confirmation covers that one build only.
+
 ### Commit Message Format
 
 Use conventional commits: `type: lowercase description` — no trailing period.

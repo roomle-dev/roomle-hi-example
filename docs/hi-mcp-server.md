@@ -520,15 +520,19 @@ without placing an order.
 
 ### get-plan-images
 
-No parameters. Renders the current plan and returns a perspective image and a
-top-view image as MCP image content, so the agent can inspect the plan
-visually. The top-view orientation matches the wall `side` labels of
-`get-plan-context`: a wall with side `right` is at the right edge of the top
-image, `top` at the upper edge. The description tells the agent that the
-images show how the plan looks, while what an article is and how big it is
-come from `desc` and `dimensions` (see [Authoring pos groups](#authoring-pos-groups)).
-The images show the doors and drawers as they are in the planner: the tool asks the
-snapshot for `keepOpenGeometry`.
+No parameters. Renders two images of the current plan as MCP image content, so
+the agent can inspect the plan visually, after one text content that names them:
+first the groups alone, seen from their front without the room or other objects
+(the planner's object perspective, `perspectiveObjectImage`), then the top view
+of the whole plan. Without groups in the plan the text says so, and the top view
+comes alone. One camera serves all groups, so where fronts face opposite
+directions one side is seen from behind; the description tells the agent that a
+root module it does not see is not missing. The top-view orientation matches the
+wall `side` labels of `get-plan-context`: a wall with side `right` is at the
+right edge of the top image, `top` at the upper edge. The images show the doors
+and drawers as they are in the planner: the tool asks the snapshot for
+`keepOpenGeometry` (D97 and D88 of the
+[behaviour reference](hi-mcp-behaviour.md#3-decisions)).
 
 ### open-or-close-group, open-or-close-article
 

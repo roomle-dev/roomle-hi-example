@@ -57,7 +57,8 @@ plan snapshot id: `ps_s3p5hmscmmsnshopj2tybjwmt7ijy5o`
 ![Three Tall Units](./images/three-tall-units.png)
 
 The Default Room with one group: three `HTB60` along the right wall from the back right corner. The
-group editing tests start from it. It was built with `create-or-replace-groups` and saved with
+group editing tests start from it, and so do the door tests `open-cabinet-look-inside`,
+`open-whole-kitchen` and `edit-add-subarticle-look-inside`: every `HTB60` has one door. It was built with `create-or-replace-groups` and saved with
 `saveExternalObjectSnapshot()`; the ids survive a reload:
 
 | | id |
@@ -161,6 +162,9 @@ all cabinet identities, placement, finishes and docking.
 | `edit-add-subarticle` | Add one fixed shelf to the middle wardrobe, retaining its existing shelf. | 1 / 2 / 1 |
 | `edit-delete-subarticle` | Remove only the left wardrobe's shelf. | 0 / 1 / 1 |
 | `edit-move-subarticle` | Transfer the left shelf into the right wardrobe, retaining the existing right shelf. | 0 / 1 / 2 |
+
+The test `open-cabinet-without-doors` starts from this plan too: the open wardrobes have no doors,
+so `open-or-close-article` names the wardrobe in its corrections and the agent says so.
 
 The move test transfers between cabinets rather than asking to change the height of a fixed
 shelf. A recreated fitting can have a new instance ID; its returned identity, owning root,

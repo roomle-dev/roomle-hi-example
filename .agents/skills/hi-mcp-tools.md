@@ -50,7 +50,13 @@ are, without the session preamble of `get-skill`.
 |---|---|
 | `get-price` | Calculate pricing |
 | `get-order-data` | Get order information |
-| `get-plan-images` | Render plan images |
+| `get-plan-images` | Render plan images, with the doors and drawers as they are |
+
+### View Tools
+| Tool | Purpose |
+|---|---|
+| `open-or-close-group` | Open (`open: true`) or close every door and drawer of a group |
+| `open-or-close-article` | Open or close the doors and drawers of one root module, not its neighbours |
 
 ## Tool Reference
 
@@ -424,6 +430,20 @@ value carries its code — `Cloudy blue (#506080)` —, the colour of that value
 
 **Timeout**: 30 seconds for `get-price`; 2 minutes for `get-order-data` and `get-plan-images`
 (snapshots)
+
+`get-plan-images` asks the snapshot for `keepOpenGeometry`: the images show the doors and drawers
+as they are in the planner.
+
+### open-or-close-group, open-or-close-article
+
+**Purpose**: Open or close doors and drawers, so `get-plan-images` shows the inside of a cabinet
+
+**Parameters**: `groupId` or `rootModuleId` (the ids of `get-plan-context`), `open` (boolean)
+
+**Result**: `{ command, groups: [], removedGroupIds: [], changed: false, corrections? }` — the
+view of the planner changes, the plan does not: no undo step, nothing saved, price and order
+unchanged. `corrections` names a target without doors or drawers. They switch at once, and a root
+module opens without the root modules docked to it.
 
 ## Usage Patterns
 

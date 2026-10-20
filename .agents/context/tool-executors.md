@@ -40,6 +40,8 @@ the server and needs no connected planner page. Parameters and result formats ar
 | `get-price` | Calculate the plan's price | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
 | `get-order-data` | Read order data from a plan snapshot | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
 | `get-plan-images` | Render perspective and top-view images of the plan | No | [Price and snapshot forwards](#get-price-get-order-data-get-plan-images) |
+| `open-or-close-group` | Open or close every door and drawer of a group | No — the view only | [Doors and drawers](#doors-and-drawers) |
+| `open-or-close-article` | Open or close the doors and drawers of one root module | No — the view only | [Doors and drawers](#doors-and-drawers) |
 
 ## The files
 
@@ -70,7 +72,7 @@ context, the calculated groups, the layout load, the group operations (`runGroup
 
 | Wrapper | What it does | Used by |
 | ------- | ------------ | ------- |
-| `oneAtATime` | Chains the call onto a module-level promise (`planChanges`), so plan changes never run concurrently; a failed call does not block the next | `get-plan-context`, every plan-changing tool, `undo`, `redo` |
+| `oneAtATime` | Chains the call onto a module-level promise (`planChanges`), so plan changes never run concurrently; a failed call does not block the next | `get-plan-context`, `get-plan-images`, every plan-changing tool, `undo`, `redo` |
 | `recorded(tool, …)` | Counts the planner steps the tool command reports, for undo ([MCP server](./mcp-server.md#undo-and-redo)) | every plan-changing tool |
 | `planChange` | `oneAtATime(recorded(…))` | every plan-changing tool |
 | `inPlanner(tool, shape?)` | `planChange` around the one planner call `externalObjectGroupOperation(tool, args)`; removes `historySteps` (and an older planner's `historyFollowUps`) from the result and raises its `error` (a tool that failed after it changed the plan); the two attribute tools shape it with `compactAttributeResult` | `create-or-replace-groups`, `place-group`, the ten command tools |
@@ -327,7 +329,18 @@ The tool command's part:
 ## get-price, get-order-data, get-plan-images
 
 Thin forwards: `fetchPrice()`; `getExternalObjectSnapshot({ orderData: true })` returning `orderData`;
-`getExternalObjectSnapshot({ perspectiveImage, topImage })` returning both images.
+`getExternalObjectSnapshot({ perspectiveImage, topImage, keepOpenGeometry })` returning both images,
+with the doors and drawers as they are in the planner — without `keepOpenGeometry` the planner
+closes them for the snapshot. `get-plan-images` waits in `oneAtATime`, so an opening or a plan
+change the agent sent at the same time is in the images.
+
+## Doors and drawers
+
+`open-or-close-group` and `open-or-close-article` are `inPlanner` forwards like the command
+tools: roomle-ui runs them as tool commands (`hi-tools.ts`) and answers with `changed: false`
+and `historySteps` 0, because opening a door changes the view, not the plan. `recorded` therefore
+keeps no record, and the next `undo` still reverts the last plan change. They are not in
+`PLAN_CHANGING_TOOLS` (`hi-mcp-server.ts`), so the log keeps no argument line for them.
 
 ## The plan context the agent sees
 

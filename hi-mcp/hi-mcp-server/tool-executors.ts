@@ -382,6 +382,8 @@ export const toolExecutors: Record<string, ToolExecutor> = {
   'move-interior-fitting': inPlanner('move-interior-fitting'),
   'delete-interior-fittings': inPlanner('delete-interior-fittings'),
   'replace-interior-fitting': inPlanner('replace-interior-fitting'),
+  'open-or-close-group': inPlanner('open-or-close-group'),
+  'open-or-close-article': inPlanner('open-or-close-article'),
   'get-interior-design-options': oneAtATime(async (api, args) => {
     const { groupId, rootId, containerModuleId, articleId } = args;
     if (typeof groupId !== 'string' || !groupId.trim())
@@ -559,14 +561,17 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     return snapshot?.orderData ?? null;
   },
 
-  'get-plan-images': async (roomDesignerApi) => {
+  // waits like get-plan-context, so the images show the plan and the doors
+  // after the change or the opening sent before them
+  'get-plan-images': oneAtATime(async (roomDesignerApi) => {
     const snapshot = await roomDesignerApi.extended.getExternalObjectSnapshot({
       perspectiveImage: true,
       topImage: true,
+      keepOpenGeometry: true,
     });
     return {
       perspectiveImage: snapshot?.perspectiveImage,
       topImage: snapshot?.topImage,
     };
-  },
+  }),
 };

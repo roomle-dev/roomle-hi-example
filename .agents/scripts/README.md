@@ -26,4 +26,5 @@ Agent utility scripts for automating repository tasks: link checking, test runni
 | [`generate-article-catalog.js`](generate-article-catalog.js) | Generate the article catalog |
 | [`generate-attributes-table.js`](generate-attributes-table.js) | Generate the attributes table |
 | [`mcp-test-navigation.js`](mcp-test-navigation.js) | Navigate the MCP test infrastructure |
+| [`plan-images.js`](plan-images.js) | Name and decode the images `get-plan-images` showed the agent, per turn, for `run-hi-mcp-prompt.js` |
 | [`render-report-pdf.js`](render-report-pdf.js) | Render a report to PDF |

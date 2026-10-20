@@ -602,7 +602,15 @@ No parameters. Returns the order data of the current planning situation without 
 No parameters. Renders the current plan and returns a perspective image and a top-view image as
 MCP image content, so the agent can inspect the plan visually. The top-view orientation matches
 the wall `side` labels of `get-plan-context`: a wall with side `right` is at the right edge of
-the top image, `top` at the upper edge.
+the top image, `top` at the upper edge. The images show the doors and drawers as they are in the
+planner (`keepOpenGeometry`).
+
+### open-or-close-group, open-or-close-article
+
+`groupId` or `rootModuleId`, and `open`. Opens (`true`) or closes (`false`) every door and drawer
+of the group, or of the one root module without the root modules docked to it, at once — to look
+inside a cabinet with `get-plan-images`. The view changes, the plan does not: no undo step, nothing
+saved. A target without doors or drawers is named in `corrections`.
 
 ## Authoring pos groups
 

@@ -21,8 +21,11 @@
  * what the model sent, and the corrections, groups not loaded or error it got
  * back; and every failed provider step of the turn with its cause chain),
  * plan-context.json (rooms and groups after the chat),
- * planner-calls.json (the chat's, each with the page's time in ms), prompt-image.jpg (the image sent) and every
- * snapshot field as a file of its own. Exits 1 when the chat or the snapshot
+ * planner-calls.json (the chat's, each with the page's time in ms), prompt-image.jpg (the image sent),
+ * turn-<n>-plan-images-<k>-perspective.png and -top.png (the images the k-th
+ * get-plan-images call of turn n showed the agent, listed in the turn's
+ * planImages) and every snapshot field as a file of its own; the snapshot
+ * keeps the doors and drawers as the agent left them. Exits 1 when the chat or the snapshot
  * reported an error or no snapshot or plan snapshot id came back;
  * a stopped run (Ctrl+C) stops every server and stores nothing.
  *
@@ -40,6 +43,7 @@ import {
   recordNavigations,
   recordStepFailures,
 } from './mcp-test-navigation.js';
+import { planImageFiles } from './plan-images.js';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAUNCHER = join(REPO_DIR, 'minimal-hi-example', 'start.mjs');
@@ -78,13 +82,17 @@ const SNAPSHOT_FILES = [
   ['perspectiveObjectImage', 'perspective-object-image.png', 'base64'],
   ['planXML', 'plan.xml', 'utf8'],
 ];
-// Only the fields stored: the object GLB is not even generated.
-const SNAPSHOT_REQUEST = Object.fromEntries(
-  [...SNAPSHOT_FILES.map(([field]) => field), 'orderData'].map((field) => [
-    field,
-    true,
-  ])
-);
+// Only the fields stored: the object GLB is not even generated. The doors and
+// drawers stay as the agent left them, as get-plan-images shows them.
+const SNAPSHOT_REQUEST = {
+  ...Object.fromEntries(
+    [...SNAPSHOT_FILES.map(([field]) => field), 'orderData'].map((field) => [
+      field,
+      true,
+    ])
+  ),
+  keepOpenGeometry: true,
+};
 const USAGE =
   'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed] [--no-typecheck]';
 
@@ -356,6 +364,9 @@ const parseFrame = (payload) => {
 const recordPlannerCalls = (page) => {
   const calls = [];
   const startedAt = new Map();
+  // the snapshots the MCP server asked for during a turn, with their answers
+  const snapshotTurns = new Map();
+  const snapshotAnswers = [];
   let resolveClientId;
   const clientId = new Promise((resolve) => {
     resolveClientId = resolve;
@@ -370,6 +381,12 @@ const recordPlannerCalls = (page) => {
           args: message.args,
         });
         startedAt.set(message.id, Date.now());
+        if (
+          message.method === 'getExternalObjectSnapshot' &&
+          toolCalls.turn !== undefined
+        ) {
+          snapshotTurns.set(message.id, toolCalls.turn);
+        }
       }
     });
     socket.on('framesent', ({ payload }) => {
@@ -385,10 +402,16 @@ const recordPlannerCalls = (page) => {
         if (!message.ok) {
           call.error = message.error;
         }
+        if (message.ok && snapshotTurns.has(message.id)) {
+          snapshotAnswers.push({
+            turn: snapshotTurns.get(message.id),
+            result: message.result,
+          });
+        }
       }
     });
   });
-  return { calls, clientId };
+  return { calls, clientId, snapshotAnswers };
 };
 
 const splitChatStream = (text) => {
@@ -545,12 +568,15 @@ const evaluateInPage = (page, method, description, argument) =>
 
 const storeResult = async (
   runDir,
-  { run, planContext, plannerCalls, promptImage, snapshot }
+  { run, planContext, plannerCalls, planImages, promptImage, snapshot }
 ) => {
   await mkdir(runDir, { recursive: true });
   const write = (file, content) => writeFile(join(runDir, file), content);
   await write('run.json', JSON.stringify(run, null, 2));
   await write('planner-calls.json', JSON.stringify(plannerCalls, null, 2));
+  for (const { file, data } of planImages) {
+    await write(file, data);
+  }
   if (promptImage) {
     await write(
       PROMPT_IMAGE_FILE,
@@ -590,8 +616,11 @@ const runSession = async (options, launcher, browser) => {
     : exampleUrl;
   const page = await browser.newPage();
   const navigation = recordNavigations(page);
-  const { calls: plannerCalls, clientId: pageClientId } =
-    recordPlannerCalls(page);
+  const {
+    calls: plannerCalls,
+    clientId: pageClientId,
+    snapshotAnswers,
+  } = recordPlannerCalls(page);
   await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
   await pollUntil(
     planContextHasArticles,
@@ -624,6 +653,7 @@ const runSession = async (options, launcher, browser) => {
   );
   toolCalls.turn = undefined;
   const chatPlannerCalls = plannerCalls.slice();
+  const planImages = planImageFiles(snapshotAnswers);
   const errors = turns.flatMap((turn) => turn.errors);
   const chatDoneAt = Date.now();
   navigation.setPhase('snapshot');
@@ -671,6 +701,9 @@ const runSession = async (options, launcher, browser) => {
     // after the snapshot, so a failure logged after its turn's response is in
     turns: turns.map((turn, index) => ({
       ...turn,
+      planImages: planImages
+        .filter((image) => image.turn === index)
+        .map(({ file }) => file),
       stepFailures: stepFailures.ofTurn(index),
     })),
     errors,
@@ -689,6 +722,7 @@ const runSession = async (options, launcher, browser) => {
     run,
     planContext,
     plannerCalls: chatPlannerCalls,
+    planImages,
     promptImage,
     snapshot,
   };

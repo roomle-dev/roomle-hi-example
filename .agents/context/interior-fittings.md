@@ -22,6 +22,10 @@ Results retain `changed`, `addedInstanceIds`, `removedInstanceIds`, final `fitti
 The server owns schemas, serial forwarding and agent wording. The roomle-ui implementation is based on `feat/water-connection`; it owns fitting identity, compatibility, calculation, completion and restoration. The bridge still exposes six planner methods. Chat recovery treats discovery as read-only and distinguishes returned fitting results from pending/failed edits.
 
 
+To see the fittings in `get-plan-images`, the agent opens the cabinet first with
+`open-or-close-article` — the descriptions of `get-interior-design-options` and `get-plan-images`
+say so; see [Doors and drawers](tool-executors.md#doors-and-drawers).
+
 ## Validation
 
 Unit tests cover MCP schema rejection, exact scoped/legacy forwarding, serial reads, interior-only undo/redo comparison, browser transport and interrupted chat feedback. SDK tests cover staging, awaited restoration of cache and scene, and read-only replacement discovery in occupied parents with regenerated containers. The focused live smoke scenario covers discovery/addition, replacement and undo, using both “interior fitting” and “Interior Design”. It checks the restored instance and parent, actual placement, cabinet identity and the final answer. Acceptance evidence and library script identity are recorded in [the feature analysis](../feature-analysis/interior-design-sub-articles.md#implementation-evidence--2026-10-19). Furniture_Smith generates new container IDs across calculations and its modular front inserts may ignore requested vertical positions. Other libraries need their own acceptance runs to establish supported fitting and placement behaviour.

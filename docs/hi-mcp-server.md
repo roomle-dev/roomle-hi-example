@@ -699,6 +699,19 @@ visually. The top-view orientation matches the wall `side` labels of
 image, `top` at the upper edge. The description tells the agent that the
 images show how the plan looks, while what an article is and how big it is
 come from `desc` and `dimensions` (see [Authoring pos groups](#authoring-pos-groups)).
+The images show the doors and drawers as they are in the planner: the tool asks the
+snapshot for `keepOpenGeometry`.
+
+### open-or-close-group, open-or-close-article
+
+`open-or-close-group` takes `groupId` and `open`, `open-or-close-article` takes
+`rootModuleId` and `open`. `open: true` opens every door and drawer of the group, or of the
+one root module without the root modules docked to it, `open: false` closes them, at once. The
+agent opens a cabinet right before `get-plan-images` to look inside, for example at its interior
+fittings. The tools change the view of the planner only: nothing is saved, `undo` does not see
+them, the price and the order stay the same. The result names a group or root module without doors
+or drawers in `corrections`. Both run in roomle-ui through `externalObjectGroupOperation`, like
+the command tools ([D88](hi-mcp-behaviour.md#doors-and-drawers-2026-10-20)).
 
 For mounting, choose from article and attribute descriptions. Categories organize the catalog; an unknown category supplies no floor-mounting evidence. An article used at wall level hangs `above` its carrier, and finishing parts continue that row `rightOf` or `leftOf`. Explicit `gapMm`, including zero, sets clearance. A replace preserves measured carrier offsets of retained roots even when a non-touching link is absent; a new relation or changed article supersedes that inference. A merged upper article receives the default hang gap only when its y offset is omitted; an explicit zero remains zero.
 

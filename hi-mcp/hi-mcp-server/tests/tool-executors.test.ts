@@ -1117,6 +1117,7 @@ describe('remaining tools', () => {
     expect(api.extended.getExternalObjectSnapshot).toHaveBeenCalledWith({
       perspectiveImage: true,
       topImage: true,
+      keepOpenGeometry: true,
     });
   });
 });
@@ -1173,6 +1174,23 @@ describe('plan changes', () => {
       'plan context',
       'plan context',
     ]);
+  });
+
+  it('renders the plan images after an opening sent at the same time', async () => {
+    const events: string[] = [];
+    const api = recordingApi(events);
+    api.extended.getExternalObjectSnapshot.mockImplementation(async () => {
+      events.push('images');
+      return { perspectiveImage: 'AAA=', topImage: 'BBB=' };
+    });
+    await Promise.all([
+      toolExecutors['open-or-close-article'](api, {
+        rootModuleId: 'a',
+        open: true,
+      }),
+      toolExecutors['get-plan-images'](api, {}),
+    ]);
+    expect(events.indexOf('images')).toBeGreaterThan(events.indexOf('end a'));
   });
 
   it('runs the next plan change after one that fails', async () => {
@@ -1249,6 +1267,8 @@ describe('tools that change the plan', () => {
     ],
     ['swap-root-modules', { groupId: 'g1', rootModuleIds: ['r1', 'r2'] }],
     ['merge-groups', { targetGroupId: 'g1', groupIds: ['g2'] }],
+    ['open-or-close-group', { groupId: 'g1', open: true }],
+    ['open-or-close-article', { rootModuleId: 'r1', open: false }],
   ];
 
   it.each(toolCalls)(
@@ -1515,6 +1535,8 @@ describe('undo and redo', () => {
         steps: [(current) => current.filter((group) => group.id !== groupId)],
         followUps: [],
       }),
+      // doors and drawers change the view, not the plan: no step
+      'open-or-close-article': () => ({ steps: [], followUps: [] }),
       'delete-article-and-compact': ({ groupId, rootModuleId }) => ({
         steps: [
           changeGroup(groupId, (group) => ({
@@ -1641,6 +1663,26 @@ describe('undo and redo', () => {
       groups: [initialGroup],
     });
     expect(planner.groups()).toEqual([initialGroup]);
+  });
+
+  it('keeps the undo record of the last plan change when a cabinet is opened after it', async () => {
+    const planner = historyPlanner();
+    await changeFront(planner);
+    await toolExecutors['open-or-close-article'](planner.api, {
+      rootModuleId: 'r1',
+      open: true,
+    });
+
+    expect(planHistory.lastDone()).toMatchObject({
+      tool: 'change-group-attribute',
+      steps: 1,
+    });
+    const result = (await toolExecutors.undo(planner.api, {})) as any;
+    expect(planner.api.extended.undo).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      undone: 'change-group-attribute',
+      groups: [initialGroup],
+    });
   });
 
   it('returns the groups the reverted call changed, and the others by their id', async () => {

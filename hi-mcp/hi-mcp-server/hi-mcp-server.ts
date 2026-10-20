@@ -202,7 +202,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     .tuple([z.number().finite(), z.number().finite(), z.number().finite()])
     .optional()
     .describe(
-      'Millimetres x right, y up, z front, relative to parentModuleId. Omit for the library default on add, or retain actual placement on move/replace. Read calculated result for adjustments.'
+      'Millimetres x right, y up, z front, relative to parentModuleId - the frame of a fitting position from get-interior-design-options; to move a fitting by an offset, add it to that position. Omit for the library default on add, or retain actual placement on move/replace. Read calculated result for adjustments.'
     );
   const destination = z.object({
     rootId: fittingId,
@@ -213,7 +213,7 @@ export const createHiMcpServer = (plannerApi: PlannerApi): McpServer => {
     'get-interior-design-options',
     {
       description:
-        'Inspect Interior Design / interior fittings / sub-articles of one loaded HI group without selecting it. Returns unique installed instance IDs, parent-local calculated positions, compatible additions with destination tuples and fittings[].replacementArticles for each occupied parent. Choose replacements from that installed fitting, even when no additions fit. articleId filters addition/replacement candidates. Discover before editing; clarify ambiguous instances or unspecified interior changes. Empty options differ from unsupported or failed discovery. To see the fittings in get-plan-images, open the cabinet with open-or-close-article first.',
+        'Inspect Interior Design / interior fittings / sub-articles of one loaded HI group without selecting it. Returns unique installed instance IDs, parent-local positions where each fitting starts, compatible additions with destination tuples and fittings[].replacementArticles for each occupied parent. Choose replacements from that installed fitting, even when no additions fit. articleId filters addition/replacement candidates. Discover before editing; clarify ambiguous instances or unspecified interior changes. Empty options differ from unsupported or failed discovery. To see the fittings in get-plan-images, open the cabinet with open-or-close-article first.',
       inputSchema: {
         groupId: fittingId,
         rootId: fittingId.optional(),

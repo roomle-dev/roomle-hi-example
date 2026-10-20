@@ -653,6 +653,27 @@ describe('hi-mcp-server tool calls', () => {
     }
   });
 
+  it('tells the agent that a fitting moves by an offset added to its discovered position', async () => {
+    const client = await connectClient(createMockPlannerApi());
+    const { tools } = await client.listTools();
+    const tool = (name: string) => tools.find((t) => t.name === name);
+
+    expect(tool('get-interior-design-options')?.description).toContain(
+      'parent-local positions where each fitting starts'
+    );
+    for (const name of [
+      'add-interior-fitting',
+      'move-interior-fitting',
+      'replace-interior-fitting',
+    ]) {
+      expect(
+        JSON.stringify(tool(name)?.inputSchema.properties?.insertPosition)
+      ).toContain(
+        'the frame of a fitting position from get-interior-design-options; to move a fitting by an offset, add it to that position'
+      );
+    }
+  });
+
   it('limits the desc-over-image rule to the catalog images', async () => {
     const client = await connectClient(createMockPlannerApi());
     const rules = textOf(

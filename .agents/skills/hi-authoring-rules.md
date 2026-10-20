@@ -124,7 +124,7 @@ The relations compile to these docking vectors. Groups from `get-plan-context` s
 | Left | LeftBottom | RightBottom | StartStart | 0 |
 | Above | LeftTop/RightTop/BackTop | LeftBottom/RightBottom/BackBottom | StartStart | the gap below a wall unit (660 in Furniture_Smith) |
 | Wall unit beside a tall unit | RightTop / LeftTop of the tall unit | LeftTop / RightTop | StartStart | 0 — tops flush |
-| Behind | BackBottom | BackBottom | (none) | 0 |
+| Behind | BackBottom | BackBottom | `EndStart` when the units that name the turned unit continue its row to its right only, else `StartEnd`; mirrored when the entry is on the turned unit (D98) | 0 |
 | Range hood in a gap between wall units | RightBottom of the wall unit left of the gap | LeftBottom of the hood | StartStart | 0 |
 
 ### Mode Options

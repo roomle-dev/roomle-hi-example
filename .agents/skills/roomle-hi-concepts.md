@@ -11,7 +11,7 @@ Load this skill when working with:
 - Article catalog and module selection
 - HI-specific parameters and attributes
 
-**Do NOT load** for general Roomle planner concepts not specific to HI, or for MCP server implementation details (use `hi-mcp-server.md` instead).
+**Do NOT load** for general Roomle planner concepts not specific to HI, or for the implementation of the tools (use `hi-mcp-tools.md` instead).
 
 ---
 
@@ -150,8 +150,7 @@ roomle-ui `hi-root-module-arrangement-test.ts`).
 **Origin and docking corner**: a root's origin is usually the back left bottom corner of its docking
 vectors, but not always — a range hood is centred on its origin, the corner point of a corner
 article lies off its origin, and a right-handed corner article (`mod_CarcaseDirection` Right) is
-turned. The server places and reports every group by the docking corner
-([hi-mcp-server.md §4](./hi-mcp-server.md#4-group-placement-internal)).
+turned. The tools place and report every group by the docking corner.
 
 ### 5. Positioning
 
@@ -503,7 +502,6 @@ an image.
 
 ## Related Skills
 
-- **[hi-mcp-server.md](./hi-mcp-server.md)** — MCP server architecture and implementation
 - **[hi-authoring-rules.md](./hi-authoring-rules.md)** — Detailed HI authoring patterns and rules
 - **[hi-mcp-tools.md](./hi-mcp-tools.md)** — Complete MCP tool reference with examples
 
@@ -511,4 +509,4 @@ an image.
 
 - [AGENTS.md](../../AGENTS.md) — AI assistant instructions
 - [.agents/README.md](../README.md) — Digital brain index
-- [docs/hi-mcp-server.md](../../docs/hi-mcp-server.md) — User-facing MCP documentation
+- [docs/hi-mcp-server.md](../../docs/hi-mcp-server.md) — The example page and the HI tools

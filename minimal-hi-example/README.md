@@ -35,5 +35,4 @@ Port 3000 taken (e.g. by the ligna-store dev server)? Start with
 `EXAMPLE_PORT=3101 npm start`. More: [example prompts](../docs/hi-mcp-server.md#example-prompts) ·
 [configuring the example](../docs/hi-mcp-server.md#the-example) ·
 [tool reference](../docs/hi-mcp-server.md#tool-reference) ·
-[troubleshooting](../docs/ai-chat.md#troubleshooting) ·
-[PoC presentation with demo results](../docs/hi-mcp-poc-presentation.md)
+[troubleshooting](../docs/ai-chat.md#troubleshooting)

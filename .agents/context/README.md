@@ -15,11 +15,10 @@ deploy it in [setup](../../docs/setup/).
 
 | Page | Covers |
 | ---- | ------ |
-| [MCP server](./mcp-server.md) | `server.ts`, tool registration, the page bridge, the planner methods, undo and redo |
 | [Tool executors](./tool-executors.md#tool-overview) | Overview table of all MCP tools; `tool-executors.ts`, `agent-facing.ts` and the tool commands of roomle-ui (`hi-tool-commands.ts`): tool pipelines, the plan context the agent sees, corrections, row edits |
 | [Layout and placement](./layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
 | [Pages, chat and launcher](./pages-chat-and-launcher.md) | the page side of the bridge, `start.mjs`, the chat of the example page |
-| [Deployment and testing](./deployment-and-testing.md) | Cloudflare, the workspaces and scripts, the unit tests, the end-to-end test runs |
+| [Scripts and testing](./deployment-and-testing.md) | The workspaces and scripts, the unit tests, the end-to-end test runs |
 
 ## The system
 
@@ -71,9 +70,6 @@ ligna-store chat (runs in the page) ──────── MCP ─────
 | Process | Started by | Port | Code |
 | ------- | ---------- | ---- | ---- |
 | Example page (static files, the model of its chat) | `npm start` (`minimal-hi-example/start.mjs`) | 3000 (`EXAMPLE_PORT`) | `minimal-hi-example/index.html` |
-| MCP server | `npm run mcp-server`, or the Cloudflare container | 3100 (`HI_MCP_PORT`, else `PORT`) | `hi-mcp/hi-mcp-server/` |
-| ligna-store dev server | `npm run dev` in the ligna-store | 3000 | `ligna-store/hi-mcp/` (bridge and chat in the store) |
-| Cloudflare Worker + Container | `wrangler deploy` | — | `hi-mcp/cf/` |
 
 ## A tool call from end to end
 
@@ -116,16 +112,6 @@ agent's side.
 
 | Path | What it is |
 | ---- | ---------- |
-| `hi-mcp/hi-mcp-server/server.ts` | Process entry: HTTP server, `/mcp`, the `/bridge` upgrade, origins, the `client` check |
-| `hi-mcp/hi-mcp-server/hi-mcp-server.ts` | `McpServer` per request: served instructions and rules, the 20 tool registrations (zod), logging, result shaping |
-| `hi-mcp/hi-mcp-server/tool-executors.ts` | The tool executors: `get-plan-context`, `find-attributes`, the forward of every plan-changing tool, undo and redo, one plan change at a time |
-| `hi-mcp/hi-mcp-server/agent-facing.ts` | The plan context in the agent's words: wall names, room corners, the wall of a door or a window, short descriptions |
-| `hi-mcp/hi-mcp-server/plan-history.ts` | The record of plan-changing tool calls for `undo` and `redo` |
-| `hi-mcp/hi-mcp-server/planner-api.ts` | The planner methods the tools may call, with their timeouts |
-| `hi-mcp/hi-mcp-server/page-bridge.ts` | The connected page, call correlation, timeouts, protocol check |
-| `hi-mcp/hi-mcp-server/types.ts` | The bridge message protocol, `BRIDGE_PROTOCOL` |
-| `hi-mcp/hi-mcp-client/` | The page side of the bridge (`browser-bridge.ts`), the tested reference copy of the ligna-store's bridge |
-| `hi-mcp/cf/` | Cloudflare deployment: Worker, Container, Dockerfile |
 | `minimal-hi-example/index.html` | The example page: HI presets demo, the planning assistant of the embedding-lib in the planner's chat window |
 | `minimal-hi-example/start.mjs` | The launcher: static serving, the model of the chat at `/planning-assistant-config.json` |
 | `.agents/scripts/run-hi-mcp-prompt.js`, `run-hi-mcp-tests.js` | End-to-end runs of prompts through the chat of the example page in a headless planner |
@@ -181,12 +167,10 @@ the lifetime of the process:
    `hi-tool-commands.ts`), which reports its planner steps through `runToolCommand`. A new edit the
    planner does not offer yet is a group operation (`HI_GROUP_OPERATION`, executed in `hi-tools.ts`)
    the tool command runs.
-4. Only a tool that needs a new planner method extends `planner-api.ts` **and** the page
-   allow-list: `PLANNER_METHODS` in `hi-mcp/hi-mcp-client/browser-bridge.ts` and the ligna-store
-   copy, plus `PLANNER_METHODS` in `minimal-hi-example/index.html`, the methods the example page
-   records for the test scripts. `tests/planner-api.test.ts` checks that the client allow-list
-   matches the planner API.
-5. Unit tests in the matching `tests/` folder — a tool command's in roomle-ui
+4. Only a tool that needs a new planner method extends `planner-api.ts` of the tools (roomle-ui
+   `packages/embedding-lib/src/homag-intelligence/hi-mcp/`), plus `PLANNER_METHODS` in
+   `minimal-hi-example/index.html`, the methods the example page records for the test scripts.
+5. Unit tests in roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-mcp/` — a tool command's in roomle-ui
    `homag-intelligence/__tests__/hi-tool-commands/`; then the behaviour reference, the tool reference
    in `docs/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`.
 

@@ -1,52 +1,8 @@
 # Pages, Chat and Launcher
 
-The page side of the bridge, the launcher that starts the example, and the chat of the example
-page. How the chat behaves for the user, with its models and the image feature, is described in
+The launcher that starts the example and the chat of the example page. How the chat behaves for the user, with its models and the image feature, is described in
 [ai-chat.md](../../docs/ai-chat.md); this page describes the code.
 [Back to the overview](./README.md).
-
-## The page side of the bridge
-
-The MCP server reaches a planner page through its `/bridge`. The example page has no bridge any
-more: it runs the HI MCP tools of the embedding-lib itself ([The chat of the example
-page](#the-chat-of-the-example-page)). Two copies of the same client exist:
-
-| Copy | Used by | Tests |
-| ---- | ------- | ----- |
-| `hi-mcp/hi-mcp-client/browser-bridge.ts` + `types.ts` | the reference copy of the ligna-store's bridge | `hi-mcp-client/tests/browser-bridge.test.ts` |
-| `ligna-store/hi-mcp/browser-bridge.ts` + `types.ts` | the store page | — (synced by hand from the reference copy) |
-
-### What every copy does
-
-1. **Connect** to the server's `/bridge`, with `?session=<id>` when a session is set.
-2. **Send `hello`** on open: `example`, `url`, `protocol: 2`, `clientId`.
-3. **Wait for `ready`.** Calls before `ready` are ignored.
-4. **Run a `call`:** a method outside the allow-list answers `Planner method not exposed: <method>`;
-   otherwise `await roomDesignerApi.extended[method](...args)` and reply `{ ok: true, result }`, or
-   `{ ok: false, error }` with the error message.
-5. **Relay history:** wrap `extended.callbacks.onHistoryChange` — call the host page's handler
-   first, then send `{ kind: 'event', name: 'historyChange', undo, redo }`.
-6. **Reconnect** after 3 s (`RECONNECT_DELAY_MS`) on close — except after close code 4409, when
-   another page owns the planner: then report "occupied" and stop.
-
-The allow-list is `getExternalObjectPlanContext`, `externalObjectGroupOperation`, `fetchPrice`,
-`getExternalObjectSnapshot`, `undo`, `redo` — the methods of `planner-api.ts`
-(`tests/planner-api.test.ts` checks that the client list matches).
-
-`browser-bridge.ts` takes the server URL and the session from `options.serverUrl` and
-`options.sessionId`; on an `https:` page without a server URL it also tries
-`wss://localhost:3100/bridge`, rotated when a socket never opened. `resolveBridgeUrls` turns an
-`http(s)` server URL into `ws(s)`, strips a trailing slash, and appends `/bridge`. It reports
-connecting, connected, occupied and unavailable through `onStatusChange` and has `retry()` and
-`dispose()`; `hello` carries `ligna-store` and the page URL without `api_key`.
-
-The store's `Planner.vue` resolves `mcpOptions` from `mcp_server` and `mcp_session`, then starts
-the bridge when its planner is available. The resolver generates one `clientId` and uses it as
-the session when none is supplied. Optional `chatOptions` reuse that identity and add a supported
-model, API key and image support; only then does the planner show the chat window
-(`featureFlags.planningAssistant`) and `hi-mcp/chat-host.ts` feed it. Missing or invalid chat
-settings leave the bridge enabled. A page without a valid `mcp_server` starts no bridge, including
-on INT. Unmount and locale reload dispose the bridge and optional chat together.
 
 ## The launcher — `minimal-hi-example/start.mjs`
 
@@ -92,7 +48,7 @@ example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`
    `chat=true` with a model and `server_url`.
 
 SIGINT and SIGTERM end the launcher with 0, and the page server stops with it.
-`hi-mcp-server/tests/example-launcher.test.ts` checks the config of a model, the 404 without one,
+`minimal-hi-example/tests/start.test.js` checks the config of a model, the 404 without one,
 the 403 for a foreign Host, and that the page port can be bound again after signalling only the launcher PID (POSIX).
 
 ## The chat of the example page

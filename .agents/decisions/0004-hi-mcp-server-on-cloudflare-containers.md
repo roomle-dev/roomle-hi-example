@@ -1,8 +1,8 @@
 # ADR 0004 — The HI MCP server runs as a Cloudflare Container, one container per session
 
-> **Status**: Accepted — superseded in part by [ADR 0008](0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md): the server runs in the Roomle account, not a personal one
+> **Status**: Superseded by [ADR 0011](0011-the-hi-tools-live-in-the-embedding-lib.md) — there is no MCP server to deploy
 > **Date**: 2026-09-26 (container per page and one planner per server: 2026-10-03)
-> **Analysis**: the Cloudflare Containers deployment and the multiple-connections feature analyses (git history); guide [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md)
+> **Analysis**: the Cloudflare Containers deployment and the multiple-connections feature analyses (git history); guide cloudflare-mcp-server.md
 
 ## Context
 
@@ -58,5 +58,5 @@ WebSocket. One server process holds one planner page, so parallel users need a s
 - Disabling only the second chat in the UI: during a reconnect its calls could still reach another
   page's planner; the server checks the `client` ID instead.
 - Not chosen: Azure App Service (no access rights to a subscription; its runbook is
-  [azure-mcp-server.md](../../docs/setup/azure-mcp-server.md)) and Cloud Run (viable, not asked
+  azure-mcp-server.md) and Cloud Run (viable, not asked
   for).

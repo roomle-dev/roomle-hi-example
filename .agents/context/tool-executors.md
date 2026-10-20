@@ -1,6 +1,6 @@
 # Tool Executors
 
-[`tool-executors.ts`](../../hi-mcp/hi-mcp-server/tool-executors.ts) runs the tools in the server: it
+`tool-executors.ts` of the HI tools (roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/`) runs the tools: it
 reads the plan context and puts it into the agent's words, searches the attributes, forwards every
 tool that changes the plan as one planner call, and keeps the undo record. The HI tool commands of
 roomle-ui (`hi-tool-commands.ts` and its modules) perform the tools that change the plan: they
@@ -11,10 +11,10 @@ in [hi-mcp-behaviour.md §6](../../docs/hi-mcp-behaviour.md#6-tools) and
 
 ## Tool overview
 
-The server exposes these 26 MCP tools. Their names, input schemas and handlers are registered in
-[`hi-mcp-server.ts`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts). Twenty-five handlers call the
+`createHiMcpTools` serves these tools. Their names, input schemas and handlers are registered in
+`hi-mcp-server.ts` of the same folder. Twenty-five handlers call the
 matching entry in `toolExecutors`; `get-authoring-rules` returns `AUTHORING_RULES` directly from
-the server and needs no connected planner page. Parameters and result formats are in the
+the tool set and calls no planner method. Parameters and result formats are in the
 [tool reference](../../docs/hi-mcp-server.md#tool-reference).
 
 | Tool | Purpose | Changes the plan | Implementation details |
@@ -73,7 +73,7 @@ context, the calculated groups, the layout load, the group operations (`runGroup
 | Wrapper | What it does | Used by |
 | ------- | ------------ | ------- |
 | `oneAtATime` | Chains the call onto a module-level promise (`planChanges`), so plan changes never run concurrently; a failed call does not block the next | `get-plan-context`, `get-plan-images`, every plan-changing tool, `undo`, `redo` |
-| `recorded(tool, …)` | Counts the planner steps the tool command reports, for undo ([MCP server](./mcp-server.md#undo-and-redo)) | every plan-changing tool |
+| `recorded(tool, …)` | Counts the planner steps the tool command reports, for undo ([undo, redo](#undo-redo)) | every plan-changing tool |
 | `planChange` | `oneAtATime(recorded(…))` | every plan-changing tool |
 | `inPlanner(tool, shape?)` | `planChange` around the one planner call `externalObjectGroupOperation(tool, args)`; removes `historySteps` (and an older planner's `historyFollowUps`) from the result and raises its `error` (a tool that failed after it changed the plan); the two attribute tools shape it with `compactAttributeResult` | `create-or-replace-groups`, `place-group`, the ten command tools |
 | `inPlacementFrame` (roomle-ui) | Rewrites every group `position` into the placement frame and adds `rowIndex` ([Layout and placement](./layout-and-placement.md#reading-a-group-back-positioninplacementframe)) | the plan context of the planner, every tool command and group operation |
@@ -324,7 +324,54 @@ The tool command's part:
 
 ## undo, redo
 
-`revertToolCall(direction)` — described in [MCP server](./mcp-server.md#undo-and-redo).
+`undo` reverts the plan change of the last tool call that changed the plan — however many planner
+steps it took — and `redo` brings it back. The tool set cannot ask the planner which steps a tool
+made, so it counts them.
+
+### The record — `plan-history.ts`
+
+`planHistory` keeps two stacks of `ToolCallRecord { tool, steps, groupsBefore, groupsAfter }`
+(`_done`, `_undone`), a count of history events, and whether a tool call is in flight.
+
+- **Telling tool steps from user changes** (`historyChanged`): every history event of the planner
+  (`extended.callbacks.onHistoryChange`, which the tool set chains) is counted. While a tool call runs, the event is the call's own. Outside a call it is
+  a change the user made in the planner — the record is forgotten and the next undo answers
+  "changed in the planner".
+- `record()` pushes a call and clears the redo stack; `reset()` clears all.
+
+### Recording a call — `recorded` in `tool-executors.ts`
+
+`recorded(tool, executor)` gives the executor a counting planner API (`countingPlannerApi`). The
+tool command in roomle-ui counts the steps it put on the planner's undo history (`runToolCommand`):
+
+| Planner step in the page | Steps |
+| ------------------------ | ----- |
+| a layout load that loaded something | +1 |
+| a group operation (`externalObjectGroupOperation` of the `HiToolPlanner`) | +1 |
+
+and reports them as `historySteps`; the counting API adds them up, a result without `historySteps`
+as one step. A tool that fails after it changed the plan answers with `error` and its steps; the
+counting API records them and `inPlanner` then raises the error. Before the call the counting API reads the groups of the plan context (`groupsBefore`,
+`readGroupsKey`); after the call it reads them again (`groupsAfter`). Plans are compared by
+`groupsKey`: the groups sorted by id, numbers rounded to 0.1 mm. A recorded call ends redo
+(`planHistory.record`), as the planner drops its redo future with a new step.
+
+The planner runs a tool call as one step of its undo history and answers after its last reload
+(D77, D79): the tool command reports `historySteps` 1, or 0 when it changed nothing, and no history
+event of the call arrives after its answer, so the call waits for none.
+
+### Reverting — `revertToolCall(direction)`
+
+1. No record: `undone: null` / `redone: null` with a hint (nothing to undo, or changed in the planner).
+2. The current plan must equal the call's end state (undo) or start state (redo); otherwise the
+   record is forgotten — the user changed the plan.
+3. `stepHistory` calls the planner's `undo()` / `redo()` once per recorded step, each confirmed by a
+   history event within `HISTORY_EVENT_WAIT_MS` (1 s).
+4. The plan must now equal the other state. If it does not, the steps are taken back the other way
+   and the result says so.
+
+The behaviour and every message: [hi-mcp-behaviour.md §6 undo, redo](../../docs/hi-mcp-behaviour.md#undo-redo)
+and [§8.8](../../docs/hi-mcp-behaviour.md#88-undo-and-redo).
 
 ## get-price, get-order-data, get-plan-images
 

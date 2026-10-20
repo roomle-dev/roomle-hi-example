@@ -27,16 +27,17 @@ deliberately rejected. Read these before proposing a change to an area they cove
 
 | ADR | Status |
 |---|---|
-| [0001 — HI MCP tool logic runs in the MCP server, pages only execute planner methods](decisions/0001-hi-mcp-tool-logic-in-the-server.md) | Superseded in part by 0007 |
-| [0002 — One MCP server for every client, configured from outside](decisions/0002-one-mcp-server-configured-from-outside.md) | Superseded in part by 0010 |
-| [0003 — The AI chat is an MCP client beside the MCP server](decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) | Superseded in part by 0010 |
-| [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](decisions/0004-hi-mcp-server-on-cloudflare-containers.md) | Superseded in part by 0008 |
-| [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](decisions/0005-deploy-hi-mcp-from-release-cloudflare.md) | Superseded (the deploy workflow is removed) |
+| [0001 — HI MCP tool logic runs in the MCP server, pages only execute planner methods](decisions/0001-hi-mcp-tool-logic-in-the-server.md) | Superseded by ADR 0011 |
+| [0002 — One MCP server for every client, configured from outside](decisions/0002-one-mcp-server-configured-from-outside.md) | Superseded by ADR 0011 |
+| [0003 — The AI chat is an MCP client beside the MCP server](decisions/0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) | Superseded by ADR 0011 |
+| [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](decisions/0004-hi-mcp-server-on-cloudflare-containers.md) | Superseded by ADR 0011 |
+| [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](decisions/0005-deploy-hi-mcp-from-release-cloudflare.md) | Superseded by ADR 0011 |
 | [0006 — The prompt tests assess the agent, the unit tests the tools](decisions/0006-prompt-tests-assess-the-agent.md) | Accepted |
 | [0007 — The tool logic of the plan-changing HI MCP tools runs in the planner](decisions/0007-hi-mcp-tool-logic-in-the-planner.md) | Accepted |
-| [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Superseded in part (deployed by hand) |
+| [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Superseded by ADR 0011 |
 | [0009 — The chat window is a panel of the planner, the agent loop stays in the host](decisions/0009-the-chat-window-is-a-panel-of-the-planner.md) | Accepted |
-| [0010 — The example's chat runs in the page, with the planning assistant of the embedding-lib](decisions/0010-the-example-chat-runs-in-the-page.md) | Accepted |
+| [0010 — The example's chat runs in the page, with the planning assistant of the embedding-lib](decisions/0010-the-example-chat-runs-in-the-page.md) | Accepted — its server clause superseded by 0011 |
+| [0011 — The HI tools live only in the roomle-ui embedding-lib](decisions/0011-the-hi-tools-live-in-the-embedding-lib.md) | Accepted |
 
 ---
 
@@ -48,8 +49,6 @@ Skills provide deep domain knowledge for AI agents. Load them when the task matc
 
 | Skill | Description | Load When |
 |---|---|---|
-| [hi-mcp-server.md](./skills/hi-mcp-server.md) | MCP server architecture, HTTP handling, SSE bridge, protocol compliance | MCP server development, tool registration, bridge implementation |
-| [hi-mcp-cloudflare-deployment.md](./skills/hi-mcp-cloudflare-deployment.md) | Cloudflare deployment of the hi-mcp server: wrangler deploy/update, URL anatomy, container cleanup, teardown | Deploying, updating, or troubleshooting the Cloudflare-hosted hi-mcp server |
 | [hi-authoring-rules.md](./skills/hi-authoring-rules.md) | HI authoring patterns, docking vectors, group creation, positioning new groups with a placement | Creating or modifying HI groups, docking patterns, article selection |
 | [hi-mcp-tools.md](./skills/hi-mcp-tools.md) | Complete MCP tool reference with parameters, examples, error handling | Using MCP tools, tool implementation, error diagnosis |
 | [roomle-hi-concepts.md](./skills/roomle-hi-concepts.md) | Core HI concepts: rooms, walls, articles, groups, docking, data model | Understanding HI architecture, data structures, relationships |
@@ -86,7 +85,6 @@ Living reference of the implementation: how the code is built today. Full index 
 
 | Document | Covers |
 |---|---|
-| [mcp-server.md](context/mcp-server.md) | `server.ts`, tool registration, the page bridge, the planner methods, undo and redo |
 | [tool-executors.md](context/tool-executors.md) | Overview of all MCP tools, `tool-executors.ts`, `agent-facing.ts`, the tool commands of roomle-ui |
 | [layout-and-placement.md](context/layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
 | [pages-chat-and-launcher.md](context/pages-chat-and-launcher.md) | The page side of the bridge, `start.mjs`, the chat of the example page |
@@ -108,9 +106,8 @@ ADRs document why the code is shaped the way it is; they are listed under [Decis
 
 Living reference documentation for end users and developers is maintained in the `docs/` folder:
 
-- [hi-mcp-behaviour.md](../docs/hi-mcp-behaviour.md) — How the MCP server behaves towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback
-- [hi-mcp-server.md](../docs/hi-mcp-server.md) — Complete MCP server documentation
-- [hi-mcp-poc-presentation.md](../docs/hi-mcp-poc-presentation.md) — Proof of concept presentation
+- [hi-mcp-behaviour.md](../docs/hi-mcp-behaviour.md) — How the HI tools behave towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback
+- [hi-mcp-server.md](../docs/hi-mcp-server.md) — The example page and the HI tools
 
 ---
 

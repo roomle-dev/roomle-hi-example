@@ -1,8 +1,8 @@
 # ADR 0005 — The HI MCP server is deployed by a push to `release/cloudflare`
 
-> **Status**: Superseded — the workflow `.github/workflows/deploy-cloudflare.yml` is removed; PRD and DEV of [ADR 0008](0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) are deployed by hand (`npm run deploy:cf`, `npm run deploy:cf:dev`)
+> **Status**: Superseded by [ADR 0011](0011-the-hi-tools-live-in-the-embedding-lib.md) — there is no MCP server to deploy
 > **Date**: 2026-10-01
-> **Analysis**: the feature analysis of the deploy workflow (git history); guide [cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md)
+> **Analysis**: the feature analysis of the deploy workflow (git history); guide cloudflare-mcp-server.md
 
 ## Context
 
@@ -30,13 +30,13 @@ checked out. The repository is public.
   unless someone deploys by hand.
 - The runner is Linux x64: the root lockfile must carry the Linux platform binaries of its native
   packages. A change to the workflow or the lockfile is checked in `node:22` on `linux/amd64`
-  ([deployment skill](../skills/hi-mcp-cloudflare-deployment.md#verifying-a-lockfile-change-on-linux)); macOS proves nothing about the
+  (deployment skill); macOS proves nothing about the
   runner.
 - CI and the image share the repository-root `package-lock.json`. The image builds from the root,
   copies all workspace manifests, and selects `hi-mcp/hi-mcp-server` by its workspace path with
   `--omit=dev`; chat/provider packages and Cloudflare tooling stay outside the runtime image.
   The root `.dockerignore` includes only the install inputs and server source.
-  See [Updating image dependencies](../../docs/setup/cloudflare-mcp-server.md#updating-image-dependencies).
+  See Updating image dependencies.
 - `hi-mcp/cf/package.json` asks for `latest`; a lockfile refresh can pull in a new
   `@cloudflare/containers` or wrangler, which the test gate catches before a deploy.
 

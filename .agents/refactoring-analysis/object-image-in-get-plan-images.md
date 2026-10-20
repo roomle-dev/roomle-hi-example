@@ -37,10 +37,10 @@ and the **top view of the whole plan**, instead of the plan perspective and the 
 The executor requests the two images and the registration turns them into MCP image content, the
 perspective first:
 
-- [`tool-executors.ts:540-549`](../../hi-mcp/hi-mcp-server/tool-executors.ts#L540-L549) —
+- `tool-executors.ts:540-549` —
   `getExternalObjectSnapshot({ perspectiveImage: true, topImage: true })`, returns
   `{ perspectiveImage, topImage }`.
-- [`hi-mcp-server.ts:754-783`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L754-L783) — the
+- `hi-mcp-server.ts:754-783` — the
   description ("Renders the current plan and returns a perspective image and a top-view image, so the
   plan can be inspected visually …"), the data-URL stripping, `{ error: 'No images available' }`
   when both are missing.
@@ -123,22 +123,22 @@ materials, without the room"). The plan perspective answers neither well.
 
 **Code** (the pages and roomle-ui stay untouched: `getExternalObjectSnapshot` is allow-listed with
 its options passed through — `MCP_PLANNER_METHODS` in [`index.html:953`](../../minimal-hi-example/index.html#L953),
-`PLANNER_METHODS` in [`browser-bridge.ts:13`](../../hi-mcp/hi-mcp-client/browser-bridge.ts#L13),
-[`planner-api.ts:15`](../../hi-mcp/hi-mcp-server/planner-api.ts#L15) takes any boolean
+`PLANNER_METHODS` in `browser-bridge.ts:13`,
+`planner-api.ts:15` takes any boolean
 options; the ligna-store does not reference the tool's result):
 
 | File | Change |
 |---|---|
-| [`tool-executors.ts:540-549`](../../hi-mcp/hi-mcp-server/tool-executors.ts#L540-L549) | request `perspectiveObjectImage` instead of `perspectiveImage`, return `{ perspectiveObjectImage, topImage }` |
-| [`hi-mcp-server.ts:754-783`](../../hi-mcp/hi-mcp-server/hi-mcp-server.ts#L754-L783) | the description (§5), the result type, the result shape: one text content naming the images, then the group view, then the top view (§5) |
+| `tool-executors.ts:540-549` | request `perspectiveObjectImage` instead of `perspectiveImage`, return `{ perspectiveObjectImage, topImage }` |
+| `hi-mcp-server.ts:754-783` | the description (§5), the result type, the result shape: one text content naming the images, then the group view, then the top view (§5) |
 
 **Tests:**
 
 | File | Change |
 |---|---|
-| [`tool-executors.test.ts:966-984`](../../hi-mcp/hi-mcp-server/tests/tool-executors.test.ts#L966-L984) | the mock snapshot and the expected call `{ perspectiveObjectImage: true, topImage: true }` |
-| [`hi-mcp-server.test.ts:1261-1278`](../../hi-mcp/hi-mcp-server/tests/hi-mcp-server.test.ts#L1261-L1278) | the mock snapshot keys and the expected content: the text naming the images, then the two images; **new case**: a snapshot without `perspectiveObjectImage` (no groups) returns the text saying so and one image |
-| [`hi-mcp-chat/tests/tool-result-images.test.ts`](../../hi-mcp/hi-mcp-chat/tests/tool-result-images.test.ts) | no change — a tool result with text beside images is already covered (`it('keeps the text parts of a tool result beside the note')`, lines 99-128): the text stays in the tool message, the images move to the next user message |
+| `tool-executors.test.ts:966-984` | the mock snapshot and the expected call `{ perspectiveObjectImage: true, topImage: true }` |
+| `hi-mcp-server.test.ts:1261-1278` | the mock snapshot keys and the expected content: the text naming the images, then the two images; **new case**: a snapshot without `perspectiveObjectImage` (no groups) returns the text saying so and one image |
+| `hi-mcp-chat/tests/tool-result-images.test.ts` | no change — a tool result with text beside images is already covered (`it('keeps the text parts of a tool result beside the note')`, lines 99-128): the text stays in the tool message, the images move to the next user message |
 
 **Documentation, in the same change:**
 
@@ -146,7 +146,7 @@ options; the ligna-store does not reference the tool's result):
 |---|---|
 | [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md) | §3 *Information for the agent*: a new decision (§5); §5.3 result format (line 501: a text naming the images, then the images); the §6 results table ("two images", line 596); §6 *get-price, get-order-data, get-plan-images* (line 797) |
 | [`docs/hi-mcp-server.md:664-673`](../../docs/hi-mcp-server.md#L664-L673) | the tool reference entry |
-| [`hi-mcp-server/README.md:586-592`](../../hi-mcp/hi-mcp-server/README.md#L586-L592) | the tool reference entry |
+| `hi-mcp-server/README.md:586-592` | the tool reference entry |
 | [`.agents/skills/hi-mcp-tools.md:49, 379-387`](../skills/hi-mcp-tools.md) | the tool table and the reference block |
 | [`docs/ai-chat.md:219`](../../docs/ai-chat.md#L219), [`hi-mcp-testing.md`](../skills/hi-mcp-testing.md) | unchanged — "its two renders" stays true; the test runs store all four snapshot images themselves |
 
@@ -180,7 +180,7 @@ view of the whole plan."` followed by the top view. Without any image, `{ "error
 available" }` as today.
 
 Why one text before the images and not one beside each: for Mistral the chat's middleware
-([`tool-result-images.ts`](../../hi-mcp/hi-mcp-chat/tool-result-images.ts)) keeps a tool result's
+(`tool-result-images.ts`) keeps a tool result's
 text parts in the tool message and moves its images into the next user message, so a label placed
 between the images would lose its place. A text that numbers the images reads the same for every
 provider.

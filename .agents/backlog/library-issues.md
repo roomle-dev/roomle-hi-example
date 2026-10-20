@@ -430,38 +430,47 @@ create again with `OTB45` ×4 and `O2TB90` ×2.
 **Problem.** The image tests ask for a kitchen like the photo, backsplash included; the agent sets
 `mod_CreateBacksplash` — its desc says it "Adds the contour for the backsplash and also starts
 generating the backsplashes" — with `mod_BacksplashColor` and `mod_BacksplashHeight`. The library
-cannot calculate the backsplash — "Error 14034: Could not find entry in tab_GrainDirectionSettings
+does not calculate the backsplash — "Error 14034: Could not find entry in tab_GrainDirectionSettings
 for input values: part_Backsplash - undefined - undefined - undefined - 600 - 110" — so the
 `mr_Backsplash` root is not built; the server builds the rest of the group and names it in
-`notLoaded`. The agent drops the backsplash and the final answer reports the omission — the image
-tests' expects ask for exactly that ("the backsplash visible in the image is generated when the
-library supports it").
+`notLoaded`. A separate `change-group-attribute` with the colour and height after the backsplash is
+generated gets the same error. The agent drops the backsplash and the final answer reports the
+omission — the image tests' expects ask for exactly that ("the backsplash visible in the image is
+generated when the library supports it").
 
-**Cause.** `tab_GrainDirectionSettings` has no entry for the backsplash part at all, for any colour
-and height. The descs of `mod_CreateBacksplash` and `mod_BacksplashColor` invite generating the
-backsplash and name no limit, so nothing tells the agent that the library does not calculate it.
+**Cause.** Not established. Every failure looks up `tab_GrainDirectionSettings` with the three
+values after `part_Backsplash` undefined — whether the colour and height come with the create or in
+a separate call — and no entry matches. The same separate call built the backsplash on 2026-10-18 on
+the local roomle-ui of `fix/generated-part-switch-discovery` (`cf377cfd4`,
+[deterministic checks](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md#deterministic-checks));
+whether the library data or the planner changed since is open. The descs of `mod_CreateBacksplash`
+and `mod_BacksplashColor` invite generating the backsplash and name no limit.
 
-**How the library behaves.** Checked in the stored runs:
+**How the library behaves.**
 
-| Backsplash settings | Built | Runs |
+| Backsplash settings | Built | Where |
 |---|---|---|
-| `mod_CreateBacksplash` true with `mod_BacksplashColor` 240, `mod_BacksplashHeight` 635 | no: Error 14034 (`tab_GrainDirectionSettings`, `part_Backsplash`) | `mcp-test-2026-10-20_06-45-46` gpt-6-astra 59 |
-| `mod_CreateBacksplash` true, no colour | no: Error 14034 (`part_Backsplash - undefined - undefined - undefined - 600 - 110` and `600 - 485`) | `mcp-test-2026-10-20_06-45-46` gpt-6-astra 61 |
-| `mod_CreateBacksplash` true with `mod_BacksplashColor` 216, `mod_BacksplashHeight` 500 | no: Error 14034 | `mcp-test-2026-10-20_06-45-46` gpt-6-astra 62 |
+| `mod_CreateBacksplash` true with `mod_BacksplashColor` 240, `mod_BacksplashHeight` 635 in the create; then a separate `change-group-attribute` with 240 / 635 | no: Error 14034 after both calls (`1200 - 635`) | `mcp-test-2026-10-20_06-45-46` gpt-6-astra 59 |
+| `mod_CreateBacksplash` true, no colour; a second create with 240 / 485 | no: Error 14034 (`600 - 110`, `600 - 485`) | `mcp-test-2026-10-20_06-45-46` gpt-6-astra 61 |
+| `mod_CreateBacksplash` true with 216 / 500 and 216 / 250 in the create; then separate `change-group-attribute` calls with the same values | no: Error 14034 after both calls (`620 - 500`, `1220 - 250`) | `mcp-test-2026-10-20_06-45-46` gpt-6-astra 62 |
+| The switch on a lone `UTB60`, then a separate call with 216 / 500; on a lone `EUTB60`, then 240 / 635; on two `UTB60`, then 240 / 635; the create of run 59, then 240 / 635 | no: Error 14034 after the create and after the separate call (`620 - 500`, `620 - 635`, `1220 - 635`, `1200 - 635`) | bo-test planner, 2026-10-20, without a model |
+| The switch on a lone `UTB60`, then a separate call with 216 / 500; on a lone `EUTB60`, then 240 / 635; the right-wall image payload, then 240 / 635 | yes, after the separate call | local roomle-ui `cf377cfd4`, 2026-10-18 |
 
-**To do.** The library: the grain-direction entries for the backsplash in
-`tab_GrainDirectionSettings`; with them the `desc` of `mod_CreateBacksplash` can name when the
-backsplash is generated. Until then, apply the proposed desc in
-[section 2.10](../../docs/library-information/suggested-library-changes.md#210-backsplash) — the
-agent learns not to set the attribute. Then check that the served text needs nothing more.
+**To do.** Establish which side changed: replay the lone `UTB60` check on roomle-ui `cf377cfd4`.
+Built there, the cause is in roomle-ui and the issue moves to
+[roomle-ui-issues.md](roomle-ui-issues.md); not built, the library: the backsplash's entries in
+`tab_GrainDirectionSettings` or the inputs of its lookup. Meanwhile the proposed desc in
+[section 2.10](../../docs/library-information/suggested-library-changes.md#210-backsplash) tells the
+agent to report a backsplash the library does not calculate. Then check that the served text needs
+nothing more.
 
 **Status.** Open, not reported to the library development team.
 
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
-of the image is generated, or the agent does not set `mod_CreateBacksplash` and the answer reports
-the omission.
+of the image is generated; where it is not, the answer reports the omission.
 
-**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 61 (`image-planning-right-wall`, local
-roomle-ui :5173): roots with `mod_CreateBacksplash` true — the `mr_Backsplash` roots are not
-calculated, Error 14034 (`part_Backsplash`), in the creates and again after a
-`change-module-attribute`; the model dropped the backsplash and the answer reports the omission.
+**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 59 (`image-kitchen-left-wall`, local
+roomle-ui :5173): the create sets `mod_CreateBacksplash` with 240 / 635 — the `mr_Backsplash` root is
+not calculated, Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1200 - 635`); a
+separate `change-group-attribute` with 240 / 635 gets the same error; the model switched the
+backsplash off and the answer reports the omission.

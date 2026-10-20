@@ -462,4 +462,4 @@ In the library, as proposed:
 
 | Attribute | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
-| `mod_CreateBacksplash` | Create backsplash | Adds the contour for the backsplash and also starts generating the backsplashes. | Adds the contour for the backsplash and also starts generating the backsplashes. The library does not calculate the backsplash — its grain-direction table has no entry for it — so it is not built and the result names it in notLoaded; do not set it. |
+| `mod_CreateBacksplash` | Create backsplash | Adds the contour for the backsplash and also starts generating the backsplashes. | Adds the contour for the backsplash and also starts generating the backsplashes. Where the library cannot calculate the backsplash, the result names it in notLoaded; report it as not built. |

@@ -42,7 +42,7 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 | [78 — Tall-unit descriptions omit width-dependent door arrangements](library-issues.md#78-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG library: apply the width-dependent tall-unit door and resize descriptions so retained single-door settings are corrected for a paired unit | medium |
 | [79 — Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate](library-issues.md#79-base-units-narrowed-to-150-mm-with-a-150-mm-plinth-the-library-cannot-calculate) | HOMAG library: the desc of `mod_Width` names the widths the plinth takes; under 300 mm, a filler panel or pull-out fills the gap | low |
 | [80 — Wall units at 900 mm with a single door the library cannot calculate](library-issues.md#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG library: the single-door wall cabinets' descs name the widths a single door takes; wider, a cabinet with a pair of doors | low |
-| [93 — Backsplashes the library cannot calculate](library-issues.md#93-backsplashes-the-library-cannot-calculate) | HOMAG library: the grain-direction entries for the backsplash, or a desc that says the backsplash cannot be generated | low |
+| [93 — Backsplashes the library cannot calculate](library-issues.md#93-backsplashes-the-library-cannot-calculate) | HOMAG library or roomle-ui (not established): replay the check that built the backsplash on 2026-10-18; then the backsplash's grain-direction lookup in the library, or the planner fix | low |
 
 ## Library neutrality of the MCP server
 

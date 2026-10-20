@@ -1176,6 +1176,23 @@ describe('plan changes', () => {
     ]);
   });
 
+  it('renders the plan images after an opening sent at the same time', async () => {
+    const events: string[] = [];
+    const api = recordingApi(events);
+    api.extended.getExternalObjectSnapshot.mockImplementation(async () => {
+      events.push('images');
+      return { perspectiveImage: 'AAA=', topImage: 'BBB=' };
+    });
+    await Promise.all([
+      toolExecutors['open-or-close-article'](api, {
+        rootModuleId: 'a',
+        open: true,
+      }),
+      toolExecutors['get-plan-images'](api, {}),
+    ]);
+    expect(events.indexOf('images')).toBeGreaterThan(events.indexOf('end a'));
+  });
+
   it('runs the next plan change after one that fails', async () => {
     const events: string[] = [];
     const api = recordingApi(events, ['a']);

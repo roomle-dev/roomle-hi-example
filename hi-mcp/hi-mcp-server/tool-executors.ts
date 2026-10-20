@@ -561,7 +561,9 @@ export const toolExecutors: Record<string, ToolExecutor> = {
     return snapshot?.orderData ?? null;
   },
 
-  'get-plan-images': async (roomDesignerApi) => {
+  // waits like get-plan-context, so the images show the plan and the doors
+  // after the change or the opening sent before them
+  'get-plan-images': oneAtATime(async (roomDesignerApi) => {
     const snapshot = await roomDesignerApi.extended.getExternalObjectSnapshot({
       perspectiveImage: true,
       topImage: true,
@@ -571,5 +573,5 @@ export const toolExecutors: Record<string, ToolExecutor> = {
       perspectiveImage: snapshot?.perspectiveImage,
       topImage: snapshot?.topImage,
     };
-  },
+  }),
 };

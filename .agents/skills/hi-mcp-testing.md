@@ -200,10 +200,11 @@ Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json`
 
 | File | Look at |
 |---|---|
-| `top-image.png`, `perspective-image.png` | where the group stands, what it consists of |
+| `top-image.png`, `perspective-image.png` | where the group stands, what it consists of — with the doors and drawers as the agent left them |
+| `turn-<n>-plan-images-<k>-perspective.png`, `-top.png` | what the agent saw: the images of its k-th `get-plan-images` call in turn n (listed in the turn's `planImages` in `run.json`) — an opened cabinet, or the first turn of a conversation that later closes it again |
 | `perspective-object-image.png` | the group alone — its fronts, appliances and materials, without the room |
 | `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
-| `run.json` | `plan`; per turn the answer, the tools and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back — and `stepFailures` — per failed provider step the `step`, `durationMs` and the cause chain `causes`; `errors`; `planSnapshotId`; `snapshotCaptured`; `navigations` (timestamp, phase, main frame, URL, `fragmentOnly`) |
+| `run.json` | `plan`; per turn the answer, the tools, `planImages` and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back — and `stepFailures` — per failed provider step the `step`, `durationMs` and the cause chain `causes`; `errors`; `planSnapshotId`; `snapshotCaptured`; `navigations` (timestamp, phase, main frame, URL, `fragmentOnly`) |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
 | `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) and what stands in the room (`obstacles.objects[]`: `kind`, `outline`, `bottomMm`/`topMm`, a door or window with `wall` and `fromEndMm`; `obstacles.groups[].roots[]`: the room-space outline and height range of every root module) |
 | `planner-calls.json` | what the MCP server sent to the planner during the chat: `externalObjectGroupOperation` — `args` = the tool and the arguments the model sent (for `create-or-replace-groups` `args[1].posGroups[]` with the roots, their relations and attributes, and the `placement`), the result's `corrections`, `notLoaded`, `historySteps`; `ok: false` with the page's `error`. The docking the relations became is in `plan-context.json` (`groups[].roots[].contextData`) |

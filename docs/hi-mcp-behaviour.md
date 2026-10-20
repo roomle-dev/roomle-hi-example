@@ -928,7 +928,8 @@ history no longer holds the call, though a configurator step may have been undon
 - **`get-order-data`** returns the order data of the current plan without placing an order, or
   `null`.
 - **`get-plan-images`** renders a perspective and a top view, with the doors and drawers as they are
-  in the planner (`keepOpenGeometry`, D88). The top view matches the wall side labels. Without
+  in the planner (`keepOpenGeometry`, D88). It waits for a plan change or an opening that runs
+  (`oneAtATime`, D4), so the images show its result. The top view matches the wall side labels. Without
   images, the result is `{ "error": "No images available" }`.
 
 Mounting settings and article selection come from the existing library descriptions and attributes; categories organize the catalog. The authoring rules and the descriptions of `get-plan-context` and `create-or-replace-groups` explain `above`, explicit clearance and continuing an upper row with finishing parts (D85). Short descriptions retain FUNCTION and AI_SELECTION_HINT; full requirements remain available through `articleDescriptions`. Unknown categories keep explicit upper relations and gaps, including stacking requests.

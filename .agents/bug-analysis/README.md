@@ -48,7 +48,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 | [The backsplash of an image kitchen is reported as not buildable](backsplash-of-an-image-kitchen-reported-as-not-buildable.md) | Fixed — closed as resolved by the user; roomle-ui change pending landing | former backlog #75 |
 | [An edit that gives a row a new end leaves a door hinged to the outside](edit-that-gives-a-row-a-new-end-leaves-a-door-hinged-to-the-outside.md) | Open — implemented and unit verified; live model acceptance awaiting approval | former backlog #77 |
 | [A swap of a widened unit is refused for want of a docking vector](swap-of-widened-unit-refused-for-want-of-docking-vector.md) | Open — feedback and recovery implemented on a branch based on `release/bo-test`; live acceptance and library descriptions pending | library backlog #78 |
-| [A shelf moved down inside its cabinet stays in place](shelf-moved-down-inside-its-cabinet-stays-in-place.md) | Open — reproduced without a model; fix in roomle-ui on `release/bo-test` | test `edit-move-subarticle` |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

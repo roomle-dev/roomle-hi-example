@@ -2,7 +2,7 @@
 
 > **Type**: Backlog item (architecture)
 > **Domain**: the HI MCP server `hi-mcp/hi-mcp-server`, its Cloudflare deployment `hi-mcp/cf`, the page bridges and the chats of the three hosts; roomle-ui `packages/embedding-lib`
-> **Status**: Open — the decisions of §6 are taken
+> **Status**: Open — the decisions of §6 are taken; the first step (roomle-ui) is analysed in [hi-mcp-tools-in-the-embedding-lib-first-step.md](../feature-analysis/hi-mcp-tools-in-the-embedding-lib-first-step.md)
 
 ## Affected repositories
 

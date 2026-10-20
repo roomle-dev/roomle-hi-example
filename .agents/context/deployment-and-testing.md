@@ -26,6 +26,7 @@ the lockfile, the shared TypeScript config and the server source.
 | root | `deploy:cf`, `deploy:cf:dev` | `wrangler deploy` in `hi-mcp/cf`, PRD / DEV (`--env dev`) — for testing, debugging and emergencies |
 | root | `format`, `format:check`, `lint`, `lint:fix` | Prettier, oxlint |
 | `hi-mcp/` | `start` | the MCP server |
+| `hi-mcp/` | `export:fixture -- <file>` | `hi-mcp-server/export-fixture.ts`: writes the answers of `tools/list` and `skills/list` to the file — the fixture of the tool copy in the roomle-ui embedding-lib (D89) |
 | `hi-mcp/` | `test` | vitest across the server, the client, the chat and `cf` |
 | `hi-mcp/` | `typecheck` | `tsc --noEmit` for the server, the client and the chat (not `cf`) |
 

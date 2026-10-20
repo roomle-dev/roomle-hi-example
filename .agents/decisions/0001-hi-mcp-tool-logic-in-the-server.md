@@ -39,8 +39,8 @@ client enforced an older rule than the one the server published.
 - `create-or-replace-groups` makes four page round trips instead of one.
 - Timeouts apply per planner call.
 - Each host still carries the thin bridge. Moving the bridge into embedding-lib or the Rubens UI
-  remains the product direction; the [backlog](../backlog/hi-tools-in-the-embedding-lib.md) replaces the
-  bridge with the tools in the embedding-lib. Moving
+  remains the product direction; the example page runs the tools of the embedding-lib without a
+  bridge ([ADR 0010](0010-the-example-chat-runs-in-the-page.md)). Moving
   payload validation into the planner API, with structured errors per input, remains open.
 
 ## Rejected

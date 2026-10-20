@@ -48,9 +48,7 @@ The embedding dev server of roomle-ui compiles the source on request and answers
 Checked on 2026-10-20: a page on another `localhost` port imports `/src/roomle-embedding-lib.ts` and
 `/src/hi.ts` from the dev server, with every export the example uses.
 
-This works only on the machine with the roomle-ui checkout. A page parameter that switches the source
-without editing `index.html` is planned (see the backlog item
-[hi-tools-in-the-embedding-lib.md](../../.agents/backlog/hi-tools-in-the-embedding-lib.md)).
+This works only on the machine with the roomle-ui checkout.
 
 ## A dev version on npm
 

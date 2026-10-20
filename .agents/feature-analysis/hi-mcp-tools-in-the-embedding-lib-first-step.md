@@ -5,7 +5,7 @@
 > **Date**: 2026-10-20\
 > **Base**: roomle-hi-example `master` at `433f7e9`; roomle-ui `release/bo-test` at `728317a91`\
 > **Source**: [RML-18196](https://roomle.atlassian.net/browse/RML-18196), the first step\
-> **Backlog**: [hi-tools-in-the-embedding-lib.md](../backlog/hi-tools-in-the-embedding-lib.md)
+> **Backlog**: `hi-tools-in-the-embedding-lib.md` (removed)
 
 ## Affected repositories
 

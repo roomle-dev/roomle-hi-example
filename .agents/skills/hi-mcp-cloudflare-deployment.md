@@ -8,26 +8,7 @@ container application cleanup, verification, teardown.
 
 The code lives in the repository; the cloud deployment is always replaced wholesale.
 
-**The normal path is a push to a release branch:** `release/cloudflare` deploys PRD
-(`hi-planning-assistant`), `release/cloudflare.dev` deploys DEV (`hi-planning-assistant-dev`). The
-workflow `.github/workflows/deploy-cloudflare.yml` runs `npm ci`, the `hi-mcp` typecheck and unit
-tests, `npx wrangler deploy --env=""` (PRD) or `--env="dev"` (DEV), and an `initialize` → 200 check
-against the stage's URL (about 1.5 min, one deploy at a time per stage). To release `master`:
-
-```bash
-git fetch origin
-git push origin origin/master:release/cloudflare.dev   # DEV (fast-forward)
-git push origin origin/master:release/cloudflare       # PRD (fast-forward)
-```
-
-The credential is the `CLOUDFLARE_API_TOKEN` secret of the GitHub environment `cloudflare` (PRD,
-only `release/cloudflare` may use it) and `cloudflare-dev` (DEV, only `release/cloudflare.dev`): an
-API token of the Roomle account from "Edit Cloudflare Workers" plus **Account · Containers · Edit**.
-The account comes from `account_id` in `wrangler.jsonc`, not from a secret. The one-time setup is in
-[cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md#one-time-setup-repository-admin).
-
-By hand (for testing, debugging and emergencies — the next push to `release/cloudflare` replaces a
-manual PRD deploy again), from the repository root:
+Both stages are deployed by hand, from the repository root:
 
 ```bash
 npm run deploy:cf       # PRD: Worker hi-planning-assistant      (cd hi-mcp/cf && npx wrangler deploy)
@@ -53,8 +34,7 @@ account (`npx wrangler whoami`); without it the deploy fails instead of going to
   A re-login (`wrangler logout && wrangler login`) is only the one-time recovery when a deploy
   fails with `Unauthorized` (see pitfalls below)
 - a changed worker name requires editing `"name"` in `hi-mcp/cf/wrangler.jsonc` first, and then
-  the URL in `HI_MCP_STORE_URL` (the `vars` of the same file) and in the verify step of
-  `.github/workflows/deploy-cloudflare.yml`
+  the URL in `HI_MCP_STORE_URL` (the `vars` of the same file)
 
 ## URL anatomy (where the public URL comes from)
 
@@ -90,12 +70,12 @@ For session-routing or bridge changes, run the [live session checks](../../docs/
 
 Container startup belongs to SDK `containerFetch`, after setting the session-specific `HI_MCP_STORE_URL`. It returns 503 for exhausted capacity, 429 for startup throttling, and 500 for other startup failures. Keep that error handling in the request path; `cf/tests/container-startup-errors.test.ts` exercises the installed SDK with failing startup.
 
-## Verifying a workflow or lockfile change on Linux
+## Verifying a lockfile change on Linux
 
-The workflow runs on `ubuntu-24.04` with Node 22. A lockfile written from a macOS `node_modules`
-lists only the macOS binary of a native package ([npm/cli#4828](https://github.com/npm/cli/issues/4828)),
-so a green run on macOS proves nothing about the runner. Run the workflow's steps on Linux x64,
-against a clean copy of the branch:
+The container image installs from the root lockfile on Linux (`hi-mcp/cf/Dockerfile`). A lockfile
+written from a macOS `node_modules` lists only the macOS binary of a native package
+([npm/cli#4828](https://github.com/npm/cli/issues/4828)), so a green run on macOS proves nothing
+about Linux. Install and test on Linux x64, against a clean copy of the branch:
 
 ```bash
 docker run --rm --platform linux/amd64 -v <clean copy>:/src:ro node:22 bash -c \
@@ -135,10 +115,7 @@ npx wrangler containers delete <ID>        # stop and remove the container appli
 | `Cannot resolve host` / a client refuses the URL | URL built from the account ID instead of the account subdomain — take the URL from the deploy output |
 | deploy fails with "different durable object namespace" | orphaned container app from an earlier delete — `wrangler containers list` + `containers delete` |
 | deploy uploads the Worker, then `Unauthorized` | **nothing to delete** — the container-app update step lost authorization. In order: retry the deploy → fresh `wrangler logout && wrangler login` → check the container app state in the dashboard → fall back to an API token: dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template, then `CLOUDFLARE_API_TOKEN=<token> npx wrangler deploy` |
-| GitHub deploy uploads the Worker, then `Unauthorized`/403 at the container step | the API token lacks **Account · Containers · Edit** — edit the token in Cloudflare, then "Re-run jobs" |
-| GitHub run, test step: `Cannot find module @rollup/rollup-linux-x64-gnu` (or another Linux binary) | the root lockfile lost the Linux binaries (npm/cli#4828, a lockfile written from a macOS `node_modules`). Re-resolve on Linux: `npm update <package> --package-lock-only --ignore-scripts` in `node:22` with `--platform linux/amd64`, then run the workflow's steps in that container — see [Verifying a workflow or lockfile change on Linux](#verifying-a-workflow-or-lockfile-change-on-linux) |
-| GitHub deploy step is not authenticated | the secret is missing in the stage's environment (`cloudflare`, `cloudflare-dev`), or the run is not on its release branch (the environment's branch rule) |
-| GitHub deploy: `Authentication error [code: 10000]` | the token has no access to the Roomle account (`account_id` in `wrangler.jsonc`) — create it in that account |
+| image build or Linux test run: `Cannot find module @rollup/rollup-linux-x64-gnu` (or another Linux binary) | the root lockfile lost the Linux binaries (npm/cli#4828, a lockfile written from a macOS `node_modules`). Re-resolve on Linux: `npm update <package> --package-lock-only --ignore-scripts` in `node:22` with `--platform linux/amd64`, then run the Linux steps in that container — see [Verifying a lockfile change on Linux](#verifying-a-lockfile-change-on-linux) |
 | deploy rejects `"instance_type": "basic"` | change to `standard-1` in `wrangler.jsonc` |
 | first request takes ~10 s | the container boots on demand after sleeping — expected |
 | agent gets "No HI page connected" | no page is connected to this session — open the suggested store URL and start planning. `HiMcpContainer.fetch` adds the requesting session, or `mcp_session=default` for an unnamed agent, to `HI_MCP_STORE_URL` before container startup; the page needs no chat credentials. Keep the tab open |
@@ -148,6 +125,5 @@ npx wrangler containers delete <ID>        # stop and remove the container appli
 - Deploy/verify/teardown guide: [docs/setup/cloudflare-mcp-server.md](../../docs/setup/cloudflare-mcp-server.md)
 - Connecting an agent (Mistral example): [docs/setup/connect-agent-to-cloud-mcp.md](../../docs/setup/connect-agent-to-cloud-mcp.md)
 - Decisions: [ADR 0004 — the server on Cloudflare Containers](../decisions/0004-hi-mcp-server-on-cloudflare-containers.md),
-  [ADR 0005 — deploy from `release/cloudflare`](../decisions/0005-deploy-hi-mcp-from-release-cloudflare.md),
   [ADR 0008 — PRD and DEV in the Roomle account](../decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md)
-- Open issues: [deployment-and-session-issues.md](../backlog/deployment-and-session-issues.md)
+

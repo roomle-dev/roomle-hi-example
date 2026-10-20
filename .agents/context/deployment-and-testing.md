@@ -61,14 +61,11 @@ subdomain `dashiell-bell` is shared with `roomle-planner-mcp` and is not changed
   calls and the undo record in memory; they are lost when it sleeps or restarts, and the page's
   bridge reconnects.
 - **Origins:** the server accepts the page bridge and browser calls of `/mcp` from any origin.
-- **Deploy:** a push to `release/cloudflare` (PRD) or `release/cloudflare.dev` (DEV) runs
-  `.github/workflows/deploy-cloudflare.yml` — Node 22, `npm ci` at the root, the typecheck, the `cf`
-  typecheck, `npm test`, `wrangler deploy --env=""` or `--env="dev"` with the `CLOUDFLARE_API_TOKEN`
-  secret of the GitHub environment `cloudflare` or `cloudflare-dev`, then a smoke test that posts
-  `initialize` to the stage's `/mcp` and expects HTTP 200 ([ADR 0005](../../.agents/decisions/0005-deploy-hi-mcp-from-release-cloudflare.md),
-  [ADR 0008](../../.agents/decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md)).
-  Verify a workflow or lockfile change on Linux first
-  ([how](../../.agents/skills/hi-mcp-cloudflare-deployment.md#verifying-a-workflow-or-lockfile-change-on-linux)).
+- **Deploy:** by hand, `npm run deploy:cf` (PRD) or `npm run deploy:cf:dev` (DEV) —
+  `wrangler deploy` in `hi-mcp/cf` with Node 22, into the Roomle account
+  ([ADR 0008](../../.agents/decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md)).
+  Verify a lockfile change on Linux first
+  ([how](../../.agents/skills/hi-mcp-cloudflare-deployment.md#verifying-a-lockfile-change-on-linux)).
 
 ## Unit tests
 

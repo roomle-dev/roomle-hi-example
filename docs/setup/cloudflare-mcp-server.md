@@ -20,7 +20,8 @@ The container runs the tools and relays their planner calls into the connected l
 (opened with `mcp_server` and a matching `mcp_session`) — the planning session itself lives in that page.
 Modeled on roomle-model-exporter's `cf/` deployment. The decisions and the rejected alternatives:
 [ADR 0004 — the server on Cloudflare Containers](../../.agents/decisions/0004-hi-mcp-server-on-cloudflare-containers.md),
-[ADR 0005 — deploy from `release/cloudflare`](../../.agents/decisions/0005-deploy-hi-mcp-from-release-cloudflare.md).
+[ADR 0008 — PRD and DEV in the Roomle account](../../.agents/decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md).
+Both stages are deployed by hand ([Deploy by hand](#deploy-by-hand-one-command-run-it-yourself)).
 
 ## Prerequisites
 
@@ -29,81 +30,6 @@ Modeled on roomle-model-exporter's `cf/` deployment. The decisions and the rejec
 - **Node 22+** for wrangler (on this machine: `~/.volta/bin` first on the PATH; the plain
   Node 20 fails with a version error)
 - Nothing else: no domain, no certificates (Cloudflare terminates TLS)
-- For deploys from GitHub: the one-time [setup of the token and the environment](#one-time-setup-repository-admin)
-
-## Deploy from GitHub (push to a release branch)
-
-The workflow [`deploy-cloudflare.yml`](../../.github/workflows/deploy-cloudflare.yml) runs on
-every push to one of the two release branches:
-
-| Branch | Stage | Worker | GitHub environment |
-| ------ | ----- | ------ | ------------------ |
-| `release/cloudflare` | PRD | `hi-planning-assistant` | `cloudflare` |
-| `release/cloudflare.dev` | DEV | `hi-planning-assistant-dev` | `cloudflare-dev` |
-
-1. `npm ci`
-2. the typecheck and the unit tests of the `hi-mcp` workspace
-3. `npx wrangler deploy --env=""` (PRD) or `npx wrangler deploy --env="dev"` (DEV) — builds and
-   pushes the image, uploads the Worker
-4. an `initialize` against the stage's public URL, which must answer 200
-
-A failing test or image build deploys nothing. Each stage deploys one run at a time; a second push
-to the same branch waits for the first, and DEV and PRD deploy independently. A run takes about
-1.5 minutes.
-
-To release `master`:
-
-```bash
-git fetch origin
-git push origin origin/master:release/cloudflare.dev   # DEV (fast-forward)
-git push origin origin/master:release/cloudflare       # PRD (fast-forward)
-```
-
-Watch the run with `gh run watch --repo roomle-dev/roomle-hi-example` or in the Actions tab. To
-retry a failed deploy, use "Re-run jobs" there.
-
-A manual `npm run deploy:cf` or `npm run deploy:cf:dev` (below) still replaces the deployment of
-its stage. After a manual deploy, the running server no longer matches its release branch until the
-next push, so keep manual deploys for testing, debugging and emergencies.
-
-### One-time setup (repository admin)
-
-1. **Cloudflare API token** — create it in the Roomle account (`account_id` in
-   `hi-mcp/cf/wrangler.jsonc`):
-   1. In the Roomle account, go to Manage Account → Account API Tokens → Create Token and pick
-      **"Edit Cloudflare Workers"**.
-   2. Keep its permissions and add one row: **Account · Containers · Edit**.
-   3. Under Account Resources, include the Roomle account only.
-   4. Create the token and copy it (it is shown only once).
-
-   An account API token belongs to the account, not to a person. Should the container step refuse
-   it with 403, a user token (My Profile → API Tokens) with the same permissions takes its place.
-   The workflow needs no account ID secret: wrangler takes the account from `account_id`.
-2. **GitHub environments `cloudflare` (PRD) and `cloudflare-dev` (DEV), each with the token as
-   `CLOUDFLARE_API_TOKEN`.** An environment hands its secret only to jobs that run for its release
-   branch. The repository is public, so no workflow on another branch may read it.
-
-```bash
-R=roomle-dev/roomle-hi-example
-POLICY='{"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
-# PRD
-echo "$POLICY" | gh api -X PUT repos/$R/environments/cloudflare --input -
-gh api -X POST repos/$R/environments/cloudflare/deployment-branch-policies \
-  -f name=release/cloudflare -f type=branch
-gh secret set CLOUDFLARE_API_TOKEN --env cloudflare --repo $R       # prompts for the token
-# DEV
-echo "$POLICY" | gh api -X PUT repos/$R/environments/cloudflare-dev --input -
-gh api -X POST repos/$R/environments/cloudflare-dev/deployment-branch-policies \
-  -f name=release/cloudflare.dev -f type=branch
-gh secret set CLOUDFLARE_API_TOKEN --env cloudflare-dev --repo $R   # prompts for the token
-```
-
-The same in the web UI, once per environment:
-
-1. Go to Settings → Environments → New environment `cloudflare` (`cloudflare-dev`).
-2. Under Deployment branches and tags, choose "Selected branches and tags" and add
-   `release/cloudflare` (`release/cloudflare.dev`).
-3. Add the token as the environment secret `CLOUDFLARE_API_TOKEN`.
 
 ## Deploy by hand (one command, run it yourself)
 
@@ -259,9 +185,8 @@ reload without cache.
 
 ## Updating after code changes
 
-Push to the release branch of the stage ([Deploy from GitHub](#deploy-from-github-push-to-a-release-branch)).
-The deployment is replaced in place: nothing is deleted, and the URL stays the same. By hand, the
-same is one command:
+Deploy the stage again. The deployment is replaced in place: nothing is deleted, and the URL stays
+the same:
 
 ```bash
 npm run deploy:cf        # from the repository root; same as: cd hi-mcp/cf && npx wrangler deploy
@@ -301,8 +226,7 @@ npm install --package-lock-only --ignore-scripts
 ```
 
 Keep the manifests and root lockfile in the same commit. Check the local image build above and
-the [Linux CI steps](../../.agents/skills/hi-mcp-cloudflare-deployment.md#verifying-a-workflow-or-lockfile-change-on-linux).
-The deploy workflow builds this same image after its typechecks and tests.
+the [Linux steps](../../.agents/skills/hi-mcp-cloudflare-deployment.md#verifying-a-lockfile-change-on-linux).
 
 ## Teardown (the container app needs its own delete)
 
@@ -324,10 +248,7 @@ npx wrangler containers delete <ID>  # stop and remove the container application
 | wrangler refuses to start | Node < 22 on the PATH — use `~/.volta/bin` first |
 | image build: `npm ci` … `Invalid: lock file's <pkg>@<a> does not satisfy <pkg>@<b>` | a workspace manifest and the root `package-lock.json` disagree — update the root lockfile and verify the Linux build; see [Updating image dependencies](#updating-image-dependencies) |
 | deploy uploads the Worker, then `Unauthorized` | **nothing to delete** — the container-app update step lost authorization (the Worker upload itself succeeded). In order: retry the deploy → fresh `wrangler logout && wrangler login` → check the container app state in the dashboard (Containers → `hi-planning-assistant-himcpcontainer`) → fall back to an API token: dashboard → My Profile → API Tokens → "Edit Cloudflare Workers" template, then `CLOUDFLARE_API_TOKEN=<token> npx wrangler deploy`. Until a deploy fully succeeds, the running container keeps the previous image |
-| GitHub deploy uploads the Worker, then `Unauthorized`/403 at the container step | the API token lacks **Account · Containers · Edit** — edit the token in Cloudflare, then "Re-run jobs" |
-| GitHub run, test step: `Cannot find module @rollup/rollup-linux-x64-gnu` (or another `…-linux-x64…` binary) | the root `package-lock.json` lost the Linux binaries ([npm/cli#4828](https://github.com/npm/cli/issues/4828): a lockfile written from a macOS `node_modules`). Re-resolve the package on Linux with `npm update <package> --package-lock-only --ignore-scripts` in `node:22` (`--platform linux/amd64`), then run the workflow's steps in the same container — see [Verifying a workflow or lockfile change on Linux](../../.agents/skills/hi-mcp-cloudflare-deployment.md#verifying-a-workflow-or-lockfile-change-on-linux) |
-| GitHub deploy step: `CLOUDFLARE_API_TOKEN` missing / not authenticated | the secret is not set in the stage's environment (`cloudflare`, `cloudflare-dev`), or the run is not on its release branch — see [One-time setup](#one-time-setup-repository-admin) |
-| GitHub deploy step: `Authentication error [code: 10000]` | the token has no access to the Roomle account (`account_id` in `wrangler.jsonc`) — create it in that account, see [One-time setup](#one-time-setup-repository-admin) |
+| image build or Linux test run: `Cannot find module @rollup/rollup-linux-x64-gnu` (or another `…-linux-x64…` binary) | the root `package-lock.json` lost the Linux binaries ([npm/cli#4828](https://github.com/npm/cli/issues/4828): a lockfile written from a macOS `node_modules`). Re-resolve the package on Linux with `npm update <package> --package-lock-only --ignore-scripts` in `node:22` (`--platform linux/amd64`), then run the Linux steps in the same container — see [Verifying a lockfile change on Linux](../../.agents/skills/hi-mcp-cloudflare-deployment.md#verifying-a-lockfile-change-on-linux) |
 | `Cannot resolve host` / client refuses the URL | URL built from the **account ID** instead of the account **subdomain** — take the URL from the deploy output |
 | deploy: "already an application … different durable object namespace" | orphaned container app from an earlier `wrangler delete` — `wrangler containers list` + `wrangler containers delete <ID>` |
 | deploy rejects the config | `instance_type` naming — use `standard-1`; or Containers require the Workers Paid plan |

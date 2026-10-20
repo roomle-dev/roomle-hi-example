@@ -38,8 +38,7 @@ WebSocket. One server process holds one planner page, so parallel users need a s
   container (~10 s), discovery (`initialize`, `tools/list`) included; answering discovery in the
   Worker from a static manifest, as the exporter does, is the option if idle connectors cost too
   much.
-- A session name routes, it does not authenticate; the access control is open
-  ([backlog](../backlog/deployment-and-session-issues.md#3-the-public-mcp-endpoint-has-no-access-control)).
+- A session name routes, it does not authenticate; the access control is open.
 - An external MCP client reaches a store page only with the page's session name
   (`mcp_session=<name>` on the page, `?session=<name>` in the client URL).
 - The Worker `hi-mcp-poc` lives on a personal Cloudflare account. Another account changes the

@@ -80,19 +80,3 @@ Details: [mcp-test-infrastructure-issues.md](mcp-test-infrastructure-issues.md).
 | Item | To do | Priority |
 |---|---|---|
 | [1 — The object-only perspective render draws an empty frame under software GL](mcp-test-infrastructure-issues.md#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl) | roomle-ui: find why the frame is dropped under SwiftShader | low |
-
-## Deployment, launcher and page sessions
-
-Details: [deployment-and-session-issues.md](deployment-and-session-issues.md).
-
-| Item | To do | Priority |
-|---|---|---|
-| [3 — The public MCP endpoint has no access control](deployment-and-session-issues.md#3-the-public-mcp-endpoint-has-no-access-control) | Decide session links, roomle.com OAuth or a shared secret before the URL goes beyond a trial | medium |
-| [4 — The personal deployment still runs and the DEV environment admits every branch](deployment-and-session-issues.md#4-the-personal-deployment-still-runs-and-the-dev-environment-admits-every-branch) | Give `cloudflare-dev` its branch policy, delete the unused `CLOUDFLARE_ACCOUNT_ID` secrets, tear down `hi-mcp-poc` in the personal account | medium |
-
-## Architecture
-
-| Item | To do | Details |
-|---|---|---|
-| The HI tools in the embedding-lib instead of the Cloudflare MCP server | The page provides the tools: the MCP server's tools, served text, skills and undo record in the embedding-lib (`src/homag-intelligence`); the AI SDK loops and their provider mappings stay in the hosts, which drop only the server, the bridge and the MCP client; the example's chat moves into its page; teardown of the Workers last | [hi-tools-in-the-embedding-lib.md](hi-tools-in-the-embedding-lib.md) |
-| A backend-controlled agent loop with browser-executed scene tools | The scene tools stay in the browser; the agent loop, the tool authorization and the provider credentials move to the backend | [backend-agent-loop-with-browser-scene-tools.md](backend-agent-loop-with-browser-scene-tools.md) |

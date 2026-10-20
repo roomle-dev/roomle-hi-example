@@ -60,16 +60,12 @@ the production API:
 EXAMPLE_SERVER_URL='https://test.roomle.com/t/cp/3087/?customApiUrl=https://www.roomle.com/api/v2' npm start gpt-5.4-mini "$AZURE_GPT_KEY"
 ```
 
-Deploy the MCP server to Cloudflare: push to `release/cloudflare` (PRD) or
-`release/cloudflare.dev` (DEV); the GitHub workflow `.github/workflows/deploy-cloudflare.yml` tests
-and deploys it. By hand, for testing, debugging and emergencies (`npx wrangler deploy` in
-`hi-mcp/cf`; needs Node 22+ and a one-time `npx wrangler login`):
+Deploy the MCP server to Cloudflare by hand (`npx wrangler deploy` in `hi-mcp/cf`; needs Node 22+
+and a one-time `npx wrangler login`):
 
 ```bash
-git push origin origin/master:release/cloudflare.dev   # release master to DEV
-git push origin origin/master:release/cloudflare   # release master to PRD
-npm run deploy:cf                                  # by hand, PRD
-npm run deploy:cf:dev                              # by hand, DEV
+npm run deploy:cf        # PRD
+npm run deploy:cf:dev    # DEV
 ```
 
 The servers: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp`, DEV `https://hi-planning-assistant-dev.dashiell-bell.workers.dev/mcp`.

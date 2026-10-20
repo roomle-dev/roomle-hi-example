@@ -24,10 +24,10 @@ Each ADR carries:
 | [0002 — One MCP server for every client, configured from outside](0002-one-mcp-server-configured-from-outside.md) | Superseded in part by 0010 |
 | [0003 — The AI chat is an MCP client beside the MCP server](0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) | Superseded in part by 0010 |
 | [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](0004-hi-mcp-server-on-cloudflare-containers.md) | Superseded in part by 0008 |
-| [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](0005-deploy-hi-mcp-from-release-cloudflare.md) | Superseded in part by 0008 |
+| [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](0005-deploy-hi-mcp-from-release-cloudflare.md) | Superseded (the deploy workflow is removed) |
 | [0006 — The prompt tests assess the agent, the unit tests the tools](0006-prompt-tests-assess-the-agent.md) | Accepted |
 | [0007 — The tool logic of the plan-changing HI MCP tools runs in the planner](0007-hi-mcp-tool-logic-in-the-planner.md) | Accepted |
-| [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Accepted |
+| [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Superseded in part (deployed by hand) |
 | [0009 — The chat window is a panel of the planner, the agent loop stays in the host](0009-the-chat-window-is-a-panel-of-the-planner.md) | Accepted |
 | [0010 — The example's chat runs in the page, with the planning assistant of the embedding-lib](0010-the-example-chat-runs-in-the-page.md) | Accepted |
 

@@ -19,6 +19,9 @@ the document a row links.
 | 86 — A swapped row of different unit widths stands through the wall | roomle-ui: keep the row's wall-side end in place when the swapped roots have different widths (anchor the wall-side end or clamp the row into the room) | medium |
 | 87 — The model asks instead of building when the user's reference does not match the plan | Served text: say a group the user asks for is built where the user points, and name where a mismatched reference is; and fix the expect of `installation-elements-supplies` to the plan it loads | low |
 | 89 — Wall units in separate groups do not follow their edited carriers | roomle-ui: apply D42 across scene groups as well as within the edited group; follow the moved carrier and leave unrelated wall units in place | medium |
+| 90 — A group placed over existing objects is not disclosed | Served text: the answer names every object a group stands over, also where the user leaves the place open | low |
+| 91 — The answer describes the two legs of the L-shaped kitchen swapped | Served text: the answer describes the plan as it stands, naming the wall of each group | low |
+| 92 — The answer names a supply without its position | Served text: the answer names where the user's reference is | low |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Where Mistral Large falls short of the prompts](mistral-large-prompt-issues.md) | Improvement candidates from the `mistral-large-latest` test run: declare the payload fields in the input schema, merge groups that name each other's roots, act on obstacle hints, describe the walls, open the edit tools with the user's words | medium |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
@@ -39,6 +42,7 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 | [78 — Tall-unit descriptions omit width-dependent door arrangements](library-issues.md#78-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG library: apply the width-dependent tall-unit door and resize descriptions so retained single-door settings are corrected for a paired unit | medium |
 | [79 — Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate](library-issues.md#79-base-units-narrowed-to-150-mm-with-a-150-mm-plinth-the-library-cannot-calculate) | HOMAG library: the desc of `mod_Width` names the widths the plinth takes; under 300 mm, a filler panel or pull-out fills the gap | low |
 | [80 — Wall units at 900 mm with a single door the library cannot calculate](library-issues.md#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG library: the single-door wall cabinets' descs name the widths a single door takes; wider, a cabinet with a pair of doors | low |
+| [93 — Backsplashes the library cannot calculate](library-issues.md#93-backsplashes-the-library-cannot-calculate) | HOMAG library or roomle-ui (not established): replay the check that built the backsplash on 2026-10-18; then the backsplash's grain-direction lookup in the library, or the planner fix | low |
 
 ## Library neutrality of the MCP server
 

@@ -46,6 +46,7 @@ keeps every suggested text, applied in the library or not.
 | 78 | [Tall-unit descriptions omit width-dependent door arrangements](#78-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | medium — a widened unit keeps an incompatible single-door hinge input |
 | 79 | [Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate](#79-base-units-narrowed-to-150-mm-with-a-150-mm-plinth-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the unit is not built, the agent needs a second create |
 | 80 | [Wall units at 900 mm with a single door the library cannot calculate](#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the cabinets are not built, the agent needs a second create |
+| 93 | [Backsplashes the library cannot calculate](#93-backsplashes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the backsplash is not built; the agent must drop it and report the omission |
 
 **Solved by descriptions**: with the descriptions the agent builds at the first attempt what it
 wants, without a call the library cannot calculate; "partly" names in the issue what only the
@@ -423,3 +424,53 @@ first `create-or-replace-groups`): roots `bridge1` and `bridge2` `OTB60` with `m
 (`207d9e11-1c13-4958-bcf9-6282e3782624`, `78feb95d-e6b0-4cbe-8f87-6fa656572525`) in the group
 `176aaf97-0133-4b90-80c8-8537cdf010f3`, not calculated, Error 14019; the model undid and sent the
 create again with `OTB45` ×4 and `O2TB90` ×2.
+
+## 93. Backsplashes the library cannot calculate
+
+**Problem.** The image tests ask for a kitchen like the photo, backsplash included; the agent sets
+`mod_CreateBacksplash` — its desc says it "Adds the contour for the backsplash and also starts
+generating the backsplashes" — with `mod_BacksplashColor` and `mod_BacksplashHeight`. The library
+does not calculate the backsplash — "Error 14034: Could not find entry in tab_GrainDirectionSettings
+for input values: part_Backsplash - undefined - undefined - undefined - 600 - 110" — so the
+`mr_Backsplash` root is not built; the server builds the rest of the group and names it in
+`notLoaded`. A separate `change-group-attribute` with the colour and height after the backsplash is
+generated gets the same error. The agent drops the backsplash and the final answer reports the
+omission — the image tests' expects ask for exactly that ("the backsplash visible in the image is
+generated when the library supports it").
+
+**Cause.** Not established. Every failure looks up `tab_GrainDirectionSettings` with the three
+values after `part_Backsplash` undefined — whether the colour and height come with the create or in
+a separate call — and no entry matches. The same separate call built the backsplash on 2026-10-18 on
+the local roomle-ui of `fix/generated-part-switch-discovery` (`cf377cfd4`,
+[deterministic checks](../bug-analysis/backsplash-of-an-image-kitchen-reported-as-not-buildable.md#deterministic-checks));
+whether the library data or the planner changed since is open. The descs of `mod_CreateBacksplash`
+and `mod_BacksplashColor` invite generating the backsplash and name no limit.
+
+**How the library behaves.**
+
+| Backsplash settings | Built | Where |
+|---|---|---|
+| `mod_CreateBacksplash` true with `mod_BacksplashColor` 240, `mod_BacksplashHeight` 635 in the create; then a separate `change-group-attribute` with 240 / 635 | no: Error 14034 after both calls (`1200 - 635`) | `mcp-test-2026-10-20_06-45-46` gpt-6-astra 59 |
+| `mod_CreateBacksplash` true, no colour; a second create with 240 / 485 | no: Error 14034 (`600 - 110`, `600 - 485`) | `mcp-test-2026-10-20_06-45-46` gpt-6-astra 61 |
+| `mod_CreateBacksplash` true with 216 / 500 and 216 / 250 in the create; then separate `change-group-attribute` calls with the same values | no: Error 14034 after both calls (`620 - 500`, `1220 - 250`) | `mcp-test-2026-10-20_06-45-46` gpt-6-astra 62 |
+| The switch on a lone `UTB60`, then a separate call with 216 / 500; on a lone `EUTB60`, then 240 / 635; on two `UTB60`, then 240 / 635; the create of run 59, then 240 / 635 | no: Error 14034 after the create and after the separate call (`620 - 500`, `620 - 635`, `1220 - 635`, `1200 - 635`) | bo-test planner, 2026-10-20, without a model |
+| The switch on a lone `UTB60`, then a separate call with 216 / 500; on a lone `EUTB60`, then 240 / 635; the right-wall image payload, then 240 / 635 | yes, after the separate call | local roomle-ui `cf377cfd4`, 2026-10-18 |
+
+**To do.** Establish which side changed: replay the lone `UTB60` check on roomle-ui `cf377cfd4`.
+Built there, the cause is in roomle-ui and the issue moves to
+[roomle-ui-issues.md](roomle-ui-issues.md); not built, the library: the backsplash's entries in
+`tab_GrainDirectionSettings` or the inputs of its lookup. Meanwhile the proposed desc in
+[section 2.10](../../docs/library-information/suggested-library-changes.md#210-backsplash) tells the
+agent to report a backsplash the library does not calculate. Then check that the served text needs
+nothing more.
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
+of the image is generated; where it is not, the answer reports the omission.
+
+**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 59 (`image-kitchen-left-wall`, local
+roomle-ui :5173): the create sets `mod_CreateBacksplash` with 240 / 635 — the `mr_Backsplash` root is
+not calculated, Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1200 - 635`); a
+separate `change-group-attribute` with 240 / 635 gets the same error; the model switched the
+backsplash off and the answer reports the omission.

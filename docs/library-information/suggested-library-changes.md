@@ -27,6 +27,7 @@ heading of each. Every text stays here once the library carries it, with its sta
 | [2.7 Handle position type](#27-handle-position-type) | `mod_HandlePosType` | applied |
 | [2.8 Sink](#28-sink) | `mod_SinkId` | applied |
 | [2.9 Width](#29-width) | `mod_Width` | open |
+| [2.10 Backsplash](#210-backsplash) | `mod_CreateBacksplash` | open |
 
 ## 1. Article descriptions
 
@@ -454,3 +455,11 @@ In the library, as proposed:
 | Attribute | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
 | `mod_Width` | Width | Width of the element | Width of the element. Set it to a width the library calculates for the article. Under 300 mm, the library does not calculate the plinth of a base unit: fill the gap with a filler panel (15 cm) or a pull-out unit. |
+
+### 2.10 Backsplash
+
+**Attribute.** `mod_CreateBacksplash` (Create backsplash).
+
+| Attribute | Name | `desc` before | Proposed `desc` |
+|---|---|---|---|
+| `mod_CreateBacksplash` | Create backsplash | Adds the contour for the backsplash and also starts generating the backsplashes. | Adds the contour for the backsplash and also starts generating the backsplashes. Where the library cannot calculate the backsplash, the result names it in notLoaded; report it as not built. |

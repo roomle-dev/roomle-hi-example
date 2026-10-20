@@ -30,7 +30,7 @@ never drop the agent's content silently.
 | 84 | [The find-attributes answer lists the values without naming the attribute](#84-the-find-attributes-answer-lists-the-values-without-naming-the-attribute) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:252-268`, the `find-attributes` description) | low | gpt-6-astra | |
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
 | 86 | [A swapped row of different unit widths stands through the wall](#86-a-swapped-row-of-different-unit-widths-stands-through-the-wall) | bug | roomle-ui `hi-tools.ts:908` (`swapRootModules`) with `glue-logic.ts:2593` (`arrangeAndLoad`) and `hi-root-module-arrangement.ts:412` (`keepWallDistances`) | medium | gpt-6-astra | |
-| 87 | [The model asks instead of building when the user's reference does not match the plan](#87-the-model-asks-instead-of-building-when-the-users-reference-does-not-match-the-plan) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) and the test (`docs/test-prompts.json`, the expect of `installation-elements-supplies`) | low | gpt-6-astra | |
+| 87 | [The model asks instead of building when the user's reference does not match the plan](#87-the-model-asks-instead-of-building-when-the-users-reference-does-not-match-the-plan) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 89 | [Wall units in separate groups do not follow their edited carriers](#89-wall-units-in-separate-groups-do-not-follow-their-edited-carriers) | bug | roomle-ui `hi-tools.ts` (`insertArticleIntoGroup`, `swapRootModules`), `glue-logic.ts` (`arrangeAndLoad`), `hi-root-module-arrangement.ts` (`carriersOfUnitsAbove`, `moveUnitsAboveWithTheirCarriers`) | medium | gpt-6-astra | |
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
@@ -139,9 +139,8 @@ builds over the furniture and reports.
 user names has no free stretch of the requested width — ask, or place where a stretch fits and say
 so. Verify model acceptance.
 
-**Test.** `wardrobe-split-door-hinges`, `wardrobe-door-hinges`, `wardrobe-swap-door-hinges`,
-`wardrobe-exchange-end-door-hinge`, `wardrobe-extend-door-hinge`: the model asks or places in a free
-stretch instead of overlapping the furniture.
+**Test.** None in the suite: the wardrobe tests of the closets plan use its free right wall, so no
+test names a wall without a free stretch of the requested width.
 
 **Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 38 (`wardrobe-split-door-hinges`, local
 roomle-ui :5173): five 400 mm single-door wardrobes (2000 mm) on the closets back wall over the low
@@ -182,12 +181,10 @@ not stand side by side, the result says so and where the article landed — feed
 (Guards Are a Last Resort); alternatively one sentence in the served description says what side by
 side means (two root modules that name each other's side docking vectors). Verify model acceptance.
 
-**Test.** `edit-insert-below-wall-units`: the insert lands between the two root modules that stand
-side by side, or the result says the named pair does not stand side by side. The test's premise is
-stale: `docs/test-prompts.md` describes the corner kitchen with the sink on the right leg, the saved
-plan of `corner-kitchen-wall-units` has it on the back leg (`mcp-test-2026-10-20_06-45-46`
-gpt-6-astra 30: the prompt's hob unit and sink unit stand on different legs of the L, the model asks
-which side to insert on and builds nothing).
+**Test.** None in the suite: `edit-insert-below-wall-units` names two root modules that stand side
+by side (the hob unit and the drawer unit next to the fridge). A test of the issue names two root
+modules that are adjacent in the docking chain but do not stand side by side, and checks that the
+result says so.
 
 **Reproduce.** `mcp-test-2026-10-19_07-42-07`, gpt-6-astra 27 (`edit-insert-below-wall-units`): the
 model named the sink and a base unit (adjacent in the docking chain, not side by side in space); the
@@ -244,19 +241,15 @@ another wall — "No changes made yet".
 but not that a group the user asks for is built where the user points; when the user's reference
 names a supply that is elsewhere, no served sentence says to name where it is and build at the
 nearest matching place, so the model reads the legitimacy as a permission it may decline and stops
-to ask (the issue-82 class). And the test adds a second cause: the expect of
-`installation-elements-supplies` (`docs/test-prompts.json`) asks for "a base cabinet against the
-back wall standing on the plug", but the plan it loads (`room-with-supplies`) has no plug on the
-back wall — the model cannot meet the expect by building.
+to ask (the issue-82 class).
 
 **To do.** roomle-hi-example served text (`hi-mcp-server.ts:42`): say that a group the user asks
 for is built where the user points, and when the user's reference names a supply that is elsewhere,
-the answer names where it is and builds at the nearest matching place — one sentence. And the test:
-fix the expect of `installation-elements-supplies` to the plan it loads (the plug is on the left
-wall), or load a plan with a plug on the back wall. Verify model acceptance.
+the answer names where it is and builds at the nearest matching place — one sentence. Verify model
+acceptance.
 
-**Test.** `installation-elements-supplies`: the model builds the base cabinet and the answer names
-where the plug is; `kitchen-conversation` turn 7: the model adds the pull-out larder unit.
+**Test.** `kitchen-conversation` turn 7: the model adds the pull-out larder unit. No other test of
+the suite names a reference that does not match its plan.
 
 **Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 53 (`installation-elements-supplies`,
 plan snapshot `ps_scqns3qvwl3fuav4v8m0syqrzcmhuj`, local roomle-ui :5173): no planner call that

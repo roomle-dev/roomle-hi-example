@@ -87,34 +87,36 @@ plan snapshot id: `ps_s7hy5nqvtts37wl79u6q8tq67bc12s2`
 ![Corner Kitchen with Wall Units](./images/corner-kitchen-wall-units.png)
 
 The Default Room with one corner kitchen in the back right corner: the corner unit, a right leg
-of a drawer unit, the hob unit, the sink unit and a tall fridge unit that ends before the door, a
-back leg of three base units, a range hood above the hob unit and a wall unit above every other
-base unit except the dishwasher. The row edit tests (RML-18045) start from it. It was built with one
+of a drawer unit, the hob unit, a second drawer unit and a tall fridge unit that ends before the
+door, a back leg of a base unit, the sink unit and the dishwasher, a range hood above the hob unit
+and a wall unit above every other base unit except the dishwasher. The row edit tests (RML-18045) start from it. It was built with one
 `create-or-replace-groups` call against the local planner and saved with
 `saveExternalObjectSnapshot()`; the ids survive a reload. Every wall unit and the hood were placed
 `above` their floor unit; after the reload the kernel's docking no longer links them to it, which
 the row edits handle by position (D42 in the [behaviour reference](hi-mcp-behaviour.md)).
 
-group `031ee57a-65f1-4cac-837c-a19c769ddce7`
+groups `031ee57a-65f1-4cac-837c-a19c769ddce7` (the floor units and the wall unit above the drawer
+unit next to the fridge), `afbe92eb-fdef-4a0f-89a7-aeedc6b66446` (the range hood and the wall unit
+beside it) and `85510a7e-45fd-45f7-bc30-3be32fcc895c` (the two wall units on the back wall)
 
 | unit | article | id |
 |---|---|---|
 | corner unit (back right corner) | `UERTB90` | `814c6854-af4a-4370-807b-b1c0526dc1a0` |
 | base unit with drawers (right wall, next to the corner) | `US2A60` | `7cd04e00-a392-4201-9cd3-97c864e5dec1` |
-| hob unit | `UKS2A60` | `379fa7a9-48e8-44f0-bc25-8c6f60fb4bb5` |
-| sink unit | `SUT60` | `0c64ff31-f73c-4b42-a346-8f92553c651a` |
+| hob unit (right wall) | `UKS2A60` | `379fa7a9-48e8-44f0-bc25-8c6f60fb4bb5` |
+| base unit with drawers (right wall, next to the fridge) | `US2A60` | `b9bbab7e-7dde-42fa-a28d-11f3b63ae205` |
 | tall fridge unit | `HK60` | `ad52e21b-1658-42b6-885e-37e6f508b562` |
 | base unit (back wall, next to the corner) | `UTB60` | `46ce47e7-325f-4ff7-9023-4e2898925b2d` |
-| base unit with drawers (back wall) | `US2A60` | `b9bbab7e-7dde-42fa-a28d-11f3b63ae205` |
+| sink unit (back wall) | `SUT60` | `31616143-9850-4959-8eaa-e169be949d84` |
 | dishwasher | `GSP` | `27d63628-ab97-48da-b306-cef2be0dcc16` |
-| wall unit (above the drawer unit on the right wall) | `OTB60` | `4c722e3d-e4bf-4e50-a07b-ef12a16423f0` |
+| wall unit (above the drawer unit next to the corner) | `OTB60` | `4c722e3d-e4bf-4e50-a07b-ef12a16423f0` |
 | range hood (above the hob unit) | `DU` | `a834858d-1717-4842-901d-b36e2d6e6714` |
-| wall unit (above the sink unit) | `OTB60` | `5b754b36-7ece-4d25-8a1b-317c2258981f` |
+| wall unit (above the drawer unit next to the fridge) | `OTB60` | `5b754b36-7ece-4d25-8a1b-317c2258981f` |
 | wall unit (above the base unit on the back wall) | `OTB60` | `ba294c27-cac5-4552-8b76-b918c7ad6c28` |
-| wall unit (beside it, on the back wall) | `OTB60` | `1450cfe7-cf6f-4b83-a52f-b4f02d992f47` |
+| wall unit (above the sink unit) | `OTB60` | `1450cfe7-cf6f-4b83-a52f-b4f02d992f47` |
 
 ```json
-{"posGroups":[{"libraryId":"Furniture_Smith","placement":{"posGroup":[4815,0,-3765],"posRotationY":270},"roots":[{"id":"c1","articleId":"UERTB90"},{"id":"r1","articleId":"US2A60","rightOf":"c1"},{"id":"r2","articleId":"UKS2A60","rightOf":"r1"},{"id":"r3","articleId":"SUT60","rightOf":"r2"},{"id":"t1","articleId":"HK60","rightOf":"r3"},{"id":"l1","articleId":"UTB60","leftOf":"c1"},{"id":"l2","articleId":"US2A60","leftOf":"l1"},{"id":"l3","articleId":"GSP","leftOf":"l2"},{"id":"w1","articleId":"OTB60","above":"r1"},{"id":"h1","articleId":"DU","above":"r2"},{"id":"w2","articleId":"OTB60","above":"r3"},{"id":"wl1","articleId":"OTB60","above":"l1"},{"id":"wl2","articleId":"OTB60","leftOf":"wl1"}]}]}
+{"posGroups":[{"libraryId":"Furniture_Smith","placement":{"posGroup":[4815,0,-3765],"posRotationY":270},"roots":[{"id":"c1","articleId":"UERTB90"},{"id":"r1","articleId":"US2A60","rightOf":"c1"},{"id":"r2","articleId":"UKS2A60","rightOf":"r1"},{"id":"r3","articleId":"US2A60","rightOf":"r2"},{"id":"t1","articleId":"HK60","rightOf":"r3"},{"id":"l1","articleId":"UTB60","leftOf":"c1"},{"id":"l2","articleId":"SUT60","leftOf":"l1"},{"id":"l3","articleId":"GSP","leftOf":"l2"},{"id":"w1","articleId":"OTB60","above":"r1"},{"id":"h1","articleId":"DU","above":"r2"},{"id":"w2","articleId":"OTB60","above":"r3"},{"id":"wl1","articleId":"OTB60","above":"l1"},{"id":"wl2","articleId":"OTB60","leftOf":"wl1"}]}]}
 ```
 
 ### Two Wardrobes on the Right Wall

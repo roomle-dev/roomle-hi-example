@@ -21,7 +21,7 @@
  * [hi-mcp] lines the tools log in the page console),
  * plan-context.json (rooms and groups after the chat, in the agent's words),
  * planner-calls.json (the chat's, each with the page's time in ms), prompt-image.jpg (the image sent),
- * turn-<n>-plan-images-<k>-perspective.png and -top.png (the images the k-th
+ * turn-<n>-plan-images-<k>-perspective-object.png and -top.png (the images the k-th
  * get-plan-images call of turn n showed the agent, listed in the turn's
  * planImages) and every snapshot field as a file of its own; the snapshot
  * keeps the doors and drawers as the agent left them. Exits 1 when the chat or the snapshot

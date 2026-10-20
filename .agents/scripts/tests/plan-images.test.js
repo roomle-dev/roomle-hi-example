@@ -32,6 +32,26 @@ test('names the images of every get-plan-images call by its turn and its order i
   );
 });
 
+test('names the group view of get-plan-images perspective-object, before the top view', () => {
+  const files = planImageFiles([
+    {
+      turn: 0,
+      result: {
+        perspectiveObjectImage: base64('o1'),
+        topImage: base64('t1'),
+      },
+    },
+  ]);
+
+  assert.deepEqual(
+    files.map(({ file, data }) => [file, data.toString()]),
+    [
+      ['turn-1-plan-images-1-perspective-object.png', 'o1'],
+      ['turn-1-plan-images-1-top.png', 't1'],
+    ]
+  );
+});
+
 test('leaves out a snapshot answer without images, such as the order data', () => {
   assert.deepEqual(
     planImageFiles([

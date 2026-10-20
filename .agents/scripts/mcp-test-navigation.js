@@ -39,7 +39,7 @@ export const isNavigationInterrupted = (run) =>
   );
 
 const TRANSPORT_FAILURE =
-  /Failed to process successful response|ECONNRESET|socket hang up|fetch failed|terminated|AI_APICallError/i;
+  /Failed to process successful response|ECONNRESET|socket hang up|fetch failed|Failed to fetch|terminated|AI_APICallError/i;
 
 // A provider or transport failure: the model call or the connection dropped
 // mid-stream, so the run says nothing about the planning. A run that completed

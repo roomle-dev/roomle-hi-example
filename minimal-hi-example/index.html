@@ -1010,6 +1010,11 @@
         return JSON.parse(text);
       };
 
+      // Ends the running turn of the planning assistant, for the test runner
+      // when a turn takes too long.
+      const chatAbort = new AbortController();
+      window.hiPlanningAssistantAbort = () => chatAbort.abort();
+
       const startChat = async () => {
         if (
           typeof roomDesignerApi.extended.planningAssistantOutput !== 'function'
@@ -1036,7 +1041,7 @@
         await startPlanningAssistant(
           recordedPlannerApi(roomDesignerApi),
           config,
-          new AbortController().signal
+          chatAbort.signal
         );
       };
 

@@ -256,8 +256,9 @@ them (`.agents/scripts/run-hi-mcp-prompt.js`).
 
 - The API key travels: CLI argument → launcher → `/planning-assistant-config.json`
   → the page, which calls the provider with it. The launcher serves the config to
-  requests from this machine only (403 otherwise) and keeps the key out of the
-  page URL and its log.
+  requests from this machine only, under a `localhost` or loopback Host, so a site
+  whose name resolves to this machine (DNS rebinding) cannot read it (403
+  otherwise), and keeps the key out of the page URL and its log.
 - A CLI argument is visible in `ps` for the lifetime of the process — accepted
   for a local dev example.
 - The key is in the page: anyone with the page open can read it in the browser.

@@ -205,6 +205,11 @@ const STATIC_CONTENT_TYPES = {
   '.json': 'application/json; charset=utf-8',
 };
 const LOOPBACK_ADDRESSES = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+// The authorities the page has on this machine. Another Host is a site whose
+// name resolves to this machine (DNS rebinding), which must not read the key.
+const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '[::1]'].map(
+  (host) => `${host}:${STATIC_PORT}`
+);
 
 const serveStatic = (response, pathname) => {
   const relativePath = pathname === '/' ? 'index.html' : pathname.slice(1);
@@ -235,7 +240,10 @@ const servePlanningAssistantConfig = (request, response) => {
     );
     return;
   }
-  if (!LOOPBACK_ADDRESSES.includes(request.socket.remoteAddress)) {
+  if (
+    !LOOPBACK_ADDRESSES.includes(request.socket.remoteAddress) ||
+    !LOOPBACK_HOSTS.includes(request.headers.host?.toLowerCase())
+  ) {
     response.writeHead(403, { 'Content-Type': 'text/plain' });
     response.end('The model is served to this machine only');
     return;

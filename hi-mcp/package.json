@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "start": "npm start --workspace hi-mcp-server",
+    "export:fixture": "npm run export:fixture --workspace hi-mcp-server --",
     "test": "vitest run",
     "typecheck": "tsc --noEmit --project hi-mcp-server/tsconfig.json && tsc --noEmit --project hi-mcp-client/tsconfig.json"
   },

@@ -47,6 +47,7 @@ const LAUNCHER_READY_TIMEOUT_MS = 3 * 60_000;
 const PAGE_READY_TIMEOUT_MS = 2 * 60_000;
 const CHAT_TIMEOUT_MS = 10 * 60_000;
 const SNAPSHOT_TIMEOUT_MS = 2 * 60_000;
+const SETTLE_TIMEOUT_MS = 3 * 60_000;
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 const POLL_INTERVAL_MS = 1000;
 // The HI MCP tools of the page log what a tool was sent and the feedback it
@@ -320,25 +321,48 @@ const waitForPlanningAssistant = async (page) => {
   }
 };
 
+// A turn that failed or timed out may still run in the page: it is aborted,
+// and the runner waits until the turn and the planner calls of its tools have
+// ended. False when they do not end, so the plan may still change.
+const settleTurn = async (page, turn) => {
+  try {
+    await withTimeout(
+      (async () => {
+        await page.evaluate(() => window.hiPlanningAssistantAbort());
+        await turn.catch(() => {});
+        await page.waitForFunction(
+          () => window.hiPlannerCalls.every((call) => 'ok' in call),
+          null,
+          { timeout: SETTLE_TIMEOUT_MS }
+        );
+      })(),
+      SETTLE_TIMEOUT_MS,
+      'the aborted chat turn to end'
+    );
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 // A turn as the chat window sends it: the prompt and the image go to the
 // planning assistant of the page, which answers in the output of the window.
 const sendPrompt = async (page, text, image) => {
   const outputStart = await page.evaluate(
     () => window.hiPlanningAssistantOutput.length
   );
+  const turn = page.evaluate(
+    (prompt) =>
+      window.instance.extended.callbacks.onPlanningAssistantPrompt(prompt),
+    { text, images: image ? [image] : [] }
+  );
   let failure;
+  let settled = true;
   try {
-    await withTimeout(
-      page.evaluate(
-        (prompt) =>
-          window.instance.extended.callbacks.onPlanningAssistantPrompt(prompt),
-        { text, images: image ? [image] : [] }
-      ),
-      CHAT_TIMEOUT_MS,
-      'the chat turn'
-    );
+    await withTimeout(turn, CHAT_TIMEOUT_MS, 'the chat turn');
   } catch (error) {
     failure = error;
+    settled = await settleTurn(page, turn);
   }
   const parts = await page.evaluate(
     (start) => window.hiPlanningAssistantOutput.slice(start),
@@ -353,6 +377,7 @@ const sendPrompt = async (page, text, image) => {
       ...texts('error'),
       ...(failure ? [`chat turn failed: ${failure.message}`] : []),
     ],
+    settled,
   };
 };
 
@@ -390,10 +415,12 @@ const prepareImage = (page, bytes) =>
 // The prompts are the turns of one conversation, as in the chat window: the
 // planning assistant keeps the history. A turn with an error ends it. The
 // image goes along with the last prompt. The planner calls of a turn are the
-// ones the page recorded while it ran.
+// ones the page recorded while it ran. settled is false when a failed turn did
+// not end in the page.
 const runConversation = async (page, prompts, image) => {
   const turns = [];
   const plannerCallTurns = [];
+  let settled = true;
   for (const [index, prompt] of prompts.entries()) {
     const turnImage = index === prompts.length - 1 ? image : undefined;
     console.log(
@@ -404,7 +431,12 @@ const runConversation = async (page, prompts, image) => {
     const plannerCallsBefore = await page.evaluate(
       () => window.hiPlannerCalls.length
     );
-    const turn = await sendPrompt(page, prompt, turnImage?.dataUrl);
+    const { settled: turnSettled, ...turn } = await sendPrompt(
+      page,
+      prompt,
+      turnImage?.dataUrl
+    );
+    settled &&= turnSettled;
     const plannerCallsAfter = await page.evaluate(
       () => window.hiPlannerCalls.length
     );
@@ -424,7 +456,7 @@ const runConversation = async (page, prompts, image) => {
       break;
     }
   }
-  return { turns, plannerCallTurns };
+  return { turns, plannerCallTurns, settled };
 };
 
 const evaluateInPage = (page, method, description, argument) =>
@@ -496,7 +528,7 @@ const runSession = async (options, launcher, browser) => {
   const promptImage =
     options.imageBytes && (await prepareImage(page, options.imageBytes));
   navigation.setPhase('chat');
-  const { turns, plannerCallTurns } = await runConversation(
+  const { turns, plannerCallTurns, settled } = await runConversation(
     page,
     options.prompts,
     promptImage && { file: options.image, dataUrl: promptImage }
@@ -520,45 +552,52 @@ const runSession = async (options, launcher, browser) => {
   navigation.setPhase('snapshot');
   console.log('[run-hi-mcp-prompt] chat done, reading and saving the snapshot');
   let planContext;
-  try {
-    planContext = await withTimeout(
-      page.evaluate(
-        (include) => window.hiAgentPlanContext(include),
-        ['rooms', 'groups', 'obstacles']
-      ),
-      SNAPSHOT_TIMEOUT_MS,
-      'the plan context'
-    );
-  } catch (error) {
-    errors.push(`plan context failed: ${error.message}`);
-  }
   let snapshot;
-  try {
-    snapshot = await evaluateInPage(
-      page,
-      'getExternalObjectSnapshot',
-      'the snapshot',
-      SNAPSHOT_REQUEST
-    );
-    if (!snapshot) {
-      errors.push('getExternalObjectSnapshot returned no snapshot');
-    }
-  } catch (error) {
-    errors.push(`snapshot failed: ${error.message}`);
-  }
   let planSnapshotId = null;
-  try {
-    const saved = await evaluateInPage(
-      page,
-      'saveExternalObjectSnapshot',
-      'the saved snapshot'
+  // a turn that did not end may still change the plan: nothing is captured
+  if (!settled) {
+    errors.push(
+      'the aborted chat turn did not end - the plan was not captured'
     );
-    planSnapshotId = saved?.planSnapshotId ?? null;
-    if (!planSnapshotId) {
-      errors.push('saveExternalObjectSnapshot returned no plan snapshot id');
+  } else {
+    try {
+      planContext = await withTimeout(
+        page.evaluate(
+          (include) => window.hiAgentPlanContext(include),
+          ['rooms', 'groups', 'obstacles']
+        ),
+        SNAPSHOT_TIMEOUT_MS,
+        'the plan context'
+      );
+    } catch (error) {
+      errors.push(`plan context failed: ${error.message}`);
     }
-  } catch (error) {
-    errors.push(`saving the snapshot failed: ${error.message}`);
+    try {
+      snapshot = await evaluateInPage(
+        page,
+        'getExternalObjectSnapshot',
+        'the snapshot',
+        SNAPSHOT_REQUEST
+      );
+      if (!snapshot) {
+        errors.push('getExternalObjectSnapshot returned no snapshot');
+      }
+    } catch (error) {
+      errors.push(`snapshot failed: ${error.message}`);
+    }
+    try {
+      const saved = await evaluateInPage(
+        page,
+        'saveExternalObjectSnapshot',
+        'the saved snapshot'
+      );
+      planSnapshotId = saved?.planSnapshotId ?? null;
+      if (!planSnapshotId) {
+        errors.push('saveExternalObjectSnapshot returned no plan snapshot id');
+      }
+    } catch (error) {
+      errors.push(`saving the snapshot failed: ${error.message}`);
+    }
   }
   navigation.setPhase('complete');
   const run = {

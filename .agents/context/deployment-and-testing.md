@@ -79,7 +79,7 @@ is aliased to a stub).
 | `hi-mcp-server/tests/plan-history.test.ts` | the undo record and history events |
 | `hi-mcp-server/tests/page-bridge.test.ts` | handshake, one page, call correlation, timeouts, disconnect (with `fake-page-socket.ts`) |
 | `hi-mcp-server/tests/planner-api.test.ts` | the methods and timeouts; the client allow-list matches |
-| `hi-mcp-server/tests/example-launcher.test.ts` | starts the real launcher on unused ports, with a model and a dummy key and without a model: the planning assistant config of the model, `no-store`, the 404 without a model; SIGTERM/SIGINT to only the launcher PID release the page port (POSIX; no model request) |
+| `hi-mcp-server/tests/example-launcher.test.ts` | starts the real launcher on unused ports, with a model and a dummy key and without a model: the planning assistant config of the model, `no-store`, the 404 without a model, the 403 for a foreign Host; SIGTERM/SIGINT to only the launcher PID release the page port (POSIX; no model request) |
 | `hi-mcp-client/tests/browser-bridge.test.ts` | the page side of the bridge |
 | `cf/tests/worker.test.ts` | the Worker's routing |
 | `cf/tests/container.test.ts` | the named/default store link is set before container startup and preserved across bridge reconnects |
@@ -122,7 +122,10 @@ node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt
    clears its undo history then) and the planning assistant reports the chat available
    (`window.hiPlanningAssistantOutput`).
 4. Sends each prompt as one chat turn through the page (`onPlanningAssistantPrompt`; the planning
-   assistant keeps the history) and waits up to 10 minutes for the turn to end. The answer, the tool
+   assistant keeps the history) and waits up to 10 minutes for the turn to end. A turn that fails
+   or times out is aborted (`window.hiPlanningAssistantAbort`), and the runner waits up to 3 minutes
+   until the turn and the planner calls of its tools have ended; when they do not, the plan may still
+   change and the run captures nothing (step 5). The answer, the tool
    activity and the errors are the output parts of the turn; the tool calls are the
    `[hi-mcp] tool <name> args|feedback|error` lines of the page console.
 5. Reads the plan context (`window.hiAgentPlanContext`) and takes a snapshot in the page

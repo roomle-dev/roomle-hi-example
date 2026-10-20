@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { request } from 'node:http';
 import { createServer } from 'node:net';
 import { setTimeout } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
@@ -39,6 +40,21 @@ const canBind = (port: number) =>
     const server = createServer();
     server.once('error', () => resolve(false));
     server.listen(port, '127.0.0.1', () => server.close(() => resolve(true)));
+  });
+
+// The status of a request to this machine that names another site as its
+// Host, as a page of a DNS-rebinding site sends it (fetch cannot set Host).
+const statusWithHost = (port: number, path: string, host: string) =>
+  new Promise<number | undefined>((resolve, reject) => {
+    request(
+      { host: '127.0.0.1', port, path, headers: { host } },
+      (response) => {
+        response.resume();
+        resolve(response.statusCode);
+      }
+    )
+      .on('error', reject)
+      .end();
   });
 
 // Starts the launcher with the arguments on an unused page port and waits
@@ -111,6 +127,13 @@ describe.skipIf(process.platform === 'win32')('example launcher', () => {
       expect(
         (await withoutModel.fetchPath('/planning-assistant-config.json')).status
       ).toBe(404);
+      expect(
+        await statusWithHost(
+          withModel.port,
+          '/planning-assistant-config.json',
+          `rebinding.example:${withModel.port}`
+        )
+      ).toBe(403);
     } finally {
       withModel.kill();
       withoutModel.kill();

@@ -3,6 +3,7 @@ import { after, before, test } from 'node:test';
 import { chromium } from 'playwright';
 import {
   isNavigationInterrupted,
+  isTransportFailure,
   recordNavigations,
 } from '../mcp-test-navigation.js';
 
@@ -134,6 +135,21 @@ test('keeps a complete capture and ignores a fragment change for retry purposes'
       errors: [],
       snapshotCaptured: true,
       navigations: navigation.entries,
+    }),
+    false
+  );
+});
+
+test('takes the dropped connection of the browser and of node as a transport failure', () => {
+  for (const error of [
+    'The planning assistant failed: Failed to fetch',
+    'chat turn failed: fetch failed',
+  ]) {
+    assert.equal(isTransportFailure({ errors: [error] }), true, error);
+  }
+  assert.equal(
+    isTransportFailure({
+      errors: ['The planning assistant failed: Invalid API key'],
     }),
     false
   );

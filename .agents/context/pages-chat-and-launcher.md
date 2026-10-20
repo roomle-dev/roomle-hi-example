@@ -83,8 +83,9 @@ example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`
    every `gpt-*` deployment on a Foundry resource and the ids of `IMAGE_INPUT_MODELS`.
 2. **Static server** for `minimal-hi-example/` (`/` → `index.html`; only `.html`, `.js`, `.md`, `.json`).
 3. **Config:** `/planning-assistant-config.json` answers the config as JSON with
-   `Cache-Control: no-store`, to a request from this machine only (`127.0.0.1`, `::1`; 403
-   otherwise), and 404 without a model.
+   `Cache-Control: no-store`, to a request from this machine only (`127.0.0.1`, `::1`) under a
+   loopback Host (`localhost`, `127.0.0.1`, `[::1]` with the page port), so a site whose name
+   resolves to this machine (DNS rebinding) cannot read the key; 403 otherwise, 404 without a model.
 4. **Prints** `Example:` and, with a model, `Model:` (provider and model, never the key) — the test
    scripts parse the `Example:` line — and opens
    `http://localhost:3000/?backendId=HI_PRE_Roomle_Milestone_2&library_id=Furniture_Smith`, plus
@@ -92,7 +93,7 @@ example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`
 
 SIGINT and SIGTERM end the launcher with 0, and the page server stops with it.
 `hi-mcp-server/tests/example-launcher.test.ts` checks the config of a model, the 404 without one,
-and that the page port can be bound again after signalling only the launcher PID (POSIX).
+the 403 for a foreign Host, and that the page port can be bound again after signalling only the launcher PID (POSIX).
 
 ## The chat of the example page
 
@@ -135,5 +136,5 @@ errors (`[planning-assistant] …`).
 - **Two bridge copies.** A protocol change touches the server's `types.ts`, the client's
   `types.ts` and the ligna-store copy, and raises `BRIDGE_PROTOCOL`.
 - **The test scripts use page globals** — `window.instance`, `window.hiPosGroupsCompletelyLoaded`,
-  `window.hiPlannerCalls`, `window.hiPlanningAssistantOutput` and `window.hiAgentPlanContext` of
-  `index.html` ([Deployment and testing](./deployment-and-testing.md#end-to-end-runs)).
+  `window.hiPlannerCalls`, `window.hiPlanningAssistantOutput`, `window.hiAgentPlanContext` and
+  `window.hiPlanningAssistantAbort` (ends a turn that takes too long) of `index.html` ([Deployment and testing](./deployment-and-testing.md#end-to-end-runs)).

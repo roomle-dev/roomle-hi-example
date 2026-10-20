@@ -6,6 +6,7 @@
   "description": "PoC MCP server that generates HI object groups from a single JSON pos-group payload in the INT-stage ligna-store",
   "scripts": {
     "start": "vite-node server.ts",
+    "export:fixture": "vite-node export-fixture.ts",
     "lint:types": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {

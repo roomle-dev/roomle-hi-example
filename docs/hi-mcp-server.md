@@ -952,4 +952,4 @@ operations:
 
 ## Interior Design tools
 
-The server exposes `get-interior-design-options`, `add-interior-fitting`, `move-interior-fitting`, `delete-interior-fittings` and `replace-interior-fitting`. Discovery reads one loaded group through scoped context options; edits use the existing command route and report exact fitting IDs, actual change and library adjustments. [Arguments, coordinates and failure/history semantics](hi-mcp-behaviour.md#interior-design-tools).
+The server exposes `get-interior-design-options`, `add-interior-fitting`, `move-interior-fitting`, `delete-interior-fittings` and `replace-interior-fitting`. Discovery reads one loaded group through scoped context options; edits use the existing command route and report exact fitting IDs, actual change and library adjustments. A fitting's position is where its parts start, in its parent's frame; an edit places a fitting at the requested point in that frame. [Arguments, coordinates and failure/history semantics](hi-mcp-behaviour.md#interior-design-tools).

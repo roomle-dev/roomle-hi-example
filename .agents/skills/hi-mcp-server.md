@@ -114,7 +114,7 @@ The ligna-store runs the same protocol with its copy, `ligna-store/hi-mcp/browse
 5. Update documentation (`docs/hi-mcp-behaviour.md`, `docs/hi-mcp-server.md`, `.agents/skills/hi-mcp-tools.md`)
 6. Add/extend unit tests in `hi-mcp/hi-mcp-server/tests/`
 7. `npm test` + `npm run typecheck` at the `hi-mcp` root
-8. Make the same change in the copy of the tools in roomle-ui (`packages/embedding-lib/src/homag-intelligence/hi-mcp/`, D89 of `docs/hi-mcp-behaviour.md`) and export its fixture again: `npm run export:fixture -- <roomle-ui>/tests/unit/embedding-lib/homag-intelligence/hi-mcp/fixtures/hi-mcp-fixture.json` in `hi-mcp/`
+8. Make the same change in the copy of the tools in roomle-ui (`packages/embedding-lib/src/homag-intelligence/hi-mcp/`, D94 of `docs/hi-mcp-behaviour.md`) and export its fixture again: `npm run export:fixture -- <roomle-ui>/tests/unit/embedding-lib/homag-intelligence/hi-mcp/fixtures/hi-mcp-fixture.json` in `hi-mcp/`
 
 ## Modifying Existing Tools
 

@@ -258,7 +258,7 @@ correction reporting it is a **bug** of the MCP server, not a model finding.
 
 The MCP server in the rules below is the HI MCP tools: the example runs the copy of the roomle-ui
 embedding-lib (`packages/embedding-lib/src/homag-intelligence/hi-mcp/`), and a fix goes into both
-copies (D89 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md)).
+copies (D94 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md)).
 
 | Verdict | When |
 |---|---|

@@ -249,7 +249,7 @@ When the repository uses Atlassian Jira:
 3. **WebSocket Bridge** — The `/bridge` WebSocket connects the MCP server to the browser page
 4. **Tools in the Server, Planner Calls in the Page** — The tools run in the server (`tool-executors.ts`); the planner methods they call (`planner-api.ts`) are relayed to `roomDesignerApi.extended` in the page, which executes only the methods on its allow-list
 5. **Plan-Changing Tools Run in roomle-ui** — Every tool that changes the plan is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`; roomle-ui performs the whole tool as an HI tool command (`hi-tool-commands.ts` in `packages/web-sdk/packages/homag-intelligence/src/`): corrections, ids, docking from the relations, placement, group materials, hints. It answers with the tool's result and the planner steps it made, which the server counts for undo (D71 of [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md#3-decisions))
-6. **A Copy of the Tools in the roomle-ui Embedding-Lib** — `createHiMcpTools` (roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/`) runs the same tools in the page, without the MCP protocol (D89). Until the server is deleted, **a tool change goes into both copies in the same task**: the tool, its description and schema, the served text and the skills. Then export the fixture of the roomle-ui tests again: `npm run export:fixture -- <roomle-ui>/tests/unit/embedding-lib/homag-intelligence/hi-mcp/fixtures/hi-mcp-fixture.json` in `hi-mcp/`
+6. **A Copy of the Tools in the roomle-ui Embedding-Lib** — `createHiMcpTools` (roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/`) runs the same tools in the page, without the MCP protocol (D94). Until the server is deleted, **a tool change goes into both copies in the same task**: the tool, its description and schema, the served text and the skills. Then export the fixture of the roomle-ui tests again: `npm run export:fixture -- <roomle-ui>/tests/unit/embedding-lib/homag-intelligence/hi-mcp/fixtures/hi-mcp-fixture.json` in `hi-mcp/`
 
 ### HI Data Model
 
@@ -526,7 +526,7 @@ The servers: PRD `https://hi-planning-assistant.dashiell-bell.workers.dev/mcp`, 
 4. Add or extend unit tests in the matching `tests/` folder — a tool command's in roomle-ui `homag-intelligence/__tests__/hi-tool-commands/`
 5. Update `docs/hi-mcp-behaviour.md`, the `docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
 6. Test with MCP client
-7. Make the same change in the roomle-ui copy of the tools and export its fixture again (item 6 of [MCP Server Architecture](#mcp-server-architecture), D89)
+7. Make the same change in the roomle-ui copy of the tools and export its fixture again (item 6 of [MCP Server Architecture](#mcp-server-architecture), D94)
 
 ## Suggested Change Workflow
 

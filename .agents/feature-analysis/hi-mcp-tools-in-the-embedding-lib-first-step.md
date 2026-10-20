@@ -12,7 +12,7 @@
 | Repository | Required work |
 |---|---|
 | **roomle-ui — `release/bo-test`** | A copy of the MCP server's tool code in `packages/embedding-lib/src/homag-intelligence/hi-mcp/`, exposed as `createHiMcpTools` in `packages/embedding-lib/src/hi.ts`. zod as a dependency bundled into the tool code, the size check of the embedding build narrowed to the main file. The HI presets demo (`hi-presets-example.ts`, `planning-assistant.ts`) uses the tool set instead of the MCP client and the WebSocket bridge. Unit tests and the embedding documentation. |
-| **roomle-hi-example** | The MCP server stays: the ligna-store and the example page still use it. A script that exports today's `tools/list` and `skills/list` as the fixture of the roomle-ui tests (`hi-mcp-server/export-fixture.ts`), decision D89 of `docs/hi-mcp-behaviour.md` and the rule that a tool change goes into both copies. This document. |
+| **roomle-hi-example** | The MCP server stays: the ligna-store and the example page still use it. A script that exports today's `tools/list` and `skills/list` as the fixture of the roomle-ui tests (`hi-mcp-server/export-fixture.ts`), decision D94 of `docs/hi-mcp-behaviour.md` and the rule that a tool change goes into both copies. This document. |
 | **ligna-store** | No change in this step. |
 | **Cloudflare** | No change in this step. The PRD Worker keeps serving the live store. |
 
@@ -329,7 +329,7 @@ roomle-ui `release/bo-test`:
   `.agents/homag-intelligence.md:241` — the skills are served by the tool set of the embedding-lib.
 
 roomle-hi-example: this document and its index rows; `hi-mcp/hi-mcp-server/export-fixture.ts` and
-the script `export:fixture`; D89 in `docs/hi-mcp-behaviour.md`; the two-copies rule in `AGENTS.md`
+the script `export:fixture`; D94 in `docs/hi-mcp-behaviour.md`; the two-copies rule in `AGENTS.md`
 and `.agents/skills/hi-mcp-server.md`; the script in `.agents/context/deployment-and-testing.md`.
 The server, its docs and its skills stay until the later steps of the ticket.
 

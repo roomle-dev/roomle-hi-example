@@ -2,7 +2,7 @@
 
 How roomle-ui handles the errors of an HI library, from the call into the library's calculation
 script to the result the agent reads. It covers four layers: the library boundary, the glue logic,
-the HI tool commands, and the HI tools of the embedding-lib.
+the HI tool commands, and the HI tools the planner serves.
 
 Two things are documented elsewhere:
 
@@ -15,7 +15,7 @@ Two things are documented elsewhere:
 All paths are in roomle-ui:
 
 - `homag-intelligence/src/` stands for `packages/web-sdk/packages/homag-intelligence/src/`.
-- `hi-mcp/` stands for `packages/embedding-lib/src/homag-intelligence/hi-mcp/`.
+- `hi-mcp/` stands for `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`.
 
 ## What a library error is
 

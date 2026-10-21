@@ -198,15 +198,19 @@ const singleModelSession = async (t) => {
       ],
     },
     [
-      { method: 'getPlanContext', args: [], ok: true },
+      { id: 1, tool: 'get-plan-context', input: {}, ms: 40, ok: true },
       {
-        method: 'externalObjectGroupOperation',
-        args: ['create-or-replace-groups', { posGroups: [] }],
+        id: 2,
+        tool: 'create-or-replace-groups',
+        input: { posGroups: [] },
+        ms: 900,
         ok: true,
       },
       {
-        method: 'externalObjectGroupOperation',
-        args: ['undo', {}],
+        id: 3,
+        tool: 'undo',
+        input: {},
+        ms: 10,
         ok: false,
         error: 'nothing to undo',
       },
@@ -260,7 +264,16 @@ const singleModelSession = async (t) => {
       planSnapshotId: 'ps_run02',
     },
     { groups: [] },
-    []
+    // recorded before the tools ran in the planner: planner calls
+    [
+      { method: 'getExternalObjectPlanContext', args: [['groups']], ok: true },
+      {
+        method: 'externalObjectGroupOperation',
+        args: ['change-group-attribute', { groupId: 'g' }],
+        ok: false,
+        error: 'no such attribute',
+      },
+    ]
   );
 
   await writeRun(
@@ -508,12 +521,16 @@ test('extracts the facts of a single-model session', async (t) => {
   });
 
   assert.deepEqual(r1.plannerCalls, [
+    { tool: 'get-plan-context', ok: true, error: null },
     { tool: 'create-or-replace-groups', ok: true, error: null },
     { tool: 'undo', ok: false, error: 'nothing to undo' },
   ]);
 
   assert.equal(r2.nn, '02');
   assert.equal(r2.random, true);
+  assert.deepEqual(r2.plannerCalls, [
+    { tool: 'change-group-attribute', ok: false, error: 'no such attribute' },
+  ]);
   assert.equal(r2.turns[0].answer, 'B'.repeat(480) + ' …');
   assert.deepEqual(r2.turns[0].toolCalls[0].notLoaded, [
     'A'.repeat(295) + ' …',

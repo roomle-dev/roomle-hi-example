@@ -3,8 +3,9 @@
 The documentation of `minimal-hi-example/` — the standalone HI presets example
 ([`index.html`](../minimal-hi-example/index.html)) and its start launcher
 ([`start.mjs`](../minimal-hi-example/start.mjs)) — and of the HI tools it runs, the tools of the
-roomle-ui embedding-lib (`createHiMcpTools`, `packages/embedding-lib/src/homag-intelligence/hi-mcp/`,
-[ADR 0011](../.agents/decisions/0011-the-hi-tools-live-in-the-embedding-lib.md)). With both, an AI agent
+roomle-ui planner (`packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`), which the embedding-lib
+hands to the agent of the page (`createHiMcpTools`,
+[ADR 0012](../.agents/decisions/0012-the-hi-tool-set-runs-in-the-planner.md)). With both, an AI agent
 orchestrates HOMAG Intelligence (HI) object groups in a live planning session: the agent retrieves
 the plan context (master data, rooms, articles, existing groups) and creates or modifies HI object
 groups — without computing root-module positions itself.
@@ -22,7 +23,7 @@ For the shortest path to a first chat turn in the example, see the
 A standalone, copy-paste version of the embedding-lib HI presets demo. It
 contains the complete interface and browser JavaScript in one
 [`index.html`](../minimal-hi-example/index.html), requires no build step, and loads only
-`@roomle/embedding-lib` and its `hi.js` from unpkg — the dev version `0.0.0-dev-a40887e` until a
+`@roomle/embedding-lib` and its `hi.js` from unpkg — the dev version `0.0.0-dev-a95b24e` until a
 release has the planning assistant ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
 
 The preset dropdown is filled from `GET <HI_SERVER_BASE_URL>/backends/list`,
@@ -62,16 +63,17 @@ the example page (index.html, served by the launcher on :3000)
     |  onPlanningAssistantPrompt
     v
   startPlanningAssistant (embedding-lib) --streamText--> the model of /planning-assistant-config.json
-    |  the HI MCP tools of the embedding-lib (createHiMcpTools)
+    |  the HI MCP tools of the embedding-lib (createHiMcpTools), forwarding every call
     v
-  roomDesignerApi.extended: the six planner methods;
-  roomle-ui performs the plan-changing tools (HI tool commands)
+  roomDesignerApi.extended.callExternalObjectAgentTool: the tools run in the planner,
+  on its six planner methods; roomle-ui performs the plan-changing tools (HI tool commands)
 ```
 
 The example is one process: `start.mjs` serves `index.html` on port 3000 and, when it is started
 with a model, the `PlanningAssistantConfig` of that model at `/planning-assistant-config.json`. The
-tools run in the page; each tool calls one or more planner methods of `roomDesignerApi.extended`. A
-tool that changes the plan is one call,
+tools run in the planner: the page forwards every tool call to
+`roomDesignerApi.extended.callExternalObjectAgentTool`, and the tool calls one or more planner
+methods there. A tool that changes the plan is one call,
 `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`: roomle-ui
 performs the whole tool as an HI tool command (`hi-tool-commands.ts`) — the
 corrections, the docking from the relations, the placement, the group
@@ -80,9 +82,9 @@ materials, the hints — and answers with the tool's result.
 | File | Responsibility |
 | ---- | -------------- |
 | `minimal-hi-example/start.mjs` | The launcher: static file server for `minimal-hi-example/` on :3000, the model of the chat at `/planning-assistant-config.json` (to this machine only), opens the browser |
-| `minimal-hi-example/index.html` | The example itself, plus the chat at the end: `startPlanningAssistant` with the model of the launcher, on a planner API that records the planner calls for the test scripts |
+| `minimal-hi-example/index.html` | The example itself, plus the chat at the end: `startPlanningAssistant` with the model of the launcher, on a planner API that records the tool calls the planner runs, for the test scripts |
 | `minimal-hi-example/package.json` | The `start` script that runs the launcher and `dev` which adds `server_url=http://localhost:5173/` |
-| roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/*` | The HI tools: tool definitions with zod schemas and the served text (`hi-mcp-server.ts`), the tool executors (`tool-executors.ts`: the plan context in the agent's words, `find-attributes`, the forward of the plan-changing tools, undo and redo), the planner methods they call (`planner-api.ts`), the planning skills — shared with the ligna-store |
+| roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/*` | The HI tools: tool definitions with zod schemas and the served text (`hi-mcp-server.ts`), the tool executors (`tool-executors.ts`: the plan context in the agent's words, `find-attributes`, the forward of the plan-changing tools, undo and redo), the planner methods they call (`planner-api.ts`), the planning skills — shared with the ligna-store |
 
 ## Prerequisites
 
@@ -244,7 +246,7 @@ planner (`getExternalObjectAgentPrompts()`), names the skills too.
 `file` names a supporting file the skill refers to (`references/planning-reference.md`);
 `SKILL.md` is the default and comes after a short preamble that maps the skill onto the planning
 session. Answered by the tool set itself, without a planner call. The skills are the
-files of roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/skills/`
+files of roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/skills/`
 ([hi-mcp-behaviour.md §5.6](hi-mcp-behaviour.md#56-planning-skills-get-skill)).
 
 ### find-attributes

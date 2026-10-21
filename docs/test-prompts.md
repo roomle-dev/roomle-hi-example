@@ -226,7 +226,7 @@ plans a kitchen with a sink.
 **Decision** ([ADR 0006](../.agents/decisions/0006-prompt-tests-assess-the-agent.md)): the tests
 assess how well the agent understands the prompts and picks the right tools; they do not test the
 tools. A test never calls a tool itself — the tools are tested by the unit tests in
-roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-mcp/`. A test that needs a changed plan
+roomle-ui `packages/web-sdk/packages/homag-intelligence/__tests__/hi-mcp/`. A test that needs a changed plan
 asks for the change in an earlier turn — "join groups" first asks to delete the middle unit; `undo-last-change`, `redo-last-change` and `undo-a-wrong-command`
 first ask to delete the middle unit of the Three Tall Units — `redo-last-change` also to undo it —
 and the last turn asks the agent to undo, redo or correct that change. Every turn is evaluated.

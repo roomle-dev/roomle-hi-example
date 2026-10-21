@@ -1,6 +1,6 @@
 # Tool Executors
 
-`tool-executors.ts` of the HI tools (roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/`) runs the tools: it
+`tool-executors.ts` of the HI tools (roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`) runs the tools: it
 reads the plan context and puts it into the agent's words, searches the attributes, forwards every
 tool that changes the plan as one planner call, and keeps the undo record. The HI tool commands of
 roomle-ui (`hi-tool-commands.ts` and its modules) perform the tools that change the plan: they
@@ -11,7 +11,8 @@ in [hi-mcp-behaviour.md §6](../../docs/hi-mcp-behaviour.md#6-tools) and
 
 ## Tool overview
 
-`createHiMcpTools` serves these tools. Their names, input schemas and handlers are registered in
+The planner serves these tools (`getExternalObjectAgentTools`, `callExternalObjectAgentTool`), and
+`createHiMcpTools` of the embedding-lib hands them to the agent. Their names, input schemas and handlers are registered in
 `hi-mcp-server.ts` of the same folder. Twenty-five handlers call the
 matching entry in `toolExecutors`; `get-authoring-rules` returns `AUTHORING_RULES` directly from
 the tool set and calls no planner method. Parameters and result formats are in the

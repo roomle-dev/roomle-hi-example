@@ -14,7 +14,8 @@
  * --test keeps the runs of that test id and can be repeated. Prints the
  * benchmark as Markdown; with --out it writes benchmark.md and benchmark.json
  * there instead. A planner call is timed when planner-calls.json carries its
- * ms. A run whose chat ended with an error (a turn's errors in run.json) is
+ * method and its ms; the tool calls a run of the in-page chat records there
+ * are not planner calls. A run whose chat ended with an error (a turn's errors in run.json) is
  * listed and marked, but left out of the per-test and tool tables; a test with
  * fewer than two measured runs is marked there.
  */
@@ -155,7 +156,7 @@ const benchmarkRun = (dir) => {
   const run = readJson(join(dir, 'run.json'));
   const plannerMs = new Map(
     (readJson(join(dir, 'planner-calls.json')) ?? [])
-      .filter((call) => typeof call.ms === 'number')
+      .filter((call) => call.method && typeof call.ms === 'number')
       .map((call) => [call.id, call.ms])
   );
   const log = existsSync(join(dir, 'console.log'))

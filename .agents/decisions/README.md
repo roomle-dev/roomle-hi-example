@@ -30,7 +30,8 @@ Each ADR carries:
 | [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Superseded by ADR 0011 |
 | [0009 — The chat window is a panel of the planner, the agent loop stays in the host](0009-the-chat-window-is-a-panel-of-the-planner.md) | Accepted |
 | [0010 — The example's chat runs in the page, with the planning assistant of the embedding-lib](0010-the-example-chat-runs-in-the-page.md) | Accepted — its server clause superseded by 0011 |
-| [0011 — The HI tools live only in the roomle-ui embedding-lib](0011-the-hi-tools-live-in-the-embedding-lib.md) | Accepted |
+| [0011 — The HI tools live only in the roomle-ui embedding-lib](0011-the-hi-tools-live-in-the-embedding-lib.md) | Accepted — its embedding-lib clause superseded by 0012 |
+| [0012 — The HI tool set runs in the planner, the embedding-lib forwards to it](0012-the-hi-tool-set-runs-in-the-planner.md) | Accepted |
 
 ## Adding an ADR
 

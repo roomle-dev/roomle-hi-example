@@ -79,7 +79,7 @@ It reads, per run, `run.json`, `console.log` and `planner-calls.json`, and write
 | per test | runs, chat seconds (mean, min, max), steps and input tokens (mean) per model and test — the runs whose chat ended with an error left out, a test with fewer than two runs marked |
 | runs | per run: chat s, steps, model s, tools s, other s (the chat time outside the steps), tokens in, out and reasoning, plan changes, corrections, groups not loaded, errors, and "chat error" for a run left out |
 | tools | per model and tool: calls, calls per run, total s, mean ms — without the runs left out |
-| per run | per step: turn, tools, step s, tools s, model s, input, output, reasoning, result tokens, planner calls per method (with their seconds when `planner-calls.json` has `ms`) |
+| per run | per step: turn, tools, step s, tools s, model s, input, output, reasoning, result tokens, planner calls per method (with their seconds when `planner-calls.json` has them per method — runs of the former chat backend; the in-page chat records tool calls there) |
 
 The derived values:
 

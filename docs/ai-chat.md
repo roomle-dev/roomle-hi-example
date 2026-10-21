@@ -13,7 +13,7 @@ embedding-lib (`createHiMcpTools`) — the tools of
 reference is roomle-ui `packages/embedding-lib/docs/homag-intelligence-embedding.md`,
 "The AI Planning Assistant agent" and "HI MCP tools for an AI agent". The page
 loads the embedding-lib from unpkg; until a release has these functions, it is
-the dev version `0.0.0-dev-a40887e` ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
+the dev version `0.0.0-dev-a95b24e` ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
 Supported providers: **Mistral**, **Anthropic (Claude)**, **Google (Gemini)** and
 **Azure OpenAI**.
 
@@ -243,11 +243,11 @@ signed `imageUrl` of the master data
   │     onPlanningAssistantPrompt ──▶ planning assistant ──▶ planningAssistantOutput
   └── startPlanningAssistant of @roomle/embedding-lib/hi
         ├── the model via the @ai-sdk provider packages (from esm.sh)
-        └── streamText with createHiMcpTools ──▶ roomDesignerApi.extended (six planner methods)
+        └── streamText with createHiMcpTools ──▶ roomDesignerApi.extended.callExternalObjectAgentTool (the tools run in the planner)
 ```
 
-The page passes `startPlanningAssistant` a planner API that records the planner
-calls of the tools in `window.hiPlannerCalls` and the output of the window in
+The page passes `startPlanningAssistant` a planner API that records the tool
+calls the planner runs in `window.hiPlannerCalls` and the output of the window in
 `window.hiPlanningAssistantOutput`; `window.hiAgentPlanContext(include)` answers
 the plan context in the agent's words. The prompt runner of "test the mcp" reads
 them (`.agents/scripts/run-hi-mcp-prompt.js`).

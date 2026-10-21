@@ -1,5 +1,6 @@
 {
   "randomTests": 5,
+  "promptSuffix": "Decide any open details yourself instead of asking.",
   "models": [
     {
       "provider": "gpt-5-mini",

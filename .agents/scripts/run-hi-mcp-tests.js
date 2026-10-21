@@ -9,8 +9,9 @@
  * ({ provider, apiKey }; apiKey "$NAME" reads the environment variable NAME),
  * plans ({ <name>: <plan snapshot id> }), tests
  * ({ id, title, plan, prompt?, image?, expect?, random? }; a prompt list is
- * sent as consecutive turns of one chat) and randomTests (how many random tests
- * the "test the mcp" skill adds; checked only). Before the first run it checks
+ * sent as consecutive turns of one chat), randomTests (how many random tests
+ * the "test the mcp" skill adds; checked only) and promptSuffix (a text appended
+ * to the first prompt of every test that has one). Before the first run it checks
  * the file, the images and the keys. A run goes
  * to <out>/<provider>/<NN>-<id>/ with its console.log. A missing run.json, a
  * navigation-interrupted capture or a transport failure is retried up to three
@@ -78,8 +79,25 @@ const isPrompt = (prompt) =>
     prompt.length > 0 &&
     prompt.every((turn) => typeof turn === 'string' && turn !== ''));
 
-const problemsOf = ({ models, plans, tests, randomTests }) => {
+// The turns of a test, the suffix appended to the first one; a test without a
+// prompt sends its image alone, so it gets no suffix.
+const turnsOf = (prompt, suffix) => {
+  const [first = '', ...rest] = [prompt ?? ''].flat();
+  if (!suffix || first === '') {
+    return [first, ...rest];
+  }
+  const separator = /[.!?]$/.test(first.trimEnd()) ? ' ' : '. ';
+  return [`${first.trimEnd()}${separator}${suffix}`, ...rest];
+};
+
+const problemsOf = ({ models, plans, tests, randomTests, promptSuffix }) => {
   const problems = [];
+  if (
+    promptSuffix !== undefined &&
+    (typeof promptSuffix !== 'string' || promptSuffix.trim() === '')
+  ) {
+    problems.push('promptSuffix: a non-empty text');
+  }
   const planCount = Object.keys(plans ?? {}).length;
   if (
     randomTests !== undefined &&
@@ -213,7 +231,7 @@ const main = async () => {
       const args = [
         model.provider,
         resolveApiKey(model.apiKey),
-        ...[test.prompt ?? ''].flat(),
+        ...turnsOf(test.prompt, suite.promptSuffix),
         '--plan',
         suite.plans[test.plan],
         ...(test.image ? ['--image', test.image] : []),

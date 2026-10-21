@@ -502,7 +502,7 @@ node .agents/scripts/run-hi-mcp-tests.js [<tests.json>] [--out <dir>] [--dev]
 
 | Argument | Meaning |
 |---|---|
-| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `tests` (`{ id, title, plan, prompt?, image?, expect?, random? }`, `prompt` a text or a list of turns), `randomTests` (how many random tests [step 3](#random-tests) adds); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
+| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `tests` (`{ id, title, plan, prompt?, image?, expect?, random? }`, `prompt` a text or a list of turns), `randomTests` (how many random tests [step 3](#random-tests) adds), `promptSuffix` (the text appended to the first prompt of every test, so that the agent decides open details itself instead of asking); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
 | `--out <dir>` | the session directory, default `.temp/result/mcp-test-<local time>/`; an existing one is continued |
 | `--dev` | passed to every run |
 
@@ -510,11 +510,13 @@ The runner:
 
 1. checks the file before the first run — every model has a key (a `"$NAME"` variable is set), every test has a
    unique kebab-case `id`, a `plan` of `plans`, a prompt (a text or a list of texts) or an image and an existing
-   image file; an explicit `randomTests` is a whole number from 0 to the number of plans — and
-   names every problem;
+   image file; an explicit `randomTests` is a whole number from 0 to the number of plans, an
+   explicit `promptSuffix` a non-empty text — and names every problem;
 2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider> "<apiKey>"
    "<prompt>" ["<prompt>" …] --plan <id> [--image <file>] --out <out>/<provider>/<NN>-<id>`
-   (one `"<prompt>"` per turn of a `prompt` list),
+   (one `"<prompt>"` per turn of a `prompt` list, the `promptSuffix` appended to the first one —
+   after a `.` when it ends without `.`, `!` or `?`; a test without a prompt sends its image alone,
+   with an empty prompt and no suffix),
    with its output in that directory's `console.log`. It runs one at a time (the ports are fixed),
    each with a fresh launcher and browser;
 3. repeats a run without `run.json`, with a navigation-interrupted capture or with a provider or

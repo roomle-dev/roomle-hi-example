@@ -128,6 +128,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [The attributes of sub modules are missing from the attribute vocabulary](bug-analysis/sub-module-attributes-missing-from-the-vocabulary.md) | Open — fix proposed: roomle-ui `compactMasterData` keeps the customer-facing attributes of sub modules (`mod_SinkId`) | 2026-10-21 |
 
 ### Feature Analyses
 

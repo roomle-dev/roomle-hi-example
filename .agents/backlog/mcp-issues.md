@@ -23,11 +23,9 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 82 | [The model asks instead of building the group the user asked for on a wall of floor-to-ceiling windows](#82-the-model-asks-instead-of-building-the-group-the-user-asked-for-on-a-wall-of-floor-to-ceiling-windows) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 83 | [Where no free stretch of the wall fits the group, it is placed over existing furniture and reported](#83-where-no-free-stretch-of-the-wall-fits-the-group-it-is-placed-over-existing-furniture-and-reported) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 84 | [The find-attributes answer lists the values without naming the attribute](#84-the-find-attributes-answer-lists-the-values-without-naming-the-attribute) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:252-268`, the `find-attributes` description) | low | gpt-6-astra | |
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
-| 87 | [The model asks instead of building when the user's reference does not match the plan](#87-the-model-asks-instead-of-building-when-the-users-reference-does-not-match-the-plan) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
 | 92 | [The answer names a supply without its position](#92-the-answer-names-a-supply-without-its-position) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
@@ -39,31 +37,6 @@ never drop the agent's content silently.
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 82. The model asks instead of building the group the user asked for on a wall of floor-to-ceiling windows
-
-**Problem.** On a wall of floor-to-ceiling windows the model asks a clarifying question instead of
-creating the group the user asked for (05), and where it builds, it discloses the placement as a
-problem (64). The served rule says a group goes where the user puts it, also when a door or a window
-is there (D51), and the obstacle test builds the group anyway and names what it stands in front of
-(D55).
-
-**Cause.** The placement rule (`hi-mcp-server.ts:42`) states that a placement in front of a window is
-legitimate and that the answer says what the group stands in front of, but not that the group is
-built when the user names the wall — a model reads the legitimacy as a permission it may decline and
-stops to ask.
-
-**To do.** roomle-hi-example served text (`hi-mcp-server.ts:42`): say that a group the user asks for
-on a wall of windows is built and the answer names the windows — one sentence. Verify model
-acceptance.
-
-**Test.** `living-room-sideboard-and-tv`: the model creates the sideboard on the glazed front wall
-and the answer names the windows.
-
-**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 05 (`sideboard-living-room-front-wall`,
-bo-test): `get-plan-context` and `get-skill` only, no `get-authoring-rules` and no
-`create-or-replace-groups` — the model asks whether the sideboard should stand on a solid wall or
-free near the windows.
 
 ## 83. Where no free stretch of the wall fits the group, it is placed over existing furniture and reported
 
@@ -133,39 +106,6 @@ result says so.
 model named the sink and a base unit (adjacent in the docking chain, not side by side in space); the
 insert landed beside the sink. Local roomle-ui :5173.
 
-## 87. The model asks instead of building when the user's reference does not match the plan
-
-**Problem.** When the user's reference does not match the plan, the model asks a clarifying question
-instead of creating the group the user asked for (53): the user asks for a base cabinet on the back
-wall in front of the plug, the plan has no plug on the back wall (the plug is on the left wall), and
-the model lists the supplies correctly, states there is no plug on the back wall, then asks whether
-to place the cabinet in front of the back-wall object or in front of the left-wall plug — nothing is
-created. The same class shows where the request needs a choice the served text leaves open (63,
-turn 7): the user says "Add a pull-out larder unit", the model answers that the plan already has a
-larder, that another would exceed its own 3.8 m limit, and asks whether to rework the run or use
-another wall — "No changes made yet".
-
-**Cause.** The placement rule (`hi-mcp-server.ts:42`) states when a placement is legitimate (D51)
-but not that a group the user asks for is built where the user points; when the user's reference
-names a supply that is elsewhere, no served sentence says to name where it is and build at the
-nearest matching place, so the model reads the legitimacy as a permission it may decline and stops
-to ask (the issue-82 class).
-
-**To do.** roomle-hi-example served text (`hi-mcp-server.ts:42`): say that a group the user asks
-for is built where the user points, and when the user's reference names a supply that is elsewhere,
-the answer names where it is and builds at the nearest matching place — one sentence. Verify model
-acceptance.
-
-**Test.** `kitchen-conversation` turn 7: the model adds the pull-out larder unit. No other test of
-the suite names a reference that does not match its plan.
-
-**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 53 (`installation-elements-supplies`,
-plan snapshot `ps_scqns3qvwl3fuav4v8m0syqrzcmhuj`, local roomle-ui :5173): no planner call that
-changes the plan — the model lists the plug (194 mm above the floor, 3635 mm from the back-left
-corner) and the water connection (535 mm, 1615 mm), both on the left wall, states there is no plug
-on the back wall, then asks "Should I place the base cabinet in front of that back-wall object, or
-in front of the confirmed plug on the left wall? I haven't added the cabinet yet."
-
 ## 90. A group placed over existing objects is not disclosed
 
 **Problem.** `obstacle-island-free-spot` (52): the model places a new island of three US2A60 base
@@ -222,9 +162,8 @@ sink cabinet SUT60 and the support UTB60 (1220 mm) on the back wall covering the
 (x 3280, y −3725 against the back wall), but the answer says "near the existing water connection"
 without its position, which the expect asks for.
 
-**Cause.** The served text says the answer says what a group stands in front of and, per the to-do of
-issue 87, names where a reference that does not match is — but no sentence says the answer names
-where the user's reference is when it matches, so the model names the connection without its
+**Cause.** The served text says the answer says what a group stands in front of, but no sentence says
+the answer names where the user's reference is, so the model names the connection without its
 position.
 
 **To do.** roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule): one sentence —

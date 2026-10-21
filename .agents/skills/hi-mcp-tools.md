@@ -69,8 +69,8 @@ are, without the session preamble of `get-skill`.
 { include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'installationElements' | 'masterData' | 'articleDescriptions'> }
 ```
 
-**Returns**: Rooms, articles, attributes (the vocabulary: per library the root-assigned customer-facing or Bool
-attributes with their values, a shared value list listed once with `sameSelectionsAs` on the later
+**Returns**: Rooms, articles, attributes (the vocabulary: per library every attribute with its
+values (D100), a shared value list listed once with `sameSelectionsAs` on the later
 attributes, D76), groups, obstacles, installationElements; masterData and articleDescriptions if requested. Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
@@ -159,7 +159,8 @@ organize the catalog. Unknown categories retain explicit `above` and `gapMm`; fi
 continue the wall row `rightOf` / `leftOf`. A replace restores missing carrier links at measured
 offsets for retained roots with unchanged articles and no new relation.
 
-**Materials**: a root's `attributes` are overrides of that root module. A material for the whole group
+**Materials**: a root's `attributes` are overrides of that root module; one only its sub modules
+carry — the sink of a sink unit — is set on those sub modules (D100). A material for the whole group
 (fronts, worktop, carcase) goes into the group's `attributes`; the server sets every group attribute
 that is not one of the library's group settings (`groupSettings` of the master data) on every unit and
 generated root after the load — after a create and after a replace, the program attributes first, so a
@@ -414,13 +415,15 @@ is matched on its own, in any order, and colour/color, grey/gray and worktop/cou
 one search for `color` returns every colour attribute. A value
 list several attributes share is listed once; the later attributes carry `sameSelectionsAs`, the
 id of the attribute that lists it (D64). Every match names the root modules that carry it,
-`rootModules: [{ id, name }]`, and the attributes the root modules in the plan carry come first —
+`rootModules: [{ id, name }]`, and the sub modules that carry it, `subModules: [{ id, name }]`,
+when there are any (D100); the attributes the root modules in the plan and their sub modules
+carry come first —
 the panel top's colour, named Color like the worktop's, comes after the worktop's in a group that
 has a worktop.
 
 The matches include the attributes of the roots the library generates (worktop `mr_Countertop`,
-toe kick, finger grip, backsplash, …): the compacted master data keeps the root modules and the
-sub modules of the master data's `Root` group, which are the generated roots. The worktop colour is
+toe kick, finger grip, backsplash, …): the compacted master data lists the root modules and the
+sub modules of the master data's `Root` group, which are the generated roots, as `modules`. The worktop colour is
 `mod_CountertopColor`, set on the whole group with `change-group-attribute` or as a group attribute
 of `create-or-replace-groups`. The desc of a colour
 value carries its code — `Cloudy blue (#506080)` —, the colour of that value; the description of

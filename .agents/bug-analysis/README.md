@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [repaired-root-module-moves-its-group.md](repaired-root-module-moves-its-group.md) | Open | [MCP backlog 86](../backlog/mcp-issues.md#86-a-swapped-row-of-different-unit-widths-stands-through-the-wall) — the load that recalculates a root module the library could not calculate leaves the group position to the kernel, which keeps that root's center and moves the row 600 mm through the wall; the swap is not involved |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

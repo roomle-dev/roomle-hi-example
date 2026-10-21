@@ -27,8 +27,8 @@ never drop the agent's content silently.
 | 83 | [Where no free stretch of the wall fits the group, it is placed over existing furniture and reported](#83-where-no-free-stretch-of-the-wall-fits-the-group-it-is-placed-over-existing-furniture-and-reported) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 84 | [The find-attributes answer lists the values without naming the attribute](#84-the-find-attributes-answer-lists-the-values-without-naming-the-attribute) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:252-268`, the `find-attributes` description) | low | gpt-6-astra | |
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
-| 86 | [A swapped row of different unit widths stands through the wall](#86-a-swapped-row-of-different-unit-widths-stands-through-the-wall) | bug | roomle-ui `hi-tools.ts:908` (`swapRootModules`) with `glue-logic.ts:2593` (`arrangeAndLoad`) and `hi-root-module-arrangement.ts:412` (`keepWallDistances`) | medium | gpt-6-astra | |
-| 87 | [The model asks instead of building when the user's reference does not match the plan](#87-the-model-asks-instead-of-building-when-the-users-reference-does-not-match-the-plan) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
+| 86 | [A swapped row of different unit widths stands through the wall](#86-a-swapped-row-of-different-unit-widths-stands-through-the-wall) | bug | roomle-ui `glue-logic.ts` (`_runGroupCalculation`, the attribute loads without `applyGroupPosition`), `hi-root-module-arrangement.ts` (the footprint check of `keepWallDistances`); analysed in [repaired-root-module-moves-its-group.md](../bug-analysis/repaired-root-module-moves-its-group.md): not the swap — the load that recalculates the failed root leaves the position to the kernel, which keeps that root's center and moves the row 600 mm; the load must apply the group position while a footprint is incomplete | medium | gpt-6-astra | |
+| 87 | [The smodel asks instead of building when the user's reference does not match the plan](#87-the-model-asks-instead-of-building-when-the-users-reference-does-not-match-the-plan) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 89 | [Wall units in separate groups do not follow their edited carriers](#89-wall-units-in-separate-groups-do-not-follow-their-edited-carriers) | bug | roomle-ui `hi-tools.ts` (`insertArticleIntoGroup`, `swapRootModules`, `removeArticleFromGroup`), `hi-root-module-arrangement.ts` (`carriersOfUnitsInOtherGroups`, `groupsFollowingTheirCarriers`) | medium | gpt-6-astra | |
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
@@ -133,31 +133,29 @@ insert landed beside the sink. Local roomle-ui :5173.
 
 ## 86. A swapped row of different unit widths stands through the wall
 
-**Problem.** `swap-root-modules` of two root modules of different widths in a row against a wall
-moves the whole row behind its place: after widening the last of three tall units to 900 mm and
-swapping it with the first, the row's back end stands 600 mm through the back wall (32). The row is
-contiguous and its doors are correct — only its place is wrong.
+**Problem.** After widening the last of three tall units to 900 mm (Error 14019), correcting its
+door and swapping it with the first, the row's back end stands 600 mm through the back wall (32).
+The row is contiguous and its doors are correct — only its place is wrong. The row moves on the
+door correction, not on the swap.
 
-**Cause.** `swapRootModules` (`packages/web-sdk/packages/homag-intelligence/src/hi-tools.ts:908` in
-roomle-ui) exchanges the two roots' bottom-side docking links, article positions and rotations, then
-re-arranges the group with `REARRANGED_ROW_LOAD` (`hi-tools.ts:65-72`, `applyGroupPosition: true` —
-"the glue logic dictates the group position"). `keepWallDistances`
-(`packages/web-sdk/packages/homag-intelligence/src/hi-root-module-arrangement.ts:412`) translates
-the group so the arranged docking box's wall-facing side keeps its room position. With swapped roots
-of different widths (600 ↔ 900 mm) the arranged box is offset 600 mm from the original's, so the
-whole row translates 600 mm backwards through the wall. The doc of `arrangeAndLoad`
-(`glue-logic.ts:2588-2592`) — "the side at a wall keeps its place" — and the doc of
-`swapRootModules` (`hi-tools.ts:905-906`) — "the row keeps its length, and its side at a wall keeps
-its place" — are both broken for this case. An equal-width swap keeps the row in place
-(`edit-swap-hob-unit` passes).
+**Cause.** Not the swap: the row is 600 mm in the wall before it. The agent's door correction lets
+the library calculate the widened unit again (it had no docking vectors, D95). The glue logic keeps
+the group transform but loads without `applyGroupPosition` (`loadWithChangedAttributes`,
+`packages/web-sdk/packages/homag-intelligence/src/glue-logic.ts:2193-2205` in roomle-ui; the flag
+`arrangementMovedGroup` is set only when the arrangement moved the group, `:2059-2062`). The kernel
+then keeps a reference root in place, and for the root without docking vectors it keeps the root's
+center (RoomleCore `configurable-object-position-update-operator.cpp:349,439`). The center moves
+from the failed geometry to the calculated one, and the group moves with it. The swap afterwards
+keeps the row where it is. Analysed in
+[repaired-root-module-moves-its-group.md](../bug-analysis/repaired-root-module-moves-its-group.md).
 
-**To do.** roomle-ui: keep the row's wall-side end in place when the swapped roots have different
-widths — anchor the wall-side end of the arranged row, or clamp the translated group into the room.
-This is a planner defect, not a guard: the agent's input is valid and the planner builds impossible
-geometry.
+**To do.** roomle-ui: the load after a calculation in which the group before or the calculated
+group has a root without docking vectors applies the group position (`_runGroupCalculation`, a
+shared footprint check with `keepWallDistances`).
 
-**Test.** `edit-swap-units`: after the swap the row's back end stays at z −3765. A permanent
-geometry test swaps different-width roots at a wall and asserts the wall-side end keeps its place.
+**Test.** `edit-swap-units`: after the swap the row's back end stays at z −3765. roomle-ui
+`glue-logic-test.ts`: an attribute change that fails a root and one that recalculates a failed root
+both load with `applyGroupPosition`; one with complete footprints loads without it.
 
 **Reproduce.** `mcp-test-2026-10-19_10-57-22`, gpt-6-astra 32 (`edit-swap-units`, plan snapshot
 `ps_s9yhi76jypo1d6qhe3tfpgsv80rfpj8`, local roomle-ui :5173): turn 1 `change-module-attribute`

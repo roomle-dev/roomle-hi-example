@@ -126,6 +126,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Repairing a root module the library could not calculate moves its group through the wall](bug-analysis/repaired-root-module-moves-its-group.md) | Open — fix proposed in the roomle-ui glue logic | 2026-10-21 |
 
 ### Feature Analyses
 

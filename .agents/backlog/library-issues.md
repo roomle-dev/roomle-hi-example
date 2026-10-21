@@ -334,8 +334,9 @@ establish an intermediate-width threshold.
 then swaps the complete paired-door unit into the back corner. The row is contiguous at
 2100 mm, back end z −3765, with appropriate single/paired outer hinges.
 
-**Reproduce.** `mcp-test-2026-10-18_14-48-28`, gpt-6-astra 32: the last `HTB60`
-widened to 900 mm retains `Right`; the saved XML carries Error 14019 and zero door parts.
+**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 36 (`edit-swap-units`, local roomle-ui
+:5173): the last `HTB60` `8774cac2` widened to 900 mm retains `Right`; the correction carries Error
+14019 (`tab_DoorSettings`) and the model undoes the widening.
 
 ## 79. Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate
 
@@ -357,6 +358,7 @@ limit, so nothing tells the agent that a base unit narrowed under the narrowest 
 |---|---|---|---|---|
 | `UTB60` | 450 mm, narrower | the library's default | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 07 |
 | `UTB30` | 150 mm, narrower | 150 mm | no: Error 14011 (`tab_PlinthAreaSettings`) | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 49 |
+| `UTB30` | 150 mm, narrower | the library's default (base unit tops at 820 mm) | no: Error 14011 with the same input values (`… - 150 - 150 - 50`) | `mcp-test-2026-10-21_08-37-33` gpt-6-astra 65 |
 | `H2TB60` (tall unit) | 300 mm, narrower | 150 mm | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 49, the second create |
 | `PU15L` (filler panel, 15 cm) | 150 mm, as it comes | 150 mm | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 49, the second create |
 
@@ -375,11 +377,11 @@ Then check that the served text needs nothing more.
 **Test.** `image-kitchen-back-right-corner`: the first create builds the narrow unit of the photo,
 or the agent fills the narrow space with a filler panel or a pull-out at the first attempt.
 
-**Reproduce.** `mcp-test-2026-10-18_14-48-28`: gpt-6-astra 49 (`image-kitchen-back-right-corner`,
-the first `create-or-replace-groups`): root `narrow` `UTB30` with `mod_Width` 150
-(`19281da8-e040-449b-af89-63a7a66f7d87`) in the group `dfba02de-cd07-4be7-9189-9c9c33ef82bc`
-with `mod_PlinthAreaHeight` 150 in the group attributes, not calculated, Error 14011; the model
-undid and sent the create again with `PU15L`.
+**Reproduce.** `mcp-test-2026-10-21_08-37-33`: gpt-6-astra 65 (`image-kitchen-back-right-corner`,
+local roomle-ui :5173, the `create-or-replace-groups`): root `narrow` `UTB30` with `mod_Width` 150
+(`412561f7-a91c-437f-974c-fda6d21a77f1`) in the group `c16d13fc-8585-4baf-a81f-69bf95fdf4ad`,
+without a plinth height in the group attributes, not calculated, Error 14011; the model set
+`mod_Width` 300 with `change-module-attribute`.
 
 ## 80. Wall units at 900 mm with a single door the library cannot calculate
 
@@ -418,11 +420,12 @@ Then check that the served text needs nothing more.
 **Test.** `image-planning-right-wall`: the first create builds the widened wall units, or the
 agent picks the articles that take the width at the first attempt.
 
-**Reproduce.** `mcp-test-2026-10-18_14-48-28`: gpt-6-astra 50 (`image-planning-right-wall`, the
-first `create-or-replace-groups`): roots `bridge1` and `bridge2` `OTB60` with `mod_Width` 900
-(`207d9e11-1c13-4958-bcf9-6282e3782624`, `78feb95d-e6b0-4cbe-8f87-6fa656572525`) in the group
-`176aaf97-0133-4b90-80c8-8537cdf010f3`, not calculated, Error 14019; the model undid and sent the
-create again with `OTB45` ×4 and `O2TB90` ×2.
+**Reproduce.** `mcp-test-2026-10-21_08-37-33`: gpt-6-astra 66 (`image-planning-right-wall`, local
+roomle-ui :5173, the first `create-or-replace-groups`): roots `top1` and `top2` `OTB60` with
+`mod_Width` 900 and `Left` / `Right` (`d309e09b-cca7-4015-9489-8562c46f07bd`,
+`dc835748-1a27-487a-90e7-0ee050e3fe62`) in the group `351cdee1-4213-47c5-8733-889a827fadf1`, not
+calculated, Error 14019; the model set `LeftRight` on them, then undid and rebuilt the run without
+the band.
 
 ## 93. Backsplashes the library cannot calculate
 
@@ -455,6 +458,7 @@ and `mod_BacksplashColor` invite generating the backsplash and name no limit.
 | `mod_CreateBacksplash` true with 216 / 500 and 216 / 250 in the create; then separate `change-group-attribute` calls with the same values | no: Error 14034 after both calls (`620 - 500`, `1220 - 250`) | `mcp-test-2026-10-20_06-45-46` gpt-6-astra 62 |
 | The switch on a lone `UTB60`, then a separate call with 216 / 500; on a lone `EUTB60`, then 240 / 635; on two `UTB60`, then 240 / 635; the create of run 59, then 240 / 635 | no: Error 14034 after the create and after the separate call (`620 - 500`, `620 - 635`, `1220 - 635`, `1200 - 635`) | bo-test planner, 2026-10-20, without a model |
 | The switch on a lone `UTB60`, then a separate call with 216 / 500; on a lone `EUTB60`, then 240 / 635; the right-wall image payload, then 240 / 635 | yes, after the separate call | local roomle-ui `cf377cfd4`, 2026-10-18 |
+| `mod_CreateBacksplash` true in the create, then 240 / 635 by `change-group-attribute` (64); the switch in the create, then 240 / 515 in a replace by ids (66); 216 / 550 and 216 / 250 in the create, then the same by `change-group-attribute` (67) | no: Error 14034 after every call (`1200 - 110`, `1200 - 635`; `600 - 110`, `600 - 515`; `600 - 550`, `1220 - 250`) | local roomle-ui `4bc1636cf`, `mcp-test-2026-10-21_08-37-33` gpt-6-astra 64, 66, 67 |
 
 **To do.** Establish which side changed: replay the lone `UTB60` check on roomle-ui `cf377cfd4`
 (recover it from the reflog before it expires). `cf377cfd4` has no C25 feedback after an attribute
@@ -471,8 +475,8 @@ nothing more.
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
 
-**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 59 (`image-kitchen-left-wall`, local
-roomle-ui :5173): the create sets `mod_CreateBacksplash` with 240 / 635 — the `mr_Backsplash` root is
-not calculated, Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1200 - 635`); a
-separate `change-group-attribute` with 240 / 635 gets the same error; the model switched the
-backsplash off and the answer reports the omission.
+**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 64 (`image-kitchen-left-wall`, local
+roomle-ui :5173): the create sets `mod_CreateBacksplash` — the `mr_Backsplash` root is not
+calculated, Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1200 - 110`); a
+separate `change-group-attribute` with 240 / 635 gets the same error (`1200 - 635`); the model
+switched the backsplash off and the answer reports the omission.

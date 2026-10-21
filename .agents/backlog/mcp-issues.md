@@ -13,7 +13,10 @@ Each issue names the problem, its cause, the to-do, the test of the fix and how 
 overview names the module, team or repository responsible for the fix, and the model and the
 reasoning effort of the run that reproduces it — empty where it is unknown; a model the chat sends
 no effort for runs at its provider's default. Library data issues are tracked in
-[library-issues.md](library-issues.md). An issue leaves this document when its fix is in the code.
+[library-issues.md](library-issues.md). A calculation error of the library is an MCP issue here
+when an invalid attribute value the tools sent caused it, and a library issue there otherwise
+(D99 of [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#3-decisions)). An issue leaves
+this document when its fix is in the code.
 The guideline for every server issue is
 [Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort): wrong content an agent creates
 is an instruction problem first; correct where the intent is clear, report what was corrected, and
@@ -28,7 +31,6 @@ never drop the agent's content silently.
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
-| 95 | [A tall filler panel kept by id in a replace is taken for a wall unit](#95-a-tall-filler-panel-kept-by-id-in-a-replace-is-taken-for-a-wall-unit) | defect | roomle-ui `hi-tool-commands.ts` (`retainedWallRoots`) with `hi-group-layout.ts` (`wallRootsOf`) | medium | gpt-6-astra | |
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui embedding-lib (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
 | 97 | [Wall units docked beside the hood hang higher than the other wall units](#97-wall-units-docked-beside-the-hood-hang-higher-than-the-other-wall-units) | defect (not analysed) | roomle-ui HI tool commands, the library or the planner (not analysed) | low | gpt-6-astra | |
 | 98 | [A row placed into a corner stands 10 mm off the wall after later edits](#98-a-row-placed-into-a-corner-stands-10-mm-off-the-wall-after-later-edits) | defect (not analysed) | roomle-ui `hi-tool-commands.ts` (the resubmit by id or the merge, not analysed) | low | gpt-6-astra | |
@@ -153,34 +155,6 @@ has them.
 **Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 60 (`image-kitchen-back-right-corner`,
 plan snapshot `ps_scriq9ltecd67bb427i97vk6f2dbkbi`, local roomle-ui :5173): the final answer's
 composition bullet swaps the two legs against the plan.
-
-## 95. A tall filler panel kept by id in a replace is taken for a wall unit
-
-**Problem.** In a replace of a kitchen run by its ids, the tool command takes a tall filler panel
-(Furniture_Smith `PH15L`, `Kitchen / Cover Panels / Fillers`, 2100 mm) for a wall unit: the
-correction "floor unit '…' (HK260) cannot stand rightOf the wall unit '…' (PH15L) - it continues
-the floor row" drops the fridge's relation to the filler, and "root '…' names no neighbour - it was
-put rightOf '…'" moves the filler behind the fridge. The model sent the filler as the first root of
-the run and the fridge `rightOf` it, as in the create before.
-
-**Cause.** Not traced. `hi-tool-commands.ts` keeps as a wall root every retained root without a
-relation that `carriersOfUnitsAbove` finds above another root of the group as it stands
-(`retainedWallRoots`), and `wallRootsOf` (`hi-group-layout.ts`) accepts it because a filler is
-neither a floor unit nor a wall unit by its category. So in the plan the create before left, the
-filler's docking-vector box stood above another root's box — where the create put it is not
-recorded.
-
-**To do.** roomle-ui: replay the first `create-or-replace-groups` of the run (its `planner-calls.json`)
-against the local planner, read where the filler stands and which root `carriersOfUnitsAbove` finds
-below it; fix the layout that puts it there, or keep a root that stands on the floor out of the
-units above.
-
-**Test.** roomle-ui `hi-tool-commands` tests: a replace by ids of a run whose first root is a tall
-filler panel keeps the next unit `rightOf` it, without a wall-unit correction.
-
-**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 66 (`image-planning-right-wall`, local
-roomle-ui :5173): the third `create-or-replace-groups` (the replace of group `351cdee1` by ids)
-returns both corrections for the filler `1147a3da`; the model undoes and rebuilds without it.
 
 ## 96. "One more shelf" adds the shelf set the cabinet already shows
 

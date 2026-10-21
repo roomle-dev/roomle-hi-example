@@ -128,7 +128,6 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
-| [The plan context hides attributes of the library from the agent](bug-analysis/sub-module-attributes-missing-from-the-vocabulary.md) | Open — fix proposed: roomle-ui `compactMasterData` keeps every attribute of the library, the groups show the attributes of sub modules (`mod_SinkId`) | 2026-10-21 |
 
 ### Feature Analyses
 

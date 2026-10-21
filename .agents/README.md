@@ -98,7 +98,7 @@ Durable answers to recurring questions. Full index in [`wiki/README.md`](wiki/RE
 
 | Page | Covers |
 |---|---|
-| — | No wiki pages yet |
+| [An MCP endpoint for the HI tools at `…/hi-mcp`](wiki/hi-mcp-endpoint-for-external-clients.md) | Why the planner cannot serve an MCP endpoint itself; the relay and the page bridge in the planner, what needs to be done and the concerns |
 
 ### Decisions (Architecture Decision Records)
 
@@ -162,7 +162,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 
 | Document | Last touched |
 |---|---|
-| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-18 |
+| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the architecture, the ligna-store | 2026-10-21 |
 | [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner: island back-row alignment | 2026-10-19 |
 | [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right and the calculation errors of values the library accepts, with the status of the report to the library development team: sink drainer width and the restriction on a hob to its right, handleless fronts, the sizes of flip-lift wall cabinets, end panels with a plain upright colour, width-dependent tall-unit doors | 2026-10-21 |
 | [Open issues of roomle-ui](backlog/roomle-ui-issues.md) — defects of the planner outside the HI tool commands that the MCP prompt tests show: a dark worktop the renderer's top light makes look white | 2026-10-16 |
@@ -173,6 +173,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [Attribute values checked before an edit](backlog/attribute-values-checked-before-an-edit.md) — the HI tools apply an agent's attribute value without the library's verified options; what to do with a value a module does not take | 2026-10-21 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-14 |
 | [Analyse how Spec Kit can help with the prompting](backlog/speckit-for-the-prompting.md) — Spec Kit's prompt sections as inspiration for the served text and the chat prompt | 2026-10-07 |
+| [The HI tool set in the planner, the embedding-lib forwards to it](backlog/hi-tool-set-in-the-planner.md) — the tool set moves from the embedding-lib into the planner behind two planner methods, so a tool change ships with the planner and a tool call is one round trip | 2026-10-21 |
 
 ---
 

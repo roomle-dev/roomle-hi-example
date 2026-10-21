@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [recalculated-root-module-pulls-its-wall-row-to-the-group-origin.md](recalculated-root-module-pulls-its-wall-row-to-the-group-origin.md) | Open | [backlog item 95](../backlog/mcp-issues.md#95-a-tall-filler-panel-kept-by-id-in-a-replace-is-taken-for-a-wall-unit) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

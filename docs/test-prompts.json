@@ -65,10 +65,10 @@
     },
     {
       "id": "sideboard-living-room-front-wall",
-      "title": "A sideboard on the front wall",
+      "title": "A sideboard on the back wall beside the armchairs",
       "plan": "living-room",
-      "prompt": "add a sideboard of three low cabinets to the front wall",
-      "expect": "one create-or-replace-groups call with a placement by wall (wall front, centred); one group of three low cabinets with its back against the front wall, inside the room; the answer names the windows the sideboard stands in front of"
+      "prompt": "add a sideboard of three low cabinets to the backside wall beside the armchairs",
+      "expect": "no question back; one create-or-replace-groups call with a placement by wall (the back wall, wall 1: z -3765, x -3185 to 1935); one group of three low cabinets with its back against the back wall on its stretch next to the two armchairs (x -2764 to -1449), inside the room, overlapping neither the armchairs, the side table between them, the rug (z from -2540) nor another object"
     },
     {
       "id": "wardrobe-closets-back-wall",

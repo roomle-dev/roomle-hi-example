@@ -57,8 +57,8 @@ stops to ask.
 on a wall of windows is built and the answer names the windows — one sentence. Verify model
 acceptance.
 
-**Test.** `sideboard-living-room-front-wall`: the model creates the sideboard on the glazed front
-wall and the answer names the windows.
+**Test.** `living-room-sideboard-and-tv`: the model creates the sideboard on the glazed front wall
+and the answer names the windows.
 
 **Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 05 (`sideboard-living-room-front-wall`,
 bo-test): `get-plan-context` and `get-skill` only, no `get-authoring-rules` and no

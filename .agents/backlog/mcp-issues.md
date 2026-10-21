@@ -33,6 +33,8 @@ never drop the agent's content silently.
 | 92 | [The answer names a supply without its position](#92-the-answer-names-a-supply-without-its-position) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 95 | [A tall filler panel kept by id in a replace is taken for a wall unit](#95-a-tall-filler-panel-kept-by-id-in-a-replace-is-taken-for-a-wall-unit) | defect | roomle-ui `hi-tool-commands.ts` (`retainedWallRoots`) with `hi-group-layout.ts` (`wallRootsOf`) | medium | gpt-6-astra | |
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui embedding-lib (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
+| 97 | [Wall units docked beside the hood hang higher than the other wall units](#97-wall-units-docked-beside-the-hood-hang-higher-than-the-other-wall-units) | defect (not analysed) | roomle-ui HI tool commands, the library or the planner (not analysed) | low | gpt-6-astra | |
+| 98 | [A row placed into a corner stands 10 mm off the wall after later edits](#98-a-row-placed-into-a-corner-stands-10-mm-off-the-wall-after-later-edits) | defect (not analysed) | roomle-ui `hi-tool-commands.ts` (the resubmit by id or the merge, not analysed) | low | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -58,10 +60,10 @@ acceptance.
 **Test.** `sideboard-living-room-front-wall`: the model creates the sideboard on the glazed front
 wall and the answer names the windows.
 
-**Reproduce.** `mcp-test-2026-10-19_07-42-07`, gpt-6-astra 05 (`sideboard-living-room-front-wall`):
-no `create-or-replace-groups` call — the model asks whether to place the sideboard in front of the
-glazing or against a solid wall; and 64 (`random-4-cabinet-undo-redo`): the model places a low
-cabinet in front of floor-to-ceiling windows and discloses it. Local roomle-ui :5173.
+**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 05 (`sideboard-living-room-front-wall`,
+bo-test): `get-plan-context` and `get-skill` only, no `get-authoring-rules` and no
+`create-or-replace-groups` — the model asks whether the sideboard should stand on a solid wall or
+free near the windows.
 
 ## 83. Where no free stretch of the wall fits the group, it is placed over existing furniture and reported
 
@@ -102,9 +104,9 @@ answer names the attribute id with its values.
 
 **Test.** `attributes-find-front-colour`: the answer names the attribute id with the front colours.
 
-**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 18 (`attributes-find-front-colour`,
-local roomle-ui :5173): the answer lists the 21 front colours in four style groups, never names the
-attribute id (`mod_FrontColor`).
+**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 18 (`attributes-find-front-colour`,
+bo-test): the answer lists the 21 front colours in four style groups, never names the attribute id
+(`mod_FrontColor`).
 
 ## 85. insert-article-into-group takes a between-pair whose root modules do not stand side by side
 
@@ -230,10 +232,10 @@ the answer names where the user's reference is. Verify model acceptance.
 
 **Test.** `sink-cabinet-at-water-connection`: the answer names the water connection's position.
 
-**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 55 (`sink-cabinet-at-water-connection`,
-local roomle-ui :5173): one `create-or-replace-groups`, the sink cabinet spanning x 2990..3590 over
-the connection at about x 3300; the answer says "against the back wall near the water connection"
-without its position.
+**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 55 (`sink-cabinet-at-water-connection`,
+bo-test): one `create-or-replace-groups`, the sink cabinet spanning x 2990..3590 over the connection
+at about x 3300; the answer says "along the back wall near the water connection" without its
+position.
 
 ## 95. A tall filler panel kept by id in a replace is taken for a wall unit
 
@@ -283,6 +285,49 @@ never into a served rule.
 **Test.** `edit-add-subarticle-look-inside`: the opened middle cabinet shows one shelf more than in
 `open-cabinet-look-inside`.
 
-**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 61 (`edit-add-subarticle-look-inside`,
-local roomle-ui :5173): `add-interior-fitting` of `AdjShelves` into the middle unit `a7271f1b`; the
-group view shows the four shelves of the unedited cabinet.
+**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 61 (`edit-add-subarticle-look-inside`,
+bo-test): `add-interior-fitting` of `AdjShelves` into the middle unit `a7271f1b`; `plan.xml` holds 12
+`part_ShelfadjWood`, the same as the unedited kitchen of 59.
+
+## 97. Wall units docked beside the hood hang higher than the other wall units
+
+**Problem.** In a corner kitchen the wall units docked beside the range hood hang 150 mm higher than
+the wall units of the other leg: `mod_HeightPosInsertion` 1570 against 1420, visible in the object
+image. The model sent no height, and no correction reports the change.
+
+**Cause.** Not analysed. The model docked the hood `rightOf` a wall unit that stands `above` a base
+unit, and the next wall unit `rightOf` the hood, instead of the hood `above` the hob; the hood and
+both wall units of that row hang from 1570 mm, where the hood hangs from 1470 to 1620 mm in the
+other runs, by the plinth. Whether the tool command (`relationsToDocking`, the height of a row above), the library (a
+row docked to a hood takes the hood's insertion height) or the planner sets the 1570 is open.
+
+**To do.** roomle-ui: replay the run's `create-or-replace-groups` (its `planner-calls.json`) against
+the local planner, read `mod_HeightPosInsertion` of the three roots of the right-wall row after the
+load and find which step sets it; then decide between the tool command, the served rule for hoods
+and the library's desc.
+
+**Test.** `full-kitchen-walnut-marble-corner`: the wall units of both legs hang at one height.
+
+**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 50 (`full-kitchen-walnut-marble-corner`,
+bo-test): roots `wallRight` `OTB60` `above` `prepRight`, `hood` `DU` `rightOf` `wallRight`,
+`wallLanding` `OTB60` `rightOf` `hood`; both OTB60 at 1570, the back-wall wall units at 1420.
+
+## 98. A row placed into a corner stands 10 mm off the wall after later edits
+
+**Problem.** A base row placed with `wall` right and `alignment` back stands 10 mm off the back wall
+at the end of a three-turn conversation (group position z -3755, the back wall at -3765). No
+correction or hint names the shift.
+
+**Cause.** Not analysed. Turn 1 places the row, turn 2 resubmits the group by its id without
+placement with three wall units, turn 3 merges a drawer unit at the front end. The runs record only
+the plan after the last turn, so which call moves the row is unknown; a replace without placement
+keeps the group's position (D46), and a merge keeps the earlier root modules in place (D82).
+
+**To do.** roomle-ui: replay the three calls of the run (its `planner-calls.json`) against the local
+planner, read the group position after each, and fix the call that moves the row.
+
+**Test.** roomle-ui `hi-tool-commands` tests: a resubmit by id without placement and a merge at the
+free end keep the first root module of a corner row at the wall.
+
+**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 74 (`random-4-base-row-wall-units-extend`,
+bo-test): the final group `b4bdd14a` at `[4815, 0, -3755]`, rotation 270.

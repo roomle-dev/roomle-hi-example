@@ -47,6 +47,8 @@ keeps every suggested text, applied in the library or not.
 | 79 | [Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate](#79-base-units-narrowed-to-150-mm-with-a-150-mm-plinth-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the unit is not built, the agent needs a second create |
 | 80 | [Wall units at 900 mm with a single door the library cannot calculate](#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the cabinets are not built, the agent needs a second create |
 | 93 | [Backsplashes the library cannot calculate](#93-backsplashes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the backsplash is not built; the agent must drop it and report the omission |
+| 99 | [A handle strip the library cannot calculate](#99-a-handle-strip-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the units with a handle are not built, the agent needs a second create |
+| 100 | [A worktop on the tall units from the group's countertop switch](#100-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — a worktop on top of the tall units |
 
 **Solved by descriptions**: with the descriptions the agent builds at the first attempt what it
 wants, without a call the library cannot calculate; "partly" names in the issue what only the
@@ -377,11 +379,11 @@ Then check that the served text needs nothing more.
 **Test.** `image-kitchen-back-right-corner`: the first create builds the narrow unit of the photo,
 or the agent fills the narrow space with a filler panel or a pull-out at the first attempt.
 
-**Reproduce.** `mcp-test-2026-10-21_08-37-33`: gpt-6-astra 65 (`image-kitchen-back-right-corner`,
-local roomle-ui :5173, the `create-or-replace-groups`): root `narrow` `UTB30` with `mod_Width` 150
-(`412561f7-a91c-437f-974c-fda6d21a77f1`) in the group `c16d13fc-8585-4baf-a81f-69bf95fdf4ad`,
-without a plinth height in the group attributes, not calculated, Error 14011; the model set
-`mod_Width` 300 with `change-module-attribute`.
+**Reproduce.** `mcp-test-2026-10-21_12-49-36`: gpt-6-astra 65 (`image-kitchen-back-right-corner`,
+bo-test, the `create-or-replace-groups`): root `UTB30` with `mod_Width` 150
+(`ba5b0fab-b40d-4988-9a98-8330cf4b852a`) in the group `3097c084-4a02-4a23-9f9c-ff4df67d48e3`, with
+`mod_PlinthAreaHeight` 150 in the group attributes, not calculated, Error 14011; the model exchanged
+it for the 150 mm filler `PU15L`.
 
 ## 80. Wall units at 900 mm with a single door the library cannot calculate
 
@@ -420,12 +422,11 @@ Then check that the served text needs nothing more.
 **Test.** `image-planning-right-wall`: the first create builds the widened wall units, or the
 agent picks the articles that take the width at the first attempt.
 
-**Reproduce.** `mcp-test-2026-10-21_08-37-33`: gpt-6-astra 66 (`image-planning-right-wall`, local
-roomle-ui :5173, the first `create-or-replace-groups`): roots `top1` and `top2` `OTB60` with
-`mod_Width` 900 and `Left` / `Right` (`d309e09b-cca7-4015-9489-8562c46f07bd`,
-`dc835748-1a27-487a-90e7-0ee050e3fe62`) in the group `351cdee1-4213-47c5-8733-889a827fadf1`, not
-calculated, Error 14019; the model set `LeftRight` on them, then undid and rebuilt the run without
-the band.
+**Reproduce.** `mcp-test-2026-10-21_12-49-36`: gpt-6-astra 66 (`image-planning-right-wall`,
+bo-test, the first `create-or-replace-groups`): roots `upper-header1` and `upper-header2` `OTB60`
+with `mod_Width` 900 and `Left` / `Right` (`0f28d725-7d4c-4ddf-b5ee-6e55047eb95a`,
+`e3ff5339-6689-4f07-8374-abf33cc1ed10`) in the group `a95f4523-027a-43fd-81cf-61525af60b35`, not
+calculated, Error 14019; the model undid the create and sent it again with two `O2TB90`.
 
 ## 93. Backsplashes the library cannot calculate
 
@@ -459,6 +460,7 @@ and `mod_BacksplashColor` invite generating the backsplash and name no limit.
 | The switch on a lone `UTB60`, then a separate call with 216 / 500; on a lone `EUTB60`, then 240 / 635; on two `UTB60`, then 240 / 635; the create of run 59, then 240 / 635 | no: Error 14034 after the create and after the separate call (`620 - 500`, `620 - 635`, `1220 - 635`, `1200 - 635`) | bo-test planner, 2026-10-20, without a model |
 | The switch on a lone `UTB60`, then a separate call with 216 / 500; on a lone `EUTB60`, then 240 / 635; the right-wall image payload, then 240 / 635 | yes, after the separate call | local roomle-ui `cf377cfd4`, 2026-10-18 |
 | `mod_CreateBacksplash` true in the create, then 240 / 635 by `change-group-attribute` (64); the switch in the create, then 240 / 515 in a replace by ids (66); 216 / 550 and 216 / 250 in the create, then the same by `change-group-attribute` (67) | no: Error 14034 after every call (`1200 - 110`, `1200 - 635`; `600 - 110`, `600 - 515`; `600 - 550`, `1220 - 250`) | local roomle-ui `4bc1636cf`, `mcp-test-2026-10-21_08-37-33` gpt-6-astra 64, 66, 67 |
+| 240 / 660 in the create (64); 240 / 455 in the create, then the same by `change-group-attribute` (66); the switch with 216 / 500 and 216 / 250 in the create, then the same by `change-group-attribute` (67) | no: Error 14034 after every call (`1200 - 660`; `600 - 455`, `600 - 455`; `620 - 110`, `1210 - 110`, `620 - 500`, `1210 - 250`) | bo-test `c92cf6b11`, `mcp-test-2026-10-21_12-49-36` gpt-6-astra 64, 66, 67 |
 
 **To do.** Establish which side changed: replay the lone `UTB60` check on roomle-ui `cf377cfd4`
 (recover it from the reflog before it expires). `cf377cfd4` has no C25 feedback after an attribute
@@ -475,8 +477,62 @@ nothing more.
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
 
-**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 64 (`image-kitchen-left-wall`, local
-roomle-ui :5173): the create sets `mod_CreateBacksplash` — the `mr_Backsplash` root is not
-calculated, Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1200 - 110`); a
-separate `change-group-attribute` with 240 / 635 gets the same error (`1200 - 635`); the model
-switched the backsplash off and the answer reports the omission.
+**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 64 (`image-kitchen-left-wall`, bo-test):
+the create sets `mod_BacksplashColor` 240 and `mod_BacksplashHeight` 660 — the `mr_Backsplash` root
+is not calculated, Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1200 - 660`);
+the model switched the backsplash off and the answer reports the omission.
+
+## 99. A handle strip the library cannot calculate
+
+**Problem.** For a modern kitchen the agent sets the handle strip (Furniture_Smith
+`mod_HandleDesign` 40) on the group. The library calculates none of the root modules with a handle:
+the server builds the dishwasher, the panels and the hood and names the other 14 of the 20 roots in
+`notLoaded`. The agent undoes the create and sends it again with rail handles (20).
+
+**Cause.** Not analysed. The library answers with three errors: "Error 22025: There is a HandleStripe
+selected in the HandleDesign and the HandlePosType selected is not valid" for the corner unit, the
+tall units and the wall units; a raw "Unexpected token 'N', \"None\" is not valid JSON" for the base
+units; and "The variant 'mod_HandleDrill' is not set in 'mc_Handlestrip01'" for the sink unit. The
+agent sent no `mod_HandlePosType`; which value a handle strip needs, and whether the JSON error is a
+defect of the library's script, is open. The `desc` of `mod_HandleDesign` does not say that a handle
+strip needs another handle position.
+
+**To do.** The library: say in the `desc` of the handle strip value which `mod_HandlePosType` it
+takes, or set it with the strip; report the JSON parse error of the base units to the library
+development team. The proposed text goes into
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md) once
+the handle position is known.
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `kitchen-conversation`: a modern kitchen with a handle strip is built at the first create,
+or the agent picks a handle the library calculates.
+
+**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 68 (`kitchen-conversation`, bo-test,
+turn 1, the first `create-or-replace-groups`): group attributes with `mod_HandleDesign` 40 and no
+`mod_HandlePosType`, 14 of the 20 roots of the group `e63b39b3-1f2f-48cd-a464-77fc09990abd` in
+`notLoaded` with the three errors.
+
+## 100. A worktop on the tall units from the group's countertop switch
+
+**Problem.** The agent sets `mod_CreateCountertop` true in the group attributes of a kitchen with
+tall units. The library puts the worktop on every root that carries the attribute, tall units
+included: the oven tower and the pantry carry a worktop on top (visible in the object image). The
+agent switches it off root by root and misses some.
+
+**Cause.** Not analysed. Without the group attribute the library puts the worktop over the base units
+only (an `HTB60` beside two drawer units has none); with it, the tall units get one. The `desc` of
+`mod_CreateCountertop` does not say that it reaches every root module of the group.
+
+**To do.** The library: say in the `desc` of `mod_CreateCountertop` that set on the group it puts a
+worktop on the tall units too, and that the base units get one by default — once the library's
+default is confirmed, the text goes into
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md).
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `image-kitchen-back-right-corner`: no tall unit carries a worktop.
+
+**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 65 (`image-kitchen-back-right-corner`,
+bo-test): `mod_CreateCountertop` true in the group attributes of `3097c084`; the model switched it off
+on `HK260`, its end panel and the wall units, the worktop stays on `H2TB60` and `HOTS2AB60`.

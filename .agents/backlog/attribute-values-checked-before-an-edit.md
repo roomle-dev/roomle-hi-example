@@ -1,7 +1,7 @@
 # Backlog: attribute values checked against the library's verified options before an edit
 
 > **Type**: Backlog item (HI tool commands; an MCP issue by D99)
-> **Domain**: roomle-ui `homag-intelligence` — the attribute edits of the HI tools: `change-module-attribute`, `change-group-attribute`, and the group attributes and root overrides of `create-or-replace-groups` (`hi-tool-commands.ts`, `hi-tools.ts`, `hi-tool-attributes.ts`, `glue-logic.ts`); read only: the planner's parameter validation (`planner-kernel-access.ts`); roomle-hi-example: the served text
+> **Domain**: roomle-ui `homag-intelligence` — the attribute edits of the HI tools: `change-module-attribute`, `change-group-attribute`, and the group attributes and root overrides of `create-or-replace-groups` (`hi-tool-commands.ts`, `hi-tools.ts`, `hi-tool-attributes.ts`, `glue-logic.ts`); read only: the planner's parameter validation (`planner-kernel-access.ts`); roomle-ui embedding-lib: the served text (`packages/embedding-lib/src/homag-intelligence/hi-mcp/hi-mcp-server.ts`); roomle-hi-example: the documentation
 > **Status**: Open — the behaviour on a value the module does not take is to be decided
 
 ---
@@ -28,8 +28,14 @@ The planner's attribute panel narrows its choices with it (`_validateParameters`
   the planner's attribute edits (`hi-tools.ts:461`, `:519`, `:555`). `modifyAttributesOfModules`
   (`glue-logic.ts:2690`) asks the library only to resolve conflicts (`solveModuleAttributeConflict`,
   `:2702`), then sets the value and calculates.
-- `create-or-replace-groups` passes the group attributes (`applyGroupWideAttributes`,
-  `hi-tool-attributes.ts:392`) and the roots' attribute overrides straight into the layout.
+- `create-or-replace-groups` sets attributes at two stages:
+  - **In the layout:** the roots' attribute overrides and the library's group settings
+    (`groupSettings` of the master data) are calculated with the load.
+  - **After the load:** every other group attribute is set with one `change-attributes`
+    (`applyGroupWideAttributes`, `hi-tool-attributes.ts:392`), the same planner operation as
+    `change-group-attribute`. A root module's own value of one of them is kept.
+
+  Neither stage checks the values.
 - `find-attributes` and the plan context's attribute vocabulary list the values of the master data
   (`tool-executors.ts:478` of the embedding-lib). Those are the attribute's selections, the same for
   every article, not the values one module takes.
@@ -61,14 +67,19 @@ the library accepts that width, so the failure is a library bug.
    - A `Conflicting` value: apply it. The library resolves the conflict and the result names what it
      changed (D59).
    - An attribute the library does not verify: apply it as today.
-2. **roomle-ui**: check the values of `change-module-attribute` and `change-group-attribute`, and of
-   a create's group attributes and root overrides, with the verified options before they are set.
-   The roots of a create exist only after the calculation. Check either on the calculated group and
-   calculate again, or on the article template (`calculateArticleTemplate`).
-3. **Served text**: say what the result names when a value is not taken, so the agent picks among
-   the values the module takes.
-4. **Documentation**: the decision in §3 and the feedback row in §8 of `docs/hi-mcp-behaviour.md`,
-   `docs/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`.
+2. **roomle-ui**: check the values against the verified options before they are set, at both
+   stages:
+   - **The planner's attribute operations** (`change-attributes`, `change-module-attribute`). They
+     serve `change-module-attribute`, `change-group-attribute` and the group attributes a create sets
+     after its load.
+   - **The layout inputs of a create**, the root overrides and the group settings. Their roots exist
+     only after the calculation, so check either on the calculated group and calculate again, or on
+     the article template (`calculateArticleTemplate`).
+3. **Served text** (roomle-ui embedding-lib, `hi-mcp-server.ts`): say what the result names when a
+   value is not taken, so the agent picks among the values the module takes. It reaches the example
+   page and the ligna-store with a new embedding-lib build.
+4. **Documentation** (roomle-hi-example): the decision in §3 and the feedback row in §8 of
+   `docs/hi-mcp-behaviour.md`, `docs/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`.
 
 ## Test
 
@@ -79,7 +90,8 @@ roomle-ui `hi-tool-commands` tests, with the verified options mocked:
 - A `Conflicting` value is applied, with the library's changes.
 - An attribute without verified options is applied as today.
 - A create with an invalid group attribute value builds the group without that value on the root
-  modules that do not take it.
+  modules that do not take it (the stage after the load).
+- A create with an invalid root override builds the root module without it (the layout stage).
 
 ## Reproduce
 

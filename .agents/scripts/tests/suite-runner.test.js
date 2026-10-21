@@ -43,7 +43,7 @@ const success = {
   snapshotCaptured: true,
 };
 
-const fixture = async (t, cases) => {
+const fixture = async (t, cases, suite = {}) => {
   const root = await mkdtemp(join(tmpdir(), 'mcp-suite-navigation-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   const tests = join(root, 'tests.json');
@@ -66,6 +66,7 @@ const fixture = async (t, cases) => {
           prompt: 'A test prompt',
         },
       ],
+      ...suite,
     })
   );
   return {
@@ -297,4 +298,66 @@ test('reports an API save failure without navigation without retrying it', async
   assert.equal(existsSync(f.first), false);
   await f.run();
   assert.equal((await f.calls()).length, 1);
+});
+
+test('appends the prompt suffix to the first turn of every test, not to an image sent alone', async (t) => {
+  const suffix = 'Decide any open details yourself instead of asking.';
+  const f = await fixture(
+    t,
+    [{ run: success }, { run: success }, { run: success }, { run: success }],
+    {
+      promptSuffix: suffix,
+      tests: [
+        {
+          id: 'single',
+          title: 'Single',
+          plan: 'room',
+          prompt: 'add a cabinet',
+        },
+        {
+          id: 'conversation',
+          title: 'Conversation',
+          plan: 'room',
+          prompt: ['Plan a kitchen.', 'make it white'],
+        },
+        {
+          id: 'question',
+          title: 'Question',
+          plan: 'room',
+          prompt: 'which colours can I choose?',
+        },
+        {
+          id: 'image-only',
+          title: 'Image only',
+          plan: 'room',
+          image: 'docs/images/three-tall-units.png',
+        },
+      ],
+    }
+  );
+  await f.run();
+  assert.deepEqual(
+    (await f.calls()).map((call) => call.prompts),
+    [
+      [`add a cabinet. ${suffix}`],
+      [`Plan a kitchen. ${suffix}`, 'make it white'],
+      [`which colours can I choose? ${suffix}`],
+      [''],
+    ]
+  );
+});
+
+test('sends the prompts unchanged without a prompt suffix', async (t) => {
+  const f = await fixture(t, [{ run: success }]);
+  await f.run();
+  assert.deepEqual(
+    (await f.calls()).map((call) => call.prompts),
+    [['A test prompt']]
+  );
+});
+
+test('rejects an empty prompt suffix before the first run', async (t) => {
+  const f = await fixture(t, [], { promptSuffix: ' ' });
+  await assert.rejects(f.run(), /promptSuffix: a non-empty text/);
+  assert.deepEqual(await f.calls(), []);
 });

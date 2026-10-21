@@ -9,7 +9,8 @@ const calls = existsSync(process.env.TEST_PROMPT_CALLS)
 const scenario = cases[calls.length];
 assert.ok(scenario, 'The suite launched more attempts than expected');
 const dir = process.argv[process.argv.indexOf('--out') + 1];
-calls.push({ dir });
+const prompts = process.argv.slice(4, process.argv.indexOf('--plan'));
+calls.push({ dir, prompts });
 writeFileSync(process.env.TEST_PROMPT_CALLS, JSON.stringify(calls));
 const marker = `attempt-${calls.length}`;
 console.log(marker);

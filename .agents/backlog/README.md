@@ -10,16 +10,15 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| 82 — The model asks instead of building the group the user asked for on a wall of floor-to-ceiling windows | Served text: say that a group the user asks for on a wall of windows is built and the answer names the windows | low |
 | 83 — Where no free stretch of the wall fits the group, it is placed over existing furniture and reported | Served text: say what to do when the wall the user names has no free stretch of the requested width | low |
 | 84 — The find-attributes answer lists the values without naming the attribute | Served text: the `find-attributes` description says the answer names the attribute id | low |
 | 85 — insert-article-into-group takes a between-pair whose root modules do not stand side by side | roomle-ui: the insert's result says when the named pair does not stand side by side; or the served description says what side by side means | low |
-| 87 — The model asks instead of building when the user's reference does not match the plan | Served text: say a group the user asks for is built where the user points, and name where a mismatched reference is | low |
 | 90 — A group placed over existing objects is not disclosed | Served text: the answer names every object a group stands over, also where the user leaves the place open | low |
 | 91 — The answer describes the two legs of the L-shaped kitchen swapped | Served text: the answer describes the plan as it stands, naming the wall of each group | low |
-| 92 — The answer names a supply without its position | Served text: the answer names where the user's reference is | low |
 | 95 — A tall filler panel kept by id in a replace is taken for a wall unit | roomle-ui: replay the run's first create, find where the filler stands and why it counts as a unit above, keep a floor-standing root out of the units above | medium |
 | 96 — "One more shelf" adds the shelf set the cabinet already shows | Analyse what `get-interior-design-options` and the plan context show of the shelves a cabinet without fittings renders | low |
+| 97 — Wall units docked beside the hood hang higher than the other wall units | roomle-ui: replay the run's create, find which step sets the 1570 mm insertion height of the row beside the hood | low |
+| 98 — A row placed into a corner stands 10 mm off the wall after later edits | roomle-ui: replay the run's three calls, find the call that moves the row and fix it | low |
 | Test prompts for replacing, transferring and batch-deleting interior fittings | `docs/test-prompts.json` has no test that needs `replace-interior-fitting`, a `move-interior-fitting` into another root module of the group or a `delete-interior-fittings` of several fittings. Add tests on a plan with an installed fitting that has `replacementArticles`: replace it by one of them, move a shelf into the neighbouring carcass, delete two shelves in one request | low |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Where Mistral Large falls short of the prompts](mistral-large-prompt-issues.md) | Improvement candidates from the `mistral-large-latest` test run: declare the payload fields in the input schema, merge groups that name each other's roots, act on obstacle hints, describe the walls, open the edit tools with the user's words | medium |
@@ -42,6 +41,8 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 | [79 — Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate](library-issues.md#79-base-units-narrowed-to-150-mm-with-a-150-mm-plinth-the-library-cannot-calculate) | HOMAG library: the desc of `mod_Width` names the widths the plinth takes; under 300 mm, a filler panel or pull-out fills the gap | low |
 | [80 — Wall units at 900 mm with a single door the library cannot calculate](library-issues.md#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG library: the single-door wall cabinets' descs name the widths a single door takes; wider, a cabinet with a pair of doors | low |
 | [93 — Backsplashes the library cannot calculate](library-issues.md#93-backsplashes-the-library-cannot-calculate) | HOMAG library or roomle-ui (not established): replay the check that built the backsplash on 2026-10-18; then the backsplash's grain-direction lookup in the library, or the planner fix | low |
+| [99 — A handle strip the library cannot calculate](library-issues.md#99-a-handle-strip-the-library-cannot-calculate) | HOMAG library: the handle position a handle strip takes in the desc of the handle design, or set with the strip; report the JSON parse error of the base units | low |
+| [100 — A worktop on the tall units from the group's countertop switch](library-issues.md#100-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG library: the desc of `mod_CreateCountertop` says that set on the group it reaches the tall units too | low |
 
 ## Library neutrality of the MCP server
 

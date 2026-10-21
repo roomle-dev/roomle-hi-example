@@ -64,9 +64,12 @@ front) turns to room `+x`. The planner may report 270° as −90°; the tools no
 | `+z` | towards the front |
 
 At rotation 0 the back of a group faces `−z`, the back wall. *Right* and *left* in the served rules
-always mean "as seen from the front", which is the local `+x` / `−x` of the group: `rightOf`,
-`leftOf`, `rowIndex` (1 at the left end), the hinge side of a door, the left-to-right order of the
-image-planning skill.
+always mean "as seen from the front" of the article they are said of — its local `+x` / `−x`:
+`rightOf`, `leftOf`, `rowIndex` (1 at the left end of a row), the hinge side of a door, the
+left-to-right order of the image-planning skill. In a straight row that is the group's `+x` / `−x`.
+An article turned within its group has its own: in a corner group the row `leftOf` the corner
+article runs along `+z` of the corner article's frame, and a back row (`behind`) is turned by 180°.
+There right and left follow the article and its row, not the group's axes.
 
 #### The walls and the 1D coordinates along them
 
@@ -237,14 +240,15 @@ matrices. A position the agent sends on a root or a group is dropped and reporte
 | `place-group` | the `position` of the moved group; `hint` | `wall`, `alignment`, `offsetMm`, `roomIndex` |
 | `merge-article-into-group` | the `position` of the changed group | `dockTo.offset` (group space) |
 | `get-interior-design-options` | `position` of every fitting (parent-local) | — |
-| `add-interior-fitting`, `move-interior-fitting`, `replace-interior-fitting` | the placement of the fitting in the result | `insertPosition` (parent-local) |
+| `add-interior-fitting`, `move-interior-fitting`, `replace-interior-fitting` | the final `fittings` of the result with their `position` (parent-local) | `insertPosition` (parent-local) |
+| `delete-interior-fittings` | the final `fittings` of the result with their `position` (parent-local) — the fittings that remain | — |
 | `insert-article-into-group`, `exchange-root-module`, `swap-root-modules`, `delete-article-and-compact`, `delete-article-in-place`, `merge-groups`, `undo`, `redo` | the `position` of the returned groups | — |
 | `get-plan-images` | the top view, oriented like the side labels | — |
 
 The other tools — `find-attributes`, `get-authoring-rules`, `get-skill`, `change-module-attribute`,
 `change-group-attribute`, `delete-group`, `open-or-close-group`, `open-or-close-article`, `get-price`,
-`get-order-data`, `delete-interior-fittings` — neither take nor return coordinates. A size attribute
-(width, depth, height) is a dimension, not a position.
+`get-order-data` — neither take nor return coordinates. A size attribute (width, depth, height) is a
+dimension, not a position.
 
 ### get-plan-context
 
@@ -252,9 +256,9 @@ The agent's whole picture of the room is in its sections, all in pos space:
 
 | Section | Coordinates |
 | ------- | ----------- |
-| `rooms[].levels[].segments[].pos` | the room contour, `[x, level, z]` per segment, with the SVG command `cmd` (`M`, `L`, `Z`, …) |
-| `rooms[].walls[]` | `start`, `end` (`[x, 0, z]`), `lengthMm`, `facingRotationY`, `side`, `name`, `index` |
-| `rooms[].corners[]` | `name`, `point` (`[x, 0, z]`), `posRotationY` |
+| `rooms.rooms[].levels[].segments[].pos` | the room contour, `[x, level, z]` per segment, with the SVG command `cmd` (`M`, `L`, `Z`, …) |
+| `rooms.rooms[].walls[]` | `start`, `end` (`[x, 0, z]`), `lengthMm`, `facingRotationY`, `side`, `name`, `index` |
+| `rooms.rooms[].corners[]` | `name`, `point` (`[x, 0, z]`), `posRotationY` |
 | `obstacles.objects[]` | `outline` (`[x, 0, z]` around the object), `bottomMm`, `topMm`; a door or a window also `roomIndex`, `wall` (an index), `fromEndMm` |
 | `obstacles.groups[].roots[]` | the `outline` of every root module in the room, `bottomMm`, `topMm` |
 | `installationElements[]` | `position` `[x, level, z]` of an electric plug or a water connection |
@@ -296,12 +300,19 @@ hang gap. The tool positions by docking, never by room coordinates (D19).
 `get-interior-design-options` returns per fitting its `position` relative to its parent module;
 `add-interior-fitting`, `move-interior-fitting` and `replace-interior-fitting` take an optional
 `insertPosition` in the same frame. To move a fitting by an offset, the agent adds the offset to its
-position.
+position. Every fitting edit, `delete-interior-fittings` included, returns the final `fittings` of
+the group with their `position` in that frame.
 
 ### The tools that return groups
 
-Every command tool, `undo` and `redo` return the changed groups with their `position` in the
-placement frame, so the agent can check a move numerically and copy a position into a placement.
+`create-or-replace-groups`, `place-group`, `merge-article-into-group`, `insert-article-into-group`,
+`exchange-root-module`, `swap-root-modules`, `delete-article-and-compact`,
+`delete-article-in-place`, `merge-groups`, `undo` and `redo` return the changed groups with their
+`position` in the placement frame, so the agent can check a move numerically and copy a position
+into a placement. `change-module-attribute` and `change-group-attribute` return only ids
+(`groupIds`, `changedModuleIds`) and `corrections`, and `delete-group` the id of the deleted group:
+after an attribute edit — a resize too — the agent reads the positions and footprints with
+`get-plan-context`.
 
 ### get-plan-images
 

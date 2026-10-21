@@ -66,7 +66,19 @@ The tool set reaches the planner through six `roomDesignerApi.extended` methods 
    A planner without the two methods is an older deployment. `handleSetup` lists the planner's
    methods, so `createHiMcpTools` rejects with an error that says the planner needs an update. zod
    leaves the embedding-lib, because only `hi-mcp/` uses it.
-4. **roomle-hi-example: update the documentation.**
+4. **roomle-hi-example: move the run recording to the forwarding method.** The six planner methods
+   no longer cross the iframe, so the example's recorder no longer sees them. That recorder
+   (`recordedPlannerApi`, `minimal-hi-example/index.html:939-985`) records only those six methods,
+   and keeps a result only for `getExternalObjectSnapshot`.
+   - The recorder records `callHiMcpTool` instead: the tool, its input, its time, and its success or
+     error. It keeps the result of a `get-plan-images` call.
+   - The runner (`run-hi-mcp-prompt.js:537-549`) and `planImageFiles` (`plan-images.js:10`) take the
+     images the agent saw from the image parts of those results, instead of from the snapshot
+     answers.
+   - `planner-calls.json` then lists tool calls, not planner calls. Its readers,
+     `benchmark-hi-mcp-runs.js:157` and `extract-run-facts.js:89`, read tool calls. If the
+     benchmark still needs the time of each planner method, the planner reports it.
+5. **roomle-hi-example: update the documentation.**
    - Add an ADR that supersedes the location clause of ADR 0011: the tool set lives in the planner,
      and the embedding-lib forwards to it.
    - Update D94 of [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#3-decisions),
@@ -119,9 +131,14 @@ roomle-ui:
 - **The assistant tests pass with the forwarding tool set:** `hi-planning-assistant.spec.ts` and
   `hi-mcp-stream-text.spec.ts`.
 
-roomle-hi-example: a "test the mcp" run of [`test-prompts.json`](../../docs/test-prompts.json)
-against a local roomle-ui with the change, `undo-a-wrong-command` and a turn with `get-plan-images`
-included.
+roomle-hi-example:
+
+- **The scripts' tests** (`.agents/scripts/tests/`) cover `planImageFiles` with the image parts of a
+  `get-plan-images` result, and the readers of `planner-calls.json` with tool calls.
+- **A "test the mcp" run** of [`test-prompts.json`](../../docs/test-prompts.json) against a local
+  roomle-ui with the change, `undo-a-wrong-command` and a turn with `get-plan-images` included. The
+  run writes the `[hi-mcp]` lines into `run.json`, the tool calls into `planner-calls.json`, and the
+  images of the `get-plan-images` turn as `turn-<n>-plan-images-<k>-…png`.
 
 ## Reproduce
 

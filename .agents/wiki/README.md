@@ -8,7 +8,7 @@ A wiki page is **not** an analysis — it has no lifecycle. It says what holds t
 
 | Page | Covers |
 |---|---|
-| — | No wiki pages yet |
+| [An MCP endpoint for the HI tools at `…/hi-mcp`](hi-mcp-endpoint-for-external-clients.md) | Why the planner cannot serve an MCP endpoint itself; the relay and the page bridge in the planner, what needs to be done and the concerns: access to the plan, one agent per planner, the open tab, long calls, discovery, operations |
 
 ## Adding a Wiki Page
 

@@ -17,6 +17,7 @@ deploy it in [setup](../../docs/setup/).
 | ---- | ------ |
 | [Tool executors](./tool-executors.md#tool-overview) | Overview table of all MCP tools; `tool-executors.ts`, `agent-facing.ts` and the tool commands of roomle-ui (`hi-tool-commands.ts`): tool pipelines, the plan context the agent sees, corrections, row edits |
 | [Layout and placement](./layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
+| [Coordinate systems](./coordinate-systems.md) | The agent's coordinate system and where the served text explains it, the tools that read or write coordinates, every conversion between RoomleCore, roomle-ui and the HI tools |
 | [Pages, chat and launcher](./pages-chat-and-launcher.md) | the page side of the bridge, `start.mjs`, the chat of the example page |
 | [Scripts and testing](./deployment-and-testing.md) | The workspaces and scripts, the unit tests, the end-to-end test runs |
 

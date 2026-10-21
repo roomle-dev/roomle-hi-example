@@ -87,6 +87,7 @@ Living reference of the implementation: how the code is built today. Full index 
 |---|---|
 | [tool-executors.md](context/tool-executors.md) | Overview of all MCP tools, `tool-executors.ts`, `agent-facing.ts`, the tool commands of roomle-ui |
 | [layout-and-placement.md](context/layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
+| [coordinate-systems.md](context/coordinate-systems.md) | The agent's coordinate system and where the served text explains it, the tools that read or write coordinates, every conversion between RoomleCore, roomle-ui and the HI tools |
 | [pages-chat-and-launcher.md](context/pages-chat-and-launcher.md) | The page side of the bridge, `start.mjs`, the chat of the example page |
 | [deployment-and-testing.md](context/deployment-and-testing.md) | Cloudflare, the workspaces and scripts, the unit tests, the end-to-end test runs |
 

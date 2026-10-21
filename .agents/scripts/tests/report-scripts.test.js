@@ -264,7 +264,16 @@ const singleModelSession = async (t) => {
       planSnapshotId: 'ps_run02',
     },
     { groups: [] },
-    []
+    // recorded before the tools ran in the planner: planner calls
+    [
+      { method: 'getExternalObjectPlanContext', args: [['groups']], ok: true },
+      {
+        method: 'externalObjectGroupOperation',
+        args: ['change-group-attribute', { groupId: 'g' }],
+        ok: false,
+        error: 'no such attribute',
+      },
+    ]
   );
 
   await writeRun(
@@ -519,6 +528,9 @@ test('extracts the facts of a single-model session', async (t) => {
 
   assert.equal(r2.nn, '02');
   assert.equal(r2.random, true);
+  assert.deepEqual(r2.plannerCalls, [
+    { tool: 'change-group-attribute', ok: false, error: 'no such attribute' },
+  ]);
   assert.equal(r2.turns[0].answer, 'B'.repeat(480) + ' …');
   assert.deepEqual(r2.turns[0].toolCalls[0].notLoaded, [
     'A'.repeat(295) + ' …',

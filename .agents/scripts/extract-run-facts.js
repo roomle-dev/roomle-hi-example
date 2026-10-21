@@ -10,7 +10,8 @@
  * evaluation (skill hi-mcp-testing, section 5) and the input of
  * build-test-report.js: per run the test, the turns with their tools and tool
  * calls (corrections, the notLoaded errors, error) and the shortened answer,
- * the groups after the chat and the tool calls the planner ran. A
+ * the groups after the chat and the tool calls the planner ran (in a session
+ * recorded before the tools ran in the planner, its plan-changing calls). A
  * multi-model session is keyed by model and test, so every model's run of a
  * test is kept.
  */
@@ -42,6 +43,19 @@ const notLoadedTexts = (notLoaded) => {
         : [];
     return errors.filter(Boolean).map((error) => short(error, 300));
   });
+};
+
+// A session recorded before the tools ran in the planner holds planner calls:
+// a plan-changing one names its tool in args[0], the reads name none.
+const plannerCallFacts = (call) => {
+  const tool =
+    call.tool ??
+    (call.method === 'externalObjectGroupOperation'
+      ? call.args?.[0]
+      : undefined);
+  return tool === undefined
+    ? []
+    : [{ tool, ok: call.ok !== false, error: call.error || null }];
 };
 
 const session = process.argv[2];
@@ -133,11 +147,7 @@ for (const model of models) {
             category: r.category || null,
           })),
       })),
-      plannerCalls: (plannerCalls || []).map((c) => ({
-        tool: c.tool,
-        ok: c.ok !== false,
-        error: c.error || null,
-      })),
+      plannerCalls: (plannerCalls || []).flatMap(plannerCallFacts),
       dir: run.dir,
     });
   });

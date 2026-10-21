@@ -28,7 +28,6 @@ never drop the agent's content silently.
 | 84 | [The find-attributes answer lists the values without naming the attribute](#84-the-find-attributes-answer-lists-the-values-without-naming-the-attribute) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:252-268`, the `find-attributes` description) | low | gpt-6-astra | |
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
 | 87 | [The model asks instead of building when the user's reference does not match the plan](#87-the-model-asks-instead-of-building-when-the-users-reference-does-not-match-the-plan) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
-| 89 | [Wall units in separate groups do not follow their edited carriers](#89-wall-units-in-separate-groups-do-not-follow-their-edited-carriers) | bug | roomle-ui `hi-tools.ts` (`insertArticleIntoGroup`, `swapRootModules`, `exchangeRootModule`, `mergeArticleIntoGroup` — the following step of `removeArticleFromGroup`), `hi-root-module-arrangement.ts` (`groupsFollowingTheirCarriers`); analysed in [separate-wall-unit-groups-stay-on-insert-and-swap.md](../bug-analysis/separate-wall-unit-groups-stay-on-insert-and-swap.md): the insert and the swap arrange and load the edited group alone, the lookup of the units of other groups runs in the delete only; a group whose units follow carriers that moved differently keeps its place by D42, so the hood of the corner kitchen never follows the hob across the corner — proposed: every row edit runs the following step, and such a group moves its units within the group (the user's decision) | medium | gpt-6-astra | |
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
 | 92 | [The answer names a supply without its position](#92-the-answer-names-a-supply-without-its-position) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
@@ -162,57 +161,6 @@ changes the plan — the model lists the plug (194 mm above the floor, 3635 mm f
 corner) and the water connection (535 mm, 1615 mm), both on the left wall, states there is no plug
 on the back wall, then asks "Should I place the base cabinet in front of that back-wall object, or
 in front of the confirmed plug on the left wall? I haven't added the cabinet yet."
-
-## 89. Wall units in separate groups do not follow their edited carriers
-
-**Problem.** After an insert or a swap moves base-row carriers, the wall units in a separate group
-do not follow them. After a swap exchanges the hob and the sink across the corner, the separate hood
-group stays on the right leg instead of following the hob, and the back-wall wall-unit group stays in
-its old place instead of following the sink (33). After a `delete-article-and-compact` next to the
-corner moves the hob into the gap, the separate group of the hood and the wall unit above the removed
-unit keeps its place and the correction names it, while the same-group wall unit `5b754b36` moves
-into the hood's place, so a wall unit overlaps the hood (31).
-
-**Cause.** The rule (`hi-mcp-server.ts:40`), the insert description (`:778-779`) and the swap
-description (`:831-832`) promise that units above move with their carriers (D42).
-`delete-article-and-compact` finds the units above in other groups by room position and moves each
-such group as a whole (`removeArticleFromGroup` with `carriersOfUnitsInOtherGroups` and
-`groupsFollowingTheirCarriers`, `hi-root-module-arrangement.ts` in roomle-ui);
-`insertArticleIntoGroup` and `swapRootModules` (`hi-tools.ts`) pass only the edited group to
-`arrangeAndLoad`, so the units of other groups never enter the lookup; the exchange and the merge
-have the same gap. A group whose units follow different carriers keeps its place as a whole (D42)
-— in 31 the wall unit above the removed unit keeps its place (the hob carries the hood already) and
-the hood would follow the hob; in 33 the hood turns with the hob while the wall unit beside it
-stays —, so even the delete's following leaves the hood of the corner kitchen where it is.
-Analysed in
-[separate-wall-unit-groups-stay-on-insert-and-swap.md](../bug-analysis/separate-wall-unit-groups-stay-on-insert-and-swap.md).
-
-**To do.** roomle-ui: the following step of `removeArticleFromGroup` becomes a step every row edit
-runs — insert, swap, exchange, merge. A group whose units follow different carriers moves its units
-within the group, as the edited group moves its own units (the user's decision; splitting stays
-rejected). The overlap correction of a kept unit measures across groups. Keep the served promise
-and D42 consistent; do not prescribe an extra `place-group` for every base-row edit.
-
-**Test.** `edit-remove-next-to-corner` and `edit-swap-hob-unit`: the hood and the affected wall
-units follow their carriers without an extra placement call; `edit-insert-below-wall-units` passes
-today — no unit of another group hangs from a root the insert moves on that plan. Planner tests for
-insert, swap, exchange and merge with units above in separate groups, and for a group whose units
-follow different carriers.
-
-**Reproduce.** Without a model: a roomle-ui unit test with the fixtures of `hi-tools-test.ts` — a
-free row of three roots and a second group of one unit hung above `root-1`; after
-`swapRootModules(['root-1', 'root-3'])` the second group stays at its place instead of moving with
-`root-1` to group x 1200, one load, `groupIds` with the edited group only; the same for an insert
-between `root-1` and `root-2` with the unit above `root-2`. With a model:
-`mcp-test-2026-10-20_19-13-28` and `_12-45-30`, gpt-6-astra 34 (`edit-swap-hob-unit`, bo-test
-planner): `swap-root-modules` of the hob UKS2A60 `379fa7a9` and the sink SUT60 `31616143` — the
-two units change places (the hob from row 6 to row 2, the sink from row 2 to row 6), but the
-separate hood group `afbe92eb` (OTB60 + DU) stays at [4815, 1480, −2604] on the right leg instead
-of following the hob to the back leg, and the back-wall wall-unit group `85510a7e` stays at
-[2953.91, 1480, −3764.81] instead of following the sink; the answer says the hood was not moved.
-32 (`edit-remove-next-to-corner`) in `_12-45-30`: the delete alone, the hood group stays and the
-answer names the overlap with the moved wall unit. The saved `plan-context.json` and `plan.xml`
-retain the group membership and resulting positions.
 
 ## 90. A group placed over existing objects is not disclosed
 

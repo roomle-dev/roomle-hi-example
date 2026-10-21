@@ -126,7 +126,6 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Wall units in separate groups do not follow their edited carriers](bug-analysis/separate-wall-unit-groups-stay-on-insert-and-swap.md) | Open — fix proposed in the roomle-ui HI tools, one decision for the user | 2026-10-21 |
 
 ### Feature Analyses
 

@@ -312,10 +312,11 @@ and grouping, and the MCP `tool-executors.test.ts` covers compaction.
 For merge, insert, `delete-article-and-compact`, exchange and swap the tool command does **not** rewrite the row's docking — the group
 operation does: it closes or opens the gap, keeps the ends at a wall or in a corner, and moves the
 units above with their carrier (roomle-ui `hi-root-module-arrangement.ts`, `carriersOfUnitsAbove`).
-`delete-article-and-compact` also moves the groups of units above in other groups: `removeArticleFromGroup`
-(`hi-tools.ts`) finds them by room position (`carriersOfUnitsInOtherGroups`), and after the
-arrangement loads each group whose units' carriers moved the same way at its new position
-(`groupsFollowingTheirCarriers`) and returns it in `groupIds`.
+Every row edit also moves the units above in other groups: `hi-tools.ts` finds them by room
+position before the edit (`carriersOfUnitsInOtherGroups`) and after the load moves each unit within
+its group the way its carrier went (`groupsFollowingTheirCarriers`), loading each group with a
+moved unit in the same edit and returning it in `groupIds`; the group keeps its place and its
+origin.
 The tool command's part:
 
 - `insertBetween`: two roots that are not neighbours are read as the first root and its neighbour

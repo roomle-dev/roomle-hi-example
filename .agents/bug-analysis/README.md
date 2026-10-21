@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [separate-wall-unit-groups-stay-on-insert-and-swap.md](separate-wall-unit-groups-stay-on-insert-and-swap.md) | Open | [MCP backlog 89](../backlog/mcp-issues.md#89-wall-units-in-separate-groups-do-not-follow-their-edited-carriers) — the insert and the swap arrange and load the edited group alone; the lookup of the units above in other groups and their move run in the delete only, and a group whose units follow carriers that moved differently keeps its place, so the hood of the corner kitchen never follows the hob |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

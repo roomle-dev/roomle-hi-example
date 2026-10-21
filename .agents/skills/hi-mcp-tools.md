@@ -319,7 +319,7 @@ placement's attributes, including a height the library adjusts:
   (OTB60 ×3)" (D59). A `notLoaded` entry has one error per cause, the root modules that failed alike
   in one sentence (D73)
 - `hint`: after a row edit (insert, `delete-article-and-compact`, exchange, swap) — names the units above that moved with
-  the unit below them by root id and article id, says when the row now reaches past a wall or into another group, and names a
+  the unit below them by root id and article id, also those of other groups, says when the row now reaches past a wall or into another group, and names a
   root module that now stands in front of a door or a window or on an object, with the free stretches
   of its wall (D43, D55). A turned leg is named by its original wall and the wall it now runs along
   when known, with the ids and article ids of its roots together (D52). Before/after room positions
@@ -339,21 +339,23 @@ transform when either whole docking footprint cannot be measured.
   other, the end of the row at a wall stays, a unit hung on it hangs on the neighbour that moves into
   the gap; a unit at a row end is deleted and nothing else moves; a corner article between two legs
   is deleted and the gap closed by turning one leg by 90° with the units above it, and the
-  `corrections` name the roots of the leg that turned, and `hint` names its original and destination wall when known (D52); a group
-  of wall units of its own moves with the units below its units and is returned beside the edited
-  group, or keeps its place, named in `corrections`, when they moved differently (D42); the only unit is deleted with its group
+  `corrections` name the roots of the leg that turned, and `hint` names its original and destination wall when known (D52); wall
+  units of other groups move with the units below them, each within its group, and their groups
+  are returned beside the edited group (D42); the only unit is deleted with its group
   (`gapClosed: false`). `delete-article-and-compact` never splits a group
 - `exchange-root-module`: the article has one root module; the new unit keeps the position and
   the docking of the replaced one; `attributes` override attributes of the new unit (`mod_Width` for
-  another width: the rest of the row moves by the difference, the end at a wall stays); a docking
-  the new article cannot take is named in `corrections`
+  another width: the rest of the row moves by the difference, with the units hanging from it, also
+  in other groups, the end at a wall stays); a docking the new article cannot take is named in
+  `corrections`
 - `insert-article-into-group`: the new unit is docked to both roots of `between` (two neighbours in
   either order); the end of the row at a wall or in a corner keeps its place and the rest of the row
-  moves by the unit's width; units hanging from a unit move with it. Two roots of one row that are no
-  neighbours put the unit beside the first-named root, towards the second, reported in `corrections`
+  moves by the unit's width; units hanging from a unit move with it, also in other groups. Two roots
+  of one row that are no neighbours put the unit beside the first-named root, towards the second,
+  reported in `corrections`
 - `swap-root-modules`: two units change places, neighbours or not, with their attributes and the
-  units hanging from them; the row keeps its length and its end at a wall; a corner article and a
-  straight unit cannot change places
+  units hanging from them, also in other groups; the row keeps its length and its end at a wall; a
+  corner article and a straight unit cannot change places
 - `merge-groups`: the groups are merged into the target where they stand, like the planner's merge
   action — nothing is moved and no docking is added; groups of different libraries cannot be merged
   (the planner's message is passed on)

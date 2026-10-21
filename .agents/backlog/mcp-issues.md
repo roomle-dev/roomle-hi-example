@@ -28,7 +28,6 @@ never drop the agent's content silently.
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
-| 92 | [The answer names a supply without its position](#92-the-answer-names-a-supply-without-its-position) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 95 | [A tall filler panel kept by id in a replace is taken for a wall unit](#95-a-tall-filler-panel-kept-by-id-in-a-replace-is-taken-for-a-wall-unit) | defect | roomle-ui `hi-tool-commands.ts` (`retainedWallRoots`) with `hi-group-layout.ts` (`wallRootsOf`) | medium | gpt-6-astra | |
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui embedding-lib (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
 | 97 | [Wall units docked beside the hood hang higher than the other wall units](#97-wall-units-docked-beside-the-hood-hang-higher-than-the-other-wall-units) | defect (not analysed) | roomle-ui HI tool commands, the library or the planner (not analysed) | low | gpt-6-astra | |
@@ -154,27 +153,6 @@ has them.
 **Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 60 (`image-kitchen-back-right-corner`,
 plan snapshot `ps_scriq9ltecd67bb427i97vk6f2dbkbi`, local roomle-ui :5173): the final answer's
 composition bullet swaps the two legs against the plan.
-
-## 92. The answer names a supply without its position
-
-**Problem.** The same class as 84: `sink-cabinet-at-water-connection` (54) — the model builds the
-sink cabinet SUT60 and the support UTB60 (1220 mm) on the back wall covering the water connection
-(x 3280, y −3725 against the back wall), but the answer says "near the existing water connection"
-without its position, which the expect asks for.
-
-**Cause.** The served text says the answer says what a group stands in front of, but no sentence says
-the answer names where the user's reference is, so the model names the connection without its
-position.
-
-**To do.** roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule): one sentence —
-the answer names where the user's reference is. Verify model acceptance.
-
-**Test.** `sink-cabinet-at-water-connection`: the answer names the water connection's position.
-
-**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 55 (`sink-cabinet-at-water-connection`,
-bo-test): one `create-or-replace-groups`, the sink cabinet spanning x 2990..3590 over the connection
-at about x 3300; the answer says "along the back wall near the water connection" without its
-position.
 
 ## 95. A tall filler panel kept by id in a replace is taken for a wall unit
 

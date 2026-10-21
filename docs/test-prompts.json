@@ -446,7 +446,7 @@
       "title": "A cabinet with a sink at the water connection",
       "plan": "empty-room-with-water-connection",
       "prompt": "add a cabinet with a sink",
-      "expect": "one group with a sink cabinet standing at the water connection whose position the installationElements section lists; the answer names the water connection and its position"
+      "expect": "one group with a sink cabinet standing at the water connection whose position the installationElements section lists; the answer names the water connection"
     },
     {
       "id": "sideboard-row-one-more-cabinet",

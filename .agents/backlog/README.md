@@ -15,7 +15,6 @@ the document a row links.
 | 85 — insert-article-into-group takes a between-pair whose root modules do not stand side by side | roomle-ui: the insert's result says when the named pair does not stand side by side; or the served description says what side by side means | low |
 | 90 — A group placed over existing objects is not disclosed | Served text: the answer names every object a group stands over, also where the user leaves the place open | low |
 | 91 — The answer describes the two legs of the L-shaped kitchen swapped | Served text: the answer describes the plan as it stands, naming the wall of each group | low |
-| 95 — A tall filler panel kept by id in a replace is taken for a wall unit | roomle-ui: replay the run's first create, find where the filler stands and why it counts as a unit above, keep a floor-standing root out of the units above | medium |
 | 96 — "One more shelf" adds the shelf set the cabinet already shows | Analyse what `get-interior-design-options` and the plan context show of the shelves a cabinet without fittings renders | low |
 | 97 — Wall units docked beside the hood hang higher than the other wall units | roomle-ui: replay the run's create, find which step sets the 1570 mm insertion height of the row beside the hood | low |
 | 98 — A row placed into a corner stands 10 mm off the wall after later edits | roomle-ui: replay the run's three calls, find the call that moves the row and fix it | low |

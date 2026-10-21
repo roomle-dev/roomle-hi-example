@@ -131,6 +131,15 @@ footprint supplies no wall-distance translation, so the group transform stays. G
 roots without vectors do not prevent measurement. The recovery-mode and incomplete-footprint
 cases are covered in `hi-root-module-arrangement-test.ts`.
 
+A root the library could not calculate when it was added was never docked: the planner put it
+where another root stands, so it shares that root's `articlePos`. `_seedCandidates` keeps such a
+root from starting a docking cluster once it has vectors, as long as another root left to arrange
+has a position; the breadth-first docking then places it from its neighbour, so a unit on top docks
+onto its wall unit instead of the wall unit being docked below it at the group origin. A root that
+failed after it was docked stands on a place of its own and may start its cluster, as before.
+Covered by `describe('a root the library calculates for the first time')` in
+`hi-root-module-arrangement-test.ts` and the `change-module-attribute` case in `hi-tools-test.ts`.
+
 ## Placing a new group — hi-group-placement.ts
 
 A new group placed by point comes with a `placement { posGroup, posRotationY, rootId? }`: the room

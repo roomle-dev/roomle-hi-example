@@ -187,7 +187,7 @@ the agent does not fetch the authoring rules.
   `articleId`, input `attributes`, `contextData` with vector names only) plus
   read-only facts (`articleName`, `desc`, `category`,
   `dockingVectors`, `freeDockingVectors` — the vectors no docking entry uses,
-  where a new root can dock — `subModules` with their id,
+  where a new root can dock — `subModules` with their id and input `attributes`,
   `isGenerated`). No root positions, no geometry. A returned group is a valid
   `create-or-replace-groups` payload as it is
 - `obstacles` — what stands in the room, in the coordinates of the walls:
@@ -206,14 +206,16 @@ the agent does not fetch the authoring rules.
   plan: per element its `type` (`ElectricPlug` or `WaterConnection`) and its
   `position` (`[x, level, z]` in the coordinates of the walls) — a position
   only, no size. They are no obstacles: a group may stand on a supply
-- `attributes` — the attribute vocabulary, by default: per library the root-assigned attributes that are
-  main, Simple or Bool with id, name, desc, group, type and
+- `attributes` — the attribute vocabulary, by default: per library every attribute
+  with id, name, desc, group, type and
   `selections` (value, name and desc); a value list several attributes share is listed
   once, the later attributes carry `sameSelectionsAs`, the id of the attribute that lists
-  it. The ids are those of the catalog's `mainAttributes` and of the roots' `attributes`;
+  it. The ids are those of the catalog's `mainAttributes`, of the roots' `attributes` and
+  of their sub modules' `attributes`;
   [find-attributes](#find-attributes) searches the same vocabulary for a question
 - `masterData` — only when included explicitly: per library the root modules
-  (id, name, desc) with their relevant attribute ids, the attributes as in
+  (`modules`: id, name, desc) and the other modules but the group orchestrator
+  (`subModules`), each with the ids of its attributes, the attributes as in
   `attributes` with every value list, and `groupSettings`, the attributes the
   library's group orchestrator sets on a group
 - `articleDescriptions` — only when included explicitly, for a question about
@@ -254,16 +256,17 @@ files of roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/skil
 Answers a question about an attribute: searches the attribute vocabulary — the
 `attributes` section of `get-plan-context` — by text (attribute id, name,
 description, group or selection name) and returns the matching attributes with
-their `selections` and the root modules that carry them. The vocabulary is the
-compacted master data (root modules — the generated ones such as the worktop
-`mr_Countertop` included — and their customer-facing or Bool attributes); the section
+their `selections` and the root modules and sub modules that carry them. The vocabulary is
+every attribute of the compacted master data, which names the root modules — the generated
+ones such as the worktop `mr_Countertop` included — and the sub modules that carry them; the section
 already lists every attribute with its values, so a planning needs no search. Every word of the text is matched on its own, in
 any order, and colour/color, grey/gray and worktop/countertop read alike: one
 search for `color` returns every colour attribute — front, carcase, countertop,
 toe kick and the others. A value list several attributes share is listed once;
 the later attributes carry `sameSelectionsAs`, the id of the attribute that
-lists it. Every match names its root modules with id and name, and the
-attributes the root modules in the plan carry come first. At most 20 matches are returned; narrow
+lists it. Every match names its root modules — and its sub modules, when sub
+modules carry it — with id and name, and the attributes the root modules in the
+plan and their sub modules carry come first. At most 20 matches are returned; narrow
 the text when the result carries a `hint`. The desc of a colour value
 carries its code — `Cloudy blue (#506080)` —, the colour of that value;
 the agent chooses a dark, a light or a blue value by it.

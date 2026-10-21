@@ -94,16 +94,18 @@ halfway through a change.
    root (`HiToolsImplementation.getPlanContext`, `inPlacementFrame`).
 4. Adds the agent's vocabulary ([The plan context the agent sees](#the-plan-context-the-agent-sees)).
 
-The vocabulary comes from compacted master data: article and generated roots with assigned
-attributes that are main, Simple or Bool. The server preserves Bool descriptions and optional
-selections; `find-attributes` uses the retained module assignments to identify their carriers.
+The vocabulary is every attribute of the compacted master data, which lists the article and
+generated roots (`modules`) and the other modules but the group orchestrator (`subModules`) with
+their assigned attributes (D100). `modules` holds roots only: `moveGeneratedRootOverrides` takes an
+entry no catalog article names for a generated root. `find-attributes` uses the assignments to
+name the root modules and the sub modules that carry a match.
 
 ## find-attributes
 
 Reads the master data fresh on every call, filters by `libraryId`, and matches the text
 (lower-cased substring) against the attribute's id, name, description and group and every
 selection's name, description and value (`attributeMatches`). Returns the first
-`MAX_ATTRIBUTE_MATCHES` (20) with the root modules that carry each attribute, the total, and a hint
+`MAX_ATTRIBUTE_MATCHES` (20) with the root modules and the sub modules that carry each attribute, the total, and a hint
 when there were more.
 
 ## create-or-replace-groups

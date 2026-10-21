@@ -36,7 +36,7 @@ without the overexposure of the top light.
 **Test.** `image-planning-right-wall`: the object image shows the worktops in the colour of
 `mod_CountertopColor`.
 
-**Reproduce.** `mcp-test-2026-10-16_18-18-00`: gpt-6-astra 48 (`image-planning-right-wall`, plan snapshot `ps_s10nlsydubooegzw0cd6fjbfzngktq9`, bo-test): white worktops on the wall run and the island in the object image, 324 with the program Style in `order-data.json`.
+**Reproduce.** `mcp-test-2026-10-21_08-37-33`: gpt-6-astra 66 (`image-planning-right-wall`, plan snapshot `ps_sgcouwpmzlv4a820vvylrzodcctsdk8`, local roomle-ui :5173): white worktops on the wall run and the island in the object image, dark marble 324 with the program Style in `order-data.json`.
 
 ## 94. The water connection is an installation element only through a planner override
 

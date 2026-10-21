@@ -31,6 +31,8 @@ never drop the agent's content silently.
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
 | 92 | [The answer names a supply without its position](#92-the-answer-names-a-supply-without-its-position) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
+| 95 | [A tall filler panel kept by id in a replace is taken for a wall unit](#95-a-tall-filler-panel-kept-by-id-in-a-replace-is-taken-for-a-wall-unit) | defect | roomle-ui `hi-tool-commands.ts` (`retainedWallRoots`) with `hi-group-layout.ts` (`wallRootsOf`) | medium | gpt-6-astra | |
+| 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui embedding-lib (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -100,8 +102,8 @@ answer names the attribute id with its values.
 
 **Test.** `attributes-find-front-colour`: the answer names the attribute id with the front colours.
 
-**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 18 (`attributes-find-front-colour`,
-local roomle-ui :5173): the answer lists the 21 front colours in a table, never names the
+**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 18 (`attributes-find-front-colour`,
+local roomle-ui :5173): the answer lists the 21 front colours in four style groups, never names the
 attribute id (`mod_FrontColor`).
 
 ## 85. insert-article-into-group takes a between-pair whose root modules do not stand side by side
@@ -228,6 +230,59 @@ the answer names where the user's reference is. Verify model acceptance.
 
 **Test.** `sink-cabinet-at-water-connection`: the answer names the water connection's position.
 
-**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 54 (`sink-cabinet-at-water-connection`,
+**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 55 (`sink-cabinet-at-water-connection`,
 local roomle-ui :5173): one `create-or-replace-groups`, the sink cabinet spanning x 2990..3590 over
-the connection at x 3280; the answer names the connection without its position.
+the connection at about x 3300; the answer says "against the back wall near the water connection"
+without its position.
+
+## 95. A tall filler panel kept by id in a replace is taken for a wall unit
+
+**Problem.** In a replace of a kitchen run by its ids, the tool command takes a tall filler panel
+(Furniture_Smith `PH15L`, `Kitchen / Cover Panels / Fillers`, 2100 mm) for a wall unit: the
+correction "floor unit '…' (HK260) cannot stand rightOf the wall unit '…' (PH15L) - it continues
+the floor row" drops the fridge's relation to the filler, and "root '…' names no neighbour - it was
+put rightOf '…'" moves the filler behind the fridge. The model sent the filler as the first root of
+the run and the fridge `rightOf` it, as in the create before.
+
+**Cause.** Not traced. `hi-tool-commands.ts` keeps as a wall root every retained root without a
+relation that `carriersOfUnitsAbove` finds above another root of the group as it stands
+(`retainedWallRoots`), and `wallRootsOf` (`hi-group-layout.ts`) accepts it because a filler is
+neither a floor unit nor a wall unit by its category. So in the plan the create before left, the
+filler's docking-vector box stood above another root's box — where the create put it is not
+recorded.
+
+**To do.** roomle-ui: replay the first `create-or-replace-groups` of the run (its `planner-calls.json`)
+against the local planner, read where the filler stands and which root `carriersOfUnitsAbove` finds
+below it; fix the layout that puts it there, or keep a root that stands on the floor out of the
+units above.
+
+**Test.** roomle-ui `hi-tool-commands` tests: a replace by ids of a run whose first root is a tall
+filler panel keeps the next unit `rightOf` it, without a wall-unit correction.
+
+**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 66 (`image-planning-right-wall`, local
+roomle-ui :5173): the third `create-or-replace-groups` (the replace of group `351cdee1` by ids)
+returns both corrections for the filler `1147a3da`; the model undoes and rebuilds without it.
+
+## 96. "One more shelf" adds the shelf set the cabinet already shows
+
+**Problem.** Asked for one more shelf in a tall cabinet without fittings (Furniture_Smith `HTB60`),
+the model adds the adjustable-shelf set (`AdjShelves`) and answers that a shelf was added — but the
+cabinet already renders the same four shelves, so nothing changes for the user (61: 12
+`part_ShelfadjWood` in `plan.xml`, the same as the unedited cabinets of 59).
+
+**Cause.** Not analysed. The plan context lists no fitting for a cabinet without fittings, though the
+library renders its default adjustable shelves (`mod_RackAreaType` Adj), so the model cannot see
+that the shelves are there; what `get-interior-design-options` returns for that cabinet is not
+recorded in the runs, and the `AdjShelves` desc may not say that it is the cabinet's default set.
+
+**To do.** Analyse what `get-interior-design-options` returns for the cabinet without fittings and
+whether its result or the plan context can show the shelves the library renders (roomle-ui
+embedding-lib); what the agent lacks about the article goes into the desc of the library data,
+never into a served rule.
+
+**Test.** `edit-add-subarticle-look-inside`: the opened middle cabinet shows one shelf more than in
+`open-cabinet-look-inside`.
+
+**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 61 (`edit-add-subarticle-look-inside`,
+local roomle-ui :5173): `add-interior-fitting` of `AdjShelves` into the middle unit `a7271f1b`; the
+group view shows the four shelves of the unedited cabinet.

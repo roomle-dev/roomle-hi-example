@@ -1,6 +1,7 @@
 # Open issues of the libraries
 
-> **Type**: Backlog — what the library data lacks for the agent to plan right
+> **Type**: Backlog — what the library data lacks for the agent to plan right, and the calculation
+> errors of values the library accepts
 > **Domain**: the library data the plan context passes on — the article list and the master data,
 > and in them the `desc` properties
 > **Maintained by**: step 7 of [the testing skill](../skills/hi-mcp-testing.md#7-open-issues)
@@ -8,7 +9,11 @@
 The MCP server is library-neutral ([§2.4](../../docs/hi-mcp-behaviour.md#24-instructions)): what
 the agent knows of a library comes only from the library data. When the agent plans wrong because
 that data lacks information, the fix is in the library, and the issue is here. What a library builds
-is intended; an issue asks for information, not for other geometry. Each issue names the library,
+is intended; an issue asks for information, not for other geometry. A calculation error is no
+intended behaviour: a value the library accepts must calculate, so a calculation that fails for it
+is a library bug and is tracked here; a calculation error caused by an invalid attribute value the
+tools sent is an MCP issue in [mcp-issues.md](mcp-issues.md) (D99 of
+[`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#3-decisions)). Each issue names the library,
 the problem, its cause, how the library behaves, the to-do for the library, the test, whether it is
 reported to the library development team, and how to reproduce it. MCP, chat and planner issues are
 tracked in [mcp-issues.md](mcp-issues.md). The **Status** of an issue says what the library already
@@ -45,7 +50,7 @@ keeps every suggested text, applied in the library or not.
 | 76 | [Articles with two doors that do not say how their doors stand](#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | yes | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
 | 78 | [Tall-unit descriptions omit width-dependent door arrangements](#78-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | medium — a widened unit keeps an incompatible single-door hinge input |
 | 79 | [Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate](#79-base-units-narrowed-to-150-mm-with-a-150-mm-plinth-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the unit is not built, the agent needs a second create |
-| 80 | [Wall units at 900 mm with a single door the library cannot calculate](#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the cabinets are not built, the agent needs a second create |
+| 80 | [Wall units at 900 mm with a single door the library cannot calculate](#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the cabinets are not built, the agent needs a second create |
 | 93 | [Backsplashes the library cannot calculate](#93-backsplashes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the backsplash is not built; the agent must drop it and report the omission |
 | 99 | [A handle strip the library cannot calculate](#99-a-handle-strip-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the units with a handle are not built, the agent needs a second create |
 | 100 | [A worktop on the tall units from the group's countertop switch](#100-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — a worktop on top of the tall units |
@@ -395,10 +400,16 @@ mr_StorageunitSingle - 900 - Automatic - Left - Automatic" (and the `Right` vari
 not built; the server builds the rest of the group and names them in `notLoaded`. The agent undoes
 the create and sends it again with four `OTB45` and two `O2TB90`.
 
-**Cause.** `tab_DoorSettings` has no entry for a single door at 900 mm. Widened, the wall unit
-keeps the single door its article defines (`mr_StorageunitSingle` with one `mf_Door`); the wall
-cabinet with a pair of doors `O2TB90` calculates at 900 mm. The descs of the single-door wall
-cabinets (`OTB30`, `OTB45`, `OTB60`) and of `mod_Width` name no width limit for a single door.
+**Cause.** A library bug (D99): the library accepts the width but cannot calculate it.
+`mod_Width` is a `Dim` slider whose master data names no range, the article sets only its 600 mm
+default, and the verified options the library gives for the root module and its door
+(`getVerifiedAttributeOptions`) cover no width, height or door direction. The calculation then
+fails: `tab_DoorSettings` has no entry for a single door at 900 mm — widened, the wall unit keeps
+the single door its article defines (`mr_StorageunitSingle` with one `mf_Door`) — and the library's
+scripts throw after the missing entry ("Cannot read properties of undefined (reading
+'RealDoorDirection')", "\"undefined\" is not valid JSON"). The wall cabinet with a pair of doors
+`O2TB90` calculates at 900 mm. The descs of the single-door wall cabinets (`OTB30`, `OTB45`,
+`OTB60`) and of `mod_Width` name no width limit for a single door.
 
 **How the library behaves.** Checked in the stored runs:
 
@@ -408,14 +419,21 @@ cabinets (`OTB30`, `OTB45`, `OTB60`) and of `mod_Width` name no width limit for 
 | `OTB60` | a single door | 900 mm, widened | no: Error 14019 (`tab_DoorSettings`) | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 50 |
 | `O2TB90` | a pair of doors side by side | 900 mm, as it comes | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 50, the second create |
 
+The verified options of a 600 mm `OTB60` (local roomle-ui, `getExternalObjectAttributeOptionsOrRanges`
+of every module, all attributes): the root module verifies 16 attributes — programs, colours,
+designs, the plinth height —, its door 12; none of them is `mod_Width`, `mod_Height` or
+`mod_DoorDirectionSelection`.
+
 Not known: the widths a single door takes between 600 and 900 mm, and whether a single-door wall
 cabinet narrowed under its own width calculates.
 
-**To do.** The library: the width ranges a single door takes in `tab_DoorSettings`, or entries for
-a single door at 900 mm; with them the `AI_SELECTION_HINT` of the single-door wall cabinets can
-name the widths — section 1.4 of
+**To do.** The library: calculate the single-door wall cabinets at every width `mod_Width` accepts
+(entries in `tab_DoorSettings`), or declare the widths a single door takes as the verified range of
+`mod_Width`, so that a width outside it is ruled out before the edit — the check the tools then make
+is [attribute-values-checked-before-an-edit.md](attribute-values-checked-before-an-edit.md); and no
+script exception after a missing table entry. With the widths known, the `AI_SELECTION_HINT` of the
+single-door wall cabinets can name them — section 1.4 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#14-wall-units-with-a-single-door).
-Then check that the served text needs nothing more.
 
 **Status.** Open, not reported to the library development team.
 
@@ -427,6 +445,10 @@ bo-test, the first `create-or-replace-groups`): roots `upper-header1` and `upper
 with `mod_Width` 900 and `Left` / `Right` (`0f28d725-7d4c-4ddf-b5ee-6e55047eb95a`,
 `e3ff5339-6689-4f07-8374-abf33cc1ed10`) in the group `a95f4523-027a-43fd-81cf-61525af60b35`, not
 calculated, Error 14019; the model undid the create and sent it again with two `O2TB90`.
+`mcp-test-2026-10-21_08-37-33`: gpt-6-astra 66 (`image-planning-right-wall`, local roomle-ui
+:5173, the first `create-or-replace-groups`): `top1` and `top2` `OTB60` with `mod_Width` 900 and
+`Left` / `Right` on top of two `O2TB90`, not calculated, Error 14019 and the script exceptions; the
+model's `change-module-attribute` to `LeftRight` lets the library calculate them.
 
 ## 93. Backsplashes the library cannot calculate
 

@@ -13,7 +13,10 @@ Each issue names the problem, its cause, the to-do, the test of the fix and how 
 overview names the module, team or repository responsible for the fix, and the model and the
 reasoning effort of the run that reproduces it — empty where it is unknown; a model the chat sends
 no effort for runs at its provider's default. Library data issues are tracked in
-[library-issues.md](library-issues.md). An issue leaves this document when its fix is in the code.
+[library-issues.md](library-issues.md). A calculation error of the library is an MCP issue here
+when an invalid attribute value the tools sent caused it, and a library issue there otherwise
+(D99 of [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#3-decisions)). An issue leaves
+this document when its fix is in the code.
 The guideline for every server issue is
 [Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort): wrong content an agent creates
 is an instruction problem first; correct where the intent is clear, report what was corrected, and

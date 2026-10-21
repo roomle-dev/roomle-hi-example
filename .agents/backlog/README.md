@@ -19,13 +19,15 @@ the document a row links.
 | 97 — Wall units docked beside the hood hang higher than the other wall units | roomle-ui: replay the run's create, find which step sets the 1570 mm insertion height of the row beside the hood | low |
 | 98 — A row placed into a corner stands 10 mm off the wall after later edits | roomle-ui: replay the run's three calls, find the call that moves the row and fix it | low |
 | Test prompts for replacing, transferring and batch-deleting interior fittings | `docs/test-prompts.json` has no test that needs `replace-interior-fitting`, a `move-interior-fitting` into another root module of the group or a `delete-interior-fittings` of several fittings. Add tests on a plan with an installed fitting that has `replacementArticles`: replace it by one of them, move a shelf into the neighbouring carcass, delete two shelves in one request | low |
+| [Attribute values checked before an edit](attribute-values-checked-before-an-edit.md) | Decide what an edit does with a value the module does not take; roomle-ui: check the agent's attribute values against the library's verified options (`getVerifiedAttributeOptions`) before they are set | medium |
 | [A relation for a unit under a tabletop](under-relation-for-tabletops.md) | Live-check the inner vectors of a DeMaat tabletop, then compile `under` with the vector index | low |
 | [Where Mistral Large falls short of the prompts](mistral-large-prompt-issues.md) | Improvement candidates from the `mistral-large-latest` test run: declare the payload fields in the input schema, merge groups that name each other's roots, act on obstacle hints, describe the walls, open the edit tools with the user's words | medium |
 | [Analyse how Spec Kit can help with the prompting](speckit-for-the-prompting.md) | Compare the prompt sections of Spec Kit (user input, pre-execution checks, guidelines, success criteria, done when) with the served text and the chat prompt; propose what improves the plannings | medium |
 
 ## Libraries
 
-What the library data lacks for the agent to plan right; the fix is in the library. Details:
+What the library data lacks for the agent to plan right, and the calculation errors of values the
+library accepts (D99); the fix is in the library. Details:
 [library-issues.md](library-issues.md).
 
 | Item | To do | Priority |
@@ -38,7 +40,7 @@ What the library data lacks for the agent to plan right; the fix is in the libra
 | [76 — Articles with two doors that do not say how their doors stand](library-issues.md#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG library: the articles with two doors say one above the other or side by side; `LeftLeft`, `RightRight` and the desc of `14` | low |
 | [78 — Tall-unit descriptions omit width-dependent door arrangements](library-issues.md#78-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG library: apply the width-dependent tall-unit door and resize descriptions so retained single-door settings are corrected for a paired unit | medium |
 | [79 — Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate](library-issues.md#79-base-units-narrowed-to-150-mm-with-a-150-mm-plinth-the-library-cannot-calculate) | HOMAG library: the desc of `mod_Width` names the widths the plinth takes; under 300 mm, a filler panel or pull-out fills the gap | low |
-| [80 — Wall units at 900 mm with a single door the library cannot calculate](library-issues.md#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG library: the single-door wall cabinets' descs name the widths a single door takes; wider, a cabinet with a pair of doors | low |
+| [80 — Wall units at 900 mm with a single door the library cannot calculate](library-issues.md#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG library bug: calculate a single door at every width `mod_Width` accepts, or declare the widths it takes as the verified range of `mod_Width`; then the descs name them | low |
 | [93 — Backsplashes the library cannot calculate](library-issues.md#93-backsplashes-the-library-cannot-calculate) | HOMAG library or roomle-ui (not established): replay the check that built the backsplash on 2026-10-18; then the backsplash's grain-direction lookup in the library, or the planner fix | low |
 | [99 — A handle strip the library cannot calculate](library-issues.md#99-a-handle-strip-the-library-cannot-calculate) | HOMAG library: the handle position a handle strip takes in the desc of the handle design, or set with the strip; report the JSON parse error of the base units | low |
 | [100 — A worktop on the tall units from the group's countertop switch](library-issues.md#100-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG library: the desc of `mod_CreateCountertop` says that set on the group it reaches the tall units too | low |

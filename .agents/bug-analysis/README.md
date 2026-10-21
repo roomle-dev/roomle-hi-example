@@ -40,7 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [The attributes of sub modules are missing from the attribute vocabulary](sub-module-attributes-missing-from-the-vocabulary.md) | Open — fix proposed (roomle-ui `compactMasterData`) | — |
+| [The plan context hides attributes of the library from the agent](sub-module-attributes-missing-from-the-vocabulary.md) | Open — fix proposed: roomle-ui `compactMasterData` keeps every attribute (`mod_SinkId`) | — |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

@@ -26,7 +26,7 @@ A document counts as done only when all of these hold:
   --grep=<TICKET>`, `git log --oneline origin/master -S<symbol> -- minimal-hi-example`; the tools: roomle-ui).
 - The behaviour is still in the code at HEAD — the key condition, the function, the sentence of the
   served text.
-- The guarding test exists: an `it('…')` in roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-mcp/*.spec.ts` or a tool command's test; for served text, a
+- The guarding test exists: an `it('…')` in roomle-ui `packages/web-sdk/packages/homag-intelligence/__tests__/hi-mcp/*-test.ts` or a tool command's test; for served text, a
   test of [`docs/test-prompts.json`](../../docs/test-prompts.json) can guard it as well.
 - roomle-ui work is on roomle-ui `origin/release/bo-test`, the planner the example page loads
   (`DEFAULT_SERVER_URL`, `minimal-hi-example/index.html`), or on `origin/master`:
@@ -60,7 +60,7 @@ its home already states it; add it only where it does not.
 | A tool's parameters and examples | [`hi-mcp-tools.md`](hi-mcp-tools.md) |
 | HI domain knowledge — rooms, walls, articles, docking, positioning | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), [`hi-authoring-rules.md`](hi-authoring-rules.md) |
 | How the planner or the library behaves, as a root-cause investigation found it — what a load report replaces, how the arrangement docks, what an attribute switches | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), or the planner section of `hi-mcp-behaviour.md` where it explains the tools' behaviour; written as today's behaviour |
-| The regression test | it exists; name it next to the invariant: guarded by `it('…')` in roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-mcp/….spec.ts`, or by the test `<id>` of `docs/test-prompts.json` |
+| The regression test | it exists; name it next to the invariant: guarded by `it('…')` in roomle-ui `packages/web-sdk/packages/homag-intelligence/__tests__/hi-mcp/…-test.ts`, or by the test `<id>` of `docs/test-prompts.json` |
 | A debugging or test recipe — a run script, a headless check | the matching skill in `.agents/skills/` ([`hi-mcp-testing.md`](hi-mcp-testing.md)) |
 | Model comparisons and before/after numbers that later work compares against | `.agents/benchmarks/`, with a row in the benchmarks table of [`.agents/README.md`](../README.md) |
 | A deferred item, a follow-up or an open finding | a todo in [`.agents/backlog/`](../backlog/README.md), written as [the backlog cleanup](hi-backlog-cleanup.md#what-the-backlog-is) defines it |

@@ -41,8 +41,8 @@ ligna-store chat (runs in the page) ──────── MCP ─────
                                                               ▲
                                                               │ roomDesignerApi.extended
                                   example page: minimal-hi-example/index.html (:3000)
-                                    the planning assistant and the HI MCP tools of the
-                                    embedding-lib, both in the page — no MCP server
+                                    the planning assistant of the embedding-lib in the
+                                    page, the HI MCP tools in the planner — no MCP server
 ```
 
 - **The server holds the tools, the page holds the planner.** A browser page cannot accept
@@ -62,9 +62,9 @@ ligna-store chat (runs in the page) ──────── MCP ─────
   clients, locally and on Cloudflare; clients wire themselves to it through URL parameters and
   environment variables
   ([ADR 0002](../../.agents/decisions/0002-one-mcp-server-configured-from-outside.md)).
-- **The example page needs no server.** It runs the copy of the tools in the embedding-lib of
-  roomle-ui (`createHiMcpTools`, `packages/embedding-lib/src/homag-intelligence/hi-mcp/`) and its
-  planning assistant (`startPlanningAssistant`) in the page, on the same planner methods
+- **The example page needs no server.** It runs the planning assistant of the roomle-ui
+  embedding-lib (`startPlanningAssistant`) in the page, with the tools the planner serves
+  (`createHiMcpTools`, `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`)
   ([Pages, chat and launcher](./pages-chat-and-launcher.md#the-chat-of-the-example-page)).
 
 ### Processes and ports
@@ -105,8 +105,9 @@ ligna-store chat (runs in the page) ──────── MCP ─────
    (`planningAssistantOutput`).
 
 The same call from an external MCP client skips steps 1, 2 and 9 and has no `client` binding. In
-the example page, the tools of the embedding-lib run steps 4, 5 and 8 in the page and call the
-planner method directly, without the bridge of step 6.
+the example page, the page forwards the call to the planner (`callExternalObjectAgentTool`), and
+the tools run steps 4, 5 and 8 there and call the planner method directly, without the bridge of
+step 6.
 [hi-mcp-behaviour.md §4](../../docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs) describes the call from the
 agent's side.
 
@@ -170,9 +171,8 @@ the lifetime of the process:
    planner does not offer yet is a group operation (`HI_GROUP_OPERATION`, executed in `hi-tools.ts`)
    the tool command runs.
 4. Only a tool that needs a new planner method extends `planner-api.ts` of the tools (roomle-ui
-   `packages/embedding-lib/src/homag-intelligence/hi-mcp/`), plus `PLANNER_METHODS` in
-   `minimal-hi-example/index.html`, the methods the example page records for the test scripts.
-5. Unit tests in roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-mcp/` — a tool command's in roomle-ui
+   `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`).
+5. Unit tests in roomle-ui `packages/web-sdk/packages/homag-intelligence/__tests__/hi-mcp/` — a tool command's in roomle-ui
    `homag-intelligence/__tests__/hi-tool-commands/`; then the behaviour reference, the tool reference
    in `docs/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`.
 
@@ -184,7 +184,7 @@ the lifetime of the process:
   [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md), and checked by tests. Change both in the same
   change: a message of a tool command with the behaviour reference that quotes it.
 - **The log format is parsed.** `[hi-mcp] tool <name> args|feedback|error <json>` — logged by the
-  copy of the tools in the embedding-lib to the console of the example page — is read by
+  tools in the planner to the console of the planner's frame, which the page console carries — is read by
   `run-hi-mcp-prompt.js` to collect the tool calls of a turn.
 - **The bridge protocol has three copies** — `hi-mcp-server/types.ts`, `hi-mcp-client/types.ts` and
   the ligna-store's. Change `BRIDGE_PROTOCOL` when the

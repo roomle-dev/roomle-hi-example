@@ -18,9 +18,9 @@
  * writes --out (default .temp/result/<UTC timestamp>-<model>/): run.json
  * (with every call of a plan-changing MCP tool per turn: what the model sent,
  * and the corrections, groups not loaded or error it got back, read from the
- * [hi-mcp] lines the tools log in the page console),
+ * [hi-mcp] lines the tools log in the console of the planner frame),
  * plan-context.json (rooms and groups after the chat, in the agent's words),
- * planner-calls.json (the chat's, each with the page's time in ms), prompt-image.jpg (the image sent),
+ * planner-calls.json (the chat's tool calls the planner ran, each with the page's time in ms), prompt-image.jpg (the image sent),
  * turn-<n>-plan-images-<k>-perspective-object.png and -top.png (the images the k-th
  * get-plan-images call of turn n showed the agent, listed in the turn's
  * planImages) and every snapshot field as a file of its own; the snapshot
@@ -50,8 +50,9 @@ const SNAPSHOT_TIMEOUT_MS = 2 * 60_000;
 const SETTLE_TIMEOUT_MS = 3 * 60_000;
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 const POLL_INTERVAL_MS = 1000;
-// The HI MCP tools of the page log what a tool was sent and the feedback it
-// gave as one JSON line each, in the page console.
+// The HI MCP tools log what a tool was sent and the feedback it gave as one
+// JSON line each, in the console of the planner frame, which the page console
+// carries.
 const TOOL_CALL_LINE = /^\[hi-mcp\] tool (\S+) (args|feedback|error) (.+)$/;
 // The lines of the page console that go to the run's output while a turn
 // runs: the tool calls, the planner calls of the tools and the errors of the
@@ -538,15 +539,15 @@ const runSession = async (options, launcher, browser) => {
   const chatPlannerCalls = recordedPlannerCalls.map(
     ({ result: _result, ...call }) => call
   );
-  // the snapshots the tools asked for during a turn, with their answers
-  const snapshotAnswers = recordedPlannerCalls.flatMap((call, index) =>
-    call.method === 'getExternalObjectSnapshot' &&
+  // the get-plan-images calls of a turn, with their results
+  const planImageAnswers = recordedPlannerCalls.flatMap((call, index) =>
+    call.tool === 'get-plan-images' &&
     call.ok &&
     plannerCallTurns[index] !== undefined
       ? [{ turn: plannerCallTurns[index], result: call.result }]
       : []
   );
-  const planImages = planImageFiles(snapshotAnswers);
+  const planImages = planImageFiles(planImageAnswers);
   const errors = turns.flatMap((turn) => turn.errors);
   const chatDoneAt = Date.now();
   navigation.setPhase('snapshot');

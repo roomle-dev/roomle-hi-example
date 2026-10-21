@@ -222,7 +222,7 @@
     </div>
 
     <script type="module">
-      import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-a40887e';
+      import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-a95b24e';
       import {
         createHiMcpTools,
         libLoadArticleCatalog,
@@ -232,7 +232,7 @@
         omPostRequest,
         setupHi,
         startPlanningAssistant,
-      } from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-a40887e/hi.js';
+      } from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-a95b24e/hi.js';
 
       const DEFAULT_PLAN_ID = 'ps_8jjg0zezlblb48vzn8qas9vwwn7fqbg';
       const DEFAULT_SERVER_URL = 'https://www.roomle.com/t/bo-test/';
@@ -935,21 +935,14 @@
       // the HI MCP tools, the planner's prompts and the model the launcher
       // serves at /planning-assistant-config.json, to this machine only.
 
-      // The planner methods the HI MCP tools call.
-      const PLANNER_METHODS = [
-        'getExternalObjectPlanContext',
-        'externalObjectGroupOperation',
-        'fetchPrice',
-        'getExternalObjectSnapshot',
-        'undo',
-        'redo',
-      ];
+      // The planner method the HI MCP tools forward their calls to: the tools
+      // run in the planner.
+      const AGENT_TOOL_CALL = 'callExternalObjectAgentTool';
 
       // The planner API the planning assistant runs on. For the test runner,
-      // it records the planner calls of the tools in window.hiPlannerCalls -
-      // with the answer of a snapshot, which holds the images get-plan-images
-      // shows the agent - and the output of the window in
-      // window.hiPlanningAssistantOutput.
+      // it records the tool calls the planner runs in window.hiPlannerCalls -
+      // with the result of get-plan-images, which holds the images the agent
+      // saw - and the output of the window in window.hiPlanningAssistantOutput.
       window.hiPlannerCalls = [];
       window.hiPlanningAssistantOutput = [];
       const recordedPlannerApi = (api) => ({
@@ -965,24 +958,25 @@
                 );
               };
             }
-            if (!PLANNER_METHODS.includes(name)) {
+            if (name !== AGENT_TOOL_CALL) {
               return member;
             }
-            return async (...args) => {
+            return async (tool, input) => {
               const call = {
                 id: window.hiPlannerCalls.length + 1,
-                method: name,
-                args,
+                tool,
+                input,
               };
               window.hiPlannerCalls.push(call);
-              logApiCall(`MCP ${name}`);
+              logApiCall(`MCP ${tool}`);
               const startedAt = performance.now();
               try {
-                const result = await member.apply(extended, args);
+                const result = await member.call(extended, tool, input);
                 Object.assign(call, {
                   ms: Math.round(performance.now() - startedAt),
-                  ok: true,
-                  ...(name === 'getExternalObjectSnapshot' && { result }),
+                  ok: !result?.isError,
+                  ...(result?.isError && { error: result.content?.[0]?.text }),
+                  ...(tool === 'get-plan-images' && { result }),
                 });
                 return result;
               } catch (error) {

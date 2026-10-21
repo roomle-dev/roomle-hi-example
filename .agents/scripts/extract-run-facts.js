@@ -10,7 +10,7 @@
  * evaluation (skill hi-mcp-testing, section 5) and the input of
  * build-test-report.js: per run the test, the turns with their tools and tool
  * calls (corrections, the notLoaded errors, error) and the shortened answer,
- * the groups after the chat and the planner calls the server sent. A
+ * the groups after the chat and the tool calls the planner ran. A
  * multi-model session is keyed by model and test, so every model's run of a
  * test is kept.
  */
@@ -133,13 +133,11 @@ for (const model of models) {
             category: r.category || null,
           })),
       })),
-      plannerCalls: (plannerCalls || [])
-        .filter((c) => c.method === 'externalObjectGroupOperation')
-        .map((c) => ({
-          tool: c.args[0],
-          ok: c.ok !== false,
-          error: c.error || null,
-        })),
+      plannerCalls: (plannerCalls || []).map((c) => ({
+        tool: c.tool,
+        ok: c.ok !== false,
+        error: c.error || null,
+      })),
       dir: run.dir,
     });
   });

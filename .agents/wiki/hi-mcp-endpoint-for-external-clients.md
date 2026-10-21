@@ -36,31 +36,33 @@ MCP client ──HTTP POST /hi-mcp (session)──▶ relay ◀──WebSocket, 
 | Relay | a hosted service | accepts Streamable HTTP and the planner's WebSocket, pairs them by session, forwards the messages; knows no tools |
 | Page bridge | the planner (roomle-ui) | opens the WebSocket on request, hands the messages to the MCP server logic, sends the answers back |
 | MCP server logic | the planner | answers `initialize`, `tools/list`, `tools/call` and `ping` from the HI tool set |
-| HI tool set | the planner | the tools, as in [hi-tool-set-in-the-planner.md](../backlog/hi-tool-set-in-the-planner.md) |
+| HI tool set | the planner | the tools: `getExternalObjectAgentTools` and `callExternalObjectAgentTool` ([ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md)) |
 
 Because the relay forwards the messages unchanged, a tool change never touches the relay. The
 tools, the served text and the protocol answers all ship with the planner.
 
 ## What needs to be done
 
-1. **The tool set in the planner.** This is the prerequisite: the backlog item
-   [hi-tool-set-in-the-planner.md](../backlog/hi-tool-set-in-the-planner.md). Without it, the bridge
-   would have to live in the embedding-lib of every host page, and a tool would make several round
-   trips into the iframe.
-2. **The MCP protocol in the planner.** The planner answers `initialize`, `tools/list`,
-   `tools/call` and `ping` from the tool set.
+The tool set runs in the planner
+([ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md)):
+`getExternalObjectAgentTools` and `callExternalObjectAgentTool` answer as `tools/list` and
+`tools/call` do, and a tool call is one round trip into the planner's iframe. The MCP server logic
+builds on them.
+
+1. **The MCP protocol in the planner.** The planner answers `initialize`, `tools/list`,
+   `tools/call` and `ping` from those two methods.
    - `initialize` returns the system prompt of `getExternalObjectAgentPrompts` (roomle-ui
      `roomle-planner.ts:3213`, D80) as its `instructions`. Without it an external agent gets no
      system prompt.
    - Either a small JSON-RPC handler, or the MCP SDK's `Server` with a custom transport. The SDK
      stays a lazy chunk of the planner that loads only with the bridge. D94 rejects the MCP SDK in
      the host bundle.
-3. **The page bridge in the planner.**
+2. **The page bridge in the planner.**
    - It opens only on request: an init option or feature flag with the relay URL.
    - It opens the WebSocket, announces its protocol version and planner version, and reconnects
      when the connection drops.
    - It shows its state in the planner UI: connected, the pairing code, a disconnect button.
-4. **The relay.**
+3. **The relay.**
    - **Endpoints:** Streamable HTTP at `/hi-mcp`, and the planner's WebSocket at `/hi-mcp/bridge`.
    - **Per session:** it holds the planner's socket and the open requests. It keeps a request open
      for the whole tool call. Without a connected planner it answers with an error that says which
@@ -70,7 +72,7 @@ tools, the served text and the protocol answers all ship with the planner.
    - **Routing:** serving it under `www.roomle.com/t/bo-test/hi-mcp` needs a routing rule in front
      of the bucket. A host of its own needs none and loses nothing: the planner opens the WebSocket
      cross-origin either way.
-5. **Pairing and authentication.**
+4. **Pairing and authentication.**
    - The planner shows a pairing token, and the user adds the endpoint with it to the MCP client,
      e.g. `claude mcp add --transport http hi-mcp <relay>/hi-mcp` with the token as a header.
    - Or the relay uses the MCP authorization flow (OAuth) with the Roomle account and maps the
@@ -78,13 +80,13 @@ tools, the served text and the protocol answers all ship with the planner.
    - Either way the token is unguessable, expires and can be revoked from the planner. A session
      name routes requests and authenticates nothing
      ([ADR 0004](../decisions/0004-hi-mcp-server-on-cloudflare-containers.md)).
-6. **Tests.**
+5. **Tests.**
    - roomle-ui: the protocol answers, and the bridge's hello, reconnect and refusals.
    - The relay: pairing, no planner connected, a second planner for the same session, timeouts, a
      dropped socket during a call.
    - End to end: an external client against a local planner and a local relay. The prompt runner
      (`run-hi-mcp-prompt.js`) drives the in-page chat and does not cover this path.
-7. **Documentation.**
+6. **Documentation.**
    - An ADR that brings back an MCP endpoint and supersedes the consequence "no MCP endpoint for
      external MCP clients" of ADR 0011. The ADR's own reason for rejecting the endpoint — no page
      runs the page bridge — does not hold when the planner runs the bridge.
@@ -142,5 +144,5 @@ tools, the served text and the protocol answers all ship with the planner.
   per server, the refusal of a second page
 - [ADR 0010](../decisions/0010-the-example-chat-runs-in-the-page.md) — one client per planner
 - [ADR 0011](../decisions/0011-the-hi-tools-live-in-the-embedding-lib.md) — no MCP endpoint
-- [hi-tool-set-in-the-planner.md](../backlog/hi-tool-set-in-the-planner.md) — the prerequisite
+- [ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md) — the tool set in the planner
 - D80 and D94 of [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#3-decisions)

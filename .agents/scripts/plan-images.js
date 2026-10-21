@@ -1,30 +1,28 @@
-// The images get-plan-images showed the agent during the chat: the planner's
-// answers to getExternalObjectSnapshot within a turn, as files named by their
-// turn and their order in it, so the evaluation sees what the agent saw.
-const VIEWS = [
-  ['perspectiveObjectImage', 'perspective-object'],
-  ['perspectiveImage', 'perspective'],
-  ['topImage', 'top'],
-];
+// The images get-plan-images showed the agent during the chat: the image parts
+// of its results within a turn, as files named by their turn and their order
+// in it, so the evaluation sees what the agent saw. The last image of a result
+// is the top view, an image before it the groups alone.
+const VIEWS_BY_COUNT = new Map([
+  [1, ['top']],
+  [2, ['perspective-object', 'top']],
+]);
 
 export const planImageFiles = (answers) => {
   const callsPerTurn = new Map();
   return answers.flatMap(({ turn, result }) => {
-    const views = VIEWS.filter(
-      ([field]) => typeof result?.[field] === 'string'
+    const images = (result?.content ?? []).filter(
+      (part) => part.type === 'image'
     );
-    if (views.length === 0) {
+    const views = VIEWS_BY_COUNT.get(images.length);
+    if (!views) {
       return [];
     }
     const call = (callsPerTurn.get(turn) ?? 0) + 1;
     callsPerTurn.set(turn, call);
-    return views.map(([field, view]) => ({
+    return images.map((image, index) => ({
       turn,
-      file: `turn-${turn + 1}-plan-images-${call}-${view}.png`,
-      data: Buffer.from(
-        result[field].replace(/^data:image\/\w+;base64,/, ''),
-        'base64'
-      ),
+      file: `turn-${turn + 1}-plan-images-${call}-${views[index]}.png`,
+      data: Buffer.from(image.data, 'base64'),
     }));
   });
 };

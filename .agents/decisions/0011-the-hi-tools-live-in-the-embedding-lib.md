@@ -1,6 +1,6 @@
 # ADR 0011 — The HI tools live only in the roomle-ui embedding-lib
 
-> **Status**: Accepted
+> **Status**: Accepted — the clause that puts the HI tools into the embedding-lib is superseded by [ADR 0012](0012-the-hi-tool-set-runs-in-the-planner.md)
 > **Date**: 2026-10-20
 > **Supersedes**: [ADR 0001](0001-hi-mcp-tool-logic-in-the-server.md), [ADR 0002](0002-one-mcp-server-configured-from-outside.md), [ADR 0003](0003-the-ai-chat-is-an-mcp-client-beside-the-server.md), [ADR 0004](0004-hi-mcp-server-on-cloudflare-containers.md), [ADR 0005](0005-deploy-hi-mcp-from-release-cloudflare.md), [ADR 0008](0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) and the server clause of [ADR 0010](0010-the-example-chat-runs-in-the-page.md)
 

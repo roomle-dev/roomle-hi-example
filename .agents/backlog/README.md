@@ -83,8 +83,3 @@ Details: [mcp-test-infrastructure-issues.md](mcp-test-infrastructure-issues.md).
 |---|---|---|
 | [1 — The object-only perspective render draws an empty frame under software GL](mcp-test-infrastructure-issues.md#1-the-object-only-perspective-render-draws-an-empty-frame-under-software-gl) | roomle-ui: find why the frame is dropped under SwiftShader | low |
 
-## Architecture
-
-| Item | To do | Priority |
-|---|---|---|
-| [The HI tool set in the planner, the embedding-lib forwards to it](hi-tool-set-in-the-planner.md) | Decide with the user; roomle-ui: move the tool set of the embedding-lib (`hi-mcp/`) into the planner behind two planner methods (tool definitions, tool call), keep `createHiMcpTools` as a forwarding wrapper; a new ADR that supersedes the location clause of ADR 0011 | medium |

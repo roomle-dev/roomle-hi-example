@@ -198,15 +198,19 @@ const singleModelSession = async (t) => {
       ],
     },
     [
-      { method: 'getPlanContext', args: [], ok: true },
+      { id: 1, tool: 'get-plan-context', input: {}, ms: 40, ok: true },
       {
-        method: 'externalObjectGroupOperation',
-        args: ['create-or-replace-groups', { posGroups: [] }],
+        id: 2,
+        tool: 'create-or-replace-groups',
+        input: { posGroups: [] },
+        ms: 900,
         ok: true,
       },
       {
-        method: 'externalObjectGroupOperation',
-        args: ['undo', {}],
+        id: 3,
+        tool: 'undo',
+        input: {},
+        ms: 10,
         ok: false,
         error: 'nothing to undo',
       },
@@ -508,6 +512,7 @@ test('extracts the facts of a single-model session', async (t) => {
   });
 
   assert.deepEqual(r1.plannerCalls, [
+    { tool: 'get-plan-context', ok: true, error: null },
     { tool: 'create-or-replace-groups', ok: true, error: null },
     { tool: 'undo', ok: false, error: 'nothing to undo' },
   ]);

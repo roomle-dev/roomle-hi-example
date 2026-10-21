@@ -15,7 +15,7 @@ Paths:
 
 | Short form | Repository and folder |
 | ---------- | --------------------- |
-| `hi-mcp/…` | roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/` — the HI tools (`createHiMcpTools`) |
+| `hi-mcp/…` | roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/` — the HI tools (`createHiMcpTools`) |
 | `hi/…` | roomle-ui `packages/web-sdk/packages/homag-intelligence/src/` — the plan context and the HI tool commands |
 | `planner-core/…` | roomle-ui `packages/web-sdk/packages/planner-core/src/` |
 | `src/…` | RoomleCore `src/` — the kernel |

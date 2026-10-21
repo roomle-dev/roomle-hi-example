@@ -211,8 +211,8 @@ When the repository uses Atlassian Jira:
 
 ### HI Tools Architecture
 
-1. **The Tools in the roomle-ui Embedding-Lib** — `createHiMcpTools` of `@roomle/embedding-lib/hi` (roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/`) is the only implementation of the HI tools: tools in the shape of MCP tools, without the MCP protocol (D94, [ADR 0011](./.agents/decisions/0011-the-hi-tools-live-in-the-embedding-lib.md))
-2. **The Planning Assistant in the Page** — `startPlanningAssistant` of the embedding-lib runs the agent loop in the page of the example and of the ligna-store; the tools call the planner of the page directly (`instance.extended`, six planner methods)
+1. **The Tools in the roomle-ui Planner** — the planner serves the only implementation of the HI tools (roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`, `getExternalObjectAgentTools` and `callExternalObjectAgentTool`); `createHiMcpTools` of `@roomle/embedding-lib/hi` hands them to an agent in the page as tools in the shape of MCP tools, without the MCP protocol, and forwards every call (D94, [ADR 0012](./.agents/decisions/0012-the-hi-tool-set-runs-in-the-planner.md))
+2. **The Planning Assistant in the Page** — `startPlanningAssistant` of the embedding-lib runs the agent loop in the page of the example and of the ligna-store; the tools run in the planner of the page (`instance.extended.callExternalObjectAgentTool`) and call its six planner methods there
 3. **Plan-Changing Tools Run in roomle-ui** — Every tool that changes the plan is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`; roomle-ui performs the whole tool as an HI tool command (`hi-tool-commands.ts` in `packages/web-sdk/packages/homag-intelligence/src/`): corrections, ids, docking from the relations, placement, group materials, hints. It answers with the tool's result and the planner steps it made, which the tool set counts for undo (D71 of [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md#3-decisions))
 
 ### HI Data Model
@@ -439,12 +439,12 @@ assistant runs the HI tools.
 
 ### Adding New Tools
 
-1. Register the tool in roomle-ui `packages/embedding-lib/src/homag-intelligence/hi-mcp/hi-mcp-server.ts` (zod schema + handler)
+1. Register the tool in roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/hi-mcp-server.ts` (zod schema + handler)
 2. Implement the executor in `tool-executors.ts` there. A tool that changes the plan is a tool command in roomle-ui (`HI_TOOL_COMMAND` in `homag-intelligence/src/hi-plan-context.ts`, the command in `HI_TOOL_COMMANDS` of `hi-tool-commands.ts`) plus a forwarder, `inPlanner('<tool name>')`, which sends it through `externalObjectGroupOperation` and wraps it in `oneAtATime`, so it never runs beside another plan change, and in the undo record
-3. An edit the planner does not offer yet is a group operation the tool command runs (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`, executed in `hi-tools.ts`) — no new planner method. Only if a tool needs a planner method the tools do not call yet: add it to `planner-api.ts` of the tools and to the methods the example page records (`PLANNER_METHODS` in `minimal-hi-example/index.html`)
-4. Add or extend unit tests in roomle-ui `tests/unit/embedding-lib/homag-intelligence/hi-mcp/` — a tool command's in `homag-intelligence/__tests__/hi-tool-commands/`
+3. An edit the planner does not offer yet is a group operation the tool command runs (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`, executed in `hi-tools.ts`) — no new planner method. Only if a tool needs a planner method the tools do not call yet: add it to `planner-api.ts` of the tools
+4. Add or extend unit tests in roomle-ui `packages/web-sdk/packages/homag-intelligence/__tests__/hi-mcp/` and the fixture `packages/web-sdk/packages/test-helpers/unit/hi-mcp-fixture.json` — a tool command's in `homag-intelligence/__tests__/hi-tool-commands/`
 5. Update `docs/hi-mcp-behaviour.md`, the `docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
-6. The example page and the ligna-store get the tool with a new embedding-lib version — built only after asking ([Hard Rule](#hard-rule-no-embedding-lib-build-without-asking))
+6. The example page and the ligna-store get the tool with the planner at their server URL; a new embedding-lib version is needed only when the forwarding of `createHiMcpTools` changes — built only after asking ([Hard Rule](#hard-rule-no-embedding-lib-build-without-asking))
 
 ## Suggested Change Workflow
 

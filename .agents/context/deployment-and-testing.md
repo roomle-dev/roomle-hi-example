@@ -25,10 +25,11 @@ page and needs no dependency here. Node 20 or later.
 | `minimal-hi-example/tests/start.test.js` | starts the real launcher on unused ports, with a model and a dummy key and without a model: the planning assistant config of the model, `no-store`, the 404 without a model, the 403 for a foreign Host; SIGTERM/SIGINT to only the launcher PID release the page port (POSIX; no model request) |
 | `.agents/scripts/tests/*.test.js` | the test tooling (`node --test`) |
 
-The HI tools are tested in roomle-ui, in `tests/unit/embedding-lib/homag-intelligence/hi-mcp/`
+The HI tools are tested in roomle-ui, in `packages/web-sdk/packages/homag-intelligence/__tests__/hi-mcp/`
 (`tool-executors`, `hi-mcp-server`, `plan-history`, `skills`, `interior-fittings`, `mcp-tool`,
-`hi-mcp-tools`, `hi-mcp-stream-text`), with
-`npx vitest run tests/unit/embedding-lib/homag-intelligence/hi-mcp --config config/vite.config.ui.mts`.
+`hi-mcp-tools`, `hi-mcp-fixture`), with `npm run test -- --run packages/homag-intelligence/__tests__/hi-mcp`
+in `packages/web-sdk`; the forwarding of the embedding-lib in `tests/unit/embedding-lib/homag-intelligence/hi-mcp/`
+(`hi-mcp-tools`, `hi-mcp-stream-text`), with `npm run test:unit:debugCI -- tests/unit/embedding-lib`.
 
 The tool commands of the plan-changing tools are tested in roomle-ui, with `npm run test` in
 `packages/web-sdk` (`packages/web-sdk/packages/homag-intelligence/__tests__/`):
@@ -75,7 +76,7 @@ node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt
    `[hi-mcp] tool <name> args|feedback|error` lines of the page console.
 5. Reads the plan context (`window.hiAgentPlanContext`) and takes a snapshot in the page
    (`window.instance.extended`): images, plan XML, order data, and a saved plan snapshot id. The
-   planner calls of the chat come from `window.hiPlannerCalls`.
+   tool calls the planner ran during the chat come from `window.hiPlannerCalls`.
 
 Output in `--out` or `.temp/result/<time>-<model>/`: `run.json` (turns, answers, tool calls,
 errors, the snapshot id, `snapshotCaptured` and `navigations`), the plan context, the planner calls,

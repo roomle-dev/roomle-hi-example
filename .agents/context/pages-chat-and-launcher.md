@@ -54,7 +54,7 @@ the 403 for a foreign Host, and that the page port can be bound again after sign
 ## The chat of the example page
 
 `index.html` imports `@roomle/embedding-lib` and its `hi.js` from unpkg — the dev version
-`0.0.0-dev-a40887e` until a release has the planning assistant
+`0.0.0-dev-a95b24e` until a release has the planning assistant
 ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`
 the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
 
@@ -64,26 +64,30 @@ the page sets `featureFlags.planningAssistant` in the planner options, and `star
    unavailable with the message to start the example with a model;
 3. calls `startPlanningAssistant(recordedPlannerApi(roomDesignerApi), config, signal)` of the
    embedding-lib, which loads the AI SDK and the provider from esm.sh, requests the prompts of the
-   planner (`getExternalObjectAgentPrompts()`), creates the HI MCP tools, registers
+   planner (`getExternalObjectAgentPrompts()`), creates the HI MCP tools from the tools the planner
+   serves (`getExternalObjectAgentTools()`), registers
    `onPlanningAssistantPrompt` and runs every turn with `streamText` (at most 16 steps, the last
    without tools).
 
 `recordedPlannerApi` is the planner API the planning assistant runs on: a proxy of
-`roomDesignerApi.extended` that records every call of the six planner methods in
-`window.hiPlannerCalls` (`id`, `method`, `args`, `ms`, `ok`, `error`, and the answer of a
-snapshot, which holds the images `get-plan-images` shows the agent) and every output part of the
-window in `window.hiPlanningAssistantOutput`. Its `callbacks` are the planner's own, so the
-assistant's `onPlanningAssistantPrompt` and the tools' `onHistoryChange` land there.
-`window.hiAgentPlanContext(include)` creates a tool set of its own and answers the plan context in
-the agent's words, as the tool `get-plan-context` does. The tools log every tool call and planner
-call to the page console (`[hi-mcp] tool …`, `[hi-mcp] call <n>: …`), the planning assistant its
+`roomDesignerApi.extended` that records every tool call the planner runs
+(`callExternalObjectAgentTool`) in `window.hiPlannerCalls` (`id`, `tool`, `input`, `ms`, `ok`,
+`error` — the text of an `isError` result or the rejection —, and the result of `get-plan-images`,
+which holds the images the agent saw) and every output part of the window in
+`window.hiPlanningAssistantOutput`. Its `callbacks` are the planner's own, so the assistant's
+`onPlanningAssistantPrompt` lands there. `window.hiAgentPlanContext(include)` answers the plan
+context in the agent's words, as the tool `get-plan-context` does, without being recorded. The
+tools log every tool call and planner call to the console of the planner's frame, which the page
+console carries (`[hi-mcp] tool …`, `[hi-mcp] call <n>: …`); the planning assistant logs its
 errors (`[planning-assistant] …`).
 
 ## Before you change these files
 
-- **The chat is the embedding-lib's.** The loop, the tools, the served text and the planning skills
-  live in roomle-ui `packages/embedding-lib`; the page only hands it the model and the planner API.
-  A new embedding-lib version means raising the version in the two imports of `index.html`.
+- **The chat is roomle-ui's.** The loop lives in roomle-ui `packages/embedding-lib`; the tools, the
+  served text and the planning skills in the planner
+  ([ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md)), so they come with the
+  planner at the server URL. The page only hands the loop the model and the planner API. A new
+  embedding-lib version means raising the version in the two imports of `index.html`.
 - **The prompts come from the planner:** the planning assistant requests
   `getExternalObjectAgentPrompts()`; a change of a prompt is a change in roomle-ui
   `hi-agent-prompts.ts`.

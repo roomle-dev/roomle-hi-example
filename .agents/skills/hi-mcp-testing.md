@@ -205,7 +205,7 @@ Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json`
 | `run.json` | `plan`; per turn the answer, the tools, `planImages` and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId`; `snapshotCaptured`; `navigations` (timestamp, phase, main frame, URL, `fragmentOnly`) |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
 | `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) and what stands in the room (`obstacles.objects[]`: `kind`, `outline`, `bottomMm`/`topMm`, a door or window with `wall` and `fromEndMm`; `obstacles.groups[].roots[]`: the room-space outline and height range of every root module) |
-| `planner-calls.json` | what the HI MCP tools of the page sent to the planner during the chat: `externalObjectGroupOperation` — `args` = the tool and the arguments the model sent (for `create-or-replace-groups` `args[1].posGroups[]` with the roots, their relations and attributes, and the `placement`), the result's `corrections`, `notLoaded`, `historySteps`; `ok: false` with the page's `error`. The docking the relations became is in `plan-context.json` (`groups[].roots[].contextData`) |
+| `planner-calls.json` | the tool calls the planner ran during the chat: `tool`, `input` = the arguments as the model sent them, before the tool validated them (for `create-or-replace-groups` `input.posGroups[]` with the roots, their relations and attributes, and the `placement`), `ms`; `ok: false` with the `error` — the text of an `isError` result. The docking the relations became is in `plan-context.json` (`groups[].roots[].contextData`) |
 | `console.log` | the `[hi-mcp]` lines of the tools during the chat — every tool call and every planner call — and the `[planning-assistant]` errors; `[run-hi-mcp-prompt] navigation` events |
 
 The evidence at a glance:
@@ -213,8 +213,8 @@ The evidence at a glance:
 ```bash
 jq '{planSnapshotId, errors, turns: [.turns[] | {prompt, answer: (.answer | .[0:500]), tools, toolCalls}]}' "$R/run.json"
 jq -c '.groups[]? | {group: .id[0:8], pos: .position.pos, rotationY: .position.rotationY, sizeMm: [.position.footprint.widthMm, .position.footprint.depthMm], roots: [.roots[]? | .desc]}' "$R/plan-context.json"
-jq -c '.[] | select(.method == "externalObjectGroupOperation") | {tool: .args[0], ok, error, placement: [.args[1] | objects | .posGroups[]?.placement | select(.)], args: (if .args[0] == "create-or-replace-groups" then null else .args[1] end)}' "$R/planner-calls.json"
-jq -c '[.[] | select(.method == "externalObjectGroupOperation" and .args[0] == "create-or-replace-groups")][-1].args[1].posGroups[].roots[] | {id, articleId, attributes: [.attributes[]? | "\(.id)=\(.value)"], relation: ([to_entries[] | select(.key | IN("rightOf", "leftOf", "onTop", "above", "behind")) | "\(.key) \(.value)"] | join(","))}' "$R/planner-calls.json"
+jq -c '.[] | {tool, ok, error, placement: [.input | objects | .posGroups[]?.placement | select(.)], input: (if .tool == "create-or-replace-groups" then null else .input end)}' "$R/planner-calls.json"
+jq -c '[.[] | select(.tool == "create-or-replace-groups")][-1].input.posGroups[].roots[] | {id, articleId, attributes: [.attributes[]? | "\(.id)=\(.value)"], relation: ([to_entries[] | select(.key | IN("rightOf", "leftOf", "onTop", "above", "behind")) | "\(.key) \(.value)"] | join(","))}' "$R/planner-calls.json"
 jq -c '.groups[]? | {group: .id[0:8], doors: [.roots[]? | select(.isGenerated != true) | {row: .rowIndex, articleId, desc: (.desc // "" | .[0:60]), door: ([.attributes[]? | select(.id == "mod_DoorDirectionSelection") | .value][0] // "Automatic")}] | sort_by(.row)}' "$R/plan-context.json"
 ```
 
@@ -250,15 +250,16 @@ the tools in the page console, holds per call of a plan-changing tool what the m
 copied before the tool corrected it) and what it got back: the corrections, the groups not built, the error. A schema
 error ("Input validation error") is not in it — it shows only as a tool call without planner calls.
 
-Before calling a result a model finding, compare the model's `args` with what reached the planner
-(`planner-calls.json`). Content the model sent that is missing in the planner call without a
-correction reporting it is a **bug** of the MCP server, not a model finding.
+Before calling a result a model finding, compare what the model sent (`input` in
+`planner-calls.json`) with what the tool ran with (`args` of the call in `run.json`). Content the
+model sent that is missing there without a correction reporting it is a **bug** of the MCP server,
+not a model finding.
 
 #### Verdict
 
-The MCP server in the rules below is the HI MCP tools: the example runs the copy of the roomle-ui
-embedding-lib (`packages/embedding-lib/src/homag-intelligence/hi-mcp/`), and a fix goes into both
-copies (D94 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md)).
+The MCP server in the rules below is the HI MCP tools: the tool set the roomle-ui planner serves
+(`packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`), which the embedding-lib hands to the
+agent of the page (D94 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md)).
 
 | Verdict | When |
 |---|---|
@@ -563,8 +564,9 @@ The script:
    page reports itself available;
 4. sends the prompts to the planning assistant of the page (`onPlanningAssistantPrompt`, as the chat
    window does), each until the turn ends, and reads the turn from the output of the window
-   (`window.hiPlanningAssistantOutput`), the tool calls from the `[hi-mcp]` lines of the page console
-   and the planner calls with their full arguments from `window.hiPlannerCalls`;
+   (`window.hiPlanningAssistantOutput`), the tool calls from the `[hi-mcp]` lines of the planner's
+   frame in the page console, and the tool calls the planner ran, with their full input, from
+   `window.hiPlannerCalls`;
 5. reads the rooms, groups and obstacles in the agent's words (`window.hiAgentPlanContext`, as
    `get-plan-context` answers), then `getExternalObjectSnapshot()` with every
    field it stores and without the object GLB (the GLB is not generated), then saves
@@ -578,7 +580,7 @@ The script:
 |---|---|
 | `run.json` | provider; `plan`; `turns` (per turn the prompt, the `image` file it carried, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` —, errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
 | `plan-context.json` | `get-plan-context` with rooms and groups after the chat — the walls and where the groups stand |
-| `planner-calls.json` | every planner call during the chat: method, full arguments, `ok`, the page's `error`, and `ms` — how long the page took from the call to its result |
+| `planner-calls.json` | every tool call the planner ran during the chat: `tool`, the full `input`, `ok`, the `error`, and `ms` — how long the page waited from the call to its result |
 | `prompt-image.jpg` | with `--image` only: the image as the model got it |
 | `order-data.json` | `orderData` of the snapshot — the groups with their articles and attributes |
 | `top-image.png`, `perspective-image.png` | the whole plan rendered |
@@ -625,7 +627,7 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 | `errors` in `run.json` with the provider's message | invalid key or a provider failure; the snapshot is still stored |
 | `Failed to process successful response` in `errors` | the provider answered with HTTP 200 and the AI SDK failed while it handled the response — a transport error, a response it could not validate, or another failure. The message is the turn's error in `run.json` (`The planning assistant failed: …`) and the `[planning-assistant]` line in `console.log`. Only a failure from a transport error — `TypeError: terminated <- caused by Error: read ECONNRESET`, a connection reset by the provider or the network — is an **environment** failure, which the runner retries as a transport failure; any other cause is analysed like a provider error |
 | `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context. For a Mistral model after `get-plan-images` a known limitation: the planning assistant sends the images of a tool result to Mistral as JSON text ([images in tool results](../../docs/ai-chat.md#images-in-tool-results)). Otherwise a **bug** — the tools return compact JSON without `imageUrl` ([result format](../../docs/hi-mcp-behaviour.md#53-result-format)); look for the result that is still large |
-| `api.extended[message.method] is not a function` in `planner-calls.json` | the planner build lacks the method (see the bug rules above) |
+| `The planner has no HI agent tools: it needs a Rubens UI with getExternalObjectAgentTools.` as the window's availability | the planner at the example's server URL is older than the embedding-lib of the page: run against a planner that serves the tools (`EXAMPLE_SERVER_URL`), see [ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md) |
 | `chat turn failed: timed out after 600s waiting for the chat turn` | the run script's chat timeout (10 minutes): the model did not answer in time — the chat shows nothing while a model reasons. The runner aborts the turn and waits until it and its planner calls have ended; the turn keeps the tools and the text of the window before, and the plan what the tools changed |
 | `the aborted chat turn did not end - the plan was not captured` | the aborted turn or a planner call of its tools did not end within 3 minutes, so the plan could still change: the run has no snapshot, plan context or plan snapshot id |
 | the runner names problems of the test file and runs nothing | an empty key variable, an unknown plan name, a missing image, a duplicate id — fix the file or the environment |

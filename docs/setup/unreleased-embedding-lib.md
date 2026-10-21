@@ -1,12 +1,12 @@
 # Using an unreleased embedding-lib
 
 The example page `minimal-hi-example/index.html` imports `@roomle/embedding-lib` and its `hi.js` from
-unpkg, in a fixed version — the dev version `0.0.0-dev-a40887e` of the roomle-ui branch
-`feat/hi-mcp-improvements` until a release has the planning assistant:
+unpkg, in a fixed version — the dev version `0.0.0-dev-a95b24e` of the roomle-ui branch
+`feat/hi-tool-set-in-the-planner` until a release has the planning assistant:
 
 ```js
-import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-a40887e';
-import { /* … */ setupHi } from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-a40887e/hi.js';
+import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-a95b24e';
+import { /* … */ setupHi } from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-a95b24e/hi.js';
 ```
 
 To try a change that exists only on a roomle-ui branch, point these two imports somewhere else. Two ways

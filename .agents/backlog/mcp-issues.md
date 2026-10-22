@@ -33,7 +33,7 @@ never drop the agent's content silently.
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui planner (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
 | 97 | [Wall units docked beside the hood hang higher than the other wall units](#97-wall-units-docked-beside-the-hood-hang-higher-than-the-other-wall-units) | defect (not analysed) | roomle-ui HI tool commands, the library or the planner (not analysed) | low | gpt-6-astra | |
 | 98 | [A row placed into a corner stands 10 mm off the wall after later edits](#98-a-row-placed-into-a-corner-stands-10-mm-off-the-wall-after-later-edits) | defect (not analysed) | roomle-ui `hi-tool-commands.ts` (the resubmit by id or the merge, not analysed) | low | gpt-6-astra | |
-| 101 | [A side panel the agent sent is missing from the plan without a report](#101-a-side-panel-the-agent-sent-is-missing-from-the-plan-without-a-report) | defect (not analysed) | roomle-ui HI tools (the create, the undo or the merge, not analysed) | low | gpt-6-astra | |
+| 101 | [A side panel the agent sent is missing from the plan without a report](#101-a-side-panel-the-agent-sent-is-missing-from-the-plan-without-a-report) | defect | RoomleCore: the split of a delete in place ([analysis](../bug-analysis/side-panel-missing-after-a-delete-and-an-undo.md): the undo is fixed by D101, the split is open) | low | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 
@@ -215,16 +215,22 @@ final plan holds no such panel, and no tool result names it in `notLoaded` or `c
 between, the agent deleted one root module in place, undid that, and merged two further groups into
 the kitchen.
 
-**Cause.** Not analysed. The run records the plan only after the turn, so which call lost the panel
-is unknown: the create (a panel left of a wall unit at the corner, above the corner unit), the undo
-of the delete, or the merge of the two groups.
+**Cause.** Analysed in
+[side-panel-missing-after-a-delete-and-an-undo.md](../bug-analysis/side-panel-missing-after-a-delete-and-an-undo.md).
+The create builds the panel. The agent deletes it in place, and the delete splits the hood and the
+wall cabinet off as groups of their own. The undo of the delete reverts nothing: the reload of the
+three groups reports plan changes after the call. That is the defect of D101, which the run's bo-test
+did not carry yet. The agent then merges the groups back without the panel. The split comes from
+RoomleCore: `splitManipulatedGroupIntoAssemblies` (`external-module-group-dock-configurator.cpp:724`)
+splits by docking vectors that touch geometrically, so every unit docked with an offset above
+another one becomes a group of its own after any delete in place.
 
-**To do.** roomle-ui: replay the run's calls (its `planner-calls.json`) against the local planner,
-read the groups after each call, find the call that drops the panel and make it build the panel or
-name it in its result.
+**To do.** RoomleCore: split a group after a delete by the group's docking (`contextData`), so a
+unit hanging above another one stays in its group. The RoomleCore team confirms first that the
+geometric split is not intended.
 
-**Test.** roomle-ui `hi-tool-commands` tests: a root module a create, an undo or a merge does not
-build is named in the result.
+**Test.** RoomleCore: `tryDeleteChild` of an end panel keeps a wall unit docked above a floor unit
+with an offset in the remaining assembly.
 
 **Reproduce.** `mcp-test-2026-10-22_07-57-33`, gpt-6-astra 06 (`kitchen-family-two-kids`, bo-test):
 `W35O` `cupspanel` in the `args` of the second create; the final group `556610f7` holds no `W35O`.

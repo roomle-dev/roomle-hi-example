@@ -35,7 +35,7 @@ never drop the agent's content silently.
 | 97 | [Wall units docked beside the hood hang higher than the other wall units](#97-wall-units-docked-beside-the-hood-hang-higher-than-the-other-wall-units) | defect (not analysed) | roomle-ui HI tool commands, the library or the planner (not analysed) | low | gpt-6-astra | |
 | 98 | [A row placed into a corner stands 10 mm off the wall after later edits](#98-a-row-placed-into-a-corner-stands-10-mm-off-the-wall-after-later-edits) | defect (not analysed) | roomle-ui `hi-tool-commands.ts` (the resubmit by id or the merge, not analysed) | low | gpt-6-astra | |
 | 101 | [A side panel the agent sent is missing from the plan without a report](#101-a-side-panel-the-agent-sent-is-missing-from-the-plan-without-a-report) | defect (not analysed) | roomle-ui HI tools (the create, the undo or the merge, not analysed) | low | gpt-6-astra | |
-| 102 | [undo reverts nothing after a create the library calculated only in part](#102-undo-reverts-nothing-after-a-create-the-library-calculated-only-in-part) | defect (not analysed) | roomle-ui HI tools (`hi-mcp/plan-history.ts`, `revertToolCall` of `tool-executors.ts`) | medium | gpt-6-astra | |
+| 102 | [undo reverts nothing after a tool call that reloads several groups at once](#102-undo-reverts-nothing-after-a-tool-call-that-reloads-several-groups-at-once) | defect | roomle-ui planner-core (`runToolCall` of `plan-interaction-manager.ts`, `externalObjectGroupOperation` of `roomle-planner.ts`); analysed in [undo-reverts-nothing-after-a-reload-of-several-groups.md](../bug-analysis/undo-reverts-nothing-after-a-reload-of-several-groups.md): not the library's partial calculation. The commit of the call's step makes the kernel report plan changes for the groups of a multi-group reload, and their reloads fire history events after the answer, which the tool set takes for changes in the planner | medium | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -247,26 +247,31 @@ build is named in the result.
 **Reproduce.** `mcp-test-2026-10-22_07-57-33`, gpt-6-astra 06 (`kitchen-family-two-kids`, bo-test):
 `W35O` `cupspanel` in the `args` of the second create; the final group `556610f7` holds no `W35O`.
 
-## 102. undo reverts nothing after a create the library calculated only in part
+## 102. undo reverts nothing after a tool call that reloads several groups at once
 
-**Problem.** The agent creates two groups in one `create-or-replace-groups`, and the library cannot
-calculate root modules of every group (`notLoaded` names both). The following `undo` makes no planner
-undo call and reverts nothing: both groups stay, and the agent changes their attributes instead of
-building them again. With one group of the call in `notLoaded` — a one-group create, or a two-group
-create of which one group fails — the undo reverts the create.
+**Problem.** The agent creates two groups in one `create-or-replace-groups`. The following `undo`
+makes no planner undo call and reverts nothing: both groups stay, and the agent changes their
+attributes instead of building them again. The same holds for every tool call with a reload of two
+or more groups — a two-group create with or without groups in `notLoaded`, a
+`delete-article-in-place` that splits a group. A call that reloads one group at a time undoes
+correctly.
 
-**Cause.** Not analysed. One plan-context read and no planner undo call mean that `revertToolCall`
-(`tool-executors.ts`) found no record of the create (`planHistory.lastDone()` empty). Either the
-create was not recorded, or a planner history event after the create's end — the library
-recalculating the root modules it could not calculate — counted as a change in the planner, which
-forgets every record (`PlanHistory.historyChanged`).
+**Cause.** Analysed in
+[undo-reverts-nothing-after-a-reload-of-several-groups.md](../bug-analysis/undo-reverts-nothing-after-a-reload-of-several-groups.md).
+`runToolCall` (`plan-interaction-manager.ts`) commits the call's step and returns at once. For a step
+with a reload of several groups (`placeAtWalls` moves the new groups in one reload), that commit makes
+the kernel report `externalObjectPlanChanged` for each of them; their `PLAN_CHANGED` reloads run after
+the answer, resume the step and commit it again. The history events of those commits arrive while no
+tool call runs, so `PlanHistory.historyChanged` forgets every record and `undo` answers that the plan
+was changed in the planner.
 
-**To do.** roomle-ui: replay the run's create and undo against the local planner with the history
-events and the undo record logged, find why the record is missing, and make undo revert the whole
-create.
+**To do.** roomle-ui: `runToolCall` waits for the plan changes its commit reports, keeps their reloads
+in the call's step and commits it again before `externalObjectGroupOperation` answers (the proposed
+fix of the analysis).
 
-**Test.** roomle-ui hi-mcp tests: an undo after a create of two groups that both have roots in
-`notLoaded` removes both groups.
+**Test.** roomle-ui planner-core: `runToolCall` returns after the reloads its commit reports, with one
+step; hi-mcp tool executors: a create whose planner fires several history events before it answers is
+reverted by one `undo`.
 
 **Reproduce.** `mcp-test-2026-10-22_09-29-56`, gpt-6-astra 10 (`image-only-no-text`, local roomle-ui
 `725e0dda3`): after the create (two `posGroups` placed by wall 0 and wall 8, both in `notLoaded`), the

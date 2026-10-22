@@ -270,7 +270,9 @@ modules carry it — with id and name, and the attributes the root modules in th
 plan and their sub modules carry come first. At most 20 matches are returned; narrow
 the text when the result carries a `hint`. The desc of a colour value
 carries its code — `Cloudy blue (#506080)` —, the colour of that value;
-the agent chooses a dark, a light or a blue value by it.
+the agent chooses a dark, a light or a blue value by it. The agent's answer
+names the attribute by its name and its id with the values it lists, since
+several attributes can share a name.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |

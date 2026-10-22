@@ -419,7 +419,9 @@ id of the attribute that lists it (D64). Every match names the root modules that
 when there are any (D100); the attributes the root modules in the plan and their sub modules
 carry come first —
 the panel top's colour, named Color like the worktop's, comes after the worktop's in a group that
-has a worktop.
+has a worktop. The description tells the agent that its answer names the attribute by its name and
+its id with the values it lists — `Front color` (`mod_FrontColor`) —, since several attributes can
+share a name (D76).
 
 The matches include the attributes of the roots the library generates (worktop `mr_Countertop`,
 toe kick, finger grip, backsplash, …): the compacted master data lists the root modules and the

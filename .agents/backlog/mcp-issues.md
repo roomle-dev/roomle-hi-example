@@ -27,7 +27,6 @@ never drop the agent's content silently.
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
 | 83 | [Where no free stretch of the wall fits the group, it is placed over existing furniture and reported](#83-where-no-free-stretch-of-the-wall-fits-the-group-it-is-placed-over-existing-furniture-and-reported) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
-| 84 | [The find-attributes answer lists the values without naming the attribute](#84-the-find-attributes-answer-lists-the-values-without-naming-the-attribute) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:252-268`, the `find-attributes` description) | low | gpt-6-astra | |
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
@@ -66,24 +65,6 @@ test names a wall without a free stretch of the requested width.
 roomle-ui :5173): five 400 mm single-door wardrobes (2000 mm) on the closets back wall over the low
 object x 3506..4074 (568 × 570 mm), the answer discloses the overlap; the run passes — its expect
 covers the door hinges only.
-
-## 84. The find-attributes answer lists the values without naming the attribute
-
-**Problem.** `find-attributes` returns the matching attributes with their values, and the model's
-answer lists the values without naming the attribute id (18: the 21 front colours listed, the
-attribute never named).
-
-**Cause.** The `find-attributes` description (`hi-mcp-server.ts:252-268`) says what the tool returns
-but not that the answer names the attribute id.
-
-**To do.** roomle-hi-example served text: one sentence in the `find-attributes` description — the
-answer names the attribute id with its values.
-
-**Test.** `attributes-find-front-colour`: the answer names the attribute id with the front colours.
-
-**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 18 (`attributes-find-front-colour`,
-bo-test): the answer lists the 21 front colours in four style groups, never names the attribute id
-(`mod_FrontColor`).
 
 ## 85. insert-article-into-group takes a between-pair whose root modules do not stand side by side
 

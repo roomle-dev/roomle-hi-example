@@ -125,8 +125,8 @@ The roomle-ui side, in `packages/web-sdk/packages/`:
 | Path | What it is |
 | ---- | ---------- |
 | `homag-intelligence/src/external-object-api.ts` | The interface of the planner methods the tools call, with their documentation |
-| `planner-core/src/roomle-planner.ts` | Their implementation on `RoomlePlanner` (`getExternalObjectPlanContext`, `externalObjectGroupOperation`, …) |
-| `homag-intelligence/src/hi-tools.ts` | `HiToolsImplementation`: `getPlanContext` (the groups in the placement frame), `executeGroupOperation` (a command named like a tool runs the tool command, every other command the group operation), the group operations; it implements `HiToolPlanner` in the planner itself |
+| `planner-core/src/roomle-planner.ts` | Their implementation on `RoomlePlanner` (`getExternalObjectPlanContext`, `getExternalObjectLibraryContext`, `externalObjectGroupOperation`, …) |
+| `homag-intelligence/src/hi-tools.ts` | `HiToolsImplementation`: `getPlanContext` (the groups in the placement frame), `getLibraryContext` (`createLibraryContext` of `hi-library-context.ts`: the master data, the catalog and the sub articles, nothing of the plan), `executeGroupOperation` (a command named like a tool runs the tool command, every other command the group operation), the group operations; it implements `HiToolPlanner` in the planner itself |
 | `homag-intelligence/src/hi-tool-commands.ts` | The HI tool commands: `HI_TOOL_COMMANDS`, one per plan-changing tool, `runToolCommand` (reports `historySteps`), `inPlacementFrame` |
 | `homag-intelligence/src/hi-tool-ids.ts`, `hi-tool-payload.ts`, `hi-tool-docking.ts`, `hi-tool-hints.ts`, `hi-tool-attributes.ts`, `hi-wall-placement.ts` | The parts of the tool commands: ids and articles, the payload, the docking, the hints, the group attributes and library changes, the wall placement |
 | `homag-intelligence/src/hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts` | Relations → docking, the anchor and its frame, the geometry ([Layout and placement](./layout-and-placement.md)) |

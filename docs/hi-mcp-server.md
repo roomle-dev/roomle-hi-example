@@ -66,7 +66,7 @@ the example page (index.html, served by the launcher on :3000)
     |  the HI MCP tools of the embedding-lib (createHiMcpTools), forwarding every call
     v
   roomDesignerApi.extended.callExternalObjectAgentTool: the tools run in the planner,
-  on its six planner methods; roomle-ui performs the plan-changing tools (HI tool commands)
+  on its seven planner methods; roomle-ui performs the plan-changing tools (HI tool commands)
 ```
 
 The example is one process: `start.mjs` serves `index.html` on port 3000 and, when it is started
@@ -135,9 +135,10 @@ agent can open them.
 
 ### get-plan-context
 
-Returns a snapshot of the HI planning session, agent-ready as the planner API
-(`getExternalObjectPlanContext`) provides it — compacted sections, one
-coordinate system throughout (3D, right-handed, Y up).
+Returns a snapshot of the HI planning session, agent-ready as the planner API provides it — the
+plan from `getExternalObjectPlanContext`, the master data and the article catalog from
+`getExternalObjectLibraryContext` — compacted sections, one coordinate system throughout (3D,
+right-handed, Y up).
 
 The tool description asks the agent to briefly name a door or window that determines a placement
 and explain whether the final placement keeps it clear, using the returned obstacle dimensions

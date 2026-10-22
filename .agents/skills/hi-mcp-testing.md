@@ -592,7 +592,7 @@ The script:
    page and the model of its chat (port 3000, or `EXAMPLE_PORT`);
 2. opens the example URL the launcher prints, with `id` of `--plan`, in Playwright Chromium, a
    fresh browser each run, so every run starts from its plan (no IndexedDB state);
-3. waits until the plan context of the page lists articles (HI library loaded), until the HI library
+3. waits until the library context of the page lists articles (HI library loaded), until the HI library
    has loaded the plan's groups (`window.hiPosGroupsCompletelyLoaded`, set by the example page in
    `onPosGroupsCompletelyLoaded`) — the planner clears its undo history then, so a change of the
    chat made before it could not be undone in a later turn — and until the planning assistant of the

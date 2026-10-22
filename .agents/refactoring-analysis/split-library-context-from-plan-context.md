@@ -1,7 +1,8 @@
 # Split the library context from the plan context
 
 > **Type**: Refactoring analysis
-> **Status**: Open
+> **Status**: Open — implemented on roomle-ui `feat/hi-mcp-improvements` (`725e0dda3`) and
+> roomle-hi-example `refactor/library-context`; not yet deployed to bo-test
 > **Date**: 2026-10-22
 > **Base**: roomle-hi-example `master` `34abf72`; roomle-ui `release/bo-test` `142e1a96d` (the branch
 > the bo-test planner runs — the HI tool set is not on roomle-ui `master`)
@@ -253,23 +254,25 @@ No performance refactoring: the templates are calculated once per article as tod
 in the plan now included, a few milliseconds each (D74: 0.75 s for 111 articles) — so no benchmark is
 required.
 
-## Questions for the user
+## Decisions
 
-1. **The library sections of the plan context.** Keep `masterData` and `articles` in
-   `getExternalObjectPlanContext` as deprecated sections that delegate to the library context
-   (recommended — the method and its default are public API of the embedding-lib), or remove them?
-   Removing them changes the default result of the plan context for every page that calls it.
-2. **A seventh planner method for the tools.** D71 and ADR 0007 keep the tools at six planner methods,
-   argued from the page allow-lists of the server architecture; since ADR 0012 the tools run in the
-   planner and no allow-list remains. Let the tools call `getExternalObjectLibraryContext`
-   (recommended — the split is incomplete if the tools keep reading the library through the plan
-   context), with D71 updated and a new ADR?
-3. **The article geometry from the template only.** Accept the output change above (recommended — it
-   makes the catalog independent of the plan), or keep the geometry of a root in the plan, which
-   needs the plan in the library context again?
-4. **The agent-facing tool unchanged.** Keep `get-plan-context` as the agent's one tool for both kinds
-   (recommended — the refactoring is about the planner API), or add a tool for the library data,
-   which changes the tool list and the served text?
+Decided by the user on 2026-10-22, each as recommended:
+
+1. **The library sections of the plan context** stay in `getExternalObjectPlanContext` as deprecated
+   sections that return what the library context returns.
+2. **A seventh planner method for the tools**: the tools call `getExternalObjectLibraryContext`; D71
+   names seven methods, and [ADR 0013](../decisions/0013-the-library-context-is-a-planner-method-of-its-own.md)
+   records the decision.
+3. **The article geometry from the template only**, with the output change above.
+4. **The agent-facing tool unchanged**: `get-plan-context` keeps its sections, defaults and result.
+5. **A third library section, `subArticles`**: the sub-article catalog (`articleId`, `libraryId`,
+   `desc`), the library part of the interior design options, which until now only the scoped
+   `interiorDesign` section of the plan context showed, per group.
+
+One deviation from the target shape: `compactMasterData` and `compactArticle` stay in
+`hi-plan-context.ts`. They depend on helpers the plan context keeps (`isRootModule`,
+`compactAttribute`, `cornerPointOfRoot`, `articleRootDockingVectors`, …), so the new
+`hi-library-context.ts` imports them instead of moving half of the plan context's helpers with them.
 
 Not in this refactoring: caching the whole library context in the planner between
 `addLibrary` / `loadPosData` and the next catalog load. The compaction copies the catalog on every

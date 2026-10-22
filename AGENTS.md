@@ -213,7 +213,7 @@ When the repository uses Atlassian Jira:
 ### HI Tools Architecture
 
 1. **The Tools in the roomle-ui Planner** — the planner serves the only implementation of the HI tools (roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`, `getExternalObjectAgentTools` and `callExternalObjectAgentTool`); `createHiMcpTools` of `@roomle/embedding-lib/hi` hands them to an agent in the page as tools in the shape of MCP tools, without the MCP protocol, and forwards every call (D94, [ADR 0012](./.agents/decisions/0012-the-hi-tool-set-runs-in-the-planner.md))
-2. **The Planning Assistant in the Page** — `startPlanningAssistant` of the embedding-lib runs the agent loop in the page of the example and of the ligna-store; the tools run in the planner of the page (`instance.extended.callExternalObjectAgentTool`) and call its six planner methods there
+2. **The Planning Assistant in the Page** — `startPlanningAssistant` of the embedding-lib runs the agent loop in the page of the example and of the ligna-store; the tools run in the planner of the page (`instance.extended.callExternalObjectAgentTool`) and call its seven planner methods there
 3. **Plan-Changing Tools Run in roomle-ui** — Every tool that changes the plan is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`; roomle-ui performs the whole tool as an HI tool command (`hi-tool-commands.ts` in `packages/web-sdk/packages/homag-intelligence/src/`): corrections, ids, docking from the relations, placement, group materials, hints. It answers with the tool's result and the planner steps it made, which the tool set counts for undo (D71 of [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md#3-decisions))
 
 ### HI Data Model

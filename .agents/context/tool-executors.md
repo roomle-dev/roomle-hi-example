@@ -89,8 +89,10 @@ halfway through a change.
    and `articleDescriptions`).
 2. `obstacles` needs `rooms` to assign doors and windows to walls; it fetches them and removes them
    again if they were not asked for.
-3. One `getExternalObjectPlanContext(sections)` call — roomle-ui shapes the context
-   (`hi-plan-context.ts`) and reports the groups in the placement frame with the `rowIndex` of every
+3. One `getExternalObjectLibraryContext(sections)` call for `articles` and `masterData` and one
+   `getExternalObjectPlanContext(sections)` call for the other sections, each only when a section of
+   its kind is requested, in parallel — roomle-ui shapes the contexts (`hi-library-context.ts`,
+   `hi-plan-context.ts`) and reports the groups in the placement frame with the `rowIndex` of every
    root (`HiToolsImplementation.getPlanContext`, `inPlacementFrame`).
 4. Adds the agent's vocabulary ([The plan context the agent sees](#the-plan-context-the-agent-sees)).
 

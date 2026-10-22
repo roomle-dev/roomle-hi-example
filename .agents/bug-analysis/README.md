@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [undo-reverts-nothing-after-a-reload-of-several-groups.md](undo-reverts-nothing-after-a-reload-of-several-groups.md) | Open | [MCP backlog item 102](../backlog/mcp-issues.md#102-undo-reverts-nothing-after-a-tool-call-that-reloads-several-groups-at-once) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

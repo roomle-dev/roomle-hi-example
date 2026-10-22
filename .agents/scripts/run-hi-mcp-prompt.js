@@ -7,7 +7,7 @@
  *
  * Starts the launcher (minimal-hi-example/start.mjs <model> <api-key>), opens
  * the example page in Playwright Chromium (headless unless --headed; --dev is
- * passed to the launcher) on --plan, waits until the plan context lists
+ * passed to the launcher) on --plan, waits until the library context lists
  * articles, the HI library has loaded the plan's groups and the planning
  * assistant of the page is available, then sends the prompts to the planning
  * assistant as consecutive turns of one conversation, each until the turn
@@ -290,10 +290,10 @@ const waitForLoadedPlanGroups = async (page) => {
   }
 };
 
-const planContextHasArticles = (page) =>
+const libraryContextHasArticles = (page) =>
   page.evaluate(async () => {
     const context =
-      await window.instance?.extended.getExternalObjectPlanContext([
+      await window.instance?.extended.getExternalObjectLibraryContext([
         'articles',
       ]);
     return context?.articles?.length > 0;
@@ -518,7 +518,7 @@ const runSession = async (options, launcher, browser) => {
   recordPageConsole(page);
   await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
   await pollUntil(
-    () => planContextHasArticles(page),
+    () => libraryContextHasArticles(page),
     PAGE_READY_TIMEOUT_MS,
     'the page and the HI library'
   );

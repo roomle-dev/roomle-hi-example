@@ -62,8 +62,8 @@ node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt
 
 1. Starts the launcher with the model, the key and `--no-open`, and parses its `Example:` line.
 2. Opens the example page in headless Chromium (`--enable-gpu`: the software renderer draws the
-   object-only image empty) with the plan, and waits until the plan context of the planner
-   (`getExternalObjectPlanContext`) has articles.
+   object-only image empty) with the plan, and waits until the library context of the planner
+   (`getExternalObjectLibraryContext`) has articles.
 3. Waits until the planner has loaded the plan's groups (`window.hiPosGroupsCompletelyLoaded`; it
    clears its undo history then) and the planning assistant reports the chat available
    (`window.hiPlanningAssistantOutput`).

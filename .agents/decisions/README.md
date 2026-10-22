@@ -26,12 +26,13 @@ Each ADR carries:
 | [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](0004-hi-mcp-server-on-cloudflare-containers.md) | Superseded by ADR 0011 |
 | [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](0005-deploy-hi-mcp-from-release-cloudflare.md) | Superseded by ADR 0011 |
 | [0006 — The prompt tests assess the agent, the unit tests the tools](0006-prompt-tests-assess-the-agent.md) | Accepted |
-| [0007 — The tool logic of the plan-changing HI MCP tools runs in the planner](0007-hi-mcp-tool-logic-in-the-planner.md) | Accepted |
+| [0007 — The tool logic of the plan-changing HI MCP tools runs in the planner](0007-hi-mcp-tool-logic-in-the-planner.md) | Accepted — its six-methods clause superseded by 0013 |
 | [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Superseded by ADR 0011 |
 | [0009 — The chat window is a panel of the planner, the agent loop stays in the host](0009-the-chat-window-is-a-panel-of-the-planner.md) | Accepted |
 | [0010 — The example's chat runs in the page, with the planning assistant of the embedding-lib](0010-the-example-chat-runs-in-the-page.md) | Accepted — its server clause superseded by 0011 |
 | [0011 — The HI tools live only in the roomle-ui embedding-lib](0011-the-hi-tools-live-in-the-embedding-lib.md) | Accepted — its embedding-lib clause superseded by 0012 |
 | [0012 — The HI tool set runs in the planner, the embedding-lib forwards to it](0012-the-hi-tool-set-runs-in-the-planner.md) | Accepted |
+| [0013 — The library context is a planner method of its own](0013-the-library-context-is-a-planner-method-of-its-own.md) | Accepted |
 
 ## Adding an ADR
 

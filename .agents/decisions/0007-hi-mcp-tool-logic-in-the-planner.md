@@ -1,6 +1,6 @@
 # ADR 0007 — The tool logic of the plan-changing HI MCP tools runs in the planner
 
-> **Status**: Accepted
+> **Status**: Accepted — the clause that keeps the tools at six planner methods is superseded by [ADR 0013](0013-the-library-context-is-a-planner-method-of-its-own.md)
 > **Date**: 2026-10-13
 > **Ticket**: [RML-18147](https://roomle.atlassian.net/browse/RML-18147); decisions D71 and D72 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)
 > **Supersedes in part**: [ADR 0001](0001-hi-mcp-tool-logic-in-the-server.md) — where the tool logic runs

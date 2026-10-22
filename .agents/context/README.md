@@ -15,6 +15,7 @@ deploy it in [setup](../../docs/setup/).
 
 | Page | Covers |
 | ---- | ------ |
+| [Agent architecture](./agent-architecture.md) | The parts of the AI Planning Assistant and where they run: the chat window `PlanningAssistantChat.vue`, the embedding bridge, the planning assistant and `createHiMcpTools` of the embedding-lib, the planner's agent methods, the HI tool set, the glue logic with its HI tools and tool commands, the HI channel and RoomleCore; every hop of a prompt from the window to the kernel and back |
 | [Tool executors](./tool-executors.md#tool-overview) | Overview table of all MCP tools; `tool-executors.ts`, `agent-facing.ts` and the tool commands of roomle-ui (`hi-tool-commands.ts`): tool pipelines, the plan context the agent sees, corrections, row edits |
 | [Layout and placement](./layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
 | [Library errors](./library-errors.md) | How roomle-ui handles the errors of an HI library: the library boundary and its call sites, failed root modules in the glue logic and the arrangement, the reports of the tool commands (`notLoaded`, `corrections`), the HI tools, what is not covered |

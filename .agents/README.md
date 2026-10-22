@@ -87,6 +87,7 @@ Living reference of the implementation: how the code is built today. Full index 
 
 | Document | Covers |
 |---|---|
+| [agent-architecture.md](context/agent-architecture.md) | The parts of the AI Planning Assistant and where they run — chat window, embedding bridge, planning assistant, `createHiMcpTools`, the planner's agent methods, the HI tool set, the glue logic, RoomleCore — and every hop of a prompt from the window to the kernel and back |
 | [tool-executors.md](context/tool-executors.md) | Overview of all MCP tools, `tool-executors.ts`, `agent-facing.ts`, the tool commands of roomle-ui |
 | [layout-and-placement.md](context/layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
 | [library-errors.md](context/library-errors.md) | How roomle-ui handles the errors of an HI library: the call sites of the library, the glue logic, the HI tool commands and the HI tools |

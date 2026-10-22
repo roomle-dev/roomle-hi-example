@@ -172,7 +172,7 @@ batch up to 9.4k.
 
 Each group attribute costs about 0.6 s: `create-or-replace-groups` sets every group attribute that is
 not a library group setting with its own `change-group-attribute` command after the load (D36,
-G46 in [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md)), and the planner recalculates the
+G46 in [hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md)), and the planner recalculates the
 group for each one. `create-or-replace-groups` takes 90 s of the 115 s of tool time, about 75–80 s
 of it for these commands.
 
@@ -221,7 +221,7 @@ their own.
 
 **Cause**: the tool API. `change-module-attribute` takes one `rootModuleId` and one attribute, and
 its result is `{ command, groups, … }` with the changed group in the plan-context shape
-([hi-mcp-behaviour.md, the command tools](../../docs/hi-mcp-behaviour.md#the-command-tools)).
+([hi-mcp-behaviour.md, the command tools](../context/hi-mcp-behaviour.md#the-command-tools)).
 
 ### 4.4 Corrections that are no corrections
 
@@ -627,7 +627,7 @@ and the step kinds of [9.4.2](#942-where-the-time-goes-by-kind-of-step-gpt-6-ast
 
 [RML-18164](https://roomle.atlassian.net/browse/RML-18164) implements the improvements of [9.6](#96-proposed-improvements)
 in the order of its implementation plan (decisions D76, D77 and D79 of
-[hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)), and measures
+[hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md#3-decisions)), and measures
 each one with the same small set: the four kitchen-from-image tests with gpt-6-astra, twice each,
 on one build and the local planner (`--dev`, roomle-ui `release/bo-test` at 56256a5b7 plus the
 improvements), two runner sessions per round. The benchmarks are in

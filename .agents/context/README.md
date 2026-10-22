@@ -9,12 +9,14 @@ documented and added here, and every change to the implementation requires an up
 
 This documentation describes **how** the code works. **What** the server does towards an agent and
 **why** — the rules it serves, every decision, guard, correction and feedback message — is in
-[hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md); this documentation links to it instead of repeating
+[hi-mcp-behaviour.md](hi-mcp-behaviour.md); this documentation links to it instead of repeating
 it. How to use the HI MCP is in the [user guide](../../docs/user-guide/README.md), how to install and
 deploy it in [setup](../../docs/setup/).
 
 | Page | Covers |
 | ---- | ------ |
+| [HI tools — behaviour](./hi-mcp-behaviour.md) | How the HI tools behave towards an agent: guidelines, decisions, tools, the information they provide, guards, corrections and feedback; every change to a tool or a served rule updates it |
+| [HI presets example & HI tools — reference](./hi-mcp-server.md) | The example page and the HI tools: architecture, running, the tool reference, authoring and positioning pos groups, the interior design tools |
 | [Agent architecture](./agent-architecture.md) | The parts of the AI Planning Assistant and where they run: the chat window `PlanningAssistantChat.vue`, the embedding bridge, the planning assistant and `createHiMcpTools` of the embedding-lib, the planner's agent methods, the HI tool set, the glue logic with its HI tools and tool commands, the HI channel and RoomleCore; every hop of a prompt from the window to the kernel and back |
 | [Tool executors](./tool-executors.md#tool-overview) | Overview table of all MCP tools; `tool-executors.ts`, `agent-facing.ts` and the tool commands of roomle-ui (`hi-tool-commands.ts`): tool pipelines, the plan context the agent sees, corrections, row edits |
 | [Layout and placement](./layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
@@ -53,7 +55,7 @@ ligna-store chat (runs in the page) ──────── MCP ─────
 - **A tool that changes the plan is one planner call.** The server sends
   `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`, and roomle-ui performs the
   whole tool as a tool command: corrections, ids, docking, placement, materials, hints (D71 of
-  [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)).
+  [hi-mcp-behaviour.md](hi-mcp-behaviour.md#3-decisions)).
 - **The page executes only allow-listed methods** — the ones `planner-api.ts` calls. Nothing else of
   the planner API (placing an order, overwriting the plan) is reachable from the server.
 - **The planner does the planning.** No tool computes root-module positions. The tool commands turn
@@ -109,7 +111,7 @@ The same call from an external MCP client skips steps 1, 2 and 9 and has no `cli
 the example page, the page forwards the call to the planner (`callExternalObjectAgentTool`), and
 the tools run steps 4, 5 and 8 there and call the planner method directly, without the bridge of
 step 6.
-[hi-mcp-behaviour.md §4](../../docs/hi-mcp-behaviour.md#4-how-a-tool-call-runs) describes the call from the
+[hi-mcp-behaviour.md §4](hi-mcp-behaviour.md#4-how-a-tool-call-runs) describes the call from the
 agent's side.
 
 ## Repository map
@@ -175,14 +177,14 @@ the lifetime of the process:
    `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`).
 5. Unit tests in roomle-ui `packages/web-sdk/packages/homag-intelligence/__tests__/hi-mcp/` — a tool command's in roomle-ui
    `homag-intelligence/__tests__/hi-tool-commands/`; then the behaviour reference, the tool reference
-   in `docs/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`.
+   in `hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`.
 
 ### Contracts that are easy to break
 
 - **The served text is the server's interface.** The instructions, `AUTHORING_RULES` and the tool
   descriptions in `hi-mcp-server.ts`, and every correction, hint and error message — those of the
   tool commands in roomle-ui —, are read by the agents, quoted in
-  [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md), and checked by tests. Change both in the same
+  [hi-mcp-behaviour.md](hi-mcp-behaviour.md), and checked by tests. Change both in the same
   change: a message of a tool command with the behaviour reference that quotes it.
 - **The log format is parsed.** `[hi-mcp] tool <name> args|feedback|error <json>` — logged by the
   tools in the planner to the console of the planner's frame, which the page console carries — is read by

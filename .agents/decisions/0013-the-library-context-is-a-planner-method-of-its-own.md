@@ -2,7 +2,7 @@
 
 > **Status**: Accepted
 > **Date**: 2026-10-22
-> **Supersedes**: the clause of [ADR 0007](0007-hi-mcp-tool-logic-in-the-planner.md) that keeps the tools at six planner methods; D71 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions) names seven
+> **Supersedes**: the clause of [ADR 0007](0007-hi-mcp-tool-logic-in-the-planner.md) that keeps the tools at six planner methods; D71 of [hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md#3-decisions) names seven
 
 ## Context
 

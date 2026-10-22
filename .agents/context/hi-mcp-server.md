@@ -1,11 +1,11 @@
 # HI Presets Example & HI Tools — Reference
 
 The documentation of `minimal-hi-example/` — the standalone HI presets example
-([`index.html`](../minimal-hi-example/index.html)) and its start launcher
-([`start.mjs`](../minimal-hi-example/start.mjs)) — and of the HI tools it runs, the tools of the
+([`index.html`](../../minimal-hi-example/index.html)) and its start launcher
+([`start.mjs`](../../minimal-hi-example/start.mjs)) — and of the HI tools it runs, the tools of the
 roomle-ui planner (`packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`), which the embedding-lib
 hands to the agent of the page (`createHiMcpTools`,
-[ADR 0012](../.agents/decisions/0012-the-hi-tool-set-runs-in-the-planner.md)). With both, an AI agent
+[ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md)). With both, an AI agent
 orchestrates HOMAG Intelligence (HI) object groups in a live planning session: the agent retrieves
 the plan context (master data, rooms, articles, existing groups) and creates or modifies HI object
 groups — without computing root-module positions itself.
@@ -13,18 +13,18 @@ groups — without computing root-module positions itself.
 The example page runs the HI MCP tools of the embedding-lib
 (`createHiMcpTools`) in the page, and the planning assistant of the embedding-lib
 (`startPlanningAssistant`) chats with them in the AI Planning Assistant window
-([ai-chat.md](ai-chat.md)).
+([ai-chat.md](../../docs/ai-chat.md)).
 
 For the shortest path to a first chat turn in the example, see the
-[README](../minimal-hi-example/README.md) of `minimal-hi-example/`.
+[README](../../minimal-hi-example/README.md) of `minimal-hi-example/`.
 
 ## The example
 
 A standalone, copy-paste version of the embedding-lib HI presets demo. It
 contains the complete interface and browser JavaScript in one
-[`index.html`](../minimal-hi-example/index.html), requires no build step, and loads only
+[`index.html`](../../minimal-hi-example/index.html), requires no build step, and loads only
 `@roomle/embedding-lib` and its `hi.js` from unpkg — the dev version `0.0.0-dev-a95b24e` until a
-release has the planning assistant ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
+release has the planning assistant ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)).
 
 The preset dropdown is filled from `GET <HI_SERVER_BASE_URL>/backends/list`,
 the same endpoint the source presets demo uses. There is no hardcoded preset
@@ -114,12 +114,12 @@ Without the chat the example can still be served by any static file
 server (e.g. `npx http-server -c-1 -p 39485`); only the chat needs the model the launcher serves.
 
 The chat: `npm start <model> <api-key>` (for example `npm start mistral <api-key>`) opens the
-example with `chat=true` and serves the model to the page — see [ai-chat.md](./ai-chat.md).
+example with `chat=true` and serves the model to the page — see [ai-chat.md](../../docs/ai-chat.md).
 
 ## Tool reference
 
 The behaviour reference — guidelines, decisions, every guard, correction and feedback message, and
-the information the server provides — is [../../docs/hi-mcp-behaviour.md](hi-mcp-behaviour.md).
+the information the server provides — is [hi-mcp-behaviour.md](hi-mcp-behaviour.md).
 
 The tools run in the server, but every planner call they make executes in the
 planner page, so a tool is only as fast as the page. The timeout applies per
@@ -677,7 +677,7 @@ A new group is positioned in the call that creates it, in one of two forms:
 - **Rotation**: `posRotationY` turns the group around `posGroup`, in degrees,
   **counter-clockwise as seen from above** (in the top-view image). This is
   the `rotationY` convention of the kernel and the glue logic, verified against
-  RoomleCore in [roomle-hi-concepts.md](../.agents/skills/roomle-hi-concepts.md#rotation-sense).
+  RoomleCore in [roomle-hi-concepts.md](../skills/roomle-hi-concepts.md#rotation-sense).
 - **Walls**: every wall in `get-plan-context` has `start`/`end` (floor points
   in the coordinates of `posGroup`), `lengthMm`, `type` and
   `facingRotationY`. With `posRotationY` = the wall's `facingRotationY` the

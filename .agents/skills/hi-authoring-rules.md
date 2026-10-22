@@ -10,9 +10,9 @@
 
 **One piece of furniture is one group.** Every article standing beside, above or back to back with another article is a related root module of the same group; the group carries one placement. Never split one piece of furniture into several positioned groups.
 
-**Fronts.** The front program says how a front is built — its desc: simple fronts, frame fronts with wooden filling, mitred frame fronts with glass filling, milled fronts. Choose it by its desc first, then the front colour. A program offers only some colours: a colour it does not offer switches the program, and a program resets a colour it does not offer; `corrections` name every such change. When the colour the user wants comes only with fronts built differently, keep the fronts: undo, take the closest colour the program offers, and tell the user which fronts the wanted colour comes with ([D59, D60](../../docs/hi-mcp-behaviour.md#3-decisions)).
+**Fronts.** The front program says how a front is built — its desc: simple fronts, frame fronts with wooden filling, mitred frame fronts with glass filling, milled fronts. Choose it by its desc first, then the front colour. A program offers only some colours: a colour it does not offer switches the program, and a program resets a colour it does not offer; `corrections` name every such change. When the colour the user wants comes only with fronts built differently, keep the fronts: undo, take the closest colour the program offers, and tell the user which fronts the wanted colour comes with ([D59, D60](../context/hi-mcp-behaviour.md#3-decisions)).
 
-**Doors.** A door is hinged on one side and has its handle on the other. In a row, the door at the left end is hinged on the left and the door at the right end on the right, as seen from the front, so no handle is on the outside of the row; a pair of doors side by side is hinged at its two outer sides. Set it with the attribute whose values say on which side a door is hinged — the value for single doors or for a pair of doors, as the article has — in the attributes of the root modules at the two ends of the row (`rowIndex` 1 and the last), and again on the root module at an end after an edit that gives the row a new end: an article added, deleted, exchanged or swapped at an end. The other doors keep their side ([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17)).
+**Doors.** A door is hinged on one side and has its handle on the other. In a row, the door at the left end is hinged on the left and the door at the right end on the right, as seen from the front, so no handle is on the outside of the row; a pair of doors side by side is hinged at its two outer sides. Set it with the attribute whose values say on which side a door is hinged — the value for single doors or for a pair of doors, as the article has — in the attributes of the root modules at the two ends of the row (`rowIndex` 1 and the last), and again on the root module at an end after an edit that gives the row a new end: an article added, deleted, exchanged or swapped at an end. The other doors keep their side ([D84](../context/hi-mcp-behaviour.md#doors-2026-10-17)).
 
 Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rotationY` on a root — are **ignored**: the server drops them and reports it in `corrections`.
 
@@ -82,7 +82,7 @@ retained upper root's measured carrier offset; new relations and changed article
 
 Every root after the first names one neighbour of the same group by its id, with exactly one
 relation; the server compiles the docking (`contextData`) from it
-([behaviour reference D34](../../docs/hi-mcp-behaviour.md#3-decisions)):
+([behaviour reference D34](../context/hi-mcp-behaviour.md#3-decisions)):
 
 | Relation | Meaning | Docking the server builds |
 |---|---|---|
@@ -228,7 +228,7 @@ placement: {
 - **Anywhere else** (island, middle of the room, next to a door): any floor point `obstacles` leaves
   free, any rotation.
 - **Outside the room** is allowed: the server never refuses, moves or warns about a group placed
-  outside the room — the user may ask for one ([D22](../../docs/hi-mcp-behaviour.md#3-decisions)).
+  outside the room — the user may ask for one ([D22](../context/hi-mcp-behaviour.md#3-decisions)).
 - **Obstacles**: the `obstacles` section of `get-plan-context` lists what stands in the room — doors,
   windows and other objects with `kind`, `outline` and `bottomMm`/`topMm`, and per group the outlines
   of its root modules. Root outlines bound the calculated parts and can extend past their docking
@@ -236,13 +236,13 @@ placement: {
   Article-specific overhangs belong in the library descriptions. A door or a window lies in a wall
   (`roomIndex`, `wall`, `fromEndMm` — its span from the wall's end). A group goes on the wall, the corner or
   the spot the user names, also in front of a door or a window, and the answer names them
-  ([D81](../../docs/hi-mcp-behaviour.md#3-decisions)). Where the user leaves the place open, put a new group
+  ([D81](../context/hi-mcp-behaviour.md#3-decisions)). Where the user leaves the place open, put a new group
   on a stretch of wall or a spot that `obstacles` leaves free: a placement with that wall, alignment `end` and `offsetMm` = the start of a free stretch
   puts a group on it; base units lower than a window's `bottomMm` fit below it. The result's `hint`
   names every root module that overlaps an object or another group or stands in front of a door or
   a window, with the free stretches of its wall, and for a group placed at a wall in front of a door
   or a window of the adjoining wall the `offsetMm` that keeps it clear; the group is built anyway
-  ([D55](../../docs/hi-mcp-behaviour.md#3-decisions)).
+  ([D55](../context/hi-mcp-behaviour.md#3-decisions)).
 - **New groups only**: the placement is applied once, when the group is created. A placement on a
   group already in the plan is not used — the group keeps its position, and `corrections` says so;
   a group resubmitted without placement keeps its position.
@@ -282,7 +282,7 @@ names them, and says when the row now reaches past a wall or into another group.
 
 The server corrects what it can and builds every group it can; only a call in which no group can be
 built is an error. Every guard and correction:
-[hi-mcp-behaviour.md §8](../../docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
+[hi-mcp-behaviour.md §8](../context/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
 
 ### Corrected and reported in `corrections` (the group is loaded):
 - A root without a relation (in a group with relations) — put into the row of its kind; a relation to an unknown root or to itself, or one that closes a ring — ignored or dropped

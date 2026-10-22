@@ -37,7 +37,7 @@ over the host's `onHistoryChange` callback.
 The agent loop, the model and the key stay in the host
 ([ADR 0009](0009-the-chat-window-is-a-panel-of-the-planner.md)), and the plan-changing tool logic
 stays `externalObjectGroupOperation` (ADR 0007). The planner serves a tool set, not the MCP
-protocol (D94 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)).
+protocol (D94 of [hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md#3-decisions)).
 
 ## Consequences
 

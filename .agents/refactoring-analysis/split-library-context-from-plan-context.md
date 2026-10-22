@@ -196,8 +196,8 @@ planner calls, in parallel where they are independent:
 | File | Change |
 |---|---|
 | `.agents/scripts/run-hi-mcp-prompt.js:293-300` | the readiness check |
-| `docs/hi-mcp-behaviour.md` | D48 (the plan context is agent-ready) names the two contexts; D74 (the catalog's geometry) — from the template only; D71 (six planner methods) — seven (question 2); the planner methods table (`:404-410`); the `get-plan-context` passage (`:701-708`) |
-| `docs/hi-mcp-server.md:136-140` | `get-plan-context` reads both contexts |
+| `.agents/context/hi-mcp-behaviour.md` | D48 (the plan context is agent-ready) names the two contexts; D74 (the catalog's geometry) — from the template only; D71 (six planner methods) — seven (question 2); the planner methods table (`:404-410`); the `get-plan-context` passage (`:701-708`) |
+| `.agents/context/hi-mcp-server.md:136-140` | `get-plan-context` reads both contexts |
 | `.agents/context/tool-executors.md:88-95` | the steps of `get-plan-context` |
 | `.agents/context/deployment-and-testing.md:64-66` | the readiness check |
 | `.agents/context/README.md:128-129` | the planner and the HI tools methods |

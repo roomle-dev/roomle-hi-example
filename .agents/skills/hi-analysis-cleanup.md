@@ -53,10 +53,10 @@ its home already states it; add it only where it does not.
 
 | What | Where it goes |
 |---|---|
-| How the HI tools behave towards an agent — a tool, a served rule, a result, a guard, a correction, a feedback message | [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md), in the section of that tool or rule |
+| How the HI tools behave towards an agent — a tool, a served rule, a result, a guard, a correction, a feedback message | [`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md), in the section of that tool or rule |
 | A decision about that behaviour, or a rejected approach someone could plausibly re-propose | a numbered decision `D<n>` in §3 of `hi-mcp-behaviour.md`, with its date, source and state |
 | An architecture decision — where the logic runs, how the page runs the tools | a numbered ADR in [`.agents/decisions/`](../decisions/) |
-| How a feature works — the tools, the chat, the pages | the living-reference document of the area: [`hi-mcp-server.md`](../../docs/hi-mcp-server.md), [`ai-chat.md`](../../docs/ai-chat.md), [`docs/`](../../docs/) — a new document for a new feature |
+| How a feature works — the tools, the chat, the pages | the living-reference document of the area: [`hi-mcp-server.md`](../context/hi-mcp-server.md), [`ai-chat.md`](../../docs/ai-chat.md), [`docs/`](../../docs/) — a new document for a new feature |
 | A tool's parameters and examples | [`hi-mcp-tools.md`](hi-mcp-tools.md) |
 | HI domain knowledge — rooms, walls, articles, docking, positioning | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), [`hi-authoring-rules.md`](hi-authoring-rules.md) |
 | How the planner or the library behaves, as a root-cause investigation found it — what a load report replaces, how the arrangement docks, what an attribute switches | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), or the planner section of `hi-mcp-behaviour.md` where it explains the tools' behaviour; written as today's behaviour |
@@ -119,9 +119,9 @@ A split along the living reference of this repository:
 
 | Group | Owns |
 |---|---|
-| HI tool behaviour — tools, placement, docking, guards, plan context, undo | `docs/hi-mcp-behaviour.md`, `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md` |
+| HI tool behaviour — tools, placement, docking, guards, plan context, undo | `.agents/context/hi-mcp-behaviour.md`, `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md` |
 | Chat, models and testing | `docs/ai-chat.md`, `docs/test-prompts.md`, `.agents/skills/vercel-ai-sdk-chat.md`, `hi-mcp-testing.md` |
-| Architecture and pages | `docs/hi-mcp-server.md`, the other documents of `docs/`, the READMEs |
+| Architecture and pages | `.agents/context/hi-mcp-server.md`, `.agents/context/agent-architecture.md`, the documents of `docs/`, the READMEs |
 
 The coordinator keeps `.agents/README.md`, `.agents/decisions/` and the existing backlog documents.
 
@@ -149,7 +149,7 @@ While promoting, compare the living reference with the code and correct what the
   .agents/decisions/`), not from the local tree, and add each to the Decisions table of
   [`.agents/README.md`](../README.md).
 - Decisions: take the next free `D<n>` after the highest in `git show
-  origin/master:docs/hi-mcp-behaviour.md`.
+  origin/master:.agents/context/hi-mcp-behaviour.md`.
 
 Number the drafts in the documents and in the handoff files, and write a map from draft to number for
 the next step.

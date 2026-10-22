@@ -39,7 +39,7 @@ The agent cannot write this:
    the anchor frame) and writes `ownDockingVectorIndex` / `dockingVectorIndex`.
 3. **Keep the indices** of a compiled entry in `toArticlePick` (`hi-tool-payload.ts:9`); C3 strips every index.
 4. The served rules name `under` beside the other relations; §5.2 and the relation corrections of
-   [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md) describe it.
+   [hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md) describe it.
 
 ## Test
 

@@ -8,7 +8,7 @@
 
 The example page and the ligna-store run the planning assistant of the roomle-ui embedding-lib
 (`startPlanningAssistant`) with the HI tools of the embedding-lib (`createHiMcpTools`, D94 of
-[hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)). No page connects to the page
+[hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md#3-decisions)). No page connects to the page
 bridge of the MCP server any more, so no MCP client reaches a planner through it, and the Cloudflare
 deployment has no page to serve. The server was left as the reference the tool copy of the
 embedding-lib was compared against.

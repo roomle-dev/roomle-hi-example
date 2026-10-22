@@ -6,8 +6,8 @@ tool that changes the plan as one planner call, and keeps the undo record. The H
 roomle-ui (`hi-tool-commands.ts` and its modules) perform the tools that change the plan: they
 validate and correct the agent's input, run the planner's operations, and shape the result.
 What the tools do towards the agent, with every correction and message, is
-in [hi-mcp-behaviour.md §6](../../docs/hi-mcp-behaviour.md#6-tools) and
-[§8](../../docs/hi-mcp-behaviour.md#8-guards-corrections-and-feedback). [Back to the overview](./README.md).
+in [hi-mcp-behaviour.md §6](hi-mcp-behaviour.md#6-tools) and
+[§8](hi-mcp-behaviour.md#8-guards-corrections-and-feedback). [Back to the overview](./README.md).
 
 ## Tool overview
 
@@ -16,14 +16,14 @@ The planner serves these tools (`getExternalObjectAgentTools`, `callExternalObje
 `hi-mcp-server.ts` of the same folder. Twenty-five handlers call the
 matching entry in `toolExecutors`; `get-authoring-rules` returns `AUTHORING_RULES` directly from
 the tool set and calls no planner method. Parameters and result formats are in the
-[tool reference](../../docs/hi-mcp-server.md#tool-reference).
+[tool reference](hi-mcp-server.md#tool-reference).
 
 | Tool | Purpose | Changes the plan | Implementation details |
 | ---- | ------- | ---------------- | ---------------------- |
 | `get-plan-context` | Read rooms, articles, groups, obstacles, installation elements and optional master data | No | [Context reads and shaping](#get-plan-context) |
 | `find-attributes` | Search library attributes and their available values | No | [Attribute search](#find-attributes) |
-| `get-authoring-rules` | Read the group payload format, relations, placement rules and examples | No | [Direct server handler](../../docs/hi-mcp-server.md#get-authoring-rules) |
-| `get-skill` | Read a planning skill or one of its files | No | [`skills.ts`](#the-files), [the skills](../../docs/hi-mcp-behaviour.md#56-planning-skills-get-skill) |
+| `get-authoring-rules` | Read the group payload format, relations, placement rules and examples | No | [Direct server handler](hi-mcp-server.md#get-authoring-rules) |
+| `get-skill` | Read a planning skill or one of its files | No | [`skills.ts`](#the-files), [the skills](hi-mcp-behaviour.md#56-planning-skills-get-skill) |
 | `create-or-replace-groups` | Create groups with a placement or rebuild existing groups by id | Yes | [Creation and replacement pipeline](#create-or-replace-groups) |
 | `place-group` | Move an existing group against a wall or into a room corner | Yes | [Placement pipeline](#place-group) |
 | `change-module-attribute` | Set an attribute on selected root modules or their submodules | Yes | [Command forwarding and result wrapping](#the-command-tools) |
@@ -116,7 +116,7 @@ The longest pipeline, in roomle-ui (`HI_TOOL_COMMANDS['create-or-replace-groups'
 `hi-tool-commands.ts`); the server forwards the arguments. Each group of the call is prepared on its
 own; a group that fails leaves the
 call and is reported in `notLoaded`, the others load
-([§8.3](../../docs/hi-mcp-behaviour.md#83-create-or-replace-groups)).
+([§8.3](hi-mcp-behaviour.md#83-create-or-replace-groups)).
 
 1. **Group-wide attributes first.** `generatedRootAttributes` takes the attributes the agent set on
    generated roots (worktop, toe kick) before they are dropped.
@@ -380,8 +380,8 @@ event of the call arrives after its answer, so the call waits for none.
 4. The plan must now equal the other state. If it does not, the steps are taken back the other way
    and the result says so.
 
-The behaviour and every message: [hi-mcp-behaviour.md §6 undo, redo](../../docs/hi-mcp-behaviour.md#undo-redo)
-and [§8.8](../../docs/hi-mcp-behaviour.md#88-undo-and-redo).
+The behaviour and every message: [hi-mcp-behaviour.md §6 undo, redo](hi-mcp-behaviour.md#undo-redo)
+and [§8.8](hi-mcp-behaviour.md#88-undo-and-redo).
 
 ## get-price, get-order-data, get-plan-images
 

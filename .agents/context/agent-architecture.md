@@ -9,7 +9,7 @@ tools or the planner methods the tools use.
 Related pages:
 
 - What the tools do towards the agent (the served rules, the guards, the corrections and the
-  feedback): [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md).
+  feedback): [hi-mcp-behaviour.md](hi-mcp-behaviour.md).
 - The executors one by one: [Tool executors](./tool-executors.md).
 - The example page and its launcher: [Pages, chat and launcher](./pages-chat-and-launcher.md).
 

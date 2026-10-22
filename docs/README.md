@@ -1,13 +1,14 @@
 # Documentation
 
-User-facing documentation for this repository.
+Documentation for external readers: users of the HI agent, integrators and anyone setting up the
+example. It is user-friendly and at a higher level — what the HI agent does and how to use it, not
+how the code is built. The implementation reference — the architecture, how the HI tools behave
+towards an agent, the tool reference — is in [`.agents/context/`](../.agents/context/README.md).
 
 ## Index
 
 | Document | Covers |
 |---|---|
-| [hi-mcp-behaviour.md](hi-mcp-behaviour.md) | How the MCP server behaves towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback |
-| [hi-mcp-server.md](hi-mcp-server.md) | Complete MCP server documentation: the example page, the server, its tools and clients |
 | [ai-chat.md](ai-chat.md) | The AI chat of the example: providers, models, images |
 | [user-guide/README.md](user-guide/README.md) | User guide: what the HI MCP does, the ways to use it, prompts, limits |
 | [setup/](setup/) | Setup guides: local MCP server, Cloudflare, Azure, Ollama, Jan AI |
@@ -20,6 +21,6 @@ User-facing documentation for this repository.
 
 ## Guidelines
 
-- User-facing documentation lives here, in `docs/`.
-- Agent-facing documentation (living reference of the implementation, skills, analyses, backlog) lives in `.agents/`.
-- Keep the two separate: `docs/` is for users of the project, `.agents/` is for agents working on the project.
+- `docs/` is for external readers: user guides, setup and integration guides, and the overviews they need — user-friendly and at a higher level.
+- Everything about the implementation lives in `.agents/`: the architecture and the living reference of the code (`.agents/context/`), the behaviour and tool reference of the HI tools, skills, decisions, analyses and the backlog. A document written for developers or agents never goes into `docs/`.
+- A page here links into `.agents/` where a reader needs the detail, instead of repeating it.

@@ -7,7 +7,7 @@ the HI tool commands, and the HI tools the planner serves.
 Two things are documented elsewhere:
 
 - Which errors are MCP bugs and which are library bugs: D99 of
-  [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions).
+  [hi-mcp-behaviour.md](hi-mcp-behaviour.md#3-decisions).
 - The messages the agent gets: quoted there in §8 (C25, the `notLoaded` rows).
 
 [Back to the overview](./README.md).

@@ -7,7 +7,7 @@
 ## Context
 
 The roomle-ui embedding-lib carries a copy of the HI MCP tools (`createHiMcpTools`, D94 of
-[hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)) and a planning assistant that
+[hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md#3-decisions)) and a planning assistant that
 runs the agent loop with them in the page (`startPlanningAssistant`), configured by one JSON object,
 the `PlanningAssistantConfig`. With them, the example page no longer needs the MCP server, its page
 bridge or the chat backend `hi-mcp-chat` to chat with the planner. The key stays a CLI argument of

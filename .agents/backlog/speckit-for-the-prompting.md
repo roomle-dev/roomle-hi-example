@@ -9,8 +9,8 @@
 
 Once the MCP server offers the main planning functions, the quality of a planning is mainly a
 prompting problem: what the model is told about the planning, in which order, and when it is done.
-The served text has grown rule by rule ([hi-mcp-behaviour.md §2.4](../../docs/hi-mcp-behaviour.md#24-instructions),
-[§5](../../docs/hi-mcp-behaviour.md#5-information-the-server-provides)); it has no fixed structure for
+The served text has grown rule by rule ([hi-mcp-behaviour.md §2.4](../context/hi-mcp-behaviour.md#24-instructions),
+[§5](../context/hi-mcp-behaviour.md#5-information-the-server-provides)); it has no fixed structure for
 the input, the checks before acting, the guidelines and the criteria of a finished planning.
 
 [Spec Kit](https://github.com/github/spec-kit) structures its agent prompts in sections such as:
@@ -32,7 +32,7 @@ Analyse the prompt templates of Spec Kit against the served text and the chat pr
    the tool descriptions and the chat's system prompt, and which are missing — e.g. checks before the
    first plan change, success criteria of a planning, and when the agent is done.
 2. Which of them would improve the plannings, as a proposal for the served text — in the words of the
-   guidelines of [hi-mcp-behaviour.md §2](../../docs/hi-mcp-behaviour.md#2-guidelines): shorter, not
+   guidelines of [hi-mcp-behaviour.md §2](../context/hi-mcp-behaviour.md#2-guidelines): shorter, not
    longer.
 
 The result is a feature analysis in `.agents/feature-analysis/`.

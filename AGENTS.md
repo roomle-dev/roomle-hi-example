@@ -5,7 +5,7 @@
 ## Always Do This First
 
 1. **Load matching skills.** Check the [On-Demand Skills](#on-demand-skills) catalog and read every skill file whose domain matches the task *before* taking action. Multiple skills may apply to one task.
-2. **Read [`docs/hi-mcp-server.md`](./docs/hi-mcp-server.md)** before answering architecture or domain questions. It is the reference of the example page and the HI tools. **Read [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md)** before changing a tool, a served rule, a guard or a correction — the single reference for how the HI tools behave towards an agent, with every decision, guard, correction and feedback message.
+2. **Read [`.agents/context/hi-mcp-server.md`](.agents/context/hi-mcp-server.md)** before answering architecture or domain questions. It is the reference of the example page and the HI tools. **Read [`.agents/context/hi-mcp-behaviour.md`](.agents/context/hi-mcp-behaviour.md)** before changing a tool, a served rule, a guard or a correction — the single reference for how the HI tools behave towards an agent, with every decision, guard, correction and feedback message.
 3. **Read [`.agents/README.md`](./.agents/README.md)** for the complete digital brain index, separating living reference from historical records.
 4. **Treat documentation as part of the task, not a follow-up.** Every analysis produces a document, and every change to productive code updates one — see [Where Documentation Goes](#where-documentation-goes).
 
@@ -214,7 +214,7 @@ When the repository uses Atlassian Jira:
 
 1. **The Tools in the roomle-ui Planner** — the planner serves the only implementation of the HI tools (roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`, `getExternalObjectAgentTools` and `callExternalObjectAgentTool`); `createHiMcpTools` of `@roomle/embedding-lib/hi` hands them to an agent in the page as tools in the shape of MCP tools, without the MCP protocol, and forwards every call (D94, [ADR 0012](./.agents/decisions/0012-the-hi-tool-set-runs-in-the-planner.md))
 2. **The Planning Assistant in the Page** — `startPlanningAssistant` of the embedding-lib runs the agent loop in the page of the example and of the ligna-store; the tools run in the planner of the page (`instance.extended.callExternalObjectAgentTool`) and call its seven planner methods there
-3. **Plan-Changing Tools Run in roomle-ui** — Every tool that changes the plan is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`; roomle-ui performs the whole tool as an HI tool command (`hi-tool-commands.ts` in `packages/web-sdk/packages/homag-intelligence/src/`): corrections, ids, docking from the relations, placement, group materials, hints. It answers with the tool's result and the planner steps it made, which the tool set counts for undo (D71 of [`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md#3-decisions))
+3. **Plan-Changing Tools Run in roomle-ui** — Every tool that changes the plan is one planner call, `externalObjectGroupOperation(<tool name>, <the tool's arguments>)`; roomle-ui performs the whole tool as an HI tool command (`hi-tool-commands.ts` in `packages/web-sdk/packages/homag-intelligence/src/`): corrections, ids, docking from the relations, placement, group materials, hints. It answers with the tool's result and the planner steps it made, which the tool set counts for undo (D71 of [`.agents/context/hi-mcp-behaviour.md`](.agents/context/hi-mcp-behaviour.md#3-decisions))
 
 ### HI Data Model
 
@@ -249,7 +249,7 @@ When the repository uses Atlassian Jira:
 - **Variables**: camelCase (`planContext`, `dockingVector`)
 - **Constants**: UPPER_SNAKE_CASE (`PORT`, `DEFAULT_CALL_TIMEOUT_MS`)
 - **Functions**: camelCase (`getPlanContext`, `createOrReplaceGroups`)
-- **Files**: kebab-case (`minimal-hi-example/start.mjs`, `docs/hi-mcp-server.md`)
+- **Files**: kebab-case (`minimal-hi-example/start.mjs`, `.agents/context/hi-mcp-server.md`)
 
 ### Comments
 
@@ -278,7 +278,7 @@ no article, category, attribute, value or measure of one library, not even as an
 source of library information is the library data: the master data and the article list, and in
 them the `desc` properties. When an agent picks the wrong library content because it lacks
 information, the fix is the desc in the library data, never a served rule. See §2.4 of
-[`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md#24-instructions).
+[`.agents/context/hi-mcp-behaviour.md`](.agents/context/hi-mcp-behaviour.md#24-instructions).
 
 The policy covers the served text, the results and the tools' logic only. Code comments, tests
 and markdown files are no violation: a comment, a test fixture or a README example may name a
@@ -328,12 +328,28 @@ Rules:
   API that led the agent there. "The server accepted it" is not a root cause.
 
 Every guard, correction and feedback message of the server is in §8 of
-[`docs/hi-mcp-behaviour.md`](./docs/hi-mcp-behaviour.md), the decisions behind them in
+[`.agents/context/hi-mcp-behaviour.md`](.agents/context/hi-mcp-behaviour.md), the decisions behind them in
 its §3.
 
 ## Where Documentation Goes
 
 Documentation lives in markdown files under `docs/` and `.agents/`, never in code comments.
+
+### `docs/` is for external readers
+
+- **`docs/`** holds documentation for readers outside the development of this repository: user
+  guides, setup and integration guides, and the overviews they need. It is user-friendly and at a
+  higher level. It says what the HI agent does and how to use it, not how the code is built.
+- **`.agents/`** holds everything about the implementation:
+  - the architecture;
+  - the behaviour reference of the HI tools;
+  - the tool reference;
+  - the decisions, the analyses and the backlog.
+
+  How the code works lives in `.agents/context/`.
+- **Linking:** a page in `docs/` links into `.agents/` where a reader needs the detail, instead of
+  repeating it. A document written for developers or agents goes into `.agents/`, never into
+  `docs/`.
 
 ### Digital Brain Structure
 
@@ -385,18 +401,19 @@ change.
 | Feature analysis | new file in `.agents/feature-analysis/` with kebab-case slug |
 | Refactoring analysis | new file in `.agents/refactoring-analysis/` with kebab-case slug |
 | Benchmark and performance analysis | new file in `.agents/benchmarks/` with kebab-case slug, its benchmark in a folder of the same name — see [`.agents/skills/hi-mcp-benchmarking.md`](./.agents/skills/hi-mcp-benchmarking.md) |
-| New feature capability | Update `docs/hi-mcp-server.md` or create new file in `docs/` |
-| HI tool behaviour — a tool, a served rule, a result, a guard, a correction, feedback, a decision | `docs/hi-mcp-behaviour.md`, in the same change |
+| New feature capability | `.agents/context/`: update `.agents/context/hi-mcp-server.md` or the document of the area, or create a new one; a user-facing guide for it in `docs/` |
+| HI tool behaviour — a tool, a served rule, a result, a guard, a correction, feedback, a decision | `.agents/context/hi-mcp-behaviour.md`, in the same change |
 | MCP tool reference updates | `.agents/skills/hi-mcp-tools.md` |
 | Architecture decisions | Create ADR in `.agents/decisions/` |
 | Wiki page — a durable answer to a recurring question | `.agents/wiki/` |
 | Open work | `.agents/backlog/` |
-| Living reference | `docs/` for user-facing documentation |
+| Living reference of the implementation | `.agents/context/` |
+| User guide, setup or integration guide for external readers | `docs/` |
 
-**Important**: Analysis documents in `.agents/bug-analysis/`, `.agents/feature-analysis/`, and `.agents/refactoring-analysis/` are **historical records** — they document the analysis process and decisions, but the durable knowledge should be promoted to living-reference documentation in `docs/` or the skill files.
+**Important**: Analysis documents in `.agents/bug-analysis/`, `.agents/feature-analysis/`, and `.agents/refactoring-analysis/` are **historical records** — they document the analysis process and decisions, but the durable knowledge should be promoted to living-reference documentation in `.agents/context/` or the skill files, and to `docs/` where users need it.
 
 **The living reference describes today.** Everything outside the analyses and the backlog —
-`docs/`, `.agents/skills/`, the READMEs, `docs/hi-mcp-behaviour.md` — says how the code works now:
+`.agents/context/` with `hi-mcp-behaviour.md`, `.agents/skills/`, `docs/`, the READMEs — says how the code works now:
 
 - When an analysis is deleted, its valuable content goes there first: the invariants, the decisions
   and the rejected approaches someone could re-propose, the guarding tests, and how the planner and
@@ -406,7 +423,7 @@ change.
 - It does not record when something was solved, fixed, verified or confirmed.
 - It carries no ticket numbers. They belong to the analyses, the backlog items, the pull requests
   and the Jira comments.
-- A decision row in §3 of `docs/hi-mcp-behaviour.md` keeps its decision date, who decided and its
+- A decision row in §3 of `.agents/context/hi-mcp-behaviour.md` keeps its decision date, who decided and its
   state.
 
 **A solved bug keeps no analysis.** Once its fix has landed — on `master`, a roomle-ui fix on
@@ -444,7 +461,7 @@ assistant runs the HI tools.
 2. Implement the executor in `tool-executors.ts` there. A tool that changes the plan is a tool command in roomle-ui (`HI_TOOL_COMMAND` in `homag-intelligence/src/hi-plan-context.ts`, the command in `HI_TOOL_COMMANDS` of `hi-tool-commands.ts`) plus a forwarder, `inPlanner('<tool name>')`, which sends it through `externalObjectGroupOperation` and wraps it in `oneAtATime`, so it never runs beside another plan change, and in the undo record
 3. An edit the planner does not offer yet is a group operation the tool command runs (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`, executed in `hi-tools.ts`) — no new planner method. Only if a tool needs a planner method the tools do not call yet: add it to `planner-api.ts` of the tools
 4. Add or extend unit tests in roomle-ui `packages/web-sdk/packages/homag-intelligence/__tests__/hi-mcp/` and the fixture `packages/web-sdk/packages/test-helpers/unit/hi-mcp-fixture.json` — a tool command's in `homag-intelligence/__tests__/hi-tool-commands/`
-5. Update `docs/hi-mcp-behaviour.md`, the `docs/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
+5. Update `.agents/context/hi-mcp-behaviour.md`, the `.agents/context/hi-mcp-server.md` tool reference and `.agents/skills/hi-mcp-tools.md`
 6. The example page and the ligna-store get the tool with the planner at their server URL; a new embedding-lib version is needed only when the forwarding of `createHiMcpTools` changes — built only after asking ([Hard Rule](#hard-rule-no-embedding-lib-build-without-asking))
 
 ## Suggested Change Workflow

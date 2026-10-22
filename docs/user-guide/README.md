@@ -257,9 +257,9 @@ says what it substituted and adapted.
   of the Furniture_Smith library
 - [AI chat in the example](../ai-chat.md) — the chat window and its models
   in detail
-- [Example and tool reference](../hi-mcp-server.md) — for
+- [Example and tool reference](../../.agents/context/hi-mcp-server.md) — for
   developers: the example page and the tools
 
 ## Interior Design
 
-Ask to add a shelf or drawer inside a cabinet, move a specific fitting higher, transfer it within the same furniture group, delete identified fittings, or replace one with an available alternative. The assistant first discovers what the loaded library supports. It may ask which fitting you mean when several are alike. Actual placement and retained settings depend on the library; the tool result reports adjustments and changed instance IDs. Undo and redo apply to each completed edit. See [the tool contract](../hi-mcp-behaviour.md#interior-design-tools).
+Ask to add a shelf or drawer inside a cabinet, move a specific fitting higher, transfer it within the same furniture group, delete identified fittings, or replace one with an available alternative. The assistant first discovers what the loaded library supports. It may ask which fitting you mean when several are alike. Actual placement and retained settings depend on the library; the tool result reports adjustments and changed instance IDs. Undo and redo apply to each completed edit. See [the tool contract](../../.agents/context/hi-mcp-behaviour.md#interior-design-tools).

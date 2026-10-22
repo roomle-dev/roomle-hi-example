@@ -7,8 +7,8 @@ a rotation, a wall span or a footprint. [Back to the overview](./README.md).
 
 The geometry of the placement — the anchor walk, the relations, the docking — is described in
 [Layout and placement](./layout-and-placement.md); the rules the agent gets in
-[hi-mcp-behaviour.md §5](../../docs/hi-mcp-behaviour.md#5-information-the-server-provides) and
-[§7](../../docs/hi-mcp-behaviour.md#7-positioning). This document follows one question through all
+[hi-mcp-behaviour.md §5](hi-mcp-behaviour.md#5-information-the-server-provides) and
+[§7](hi-mcp-behaviour.md#7-positioning). This document follows one question through all
 of them: which frame is a number in, and where does it change frame.
 
 Paths:
@@ -76,7 +76,7 @@ There right and left follow the article and its row, not the group's axes.
 Every wall of `get-plan-context` has `start` and `end` (floor points), `lengthMm` and
 `facingRotationY` — the rotation of a group standing with its back against the wall. The kernel's
 room contour runs counter-clockwise with the room on its left (D61 of
-[hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)), so in a rectangular room:
+[hi-mcp-behaviour.md](hi-mcp-behaviour.md#3-decisions)), so in a rectangular room:
 
 | `side` | `name` | Runs in the top view (start → end) | `end` lies in the corner | `facingRotationY` |
 | ------ | ------ | ---------------------------------- | ------------------------ | ----------------- |
@@ -561,7 +561,7 @@ The plan context and the placements round coordinates to 0.01 mm (`round2`, `+ 0
 
 - **The served text and the conversions** — the rotation sense, the wall `end` rule, the side labels
   and the corner rotations are written into `AUTHORING_RULES` and the tool descriptions
-  (`hi-mcp/hi-mcp-server.ts`) and into [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md); change them
+  (`hi-mcp/hi-mcp-server.ts`) and into [hi-mcp-behaviour.md](hi-mcp-behaviour.md); change them
   together with `deriveWalls`, `placeAgainstWall`, `placeCornerAtWalls` and `roomCorners`.
 - **The sign of `z`** — `[x, level, −y]` is applied in three places in roomle-ui
   (`convertContourSegment`, `shapeObstacles`, `_gatherInstallationElements`); the kernel applies the

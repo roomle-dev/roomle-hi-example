@@ -60,7 +60,7 @@ EXAMPLE_SERVER_URL='https://test.roomle.com/t/cp/3087/?customApiUrl=https://www.
 ```
 
 Details: [AI chat](./docs/ai-chat.md) ·
-[example and tool reference](./docs/hi-mcp-server.md)
+[example and tool reference](.agents/context/hi-mcp-server.md)
 
 ## Ask the agent
 
@@ -72,7 +72,7 @@ Get the plan context of the HI session and summarize it.
 Add a group of three tall units to the wall on the right.
 ```
 
-More: [example prompts](./docs/hi-mcp-server.md#example-prompts)
+More: [example prompts](.agents/context/hi-mcp-server.md#example-prompts)
 
 ## Links
 

@@ -9,6 +9,7 @@ towards an agent, the tool reference — is in [`.agents/context/`](../.agents/c
 
 | Document | Covers |
 |---|---|
+| [planning-assistant-overview.md](planning-assistant-overview.md) | How the AI Planning Assistant works: its components and where they run, a block diagram of how they interact, what happens with a request, why it is built this way, security and limits |
 | [ai-chat.md](ai-chat.md) | The AI chat of the example: providers, models, images |
 | [user-guide/README.md](user-guide/README.md) | User guide: what the HI MCP does, the ways to use it, prompts, limits |
 | [setup/](setup/) | Setup guides: local MCP server, Cloudflare, Azure, Ollama, Jan AI |

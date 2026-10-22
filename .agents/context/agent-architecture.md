@@ -12,6 +12,8 @@ Related pages:
   feedback): [hi-mcp-behaviour.md](hi-mcp-behaviour.md).
 - The executors one by one: [Tool executors](./tool-executors.md).
 - The example page and its launcher: [Pages, chat and launcher](./pages-chat-and-launcher.md).
+- The same architecture for external readers, with a block diagram and without code:
+  [How the AI Planning Assistant works](../../docs/planning-assistant-overview.md).
 
 Code references without a repository name are roomle-ui paths, from the roomle-ui root, with the line
 numbers of the branch `feat/hi-mcp`. RoomleCore, ligna-store and roomle-hi-example references name

@@ -15,7 +15,7 @@ reasoning effort of the run that reproduces it — empty where it is unknown; a 
 no effort for runs at its provider's default. Library data issues are tracked in
 [library-issues.md](library-issues.md). A calculation error of the library is an MCP issue here
 when an invalid attribute value the tools sent caused it, and a library issue there otherwise
-(D99 of [`docs/hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#3-decisions)). An issue leaves
+(D99 of [`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md#3-decisions)). An issue leaves
 this document when its fix is in the code.
 The guideline for every server issue is
 [Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort): wrong content an agent creates

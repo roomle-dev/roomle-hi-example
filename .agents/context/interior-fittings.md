@@ -19,7 +19,7 @@ Discovery precedes edits. A generated container ID can expire after calculation;
 
 Results retain `changed`, `addedInstanceIds`, `removedInstanceIds`, final `fittings`, and `corrections`. Recreation may change IDs. A changed call is one undoable action; no-op or failed-before-change calls add none. A failure after loading retains the planner's undo record. Groups include compact `interiorFittings`, so history detects an interior-only move or setting change with an unchanged cabinet outline. Never rebuild nested module trees or issue separate delete/add calls as replacement.
 
-The server owns schemas, serial forwarding and agent wording. roomle-ui (`homag-intelligence/src/hi-interior-design.ts`) owns fitting identity, compatibility, calculation, completion and restoration. The planner API stays at six methods (D71, D96 of the [behaviour reference](../../docs/hi-mcp-behaviour.md#3-decisions)).
+The server owns schemas, serial forwarding and agent wording. roomle-ui (`homag-intelligence/src/hi-interior-design.ts`) owns fitting identity, compatibility, calculation, completion and restoration. The planner API stays at six methods (D71, D96 of the [behaviour reference](hi-mcp-behaviour.md#3-decisions)).
 
 
 To see the fittings in `get-plan-images`, the agent opens the cabinet first with
@@ -28,7 +28,7 @@ say so; see [Doors and drawers](tool-executors.md#doors-and-drawers).
 
 ## Placement
 
-D89 of the [behaviour reference](../../docs/hi-mcp-behaviour.md#interior-fittings-2026-10-20).
+D89 of the [behaviour reference](hi-mcp-behaviour.md#interior-fittings-2026-10-20).
 roomle-ui `hi-interior-design.ts`:
 
 - **Position** (`interiorFittings`): the lowest corner of the fitting's own visible parts — their

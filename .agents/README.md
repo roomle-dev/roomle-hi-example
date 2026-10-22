@@ -87,6 +87,9 @@ Living reference of the implementation: how the code is built today. Full index 
 
 | Document | Covers |
 |---|---|
+| [hi-mcp-behaviour.md](context/hi-mcp-behaviour.md) | How the HI tools behave towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback |
+| [hi-mcp-server.md](context/hi-mcp-server.md) | The example page and the HI tools: architecture, running, the tool reference, authoring and positioning pos groups |
+| [agent-architecture.md](context/agent-architecture.md) | The parts of the AI Planning Assistant and where they run — chat window, embedding bridge, planning assistant, `createHiMcpTools`, the planner's agent methods, the HI tool set, the glue logic, RoomleCore — and every hop of a prompt from the window to the kernel and back |
 | [tool-executors.md](context/tool-executors.md) | Overview of all MCP tools, `tool-executors.ts`, `agent-facing.ts`, the tool commands of roomle-ui |
 | [layout-and-placement.md](context/layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
 | [library-errors.md](context/library-errors.md) | How roomle-ui handles the errors of an HI library: the call sites of the library, the glue logic, the HI tool commands and the HI tools |
@@ -108,10 +111,11 @@ ADRs document why the code is shaped the way it is; they are listed under [Decis
 
 ### User-Facing Documentation
 
-Living reference documentation for end users and developers is maintained in the `docs/` folder:
-
-- [hi-mcp-behaviour.md](../docs/hi-mcp-behaviour.md) — How the HI tools behave towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback
-- [hi-mcp-server.md](../docs/hi-mcp-server.md) — The example page and the HI tools
+`docs/` is for external readers. It holds user guides, setup and integration guides, and the
+overviews those readers need: user-friendly and at a higher level. It says what the HI agent does
+and how to use it. How the code is built — the architecture, the behaviour reference, the tool
+reference — lives in [`context/`](context/README.md), never in `docs/`. Index:
+[`docs/README.md`](../docs/README.md).
 
 ---
 
@@ -244,7 +248,7 @@ Every analysis document should include:
 
 | What you produced | Where it goes | Lifecycle |
 |---|---|---|
-| **Living reference** — how things work now | `.agents/skills/` or `docs/` | Updated when behaviour changes; says what holds today — never what was wrong, when something was solved, or a ticket number |
+| **Living reference** — how things work now | `.agents/context/` or `.agents/skills/`; a user guide for external readers in `docs/` | Updated when behaviour changes; says what holds today — never what was wrong, when something was solved, or a ticket number |
 | **Implementation context** — how the code is built | `.agents/context/` | Living reference; every new feature is documented and added here, every change requires an update here |
 | **Historical record** — analysis, benchmark, refactoring | `.agents/<analysis-type>/` | Never updated after close-out; deleted by ["cleanup analyses"](skills/hi-analysis-cleanup.md) once the work has landed |
 | **Decision** — why code is shaped this way | `.agents/decisions/` | Living reference |
@@ -266,7 +270,9 @@ Every analysis document should include:
 
 ### For End Users
 
-Add to `docs/` folder and update the main README.md if appropriate.
+Add to `docs/` folder and update the main README.md if appropriate. Only documentation for external
+readers goes there — user guides, setup and integration guides, at a higher level; a document for
+developers or agents goes into `.agents/`.
 
 ## See Also
 

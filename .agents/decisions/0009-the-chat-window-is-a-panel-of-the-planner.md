@@ -2,7 +2,7 @@
 
 > **Status**: Accepted
 > **Date**: 2026-10-15
-> **Ticket**: [RML-18190](https://roomle.atlassian.net/browse/RML-18190); [ADR 0003](0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) for the agent loop, D80 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions) for the prompts
+> **Ticket**: [RML-18190](https://roomle.atlassian.net/browse/RML-18190); [ADR 0003](0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) for the agent loop, D80 of [hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md#3-decisions) for the prompts
 
 ## Context
 

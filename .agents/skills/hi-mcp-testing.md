@@ -261,7 +261,7 @@ Check:
 - the docking graph is sound — every root reachable from the placed root, at most one root per
   docking vector, wall units docked to `*Top` vectors;
 - the doors open to the outside of every row the run creates or gives a new end
-  ([D84](../../docs/hi-mcp-behaviour.md#doors-2026-10-17)) — the door at the left end of a row
+  ([D84](../context/hi-mcp-behaviour.md#doors-2026-10-17)) — the door at the left end of a row
   (`rowIndex` 1) hinged on the left, the door at the right end on the right, a pair of doors side by
   side at its two outer sides; floor units and wall units form rows of their own. A row of the
   starting plan keeps its doors as the plan has them while an edit leaves its ends. Read the hinge side from the roots' input attributes in `plan-context.json`
@@ -287,7 +287,7 @@ not a model finding.
 
 The MCP server in the rules below is the HI MCP tools: the tool set the roomle-ui planner serves
 (`packages/web-sdk/packages/homag-intelligence/src/hi-mcp/`), which the embedding-lib hands to the
-agent of the page (D94 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md)).
+agent of the page (D94 of [hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md)).
 
 | Verdict | When |
 |---|---|
@@ -514,7 +514,7 @@ not an archive: it holds only what is still to be done — no history of runs, f
   present tense, the cause in the code, the to-do, its test, and a **Reproduce** line naming the run
   whose payload reproduces it; a to-do never puts library information into the server — what the
   agent lacks about a library goes into the descs of the library data
-  ([library-neutral](../../docs/hi-mcp-behaviour.md#24-instructions));
+  ([library-neutral](../context/hi-mcp-behaviour.md#24-instructions));
 - describe a library issue only in [library-issues.md](../backlog/library-issues.md), including its
   overview, with the library and whether it is reported to the library development team; the exact
   `desc` text proposed to the library goes into
@@ -661,7 +661,7 @@ per turn; Mistral Large: 40 s to 2 min for one group) and about 20 s for the sna
 | every `perspective-object-image.png` is fully transparent, the other images render | no GPU: headless Chromium fell back to SwiftShader, under which the planner's object-only perspective render draws an empty frame — the run script passes `--enable-gpu` for this; on a machine without a GPU the image stays empty until the planner defect is fixed ([backlog](../backlog/mcp-test-infrastructure-issues.md), issue 1) |
 | `errors` in `run.json` with the provider's message | invalid key or a provider failure; the snapshot is still stored |
 | `Failed to process successful response` in `errors` | the provider answered with HTTP 200 and the AI SDK failed while it handled the response — a transport error, a response it could not validate, or another failure. The message is the turn's error in `run.json` (`The planning assistant failed: …`) and the `[planning-assistant]` line in `console.log`. Only a failure from a transport error — `TypeError: terminated <- caused by Error: read ECONNRESET`, a connection reset by the provider or the network — is an **environment** failure, which the runner retries as a transport failure; any other cause is analysed like a provider error |
-| `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context. For a Mistral model after `get-plan-images` a known limitation: the planning assistant sends the images of a tool result to Mistral as JSON text ([images in tool results](../../docs/ai-chat.md#images-in-tool-results)). Otherwise a **bug** — the tools return compact JSON without `imageUrl` ([result format](../../docs/hi-mcp-behaviour.md#53-result-format)); look for the result that is still large |
+| `Prompt … > 262144 maximum context length` in `errors` | the turn's tool results exceed the model's context. For a Mistral model after `get-plan-images` a known limitation: the planning assistant sends the images of a tool result to Mistral as JSON text ([images in tool results](../../docs/ai-chat.md#images-in-tool-results)). Otherwise a **bug** — the tools return compact JSON without `imageUrl` ([result format](../context/hi-mcp-behaviour.md#53-result-format)); look for the result that is still large |
 | `The planner has no HI agent tools: it needs a Rubens UI with getExternalObjectAgentTools.` as the window's availability | the planner at the example's server URL is older than the embedding-lib of the page: run against a planner that serves the tools (`EXAMPLE_SERVER_URL`), see [ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md) |
 | `chat turn failed: timed out after 600s waiting for the chat turn` | the run script's chat timeout (10 minutes): the model did not answer in time — the chat shows nothing while a model reasons. The runner aborts the turn and waits until it and its planner calls have ended; the turn keeps the tools and the text of the window before, and the plan what the tools changed |
 | `the aborted chat turn did not end - the plan was not captured` | the aborted turn or a planner call of its tools did not end within 3 minutes, so the plan could still change: the run has no snapshot, plan context or plan snapshot id |

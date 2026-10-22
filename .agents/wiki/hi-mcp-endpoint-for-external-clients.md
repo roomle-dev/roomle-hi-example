@@ -145,4 +145,4 @@ builds on them.
 - [ADR 0010](../decisions/0010-the-example-chat-runs-in-the-page.md) — one client per planner
 - [ADR 0011](../decisions/0011-the-hi-tools-live-in-the-embedding-lib.md) — no MCP endpoint
 - [ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md) — the tool set in the planner
-- D80 and D94 of [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#3-decisions)
+- D80 and D94 of [`hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md#3-decisions)

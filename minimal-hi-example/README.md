@@ -3,7 +3,7 @@
 Shortest path to a working session: the standalone HI presets example in one
 [`index.html`](./index.html) with the AI chat of the roomle-ui embedding-lib, started by the
 [`start.mjs`](./start.mjs) launcher. Every detail and alternative:
-[docs/hi-mcp-server.md](../docs/hi-mcp-server.md) and [docs/ai-chat.md](../docs/ai-chat.md).
+[.agents/context/hi-mcp-server.md](../.agents/context/hi-mcp-server.md) and [docs/ai-chat.md](../docs/ai-chat.md).
 
 **1. Once:** install Node 20+. The example needs no build and no install.
 
@@ -32,7 +32,7 @@ root [README](../README.md) lists every `npm start` variant (Mistral, Anthropic,
 Azure AI Foundry deployments) and the agent prompts.
 
 Port 3000 taken (e.g. by the ligna-store dev server)? Start with
-`EXAMPLE_PORT=3101 npm start`. More: [example prompts](../docs/hi-mcp-server.md#example-prompts) ·
-[configuring the example](../docs/hi-mcp-server.md#the-example) ·
-[tool reference](../docs/hi-mcp-server.md#tool-reference) ·
+`EXAMPLE_PORT=3101 npm start`. More: [example prompts](../.agents/context/hi-mcp-server.md#example-prompts) ·
+[configuring the example](../.agents/context/hi-mcp-server.md#the-example) ·
+[tool reference](../.agents/context/hi-mcp-server.md#tool-reference) ·
 [troubleshooting](../docs/ai-chat.md#troubleshooting)

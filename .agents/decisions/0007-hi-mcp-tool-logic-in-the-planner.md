@@ -2,7 +2,7 @@
 
 > **Status**: Accepted — the clause that keeps the tools at six planner methods is superseded by [ADR 0013](0013-the-library-context-is-a-planner-method-of-its-own.md)
 > **Date**: 2026-10-13
-> **Ticket**: [RML-18147](https://roomle.atlassian.net/browse/RML-18147); decisions D71 and D72 of [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md#3-decisions)
+> **Ticket**: [RML-18147](https://roomle.atlassian.net/browse/RML-18147); decisions D71 and D72 of [hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md#3-decisions)
 > **Supersedes in part**: [ADR 0001](0001-hi-mcp-tool-logic-in-the-server.md) — where the tool logic runs
 
 ## Context
@@ -43,7 +43,7 @@ The bridge protocol and the allow-list as the page's security boundary stay as A
 - `create-or-replace-groups` is one page round trip; the catalog of the plan context carries the
   docking vectors and the corner point of every article, of an article that is not in the plan from
   its template, or of the articles a caller names (`articleIds`) (D74 of
-  [`hi-mcp-behaviour.md`](../../docs/hi-mcp-behaviour.md#3-decisions)).
+  [`hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md#3-decisions)).
 - A tool that fails after it changed the plan answers with its error and the undo steps it made;
   the server records the steps, so undo reverts the half-done call, and raises the error to the
   agent.

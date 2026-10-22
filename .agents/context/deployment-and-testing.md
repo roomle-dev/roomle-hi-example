@@ -45,7 +45,7 @@ The tool commands of the plan-changing tools are tested in roomle-ui, with `npm 
 | `hi-group-layout-test.ts`, `hi-group-placement-test.ts`, `hi-plan-space-test.ts` | relations to docking, including a real agent's kitchen; anchor root, anchor frames, repositioning, the placement frame; footprints, walls, corners, wall and corner placement, overlap |
 | `article-template-test.ts` | `calculateArticleTemplate`: the article template calculated outside the plan, and its cache |
 
-Many tests are named in [hi-mcp-behaviour.md](../../docs/hi-mcp-behaviour.md) as the guard of a decision or
+Many tests are named in [hi-mcp-behaviour.md](hi-mcp-behaviour.md) as the guard of a decision or
 a message — a renamed test breaks those references.
 
 ## End-to-end runs

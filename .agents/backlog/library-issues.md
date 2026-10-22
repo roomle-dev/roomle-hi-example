@@ -54,6 +54,7 @@ keeps every suggested text, applied in the library or not.
 | 93 | [Backsplashes the library cannot calculate](#93-backsplashes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the backsplash is not built; the agent must drop it and report the omission |
 | 99 | [A handle strip the library cannot calculate](#99-a-handle-strip-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the units with a handle are not built, the agent needs a second create |
 | 100 | [A worktop on the tall units from the group's countertop switch](#100-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — a worktop on top of the tall units |
+| 106 | [A drawer sideboard lowered to 720 mm the library cannot calculate](#106-a-drawer-sideboard-lowered-to-720-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the drawer sideboard is not built, the agent needs a second create |
 
 **Solved by descriptions**: with the descriptions the agent builds at the first attempt what it
 wants, without a call the library cannot calculate; "partly" names in the issue what only the
@@ -398,7 +399,9 @@ wall units to 900 mm (`OTB60` with `mod_Width` 900, `mod_DoorDirectionSelection`
 not find entry in tab_DoorSettings for input value: WallUnit - All - Standard - 190 -
 mr_StorageunitSingle - 900 - Automatic - Left - Automatic" (and the `Right` variant) — so they are
 not built; the server builds the rest of the group and names them in `notLoaded`. The agent undoes
-the create and sends it again with four `OTB45` and two `O2TB90`.
+the create and sends it again with four `OTB45` and two `O2TB90`. Narrowed, the wall cabinet with a
+pair of doors fails the same way: `O2TB90` at 600 mm with `LeftRight` ("… 600 - Automatic -
+LeftRight - Automatic").
 
 **Cause.** A library bug (D99): the library accepts the width but cannot calculate it.
 `mod_Width` is a `Dim` slider whose master data names no range, the article sets only its 600 mm
@@ -418,14 +421,15 @@ scripts throw after the missing entry ("Cannot read properties of undefined (rea
 | `OTB30`, `OTB45`, `OTB60` | a single door | as they come (300, 450, 600 mm) | yes | every run that plans them |
 | `OTB60` | a single door | 900 mm, widened | no: Error 14019 (`tab_DoorSettings`) | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 50 |
 | `O2TB90` | a pair of doors side by side | 900 mm, as it comes | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 50, the second create |
+| `O2TB90` | a pair of doors side by side (`LeftRight`) | 600 mm, narrowed | no: Error 14019 (`tab_DoorSettings` … `600 - Automatic - LeftRight`) | `mcp-test-2026-10-22_19-45-49` gpt-6-astra 67, the first create |
 
 The verified options of a 600 mm `OTB60` (local roomle-ui, `getExternalObjectAttributeOptionsOrRanges`
 of every module, all attributes): the root module verifies 16 attributes — programs, colours,
 designs, the plinth height —, its door 12; none of them is `mod_Width`, `mod_Height` or
 `mod_DoorDirectionSelection`.
 
-Not known: the widths a single door takes between 600 and 900 mm, and whether a single-door wall
-cabinet narrowed under its own width calculates.
+Not known: the widths a single door takes between 600 and 900 mm, whether a single-door wall
+cabinet narrowed under its own width calculates, and the widths a pair of doors takes below 900 mm.
 
 **To do.** The library: calculate the single-door wall cabinets at every width `mod_Width` accepts
 (entries in `tab_DoorSettings`), or declare the widths a single door takes as the verified range of
@@ -437,18 +441,13 @@ single-door wall cabinets can name them — section 1.4 of
 
 **Status.** Open, not reported to the library development team.
 
-**Test.** `image-planning-right-wall`: the first create builds the widened wall units, or the
-agent picks the articles that take the width at the first attempt.
+**Test.** `image-planning-right-wall`, `image-kitchen-back-right-corner`: the first create builds
+the resized wall units, or the agent picks the articles that take the width at the first attempt.
 
-**Reproduce.** `mcp-test-2026-10-21_12-49-36`: gpt-6-astra 66 (`image-planning-right-wall`,
-bo-test, the first `create-or-replace-groups`): roots `upper-header1` and `upper-header2` `OTB60`
-with `mod_Width` 900 and `Left` / `Right` (`0f28d725-7d4c-4ddf-b5ee-6e55047eb95a`,
-`e3ff5339-6689-4f07-8374-abf33cc1ed10`) in the group `a95f4523-027a-43fd-81cf-61525af60b35`, not
-calculated, Error 14019; the model undid the create and sent it again with two `O2TB90`.
-`mcp-test-2026-10-21_08-37-33`: gpt-6-astra 66 (`image-planning-right-wall`, local roomle-ui
-:5173, the first `create-or-replace-groups`): `top1` and `top2` `OTB60` with `mod_Width` 900 and
-`Left` / `Right` on top of two `O2TB90`, not calculated, Error 14019 and the script exceptions; the
-model's `change-module-attribute` to `LeftRight` lets the library calculate them.
+**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 67 (`image-kitchen-back-right-corner`,
+bo-test `205cc9bc8`, the first `create-or-replace-groups`): root `wallright` `O2TB90` with
+`mod_Width` 600 and `LeftRight` in the group `57f72e90-329e-4053-8d27-03e860668a1d`, not calculated,
+Error 14019; the model undid the create and sent it again with `OTB30` wall units.
 
 ## 93. Backsplashes the library cannot calculate
 
@@ -485,6 +484,7 @@ and `mod_BacksplashColor` invite generating the backsplash and name no limit.
 | 240 / 660 in the create (64); 240 / 455 in the create, then the same by `change-group-attribute` (66); the switch with 216 / 500 and 216 / 250 in the create, then the same by `change-group-attribute` (67) | no: Error 14034 after every call (`1200 - 660`; `600 - 455`, `600 - 455`; `620 - 110`, `1210 - 110`, `620 - 500`, `1210 - 250`) | bo-test `c92cf6b11`, `mcp-test-2026-10-21_12-49-36` gpt-6-astra 64, 66, 67 |
 | The switch per root in the create, then 326 / 660 by `change-group-attribute` (07); the switch per root in the create of two groups, then 216 / 600 and 216 / 200 by `change-group-attribute` (10) | no: Error 14034 after every call (`1800 - 110`, `1800 - 660`; `600 - 110`, `1470 - 110`, `600 - 600`, `1470 - 200`) | bo-test `83f01375e`, `mcp-test-2026-10-22_07-57-33` gpt-6-astra 07, 10 |
 | The switch per root in the create, then 326 / 635 with a thickness of 16 by `change-group-attribute` (07); 216 in the create of two groups, then 216 / 600 and 216 / 200 with a thickness of 16 (10) | no: Error 14034 after every call (`1200 - 110`, `1200 - 635`; `600 - 110`, `1220 - 110`, `600 - 600`, `1220 - 200`) | local roomle-ui `725e0dda3`, `mcp-test-2026-10-22_09-29-56` gpt-6-astra 07, 10 |
+| The switch on one root with 326 / 660 in the create, then 240 by `change-group-attribute` (66); the switch per root with 216 in the create of two groups, then 216 / 600 and 216 / 300 with a thickness of 16 (69) | no: Error 14034 after every call (`1200 - 660`, `1200 - 660`; `600 - 110`, `600 - 600`, `1220 - 300`) | bo-test `205cc9bc8`, `mcp-test-2026-10-22_19-45-49` gpt-6-astra 66, 69 |
 
 **To do.** Establish which side changed: replay the lone `UTB60` check on roomle-ui `cf377cfd4`
 (recover it from the reflog before it expires). `cf377cfd4` has no C25 feedback after an attribute
@@ -501,12 +501,12 @@ nothing more.
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
 
-**Reproduce.** `mcp-test-2026-10-22_09-29-56`, gpt-6-astra 07 (`image-kitchen-left-wall`, local
-roomle-ui `725e0dda3`): the create switches the backsplash on per root, `change-group-attribute` sets
-`mod_BacksplashColor` 326, `mod_BacksplashHeight` 635 and `mod_BacksplashThk` 16 — the
-`mr_Backsplash` root is not calculated, Error 14034
-(`part_Backsplash - undefined - undefined - undefined - 1200 - 635`); the model switched the
-backsplash off and the answer reports the omission.
+**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 66 (`image-kitchen-left-wall`, bo-test
+`205cc9bc8`): the create switches the backsplash on for one root with `mod_BacksplashColor` 326 and
+`mod_BacksplashHeight` 660 in the group attributes — the `mr_Backsplash` root is not calculated,
+Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1200 - 660`), also after
+`change-group-attribute` with `mod_BacksplashColor` 240; the model switched the backsplash off and
+the answer reports the omission.
 
 ## 99. A handle strip the library cannot calculate
 
@@ -526,7 +526,8 @@ the default length 160 (Error 13003, "Could not find entry in tab_HandleMapping"
 selected in the HandleDesign and the HandlePosType selected is not valid" for the corner unit, the
 tall units and the wall units; a raw "Unexpected token 'N', \"None\" is not valid JSON" for the base
 units; and "The variant 'mod_HandleDrill' is not set in 'mc_Handlestrip01'" for the sink unit. The
-agent sent no `mod_HandlePosType`; which value a handle strip needs, and whether the JSON error is a
+agent sent no `mod_HandlePosType`; with `mod_HandlePosType` 03 sent, a strip the library chose
+fails with Error 22025 as well. Which value a handle strip needs, and whether the JSON error is a
 defect of the library's script, is open. The `desc` of `mod_HandleDesign` does not say that a handle
 strip needs another handle position. Which group attributes make the library replace the handle
 design — the front program, the handle colour or the handle length — is open too; the descs of the
@@ -545,10 +546,12 @@ the handle position is known.
 `kitchen-oven-fridge-sink-corner`: a kitchen with a handle strip is built at the first create, or
 the agent picks a handle the library keeps and calculates.
 
-**Reproduce.** `mcp-test-2026-10-22_09-29-56`, gpt-6-astra 04 (`kitchen-oven-fridge-sink-corner`,
-local roomle-ui `725e0dda3`, the first `create-or-replace-groups`): group attributes with
-`mod_FrontProgram` Classic and `mod_HandleDesign` 20; the library changes the handle design of 11
-root modules to 40 and does not calculate them (Error 22025, `"None" is not valid JSON`).
+**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 65 (`image-only-tall-units`, bo-test
+`205cc9bc8`, the `create-or-replace-groups`): group attributes with `mod_HandleDesign` 20,
+`mod_HandleColor` StainlessSteel, `mod_HandleLength` 128 and `mod_HandlePosType` 03; the library
+changes the handle design of the three `KS_HT600` to 40 and does not calculate them (Error 22025);
+`change-group-attribute` to the rectangular handle (60) at 128 mm in StainlessSteel fails on the
+handle mapping (Error 13003); the rail handle (20) at 160 mm in StainlessSteelMattBrushed calculates.
 
 ## 100. A worktop on the tall units from the group's countertop switch
 
@@ -573,3 +576,46 @@ default is confirmed, the text goes into
 **Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 65 (`image-kitchen-back-right-corner`,
 bo-test): `mod_CreateCountertop` true in the group attributes of `3097c084`; the model switched it off
 on `HK260`, its end panel and the wall units, the worktop stays on `H2TB60` and `HOTS2AB60`.
+
+## 106. A drawer sideboard lowered to 720 mm the library cannot calculate
+
+**Problem.** For a sideboard of "low cabinets" the agent lowers three living-room sideboards to
+720 mm (`mod_Height` 720 on two `SB_UB600` and one `SB_US600`). The library calculates the door
+sideboards but not the drawer sideboard — "Error 13008: Could not find entry in
+tab_DrawerBoxDimensionMapping for input values: Legrabox - 322 - 30.5" — so it is not built; the
+server builds the other two and names it in `notLoaded`. The agent undoes the create and sends it
+again with three door sideboards.
+
+**Cause.** A library bug (D99): the library accepts the height but cannot calculate the drawer
+boxes for it. `mod_Height` is a `Dim` whose master data names no range, and the drawer sideboard
+takes four drawers with fixed front heights (`mod_FrontHeightSelection` 290, 290, 160, …); lowered
+by 180 mm, the drawer box mapping has no entry for the resulting box. The descs of `SB_US600` and of
+`mod_Height` name no height limit.
+
+**How the library behaves.** Checked in the stored runs:
+
+| Article | Height | Built | Runs |
+|---|---|---|---|
+| `SB_UB600` (1 door) | 720 mm, lowered from 900 | yes | `mcp-test-2026-10-22_19-45-49` gpt-6-astra 60, both creates |
+| `SB_US600` (4 drawers) | 720 mm, lowered from 900 | no: Error 13008 (`tab_DrawerBoxDimensionMapping`) | `mcp-test-2026-10-22_19-45-49` gpt-6-astra 60, the first create |
+
+Not known: the heights the drawer sideboard takes, and whether the other drawer articles of the
+library fail the same way when lowered.
+
+**To do.** The library: calculate the drawer sideboard at every height `mod_Height` accepts (entries
+in `tab_DrawerBoxDimensionMapping`), or declare the heights it takes as the verified range of
+`mod_Height`, so that a height outside it is ruled out before the edit — the check the tools then
+make is [attribute-values-checked-before-an-edit.md](attribute-values-checked-before-an-edit.md).
+With the heights known, the proposed desc of `SB_US600` naming them goes into
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md).
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `sideboard-living-room-front-wall`: the first create builds every sideboard the agent
+sends, or the agent keeps a drawer sideboard at a height the library takes.
+
+**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 60 (`sideboard-living-room-front-wall`,
+bo-test `205cc9bc8`, the first `create-or-replace-groups`): root `side-middle` `SB_US600` with
+`mod_Height` 720 (`cbbfee92-24f0-45c3-b2c0-1d593c5fce81`) in the group
+`32a54a57-4e53-48b4-b406-d415ac281f51`, not calculated, Error 13008; the model undid the create and
+sent it again with three `SB_UB600`.

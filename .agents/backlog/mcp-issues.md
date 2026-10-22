@@ -35,7 +35,6 @@ never drop the agent's content silently.
 | 97 | [Wall units docked beside the hood hang higher than the other wall units](#97-wall-units-docked-beside-the-hood-hang-higher-than-the-other-wall-units) | defect (not analysed) | roomle-ui HI tool commands, the library or the planner (not analysed) | low | gpt-6-astra | |
 | 98 | [A row placed into a corner stands 10 mm off the wall after later edits](#98-a-row-placed-into-a-corner-stands-10-mm-off-the-wall-after-later-edits) | defect (not analysed) | roomle-ui `hi-tool-commands.ts` (the resubmit by id or the merge, not analysed) | low | gpt-6-astra | |
 | 101 | [A side panel the agent sent is missing from the plan without a report](#101-a-side-panel-the-agent-sent-is-missing-from-the-plan-without-a-report) | defect (not analysed) | roomle-ui HI tools (the create, the undo or the merge, not analysed) | low | gpt-6-astra | |
-| 102 | [undo reverts nothing after a create the library calculated only in part](#102-undo-reverts-nothing-after-a-create-the-library-calculated-only-in-part) | defect (not analysed) | roomle-ui HI tools (`hi-mcp/plan-history.ts`, `revertToolCall` of `tool-executors.ts`) | medium | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 
@@ -248,32 +247,6 @@ build is named in the result.
 
 **Reproduce.** `mcp-test-2026-10-22_07-57-33`, gpt-6-astra 06 (`kitchen-family-two-kids`, bo-test):
 `W35O` `cupspanel` in the `args` of the second create; the final group `556610f7` holds no `W35O`.
-
-## 102. undo reverts nothing after a create the library calculated only in part
-
-**Problem.** The agent creates two groups in one `create-or-replace-groups`, and the library cannot
-calculate root modules of every group (`notLoaded` names both). The following `undo` makes no planner
-undo call and reverts nothing: both groups stay, and the agent changes their attributes instead of
-building them again. With one group of the call in `notLoaded` — a one-group create, or a two-group
-create of which one group fails — the undo reverts the create.
-
-**Cause.** Not analysed. One plan-context read and no planner undo call mean that `revertToolCall`
-(`tool-executors.ts`) found no record of the create (`planHistory.lastDone()` empty). Either the
-create was not recorded, or a planner history event after the create's end — the library
-recalculating the root modules it could not calculate — counted as a change in the planner, which
-forgets every record (`PlanHistory.historyChanged`).
-
-**To do.** roomle-ui: replay the run's create and undo against the local planner with the history
-events and the undo record logged, find why the record is missing, and make undo revert the whole
-create.
-
-**Test.** roomle-ui hi-mcp tests: an undo after a create of two groups that both have roots in
-`notLoaded` removes both groups.
-
-**Reproduce.** `mcp-test-2026-10-22_09-29-56`, gpt-6-astra 10 (`image-only-no-text`, local roomle-ui
-`725e0dda3`): after the create (two `posGroups` placed by wall 0 and wall 8, both in `notLoaded`), the
-`undo` logs no `call N: undo` between its args and its feedback; the groups `9ed4ec9a` and `2702debf`
-stay.
 
 ## 103. A unit on top of a follower in another group stays behind when the row below moves
 

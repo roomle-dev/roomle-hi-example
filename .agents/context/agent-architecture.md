@@ -462,7 +462,7 @@ Take "Plan a kitchen along the left wall". The model typically calls `get-skill`
    AI SDK sends the provider the system prompt, the conversation, the new message and the tools with
    their JSON Schemas. The request goes straight from the browser, with the key from the config.
 7. While the stream runs, every `text-delta` and every `tool-call` becomes one
-   `planningAssistantOutput` call ([step 24](#6-output-and-the-end-of-the-turn)).
+   `planningAssistantOutput` call ([step 25](#6-output-and-the-end-of-the-turn)).
 
 ### 3. A tool call crosses into the planner
 
@@ -530,14 +530,26 @@ Take "Plan a kitchen along the left wall". The model typically calls `get-skill`
     group again in its new planning situation and reloads it
     (`changedGroupPlanningSituation`). `loadExternalObjectGroups` waits for these follow-ups before
     it answers.
-19. **Answer.** The tool command collects the corrections, the hints and the `notLoaded` groups, and
+19. **Place at the wall, set the group attributes.** The first load does not place a group by wall.
+    After it, the tool command reads the calculated groups again:
+    - **Wall placement.** A group placed by wall, as "along the left wall" is, gets its target from
+      `placeAtWalls` (`hi-tool-commands.ts:216`), which computes it from the calculated group
+      (`wallTarget`). It loads the groups once more through `loadExternalObjectGroupLayout`, so
+      steps 16 to 18 run again, then reads them and names each group the reload did not move.
+    - **Group attributes.** `applyGroupWideAttributes` (`hi-tool-attributes.ts:392`) sets the
+      group-wide attributes with one group operation, `change-attributes`. The glue logic calculates
+      and loads it like any other change.
+
+    Every load and group operation of the call stays in the one undo step that `runToolCall` holds.
+    [Tool executors](./tool-executors.md#create-or-replace-groups) lists every stage of the command.
+20. **Answer.** The tool command collects the corrections, the hints and the `notLoaded` groups, and
     reports the groups in the placement frame (`inPlacementFrame`). `runToolCommand` adds
     `historySteps: 1`, or 0 when nothing changed. `runToolCall` ends and commits the undo step, and
     the planner fires `onHistoryChange`.
-20. **History events.** `onHistoryChange` runs its chain. The tool set's handler counts the event
+21. **History events.** `onHistoryChange` runs its chain. The tool set's handler counts the event
     (`planHistory.historyChanged`), then calls the earlier handlers, which are the planner UI's and
     `ExposedApi`'s forwarder to the host.
-21. **Record for undo.** Back in the executor:
+22. **Record for undo.** Back in the executor:
     - `countingPlannerApi` adds the steps;
     - `recorded` reads `groupsAfter` and records `{ tool, steps, groupsBefore, groupsAfter }` for
       `undo`;
@@ -547,17 +559,17 @@ Take "Plan a kitchen along the left wall". The model typically calls `get-skill`
 
 ### 5. The result goes back to the model
 
-22. `RoomlePlanner.callExternalObjectAgentTool` resolves with the `McpToolResult`. `ExposedApi`
+23. `RoomlePlanner.callExternalObjectAgentTool` resolves with the `McpToolResult`. `ExposedApi`
     answers `{ result }` on the port, the host's `extended.callExternalObjectAgentTool` resolves,
     and `execute` returns the result.
-23. `toModelOutput` turns it into the model's tool result, and the AI SDK starts the next step with
+24. `toModelOutput` turns it into the model's tool result, and the AI SDK starts the next step with
     it. The reading tools (`get-plan-context`, `get-plan-images` and the others) take the same path
     with read-only planner methods. `get-plan-images` returns two PNGs as `image` parts, which reach
     the model as `file` parts.
 
 ### 6. Output and the end of the turn
 
-24. **Output parts.** Each `planningAssistantOutput(part)` from step 7 takes this path:
+25. **Output parts.** Each `planningAssistantOutput(part)` from step 7 takes this path:
     1. the host posts the message `extended.planningAssistantOutput`;
     2. in the iframe, `RoomlePlanner.planningAssistantOutput` (`roomle-planner.ts:3247`) calls
        `_roomlePlannerUiCallback.onPlanningAssistantOutput(part)`;
@@ -567,10 +579,10 @@ Take "Plan a kitchen along the left wall". The model typically calls `get-skill`
 
     The loop does not await these calls. Messages to one window arrive in the order they were
     posted, so the parts arrive in order.
-25. **The final answer.** The model's last step answers with text only. When the stream ends, the
+26. **The final answer.** The model's last step answers with text only. When the stream ends, the
     handler appends the user message and the response messages to the conversation and sends
     `done`. `store.receive` ends the turn, and the input is free again.
-26. **Closing the loop.** The handler's promise resolves, so the host answers the callback message
+27. **Closing the loop.** The handler's promise resolves, so the host answers the callback message
     from step 4 with `{ result: null }`. `waitForLastResult` resolves in the iframe; nothing awaits
     it.
 
@@ -672,10 +684,21 @@ so `undo` reverts them.
 **Missing parts.** A planner without HI, or without the agent methods, makes the setup fail, and the
 window shows the reason as unavailable.
 
-**User changes during a call.** The user can change the plan in the planner while a tool call runs.
-The planner's history events then fall outside the tool calls, and `PlanHistory` forgets the
-earlier records, so `undo` never reverts a change the user made
-([Tool executors](./tool-executors.md#undo-redo)).
+**User changes in the planner.** Two separate mechanisms keep `undo` and `redo` from reverting a
+change the user made ([Tool executors](./tool-executors.md#undo-redo)):
+
+- **History events** (`PlanHistory.historyChanged`). An event between tool calls is a change the
+  user made in the planner: `PlanHistory` forgets its records, and the next `undo` answers that the
+  plan was changed in the planner. An event while a tool call runs counts as the call's own, so the
+  events cannot tell a change the user makes during a call from the call's steps.
+- **The plan's groups** (`revertToolCall`). This check catches the change made during a call:
+  - `undo` runs only while the plan's groups equal the state the call left (`groupsAfter`), and
+    `redo` only while they equal the state before it (`groupsBefore`);
+  - after stepping, both compare the plan with the other state;
+  - a revert that does not give back the expected plan is taken back, and the records are
+    forgotten.
+
+  So `undo` never leaves a wrong revert in place.
 
 ## Where the state lives
 

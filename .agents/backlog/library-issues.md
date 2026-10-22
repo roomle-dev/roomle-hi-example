@@ -483,6 +483,7 @@ and `mod_BacksplashColor` invite generating the backsplash and name no limit.
 | The switch on a lone `UTB60`, then a separate call with 216 / 500; on a lone `EUTB60`, then 240 / 635; the right-wall image payload, then 240 / 635 | yes, after the separate call | local roomle-ui `cf377cfd4`, 2026-10-18 |
 | `mod_CreateBacksplash` true in the create, then 240 / 635 by `change-group-attribute` (64); the switch in the create, then 240 / 515 in a replace by ids (66); 216 / 550 and 216 / 250 in the create, then the same by `change-group-attribute` (67) | no: Error 14034 after every call (`1200 - 110`, `1200 - 635`; `600 - 110`, `600 - 515`; `600 - 550`, `1220 - 250`) | local roomle-ui `4bc1636cf`, `mcp-test-2026-10-21_08-37-33` gpt-6-astra 64, 66, 67 |
 | 240 / 660 in the create (64); 240 / 455 in the create, then the same by `change-group-attribute` (66); the switch with 216 / 500 and 216 / 250 in the create, then the same by `change-group-attribute` (67) | no: Error 14034 after every call (`1200 - 660`; `600 - 455`, `600 - 455`; `620 - 110`, `1210 - 110`, `620 - 500`, `1210 - 250`) | bo-test `c92cf6b11`, `mcp-test-2026-10-21_12-49-36` gpt-6-astra 64, 66, 67 |
+| The switch per root in the create, then 326 / 660 by `change-group-attribute` (07); the switch per root in the create of two groups, then 216 / 600 and 216 / 200 by `change-group-attribute` (10) | no: Error 14034 after every call (`1800 - 110`, `1800 - 660`; `600 - 110`, `1470 - 110`, `600 - 600`, `1470 - 200`) | bo-test `83f01375e`, `mcp-test-2026-10-22_07-57-33` gpt-6-astra 07, 10 |
 
 **To do.** Establish which side changed: replay the lone `UTB60` check on roomle-ui `cf377cfd4`
 (recover it from the reflog before it expires). `cf377cfd4` has no C25 feedback after an attribute
@@ -499,10 +500,11 @@ nothing more.
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
 
-**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 64 (`image-kitchen-left-wall`, bo-test):
-the create sets `mod_BacksplashColor` 240 and `mod_BacksplashHeight` 660 — the `mr_Backsplash` root
-is not calculated, Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1200 - 660`);
-the model switched the backsplash off and the answer reports the omission.
+**Reproduce.** `mcp-test-2026-10-22_07-57-33`, gpt-6-astra 07 (`image-kitchen-left-wall`, bo-test):
+the create switches the backsplash on per root, `change-group-attribute` sets `mod_BacksplashColor`
+326 and `mod_BacksplashHeight` 660 — the `mr_Backsplash` root is not calculated, Error 14034
+(`part_Backsplash - undefined - undefined - undefined - 1800 - 660`); the model switched the
+backsplash off and the answer reports the omission.
 
 ## 99. A handle strip the library cannot calculate
 
@@ -511,29 +513,38 @@ the model switched the backsplash off and the answer reports the omission.
 the server builds the dishwasher, the panels and the hood and names the other 14 of the 20 roots in
 `notLoaded`. The agent undoes the create and sends it again with rail handles (20).
 
+The library also replaces the handle design the agent sets in the group attributes: the rail handle
+(20) becomes the strip (40) or the curved bow (100), the strip (40) and the rectangular handle (60)
+become the curved bow (100), the curved bow (100) becomes the strip (40). The server reports each
+replacement in `corrections`; a strip the library chose itself fails as above.
+
 **Cause.** Not analysed. The library answers with three errors: "Error 22025: There is a HandleStripe
 selected in the HandleDesign and the HandlePosType selected is not valid" for the corner unit, the
 tall units and the wall units; a raw "Unexpected token 'N', \"None\" is not valid JSON" for the base
 units; and "The variant 'mod_HandleDrill' is not set in 'mc_Handlestrip01'" for the sink unit. The
 agent sent no `mod_HandlePosType`; which value a handle strip needs, and whether the JSON error is a
 defect of the library's script, is open. The `desc` of `mod_HandleDesign` does not say that a handle
-strip needs another handle position.
+strip needs another handle position. Which group attributes make the library replace the handle
+design — the front program, the handle colour or the handle length — is open too; the descs of the
+handle designs do not say which of them each takes.
 
 **To do.** The library: say in the `desc` of the handle strip value which `mod_HandlePosType` it
-takes, or set it with the strip; report the JSON parse error of the base units to the library
+takes, or set it with the strip; say in the descs of the handle designs which front programs,
+handle colours and lengths each takes; report the JSON parse error of the base units to the library
 development team. The proposed text goes into
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md) once
 the handle position is known.
 
 **Status.** Open, not reported to the library development team.
 
-**Test.** `kitchen-conversation`: a modern kitchen with a handle strip is built at the first create,
-or the agent picks a handle the library calculates.
+**Test.** `kitchen-conversation`, `kitchen-oven-hood-sink-fridge-corner`,
+`kitchen-oven-fridge-sink-corner`: a kitchen with a handle strip is built at the first create, or
+the agent picks a handle the library keeps and calculates.
 
-**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 68 (`kitchen-conversation`, bo-test,
-turn 1, the first `create-or-replace-groups`): group attributes with `mod_HandleDesign` 40 and no
-`mod_HandlePosType`, 14 of the 20 roots of the group `e63b39b3-1f2f-48cd-a464-77fc09990abd` in
-`notLoaded` with the three errors.
+**Reproduce.** `mcp-test-2026-10-22_07-57-33`, gpt-6-astra 03 (`kitchen-oven-hood-sink-fridge-corner`,
+bo-test, the first `create-or-replace-groups`): group attributes with `mod_FrontProgram` Classic,
+`mod_HandleDesign` 20 and `mod_HandleColor` StainlessSteel; the library changes the handle design to
+40 and does not calculate 9 of the 13 roots (Error 22025, `"None" is not valid JSON`).
 
 ## 100. A worktop on the tall units from the group's countertop switch
 

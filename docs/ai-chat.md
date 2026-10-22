@@ -108,9 +108,7 @@ gpt-6.1-sol run at their default. `HI_CHAT_REASONING_EFFORT` overrides the effor
 model reached through the Responses API; Mistral, Anthropic and Google models get none, and neither
 does a deployment on Chat Completions. The defaults measured on the Foundry resource (2026-10-07):
 gpt-5.4-mini does not reason (0 reasoning tokens in every step), gpt-5-mini and gpt-6-astra reason
-as at `medium`. gpt-5-mini and gpt-5.4-mini read images and have a 400k context window. Measuring
-the planning quality at `high` is open:
-[backlog](../.agents/backlog/reasoning-effort-for-the-gpt-chat-models.md).
+as at `medium`. gpt-5-mini and gpt-5.4-mini read images and have a 400k context window.
 
 The effort was chosen from the 32 tests of `docs/test-prompts.json`, one run each, evaluated as
 "test the mcp" does (2026-10-07, with the chat backend of that time):

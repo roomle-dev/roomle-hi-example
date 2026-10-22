@@ -169,13 +169,12 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 
 | Document | Last touched |
 |---|---|
-| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the ligna-store | 2026-10-21 |
+| [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the ligna-store | 2026-10-22 |
 | [Open MCP issues](backlog/mcp-issues.md) — the open defects and hardening of the MCP server, its served text, the chat and the planner: island back-row alignment | 2026-10-19 |
 | [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right and the calculation errors of values the library accepts, with the status of the report to the library development team: sink drainer width and the restriction on a hob to its right, handleless fronts, the sizes of flip-lift wall cabinets, end panels with a plain upright colour, width-dependent tall-unit doors | 2026-10-21 |
 | [Open issues of roomle-ui](backlog/roomle-ui-issues.md) — defects of the planner outside the HI tool commands that the MCP prompt tests show: a dark worktop the renderer's top light makes look white | 2026-10-16 |
 | [Where Mistral Large falls short of the prompts](backlog/mistral-large-prompt-issues.md) — improvement candidates from the `mistral-large-latest` test run: where the MCP server could give a weaker model better information or hints | 2026-10-17 |
 | [Library-neutrality issues of the MCP server](backlog/mcp-policy-issues.md) — what in the MCP server still carries library-specific content: the served text's kitchen taxonomy, the search normalization and the result messages of the HI tool commands | 2026-10-14 |
-| [Reasoning effort for the GPT chat models](backlog/reasoning-effort-for-the-gpt-chat-models.md) — the ligna-store chat sends no reasoning effort; further measurement only on request | 2026-10-14 |
 | [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL | 2026-10-17 |
 | [Attribute values checked before an edit](backlog/attribute-values-checked-before-an-edit.md) — the HI tools apply an agent's attribute value without the library's verified options; what to do with a value a module does not take | 2026-10-21 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-14 |

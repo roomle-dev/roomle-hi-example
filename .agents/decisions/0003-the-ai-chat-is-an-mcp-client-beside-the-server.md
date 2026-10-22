@@ -1,6 +1,6 @@
 # ADR 0003 — The AI chat is an MCP client beside the MCP server
 
-> **Status**: Superseded by [ADR 0011](0011-the-hi-tools-live-in-the-embedding-lib.md) — the chats run the planning assistant in the page; in part before by [0010](0010-the-example-chat-runs-in-the-page.md)
+> **Status**: Superseded by [ADR 0011](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tools-live-in-the-embedding-lib.md) — the chats run the planning assistant in the page; in part before by [0010](0010-the-example-chat-runs-in-the-page.md)
 > **Date**: 2026-09-30
 > **Analysis**: [RML-17984](https://roomle.atlassian.net/browse/RML-17984) (the chat in the example); the ligna-store chat window: [PR #37](https://github.com/roomle-dev/roomle-hi-example/pull/37) and ligna-store `6043ce3`
 
@@ -35,7 +35,7 @@ per session and is shared by every client.
 - There are two chat implementations, the example's backend and the store's page module. A change to
   the step policy or the Mistral image middleware is made in both. Both take their system prompt and
   image prompt from the planner (D80 of
-  [hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md#3-decisions)).
+  [hi-tools-behaviour.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)).
 - The store's key is visible in the browser history, in the access logs of the store host and in the
   page. The store keeps it out of the page URL its bridge announces. This is acceptable for a demo
   only: before a production store, the key moves to a server-side secret (e.g. a Worker secret

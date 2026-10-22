@@ -1,6 +1,6 @@
 # ADR 0002 — One MCP server for every client, configured from outside
 
-> **Status**: Superseded by [ADR 0011](0011-the-hi-tools-live-in-the-embedding-lib.md) — there is no MCP server
+> **Status**: Superseded by [ADR 0011](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tools-live-in-the-embedding-lib.md) — there is no MCP server
 > **Date**: 2026-09-27
 > **Analysis**: the refactoring analysis of pull request [#13](https://github.com/roomle-dev/roomle-hi-example/pull/13) (git history); the server copied from the roomle-ui PoC [RML-17693](https://roomle.atlassian.net/browse/RML-17693) in pull request [#12](https://github.com/roomle-dev/roomle-hi-example/pull/12)
 

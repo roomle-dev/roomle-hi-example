@@ -6,14 +6,14 @@
 > and in them the `desc` properties
 > **Maintained by**: step 7 of [the testing skill](../skills/hi-mcp-testing.md#7-open-issues)
 
-The MCP server is library-neutral ([§2.4](../context/hi-mcp-behaviour.md#24-instructions)): what
+The MCP server is library-neutral ([§2.4](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#24-instructions)): what
 the agent knows of a library comes only from the library data. When the agent plans wrong because
 that data lacks information, the fix is in the library, and the issue is here. What a library builds
 is intended; an issue asks for information, not for other geometry. A calculation error is no
 intended behaviour: a value the library accepts must calculate, so a calculation that fails for it
 is a library bug and is tracked here; a calculation error caused by an invalid attribute value the
 tools sent is an MCP issue in [mcp-issues.md](mcp-issues.md) (D99 of
-[`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md#3-decisions)). Each issue names the library,
+[roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)). Each issue names the library,
 the problem, its cause, how the library behaves, the to-do for the library, the test, whether it is
 reported to the library development team, and how to reproduce it. MCP, chat and planner issues are
 tracked in [mcp-issues.md](mcp-issues.md). The **Status** of an issue says what the library already
@@ -28,7 +28,7 @@ keeps every suggested text, applied in the library or not.
   `REQUIREMENTS`, `RECOMMENDED_NEIGHBOURS`, `RESTRICTIONS`, `STYLE_COMPATIBILITY`, `SEARCH_KEYWORDS`,
   `AI_SELECTION_HINT` — and hold at most 1000 characters. The catalog of `get-plan-context` serves
   the `FUNCTION` and `AI_SELECTION_HINT` lines only (D63 of
-  [`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md)); the full description only when the
+  [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md)); the full description only when the
   agent requests `articleDescriptions`. What the agent needs to pick an article goes into these two
   lines.
 - **The attribute vocabulary** of `get-plan-context` serves the customer-facing attributes —
@@ -281,7 +281,7 @@ articles that take the glass front.
 ## 76. Articles with two doors that do not say how their doors stand
 
 **Problem.** In a row, the agent hinges the doors at the two ends at the outer sides of the row
-([D84](../context/hi-mcp-behaviour.md#doors-2026-10-17)), with the value of
+([D84](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#doors)), with the value of
 `mod_DoorDirectionSelection` for single doors or for a pair of doors. A value the article does not
 take fails with error 14019 and the root module is not built: `H2TB60` with `LeftRight`, `U2TB90`
 with `Left` or `Right`. `LeftLeft` and `RightRight` are offered for a pair but not calculated on

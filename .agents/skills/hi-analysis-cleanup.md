@@ -53,13 +53,13 @@ its home already states it; add it only where it does not.
 
 | What | Where it goes |
 |---|---|
-| How the HI tools behave towards an agent — a tool, a served rule, a result, a guard, a correction, a feedback message | [`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md), in the section of that tool or rule |
-| A decision about that behaviour, or a rejected approach someone could plausibly re-propose | a numbered decision `D<n>` in §3 of `hi-mcp-behaviour.md`, with its date, source and state |
+| How the HI tools behave towards an agent — a tool, a served rule, a result, a guard, a correction, a feedback message | [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md), in the section of that tool or rule |
+| A decision about that behaviour, or a rejected approach someone could plausibly re-propose | a numbered decision `D<n>` in §3 of roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`, with its source and state, in a roomle-ui branch |
 | An architecture decision — where the logic runs, how the page runs the tools | a numbered ADR in [`.agents/decisions/`](../decisions/) |
 | How a feature works — the tools, the chat, the pages | the living-reference document of the area: [`hi-mcp-server.md`](../context/hi-mcp-server.md), [`ai-chat.md`](../../docs/ai-chat.md), [`docs/`](../../docs/) — a new document for a new feature |
 | A tool's parameters and examples | [`hi-mcp-tools.md`](hi-mcp-tools.md) |
 | HI domain knowledge — rooms, walls, articles, docking, positioning | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), [`hi-authoring-rules.md`](hi-authoring-rules.md) |
-| How the planner or the library behaves, as a root-cause investigation found it — what a load report replaces, how the arrangement docks, what an attribute switches | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), or the planner section of `hi-mcp-behaviour.md` where it explains the tools' behaviour; written as today's behaviour |
+| How the planner or the library behaves, as a root-cause investigation found it — what a load report replaces, how the arrangement docks, what an attribute switches | [`roomle-hi-concepts.md`](roomle-hi-concepts.md), or the planner section of roomle-ui `hi-tools-behaviour.md` where it explains the tools' behaviour; written as today's behaviour |
 | The regression test | it exists; name it next to the invariant: guarded by `it('…')` in roomle-ui `packages/web-sdk/packages/homag-intelligence/__tests__/hi-mcp/…-test.ts`, or by the test `<id>` of `docs/test-prompts.json` |
 | A debugging or test recipe — a run script, a headless check | the matching skill in `.agents/skills/` ([`hi-mcp-testing.md`](hi-mcp-testing.md)) |
 | Model comparisons and before/after numbers that later work compares against | `.agents/benchmarks/`, with a row in the benchmarks table of [`.agents/README.md`](../README.md) |
@@ -76,8 +76,8 @@ problem was found ("found in the live check of …", "the model took …"), no "
 "previously", "no longer", "the old code", ticket stories. A rejected approach is stated as rejected,
 with its reason in terms of today's behaviour. It does not record when something was solved,
 fixed, verified or confirmed — no "confirmed live on …", "amended …", "since the refresh of …". It
-carries no ticket numbers: an RML number or a Jira link is irrelevant to how the code works. The
-decision date, who decided and the state of a decision in §3 of `hi-mcp-behaviour.md` are the only
+carries no ticket numbers: an RML number or a Jira link is irrelevant to how the code works. Who
+decided and the state of a decision in §3 of roomle-ui `hi-tools-behaviour.md` are the only
 history it keeps. Ticket numbers belong to the backlog items and the analyses.
 
 ## Hard rules
@@ -119,9 +119,9 @@ A split along the living reference of this repository:
 
 | Group | Owns |
 |---|---|
-| HI tool behaviour — tools, placement, docking, guards, plan context, undo | `.agents/context/hi-mcp-behaviour.md`, `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md` |
+| HI tool behaviour — tools, placement, docking, guards, plan context, undo | roomle-ui `.agents/homag-intelligence/` (in a roomle-ui branch), `.agents/skills/hi-mcp-tools.md`, `hi-authoring-rules.md`, `roomle-hi-concepts.md` |
 | Chat, models and testing | `docs/ai-chat.md`, `docs/test-prompts.md`, `.agents/skills/vercel-ai-sdk-chat.md`, `hi-mcp-testing.md` |
-| Architecture and pages | `.agents/context/hi-mcp-server.md`, `.agents/context/agent-architecture.md`, the documents of `docs/`, the READMEs |
+| Architecture and pages | `.agents/context/hi-mcp-server.md`, `.agents/context/pages-chat-and-launcher.md`, the documents of `docs/`, the READMEs |
 
 The coordinator keeps `.agents/README.md`, `.agents/decisions/` and the existing backlog documents.
 
@@ -148,8 +148,8 @@ While promoting, compare the living reference with the code and correct what the
 - ADRs: take the next free number from `origin/master` (`git ls-tree --name-only origin/master
   .agents/decisions/`), not from the local tree, and add each to the Decisions table of
   [`.agents/README.md`](../README.md).
-- Decisions: take the next free `D<n>` after the highest in `git show
-  origin/master:.agents/context/hi-mcp-behaviour.md`.
+- Decisions: take the next free `D<n>` after the highest in roomle-ui `git show
+  origin/master:.agents/homag-intelligence/hi-tools-behaviour.md`.
 
 Number the drafts in the documents and in the handoff files, and write a map from draft to number for
 the next step.

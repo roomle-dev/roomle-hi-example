@@ -25,28 +25,9 @@ page and needs no dependency here. Node 20 or later.
 | `minimal-hi-example/tests/start.test.js` | starts the real launcher on unused ports, with a model and a dummy key and without a model: the planning assistant config of the model, `no-store`, the 404 without a model, the 403 for a foreign Host; SIGTERM/SIGINT to only the launcher PID release the page port (POSIX; no model request) |
 | `.agents/scripts/tests/*.test.js` | the test tooling (`node --test`) |
 
-The HI tools are tested in roomle-ui, in `packages/web-sdk/packages/homag-intelligence/__tests__/hi-mcp/`
-(`tool-executors`, `hi-mcp-server`, `plan-history`, `skills`, `interior-fittings`, `mcp-tool`,
-`hi-mcp-tools`, `hi-mcp-fixture`), with `npm run test -- --run packages/homag-intelligence/__tests__/hi-mcp`
-in `packages/web-sdk`; the forwarding of the embedding-lib in `tests/unit/embedding-lib/homag-intelligence/hi-mcp/`
-(`hi-mcp-tools`, `hi-mcp-stream-text`), with `npm run test:unit:debugCI -- tests/unit/embedding-lib`.
-
-The tool commands of the plan-changing tools are tested in roomle-ui, with `npm run test` in
-`packages/web-sdk` (`packages/web-sdk/packages/homag-intelligence/__tests__/`):
-
-| File | Covers |
-| ---- | ------ |
-| `hi-tool-commands/create-or-replace-groups-input-test.ts` | the payload of `create-or-replace-groups`: preparation, article ids, relations, docking corrections |
-| `hi-tool-commands/create-or-replace-groups-placement-test.ts` | loading, the anchor frame from the article template, materials, obstacle hints, the placement by wall |
-| `hi-tool-commands/place-group-test.ts` | `place-group` |
-| `hi-tool-commands/group-commands-test.ts` | the command tools: ids, attributes, library changes, docking targets, row edits and their hints |
-| `hi-tool-commands/placement-frame-test.ts` | positions in the placement frame and the `rowIndex` of every root |
-| `hi-tool-commands/run-tool-command-test.ts` | the planner steps a tool command reports for undo |
-| `hi-group-layout-test.ts`, `hi-group-placement-test.ts`, `hi-plan-space-test.ts` | relations to docking, including a real agent's kitchen; anchor root, anchor frames, repositioning, the placement frame; footprints, walls, corners, wall and corner placement, overlap |
-| `article-template-test.ts` | `calculateArticleTemplate`: the article template calculated outside the plan, and its cache |
-
-Many tests are named in [hi-mcp-behaviour.md](hi-mcp-behaviour.md) as the guard of a decision or
-a message — a renamed test breaks those references.
+The HI tools, their tool commands and the forwarding of the embedding-lib are tested in roomle-ui, see
+[Testing](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence.md#testing) of its HOMAG
+Intelligence guideline.
 
 ## End-to-end runs
 

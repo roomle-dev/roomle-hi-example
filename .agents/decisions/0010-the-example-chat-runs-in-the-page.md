@@ -1,13 +1,13 @@
 # ADR 0010 — The example's chat runs in the page, with the planning assistant of the embedding-lib
 
-> **Status**: Accepted — the clause that keeps the MCP server is superseded by [ADR 0011](0011-the-hi-tools-live-in-the-embedding-lib.md)
+> **Status**: Accepted — the clause that keeps the MCP server is superseded by [ADR 0011](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tools-live-in-the-embedding-lib.md)
 > **Date**: 2026-10-20
 > **Ticket**: [RML-18196](https://roomle.atlassian.net/browse/RML-18196); supersedes the example's part of [ADR 0003](0003-the-ai-chat-is-an-mcp-client-beside-the-server.md) and the launcher part of [ADR 0002](0002-one-mcp-server-configured-from-outside.md)
 
 ## Context
 
 The roomle-ui embedding-lib carries a copy of the HI MCP tools (`createHiMcpTools`, D94 of
-[hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md#3-decisions)) and a planning assistant that
+[hi-tools-behaviour.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)) and a planning assistant that
 runs the agent loop with them in the page (`startPlanningAssistant`), configured by one JSON object,
 the `PlanningAssistantConfig`. With them, the example page no longer needs the MCP server, its page
 bridge or the chat backend `hi-mcp-chat` to chat with the planner. The key stays a CLI argument of

@@ -33,13 +33,13 @@ deliberately rejected. Read these before proposing a change to an area they cove
 | [0004 — The HI MCP server runs as a Cloudflare Container, one container per session](decisions/0004-hi-mcp-server-on-cloudflare-containers.md) | Superseded by ADR 0011 |
 | [0005 — The HI MCP server is deployed by a push to `release/cloudflare`](decisions/0005-deploy-hi-mcp-from-release-cloudflare.md) | Superseded by ADR 0011 |
 | [0006 — The prompt tests assess the agent, the unit tests the tools](decisions/0006-prompt-tests-assess-the-agent.md) | Accepted |
-| [0007 — The tool logic of the plan-changing HI MCP tools runs in the planner](decisions/0007-hi-mcp-tool-logic-in-the-planner.md) | Accepted — its six-methods clause superseded by 0013 |
+| [0007 — The tool logic of the plan-changing HI MCP tools runs in the planner](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/hi-mcp-tool-logic-in-the-planner.md) | Accepted — its six-methods clause superseded by 0013; lives in roomle-ui |
 | [0008 — The HI MCP server runs in the Roomle Cloudflare account, as PRD and DEV](decisions/0008-hi-mcp-prd-and-dev-in-the-roomle-cloudflare-account.md) | Superseded by ADR 0011 |
-| [0009 — The chat window is a panel of the planner, the agent loop stays in the host](decisions/0009-the-chat-window-is-a-panel-of-the-planner.md) | Accepted |
+| [0009 — The chat window is a panel of the planner, the agent loop stays in the host](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-chat-window-is-a-panel-of-the-planner.md) | Accepted; lives in roomle-ui |
 | [0010 — The example's chat runs in the page, with the planning assistant of the embedding-lib](decisions/0010-the-example-chat-runs-in-the-page.md) | Accepted — its server clause superseded by 0011 |
-| [0011 — The HI tools live only in the roomle-ui embedding-lib](decisions/0011-the-hi-tools-live-in-the-embedding-lib.md) | Accepted — its embedding-lib clause superseded by 0012 |
-| [0012 — The HI tool set runs in the planner, the embedding-lib forwards to it](decisions/0012-the-hi-tool-set-runs-in-the-planner.md) | Accepted |
-| [0013 — The library context is a planner method of its own](decisions/0013-the-library-context-is-a-planner-method-of-its-own.md) | Accepted |
+| [0011 — The HI tools live only in the roomle-ui embedding-lib](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tools-live-in-the-embedding-lib.md) | Accepted — its embedding-lib clause superseded by 0012; lives in roomle-ui |
+| [0012 — The HI tool set runs in the planner, the embedding-lib forwards to it](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tool-set-runs-in-the-planner.md) | Accepted; lives in roomle-ui |
+| [0013 — The library context is a planner method of its own](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-library-context-is-a-planner-method-of-its-own.md) | Accepted; lives in roomle-ui |
 
 ---
 
@@ -87,15 +87,10 @@ Living reference of the implementation: how the code is built today. Full index 
 
 | Document | Covers |
 |---|---|
-| [hi-mcp-behaviour.md](context/hi-mcp-behaviour.md) | How the HI tools behave towards an agent: guidelines, decisions, tools, the information it provides, guards, corrections and feedback |
-| [hi-mcp-server.md](context/hi-mcp-server.md) | The example page and the HI tools: architecture, running, the tool reference, authoring and positioning pos groups |
-| [agent-architecture.md](context/agent-architecture.md) | The parts of the AI Planning Assistant and where they run — chat window, embedding bridge, planning assistant, `createHiMcpTools`, the planner's agent methods, the HI tool set, the glue logic, RoomleCore — and every hop of a prompt from the window to the kernel and back |
-| [tool-executors.md](context/tool-executors.md) | Overview of all MCP tools, `tool-executors.ts`, `agent-facing.ts`, the tool commands of roomle-ui |
-| [layout-and-placement.md](context/layout-and-placement.md) | roomle-ui `hi-group-layout.ts`, `hi-group-placement.ts`, `hi-plan-space.ts`, `hi-wall-placement.ts`, the coordinate conventions |
-| [library-errors.md](context/library-errors.md) | How roomle-ui handles the errors of an HI library: the call sites of the library, the glue logic, the HI tool commands and the HI tools |
-| [coordinate-systems.md](context/coordinate-systems.md) | The agent's coordinate system and where the served text explains it, the tools that read or write coordinates, every conversion between RoomleCore, roomle-ui and the HI tools |
-| [pages-chat-and-launcher.md](context/pages-chat-and-launcher.md) | The page side of the bridge, `start.mjs`, the chat of the example page |
-| [deployment-and-testing.md](context/deployment-and-testing.md) | Cloudflare, the workspaces and scripts, the unit tests, the end-to-end test runs |
+| [hi-mcp-server.md](context/hi-mcp-server.md) | The example page: architecture, running, a demo walkthrough, example prompts, troubleshooting |
+| [pages-chat-and-launcher.md](context/pages-chat-and-launcher.md) | `start.mjs`, the chat of the example page |
+| [deployment-and-testing.md](context/deployment-and-testing.md) | The workspaces and scripts, the unit tests, the end-to-end test runs |
+| [roomle-ui HOMAG Intelligence guideline](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence.md) | In roomle-ui: the HI tools, the planning assistant and the chat window — the architecture, the behaviour reference, the tool reference, the tool executors, layout and placement, library errors, coordinate systems, interior fittings |
 
 ### Wiki
 
@@ -113,8 +108,8 @@ ADRs document why the code is shaped the way it is; they are listed under [Decis
 
 `docs/` is for external readers. It holds user guides, setup and integration guides, and the
 overviews those readers need: user-friendly and at a higher level. It says what the HI agent does
-and how to use it. How the code is built — the architecture, the behaviour reference, the tool
-reference — lives in [`context/`](context/README.md), never in `docs/`. Index:
+and how to use it. How the code of this repository is built lives in [`context/`](context/README.md),
+never in `docs/`; the HI tools are documented in roomle-ui. Index:
 [`docs/README.md`](../docs/README.md).
 
 ---
@@ -277,4 +272,3 @@ developers or agents goes into `.agents/`.
 
 - [AGENTS.md](../AGENTS.md) — AI assistant instructions and workflow
 
-- [Interior fitting implementation](context/interior-fittings.md) — scoped discovery and fitting edits through the existing planner bridge.

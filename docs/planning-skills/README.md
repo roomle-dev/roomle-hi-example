@@ -6,4 +6,4 @@ France and the living-room skill.
 The skills themselves live in roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/skills/`,
 in the Agent Skills format. The MCP server serves them to every client with the tool `get-skill`,
 and to a host that loads skills itself with the Skills extension of MCP — see
-[hi-mcp-behaviour.md §5.6](../../.agents/context/hi-mcp-behaviour.md#56-planning-skills-get-skill).
+[hi-tools-behaviour.md §5.6](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#56-planning-skills-get-skill).

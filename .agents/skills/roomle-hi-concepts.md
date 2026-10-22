@@ -21,7 +21,7 @@ HOMAG Intelligence (HI) is Roomle's system for configuring, pricing and ordering
 from the articles of a library — kitchens, wardrobes, sideboards, utility rooms. It extends the
 Roomle planner with domain-specific concepts. The data below is what `get-plan-context` returns;
 the complete field list is §5.4 of
-[hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md#54-the-plan-context-get-plan-context).
+[hi-tools-behaviour.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#54-the-plan-context-get-plan-context).
 
 One coordinate system throughout: 3D, right-handed, Y up, millimetres. A floor point is
 `[x, 0, z]`; the back of a rectangular room (`top` in the top-view image) lies at the smallest z.
@@ -141,7 +141,7 @@ group origin and places every other root breadth-first along the docking; a root
 corner article's `LeftBottom` is turned by 90°. Roots without a docking path to the others — a wall
 row whose link to the floor units did not survive a load — are arranged as a cluster of their own
 that keeps its position; a unit above follows the root below it by position instead
-([D42](../context/hi-mcp-behaviour.md#row-edits-2026-10-05)). An attribute can change a root's
+([D42](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#row-edits)). An attribute can change a root's
 docking geometry without moving the root: a plinth height raises the docking top of a floor unit
 while its root stays at y = 0, and the units above keep their clearance to that docking top
 (guarded by `keeps both detached wall units above carriers whose docking tops change by %i mm` in
@@ -262,7 +262,7 @@ calculation fails with error 14019 and the root module is not built (`U2TB90` wi
 `HTB60` widened to 900 mm has a pair of doors — `Automatic` resolves to `LeftRight` —, and a `Right`
 it keeps from its single door fails with error 14019. A root module the library cannot calculate has
 no docking vectors and no front parts; its diagnostic is in the root's `logMessages`, which the
-attribute tools report ([D95](../context/hi-mcp-behaviour.md#calculation-errors-2026-10-19)). The
+attribute tools report ([D95](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#calculation-errors)). The
 door direction is not `implicitRelevant`, so a root module added beside another gets `Automatic`. A
 swap or a delete keeps the value with its root module: the root module that becomes an end keeps the
 side it had (roomle-ui `it('keeps the attributes and the hung units with their roots')`,
@@ -276,7 +276,7 @@ doors say whether their doors stand one above the other or side by side
 ([`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md),
 sections 1.2, 2.6 and 2.7).
 The agent hinges the doors at the ends of a row by the served rule of
-[D84](../context/hi-mcp-behaviour.md#doors-2026-10-17).
+[D84](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#doors).
 
 ### Article Parameters
 
@@ -449,7 +449,7 @@ const group = {
 ## Error Handling
 
 The server corrects what it can and builds every group it can
-([hi-mcp-behaviour.md §8](../context/hi-mcp-behaviour.md#8-guards-corrections-and-feedback)):
+([hi-tools-behaviour.md §8](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#8-guards-corrections-and-feedback)):
 
 1. **`corrections`** — what the server changed in the input and applied: a placement it cannot use
    (`posGroup` not a point, no numeric `posRotationY`) or one on a group already in the plan is not

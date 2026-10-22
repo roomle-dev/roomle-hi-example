@@ -9,7 +9,7 @@
 ## Problem
 
 The HI tools apply an attribute value the agent sends without checking it against what the library
-accepts for that module. By D99 of [`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md#3-decisions),
+accepts for that module. By D99 of [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions),
 a calculation error caused by such a value is an MCP bug. The tools only catch the error afterwards
 (D73, D95, C25), when the root module is already left without geometry.
 
@@ -78,8 +78,9 @@ the library accepts that width, so the failure is a library bug.
 3. **Served text** (roomle-ui planner, `hi-mcp-server.ts`): say what the result names when a
    value is not taken, so the agent picks among the values the module takes. It reaches the example
    page and the ligna-store with the planner at their server URL.
-4. **Documentation** (roomle-hi-example): the decision in §3 and the feedback row in §8 of
-   `.agents/context/hi-mcp-behaviour.md`, `.agents/context/hi-mcp-server.md` and `.agents/skills/hi-mcp-tools.md`.
+4. **Documentation**: in roomle-ui, the decision in §3 and the feedback row in §8 of
+   `.agents/homag-intelligence/hi-tools-behaviour.md` and the tool reference
+   `.agents/homag-intelligence/hi-tools-reference.md`; in roomle-hi-example, `.agents/skills/hi-mcp-tools.md`.
 
 ## Test
 

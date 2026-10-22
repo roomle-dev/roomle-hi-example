@@ -1,6 +1,6 @@
 # ADR 0004 — The HI MCP server runs as a Cloudflare Container, one container per session
 
-> **Status**: Superseded by [ADR 0011](0011-the-hi-tools-live-in-the-embedding-lib.md) — there is no MCP server to deploy
+> **Status**: Superseded by [ADR 0011](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tools-live-in-the-embedding-lib.md) — there is no MCP server to deploy
 > **Date**: 2026-09-26 (container per page and one planner per server: 2026-10-03)
 > **Analysis**: the Cloudflare Containers deployment and the multiple-connections feature analyses (git history); guide cloudflare-mcp-server.md
 

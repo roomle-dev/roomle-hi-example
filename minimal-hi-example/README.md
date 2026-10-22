@@ -34,5 +34,5 @@ Azure AI Foundry deployments) and the agent prompts.
 Port 3000 taken (e.g. by the ligna-store dev server)? Start with
 `EXAMPLE_PORT=3101 npm start`. More: [example prompts](../.agents/context/hi-mcp-server.md#example-prompts) ·
 [configuring the example](../.agents/context/hi-mcp-server.md#the-example) ·
-[tool reference](../.agents/context/hi-mcp-server.md#tool-reference) ·
+[tool reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-reference.md#tool-reference) ·
 [troubleshooting](../docs/ai-chat.md#troubleshooting)

@@ -159,7 +159,7 @@ call to the page console (`[hi-mcp] tool …`, `[hi-mcp] call …`).
 ### A chat turn
 
 The planning assistant gives the model the system prompt of the planner (its
-sentences in the [behaviour reference](../.agents/context/hi-mcp-behaviour.md#4-how-a-tool-call-runs)),
+sentences in the [behaviour reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#4-how-a-tool-call-runs)),
 the conversation and the HI MCP tools, and runs `streamText` in steps: a step is
 one model call and the tool calls it returns.
 
@@ -225,7 +225,7 @@ model for plannings that look at the plan.
 
 The tools keep their results small for every model: compact JSON without the
 signed `imageUrl` of the master data
-([behaviour reference §5.3](../.agents/context/hi-mcp-behaviour.md#53-result-format)).
+([behaviour reference §5.3](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#53-result-format)).
 
 ## Architecture
 
@@ -280,7 +280,7 @@ The ligna-store runs the same planning assistant of the embedding-lib in the
 planner's AI Planning Assistant window: `startPlanningAssistant` of
 `@roomle/embedding-lib/hi`, with the HI MCP tools of the embedding-lib
 (`createHiMcpTools`, D94 of the
-[behaviour reference](../.agents/context/hi-mcp-behaviour.md#3-decisions)), which call the planner of
+[behaviour reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)), which call the planner of
 the store page directly — no MCP server, no page bridge and no MCP client. The
 store URL parameters `model` (default `gpt-6-astra`) and `api_key` turn into the
 `PlanningAssistantConfig` (ligna-store `hi-mcp/chat-options.ts`), and the browser

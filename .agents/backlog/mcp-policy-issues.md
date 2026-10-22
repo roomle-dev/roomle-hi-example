@@ -16,7 +16,7 @@ content. Scope: the served text and the logic in `hi-mcp/hi-mcp-server/`, and th
 of the HI tool commands in roomle-ui (`packages/web-sdk/packages/homag-intelligence/src/`), which the
 server passes on as the results of its plan-changing tools.
 
-Both items are violations of the policy above: they sit in the served text, the results or the
+Every item is a violation of the policy above: it sits in the served text, the results or the
 server's logic.
 
 ## Overview
@@ -25,6 +25,7 @@ server's logic.
 |---|---|---|---|
 | 1 | `hi-mcp-server.ts` | Served text (`AUTHORING_RULES`, `INSTRUCTIONS`, tool descriptions) bakes in one furniture domain's taxonomy and fixed measures, and names one library's concrete content | high |
 | 2 | `tool-executors.ts`; roomle-ui HI tool commands | Spelling correction carries a fixed vocabulary in the logic; result messages name furniture kinds | medium |
+| 3 | `agent-facing.ts`; HOMAG library | The attribute filter names the element type `mod_TypeElement` because the library does not mark the attributes the agent leaves to the article | low |
 
 ## 1. Served text in `hi-mcp-server.ts`
 
@@ -55,3 +56,15 @@ the agent is told to reason in terms its library does not have.
 |---|---|---|
 | `SPELLINGS` hard-codes search normalization | `tool-executors.ts:51-55`: `[/colour/g, 'color']`, `[/grey/g, 'gray']`, `[/worktop/g, 'countertop']`. `searchable()` applies them to the query and to temporary copies of the master-data fields for matching only — no attribute value is mutated or returned changed. The fixed vocabulary in the logic is the issue: drop it or derive it from the master data's attribute values | medium |
 | Result messages name library content | The results of the plan-changing tools come from the HI tool commands of roomle-ui: `hi-group-layout.ts:246-276, 338-353, 516, 718, 751`, `hi-tool-docking.ts:195, 223, 334, 754-757, 1022-1023`, `hi-tool-hints.ts:154` name furniture kinds (wall unit, range hood, worktop). Rewrite them in the neutral vocabulary. Comments are outside the policy | medium |
+
+## 3. The attribute filter names the element type
+
+The function `isAgentFacingAttribute` (roomle-ui `hi-mcp/agent-facing.ts`) decides which attributes
+the agent sees and sets (D102 of [`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md#3-decisions)).
+It leaves out the element type `mod_TypeElement` by its id: an article sets its element type, and
+another type is another article. The library's master data does not say which attributes the agent
+leaves to the article, so the function names one library's attribute in the tools' logic.
+
+| Item | To do | Priority |
+|---|---|---|
+| The library marks the attributes the agent leaves to the article | HOMAG library: a mark on the attribute in the master data. roomle-ui: `isAgentFacingAttribute` reads the mark instead of the id; the id `mod_TypeElement` leaves the code | low |

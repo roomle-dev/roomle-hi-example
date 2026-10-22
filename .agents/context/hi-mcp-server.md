@@ -208,7 +208,9 @@ the agent does not fetch the authoring rules.
   `position` (`[x, level, z]` in the coordinates of the walls) — a position
   only, no size. They are no obstacles: a group may stand on a supply
 - `attributes` — the attribute vocabulary, by default: per library every attribute
-  with id, name, desc, group, type and
+  the agent sees — the attribute filter of the tools leaves out the element type
+  `mod_TypeElement` in every section and result
+  ([D102](hi-mcp-behaviour.md#3-decisions)) — with id, name, desc, group, type and
   `selections` (value, name and desc); a value list several attributes share is listed
   once, the later attributes carry `sameSelectionsAs`, the id of the attribute that lists
   it. The ids are those of the catalog's `mainAttributes`, of the roots' `attributes` and
@@ -258,7 +260,7 @@ Answers a question about an attribute: searches the attribute vocabulary — the
 `attributes` section of `get-plan-context` — by text (attribute id, name,
 description, group or selection name) and returns the matching attributes with
 their `selections` and the root modules and sub modules that carry them. The vocabulary is
-every attribute of the compacted master data, which names the root modules — the generated
+every attribute of the compacted master data the agent sees, which names the root modules — the generated
 ones such as the worktop `mr_Countertop` included — and the sub modules that carry them; the section
 already lists every attribute with its values, so a planning needs no search. Every word of the text is matched on its own, in
 any order, and colour/color, grey/gray and worktop/countertop read alike: one

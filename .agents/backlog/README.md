@@ -56,6 +56,7 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 |---|---|---|
 | Served text encodes a kitchen taxonomy | `hi-mcp-server.ts`: `AUTHORING_RULES`, `INSTRUCTIONS` and the tool descriptions reason in base/wall/tall units, worktop, hood and island as if every library were a kitchen, and carry one library's concrete content and fixed measures. Rewrite so the rules speak of articles, root modules, relations and docking vectors | high |
 | Spelling correction and result messages map library vocabulary | `tool-executors.ts`: `SPELLINGS` hard-codes search normalization for `colour`/`grey`/`worktop`; drop it or derive it from the master data. The result messages of the roomle-ui HI tool commands name furniture kinds; rewrite them neutrally | medium |
+| [The attribute filter names the element type](mcp-policy-issues.md#3-the-attribute-filter-names-the-element-type) | HOMAG library: mark the attributes the agent leaves to the article in the master data; roomle-ui: `isAgentFacingAttribute` reads the mark instead of the id `mod_TypeElement` | low |
 
 ## Planner (roomle-ui, RoomleCore)
 

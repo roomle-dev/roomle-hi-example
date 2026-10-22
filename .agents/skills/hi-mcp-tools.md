@@ -69,8 +69,9 @@ are, without the session preamble of `get-skill`.
 { include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'installationElements' | 'masterData' | 'articleDescriptions'> }
 ```
 
-**Returns**: Rooms, articles, attributes (the vocabulary: per library every attribute with its
-values (D100), a shared value list listed once with `sameSelectionsAs` on the later
+**Returns**: Rooms, articles, attributes (the vocabulary: per library every attribute the agent
+sees with its values (D100) — the attribute filter leaves out the element type `mod_TypeElement`
+in every section and result (D102) —, a shared value list listed once with `sameSelectionsAs` on the later
 attributes, D76), groups, obstacles, installationElements; masterData and articleDescriptions if requested. Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words

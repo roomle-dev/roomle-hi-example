@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [element-type-attribute-and-the-agents-undos.md](element-type-attribute-and-the-agents-undos.md) | Open | User feedback: never touch `mod_TypeElement`, change only POS-relevant attributes, fewer undos |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

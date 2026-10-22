@@ -145,6 +145,7 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Split the library context from the plan context](refactoring-analysis/split-library-context-from-plan-context.md) | Open — four questions for the user | 2026-10-22 |
 
 ### Benchmarks & Performance Analyses
 

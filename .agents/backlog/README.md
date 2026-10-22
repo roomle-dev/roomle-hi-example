@@ -17,7 +17,6 @@ the document a row links.
 | 96 — "One more shelf" adds the shelf set the cabinet already shows | Analyse what `get-interior-design-options` and the plan context show of the shelves a cabinet without fittings renders | low |
 | 97 — Wall units docked beside the hood hang higher than the other wall units | roomle-ui: replay the run's create, find which step sets the 1570 mm insertion height of the row beside the hood | low |
 | 98 — A row placed into a corner stands 10 mm off the wall after later edits | roomle-ui: replay the run's three calls, find the call that moves the row and fix it | low |
-| 101 — A side panel the agent sent is missing from the plan without a report | roomle-ui: replay the run's calls, find the call that drops the panel and make it build or report it | low |
 | 103 — A unit on top of a follower in another group stays behind when the row below moves | roomle-ui: move the units on top of a follower with it, bottom-up, as within the edited group | low |
 | 104 — A unit of another group keeps its height when its carrier changes height | roomle-ui: apply the change of the carrier's docking top to the units of other groups | low |
 | Test prompts for replacing, transferring and batch-deleting interior fittings | `docs/test-prompts.json` has no test that needs `replace-interior-fitting`, a `move-interior-fitting` into another root module of the group or a `delete-interior-fittings` of several fittings. Add tests on a plan with an installed fitting that has `replacementArticles`: replace it by one of them, move a shelf into the neighbouring carcass, delete two shelves in one request | low |
@@ -56,6 +55,7 @@ about a specific library. Details: [mcp-policy-issues.md](mcp-policy-issues.md).
 |---|---|---|
 | Served text encodes a kitchen taxonomy | `hi-mcp-server.ts`: `AUTHORING_RULES`, `INSTRUCTIONS` and the tool descriptions reason in base/wall/tall units, worktop, hood and island as if every library were a kitchen, and carry one library's concrete content and fixed measures. Rewrite so the rules speak of articles, root modules, relations and docking vectors | high |
 | Spelling correction and result messages map library vocabulary | `tool-executors.ts`: `SPELLINGS` hard-codes search normalization for `colour`/`grey`/`worktop`; drop it or derive it from the master data. The result messages of the roomle-ui HI tool commands name furniture kinds; rewrite them neutrally | medium |
+| [The attribute filter names the element type](mcp-policy-issues.md#3-the-attribute-filter-names-the-element-type) | HOMAG library: mark the attributes the agent leaves to the article in the master data; roomle-ui: `isAgentFacingAttribute` reads the mark instead of the id `mod_TypeElement` | low |
 
 ## Planner (roomle-ui, RoomleCore)
 
@@ -65,6 +65,7 @@ Defects of the planner outside the HI tool commands. Details: [roomle-ui-issues.
 |---|---|---|
 | 63 — A dark worktop renders white under the top light | roomle-ui renderer: the top light overexposes the tabletop depending on the line of sight, so black appears white; render it in its material colour from every line of sight | [roomle-ui-issues.md, 63](roomle-ui-issues.md#63-a-dark-worktop-renders-white-under-the-top-light) |
 | 94 — The water connection is an installation element only through a planner override | Rubens Admin: set level 28 on the wall water connection items; then remove the `water_connections` level override in roomle-ui `planner-kernel-access.ts` | [roomle-ui-issues.md, 94](roomle-ui-issues.md#94-the-water-connection-is-an-installation-element-only-through-a-planner-override) |
+| 105 — Dragging a unit out of a group splits off the units hanging above the rest | roomle-ui glue logic: `splitRootModuleFromGroup` keeps the split-off parts the docking still links to the group, as a delete in place does (D103) | [roomle-ui-issues.md, 105](roomle-ui-issues.md#105-dragging-a-unit-out-of-a-group-splits-off-the-units-hanging-above-the-rest) |
 
 ## Chat
 

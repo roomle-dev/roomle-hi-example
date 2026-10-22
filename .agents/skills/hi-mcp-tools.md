@@ -69,8 +69,9 @@ are, without the session preamble of `get-skill`.
 { include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'installationElements' | 'masterData' | 'articleDescriptions'> }
 ```
 
-**Returns**: Rooms, articles, attributes (the vocabulary: per library every attribute with its
-values (D100), a shared value list listed once with `sameSelectionsAs` on the later
+**Returns**: Rooms, articles, attributes (the vocabulary: per library every attribute the agent
+sees with its values (D100) — the attribute filter leaves out the element type `mod_TypeElement`
+in every section and result (D102) —, a shared value list listed once with `sameSelectionsAs` on the later
 attributes, D76), groups, obstacles, installationElements; masterData and articleDescriptions if requested. Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
@@ -334,7 +335,8 @@ geometry, retains the requested mode when original vectors are absent, and keeps
 transform when either whole docking footprint cannot be measured.
 
 - `delete-article-in-place`: deletes the unit and leaves the gap: units no longer docked together become
-  separate groups where they stand; deleting the only unit deletes the group; generated roots
+  separate groups where they stand, while a unit hanging above another one stays with it (D103);
+  deleting the only unit deletes the group; generated roots
   (worktop, toe kick) cannot be deleted
 - `delete-article-and-compact`: deletes the unit and closes the gap: its neighbours are docked to each
   other, the end of the row at a wall stays, a unit hung on it hangs on the neighbour that moves into

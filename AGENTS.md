@@ -284,6 +284,11 @@ The policy covers the served text, the results and the tools' logic only. Code c
 and markdown files are no violation: a comment, a test fixture or a README example may name a
 library's content freely.
 
+One exception: the attribute filter of the tools (`isAgentFacingAttribute`, roomle-ui
+`hi-mcp/agent-facing.ts`) names the element type `mod_TypeElement`, which the agent leaves to the
+article. The library does not mark such attributes yet; once it does, the filter reads the mark
+(D102 of [`.agents/context/hi-mcp-behaviour.md`](.agents/context/hi-mcp-behaviour.md#3-decisions)).
+
 ### Guards Are a Last Resort
 
 A **guard** is a check in the HI tools that refuses an agent's input because it identifies the

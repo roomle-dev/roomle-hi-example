@@ -4,7 +4,8 @@ The test cases for the Roomle HI (HOMAG Intelligence) room planning live in
 [test-prompts.json](./test-prompts.json): each starts from one of the plans below, with a prompt, an
 image or both. They assess how well an agent understands a prompt and picks the MCP server tools
 that create, position and edit groups in Roomle sessions. Every test starts from a fixed plan, so it
-does not depend on what the model built in another test.
+does not depend on what the model built in another test. [minimum-test-prompts.json](./minimum-test-prompts.json)
+holds the [minimum set](#minimum-set) of them.
 
 ## Plans
 
@@ -232,6 +233,7 @@ units across the wide part would block the passage between the doors.
 | `models` | the chat models to test, `{ provider, apiKey }`: a provider name of the launcher and its key — `"$NAME"` reads the key from the environment variable `NAME`, which keeps it out of the committed file |
 | `randomTests` | how many random tests the "test the mcp" skill adds to each session: a whole number from 0 to the number of available plans (default 5, 0 for none); a custom suite with fewer than five plans sets a count within its range. The agent running it writes them for the plans drawn at random without repetition, marks them `"random": true` and appends them only to the end of the session's test file — the report shows them as random tests ([skill](../.agents/skills/hi-mcp-testing.md#random-tests)) |
 | `promptSuffix` | a text the runner appends to the first prompt of every test — after a `.` when that prompt does not end with `.`, `!` or `?`, after a blank otherwise; a test without a prompt sends its image alone, without it. The agent may ask a question instead of planning, which is fine for a user but leaves a test without a result, because the test answers nothing: the suffix asks it to decide open details itself. The prompts of the tests stay as a user writes them; the runs record the prompts as sent |
+| `testSet` | optional: the name of a subset of the tests — `"minimum"` in the [minimum set](#minimum-set); the report of a session names it in its title and in a note under it |
 | `plans` | the plans above by name: `{ "<name>": "<plan snapshot id>" }` |
 | `categories` | the tests grouped by what they test, `{ category, tests }`: a unique name and at least one test, every test in one category. The runner runs the tests of all categories in the order of the file — the categories below: the tools and the group edits first, the other furniture right after the kitchen, the image tests and the kitchen conversation last — and numbers them across the categories |
 | `tests` of a category | `{ id, title, plan, prompt?, image?, expect?, random? }` — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message — a `prompt` list is sent as consecutive turns of one conversation, the image with the last turn; `expect` says what the evaluation checks, per turn for a list; `random` marks a random test, which only a session file holds, in its last category `random` |
@@ -272,6 +274,15 @@ The two middle-cabinet removal tests use explicit gap instructions on the Three 
 
 "Remove" and "delete" have the same meaning to the agent; the requested gap behaviour selects the
 tool. The prompts describe the desired result in user words and contain no tool names.
+
+## Minimum Set
+
+[minimum-test-prompts.json](./minimum-test-prompts.json) is a shorter run of the tests in the same
+format: copies of tests of `test-prompts.json` in their categories, with the same models, plans and
+prompt suffix, `randomTests` 0 and `"testSet": "minimum"`. A test changed in `test-prompts.json`
+changes there too. Asked to run the tests with the minimum set, the
+[testing skill](../.agents/skills/hi-mcp-testing.md#the-minimum-set) prepares the session from it;
+the report and its PDF are marked as the minimum set.
 
 ## Prepared test sessions
 

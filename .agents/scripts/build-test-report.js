@@ -9,7 +9,9 @@
  * that cannot be derived from the runs: per run the verdict, the bug, the doors
  * and the evaluation text; the planner of the header row; the sections between
  * the random tests and the run sections; the random tests worth keeping; the
- * skipped tests. Writes report.md (default <sessionDir>/report.md). The
+ * skipped tests. A session run from a subset (testSet, e.g. the minimum set)
+ * names it in the title and in a note under it. Writes report.md (default
+ * <sessionDir>/report.md). The
  * markdown template of skill hi-mcp-testing, section 6, is the content spec:
  * when this script's rendering and the template disagree, the template wins;
  * fix the script.
@@ -100,9 +102,10 @@ if (problems.length) {
 const m = basename(session).match(
   /^mcp-test-(\d{4}-\d{2}-\d{2})_(\d{2})-(\d{2})/
 );
+const testSet = facts.testSet ? ` — ${facts.testSet} set` : '';
 const title = m
-  ? `# HI MCP test — ${m[1]} ${m[2]}:${m[3]}`
-  : evals.header?.title || '# HI MCP test';
+  ? `# HI MCP test${testSet} — ${m[1]} ${m[2]}:${m[3]}`
+  : evals.header?.title || `# HI MCP test${testSet}`;
 
 const effort = evals.header?.reasoningEffort;
 const headerCells = [
@@ -243,6 +246,14 @@ const expandRefs = (body) =>
 const out = [];
 out.push(title);
 out.push('');
+if (facts.testSet) {
+  const setName = facts.testSet[0].toUpperCase() + facts.testSet.slice(1);
+  const fixedCount = facts.tests.filter((t) => !t.random).length;
+  out.push(
+    `**${setName} set** — this report covers only the ${fixedCount} tests of the ${facts.testSet} set, not every test of \`docs/test-prompts.json\`.`
+  );
+  out.push('');
+}
 out.push(`| ${headerCells.join(' | ')} |`);
 out.push(`|${'---|'.repeat(headerCells.length)}`);
 for (const model of facts.models) out.push(headerRow(model));

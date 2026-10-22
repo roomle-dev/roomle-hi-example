@@ -564,6 +564,25 @@ test('extracts the facts of a single-model session', async (t) => {
   assert.deepEqual(r3.promptTurns, [null]);
 });
 
+test('names the minimum set in the title and in a note under it', async (t) => {
+  const { session } = await singleModelSession(t);
+  const suite = JSON.parse(await readFile(join(session, 'tests.json'), 'utf8'));
+  await writeJson(session, 'tests.json', { testSet: 'minimum', ...suite });
+  await exec(process.execPath, [extract, session, join(session, 'facts.json')]);
+  const facts = JSON.parse(await readFile(join(session, 'facts.json'), 'utf8'));
+  assert.equal(facts.testSet, 'minimum');
+  await exec(process.execPath, [build, session]);
+  const report = await readFile(join(session, 'report.md'), 'utf8');
+
+  assert.ok(
+    report.startsWith(
+      '# HI MCP test — minimum set — 2099-01-01 00:00\n\n' +
+        '**Minimum set** — this report covers only the 3 tests of the minimum set, not every test of `docs/test-prompts.json`.\n\n' +
+        '| Model |'
+    )
+  );
+});
+
 test('builds the report of a single-model session', async (t) => {
   const { session } = await singleModelSession(t);
   await exec(process.execPath, [extract, session, join(session, 'facts.json')]);

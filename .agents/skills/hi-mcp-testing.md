@@ -1,13 +1,15 @@
 # HI MCP Testing Skill
 
-**Load this skill when:** the user asks to **"test the mcp"** — run [Test the MCP](#test-the-mcp) —
+**Load this skill when:** the user asks to **"test the mcp"** — run [Test the MCP](#test-the-mcp);
+with **"the minimum set"** (the minimum tests, a minimum test run) from
+[minimum-test-prompts.json](../../docs/minimum-test-prompts.json), see [the minimum set](#the-minimum-set) —
 or the task involves testing the HI MCP server end to end with a real model and a real planner:
 running a prompt through the chat, checking the plan a prompt produces, comparing prompts or models.
 
 ## Test the MCP
 
-Runs the tests of [test-prompts.json](../../docs/test-prompts.json) with the runner
-`run-hi-mcp-tests.js` — each from its plan, with its prompt (or its turns) and image — stores every
+Runs the tests of [test-prompts.json](../../docs/test-prompts.json), or of the
+[minimum set](#the-minimum-set), with the runner `run-hi-mcp-tests.js` — each from its plan, with its prompt (or its turns) and image — stores every
 result under one session directory and ends with `report.md` and its PDF in `.temp/reports/`, named after the
 date and the models of the session ([the PDF](#the-pdf)): per test the plan snapshot id, the
 perspective, the perspective object and the top image, an evaluation and a bug verdict.
@@ -44,6 +46,23 @@ models — by default every test and the `gpt-5-mini` model:
 ```bash
 jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/test-prompts.json > "$SESSION/tests.json"
 ```
+
+#### The minimum set
+
+When the user asks to run the tests with the minimum set, the source is
+[minimum-test-prompts.json](../../docs/minimum-test-prompts.json) in place of
+`docs/test-prompts.json` in every command of this step:
+
+```bash
+jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/minimum-test-prompts.json > "$SESSION/tests.json"
+```
+
+It is a subset of the tests in the same format, with `randomTests` 0 — no random tests unless the
+user asks for them — and `"testSet": "minimum"`. Keep `testSet` in the session file: the report
+names the minimum set in its title and in a note under it, and the PDF in its name
+([the PDF](#the-pdf)).
+
+#### Categories and filters
 
 The tests are grouped in `categories` (`{ category, tests }`, see
 [test-prompts.md](../../docs/test-prompts.md#test-cases)); the runner runs them in the order of the
@@ -353,6 +372,11 @@ The builder checks the evaluation against the runs and the `[[…]]` refs and wr
 do not resolve. The template below is the content spec: when the script's rendering and the template
 disagree, the template wins; fix the script.
 
+A session of the [minimum set](#the-minimum-set) says so at the top: the title is
+`# HI MCP test — minimum set — <YYYY-MM-DD HH:MM>`, and a note under it says that the report covers
+only the tests of the minimum set, not every test of `docs/test-prompts.json` (the builder renders
+both from `testSet`).
+
 The header row counts fixed and random tests separately. Preserve the `Random:` titles in the
 summary and run headings. Each random run names its origin; the "Random tests" section lists the
 random cases with their JSON. A random case worth keeping can be copied from there into its
@@ -474,6 +498,8 @@ node .agents/scripts/render-report-pdf.js "$SESSION/report.md" --out ".temp/repo
   `_`: `mcp-test-2026-10-08_gpt-5-mini_gpt-5.4-mini_gpt-6-astra.pdf`.
 - A second session of the same date and models adds the time of its directory after the date:
   `mcp-test-2026-10-16_11-57-20_gpt-6-astra.pdf`.
+- A session of the [minimum set](#the-minimum-set) adds `minimum-` before the date:
+  `mcp-test-minimum-2026-10-22_gpt-5-mini.pdf`.
 
 The session directory keeps no PDF. The PDF is A4, every run section on a new page, the links of the summary
 jumping to the run sections, the images embedded at most 640 px wide (about 3 MB for 32 runs, against
@@ -512,7 +538,7 @@ node .agents/scripts/run-hi-mcp-tests.js [<tests.json>] [--out <dir>] [--dev]
 
 | Argument | Meaning |
 |---|---|
-| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `categories` (`{ category, tests }`, the tests `{ id, title, plan, prompt?, image?, expect?, random? }` in the order they run, `prompt` a text or a list of turns), `randomTests` (how many random tests [step 3](#random-tests) adds), `promptSuffix` (the text appended to the first prompt of every test, so that the agent decides open details itself instead of asking); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
+| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `categories` (`{ category, tests }`, the tests `{ id, title, plan, prompt?, image?, expect?, random? }` in the order they run, `prompt` a text or a list of turns), `randomTests` (how many random tests [step 3](#random-tests) adds), `promptSuffix` (the text appended to the first prompt of every test, so that the agent decides open details itself instead of asking), `testSet` (the name of a subset of the tests, `"minimum"` in [minimum-test-prompts.json](../../docs/minimum-test-prompts.json); only the report reads it); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
 | `--out <dir>` | the session directory, default `.temp/result/mcp-test-<local time>/`; an existing one is continued |
 | `--dev` | passed to every run |
 

@@ -1,0 +1,138 @@
+{
+  "testSet": "minimum",
+  "randomTests": 0,
+  "promptSuffix": "Decide any open details yourself instead of asking.",
+  "models": [
+    {
+      "provider": "gpt-5-mini",
+      "apiKey": "$AZURE_GPT_KEY"
+    },
+    {
+      "provider": "gpt-5.4-mini",
+      "apiKey": "$AZURE_GPT_KEY"
+    },
+    {
+      "provider": "gpt-6-astra",
+      "apiKey": "$AZURE_GPT_KEY"
+    },
+    {
+      "provider": "gpt-6.1-sol",
+      "apiKey": "$AZURE_GPT_SOL_KEY"
+    },
+    {
+      "provider": "Mistral-Large-3",
+      "apiKey": "$AZURE_GPT_KEY"
+    }
+  ],
+  "plans": {
+    "default-room": "ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv",
+    "living-room": "ps_nwzhfk8bjc2gu02gsyocsdragi0rxey",
+    "closets": "ps_n9zrz89zsyy46l34mkf5pd52cx2ea2y",
+    "utility-room": "ps_mq3m2wuhq6w23ry742eh50nb2vub5ej",
+    "room-and-attic": "ps_qn012p0tjux6dabt6oym0bzngmqex70u",
+    "three-tall-units": "ps_s3p5hmscmmsnshopj2tybjwmt7ijy5o",
+    "corner-kitchen-wall-units": "ps_s7hy5nqvtts37wl79u6q8tq67bc12s2",
+    "two-wardrobes-right-wall": "ps_s3qfqirqsvfwrr8em4d344h0c4sk8po",
+    "three-open-wardrobes-with-shelves": "ps_sbga21bftgc6paechjqf8x5qbk538sp",
+    "open-plan-room": "ps_qwm5odi6tyflyqwpdcxz1la791ho633",
+    "room-with-supplies": "ps_sa6laqmrrczr6wmo8jfk7pdyz36omon",
+    "empty-room-with-water-connection": "ps_sau169slquuapnhdz3fdmc0u24eplrcf",
+    "l-shaped-pass-through-room": "ps_sje41pva5egn6qp5xti55q6c7fcfin5"
+  },
+  "categories": [
+    {
+      "category": "sub article",
+      "tests": [
+        {
+          "id": "edit-add-move-delete-subarticle",
+          "title": "Add, move and delete shelf sub-articles over three turns",
+          "plan": "three-open-wardrobes-with-shelves",
+          "prompt": [
+            "add a shelf to the middle of the left-most carcass of the wardrobe",
+            "move the shelf inside the right-most cabinet down by 500 mm",
+            "delete the shelf from the middle cabinet"
+          ],
+          "expect": "turn 1: get-interior-design-options on group ce854b3e-90d6-4e65-ba7b-461e125cc8da, then one add-interior-fitting of a compatible FixedShelf into left root ab0737ab-a681-48ed-995b-46ee788a2329, at about half the height of the cabinet's interior; the original left shelf 037ab69e-8475-4418-b6db-df6738b91df1 stays; shelves left / middle / right 2 / 1 / 1. turn 2: one move-interior-fitting of right shelf c585292d-26f7-41da-92ff-50a278161f95 in right root 22e7519d-4218-46e4-b1a5-5c92934ad420, in its current parent, with an insertPosition 500 mm lower in y than its measured position, x and z unchanged; the returned actual placement is 500 mm lower, a library adjustment is reported; shelves 2 / 1 / 1. turn 3: one delete-interior-fittings of only middle shelf 19d07551-c89b-43ee-8caa-e4c2bef10fb6 in middle root 7b8bd635-7f19-4e3c-b280-95b91d4c4916; shelves 2 / 0 / 1, the two left shelves and the moved right shelf where turns 1 and 2 put them. Recreation may change instance IDs; the agent uses the returned IDs or discovers them again. Every turn keeps the three cabinets, their placement, finishes and docking; no cabinet or whole group is deleted, no separate delete/add commands for the move."
+        }
+      ]
+    },
+    {
+      "category": "water supply",
+      "tests": [
+        {
+          "id": "sink-cabinet-at-water-connection",
+          "title": "A cabinet with a sink at the water connection",
+          "plan": "empty-room-with-water-connection",
+          "prompt": "add a cabinet with a sink",
+          "expect": "one group with a sink cabinet standing at the water connection whose position the installationElements section lists; the answer names the water connection"
+        },
+        {
+          "id": "kitchen-oven-hood-sink-fridge-corner",
+          "title": "Oven, range hood, sink, fridge in the corner",
+          "plan": "empty-room-with-water-connection",
+          "prompt": "plan a kitchen with an oven, a hob, a range hood, a sink and a fridge"
+        }
+      ]
+    },
+    {
+      "category": "kitchen",
+      "tests": [
+        {
+          "id": "kitchen-oven-fridge-sink-corner",
+          "title": "Oven, fridge, sink in the corner",
+          "plan": "default-room",
+          "prompt": "plan a kitchen with an oven, a hob, a range hood, a sink and a fridge in the back right corner of the room"
+        },
+        {
+          "id": "full-kitchen-walnut-marble-corner",
+          "title": "Full kitchen, walnut, dark marble, around the corner",
+          "plan": "default-room",
+          "prompt": "create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room. Arrange the kitchen around the corner. The front of the kitchen should be made of walnut and the worktop should be made of dark marble",
+          "expect": "appliances: oven, hob, cooker hood, fridge, sink; storage: cabinet with drawers, wall cabinets; placement: back right corner, around the corner; materials: walnut front, dark marble worktop"
+        },
+        {
+          "id": "kitchen-family-two-kids",
+          "title": "Kitchen for a family with two kids",
+          "plan": "default-room",
+          "prompt": "create a kitchen for a family with 2 kids"
+        }
+      ]
+    },
+    {
+      "category": "planning from images",
+      "tests": [
+        {
+          "id": "image-kitchen-left-wall",
+          "title": "Image: kitchen on the left-hand wall",
+          "plan": "default-room",
+          "prompt": "create a kitchen like the one in the image on the left-hand wall of the room",
+          "image": "docs/images/kitchen-1.png",
+          "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the kitchen of the image on the left-hand wall, in the order of the image; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
+        },
+        {
+          "id": "image-kitchen-back-right-corner",
+          "title": "Image: kitchen in the back right corner",
+          "plan": "default-room",
+          "prompt": "create a kitchen like the one shown in the image, in the back right corner of the room",
+          "image": "docs/images/kitchen-2.png",
+          "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the L-shaped kitchen of the image around the back right corner, one leg on the back wall and one on the right wall: the long leg with the tall units at its far end - among them one tall unit with the microwave built in above the oven - base units, a drawer unit below the hob, a chimney range hood above the hob and a wall unit on each side of the hood; the short leg with the sink unit at its end; anthracite fronts and a light oak worktop; no tall unit and no wall unit in front of the window (back wall, x -450 to 1650, bottom 950) - the base units may run below it - and nothing in the door opening (right wall, z 280 to 1180); the image shows no backsplash; the final answer accurately reports any remaining omission"
+        },
+        {
+          "id": "image-planning-right-wall",
+          "title": "Image: planning on the right-hand wall",
+          "plan": "default-room",
+          "prompt": "create a planning as to the one shown in the picture on the right-hand wall of the room.",
+          "image": "docs/images/kitchen-3.png",
+          "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the kitchen of the image: one row of five tall units against the right-hand wall, in the order of the image, between the back right corner and the door (right wall, z 280 to 1180), clear of the door opening - white fronts, two neighbouring tall units with oak fronts, one white tall unit with the oven built in; and a separate island group of base units free in the room in front of the row, parallel to it with a walkway between, carrying the hob and the sink; white fronts and a light grey stone worktop on the island; no wall units; the image shows no backsplash; the final answer accurately reports any remaining omission"
+        },
+        {
+          "id": "image-only-no-text",
+          "title": "Image only, no text",
+          "plan": "l-shaped-pass-through-room",
+          "image": "docs/images/kitchen-4.png",
+          "expect": "the model decides what to plan; the chat sends the image with the image prompt of the planner, which names the skill image-planning; the model fetches image-planning, and the kitchen skill for its checks, and plans the galley kitchen of the image as close to it as possible in the narrow wing of the L-shaped room, whose end wall has the window as in the image: one row along the left wall (x -780) from the window wall towards the door - the tall fridge unit, the sink unit, the dishwasher, the oven below the hob and drawer units, wall units above - and opposite it, along the wall at x 2220, base units with a worktop and a wall unit above them; under the window (top wall, x -330 to 1770, bottom 950) at most base units or a worktop, no tall unit and no wall unit in front of it; the passage between the two doors (left and right wall, z -210 to 690) stays free: no unit in a door opening or in the swing of the right door (x 3530 to 4420); cream fronts and a walnut worktop; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
+        }
+      ]
+    }
+  ]
+}

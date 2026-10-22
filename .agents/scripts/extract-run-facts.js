@@ -11,7 +11,8 @@
  * build-test-report.js: per run the test, the turns with their tools and tool
  * calls (corrections, the notLoaded errors, error) and the shortened answer,
  * the groups after the chat and the tool calls the planner ran (in a session
- * recorded before the tools ran in the planner, its plan-changing calls). A
+ * recorded before the tools ran in the planner, its plan-changing calls), and
+ * the testSet of a session run from a subset such as the minimum set. A
  * multi-model session is keyed by model and test, so every model's run of a
  * test is kept.
  */
@@ -158,6 +159,7 @@ const facts = {
   session: basename(session),
   startedAt: results.startedAt || null,
   finishedAt: results.finishedAt || null,
+  testSet: suite.testSet || null,
   models,
   tests,
   runs,

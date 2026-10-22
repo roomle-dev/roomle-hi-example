@@ -6,7 +6,8 @@
  *
  * Reads <sessionDir>/tests.json and results.json and, per run, the run's
  * run.json, plan-context.json and planner-calls.json. Writes the facts to
- * outFile, or to stdout without one. The facts are the working file of the
+ * outFile, or to stdout without one; a tests.json without categories is
+ * rejected before anything is written. The facts are the working file of the
  * evaluation (skill hi-mcp-testing, section 5) and the input of
  * build-test-report.js: per run the test, the turns with their tools and tool
  * calls (corrections, the notLoaded errors, error) and the shortened answer,
@@ -84,7 +85,13 @@ const readRequiredJson = (path) => {
 };
 
 const suite = readRequiredJson(join(session, 'tests.json'));
-const tests = (suite.categories || []).flatMap((c) => c.tests || []);
+if (!Array.isArray(suite.categories)) {
+  console.error(
+    `extract-run-facts: ${join(session, 'tests.json')} has no categories - a session prepared before the test categories; prepare it again`
+  );
+  process.exit(1);
+}
+const tests = suite.categories.flatMap((c) => c.tests || []);
 const results = readRequiredJson(join(session, 'results.json'));
 const runsByModelAndTest = new Map(
   (results.runs || []).map((r) => [`${r.model}/${r.test}`, r])

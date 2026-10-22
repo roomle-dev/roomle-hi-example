@@ -793,6 +793,29 @@ test('fails explicitly when a required session file is missing', async (t) => {
   );
 });
 
+test('rejects a session file without categories and keeps the existing facts', async (t) => {
+  const { session } = await singleModelSession(t);
+  const suite = JSON.parse(await readFile(join(session, 'tests.json'), 'utf8'));
+  const factsFile = join(session, 'facts.json');
+  await exec(process.execPath, [extract, session, factsFile]);
+  const facts = await readFile(factsFile, 'utf8');
+  const { categories, ...rest } = suite;
+  await writeJson(session, 'tests.json', {
+    ...rest,
+    tests: categories.flatMap((category) => category.tests),
+  });
+
+  await assert.rejects(
+    exec(process.execPath, [extract, session, factsFile]),
+    (err) => {
+      assert.equal(err.code, 1);
+      assert.match(err.stderr, /tests\.json has no categories/);
+      return true;
+    }
+  );
+  assert.equal(await readFile(factsFile, 'utf8'), facts);
+});
+
 test('keeps the startup errors of a run whose run.json is missing', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'report-scripts-'));
   t.after(() => rm(root, { recursive: true, force: true }));

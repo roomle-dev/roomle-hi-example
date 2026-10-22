@@ -2,7 +2,7 @@
 
 The MCP server serves every HI library, not only Furniture_Smith. The policy is stated in
 [`AGENTS.md`](../../AGENTS.md) §"Library-Neutral" and in §2.4 of
-[`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md#24-instructions):
+[roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#24-instructions):
 
 > The server serves every HI library. The served text, the results and the server's logic carry no
 > information about a specific library — no article, category, attribute, value or measure of one
@@ -30,7 +30,7 @@ server's logic.
 ## 1. Served text in `hi-mcp-server.ts`
 
 The description of `get-skill` names kinds of rooms by design: it is the index of the planning
-skills, the domain knowledge served on demand (D75 of `.agents/context/hi-mcp-behaviour.md`). It is no item of
+skills, the domain knowledge served on demand (D75 of roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`). It is no item of
 this list; the policy test exempts it from the no-kitchen check of the tool descriptions.
 
 The served text reaches every agent of every library, so it is the strongest place to get the
@@ -60,7 +60,7 @@ the agent is told to reason in terms its library does not have.
 ## 3. The attribute filter names the element type
 
 The function `isAgentFacingAttribute` (roomle-ui `hi-mcp/agent-facing.ts`) decides which attributes
-the agent sees and sets (D102 of [`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md#3-decisions)).
+the agent sees and sets (D102 of [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)).
 It leaves out the element type `mod_TypeElement` by its id: an article sets its element type, and
 another type is another article. The library's master data does not say which attributes the agent
 leaves to the article, so the function names one library's attribute in the tools' logic.

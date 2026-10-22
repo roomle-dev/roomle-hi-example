@@ -124,7 +124,7 @@ git commit -m "docs: update the Furniture_Smith materials catalog"
 
 The materials table includes a **Suggested Color** column with the hex color code of each material:
 
-1. **The description's code** — a description that carries a `#RRGGBB` code (`Cloudy blue (#506080)`) gives the color, taken as it is. The library states the color of the value; nothing is downloaded. The MCP server's agent trusts the same code (D53 in [the behaviour reference](../context/hi-mcp-behaviour.md#3-decisions)).
+1. **The description's code** — a description that carries a `#RRGGBB` code (`Cloudy blue (#506080)`) gives the color, taken as it is. The library states the color of the value; nothing is downloaded. The MCP server's agent trusts the same code (D53 in [the behaviour reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)).
 2. **The thumbnail's pixels** — only a material whose description has no code gets its color calculated from its thumbnail with the Sharp library, as below.
 
 ### Why Accuracy Matters

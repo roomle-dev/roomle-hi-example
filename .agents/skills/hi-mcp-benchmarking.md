@@ -149,4 +149,4 @@ input tokens per test.
 
 - [hi-mcp-testing.md](./hi-mcp-testing.md) — the runs a benchmark reads
 - [vercel-ai-sdk-chat.md](./vercel-ai-sdk-chat.md) — the chat's step loop and its step log
-- [hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md) — what each tool returns, the corrections
+- [hi-tools-behaviour.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md) — what each tool returns, the corrections

@@ -3,7 +3,7 @@
 **Load this skill when the task involves:** MCP tool definitions, tool parameters, usage patterns, error handling for specific tools.
 
 The behaviour reference — every guard, correction and feedback message, and the decisions behind
-them — is [`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md).
+them — is [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md).
 
 ## Tool Overview
 
@@ -519,7 +519,7 @@ end of a row, a unit on a taken side moved to the free end of the row, an articl
 catalog's spelling, a target of `place-group` or of a placement by wall moved off an overlap or
 centred on a parallel alignment, a value of a placement by wall it cannot read taken as its default.
 Every guard and correction:
-[hi-mcp-behaviour.md §8](../context/hi-mcp-behaviour.md#8-guards-corrections-and-feedback).
+[hi-tools-behaviour.md §8](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#8-guards-corrections-and-feedback).
 
 ## Timeouts
 
@@ -539,4 +539,4 @@ is one call, which roomle-ui performs:
 
 ## Interior Design tools
 
-Use `get-interior-design-options` for a loaded group before adding, moving, deleting or replacing interior fittings. Four command tools implement those edits through the existing planner route. Use installed instance IDs and newly discovered destination tuples; choose replacements from that fitting's `replacementArticles`, including when no additions fit. `articleId` filters addition and replacement candidates. A fitting's `position` is where its parts start, in its parent's frame, the frame of `insertPosition`: move a fitting by adding the offset to its position. Clarify ambiguous instances. See [the complete contract](../context/hi-mcp-behaviour.md#interior-design-tools) and [implementation ownership](../context/interior-fittings.md).
+Use `get-interior-design-options` for a loaded group before adding, moving, deleting or replacing interior fittings. Four command tools implement those edits through the existing planner route. Use installed instance IDs and newly discovered destination tuples; choose replacements from that fitting's `replacementArticles`, including when no additions fit. `articleId` filters addition and replacement candidates. A fitting's `position` is where its parts start, in its parent's frame, the frame of `insertPosition`: move a fitting by adding the offset to its position. Clarify ambiguous instances. See [the complete contract](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#interior-design-tools) and [implementation ownership](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence.md#interior-design-fittings).

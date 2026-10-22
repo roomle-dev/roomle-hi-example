@@ -7,7 +7,7 @@ how would that endpoint talk to roomle-ui?
 **Short answer:** only through a relay server that this path is routed to. The planner tab opens a
 WebSocket to the relay, and the relay forwards the client's MCP messages over it. The MCP server
 logic itself can run in the planner tab. Today there is no MCP endpoint
-([ADR 0011](../decisions/0011-the-hi-tools-live-in-the-embedding-lib.md)).
+([ADR 0011](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tools-live-in-the-embedding-lib.md)).
 
 ## Why the planner cannot be the endpoint itself
 
@@ -36,7 +36,7 @@ MCP client ──HTTP POST /hi-mcp (session)──▶ relay ◀──WebSocket, 
 | Relay | a hosted service | accepts Streamable HTTP and the planner's WebSocket, pairs them by session, forwards the messages; knows no tools |
 | Page bridge | the planner (roomle-ui) | opens the WebSocket on request, hands the messages to the MCP server logic, sends the answers back |
 | MCP server logic | the planner | answers `initialize`, `tools/list`, `tools/call` and `ping` from the HI tool set |
-| HI tool set | the planner | the tools: `getExternalObjectAgentTools` and `callExternalObjectAgentTool` ([ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md)) |
+| HI tool set | the planner | the tools: `getExternalObjectAgentTools` and `callExternalObjectAgentTool` ([ADR 0012](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tool-set-runs-in-the-planner.md)) |
 
 Because the relay forwards the messages unchanged, a tool change never touches the relay. The
 tools, the served text and the protocol answers all ship with the planner.
@@ -44,7 +44,7 @@ tools, the served text and the protocol answers all ship with the planner.
 ## What needs to be done
 
 The tool set runs in the planner
-([ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md)):
+([ADR 0012](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tool-set-runs-in-the-planner.md)):
 `getExternalObjectAgentTools` and `callExternalObjectAgentTool` answer as `tools/list` and
 `tools/call` do, and a tool call is one round trip into the planner's iframe. The MCP server logic
 builds on them.
@@ -143,6 +143,6 @@ builds on them.
 - [ADR 0004](../decisions/0004-hi-mcp-server-on-cloudflare-containers.md) — sessions, one planner
   per server, the refusal of a second page
 - [ADR 0010](../decisions/0010-the-example-chat-runs-in-the-page.md) — one client per planner
-- [ADR 0011](../decisions/0011-the-hi-tools-live-in-the-embedding-lib.md) — no MCP endpoint
-- [ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md) — the tool set in the planner
-- D80 and D94 of [`hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md#3-decisions)
+- [ADR 0011](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tools-live-in-the-embedding-lib.md) — no MCP endpoint
+- [ADR 0012](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tool-set-runs-in-the-planner.md) — the tool set in the planner
+- D80 and D94 of [`hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)

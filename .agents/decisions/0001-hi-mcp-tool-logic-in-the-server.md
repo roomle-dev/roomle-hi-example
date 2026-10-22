@@ -1,6 +1,6 @@
 # ADR 0001 — HI MCP tool logic runs in the MCP server, pages only execute planner methods
 
-> **Status**: Superseded by [ADR 0011](0011-the-hi-tools-live-in-the-embedding-lib.md) — the tools live only in the roomle-ui embedding-lib; in part before by [ADR 0007](0007-hi-mcp-tool-logic-in-the-planner.md)
+> **Status**: Superseded by [ADR 0011](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tools-live-in-the-embedding-lib.md) — the tools live only in the roomle-ui embedding-lib; in part before by [ADR 0007](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/hi-mcp-tool-logic-in-the-planner.md)
 > **Date**: 2026-09-29
 > **Analysis**: the refactoring analysis of pull request [#23](https://github.com/roomle-dev/roomle-hi-example/pull/23) (git history, commit `20b20a0`)
 
@@ -28,7 +28,7 @@ client enforced an older rule than the one the server published.
   `updateExternalObjectGroupAttribute` (D3), `getExternalObjectGroups` and `removeExternalObject`
   joined for the anchor probe and the calculated groups, and `undo` and `redo` for the undo tools
   (D37). `PlannerApi` in `planner-api.ts` is the current list; its uses are in §4 of
-  [hi-mcp-behaviour.md](../context/hi-mcp-behaviour.md#4-how-a-tool-call-runs).
+  [hi-tools-behaviour.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#4-how-a-tool-call-runs).
 
 ## Consequences
 

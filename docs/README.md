@@ -2,14 +2,15 @@
 
 Documentation for external readers: users of the HI agent, integrators and anyone setting up the
 example. It is user-friendly and at a higher level — what the HI agent does and how to use it, not
-how the code is built. The implementation reference — the architecture, how the HI tools behave
-towards an agent, the tool reference — is in [`.agents/context/`](../.agents/context/README.md).
+how the code is built. The implementation reference of the example is in
+[`.agents/context/`](../.agents/context/README.md); the HI tools and the AI Planning Assistant are
+documented in roomle-ui.
 
 ## Index
 
 | Document | Covers |
 |---|---|
-| [planning-assistant-overview.md](planning-assistant-overview.md) | How the AI Planning Assistant works: its components and where they run, a block diagram of how they interact, what happens with a request, why it is built this way, security and limits |
+| [How the AI Planning Assistant works](https://github.com/roomle-dev/roomle-ui/blob/master/packages/embedding-lib/docs/planning-assistant-overview.md) | In roomle-ui: how the AI Planning Assistant works: its components and where they run, a block diagram of how they interact, what happens with a request, why it is built this way, security and limits |
 | [ai-chat.md](ai-chat.md) | The AI chat of the example: providers, models, images |
 | [user-guide/README.md](user-guide/README.md) | User guide: what the HI MCP does, the ways to use it, prompts, limits |
 | [setup/](setup/) | Setup guides: local MCP server, Cloudflare, Azure, Ollama, Jan AI |

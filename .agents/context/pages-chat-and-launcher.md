@@ -85,7 +85,7 @@ errors (`[planning-assistant] …`).
 
 - **The chat is roomle-ui's.** The loop lives in roomle-ui `packages/embedding-lib`; the tools, the
   served text and the planning skills in the planner
-  ([ADR 0012](../decisions/0012-the-hi-tool-set-runs-in-the-planner.md)), so they come with the
+  ([ADR 0012](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tool-set-runs-in-the-planner.md)), so they come with the
   planner at the server URL. The page only hands the loop the model and the planner API. A new
   embedding-lib version means raising the version in the two imports of `index.html`.
 - **The prompts come from the planner:** the planning assistant requests
@@ -93,8 +93,6 @@ errors (`[planning-assistant] …`).
   `hi-agent-prompts.ts`.
 - **The model names are the launcher's.** A new model or deployment is an entry in `start.mjs`
   (`FOUNDRY_DEPLOYMENTS`, `MODEL_ALIASES`, `IMAGE_INPUT_MODELS`).
-- **Two bridge copies.** A protocol change touches the server's `types.ts`, the client's
-  `types.ts` and the ligna-store copy, and raises `BRIDGE_PROTOCOL`.
 - **The test scripts use page globals** — `window.instance`, `window.hiPosGroupsCompletelyLoaded`,
   `window.hiPlannerCalls`, `window.hiPlanningAssistantOutput`, `window.hiAgentPlanContext` and
   `window.hiPlanningAssistantAbort` (ends a turn that takes too long) of `index.html` ([Deployment and testing](./deployment-and-testing.md#end-to-end-runs)).

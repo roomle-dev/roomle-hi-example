@@ -70,7 +70,7 @@ list the water connection in `installationElements` and not in `obstacles`; room
 splits as the kernel reports it. Every unit that hangs above another one, a wall unit or a hood,
 becomes a group of its own, although the docking of the group still hangs it on its carrier. The HI
 tools do not drag units out; a delete in place keeps such units in the group (D103 of
-[`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md#3-decisions)).
+[roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)).
 
 **Cause.** RoomleCore `ModuleGroupDockConfigurator::tryUndockAndCreateSeparatePlanObject`
 (`external-module-group-dock-configurator.cpp:553`) splits the rest with

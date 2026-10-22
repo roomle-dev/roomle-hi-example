@@ -94,7 +94,7 @@ and a wall unit above every other base unit except the dishwasher. The row edit 
 `create-or-replace-groups` call against the local planner and saved with
 `saveExternalObjectSnapshot()`; the ids survive a reload. Every wall unit and the hood were placed
 `above` their floor unit; after the reload the kernel's docking no longer links them to it, which
-the row edits handle by position (D42 in the [behaviour reference](../.agents/context/hi-mcp-behaviour.md)).
+the row edits handle by position (D42 in the [behaviour reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md)).
 
 groups `031ee57a-65f1-4cac-837c-a19c769ddce7` (the floor units and the wall unit above the drawer
 unit next to the fridge), `afbe92eb-fdef-4a0f-89a7-aeedc6b66446` (the range hood and the wall unit
@@ -131,7 +131,7 @@ high) against the right wall, 1200 mm from the back right corner, with a generat
 by hand in the planner (the RML-18045 issue of 2026-10-06); the ids survive a reload. The test
 `edit-insert-low-between-high` starts from it: "insert a low cabinet between the high cabinets"
 names the pair collectively, the group is no kitchen, and the article to insert is of another
-height than its neighbours (D44 in the [behaviour reference](../.agents/context/hi-mcp-behaviour.md#words-2026-10-06)).
+height than its neighbours (D44 in the [behaviour reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#words)).
 
 | | id |
 |---|---|
@@ -190,7 +190,7 @@ between the side table and the door (x -1021 to 590), and the free floor lies be
 table and the kitchen. The test `sideboard-row-one-more-cabinet` extends the sideboard row, a group
 the library generated with its countertop overhang at the group origin, so no root module stands
 there: its four cabinets keep their place (D82 in the
-[behaviour reference](../.agents/context/hi-mcp-behaviour.md#merge-2026-10-16)).
+[behaviour reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#merge)).
 
 ### Room with Supplies
 
@@ -200,14 +200,14 @@ The example plan of [RML-18023](https://roomle.atlassian.net/browse/RML-18023) c
 electric plug, one water connection, one light switch, one door, one window and three HI groups.
 The light switch is the negative control of the installation-element tests: it stays an obstacle
 object, the plug and the water connection are installation elements (D86 in the
-[behaviour reference](../.agents/context/hi-mcp-behaviour.md#installation-elements-2026-10-19)).
+[behaviour reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#installation-elements)).
 
 ### Empty Room with a Water Connection
 
 plan snapshot id: `ps_sau169slquuapnhdz3fdmc0u24eplrcf`
 
 One empty room and one water connection: the connection is an installation element (D86 in the
-[behaviour reference](../.agents/context/hi-mcp-behaviour.md#installation-elements-2026-10-19)) — its position in the
+[behaviour reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#installation-elements)) — its position in the
 `installationElements` section, no obstacle. The tests `sink-cabinet-at-water-connection` and
 `kitchen-oven-hood-sink-fridge-corner` start from it: the first adds a sink cabinet, the second
 plans a kitchen with a sink.
@@ -242,7 +242,7 @@ units across the wide part would block the passage between the doors.
 |---|---|
 | `mcp tools` | moving a group, reading the attributes and the order data, the plan images, opening doors, undo and redo |
 | `group edit` | the edits of an existing group: attributes, add, insert, exchange, swap, delete, join |
-| `door hinge` | the doors at the ends of a row hinged at its outer sides after a create or an edit ([D84](../.agents/context/hi-mcp-behaviour.md#doors-2026-10-17)) |
+| `door hinge` | the doors at the ends of a row hinged at its outer sides after a create or an edit ([D84](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#doors)) |
 | `sub article` | the interior fittings of a cabinet: adding, moving and deleting a shelf |
 | `water supply` | the plugs and water connections of the room, a sink at the water connection |
 | `obstacle` | a group clear of the attic, a window, the furniture and the doors, or in a free spot |

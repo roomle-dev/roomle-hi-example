@@ -196,9 +196,9 @@ planner calls, in parallel where they are independent:
 | File | Change |
 |---|---|
 | `.agents/scripts/run-hi-mcp-prompt.js:293-300` | the readiness check |
-| `.agents/context/hi-mcp-behaviour.md` | D48 (the plan context is agent-ready) names the two contexts; D74 (the catalog's geometry) — from the template only; D71 (six planner methods) — seven (question 2); the planner methods table (`:404-410`); the `get-plan-context` passage (`:701-708`) |
-| `.agents/context/hi-mcp-server.md:136-140` | `get-plan-context` reads both contexts |
-| `.agents/context/tool-executors.md:88-95` | the steps of `get-plan-context` |
+| roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md` | D48 (the plan context is agent-ready) names the two contexts; D74 (the catalog's geometry) — from the template only; D71 (six planner methods) — seven (question 2); the planner methods table (`:404-410`); the `get-plan-context` passage (`:701-708`) |
+| roomle-ui `.agents/homag-intelligence/hi-tools-reference.md` | `get-plan-context` reads both contexts |
+| roomle-ui `.agents/homag-intelligence/tool-executors.md:88-95` | the steps of `get-plan-context` |
 | `.agents/context/deployment-and-testing.md:64-66` | the readiness check |
 | `.agents/context/README.md:128-129` | the planner and the HI tools methods |
 | `.agents/decisions/` | a new ADR: the library context is a planner method of its own (question 2); ADR 0007 keeps its record |
@@ -261,7 +261,7 @@ Decided by the user on 2026-10-22, each as recommended:
 1. **The library sections of the plan context** stay in `getExternalObjectPlanContext` as deprecated
    sections that return what the library context returns.
 2. **A seventh planner method for the tools**: the tools call `getExternalObjectLibraryContext`; D71
-   names seven methods, and [ADR 0013](../decisions/0013-the-library-context-is-a-planner-method-of-its-own.md)
+   names seven methods, and [ADR 0013](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-library-context-is-a-planner-method-of-its-own.md)
    records the decision.
 3. **The article geometry from the template only**, with the output change above.
 4. **The agent-facing tool unchanged**: `get-plan-context` keeps its sections, defaults and result.

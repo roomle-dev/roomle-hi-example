@@ -32,7 +32,7 @@ never drop the agent's content silently.
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui planner (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
 | 97 | [Wall units docked beside the hood hang higher than the other wall units](#97-wall-units-docked-beside-the-hood-hang-higher-than-the-other-wall-units) | defect (not analysed) | roomle-ui HI tool commands, the library or the planner (not analysed) | low | gpt-6-astra | |
-| 98 | [A row placed into a corner stands 10 mm off the wall after later edits](#98-a-row-placed-into-a-corner-stands-10-mm-off-the-wall-after-later-edits) | defect (not analysed) | roomle-ui `hi-tool-commands.ts` (the resubmit by id or the merge, not analysed) | low | gpt-6-astra | |
+| 98 | [A row with a worktop placed into a corner stands 10 mm off the wall](#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) | defect (not analysed) | roomle-ui `hi-wall-placement.ts` or the library's worktop (not analysed) | low | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 
@@ -143,8 +143,8 @@ composition bullet swaps the two legs against the plan.
 
 **Problem.** Asked for one more shelf in a tall cabinet without fittings (Furniture_Smith `HTB60`),
 the model adds the adjustable-shelf set (`AdjShelves`) and answers that a shelf was added — but the
-cabinet already renders the same four shelves, so nothing changes for the user (61: 12
-`part_ShelfadjWood` in `plan.xml`, the same as the unedited cabinets of 59).
+cabinet already renders the same four shelves, so nothing changes for the user (41: 12
+`part_ShelfadjWood` in `plan.xml`, the same as the unedited cabinets of 08).
 
 **Cause.** Not analysed. The plan context lists no fitting for a cabinet without fittings, though the
 library renders its default adjustable shelves (`mod_RackAreaType` Adj), so the model cannot see
@@ -159,9 +159,9 @@ never into a served rule.
 **Test.** `edit-add-subarticle-look-inside`: the opened middle cabinet shows one shelf more than in
 `open-cabinet-look-inside`.
 
-**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 61 (`edit-add-subarticle-look-inside`,
-bo-test): `add-interior-fitting` of `AdjShelves` into the middle unit `a7271f1b`; `plan.xml` holds 12
-`part_ShelfadjWood`, the same as the unedited kitchen of 59.
+**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 41 (`edit-add-subarticle-look-inside`,
+bo-test `205cc9bc8`): `add-interior-fitting` of `AdjShelves` into the middle unit `a7271f1b`; `plan.xml` holds 12
+`part_ShelfadjWood`, the same as the unedited kitchen of 08.
 
 ## 97. Wall units docked beside the hood hang higher than the other wall units
 
@@ -182,29 +182,37 @@ and the library's desc.
 
 **Test.** `full-kitchen-walnut-marble-corner`: the wall units of both legs hang at one height.
 
-**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 50 (`full-kitchen-walnut-marble-corner`,
-bo-test): roots `wallRight` `OTB60` `above` `prepRight`, `hood` `DU` `rightOf` `wallRight`,
-`wallLanding` `OTB60` `rightOf` `hood`; both OTB60 at 1570, the back-wall wall units at 1420.
+**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 52 (`full-kitchen-walnut-marble-corner`,
+bo-test `205cc9bc8`): roots `wallright` `OTB60` `above` `landing1`, `hood` `DU` `rightOf` `wallright`,
+`wallend` `OTB60` `rightOf` `hood`; both OTB60 at 1570, the back-wall wall units at 1420.
 
-## 98. A row placed into a corner stands 10 mm off the wall after later edits
+## 98. A row with a worktop placed into a corner stands 10 mm off the wall
 
-**Problem.** A base row placed with `wall` right and `alignment` back stands 10 mm off the back wall
-at the end of a three-turn conversation (group position z -3755, the back wall at -3765). No
-correction or hint names the shift.
+**Problem.** A base row with a worktop placed with `wall` right and `alignment` back stands 10 mm off
+the back wall right after the create: group position z -3755, the back wall at -3765, and the
+group's footprint runs from x 0 to 2110 for 2100 mm of carcasses, so neither a carcass nor the
+worktop reaches the wall. No correction or hint names the shift. Rows without a worktop placed the
+same way stand at the wall (two wardrobes at z -3765), and so does a corner kitchen whose corner
+unit is the anchor.
 
-**Cause.** Not analysed. Turn 1 places the row, turn 2 resubmits the group by its id without
-placement with three wall units, turn 3 merges a drawer unit at the front end. The runs record only
-the plan after the last turn, so which call moves the row is unknown; a replace without placement
-keeps the group's position (D46), and a merge keeps the earlier root modules in place (D82).
+**Cause.** Not analysed. The footprint of a row with a worktop placed by wall elsewhere starts at
+x -10, the worktop's overhang beyond the first carcass (four base units centred on the back wall:
+x -10 to 2410); in the corner row it starts at 0, and the 10 mm of the overhang lie at the front
+end. Whether the placement into the corner (roomle-ui `hi-wall-placement.ts`) keeps room for an
+overhang the library puts at the other end, or the library's worktop generation moves it, is open.
 
-**To do.** roomle-ui: replay the three calls of the run (its `planner-calls.json`) against the local
-planner, read the group position after each, and fix the call that moves the row.
+**To do.** roomle-ui: replay the create of the run (its `planner-calls.json`) against the local
+planner, read the group position, the footprint and the worktop's overhangs after the load, and fix
+the step that leaves the row off the wall.
 
-**Test.** roomle-ui `hi-tool-commands` tests: a resubmit by id without placement and a merge at the
-free end keep the first root module of a corner row at the wall.
+**Test.** roomle-ui `hi-tool-commands` tests: a row with a worktop placed by wall into a corner
+stands with its first carcass or its worktop at the wall; the random test 75 of
+`mcp-test-2026-10-22_19-45-49` (`random-5-base-row-right-wall-corner`) as a fixed prompt test.
 
-**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 74 (`random-4-base-row-wall-units-extend`,
-bo-test): the final group `b4bdd14a` at `[4815, 0, -3755]`, rotation 270.
+**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 75 (`random-5-base-row-right-wall-corner`,
+bo-test `205cc9bc8`): one `create-or-replace-groups` with `placement` `{ wall: right, alignment: back }`
+of `U2TB90`, `US2A60`, `US2A60`; the group `f32075ff` at `[4815, 0, -3755]`, rotation 270, footprint
+x 0 to 2110.
 
 ## 103. A unit on top of a follower in another group stays behind when the row below moves
 

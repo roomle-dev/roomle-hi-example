@@ -48,8 +48,8 @@ kitchen.
 
 The script [update-planning-results.js](../scripts/update-planning-results.js):
 
-1. writes `$SESSION/tests.json` — the model, the default room and one test `kitchen-<n>` per kitchen
-   image, the image without a prompt;
+1. writes `$SESSION/tests.json` — the model, the default room and, in the category
+   `planning from images`, one test `kitchen-<n>` per kitchen image, the image without a prompt;
 2. runs it with [run-hi-mcp-tests.js](../scripts/run-hi-mcp-tests.js): every kitchen in a fresh
    launcher and browser with [run-hi-mcp-prompt.js](../scripts/run-hi-mcp-prompt.js), which saves
    the plan snapshot; a provider or transport failure is repeated up to three attempts; a run goes

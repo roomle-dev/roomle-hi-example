@@ -113,12 +113,16 @@ from interrupted browser capture and does not by itself trigger the suite's navi
 node .agents/scripts/run-hi-mcp-tests.js [docs/test-prompts.json] [--out <dir>] [--dev]
 ```
 
-Reads `models` (provider and key, `"$NAME"` reads the environment), `plans` and `tests` from the test
-file, validates it, and runs every model × test as a child `run-hi-mcp-prompt.js`. An explicit
-`randomTests` count must be a whole number from 0 to the number of available plans.
+Reads `models` (provider and key, `"$NAME"` reads the environment), `plans` and `categories` from
+the test file, validates it, and runs every model × test as a child `run-hi-mcp-prompt.js`. A
+category is `{ category, tests }`: a unique name and at least one test. The runner runs the tests
+of all categories one list in the order of the file and numbers the run directories across the
+categories. An explicit `randomTests` count must be a whole number from 0 to the number of
+available plans.
 
 The [testing skill](../../.agents/skills/hi-mcp-testing.md#3-tests) prepares a full session file
-from the selected fixed cases, then the requested number of random cases.
+from the selected fixed cases, then the requested number of random cases in a last category
+`random`.
 The agent writes their prompts and expectations before running them. A `jq` composition command
 checks the generated counts, expectations, plans, markings and unique ids. Cases stay
 in the session directory, and a resumed session uses the same prepared file. Runs limited to

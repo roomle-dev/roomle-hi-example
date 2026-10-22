@@ -59,32 +59,42 @@ const singleModelSession = async (t) => {
     randomTests: 1,
     models: [{ provider: 'gpt-test-a', apiKey: '$KEY' }],
     plans: { 'default-room': 'ps_room' },
-    tests: [
+    categories: [
       {
-        id: 'alpha-create',
-        title: 'Alpha create',
-        plan: 'default-room',
-        prompt: 'add one cabinet',
+        category: 'cabinet',
+        tests: [
+          {
+            id: 'alpha-create',
+            title: 'Alpha create',
+            plan: 'default-room',
+            prompt: 'add one cabinet',
+          },
+          {
+            id: 'beta-random',
+            title: 'Random: beta',
+            plan: 'default-room',
+            random: true,
+            prompt: 'make it white',
+          },
+        ],
       },
       {
-        id: 'beta-random',
-        title: 'Random: beta',
-        plan: 'default-room',
-        random: true,
-        prompt: 'make it white',
-      },
-      {
-        id: 'gamma-image',
-        title: 'Gamma image',
-        plan: 'default-room',
-        image: 'docs/images/gamma.png',
-        prompt: null,
-      },
-      {
-        id: 'delta-skipped',
-        title: 'Delta skipped',
-        plan: 'default-room',
-        prompt: 'skipped',
+        category: 'planning from images',
+        tests: [
+          {
+            id: 'gamma-image',
+            title: 'Gamma image',
+            plan: 'default-room',
+            image: 'docs/images/gamma.png',
+            prompt: null,
+          },
+          {
+            id: 'delta-skipped',
+            title: 'Delta skipped',
+            plan: 'default-room',
+            prompt: 'skipped',
+          },
+        ],
       },
     ],
   };
@@ -352,20 +362,30 @@ const multiModelSession = async (t) => {
       { provider: 'gpt-test.b', apiKey: '$B' },
     ],
     plans: { 'default-room': 'ps_room' },
-    tests: [
+    categories: [
       {
-        id: 'alpha-create',
-        title: 'Alpha create',
-        plan: 'default-room',
-        image: 'docs/images/alpha.png',
-        prompt: 'add one cabinet',
+        category: 'planning from images',
+        tests: [
+          {
+            id: 'alpha-create',
+            title: 'Alpha create',
+            plan: 'default-room',
+            image: 'docs/images/alpha.png',
+            prompt: 'add one cabinet',
+          },
+        ],
       },
       {
-        id: 'beta-random',
-        title: 'Random: beta',
-        plan: 'default-room',
-        random: true,
-        prompt: 'make it white',
+        category: 'random',
+        tests: [
+          {
+            id: 'beta-random',
+            title: 'Random: beta',
+            plan: 'default-room',
+            random: true,
+            prompt: 'make it white',
+          },
+        ],
       },
     ],
   };
@@ -711,7 +731,14 @@ test('fails explicitly when a required session file is missing', async (t) => {
   await mkdir(session, { recursive: true });
   const tests = {
     models: [{ provider: 'gpt-test-a' }],
-    tests: [{ id: 'alpha', title: 'Alpha', plan: 'default-room', prompt: 'p' }],
+    categories: [
+      {
+        category: 'cabinet',
+        tests: [
+          { id: 'alpha', title: 'Alpha', plan: 'default-room', prompt: 'p' },
+        ],
+      },
+    ],
   };
   const results = {
     startedAt: '2099-01-03T00:00:00.000Z',
@@ -754,7 +781,14 @@ test('keeps the startup errors of a run whose run.json is missing', async (t) =>
   await mkdir(join(session, 'gpt-test-a/01-alpha'), { recursive: true });
   await writeJson(session, 'tests.json', {
     models: [{ provider: 'gpt-test-a' }],
-    tests: [{ id: 'alpha', title: 'Alpha', plan: 'default-room', prompt: 'p' }],
+    categories: [
+      {
+        category: 'cabinet',
+        tests: [
+          { id: 'alpha', title: 'Alpha', plan: 'default-room', prompt: 'p' },
+        ],
+      },
+    ],
   });
   await writeJson(session, 'results.json', {
     startedAt: '2099-01-04T00:00:00.000Z',

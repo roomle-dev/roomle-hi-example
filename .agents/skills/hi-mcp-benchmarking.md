@@ -52,7 +52,8 @@ repetition:
 SESSION=".temp/result/benchmark-$(date +%Y-%m-%d_%H-%M-%S)"
 mkdir -p "$SESSION"
 jq '.randomTests = 0 | .models = [{ "provider": "gpt-6-astra", "apiKey": "$AZURE_GPT_KEY" }]
-    | .tests |= map(select(.id | IN("image-kitchen-left-wall", "image-only-no-text")))' \
+    | .categories |= map(.tests |= map(select(.id | IN("image-kitchen-left-wall", "image-only-no-text")))
+      | select(.tests | length > 0))' \
   docs/test-prompts.json > "$SESSION/tests.json"
 node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" > "$SESSION/runner.log" 2>&1
 ```

@@ -35,539 +35,610 @@
     "three-open-wardrobes-with-shelves": "ps_sbga21bftgc6paechjqf8x5qbk538sp",
     "open-plan-room": "ps_qwm5odi6tyflyqwpdcxz1la791ho633",
     "room-with-supplies": "ps_sa6laqmrrczr6wmo8jfk7pdyz36omon",
-    "empty-room-with-water-connection": "ps_sau169slquuapnhdz3fdmc0u24eplrcf"
+    "empty-room-with-water-connection": "ps_sau169slquuapnhdz3fdmc0u24eplrcf",
+    "l-shaped-pass-through-room": "ps_sje41pva5egn6qp5xti55q6c7fcfin5"
   },
-  "tests": [
-    {
-      "id": "three-tall-units-right-wall",
-      "title": "Three tall units, right wall",
-      "plan": "default-room",
-      "prompt": "add a group of three tall units to the wall on the right"
-    },
-    {
-      "id": "four-cabinets-back-wall",
-      "title": "Four cabinets, back wall",
-      "plan": "default-room",
-      "prompt": "add a group of 4 cabinets to the wall in the back"
-    },
-    {
-      "id": "four-cabinets-centred-back-wall",
-      "title": "Four base cabinets, centred on the back wall",
-      "plan": "default-room",
-      "prompt": "add a row of four base cabinets centred on the back wall",
-      "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of four base cabinets with its back against the back wall, centred on it (the back wall runs from x -685 to 4815), inside the room"
-    },
-    {
-      "id": "media-unit-left-wall",
-      "title": "A media unit on the left wall",
-      "plan": "default-room",
-      "prompt": "add a low media unit with a few cabinets to the wall on the left",
-      "expect": "one create-or-replace-groups call with a placement by wall (wall left, centred); one group of low cabinets with its back against the left wall, centred on it (the left wall runs from z -3765 to 1235), inside the room"
-    },
-    {
-      "id": "sideboard-living-room-front-wall",
-      "title": "A sideboard on the back wall beside the armchairs",
-      "plan": "living-room",
-      "prompt": "add a sideboard of three low cabinets to the backside wall beside the armchairs",
-      "expect": "no question back; one create-or-replace-groups call with a placement by wall (the back wall, wall 1: z -3765, x -3185 to 1935); one group of three low cabinets with its back against the back wall on its stretch next to the two armchairs (x -2764 to -1449), inside the room, overlapping neither the armchairs, the side table between them, the rug (z from -2540) nor another object"
-    },
-    {
-      "id": "wardrobe-closets-back-wall",
-      "title": "Wardrobes on the back wall",
-      "plan": "closets",
-      "prompt": "add two wardrobes to the back wall",
-      "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of two tall wardrobe units with their backs against the back wall, inside the room"
-    },
-    {
-      "id": "utility-room-cabinets-left-wall",
-      "title": "Utility room cabinets on the left wall",
-      "plan": "utility-room",
-      "prompt": "add a row of three base cabinets with a worktop to the left wall",
-      "expect": "one create-or-replace-groups call with a placement by wall (wall left, centred); one group of three base cabinets with their backs against the left wall, inside the room"
-    },
-    {
-      "id": "attic-room-tall-units-right-wall",
-      "title": "Tall units on the right wall of the attic room",
-      "plan": "room-and-attic",
-      "prompt": "add three tall units to the right wall",
-      "expect": "one create-or-replace-groups call with a placement by wall (wall right, centred); one group of three tall units with their backs against the right wall, inside the room and clear of the attic"
-    },
-    {
-      "id": "place-group-move-kitchen",
-      "title": "Move the kitchen to the left wall",
-      "plan": "three-tall-units",
-      "prompt": "move the kitchen to the left wall",
-      "expect": "one place-group call on the existing group with wall left; the group keeps its three units and stands against the left wall"
-    },
-    {
-      "id": "living-room-sideboard-and-tv",
-      "title": "A sideboard and a TV unit in the living room",
-      "plan": "living-room",
-      "prompt": "add a sideboard to the front wall and a low TV unit to the back wall",
-      "expect": "create-or-replace-groups creates two groups, in one batched call or separate calls, each with a placement by wall: one sideboard group on the front wall and one low TV unit group on the back wall, both inside the room"
-    },
-    {
-      "id": "closets-two-wardrobes-corner",
-      "title": "Two wardrobes in the corner of the closet room",
-      "plan": "closets",
-      "prompt": "put two wardrobes into the back right corner",
-      "expect": "one create-or-replace-groups call with a placement by wall and alignment into the corner (wall right, alignment back); one group of two tall wardrobe units flush in the back right corner"
-    },
-    {
-      "id": "wardrobe-door-hinges",
-      "title": "Door hinges at the ends of a wardrobe",
-      "plan": "closets",
-      "prompt": "add a wardrobe of four cabinets with one door each to the right wall",
-      "expect": "one create-or-replace-groups call with a placement by wall (wall right); one group of four single-door wardrobe cabinets in a row; mod_DoorDirectionSelection Left in the attributes of the root module at the left end and Right in those of the root module at the right end, the two in the middle unchanged; no handle on the outside of the row"
-    },
-    {
-      "id": "utility-room-washer-and-sink",
-      "title": "A washer and a sink in the utility room",
-      "plan": "utility-room",
-      "prompt": "add a washer and a sink cabinet to the back wall",
-      "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of a washer and a sink cabinet with their backs against the back wall, inside the room"
-    },
-    {
-      "id": "attic-room-storage-under-slope",
-      "title": "Storage units under the attic slope",
-      "plan": "room-and-attic",
-      "prompt": "add low storage units along the wall under the attic slope",
-      "expect": "one create-or-replace-groups call with a placement by wall; one group of low storage units against the wall under the slope, inside the room and clear of the attic"
-    },
-    {
-      "id": "two-wardrobes-add-third",
-      "title": "Add a third wardrobe",
-      "plan": "two-wardrobes-right-wall",
-      "prompt": "add a third wardrobe next to the two on the right wall",
-      "expect": "one create-or-replace-groups call that extends the existing group by one wardrobe docked to its free side; three wardrobes in a row on the right wall"
-    },
-    {
-      "id": "edit-change-one-unit",
-      "title": "Change one unit",
-      "plan": "three-tall-units",
-      "prompt": "make the first unit 900 mm wide",
-      "expect": "change-module-attribute: mod_Width 900 on the first unit"
-    },
-    {
-      "id": "edit-change-whole-kitchen",
-      "title": "Change the whole kitchen",
-      "plan": "three-tall-units",
-      "prompt": "make the fronts of the whole kitchen white",
-      "expect": "change-group-attribute: a white mod_FrontColor on every unit"
-    },
-    {
-      "id": "attributes-find-front-colour",
-      "title": "Find the front colour attribute",
-      "plan": "three-tall-units",
-      "prompt": "which front colours can I choose for the kitchen?",
-      "expect": "one find-attributes call for the front colour; the answer lists the available front colour values of the library and names the attribute"
-    },
-    {
-      "id": "edit-add-one-unit",
-      "title": "Add one unit",
-      "plan": "three-tall-units",
-      "prompt": "add a cabinet with drawers to the right of the kitchen",
-      "expect": "merge-article-into-group: a drawer cabinet at the front end of the row"
-    },
-    {
-      "id": "edit-add-subarticle",
-      "title": "Add a shelf sub-article to the right wardrobe",
-      "plan": "three-open-wardrobes-with-shelves",
-      "prompt": "add a shelf to the middle of the right-most carcass of the wardrobe",
-      "expect": "get-interior-design-options discovers a compatible FixedShelf article and current destination in right root 22e7519d-4218-46e4-b1a5-5c92934ad420 of group ce854b3e-90d6-4e65-ba7b-461e125cc8da; add-interior-fitting adds exactly one new installed instance there, at about half the height of the cabinet's interior (an insertPosition, or the library default when it already stands there). Four shelf sub-articles remain: one in the left wardrobe, one in the middle, two in the right. All three original shelves, cabinet identities, placement, finishes and docking remain unchanged; the result reports the new instance ID and actual placement."
-    },
-    {
-      "id": "edit-delete-subarticle",
-      "title": "Delete the shelf sub-article from the left wardrobe",
-      "plan": "three-open-wardrobes-with-shelves",
-      "prompt": "delete the shelf from the leftmost cabinet",
-      "expect": "get-interior-design-options identifies installed FixedShelf instance 037ab69e-8475-4418-b6db-df6738b91df1 in left root ab0737ab-a681-48ed-995b-46ee788a2329; delete-interior-fittings removes only that instance. The group still contains all three wardrobe cabinets at their original positions with unchanged finishes and docking, with no shelf in the left wardrobe and the original shelf in each of the middle and right wardrobes. No cabinet or whole group is deleted."
-    },
-    {
-      "id": "edit-move-subarticle",
-      "title": "Move a shelf sub-article down in the middle wardrobe",
-      "plan": "three-open-wardrobes-with-shelves",
-      "prompt": "move the shelf inside the middle cabinet down by 500 mm",
-      "expect": "get-interior-design-options identifies installed FixedShelf instance 19d07551-c89b-43ee-8caa-e4c2bef10fb6 and its measured position in middle root 7b8bd635-7f19-4e3c-b280-95b91d4c4916 of group ce854b3e-90d6-4e65-ba7b-461e125cc8da; one move-interior-fitting keeps it in its current parent (destination omitted or the same) with an insertPosition 500 mm lower in y than the measured position, x and z unchanged. The returned actual placement is 500 mm lower; a library adjustment of the height is reported in the corrections. Three shelf sub-articles remain, one in each wardrobe. Recreation may change the moved instance ID; use the returned identity. Compatible settings are retained or resets reported. Cabinet identities, placement, finishes, docking and the left and right shelves remain unchanged; no transfer to another cabinet, no separate delete/add commands or whole-cabinet move."
-    },
-    {
-      "id": "edit-add-move-delete-subarticle",
-      "title": "Add, move and delete shelf sub-articles over three turns",
-      "plan": "three-open-wardrobes-with-shelves",
-      "prompt": [
-        "add a shelf to the middle of the left-most carcass of the wardrobe",
-        "move the shelf inside the right-most cabinet down by 500 mm",
-        "delete the shelf from the middle cabinet"
-      ],
-      "expect": "turn 1: get-interior-design-options on group ce854b3e-90d6-4e65-ba7b-461e125cc8da, then one add-interior-fitting of a compatible FixedShelf into left root ab0737ab-a681-48ed-995b-46ee788a2329, at about half the height of the cabinet's interior; the original left shelf 037ab69e-8475-4418-b6db-df6738b91df1 stays; shelves left / middle / right 2 / 1 / 1. turn 2: one move-interior-fitting of right shelf c585292d-26f7-41da-92ff-50a278161f95 in right root 22e7519d-4218-46e4-b1a5-5c92934ad420, in its current parent, with an insertPosition 500 mm lower in y than its measured position, x and z unchanged; the returned actual placement is 500 mm lower, a library adjustment is reported; shelves 2 / 1 / 1. turn 3: one delete-interior-fittings of only middle shelf 19d07551-c89b-43ee-8caa-e4c2bef10fb6 in middle root 7b8bd635-7f19-4e3c-b280-95b91d4c4916; shelves 2 / 0 / 1, the two left shelves and the moved right shelf where turns 1 and 2 put them. Recreation may change instance IDs; the agent uses the returned IDs or discovers them again. Every turn keeps the three cabinets, their placement, finishes and docking; no cabinet or whole group is deleted, no separate delete/add commands for the move."
-    },
-    {
-      "id": "edit-remove-unit",
-      "title": "Remove a unit and leave the gap",
-      "plan": "three-tall-units",
-      "prompt": "remove the middle cabinet and leave the gap; keep the other two cabinets where they are",
-      "expect": "delete-article-in-place on the middle cabinet: two groups of one cabinet each, both in their original positions, with the 600 mm gap left between them"
-    },
-    {
-      "id": "edit-delete-unit",
-      "title": "Remove a unit and close the gap",
-      "plan": "three-tall-units",
-      "prompt": "remove the middle cabinet and close the gap by moving the last cabinet next to the first; keep the cabinet in the back corner where it is",
-      "expect": "delete-article-and-compact on the middle cabinet: one group of the two remaining cabinets docked together with no gap; the first cabinet stays in the back right corner and the last moves 600 mm towards it; both cabinets keep their attributes"
-    },
-    {
-      "id": "edit-delete-group",
-      "title": "Delete a group",
-      "plan": "three-tall-units",
-      "prompt": "delete the kitchen",
-      "expect": "delete-group: the plan has no groups"
-    },
-    {
-      "id": "edit-replace-unit",
-      "title": "Replace a unit",
-      "plan": "three-tall-units",
-      "prompt": "replace the middle unit with a cabinet with drawers",
-      "expect": "exchange-root-module: the middle unit becomes a drawer cabinet, the row stays"
-    },
-    {
-      "id": "edit-replace-unit-wider",
-      "title": "Replace a unit with a wider one",
-      "plan": "three-tall-units",
-      "prompt": "replace the middle unit with a 900 mm wide tall cabinet with drawers",
-      "expect": "one exchange-root-module with mod_Width 900 in its attributes: the row is 2100 mm, the back end stays at z -3765"
-    },
-    {
-      "id": "edit-insert-unit",
-      "title": "Insert a unit",
-      "plan": "three-tall-units",
-      "prompt": "insert a cabinet with drawers between the first and the second unit",
-      "expect": "insert-article-into-group between the first and the middle unit: one group of four, the back end stays at z -3765, the row grows to the front by the unit's width"
-    },
-    {
-      "id": "edit-insert-low-between-high",
-      "title": "Insert a low cabinet between the high cabinets",
-      "plan": "two-wardrobes-right-wall",
-      "prompt": "insert a low cabinet between the high cabinets",
-      "expect": "one insert-article-into-group call between the two wardrobes with a base cabinet (e.g. UTB60): one group of three root modules, the wardrobes keep their article, no new group, no replace, no exchange; the group's pos stays [4815, 0, -2563.1]"
-    },
-    {
-      "id": "edit-insert-below-wall-units",
-      "title": "Insert a unit below wall units",
-      "plan": "corner-kitchen-wall-units",
-      "prompt": "insert a narrow base unit with drawers between the hob unit and the drawer unit next to the fridge",
-      "expect": "insert-article-into-group of a narrow drawer unit (e.g. US2A30) between the hob unit and the drawer unit next to the tall fridge unit on the right leg: the corner unit stays in the corner, the right leg grows to the front by the new unit's width and the tall fridge unit stays clear of the door, the range hood stays above the hob unit, the wall unit above the shifted drawer unit moves with it; the answer names the moved wall unit"
-    },
-    {
-      "id": "edit-remove-next-to-corner",
-      "title": "Remove the unit next to the corner",
-      "plan": "corner-kitchen-wall-units",
-      "prompt": "remove the base unit next to the corner unit on the right wall and close the gap",
-      "expect": "delete-article-and-compact of the drawer unit next to the corner: the gap closes towards the corner, the corner unit stays, the hob unit moves into the gap with the range hood; the wall unit above the removed unit keeps its place and the answer says so"
-    },
-    {
-      "id": "edit-remove-corner-unit",
-      "title": "Remove the corner unit",
-      "plan": "corner-kitchen-wall-units",
-      "prompt": "remove the corner unit and close the gap",
-      "expect": "delete-article-and-compact of the corner unit: one group; one leg turns by 90 degrees with its wall units and is docked to the other, so the legs form one straight row; the answer says which leg turned"
-    },
-    {
-      "id": "edit-swap-hob-unit",
-      "title": "Swap the hob unit",
-      "plan": "corner-kitchen-wall-units",
-      "prompt": "swap the hob unit and the sink unit",
-      "expect": "swap-root-modules: the hob unit and the sink unit change places, the range hood stays above the hob unit and the wall unit above the sink moves with it"
-    },
-    {
-      "id": "edit-join-groups",
-      "title": "Join groups",
-      "plan": "three-tall-units",
-      "prompt": [
-        "delete the middle unit",
-        "join the two groups on the right wall"
-      ],
-      "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: merge-groups: one group with both units"
-    },
-    {
-      "id": "edit-swap-units",
-      "title": "Swap two units",
-      "plan": "three-tall-units",
-      "prompt": [
-        "make the last unit 900 mm wide",
-        "swap the first and the last unit"
-      ],
-      "expect": "turn 1: change-module-attribute: mod_Width 900 on the last unit; a calculation diagnostic requires correcting incompatible retained attributes before proceeding, with built front geometry and docking vectors; turn 2: swap-root-modules: the 900 mm unit stands in the back corner, the row stays contiguous at 2100 mm and its back end at z -3765; the widened paired-door unit has both outer hinges, the single door at the new right end is hinged right, with unrelated door settings unchanged; a dropped docking, refused or undone swap does not pass"
-    },
-    {
-      "id": "edit-swap-door-hinges",
-      "title": "Door hinges after swapping the ends without resizing",
-      "plan": "three-tall-units",
-      "prompt": "swap the first and the last unit",
-      "expect": "swap-root-modules completes without a preceding width change: the former last unit is first and the former first unit last; the row stays 1800 mm with its back end at z -3765; the new left-end single door is hinged left and the right-end door right, with unrelated inputs unchanged; check final attributes and handles, including when get-authoring-rules is not called"
-    },
-    {
-      "id": "wardrobe-swap-door-hinges",
-      "title": "Swap the ends of a correctly hinged wardrobe",
-      "plan": "closets",
-      "prompt": [
-        "add a wardrobe of three cabinets with one door each, 400 mm wide each, to the right wall",
-        "swap the first and the last cabinet"
-      ],
-      "expect": "turn 1: one row of three 400 mm single-door wardrobe cabinets, left end hinged left and right end right; turn 2: the end cabinets change places and their door settings are corrected for their new ends; the row stays 1200 mm and the middle cabinet keeps its door input; verify both turns rather than inferring the initial hinges from the final plan"
-    },
-    {
-      "id": "wardrobe-split-door-hinges",
-      "title": "Door hinges at both ends exposed by a middle deletion",
-      "plan": "closets",
-      "prompt": [
-        "add a wardrobe of five cabinets with one door each, 400 mm wide each, to the right wall",
-        "delete the middle cabinet and leave the gap"
-      ],
-      "expect": "turn 1: five 400 mm single-door wardrobe cabinets in one row with outer hinges; turn 2: delete-article-in-place splits it into two two-cabinet rows where they stand, with a 400 mm gap; the newly exposed right end of the left row hinges right and the new left end of the right row hinges left; unchanged original outer ends keep their settings; evaluate each row separately"
-    },
-    {
-      "id": "wardrobe-exchange-end-door-hinge",
-      "title": "Door hinge after replacing a wardrobe end",
-      "plan": "closets",
-      "prompt": [
-        "add a wardrobe of three cabinets with one door each, 400 mm wide each, to the right wall",
-        "replace the last cabinet with a single-door kitchen pantry cabinet of the same width"
-      ],
-      "expect": "turn 1: three 400 mm single-door wardrobe cabinets, left end hinged left and right end right; turn 2: exchange-root-module replaces the right end with a single-door pantry article at 400 mm; its door hinges right through an explicit override or a targeted follow-up, and the first two cabinets keep their inputs and positions"
-    },
-    {
-      "id": "edit-swap-paired-door-hinges",
-      "title": "Keep paired-door arrangements when swapping ends",
-      "plan": "default-room",
-      "prompt": [
-        "add three base cabinets, each with a pair of doors side by side, to the left wall",
-        "swap the first and the last cabinet"
-      ],
-      "expect": "turn 1: one row of three cabinets with paired doors hinged at their two outer sides; turn 2: the end cabinets change places and retain the library-valid paired-door arrangement (Furniture_Smith LeftRight), with handles meeting in the middle; no single-door Left or Right input on a paired-door article, no calculation failure"
-    },
-    {
-      "id": "edit-exchange-drawer-end",
-      "title": "A drawer-only end receives no invented door setting",
-      "plan": "default-room",
-      "prompt": [
-        "add three base cabinets with one door each to the left wall",
-        "replace the last cabinet with a cabinet with only drawers, of the same width"
-      ],
-      "expect": "turn 1: one row of three single-door cabinets with outer hinges; turn 2: exchange-root-module replaces the right end with a drawer-only article of the same width; no door-direction input is invented for the drawer-only root, and the other cabinets keep their door settings and positions"
-    },
-    {
-      "id": "wardrobe-extend-door-hinge",
-      "title": "A new end of a wardrobe",
-      "plan": "closets",
-      "prompt": [
-        "add a wardrobe of three cabinets with one door each to the right wall",
-        "add one more cabinet at its right end"
-      ],
-      "expect": "turn 1: one create-or-replace-groups call with a placement by wall (wall right); three single-door wardrobe cabinets in a row, mod_DoorDirectionSelection Left on the root module at the left end and Right on the one at the right end; turn 2: one edit that adds a single-door cabinet at the right end of the group (merge-article-into-group, or a replace of the group); the new end has mod_DoorDirectionSelection Right, the former end keeps Right; no handle on the outside of the row"
-    },
-    {
-      "id": "undo-last-change",
-      "title": "Undo the last change",
-      "plan": "three-tall-units",
-      "prompt": ["delete the middle unit", "undo the last change"],
-      "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: undo: one group of three tall units again"
-    },
-    {
-      "id": "redo-last-change",
-      "title": "Redo the undone change",
-      "plan": "three-tall-units",
-      "prompt": ["delete the middle unit", "undo the last change", "redo that"],
-      "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: undo: one group of three tall units again; turn 3: redo: the middle unit removed again, two groups"
-    },
-    {
-      "id": "undo-a-wrong-command",
-      "title": "Undo a wrong command",
-      "plan": "three-tall-units",
-      "prompt": [
-        "delete the middle unit",
-        "that was the wrong unit - remove the last unit, not the middle one"
-      ],
-      "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: undo, then delete-article-and-compact or delete-article-in-place on the last unit: one group of the first two units; the newly exposed right-end single door is hinged right, and the left end keeps its input setting"
-    },
-    {
-      "id": "kitchen-back-right-corner",
-      "title": "Kitchen in the back right corner",
-      "plan": "default-room",
-      "prompt": "plan a kitchen in the back right corner of the room"
-    },
-    {
-      "id": "kitchen-oven-fridge-sink-corner",
-      "title": "Oven, fridge, sink in the corner",
-      "plan": "default-room",
-      "prompt": "plan a kitchen with an oven, a hob, a range hood, a sink and a fridge in the back right corner of the room"
-    },
-    {
-      "id": "kitchen-oven-hood-sink-fridge-corner",
-      "title": "Oven, range hood, sink, fridge in the corner",
-      "plan": "empty-room-with-water-connection",
-      "prompt": "plan a kitchen with an oven, a hob, a range hood, a sink and a fridge"
-    },
-    {
-      "id": "full-kitchen-walnut-marble-corner",
-      "title": "Full kitchen, walnut, dark marble, around the corner",
-      "plan": "default-room",
-      "prompt": "create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room. Arrange the kitchen around the corner. The front of the kitchen should be made of walnut and the worktop should be made of dark marble",
-      "expect": "appliances: oven, hob, cooker hood, fridge, sink; storage: cabinet with drawers, wall cabinets; placement: back right corner, around the corner; materials: walnut front, dark marble worktop"
-    },
-    {
-      "id": "obstacle-window-back-wall",
-      "title": "Base and wall cabinets on the window wall",
-      "plan": "default-room",
-      "prompt": "add four base cabinets with wall cabinets above them on the back wall",
-      "expect": "one group against the back wall: the base cabinets may run below the window (bottomMm 950), no wall cabinet and no tall unit overlaps the window's span x -450 to 1650 (fromEndMm 235 to 2335 of the back wall); the answer names the window"
-    },
-    {
-      "id": "obstacle-back-wall-beside-the-sofa",
-      "title": "Tall cabinets on a furnished wall",
-      "plan": "open-plan-room",
-      "prompt": "add two tall cabinets on the back wall",
-      "expect": "one group of two tall units against the back wall in its free stretch between the side table next to the sofa and the door (x -1021 to 590): it overlaps neither the sofa, the side table nor the door opening"
-    },
-    {
-      "id": "obstacle-island-free-spot",
-      "title": "A kitchen island in a furnished room",
-      "plan": "open-plan-room",
-      "prompt": "add a kitchen island of three base cabinets in a free spot of the room",
-      "expect": "one new group of three base units away from the walls whose root modules overlap no object (dining table, chairs, rug, plant, sofa) and no other group"
-    },
-    {
-      "id": "installation-elements-supplies",
-      "title": "The supplies of the room are installation elements",
-      "plan": "room-with-supplies",
-      "prompt": "which electric plugs and water connections are in the room? add a base cabinet in front of the plug",
-      "expect": "the answer lists the plug and the water connection, both on the left wall, with the positions of the installationElements section and none in the obstacles; one base cabinet group against the left wall standing on the plug, with no overlap hint - a supply is no obstacle - while the light switch on the back wall stays an obstacle object"
-    },
-    {
-      "id": "sink-cabinet-at-water-connection",
-      "title": "A cabinet with a sink at the water connection",
-      "plan": "empty-room-with-water-connection",
-      "prompt": "add a cabinet with a sink",
-      "expect": "one group with a sink cabinet standing at the water connection whose position the installationElements section lists; the answer names the water connection"
-    },
-    {
-      "id": "sideboard-row-one-more-cabinet",
-      "title": "One more cabinet for the sideboard row",
-      "plan": "open-plan-room",
-      "prompt": "add one more cabinet of the same kind to the sideboard row on the front wall",
-      "expect": "one merge-article-into-group that docks a fifth SB_UB600 at the door end of the sideboard row on the front wall, and no place-group: the four earlier cabinets keep their place (x 1139 to 3139, the countertop reaching the right wall) and the row runs from x 639 to 3248, clear of the door opening (x -1699 to 401)"
-    },
-    {
-      "id": "order-data-kitchen",
-      "title": "Order data of the kitchen",
-      "plan": "three-tall-units",
-      "prompt": "show me the order data of the kitchen",
-      "expect": "one get-order-data call; the answer reports the order data of the plan's kitchen group"
-    },
-    {
-      "id": "plan-images-kitchen",
-      "title": "Images of the kitchen",
-      "plan": "three-tall-units",
-      "prompt": "show me the kitchen from above and in perspective",
-      "expect": "one get-plan-images call; the answer shows the group view - the kitchen alone, seen from its front - and the top view of the plan"
-    },
-    {
-      "id": "open-cabinet-look-inside",
-      "title": "Open one cabinet to look inside",
-      "plan": "three-tall-units",
-      "prompt": "open the middle cabinet and show me what is inside",
-      "expect": "one open-or-close-article call on the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa with open true, then get-plan-images: the group view shows the middle cabinet with its door open and its shelves inside, the first and the last cabinet closed; the plan is unchanged - no plan-changing tool call, undo has nothing to revert"
-    },
-    {
-      "id": "open-whole-kitchen",
-      "title": "Open every door of the kitchen",
-      "plan": "three-tall-units",
-      "prompt": [
-        "open all doors of the kitchen and show it to me",
-        "close them again"
-      ],
-      "expect": "turn 1: one open-or-close-group call on group 064a7d91-b583-4883-b71b-95c324d3d824 with open true, then get-plan-images: all three doors are open in the images; turn 2: one open-or-close-group call on the same group with open false, all doors closed; no plan-changing tool call in either turn"
-    },
-    {
-      "id": "edit-add-subarticle-look-inside",
-      "title": "Add a shelf and look at it",
-      "plan": "three-tall-units",
-      "prompt": "add one more shelf inside the middle cabinet and show me the inside of the cabinet",
-      "expect": "get-interior-design-options on group 064a7d91-b583-4883-b71b-95c324d3d824 for the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa; one add-interior-fitting of a compatible shelf article into the middle unit; open-or-close-article on the middle unit with open true before get-plan-images; the group view shows the open middle cabinet with the added shelf; the three cabinets keep their place, finishes and docking"
-    },
-    {
-      "id": "open-cabinet-without-doors",
-      "title": "Open a wardrobe that has no doors",
-      "plan": "three-open-wardrobes-with-shelves",
-      "prompt": "open the doors of the left wardrobe",
-      "expect": "one open-or-close-article call on the left wardrobe ab0737ab-a681-48ed-995b-46ee788a2329 (or open-or-close-group on group ce854b3e-90d6-4e65-ba7b-461e125cc8da); the result's corrections name it as having no doors or drawers that open, and the answer tells the user that the open wardrobe has no doors; no plan-changing tool call"
-    },
-    {
-      "id": "image-only-tall-units",
-      "title": "Image only, no text: tall units",
-      "plan": "default-room",
-      "image": "docs/images/three-tall-units.png",
-      "expect": "the model fetches the skill image-planning, identifies the furniture as tall units (a wardrobe or cabinet), not a kitchen, and plans it as close to the image as possible: three tall units side by side; no sink, hob, oven, worktop or base units"
-    },
-    {
-      "id": "image-kitchen-left-wall",
-      "title": "Image: kitchen on the left-hand wall",
-      "plan": "default-room",
-      "prompt": "create a kitchen like the one in the image on the left-hand wall of the room",
-      "image": "docs/images/kitchen-1.png",
-      "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the kitchen of the image on the left-hand wall, in the order of the image; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
-    },
-    {
-      "id": "image-kitchen-back-right-corner",
-      "title": "Image: kitchen in the back right corner",
-      "plan": "default-room",
-      "prompt": "create a kitchen like the one shown in the image, in the back right corner of the room",
-      "image": "docs/images/kitchen-2.png"
-    },
-    {
-      "id": "image-planning-right-wall",
-      "title": "Image: planning on the right-hand wall",
-      "plan": "default-room",
-      "prompt": "create a planning as to the one shown in the picture on the right-hand wall of the room.",
-      "image": "docs/images/kitchen-3.jpeg",
-      "expect": "the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
-    },
-    {
-      "id": "image-only-no-text",
-      "title": "Image only, no text",
-      "plan": "default-room",
-      "image": "docs/images/kitchen-4.png",
-      "expect": "the model decides what to plan; the chat sends the image with the image prompt of the planner, which names the skill image-planning; the model fetches image-planning, and the kitchen skill for its checks, and plans the kitchen as close to the image as possible; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
-    },
-    {
-      "id": "kitchen-conversation",
-      "title": "Kitchen conversation: L-shaped kitchen, fronts, larder, island, sloping ceiling",
-      "plan": "default-room",
-      "prompt": [
-        "Plan a modern L-shaped kitchen for a family of four.",
-        "Replace all fronts with natural oak.",
-        "Add a pull-out larder unit on the left wall.",
-        "Change the kitchen to a 3.8 m row along one wall with a cooking island, country-house style, budget €15,000",
-        "Only handleless fronts and dark colors",
-        "I have a room with a sloping ceiling and need a lot of storage space",
-        "Add a pull-out larder unit"
-      ],
-      "expect": "turn 1: one kitchen group around a corner, a leg on each of two walls, with sink, hob and range hood, oven, fridge, dishwasher and storage for four (drawer units, wall units, a tall unit), modern fronts; turn 2: change-group-attribute, an oak mod_FrontColor (Oak 222) on every unit; turn 3: a tall unit with pull-outs (e.g. HT2AB60 or HTS2AB60) against the left wall - merge-article-into-group at the end of the kitchen's leg where the kitchen reaches the left wall, otherwise a group of its own - overlapping neither the window nor the door; turn 4: the L-shaped kitchen is replaced by a kitchen row of at most 3800 mm on one wall and a separate island group that carries the hob, country-house fronts (e.g. Oak), get-price is called and the answer compares the total with the €15,000 budget; turn 5: handleless units (the Kitchen handleless articles, e.g. US2A60 to EUS2A60, where a variant exists) and a dark mod_FrontColor on every unit; turn 6: the room has no sloping ceiling - the answer says so or asks where it is, and any storage it adds fits the walls; turn 7: one more tall unit with pull-outs at a free end of a row"
-    },
-    {
-      "id": "kitchen-family-two-kids",
-      "title": "Kitchen for a family with two kids",
-      "plan": "default-room",
-      "prompt": "create a kitchen for a family with 2 kids"
-    },
-    {
-      "id": "utility-room-open-wall-units",
-      "title": "Utility base row and open wall units",
-      "plan": "utility-room",
-      "prompt": [
-        "Plan the utility room on the right wall: a tall unit with one door and two base units with one door each.",
-        "Add an open wall unit above each of the two base units, with 500 mm of clear space below each wall unit."
-      ],
-      "expect": "One group retains its right-wall floor row. Two open utility wall units are added above the two base units with 500 mm clearance, without being put into the floor row or requiring undo and merge recovery. Their actual bottom heights and returned docking determine mounting; category alone does not."
+  "categories": [
+    {
+      "category": "mcp tools",
+      "tests": [
+        {
+          "id": "place-group-move-kitchen",
+          "title": "Move the kitchen to the left wall",
+          "plan": "three-tall-units",
+          "prompt": "move the kitchen to the left wall",
+          "expect": "one place-group call on the existing group with wall left; the group keeps its three units and stands against the left wall"
+        },
+        {
+          "id": "attributes-find-front-colour",
+          "title": "Find the front colour attribute",
+          "plan": "three-tall-units",
+          "prompt": "which front colours can I choose for the kitchen?",
+          "expect": "one find-attributes call for the front colour; the answer lists the available front colour values of the library and names the attribute"
+        },
+        {
+          "id": "undo-last-change",
+          "title": "Undo the last change",
+          "plan": "three-tall-units",
+          "prompt": ["delete the middle unit", "undo the last change"],
+          "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: undo: one group of three tall units again"
+        },
+        {
+          "id": "redo-last-change",
+          "title": "Redo the undone change",
+          "plan": "three-tall-units",
+          "prompt": [
+            "delete the middle unit",
+            "undo the last change",
+            "redo that"
+          ],
+          "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: undo: one group of three tall units again; turn 3: redo: the middle unit removed again, two groups"
+        },
+        {
+          "id": "undo-a-wrong-command",
+          "title": "Undo a wrong command",
+          "plan": "three-tall-units",
+          "prompt": [
+            "delete the middle unit",
+            "that was the wrong unit - remove the last unit, not the middle one"
+          ],
+          "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: undo, then delete-article-and-compact or delete-article-in-place on the last unit: one group of the first two units; the newly exposed right-end single door is hinged right, and the left end keeps its input setting"
+        },
+        {
+          "id": "order-data-kitchen",
+          "title": "Order data of the kitchen",
+          "plan": "three-tall-units",
+          "prompt": "show me the order data of the kitchen",
+          "expect": "one get-order-data call; the answer reports the order data of the plan's kitchen group"
+        },
+        {
+          "id": "plan-images-kitchen",
+          "title": "Images of the kitchen",
+          "plan": "three-tall-units",
+          "prompt": "show me the kitchen from above and in perspective",
+          "expect": "one get-plan-images call; the answer shows the group view - the kitchen alone, seen from its front - and the top view of the plan"
+        },
+        {
+          "id": "open-cabinet-look-inside",
+          "title": "Open one cabinet to look inside",
+          "plan": "three-tall-units",
+          "prompt": "open the middle cabinet and show me what is inside",
+          "expect": "one open-or-close-article call on the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa with open true, then get-plan-images: the group view shows the middle cabinet with its door open and its shelves inside, the first and the last cabinet closed; the plan is unchanged - no plan-changing tool call, undo has nothing to revert"
+        },
+        {
+          "id": "open-whole-kitchen",
+          "title": "Open every door of the kitchen",
+          "plan": "three-tall-units",
+          "prompt": [
+            "open all doors of the kitchen and show it to me",
+            "close them again"
+          ],
+          "expect": "turn 1: one open-or-close-group call on group 064a7d91-b583-4883-b71b-95c324d3d824 with open true, then get-plan-images: all three doors are open in the images; turn 2: one open-or-close-group call on the same group with open false, all doors closed; no plan-changing tool call in either turn"
+        },
+        {
+          "id": "open-cabinet-without-doors",
+          "title": "Open a wardrobe that has no doors",
+          "plan": "three-open-wardrobes-with-shelves",
+          "prompt": "open the doors of the left wardrobe",
+          "expect": "one open-or-close-article call on the left wardrobe ab0737ab-a681-48ed-995b-46ee788a2329 (or open-or-close-group on group ce854b3e-90d6-4e65-ba7b-461e125cc8da); the result's corrections name it as having no doors or drawers that open, and the answer tells the user that the open wardrobe has no doors; no plan-changing tool call"
+        }
+      ]
+    },
+    {
+      "category": "group edit",
+      "tests": [
+        {
+          "id": "two-wardrobes-add-third",
+          "title": "Add a third wardrobe",
+          "plan": "two-wardrobes-right-wall",
+          "prompt": "add a third wardrobe next to the two on the right wall",
+          "expect": "one create-or-replace-groups call that extends the existing group by one wardrobe docked to its free side; three wardrobes in a row on the right wall"
+        },
+        {
+          "id": "edit-change-one-unit",
+          "title": "Change one unit",
+          "plan": "three-tall-units",
+          "prompt": "make the first unit 900 mm wide",
+          "expect": "change-module-attribute: mod_Width 900 on the first unit"
+        },
+        {
+          "id": "edit-change-whole-kitchen",
+          "title": "Change the whole kitchen",
+          "plan": "three-tall-units",
+          "prompt": "make the fronts of the whole kitchen white",
+          "expect": "change-group-attribute: a white mod_FrontColor on every unit"
+        },
+        {
+          "id": "edit-add-one-unit",
+          "title": "Add one unit",
+          "plan": "three-tall-units",
+          "prompt": "add a cabinet with drawers to the right of the kitchen",
+          "expect": "merge-article-into-group: a drawer cabinet at the front end of the row"
+        },
+        {
+          "id": "edit-remove-unit",
+          "title": "Remove a unit and leave the gap",
+          "plan": "three-tall-units",
+          "prompt": "remove the middle cabinet and leave the gap; keep the other two cabinets where they are",
+          "expect": "delete-article-in-place on the middle cabinet: two groups of one cabinet each, both in their original positions, with the 600 mm gap left between them"
+        },
+        {
+          "id": "edit-delete-unit",
+          "title": "Remove a unit and close the gap",
+          "plan": "three-tall-units",
+          "prompt": "remove the middle cabinet and close the gap by moving the last cabinet next to the first; keep the cabinet in the back corner where it is",
+          "expect": "delete-article-and-compact on the middle cabinet: one group of the two remaining cabinets docked together with no gap; the first cabinet stays in the back right corner and the last moves 600 mm towards it; both cabinets keep their attributes"
+        },
+        {
+          "id": "edit-delete-group",
+          "title": "Delete a group",
+          "plan": "three-tall-units",
+          "prompt": "delete the kitchen",
+          "expect": "delete-group: the plan has no groups"
+        },
+        {
+          "id": "edit-replace-unit",
+          "title": "Replace a unit",
+          "plan": "three-tall-units",
+          "prompt": "replace the middle unit with a cabinet with drawers",
+          "expect": "exchange-root-module: the middle unit becomes a drawer cabinet, the row stays"
+        },
+        {
+          "id": "edit-replace-unit-wider",
+          "title": "Replace a unit with a wider one",
+          "plan": "three-tall-units",
+          "prompt": "replace the middle unit with a 900 mm wide tall cabinet with drawers",
+          "expect": "one exchange-root-module with mod_Width 900 in its attributes: the row is 2100 mm, the back end stays at z -3765"
+        },
+        {
+          "id": "edit-insert-unit",
+          "title": "Insert a unit",
+          "plan": "three-tall-units",
+          "prompt": "insert a cabinet with drawers between the first and the second unit",
+          "expect": "insert-article-into-group between the first and the middle unit: one group of four, the back end stays at z -3765, the row grows to the front by the unit's width"
+        },
+        {
+          "id": "edit-insert-low-between-high",
+          "title": "Insert a low cabinet between the high cabinets",
+          "plan": "two-wardrobes-right-wall",
+          "prompt": "insert a low cabinet between the high cabinets",
+          "expect": "one insert-article-into-group call between the two wardrobes with a base cabinet (e.g. UTB60): one group of three root modules, the wardrobes keep their article, no new group, no replace, no exchange; the group's pos stays [4815, 0, -2563.1]"
+        },
+        {
+          "id": "edit-insert-below-wall-units",
+          "title": "Insert a unit below wall units",
+          "plan": "corner-kitchen-wall-units",
+          "prompt": "insert a narrow base unit with drawers between the hob unit and the drawer unit next to the fridge",
+          "expect": "insert-article-into-group of a narrow drawer unit (e.g. US2A30) between the hob unit and the drawer unit next to the tall fridge unit on the right leg: the corner unit stays in the corner, the right leg grows to the front by the new unit's width and the tall fridge unit stays clear of the door, the range hood stays above the hob unit, the wall unit above the shifted drawer unit moves with it; the answer names the moved wall unit"
+        },
+        {
+          "id": "edit-remove-next-to-corner",
+          "title": "Remove the unit next to the corner",
+          "plan": "corner-kitchen-wall-units",
+          "prompt": "remove the base unit next to the corner unit on the right wall and close the gap",
+          "expect": "delete-article-and-compact of the drawer unit next to the corner: the gap closes towards the corner, the corner unit stays, the hob unit moves into the gap with the range hood; the wall unit above the removed unit keeps its place and the answer says so"
+        },
+        {
+          "id": "edit-remove-corner-unit",
+          "title": "Remove the corner unit",
+          "plan": "corner-kitchen-wall-units",
+          "prompt": "remove the corner unit and close the gap",
+          "expect": "delete-article-and-compact of the corner unit: one group; one leg turns by 90 degrees with its wall units and is docked to the other, so the legs form one straight row; the answer says which leg turned"
+        },
+        {
+          "id": "edit-swap-hob-unit",
+          "title": "Swap the hob unit",
+          "plan": "corner-kitchen-wall-units",
+          "prompt": "swap the hob unit and the sink unit",
+          "expect": "swap-root-modules: the hob unit and the sink unit change places, the range hood stays above the hob unit and the wall unit above the sink moves with it"
+        },
+        {
+          "id": "edit-join-groups",
+          "title": "Join groups",
+          "plan": "three-tall-units",
+          "prompt": [
+            "delete the middle unit",
+            "join the two groups on the right wall"
+          ],
+          "expect": "turn 1: delete-article-in-place, the kitchen splits into two groups; turn 2: merge-groups: one group with both units"
+        },
+        {
+          "id": "edit-swap-units",
+          "title": "Swap two units",
+          "plan": "three-tall-units",
+          "prompt": [
+            "make the last unit 900 mm wide",
+            "swap the first and the last unit"
+          ],
+          "expect": "turn 1: change-module-attribute: mod_Width 900 on the last unit; a calculation diagnostic requires correcting incompatible retained attributes before proceeding, with built front geometry and docking vectors; turn 2: swap-root-modules: the 900 mm unit stands in the back corner, the row stays contiguous at 2100 mm and its back end at z -3765; the widened paired-door unit has both outer hinges, the single door at the new right end is hinged right, with unrelated door settings unchanged; a dropped docking, refused or undone swap does not pass"
+        },
+        {
+          "id": "sideboard-row-one-more-cabinet",
+          "title": "One more cabinet for the sideboard row",
+          "plan": "open-plan-room",
+          "prompt": "add one more cabinet of the same kind to the sideboard row on the front wall",
+          "expect": "one merge-article-into-group that docks a fifth SB_UB600 at the door end of the sideboard row on the front wall, and no place-group: the four earlier cabinets keep their place (x 1139 to 3139, the countertop reaching the right wall) and the row runs from x 639 to 3248, clear of the door opening (x -1699 to 401)"
+        }
+      ]
+    },
+    {
+      "category": "door hinge",
+      "tests": [
+        {
+          "id": "wardrobe-door-hinges",
+          "title": "Door hinges at the ends of a wardrobe",
+          "plan": "closets",
+          "prompt": "add a wardrobe of four cabinets with one door each to the right wall",
+          "expect": "one create-or-replace-groups call with a placement by wall (wall right); one group of four single-door wardrobe cabinets in a row; mod_DoorDirectionSelection Left in the attributes of the root module at the left end and Right in those of the root module at the right end, the two in the middle unchanged; no handle on the outside of the row"
+        },
+        {
+          "id": "edit-swap-door-hinges",
+          "title": "Door hinges after swapping the ends without resizing",
+          "plan": "three-tall-units",
+          "prompt": "swap the first and the last unit",
+          "expect": "swap-root-modules completes without a preceding width change: the former last unit is first and the former first unit last; the row stays 1800 mm with its back end at z -3765; the new left-end single door is hinged left and the right-end door right, with unrelated inputs unchanged; check final attributes and handles, including when get-authoring-rules is not called"
+        },
+        {
+          "id": "wardrobe-swap-door-hinges",
+          "title": "Swap the ends of a correctly hinged wardrobe",
+          "plan": "closets",
+          "prompt": [
+            "add a wardrobe of three cabinets with one door each, 400 mm wide each, to the right wall",
+            "swap the first and the last cabinet"
+          ],
+          "expect": "turn 1: one row of three 400 mm single-door wardrobe cabinets, left end hinged left and right end right; turn 2: the end cabinets change places and their door settings are corrected for their new ends; the row stays 1200 mm and the middle cabinet keeps its door input; verify both turns rather than inferring the initial hinges from the final plan"
+        },
+        {
+          "id": "wardrobe-split-door-hinges",
+          "title": "Door hinges at both ends exposed by a middle deletion",
+          "plan": "closets",
+          "prompt": [
+            "add a wardrobe of five cabinets with one door each, 400 mm wide each, to the right wall",
+            "delete the middle cabinet and leave the gap"
+          ],
+          "expect": "turn 1: five 400 mm single-door wardrobe cabinets in one row with outer hinges; turn 2: delete-article-in-place splits it into two two-cabinet rows where they stand, with a 400 mm gap; the newly exposed right end of the left row hinges right and the new left end of the right row hinges left; unchanged original outer ends keep their settings; evaluate each row separately"
+        },
+        {
+          "id": "wardrobe-exchange-end-door-hinge",
+          "title": "Door hinge after replacing a wardrobe end",
+          "plan": "closets",
+          "prompt": [
+            "add a wardrobe of three cabinets with one door each, 400 mm wide each, to the right wall",
+            "replace the last cabinet with a single-door kitchen pantry cabinet of the same width"
+          ],
+          "expect": "turn 1: three 400 mm single-door wardrobe cabinets, left end hinged left and right end right; turn 2: exchange-root-module replaces the right end with a single-door pantry article at 400 mm; its door hinges right through an explicit override or a targeted follow-up, and the first two cabinets keep their inputs and positions"
+        },
+        {
+          "id": "edit-swap-paired-door-hinges",
+          "title": "Keep paired-door arrangements when swapping ends",
+          "plan": "default-room",
+          "prompt": [
+            "add three base cabinets, each with a pair of doors side by side, to the left wall",
+            "swap the first and the last cabinet"
+          ],
+          "expect": "turn 1: one row of three cabinets with paired doors hinged at their two outer sides; turn 2: the end cabinets change places and retain the library-valid paired-door arrangement (Furniture_Smith LeftRight), with handles meeting in the middle; no single-door Left or Right input on a paired-door article, no calculation failure"
+        },
+        {
+          "id": "edit-exchange-drawer-end",
+          "title": "A drawer-only end receives no invented door setting",
+          "plan": "default-room",
+          "prompt": [
+            "add three base cabinets with one door each to the left wall",
+            "replace the last cabinet with a cabinet with only drawers, of the same width"
+          ],
+          "expect": "turn 1: one row of three single-door cabinets with outer hinges; turn 2: exchange-root-module replaces the right end with a drawer-only article of the same width; no door-direction input is invented for the drawer-only root, and the other cabinets keep their door settings and positions"
+        },
+        {
+          "id": "wardrobe-extend-door-hinge",
+          "title": "A new end of a wardrobe",
+          "plan": "closets",
+          "prompt": [
+            "add a wardrobe of three cabinets with one door each to the right wall",
+            "add one more cabinet at its right end"
+          ],
+          "expect": "turn 1: one create-or-replace-groups call with a placement by wall (wall right); three single-door wardrobe cabinets in a row, mod_DoorDirectionSelection Left on the root module at the left end and Right on the one at the right end; turn 2: one edit that adds a single-door cabinet at the right end of the group (merge-article-into-group, or a replace of the group); the new end has mod_DoorDirectionSelection Right, the former end keeps Right; no handle on the outside of the row"
+        }
+      ]
+    },
+    {
+      "category": "sub article",
+      "tests": [
+        {
+          "id": "edit-add-subarticle",
+          "title": "Add a shelf sub-article to the right wardrobe",
+          "plan": "three-open-wardrobes-with-shelves",
+          "prompt": "add a shelf to the middle of the right-most carcass of the wardrobe",
+          "expect": "get-interior-design-options discovers a compatible FixedShelf article and current destination in right root 22e7519d-4218-46e4-b1a5-5c92934ad420 of group ce854b3e-90d6-4e65-ba7b-461e125cc8da; add-interior-fitting adds exactly one new installed instance there, at about half the height of the cabinet's interior (an insertPosition, or the library default when it already stands there). Four shelf sub-articles remain: one in the left wardrobe, one in the middle, two in the right. All three original shelves, cabinet identities, placement, finishes and docking remain unchanged; the result reports the new instance ID and actual placement."
+        },
+        {
+          "id": "edit-delete-subarticle",
+          "title": "Delete the shelf sub-article from the left wardrobe",
+          "plan": "three-open-wardrobes-with-shelves",
+          "prompt": "delete the shelf from the leftmost cabinet",
+          "expect": "get-interior-design-options identifies installed FixedShelf instance 037ab69e-8475-4418-b6db-df6738b91df1 in left root ab0737ab-a681-48ed-995b-46ee788a2329; delete-interior-fittings removes only that instance. The group still contains all three wardrobe cabinets at their original positions with unchanged finishes and docking, with no shelf in the left wardrobe and the original shelf in each of the middle and right wardrobes. No cabinet or whole group is deleted."
+        },
+        {
+          "id": "edit-move-subarticle",
+          "title": "Move a shelf sub-article down in the middle wardrobe",
+          "plan": "three-open-wardrobes-with-shelves",
+          "prompt": "move the shelf inside the middle cabinet down by 500 mm",
+          "expect": "get-interior-design-options identifies installed FixedShelf instance 19d07551-c89b-43ee-8caa-e4c2bef10fb6 and its measured position in middle root 7b8bd635-7f19-4e3c-b280-95b91d4c4916 of group ce854b3e-90d6-4e65-ba7b-461e125cc8da; one move-interior-fitting keeps it in its current parent (destination omitted or the same) with an insertPosition 500 mm lower in y than the measured position, x and z unchanged. The returned actual placement is 500 mm lower; a library adjustment of the height is reported in the corrections. Three shelf sub-articles remain, one in each wardrobe. Recreation may change the moved instance ID; use the returned identity. Compatible settings are retained or resets reported. Cabinet identities, placement, finishes, docking and the left and right shelves remain unchanged; no transfer to another cabinet, no separate delete/add commands or whole-cabinet move."
+        },
+        {
+          "id": "edit-add-move-delete-subarticle",
+          "title": "Add, move and delete shelf sub-articles over three turns",
+          "plan": "three-open-wardrobes-with-shelves",
+          "prompt": [
+            "add a shelf to the middle of the left-most carcass of the wardrobe",
+            "move the shelf inside the right-most cabinet down by 500 mm",
+            "delete the shelf from the middle cabinet"
+          ],
+          "expect": "turn 1: get-interior-design-options on group ce854b3e-90d6-4e65-ba7b-461e125cc8da, then one add-interior-fitting of a compatible FixedShelf into left root ab0737ab-a681-48ed-995b-46ee788a2329, at about half the height of the cabinet's interior; the original left shelf 037ab69e-8475-4418-b6db-df6738b91df1 stays; shelves left / middle / right 2 / 1 / 1. turn 2: one move-interior-fitting of right shelf c585292d-26f7-41da-92ff-50a278161f95 in right root 22e7519d-4218-46e4-b1a5-5c92934ad420, in its current parent, with an insertPosition 500 mm lower in y than its measured position, x and z unchanged; the returned actual placement is 500 mm lower, a library adjustment is reported; shelves 2 / 1 / 1. turn 3: one delete-interior-fittings of only middle shelf 19d07551-c89b-43ee-8caa-e4c2bef10fb6 in middle root 7b8bd635-7f19-4e3c-b280-95b91d4c4916; shelves 2 / 0 / 1, the two left shelves and the moved right shelf where turns 1 and 2 put them. Recreation may change instance IDs; the agent uses the returned IDs or discovers them again. Every turn keeps the three cabinets, their placement, finishes and docking; no cabinet or whole group is deleted, no separate delete/add commands for the move."
+        },
+        {
+          "id": "edit-add-subarticle-look-inside",
+          "title": "Add a shelf and look at it",
+          "plan": "three-tall-units",
+          "prompt": "add one more shelf inside the middle cabinet and show me the inside of the cabinet",
+          "expect": "get-interior-design-options on group 064a7d91-b583-4883-b71b-95c324d3d824 for the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa; one add-interior-fitting of a compatible shelf article into the middle unit; open-or-close-article on the middle unit with open true before get-plan-images; the group view shows the open middle cabinet with the added shelf; the three cabinets keep their place, finishes and docking"
+        }
+      ]
+    },
+    {
+      "category": "water supply",
+      "tests": [
+        {
+          "id": "installation-elements-supplies",
+          "title": "The supplies of the room are installation elements",
+          "plan": "room-with-supplies",
+          "prompt": "which electric plugs and water connections are in the room? add a base cabinet in front of the plug",
+          "expect": "the answer lists the plug and the water connection, both on the left wall, with the positions of the installationElements section and none in the obstacles; one base cabinet group against the left wall standing on the plug, with no overlap hint - a supply is no obstacle - while the light switch on the back wall stays an obstacle object"
+        },
+        {
+          "id": "sink-cabinet-at-water-connection",
+          "title": "A cabinet with a sink at the water connection",
+          "plan": "empty-room-with-water-connection",
+          "prompt": "add a cabinet with a sink",
+          "expect": "one group with a sink cabinet standing at the water connection whose position the installationElements section lists; the answer names the water connection"
+        },
+        {
+          "id": "kitchen-oven-hood-sink-fridge-corner",
+          "title": "Oven, range hood, sink, fridge in the corner",
+          "plan": "empty-room-with-water-connection",
+          "prompt": "plan a kitchen with an oven, a hob, a range hood, a sink and a fridge"
+        }
+      ]
+    },
+    {
+      "category": "obstacle",
+      "tests": [
+        {
+          "id": "attic-room-tall-units-right-wall",
+          "title": "Tall units on the right wall of the attic room",
+          "plan": "room-and-attic",
+          "prompt": "add three tall units to the right wall",
+          "expect": "one create-or-replace-groups call with a placement by wall (wall right, centred); one group of three tall units with their backs against the right wall, inside the room and clear of the attic"
+        },
+        {
+          "id": "attic-room-storage-under-slope",
+          "title": "Storage units under the attic slope",
+          "plan": "room-and-attic",
+          "prompt": "add low storage units along the wall under the attic slope",
+          "expect": "one create-or-replace-groups call with a placement by wall; one group of low storage units against the wall under the slope, inside the room and clear of the attic"
+        },
+        {
+          "id": "obstacle-window-back-wall",
+          "title": "Base and wall cabinets on the window wall",
+          "plan": "default-room",
+          "prompt": "add four base cabinets with wall cabinets above them on the back wall",
+          "expect": "one group against the back wall: the base cabinets may run below the window (bottomMm 950), no wall cabinet and no tall unit overlaps the window's span x -450 to 1650 (fromEndMm 235 to 2335 of the back wall); the answer names the window"
+        },
+        {
+          "id": "obstacle-back-wall-beside-the-sofa",
+          "title": "Tall cabinets on a furnished wall",
+          "plan": "open-plan-room",
+          "prompt": "add two tall cabinets on the back wall",
+          "expect": "one group of two tall units against the back wall in its free stretch between the side table next to the sofa and the door (x -1021 to 590): it overlaps neither the sofa, the side table nor the door opening"
+        },
+        {
+          "id": "obstacle-island-free-spot",
+          "title": "A kitchen island in a furnished room",
+          "plan": "open-plan-room",
+          "prompt": "add a kitchen island of three base cabinets in a free spot of the room",
+          "expect": "one new group of three base units away from the walls whose root modules overlap no object (dining table, chairs, rug, plant, sofa) and no other group"
+        }
+      ]
+    },
+    {
+      "category": "kitchen",
+      "tests": [
+        {
+          "id": "kitchen-back-right-corner",
+          "title": "Kitchen in the back right corner",
+          "plan": "default-room",
+          "prompt": "plan a kitchen in the back right corner of the room"
+        },
+        {
+          "id": "kitchen-oven-fridge-sink-corner",
+          "title": "Oven, fridge, sink in the corner",
+          "plan": "default-room",
+          "prompt": "plan a kitchen with an oven, a hob, a range hood, a sink and a fridge in the back right corner of the room"
+        },
+        {
+          "id": "full-kitchen-walnut-marble-corner",
+          "title": "Full kitchen, walnut, dark marble, around the corner",
+          "plan": "default-room",
+          "prompt": "create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room. Arrange the kitchen around the corner. The front of the kitchen should be made of walnut and the worktop should be made of dark marble",
+          "expect": "appliances: oven, hob, cooker hood, fridge, sink; storage: cabinet with drawers, wall cabinets; placement: back right corner, around the corner; materials: walnut front, dark marble worktop"
+        },
+        {
+          "id": "kitchen-family-two-kids",
+          "title": "Kitchen for a family with two kids",
+          "plan": "default-room",
+          "prompt": "create a kitchen for a family with 2 kids"
+        }
+      ]
+    },
+    {
+      "category": "cabinet",
+      "tests": [
+        {
+          "id": "three-tall-units-right-wall",
+          "title": "Three tall units, right wall",
+          "plan": "default-room",
+          "prompt": "add a group of three tall units to the wall on the right"
+        },
+        {
+          "id": "four-cabinets-back-wall",
+          "title": "Four cabinets, back wall",
+          "plan": "default-room",
+          "prompt": "add a group of 4 cabinets to the wall in the back"
+        },
+        {
+          "id": "four-cabinets-centred-back-wall",
+          "title": "Four base cabinets, centred on the back wall",
+          "plan": "default-room",
+          "prompt": "add a row of four base cabinets centred on the back wall",
+          "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of four base cabinets with its back against the back wall, centred on it (the back wall runs from x -685 to 4815), inside the room"
+        }
+      ]
+    },
+    {
+      "category": "closet",
+      "tests": [
+        {
+          "id": "wardrobe-closets-back-wall",
+          "title": "Wardrobes on the back wall",
+          "plan": "closets",
+          "prompt": "add two wardrobes to the back wall",
+          "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of two tall wardrobe units with their backs against the back wall, inside the room"
+        },
+        {
+          "id": "closets-two-wardrobes-corner",
+          "title": "Two wardrobes in the corner of the closet room",
+          "plan": "closets",
+          "prompt": "put two wardrobes into the back right corner",
+          "expect": "one create-or-replace-groups call with a placement by wall and alignment into the corner (wall right, alignment back); one group of two tall wardrobe units flush in the back right corner"
+        }
+      ]
+    },
+    {
+      "category": "media unit",
+      "tests": [
+        {
+          "id": "media-unit-left-wall",
+          "title": "A media unit on the left wall",
+          "plan": "default-room",
+          "prompt": "add a low media unit with a few cabinets to the wall on the left",
+          "expect": "one create-or-replace-groups call with a placement by wall (wall left, centred); one group of low cabinets with its back against the left wall, centred on it (the left wall runs from z -3765 to 1235), inside the room"
+        },
+        {
+          "id": "sideboard-living-room-front-wall",
+          "title": "A sideboard on the back wall beside the armchairs",
+          "plan": "living-room",
+          "prompt": "add a sideboard of three low cabinets to the backside wall beside the armchairs",
+          "expect": "no question back; one create-or-replace-groups call with a placement by wall (the back wall, wall 1: z -3765, x -3185 to 1935); one group of three low cabinets with its back against the back wall on its stretch next to the two armchairs (x -2764 to -1449), inside the room, overlapping neither the armchairs, the side table between them, the rug (z from -2540) nor another object"
+        },
+        {
+          "id": "living-room-sideboard-and-tv",
+          "title": "A sideboard and a TV unit in the living room",
+          "plan": "living-room",
+          "prompt": "add a sideboard to the front wall and a low TV unit to the back wall",
+          "expect": "create-or-replace-groups creates two groups, in one batched call or separate calls, each with a placement by wall: one sideboard group on the front wall and one low TV unit group on the back wall, both inside the room"
+        }
+      ]
+    },
+    {
+      "category": "utility room",
+      "tests": [
+        {
+          "id": "utility-room-cabinets-left-wall",
+          "title": "Utility room cabinets on the left wall",
+          "plan": "utility-room",
+          "prompt": "add a row of three base cabinets with a worktop to the left wall",
+          "expect": "one create-or-replace-groups call with a placement by wall (wall left, centred); one group of three base cabinets with their backs against the left wall, inside the room"
+        },
+        {
+          "id": "utility-room-washer-and-sink",
+          "title": "A washer and a sink in the utility room",
+          "plan": "utility-room",
+          "prompt": "add a washer and a sink cabinet to the back wall",
+          "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of a washer and a sink cabinet with their backs against the back wall, inside the room"
+        },
+        {
+          "id": "utility-room-open-wall-units",
+          "title": "Utility base row and open wall units",
+          "plan": "utility-room",
+          "prompt": [
+            "Plan the utility room on the right wall: a tall unit with one door and two base units with one door each.",
+            "Add an open wall unit above each of the two base units, with 500 mm of clear space below each wall unit."
+          ],
+          "expect": "One group retains its right-wall floor row. Two open utility wall units are added above the two base units with 500 mm clearance, without being put into the floor row or requiring undo and merge recovery. Their actual bottom heights and returned docking determine mounting; category alone does not."
+        }
+      ]
+    },
+    {
+      "category": "planning from images",
+      "tests": [
+        {
+          "id": "image-only-tall-units",
+          "title": "Image only, no text: tall units",
+          "plan": "default-room",
+          "image": "docs/images/three-tall-units.png",
+          "expect": "the model fetches the skill image-planning, identifies the furniture as tall units (a wardrobe or cabinet), not a kitchen, and plans it as close to the image as possible: three tall units side by side; no sink, hob, oven, worktop or base units"
+        },
+        {
+          "id": "image-kitchen-left-wall",
+          "title": "Image: kitchen on the left-hand wall",
+          "plan": "default-room",
+          "prompt": "create a kitchen like the one in the image on the left-hand wall of the room",
+          "image": "docs/images/kitchen-1.png",
+          "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the kitchen of the image on the left-hand wall, in the order of the image; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
+        },
+        {
+          "id": "image-kitchen-back-right-corner",
+          "title": "Image: kitchen in the back right corner",
+          "plan": "default-room",
+          "prompt": "create a kitchen like the one shown in the image, in the back right corner of the room",
+          "image": "docs/images/kitchen-2.png",
+          "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the L-shaped kitchen of the image around the back right corner, one leg on the back wall and one on the right wall: the long leg with the tall units at its far end - among them one tall unit with the microwave built in above the oven - base units, a drawer unit below the hob, a chimney range hood above the hob and a wall unit on each side of the hood; the short leg with the sink unit at its end; anthracite fronts and a light oak worktop; no tall unit and no wall unit in front of the window (back wall, x -450 to 1650, bottom 950) - the base units may run below it - and nothing in the door opening (right wall, z 280 to 1180); the image shows no backsplash; the final answer accurately reports any remaining omission"
+        },
+        {
+          "id": "image-planning-right-wall",
+          "title": "Image: planning on the right-hand wall",
+          "plan": "default-room",
+          "prompt": "create a planning as to the one shown in the picture on the right-hand wall of the room.",
+          "image": "docs/images/kitchen-3.png",
+          "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the kitchen of the image: one row of five tall units against the right-hand wall, in the order of the image, between the back right corner and the door (right wall, z 280 to 1180), clear of the door opening - white fronts, two neighbouring tall units with oak fronts, one white tall unit with the oven built in; and a separate island group of base units free in the room in front of the row, parallel to it with a walkway between, carrying the hob and the sink; white fronts and a light grey stone worktop on the island; no wall units; the image shows no backsplash; the final answer accurately reports any remaining omission"
+        },
+        {
+          "id": "image-only-no-text",
+          "title": "Image only, no text",
+          "plan": "l-shaped-pass-through-room",
+          "image": "docs/images/kitchen-4.png",
+          "expect": "the model decides what to plan; the chat sends the image with the image prompt of the planner, which names the skill image-planning; the model fetches image-planning, and the kitchen skill for its checks, and plans the galley kitchen of the image as close to it as possible in the narrow wing of the L-shaped room, whose end wall has the window as in the image: one row along the left wall (x -780) from the window wall towards the door - the tall fridge unit, the sink unit, the dishwasher, the oven below the hob and drawer units, wall units above - and opposite it, along the wall at x 2220, base units with a worktop and a wall unit above them; under the window (top wall, x -330 to 1770, bottom 950) at most base units or a worktop, no tall unit and no wall unit in front of it; the passage between the two doors (left and right wall, z -210 to 690) stays free: no unit in a door opening or in the swing of the right door (x 3530 to 4420); cream fronts and a walnut worktop; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
+        }
+      ]
+    },
+    {
+      "category": "conversation",
+      "tests": [
+        {
+          "id": "kitchen-conversation",
+          "title": "Kitchen conversation: L-shaped kitchen, fronts, larder, island, sloping ceiling",
+          "plan": "default-room",
+          "prompt": [
+            "Plan a modern L-shaped kitchen for a family of four.",
+            "Replace all fronts with natural oak.",
+            "Add a pull-out larder unit on the left wall.",
+            "Change the kitchen to a 3.8 m row along one wall with a cooking island, country-house style, budget €15,000",
+            "Only handleless fronts and dark colors",
+            "I have a room with a sloping ceiling and need a lot of storage space",
+            "Add a pull-out larder unit"
+          ],
+          "expect": "turn 1: one kitchen group around a corner, a leg on each of two walls, with sink, hob and range hood, oven, fridge, dishwasher and storage for four (drawer units, wall units, a tall unit), modern fronts; turn 2: change-group-attribute, an oak mod_FrontColor (Oak 222) on every unit; turn 3: a tall unit with pull-outs (e.g. HT2AB60 or HTS2AB60) against the left wall - merge-article-into-group at the end of the kitchen's leg where the kitchen reaches the left wall, otherwise a group of its own - overlapping neither the window nor the door; turn 4: the L-shaped kitchen is replaced by a kitchen row of at most 3800 mm on one wall and a separate island group that carries the hob, country-house fronts (e.g. Oak), get-price is called and the answer compares the total with the €15,000 budget; turn 5: handleless units (the Kitchen handleless articles, e.g. US2A60 to EUS2A60, where a variant exists) and a dark mod_FrontColor on every unit; turn 6: the room has no sloping ceiling - the answer says so or asks where it is, and any storage it adds fits the walls; turn 7: one more tall unit with pull-outs at a free end of a row"
+        }
+      ]
     }
   ]
 }

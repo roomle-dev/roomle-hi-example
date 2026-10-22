@@ -23,6 +23,7 @@ const filter = skill.match(
   /jq --slurpfile random[\s\S]*? '\n([\s\S]*?)\n' "\$SESSION\/tests\.json"/
 )?.[1];
 const sampler = skill.match(/node -e '([^']+)' "\$SESSION\/tests\.json"/)?.[1];
+const testsOf = (suite) => suite.categories.flatMap(({ tests }) => tests);
 const random = Array.from({ length: 5 }, (_, i) => ({
   id: `random-${i + 1}-storage`,
   title: `Random: storage ${i + 1}`,
@@ -50,12 +51,17 @@ const fixture = async (t, { randomCount = 5 } = {}) => {
       random.map((item, i) => [item.plan, `ps_fixture_${i + 1}`])
     ),
     randomTests: randomCount,
-    tests: [
+    categories: [
       {
-        id: 'fixed-storage',
-        title: 'Fixed storage',
-        plan: random[0].plan,
-        prompt: 'Add storage',
+        category: 'storage',
+        tests: [
+          {
+            id: 'fixed-storage',
+            title: 'Fixed storage',
+            plan: random[0].plan,
+            prompt: 'Add storage',
+          },
+        ],
       },
     ],
   };
@@ -82,7 +88,7 @@ const fixture = async (t, { randomCount = 5 } = {}) => {
       await writeFile(
         caseFile,
         JSON.stringify(
-          suite.tests.map(() => ({
+          testsOf(suite).map(() => ({
             run: {
               planSnapshotId: 'ps_fixture',
               errors: [],
@@ -111,16 +117,19 @@ const fixture = async (t, { randomCount = 5 } = {}) => {
 test('composes and executes fixed and five random tests, then resumes unchanged', async (t) => {
   const f = await fixture(t);
   const suite = await f.compose();
-  assert.deepEqual(suite.tests, [...f.base.tests, ...random]);
+  assert.deepEqual(suite.categories, [
+    ...f.base.categories,
+    { category: 'random', tests: random },
+  ]);
   const prepared = await readFile(f.tests, 'utf8');
   const results = await f.run();
   assert.deepEqual(
     results.map((run) => run.test),
-    suite.tests.map((item) => item.id)
+    testsOf(suite).map((item) => item.id)
   );
   assert.deepEqual(
     results.map((run) => run.title),
-    suite.tests.map((item) => item.title)
+    testsOf(suite).map((item) => item.title)
   );
   assert.equal(results.filter((run) => run.random).length, 5);
   assert.ok(results.every((run) => run.exitCode === 0));
@@ -132,7 +141,7 @@ test('composes and executes fixed and five random tests, then resumes unchanged'
 
 test('keeps a focused session limited to its selected fixed tests', async (t) => {
   const f = await fixture(t, { randomCount: 0 });
-  assert.deepEqual((await f.compose()).tests, f.base.tests);
+  assert.deepEqual((await f.compose()).categories, f.base.categories);
   assert.equal((await f.run()).length, 1);
 });
 

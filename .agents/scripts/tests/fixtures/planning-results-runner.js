@@ -5,7 +5,8 @@ const cases = JSON.parse(process.env.PLANNING_RESULTS_CASES);
 const suite = JSON.parse(readFileSync(process.argv[2], 'utf8'));
 const out = process.argv[process.argv.indexOf('--out') + 1];
 const { provider } = suite.models[0];
-const runs = suite.tests.map((test, index) => {
+const tests = suite.categories.flatMap((category) => category.tests);
+const runs = tests.map((test, index) => {
   const { planSnapshotId = null, errors = [], files = [] } = cases[test.id];
   const dir = join(
     provider,

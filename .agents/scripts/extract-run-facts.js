@@ -83,6 +83,7 @@ const readRequiredJson = (path) => {
 };
 
 const suite = readRequiredJson(join(session, 'tests.json'));
+const tests = (suite.categories || []).flatMap((c) => c.tests || []);
 const results = readRequiredJson(join(session, 'results.json'));
 const runsByModelAndTest = new Map(
   (results.runs || []).map((r) => [`${r.model}/${r.test}`, r])
@@ -93,7 +94,7 @@ const models = suite.models?.length
 
 const runs = [];
 for (const model of models) {
-  (suite.tests || []).forEach((t, i) => {
+  tests.forEach((t, i) => {
     const run = runsByModelAndTest.get(`${model}/${t.id}`);
     if (!run) return;
     const nn = String(i + 1).padStart(2, '0');
@@ -158,7 +159,7 @@ const facts = {
   startedAt: results.startedAt || null,
   finishedAt: results.finishedAt || null,
   models,
-  tests: suite.tests || [],
+  tests,
   runs,
 };
 

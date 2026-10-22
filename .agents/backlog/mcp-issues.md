@@ -250,25 +250,25 @@ build is named in the result.
 ## 102. undo reverts nothing after a create the library calculated only in part
 
 **Problem.** The agent creates two groups in one `create-or-replace-groups`, and the library cannot
-calculate some of their root modules (`notLoaded`). The following `undo` makes no planner undo call
-and reverts nothing: both groups stay, and the agent changes their attributes instead of building
-them again.
+calculate root modules of every group (`notLoaded` names both). The following `undo` makes no planner
+undo call and reverts nothing: both groups stay, and the agent changes their attributes instead of
+building them again. With one group of the call in `notLoaded` — a one-group create, or a two-group
+create of which one group fails — the undo reverts the create.
 
 **Cause.** Not analysed. One plan-context read and no planner undo call mean that `revertToolCall`
 (`tool-executors.ts`) found no record of the create (`planHistory.lastDone()` empty). Either the
 create was not recorded, or a planner history event after the create's end — the library
 recalculating the root modules it could not calculate — counted as a change in the planner, which
-forgets every record (`PlanHistory.historyChanged`). An undo after a single-group create with roots
-in `notLoaded` reverts it (`kitchen-oven-hood-sink-fridge-corner` of the same session).
+forgets every record (`PlanHistory.historyChanged`).
 
 **To do.** roomle-ui: replay the run's create and undo against the local planner with the history
 events and the undo record logged, find why the record is missing, and make undo revert the whole
 create.
 
-**Test.** roomle-ui hi-mcp tests: an undo after a create of two groups with roots in `notLoaded`
-removes both groups.
+**Test.** roomle-ui hi-mcp tests: an undo after a create of two groups that both have roots in
+`notLoaded` removes both groups.
 
-**Reproduce.** `mcp-test-2026-10-22_07-57-33`, gpt-6-astra 10 (`image-only-no-text`, bo-test): after
-the create (two `posGroups` placed by wall 0 and wall 8, roots of `0120a6ea` in `notLoaded`), the
-`undo` logs only `call 7: getExternalObjectPlanContext` and no `undo []`; the groups `0120a6ea` and
-`17d43f5c` stay.
+**Reproduce.** `mcp-test-2026-10-22_09-29-56`, gpt-6-astra 10 (`image-only-no-text`, local roomle-ui
+`725e0dda3`): after the create (two `posGroups` placed by wall 0 and wall 8, both in `notLoaded`), the
+`undo` logs no `call N: undo` between its args and its feedback; the groups `9ed4ec9a` and `2702debf`
+stay.

@@ -335,7 +335,8 @@ geometry, retains the requested mode when original vectors are absent, and keeps
 transform when either whole docking footprint cannot be measured.
 
 - `delete-article-in-place`: deletes the unit and leaves the gap: units no longer docked together become
-  separate groups where they stand; deleting the only unit deletes the group; generated roots
+  separate groups where they stand, while a unit hanging above another one stays with it (D103);
+  deleting the only unit deletes the group; generated roots
   (worktop, toe kick) cannot be deleted
 - `delete-article-and-compact`: deletes the unit and closes the gap: its neighbours are docked to each
   other, the end of the row at a wall stays, a unit hung on it hangs on the neighbour that moves into

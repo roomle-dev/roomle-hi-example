@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [side-panel-missing-after-a-delete-and-an-undo.md](side-panel-missing-after-a-delete-and-an-undo.md) | Open | [MCP backlog item 101](../backlog/mcp-issues.md#101-a-side-panel-the-agent-sent-is-missing-from-the-plan-without-a-report) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

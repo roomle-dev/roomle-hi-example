@@ -33,7 +33,6 @@ never drop the agent's content silently.
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui planner (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
 | 97 | [Wall units docked beside the hood hang higher than the other wall units](#97-wall-units-docked-beside-the-hood-hang-higher-than-the-other-wall-units) | defect (not analysed) | roomle-ui HI tool commands, the library or the planner (not analysed) | low | gpt-6-astra | |
 | 98 | [A row placed into a corner stands 10 mm off the wall after later edits](#98-a-row-placed-into-a-corner-stands-10-mm-off-the-wall-after-later-edits) | defect (not analysed) | roomle-ui `hi-tool-commands.ts` (the resubmit by id or the merge, not analysed) | low | gpt-6-astra | |
-| 101 | [A side panel the agent sent is missing from the plan without a report](#101-a-side-panel-the-agent-sent-is-missing-from-the-plan-without-a-report) | defect | RoomleCore: the split of a delete in place ([analysis](../bug-analysis/side-panel-missing-after-a-delete-and-an-undo.md): the undo is fixed by D101, the split is open) | low | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 
@@ -206,34 +205,6 @@ free end keep the first root module of a corner row at the wall.
 
 **Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 74 (`random-4-base-row-wall-units-extend`,
 bo-test): the final group `b4bdd14a` at `[4815, 0, -3755]`, rotation 270.
-
-## 101. A side panel the agent sent is missing from the plan without a report
-
-**Problem.** In a family kitchen the agent's second `create-or-replace-groups` holds a wall side
-panel (Furniture_Smith `W35O`, `leftOf` the wall unit above the first unit of the left leg). The
-final plan holds no such panel, and no tool result names it in `notLoaded` or `corrections`. In
-between, the agent deleted one root module in place, undid that, and merged two further groups into
-the kitchen.
-
-**Cause.** Analysed in
-[side-panel-missing-after-a-delete-and-an-undo.md](../bug-analysis/side-panel-missing-after-a-delete-and-an-undo.md).
-The create builds the panel. The agent deletes it in place, and the delete splits the hood and the
-wall cabinet off as groups of their own. The undo of the delete reverts nothing: the reload of the
-three groups reports plan changes after the call. That is the defect of D101, which the run's bo-test
-did not carry yet. The agent then merges the groups back without the panel. The split comes from
-RoomleCore: `splitManipulatedGroupIntoAssemblies` (`external-module-group-dock-configurator.cpp:724`)
-splits by docking vectors that touch geometrically, so every unit docked with an offset above
-another one becomes a group of its own after any delete in place.
-
-**To do.** RoomleCore: split a group after a delete by the group's docking (`contextData`), so a
-unit hanging above another one stays in its group. The RoomleCore team confirms first that the
-geometric split is not intended.
-
-**Test.** RoomleCore: `tryDeleteChild` of an end panel keeps a wall unit docked above a floor unit
-with an offset in the remaining assembly.
-
-**Reproduce.** `mcp-test-2026-10-22_07-57-33`, gpt-6-astra 06 (`kitchen-family-two-kids`, bo-test):
-`W35O` `cupspanel` in the `args` of the second create; the final group `556610f7` holds no `W35O`.
 
 ## 103. A unit on top of a follower in another group stays behind when the row below moves
 

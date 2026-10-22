@@ -17,6 +17,7 @@ the code.
 |---|---|---|---|---|
 | 63 | [A dark worktop renders white under the top light](#63-a-dark-worktop-renders-white-under-the-top-light) | defect, known | roomle-ui renderer | medium |
 | 94 | [The water connection is an installation element only through a planner override](#94-the-water-connection-is-an-installation-element-only-through-a-planner-override) | catalog data, PoC override | Rubens Admin catalog (`room_designer`); roomle-ui `planner-kernel-access.ts` | medium |
+| 105 | [Dragging a unit out of a group splits off the units hanging above the rest](#105-dragging-a-unit-out-of-a-group-splits-off-the-units-hanging-above-the-rest) | defect (by the code, not reproduced) | roomle-ui glue logic (`splitRootModuleFromGroup`) | low |
 
 The run directories named under **Reproduce** are under `.temp/result/`.
 
@@ -62,3 +63,26 @@ list the water connection in `installationElements` and not in `obstacles`; room
 
 **Reproduce.** `GET https://api.roomle.com/v2/items/room_designer:water_connections` answers `layer`
 43; roomle-ui `release/bo-test` `planner-kernel-access.ts:637` sets 28.
+
+## 105. Dragging a unit out of a group splits off the units hanging above the rest
+
+**Problem.** When the user drags a root module out of a group in the planner, the rest of the group
+splits as the kernel reports it. Every unit that hangs above another one, a wall unit or a hood,
+becomes a group of its own, although the docking of the group still hangs it on its carrier. The HI
+tools do not drag units out; a delete in place keeps such units in the group (D103 of
+[`.agents/context/hi-mcp-behaviour.md`](../context/hi-mcp-behaviour.md#3-decisions)).
+
+**Cause.** RoomleCore `ModuleGroupDockConfigurator::tryUndockAndCreateSeparatePlanObject`
+(`external-module-group-dock-configurator.cpp:553`) splits the rest with
+`splitManipulatedGroupIntoAssemblies`, by docking vectors that touch. roomle-ui
+`splitRootModuleFromGroup` (`glue-logic.ts:1706`) carries out that report as it is.
+
+**To do.** roomle-ui: `splitRootModuleFromGroup` keeps the split-off parts that the docking still
+links to the remaining group, as `deleteRootModule` does with `splitOffGroupsStillDocked` and
+`_keepRootModulesInPlace`. The dragged root module stays a group of its own.
+
+**Test.** roomle-ui `__tests__/glue-logic-test.ts`: dragging the end cabinet out of a row with a wall
+unit above its middle cabinet keeps the wall unit in the row.
+
+**Reproduce.** Not reproduced, found in the code: drag a base unit out of a kitchen with wall units in
+the planner.

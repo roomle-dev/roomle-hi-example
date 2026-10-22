@@ -54,7 +54,7 @@
           "title": "Find the front colour attribute",
           "plan": "three-tall-units",
           "prompt": "which front colours can I choose for the kitchen?",
-          "expect": "one find-attributes call for the front colour; the answer lists the available front colour values of the library and names the attribute"
+          "expect": "one find-attributes call for the front colour; the answer lists the available front colour values of the library and names the attribute by its name and its id (Front color, mod_FrontColor)"
         },
         {
           "id": "undo-last-change",

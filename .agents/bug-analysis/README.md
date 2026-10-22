@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [find-attributes-answer-does-not-name-the-attribute.md](find-attributes-answer-does-not-name-the-attribute.md) | Open | [MCP backlog item 84](../backlog/mcp-issues.md#84-the-find-attributes-answer-lists-the-values-without-naming-the-attribute) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

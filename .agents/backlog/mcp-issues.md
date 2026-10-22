@@ -27,7 +27,6 @@ never drop the agent's content silently.
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
 | 83 | [Where no free stretch of the wall fits the group, it is placed over existing furniture and reported](#83-where-no-free-stretch-of-the-wall-fits-the-group-it-is-placed-over-existing-furniture-and-reported) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
-| 84 | [The find-attributes answer lists the values without naming the attribute](#84-the-find-attributes-answer-lists-the-values-without-naming-the-attribute) | hardening | roomle-ui served text (`hi-mcp-server.ts:377-391`, the `find-attributes` description); analysed in [find-attributes-answer-does-not-name-the-attribute.md](../bug-analysis/find-attributes-answer-does-not-name-the-attribute.md): no served sentence says what the answer of a question about an attribute names; the fix is one sentence — the answer names the attribute by its name and its id, since names repeat | low | gpt-6-astra, gpt-6.1-sol | |
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
@@ -66,33 +65,6 @@ test names a wall without a free stretch of the requested width.
 roomle-ui :5173): five 400 mm single-door wardrobes (2000 mm) on the closets back wall over the low
 object x 3506..4074 (568 × 570 mm), the answer discloses the overlap; the run passes — its expect
 covers the door hinges only.
-
-## 84. The find-attributes answer lists the values without naming the attribute
-
-**Problem.** `find-attributes` returns the matching attributes with their values, and the model's
-answer lists the values without naming the attribute (18: the 21 front colours listed as "kitchen
-front colours and finishes", neither the name `Front color` nor the id `mod_FrontColor` named).
-
-**Cause.** Analysed in
-[find-attributes-answer-does-not-name-the-attribute.md](../bug-analysis/find-attributes-answer-does-not-name-the-attribute.md).
-The result carries the attribute's name and id, but no served sentence says what the answer of a
-question about an attribute names: not the `find-attributes` description (roomle-ui
-`hi-mcp-server.ts:377-391`), not the authoring rules, not the chat's system prompt. The GPT models
-answer in the user's words. Names repeat — two attributes are named `Front color` — so only the id
-identifies the attribute.
-
-**To do.** roomle-ui served text: one sentence in the `find-attributes` description — "Your answer
-names the attribute by its name and its id - several attributes can share a name - with the values
-it lists."; the expectation of `attributes-find-front-colour` names the attribute by its name and
-its id.
-
-**Test.** roomle-ui `__tests__/hi-mcp/hi-mcp-server-test.ts`: the description carries the sentence;
-`attributes-find-front-colour`: the answer names `Front color` and `mod_FrontColor` with the front
-colours.
-
-**Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 18 (`attributes-find-front-colour`,
-bo-test): the answer lists the 21 front colours in four style groups and never names the attribute
-(`mod_FrontColor`); the same in `mcp-test-2026-10-18_08-45-09`, gpt-6.1-sol 18.
 
 ## 85. insert-article-into-group takes a between-pair whose root modules do not stand side by side
 

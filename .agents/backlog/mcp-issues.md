@@ -35,7 +35,8 @@ never drop the agent's content silently.
 | 97 | [Wall units docked beside the hood hang higher than the other wall units](#97-wall-units-docked-beside-the-hood-hang-higher-than-the-other-wall-units) | defect (not analysed) | roomle-ui HI tool commands, the library or the planner (not analysed) | low | gpt-6-astra | |
 | 98 | [A row placed into a corner stands 10 mm off the wall after later edits](#98-a-row-placed-into-a-corner-stands-10-mm-off-the-wall-after-later-edits) | defect (not analysed) | roomle-ui `hi-tool-commands.ts` (the resubmit by id or the merge, not analysed) | low | gpt-6-astra | |
 | 101 | [A side panel the agent sent is missing from the plan without a report](#101-a-side-panel-the-agent-sent-is-missing-from-the-plan-without-a-report) | defect (not analysed) | roomle-ui HI tools (the create, the undo or the merge, not analysed) | low | gpt-6-astra | |
-| 102 | [undo reverts nothing after a create the library calculated only in part](#102-undo-reverts-nothing-after-a-create-the-library-calculated-only-in-part) | defect (not analysed) | roomle-ui HI tools (`hi-mcp/plan-history.ts`, `revertToolCall` of `tool-executors.ts`) | medium | gpt-6-astra | |
+| 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
+| 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -247,28 +248,45 @@ build is named in the result.
 **Reproduce.** `mcp-test-2026-10-22_07-57-33`, gpt-6-astra 06 (`kitchen-family-two-kids`, bo-test):
 `W35O` `cupspanel` in the `args` of the second create; the final group `556610f7` holds no `W35O`.
 
-## 102. undo reverts nothing after a create the library calculated only in part
+## 103. A unit on top of a follower in another group stays behind when the row below moves
 
-**Problem.** The agent creates two groups in one `create-or-replace-groups`, and the library cannot
-calculate root modules of every group (`notLoaded` names both). The following `undo` makes no planner
-undo call and reverts nothing: both groups stay, and the agent changes their attributes instead of
-building them again. With one group of the call in `notLoaded` — a one-group create, or a two-group
-create of which one group fails — the undo reverts the create.
+**Problem.** A floor unit carries a wall unit of another group, and a unit stands on top of that wall
+unit in the wall unit's group. A row edit that moves the floor unit moves the wall unit with it, but
+the unit on top stays where it was and stands apart from the wall unit.
 
-**Cause.** Not analysed. One plan-context read and no planner undo call mean that `revertToolCall`
-(`tool-executors.ts`) found no record of the create (`planHistory.lastDone()` empty). Either the
-create was not recorded, or a planner history event after the create's end — the library
-recalculating the root modules it could not calculate — counted as a change in the planner, which
-forgets every record (`PlanHistory.historyChanged`).
+**Cause.** `groupsFollowingTheirCarriers` (roomle-ui `hi-root-module-arrangement.ts:396-457`) moves
+only the units of other groups that a root of the edited group carries directly:
+`carriersOfUnitsInOtherGroups` (`:364-378`) leaves out a unit carried by a unit of its own group.
+`_moveUnitsOfOtherGroupsWithTheirCarriers` (`hi-tools.ts:1314-1348`) loads the follower group without
+rearranging it, so its docking does not take the unit on top along. Within the edited group,
+`moveUnitsAboveWithTheirCarriers` moves the units bottom-up through such a stack (`:241-250`).
 
-**To do.** roomle-ui: replay the run's create and undo against the local planner with the history
-events and the undo record logged, find why the record is missing, and make undo revert the whole
-create.
+**To do.** roomle-ui: move the units of the follower group that stand on a moved follower with it,
+bottom-up, as `moveUnitsAboveWithTheirCarriers` does within the edited group.
 
-**Test.** roomle-ui hi-mcp tests: an undo after a create of two groups that both have roots in
-`notLoaded` removes both groups.
+**Test.** roomle-ui `hi-root-module-arrangement` tests: a floor unit moved by 600 mm takes a wall unit
+of another group and the unit on top of that wall unit along.
 
-**Reproduce.** `mcp-test-2026-10-22_09-29-56`, gpt-6-astra 10 (`image-only-no-text`, local roomle-ui
-`725e0dda3`): after the create (two `posGroups` placed by wall 0 and wall 8, both in `notLoaded`), the
-`undo` logs no `call N: undo` between its args and its feedback; the groups `9ed4ec9a` and `2702debf`
-stay.
+**Reproduce.** No run yet: a floor unit in one group, a wall unit with a unit on top in another group
+above it; `insert-article-into-group` before the floor unit.
+
+## 104. A unit of another group keeps its height when its carrier changes height
+
+**Problem.** A row edit puts a carrier of another height where the old one stood — a 900 mm base unit
+in place of a 720 mm one. A unit of another group that stood on the old carrier keeps its height and
+overlaps the new carrier by the difference.
+
+**Cause.** `groupsFollowingTheirCarriers` (roomle-ui `hi-root-module-arrangement.ts:408-423`) moves a
+unit by the change of its carrier's origin and rotation only. A carrier of another height at the same
+origin gives no move, and the unchanged-pose check (`:445`) drops the unit. Within the edited group,
+`moveUnitsAboveWithTheirCarriers` corrects a unit by the change of its carrier's docking top
+(`:285-300`).
+
+**To do.** roomle-ui: apply the change of the carrier's docking top to the units of other groups, as
+`moveUnitsAboveWithTheirCarriers` does, before the unchanged-pose check.
+
+**Test.** roomle-ui `hi-root-module-arrangement` tests: a 720 mm carrier exchanged for a 900 mm one
+lifts a unit of another group on top of it by 180 mm.
+
+**Reproduce.** No run yet: a unit of another group on top of a base unit; `exchange-root-module` of
+the base unit for a taller article.

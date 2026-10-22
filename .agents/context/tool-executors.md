@@ -453,7 +453,8 @@ In the tool commands of roomle-ui:
   vector that meets a given vector on the neighbour.
 - **Messages are contract** — quoted in the behaviour reference, read by the agents and the tests.
 - **A tool call is one planner step** — the planner holds one interaction step for an
-  `externalObjectGroupOperation` (`runToolCall`, D79), and a tool command reaches the planner only
+  `externalObjectGroupOperation` (`runToolCall`, D79) and answers after the reloads the commit of
+  that step reports (D101), and a tool command reaches the planner only
   through the `HiToolPlanner` it is given, or `runToolCommand` does not see that it changed the plan.
 
 ## Interior Design tools

@@ -59,32 +59,42 @@ const singleModelSession = async (t) => {
     randomTests: 1,
     models: [{ provider: 'gpt-test-a', apiKey: '$KEY' }],
     plans: { 'default-room': 'ps_room' },
-    tests: [
+    categories: [
       {
-        id: 'alpha-create',
-        title: 'Alpha create',
-        plan: 'default-room',
-        prompt: 'add one cabinet',
+        category: 'cabinet',
+        tests: [
+          {
+            id: 'alpha-create',
+            title: 'Alpha create',
+            plan: 'default-room',
+            prompt: 'add one cabinet',
+          },
+          {
+            id: 'beta-random',
+            title: 'Random: beta',
+            plan: 'default-room',
+            random: true,
+            prompt: 'make it white',
+          },
+        ],
       },
       {
-        id: 'beta-random',
-        title: 'Random: beta',
-        plan: 'default-room',
-        random: true,
-        prompt: 'make it white',
-      },
-      {
-        id: 'gamma-image',
-        title: 'Gamma image',
-        plan: 'default-room',
-        image: 'docs/images/gamma.png',
-        prompt: null,
-      },
-      {
-        id: 'delta-skipped',
-        title: 'Delta skipped',
-        plan: 'default-room',
-        prompt: 'skipped',
+        category: 'planning from images',
+        tests: [
+          {
+            id: 'gamma-image',
+            title: 'Gamma image',
+            plan: 'default-room',
+            image: 'docs/images/gamma.png',
+            prompt: null,
+          },
+          {
+            id: 'delta-skipped',
+            title: 'Delta skipped',
+            plan: 'default-room',
+            prompt: 'skipped',
+          },
+        ],
       },
     ],
   };
@@ -352,20 +362,30 @@ const multiModelSession = async (t) => {
       { provider: 'gpt-test.b', apiKey: '$B' },
     ],
     plans: { 'default-room': 'ps_room' },
-    tests: [
+    categories: [
       {
-        id: 'alpha-create',
-        title: 'Alpha create',
-        plan: 'default-room',
-        image: 'docs/images/alpha.png',
-        prompt: 'add one cabinet',
+        category: 'planning from images',
+        tests: [
+          {
+            id: 'alpha-create',
+            title: 'Alpha create',
+            plan: 'default-room',
+            image: 'docs/images/alpha.png',
+            prompt: 'add one cabinet',
+          },
+        ],
       },
       {
-        id: 'beta-random',
-        title: 'Random: beta',
-        plan: 'default-room',
-        random: true,
-        prompt: 'make it white',
+        category: 'random',
+        tests: [
+          {
+            id: 'beta-random',
+            title: 'Random: beta',
+            plan: 'default-room',
+            random: true,
+            prompt: 'make it white',
+          },
+        ],
       },
     ],
   };
@@ -544,6 +564,25 @@ test('extracts the facts of a single-model session', async (t) => {
   assert.deepEqual(r3.promptTurns, [null]);
 });
 
+test('names the minimum set in the title and in a note under it', async (t) => {
+  const { session } = await singleModelSession(t);
+  const suite = JSON.parse(await readFile(join(session, 'tests.json'), 'utf8'));
+  await writeJson(session, 'tests.json', { testSet: 'minimum', ...suite });
+  await exec(process.execPath, [extract, session, join(session, 'facts.json')]);
+  const facts = JSON.parse(await readFile(join(session, 'facts.json'), 'utf8'));
+  assert.equal(facts.testSet, 'minimum');
+  await exec(process.execPath, [build, session]);
+  const report = await readFile(join(session, 'report.md'), 'utf8');
+
+  assert.ok(
+    report.startsWith(
+      '# HI MCP test — minimum set — 2099-01-01 00:00\n\n' +
+        '**Minimum set** — this report covers only the 3 tests of the minimum set, not every test of `docs/test-prompts.json`.\n\n' +
+        '| Model |'
+    )
+  );
+});
+
 test('builds the report of a single-model session', async (t) => {
   const { session } = await singleModelSession(t);
   await exec(process.execPath, [extract, session, join(session, 'facts.json')]);
@@ -711,7 +750,14 @@ test('fails explicitly when a required session file is missing', async (t) => {
   await mkdir(session, { recursive: true });
   const tests = {
     models: [{ provider: 'gpt-test-a' }],
-    tests: [{ id: 'alpha', title: 'Alpha', plan: 'default-room', prompt: 'p' }],
+    categories: [
+      {
+        category: 'cabinet',
+        tests: [
+          { id: 'alpha', title: 'Alpha', plan: 'default-room', prompt: 'p' },
+        ],
+      },
+    ],
   };
   const results = {
     startedAt: '2099-01-03T00:00:00.000Z',
@@ -747,6 +793,29 @@ test('fails explicitly when a required session file is missing', async (t) => {
   );
 });
 
+test('rejects a session file without categories and keeps the existing facts', async (t) => {
+  const { session } = await singleModelSession(t);
+  const suite = JSON.parse(await readFile(join(session, 'tests.json'), 'utf8'));
+  const factsFile = join(session, 'facts.json');
+  await exec(process.execPath, [extract, session, factsFile]);
+  const facts = await readFile(factsFile, 'utf8');
+  const { categories, ...rest } = suite;
+  await writeJson(session, 'tests.json', {
+    ...rest,
+    tests: categories.flatMap((category) => category.tests),
+  });
+
+  await assert.rejects(
+    exec(process.execPath, [extract, session, factsFile]),
+    (err) => {
+      assert.equal(err.code, 1);
+      assert.match(err.stderr, /tests\.json has no categories/);
+      return true;
+    }
+  );
+  assert.equal(await readFile(factsFile, 'utf8'), facts);
+});
+
 test('keeps the startup errors of a run whose run.json is missing', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'report-scripts-'));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -754,7 +823,14 @@ test('keeps the startup errors of a run whose run.json is missing', async (t) =>
   await mkdir(join(session, 'gpt-test-a/01-alpha'), { recursive: true });
   await writeJson(session, 'tests.json', {
     models: [{ provider: 'gpt-test-a' }],
-    tests: [{ id: 'alpha', title: 'Alpha', plan: 'default-room', prompt: 'p' }],
+    categories: [
+      {
+        category: 'cabinet',
+        tests: [
+          { id: 'alpha', title: 'Alpha', plan: 'default-room', prompt: 'p' },
+        ],
+      },
+    ],
   });
   await writeJson(session, 'results.json', {
     startedAt: '2099-01-04T00:00:00.000Z',

@@ -164,12 +164,17 @@ const main = async () => {
       {
         models: [{ provider: options.model, apiKey: `$${options['key-env']}` }],
         plans: { [PLAN]: plans[PLAN] },
-        tests: kitchens.map(({ id, title, image }) => ({
-          id,
-          title,
-          plan: PLAN,
-          image: `docs/images/${image}`,
-        })),
+        categories: [
+          {
+            category: 'planning from images',
+            tests: kitchens.map(({ id, title, image }) => ({
+              id,
+              title,
+              plan: PLAN,
+              image: `docs/images/${image}`,
+            })),
+          },
+        ],
       },
       null,
       2

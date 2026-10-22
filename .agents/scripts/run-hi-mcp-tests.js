@@ -7,9 +7,10 @@
  *
  * The test file (default docs/test-prompts.json) holds models
  * ({ provider, apiKey }; apiKey "$NAME" reads the environment variable NAME),
- * plans ({ <name>: <plan snapshot id> }), tests
- * ({ id, title, plan, prompt?, image?, expect?, random? }; a prompt list is
- * sent as consecutive turns of one chat), randomTests (how many random tests
+ * plans ({ <name>: <plan snapshot id> }), categories ({ category, tests };
+ * tests { id, title, plan, prompt?, image?, expect?, random? }, run in the
+ * order of the file; a prompt list is sent as consecutive turns of one
+ * chat), randomTests (how many random tests
  * the "test the mcp" skill adds; checked only) and promptSuffix (a text appended
  * to the first prompt of every test that has one). Before the first run it checks
  * the file, the images and the keys. A run goes
@@ -90,7 +91,18 @@ const turnsOf = (prompt, suffix) => {
   return [`${first.trimEnd()}${separator}${suffix}`, ...rest];
 };
 
-const problemsOf = ({ models, plans, tests, randomTests, promptSuffix }) => {
+const testsOf = (categories) =>
+  (Array.isArray(categories) ? categories : []).flatMap((category) =>
+    Array.isArray(category?.tests) ? category.tests : []
+  );
+
+const problemsOf = ({
+  models,
+  plans,
+  categories,
+  randomTests,
+  promptSuffix,
+}) => {
   const problems = [];
   if (
     promptSuffix !== undefined &&
@@ -128,11 +140,26 @@ const problemsOf = ({ models, plans, tests, randomTests, promptSuffix }) => {
       );
     }
   }
-  if (!Array.isArray(tests) || tests.length === 0) {
-    problems.push('tests: a non-empty list');
+  if (!Array.isArray(categories) || categories.length === 0) {
+    problems.push('categories: a non-empty list of { category, tests }');
+  }
+  const names = new Set();
+  for (const category of Array.isArray(categories) ? categories : []) {
+    const name = `category ${JSON.stringify(category?.category)}`;
+    if (
+      typeof category?.category !== 'string' ||
+      category.category.trim() === '' ||
+      names.has(category.category)
+    ) {
+      problems.push(`${name}: needs a unique name`);
+    }
+    names.add(category?.category);
+    if (!Array.isArray(category?.tests) || category.tests.length === 0) {
+      problems.push(`${name}: tests must be a non-empty list`);
+    }
   }
   const ids = new Set();
-  for (const test of Array.isArray(tests) ? tests : []) {
+  for (const test of testsOf(categories)) {
     const name = `test ${test?.id ?? JSON.stringify(test)}`;
     if (!TEST_ID.test(test?.id ?? '') || ids.has(test.id)) {
       problems.push(`${name}: needs a unique kebab-case id`);
@@ -220,9 +247,10 @@ const main = async () => {
   };
   const writeResults = () =>
     writeFile(join(outDir, 'results.json'), JSON.stringify(results, null, 2));
-  const total = suite.models.length * suite.tests.length;
+  const tests = testsOf(suite.categories);
+  const total = suite.models.length * tests.length;
   for (const model of suite.models) {
-    for (const [index, test] of suite.tests.entries()) {
+    for (const [index, test] of tests.entries()) {
       if (stopped) {
         break;
       }

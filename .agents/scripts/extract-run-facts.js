@@ -6,12 +6,14 @@
  *
  * Reads <sessionDir>/tests.json and results.json and, per run, the run's
  * run.json, plan-context.json and planner-calls.json. Writes the facts to
- * outFile, or to stdout without one. The facts are the working file of the
+ * outFile, or to stdout without one; a tests.json without categories is
+ * rejected before anything is written. The facts are the working file of the
  * evaluation (skill hi-mcp-testing, section 5) and the input of
  * build-test-report.js: per run the test, the turns with their tools and tool
  * calls (corrections, the notLoaded errors, error) and the shortened answer,
  * the groups after the chat and the tool calls the planner ran (in a session
- * recorded before the tools ran in the planner, its plan-changing calls). A
+ * recorded before the tools ran in the planner, its plan-changing calls), and
+ * the testSet of a session run from a subset such as the minimum set. A
  * multi-model session is keyed by model and test, so every model's run of a
  * test is kept.
  */
@@ -83,6 +85,13 @@ const readRequiredJson = (path) => {
 };
 
 const suite = readRequiredJson(join(session, 'tests.json'));
+if (!Array.isArray(suite.categories)) {
+  console.error(
+    `extract-run-facts: ${join(session, 'tests.json')} has no categories - a session prepared before the test categories; prepare it again`
+  );
+  process.exit(1);
+}
+const tests = suite.categories.flatMap((c) => c.tests || []);
 const results = readRequiredJson(join(session, 'results.json'));
 const runsByModelAndTest = new Map(
   (results.runs || []).map((r) => [`${r.model}/${r.test}`, r])
@@ -93,7 +102,7 @@ const models = suite.models?.length
 
 const runs = [];
 for (const model of models) {
-  (suite.tests || []).forEach((t, i) => {
+  tests.forEach((t, i) => {
     const run = runsByModelAndTest.get(`${model}/${t.id}`);
     if (!run) return;
     const nn = String(i + 1).padStart(2, '0');
@@ -157,8 +166,9 @@ const facts = {
   session: basename(session),
   startedAt: results.startedAt || null,
   finishedAt: results.finishedAt || null,
+  testSet: suite.testSet || null,
   models,
-  tests: suite.tests || [],
+  tests,
   runs,
 };
 

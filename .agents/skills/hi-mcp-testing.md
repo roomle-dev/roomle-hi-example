@@ -1,13 +1,15 @@
 # HI MCP Testing Skill
 
-**Load this skill when:** the user asks to **"test the mcp"** — run [Test the MCP](#test-the-mcp) —
+**Load this skill when:** the user asks to **"test the mcp"** — run [Test the MCP](#test-the-mcp);
+with **"the minimum set"** (the minimum tests, a minimum test run) from
+[minimum-test-prompts.json](../../docs/minimum-test-prompts.json), see [the minimum set](#the-minimum-set) —
 or the task involves testing the HI MCP server end to end with a real model and a real planner:
 running a prompt through the chat, checking the plan a prompt produces, comparing prompts or models.
 
 ## Test the MCP
 
-Runs the tests of [test-prompts.json](../../docs/test-prompts.json) with the runner
-`run-hi-mcp-tests.js` — each from its plan, with its prompt (or its turns) and image — stores every
+Runs the tests of [test-prompts.json](../../docs/test-prompts.json), or of the
+[minimum set](#the-minimum-set), with the runner `run-hi-mcp-tests.js` — each from its plan, with its prompt (or its turns) and image — stores every
 result under one session directory and ends with `report.md` and its PDF in `.temp/reports/`, named after the
 date and the models of the session ([the PDF](#the-pdf)): per test the plan snapshot id, the
 perspective, the perspective object and the top image, an evaluation and a bug verdict.
@@ -45,7 +47,31 @@ models — by default every test and the `gpt-5-mini` model:
 jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/test-prompts.json > "$SESSION/tests.json"
 ```
 
-- A subset of the tests the user names: filter `.tests` by `id` the same way.
+#### The minimum set
+
+When the user asks to run the tests with the minimum set, the source is
+[minimum-test-prompts.json](../../docs/minimum-test-prompts.json) in place of
+`docs/test-prompts.json` in every command of this step:
+
+```bash
+jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/minimum-test-prompts.json > "$SESSION/tests.json"
+```
+
+It is a subset of the tests in the same format, with `randomTests` 0 — no random tests unless the
+user asks for them — and `"testSet": "minimum"`. Keep `testSet` in the session file: the report
+names the minimum set in its title and in a note under it, and the PDF in its name
+([the PDF](#the-pdf)).
+
+#### Categories and filters
+
+The tests are grouped in `categories` (`{ category, tests }`, see
+[test-prompts.md](../../docs/test-prompts.md#test-cases)); the runner runs them in the order of the
+file. A category keeps at least one test, so a filter drops the categories it empties.
+
+- The categories the user names ("the door hinge tests"): add
+  `| .categories |= map(select(.category | IN("door hinge")))` to the `jq` filter.
+- A subset of the tests the user names: add
+  `| .categories |= map(.tests |= map(select(.id | IN("edit-delete-group", "kitchen-conversation"))) | select(.tests | length > 0))`.
 - A run limited to named tests keeps that scope: generate no extra cases unless the user asks
   for them. Set the session's `randomTests` to 0 in that case.
 - Tests with an `image` stay only for models that read images. The launcher decides that for
@@ -59,8 +85,9 @@ jq '.models = [{ "provider": "gpt-5-mini", "apiKey": "$AZURE_GPT_KEY" }]' docs/t
   - A full `mistral-*` id, or an Azure deployment named by `HI_CHAT_MODEL`, reads images only if it
     is in `IMAGE_INPUT_MODELS`.
   - A running launcher answers the config at `/planning-assistant-config.json`, with `readsImages`.
-  - For a model without images, leave the image tests out of the file and list them in the report
-    as skipped.
+  - For a model without images, leave the image tests out of the file
+    (`| .categories |= map(.tests |= map(select(.image | not)) | select(.tests | length > 0))`) and
+    list them in the report as skipped.
 
 #### Random tests
 
@@ -70,8 +97,8 @@ skill. The count must be a whole number from 0 to the number of available plans 
 is drawn once. For a custom suite with fewer than five plans, set a count within that range.
 A number the user names goes into the session file:
 `jq '.randomTests = <n>' "$SESSION/tests.json" > "$SESSION/tests.tmp" && mv "$SESSION/tests.tmp" "$SESSION/tests.json"`.
-The random tests go only into `$SESSION/tests.json`, always at its end — never into
-`docs/test-prompts.json`.
+The random tests go only into `$SESSION/tests.json`, always at its end as the category `random` —
+never into `docs/test-prompts.json`.
 
 The random tests are the session's own coverage: they stand in for the standard cases a fixed
 suite cannot hold, so together they exercise the whole range the fixed tests leave open — from a
@@ -120,15 +147,16 @@ before the run, from the plan and the catalog, with checks for every conversatio
 
 #### Compose and check the session
 
-Append the random cases once, keeping fixed cases first and random cases last. This command checks
-counts, expectations, plan references, markings and unique ids. If it fails, correct the generated
-list and rerun it; the original `tests.json` stays intact.
+Append the random cases once, keeping fixed cases first and random cases last, in the category
+`random` (none when `randomTests` is 0). This command checks counts, expectations, plan references,
+markings and unique ids. If it fails, correct the generated list and rerun it; the original
+`tests.json` stays intact.
 
 ```bash
 jq --slurpfile random "$SESSION/random-tests.json" '
   . as $suite
   | $random[0] as $generated
-  | if any(.tests[]; .random == true)
+  | if any(.categories[].tests[]; .random == true)
     then error("Session already prepared") else . end
   | if (.randomTests // 5) > (.plans | length)
     then error("randomTests cannot exceed the number of plans") else . end
@@ -140,8 +168,8 @@ jq --slurpfile random "$SESSION/random-tests.json" '
   | if any($random[0][]; (.id | startswith("random-") | not)
        or (.title | startswith("Random: ") | not) or .random != true)
     then error("Generated test markings are invalid") else . end
-  | .tests += $generated
-  | if ([.tests[].id] | unique | length) != (.tests | length)
+  | .categories += [{ category: "random", tests: $generated } | select(.tests | length > 0)]
+  | if ([.categories[].tests[].id] | unique | length) != ([.categories[].tests[]] | length)
     then error("Duplicate test ids") else . end
 ' "$SESSION/tests.json" > "$SESSION/tests.tmp" && mv "$SESSION/tests.tmp" "$SESSION/tests.json"
 ```
@@ -189,7 +217,7 @@ node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" 
   `run.json` is listed as "no run.json"; the report lists it as not run with its console log.
 
 A run's directory is `$SESSION/<model>/<NN>-<test id>/`: `<model>` is the provider name, `<NN>` the
-test's position in the file.
+test's position in the file, counted across the categories.
 
 ### 5. Evaluate
 
@@ -344,16 +372,21 @@ The builder checks the evaluation against the runs and the `[[…]]` refs and wr
 do not resolve. The template below is the content spec: when the script's rendering and the template
 disagree, the template wins; fix the script.
 
+A session of the [minimum set](#the-minimum-set) says so at the top: the title is
+`# HI MCP test — minimum set — <YYYY-MM-DD HH:MM>`, and a note under it says that the report covers
+only the tests of the minimum set, not every test of `docs/test-prompts.json` (the builder renders
+both from `testSet`).
+
 The header row counts fixed and random tests separately. Preserve the `Random:` titles in the
 summary and run headings. Each random run names its origin; the "Random tests" section lists the
-random cases with their JSON. A random case worth keeping can be copied from there into
-`docs/test-prompts.json` with a fixed id/title and without the random flag.
+random cases with their JSON. A random case worth keeping can be copied from there into its
+category of `docs/test-prompts.json` with a fixed id/title and without the random flag.
 
 - Copy the source image of every image test into `$SESSION/images/`:
 
   ```bash
   mkdir -p "$SESSION/images"
-  jq -r '[.tests[].image | select(.)] | unique[]' "$SESSION/tests.json" | xargs -I{} cp {} "$SESSION/images/"
+  jq -r '[.categories[].tests[].image | select(.)] | unique[]' "$SESSION/tests.json" | xargs -I{} cp {} "$SESSION/images/"
   ```
 
 - Link a source image as `[images/<file>](images/<file>)`, never as `docs/images/<file>`.
@@ -465,6 +498,8 @@ node .agents/scripts/render-report-pdf.js "$SESSION/report.md" --out ".temp/repo
   `_`: `mcp-test-2026-10-08_gpt-5-mini_gpt-5.4-mini_gpt-6-astra.pdf`.
 - A second session of the same date and models adds the time of its directory after the date:
   `mcp-test-2026-10-16_11-57-20_gpt-6-astra.pdf`.
+- A session of the [minimum set](#the-minimum-set) adds `minimum-` before the date:
+  `mcp-test-minimum-2026-10-22_gpt-5-mini.pdf`.
 
 The session directory keeps no PDF. The PDF is A4, every run section on a new page, the links of the summary
 jumping to the run sections, the images embedded at most 640 px wide (about 3 MB for 32 runs, against
@@ -503,14 +538,14 @@ node .agents/scripts/run-hi-mcp-tests.js [<tests.json>] [--out <dir>] [--dev]
 
 | Argument | Meaning |
 |---|---|
-| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `tests` (`{ id, title, plan, prompt?, image?, expect?, random? }`, `prompt` a text or a list of turns), `randomTests` (how many random tests [step 3](#random-tests) adds), `promptSuffix` (the text appended to the first prompt of every test, so that the agent decides open details itself instead of asking); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
+| `<tests.json>` | the test file, default [docs/test-prompts.json](../../docs/test-prompts.json) — `models` (`{ provider, apiKey }`, `"$NAME"` for the key in the environment variable `NAME`), `plans` (name → plan snapshot id), `categories` (`{ category, tests }`, the tests `{ id, title, plan, prompt?, image?, expect?, random? }` in the order they run, `prompt` a text or a list of turns), `randomTests` (how many random tests [step 3](#random-tests) adds), `promptSuffix` (the text appended to the first prompt of every test, so that the agent decides open details itself instead of asking), `testSet` (the name of a subset of the tests, `"minimum"` in [minimum-test-prompts.json](../../docs/minimum-test-prompts.json); only the report reads it); the format is in [test-prompts.md](../../docs/test-prompts.md#test-cases) |
 | `--out <dir>` | the session directory, default `.temp/result/mcp-test-<local time>/`; an existing one is continued |
 | `--dev` | passed to every run |
 
 The runner:
 
-1. checks the file before the first run — every model has a key (a `"$NAME"` variable is set), every test has a
-   unique kebab-case `id`, a `plan` of `plans`, a prompt (a text or a list of texts) or an image and an existing
+1. checks the file before the first run — every model has a key (a `"$NAME"` variable is set), every category
+   has a unique name and at least one test, every test has a unique kebab-case `id`, a `plan` of `plans`, a prompt (a text or a list of texts) or an image and an existing
    image file; an explicit `randomTests` is a whole number from 0 to the number of plans, an
    explicit `promptSuffix` a non-empty text — and names every problem;
 2. runs, for every model and then every test, `run-hi-mcp-prompt.js <provider> "<apiKey>"

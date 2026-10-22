@@ -4,7 +4,8 @@ The test cases for the Roomle HI (HOMAG Intelligence) room planning live in
 [test-prompts.json](./test-prompts.json): each starts from one of the plans below, with a prompt, an
 image or both. They assess how well an agent understands a prompt and picks the MCP server tools
 that create, position and edit groups in Roomle sessions. Every test starts from a fixed plan, so it
-does not depend on what the model built in another test.
+does not depend on what the model built in another test. [minimum-test-prompts.json](./minimum-test-prompts.json)
+holds the [minimum set](#minimum-set) of them.
 
 ## Plans
 
@@ -211,6 +212,18 @@ One empty room and one water connection: the connection is an installation eleme
 `kitchen-oven-hood-sink-fridge-corner` start from it: the first adds a sink cabinet, the second
 plans a kitchen with a sink.
 
+### L-Shaped Pass-Through Room
+
+plan snapshot id: `ps_sje41pva5egn6qp5xti55q6c7fcfin5`
+
+One empty L-shaped room (x -780 to 4420, z -3765 to 1235) without HI groups. A narrow wing of
+3000 × 3000 mm lies at the back left (x -780 to 2220, z -3765 to -765), with a window in its end
+wall (the top wall, x -330 to 1770, 950 to 2170 mm high). The wide part across the front (z -765
+to 1235) is a passage: one door in the left wall and one in the right wall, both at z -210 to 690;
+the right door opens into the room up to x 3530. The test `image-only-no-text` starts from it: the
+galley kitchen of `kitchen-4.png`, with the window at its end, fits the wing, while two rows of
+units across the wide part would block the passage between the doors.
+
 ## Test Cases
 
 [test-prompts.json](./test-prompts.json) holds:
@@ -220,8 +233,26 @@ plans a kitchen with a sink.
 | `models` | the chat models to test, `{ provider, apiKey }`: a provider name of the launcher and its key — `"$NAME"` reads the key from the environment variable `NAME`, which keeps it out of the committed file |
 | `randomTests` | how many random tests the "test the mcp" skill adds to each session: a whole number from 0 to the number of available plans (default 5, 0 for none); a custom suite with fewer than five plans sets a count within its range. The agent running it writes them for the plans drawn at random without repetition, marks them `"random": true` and appends them only to the end of the session's test file — the report shows them as random tests ([skill](../.agents/skills/hi-mcp-testing.md#random-tests)) |
 | `promptSuffix` | a text the runner appends to the first prompt of every test — after a `.` when that prompt does not end with `.`, `!` or `?`, after a blank otherwise; a test without a prompt sends its image alone, without it. The agent may ask a question instead of planning, which is fine for a user but leaves a test without a result, because the test answers nothing: the suffix asks it to decide open details itself. The prompts of the tests stay as a user writes them; the runs record the prompts as sent |
+| `testSet` | optional: the name of a subset of the tests — `"minimum"` in the [minimum set](#minimum-set); the report of a session names it in its title and in a note under it |
 | `plans` | the plans above by name: `{ "<name>": "<plan snapshot id>" }` |
-| `tests` | `{ id, title, plan, prompt?, image?, expect?, random? }`, in the order they run, from simple to complex: single groups, single edits, edits that need more understanding, edits over two or three turns, kitchens around a corner, obstacles, the image tests, and the kitchen conversation last — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message — a `prompt` list is sent as consecutive turns of one conversation, the image with the last turn; `expect` says what the evaluation checks, per turn for a list |
+| `categories` | the tests grouped by what they test, `{ category, tests }`: a unique name and at least one test, every test in one category. The runner runs the tests of all categories in the order of the file — the categories below: the tools and the group edits first, the other furniture right after the kitchen, the image tests and the kitchen conversation last — and numbers them across the categories |
+| `tests` of a category | `{ id, title, plan, prompt?, image?, expect?, random? }` — `plan` names the plan the test starts from; `prompt`, `image` (a file under `docs/images/`) or both are sent as one chat message — a `prompt` list is sent as consecutive turns of one conversation, the image with the last turn; `expect` says what the evaluation checks, per turn for a list; `random` marks a random test, which only a session file holds, in its last category `random` |
+
+| Category | Its tests check |
+|---|---|
+| `mcp tools` | moving a group, reading the attributes and the order data, the plan images, opening doors, undo and redo |
+| `group edit` | the edits of an existing group: attributes, add, insert, exchange, swap, delete, join |
+| `door hinge` | the doors at the ends of a row hinged at its outer sides after a create or an edit ([D84](hi-mcp-behaviour.md#doors-2026-10-17)) |
+| `sub article` | the interior fittings of a cabinet: adding, moving and deleting a shelf |
+| `water supply` | the plugs and water connections of the room, a sink at the water connection |
+| `obstacle` | a group clear of the attic, a window, the furniture and the doors, or in a free spot |
+| `kitchen` | a whole kitchen, around a corner, with appliances and materials |
+| `cabinet` | a row of cabinets or tall units on a wall of the empty room |
+| `closet` | wardrobes on a wall or in a corner |
+| `media unit` | low media units and sideboards in the living room |
+| `utility room` | base units, a washer and a sink, open wall units in the utility room |
+| `planning from images` | a planning from an image, with or without a prompt |
+| `conversation` | a long conversation that changes the plan over many turns |
 
 **Decision** ([ADR 0006](../.agents/decisions/0006-prompt-tests-assess-the-agent.md)): the tests
 assess how well the agent understands the prompts and picks the right tools; they do not test the
@@ -244,6 +275,15 @@ The two middle-cabinet removal tests use explicit gap instructions on the Three 
 "Remove" and "delete" have the same meaning to the agent; the requested gap behaviour selects the
 tool. The prompts describe the desired result in user words and contain no tool names.
 
+## Minimum Set
+
+[minimum-test-prompts.json](./minimum-test-prompts.json) is a shorter run of the tests in the same
+format: copies of tests of `test-prompts.json` in their categories, with the same models, plans and
+prompt suffix, `randomTests` 0 and `"testSet": "minimum"`. A test changed in `test-prompts.json`
+changes there too. Asked to run the tests with the minimum set, the
+[testing skill](../.agents/skills/hi-mcp-testing.md#the-minimum-set) prepares the session from it;
+the report and its PDF are marked as the minimum set.
+
 ## Prepared test sessions
 
 A full **"test the mcp"** session uses the
@@ -253,7 +293,7 @@ with two kinds of cases, in this order:
 | Kind | Preparation | Marking |
 |---|---|---|
 | Fixed | Copy the selected cases from `test-prompts.json`. | Their committed ids and titles. |
-| Random | Draw a plan at random without repetition for each of `randomTests` new cases (default 5, 0 for none), so no two random cases share a plan. Together they cover the range the fixed cases leave open, from a single simple request to a complex, multi-turn one. | `random-<n>-<slug>` id, `Random: <title>`, `random: true`. |
+| Random | Draw a plan at random without repetition for each of `randomTests` new cases (default 5, 0 for none), so no two random cases share a plan. Together they cover the range the fixed cases leave open, from a single simple request to a complex, multi-turn one. | `random-<n>-<slug>` id, `Random: <title>`, `random: true`, in the last category `random`. |
 
 The agent writes the generated prompts and expectations before execution, from the saved plans
 and catalog. They stay in the session directory. A run limited to named tests adds no extra cases

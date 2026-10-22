@@ -58,38 +58,44 @@ const fixture = async (t, cases, suite = {}) => {
     JSON.stringify({
       models: [{ provider: 'mock', apiKey: 'unused' }],
       plans: { room: 'ps_original' },
-      tests: [
+      categories: [
         {
-          id: 'navigation',
-          title: 'Navigation',
-          plan: 'room',
-          prompt: 'A test prompt',
+          category: 'navigation',
+          tests: [
+            {
+              id: 'navigation',
+              title: 'Navigation',
+              plan: 'room',
+              prompt: 'A test prompt',
+            },
+          ],
         },
       ],
       ...suite,
     })
   );
+  const runAll = async () => {
+    await exec(
+      process.execPath,
+      ['--import', preload, runner, tests, '--out', out],
+      {
+        env: {
+          ...process.env,
+          TEST_PROMPT_CASES: caseFile,
+          TEST_PROMPT_CALLS: calls,
+        },
+        timeout: 15_000,
+      }
+    );
+    return JSON.parse(await readFile(join(out, 'results.json'), 'utf8')).runs;
+  };
   return {
     dir,
     first,
     calls: async () =>
       existsSync(calls) ? JSON.parse(await readFile(calls, 'utf8')) : [],
-    run: async () => {
-      await exec(
-        process.execPath,
-        ['--import', preload, runner, tests, '--out', out],
-        {
-          env: {
-            ...process.env,
-            TEST_PROMPT_CASES: caseFile,
-            TEST_PROMPT_CALLS: calls,
-          },
-          timeout: 15_000,
-        }
-      );
-      return JSON.parse(await readFile(join(out, 'results.json'), 'utf8'))
-        .runs[0];
-    },
+    run: async () => (await runAll())[0],
+    runAll,
   };
 };
 
@@ -307,30 +313,35 @@ test('appends the prompt suffix to the first turn of every test, not to an image
     [{ run: success }, { run: success }, { run: success }, { run: success }],
     {
       promptSuffix: suffix,
-      tests: [
+      categories: [
         {
-          id: 'single',
-          title: 'Single',
-          plan: 'room',
-          prompt: 'add a cabinet',
-        },
-        {
-          id: 'conversation',
-          title: 'Conversation',
-          plan: 'room',
-          prompt: ['Plan a kitchen.', 'make it white'],
-        },
-        {
-          id: 'question',
-          title: 'Question',
-          plan: 'room',
-          prompt: 'which colours can I choose?',
-        },
-        {
-          id: 'image-only',
-          title: 'Image only',
-          plan: 'room',
-          image: 'docs/images/three-tall-units.png',
+          category: 'prompts',
+          tests: [
+            {
+              id: 'single',
+              title: 'Single',
+              plan: 'room',
+              prompt: 'add a cabinet',
+            },
+            {
+              id: 'conversation',
+              title: 'Conversation',
+              plan: 'room',
+              prompt: ['Plan a kitchen.', 'make it white'],
+            },
+            {
+              id: 'question',
+              title: 'Question',
+              plan: 'room',
+              prompt: 'which colours can I choose?',
+            },
+            {
+              id: 'image-only',
+              title: 'Image only',
+              plan: 'room',
+              image: 'docs/images/three-tall-units.png',
+            },
+          ],
         },
       ],
     }
@@ -359,5 +370,63 @@ test('sends the prompts unchanged without a prompt suffix', async (t) => {
 test('rejects an empty prompt suffix before the first run', async (t) => {
   const f = await fixture(t, [], { promptSuffix: ' ' });
   await assert.rejects(f.run(), /promptSuffix: a non-empty text/);
+  assert.deepEqual(await f.calls(), []);
+});
+
+test('runs the tests of every category in the order of the file, numbered across the categories', async (t) => {
+  const testOf = (id) => ({ id, title: id, plan: 'room', prompt: id });
+  const f = await fixture(
+    t,
+    [{ run: success }, { run: success }, { run: success }],
+    {
+      categories: [
+        { category: 'cabinet', tests: [testOf('first'), testOf('second')] },
+        { category: 'kitchen', tests: [testOf('third')] },
+      ],
+    }
+  );
+  const runs = await f.runAll();
+  assert.deepEqual(
+    runs.map((run) => run.dir),
+    ['mock/01-first', 'mock/02-second', 'mock/03-third']
+  );
+  assert.deepEqual(
+    (await f.calls()).map((call) => call.prompts),
+    [['first'], ['second'], ['third']]
+  );
+});
+
+test('rejects categories without a unique name or without tests, and test ids repeated across categories', async (t) => {
+  const testOf = (id) => ({ id, title: id, plan: 'room', prompt: id });
+  const f = await fixture(t, [], {
+    categories: [
+      { category: 'cabinet', tests: [testOf('same')] },
+      { category: 'cabinet', tests: [testOf('same')] },
+      { category: ' ', tests: [testOf('other')] },
+      { category: 'empty', tests: [] },
+    ],
+  });
+  await assert.rejects(f.run(), (error) => {
+    assert.match(error.stderr, /category "cabinet": needs a unique name/);
+    assert.match(error.stderr, /category " ": needs a unique name/);
+    assert.match(
+      error.stderr,
+      /category "empty": tests must be a non-empty list/
+    );
+    assert.match(error.stderr, /test same: needs a unique kebab-case id/);
+    return true;
+  });
+  assert.deepEqual(await f.calls(), []);
+});
+
+test('rejects a test file without categories before the first run', async (t) => {
+  const f = await fixture(t, [], {
+    categories: undefined,
+    tests: [{ id: 'flat', title: 'Flat', plan: 'room', prompt: 'p' }],
+  });
+  await assert.rejects(
+    f.run(),
+    /categories: a non-empty list of \{ category, tests \}/
+  );
   assert.deepEqual(await f.calls(), []);
 });

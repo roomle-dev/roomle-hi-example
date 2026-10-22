@@ -34,6 +34,8 @@ never drop the agent's content silently.
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui planner (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
 | 97 | [Wall units docked beside the hood hang higher than the other wall units](#97-wall-units-docked-beside-the-hood-hang-higher-than-the-other-wall-units) | defect (not analysed) | roomle-ui HI tool commands, the library or the planner (not analysed) | low | gpt-6-astra | |
 | 98 | [A row placed into a corner stands 10 mm off the wall after later edits](#98-a-row-placed-into-a-corner-stands-10-mm-off-the-wall-after-later-edits) | defect (not analysed) | roomle-ui `hi-tool-commands.ts` (the resubmit by id or the merge, not analysed) | low | gpt-6-astra | |
+| 101 | [A side panel the agent sent is missing from the plan without a report](#101-a-side-panel-the-agent-sent-is-missing-from-the-plan-without-a-report) | defect (not analysed) | roomle-ui HI tools (the create, the undo or the merge, not analysed) | low | gpt-6-astra | |
+| 102 | [undo reverts nothing after a create the library calculated only in part](#102-undo-reverts-nothing-after-a-create-the-library-calculated-only-in-part) | defect (not analysed) | roomle-ui HI tools (`hi-mcp/plan-history.ts`, `revertToolCall` of `tool-executors.ts`) | medium | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -222,3 +224,51 @@ free end keep the first root module of a corner row at the wall.
 
 **Reproduce.** `mcp-test-2026-10-21_12-49-36`, gpt-6-astra 74 (`random-4-base-row-wall-units-extend`,
 bo-test): the final group `b4bdd14a` at `[4815, 0, -3755]`, rotation 270.
+
+## 101. A side panel the agent sent is missing from the plan without a report
+
+**Problem.** In a family kitchen the agent's second `create-or-replace-groups` holds a wall side
+panel (Furniture_Smith `W35O`, `leftOf` the wall unit above the first unit of the left leg). The
+final plan holds no such panel, and no tool result names it in `notLoaded` or `corrections`. In
+between, the agent deleted one root module in place, undid that, and merged two further groups into
+the kitchen.
+
+**Cause.** Not analysed. The run records the plan only after the turn, so which call lost the panel
+is unknown: the create (a panel left of a wall unit at the corner, above the corner unit), the undo
+of the delete, or the merge of the two groups.
+
+**To do.** roomle-ui: replay the run's calls (its `planner-calls.json`) against the local planner,
+read the groups after each call, find the call that drops the panel and make it build the panel or
+name it in its result.
+
+**Test.** roomle-ui `hi-tool-commands` tests: a root module a create, an undo or a merge does not
+build is named in the result.
+
+**Reproduce.** `mcp-test-2026-10-22_07-57-33`, gpt-6-astra 06 (`kitchen-family-two-kids`, bo-test):
+`W35O` `cupspanel` in the `args` of the second create; the final group `556610f7` holds no `W35O`.
+
+## 102. undo reverts nothing after a create the library calculated only in part
+
+**Problem.** The agent creates two groups in one `create-or-replace-groups`, and the library cannot
+calculate some of their root modules (`notLoaded`). The following `undo` makes no planner undo call
+and reverts nothing: both groups stay, and the agent changes their attributes instead of building
+them again.
+
+**Cause.** Not analysed. One plan-context read and no planner undo call mean that `revertToolCall`
+(`tool-executors.ts`) found no record of the create (`planHistory.lastDone()` empty). Either the
+create was not recorded, or a planner history event after the create's end — the library
+recalculating the root modules it could not calculate — counted as a change in the planner, which
+forgets every record (`PlanHistory.historyChanged`). An undo after a single-group create with roots
+in `notLoaded` reverts it (`kitchen-oven-hood-sink-fridge-corner` of the same session).
+
+**To do.** roomle-ui: replay the run's create and undo against the local planner with the history
+events and the undo record logged, find why the record is missing, and make undo revert the whole
+create.
+
+**Test.** roomle-ui hi-mcp tests: an undo after a create of two groups with roots in `notLoaded`
+removes both groups.
+
+**Reproduce.** `mcp-test-2026-10-22_07-57-33`, gpt-6-astra 10 (`image-only-no-text`, bo-test): after
+the create (two `posGroups` placed by wall 0 and wall 8, roots of `0120a6ea` in `notLoaded`), the
+`undo` logs only `call 7: getExternalObjectPlanContext` and no `undo []`; the groups `0120a6ea` and
+`17d43f5c` stay.

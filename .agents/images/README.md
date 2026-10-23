@@ -14,4 +14,3 @@ Images referenced by backlog items, analysis documents, and context documents. S
 | Image | Referenced by |
 |---|---|
 | [sink-top-over-hob.png](sink-top-over-hob.png) | Bug analysis: sink unit description |
-| [wall-units-beside-the-hood-hang-higher.png](wall-units-beside-the-hood-hang-higher.png) | Bug analysis: wall units beside the hood hang higher |

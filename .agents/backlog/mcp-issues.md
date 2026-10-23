@@ -31,7 +31,6 @@ never drop the agent's content silently.
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui planner (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
-| 97 | [Wall units docked beside the hood hang higher than the other wall units](#97-wall-units-docked-beside-the-hood-hang-higher-than-the-other-wall-units) | defect | roomle-ui served text (`hi-mcp-server.ts:28,30`, the `above` relation and the range hood rule) — [bug analysis](../bug-analysis/wall-units-beside-the-hood-hang-higher.md): the served rules give one leg the hood's clearance | low | gpt-6-astra | |
 | 98 | [A row with a worktop placed into a corner stands 10 mm off the wall](#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) | defect (not analysed) | roomle-ui `hi-wall-placement.ts` or the library's worktop (not analysed) | low | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
@@ -162,32 +161,6 @@ never into a served rule.
 **Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 41 (`edit-add-subarticle-look-inside`,
 bo-test `205cc9bc8`): `add-interior-fitting` of `AdjShelves` into the middle unit `a7271f1b`; `plan.xml` holds 12
 `part_ShelfadjWood`, the same as the unedited kitchen of 08.
-
-## 97. Wall units docked beside the hood hang higher than the other wall units
-
-**Problem.** In a corner kitchen the wall units docked beside the range hood hang 150 mm higher than
-the wall units of the other leg: `mod_HeightPosInsertion` 1570 against 1420, visible in the object
-image. The model sent `gapMm` 750 for the first wall unit of the hood's leg and 600 for the other
-leg; the tool built both as sent, so no correction names them.
-
-**Cause.** The served rules ([bug analysis](../bug-analysis/wall-units-beside-the-hood-hang-higher.md)).
-The range hood rule (roomle-ui `hi-mcp-server.ts:30`, "further wall units and the range hood continue
-rightOf or leftOf each other") puts the hood into the wall-unit row, bottoms flush, so the hood's
-clearance above the hob is the `gapMm` of the row's first wall unit; the model gives a hood 650 to
-750 mm and lifts that leg with it. The `above` relation (`:28`) does not say that the wall units of a
-group hang at one height, so each leg carries its own `gapMm`.
-
-**To do.** roomle-ui `feat/hi-mcp` served text: the range hood hangs `above` the hob unit with its
-own `gapMm`, the wall units beside it `above` their own floor units (`:30`); every wall unit of a
-group hangs at one height, top flush with the tall units, one `gapMm` for all (`:28`). Verify model
-acceptance.
-
-**Test.** `full-kitchen-walnut-marble-corner`: the wall units of both legs hang at one height.
-
-**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 52 (`full-kitchen-walnut-marble-corner`,
-bo-test `205cc9bc8`): roots `wallright` `OTB60` `above` `landing1` `gapMm` 750, `hood` `DU`
-`rightOf` `wallright`, `wallend` `OTB60` `rightOf` `hood`, `wallprep` `O2TB90` `above` `prep`
-`gapMm` 600; both OTB60 at 1570, the back-wall wall units at 1420.
 
 ## 98. A row with a worktop placed into a corner stands 10 mm off the wall
 

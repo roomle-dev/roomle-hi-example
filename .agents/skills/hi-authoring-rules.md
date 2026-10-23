@@ -88,11 +88,12 @@ relation; the server compiles the docking (`contextData`) from it
 |---|---|---|
 | `rightOf` / `leftOf` | right / left of that unit, as seen from the front | `RightBottom → LeftBottom` / `LeftBottom → RightBottom`; a wall unit beside a tall unit: `RightTop → LeftTop` / `LeftTop → RightTop`, tops flush |
 | `onTop` | stands on that unit — a tall unit or a wall unit, any depth; `align` `left` (default), `right`, `back`; `gapMm` lifts it. On a kitchen base unit a wall unit hangs `above` it and a floor unit continues the row, reported | `LeftTop → LeftBottom`, `RightTop → RightBottom`, `BackTop → BackBottom` |
-| `above` | a wall unit hanging above that floor unit; `gapMm` sets the gap | `LeftTop → LeftBottom` with the gap that puts its top at the top of the tall units (D35: tall − wall − base `mod_Height`, Furniture_Smith 660) |
+| `above` | a wall unit hanging above that floor unit, its top flush with the tall units like every wall unit of the group; `gapMm` sets another gap, the same for every wall unit of the group | `LeftTop → LeftBottom` with the gap that puts its top at the top of the tall units (D35: tall − wall − base `mod_Height`, Furniture_Smith 660) |
 | `behind` | back to back, turned by 180° (an island) | `BackBottom → BackBottom`, flush with that unit at the end where the turned unit's own row starts (D98) |
 
-- Wall units and the range hood continue `rightOf` / `leftOf` each other; a hood without wall units
-  hangs `above` the hob unit. A hood beside a tall unit is hung `above` the floor unit on that side,
+- Wall units continue `rightOf` / `leftOf` each other. The range hood hangs `above` the hob unit
+  with a `gapMm` of its own, and the next wall unit past the hood hangs `above` its own floor unit
+  ([D104](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)). A hood beside a tall unit is hung `above` the floor unit on that side,
   and a floor unit beside a wall unit continues the floor row (corrections G40, G41).
 - A corner kitchen starts with a corner article and continues one row `rightOf` it and the other
   `leftOf` it; the wall units of each leg hang `above` the floor units of that leg, never on or

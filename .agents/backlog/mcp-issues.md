@@ -35,7 +35,6 @@ never drop the agent's content silently.
 | 98 | [A row with a worktop placed into a corner stands 10 mm off the wall](#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) | defect (not analysed) | roomle-ui `hi-wall-placement.ts` or the library's worktop (not analysed) | low | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
-| 107 | [A hood with the article code D46ED52X1 or DFN60 makes its group fall apart](#107-a-hood-with-the-article-code-d46ed52x1-or-dfn60-makes-its-group-fall-apart) | defect | RoomleCore JSON parser (`JsonStream::parseNextToken`) — root cause in the RoomleCore bug analysis `json-parser-rejects-numbers-in-exponent-notation.md`; roomle-ui the core upgrade | medium | gpt-6-astra | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -257,40 +256,3 @@ lifts a unit of another group on top of it by 180 mm.
 
 **Reproduce.** No run yet: a unit of another group on top of a base unit; `exchange-root-module` of
 the base unit for a taller article.
-
-## 107. A hood with the article code D46ED52X1 or DFN60 makes its group fall apart
-
-**Problem.** A range hood (`DU`) with `mod_HoodId` `D46ED52X1` or `DFN60`, with or without
-`mod_HoodSupplier` Neff, makes its whole group fall apart in the planner: the planner holds the group
-under the id `RightBottom` and the hood under the root id `LeftTop`, without plinth, worktop or grip
-strip, with the library's default fronts, and every root module stands on its own, spread through
-the room and out of it like an exploded drawing. The result lists the group as `loaded` under its own
-id and says only, in `corrections`, that it "has no calculated geometry - it was not placed at the
-bottom wall" and, in `hint`, that it is not positioned. The agent undoes and builds again without the
-hood's attributes. A built hood whose supplier is set to Neff with `change-module-attribute` keeps
-Siemens, and a second such group — the hob unit and a Neff `D46ED52X1` hood — stays in the plan.
-
-**Cause.** The RoomleCore JSON parser. The library calculates the group correctly; the four docking
-vectors of these hoods end at z `5e-324` (`Number.MIN_VALUE`, a valid JSON number), which roomle-ui
-writes with `JSON.stringify`. `JsonStream::parseNextToken` (RoomleCore `json-parser.cpp:396-408`)
-reads a number without `.` as an integer, rejects `5e-324` as an invalid token, and its recovery
-closes every enclosing container: the ids of the docking vectors `LeftTop` and `RightBottom` become
-the hood's and the group's, and everything after the hood in the group's JSON — the group's id,
-position and attributes, the generated roots — never reaches the kernel. The agent's payload is
-valid. Analysis: RoomleCore
-[`json-parser-rejects-numbers-in-exponent-notation.md`](https://github.com/roomle-internal/RoomleCore/blob/fix/json-parser-exponent-numbers/.agents/bug-analysis/json-parser-rejects-numbers-in-exponent-notation.md)
-(branch `fix/json-parser-exponent-numbers`).
-
-**To do.** RoomleCore: a number with a fraction or an exponent takes the float path of
-`JsonStream::parseNextToken`, and an underflow is no error — the fix and the tests of the analysis.
-roomle-ui: the core upgrade that carries the fix.
-
-**Test.** RoomleCore `test/util/json/json-test.cpp` and
-`deserialize-external-module-group-definition-test.cpp` as the analysis lists them.
-`image-only-no-text-2`: a hood with a Neff code builds in the first create.
-
-**Reproduce.** `issue-exploded-kitchen-7-2026-10-23_08-08-08`, gpt-6-astra-2 (`image-only-no-text-2`,
-bo-test `89ade00c3`, Roomle Core `3.2.0-alpha.3`, embedding-lib `0.0.0-dev-a95b24e`; 1 of 3 runs): the
-first `create-or-replace-groups` sends `extractor` `DU` `above` `hob` with Neff `D46ED52X1`; model-free
-in `bisect-2/` (`I-hood-id-only`, `L-minimal-neff-D46ED52X1`), `probe-edit/` and `trace/` (the library's
-result and the kernel's `[1901] Invalid token '5e-324' in JSON`) of that directory.

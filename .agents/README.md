@@ -99,6 +99,7 @@ Durable answers to recurring questions. Full index in [`wiki/README.md`](wiki/RE
 | Page | Covers |
 |---|---|
 | [An MCP endpoint for the HI tools at `…/hi-mcp`](wiki/hi-mcp-endpoint-for-external-clients.md) | Why the planner cannot serve an MCP endpoint itself; the relay and the page bridge in the planner, what needs to be done and the concerns |
+| [Why the agent cannot plan what the library cannot build](wiki/why-the-agent-cannot-plan-what-the-library-cannot-build.md) | The agent only chooses, the library calculates; what happens to wrong input and where the guarantee ends |
 
 ### Decisions (Architecture Decision Records)
 
@@ -172,6 +173,7 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 | [Library-neutrality issues of the MCP server](backlog/mcp-policy-issues.md) — what in the MCP server still carries library-specific content: the served text's kitchen taxonomy, the search normalization and the result messages of the HI tool commands | 2026-10-14 |
 | [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL | 2026-10-17 |
 | [Attribute values checked before an edit](backlog/attribute-values-checked-before-an-edit.md) — the HI tools apply an agent's attribute value without the library's verified options; what to do with a value a module does not take | 2026-10-21 |
+| [The gaps of the library calculation guarantee](backlog/library-calculation-gaps.md) — where a planning reaches the plan, the price or the order without a complete calculation of the library or without a note: failed root modules in the price and the order and in later plan contexts, the create path, the library's open calculation errors, exceptions of the calculation, the other plan-changing tools | 2026-10-23 |
 | [A relation for a unit under a tabletop](backlog/under-relation-for-tabletops.md) — a live check of the tabletop's inner vectors, then an `under` relation | 2026-10-14 |
 | [Analyse how Spec Kit can help with the prompting](backlog/speckit-for-the-prompting.md) — Spec Kit's prompt sections as inspiration for the served text and the chat prompt | 2026-10-07 |
 

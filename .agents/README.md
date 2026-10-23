@@ -99,6 +99,7 @@ Durable answers to recurring questions. Full index in [`wiki/README.md`](wiki/RE
 | Page | Covers |
 |---|---|
 | [An MCP endpoint for the HI tools at `…/hi-mcp`](wiki/hi-mcp-endpoint-for-external-clients.md) | Why the planner cannot serve an MCP endpoint itself; the relay and the page bridge in the planner, what needs to be done and the concerns |
+| [Why the agent cannot plan what the library cannot build](wiki/why-the-agent-cannot-plan-what-the-library-cannot-build.md) | The agent only chooses, the library calculates; what happens to wrong input and where the guarantee ends |
 
 ### Decisions (Architecture Decision Records)
 

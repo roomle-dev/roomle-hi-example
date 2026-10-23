@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [wall-units-beside-the-hood-hang-higher.md](wall-units-beside-the-hood-hang-higher.md) | Open | MCP issue 97: the wall units beside the range hood hang higher than the other wall units |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

@@ -195,6 +195,8 @@ request from a mistake.
 
 ## Related
 
+- [library-calculation-gaps.md](../backlog/library-calculation-gaps.md) — the open work that closes
+  these gaps
 - [roomle-ui `library-errors.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/library-errors.md)
   — every call into the library and how its errors reach the agent
 - [roomle-ui `hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md)

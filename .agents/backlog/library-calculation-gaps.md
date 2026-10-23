@@ -1,0 +1,273 @@
+# Backlog: the gaps of the library calculation guarantee
+
+> **Type**: Backlog — the work that closes the gaps named in
+> [Why the agent cannot plan what the library cannot build](../wiki/why-the-agent-cannot-plan-what-the-library-cannot-build.md#where-the-guarantee-ends)
+> **Domain**: roomle-ui `homag-intelligence` — the glue logic (`glue-logic.ts`), the HI tool
+> commands (`hi-tool-commands.ts`, `hi-tool-attributes.ts`), the plan context (`hi-plan-context.ts`)
+> and the HI tool set (`hi-mcp/`); the HOMAG libraries; roomle-hi-example: the documentation
+
+The agent only chooses, and the library calculates. Every gap below is a path on which a planning
+reaches the plan, the price or the order without a complete calculation of the library, or without
+a note that says so. None of the items refuses the agent's input
+([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort)): they run the library's own
+checks on every path and make the library's verdict visible wherever the planning is read. Where an
+item needs behaviour that is not decided, its first to-do is the decision (D51).
+
+The check of a value against the library's verified options before an edit is open work of its own:
+[attribute-values-checked-before-an-edit.md](attribute-values-checked-before-an-edit.md). It and
+item 3 change how a root's attribute values reach the calculation of a create; they are done
+together.
+
+The roomle-ui paths are relative to `packages/web-sdk/packages/homag-intelligence/src/`. The
+D-numbers are the decisions in §3 of
+[roomle-ui `hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions).
+
+## Overview
+
+| # | Gap | Responsible | Priority |
+|---|---|---|---|
+| 1 | [Price and order include root modules the library could not calculate, without a note](#1-price-and-order-include-root-modules-the-library-could-not-calculate-without-a-note) | roomle-ui HI tool set (`get-price`, `get-order-data`); the library's `getOrderData` | high |
+| 2 | [A root module the library could not calculate is not visible after the call that caused it](#2-a-root-module-the-library-could-not-calculate-is-not-visible-after-the-call-that-caused-it) | roomle-ui plan context (`hi-plan-context.ts`), served text | medium |
+| — | [Values are not checked before an edit](attribute-values-checked-before-an-edit.md) | roomle-ui tool commands and glue logic | medium |
+| 3 | [A create skips the library's conflict resolution and the checks of its root modules](#3-a-create-skips-the-librarys-conflict-resolution-and-the-checks-of-its-root-modules) | roomle-ui glue logic (`glue-logic.ts`), tool commands | medium |
+| 4 | [Values the library accepts and cannot calculate](#4-values-the-library-accepts-and-cannot-calculate) | HOMAG library development team; roomle-hi-example: the report | medium |
+| 5 | [An exception of the library's calculation leaves the group uncalculated without a note](#5-an-exception-of-the-librarys-calculation-leaves-the-group-uncalculated-without-a-note) | roomle-ui glue logic (`_calculate`), tool commands | medium |
+| 6 | [The other plan-changing tools report no library error](#6-the-other-plan-changing-tools-report-no-library-error) | roomle-ui tool commands (`hi-tool-commands.ts`) | medium |
+
+Where a group stands in the room is no gap: the tools build a group on an obstacle or outside the
+room and say so in `hint`, because the user may want it there (D51, D55).
+
+## 1. Price and order include root modules the library could not calculate, without a note
+
+**Problem.** A root module whose calculation ends with an `Error` or `Fatal` diagnostic stays in
+the plan without docking vectors and front parts (D95). `get-price` and `get-order-data` return the
+planner's answer as it is (`hi-mcp/tool-executors.ts:629-640`): `fetchPrice` and the `orderData` of
+the snapshot, both built by `getGroupDataForOrder` (`glue-logic.ts:1955`), which hands every group
+of the scene to the library's `getOrderData`. Neither answer says that a root module of the order is
+not built. What the library's `getOrderData` does with such a root module — prices it, leaves it
+out or fails — is not known.
+
+**Cause.** The handling of a failed calculation reports it in the result of the call that caused it
+(C25) and nowhere else; the order path reads no diagnostic.
+
+**To do.**
+
+1. Probe what the library's order data carries for a root module with an `Error`: its order line,
+   its price, its parts. Write the outcome into roomle-ui
+   `.agents/homag-intelligence/library-errors.md`. A root module without geometry that the library
+   prices is a library issue in [library-issues.md](library-issues.md).
+2. Decide with the user what the price and the order say about it. The candidates:
+   - `get-price` and `get-order-data` name every root module of the plan the library could not
+     calculate, with the first line of its diagnostic, beside the price or the order data, so the
+     agent tells the user that the price holds a unit that is not built as planned. Recommended: it
+     builds on D95 and refuses nothing.
+   - The planner's order flow (`onPlaceOrder` of the host) warns before an order with such a root
+     module. It is outside the HI tools and a decision about the planner's order.
+3. roomle-ui HI tool set: the decided note in `get-price` and `get-order-data`
+   (`hi-mcp/tool-executors.ts`), the failed root modules read from `getExternalObjectGroups` as
+   `withLibraryChanges` reads them (`hi-tool-attributes.ts:255-276`).
+4. Served text (`hi-mcp/hi-mcp-server.ts`): the descriptions of the two tools say what the note
+   means and that the answer names it to the user.
+5. Documentation: the decision in §3 and the feedback in §8 of roomle-ui `hi-tools-behaviour.md`,
+   `hi-tools-reference.md`, [`hi-mcp-tools.md`](../skills/hi-mcp-tools.md) and
+   [the wiki page](../wiki/why-the-agent-cannot-plan-what-the-library-cannot-build.md).
+
+**Test.** roomle-ui `__tests__/hi-mcp/tool-executors-test.ts`: on a plan whose group has a root
+module with an `Error` message, `get-price` and `get-order-data` name it; on a plan without one they
+answer as before.
+
+**Reproduce.** In the example page, model-free (`instance.extended.callExternalObjectAgentTool`):
+create an `OTB60` with `mod_Width` 900 and `mod_DoorDirectionSelection` `Left`
+([library issue 80](library-issues.md#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate)),
+then call `get-price` and `get-order-data`; neither answer names the root module.
+
+## 2. A root module the library could not calculate is not visible after the call that caused it
+
+**Problem.** The result of the call that caused a failed calculation names the root module (C25).
+After that call nothing does: `get-plan-context` carries no diagnostic (D9; `shapeRoot`,
+`hi-plan-context.ts:705`), and a failed root module shows only by what it lacks — its
+`dockingVectors` are empty (`dockingVectorNames`, `hi-plan-context.ts:320`). An agent in a later
+turn, a later conversation or on a planning opened from saved data does not know that the unit is
+not built, and its answer describes the unit as planned.
+
+**Cause.** D9 withholds the log messages of the groups because they are large, and no smaller field
+stands in for the one fact the agent needs.
+
+**To do.**
+
+1. roomle-ui plan context: `shapeRoot` (`hi-plan-context.ts:705`) gives a root module whose last
+   calculation carries an `Error` or `Fatal` diagnostic one field with the first line of its first
+   such diagnostic, worded as C25 words it; the full `logMessages` stay withheld (D9). The field is
+   new in the planner's public plan context (`getExternalObjectPlanContext`) as well; nothing there
+   is removed or renamed.
+2. Served text (`hi-mcp/hi-mcp-server.ts`, the `get-plan-context` description): such a root module
+   is not built until a valid value recalculates it, and the answer says so.
+3. Documentation: §5.4 and D9 of roomle-ui `hi-tools-behaviour.md`, `hi-tools-reference.md`,
+   [`hi-mcp-tools.md`](../skills/hi-mcp-tools.md).
+
+**Test.** roomle-ui `__tests__/hi-plan-context-test.ts`: a root module with an `Error` diagnostic
+carries the field with its first line; a root module with `Warning` and `Info` messages only does
+not.
+
+**Reproduce.** After the create of item 1, `get-plan-context` lists the `OTB60` with empty
+`dockingVectors` and no diagnostic.
+
+## 3. A create skips the library's conflict resolution and the checks of its root modules
+
+**Problem.**
+
+- The attribute values of a root in `create-or-replace-groups` go into the layout as input values
+  (`_applyRootAttributeOverrides`, `glue-logic.ts:978`, from `prepareArticlePickRoots`, `:1017`)
+  and are calculated with it. The library's conflict resolution runs only in the attribute edits
+  (`solveModuleAttributeConflict` in `modifyAttributesOfModules`, `glue-logic.ts:2919`). A create
+  therefore loads a front program with a front colour the program does not offer —
+  `mod_FrontProgram` `Classic` with `mod_FrontColor` `324` (Dark marble), which comes only with
+  `Modern` —, the planner renders it, and the next attribute change of that root module switches
+  the program (D60). The served Fronts rule keeps the agent from it; nothing else does.
+- An article dragged in gets the library's check of every root module (`solveInitialModule`:
+  `_solveInitialRootModules`, `glue-logic.ts:3600`, in `newPosDataFromId`, `:707`). A new group of a
+  create gets the check of the group only (`_solveInitialNewGroup`, `:3585`, in
+  `createOrReplacePosGroupsFromLayout`, `:865`), and only from a library with a group orchestrator;
+  a replaced group gets none.
+
+**Cause.** The layout load builds the roots from the article templates as a catalog load does, not
+as the planner's interactive edits do: it sets the values without asking the library about their
+conflicts, and runs the drag-in's checks for the group only.
+
+**To do.**
+
+1. Decide with the user:
+   - whether the root attribute values of a create go through the library's conflict resolution,
+     in the order sent, so that a create gives the values the same edits give one after the other.
+     The library's changes are then named in `corrections` (D59), as for the group attributes after
+     the load (D65), and the Fronts rule of D60 works on what the agent reads in the result;
+   - whether a new group of a create runs `solveInitialModule` per article root, as a drag-in does,
+     and whether a replace runs it for the root modules it adds.
+2. roomle-ui glue logic, per the decision: the conflict resolution in `_applyRootAttributeOverrides`
+   (`glue-logic.ts:978`) for a layout load, also for the article template of the anchor
+   (`calculateArticleTemplate`, `:1090`), so the anchor frame is read from the values the root is
+   built with; `_solveInitialRootModules` after `_solveInitialNewGroup` in
+   `createOrReplacePosGroupsFromLayout` (`:865`).
+3. roomle-ui tool commands: name the values the library changed in the root attribute values of a
+   create in `corrections` — the comparison of `findLibraryChanges` (`hi-tool-attributes.ts`)
+   against the values the call sent.
+4. Do it together with the layout stage of
+   [attribute-values-checked-before-an-edit.md](attribute-values-checked-before-an-edit.md) (to do 2,
+   "The layout inputs of a create"): both change how a root's attribute values reach the
+   calculation.
+5. Documentation: "Initial Checks of the Library" in roomle-ui `.agents/homag-intelligence.md`;
+   D59, D60 and D65 of `hi-tools-behaviour.md`; `library-errors.md`.
+
+**Test.** roomle-ui `__tests__/glue-logic-test.ts`, with a library whose
+`solveModuleAttributeConflict` switches the program for a colour: a layout load with both values
+loads the switched program, and the create's result names the change. `solveInitialModule` runs for
+every article root of a new group of a layout load and for none of its generated roots.
+
+**Reproduce.** In the example page, model-free: create an `OTB60` with `mod_FrontProgram` `Classic`
+and `mod_FrontColor` `324`; the group loads with both values, and a `change-module-attribute` of
+`mod_FrontColor` `324` on the root module switches `mod_FrontProgram`.
+
+## 4. Values the library accepts and cannot calculate
+
+**Problem.** A value the library offers must calculate (D99). The calculation errors of
+[library-issues.md](library-issues.md) — wall units at 900 mm with a single door, base units at
+150 mm with a 150 mm plinth, a drawer sideboard lowered to 720 mm, a handle strip, backsplashes —
+leave root modules without geometry for values the library accepts. Several of them are not
+reported to the library development team. A check of the values before an edit
+([attribute-values-checked-before-an-edit.md](attribute-values-checked-before-an-edit.md)) does not
+catch them: the library does not rule these values out, and it verifies no range for `mod_Width` and
+`mod_Height`.
+
+**Cause.** The library's calculation or its tables lack the combinations its attributes offer.
+
+**To do.**
+
+1. roomle-hi-example: report every calculation error of [library-issues.md](library-issues.md)
+   whose **Status** says "not reported" to the HOMAG library development team, and set its status.
+2. The library: calculate every value it offers, or rule out in its verified options
+   (`getAttributesDropDownValues`) every value it cannot calculate — with a range for `mod_Width`
+   and `mod_Height` —, so that the check before an edit catches it.
+
+**Test.** The tests of the issues in [library-issues.md](library-issues.md).
+
+**Reproduce.** Per issue, in [library-issues.md](library-issues.md).
+
+## 5. An exception of the library's calculation leaves the group uncalculated without a note
+
+**Problem.** `_calculate` (`glue-logic.ts:3456`) catches an exception of the library's
+`calculateGroup`, logs "Error adding sub article to group:" and returns the group as it was sent.
+Every later step takes it for a calculated group:
+
+- An attribute edit stores the group with the new value and the parts, dimensions and docking
+  vectors of the previous calculation (`_runGroupCalculation`, `glue-logic.ts:2267`). The plan shows
+  a geometry that does not match the attributes, and the order data is built from that group.
+- A new group of a create is loaded as its article templates with the attribute values, without a
+  calculation (`_addNewGroup`, `:2341`; `_calculateNewGroup`, `:2186`), and the layout load answers
+  `built`.
+- No tool result names it: the failed-root reports read `Error` and `Fatal` diagnostics, and
+  `_updatePosData` (`:3781`) clears the group's messages before the calculation, while the root
+  modules keep the messages of their last calculation.
+
+**Cause.** `_calculate` turns the exception into a result: the input, uncalculated.
+
+**To do.**
+
+1. Decide with the user what an exception of the calculation does (D51). The candidates:
+   - An edit keeps the previous calculated group (`lastCalculatedPosDataJson`), and the result says
+     that the library's calculation failed and the change was not applied; a create leaves the group
+     out with the exception's first line in `notLoaded` (`leftOut`, `readLoadOutcomes`,
+     `hi-tool-payload.ts:281`), and a replace keeps its previous group. Recommended: an exception
+     leaves no calculation to keep, unlike the `Error` diagnostic of D95, and the plan never shows a
+     geometry the library did not calculate.
+   - The uncalculated group stays as it is, and the result names it.
+2. roomle-ui glue logic: `_calculate` tells its callers that the calculation threw instead of
+   returning the input, and every caller acts on the decision — the call sites in "The library
+   boundary" of roomle-ui `library-errors.md`.
+3. roomle-ui tool commands: the result names it — a create in `notLoaded`, an edit in `corrections`,
+   or an error with `historySteps` 1 where the plan changed (`runToolCommand`).
+4. Documentation: "The library boundary" of roomle-ui `library-errors.md`, a decision in §3 and the
+   message in §8 of `hi-tools-behaviour.md`,
+   [the wiki page](../wiki/why-the-agent-cannot-plan-what-the-library-cannot-build.md).
+
+**Test.** roomle-ui `__tests__/glue-logic-test.ts`, with a library whose `calculateGroup` throws: an
+attribute edit and a layout load behave as decided; `__tests__/hi-tool-commands/`: the result of the
+create and of an attribute tool names the failed calculation.
+
+**Reproduce.** No run shows it; a library whose `calculateGroup` throws reproduces it in
+`glue-logic-test.ts` (`newGlueLogic`).
+
+## 6. The other plan-changing tools report no library error
+
+**Problem.** Only `create-or-replace-groups` (`hi-tool-commands.ts:748`), `change-module-attribute`
+and `change-group-attribute` (`withLibraryChanges`, `hi-tool-commands.ts:1027`, `:1083`) read the
+library's diagnostics after the load. `place-group`, `delete-article-in-place`,
+`delete-article-and-compact`, `merge-article-into-group`, `exchange-root-module`,
+`insert-article-into-group`, `swap-root-modules` and `merge-groups` do not: a root module the
+library cannot calculate after such an edit stays in the plan without a note. Every one of them
+recalculates the group, three of them add an article with attribute values
+(`merge-article-into-group`, `insert-article-into-group`, `exchange-root-module`), and the planning
+situation after a move can change an input value, such as the insertion height.
+
+**Cause.** The failed-root report lives in `withLibraryChanges` (`hi-tool-attributes.ts:237`) and in
+the create command; the other commands answer with the planner's group operation as it is.
+
+**To do.**
+
+1. roomle-ui tool commands: move the failed-root sentences of `withLibraryChanges`
+   (`hi-tool-attributes.ts:255-276`) into a function of their own and apply it to the result of
+   every plan-changing command, for the groups the command changed, with the command's name, as the
+   attribute tools report them.
+2. Served text (`hi-mcp/hi-mcp-server.ts`): the descriptions of these tools say that `corrections`
+   name a root module the library could not calculate.
+3. Documentation: §8.5 of roomle-ui `hi-tools-behaviour.md`, "The other tool commands" of
+   `library-errors.md`,
+   [the wiki page](../wiki/why-the-agent-cannot-plan-what-the-library-cannot-build.md).
+
+**Test.** roomle-ui `__tests__/hi-tool-commands/`, with the fake planner: an `exchange-root-module`,
+a `delete-article-and-compact`, a `merge-groups` and a `place-group` whose `getExternalObjectGroups`
+answer has a root module with an `Error` message name it in `corrections`; without one, the results
+stay as before.
+
+**Reproduce.** In the example page, model-free: `exchange-root-module` of a wall unit with `OTB60`
+and the attributes `mod_Width` 900 and `mod_DoorDirectionSelection` `Left`; the result names no
+failure, and `get-plan-context` lists the new root module with empty `dockingVectors`.

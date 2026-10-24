@@ -2,17 +2,19 @@
 
 > **Type**: Backlog — the work that closes the gaps named in
 > [Why the agent cannot plan what the library cannot build](../wiki/why-the-agent-cannot-plan-what-the-library-cannot-build.md#where-the-guarantee-ends)
-> **Domain**: roomle-ui `homag-intelligence` — the glue logic (`glue-logic.ts`), the HI tool
-> commands (`hi-tool-commands.ts`, `hi-tool-attributes.ts`), the plan context (`hi-plan-context.ts`)
-> and the HI tool set (`hi-mcp/`); the HOMAG libraries; roomle-hi-example: the documentation
+> **Domain**: roomle-ui `homag-intelligence` — the HI tool set (`hi-mcp/`) and the plan context
+> (`hi-plan-context.ts`), never the glue logic
+> ([Hard Rule](../../AGENTS.md#hard-rule-the-planning-assistant-stays-out-of-the-glue-logic)); the
+> HOMAG libraries; roomle-hi-example: the documentation
 
 The agent only chooses, and the library calculates. Every gap below is a path on which a planning
 reaches the plan, the price or the order without a complete calculation of the library, or without
 a note that says so. A tool call of the agent that the library cannot calculate changes nothing —
 the tools discard it before the load (D106); a root module without a complete calculation comes
 from an edit in the planner, from a loaded plan (D95) or from a follow-up calculation after a load. None of the items refuses the agent's input
-([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort)): they run the library's own
-checks on every path and make the library's verdict visible wherever the planning is read. Where an
+([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort)): they make the library's
+verdict visible wherever the planning is read, and have the library calculate every value it
+offers. Where an
 item needs behaviour that is not decided, its first to-do is the decision (D51).
 
 The roomle-ui paths are relative to `packages/web-sdk/packages/homag-intelligence/src/`. The
@@ -24,7 +26,6 @@ D-numbers are the decisions in §3 of
 | # | Gap | Responsible | Priority |
 |---|---|---|---|
 | 1 | [Price and order include root modules the library could not calculate, without a note](#1-price-and-order-include-root-modules-the-library-could-not-calculate-without-a-note) | roomle-ui HI tool set (`get-price`, `get-order-data`); the library's `getOrderData` | high |
-| 3 | [A create skips the library's conflict resolution and the checks of its root modules](#3-a-create-skips-the-librarys-conflict-resolution-and-the-checks-of-its-root-modules) | roomle-ui glue logic (`glue-logic.ts`), tool commands | medium |
 | 4 | [Values the library accepts and cannot calculate](#4-values-the-library-accepts-and-cannot-calculate) | HOMAG library development team; roomle-hi-example: the report | medium |
 
 Where a group stands in the room is no gap: the tools build a group on an obstacle or outside the
@@ -76,57 +77,6 @@ answer as before.
 ([library issue 80](library-issues.md#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate)),
 then call `get-price` and `get-order-data` model-free (`instance.extended.callExternalObjectAgentTool`);
 neither answer names the root module.
-
-## 3. A create skips the library's conflict resolution and the checks of its root modules
-
-**Problem.**
-
-- The attribute values of a root in `create-or-replace-groups` go into the layout as input values
-  (`_applyRootAttributeOverrides`, `glue-logic.ts:978`, from `prepareArticlePickRoots`, `:1017`)
-  and are calculated with it. The library's conflict resolution runs only in the attribute edits
-  (`solveModuleAttributeConflict` in `modifyAttributesOfModules`, `glue-logic.ts:2919`). A create
-  therefore loads a front program with a front colour the program does not offer —
-  `mod_FrontProgram` `Classic` with `mod_FrontColor` `324` (Dark marble), which comes only with
-  `Modern` —, the planner renders it, and the next attribute change of that root module switches
-  the program (D60). The served Fronts rule keeps the agent from it; nothing else does.
-- An article dragged in gets the library's check of every root module (`solveInitialModule`:
-  `_solveInitialRootModules`, `glue-logic.ts:3600`, in `newPosDataFromId`, `:707`). A new group of a
-  create gets the check of the group only (`_solveInitialNewGroup`, `:3585`, in
-  `createOrReplacePosGroupsFromLayout`, `:865`), and only from a library with a group orchestrator;
-  a replaced group gets none.
-
-**Cause.** The layout load builds the roots from the article templates as a catalog load does, not
-as the planner's interactive edits do: it sets the values without asking the library about their
-conflicts, and runs the drag-in's checks for the group only.
-
-**To do.**
-
-1. Decide with the user:
-   - whether the root attribute values of a create go through the library's conflict resolution,
-     in the order sent, so that a create gives the values the same edits give one after the other.
-     The library's changes are then named in `corrections` (D59), as for the group attributes after
-     the load (D65), and the Fronts rule of D60 works on what the agent reads in the result;
-   - whether a new group of a create runs `solveInitialModule` per article root, as a drag-in does,
-     and whether a replace runs it for the root modules it adds.
-2. roomle-ui glue logic, per the decision: the conflict resolution in `_applyRootAttributeOverrides`
-   (`glue-logic.ts:978`) for a layout load, also for the article template of the anchor
-   (`calculateArticleTemplate`, `:1090`), so the anchor frame is read from the values the root is
-   built with; `_solveInitialRootModules` after `_solveInitialNewGroup` in
-   `createOrReplacePosGroupsFromLayout` (`:865`).
-3. roomle-ui tool commands: name the values the library changed in the root attribute values of a
-   create in `corrections` — the comparison of `findLibraryChanges` (`hi-tool-attributes.ts`)
-   against the values the call sent.
-4. Documentation: "Initial Checks of the Library" in roomle-ui `.agents/homag-intelligence.md`;
-   D59, D60 and D65 of `hi-tools-behaviour.md`; `library-errors.md`.
-
-**Test.** roomle-ui `__tests__/glue-logic-test.ts`, with a library whose
-`solveModuleAttributeConflict` switches the program for a colour: a layout load with both values
-loads the switched program, and the create's result names the change. `solveInitialModule` runs for
-every article root of a new group of a layout load and for none of its generated roots.
-
-**Reproduce.** In the example page, model-free: create an `OTB60` with `mod_FrontProgram` `Classic`
-and `mod_FrontColor` `324`; the group loads with both values, and a `change-module-attribute` of
-`mod_FrontColor` `324` on the root module switches `mod_FrontProgram`.
 
 ## 4. Values the library accepts and cannot calculate
 

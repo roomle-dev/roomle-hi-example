@@ -26,7 +26,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example test expectation and testing skill — [analysed](../bug-analysis/group-placed-over-existing-objects.md): not reproducible, the island stands below three pendant lamps (1950 to 2802 mm) and over no object; the evaluation read the floor outlines without the heights. A unit test of the hint below a hanging object in roomle-ui closes it | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui planner (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
 | 98 | [A row with a worktop placed into a corner stands 10 mm off the wall](#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) | defect (not analysed) | roomle-ui `hi-wall-placement.ts` or the library's worktop (not analysed) | low | gpt-6-astra | |
@@ -38,35 +37,6 @@ never drop the agent's content silently.
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 90. A group placed over existing objects is not disclosed
-
-**Problem.** `obstacle-island-free-spot` (52): the model places a new island of three US2A60 base
-cabinets (1800 mm) away from the walls, opposite the kitchen (x 800..1417, z 4200..6000), over a
-plant (x 869..1031, z 5220..5380) and a chair (x 851.76..1048.24, z 4331.05..4528.95); the answer
-reports only the aisle ("It leaves approximately 1,214 mm of aisle facing the kitchen; existing
-furniture remains unchanged") and never names the objects the island stands over.
-
-**Cause.** [Analysed](../bug-analysis/group-placed-over-existing-objects.md): not a defect of the
-tools or the served text. The "plant" and the "chair" are two of three pendant lamps
-(`brands_15:flos_fuscia1`) that hang from 1950 to 2802 mm over the free spot beside the kitchen; the
-island's root modules reach 820 mm. The hint names an object only where the heights meet (D55), so it
-named nothing, and the answer was right. The evaluation compared the floor outlines without
-`bottomMm`/`topMm` and named them after the objects the test's `expect` lists.
-
-**To do.** roomle-hi-example: the `expect` of `obstacle-island-free-spot` names the pendant lamps
-above the free spot, and the evaluation rule of the testing skill says an object is overlapped only
-where the heights meet too. roomle-ui `feat/hi-mcp`: one unit test in
-`create-or-replace-groups-placement-test.ts` — a root module below an object that hangs above it gets
-no hint. Then the item leaves the backlog.
-
-**Test.** The unit test above. In the suite, `obstacle-island-free-spot` with the clarified
-expectation.
-
-**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 52 (`obstacle-island-free-spot`, local
-roomle-ui :5173): one `create-or-replace-groups` with `placement.posGroup` [800, 0, 6000] and
-`posRotationY` 90, three US2A60 roots `rightOf` each other; the plan context's obstacle outlines put
-the plant and the chair under the island's roots; the answer discloses only the aisle.
 
 ## 91. The answer describes the two legs of the L-shaped kitchen swapped
 

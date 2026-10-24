@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [group-placed-over-existing-objects.md](group-placed-over-existing-objects.md) | Open | Not reproducible on roomle-ui `feat/hi-mcp`: the "plant" and "chair" the island stands over are pendant lamps hanging from 1950 mm, and the hint tests the heights (D55); the evaluation of 2026-10-20 read the floor outlines without them. Proposed: the test's `expect` names the lamps, the testing skill's evaluation rule counts the heights, a unit test of the hint below a hanging object, then the item leaves the backlog ([mcp-issues.md #90](../backlog/mcp-issues.md#90-a-group-placed-over-existing-objects-is-not-disclosed)) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

@@ -169,8 +169,11 @@ from `get-plan-context` carries it.
 
 **Mounting**: choose articles and settings from the library descriptions and attributes; categories
 organize the catalog. Unknown categories retain explicit `above` and `gapMm`; finishing parts
-continue the wall row `rightOf` / `leftOf`. A replace restores missing carrier links at measured
-offsets for retained roots with unchanged articles and no new relation.
+continue the wall row `rightOf` / `leftOf`. A replace, a placement by wall and `place-group` restore
+the missing carrier link of a retained root the floor does not hold through its docking, at the
+measured offset, to the `Top` vector of its carrier that runs the root's way, so the link never
+turns it — a unit over the right leg of a corner article docks to its `RightTop` (C24 of
+[roomle-ui `hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#8-guards-corrections-and-feedback)).
 
 **Materials**: a root's `attributes` are overrides of that root module; one only its sub modules
 carry — the sink of a sink unit — is set on those sub modules (D100). A material for the whole group

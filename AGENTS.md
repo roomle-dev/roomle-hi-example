@@ -269,6 +269,29 @@ When the repository uses Atlassian Jira:
 - Tools should log their operations for debugging
 - Tools correct agent input whose intent is clear rather than reject it — see [Guards Are a Last Resort](#guards-are-a-last-resort)
 
+### Hard Rule: The Planning Assistant Stays Out of the Glue Logic
+
+The glue logic (roomle-ui `homag-intelligence/src/glue-logic.ts`) implements the manipulations
+through the planner's UI: the drag-in, the attribute panel, the moves, splits and deletes the user
+makes. The HI tools implement the manipulations through the Planning Assistant: the tool set
+(`hi-mcp/`), the tool commands (`hi-tool-commands.ts` and the `hi-tool-*.ts` modules) and the group
+operations of `hi-tools.ts`. The two stay apart:
+
+- **A change for the Planning Assistant never changes `glue-logic.ts`** — not for a fix, not for a
+  feature, not for a library step the agent's path lacks. The UI's behaviour stays as it is.
+- **The tools implement what they need themselves.** When the Planning Assistant needs behaviour the
+  glue logic implements for the UI — the library's conflict resolution, its initial checks, a
+  calculation — the tools run it on their side: through the library interface (`LibraryData`), on a
+  copy of the group, with conditions of their own. If that means splitting up logic or adding
+  conditions in the tools, that is done; there is no alternative.
+- **For the Planning Assistant, `glue-logic.ts` holds API functions only**, and they delegate to the
+  implementation in the tools. Implementation specific to the Planning Assistant that is in
+  `glue-logic.ts` moves to the tools
+  ([mcp-issues 108](.agents/backlog/mcp-issues.md#108-the-glue-logic-holds-implementation-of-the-planning-assistant)).
+- **Analyses, plans and backlog items place the fix there.** A gap of the agent's path against the
+  UI's path — a library step a create skips, a check the tools do not run — is closed in the tools,
+  never by changing the glue logic.
+
 ### Library-Neutral
 
 The HI tools serve every HI library, not only Furniture_Smith. The served rules, the tool
@@ -465,7 +488,7 @@ assistant runs the HI tools.
 
 1. Register the tool in roomle-ui `packages/web-sdk/packages/homag-intelligence/src/hi-mcp/hi-mcp-server.ts` (zod schema + handler)
 2. Implement the executor in `tool-executors.ts` there. A tool that changes the plan is a tool command in roomle-ui (`HI_TOOL_COMMAND` in `homag-intelligence/src/hi-plan-context.ts`, the command in `HI_TOOL_COMMANDS` of `hi-tool-commands.ts`) plus a forwarder, `inPlanner('<tool name>')`, which sends it through `externalObjectGroupOperation` and wraps it in `oneAtATime`, so it never runs beside another plan change, and in the undo record
-3. An edit the planner does not offer yet is a group operation the tool command runs (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`, executed in `hi-tools.ts`) — no new planner method. Only if a tool needs a planner method the tools do not call yet: add it to `planner-api.ts` of the tools
+3. An edit the planner does not offer yet is a group operation the tool command runs (`HI_GROUP_OPERATION` in `homag-intelligence/src/hi-plan-context.ts`, executed in `hi-tools.ts`) — no new planner method and no implementation in `glue-logic.ts` ([Hard Rule](#hard-rule-the-planning-assistant-stays-out-of-the-glue-logic)). Only if a tool needs a planner method the tools do not call yet: add it to `planner-api.ts` of the tools
 4. Add or extend unit tests in roomle-ui `packages/web-sdk/packages/homag-intelligence/__tests__/hi-mcp/` and the fixture `packages/web-sdk/packages/test-helpers/unit/hi-mcp-fixture.json` — a tool command's in `homag-intelligence/__tests__/hi-tool-commands/`
 5. Update roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md` and `.agents/homag-intelligence/hi-tools-reference.md`, and `.agents/skills/hi-mcp-tools.md` here
 6. The example page and the ligna-store get the tool with the planner at their server URL; a new embedding-lib version is needed only when the forwarding of `createHiMcpTools` changes — built only after asking ([Hard Rule](#hard-rule-no-embedding-lib-build-without-asking))

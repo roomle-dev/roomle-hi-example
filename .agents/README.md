@@ -147,6 +147,7 @@ done. The analysis and the report are the same document — the report is append
 | Document | Status | Last touched |
 |---|---|---|
 | [Split the library context from the plan context](refactoring-analysis/split-library-context-from-plan-context.md) | Open — implemented, not yet deployed to bo-test | 2026-10-22 |
+| [The agent works in the planner's coordinate system](refactoring-analysis/agent-coordinate-system-z-up.md) | Open | 2026-10-24 |
 
 ### Benchmarks & Performance Analyses
 

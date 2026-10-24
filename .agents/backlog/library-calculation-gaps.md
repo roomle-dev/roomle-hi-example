@@ -26,7 +26,7 @@ D-numbers are the decisions in §3 of
 | # | Gap | Responsible | Priority |
 |---|---|---|---|
 | 1 | [Price and order include root modules the library could not calculate, without a note](#1-price-and-order-include-root-modules-the-library-could-not-calculate-without-a-note) | roomle-ui HI tool set (`get-price`, `get-order-data`); the library's `getOrderData` | high |
-| 4 | [Values the library accepts and cannot calculate](#4-values-the-library-accepts-and-cannot-calculate) | HOMAG library development team; roomle-hi-example: the report | medium |
+| 4 | [Values the library accepts and cannot calculate](#4-values-the-library-accepts-and-cannot-calculate) | HOMAG library development team; roomle-hi-example: the report — [analysed](../bug-analysis/values-the-library-accepts-and-cannot-calculate.md): the library verifies none of the failing values out, 78 and 80 are one door error, no roomle-ui change | medium |
 
 Where a group stands in the room is no gap: the tools build a group on an obstacle or outside the
 room and say so in `hint`, because the user may want it there (D51, D55).

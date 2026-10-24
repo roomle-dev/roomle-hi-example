@@ -140,7 +140,8 @@ for (const model of models) {
       groups: (ctx.groups || []).map((g) => ({
         id: g.id.slice(0, 8),
         pos: g.position.pos,
-        rot: g.position.rotationY,
+        // rotationY: a run folder of a planner build before the agent's plan space
+        rot: g.position.rotationZ ?? g.position.rotationY,
         w: g.position.footprint.widthMm,
         d: g.position.footprint.depthMm,
         roots: (g.roots || [])

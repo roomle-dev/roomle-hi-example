@@ -14,7 +14,7 @@
 
 **Doors.** A door is hinged on one side and has its handle on the other. In a row, the door at the left end is hinged on the left and the door at the right end on the right, as seen from the front, so no handle is on the outside of the row; a pair of doors side by side is hinged at its two outer sides. Set it with the attribute whose values say on which side a door is hinged — the value for single doors or for a pair of doors, as the article has — in the attributes of the root modules at the two ends of the row (`rowIndex` 1 and the last), and again on the root module at an end after an edit that gives the row a new end: an article added, deleted, exchanged or swapped at an end. The other doors keep their side ([D84](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#doors)).
 
-Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rotationY` on a root — are **ignored**: the server drops them and reports it in `corrections`.
+Direct coordinate properties — `pos` and a rotation on a group, `articlePos` and a rotation on a root — are **ignored**: the server drops them and reports it in `corrections`. Every coordinate is in the planner's plan space: millimetres, Z up, `x` to the right and `y` to the top of the top-view image ([roomle-hi-concepts.md](./roomle-hi-concepts.md)).
 
 ## Group Structure
 
@@ -23,7 +23,7 @@ Direct coordinate properties — `pos`/`rotationY` on a group, `articlePos`/`rot
 {
   id: string,              // Unique identifier
   libraryId: string,       // Optional library identifier
-  placement: object,       // { wall, alignment?, offsetMm?, roomIndex? } or { posGroup, posRotationY, rootId? } - positions a new group
+  placement: object,       // { wall, alignment?, offsetMm?, roomIndex? } or { posGroup, posRotationZ, rootId? } - positions a new group
   roots: Root[]            // Required: array of root modules
 }
 ```
@@ -182,8 +182,8 @@ placement: {
 }
 // anywhere else, and for a group of wall units only
 placement: {
-  posGroup: [x, y, z],   // the group's back left bottom corner in the room, mm (y = 0 on the floor)
-  posRotationY: number,  // degrees, counter-clockwise as seen from above
+  posGroup: [x, y, z],   // the group's back left bottom corner in the room, mm (z = 0 on the floor)
+  posRotationZ: number,  // degrees, counter-clockwise as seen from above
   rootId: string         // optional - only with two corner articles, see below
 }
 ```
@@ -196,27 +196,28 @@ placement: {
   overlaps another group along the wall, and reloads the group there.
 
 - **Point** (the second form): `posGroup` is the room point of the group's back left bottom corner; for a group of
-  wall units only, its y is their mounting height. In a room corner it is the corner point. It
+  wall units only, its z is their mounting height; a floor point `[x, y]` is completed to `[x, y, 0]`.
+  In a room corner it is the corner point. It
   holds for every article: the server places the anchor by the back left bottom corner of its
   docking vectors, also where its origin lies elsewhere (the centre of a range hood, the arm of a
-  corner article). A returned group's `position.pos` and `rotationY` are read the same way; with two
+  corner article). A returned group's `position.pos` and `rotationZ` are read the same way; with two
   corner articles, `position.rootId` names the one `pos` belongs to.
-- **Rotation sense**: positive `posRotationY` turns the group counter-clockwise as seen from above
-  (in the top-view image) — the `rotationY` convention of the kernel (RoomleCore) and the glue logic
+- **Rotation sense**: positive `posRotationZ` turns the group counter-clockwise as seen from above
+  (in the top-view image) — the yaw of the kernel (RoomleCore) and the `rotationY` of the glue logic
   ([rotation sense](./roomle-hi-concepts.md#rotation-sense)). The right wall is **270**, the left
   wall **90**.
-- **Against a wall** with a point: `posRotationY` = the wall's `facingRotationY`; the group's back
+- **Against a wall** with a point: `posRotationZ` = the wall's `facingRotationZ`; the group's back
   stands against the wall and the group runs from `posGroup` towards the wall's `start`. A group at
   a wall takes the placement by wall, so that the server computes the point.
 - **Corner**: a corner kitchen starts with a corner article and names one wall of the corner as
   `wall` and the other as `alignment`; looking into the corner from the room, the units `rightOf`
-  the corner article run along the wall on the right. With a point: the `point` and `posRotationY`
-  of the corner in the room's `corners` list of `get-plan-context` (the `facingRotationY` of the
+  the corner article run along the wall on the right. With a point: the `point` and `posRotationZ`
+  of the corner in the room's `corners` list of `get-plan-context` (the `facingRotationZ` of the
   wall that ends in that corner). For a right-handed corner
   article (`mod_CarcaseDirection` Right) the server adds 90° itself; the group is read back with
-  the `posRotationY` it was placed with.
+  the `posRotationZ` it was placed with.
 
-| Rectangular room (back = top in the top view) | `posRotationY` | Corner: the units `rightOf` the corner article run along | Corner: the units `leftOf` it run along |
+| Rectangular room (back = top in the top view) | `posRotationZ` | Corner: the units `rightOf` the corner article run along | Corner: the units `leftOf` it run along |
 |---|---|---|---|
 | Back wall / left back corner | 0 | back wall, to the right | left wall, to the front |
 | Left wall / left front corner | 90 | left wall, to the back | front wall, to the right |
@@ -289,9 +290,9 @@ built is an error. Every guard and correction:
 - A root without a relation (in a group with relations) — put into the row of its kind; a relation to an unknown root or to itself, or one that closes a ring — ignored or dropped
 - A floor unit `above` a unit — put `rightOf` it; a wall unit `rightOf` / `leftOf` a base unit — hung `above` it; `behind` a corner article — ignored
 - `gapMm` beside a unit, an unknown `align`, a second relation field — ignored
-- `pos`/`rotationY` on a group, `articlePos`/`rotationY` on a root — dropped
+- `pos`, `rotationY` or `rotationZ` on a group, `articlePos`, `rotationY` or `rotationZ` on a root — dropped, naming the fields that were sent
 - `repositioningData` on a group — taken as the placement
-- `placement`: fields of neither form dropped; by wall: a point beside the wall dropped, an `alignment`, `offsetMm` or `roomIndex` it cannot read taken as its default, a wall it cannot read or the room does not have not used, a target that overlaps another group moved along the wall; by point: `posGroup` `[x, z]` completed to `[x, 0, z]`, a `rootId` that names no root dropped; a placement the server cannot use (`posGroup` not a point, no numeric `posRotationY`) and a placement on a group that is already in the plan are not used — the planner positions the group, an existing group keeps its position
+- `placement`: fields of neither form dropped; by wall: a point beside the wall dropped, an `alignment`, `offsetMm` or `roomIndex` it cannot read taken as its default, a wall it cannot read or the room does not have not used, a target that overlaps another group moved along the wall; by point: `posGroup` `[x, y]` completed to `[x, y, 0]`, a `rootId` that names no root dropped; a placement the server cannot use (`posGroup` not a point, no numeric `posRotationZ`) and a placement on a group that is already in the plan are not used — the planner positions the group, an existing group keeps its position
 - A root without `id` gets `root-1`, `root-2`, …; a duplicate root id no docking entry names is renamed (`u1` → `u1-2`)
 - Roots the docking does not connect to the first root — docked to the free end of a row of their kind (floor units or wall units), `mode` `StartStart`, `offset` `[0, 0, 0]`
 - Two roots on one side docking vector (`LeftBottom`, `RightBottom`) at the same place — the later one is docked to the free end of that row, or of its leg when the row ends at a corner article; Top vectors and `BackBottom` may carry several
@@ -352,7 +353,7 @@ built is an error. Every guard and correction:
 
 ## Common Mistakes
 
-1. **Direct coordinates**: Never use `articlePos`, `rotationY`, `pos`, `rotationY`
+1. **Direct coordinates**: Never use `articlePos`, `pos` or a rotation on a root or a group
 2. **Roots without a relation**: Every root after the first names its neighbour; a root without a relation continues the row of its kind, which may not be where you meant it
 3. **Docking vectors in a new group**: Name the neighbour with a relation instead of writing `contextData`
 4. **Docking to non-existent root**: An entry naming an id outside the group connects nothing; a root docked only that way is treated as unconnected — docked to the free end of a row (reported in `corrections`), or the group is not built when that is impossible (`notLoaded`)

@@ -226,7 +226,7 @@ When the repository uses Atlassian Jira:
 ### Authoring Rules
 
 - Never author root positions — roots are positioned by their relation only
-- New groups are positioned with a `placement` only (`posRotationY` counter-clockwise as seen from above: right wall 270, left wall 90)
+- New groups are positioned with a `placement` only (`posRotationZ` counter-clockwise as seen from above: right wall 270, left wall 90); every coordinate the agent reads or writes is in the planner's plan space — millimetres, Z up, `x` to the right and `y` to the top of the top-view image
 - Every root after the first names one neighbour with one relation: `rightOf`, `leftOf`, `onTop`, `above` or `behind`
 - The tool builds the docking from the relations — vector pairs ownDockingVector -> dockingVector with mode and offset (roomle-ui `hi-group-layout.ts`); groups from `get-plan-context` carry it as `contextData`
 - Free docking vectors indicate where new modules can be added

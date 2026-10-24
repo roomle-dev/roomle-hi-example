@@ -71,7 +71,7 @@ group editing tests start from it, and so do the door tests `open-cabinet-look-i
 
 ```json
 { "posGroups": [{ "libraryId": "Furniture_Smith",
-  "placement": { "posGroup": [4815, 0, -3765], "posRotationY": 270 },
+  "placement": { "posGroup": [4815, 3765, 0], "posRotationZ": 270 },
   "roots": [
     { "id": "t1", "articleId": "HTB60", "contextData": { "dockedRoots": [{ "ownDockingVector": "RightBottom",
       "dockedRoots": [{ "id": "t2", "dockingVector": "LeftBottom", "mode": "StartStart", "offset": [0, 0, 0] }] }] } },
@@ -117,7 +117,7 @@ beside it) and `85510a7e-45fd-45f7-bc30-3be32fcc895c` (the two wall units on the
 | wall unit (above the sink unit) | `OTB60` | `1450cfe7-cf6f-4b83-a52f-b4f02d992f47` |
 
 ```json
-{"posGroups":[{"libraryId":"Furniture_Smith","placement":{"posGroup":[4815,0,-3765],"posRotationY":270},"roots":[{"id":"c1","articleId":"UERTB90"},{"id":"r1","articleId":"US2A60","rightOf":"c1"},{"id":"r2","articleId":"UKS2A60","rightOf":"r1"},{"id":"r3","articleId":"US2A60","rightOf":"r2"},{"id":"t1","articleId":"HK60","rightOf":"r3"},{"id":"l1","articleId":"UTB60","leftOf":"c1"},{"id":"l2","articleId":"SUT60","leftOf":"l1"},{"id":"l3","articleId":"GSP","leftOf":"l2"},{"id":"w1","articleId":"OTB60","above":"r1"},{"id":"h1","articleId":"DU","above":"r2"},{"id":"w2","articleId":"OTB60","above":"r3"},{"id":"wl1","articleId":"OTB60","above":"l1"},{"id":"wl2","articleId":"OTB60","leftOf":"wl1"}]}]}
+{"posGroups":[{"libraryId":"Furniture_Smith","placement":{"posGroup":[4815,3765,0],"posRotationZ":270},"roots":[{"id":"c1","articleId":"UERTB90"},{"id":"r1","articleId":"US2A60","rightOf":"c1"},{"id":"r2","articleId":"UKS2A60","rightOf":"r1"},{"id":"r3","articleId":"US2A60","rightOf":"r2"},{"id":"t1","articleId":"HK60","rightOf":"r3"},{"id":"l1","articleId":"UTB60","leftOf":"c1"},{"id":"l2","articleId":"SUT60","leftOf":"l1"},{"id":"l3","articleId":"GSP","leftOf":"l2"},{"id":"w1","articleId":"OTB60","above":"r1"},{"id":"h1","articleId":"DU","above":"r2"},{"id":"w2","articleId":"OTB60","above":"r3"},{"id":"wl1","articleId":"OTB60","above":"l1"},{"id":"wl2","articleId":"OTB60","leftOf":"wl1"}]}]}
 ```
 
 ### Two Wardrobes on the Right Wall

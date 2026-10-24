@@ -23,8 +23,11 @@ Roomle planner with domain-specific concepts. The data below is what `get-plan-c
 the complete field list is §5.4 of
 [hi-tools-behaviour.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#54-the-plan-context-get-plan-context).
 
-One coordinate system throughout: 3D, right-handed, Y up, millimetres. A floor point is
-`[x, 0, z]`; the back of a rectangular room (`top` in the top-view image) lies at the smallest z.
+One coordinate system throughout, the planner's plan space: 3D, right-handed, Z up, millimetres,
+`x` to the right and `y` to the top of the top-view image. A floor point is `[x, y, 0]`; the back of
+a rectangular room (`top` in the top-view image) lies at the largest y. The tools convert at their
+dispatch: the planner methods and the HI group JSON keep their own frame, pos space (Y up)
+([coordinate-systems.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/coordinate-systems.md)).
 
 ## Core Entities
 
@@ -37,29 +40,29 @@ derived from it, and the room corners.
 - `index` — position in the room's `walls` array
 - `side` — `left`, `right`, `top`, `bottom` as seen in the top-view image (back = top, front = bottom)
 - `name` — back wall, front wall, left wall, right wall
-- `start`, `end` — floor points `[x, 0, z]`; the contour runs counter-clockwise, the interior on the left
+- `start`, `end` — floor points `[x, y, 0]`, the kernel's contour points; the contour runs counter-clockwise, the interior on the left
 - `lengthMm`, `heightMm`, `thicknessMm`
 - `type` — `wall`, or `opening` for a door
-- `facingRotationY` — the rotation of a group standing with its back against that wall
+- `facingRotationZ` — the rotation of a group standing with its back against that wall
 
 **Corner properties:** `name` (back left, back right, front left, front right), `point`, and
-`posRotationY` — the rotation of a corner kitchen in that corner, the `facingRotationY` of the
+`posRotationZ` — the rotation of a corner kitchen in that corner, the `facingRotationZ` of the
 wall that ends there.
 
 **Example** (a 4000 × 3000 mm room):
 ```javascript
 {
   walls: [
-    { index: 0, side: "bottom", name: "front wall", start: [0, 0, 0], end: [4000, 0, 0], lengthMm: 4000, type: "wall", facingRotationY: 180 },
-    { index: 1, side: "right", name: "right wall", start: [4000, 0, 0], end: [4000, 0, -3000], lengthMm: 3000, type: "wall", facingRotationY: 270 },
-    { index: 2, side: "top", name: "back wall", start: [4000, 0, -3000], end: [0, 0, -3000], lengthMm: 4000, type: "wall", facingRotationY: 0 },
-    { index: 3, side: "left", name: "left wall", start: [0, 0, -3000], end: [0, 0, 0], lengthMm: 3000, type: "wall", facingRotationY: 90 }
+    { index: 0, side: "bottom", name: "front wall", start: [0, 0, 0], end: [4000, 0, 0], lengthMm: 4000, type: "wall", facingRotationZ: 180 },
+    { index: 1, side: "right", name: "right wall", start: [4000, 0, 0], end: [4000, 3000, 0], lengthMm: 3000, type: "wall", facingRotationZ: 270 },
+    { index: 2, side: "top", name: "back wall", start: [4000, 3000, 0], end: [0, 3000, 0], lengthMm: 4000, type: "wall", facingRotationZ: 0 },
+    { index: 3, side: "left", name: "left wall", start: [0, 3000, 0], end: [0, 0, 0], lengthMm: 3000, type: "wall", facingRotationZ: 90 }
   ],
   corners: [
-    { name: "front right", point: [4000, 0, 0], posRotationY: 180 },
-    { name: "back right", point: [4000, 0, -3000], posRotationY: 270 },
-    { name: "back left", point: [0, 0, -3000], posRotationY: 0 },
-    { name: "front left", point: [0, 0, 0], posRotationY: 90 }
+    { name: "front right", point: [4000, 0, 0], posRotationZ: 180 },
+    { name: "back right", point: [4000, 3000, 0], posRotationZ: 270 },
+    { name: "back left", point: [0, 3000, 0], posRotationZ: 0 },
+    { name: "front left", point: [0, 0, 0], posRotationZ: 90 }
   ]
 }
 ```
@@ -89,7 +92,7 @@ to back with another one is a root of the same group.
 
 **As `get-plan-context` returns it** (a valid `create-or-replace-groups` payload as it is):
 - `id`, `libraryId`, `attributes` — group settings and a material for the whole group
-- `position` — read-only: `pos` (the room point of its back left bottom corner), `rotationY`, `footprint`
+- `position` — read-only: `pos` (the room point of its back left bottom corner), `rotationZ`, `footprint` (`x` and `y` ranges from `pos`, the front towards `−y`)
 - `roots` — per root its `id`, `articleId`, input `attributes`, `contextData` (the docking, vector names only), and read-only facts: `articleName`, `desc`, `category`, `isGenerated` (worktop, toe kick — the library generates them), `dockingVectors`, `freeDockingVectors`, `subModules`. No root positions
 
 **As a new group is authored:**
@@ -116,8 +119,8 @@ Every root after the first names one neighbour with one relation — `rightOf`, 
 - `roomIndex` — optional, 0 by default
 
 Anywhere else, and for a group of wall units only:
-- `posGroup` — [x, y, z] in millimetres: the room point of the group's back left bottom corner
-- `posRotationY` — rotation of the group in degrees, counter-clockwise as seen from above
+- `posGroup` — [x, y, z] in millimetres: the room point of the group's back left bottom corner, `z` 0 on the floor
+- `posRotationZ` — rotation of the group in degrees, counter-clockwise as seen from above
 - `rootId` — optional, only with two corner articles: the one that goes into the corner `posGroup` names
 
 ### 4. Docking System
@@ -143,7 +146,7 @@ row whose link to the floor units did not survive a load — are arranged as a c
 that keeps its position; a unit above follows the root below it by position instead
 ([D42](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#row-edits)). An attribute can change a root's
 docking geometry without moving the root: a plinth height raises the docking top of a floor unit
-while its root stays at y = 0, and the units above keep their clearance to that docking top
+while its root stays on the floor, and the units above keep their clearance to that docking top
 (guarded by `keeps both detached wall units above carriers whose docking tops change by %i mm` in
 roomle-ui `hi-root-module-arrangement-test.ts`).
 
@@ -156,7 +159,7 @@ turned. The tools place and report every group by the docking corner.
 
 A new group is positioned in the call that creates it: at a wall or in a room corner by
 `placement: { wall, alignment?, offsetMm?, roomIndex? }` — the server computes the point from the
-calculated group, as `place-group` does —, anywhere else by `placement: { posGroup, posRotationY,
+calculated group, as `place-group` does —, anywhere else by `placement: { posGroup, posRotationZ,
 rootId? }`, one point and one rotation.
 
 - `posGroup` is the room point of the group's back left bottom corner; in a room corner it is the
@@ -165,8 +168,8 @@ rootId? }`, one point and one rotation.
   separately positioned group. Each article after the first names its neighbour with one relation (`rightOf`,
   `leftOf`, `onTop`, `above`, `behind`), and the server builds the docking from it — see
   [hi-authoring-rules.md](./hi-authoring-rules.md#relations).
-- `posRotationY` is in degrees, counter-clockwise as seen from above. Against a wall it is the
-  wall's `facingRotationY` (rectangular room: back 0, left 90, front 180, right 270), and the
+- `posRotationZ` is in degrees, counter-clockwise as seen from above. Against a wall it is the
+  wall's `facingRotationZ` (rectangular room: back 0, left 90, front 180, right 270), and the
   group runs from `posGroup` towards the wall's `start`; a group at a wall takes the placement by
   wall instead.
 - Free space comes from the `obstacles` section of `get-plan-context`: doors, windows and other
@@ -178,7 +181,7 @@ rootId? }`, one point and one rotation.
   wall; the group is built anyway.
 - The supplies of the plan are no obstacles: the `installationElements` section of `get-plan-context`
   lists the electric plugs and the water connections with their positions (`type`,
-  `position: [x, level, z]`), so a group may stand on one — plan a sink at the water connection and
+  `position: [x, y, z]`, `z` the height), so a group may stand on one — plan a sink at the water connection and
   a hob beside a plug. The planner classifies a plan object by the level it has in the planner —
   exactly 27 is an `ElectricPlug`, 28 a `WaterConnection`; no other level, article id or name counts.
   The catalog lists the wall water connections (`room_designer:water_connections`) at level 43; the
@@ -186,8 +189,8 @@ rootId? }`, one point and one rotation.
   [roomle-ui-issues 94](../backlog/roomle-ui-issues.md#94-the-water-connection-is-an-installation-element-only-through-a-planner-override)).
   The planner reports one entry per placed supply assembly, its children included, without hidden
   ones. `position` is the
-  bottom centre of the element's bounding box (the kernel's `getCenter`) in mm with two decimals, not
-  a socket or pipe contact point. Guarded by `it('classifies the levels 27 and 28 as electric plug and
+  bottom centre of the element's bounding box (the kernel's `getCenter`) in mm with two decimals —
+  the kernel's point unchanged in the agent's plan space —, not a socket or pipe contact point. Guarded by `it('classifies the levels 27 and 28 as electric plug and
   water connection')`, `it('ignores the other service levels')` and `it('converts the kernel center to
   pos space and rounds to two decimals')` in roomle-ui `homag-intelligence/__tests__/api-test.ts`.
 - It is applied once, when the group is created. A placement on a group that is already in the
@@ -204,24 +207,29 @@ rootId? }`, one point and one rotation.
 
 The wall and corner rules are in [hi-authoring-rules.md](./hi-authoring-rules.md#positioning-a-group).
 RoomleCore ADR 0011 ("a numeric placement never rotates the object") concerns the planner's
-interactive numeric placement, not the `placement` of a new group: `posRotationY` does rotate the
+interactive numeric placement, not the `placement` of a new group: `posRotationZ` does rotate the
 group.
 
 ### Rotation sense
 
-`rotationY` and `posRotationY` are **counter-clockwise as seen from above**, in HI space and in the
-kernel alike: the right wall and the back right corner are 270, the left wall and the front left
-corner 90. Clockwise values (right 90, left 270) would put every group at a side wall against the
-opposite wall. Verified against RoomleCore:
+`rotationZ` and `posRotationZ` of the agent and `rotationY` of the HI group JSON are
+**counter-clockwise as seen from above**, in the agent's plan space, in the HI group JSON's pos space
+and in the kernel alike: the right wall and the back right corner are 270, the left wall and the
+front left corner 90. Clockwise values (right 90, left 270) would put every group at a side wall
+against the opposite wall. The agent's plan space is the kernel's, so its rotation is the kernel's
+yaw. Verified against RoomleCore:
 
-- The deserializer passes the angle through unchanged (`setGroupRotation(toRadians(rotationY))`,
-  `external-module-group-deserializer.cpp`), and the yaw is `atan2` of the direction vector.
-- HI space (Y up) becomes kernel space (Z up) by `(x, y, z) → (x, −z, y)`, a +90° rotation about X
+- The deserializer passes the angle of the HI group JSON through unchanged
+  (`setGroupRotation(toRadians(rotationY))`, `external-module-group-deserializer.cpp`), and the yaw
+  is `atan2` of the direction vector.
+- Pos space (Y up) becomes kernel space (Z up) by `(x, y, z) → (x, −z, y)`, a +90° rotation about X
   with determinant +1 (`module-group-coordinate-converter.h`): a proper rotation, no mirroring. A
-  right-handed rotation about the kernel's up axis is therefore a right-handed rotation about HI +Y.
+  right-handed rotation about the kernel's up axis is therefore a right-handed rotation about the
+  +Y of pos space, and the HI tools pass the angle between the two frames unchanged.
 - The golden Furniture_Smith L-shape (`test/data/golden/plans/furniture-smith-l-shape/`) has
-  `rotationY` 270: its main row runs along local +x, which at 270 is room +z, down the right wall;
-  the kernel's top view shows the L in the back right corner.
+  `rotationY` 270 in its HI group JSON: its main row runs along local +x, which at 270 is room −y
+  in plan space, towards the front, down the right wall; the kernel's top view shows the L in the
+  back right corner.
 
 roomle-ui states the same (`packages/embedding-lib/docs/pos-group-data-model.md`: positive is
 counter-clockwise from above, right-hand rule).
@@ -452,7 +460,7 @@ The server corrects what it can and builds every group it can
 ([hi-tools-behaviour.md §8](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#8-guards-corrections-and-feedback)):
 
 1. **`corrections`** — what the server changed in the input and applied: a placement it cannot use
-   (`posGroup` not a point, no numeric `posRotationY`) or one on a group already in the plan is not
+   (`posGroup` not a point, no numeric `posRotationZ`) or one on a group already in the plan is not
    used, a `rootId` that names no root is dropped, `repositioningData` is taken as the placement,
    a `place-group` target that overlaps another group is moved along the wall; and what the planner
    or the library changed beyond what was sent — a docking the planner dropped, a front program the
@@ -497,7 +505,7 @@ an image.
 
 1. **Inspect Plan Context** — Use `get-plan-context` to see current state
 2. **Check Docking Vectors** — Verify the vectors exist (`dockingVectors`, `freeDockingVectors`)
-3. **Check the Walls** — Take `start`/`end`/`facingRotationY` from the room's `walls` array
+3. **Check the Walls** — Take `start`/`end`/`facingRotationZ` from the room's `walls` array
 4. **Test Incrementally** — Create groups one at a time to isolate issues
 
 ## Related Skills

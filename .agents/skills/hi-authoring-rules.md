@@ -237,10 +237,14 @@ placement: {
   edges over a neighbour in the same group; that overlap alone is not a placement error.
   Article-specific overhangs belong in the library descriptions. A door or a window lies in a wall
   (`roomIndex`, `wall`, `fromEndMm` — its span from the wall's end). A group goes on the wall, the corner or
-  the spot the user names, also in front of a door or a window, and the answer names them
+  the spot the user names, also in front of a door or a window or on other furniture, and the answer names them
   ([D81](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)). Where the user leaves the place open, put a new group
   on a stretch of wall or a spot that `obstacles` leaves free: a placement with that wall, alignment `end` and `offsetMm` = the start of a free stretch
-  puts a group on it; base units lower than a window's `bottomMm` fit below it. The result's `hint`
+  puts a group on it; base units lower than a window's `bottomMm` fit below it. Along a wall the user
+  names, the group goes on a free stretch the same way; when none is as wide as the group, it goes
+  on that wall where it stands on the least, and the answer names what it stands on and the
+  alternatives — another wall where it fits, narrower units
+  ([D112](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)). The result's `hint`
   names every root module that overlaps an object or another group or stands in front of a door or
   a window, with the free stretches of its wall, and for a group placed at a wall in front of a door
   or a window of the adjoining wall the `offsetMm` that keeps it clear; the group is built anyway

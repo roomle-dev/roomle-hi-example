@@ -26,7 +26,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui planner (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
 | 98 | [A row with a worktop placed into a corner stands 10 mm off the wall](#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) | defect (not analysed) | roomle-ui `hi-wall-placement.ts` or the library's worktop (not analysed) | low | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
@@ -36,30 +35,6 @@ never drop the agent's content silently.
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 96. "One more shelf" adds the shelf set the cabinet already shows
-
-**Problem.** Asked for one more shelf in a tall cabinet without fittings (Furniture_Smith `HTB60`),
-the model adds the adjustable-shelf set (`AdjShelves`) and answers that a shelf was added — but the
-cabinet already renders the same four shelves, so nothing changes for the user (41: 12
-`part_ShelfadjWood` in `plan.xml`, the same as the unedited cabinets of 08).
-
-**Cause.** Not analysed. The plan context lists no fitting for a cabinet without fittings, though the
-library renders its default adjustable shelves (`mod_RackAreaType` Adj), so the model cannot see
-that the shelves are there; what `get-interior-design-options` returns for that cabinet is not
-recorded in the runs, and the `AdjShelves` desc may not say that it is the cabinet's default set.
-
-**To do.** Analyse what `get-interior-design-options` returns for the cabinet without fittings and
-whether its result or the plan context can show the shelves the library renders (roomle-ui
-planner); what the agent lacks about the article goes into the desc of the library data,
-never into a served rule.
-
-**Test.** `edit-add-subarticle-look-inside`: the opened middle cabinet shows one shelf more than in
-`open-cabinet-look-inside`.
-
-**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 41 (`edit-add-subarticle-look-inside`,
-bo-test `205cc9bc8`): `add-interior-fitting` of `AdjShelves` into the middle unit `a7271f1b`; `plan.xml` holds 12
-`part_ShelfadjWood`, the same as the unedited kitchen of 08.
 
 ## 98. A row with a worktop placed into a corner stands 10 mm off the wall
 

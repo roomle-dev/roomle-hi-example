@@ -380,7 +380,7 @@
           "title": "Add a shelf and look at it",
           "plan": "three-tall-units",
           "prompt": "add one more shelf inside the middle cabinet and show me the inside of the cabinet",
-          "expect": "get-interior-design-options on group 064a7d91-b583-4883-b71b-95c324d3d824 for the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa; one add-interior-fitting of a compatible shelf article into the middle unit; open-or-close-article on the middle unit with open true before get-plan-images; the group view shows the open middle cabinet with the added shelf; the three cabinets keep their place, finishes and docking"
+          "expect": "get-interior-design-options on group 064a7d91-b583-4883-b71b-95c324d3d824 for the middle unit a7271f1b-50d5-4b50-97ca-7a5bf75f77fa names the default interior of its door in defaultInteriors: four adjustable shelves (part_ShelfadjWood 4); no add-interior-fitting replaces them with the same AdjShelves set; the answer says that the middle cabinet already holds four adjustable shelves, which the library spaces itself, and what is possible instead; open-or-close-article on the middle unit with open true before get-plan-images; the group view shows the open middle cabinet with its four shelves; the three cabinets keep their place, finishes and docking"
         }
       ]
     },

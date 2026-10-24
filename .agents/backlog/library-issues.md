@@ -55,6 +55,8 @@ keeps every suggested text, applied in the library or not.
 | 99 | [A handle strip the library cannot calculate](#99-a-handle-strip-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the units with a handle are not built, the agent needs a second create |
 | 100 | [A worktop on the tall units from the group's countertop switch](#100-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — a worktop on top of the tall units |
 | 106 | [A drawer sideboard lowered to 720 mm the library cannot calculate](#106-a-drawer-sideboard-lowered-to-720-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the drawer sideboard is not built, the agent needs a second create |
+| 109 | [The adjustable-shelf set does not say that a cabinet shows it by default](#109-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the agent adds the shelf set a cabinet already shows; the result says so (C34) |
+| 110 | [The shelf descriptor names no format](#110-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
 
 **Solved by descriptions**: with the descriptions the agent builds at the first attempt what it
 wants, without a call the library cannot calculate; "partly" names in the issue what only the
@@ -700,3 +702,67 @@ bo-test `205cc9bc8`, the first `create-or-replace-groups`): root `side-middle` `
 `mod_Height` 720 (`cbbfee92-24f0-45c3-b2c0-1d593c5fce81`) in the group
 `32a54a57-4e53-48b4-b406-d415ac281f51`, not calculated, Error 13008; the model undid the create and
 sent it again with three `SB_UB600`.
+
+## 109. The adjustable-shelf set does not say that a cabinet shows it by default
+
+**Problem.** Asked for one more shelf in the middle tall cabinet `HTB60`, the agent adds the
+adjustable-shelf set `AdjShelves` and answers that a shelf was added. The cabinet shows the same four
+shelves as before. Discovery names the cabinet's default interior (`defaultInteriors`, D114 of
+[roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions))
+by its parts, and the add's result says that the cabinet shows the same parts as before (C34). The
+library data does not say that the set is the shelving such a cabinet shows by default.
+
+**Cause.** The desc of `AdjShelves` reads "Adjustable interior shelves." / "Add height-adjustable
+shelf levels inside a cabinet." / "Select to add adjustable shelves inside a cabinet." It reads as
+shelves on top of those the cabinet has. It does not say that the set fills its compartment or that
+the library sets the number of shelves.
+
+**How the library behaves.** Checked model-free on bo-test with the plan of the run: while no
+fitting fills the container of its door module, `HTB60` renders four adjustable shelves
+(`part_ShelfadjWood` ×4) in the door module. Every fitting added into the container replaces them;
+`AdjShelves` (`me_ShelfadjMultiple01`) renders the same four, fills the whole compartment and leaves
+no container. Deleting the last fitting brings the four back.
+
+**To do.** The library: the `AdjShelves` description of section 1.6 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#16-adjustable-shelves).
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `edit-add-subarticle-look-inside`: the agent adds no `AdjShelves` to the cabinet that
+shows it.
+
+**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 41 (`edit-add-subarticle-look-inside`,
+bo-test `205cc9bc8`): `add-interior-fitting` of `AdjShelves` into the middle unit `a7271f1b`;
+`plan.xml` holds 12 `part_ShelfadjWood`, as many as the unedited plan of 08. Model-free:
+`.temp/result/repro-one-more-shelf-2026-10-24/replay.mjs`.
+
+## 110. The shelf descriptor names no format
+
+**Problem.** The number of adjustable shelves cannot be set. `AdjShelves` carries no input for it,
+and the library spaces its shelves over the free height. The only attribute that names a quantity,
+`mod_ShelfadjDescriptor` (Descriptor, `Text`, user right `Master`), carried by the door module of
+`HTB60` and by `me_ShelfadjMultiple01`, names no format. A request for one more adjustable shelf
+therefore cannot be met.
+
+**Cause.** The desc "Position and quantity of the adjustable shelf via descriptor" gives neither the
+format nor an example.
+
+**How the library behaves.** Checked model-free on bo-test: `change-module-attribute` of
+`mod_ShelfadjDescriptor` on the door module `mf_Door` of the middle `HTB60` with `5`, `5x`, `5*` and
+`1;2;3;4;5` removes every shelf, without an error or a log message. Empty, the library renders its
+four shelves. A `FixedShelf` followed by `AdjShelves` in the container left beside it fails the
+calculation.
+
+**To do.** The library: the format of the descriptor, with an example, in the desc of
+`mod_ShelfadjDescriptor` — section 2.11 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#211-shelf-descriptor),
+completed once the library development team names the format.
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** With the format known, `edit-add-subarticle-look-inside`: the middle cabinet shows five
+adjustable shelves.
+
+**Reproduce.** `.temp/result/repro-one-more-shelf-2026-10-24/descriptor.mjs` on bo-test, the plan
+`ps_s3p5hmscmmsnshopj2tybjwmt7ijy5o`: after each of the four values the door module renders no
+`part_ShelfadjWood`.

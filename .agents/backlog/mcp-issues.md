@@ -26,7 +26,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui planner (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
@@ -39,31 +38,6 @@ never drop the agent's content silently.
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 85. insert-article-into-group takes a between-pair whose root modules do not stand side by side
-
-**Problem.** `insert-article-into-group` inserts between two root modules that are adjacent in the
-docking chain but do not stand side by side in space; the insert lands beside one of them (27: the
-sink and a base unit on the back leg of the L-shape; the insert landed beside the sink).
-
-**Cause.** The `insert-article-into-group` description (`hi-mcp-server.ts:700-708,720`) says "between
-two root modules that stand side by side", but the payload's between-ids are not tested against the
-geometry — chain adjacency is enough for the insert, and the result does not say that the named pair
-does not stand side by side.
-
-**To do.** roomle-ui `hi-tool-commands.ts` (the insert's result): when the two named root modules do
-not stand side by side, the result says so and where the article landed — feedback, not a refusal
-(Guards Are a Last Resort); alternatively one sentence in the served description says what side by
-side means (two root modules that name each other's side docking vectors). Verify model acceptance.
-
-**Test.** None in the suite: `edit-insert-below-wall-units` names two root modules that stand side
-by side (the hob unit and the drawer unit next to the fridge). A test of the issue names two root
-modules that are adjacent in the docking chain but do not stand side by side, and checks that the
-result says so.
-
-**Reproduce.** `mcp-test-2026-10-19_07-42-07`, gpt-6-astra 27 (`edit-insert-below-wall-units`): the
-model named the sink and a base unit (adjacent in the docking chain, not side by side in space); the
-insert landed beside the sink. Local roomle-ui :5173.
 
 ## 90. A group placed over existing objects is not disclosed
 

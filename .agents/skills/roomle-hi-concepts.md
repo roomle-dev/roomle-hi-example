@@ -287,8 +287,9 @@ calculation fails with error 14019 and the root module is not built (`U2TB90` wi
 `LeftLeft` or `RightRight`, `H2TB60` with `LeftRight`). The door arrangement can follow the size:
 `HTB60` widened to 900 mm has a pair of doors — `Automatic` resolves to `LeftRight` —, and a `Right`
 it keeps from its single door fails with error 14019. A root module the library cannot calculate has
-no docking vectors and no front parts; its diagnostic is in the root's `logMessages`, which the
-attribute tools report ([D95](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#calculation-errors)). The
+no docking vectors and no front parts; its diagnostic is in the root's `logMessages`. A tool call
+that leaves one changes nothing and names it in its error; an edit in the planner keeps it
+([D95, D106](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#calculation-errors)). The
 door direction is not `implicitRelevant`, so a root module added beside another gets `Automatic`. A
 swap or a delete keeps the value with its root module: the root module that becomes an end keeps the
 side it had (roomle-ui `it('keeps the attributes and the hung units with their roots')`,

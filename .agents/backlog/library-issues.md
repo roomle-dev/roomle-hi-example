@@ -487,7 +487,7 @@ and `mod_BacksplashColor` invite generating the backsplash and name no limit.
 | The switch on one root with 326 / 660 in the create, then 240 by `change-group-attribute` (66); the switch per root with 216 in the create of two groups, then 216 / 600 and 216 / 300 with a thickness of 16 (69) | no: Error 14034 after every call (`1200 - 660`, `1200 - 660`; `600 - 110`, `600 - 600`, `1220 - 300`) | bo-test `205cc9bc8`, `mcp-test-2026-10-22_19-45-49` gpt-6-astra 66, 69 |
 
 **To do.** Establish which side changed: replay the lone `UTB60` check on roomle-ui `cf377cfd4`
-(recover it from the reflog before it expires). `cf377cfd4` has no C25 feedback after an attribute
+(recover it from the reflog before it expires). `cf377cfd4` reports no library failure after an attribute
 command, so the replay reads the `mr_Backsplash` root's log messages, not only the tool result.
 Built there, the cause is in roomle-ui and the issue moves to
 [roomle-ui-issues.md](roomle-ui-issues.md); not built, the library: the backsplash's entries in

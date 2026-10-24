@@ -18,13 +18,12 @@ calculation.
 
 The guarantee covers the structure of a planning, not every attribute value:
 
-- **A value the library cannot calculate is kept, not discarded.** The root module stays in the plan
-  without geometry, and the result tells the agent (D95).
+- **A change the library cannot calculate is not made.** The tool call changes nothing, and the
+  result tells the agent which root modules failed and why (D106). An edit the user makes in the
+  planner is kept with its failed calculation (D95).
 - **Values are not checked against the library's valid options before an edit** (D99).
 - **A create skips the library's conflict resolution** for the attribute values of a root module.
 - **A value the library accepts can still fail to calculate**: a library bug.
-- **An exception of the library's calculation** leaves the group uncalculated, and only the console
-  says so.
 - **Where a group stands in the room is the user's choice**: an overlap is a hint, not a refusal.
 
 [Where the guarantee ends](#where-the-guarantee-ends) explains each.
@@ -95,13 +94,13 @@ Everything else in a payload is dropped before the planner sees it:
   it as inputs.
 - **The calculation.** Every new group (`_addNewGroup`, `glue-logic.ts:2341`) and every change
   (`_runGroupCalculation`, `:2267`) goes through `calculateGroup` of the library (`_calculate`,
-  `:3456`). The library computes the dimensions, the parts, the docking vectors, the generated roots
+  `:3458`). The library computes the dimensions, the parts, the docking vectors, the generated roots
   and the attribute values that depend on others. A library with a group orchestrator also checks a
   new group (`solveInitial`, `_solveInitialNewGroup`, `:3585`).
 - **Attribute edits.** Before a value is set, the library resolves its conflicts with the module's
   other values (`solveModuleAttributeConflict`, `glue-logic.ts:2919`). Every value the library
   changes beyond the one sent is named in `corrections` (`withLibraryChanges`,
-  `hi-tool-attributes.ts:237`, D59).
+  `hi-tool-attributes.ts:231`, D59).
 - **Positions.** The root module arrangement places every root by the docking vectors the library
   calculated; a root without docking vectors is not docked. RoomleCore loads the calculated group as
   it is.
@@ -118,21 +117,28 @@ Everything else in a payload is dropped before the planner sees it:
 | An attribute the module does not carry, in `change-module-attribute` or `change-group-attribute` | Not set: "Module '…' has no attribute '…'" (`hi-tools.ts:520`, `:544`) | `corrections`: the root module kept its value (`hi-tool-commands.ts:981`); an error when no change could be made |
 | A root attribute in a create that only the generated roots carry | Set on the whole group (`hi-tool-attributes.ts:80`) | `corrections` |
 | A value that conflicts with another attribute, in an edit | The library changes the other attribute | `corrections` names the change (D59) |
-| A value the library cannot calculate | **Kept**: the root module stays with its `Error` diagnostic, without docking vectors and front parts, until a valid value recalculates it | `notLoaded` (create, `hi-tool-commands.ts:748`) or `corrections` (attribute edits, `hi-tool-attributes.ts:270`): the first line of the diagnostic and what to change (D95) |
-| An exception of the library's calculation | The group stays as it was sent, without a calculation (`_calculate`, `glue-logic.ts:3456`) | Nothing; the console only |
+| A value the library cannot calculate — in any tool call that changes the plan | **Not made**: the tool set reverts the whole call with the planner's undo (D106) | An error result: nothing was changed, the root modules per group and cause with the first line of the library's message, and what to change (`runToolCommand`, `hi-tool-commands.ts:1366`; `recorded`, `hi-mcp/tool-executors.ts:258`) |
+| An exception of the library's calculation | **Not made**, as above: `_calculate` (`glue-logic.ts:3458`) marks the group with a `Fatal` message | An error result that names the group |
 | A group on an obstacle, in front of a window or outside the room | Built | `hint` (D51, D55) |
 
 ## Where the guarantee ends
 
-### A failed calculation is kept, not discarded
+### A failed calculation of the agent's change is discarded, the user's is kept
 
-When the library cannot calculate a root module with the values it has, the planner keeps the edit
-and the calculation (D95, `_runGroupCalculation`, `glue-logic.ts:2267`). The root module stays in
-the plan without docking vectors and front parts until a valid value recalculates it, and the tool
-result names it. Discarding it is a rejected approach: the value may be the user's, resetting it
-needs the library's valid combinations, and a kept group is one the agent repairs with one more
-call. D99 calls this handling a fallback that keeps the plan usable, not a path a valid planning
-takes.
+A tool call after which the library cannot calculate a root module or a group that it could before
+the call changes nothing (D106). The tool command compares the library's verdict before and after
+the call; the tool set reverts the call with the planner's undo — a tool call is one step of the
+planner's undo history — and the agent gets an error result with the failing root modules, the
+first line of the library's message and what to change. The whole call is reverted, also the groups
+of a create the library could calculate, so the agent sends the corrected call once more.
+
+The discard covers the agent's calls only. The glue logic calculates the user's edits in the
+planner as well and keeps every calculation (D95, `_runGroupCalculation`, `glue-logic.ts:2267`): a
+discard there would revert the user's own edit, such as the height of a cabinet. A root module the
+library could not calculate after an edit in the planner, or in a loaded plan, stays in the plan
+without docking vectors and front parts until a valid value recalculates it. It does not stand
+against a later tool call; the agent can repair it. D99 calls this handling a fallback that keeps
+the plan usable, not a path a valid planning takes.
 
 roomle-ui does not take such a root module out of the price or the order: `getGroupDataForOrder`
 hands every group of the scene to the library. What `getOrderData` does with a root module that
@@ -165,20 +171,6 @@ A value the library offers must calculate. When it does not — a wall unit at 9
 door, a drawer sideboard lowered to 720 mm — the library is at fault (D99). Such issues are tracked
 in [library-issues.md](../backlog/library-issues.md) and reported to the library development team.
 
-### An exception of the calculation reaches only the console
-
-`_calculate` (`glue-logic.ts:3456`) catches an exception of the library's `calculateGroup` and
-returns the group as it was sent. Every later step takes that group for a calculated one, and no
-tool result names it
-([roomle-ui `library-errors.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/library-errors.md#the-library-boundary)).
-
-### The row edits report no library error
-
-`place-group`, the delete, merge, exchange, insert and swap commands and `merge-groups` do not read
-the library's diagnostics. A root module the library cannot calculate after such an edit stays in
-the plan without a note
-([roomle-ui `library-errors.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/library-errors.md#the-other-tool-commands)).
-
 ### Where a group stands is the user's choice
 
 The tools build a group that overlaps an object, stands in front of a window or stands outside the
@@ -200,6 +192,6 @@ request from a mistake.
 - [roomle-ui `library-errors.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/library-errors.md)
   — every call into the library and how its errors reach the agent
 - [roomle-ui `hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md)
-  — D51, D59, D60, D95, D99 and the corrections and feedback of §8
+  — D51, D59, D60, D95, D99, D106 and the corrections and feedback of §8
 - [roomle-ui `homag-intelligence.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence.md)
   — the architecture of the HI integration

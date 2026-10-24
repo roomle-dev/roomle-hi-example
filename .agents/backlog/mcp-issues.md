@@ -26,7 +26,7 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 83 | [Where no free stretch of the wall fits the group, it is placed over existing furniture and reported](#83-where-no-free-stretch-of-the-wall-fits-the-group-it-is-placed-over-existing-furniture-and-reported) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
+| 83 | [Where no free stretch of the wall fits the group, it is placed over existing furniture and reported](#83-where-no-free-stretch-of-the-wall-fits-the-group-it-is-placed-over-existing-furniture-and-reported) | hardening | roomle-ui served text (`hi-mcp/hi-mcp-server.ts:38`, the Obstacles rule) — [analysed](../bug-analysis/wall-without-a-free-stretch-for-the-group.md): no sentence for a named wall without a free stretch as wide as the group; decision open (build and name, or ask) | low | gpt-6-astra | |
 | 85 | [insert-article-into-group takes a between-pair whose root modules do not stand side by side](#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:700-708,720`); roomle-ui `hi-tool-commands.ts` (the insert's result) | low | gpt-6-astra | |
 | 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
@@ -49,14 +49,16 @@ object x 3506..4074, 568 × 570 mm). In the other tests on that wall it asks ins
 — an answer the To do accepts. The obstacle test builds the group anyway and names what a root stands
 on and the free stretches of its wall (D55).
 
-**Cause.** The placement rule (`hi-mcp-server.ts:42`) says to choose a stretch of wall that obstacles
-leaves free only "where the user leaves the place open"; when the user names a wall whose free
-stretches are too short for the requested width, no served sentence says what to do, and the model
-builds over the furniture and reports.
+**Cause.** The Obstacles rule (roomle-ui `hi-mcp/hi-mcp-server.ts:38`) says to choose a stretch of
+wall that obstacles leaves free only "where the user leaves the place open"; when the user names a
+wall whose free stretches are too short for the requested width, no served sentence says what to
+do, and the model builds over the furniture and reports.
 
-**To do.** roomle-hi-example served text (`hi-mcp-server.ts:42`): say what to do when the wall the
-user names has no free stretch of the requested width — ask, or place where a stretch fits and say
-so. Verify model acceptance.
+**To do.** roomle-ui served text (`hi-mcp/hi-mcp-server.ts:38`), as
+[the analysis](../bug-analysis/wall-without-a-free-stretch-for-the-group.md#proposed-fix) proposes:
+say what to do when the wall the user names has no free stretch of the requested width — build on
+that wall and name what the group stands on and the alternatives, or ask (decision open); another
+wall is an alternative to name, not a place to build (D81). Verify model acceptance.
 
 **Test.** None in the suite: the wardrobe tests of the closets plan use its free right wall, so no
 test names a wall without a free stretch of the requested width.

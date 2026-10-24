@@ -29,6 +29,10 @@ a rectangular room (`top` in the top-view image) lies at the largest y. The tool
 dispatch: the planner methods and the HI group JSON keep their own frame, pos space (Y up)
 ([coordinate-systems.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/coordinate-systems.md)).
 
+The local frame of an article, a group and a parent module follows from the same mapping: `+x` to
+the right as seen from the front, `+z` up, `y = 0` the back, the front towards `−y`. A front towards
+`+y` would either mirror the frame (left-handed) or turn *right* into `−x`.
+
 ## Core Entities
 
 ### 1. Rooms
@@ -43,7 +47,8 @@ derived from it, and the room corners.
 - `start`, `end` — floor points `[x, y, 0]`, the kernel's contour points; the contour runs counter-clockwise, the interior on the left
 - `lengthMm`, `heightMm`, `thicknessMm`
 - `type` — `wall`, or `opening` for a door
-- `facingRotationZ` — the rotation of a group standing with its back against that wall
+- `facingRotationZ` — the rotation of a group standing with its back against that wall: for a wall
+  with the direction `d = end − start` it is `atan2(−d_y, −d_x)`, the wall's direction turned by 180°
 
 **Corner properties:** `name` (back left, back right, front left, front right), `point`, and
 `posRotationZ` — the rotation of a corner kitchen in that corner, the `facingRotationZ` of the
@@ -233,6 +238,19 @@ yaw. Verified against RoomleCore:
 
 roomle-ui states the same (`packages/embedding-lib/docs/pos-group-data-model.md`: positive is
 counter-clockwise from above, right-hand rule).
+
+Why the rotation can look clockwise: written in pos-space coordinates, the counter-clockwise turn
+`[x cos θ + z sin θ, y, −x sin θ + z cos θ]` carries the signs of a clockwise one, because the
+`+z` of pos space points down in the top view, and every angle roomle-ui derives from a direction in
+pos space carries that flip (`atan2(d_z, −d_x)` in `deriveWalls`). In plan space the same turn is
+the textbook `[x cos θ − y sin θ, x sin θ + y cos θ, z]`; an angle means the same turn in both.
+
+The planner UI shows the kernel's yaw in degrees, counter-clockwise (roomle-ui
+`src/planner/components/overlays/product-settings/ProductRotation.vue`). For an HI group its number
+can differ from the agent's `rotationZ`: the agent reads the rotation of the placement frame — group,
+anchor root and corner turn, normalised to 0–360 (`positionInPlacementFrame`, roomle-ui
+`hi-group-placement.ts`) —, the planner the yaw of the raw group, which after a reload can be −90
+instead of 270 or belong to another root. The sense is the same, the reference differs.
 
 ## HI-Specific Concepts
 

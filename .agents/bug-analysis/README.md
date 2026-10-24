@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [corner-row-with-worktop-stands-off-the-wall.md](corner-row-with-worktop-stands-off-the-wall.md) | Open | [mcp-issues.md #98](../backlog/mcp-issues.md#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

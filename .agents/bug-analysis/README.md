@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [wall-without-a-free-stretch-for-the-group.md](wall-without-a-free-stretch-for-the-group.md) | Open | On a wall the user names whose free stretches are all narrower than the group, the agent asks or builds over the furniture, from run to run: the Obstacles rule has no sentence for the case ([mcp-issues.md #83](../backlog/mcp-issues.md#83-where-no-free-stretch-of-the-wall-fits-the-group-it-is-placed-over-existing-furniture-and-reported)) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

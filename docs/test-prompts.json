@@ -511,7 +511,14 @@
           "title": "Wardrobes on the back wall",
           "plan": "closets",
           "prompt": "add two wardrobes to the back wall",
-          "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of two tall wardrobe units with their backs against the back wall, inside the room"
+          "expect": "one create-or-replace-groups call with a placement by wall (wall back); one group of two tall wardrobe units with their backs against the back wall, inside the room, on a free stretch of it - or the answer names what it stands on"
+        },
+        {
+          "id": "wardrobe-back-wall-without-a-free-stretch",
+          "title": "Wardrobe on a back wall without a free stretch for it",
+          "plan": "closets",
+          "prompt": "add a wardrobe of five cabinets with one door each, 400 mm wide each, to the back wall",
+          "expect": "one create-or-replace-groups call with a placement by wall (wall back); five 400 mm single-door wardrobe cabinets in one row on the back wall - no free stretch of the back wall is 2000 mm wide; the answer names what the wardrobe stands on or in front of (the low object, the bed, the window) and an alternative (the right wall)"
         },
         {
           "id": "closets-two-wardrobes-corner",

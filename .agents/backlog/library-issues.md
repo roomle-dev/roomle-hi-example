@@ -433,9 +433,9 @@ cabinet narrowed under its own width calculates, and the widths a pair of doors 
 
 **To do.** The library: calculate the single-door wall cabinets at every width `mod_Width` accepts
 (entries in `tab_DoorSettings`), or declare the widths a single door takes as the verified range of
-`mod_Width`, so that a width outside it is ruled out before the edit — the check the tools then make
-is [attribute-values-checked-before-an-edit.md](attribute-values-checked-before-an-edit.md); and no
-script exception after a missing table entry. With the widths known, the `AI_SELECTION_HINT` of the
+`mod_Width`, so that a width outside it is ruled out before the edit — the tools check a value
+against the verified options before they set it (D107); and no script exception after a missing
+table entry. With the widths known, the `AI_SELECTION_HINT` of the
 single-door wall cabinets can name them — section 1.4 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#14-wall-units-with-a-single-door).
 
@@ -604,8 +604,8 @@ library fail the same way when lowered.
 
 **To do.** The library: calculate the drawer sideboard at every height `mod_Height` accepts (entries
 in `tab_DrawerBoxDimensionMapping`), or declare the heights it takes as the verified range of
-`mod_Height`, so that a height outside it is ruled out before the edit — the check the tools then
-make is [attribute-values-checked-before-an-edit.md](attribute-values-checked-before-an-edit.md).
+`mod_Height`, so that a height outside it is ruled out before the edit — the tools check a value
+against the verified options before they set it (D107).
 With the heights known, the proposed desc of `SB_US600` naming them goes into
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md).
 

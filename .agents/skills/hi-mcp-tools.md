@@ -179,7 +179,7 @@ When group attributes change a floor unit’s docking height, the planner keeps 
 clearance to any wall unit hanging above it, even if their docking link did not survive the load.
 An explicit `gapMm` remains the requested clearance (D42).
 
-**Returns**: `loaded` (the planner's object ids), `groups` (the groups of the call), `otherGroupIds` (the other groups of the plan, unchanged — D68), `groupAttributes` (`[{ index, id, set, notCarried?, rootValues? }]`: per group the group attributes set on every unit with one planner command, those no unit of the group carries — for a requested generated part, find an enabling attribute with `find-attributes`, enable it when available, then set the part's attributes after generation; report only what remains missing, D65 —, and the root modules that keep their own value of one, `{ id, value, rootModuleIds }`), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input, and what the library changed with the group attributes — a front colour reset by a front program, D59) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build or the planner left out, with the reason (D73), and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), matched by the planner's answer per group to the original input index, each error naming what to send instead; the other groups and roots load). A create the library cannot calculate — a root module or a group that fails after the call and did not before — changes nothing: the result is an error that names per group (`posGroups[i]`) and cause the root modules and the first line of the library's message (D106). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
+**Returns**: `loaded` (the planner's object ids), `groups` (the groups of the call), `otherGroupIds` (the other groups of the plan, unchanged — D68), `groupAttributes` (`[{ index, id, set, notCarried?, rootValues? }]`: per group the group attributes set on every unit with one planner command, those no unit of the group carries — for a requested generated part, find an enabling attribute with `find-attributes`, enable it when available, then set the part's attributes after generation; report only what remains missing, D65 —, and the root modules that keep their own value of one, `{ id, value, rootModuleIds }`), a `hint` naming any group of the call that is still unpositioned (it sits at the plan origin — a group gets its position from the placement it is created with), `corrections` (what the server changed in the input, what the library changed with the group attributes — a front colour reset by a front program, D59 —, and a root override or group attribute a root module does not take by the library's own check, left out on it with the values it takes, D107) and `notLoaded` (`[{ index, id?, rootIds?, errors }]` — the groups it could not build or the planner left out, with the reason (D73), and, with `rootIds`, the roots of a loaded group it could not build (an unknown article id drops the root, not the group), matched by the planner's answer per group to the original input index, each error naming what to send instead; the other groups and roots load). A create the library cannot calculate — a root module or a group that fails after the call and did not before — changes nothing: the result is an error that names per group (`posGroups[i]`) and cause the root modules and the first line of the library's message (D106). A group id the agent gave an earlier group of the session replaces that group; a `hint` names each root module of the call's groups that overlaps an object or a root module of another group, or stands in front of a door or a window, with the free stretches of its wall as `fromEndMm` ranges — the group is built anyway (D55); `dockTo` on a root is read as its relation
 
 **Usage**:
 ```javascript
@@ -292,11 +292,16 @@ remain the requested clearance.
 `change-module-attribute` sets the value on every root module of `rootModuleIds` — one group or
 several, one planner command per group (`change-attributes`); a single `rootModuleId` is read as a
 list of one; with `moduleId`, one command per root module. A root module it could not change is
-named in `corrections`, the others change.
+named in `corrections`, the others change. Before it sets the value, the tool asks the library which
+values each module takes, as the planner's attribute panel does: a value a root module does not take
+is not set on it, a value off a range's step is set on the nearest step, and `corrections` name the
+values the module takes; when no root module takes the value, the call answers with that sentence as
+its error and changes nothing (D107).
 
 `change-group-attribute` sets one attribute with the planner's `change-group-attribute`, several
 (`attributes`) with one `change-attributes` — one calculation, one undo step, the program attributes
-first (D67); an attribute of the list no module of the group has is named in `corrections`. Every
+first (D67); an attribute of the list no module of the group has is named in `corrections`. The
+values go through the same check: a value some root modules do not take is set on the others. Every
 tool that takes a group id reads a root id, or a unique prefix of one, as the group that holds the
 root module, and says so in `corrections` (C23).
 
@@ -322,7 +327,10 @@ placement's attributes, including a height the library adjusts:
   a unit above that keeps its place, with the unit above that moved in and now overlaps it, or a deletion instead of
   closing the gap (`delete-article-and-compact`), with each named root labelled by its id and article id
   from the original group, falling back to its article name or id alone;
-  after `change-module-attribute` and `change-group-attribute`, last, every other attribute the library
+  after `change-module-attribute` and `change-group-attribute`, a value a root module does not take by
+  the library's own check — "change-module-attribute: root module 'w1' (OTB60) does not take
+  mod_FrontColor "999" - it kept its value; the values it takes: "152", …" (D107) —, and, last,
+  every other attribute the library
   changed with the one set — "with mod_FrontColor "324" (Dark marble (#404040)) the library changed
   mod_FrontProgram of root module 'w1' (OTB60) from "Classic" (…) to "Modern" (Mitred frame fronts with
   glass filling)"; several root modules changed alike by article and count, "of 3 root modules

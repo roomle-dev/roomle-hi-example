@@ -11,7 +11,8 @@
 The HI tools apply an attribute value the agent sends without checking it against what the library
 accepts for that module. By D99 of [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions),
 a calculation error caused by such a value is an MCP bug. The tools only catch the error afterwards
-(D73, D95, C25), when the root module is already left without geometry.
+(D106): the library has calculated the change, the call is reverted, and the agent learns from the
+library's message only that the value failed, not which values the module takes.
 
 The library offers the check. `getVerifiedAttributeOptions` (roomle-ui `glue-logic.ts:2232`; for a
 group `getVerifiedGroupAttributeOptions`, `:2287`) asks the library (`getAttributesDropDownValues`,

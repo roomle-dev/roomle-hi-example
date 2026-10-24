@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [answer-describes-l-legs-swapped.md](answer-describes-l-legs-swapped.md) | Open | [mcp-issues.md #91](../backlog/mcp-issues.md#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

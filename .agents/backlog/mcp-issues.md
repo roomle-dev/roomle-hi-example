@@ -26,7 +26,7 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
+| 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-ui `inPlacementFrame` (`hi-tool-commands.ts`), the served text and the system prompt — [analysed](../bug-analysis/answer-describes-l-legs-swapped.md): the groups the agent reads carry no wall per root module, so the answer takes the walls of the legs from what the model meant; every root module gets `wall`, the wall it stands at | low | gpt-6-astra | |
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui planner (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
 | 98 | [A row with a worktop placed into a corner stands 10 mm off the wall](#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) | defect (not analysed) | roomle-ui `hi-wall-placement.ts` or the library's worktop (not analysed) | low | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
@@ -46,19 +46,30 @@ HOTS2AB60 at working height on the back run — but the answer's bullet says "Fr
 on the back run; sink, integrated dishwasher, pantry and raised oven on the right", swapping the two
 legs.
 
-**Cause.** No served sentence says the answer describes the plan as it stands, naming the wall each
-group stands on (the plan context names the walls); the model paraphrases the two runs from memory
-and swaps them.
+**Cause.** [Analysed](../bug-analysis/answer-describes-l-legs-swapped.md). The groups of
+`get-plan-context` and of every tool result carry no wall per root module: `inPlacementFrame`
+(`hi-tool-commands.ts:342`) gives a group its position and `rowIndex` only. To name the walls of the
+two legs, the model has to repeat the mapping it encoded with (relation, corner rule, wall). The
+summary sentence of the system prompt (`hi-agent-prompts.ts:17`) points it at results that hold no
+wall. Five later runs of the test build the long leg `leftOf` the corner article at the back wall, as
+the image shows, and their answers match. The recorded plan most likely sent that leg `rightOf`, and
+the answer described what the model meant.
 
-**To do.** roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`): one sentence
-— the answer describes the plan as it stands, naming the wall of each group. Verify model acceptance.
+**To do.** roomle-ui `feat/hi-mcp`: every root module of a group the agent reads carries `wall`, the
+wall it stands at. It is derived with `wallOfRoot` and `wallName` of `hi-plan-space.ts`, as the
+turned-leg hint does, and is read-only like `rowIndex`. The result-reading rule
+(`hi-mcp-server.ts:42`), the `get-plan-context` description and the system prompt's summary sentence
+name it. roomle-hi-example: the `expect` of `image-kitchen-back-right-corner` names the legs as the
+plan has them.
 
-**Test.** `image-kitchen-back-right-corner`: the answer's description names the two legs as the plan
-has them.
+**Test.** Unit tests in `placement-frame-test.ts`: an L-shaped group carries `back wall` and
+`right wall` on its two legs, and an island carries no `wall`. In the suite,
+`image-kitchen-back-right-corner`: the answer names the two legs as the plan has them.
 
 **Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 60 (`image-kitchen-back-right-corner`,
 plan snapshot `ps_scriq9ltecd67bb427i97vk6f2dbkbi`, local roomle-ui :5173): the final answer's
-composition bullet swaps the two legs against the plan.
+composition bullet swaps the two legs against the plan. The run directory is no longer on disk, and
+the snapshot answers 404.
 
 ## 96. "One more shelf" adds the shelf set the cabinet already shows
 

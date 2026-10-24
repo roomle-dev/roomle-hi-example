@@ -108,7 +108,7 @@ Everything else in a payload is dropped before the planner sees it:
 - **Positions.** The root module arrangement places every root by the docking vectors the library
   calculated; a root without docking vectors is not docked. RoomleCore loads the calculated group as
   it is.
-- **Price and order.** `getGroupDataForOrder` (`glue-logic.ts:1955`) hands the groups of the scene to
+- **Price and order.** `getGroupDataForOrder` (`glue-logic.ts:1970`) hands the groups of the scene to
   the library's `getOrderData`, and the Order Manager prices that order.
 
 ## What happens to wrong input
@@ -168,11 +168,17 @@ built and that the answer says so. A group whose own calculation failed carries 
 A loaded plan is calculated again when it loads, so the field is current. The attribute tools
 answer without groups; their `hint` names every root module of the changed groups that is still
 not built, so a repair that fails again shows (`compactAttributeResult`,
-`hi-mcp/tool-executors.ts:240`).
+`hi-mcp/tool-executors.ts:233`).
 
-roomle-ui does not take such a root module out of the price or the order: `getGroupDataForOrder`
-hands every group of the scene to the library. What `getOrderData` does with a root module that
-carries an `Error` is decided by the library script, outside these repositories.
+The price and the order count such a root module. `getGroupDataForOrder` hands every group of the
+scene to the library, and the library's `getOrderData` keeps the root module as an order line,
+without its calculated dimensions, with one `ErrorInfo` item per `Error` message. The Order Manager
+prices that line like any other, and its `errors` and `warnings` stay empty. `get-price` and
+`get-order-data` therefore read the plan's groups as well: beside the answer, which stays as it is,
+their `hint` names every root module and group that carries `calculationError` and says that the
+price or the order data includes what is not built, so the agent tells the user
+(`withNotBuiltHint`, `hi-mcp/tool-executors.ts:220`). They read the verdict from
+`calculationError`, not from `ErrorInfo`, which is the library's order format.
 
 ### Only the attributes the library verifies are checked before an edit
 
@@ -224,8 +230,6 @@ request from a mistake.
 
 ## Related
 
-- [library-calculation-gaps.md](../backlog/library-calculation-gaps.md) — the open work that closes
-  these gaps
 - [roomle-ui `library-errors.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/library-errors.md)
   — every call into the library and how its errors reach the agent
 - [roomle-ui `hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md)

@@ -473,6 +473,14 @@ value carries its code — `Cloudy blue (#506080)` —, the colour of that value
 **Timeout**: 30 seconds for `get-price`; 2 minutes for `get-order-data` and `get-plan-images`
 (snapshots)
 
+`get-price` and `get-order-data` return the planner's answer as it is. The price and the order count
+every root module of the plan, also one the library could not calculate; when the plan holds such a
+root module or group, a `hint` beside the answer names it with the first line of the library's
+message — "root module 'r1' (OTB60) of group 'g1' is not built - … The price includes what is not
+built, without calculated dimensions and parts - say so in the answer, or change the value that
+fails." — and the agent tells the user. An answer of `null` with such a root module is the hint
+alone (D108).
+
 `get-plan-images` returns one text content that names the images, then the group view — the
 groups alone, seen from their front without the room (`perspectiveObjectImage`) — and the top view
 of the whole plan; without groups the text says so and the top view comes alone. It asks the

@@ -232,7 +232,7 @@ Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json`
 | `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
 | `run.json` | `plan`; per turn the answer, the tools, `planImages` and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId`; `snapshotCaptured`; `navigations` (timestamp, phase, main frame, URL, `fragmentOnly`) |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
-| `plan-context.json` | the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationY`) the groups after the chat (`groups[].position`: `pos`, `rotationY`, `footprint`; `groups[].roots[].desc`) and what stands in the room (`obstacles.objects[]`: `kind`, `outline`, `bottomMm`/`topMm`, a door or window with `wall` and `fromEndMm`; `obstacles.groups[].roots[]`: the room-space outline and height range of every root module) |
+| `plan-context.json` | as the `get-plan-context` tool returns it, in the agent's plan space (z up; a run folder of an older planner build has pos space, y up, with `…RotationY` fields): the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationZ`) the groups after the chat (`groups[].position`: `pos`, `rotationZ`, `footprint`; `groups[].roots[].desc`) and what stands in the room (`obstacles.objects[]`: `kind`, `outline`, `bottomMm`/`topMm`, a door or window with `wall` and `fromEndMm`; `obstacles.groups[].roots[]`: the room-space outline and height range of every root module) |
 | `planner-calls.json` | the tool calls the planner ran during the chat: `tool`, `input` = the arguments as the model sent them, before the tool validated them (for `create-or-replace-groups` `input.posGroups[]` with the roots, their relations and attributes, and the `placement`), `ms`; `ok: false` with the `error` — the text of an `isError` result. The docking the relations became is in `plan-context.json` (`groups[].roots[].contextData`) |
 | `console.log` | the `[hi-mcp]` lines of the tools during the chat — every tool call and every planner call — and the `[planning-assistant]` errors; `[run-hi-mcp-prompt] navigation` events |
 
@@ -240,7 +240,7 @@ The evidence at a glance:
 
 ```bash
 jq '{planSnapshotId, errors, turns: [.turns[] | {prompt, answer: (.answer | .[0:500]), tools, toolCalls}]}' "$R/run.json"
-jq -c '.groups[]? | {group: .id[0:8], pos: .position.pos, rotationY: .position.rotationY, sizeMm: [.position.footprint.widthMm, .position.footprint.depthMm], roots: [.roots[]? | .desc]}' "$R/plan-context.json"
+jq -c '.groups[]? | {group: .id[0:8], pos: .position.pos, rotation: (.position.rotationZ // .position.rotationY), sizeMm: [.position.footprint.widthMm, .position.footprint.depthMm], roots: [.roots[]? | .desc]}' "$R/plan-context.json"
 jq -c '.[] | {tool, ok, error, placement: [.input | objects | .posGroups[]?.placement | select(.)], input: (if .tool == "create-or-replace-groups" then null else .input end)}' "$R/planner-calls.json"
 jq -c '[.[] | select(.tool == "create-or-replace-groups")][-1].input.posGroups[].roots[] | {id, articleId, attributes: [.attributes[]? | "\(.id)=\(.value)"], relation: ([to_entries[] | select(.key | IN("rightOf", "leftOf", "onTop", "above", "behind")) | "\(.key) \(.value)"] | join(","))}' "$R/planner-calls.json"
 jq -c '.groups[]? | {group: .id[0:8], doors: [.roots[]? | select(.isGenerated != true) | {row: .rowIndex, articleId, desc: (.desc // "" | .[0:60]), door: ([.attributes[]? | select(.id == "mod_DoorDirectionSelection") | .value][0] // "Automatic")}] | sort_by(.row)}' "$R/plan-context.json"
@@ -304,7 +304,7 @@ A result is a bug when the system, not the model, is at fault:
 | a planner call fails with `api.extended[message.method] is not a function` | **environment**, no bug: the planner build the page loaded lacks that method (the command tools need `externalObjectGroupOperation`); test against a planner that has it, e.g. with `--dev` |
 | a tool or planner call fails or is rejected although the request is valid | **bug** — in the MCP server (tool error) or the planner (the page's error), by where the error comes from |
 | the chat fails on the system's own data, e.g. a tool result larger than the model's context | **bug** — the planning assistant of the embedding-lib or the MCP server; for a Mistral model and `get-plan-images` a known limitation ([images in tool results](../../docs/ai-chat.md#images-in-tool-results)) |
-| the placement the server sent is right (`repositioningData.posGroup` at the wall's `end` or the corner point, `posRotationY` the wall's `facingRotationY`), but the group stands elsewhere; or valid input yields impossible geometry (outside the room, through a wall, overlapping another group) | **bug** — MCP server placement or planner |
+| the placement the server sent is right (`repositioningData.posGroup` — pos space — at the wall's `end` or the corner point written as `[x, z, −y]`, `posRotationY` the wall's `facingRotationZ`), but the group stands elsewhere; or valid input yields impossible geometry (outside the room, through a wall, overlapping another group) | **bug** — MCP server placement or planner |
 | the plan contradicts what the tools reported (success, but the group is missing or unchanged) | **bug** |
 | a correction of the server is wrong for the request, or the server changed the input without reporting it in `corrections` | **bug** — MCP server correction |
 | the server dropped content the model sent (its `args` in `toolCalls`) without reporting it | **bug** — MCP server |
@@ -322,11 +322,13 @@ it only as a last resort. A group placed outside the room is a model finding onl
 hardening candidate: the user may ask for a placement outside the room, so the server must not
 refuse it.
 
-The server sends `posGroup` and `posRotationY` as the model gave them; for an anchor whose docking
-corner is not its origin (a corner article, a range hood) it adds the offset as `rootRelPos` and
-`rootRelRotationY`. `plan-context.json` reports a group's `position.pos` and `rotationY` in the same
-frame — the back left bottom corner and the rotation of the placement — so compare them with the
-placement directly. State the evidence (file and value) behind every bug verdict.
+The model's arguments (`toolCalls[].args`, `planner-calls.json`) are in plan space; the server turns
+`posGroup` `[x, y, z]` into the pos space of the planner, `[x, z, −y]`, and sends the model's
+`posRotationZ` as `posRotationY` in the `repositioningData`, which stays pos space; for an anchor
+whose docking corner is not its origin (a corner article, a range hood) it adds the offset as
+`rootRelPos` and `rootRelRotationY`. `plan-context.json` reports a group's `position.pos` and
+`rotationZ` in the frame of the placement — the back left bottom corner and the rotation of the
+placement, plan space — so compare them with the model's placement directly. State the evidence (file and value) behind every bug verdict.
 
 ### 6. Report
 

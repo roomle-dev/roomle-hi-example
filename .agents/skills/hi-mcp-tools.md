@@ -69,7 +69,9 @@ are, without the session preamble of `get-skill`.
 { include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'installationElements' | 'masterData' | 'articleDescriptions'> }
 ```
 
-**Returns**: Rooms, articles, attributes (the vocabulary: per library every attribute the agent
+**Returns**: in the planner's plan space — millimetres, right-handed, Z up, `x` to the right and `y`
+to the top of the top-view image (D105); the tool turns the pos space of the planner methods into it
+at its dispatch. Rooms, articles, attributes (the vocabulary: per library every attribute the agent
 sees with its values (D100) — the attribute filter leaves out the element type `mod_TypeElement`
 in every section and result (D102) —, a shared value list listed once with `sameSelectionsAs` on the later
 attributes, D76), groups, obstacles, installationElements; masterData and articleDescriptions if requested. Like every JSON result of the
@@ -77,10 +79,11 @@ server: compact JSON without the `imageUrl` fields of the planner's plan context
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
 (back wall, front wall, left wall, right wall) beside its `side`, a door opening the `type`
 `opening`, and every room a `corners` list — per corner its `name` (back left, …), `point` and the
-`posRotationY` of a corner kitchen there — so a corner placement is a lookup
+`posRotationZ` of a corner kitchen there — so a corner placement is a lookup. Every wall carries
+`start`/`end` (`[x, y, 0]`, the kernel's contour points) and `facingRotationZ`
 
 **Obstacles**: `obstacles.objects` lists every plan object that is not an HI group — `kind` (`door`,
-`window`, `object`), `outline` (floor points `[x, 0, z]` in the coordinates of the walls) and
+`window`, `object`), `outline` (floor points `[x, y, 0]` in the coordinates of the walls) and
 `bottomMm`/`topMm`; a door or a window also carries `roomIndex`, `wall` (its index in the walls
 array) and `fromEndMm`, its span along that wall measured from the wall's end. `obstacles.groups`
 gives per HI group the room-space `outline` and height range of every root module that is not
@@ -98,7 +101,7 @@ and overlap are described according to the measured result; missing data is no a
 
 **Installation elements**: `installationElements` lists the electric plugs and the water
 connections of the plan — per element its `type` (`ElectricPlug` or `WaterConnection`) and its
-`position` (`[x, level, z]` in the coordinates of the walls); a position only, no size. They are
+`position` (`[x, y, z]` in the coordinates of the walls, `z` its height); a position only, no size. They are
 no obstacles: a group may stand on a supply, and the `hint` of `create-or-replace-groups` and
 `place-group` reports no overlap for one (D86).
 
@@ -117,7 +120,8 @@ come from the library's descriptions for single or paired doors; other direction
 name and value in millimetres (Furniture_Smith: `mod_Width`, `mod_Depth`, `mod_Height`; the panels
 `mod_UprightDepth`, `mod_UprightHeight`; the range hood `DU` and the TV `SM_TV` have none). A root
 in `groups` carries the same ids among its `attributes`; a group's `position.footprint` gives
-`widthMm`/`depthMm` of the whole group. A group's `position.pos` and `rotationY` are what a
+`widthMm`/`depthMm` of the whole group, its `x` and `y` ranges measured from `pos`, the front towards
+`−y`. A group's `position.pos` and `rotationZ` are what a
 placement would name for it: the room point of its back left bottom corner and the rotation of the
 placement, whatever origin the planner keeps the group at — the agent reads back what it placed. A
 group with two corner articles also carries `position.rootId`, the corner article `pos` belongs to. A unit is resized with `change-module-attribute` and the
@@ -189,8 +193,9 @@ that corner, a corner article into the corner) or `end`, `offsetMm` from that co
 wall's end. The server loads the group, computes the target from the calculated group as
 `place-group` does (an overlap moves it along the wall), reloads it there and sets its group
 materials after the reload (D23). Anywhere else,
-and for a group of wall units only: `placement: { posGroup, posRotationY, rootId? }` — `posGroup`
-the room point of the group's back left bottom corner, `posRotationY` the rotation in degrees,
+and for a group of wall units only: `placement: { posGroup, posRotationZ, rootId? }` — `posGroup`
+the room point of the group's back left bottom corner (`z` 0 on the floor; a floor point `[x, y]` is
+completed to `[x, y, 0]`), `posRotationZ` the rotation in degrees,
 counter-clockwise as seen from above; `rootId` only with two corner articles, naming the one that
 goes into the corner `posGroup` names. One piece of furniture is one group: relate every further
 article to its neighbour instead of positioning it. `posGroup` is the back left bottom corner for
@@ -281,7 +286,7 @@ to a taken side vector to the named root's free other side, else to the root at 
 that row (a corner article ends a row: the unit then goes to the free end of the leg in the other
 direction), and a `dockingVector` the article does not have becomes the partner of `ownDockingVector`. A wall
 unit, range hood or unknown-category upper article merged `*Top -> *Bottom` on a floor unit gets
-the hang gap (D35) only when its y offset is omitted. Supplied numeric offsets, including zero,
+the hang gap (D35) only when its offset is omitted; the offset's `z` is the clearance. Supplied numeric offsets, including zero,
 remain the requested clearance.
 
 `change-module-attribute` sets the value on every root module of `rootModuleIds` — one group or
@@ -534,9 +539,9 @@ is one call, which roomle-ui performs:
 1. Always start with `get-plan-context`
 2. Validate article IDs before using
 3. Use free docking vectors when extending
-4. Position every new group with a placement — at a wall or in a room corner by `wall`, `alignment` and `offsetMm`, anywhere else by `posGroup` and `posRotationY`
+4. Position every new group with a placement — at a wall or in a room corner by `wall`, `alignment` and `offsetMm`, anywhere else by `posGroup` and `posRotationZ`
 5. Edit existing groups with the command tools; resubmit a whole group only to rebuild it
 
 ## Interior Design tools
 
-Use `get-interior-design-options` for a loaded group before adding, moving, deleting or replacing interior fittings. Four command tools implement those edits through the existing planner route. Use installed instance IDs and newly discovered destination tuples; choose replacements from that fitting's `replacementArticles`, including when no additions fit. `articleId` filters addition and replacement candidates. A fitting's `position` is where its parts start, in its parent's frame, the frame of `insertPosition`: move a fitting by adding the offset to its position. Clarify ambiguous instances. See [the complete contract](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#interior-design-tools) and [implementation ownership](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence.md#interior-design-fittings).
+Use `get-interior-design-options` for a loaded group before adding, moving, deleting or replacing interior fittings. Four command tools implement those edits through the existing planner route. Use installed instance IDs and newly discovered destination tuples; choose replacements from that fitting's `replacementArticles`, including when no additions fit. `articleId` filters addition and replacement candidates. A fitting's `position` is where its parts start — the back left bottom corner of their boxes —, in its parent's frame (`x` right, `y` towards the back, `z` up), the frame of `insertPosition`: move a fitting by adding the offset to its position. Clarify ambiguous instances. See [the complete contract](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#interior-design-tools) and [implementation ownership](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence.md#interior-design-fittings).

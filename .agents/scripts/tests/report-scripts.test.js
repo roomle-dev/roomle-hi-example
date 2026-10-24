@@ -183,8 +183,8 @@ const singleModelSession = async (t) => {
         {
           id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
           position: {
-            pos: [100, 0, -200],
-            rotationY: 270,
+            pos: [100, 200, 0],
+            rotationZ: 270,
             footprint: { widthMm: 600, depthMm: 617 },
           },
           roots: [
@@ -273,7 +273,20 @@ const singleModelSession = async (t) => {
       errors: [],
       planSnapshotId: 'ps_run02',
     },
-    { groups: [] },
+    // a run folder of a planner build before the agent's plan space
+    {
+      groups: [
+        {
+          id: 'ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee',
+          position: {
+            pos: [100, 0, -200],
+            rotationY: 90,
+            footprint: { widthMm: 600, depthMm: 560 },
+          },
+          roots: [],
+        },
+      ],
+    },
     // recorded before the tools ran in the planner: planner calls
     [
       { method: 'getExternalObjectPlanContext', args: [['groups']], ok: true },
@@ -518,7 +531,7 @@ test('extracts the facts of a single-model session', async (t) => {
   assert.equal(r1.groups.length, 1);
   assert.deepEqual(r1.groups[0], {
     id: 'aaaaaaaa',
-    pos: [100, 0, -200],
+    pos: [100, 200, 0],
     rot: 270,
     w: 600,
     d: 617,
@@ -548,6 +561,10 @@ test('extracts the facts of a single-model session', async (t) => {
 
   assert.equal(r2.nn, '02');
   assert.equal(r2.random, true);
+  assert.deepEqual(
+    r2.groups.map(({ pos, rot }) => ({ pos, rot })),
+    [{ pos: [100, 0, -200], rot: 90 }]
+  );
   assert.deepEqual(r2.plannerCalls, [
     { tool: 'change-group-attribute', ok: false, error: 'no such attribute' },
   ]);

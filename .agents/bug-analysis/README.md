@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [kitchen-vanishes-after-a-reverted-tool-call.md](kitchen-vanishes-after-a-reverted-tool-call.md) | Open — fix proposed, a new decision and three points to be confirmed | A kitchen planned from an image appears and vanishes a second later: the discard of D106 reads the library's verdict after the load and undoes the whole call with the planner's undo, instead of restoring the group before the change in the background and loading nothing |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

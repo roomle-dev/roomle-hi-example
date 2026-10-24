@@ -318,9 +318,11 @@ not the group (D62) — `hint` names every root module and group of the changed 
 still cannot calculate: "root module 'r1' (OTB60) of group 'g1' is still not built - <first line of
 the library's message>. Change the value that fails, or tell the user." (D108); the others `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed?, corrections?, hint? }`, once the
 planner has loaded the result. A command after which the library cannot calculate a root module or
-a group that it could before changes nothing: the tools revert it with the planner's undo, and the
-result is an error — "<tool>: nothing was changed - the library could not calculate root module
-'…' (…) of group '…' - <first line of the library's message>. …" (D106). Attribute commands also wait for the kernel's planning-situation
+a group that it could before changes nothing: the tools calculate the change and discard it before
+the load, the group stays as it was, and the result is an error — "<tool>: nothing was changed - the
+library could not calculate root module '…' (…) of group '…' - <first line of the library's
+message>. Change the failing values or replace the article, and send the call again." (D106); a
+failure a follow-up calculation after the load leaves is named in `libraryFailures` and kept. Attribute commands also wait for the kernel's planning-situation
 callback and its calculated follow-up load; their library-change feedback reads the actual
 placement's attributes, including a height the library adjusts:
 

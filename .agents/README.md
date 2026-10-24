@@ -129,7 +129,6 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
-| [The kitchen vanishes when the tool set reverts a call the library could not calculate completely](bug-analysis/kitchen-vanishes-after-a-reverted-tool-call.md) | Open — fix proposed, a new decision and three points to be confirmed | 2026-10-24 |
 
 ### Feature Analyses
 

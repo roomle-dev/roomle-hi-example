@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [one-more-shelf-adds-the-default-shelf-set.md](one-more-shelf-adds-the-default-shelf-set.md) | Open | [mcp-issues.md #96](../backlog/mcp-issues.md#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

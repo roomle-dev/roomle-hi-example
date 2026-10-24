@@ -111,6 +111,12 @@ own, and a corner article joins the two legs into one row. The roots are listed 
 were added, an inserted one last, so "the middle unit" is read from `rowIndex` (D66). Every group a
 tool returns carries it; a resubmitted group's `rowIndex` is ignored.
 
+**Walls**: every root module at a wall carries `wall`, the name of the wall it stands at (`back
+wall`, `right wall`, … — the names of the plan context's walls). The two legs of a corner group stand
+at two walls, and a wall unit names the wall it hangs on; a root module at no wall, such as an
+island, carries none (D113). Every group a tool returns carries it; a resubmitted group's `wall` is
+ignored.
+
 **Not built**: a root module the library could not calculate — after an edit in the planner, in a
 loaded plan or after an undo (D95) — carries `calculationError`, the first line of the library's
 message, and so does a group whose own calculation failed. The log messages stay withheld (D9). The

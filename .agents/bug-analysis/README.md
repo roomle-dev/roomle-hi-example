@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [A wall unit over the corner article is turned out through the wall by the carrier link of a placement by wall](wall-unit-over-the-corner-turned-by-the-carrier-link.md) | Open | [mcp-issues.md 109](../backlog/mcp-issues.md#109-a-wall-unit-over-the-corner-article-is-turned-out-through-the-wall-by-the-reload-of-a-placement-by-wall) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

@@ -129,6 +129,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [A wall unit over the corner article is turned out through the wall by the carrier link of a placement by wall](bug-analysis/wall-unit-over-the-corner-turned-by-the-carrier-link.md) | Open | 2026-10-24 |
 
 ### Feature Analyses
 

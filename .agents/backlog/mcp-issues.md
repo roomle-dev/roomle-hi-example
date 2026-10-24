@@ -36,6 +36,7 @@ never drop the agent's content silently.
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 107 | [A discarded exchange names the root module id of the unit it would have put in](#107-a-discarded-exchange-names-the-root-module-id-of-the-unit-it-would-have-put-in) | defect | roomle-ui `_stagedFailures`, `newLibraryFailures` (`hi-tools.ts`, `hi-tool-payload.ts`) | low | | |
 | 108 | [The glue logic holds implementation of the Planning Assistant](#108-the-glue-logic-holds-implementation-of-the-planning-assistant) | refactoring | roomle-ui HI tools (`hi-tools.ts`, `hi-tool-*.ts`); `glue-logic.ts` keeps the API functions | medium | | |
+| 109 | [A wall unit over the corner article is turned out through the wall by the reload of a placement by wall](#109-a-wall-unit-over-the-corner-article-is-turned-out-through-the-wall-by-the-reload-of-a-placement-by-wall) | defect | roomle-ui `withUnitsAboveDocked` (`hi-wall-placement.ts`) — [analysis](../bug-analysis/wall-unit-over-the-corner-turned-by-the-carrier-link.md) | high | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -298,3 +299,41 @@ implementation in the tools; the UI's behaviour is unchanged. Update the package
 
 **Reproduce.** `grep` the moved methods in roomle-ui `packages/`: outside `glue-logic.ts`, only
 `hi-tools.ts` and `hi-tool-commands.ts` call them.
+
+## 109. A wall unit over the corner article is turned out through the wall by the reload of a placement by wall
+
+**Problem.** An L-shaped kitchen in a room corner with a wall unit over the right leg of the corner
+article — `leftOf` the wall unit that hangs beside the tall units, as the photo
+`docs/images/kitchen-11.png` shows it — is created with a placement by wall. After the reload that
+moves the group to the corner, that wall unit is turned by 90° against its row and reaches 600 mm
+beyond the wall. A `place-group` reloads the same way. The same group created by point is right.
+
+**Cause.** Before the reload, `withUnitsAboveDocked` (roomle-ui `hi-wall-placement.ts`) docks every
+unit to the carrier it finds by position — here the corner article — with an entry on the
+carrier's `LeftTop`, whose direction it does not check. The corner article's `Left` vectors run
+along the back-wall leg, across the unit; the kernel aligns the directions of a docked pair and
+turns the unit. The unit is linked although its docking already holds it (through the wall unit
+beside the tall unit). Analysed in
+[the bug analysis](../bug-analysis/wall-unit-over-the-corner-turned-by-the-carrier-link.md).
+
+**To do.** roomle-ui: `withUnitsAboveDocked` docks a unit only to the `Top` vector of its carrier
+that runs the way the unit's `LeftBottom` runs, with the offset from that vector's start, and adds
+no link for a unit that reaches a floor-standing root module over the docking of the calculated
+group. C24 of roomle-ui `hi-tools-behaviour.md` says so.
+
+**Test.** roomle-ui `__tests__/hi-tool-commands/place-group-test.ts` and
+`create-or-replace-groups-placement-test.ts`: a wall unit over the corner article beside the tall
+units keeps its docking and its orientation over the reload. roomle-hi-example
+`docs/test-prompts.json`: `kitchen-11.png` in the back right corner, every wall unit inside the
+room.
+
+**Reproduce.** Model-free in the example page on the room of the plan snapshot
+`ps_srfqpet9mui0uiq7ubkui78kadflwbd` with its group deleted, on the dev server of
+`feat/hi-mcp` and on the deployed bo-test planner alike:
+`create-or-replace-groups` with the group of the analysis (`UERTB90` first, `UKS2A60` and two
+`USTB60` `leftOf`, `SUT60`, `HOTS2AB60`, `HK260` `rightOf`, `O2TB90` `above` the last base unit
+with an `OTB60` `rightOf` it, an `OTB60` `leftOf` the oven unit and another `OTB60` `leftOf` that
+one) and `placement { wall: "right", alignment: "back" }`; the last `OTB60` stands at `x` 4815 to
+5415 with `rotationY` 90, docked `LeftBottom → <corner>:LeftTop` with the offset
+`[-561, -660, 661]`. Script and outputs:
+`.temp/result/repro-wall-unit-over-the-corner-2026-10-24/`.

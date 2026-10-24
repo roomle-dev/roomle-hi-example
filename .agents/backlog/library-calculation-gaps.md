@@ -8,9 +8,9 @@
 
 The agent only chooses, and the library calculates. Every gap below is a path on which a planning
 reaches the plan, the price or the order without a complete calculation of the library, or without
-a note that says so. A tool call of the agent that the library cannot calculate changes nothing
-(D106); a root module without a complete calculation comes from an edit in the planner or from a
-loaded plan (D95). None of the items refuses the agent's input
+a note that says so. A tool call of the agent that the library cannot calculate changes nothing —
+the tools discard it before the load (D106); a root module without a complete calculation comes
+from an edit in the planner, from a loaded plan (D95) or from a follow-up calculation after a load. None of the items refuses the agent's input
 ([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort)): they run the library's own
 checks on every path and make the library's verdict visible wherever the planning is read. Where an
 item needs behaviour that is not decided, its first to-do is the decision (D51).
@@ -41,8 +41,8 @@ of the scene to the library's `getOrderData`. Neither answer says that a root mo
 not built. What the library's `getOrderData` does with such a root module — prices it, leaves it
 out or fails — is not known.
 
-**Cause.** The handling of a failed calculation reverts a tool call of the agent (D106) and reports
-nothing for an edit in the planner; the order path reads no diagnostic.
+**Cause.** The handling of a failed calculation discards a tool call of the agent before the load
+(D106) and reports nothing for an edit in the planner; the order path reads no diagnostic.
 
 **To do.**
 

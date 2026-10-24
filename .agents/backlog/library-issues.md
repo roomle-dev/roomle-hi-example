@@ -456,9 +456,10 @@ Error 14019; the model undid the create and sent it again with `OTB30` wall unit
 generating the backsplashes" — with `mod_BacksplashColor` and `mod_BacksplashHeight`. The library
 does not calculate the backsplash — "Error 14034: Could not find entry in tab_GrainDirectionSettings
 for input values: part_Backsplash - undefined - undefined - undefined - 600 - 110" — so the
-`mr_Backsplash` root is not built; the server builds the rest of the group and names it in
-`notLoaded`. A separate `change-group-attribute` with the colour and height after the backsplash is
-generated gets the same error. The agent drops the backsplash and the final answer reports the
+tools discard the change the library cannot calculate before the load (D106): a create that enables
+the backsplash on its units is not built and named in `notLoaded`, and a `change-group-attribute`
+that enables it on the built group answers "nothing was changed" with the same error — the served
+text asks for that second way, so the kitchen stands while the backsplash fails. The agent drops the backsplash and the final answer reports the
 omission — the image tests' expects ask for exactly that ("the backsplash visible in the image is
 generated when the library supports it").
 

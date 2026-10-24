@@ -18,10 +18,11 @@ calculation.
 
 The guarantee covers the structure of a planning, not every attribute value:
 
-- **A change the library cannot calculate is not made.** The tool call changes nothing, and the
-  result tells the agent which root modules failed and why (D106). An edit the user makes in the
-  planner is kept with its failed calculation (D95), and the agent reads that the root module is
-  not built (D108).
+- **A change the library cannot calculate is not made.** The tools discard it before it is loaded:
+  the group before the change stays, the plan never shows the change, and the result tells the agent
+  that nothing was changed and which root modules failed and why (D106, D109). An edit the user makes
+  in the planner is kept with its failed calculation (D95), and the agent reads that the root module
+  is not built (D108).
 - **A value the library's own check rules out is not set** (D107), but the library does not verify
   every attribute: for Furniture_Smith not the sizes.
 - **A create skips the library's conflict resolution** for the attribute values of a root module.
@@ -120,7 +121,7 @@ Everything else in a payload is dropped before the planner sees it:
 | A root attribute in a create that only the generated roots carry | Set on the whole group (`hi-tool-attributes.ts:80`) | `corrections` |
 | A value a module does not take by the library's verified options — in an attribute edit, a root override or a group attribute of a create | Not set on that root module; the rest of the call is set | `corrections` names the values the module takes; an error when no root module takes a value of the call (D107) |
 | A value that conflicts with another attribute, in an edit | The library changes the other attribute | `corrections` names the change (D59) |
-| A value the library cannot calculate — in any tool call that changes the plan | **Not made**: the tool set reverts the whole call with the planner's undo (D106) | An error result: nothing was changed, the root modules per group and cause with the first line of the library's message, and what to change (`runToolCommand`, `hi-tool-commands.ts:1366`; `recorded`, `hi-mcp/tool-executors.ts:281`) |
+| A value the library cannot calculate — in a tool call that changes the plan | **Not made**: the HI tools let the library calculate the change and discard it before the load, per group; the group before the change stays (D106, `hi-tools.ts`) | A create: `notLoaded` for the discarded group, the other groups built; every other call: an error result — nothing was changed, the root modules per group and cause with the first line of the library's message, and what to change (`runToolCommand`, `hi-tool-commands.ts`) |
 | An exception of the library's calculation | **Not made**, as above: `_calculate` (`glue-logic.ts:3458`) marks the group with a `Fatal` message | An error result that names the group |
 | A group on an obstacle, in front of a window or outside the room | Built | `hint` (D51, D55) |
 
@@ -128,12 +129,15 @@ Everything else in a payload is dropped before the planner sees it:
 
 ### A failed calculation of the agent's change is discarded, the user's is kept
 
-A tool call after which the library cannot calculate a root module or a group that it could before
-the call changes nothing (D106). The tool command compares the library's verdict before and after
-the call; the tool set reverts the call with the planner's undo — a tool call is one step of the
-planner's undo history — and the agent gets an error result with the failing root modules, the
-first line of the library's message and what to change. The whole call is reverted, also the groups
-of a create the library could calculate, so the agent sends the corrected call once more.
+A change of the agent that the library cannot calculate — a root module or a group that it could
+calculate before — is not made (D106). The HI tools own the load: they let the library calculate the
+change, compare the group before and after the calculation, and load only a clean result; otherwise
+the group before the change goes back, nothing reaches the scene, and the agent is told that nothing
+was changed — in `notLoaded` for a group of a create, whose other groups are built, in the error
+result for every other call — with the failing root modules, the first line of the library's message
+and what to change. A row edit, which the glue logic calculates and loads in one call, is staged on
+a copy first. The planning in the scene never vanishes while the agent adapts, improves or fixes it
+(D109).
 
 The discard refuses the agent's input — a guard, the last step of
 [Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort). The steps before it do not meet
@@ -141,12 +145,16 @@ the rule: the served text cannot name the value combinations a library's tables 
 library data and the served text stays library-neutral; the check of a value against the library's
 verified options before an edit (D107) prevents only part of the failures;
 the server knows no valid combination to correct the input to; and building what it can leaves the
-failed root module in the plan, which the user rules out. The error still says what failed, why,
-and what to send instead.
+failed root module in the plan, which the user rules out. The guard is as narrow as it can be: it
+discards one group's change before the load, never the planning that stands, and the error says what
+failed, why, and what to send instead.
 
-The discard covers the agent's calls only. The glue logic calculates the user's edits in the
-planner as well and keeps every calculation (D95, `_runGroupCalculation`, `glue-logic.ts:2267`): a
-discard there would revert the user's own edit, such as the height of a cabinet. A root module the
+The discard covers the agent's calls only and lives in the HI tools. The glue logic calculates the
+user's edits in the planner as well and keeps every calculation (D95, `_runGroupCalculation`,
+`glue-logic.ts`): it is not part of the discard. `delete-article-in-place` and `merge-groups` change
+the plan in the kernel before the library calculates, and the kernel's position answer after a load
+recalculates a group at its place: a root module they leave uncalculated is kept and named in
+`libraryFailures` and `calculationError`. A root module the
 library could not calculate after an edit in the planner, or in a loaded plan, stays in the plan
 without docking vectors and front parts until a valid value recalculates it. It does not stand
 against a later tool call; the agent can repair it. D99 calls this handling a fallback that keeps
@@ -216,6 +224,6 @@ request from a mistake.
 - [roomle-ui `library-errors.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/library-errors.md)
   — every call into the library and how its errors reach the agent
 - [roomle-ui `hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md)
-  — D51, D59, D60, D95, D99, D106, D107, D108 and the corrections and feedback of §8
+  — D51, D59, D60, D95, D99, D106, D107, D108, D109 and the corrections and feedback of §8
 - [roomle-ui `homag-intelligence.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence.md)
   — the architecture of the HI integration

@@ -24,7 +24,7 @@ D-numbers are the decisions in §3 of
 | # | Gap | Responsible | Priority |
 |---|---|---|---|
 | 1 | [Price and order include root modules the library could not calculate, without a note](#1-price-and-order-include-root-modules-the-library-could-not-calculate-without-a-note) | roomle-ui HI tool set (`get-price`, `get-order-data`); the library's `getOrderData` | high |
-| 2 | [A root module the library could not calculate is not visible after the call that caused it](#2-a-root-module-the-library-could-not-calculate-is-not-visible-after-the-call-that-caused-it) | roomle-ui plan context (`hi-plan-context.ts`), served text | medium |
+| 2 | [A root module the library could not calculate is not visible after the call that caused it](#2-a-root-module-the-library-could-not-calculate-is-not-visible-after-the-call-that-caused-it) | roomle-ui plan context (`hi-plan-context.ts`), served text — analysed in [bug-analysis/failed-root-module-not-visible-to-the-agent.md](../bug-analysis/failed-root-module-not-visible-to-the-agent.md): `shapeRoot` drops the library's verdict and the served text has no word for it; fix proposed, the group's own failure and a note after a failed repair to be confirmed | medium |
 | 3 | [A create skips the library's conflict resolution and the checks of its root modules](#3-a-create-skips-the-librarys-conflict-resolution-and-the-checks-of-its-root-modules) | roomle-ui glue logic (`glue-logic.ts`), tool commands | medium |
 | 4 | [Values the library accepts and cannot calculate](#4-values-the-library-accepts-and-cannot-calculate) | HOMAG library development team; roomle-hi-example: the report | medium |
 

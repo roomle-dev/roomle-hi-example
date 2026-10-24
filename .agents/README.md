@@ -129,6 +129,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [A root module the library could not calculate is not visible to the agent](bug-analysis/failed-root-module-not-visible-to-the-agent.md) | Open — fix proposed, three points to be confirmed | 2026-10-24 |
 
 ### Feature Analyses
 

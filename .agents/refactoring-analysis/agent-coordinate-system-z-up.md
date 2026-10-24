@@ -6,6 +6,8 @@
 > **Base**: roomle-hi-example `master` `36343fd`; roomle-ui `master` `7e2e54fb3` (`release/bo-test`
 > `1d9adf51e` differs in the HI code only by the wording of two relation rules, no coordinates);
 > RoomleCore `master` `ab26fa3c7`
+> **Plan**: [RML-18295](https://roomle.atlassian.net/browse/RML-18295) comment 156490, checked
+> against roomle-ui `feat/hi-mcp` `5d4a0f314`
 
 ## Affected repositories
 
@@ -178,8 +180,8 @@ Angles pass unchanged.
 | Where | Today (pos space) | Target (plan space) |
 |---|---|---|
 | `rooms…segments[].pos` | `[x, level, z]` | `[x, y, level]` — the kernel's contour point at its level |
-| `walls[].start`, `end` | `[x, 0, z]` | `[x, y, 0]` |
-| `walls[].facingRotationY` | 0, 90, 180, 270 | `facingRotationZ`, same values |
+| `walls[].start`, `end`; the `wall` of a `place-group` result | `[x, 0, z]` | `[x, y, 0]` |
+| `walls[].facingRotationY`; the same of the `place-group` `wall` | 0, 90, 180, 270 | `facingRotationZ`, same values |
 | `corners[].point`, `posRotationY` | `[x, 0, z]`, degrees | `[x, y, 0]`, `posRotationZ` |
 | `obstacles.objects[].outline`, `obstacles.groups[].roots[].outline` | `[x, 0, z]` | `[x, y, 0]` |
 | `installationElements[].position` | `[x, level, z]` | `[x, y, z]` — the kernel's centre, unconverted |
@@ -201,17 +203,21 @@ value.
 `toAgentFrame` on the result after it. Every tool call passes `runTool`. The conversion works on the
 fields of 3.2, not per tool:
 
-- results: `rooms`, `obstacles`, `installationElements`, `groups`, `group`, `fittings` and
+- results: `rooms`, `obstacles`, `installationElements`, `groups`, `group`, `wall`, `fittings` and
   `interiorFittings`. `place-group` returns a single `group`, which `inPlanner` does not pass through
-  `agentFacingGroups` (`hi-mcp/tool-executors.ts:375-397`); the conversion covers it.
-- arguments: `posGroups[].placement`, `posGroups[].roots[].contextData`, `dockTo.offset`,
-  `insertPosition`.
+  `agentFacingGroups` (`hi-mcp/tool-executors.ts:375-397`), and the `wall` it used
+  (`hi/hi-tool-commands.ts:842`, `:916`); the conversion covers both. The results of `get-price`,
+  `get-order-data`, `get-skill` and `get-plan-images` carry no plan coordinates and pass unchanged.
+- arguments: `posGroups[].placement`, `posGroups[].repositioningData` — taken as the placement
+  (`hi/hi-tool-payload.ts:744-760`) —, `posGroups[].roots[].contextData`, `dockTo.offset`,
+  `insertPosition`. A value that is not a point of three finite numbers passes as it is, so the
+  payload checks below the boundary report it as they do in pos space.
 
 `fromAgentFrame` completes a floor point `[x, y]` to `[x, y, 0]` before it converts — the completion
 moves out of `normalizePlacement` (`hi/hi-tool-payload.ts:166-171`), whose correction would print
-pos-space numbers — and keeps a missing component missing: a `dockTo.offset` without `z` arrives
-without `y`, because `hi/hi-tool-docking.ts:208` sets the hang gap when `offset[1]` is `undefined`.
-Its corrections join the result's `corrections`. `runTool` keeps logging the arguments as the agent
+pos-space numbers. An absent `dockTo.offset` stays absent: the input schema takes three numbers or
+none, and `hi/hi-tool-docking.ts:208` sets the hang gap when `offset[1]` is `undefined`. Its
+corrections join the result's `corrections`. `runTool` keeps logging the arguments as the agent
 sent them (`sent`), so a test run reads the agent's frame.
 
 Below `runTool` nothing changes frame: the executors, `agent-facing.ts` (corners, wall names,
@@ -233,8 +239,10 @@ that names an axis, a point or a rotation field changes with the frame:
 | `insertPosition` | `:199` | the local frame of 3.1 |
 | `merge-article-into-group`, `dockTo.offset` | `:724`, `:758-762` | "a supplied y value" → "a supplied z value" |
 | Feedback on a placement | `hi/hi-tool-payload.ts:70-72`, `:155`, `:178` | `posRotationZ` |
-| Positions dropped from a group or a root | `hi/hi-tool-payload.ts:739-741`, `:780-783` | the fields as the agent knows them |
-| A group placed by the unit's origin; a group without a position | `hi/hi-tool-commands.ts:617-620`, `:777-781` | `posRotationZ` |
+| Positions dropped from a group or a root | `hi/hi-tool-payload.ts:739-741`, `:780-783` | the fields as the agent knows them: a `rotationZ` is dropped with them |
+| A group without a position | `hi/hi-tool-commands.ts:777-781` | `posRotationZ`; the text of a group placed by the unit's origin (`:617-620`) names `posGroup` only and stays |
+| A root module that overlaps an object: "x … to …, z … to …" | `hi/hi-tool-hints.ts:351-358` | the `x` range and the `y` range from the negated `z` values — a text the conversion cannot reach |
+| A wall that is not found: "Available walls: …" with the pos-space walls | `hi/hi-wall-placement.ts:325-329` | the walls by index and side, without points |
 
 `place-group`, `get-plan-images` and the planning skills name no axis and stay. The text stays
 library-neutral.
@@ -270,8 +278,10 @@ library-neutral.
 | `hi-mcp/hi-mcp-server.ts:168-191` | `runTool` calls them |
 | `hi-mcp/hi-mcp-server.ts` | the served text of 3.4 |
 | `hi/hi-tool-payload.ts:70-72`, `:155`, `:166-171`, `:178`, `:739-741`, `:780-783` | the feedback texts; the floor-point completion moves to `fromAgentFrame` |
-| `hi/hi-tool-commands.ts:617-620`, `:777-781` | the feedback texts |
+| `hi/hi-tool-commands.ts:777-781` | the feedback text |
+| `hi/hi-tool-hints.ts:351-358`, `hi/hi-wall-placement.ts:325-329` | the object hint and the list of available walls (3.4) |
 | `hi/external-object-api.ts:535-547` | the doc comment of `getExternalObjectPlanContext` |
+| `packages/web-sdk/packages/test-helpers/unit/hi-mcp-fixture.json` | the tool descriptions, which `hi-mcp-fixture-test.ts`, `planner-core/__tests__/roomle-planner.ts` and `tests/unit/embedding-lib/homag-intelligence/hi-mcp/hi-mcp-stream-text.spec.ts` compare |
 | `__tests__/hi-mcp/`, `__tests__/hi-tool-commands/` | section 6 |
 | `.agents/homag-intelligence/coordinate-systems.md` | rewritten: plan space as the agent's frame, the boundary as its one conversion, the planner's frames, the points of section 2 |
 | `.agents/homag-intelligence/hi-tools-behaviour.md` | D13 restated for z up; a decision row for the agent's frame; §5, §7 and the messages of §8 |
@@ -297,16 +307,22 @@ keeps its frame.
 
 Tests of the affected behaviour, and the output changes to expect:
 
-- `__tests__/hi-mcp/tool-executors-test.ts`, `hi-mcp-tools-test.ts`, `hi-mcp-fixture-test.ts`,
-  `interior-fittings-test.ts` — what the agent reads. Every coordinate in plan space: the floor's
-  second coordinate is the negated old `z`, the height comes third; `rotationZ`, `facingRotationZ`
-  and `posRotationZ` carry the old values; footprint `y` ranges run from `−depthMm` to 0.
-- `__tests__/hi-mcp/hi-mcp-server-test.ts` — the served text.
+- `__tests__/hi-mcp/hi-mcp-server-test.ts` — the served text, and what the agent reads through the
+  tool set (`createHiMcpTools`): every coordinate in plan space — the floor's second coordinate is
+  the negated old `z`, the height comes third; `rotationZ`, `facingRotationZ` and `posRotationZ`
+  carry the old values; footprint `y` ranges run from `−depthMm` to 0. The tests of
+  create-or-replace-groups, place-group and the installation elements there (`:1354`, `:1537`,
+  `:1615`) pass through `runTool`.
+- `hi-mcp-fixture-test.ts` — unchanged itself; the fixture it compares changes with the tool
+  descriptions.
 - `__tests__/hi-tool-commands/create-or-replace-groups-input-test.ts`,
   `create-or-replace-groups-placement-test.ts` — the feedback texts of 3.4; the floor-point
-  completion leaves `normalizePlacement`.
-- Unchanged: the tests of the geometry and the tool commands (`hi-plan-context-test.ts`,
-  `hi-plan-space-test.ts`, `hi-group-placement-test.ts`, `place-group-test.ts`,
+  completion leaves `normalizePlacement` (`input-test.ts:1514-1528`); the object hint (`:2028`)
+  and the list of available walls (`:2487`).
+- `__tests__/hi-tool-commands/place-group-test.ts:284` — the object hint.
+- Unchanged: `__tests__/hi-mcp/tool-executors-test.ts` and `interior-fittings-test.ts`, which call
+  `createToolExecutors` below `runTool`, and the other tests of the geometry and the tool commands
+  (`hi-plan-context-test.ts`, `hi-plan-space-test.ts`, `hi-group-placement-test.ts`,
   `placement-frame-test.ts`, `group-commands-test.ts` and the others). They test pos space below the
   boundary.
 

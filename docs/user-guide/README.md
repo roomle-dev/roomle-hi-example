@@ -230,6 +230,9 @@ says what it substituted and adapted.
   change you made yourself, use the undo button of the planner.
 - **Outside the room.** If you ask for furniture outside the room — on a terrace, for example — the
   assistant builds it there. It does not stop you.
+- **Colours and materials a unit does not offer.** A colour, program or design a unit does not
+  offer is not set on that unit. The assistant is told which values the unit offers and can pick
+  one of them. The library does not check every attribute this way, the sizes for example.
 
 ## Troubleshooting
 

@@ -15,11 +15,6 @@ loaded plan (D95). None of the items refuses the agent's input
 checks on every path and make the library's verdict visible wherever the planning is read. Where an
 item needs behaviour that is not decided, its first to-do is the decision (D51).
 
-The check of a value against the library's verified options before an edit is open work of its own:
-[attribute-values-checked-before-an-edit.md](attribute-values-checked-before-an-edit.md). It and
-item 3 change how a root's attribute values reach the calculation of a create; they are done
-together.
-
 The roomle-ui paths are relative to `packages/web-sdk/packages/homag-intelligence/src/`. The
 D-numbers are the decisions in §3 of
 [roomle-ui `hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions).
@@ -30,7 +25,6 @@ D-numbers are the decisions in §3 of
 |---|---|---|---|
 | 1 | [Price and order include root modules the library could not calculate, without a note](#1-price-and-order-include-root-modules-the-library-could-not-calculate-without-a-note) | roomle-ui HI tool set (`get-price`, `get-order-data`); the library's `getOrderData` | high |
 | 2 | [A root module the library could not calculate is not visible after the call that caused it](#2-a-root-module-the-library-could-not-calculate-is-not-visible-after-the-call-that-caused-it) | roomle-ui plan context (`hi-plan-context.ts`), served text | medium |
-| — | [Values are not checked before an edit](attribute-values-checked-before-an-edit.md) | roomle-ui tool commands and glue logic | medium |
 | 3 | [A create skips the library's conflict resolution and the checks of its root modules](#3-a-create-skips-the-librarys-conflict-resolution-and-the-checks-of-its-root-modules) | roomle-ui glue logic (`glue-logic.ts`), tool commands | medium |
 | 4 | [Values the library accepts and cannot calculate](#4-values-the-library-accepts-and-cannot-calculate) | HOMAG library development team; roomle-hi-example: the report | medium |
 
@@ -156,11 +150,7 @@ conflicts, and runs the drag-in's checks for the group only.
 3. roomle-ui tool commands: name the values the library changed in the root attribute values of a
    create in `corrections` — the comparison of `findLibraryChanges` (`hi-tool-attributes.ts`)
    against the values the call sent.
-4. Do it together with the layout stage of
-   [attribute-values-checked-before-an-edit.md](attribute-values-checked-before-an-edit.md) (to do 2,
-   "The layout inputs of a create"): both change how a root's attribute values reach the
-   calculation.
-5. Documentation: "Initial Checks of the Library" in roomle-ui `.agents/homag-intelligence.md`;
+4. Documentation: "Initial Checks of the Library" in roomle-ui `.agents/homag-intelligence.md`;
    D59, D60 and D65 of `hi-tools-behaviour.md`; `library-errors.md`.
 
 **Test.** roomle-ui `__tests__/glue-logic-test.ts`, with a library whose
@@ -178,8 +168,7 @@ and `mod_FrontColor` `324`; the group loads with both values, and a `change-modu
 [library-issues.md](library-issues.md) — wall units at 900 mm with a single door, base units at
 150 mm with a 150 mm plinth, a drawer sideboard lowered to 720 mm, a handle strip, backsplashes —
 leave root modules without geometry for values the library accepts. Several of them are not
-reported to the library development team. A check of the values before an edit
-([attribute-values-checked-before-an-edit.md](attribute-values-checked-before-an-edit.md)) does not
+reported to the library development team. The check of the values before an edit (D107) does not
 catch them: the library does not rule these values out, and it verifies no range for `mod_Width` and
 `mod_Height`.
 

@@ -257,7 +257,10 @@ Check:
   (one wall, around a corner), the kinds of units and appliances it shows and the colours of fronts
   and worktop, as far as the catalog has them; without a wall in the prompt, any wall that fits;
 - the group stands where asked — on that wall or in that corner, back against the wall, inside the
-  room, not through a wall, window or door, not overlapping another group;
+  room, not through a wall, window or door, not overlapping another group. An object of
+  `plan-context.json` is overlapped only where its outline and its height range (`bottomMm` to
+  `topMm`) both meet a root module's — base units below a window's sill or a pendant lamp stand
+  clear of it (D55);
 - the docking graph is sound — every root reachable from the placed root, at most one root per
   docking vector, wall units docked to `*Top` vectors;
 - the doors open to the outside of every row the run creates or gives a new end

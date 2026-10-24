@@ -445,7 +445,7 @@
           "title": "A kitchen island in a furnished room",
           "plan": "open-plan-room",
           "prompt": "add a kitchen island of three base cabinets in a free spot of the room",
-          "expect": "one new group of three base units away from the walls whose root modules overlap no object (dining table, chairs, rug, plant, sofa) and no other group"
+          "expect": "one new group of three base units away from the walls whose root modules overlap no object (dining table, chairs, rug, plant, sofa) and no other group; the three pendant lamps over the free floor beside the kitchen hang from 1950 mm, above the base units, and are no overlap"
         }
       ]
     },

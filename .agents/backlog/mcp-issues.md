@@ -26,7 +26,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 90 | [A group placed over existing objects is not disclosed](#90-a-group-placed-over-existing-objects-is-not-disclosed) | hardening | roomle-hi-example served text (`hi-mcp-server.ts:42`, the placement rule) | low | gpt-6-astra | |
 | 91 | [The answer describes the two legs of the L-shaped kitchen swapped](#91-the-answer-describes-the-two-legs-of-the-l-shaped-kitchen-swapped) | hardening | roomle-hi-example served text (the answer rules, `hi-mcp-server.ts:94-102`) | low | gpt-6-astra | |
 | 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui planner (`get-interior-design-options`, the plan context's fittings) or the library data (not analysed) | low | gpt-6-astra | |
 | 98 | [A row with a worktop placed into a corner stands 10 mm off the wall](#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) | defect (not analysed) | roomle-ui `hi-wall-placement.ts` or the library's worktop (not analysed) | low | gpt-6-astra | |
@@ -38,33 +37,6 @@ never drop the agent's content silently.
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 90. A group placed over existing objects is not disclosed
-
-**Problem.** `obstacle-island-free-spot` (52): the model places a new island of three US2A60 base
-cabinets (1800 mm) away from the walls, opposite the kitchen (x 800..1417, z 4200..6000), over a
-plant (x 869..1031, z 5220..5380) and a chair (x 851.76..1048.24, z 4331.05..4528.95); the answer
-reports only the aisle ("It leaves approximately 1,214 mm of aisle facing the kitchen; existing
-furniture remains unchanged") and never names the objects the island stands over.
-
-**Cause.** The placement rule (`hi-mcp-server.ts:42`) says the answer says what the group stands in
-front of (a door or a window) and that the result's hint names every root module that overlaps an
-object, but no served sentence says the answer names the objects a group stands over — the model
-reports the aisle and drops the hint's overlaps. Where the user leaves the place open, the rule says
-to choose a spot that obstacles leave free; the model chose one they do not leave free and did not
-disclose it.
-
-**To do.** roomle-hi-example served text (`hi-mcp-server.ts:42` or the result-reading rule `:49`):
-one sentence — the answer names every object and group a root module stands over, also where the
-user leaves the place open. Verify model acceptance.
-
-**Test.** `obstacle-island-free-spot`: the model places the island clear of the plant and the chair,
-or the answer names them.
-
-**Reproduce.** `mcp-test-2026-10-20_06-45-46`, gpt-6-astra 52 (`obstacle-island-free-spot`, local
-roomle-ui :5173): one `create-or-replace-groups` with `placement.posGroup` [800, 0, 6000] and
-`posRotationY` 90, three US2A60 roots `rightOf` each other; the plan context's obstacle outlines put
-the plant and the chair under the island's roots; the answer discloses only the aisle.
 
 ## 91. The answer describes the two legs of the L-shaped kitchen swapped
 

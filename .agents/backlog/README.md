@@ -11,7 +11,6 @@ the document a row links.
 | Item | To do | Priority |
 |---|---|---|
 | 83 — Where no free stretch of the wall fits the group, it is placed over existing furniture and reported | Served text: say what to do when the wall the user names has no free stretch of the requested width | low |
-| 90 — A group placed over existing objects is not disclosed | Served text: the answer names every object a group stands over, also where the user leaves the place open | low |
 | 91 — The answer describes the two legs of the L-shaped kitchen swapped | Served text: the answer describes the plan as it stands, naming the wall of each group | low |
 | 96 — "One more shelf" adds the shelf set the cabinet already shows | Analyse what `get-interior-design-options` and the plan context show of the shelves a cabinet without fittings renders | low |
 | 98 — A row with a worktop placed into a corner stands 10 mm off the wall | roomle-ui: replay the run's create, find the step that leaves the row off the wall and fix it | low |

@@ -3,6 +3,7 @@
 > **Type**: Backlog item (HI tool commands; an MCP issue by D99)
 > **Domain**: roomle-ui `homag-intelligence` — the attribute edits of the HI tools: `change-module-attribute`, `change-group-attribute`, and the group attributes and root overrides of `create-or-replace-groups` (`hi-tool-commands.ts`, `hi-tools.ts`, `hi-tool-attributes.ts`, `glue-logic.ts`); read only: the planner's parameter validation (`planner-kernel-access.ts`); roomle-ui embedding-lib: the served text (`packages/web-sdk/packages/homag-intelligence/src/hi-mcp/hi-mcp-server.ts`); roomle-hi-example: the documentation
 > **Status**: Open — the behaviour on a value the module does not take is to be decided
+> **Analysis**: [feature-analysis/attribute-values-checked-before-an-edit.md](../feature-analysis/attribute-values-checked-before-an-edit.md) — proposes the decision (the planner's attribute panel as the measure: a value the module does not take is left out on that module, the result names the values it takes), the check as one pure function run by the planner's attribute operations and on the article template for the root overrides of a create, and the feedback
 
 ---
 

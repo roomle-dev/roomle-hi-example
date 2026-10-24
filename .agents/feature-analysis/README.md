@@ -40,6 +40,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 | Document | Status | Description |
 |---|---|---|
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
+| [attribute-values-checked-before-an-edit.md](attribute-values-checked-before-an-edit.md) | Open — the behaviour on a value the module does not take is proposed, to be confirmed | The HI tools check an attribute value against the library's verified options before they set it: a value the module does not take is left out on that module and the result names the values it takes; the check in the attribute edits and at both stages of a create |
 
 Add feature analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `group-adjustment-to-wall-width.md`).

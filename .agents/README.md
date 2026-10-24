@@ -138,6 +138,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | Document | Status | Last touched |
 |---|---|---|
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
+| [Attribute values checked before an edit](feature-analysis/attribute-values-checked-before-an-edit.md) | Open — the behaviour on a value the module does not take is proposed, to be confirmed | 2026-10-24 |
 
 ### Refactoring Analyses
 

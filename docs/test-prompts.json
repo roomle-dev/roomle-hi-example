@@ -500,6 +500,13 @@
           "plan": "default-room",
           "prompt": "add a row of four base cabinets centred on the back wall",
           "expect": "one create-or-replace-groups call with a placement by wall (wall back, centred); one group of four base cabinets with its back against the back wall, centred on it (the back wall runs from x -685 to 4815), inside the room"
+        },
+        {
+          "id": "base-row-right-wall-back-corner",
+          "title": "Three base cabinets, right wall, from the back right corner",
+          "plan": "empty-room-with-water-connection",
+          "prompt": "add three base cabinets along the right wall, starting in the back right corner: one 90 cm wide with two doors and two 60 cm wide with drawers",
+          "expect": "one create-or-replace-groups call with a placement by wall (wall right, alignment back); one group of a 90 cm two-door base cabinet and two 60 cm drawer base cabinets with its back against the right wall (x 4815) and its first cabinet against the back wall (y 3765), the worktop flush with it there"
         }
       ]
     },

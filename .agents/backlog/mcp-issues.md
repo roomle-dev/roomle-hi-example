@@ -26,7 +26,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 98 | [A row with a worktop placed into a corner stands 10 mm off the wall](#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) | defect | roomle-ui `placeAtWalls` (`hi-tool-commands.ts`) — [analysed](../bug-analysis/corner-row-with-worktop-stands-off-the-wall.md): the create places a group by wall by its measure before the library builds it at the wall and reloads it once; `place-group` measures it again at the new place (D70), the create does not | low | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 107 | [A discarded exchange names the root module id of the unit it would have put in](#107-a-discarded-exchange-names-the-root-module-id-of-the-unit-it-would-have-put-in) | defect | roomle-ui `_stagedFailures`, `newLibraryFailures` (`hi-tools.ts`, `hi-tool-payload.ts`) | low | | |
@@ -35,41 +34,6 @@ never drop the agent's content silently.
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 98. A row with a worktop placed into a corner stands 10 mm off the wall
-
-**Problem.** A base row with a worktop placed with `wall` right and `alignment` back stands 10 mm off
-the back wall right after the create: group position z -3755, the back wall at -3765, and the
-group's footprint runs from x 0 to 2110 for 2100 mm of carcasses, so neither a carcass nor the
-worktop reaches the wall. No correction or hint names the shift. Rows without a worktop placed the
-same way stand at the wall (two wardrobes at z -3765), and so does a corner kitchen whose corner
-unit is the anchor.
-
-**Cause.** [Analysed](../bug-analysis/corner-row-with-worktop-stands-off-the-wall.md). Where the
-planner first puts the new row, the library gives the worktop a 10 mm overhang at both ends
-(footprint x −10 to 2110). `placeAtWalls` (`hi-tool-commands.ts:232`) places that footprint into the
-corner, so the overhang touches the wall, and reloads the row once (`:299`). At the wall the library
-builds the end without overhang and without visible side (`DistanceWallLeft: 10`, worktop 2120 →
-2110 mm), and the first carcass stays 10 mm from the wall. `place-group` measures a group again at
-the new place and places it once more (`:886-920`, D70); with the same row and spec it puts the row
-at the wall. Both corner alignments are affected (`front` leaves the row 10 mm off the front wall);
-a centred row, a corner article placed by its corner point and a row without worktop are not.
-
-**To do.** roomle-ui `feat/hi-mcp`, `hi-tool-commands.ts`: the measure at the new place of
-`place-group` becomes a function both commands call; `placeAtWalls` calls it after its reload for
-every group the reload moved, with the other groups of the call at their targets. No served text
-and no correction change.
-
-**Test.** roomle-ui `create-or-replace-groups-placement-test.ts`: a new group placed by wall that the
-library builds with another footprint at the new place is reloaded once more and stands at the wall,
-for `back` and `front`; a group that stands as asked is not; `place-group-test.ts` keeps passing. A
-fixed prompt test `base-row-right-wall-back-corner` (plan `empty-room-with-water-connection`, the
-prompt of run 75): the first carcass stands at the back wall.
-
-**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 75 (`random-5-base-row-right-wall-corner`,
-bo-test `205cc9bc8`): one `create-or-replace-groups` with `placement` `{ wall: right, alignment: back }`
-of `U2TB90`, `US2A60`, `US2A60`; the group `f32075ff` at `[4815, 0, -3755]`, rotation 270, footprint
-x 0 to 2110.
 
 ## 103. A unit on top of a follower in another group stays behind when the row below moves
 

@@ -18,6 +18,7 @@ heading of each. Every text stays here once the library carries it, with its sta
 | [1.3 Flap wall cabinets](#13-flap-wall-cabinets) | `OSKB60`, `OSKB90`, `OFKB60`, `OFKB90` | applied |
 | [1.4 Wall units with a single door](#14-wall-units-with-a-single-door) | `OTB30`, `OTB45`, `OTB60` | open |
 | [1.5 Width-dependent tall-unit doors](#15-width-dependent-tall-unit-doors) | `HTB60` | open |
+| [1.6 Adjustable shelves](#16-adjustable-shelves) | `AdjShelves` | open |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
 | [2.2 Front program](#22-front-program) | `mod_FrontProgram` | applied |
 | [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
@@ -28,6 +29,7 @@ heading of each. Every text stays here once the library carries it, with its sta
 | [2.8 Sink](#28-sink) | `mod_SinkId` | applied |
 | [2.9 Width](#29-width) | `mod_Width` | open |
 | [2.10 Backsplash](#210-backsplash) | `mod_CreateBacksplash` | open |
+| [2.11 Shelf descriptor](#211-shelf-descriptor) | `mod_ShelfadjDescriptor` | open; the format comes from the library |
 
 ## 1. Article descriptions
 
@@ -320,6 +322,26 @@ SEARCH_KEYWORDS: tall cabinet, larder unit, pantry cabinet, food storage cupboar
 AI_SELECTION_HINT: Select for tall closed pantry storage. At 900 mm set Door direction to Automatic or Left & Right; a retained Left or Right is a single-door setting and cannot calculate this paired-door configuration.
 ```
 
+### 1.6 Adjustable shelves
+
+**Status.** Proposed, not applied. A cabinet described with adjustable shelves renders this set
+while no fitting fills its interior, so adding the set changes nothing for the user
+([library issue 109](../../.agents/backlog/library-issues.md#109-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default)).
+
+`AdjShelves` (Adjustable Shelves) — 942 characters:
+
+```
+FUNCTION: Set of height-adjustable interior shelves that fills a compartment; the library spaces the shelves over its free height.
+PURPOSE: Adjustable shelf levels inside a cabinet. A cabinet described with adjustable shelves already shows this set while no fitting fills its interior.
+TYPICAL_PLACEMENT: Inside base, wall, tall or wardrobe cabinets.
+REQUIREMENTS: Requires a host cabinet with shelf supports.
+RECOMMENDED_NEIGHBOURS: Any cabinet that accepts shelves.
+RESTRICTIONS: Accessory only; cannot be used stand-alone. Takes the whole compartment; the number of shelves follows from its height.
+STYLE_COMPATIBILITY: Neutral interior accessory. Fits all cabinet and furniture styles.
+SEARCH_KEYWORDS: adjustable shelves, shelf, interior shelf, height adjustable shelf.
+AI_SELECTION_HINT: Select for a compartment that shows no shelves. A cabinet described with adjustable shelves already shows this set; adding it there changes nothing.
+```
+
 ## 2. Attribute descriptions
 
 ### 2.1 Colour values
@@ -463,3 +485,14 @@ In the library, as proposed:
 | Attribute | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
 | `mod_CreateBacksplash` | Create backsplash | Adds the contour for the backsplash and also starts generating the backsplashes. | Adds the contour for the backsplash and also starts generating the backsplashes. Where the library cannot calculate the backsplash, the result names it in notLoaded; report it as not built. |
+
+### 2.11 Shelf descriptor
+
+**Attribute.** `mod_ShelfadjDescriptor` (Descriptor), carried by the door modules of the cabinets
+with adjustable shelves and by `me_ShelfadjMultiple01`. The format of the descriptor is not known;
+the library development team names it
+([library issue 110](../../.agents/backlog/library-issues.md#110-the-shelf-descriptor-names-no-format)).
+
+| Attribute | Name | `desc` before | Proposed `desc` |
+|---|---|---|---|
+| `mod_ShelfadjDescriptor` | Descriptor | Position and quantity of the adjustable shelf via descriptor | Position and quantity of the adjustable shelves via descriptor: the format, with an example (to be named by the library). Empty: the library spaces its shelves over the free height of the compartment. |

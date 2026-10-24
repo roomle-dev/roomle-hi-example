@@ -26,7 +26,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 96 | ["One more shelf" adds the shelf set the cabinet already shows](#96-one-more-shelf-adds-the-shelf-set-the-cabinet-already-shows) | hardening | roomle-ui `interiorOptions`, `stageInteriorEdit` (`hi-interior-design.ts`) and the library data — [analysed](../bug-analysis/one-more-shelf-adds-the-default-shelf-set.md): the tools show only the fittings, not the interior a parent module renders while no fitting fills its container, and no edit reports replacing it | low | gpt-6-astra | |
 | 98 | [A row with a worktop placed into a corner stands 10 mm off the wall](#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) | defect (not analysed) | roomle-ui `hi-wall-placement.ts` or the library's worktop (not analysed) | low | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
@@ -36,41 +35,6 @@ never drop the agent's content silently.
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 96. "One more shelf" adds the shelf set the cabinet already shows
-
-**Problem.** Asked for one more shelf in a tall cabinet without fittings (Furniture_Smith `HTB60`),
-the model adds the adjustable-shelf set (`AdjShelves`) and answers that a shelf was added — but the
-cabinet already renders the same four shelves, so nothing changes for the user (41: 12
-`part_ShelfadjWood` in `plan.xml`, the same as the unedited cabinets of 08).
-
-**Cause.** [Analysed](../bug-analysis/one-more-shelf-adds-the-default-shelf-set.md). While no
-fitting fills its container, the door module renders four adjustable shelves of its own. Any fitting
-added there takes their place: `AdjShelves` renders the same four, `FixedShelf` leaves one. Deleting
-the last fitting brings the four back. The tools show the agent only the sub-article modules
-(`interiorFittings`, `hi-interior-design.ts:185`), so discovery returns `fittings: []` with 12
-additions, and the plan context's `interiorFittings` is empty. The edits measure themselves by the
-same fittings (`stageInteriorEdit`, `:740-746`): the add returns `removedInstanceIds: []` and no
-correction.
-
-**To do.** roomle-ui `feat/hi-mcp`, `hi-interior-design.ts`:
-
-- Discovery stages one addition per parent on a copy and returns `defaultInteriors`: the parts the
-  parent shows of its own, which an addition removes.
-- The interior commands name in a correction the default interior they replace or bring back, and
-  say when the cabinet shows the same parts as before.
-- The `get-interior-design-options` description names the field.
-
-Library data: the `AdjShelves` desc and the format of `mod_ShelfadjDescriptor` (two library issues).
-
-**Test.** Unit tests in `hi-interior-design-test.ts`: a parent with a default interior is listed with
-its part counts, and an addition that replaces it names it. `edit-add-subarticle-look-inside`: the
-agent adds no shelf set the cabinet already shows. Its `expect` is open: no fifth adjustable shelf
-is offered through the tools.
-
-**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 41 (`edit-add-subarticle-look-inside`,
-bo-test `205cc9bc8`): `add-interior-fitting` of `AdjShelves` into the middle unit `a7271f1b`; `plan.xml` holds 12
-`part_ShelfadjWood`, the same as the unedited kitchen of 08.
 
 ## 98. A row with a worktop placed into a corner stands 10 mm off the wall
 

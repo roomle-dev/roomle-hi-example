@@ -11,7 +11,6 @@ the document a row links.
 | Item | To do | Priority |
 |---|---|---|
 | 83 — Where no free stretch of the wall fits the group, it is placed over existing furniture and reported | Served text: say what to do when the wall the user names has no free stretch of the requested width | low |
-| 96 — "One more shelf" adds the shelf set the cabinet already shows | Analyse what `get-interior-design-options` and the plan context show of the shelves a cabinet without fittings renders | low |
 | 98 — A row with a worktop placed into a corner stands 10 mm off the wall | roomle-ui: replay the run's create, find the step that leaves the row off the wall and fix it | low |
 | 103 — A unit on top of a follower in another group stays behind when the row below moves | roomle-ui: move the units on top of a follower with it, bottom-up, as within the edited group | low |
 | 104 — A unit of another group keeps its height when its carrier changes height | roomle-ui: apply the change of the carrier's docking top to the units of other groups | low |
@@ -45,6 +44,8 @@ library accepts (D99); the fix is in the library. Details:
 | [99 — A handle strip the library cannot calculate](library-issues.md#99-a-handle-strip-the-library-cannot-calculate) | HOMAG library: the handle position a handle strip takes in the desc of the handle design, or set with the strip; which front programs, handle colours and lengths each handle design takes; report the JSON parse error of the base units | low |
 | [100 — A worktop on the tall units from the group's countertop switch](library-issues.md#100-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG library: the desc of `mod_CreateCountertop` says that set on the group it reaches the tall units too | low |
 | [106 — A drawer sideboard lowered to 720 mm the library cannot calculate](library-issues.md#106-a-drawer-sideboard-lowered-to-720-mm-the-library-cannot-calculate) | HOMAG library bug: calculate the drawer sideboard at every height `mod_Height` accepts, or declare the heights it takes as its verified range | low |
+| [109 — The adjustable-shelf set does not say that a cabinet shows it by default](library-issues.md#109-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default) | HOMAG library: the `AdjShelves` desc says that a cabinet with adjustable shelves shows the set by default, that it fills its compartment and that the library spaces its shelves | low |
+| [110 — The shelf descriptor names no format](library-issues.md#110-the-shelf-descriptor-names-no-format) | HOMAG library: the desc of `mod_ShelfadjDescriptor` names the format of the position and quantity of the adjustable shelves, with an example | low |
 
 ## Library neutrality of the MCP server
 

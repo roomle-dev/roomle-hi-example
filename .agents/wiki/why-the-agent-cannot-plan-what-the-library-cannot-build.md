@@ -183,9 +183,13 @@ does not take is not set on it, and the result names the values it takes. The ag
 values of an attribute from the master data, the same for every article, so the check is where it
 learns what one module takes. The check covers the attributes the library verifies for the module.
 For Furniture_Smith those are the programs, colours and designs and the plinth height, not
-`mod_Width`, `mod_Height` or the door direction: a size the library accepts and cannot calculate is
-caught only by the calculation (D106). The library's group settings sent with a create are not
-checked either.
+`mod_Width`, `mod_Height`, `mod_Depth`, the door direction, the upright colour of the end panels or
+the backsplash switch: a value of them the library accepts and cannot calculate is caught only by
+the calculation (D106). The library's group settings sent with a create are not checked either.
+The library rules a value out without a change of its API: the verified options carry `Invalid`
+entries and a range per module, which the check applies. A range in the master data is one range
+for every article; the values that calculate differ per article, so the verified options of the
+module are their place.
 
 ### A create does not run the library's check of each root module
 
@@ -196,9 +200,12 @@ module for a create (D111).
 
 ### A value the library accepts can still fail
 
-A value the library offers must calculate. When it does not — a wall unit at 900 mm with a single
-door, a drawer sideboard lowered to 720 mm — the library is at fault (D99). Such issues are tracked
-in [library-issues.md](../backlog/library-issues.md) and reported to the library development team.
+A value the library offers must calculate. When it does not — a wall unit widened with the door
+direction of a single door, a drawer sideboard lowered to 720 mm — the library is at fault (D99).
+Where the library verifies a value, its verdict can accept one it cannot calculate as well: a front
+program it marks `Conflicting` on a flap, a handle strip it marks `Normal`. Such issues are tracked
+in [library-issues.md](../backlog/library-issues.md), with whether they are reported to the library
+development team.
 
 ### Where a group stands is the user's choice
 

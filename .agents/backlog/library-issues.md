@@ -43,14 +43,14 @@ keeps every suggested text, applied in the library or not.
 | # | Issue | Library | Responsible | Status | Solved by descriptions | Priority |
 |---|---|---|---|---|---|---|
 | 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | the handle design descs done | yes | medium — handled articles where the user asked for handleless ones |
-| 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; the size ranges not reported | yes | low — the cabinets are not built, the agent needs a second create |
-| 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the upright descs done; the colour value descs not done | yes | low — the end panels are not built, the agent needs one or two extra calls |
-| 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the carcase colour descs done; the colour value descs and the outside program not done | partly | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
-| 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet and front program descs done; the colour value descs not done | partly | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
+| 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; the heights not reported | yes | low — the cabinets are not built, the agent needs a second create |
+| 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the upright descs done; the colour value descs not done; the calculation error not reported | yes | low — the end panels are not built, the agent needs one or two extra calls |
+| 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the carcase colour descs done; the colour value descs and the outside program not done; the calculation error not reported | partly | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
+| 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet and front program descs done; the colour value descs not done; the calculation error not reported | partly | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
 | 76 | [Articles with two doors that do not say how their doors stand](#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | yes | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
 | 78 | [Tall-unit descriptions omit width-dependent door arrangements](#78-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | medium — a widened unit keeps an incompatible single-door hinge input |
-| 79 | [Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate](#79-base-units-narrowed-to-150-mm-with-a-150-mm-plinth-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the unit is not built, the agent needs a second create |
-| 80 | [Wall units at 900 mm with a single door the library cannot calculate](#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the cabinets are not built, the agent needs a second create |
+| 79 | [Base units narrowed to 150 mm the library cannot calculate](#79-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the unit is not built, the agent needs a second create |
+| 80 | [Wall units resized with a fixed door direction the library cannot calculate](#80-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the cabinets are not built, the agent needs a second create |
 | 93 | [Backsplashes the library cannot calculate](#93-backsplashes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the backsplash is not built; the agent must drop it and report the omission |
 | 99 | [A handle strip the library cannot calculate](#99-a-handle-strip-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the units with a handle are not built, the agent needs a second create |
 | 100 | [A worktop on the tall units from the group's countertop switch](#100-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — a worktop on top of the tall units |
@@ -62,6 +62,23 @@ library's logic or data can do.
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
+
+Whether the library accepts a value is the verdict of its verified options (D107): a value without
+verified options, or with a `Normal` or `Conflicting` entry, is accepted, and a calculation error with
+it is a library bug (D99). Furniture_Smith gives no verified options for `mod_Width`, `mod_Height`,
+`mod_Depth`, `mod_DoorDirectionSelection`, `mod_UprightColor` on the end panels and
+`mod_CreateBacksplash`, so every value of them reaches the calculation. The library can rule a value
+out without a change of its API: the verified options carry `Invalid` entries and a range
+(`dropDownRange` with `min`, `max` and `step`), which the tools apply before every edit. A range in the
+master data (a `{ min, max, step }` selection, as for `mod_GroupWidth`) is one range for every
+article; the values that calculate differ per article, so the verified options of the module are the
+place for them.
+
+**The probe of 2026-10-24** checked the calculation errors without a model, on roomle-ui
+`feat/hi-mcp` `42d17c4f3`: per case a group with the article as it comes, the verified options of
+the probed attribute on every module that carries it (`getExternalObjectAttributeOptionsOrRanges`),
+then the value by `change-module-attribute` or `change-group-attribute`. The scripts and results are
+in `.temp/result/probe-values-the-library-cannot-calculate-2026-10-24/`.
 
 ## 61. Handleless fronts done with a handle attribute
 
@@ -103,7 +120,7 @@ value: SHF - 324 - 862 - 533 - Handle" — so they are not built; the server bui
 group and names them in `notLoaded`. The agent replaces them with `O2TB90` of the same height and
 depth, at the cost of two `exchange-root-module` calls.
 
-**Cause.** The flap fitting takes a limited range of heights and depths. The descriptions of the
+**Cause.** The flap fitting takes a limited range of heights. The descriptions of the
 flap wall cabinets send the agent to a wall cabinet with doors for any height or depth other than
 their own; they name no range, and neither do `mod_Height` and `mod_Depth`.
 
@@ -115,19 +132,22 @@ their own; they name no range, and neither do `mod_Height` and `mod_Depth`.
 | `OSKB90` | 360 × 561 | no: "… SHF - 324 - 862 - 533 - Handle" | `mcp-test-2026-10-16_19-30-19` gpt-6.1-sol 48, `mcp-test-2026-10-17_13-28-41` gpt-6-astra 50 |
 | `OSKB90` | 300 × 561 | no: "… SHF - 264 - 862 - 533 - Handle" | `mcp-test-2026-10-17_09-31-13` gpt-6-astra 48 |
 | `O2TB90` (doors) | 360 × 561 | yes | `mcp-test-2026-10-17_13-28-41` gpt-6-astra 50, the `exchange-root-module` |
+| `OSKB90` | 360 × 350, the height alone | no: "… SHF - 324 - 862 - 322 - Handle" | the probe of 2026-10-24 |
+| `OSKB90` | 720 × 561, the depth alone | yes | the probe of 2026-10-24 |
 
-Both failing sizes change the height and the depth; which of the two the fitting does not take is
-not known.
+The fitting does not take the height; the depth 561 calculates. `mod_Height` has no verified
+options, so the library accepts the height it cannot calculate: a library bug (D99).
 
-**To do.** The library: the size ranges of the flap fittings in `tab_FlipliftSettings`, per fitting
-and width; with them the `FUNCTION` lines of the flap wall cabinets can name the sizes the flap
-takes. Then check that the served text needs nothing more.
+**To do.** The library: calculate the flap cabinets at every height `mod_Height` accepts, or declare
+the heights the flap fitting takes in `tab_FlipliftSettings` as the verified range of `mod_Height`
+per flap cabinet (D107); with them the `FUNCTION` lines of the flap wall cabinets can name the sizes
+the flap takes. Then check that the served text needs nothing more.
 
 **Status.** Done in the library: the `AI_SELECTION_HINT` of `OSKB60`, `OSKB90`, `OFKB60` and
 `OFKB90` — a flap cabinet at the height and depth it comes with, a wall cabinet with doors for glass
 fronts or another height or depth (section 1.3 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#13-flap-wall-cabinets)).
-Open, not reported: the size ranges.
+Open, not reported: the heights the flap fitting takes.
 
 **Test.** `image-planning-right-wall`: the first create builds the cabinets above the tall units.
 
@@ -165,19 +185,25 @@ end and cover panels come with the program ModernNature:
 | plain (192) | Classic | yes | `mcp-test-2026-10-17_13-28-41` gpt-6-astra 52, the second create of turn 1 |
 | wood (222) | Nature | yes | `mcp-test-2026-10-17_13-28-41` gpt-6-astra 52 turn 4; `mcp-test-2026-10-17_09-31-13` gpt-6-astra 50 turn 4 |
 | wood (240) | Classic | yes | `mcp-test-2026-10-17_13-28-41` gpt-6-astra 52 turn 7 |
+| plain (192), on `W60U` beside a `UTB60` by `change-group-attribute` | not set | no: "… part_FinishPanel - Upright - Horizontal - NoGrain - 584 - 820" | the probe of 2026-10-24 |
+
+`W60U` has no verified options for `mod_UprightColor`: the library accepts the plain colour it cannot
+calculate under the program the end panel comes with, a library bug (D99).
 
 **To do.** The library: the colour value descs name their kind, and the descs of `mod_UprightColor`
 and `mod_UprightProgram` name the program for each kind — sections 2.1 and 2.4 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#21-colour-values).
 The colour code stays first in each value desc: `materials.md` reads it from there. The library team
 confirms the kind of the values the runs did not show, and whether Nature takes stone decors.
-Optional: the library switches `mod_UprightProgram` with `mod_UprightColor`, as the front program
-with the front colour; the agent then needs no second attribute, and the desc of `mod_UprightColor`
-keeps its first sentence. Then check that the served text needs nothing more.
+The library bug: the library switches `mod_UprightProgram` with `mod_UprightColor`, as the front
+program with the front colour, or rules a plain colour under a wood program out in the verified
+options of the end panels (D107); with the switch the agent needs no second attribute, and the desc
+of `mod_UprightColor` keeps its first sentence. Then check that the served text needs nothing more.
 
 **Status.** Done in the library: the descs of `mod_UprightColor`, `mod_UprightProgram` and its values
 (section 2.4). Open: the kind in the colour value descs (section 2.1); the program values of
-`mod_CarcaseProgram` and `mod_CarcaseOutsideProgram` keep their old descs.
+`mod_CarcaseProgram` and `mod_CarcaseOutsideProgram` keep their old descs. Open, not reported to the
+library development team: the calculation error.
 
 **Test.** `kitchen-conversation` turn 1 and `image-kitchen-back-right-corner`: the first create with
 a plain upright colour builds its end panels.
@@ -215,21 +241,28 @@ are built with it. The same error hits base, wall and tall units:
 | plain (160, 192) | wood (230, 215, 229) | not set: the front colour | no | `mcp-test-2026-10-16_19-30-19` gpt-6.1-sol 46 (`HK260`, `USTB60`, `UTB60`); `mcp-test-2026-10-17_10-50-12` mistral-large-latest 50 (base, wall and tall units) |
 | plain (160) | wood (224, 215) | the same wood | yes | `mcp-test-2026-10-17_09-31-13` gpt-6-astra 46; `mcp-test-2026-10-17_13-28-41` gpt-6-astra 48 |
 | wood (229, 240) | plain (178, 190) | the front wood | yes | `mcp-test-2026-10-16_19-30-19` gpt-6.1-sol 45; `mcp-test-2026-10-17_09-31-13` gpt-6-astra 45 |
+| plain (160, set first; the library switched the front program to Classic) | wood (230) | not set: the front colour | no: "… part_Sidepanelleft - BaseUnit - Horizontal - NoGrain - 720 - 561" | the probe of 2026-10-24, two `UTB60`, `change-group-attribute` |
+
+The wood carcase colours are `Conflicting` in the verified options of `UTB60`: the library accepts
+them, and its conflict resolution switches `mod_CarcaseProgram` but leaves the visible sides in a
+plain colour it cannot calculate under that program, a library bug (D99).
 
 **To do.** The library: the colour value descs name their kind, and the descs of `mod_CarcaseColor`
 and `mod_CarcaseOutsideColor` say that the visible sides take the outside colour and which kind it
 needs with a wood or stone carcase — sections 2.1 and 2.3 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#23-carcase-colours).
 With them the agent builds the units at the first attempt, the visible sides in a wood or stone
-decor. Plain visible sides on a wood or stone carcase need the library: it switches
+decor. Plain visible sides on a wood or stone carcase need the library, the library bug: it switches
 `mod_CarcaseOutsideProgram` with `mod_CarcaseOutsideColor`, as the front program with the front
-colour; the desc of `mod_CarcaseColor` then keeps its first two sentences. The library team confirms
-whether `mod_CarcaseOutsideProgram` Classic builds such sides today. Then check that the served text
-needs nothing more.
+colour, or its conflict resolution leaves no plain visible side under a wood or stone program; the
+desc of `mod_CarcaseColor` then keeps its first two sentences. The library team confirms whether
+`mod_CarcaseOutsideProgram` Classic builds such sides today. Then check that the served text needs
+nothing more.
 
 **Status.** Done in the library: the descs of `mod_CarcaseColor` and `mod_CarcaseOutsideColor`
 (section 2.3). Open: the kind in the colour value descs (section 2.1), and the switch of
-`mod_CarcaseOutsideProgram` with `mod_CarcaseOutsideColor`.
+`mod_CarcaseOutsideProgram` with `mod_CarcaseOutsideColor`. Open, not reported to the library
+development team: the calculation error.
 
 **Test.** `image-kitchen-left-wall`: the first create with green fronts and a wood carcase builds
 every root module.
@@ -261,18 +294,24 @@ kitchen catalog has no wall cabinet with glass fronts; the glass display cabinet
 | flaps (`OFKB60`), Modern set | no | `mcp-test-2026-10-16_19-30-19` gpt-6.1-sol 49 |
 | flaps (`OSKB60`, `OSKB90`), Slate 326 set as front colour, the library switched to Modern | no | `mcp-test-2026-10-17_10-50-12` mistral-large-latest 48 |
 | drawers and pull-outs (`US2A60`, `UKS2A60`, `HTS2AB60`) | no; the doors of the same calls are built | `mcp-test-2026-10-17_10-50-12` mistral-large-latest 50, attempt 1, turn 5 |
+| flaps (`OFKB60`), Modern set by `change-module-attribute` | no: "… Fliplift - ModernFrame01 - Grain - Grain - None" | the probe of 2026-10-24 |
+
+Modern is `Conflicting` in the verified options of `OFKB60` and its flap (`Normal`: Nature,
+Tradition): the library accepts it, and its conflict resolution leaves a flap it cannot calculate, a
+library bug (D99).
 
 **To do.** The library: the desc of Modern says that it builds doors in stone decors, and the stone
 decors that a front in them is a Modern door — sections 2.1 and 2.2 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#22-front-program).
-With them the agent builds glass wall cabinets with doors. Glass flaps and glass drawer fronts need
-the library, if it wants to offer them: entries for `Fliplift` and `Drawer` with `ModernFrame01` in
-`tab_PanelWoodFrameConstruction`. Then check that the served text needs nothing more.
+With them the agent builds glass wall cabinets with doors. The library bug: glass flaps and glass
+drawer fronts calculate — entries for `Fliplift` and `Drawer` with `ModernFrame01` in
+`tab_PanelWoodFrameConstruction` —, or Modern is `Invalid` in the verified options of flaps, drawers
+and pull-outs (D107). Then check that the served text needs nothing more.
 
 **Status.** Done in the library: the `AI_SELECTION_HINT` of the flap wall cabinets sends the agent to
 a wall cabinet with doors for glass fronts (section 1.3), and the desc of Modern (section 2.2).
-Open: the stone decors in the colour value descs (section 2.1); glass flaps and glass drawer fronts,
-if the library wants to offer them.
+Open: the stone decors in the colour value descs (section 2.1). Open, not reported to the library
+development team: the calculation error of Modern on flaps, drawers and pull-outs.
 
 **Test.** `image-only-no-text`: the create builds the glass wall cabinets of the photo, or picks
 articles that take the glass front.
@@ -288,7 +327,9 @@ take fails with error 14019 and the root module is not built: `H2TB60` with `Lef
 with `Left` or `Right`. `LeftLeft` and `RightRight` are offered for a pair but not calculated on
 `U2TB90`.
 
-**Cause.** `tab_DoorSettings` has no entry for `LeftLeft` and `RightRight` on `U2TB90`.
+**Cause.** `tab_DoorSettings` has no entry for `LeftLeft` and `RightRight` on `U2TB90`, at the width
+it comes with. The library gives no verified options for `mod_DoorDirectionSelection`, so it accepts
+both values it cannot calculate: a library bug (D99).
 
 **How the library behaves.** Checked on the bo-test planner on 2026-10-17, without a model, through
 the MCP tools:
@@ -299,6 +340,9 @@ the MCP tools:
 | `H2TB60` | two doors, one above the other | `Left` on both | `Right` on both | `LeftRight` |
 | `U2TB90` | a pair of doors side by side | `LeftRight` | `LeftRight` | `Left`, `Right`, `LeftLeft`, `RightRight` |
 
+The probe of 2026-10-24 gives the same Error 14019 for `LeftLeft` and `RightRight` on `U2TB90` ("…
+BaseUnit - All - Standard - 240 - mr_StorageunitSingle - 900 - Automatic - LeftLeft - Cleat").
+
 By their door modules in the article list, `H2TB60` and `HWR_HB600T2` have two `mf_Door` on 60 cm,
 one above the other; `U2TB90`, `O2TB90`, `US2TB90` and `EU2TB90` one `mf_Door` on 90 cm, a pair.
 `mod_HandlePosType` on a single door of `KS_HT600K`, hinged left and hinged right: `03` and `04` both
@@ -306,7 +350,8 @@ put a vertical handle at the edge opposite the hinge, at the same place, turned 
 other; `05` and `06` put it in the middle of the door's width. None changes the hinge side.
 
 **To do.** The library: `LeftLeft` and `RightRight` are calculated on the articles with a pair of
-doors, or their descs name the articles that take them — section 2.6 of
+doors, or the verified options rule them out where they do not calculate (D107), and their descs
+name the articles that take them — section 2.6 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#26-door-direction).
 Then check that the served text needs nothing more.
 
@@ -329,12 +374,27 @@ retaining `mod_DoorDirectionSelection: Right` gives Error 14019 and an incomplet
 The attribute tools report the calculation diagnostic, but the article description does not
 explain which retained setting the agent needs to correct after resizing.
 
+**Cause.** A library bug (D99), the error of [issue 80](#80-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate)
+on a tall unit: with `Automatic` the library chooses the door arrangement by the width, and a fixed
+`mod_DoorDirectionSelection` of the other arrangement has no entry in `tab_DoorSettings` at that
+width. The library's conflict resolution does not change the door direction with the width, and it
+gives no verified options for `mod_Width` and `mod_DoorDirectionSelection`. The description of
+`HTB60` says one door.
+
+**How the library behaves.** Checked in the probe of 2026-10-24:
+
+| Door direction | Width | Built |
+|---|---|---|
+| `Automatic` | 600 mm, as it comes | yes: a single door (`mod_DoorDirection` `Left` on `mf_Door`) |
+| `Automatic` | 900 mm, widened | yes: a pair of doors side by side (`LeftRight`) |
+| `Right`, then widened | 900 mm | no: Error 14019 ("… TallUnit - All - Standard - 240 - mr_StorageunitSingle - 900 - Automatic - Right - Automatic") |
+
 **To do.** Apply the complete `HTB60` description in
 [section 1.5](../../docs/library-information/suggested-library-changes.md#15-width-dependent-tall-unit-doors)
 and the proposed resize guidance in
 [section 2.6](../../docs/library-information/suggested-library-changes.md#26-door-direction).
 Keep the facts in library data; the verified nominal and widened configurations do not
-establish an intermediate-width threshold.
+establish an intermediate-width threshold. The library bug: as in issue 80.
 
 **Status.** Open, description proposals prepared; not reported to the library development team.
 
@@ -346,7 +406,7 @@ then swaps the complete paired-door unit into the back corner. The row is contig
 :5173): the last `HTB60` `8774cac2` widened to 900 mm retains `Right`; the correction carries Error
 14019 (`tab_DoorSettings`) and the model undoes the widening.
 
-## 79. Base units narrowed to 150 mm with a 150 mm plinth the library cannot calculate
+## 79. Base units narrowed to 150 mm the library cannot calculate
 
 **Problem.** To copy the narrow unit at the end of a row of a photo, the agent narrows a base
 storage unit to 150 mm (`UTB30` with `mod_Width` 150) in a group whose plinth height is 150 mm.
@@ -355,10 +415,11 @@ input values: BaseUnit - 30 - LCF - RCF - BCF - FCR - 150 - 150 - 50" — so the
 the server builds the rest of the group and names it in `notLoaded`. The agent undoes the create and
 sends it again with the filler panel `PU15L` for the narrow space.
 
-**Cause.** `tab_PlinthAreaSettings` has no entry for a 150 mm wide base unit of the 30 cm class
-with the plinth height of the group. The descs of the base units and of `mod_Width` name no width
-limit, so nothing tells the agent that a base unit narrowed under the narrowest catalog unit
-(300 mm) is not calculated with the plinth of the row.
+**Cause.** A library bug (D99): `tab_PlinthAreaSettings` has no entry for a 150 mm wide base unit of
+the 30 cm class, with the plinth the unit comes with (100 mm) as with 150 mm, and `mod_Width` has no
+verified options, so the library accepts the width it cannot calculate. The descs of the base units
+and of `mod_Width` name no width limit, so nothing tells the agent that a base unit narrowed under
+the narrowest catalog unit (300 mm) is not calculated.
 
 **How the library behaves.** Checked in the stored runs:
 
@@ -369,14 +430,15 @@ limit, so nothing tells the agent that a base unit narrowed under the narrowest 
 | `UTB30` | 150 mm, narrower | the library's default (base unit tops at 820 mm) | no: Error 14011 with the same input values (`… - 150 - 150 - 50`) | `mcp-test-2026-10-21_08-37-33` gpt-6-astra 65 |
 | `H2TB60` (tall unit) | 300 mm, narrower | 150 mm | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 49, the second create |
 | `PU15L` (filler panel, 15 cm) | 150 mm, as it comes | 150 mm | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 49, the second create |
+| `UTB30` | 150 mm, narrower | 100 mm, as it comes | no: Error 14011 with the same input values | the probe of 2026-10-24 |
+| `UTB30` | 150 mm, narrower | 150 mm (`Normal` in the verified options) | no: Error 14011 with the same input values | the probe of 2026-10-24 |
 
-Not known: which widths and plinth heights `tab_PlinthAreaSettings` takes per base unit class —
-whether the 150 mm width alone fails or with the 150 mm plinth height, and whether the wider classes
-take 150 mm.
+The width alone fails. Not known: which widths `tab_PlinthAreaSettings` takes per base unit class,
+and whether the wider classes take 150 mm.
 
-**To do.** The library: the width and plinth height ranges of `tab_PlinthAreaSettings` per base
-unit class; with them the `desc` of `mod_Width` can name the widths the library calculates —
-section 2.9 of
+**To do.** The library: calculate the base units at every width `mod_Width` accepts, or declare the
+widths each takes as the verified range of `mod_Width` (D107); with them the `desc` of `mod_Width`
+can name the widths the library calculates — section 2.9 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#29-width).
 Then check that the served text needs nothing more.
 
@@ -391,7 +453,7 @@ bo-test, the `create-or-replace-groups`): root `UTB30` with `mod_Width` 150
 `mod_PlinthAreaHeight` 150 in the group attributes, not calculated, Error 14011; the model exchanged
 it for the 150 mm filler `PU15L`.
 
-## 80. Wall units at 900 mm with a single door the library cannot calculate
+## 80. Wall units resized with a fixed door direction the library cannot calculate
 
 **Problem.** To copy the wide light band above the tall units of a photo, the agent widens two
 wall units to 900 mm (`OTB60` with `mod_Width` 900, `mod_DoorDirectionSelection` `Left` and
@@ -403,40 +465,48 @@ the create and sends it again with four `OTB45` and two `O2TB90`. Narrowed, the 
 pair of doors fails the same way: `O2TB90` at 600 mm with `LeftRight` ("… 600 - Automatic -
 LeftRight - Automatic").
 
-**Cause.** A library bug (D99): the library accepts the width but cannot calculate it.
-`mod_Width` is a `Dim` slider whose master data names no range, the article sets only its 600 mm
-default, and the verified options the library gives for the root module and its door
-(`getVerifiedAttributeOptions`) cover no width, height or door direction. The calculation then
-fails: `tab_DoorSettings` has no entry for a single door at 900 mm — widened, the wall unit keeps
-the single door its article defines (`mr_StorageunitSingle` with one `mf_Door`) — and the library's
-scripts throw after the missing entry ("Cannot read properties of undefined (reading
-'RealDoorDirection')", "\"undefined\" is not valid JSON"). The wall cabinet with a pair of doors
-`O2TB90` calculates at 900 mm. The descs of the single-door wall cabinets (`OTB30`, `OTB45`,
-`OTB60`) and of `mod_Width` name no width limit for a single door.
+**Cause.** A library bug (D99): the library accepts the width and the door direction but cannot
+calculate them together. With `Automatic` it chooses the door arrangement by the width: `OTB60` and
+`O2TB90` get a single door at 600 mm and a pair of doors side by side at 750 and 900 mm (the
+resolved `mod_DoorDirection` of `mf_Door`: `Left`, `LeftRight`). A fixed
+`mod_DoorDirectionSelection` is looked up with the width in `tab_DoorSettings`
+(`… - <width> - Automatic - <direction> - …`), which has a single-door entry only where the width
+gives a single door and a pair entry only where it gives a pair; a resize that changes the
+arrangement fails when it keeps the direction of the arrangement before. The library's conflict
+resolution does not change the direction with the width, and its verified options rule neither
+out: `mod_Width` is a `Dim` slider whose master data names no range, and the root module and its
+door give no verified options for `mod_Width` and `mod_DoorDirectionSelection`. In the runs, the
+library's scripts throw after the missing entry ("Cannot read properties of undefined (reading
+'RealDoorDirection')", "\"undefined\" is not valid JSON"). The served rule and the desc of
+`mod_DoorDirectionSelection` ask for `Right` at the right end of a row (D84), and the descs of the
+single-door wall cabinets (`OTB30`, `OTB45`, `OTB60`) and of `mod_Width` do not say that a wider
+cabinet gets a pair of doors. [Issue 78](#78-tall-unit-descriptions-omit-width-dependent-door-arrangements)
+is the same error on a tall unit.
 
-**How the library behaves.** Checked in the stored runs:
+**How the library behaves.** Checked in the stored runs and in the probe of 2026-10-24:
 
-| Article | Doors | Width | Built | Runs |
+| Article | Door direction | Width | Built | Runs |
 |---|---|---|---|---|
-| `OTB30`, `OTB45`, `OTB60` | a single door | as they come (300, 450, 600 mm) | yes | every run that plans them |
-| `OTB60` | a single door | 900 mm, widened | no: Error 14019 (`tab_DoorSettings`) | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 50 |
-| `O2TB90` | a pair of doors side by side | 900 mm, as it comes | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 50, the second create |
-| `O2TB90` | a pair of doors side by side (`LeftRight`) | 600 mm, narrowed | no: Error 14019 (`tab_DoorSettings` … `600 - Automatic - LeftRight`) | `mcp-test-2026-10-22_19-45-49` gpt-6-astra 67, the first create |
+| `OTB30`, `OTB45`, `OTB60` | as they come | as they come (300, 450, 600 mm) | yes | every run that plans them |
+| `OTB60` | `Automatic` | 450, 750, 900 mm | yes; at 750 and 900 mm a pair of doors (`LeftRight`) | the probe of 2026-10-24 |
+| `OTB60` | `Left`, `Right` | 900 mm, widened | no: Error 14019 (`tab_DoorSettings`) | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 50; the probe of 2026-10-24 |
+| `OTB60` | `Left` | 750 mm, widened | no: Error 14019 ("… 750 - Automatic - Left - Automatic") | the probe of 2026-10-24 |
+| `O2TB90` | as it comes | 900 mm, as it comes | yes | `mcp-test-2026-10-18_14-48-28` gpt-6-astra 50, the second create |
+| `O2TB90` | `Automatic` | 600 mm, narrowed | yes: a single door (`Left`) | the probe of 2026-10-24 |
+| `O2TB90` | `LeftRight` | 600 mm, narrowed | no: Error 14019 (`tab_DoorSettings` … `600 - Automatic - LeftRight`) | `mcp-test-2026-10-22_19-45-49` gpt-6-astra 67, the first create; the probe of 2026-10-24 |
 
 The verified options of a 600 mm `OTB60` (local roomle-ui, `getExternalObjectAttributeOptionsOrRanges`
 of every module, all attributes): the root module verifies 16 attributes — programs, colours,
 designs, the plinth height —, its door 12; none of them is `mod_Width`, `mod_Height` or
 `mod_DoorDirectionSelection`.
 
-Not known: the widths a single door takes between 600 and 900 mm, whether a single-door wall
-cabinet narrowed under its own width calculates, and the widths a pair of doors takes below 900 mm.
+Not known: the width between 600 and 750 mm at which `Automatic` gives a pair of doors.
 
-**To do.** The library: calculate the single-door wall cabinets at every width `mod_Width` accepts
-(entries in `tab_DoorSettings`), or declare the widths a single door takes as the verified range of
-`mod_Width`, so that a width outside it is ruled out before the edit — the tools check a value
-against the verified options before they set it (D107); and no script exception after a missing
-table entry. With the widths known, the `AI_SELECTION_HINT` of the
-single-door wall cabinets can name them — section 1.4 of
+**To do.** The library: change the door direction with the width where the width changes the door
+arrangement — a conflict its conflict resolution resolves, which the tools name as a library change
+(D59) —, or rule the direction of the other arrangement out in the verified options of the module
+(D107); and no script exception after a missing table entry. With the widths of each arrangement
+known, the `AI_SELECTION_HINT` of the single-door wall cabinets can name them — section 1.4 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#14-wall-units-with-a-single-door).
 
 **Status.** Open, not reported to the library development team.
@@ -486,6 +556,7 @@ and `mod_BacksplashColor` invite generating the backsplash and name no limit.
 | The switch per root in the create, then 326 / 660 by `change-group-attribute` (07); the switch per root in the create of two groups, then 216 / 600 and 216 / 200 by `change-group-attribute` (10) | no: Error 14034 after every call (`1800 - 110`, `1800 - 660`; `600 - 110`, `1470 - 110`, `600 - 600`, `1470 - 200`) | bo-test `83f01375e`, `mcp-test-2026-10-22_07-57-33` gpt-6-astra 07, 10 |
 | The switch per root in the create, then 326 / 635 with a thickness of 16 by `change-group-attribute` (07); 216 in the create of two groups, then 216 / 600 and 216 / 200 with a thickness of 16 (10) | no: Error 14034 after every call (`1200 - 110`, `1200 - 635`; `600 - 110`, `1220 - 110`, `600 - 600`, `1220 - 200`) | local roomle-ui `725e0dda3`, `mcp-test-2026-10-22_09-29-56` gpt-6-astra 07, 10 |
 | The switch on one root with 326 / 660 in the create, then 240 by `change-group-attribute` (66); the switch per root with 216 in the create of two groups, then 216 / 600 and 216 / 300 with a thickness of 16 (69) | no: Error 14034 after every call (`1200 - 660`, `1200 - 660`; `600 - 110`, `600 - 600`, `1220 - 300`) | bo-test `205cc9bc8`, `mcp-test-2026-10-22_19-45-49` gpt-6-astra 66, 69 |
+| The switch on a lone `UTB60` by `change-group-attribute`, alone and with 240 / 635 in the same call | no: Error 14034 on `mr_Backsplash` (`610 - 110`); `mod_CreateBacksplash` has no verified options | local roomle-ui `42d17c4f3`, the probe of 2026-10-24 |
 
 **To do.** Establish which side changed: replay the lone `UTB60` check on roomle-ui `cf377cfd4`
 (recover it from the reflog before it expires). `cf377cfd4` reports no library failure after an attribute
@@ -494,10 +565,14 @@ Built there, the cause is in roomle-ui and the issue moves to
 [roomle-ui-issues.md](roomle-ui-issues.md); not built, the library: the backsplash's entries in
 `tab_GrainDirectionSettings` or the inputs of its lookup. Meanwhile the proposed desc in
 [section 2.10](../../docs/library-information/suggested-library-changes.md#210-backsplash) tells the
-agent to report a backsplash the library does not calculate. Then check that the served text needs
+agent to report a backsplash the library does not calculate. It names `notLoaded`, a field of the
+HI tools that a library desc does not name, and a `change-group-attribute` that enables the
+backsplash answers with an error (D106), not in `notLoaded`: the text is rewritten without the field
+once the replay has settled the cause. Then check that the served text needs
 nothing more.
 
-**Status.** Open, not reported to the library development team.
+**Status.** Open, not reported to the library development team: reported once the replay places
+the cause in the library.
 
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
@@ -523,19 +598,23 @@ replacement in `corrections`; a strip the library chose itself fails as above. A
 handle mapping lacks fails the whole group: the curved bow (100) in stainless steel matt brushed at
 the default length 160 (Error 13003, "Could not find entry in tab_HandleMapping").
 
-**Cause.** Not analysed. The library answers with three errors: "Error 22025: There is a HandleStripe
-selected in the HandleDesign and the HandlePosType selected is not valid" for the corner unit, the
-tall units and the wall units; a raw "Unexpected token 'N', \"None\" is not valid JSON" for the base
-units; and "The variant 'mod_HandleDrill' is not set in 'mc_Handlestrip01'" for the sink unit. The
-agent sent no `mod_HandlePosType`; with `mod_HandlePosType` 03 sent, a strip the library chose
-fails with Error 22025 as well. Which value a handle strip needs, and whether the JSON error is a
+**Cause.** A library bug (D99): the strip (40) is `Normal` in the verified options of `UTB60` and its
+door, so the library accepts it, and the probe of 2026-10-24 gives Error 22025 for it on a lone
+`UTB60` by `change-group-attribute`. Not analysed further. The library answers with three errors:
+"Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is
+not valid" for the corner unit, the tall units and the wall units; a raw "Unexpected token 'N',
+\"None\" is not valid JSON" for the base units; and "The variant 'mod_HandleDrill' is not set in
+'mc_Handlestrip01'" for the sink unit. The agent sent no `mod_HandlePosType`; with
+`mod_HandlePosType` 03 sent, a strip the library chose fails with Error 22025 as well. Which value a handle strip needs, and whether the JSON error is a
 defect of the library's script, is open. The `desc` of `mod_HandleDesign` does not say that a handle
 strip needs another handle position. Which group attributes make the library replace the handle
 design — the front program, the handle colour or the handle length — is open too; the descs of the
 handle designs do not say which of them each takes.
 
 **To do.** The library: say in the `desc` of the handle strip value which `mod_HandlePosType` it
-takes, or set it with the strip; say in the descs of the handle designs which front programs,
+takes, and set it with the strip — the strip `Conflicting` in the verified options, its conflict
+resolution setting the handle position —, or calculate the strip with the handle position the unit
+has; say in the descs of the handle designs which front programs,
 handle colours and lengths each takes; report the JSON parse error of the base units to the library
 development team. The proposed text goes into
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md) once
@@ -588,7 +667,8 @@ server builds the other two and names it in `notLoaded`. The agent undoes the cr
 again with three door sideboards.
 
 **Cause.** A library bug (D99): the library accepts the height but cannot calculate the drawer
-boxes for it. `mod_Height` is a `Dim` whose master data names no range, and the drawer sideboard
+boxes for it. `mod_Height` is a `Dim` whose master data names no range and for which the module
+gives no verified options, and the drawer sideboard
 takes four drawers with fixed front heights (`mod_FrontHeightSelection` 290, 290, 160, …); lowered
 by 180 mm, the drawer box mapping has no entry for the resulting box. The descs of `SB_US600` and of
 `mod_Height` name no height limit.
@@ -598,7 +678,7 @@ by 180 mm, the drawer box mapping has no entry for the resulting box. The descs 
 | Article | Height | Built | Runs |
 |---|---|---|---|
 | `SB_UB600` (1 door) | 720 mm, lowered from 900 | yes | `mcp-test-2026-10-22_19-45-49` gpt-6-astra 60, both creates |
-| `SB_US600` (4 drawers) | 720 mm, lowered from 900 | no: Error 13008 (`tab_DrawerBoxDimensionMapping`) | `mcp-test-2026-10-22_19-45-49` gpt-6-astra 60, the first create |
+| `SB_US600` (4 drawers) | 720 mm, lowered from 900 | no: Error 13008 (`tab_DrawerBoxDimensionMapping`) | `mcp-test-2026-10-22_19-45-49` gpt-6-astra 60, the first create; the probe of 2026-10-24 (`Legrabox - 322 - 30.5`) |
 
 Not known: the heights the drawer sideboard takes, and whether the other drawer articles of the
 library fail the same way when lowered.

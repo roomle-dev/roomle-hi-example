@@ -13,9 +13,8 @@ a note that says so. A tool call of the agent that the library cannot calculate 
 the tools discard it before the load (D106); a root module without a complete calculation comes
 from an edit in the planner, from a loaded plan (D95) or from a follow-up calculation after a load. None of the items refuses the agent's input
 ([Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort)): they make the library's
-verdict visible wherever the planning is read, and have the library calculate every value it
-offers. Where an
-item needs behaviour that is not decided, its first to-do is the decision (D51).
+verdict visible wherever the planning is read. Where an item needs behaviour that is not decided,
+its first to-do is the decision (D51).
 
 The roomle-ui paths are relative to `packages/web-sdk/packages/homag-intelligence/src/`. The
 D-numbers are the decisions in §3 of
@@ -26,7 +25,6 @@ D-numbers are the decisions in §3 of
 | # | Gap | Responsible | Priority |
 |---|---|---|---|
 | 1 | [Price and order include root modules the library could not calculate, without a note](#1-price-and-order-include-root-modules-the-library-could-not-calculate-without-a-note) | roomle-ui HI tool set (`get-price`, `get-order-data`); the library's `getOrderData` | high |
-| 4 | [Values the library accepts and cannot calculate](#4-values-the-library-accepts-and-cannot-calculate) | HOMAG library development team; roomle-hi-example: the report | medium |
 
 Where a group stands in the room is no gap: the tools build a group on an obstacle or outside the
 room and say so in `hint`, because the user may want it there (D51, D55).
@@ -74,30 +72,6 @@ answer as before.
 
 **Reproduce.** In the example page, set `mod_Width` 900 on an `OTB60` with
 `mod_DoorDirectionSelection` `Left` in the planner's attribute panel
-([library issue 80](library-issues.md#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate)),
+([library issue 80](library-issues.md#80-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate)),
 then call `get-price` and `get-order-data` model-free (`instance.extended.callExternalObjectAgentTool`);
 neither answer names the root module.
-
-## 4. Values the library accepts and cannot calculate
-
-**Problem.** A value the library offers must calculate (D99). The calculation errors of
-[library-issues.md](library-issues.md) — wall units at 900 mm with a single door, base units at
-150 mm with a 150 mm plinth, a drawer sideboard lowered to 720 mm, a handle strip, backsplashes —
-leave root modules without geometry for values the library accepts. Several of them are not
-reported to the library development team. The check of the values before an edit (D107) does not
-catch them: the library does not rule these values out, and it verifies no range for `mod_Width` and
-`mod_Height`.
-
-**Cause.** The library's calculation or its tables lack the combinations its attributes offer.
-
-**To do.**
-
-1. roomle-hi-example: report every calculation error of [library-issues.md](library-issues.md)
-   whose **Status** says "not reported" to the HOMAG library development team, and set its status.
-2. The library: calculate every value it offers, or rule out in its verified options
-   (`getAttributesDropDownValues`) every value it cannot calculate — with a range for `mod_Width`
-   and `mod_Height` —, so that the check before an edit catches it.
-
-**Test.** The tests of the issues in [library-issues.md](library-issues.md).
-
-**Reproduce.** Per issue, in [library-issues.md](library-issues.md).

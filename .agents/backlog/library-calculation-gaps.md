@@ -24,7 +24,7 @@ D-numbers are the decisions in §3 of
 
 | # | Gap | Responsible | Priority |
 |---|---|---|---|
-| 1 | [Price and order include root modules the library could not calculate, without a note](#1-price-and-order-include-root-modules-the-library-could-not-calculate-without-a-note) | roomle-ui HI tool set (`get-price`, `get-order-data`); the library's `getOrderData` | high |
+| 1 | [Price and order include root modules the library could not calculate, without a note](#1-price-and-order-include-root-modules-the-library-could-not-calculate-without-a-note) | roomle-ui HI tool set (`get-price`, `get-order-data`) — [analysed](../bug-analysis/price-and-order-of-root-modules-the-library-could-not-calculate.md): the library keeps the root module in the order with `ErrorInfo` items and without dimensions, the Order Manager prices it; the tools name it in a `hint` (decision pending) | high |
 
 Where a group stands in the room is no gap: the tools build a group on an obstacle or outside the
 room and say so in `hint`, because the user may want it there (D51, D55).
@@ -46,7 +46,9 @@ out or fails — is not known.
 **To do.**
 
 1. Probe what the library's order data carries for a root module with an `Error`: its order line,
-   its price, its parts. Write the outcome into roomle-ui
+   its price, its parts — probed in
+   [the analysis](../bug-analysis/price-and-order-of-root-modules-the-library-could-not-calculate.md#what-the-library-and-the-order-manager-do).
+   Write the outcome into roomle-ui
    `.agents/homag-intelligence/library-errors.md`. A root module without geometry that the library
    prices is a library issue in [library-issues.md](library-issues.md).
 2. Decide with the user what the price and the order say about it. The candidates:

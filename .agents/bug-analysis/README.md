@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [price-and-order-of-root-modules-the-library-could-not-calculate.md](price-and-order-of-root-modules-the-library-could-not-calculate.md) | Open | `get-price` and `get-order-data` include a root module the library could not calculate and name it nowhere the agent reads ([library-calculation-gaps.md #1](../backlog/library-calculation-gaps.md#1-price-and-order-include-root-modules-the-library-could-not-calculate-without-a-note)) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

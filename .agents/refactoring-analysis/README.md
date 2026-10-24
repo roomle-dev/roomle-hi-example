@@ -43,8 +43,6 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Description |
 |---|---|---|
-| [split-library-context-from-plan-context.md](split-library-context-from-plan-context.md) | Open | A planner method `getExternalObjectLibraryContext` for the master data and the article catalog, apart from the plan context; the article geometry from the template only |
-| [discard-agent-changes-the-library-cannot-calculate.md](discard-agent-changes-the-library-cannot-calculate.md) | Open | A plan-changing tool call the library answers with `Error` or `Fatal` changes nothing: the tool command reports the root modules it made fail, the HI tool set reverts the call with the planner's undo and answers with an error result; the user's own edits in the planner keep D95 |
 
 Add refactoring analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `mcp-bridge-simplification.md`).

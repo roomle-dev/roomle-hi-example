@@ -132,6 +132,16 @@ planner's undo history — and the agent gets an error result with the failing r
 first line of the library's message and what to change. The whole call is reverted, also the groups
 of a create the library could calculate, so the agent sends the corrected call once more.
 
+The discard refuses the agent's input — a guard, the last step of
+[Guards Are a Last Resort](../../AGENTS.md#guards-are-a-last-resort). The steps before it do not meet
+the rule: the served text cannot name the value combinations a library's tables lack, as they are
+library data and the served text stays library-neutral; a check of a value against the library's
+verified options before an edit prevents part of the failures and is open work
+([attribute-values-checked-before-an-edit.md](../backlog/attribute-values-checked-before-an-edit.md));
+the server knows no valid combination to correct the input to; and building what it can leaves the
+failed root module in the plan, which the user rules out. The error still says what failed, why,
+and what to send instead.
+
 The discard covers the agent's calls only. The glue logic calculates the user's edits in the
 planner as well and keeps every calculation (D95, `_runGroupCalculation`, `glue-logic.ts:2267`): a
 discard there would revert the user's own edit, such as the height of a cabinet. A root module the

@@ -34,6 +34,7 @@ never drop the agent's content silently.
 | 98 | [A row with a worktop placed into a corner stands 10 mm off the wall](#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) | defect (not analysed) | roomle-ui `hi-wall-placement.ts` or the library's worktop (not analysed) | low | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
+| 107 | [A reverted exchange names the root module id of the unit it took back](#107-a-reverted-exchange-names-the-root-module-id-of-the-unit-it-took-back) | defect | roomle-ui `runToolCommand`, `newLibraryFailures` (`hi-tool-commands.ts`, `hi-tool-payload.ts`) | low | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -232,3 +233,29 @@ lifts a unit of another group on top of it by 180 mm.
 
 **Reproduce.** No run yet: a unit of another group on top of a base unit; `exchange-root-module` of
 the base unit for a taller article.
+
+## 107. A reverted exchange names the root module id of the unit it took back
+
+**Problem.** When the library cannot calculate the unit an `exchange-root-module` puts in, the tools
+revert the call (D106) and the error names the new root module by the id the exchange gave it. After
+the revert that id is not in the plan: the agent sent the id of the unit it wanted to exchange and
+reads another one it cannot find.
+
+**Cause.** `newLibraryFailures` (roomle-ui `hi-tool-payload.ts:288`) names a root module by its id
+after the call, and the exchange gives the new unit a new id. Only a create maps the plan's ids back
+to the call (`groupLabels`, the groups as `posGroups[i]`, `hi-tool-commands.ts:759`); no command maps
+a new root module to the root module it replaces.
+
+**To do.** roomle-ui: `exchange-root-module` names its new root module by the `rootModuleId` of the
+call — a label per root module that `runToolCommand` (`hi-tool-commands.ts:1366`) puts into the
+error, as `groupLabels` labels the groups of a create. `insert-article-into-group` and
+`merge-article-into-group` add a root module with a new id as well: the error names it as the new
+unit with its article.
+
+**Test.** roomle-ui `__tests__/hi-tool-commands/run-tool-command-test.ts`: an exchange whose new root
+module the library cannot calculate names it by the `rootModuleId` of the call.
+
+**Reproduce.** In the example page with a planner that carries D106 (roomle-ui `feat/hi-mcp`
+`6512f5890`, `--dev`), model-free: create two `OTB60` side by side, then `exchange-root-module` of
+the second with `OTB60` and the attributes `mod_Width` 900 and `mod_DoorDirectionSelection` `Left`;
+the error names a root module id the plan does not hold.

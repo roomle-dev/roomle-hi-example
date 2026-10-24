@@ -275,7 +275,8 @@ The glue logic (roomle-ui `homag-intelligence/src/glue-logic.ts`) implements the
 through the planner's UI: the drag-in, the attribute panel, the moves, splits and deletes the user
 makes. The HI tools implement the manipulations through the Planning Assistant: the tool set
 (`hi-mcp/`), the tool commands (`hi-tool-commands.ts` and the `hi-tool-*.ts` modules) and the group
-operations of `hi-tools.ts`. The two stay apart:
+operations of `hi-tools.ts`. The two stay apart (D110 of
+[roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)):
 
 - **A change for the Planning Assistant never changes `glue-logic.ts`** — not for a fix, not for a
   feature, not for a library step the agent's path lacks. The UI's behaviour stays as it is.

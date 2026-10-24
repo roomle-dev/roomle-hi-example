@@ -26,7 +26,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 98 | [A row with a worktop placed into a corner stands 10 mm off the wall](#98-a-row-with-a-worktop-placed-into-a-corner-stands-10-mm-off-the-wall) | defect (not analysed) | roomle-ui `hi-wall-placement.ts` or the library's worktop (not analysed) | low | gpt-6-astra | |
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 107 | [A discarded exchange names the root module id of the unit it would have put in](#107-a-discarded-exchange-names-the-root-module-id-of-the-unit-it-would-have-put-in) | defect | roomle-ui `_stagedFailures`, `newLibraryFailures` (`hi-tools.ts`, `hi-tool-payload.ts`) | low | | |
@@ -35,34 +34,6 @@ never drop the agent's content silently.
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 98. A row with a worktop placed into a corner stands 10 mm off the wall
-
-**Problem.** A base row with a worktop placed with `wall` right and `alignment` back stands 10 mm off
-the back wall right after the create: group position z -3755, the back wall at -3765, and the
-group's footprint runs from x 0 to 2110 for 2100 mm of carcasses, so neither a carcass nor the
-worktop reaches the wall. No correction or hint names the shift. Rows without a worktop placed the
-same way stand at the wall (two wardrobes at z -3765), and so does a corner kitchen whose corner
-unit is the anchor.
-
-**Cause.** Not analysed. The footprint of a row with a worktop placed by wall elsewhere starts at
-x -10, the worktop's overhang beyond the first carcass (four base units centred on the back wall:
-x -10 to 2410); in the corner row it starts at 0, and the 10 mm of the overhang lie at the front
-end. Whether the placement into the corner (roomle-ui `hi-wall-placement.ts`) keeps room for an
-overhang the library puts at the other end, or the library's worktop generation moves it, is open.
-
-**To do.** roomle-ui: replay the create of the run (its `planner-calls.json`) against the local
-planner, read the group position, the footprint and the worktop's overhangs after the load, and fix
-the step that leaves the row off the wall.
-
-**Test.** roomle-ui `hi-tool-commands` tests: a row with a worktop placed by wall into a corner
-stands with its first carcass or its worktop at the wall; the random test 75 of
-`mcp-test-2026-10-22_19-45-49` (`random-5-base-row-right-wall-corner`) as a fixed prompt test.
-
-**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 75 (`random-5-base-row-right-wall-corner`,
-bo-test `205cc9bc8`): one `create-or-replace-groups` with `placement` `{ wall: right, alignment: back }`
-of `U2TB90`, `US2A60`, `US2A60`; the group `f32075ff` at `[4815, 0, -3755]`, rotation 270, footprint
-x 0 to 2110.
 
 ## 103. A unit on top of a follower in another group stays behind when the row below moves
 

@@ -208,8 +208,9 @@ corner: `placement: { wall, alignment?, offsetMm?, roomIndex? }` — the paramet
 `place-group`; the alignment `center` (default), the side label of the adjoining wall (flush into
 that corner, a corner article into the corner) or `end`, `offsetMm` from that corner or from the
 wall's end. The server loads the group, computes the target from the calculated group as
-`place-group` does (an overlap moves it along the wall), reloads it there and sets its group
-materials after the reload (D23). Anywhere else,
+`place-group` does (an overlap moves it along the wall), reloads it there, places it once more by
+its measure there when it does not stand as asked (D70), and sets its group materials after the
+last reload (D23). Anywhere else,
 and for a group of wall units only: `placement: { posGroup, posRotationZ, rootId? }` — `posGroup`
 the room point of the group's back left bottom corner (`z` 0 on the floor; a floor point `[x, y]` is
 completed to `[x, y, 0]`), `posRotationZ` the rotation in degrees,
@@ -253,8 +254,9 @@ placed as asked. An alignment parallel to the target wall centres the group. The
 the generated roots (worktop, toe kick) with the group, so their colours stay, and docks a wall unit
 hanging above a floor unit to it again, so it keeps its place (C24); a group that already
 stands where asked is not reloaded. The library builds a group for its place - at a wall it may
-widen the units at the end of a row -, so after the reload the group is measured as built there and
-placed once more by that measure when it does not stand as asked (D70).
+widen the units at the end of a row, and it builds the end there without the worktop's overhang -,
+so after the reload the group is measured as built there and placed once more by that measure when
+it does not stand as asked (D70).
 
 **Returns**: `placedIn` (`'corner'` or `'wall'`), the wall, and the resulting group with its
 `position`, plus `corrections` when the server corrected the request (an overlap, a parallel

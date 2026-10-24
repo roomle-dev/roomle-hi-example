@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [failed-root-module-not-visible-to-the-agent.md](failed-root-module-not-visible-to-the-agent.md) | Open — fix proposed, three points to be confirmed | A root module the library could not calculate after an edit in the planner, in a loaded plan or after an undo is listed in the plan context as planned: `shapeRoot` drops the library's verdict, and the served text has no word for it ([library-calculation-gaps.md #2](../backlog/library-calculation-gaps.md)) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

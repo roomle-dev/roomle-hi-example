@@ -111,6 +111,14 @@ own, and a corner article joins the two legs into one row. The roots are listed 
 were added, an inserted one last, so "the middle unit" is read from `rowIndex` (D66). Every group a
 tool returns carries it; a resubmitted group's `rowIndex` is ignored.
 
+**Not built**: a root module the library could not calculate — after an edit in the planner, in a
+loaded plan or after an undo (D95) — carries `calculationError`, the first line of the library's
+message, and so does a group whose own calculation failed. The log messages stay withheld (D9). The
+description tells the agent that such a root module or group is not built — no docking vectors and
+no parts until a value the library can calculate replaces the one that failed — and that the
+answer says so and never describes it as planned. Every group a tool returns carries the field; a
+resubmitted group's `calculationError` is ignored (D108).
+
 **Doors after an edit**: the description reminds the agent to hinge new row ends at the outer
 sides, left at the left end and right at the right end as seen from the front. Attribute and value
 come from the library's descriptions for single or paired doors; other directions stay unchanged
@@ -305,8 +313,10 @@ values go through the same check: a value some root modules do not take is set o
 tool that takes a group id reads a root id, or a unique prefix of one, as the group that holds the
 root module, and says so in `corrections` (C23).
 
-**Returns**: the two attribute commands `{ command, groupIds, changedModuleIds?, corrections? }`,
-not the group (D62); the others `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed?, corrections?, hint? }`, once the
+**Returns**: the two attribute commands `{ command, groupIds, changedModuleIds?, corrections?, hint? }`,
+not the group (D62) — `hint` names every root module and group of the changed groups the library
+still cannot calculate: "root module 'r1' (OTB60) of group 'g1' is still not built - <first line of
+the library's message>. Change the value that fails, or tell the user." (D108); the others `{ command, groups, removedGroupIds, changedModuleIds?, gapClosed?, corrections?, hint? }`, once the
 planner has loaded the result. A command after which the library cannot calculate a root module or
 a group that it could before changes nothing: the tools revert it with the planner's undo, and the
 result is an error — "<tool>: nothing was changed - the library could not calculate root module

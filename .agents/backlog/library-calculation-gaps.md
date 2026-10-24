@@ -24,7 +24,6 @@ D-numbers are the decisions in §3 of
 | # | Gap | Responsible | Priority |
 |---|---|---|---|
 | 1 | [Price and order include root modules the library could not calculate, without a note](#1-price-and-order-include-root-modules-the-library-could-not-calculate-without-a-note) | roomle-ui HI tool set (`get-price`, `get-order-data`); the library's `getOrderData` | high |
-| 2 | [A root module the library could not calculate is not visible after the call that caused it](#2-a-root-module-the-library-could-not-calculate-is-not-visible-after-the-call-that-caused-it) | roomle-ui plan context (`hi-plan-context.ts`), served text — analysed in [bug-analysis/failed-root-module-not-visible-to-the-agent.md](../bug-analysis/failed-root-module-not-visible-to-the-agent.md): `shapeRoot` drops the library's verdict and the served text has no word for it; fix proposed, the group's own failure and a note after a failed repair to be confirmed | medium |
 | 3 | [A create skips the library's conflict resolution and the checks of its root modules](#3-a-create-skips-the-librarys-conflict-resolution-and-the-checks-of-its-root-modules) | roomle-ui glue logic (`glue-logic.ts`), tool commands | medium |
 | 4 | [Values the library accepts and cannot calculate](#4-values-the-library-accepts-and-cannot-calculate) | HOMAG library development team; roomle-hi-example: the report | medium |
 
@@ -60,7 +59,8 @@ nothing for an edit in the planner; the order path reads no diagnostic.
      module. It is outside the HI tools and a decision about the planner's order.
 3. roomle-ui HI tool set: the decided note in `get-price` and `get-order-data`
    (`hi-mcp/tool-executors.ts`), the failed root modules read from `getExternalObjectGroups` as
-   `newLibraryFailures` reads them (`calculationErrorOf`, `hi-tool-payload.ts:270`).
+   `newLibraryFailures` reads them (`calculationErrorOf`, `hi-plan-context.ts:338`), or as the
+   plan context marks them (`calculationError`, D108).
 4. Served text (`hi-mcp/hi-mcp-server.ts`): the descriptions of the two tools say what the note
    means and that the answer names it to the user.
 5. Documentation: the decision in §3 and the feedback in §8 of roomle-ui `hi-tools-behaviour.md`,
@@ -76,40 +76,6 @@ answer as before.
 ([library issue 80](library-issues.md#80-wall-units-at-900-mm-with-a-single-door-the-library-cannot-calculate)),
 then call `get-price` and `get-order-data` model-free (`instance.extended.callExternalObjectAgentTool`);
 neither answer names the root module.
-
-## 2. A root module the library could not calculate is not visible after the call that caused it
-
-**Problem.** A root module the library could not calculate after an edit in the planner, or in a
-loaded plan, stays in the plan (D95), and nothing shows it to the agent: `get-plan-context` carries
-no diagnostic (D9; `shapeRoot`,
-`hi-plan-context.ts:705`), and a failed root module shows only by what it lacks — its
-`dockingVectors` are empty (`dockingVectorNames`, `hi-plan-context.ts:320`). An agent in a later
-turn, a later conversation or on a planning opened from saved data does not know that the unit is
-not built, and its answer describes the unit as planned. A later tool call that leaves the root
-module failing is not reverted (D106), so the agent can also change the group around it unknowingly.
-
-**Cause.** D9 withholds the log messages of the groups because they are large, and no smaller field
-stands in for the one fact the agent needs.
-
-**To do.**
-
-1. roomle-ui plan context: `shapeRoot` (`hi-plan-context.ts:705`) gives a root module whose last
-   calculation carries an `Error` or `Fatal` diagnostic one field with the first line of its first
-   such diagnostic, worded as the library failures of D106 word it; the full `logMessages` stay
-   withheld (D9). The field is
-   new in the planner's public plan context (`getExternalObjectPlanContext`) as well; nothing there
-   is removed or renamed.
-2. Served text (`hi-mcp/hi-mcp-server.ts`, the `get-plan-context` description): such a root module
-   is not built until a valid value recalculates it, and the answer says so.
-3. Documentation: §5.4 and D9 of roomle-ui `hi-tools-behaviour.md`, `hi-tools-reference.md`,
-   [`hi-mcp-tools.md`](../skills/hi-mcp-tools.md).
-
-**Test.** roomle-ui `__tests__/hi-plan-context-test.ts`: a root module with an `Error` diagnostic
-carries the field with its first line; a root module with `Warning` and `Info` messages only does
-not.
-
-**Reproduce.** After the edit of item 1, `get-plan-context` lists the `OTB60` with empty
-`dockingVectors` and no diagnostic.
 
 ## 3. A create skips the library's conflict resolution and the checks of its root modules
 

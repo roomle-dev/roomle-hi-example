@@ -20,7 +20,8 @@ The guarantee covers the structure of a planning, not every attribute value:
 
 - **A change the library cannot calculate is not made.** The tool call changes nothing, and the
   result tells the agent which root modules failed and why (D106). An edit the user makes in the
-  planner is kept with its failed calculation (D95).
+  planner is kept with its failed calculation (D95), and the agent reads that the root module is
+  not built (D108).
 - **A value the library's own check rules out is not set** (D107), but the library does not verify
   every attribute: for Furniture_Smith not the sizes.
 - **A create skips the library's conflict resolution** for the attribute values of a root module.
@@ -74,7 +75,7 @@ The served rule says it plainly: "A root module is an article pick and nothing e
 
 Everything else in a payload is dropped before the planner sees it:
 
-- `toArticlePick` (`hi-tool-payload.ts:9`) rebuilds every root from its id, article id, library id,
+- `toArticlePick` (`hi-tool-payload.ts:10`) rebuilds every root from its id, article id, library id,
   attribute ids and values, docking and relation. A module tree, parts, `posData` or dimensions
   written by the agent never reach the planner.
 - `prepareGroup` (`hi-tool-payload.ts:704`) drops the positions of roots (`articlePos`,
@@ -119,7 +120,7 @@ Everything else in a payload is dropped before the planner sees it:
 | A root attribute in a create that only the generated roots carry | Set on the whole group (`hi-tool-attributes.ts:80`) | `corrections` |
 | A value a module does not take by the library's verified options — in an attribute edit, a root override or a group attribute of a create | Not set on that root module; the rest of the call is set | `corrections` names the values the module takes; an error when no root module takes a value of the call (D107) |
 | A value that conflicts with another attribute, in an edit | The library changes the other attribute | `corrections` names the change (D59) |
-| A value the library cannot calculate — in any tool call that changes the plan | **Not made**: the tool set reverts the whole call with the planner's undo (D106) | An error result: nothing was changed, the root modules per group and cause with the first line of the library's message, and what to change (`runToolCommand`, `hi-tool-commands.ts:1366`; `recorded`, `hi-mcp/tool-executors.ts:258`) |
+| A value the library cannot calculate — in any tool call that changes the plan | **Not made**: the tool set reverts the whole call with the planner's undo (D106) | An error result: nothing was changed, the root modules per group and cause with the first line of the library's message, and what to change (`runToolCommand`, `hi-tool-commands.ts:1366`; `recorded`, `hi-mcp/tool-executors.ts:281`) |
 | An exception of the library's calculation | **Not made**, as above: `_calculate` (`glue-logic.ts:3458`) marks the group with a `Fatal` message | An error result that names the group |
 | A group on an obstacle, in front of a window or outside the room | Built | `hint` (D51, D55) |
 
@@ -150,6 +151,15 @@ library could not calculate after an edit in the planner, or in a loaded plan, s
 without docking vectors and front parts until a valid value recalculates it. It does not stand
 against a later tool call; the agent can repair it. D99 calls this handling a fallback that keeps
 the plan usable, not a path a valid planning takes.
+
+The agent sees such a root module (D108). In `get-plan-context` and in every group a tool returns,
+it carries `calculationError`, the first line of the library's message (`shapeRoot`,
+`hi-plan-context.ts:730`), and the `get-plan-context` description tells the agent that it is not
+built and that the answer says so. A group whose own calculation failed carries the field as well.
+A loaded plan is calculated again when it loads, so the field is current. The attribute tools
+answer without groups; their `hint` names every root module of the changed groups that is still
+not built, so a repair that fails again shows (`compactAttributeResult`,
+`hi-mcp/tool-executors.ts:240`).
 
 roomle-ui does not take such a root module out of the price or the order: `getGroupDataForOrder`
 hands every group of the scene to the library. What `getOrderData` does with a root module that
@@ -206,6 +216,6 @@ request from a mistake.
 - [roomle-ui `library-errors.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/library-errors.md)
   — every call into the library and how its errors reach the agent
 - [roomle-ui `hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md)
-  — D51, D59, D60, D95, D99, D106, D107 and the corrections and feedback of §8
+  — D51, D59, D60, D95, D99, D106, D107, D108 and the corrections and feedback of §8
 - [roomle-ui `homag-intelligence.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence.md)
   — the architecture of the HI integration

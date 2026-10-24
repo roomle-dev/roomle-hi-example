@@ -624,6 +624,14 @@
           "plan": "l-shaped-pass-through-room",
           "image": "docs/images/kitchen-7.jpeg",
           "expect": ""
+        },
+        {
+          "id": "image-kitchen-tall-column-right-corner",
+          "title": "Image: kitchen with a column of tall units in the back right corner",
+          "plan": "default-room",
+          "prompt": "create a kitchen like the one shown in the image, in the back right corner of the room",
+          "image": "docs/images/kitchen-11.png",
+          "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the L-shaped kitchen of the image around the back right corner: the long leg on the back wall with the hob and wall units above its base units, the hood above the hob; the short leg on the right wall with the sink unit beside the corner unit and a column of two tall units - the oven housing and the fridge - at its far end, a wall unit hanging beside the tall units over the sink and another one left of it, over the corner unit; every wall unit stands inside the room, and the wall unit over the corner unit is turned as the right-wall row is, with its back to the right wall; no tall unit and no wall unit in front of the window (back wall, x -450 to 1650, bottom 950) and nothing in the door opening (right wall, y -1180 to -280); light grey frame fronts and a light oak worktop; the final answer accurately reports any remaining omission"
         }
       ]
     },

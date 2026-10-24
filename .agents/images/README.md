@@ -14,4 +14,3 @@ Images referenced by backlog items, analysis documents, and context documents. S
 | Image | Referenced by |
 |---|---|
 | [sink-top-over-hob.png](sink-top-over-hob.png) | Bug analysis: sink unit description |
-| [wall-unit-over-the-corner-turned-by-the-carrier-link.png](wall-unit-over-the-corner-turned-by-the-carrier-link.png) | Bug analysis: [the wall unit over the corner article turned out through the wall](../bug-analysis/wall-unit-over-the-corner-turned-by-the-carrier-link.md) |

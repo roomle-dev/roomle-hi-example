@@ -14,3 +14,6 @@ Images referenced by backlog items, analysis documents, and context documents. S
 | Image | Referenced by |
 |---|---|
 | [sink-top-over-hob.png](sink-top-over-hob.png) | Bug analysis: sink unit description |
+| [insert-between-start.jpg](insert-between-start.jpg) | Bug analysis: [insert between root modules that do not stand side by side](../bug-analysis/insert-between-root-modules-not-side-by-side.md) |
+| [insert-between-hob-and-sink.jpg](insert-between-hob-and-sink.jpg) | Bug analysis: [insert between root modules that do not stand side by side](../bug-analysis/insert-between-root-modules-not-side-by-side.md) |
+| [insert-between-sink-and-hob.jpg](insert-between-sink-and-hob.jpg) | Bug analysis: [insert between root modules that do not stand side by side](../bug-analysis/insert-between-root-modules-not-side-by-side.md) |

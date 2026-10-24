@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [insert-between-root-modules-not-side-by-side.md](insert-between-root-modules-not-side-by-side.md) | Open | Not reproducible on roomle-ui `feat/hi-mcp`: the insert checks the pair against the side docking and reports every pair that is not neighbours (C19); the recorded run named two root modules on two legs of the L after the test plan was replaced. Proposed: a unit test of C19 across a corner article, then the item leaves the backlog ([mcp-issues.md #85](../backlog/mcp-issues.md#85-insert-article-into-group-takes-a-between-pair-whose-root-modules-do-not-stand-side-by-side)) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

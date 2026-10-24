@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [values-the-library-accepts-and-cannot-calculate.md](values-the-library-accepts-and-cannot-calculate.md) | Open | The library's verified options take values its calculation cannot calculate; the errors are not reported to the library development team ([library-calculation-gaps.md #4](../backlog/library-calculation-gaps.md#4-values-the-library-accepts-and-cannot-calculate)) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

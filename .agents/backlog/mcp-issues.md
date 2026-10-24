@@ -35,6 +35,7 @@ never drop the agent's content silently.
 | 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 107 | [A discarded exchange names the root module id of the unit it would have put in](#107-a-discarded-exchange-names-the-root-module-id-of-the-unit-it-would-have-put-in) | defect | roomle-ui `_stagedFailures`, `newLibraryFailures` (`hi-tools.ts`, `hi-tool-payload.ts`) | low | | |
+| 108 | [The glue logic holds implementation of the Planning Assistant](#108-the-glue-logic-holds-implementation-of-the-planning-assistant) | refactoring | roomle-ui HI tools (`hi-tools.ts`, `hi-tool-*.ts`); `glue-logic.ts` keeps the API functions | medium | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
@@ -259,3 +260,41 @@ the `rootModuleId` of the call; a discarded merge names the new unit with its ar
 `feat/hi-mcp`, `--dev`), model-free: create two `OTB60` side by side, then `exchange-root-module` of
 the second with `OTB60` and the attributes `mod_Width` 900 and `mod_DoorDirectionSelection` `Left`;
 the error names a root module id the plan does not hold.
+
+## 108. The glue logic holds implementation of the Planning Assistant
+
+**Problem.** `glue-logic.ts` implements manipulations that only the Planning Assistant makes. Its
+methods below are reached only from the HI tools (`hi-tools.ts`, `hi-tool-commands.ts`), never from
+the planner's UI. The glue logic serves the UI, the tools serve the Planning Assistant
+([Hard Rule](../../AGENTS.md#hard-rule-the-planning-assistant-stays-out-of-the-glue-logic)); a
+change for the Planning Assistant then has to touch the glue logic.
+
+- The create and replace of a `posGroups` layout: `createOrReplacePosGroupsFromLayout` (`:865`) with
+  `_isArticlePickRoot` (`:965`), `_applyRootAttributeOverrides` (`:978`), `overrideTargetsOf`
+  (`:1009`), `prepareArticlePickRoots` (`:1032`), `inheritNeighbourAttributes` (`:1665`),
+  `_keepSubModuleInputsOfKeptRoots` (`:1689`), `_inheritAttributesOfAddedRoots` (`:1745`) and the
+  outcome per group (`LayoutGroupOutcome`). The planner's API reaches it through
+  `createOrReplacePosDataFromArticleLayout(…, 'posGroups')` (`:743`, from `roomle-planner.ts:2512`).
+- The article template of the anchor: `calculateArticleTemplate` (`:1105`) with its cache.
+- The attributes of an exchange: `swapRootModuleWithAttributes` (`:2788`); the UI's
+  `swapRootModule` (`:2779`) delegates to it.
+- The staged loads of the discard (D106): `loadWithChangedAttributes` (`:2449`), `arrangeAndLoad`
+  (`:2876`).
+- The interior fittings: `getInteriorDesignOptions` (`:3031`), `editInterior` (`:3046`).
+
+The lines are those of `glue-logic.ts` on roomle-ui `feat/hi-mcp`.
+
+**Cause.** The tools grew on the glue logic's group map and calculation: what a tool needed was added
+to `glue-logic.ts`.
+
+**To do.** roomle-ui: confirm per method that only the tools reach it, then move its implementation
+into the tools. `glue-logic.ts` keeps the API functions the planner exposes —
+`createOrReplacePosDataFromArticleLayout` and the UI's `swapRootModule` —, which delegate to the
+implementation in the tools; the UI's behaviour is unchanged. Update the package layout in roomle-ui
+`.agents/homag-intelligence.md`.
+
+**Test.** roomle-ui `__tests__/glue-logic-test.ts`, `__tests__/hi-tools-test.ts` and
+`__tests__/hi-tool-commands/` pass; the tests of a moved method move with it.
+
+**Reproduce.** `grep` the moved methods in roomle-ui `packages/`: outside `glue-logic.ts`, only
+`hi-tools.ts` and `hi-tool-commands.ts` call them.

@@ -19,6 +19,7 @@ heading of each. Every text stays here once the library carries it, with its sta
 | [1.4 Wall units with a single door](#14-wall-units-with-a-single-door) | `OTB30`, `OTB45`, `OTB60` | open |
 | [1.5 Width-dependent tall-unit doors](#15-width-dependent-tall-unit-doors) | `HTB60` | open |
 | [1.6 Adjustable shelves](#16-adjustable-shelves) | `AdjShelves` | open |
+| [1.7 Tall oven housing](#17-tall-oven-housing) | `HOTS2AB60` | open |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
 | [2.2 Front program](#22-front-program) | `mod_FrontProgram` | applied |
 | [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
@@ -30,6 +31,7 @@ heading of each. Every text stays here once the library carries it, with its sta
 | [2.9 Width](#29-width) | `mod_Width` | open |
 | [2.10 Backsplash](#210-backsplash) | `mod_CreateBacksplash` | open |
 | [2.11 Shelf descriptor](#211-shelf-descriptor) | `mod_ShelfadjDescriptor` | open; the format comes from the library |
+| [2.12 Oven article codes](#212-oven-article-codes) | `mod_OvenId1`, `mod_OvenId2`, `mod_OvenId3` | open |
 
 ## 1. Article descriptions
 
@@ -342,6 +344,44 @@ SEARCH_KEYWORDS: adjustable shelves, shelf, interior shelf, height adjustable sh
 AI_SELECTION_HINT: Select for a compartment that shows no shelves. A cabinet described with adjustable shelves already shows this set; adding it there changes nothing.
 ```
 
+### 1.7 Tall oven housing
+
+**Status.** Proposed, not applied. The unit carries one built-in appliance; a second appliance
+code (a microwave above the oven) is accepted but not built, and nothing reports the drop, so the
+agent reports a microwave that is not in the plan
+([library issue 16](../../.agents/backlog/library-issues.md#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built)).
+
+`HOTS2AB60` (Tall oven housing) — 995 characters:
+
+```
+FUNCTION:
+Tall oven housing, 60 cm wide, with 1 door, 1 oven niche, 1 drawer and 2 pull-outs, adjustable shelves.
+
+PURPOSE:
+Integrates one built-in oven at ergonomic height with additional storage.
+
+TYPICAL_PLACEMENT:
+Tall-unit block, next to fridge or pantry units.
+
+REQUIREMENTS:
+Requires a compatible built-in oven and electrical connection (dedicated circuit). tall unit: carcase height approx. 2016-2160 mm, depth 561 mm. Carries one built-in appliance; a second appliance code is accepted but not built.
+
+RECOMMENDED_NEIGHBOURS:
+Fridge tall unit, pantry tall units.
+
+RESTRICTIONS:
+No sink installation; requires power for the oven.
+
+STYLE_COMPATIBILITY:
+Modern handled kitchen. Also suits classic, Scandinavian and country-house designs.
+
+SEARCH_KEYWORDS:
+oven cabinet, appliance tower, baking cabinet, built-in oven housing
+
+AI_SELECTION_HINT:
+Select when a built-in oven at working height is requested. The unit carries one built-in appliance; a microwave above the oven is not possible.
+```
+
 ## 2. Attribute descriptions
 
 ### 2.1 Colour values
@@ -496,3 +536,18 @@ the library development team names it
 | Attribute | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
 | `mod_ShelfadjDescriptor` | Descriptor | Position and quantity of the adjustable shelf via descriptor | Position and quantity of the adjustable shelves via descriptor: the format, with an example (to be named by the library). Empty: the library spaces its shelves over the free height of the compartment. |
+
+### 2.12 Oven article codes
+
+**Status.** Proposed, not applied. The three codes select the built-in appliance of a unit; on a
+unit with one appliance niche a second or third code is accepted but not built, and nothing reports
+the drop
+([library issue 16](../../.agents/backlog/library-issues.md#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built)).
+
+**Attribute.** `mod_OvenId1`, `mod_OvenId2`, `mod_OvenId3` (Article code 1 / 2 / 3), group Oven.
+
+| Attribute | Name | `desc` before | Proposed `desc` |
+|---|---|---|---|
+| `mod_OvenId1` | Article code 1 | Article code of the oven | Article code of the built-in appliance (oven or microwave) the unit carries. |
+| `mod_OvenId2` | Article code 2 | Article code of the oven | Article code of a second built-in appliance. A unit with one appliance niche builds only its first code; a second code is accepted but not built. |
+| `mod_OvenId3` | Article code 3 | Article code of the oven | Article code of a third built-in appliance. A unit with one appliance niche builds only its first code; a further code is accepted but not built. |

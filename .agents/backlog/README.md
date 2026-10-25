@@ -40,6 +40,8 @@ library accepts (D99); the fix is in the library. Details:
 | [13 — A drawer sideboard lowered to 720 mm the library cannot calculate](library-issues.md#13-a-drawer-sideboard-lowered-to-720-mm-the-library-cannot-calculate) | HOMAG library bug: calculate the drawer sideboard at every height `mod_Height` accepts, or declare the heights it takes as its verified range | low |
 | [14 — The adjustable-shelf set does not say that a cabinet shows it by default](library-issues.md#14-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default) | HOMAG library: the `AdjShelves` desc says that a cabinet with adjustable shelves shows the set by default, that it fills its compartment and that the library spaces its shelves | low |
 | [15 — The shelf descriptor names no format](library-issues.md#15-the-shelf-descriptor-names-no-format) | HOMAG library: the desc of `mod_ShelfadjDescriptor` names the format of the position and quantity of the adjustable shelves, with an example | low |
+| [16 — A built-in microwave selected on the tall oven housing is not built](library-issues.md#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built) | HOMAG library: build the second appliance in the equipment niche of `HOTS2AB60`, or rule the microwave out of `mod_OvenId2` on the single-niche units; the descs of the unit and of the codes say that the unit carries one built-in appliance | medium |
+| [17 — A Bora hob on the base hob cabinet UKS2A90 the library cannot calculate](library-issues.md#17-a-bora-hob-on-the-base-hob-cabinet-uks2a90-the-library-cannot-calculate) | HOMAG library bug: an entry in `tab_DrawerBoxDimensionMapping` for the drawer boxes of `UKS2A90` under a Bora hob, or the hob ruled out for the unit | low |
 
 ## Library neutrality of the MCP server
 
@@ -58,8 +60,8 @@ Defects of the planner outside the HI tool commands. Details: [roomle-ui-issues.
 
 | Item | To do | Details |
 |---|---|---|
-| 63 — A dark worktop renders white under the top light | roomle-ui renderer: the top light overexposes the tabletop depending on the line of sight, so black appears white; render it in its material colour from every line of sight | [roomle-ui-issues.md, 63](roomle-ui-issues.md#63-a-dark-worktop-renders-white-under-the-top-light) |
-| 94 — The water connection is an installation element only through a planner override | Rubens Admin: set level 28 on the wall water connection items; then remove the `water_connections` level override in roomle-ui `planner-kernel-access.ts` | [roomle-ui-issues.md, 94](roomle-ui-issues.md#94-the-water-connection-is-an-installation-element-only-through-a-planner-override) |
+| 1 — A dark worktop renders white under the top light | roomle-ui renderer: the top light overexposes the tabletop depending on the line of sight, so black appears white; render it in its material colour from every line of sight | [roomle-ui-issues.md, 1](roomle-ui-issues.md#1-a-dark-worktop-renders-white-under-the-top-light) |
+| 2 — The water connection is an installation element only through a planner override | Rubens Admin: set level 28 on the wall water connection items; then remove the `water_connections` level override in roomle-ui `planner-kernel-access.ts` | [roomle-ui-issues.md, 2](roomle-ui-issues.md#2-the-water-connection-is-an-installation-element-only-through-a-planner-override) |
 | Caching the library context | roomle-ui planner: keep the compacted library context (`createLibraryContext`, `hi-library-context.ts`) from `addLibrary` / `loadPosData` until the next catalog load — only when a measurement shows that compacting the catalog on every call costs | not measured; ADR 0013 of roomle-ui |
 
 ## Chat

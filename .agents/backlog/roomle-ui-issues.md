@@ -15,12 +15,12 @@ the code.
 
 | # | Issue | Kind | Responsible | Priority |
 |---|---|---|---|---|
-| 63 | [A dark worktop renders white under the top light](#63-a-dark-worktop-renders-white-under-the-top-light) | defect, known | roomle-ui renderer | medium |
-| 94 | [The water connection is an installation element only through a planner override](#94-the-water-connection-is-an-installation-element-only-through-a-planner-override) | catalog data, PoC override | Rubens Admin catalog (`room_designer`); roomle-ui `planner-kernel-access.ts` | medium |
+| 1 | [A dark worktop renders white under the top light](#1-a-dark-worktop-renders-white-under-the-top-light) | defect, known | roomle-ui renderer | medium |
+| 2 | [The water connection is an installation element only through a planner override](#2-the-water-connection-is-an-installation-element-only-through-a-planner-override) | catalog data, PoC override | Rubens Admin catalog (`room_designer`); roomle-ui `planner-kernel-access.ts` | medium |
 
 The run directories named under **Reproduce** are under `.temp/result/`.
 
-## 63. A dark worktop renders white under the top light
+## 1. A dark worktop renders white under the top light
 
 **Problem.** A dark countertop renders white in the planner's images, depending on the line of
 sight: in the object image of the handleless kitchen of the test `image-planning-right-wall` both
@@ -38,7 +38,7 @@ without the overexposure of the top light.
 
 **Reproduce.** `mcp-test-2026-10-21_12-49-36`: gpt-6-astra 66 (`image-planning-right-wall`, plan snapshot `ps_sgx7tozllj1jw7z1hdbwnkv3r2xggkd`, bo-test): light worktops on the wall run and the island in the object image, dark marble 324 with the program Style in `order-data.json`.
 
-## 94. The water connection is an installation element only through a planner override
+## 2. The water connection is an installation element only through a planner override
 
 **Problem.** The plan context lists a water connection in `installationElements` only because
 roomle-ui sets level 28 for every catalog item whose `externalIdentifier` is `water_connections`
@@ -60,5 +60,8 @@ is decided with RML-18023. Then remove the override in roomle-ui `planner-kernel
 list the water connection in `installationElements` and not in `obstacles`; roomle-ui
 `it('classifies the levels 27 and 28 as electric plug and water connection')` holds.
 
-**Reproduce.** `GET https://api.roomle.com/v2/items/room_designer:water_connections` answers `layer`
-43; roomle-ui `release/bo-test` `planner-kernel-access.ts:637` sets 28.
+**Reproduce.** `mcp-test-2026-10-25_15-24-34`, gpt-6-astra 02 (`sink-cabinet-at-water-connection`,
+local roomle-ui without the override): `get-plan-context` lists no `installationElements` for the
+plan `ps_sau169slquuapnhdz3fdmc0u24eplrcf` — the water connection comes as an obstacle object.
+`GET https://api.roomle.com/v2/items/room_designer:water_connections` answers `layer` 43; roomle-ui
+`release/bo-test` `planner-kernel-access.ts:637` sets 28.

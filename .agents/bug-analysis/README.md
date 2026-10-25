@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [Discarded creates report root identities the call never sent](discarded-create-root-identities.md) | Fixed — release verification pending | [RML-18295](https://roomle.atlassian.net/browse/RML-18295) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

@@ -72,7 +72,7 @@ repository, each answering OPEN / DONE / PARTIAL per item with `file:line` evide
 
 | Verdict | Action |
 |---|---|
-| DONE | Remove the item: its section, its row in the document's overview and its row in the README. A solved bug leaves at once. If its outcome is not yet in the living reference or a decision, promote it first ([where the outcome goes](hi-analysis-cleanup.md#where-the-outcome-goes)). Delete a document that has no item left. |
+| DONE | Remove the item: its section, its row in the document's overview and its row in the README. A solved bug leaves at once. If its outcome is not yet in the living reference or a decision, promote it first ([where the outcome goes](hi-analysis-cleanup.md#where-the-outcome-goes)). Keep shared backlog registers such as `mcp-issues.md`, including their guidance and overview tables, when empty; delete only documents dedicated to the completed item. |
 | PARTIAL | Shrink the item to the part that is still open. |
 | OPEN | Keep it. Strip the history, refresh the `file:line` references, correct every claim the code contradicts, and keep one **Reproduce** line. |
 | Not a todo | Reference material belongs in the living reference (roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`, `.agents/skills/`, `docs/`), written as today's behaviour — no past defect, no date of when it was solved, no ticket number; history already covered elsewhere is deleted. |

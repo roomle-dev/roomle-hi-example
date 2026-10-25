@@ -22,35 +22,13 @@ The guideline for every server issue is
 is an instruction problem first; correct where the intent is clear, report what was corrected, and
 never drop the agent's content silently.
 
+Keep this document, its guidance and its overview table when no issues are open, ready for new issues.
+
 ## Overview
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 112 | [A discarded group of a create is reported to the host as added and then deleted](#112-a-discarded-group-of-a-create-is-reported-to-the-host-as-added-and-then-deleted) | defect | roomle-ui the create of a `posGroups` layout (`hi-tools.ts`) | low | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 112. A discarded group of a create is reported to the host as added and then deleted
-
-**Problem.** A new group of a create that the tools discard before the load (D106) is reported to
-the host as added and then as deleted; a discarded replace is reported as changed twice. The host
-sees a group that never reached the scene.
-
-**Cause.** The create of a `posGroups` layout reports its groups to the host at its end
-(`groupsModified`, roomle-ui `hi-tools.ts:883`, `glue-logic.ts:2756`), and the discard of a group
-the library could not calculate removes it again: a new group through `removedGroup`
-(`glue-logic.ts:1251`), a replaced group back through `changedGroupFromHistory`
-(`glue-logic.ts:1265`). With the create in the tools, the verdict could come before the report.
-
-**To do.** roomle-ui `hi-tools.ts`, `createOrReplacePosGroupsFromLayout`: check the groups the
-library could not calculate before the report and report only what loads — a discarded new group
-is never reported as added, a discarded replace is reported once. No change to `glue-logic.ts`.
-
-**Test.** roomle-ui `__tests__/hi-tools-test.ts`: the host notifications of a discarded new group
-of a create name no added group; a discarded replace names one change.
-
-**Reproduce.** Model-free, unit level: `create-or-replace-groups` with one new group the library
-cannot calculate (the setup of the create discard test) reports the group to the host as added
-and then as deleted.

@@ -51,11 +51,10 @@ library cannot calculate.
 | 2 | [Flip-lift wall cabinets with sizes the library cannot calculate](#2-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; the heights not reported | low — the cabinets are not built, the agent needs a second create |
 | 3 | [End panels with a plain upright colour the library cannot calculate](#3-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the upright descs done; the colour value descs not done; the calculation error not reported | low — the end panels are not built, the agent needs one or two extra calls |
 | 6 | [Articles with two doors that do not say how their doors stand](#6-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
-| 7 | [Tall-unit descriptions omit width-dependent door arrangements](#7-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | medium — a widened unit keeps an incompatible single-door hinge input |
-| 8 | [Base units narrowed to 150 mm the library cannot calculate](#8-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the unit is not built, the agent needs a second create |
+| 7 | [Tall-unit descriptions omit width-dependent door arrangements](#7-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | the `HTB60` desc done; the shared resize guidance open; the calculation error not reported | medium — a widened unit keeps an incompatible single-door hinge input |
+| 8 | [Base units narrowed to 150 mm the library cannot calculate](#8-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the width desc done; the calculation error not reported | low — the unit is not built, the agent needs a second create |
 | 12 | [A worktop on the tall units from the group's countertop switch](#12-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
-| 14 | [The adjustable-shelf set does not say that a cabinet shows it by default](#14-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the agent adds the shelf set a cabinet already shows; the result says so (C34) |
-| 15 | [The shelf descriptor names no format](#15-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
+| 15 | [The shelf descriptor names no format](#15-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | the desc names the default spacing; the actual format and example open | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
 
 ### Not solved entirely by descriptions
 
@@ -66,11 +65,11 @@ library cannot calculate.
 |---|---|---|---|---|---|---|
 | 4 | [Carcase side panels with a plain outside colour the library cannot calculate](#4-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the carcase colour descs done; the colour value descs and the outside program not done; the calculation error not reported | partly | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
 | 5 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#5-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet and front program descs done; the colour value descs not done; the calculation error not reported | partly | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
-| 9 | [Wall units resized with a fixed door direction the library cannot calculate](#9-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the cabinets are not built, the agent needs a second create |
-| 10 | [Backsplashes the library cannot calculate](#10-backsplashes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the backsplash is not built; the agent must drop it and report the omission |
+| 9 | [Wall units resized with a fixed door direction the library cannot calculate](#9-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the single-door article descs done; the calculation error not reported | no — a library bug (D99) | low — the cabinets are not built, the agent needs a second create |
+| 10 | [Backsplashes the library cannot calculate](#10-backsplashes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the desc applied; its result-field wording and the calculation cause open | partly | low — the backsplash is not built; the agent must drop it and report the omission |
 | 11 | [A handle strip the library cannot calculate](#11-a-handle-strip-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the units with a handle are not built, the agent needs a second create |
 | 13 | [A drawer sideboard lowered to 720 mm the library cannot calculate](#13-a-drawer-sideboard-lowered-to-720-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the drawer sideboard is not built, the agent needs a second create |
-| 16 | [A built-in microwave selected on the tall oven housing is not built](#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | medium — the agent reports an appliance that is not in the plan |
+| 16 | [A built-in microwave selected on the tall oven housing is not built](#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built) | HOMAG Furniture_Smith | HOMAG library development team | the housing and appliance-code descs done; the missing second appliance not reported | partly | medium — the agent reports an appliance that is not in the plan |
 | 17 | [A Bora hob on the base hob cabinet UKS2A90 the library cannot calculate](#17-a-bora-hob-on-the-base-hob-cabinet-uks2a90-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the unit is not built, the agent replaces it |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
@@ -381,18 +380,18 @@ hinged at the outer sides, with values the library calculates.
 
 ## 7. Tall-unit descriptions omit width-dependent door arrangements
 
-**Problem.** The description of `HTB60` says one door without qualifying its width. At
-900 mm, the calculated article has paired doors with `Automatic` or `LeftRight`;
+**Problem.** At 900 mm, the calculated `HTB60` has paired doors with `Automatic` or `LeftRight`;
 retaining `mod_DoorDirectionSelection: Right` gives Error 14019 and an incomplete root.
-The attribute tools report the calculation diagnostic, but the article description does not
-explain which retained setting the agent needs to correct after resizing.
+The article description explains the 600 and 900 mm configurations and the retained setting to
+correct. The shared Door direction description still asks for `Right` at a row's right end without
+explaining that resizing can turn a single-door unit into a paired-door unit.
 
 **Cause.** A library bug (D99), the error of [issue 9](#9-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate)
 on a tall unit: with `Automatic` the library chooses the door arrangement by the width, and a fixed
 `mod_DoorDirectionSelection` of the other arrangement has no entry in `tab_DoorSettings` at that
 width. The library's conflict resolution does not change the door direction with the width, and it
-gives no verified options for `mod_Width` and `mod_DoorDirectionSelection`. The description of
-`HTB60` says one door.
+gives no verified options for `mod_Width` and `mod_DoorDirectionSelection`. The shared Door direction
+description omits resize guidance.
 
 **How the library behaves.** Checked in the probe of 2026-10-24:
 
@@ -402,14 +401,14 @@ gives no verified options for `mod_Width` and `mod_DoorDirectionSelection`. The 
 | `Automatic` | 900 mm, widened | yes: a pair of doors side by side (`LeftRight`) |
 | `Right`, then widened | 900 mm | no: Error 14019 ("… TallUnit - All - Standard - 240 - mr_StorageunitSingle - 900 - Automatic - Right - Automatic") |
 
-**To do.** Apply the complete `HTB60` description in
-[section 1.5](../../docs/library-information/suggested-library-changes.md#15-width-dependent-tall-unit-doors)
-and the proposed resize guidance in
+**To do.** Apply the proposed shared resize guidance in
 [section 2.6](../../docs/library-information/suggested-library-changes.md#26-door-direction).
 Keep the facts in library data; the verified nominal and widened configurations do not
 establish an intermediate-width threshold. The library bug: as in issue 9.
 
-**Status.** Open, description proposals prepared; not reported to the library development team.
+**Status.** Done in the library: the complete `HTB60` description (section 1.5). Open: the shared
+Door direction resize guidance (section 2.6). Open, not reported to the library development team:
+the calculation error.
 
 **Test.** `edit-swap-units`: the agent corrects incompatible retained input after resizing,
 then swaps the complete paired-door unit into the back corner. The row is contiguous at
@@ -430,9 +429,9 @@ sends it again with the filler panel `PU15L` for the narrow space.
 
 **Cause.** A library bug (D99): `tab_PlinthAreaSettings` has no entry for a 150 mm wide base unit of
 the 30 cm class, with the plinth the unit comes with (100 mm) as with 150 mm, and `mod_Width` has no
-verified options, so the library accepts the width it cannot calculate. The descs of the base units
-and of `mod_Width` name no width limit, so nothing tells the agent that a base unit narrowed under
-the narrowest catalog unit (300 mm) is not calculated.
+verified options, so the library accepts the width it cannot calculate. The desc of `mod_Width`
+warns against base units under 300 mm and directs the agent to a filler panel or pull-out unit;
+it does not supply the verified widths per article.
 
 **How the library behaves.** Checked in the stored runs:
 
@@ -455,7 +454,8 @@ can name the widths the library calculates — section 2.9 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#29-width).
 Then check that the served text needs nothing more.
 
-**Status.** Open, not reported to the library development team.
+**Status.** Done in the library: the desc of `mod_Width` (section 2.9). Open, not reported to the
+library development team: the calculation error and the verified widths per article.
 
 **Test.** `image-kitchen-back-right-corner`: the first create builds the narrow unit of the photo,
 or the agent fills the narrow space with a filler panel or a pull-out at the first attempt.
@@ -492,8 +492,9 @@ door give no verified options for `mod_Width` and `mod_DoorDirectionSelection`. 
 library's scripts throw after the missing entry ("Cannot read properties of undefined (reading
 'RealDoorDirection')", "\"undefined\" is not valid JSON"). The served rule and the desc of
 `mod_DoorDirectionSelection` ask for `Right` at the right end of a row (D84), and the descs of the
-single-door wall cabinets (`OTB30`, `OTB45`, `OTB60`) and of `mod_Width` do not say that a wider
-cabinet gets a pair of doors. [Issue 7](#7-tall-unit-descriptions-omit-width-dependent-door-arrangements)
+single-door wall cabinets (`OTB30`, `OTB45`, `OTB60`) direct the agent to keep their nominal width
+and choose a paired-door article or two narrower units for a wider cabinet. The shared Door
+direction description does not explain resizing. [Issue 7](#7-tall-unit-descriptions-omit-width-dependent-door-arrangements)
 is the same error on a tall unit.
 
 **How the library behaves.** Checked in the stored runs and in the probe of 2026-10-24:
@@ -522,7 +523,9 @@ arrangement — a conflict its conflict resolution resolves, which the tools nam
 known, the `AI_SELECTION_HINT` of the single-door wall cabinets can name them — section 1.4 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#14-wall-units-with-a-single-door).
 
-**Status.** Open, not reported to the library development team.
+**Status.** Done in the library: the `AI_SELECTION_HINT` of `OTB30`, `OTB45` and `OTB60`
+(section 1.4). Open, not reported to the library development team: the calculation error and
+the supported widths per door arrangement.
 
 **Test.** `image-planning-right-wall`, `image-kitchen-back-right-corner`: the first create builds
 the resized wall units, or the agent picks the articles that take the width at the first attempt.
@@ -576,7 +579,7 @@ and `mod_BacksplashColor` invite generating the backsplash and name no limit.
 command, so the replay reads the `mr_Backsplash` root's log messages, not only the tool result.
 Built there, the cause is in roomle-ui and the issue moves to
 [roomle-ui-issues.md](roomle-ui-issues.md); not built, the library: the backsplash's entries in
-`tab_GrainDirectionSettings` or the inputs of its lookup. Meanwhile the proposed desc in
+`tab_GrainDirectionSettings` or the inputs of its lookup. The desc in
 [section 2.10](../../docs/library-information/suggested-library-changes.md#210-backsplash) tells the
 agent to report a backsplash the library does not calculate. It names `notLoaded`, a field of the
 HI tools that a library desc does not name, and a `change-group-attribute` that enables the
@@ -584,8 +587,9 @@ backsplash answers with an error (D106), not in `notLoaded`: the text is rewritt
 once the replay has settled the cause. Then check that the served text needs
 nothing more.
 
-**Status.** Open, not reported to the library development team: reported once the replay places
-the cause in the library.
+**Status.** Done in the library: the proposed desc of `mod_CreateBacksplash` (section 2.10).
+Open: its result-field wording. The calculation failure is not reported to the library development
+team until the replay places the cause in the library.
 
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
@@ -711,39 +715,6 @@ bo-test `205cc9bc8`, the first `create-or-replace-groups`): root `side-middle` `
 `32a54a57-4e53-48b4-b406-d415ac281f51`, not calculated, Error 13008; the model undid the create and
 sent it again with three `SB_UB600`.
 
-## 14. The adjustable-shelf set does not say that a cabinet shows it by default
-
-**Problem.** Asked for one more shelf in the middle tall cabinet `HTB60`, the agent adds the
-adjustable-shelf set `AdjShelves` and answers that a shelf was added. The cabinet shows the same four
-shelves as before. Discovery names the cabinet's default interior (`defaultInteriors`, D114 of
-[roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions))
-by its parts, and the add's result says that the cabinet shows the same parts as before (C34). The
-library data does not say that the set is the shelving such a cabinet shows by default.
-
-**Cause.** The desc of `AdjShelves` reads "Adjustable interior shelves." / "Add height-adjustable
-shelf levels inside a cabinet." / "Select to add adjustable shelves inside a cabinet." It reads as
-shelves on top of those the cabinet has. It does not say that the set fills its compartment or that
-the library sets the number of shelves.
-
-**How the library behaves.** Checked model-free on bo-test with the plan of the run: while no
-fitting fills the container of its door module, `HTB60` renders four adjustable shelves
-(`part_ShelfadjWood` ×4) in the door module. Every fitting added into the container replaces them;
-`AdjShelves` (`me_ShelfadjMultiple01`) renders the same four, fills the whole compartment and leaves
-no container. Deleting the last fitting brings the four back.
-
-**To do.** The library: the `AdjShelves` description of section 1.6 of
-[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#16-adjustable-shelves).
-
-**Status.** Open, not reported to the library development team.
-
-**Test.** `edit-add-subarticle-look-inside`: the agent adds no `AdjShelves` to the cabinet that
-shows it.
-
-**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 41 (`edit-add-subarticle-look-inside`,
-bo-test `205cc9bc8`): `add-interior-fitting` of `AdjShelves` into the middle unit `a7271f1b`;
-`plan.xml` holds 12 `part_ShelfadjWood`, as many as the unedited plan of 08. Model-free:
-`.temp/result/repro-one-more-shelf-2026-10-24/replay.mjs`.
-
 ## 15. The shelf descriptor names no format
 
 **Problem.** The number of adjustable shelves cannot be set. `AdjShelves` carries no input for it,
@@ -752,8 +723,9 @@ and the library spaces its shelves over the free height. The only attribute that
 `HTB60` and by `me_ShelfadjMultiple01`, names no format. A request for one more adjustable shelf
 therefore cannot be met.
 
-**Cause.** The desc "Position and quantity of the adjustable shelf via descriptor" gives neither the
-format nor an example.
+**Cause.** The desc explains the default spacing for an empty descriptor but gives neither the
+format nor an example: it contains the placeholder "the format, with an example (to be named by
+the library)".
 
 **How the library behaves.** Checked model-free on bo-test: `change-module-attribute` of
 `mod_ShelfadjDescriptor` on the door module `mf_Door` of the middle `HTB60` with `5`, `5x`, `5*` and
@@ -766,7 +738,8 @@ calculation.
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#211-shelf-descriptor),
 completed once the library development team names the format.
 
-**Status.** Open, not reported to the library development team.
+**Status.** The proposed text is in the library (section 2.11), including its placeholder. Open:
+the actual format and an example from the library development team.
 
 **Test.** With the format known, `edit-add-subarticle-look-inside`: the middle cabinet shows five
 adjustable shelves.
@@ -801,13 +774,15 @@ second appliance in the placeholder niche, or rule the selection out (verified o
 
 **To do.** The library: build the second appliance in the equipment niche of `HOTS2AB60`, or rule
 the microwave out of `mod_OvenId2` on the single-niche units (an `Invalid` entry in its verified
-options, D107). Meanwhile the proposed desc of `HOTS2AB60` in
+options, D107). The desc of `HOTS2AB60` in
 [section 1.7](../../docs/library-information/suggested-library-changes.md#17-tall-oven-housing) and
 of `mod_OvenId1` to `mod_OvenId3` in
 [section 2.12](../../docs/library-information/suggested-library-changes.md#212-oven-article-codes)
 tell the agent that the unit carries one built-in appliance.
 
-**Status.** Open, not reported to the library development team.
+**Status.** Done in the library: the desc of `HOTS2AB60` (section 1.7) and of `mod_OvenId1`,
+`mod_OvenId2` and `mod_OvenId3` (section 2.12). Open, not reported to the library development team:
+the missing second appliance and its verified options.
 
 **Test.** `image-kitchen-back-right-corner`: the tall unit at the far end of the long leg carries
 the microwave above the oven, or the answer reports that the library cannot build it.

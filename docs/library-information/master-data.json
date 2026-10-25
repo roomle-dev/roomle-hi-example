@@ -7095,7 +7095,7 @@
     {
       "id": "mod_Width",
       "name": "Width     ",
-      "desc": "Width of the element",
+      "desc": "Width of the element. Set it to a width the library calculates for the article. Under 300 mm, the library does not calculate the plinth of a base unit: fill the gap with a filler panel (15 cm) or a pull-out unit.",
       "isMain": true,
       "group": "Global",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/16281d64-564d-43a7-a669-1073a5ac0581_width.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=cH9tWN%2FIL7qREhdmV1e0Nry2QBupUerICjTod7Njb8k%3D",
@@ -8396,7 +8396,7 @@
     {
       "id": "mod_CreateBacksplash",
       "name": "Create backsplash",
-      "desc": "Adds the contour for the backsplash and also starts generating the backsplashes.",
+      "desc": "Adds the contour for the backsplash and also starts generating the backsplashes. Where the library cannot calculate the backsplash, the result names it in notLoaded; report it as not built.",
       "isMain": false,
       "group": "GenerationMethod",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/d729f7b7-ec57-4943-97e6-b115aea39b07_backsplash.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=ENXYJBfXlVVKepdYp%2F7OlaweW5VZGGDW04b1lzCWoSc%3D",
@@ -9420,7 +9420,7 @@
     {
       "id": "mod_ShelfadjDescriptor",
       "name": "Descriptor",
-      "desc": "Position and quantity of the adjustable shelf via descriptor",
+      "desc": "Position and quantity of the adjustable shelves via descriptor: the format, with an example (to be named by the library). Empty: the library spaces its shelves over the free height of the compartment.",
       "isMain": false,
       "group": "Carcase | Shelfadj",
       "type": "Text",
@@ -9724,7 +9724,7 @@
     {
       "id": "mod_OvenId1",
       "name": "Article code 1",
-      "desc": "Article code of the oven",
+      "desc": "Article code of the built-in appliance (oven or microwave) the unit carries.",
       "isMain": true,
       "group": "Oven",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/c5bc8601-88fa-45e2-91d1-9fc19288ff29_oven.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=PY9iiEz4NuFAxaxIZjWsaQ%2Fr0g0xKS2ZISi2OSr2cYA%3D",
@@ -9846,7 +9846,7 @@
     {
       "id": "mod_OvenId2",
       "name": "Article code 2",
-      "desc": "Article code of the oven",
+      "desc": "Article code of a second built-in appliance. A unit with one appliance niche builds only its first code; a second code is accepted but not built.",
       "isMain": true,
       "group": "Oven",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/c5bc8601-88fa-45e2-91d1-9fc19288ff29_oven.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=PY9iiEz4NuFAxaxIZjWsaQ%2Fr0g0xKS2ZISi2OSr2cYA%3D",
@@ -9914,7 +9914,7 @@
     {
       "id": "mod_OvenId3",
       "name": "Article code 3",
-      "desc": "Article code of the oven",
+      "desc": "Article code of a third built-in appliance. A unit with one appliance niche builds only its first code; a further code is accepted but not built.",
       "isMain": true,
       "group": "Oven",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/c5bc8601-88fa-45e2-91d1-9fc19288ff29_oven.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=PY9iiEz4NuFAxaxIZjWsaQ%2Fr0g0xKS2ZISi2OSr2cYA%3D",

@@ -26,7 +26,6 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 103 | [A unit on top of a follower in another group stays behind when the row below moves](#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 107 | [A discarded exchange names the root module id of the unit it would have put in](#107-a-discarded-exchange-names-the-root-module-id-of-the-unit-it-would-have-put-in) | defect | roomle-ui `_stagedFailures`, `newLibraryFailures` (`hi-tools.ts`, `hi-tool-payload.ts`) | low | | |
 | 108 | [The glue logic holds implementation of the Planning Assistant](#108-the-glue-logic-holds-implementation-of-the-planning-assistant) | refactoring | roomle-ui HI tools (`hi-tools.ts`, `hi-tool-*.ts`); `glue-logic.ts` keeps the API functions | medium | | |
@@ -35,37 +34,15 @@ never drop the agent's content silently.
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
 
-## 103. A unit on top of a follower in another group stays behind when the row below moves
-
-**Problem.** A floor unit carries a wall unit of another group, and a unit stands on top of that wall
-unit in the wall unit's group. A row edit that moves the floor unit moves the wall unit with it, but
-the unit on top stays where it was and stands apart from the wall unit.
-
-**Cause.** `groupsFollowingTheirCarriers` (roomle-ui `hi-root-module-arrangement.ts:396-457`) moves
-only the units of other groups that a root of the edited group carries directly:
-`carriersOfUnitsInOtherGroups` (`:364-378`) leaves out a unit carried by a unit of its own group.
-`_moveUnitsOfOtherGroupsWithTheirCarriers` (`hi-tools.ts:1314-1348`) loads the follower group without
-rearranging it, so its docking does not take the unit on top along. Within the edited group,
-`moveUnitsAboveWithTheirCarriers` moves the units bottom-up through such a stack (`:241-250`).
-
-**To do.** roomle-ui: move the units of the follower group that stand on a moved follower with it,
-bottom-up, as `moveUnitsAboveWithTheirCarriers` does within the edited group.
-
-**Test.** roomle-ui `hi-root-module-arrangement` tests: a floor unit moved by 600 mm takes a wall unit
-of another group and the unit on top of that wall unit along.
-
-**Reproduce.** No run yet: a floor unit in one group, a wall unit with a unit on top in another group
-above it; `insert-article-into-group` before the floor unit.
-
 ## 104. A unit of another group keeps its height when its carrier changes height
 
 **Problem.** A row edit puts a carrier of another height where the old one stood — a 900 mm base unit
 in place of a 720 mm one. A unit of another group that stood on the old carrier keeps its height and
 overlaps the new carrier by the difference.
 
-**Cause.** `groupsFollowingTheirCarriers` (roomle-ui `hi-root-module-arrangement.ts:408-423`) moves a
+**Cause.** `groupsFollowingTheirCarriers` (roomle-ui `hi-root-module-arrangement.ts:417-432`) moves a
 unit by the change of its carrier's origin and rotation only. A carrier of another height at the same
-origin gives no move, and the unchanged-pose check (`:445`) drops the unit. Within the edited group,
+origin gives no move, and the unchanged-pose check (`:470`) drops the unit. Within the edited group,
 `moveUnitsAboveWithTheirCarriers` corrects a unit by the change of its carrier's docking top
 (`:285-300`).
 

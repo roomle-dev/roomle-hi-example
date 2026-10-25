@@ -129,8 +129,6 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
-| [A discarded group of a create is reported to the host as added and then deleted](bug-analysis/discarded-create-host-notifications.md) | Fixed — release verification pending | 2026-10-25 |
-| [Discarded creates report root identities the call never sent](bug-analysis/discarded-create-root-identities.md) | Fixed — release verification pending | 2026-10-25 |
 
 ### Feature Analyses
 

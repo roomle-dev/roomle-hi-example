@@ -26,38 +26,12 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 107 | [A discarded exchange names the root module id of the unit it would have put in](#107-a-discarded-exchange-names-the-root-module-id-of-the-unit-it-would-have-put-in) | defect | roomle-ui `_stagedFailures`, `newLibraryFailures` (`hi-tools.ts`, `hi-tool-payload.ts`) | low | | |
 | 108 | [The glue logic holds implementation of the Planning Assistant](#108-the-glue-logic-holds-implementation-of-the-planning-assistant) | refactoring | roomle-ui HI tools (`hi-tools.ts`, `hi-tool-*.ts`); `glue-logic.ts` keeps the API functions | medium | | |
+| 111 | [A discarded new group of a create names its root modules by ids the call never sent](#111-a-discarded-new-group-of-a-create-names-its-root-modules-by-ids-the-call-never-sent) | defect | roomle-ui `_loadGroupLayout` (`hi-tools.ts`) | low | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 107. A discarded exchange names the root module id of the unit it would have put in
-
-**Problem.** When the library cannot calculate the unit an `exchange-root-module` puts in, the tools
-discard the change before the load (D106) and the error names the new root module by the id the
-staged copy gave it. That id is never in the plan: the agent sent the id of the unit it wanted to
-exchange and reads another one it cannot find. A discarded `merge-article-into-group` and
-`insert-article-into-group` name their new unit the same way.
-
-**Cause.** `newLibraryFailures` (roomle-ui `hi-tool-payload.ts`) names a root module by its id after
-the calculation, and the staged change builds the new unit with a fresh id (`_expandArticlePick`,
-`_stagedFailures`, `hi-tools.ts`). Only a create maps the plan's ids back to the call
-(`groupLabels`, the groups as `posGroups[i]`); no row edit maps a new root module to the root module
-it replaces or to the article it adds.
-
-**To do.** roomle-ui: the staged verdict of `exchange-root-module` names its new root module by the
-`rootModuleId` of the call; `insert-article-into-group` and `merge-article-into-group` name it as the
-new unit with its article.
-
-**Test.** roomle-ui `__tests__/hi-tools-test.ts`: a discarded exchange names the new root module by
-the `rootModuleId` of the call; a discarded merge names the new unit with its article.
-
-**Reproduce.** In the example page with a planner that discards a change before the load (roomle-ui
-`feat/hi-mcp`, `--dev`), model-free: create two `OTB60` side by side, then `exchange-root-module` of
-the second with `OTB60` and the attributes `mod_Width` 900 and `mod_DoorDirectionSelection` `Left`;
-the error names a root module id the plan does not hold.
 
 ## 108. The glue logic holds implementation of the Planning Assistant
 
@@ -96,3 +70,33 @@ implementation in the tools; the UI's behaviour is unchanged. Update the package
 
 **Reproduce.** `grep` the moved methods in roomle-ui `packages/`: outside `glue-logic.ts`, only
 `hi-tools.ts` and `hi-tool-commands.ts` call them.
+
+## 111. A discarded new group of a create names its root modules by ids the call never sent
+
+**Problem.** When the library cannot calculate a new group of `create-or-replace-groups`, the tools
+discard it before the load (D106), and the error and `notLoaded[].rootIds` name its root modules,
+and the group, by the ids the planner gave them: "posGroups[0]: nothing was changed - the library
+could not calculate root module 'id0002' (cabinet-600) of group 'id0003' - …". The call sent the
+root `u1` and no group id, and the plan never holds either id. A root module a replace adds is
+named the same way.
+
+**Cause.** The glue logic gives every root module of a new group, and a root module a replace adds,
+a fresh id (`_replaceRootModuleIdsAndRemapDockedRoots`, roomle-ui `glue-logic.ts:930`, `:1169`).
+`_loadGroupLayout` (`hi-tools.ts`) calls `newLibraryFailures` without names for them. The staged
+row edits name the units they add through `newRoots` of `newLibraryFailures`; the create does not.
+
+**To do.** roomle-ui `hi-tools.ts`, `_loadGroupLayout`: pair the root modules of a built group with
+the roots of `layout.posGroups[outcome.index]` — a root kept in a replace by its id, the others by
+their order when the articles line up, as `loadedRootOf` (`hi-tool-attributes.ts`) does after the
+load — and hand the call's root ids to `newLibraryFailures` as `newRoots`; name a new group the plan
+does not hold by its `posGroups[i]` prefix alone. An article with several root modules expands into
+roots the call did not name (`<id>:<index>`), which keep their ids. No change to `glue-logic.ts`.
+
+**Test.** roomle-ui `__tests__/hi-tools-test.ts`:
+`it('discards a new group of a create the library could not calculate before the load and builds the others')`
+names `u1` in the error and in `notLoaded[].rootIds` instead of any id; a replace that adds a root
+the library cannot calculate names it by the call's id.
+
+**Reproduce.** Model-free, unit level: `create-or-replace-groups` with one new group, root `u1`, that
+the library cannot calculate (the setup of the create discard test) names
+`root module 'id0002' (cabinet-600) of group 'id0003'`.

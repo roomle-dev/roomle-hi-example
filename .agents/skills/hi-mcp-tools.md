@@ -332,7 +332,9 @@ planner has loaded the result. A command after which the library cannot calculat
 a group that it could before changes nothing: the tools calculate the change and discard it before
 the load, the group stays as it was, and the result is an error — "<tool>: nothing was changed - the
 library could not calculate root module '…' (…) of group '…' - <first line of the library's
-message>. Change the failing values or replace the article, and send the call again." (D106); a
+message>. Change the failing values or replace the article, and send the call again." (D106) — the
+new root module of `exchange-root-module` named by the call's `rootModuleId`, the new unit of
+`merge-article-into-group` and `insert-article-into-group` "the new root module (…)"; a
 failure a follow-up calculation after the load leaves is named in `libraryFailures` and kept. Attribute commands also wait for the kernel's planning-situation
 callback and its calculated follow-up load; their library-change feedback reads the actual
 placement's attributes, including a height the library adjusts:

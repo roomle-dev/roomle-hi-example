@@ -10,9 +10,6 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| 83 — Where no free stretch of the wall fits the group, it is placed over existing furniture and reported | Served text: say what to do when the wall the user names has no free stretch of the requested width | low |
-| 98 — A row with a worktop placed into a corner stands 10 mm off the wall | roomle-ui: replay the run's create, find the step that leaves the row off the wall and fix it | low |
-| 103 — A unit on top of a follower in another group stays behind when the row below moves | roomle-ui: move the units on top of a follower with it, bottom-up, as within the edited group | low |
 | 104 — A unit of another group keeps its height when its carrier changes height | roomle-ui: apply the change of the carrier's docking top to the units of other groups | low |
 | 107 — A discarded exchange names the root module id of the unit it would have put in | roomle-ui: name the new root module of a discarded exchange, merge or insert by the `rootModuleId` of the call or as the new unit with its article | low |
 | 108 — The glue logic holds implementation of the Planning Assistant | roomle-ui: move the methods only the HI tools reach out of `glue-logic.ts` into the tools; the glue logic keeps the API functions, which delegate | medium |

@@ -36,7 +36,10 @@ without the overexposure of the top light.
 **Test.** `image-planning-right-wall`: the object image shows the worktops in the colour of
 `mod_CountertopColor`.
 
-**Reproduce.** `mcp-test-2026-10-21_12-49-36`: gpt-6-astra 66 (`image-planning-right-wall`, plan snapshot `ps_sgx7tozllj1jw7z1hdbwnkv3r2xggkd`, bo-test): light worktops on the wall run and the island in the object image, dark marble 324 with the program Style in `order-data.json`.
+**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 71 (`image-only-no-text`,
+plan snapshot `ps_sv5ngzarx0q25sl3eevrxo42g3cdrcv`, bo-test): the main run's worktop is
+light/white in the saved object/top views while the opposite top remains brown. Both generated
+worktops carry Tiepolo walnut 216 in `plan.xml`; the model's group attributes also request 216.
 
 ## 2. The water connection is an installation element only through a planner override
 

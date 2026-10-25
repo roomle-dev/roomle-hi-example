@@ -48,7 +48,7 @@ library cannot calculate.
 | # | Issue | Library | Responsible | Status | Priority |
 |---|---|---|---|---|---|
 | 1 | [Handleless fronts done with a handle attribute](#1-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | the handle design descs done | medium — handled articles where the user asked for handleless ones |
-| 2 | [Flip-lift wall cabinets with sizes the library cannot calculate](#2-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; the heights not reported | low — the cabinets are not built, the agent needs a second create |
+| 2 | [Flip-lift wall cabinets with sizes the library cannot calculate](#2-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; supported heights and width/opening combinations not reported | low — the cabinets are not built, the agent needs a second create |
 | 3 | [End panels with a plain upright colour the library cannot calculate](#3-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the upright descs done; the colour value descs not done; the calculation error not reported | low — the end panels are not built, the agent needs one or two extra calls |
 | 6 | [Articles with two doors that do not say how their doors stand](#6-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
 | 7 | [Tall-unit descriptions omit width-dependent door arrangements](#7-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | the `HTB60` desc done; the shared resize guidance open; the calculation error not reported | medium — a widened unit keeps an incompatible single-door hinge input |
@@ -71,6 +71,8 @@ library cannot calculate.
 | 13 | [A drawer sideboard lowered to 720 mm the library cannot calculate](#13-a-drawer-sideboard-lowered-to-720-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the drawer sideboard is not built, the agent needs a second create |
 | 16 | [A built-in microwave selected on the tall oven housing is not built](#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built) | HOMAG Furniture_Smith | HOMAG library development team | the housing and appliance-code descs done; the missing second appliance not reported | partly | medium — the agent reports an appliance that is not in the plan |
 | 17 | [A Bora hob on the base hob cabinet UKS2A90 the library cannot calculate](#17-a-bora-hob-on-the-base-hob-cabinet-uks2a90-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the unit is not built, the agent replaces it |
+| 18 | [A wide paired-door wall cabinet with a push opening the library cannot calculate](#18-a-wide-paired-door-wall-cabinet-with-a-push-opening-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no | low — the requested upper cabinet needs a replacement |
+| 19 | [A traditional front program with a retained plain colour the library cannot calculate](#19-a-traditional-front-program-with-a-retained-plain-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the sequencing desc proposed; calculation error not reported | partly | medium — switching the program needs an extra colour change |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -150,20 +152,31 @@ their own; they name no range, and neither do `mod_Height` and `mod_Depth`.
 The fitting does not take the height; the depth 561 calculates. `mod_Height` has no verified
 options, so the library accepts the height it cannot calculate: a library bug (D99).
 
+A 1500 mm-wide `OSKB90` at its nominal 720 mm height and 350 mm depth with
+`mod_OpeningType` `PushToOpenManual` also fails Error 14023
+(`SHF - 684 - 1462 - 322 - PushToOpenManual`). The width/opening combination is accepted
+without a verified-range correction; whether the width, opening type or their combination causes
+the missing entry is not isolated. Switching that wide flap to handle strip 40 gives
+`Unexpected token 'N', "None" is not valid JSON`.
+
 **To do.** The library: calculate the flap cabinets at every height `mod_Height` accepts, or declare
 the heights the flap fitting takes in `tab_FlipliftSettings` as the verified range of `mod_Height`
-per flap cabinet (D107); with them the `FUNCTION` lines of the flap wall cabinets can name the sizes
-the flap takes. Then check that the served text needs nothing more.
+per flap cabinet (D107), and establish and expose the supported width/opening combinations; with
+them the `FUNCTION` lines of the flap wall cabinets can name the sizes the flap takes. Then check that the served text needs nothing more.
 
 **Status.** Done in the library: the `AI_SELECTION_HINT` of `OSKB60`, `OSKB90`, `OFKB60` and
 `OFKB90` — a flap cabinet at the height and depth it comes with, a wall cabinet with doors for glass
 fronts or another height or depth (section 1.3 of
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#13-flap-wall-cabinets)).
-Open, not reported: the heights the flap fitting takes.
+Open, not reported: the supported heights and width/opening combinations.
 
-**Test.** `image-planning-right-wall`: the first create builds the cabinets above the tall units.
+**Test.** `image-only-no-text-2`: the first create builds the requested upper cupboards, or
+verified options guide the agent to compatible dimensions and opening types.
 
-**Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 50 (`image-planning-right-wall`, the `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` with `mod_Height` 360 not calculated, Error 14023 (`tab_FlipliftSettings`); the model exchanged them for `O2TB90`.
+**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 72 (`image-only-no-text-2`, bo-test):
+the first create sends `OSKB90` with `mod_Width` 1500 and `PushToOpenManual` at nominal height/depth,
+which fails Error 14023; the second create uses handle strip 40 and fails the JSON parse. The
+fourth create uses nominal-width open and hinged wall units and builds.
 
 ## 3. End panels with a plain upright colour the library cannot calculate
 
@@ -594,10 +607,11 @@ team until the replay places the cause in the library.
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
 
-**Reproduce.** `mcp-test-2026-10-25_15-24-34`, gpt-6-astra 07 (`image-kitchen-left-wall`, local
-roomle-ui): the `change-group-attribute` that enables the backsplash answers "nothing was changed" —
-Error 14034 (`part_Backsplash - undefined - undefined - undefined - 620 - 110`); the model switches
-the backsplash off and the answer reports the omission.
+**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 73
+(`image-kitchen-tall-column-right-corner`, bo-test): `change-group-attribute` enables
+`mod_CreateBacksplash` on group `b8e61d93-d008-42fb-9910-4936b079a906`; generated
+`mr_Backsplash` fails Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1761 - 110`).
+The transaction is not applied and the final answer names the missing backsplash.
 
 ## 11. A handle strip the library cannot calculate
 
@@ -641,11 +655,10 @@ the handle position is known.
 `kitchen-oven-fridge-sink-corner`: a kitchen with a handle strip is built at the first create, or
 the agent picks a handle the library keeps and calculates.
 
-**Reproduce.** `mcp-test-2026-10-25_15-24-34`, gpt-6-astra 10 (`image-only-no-text`, local
-roomle-ui): the create's group attributes are not set — Error 22025 (a HandleStripe selected, the
-HandlePosType not valid) on the handled roots and `Unexpected token 'N', "None" is not valid JSON`
-on the base units; two `change-group-attribute` calls with handle attributes fail the same way
-before the colours land without handles.
+**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 71 (`image-only-no-text`, bo-test):
+both groups' finish/handle transactions fail with HandleStripe Error 22025 and the base-unit
+`None` JSON parse error. Repeated stainless-steel handle changes fail without changing the plan;
+`ChromedPolished` changes the curved bow to rectangular handle 60 and calculates.
 
 ## 12. A worktop on the tall units from the group's countertop switch
 
@@ -709,11 +722,10 @@ With the heights known, the proposed desc of `SB_US600` naming them goes into
 **Test.** `sideboard-living-room-front-wall`: the first create builds every sideboard the agent
 sends, or the agent keeps a drawer sideboard at a height the library takes.
 
-**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 60 (`sideboard-living-room-front-wall`,
-bo-test `205cc9bc8`, the first `create-or-replace-groups`): root `side-middle` `SB_US600` with
-`mod_Height` 720 (`cbbfee92-24f0-45c3-b2c0-1d593c5fce81`) in the group
-`32a54a57-4e53-48b4-b406-d415ac281f51`, not calculated, Error 13008; the model undid the create and
-sent it again with three `SB_UB600`.
+**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 62
+(`sideboard-living-room-front-wall`, bo-test): the first create sends root `sideboard-middle`,
+`SB_US600` with `mod_Height` 720, and fails Error 13008 (`Legrabox - 322 - 30.5`) before loading.
+The second create replaces it with `SB_UB600` at the same height and builds the three-cabinet row.
 
 ## 15. The shelf descriptor names no format
 
@@ -821,6 +833,81 @@ proposed — the unit and the hob are both wanted.
 **Test.** `image-planning-right-wall`: the island carries its hob unit with the Bora hob at the
 first create, without a replacement.
 
-**Reproduce.** `mcp-test-2026-10-25_15-24-34`, gpt-6-astra 09 (`image-planning-right-wall`): the
-first create's island sends `UKS2A90` with `mod_HobSupplier` Bora and `mod_HobId` PUXU — the unit
-is named in `notLoaded` with Error 13008.
+**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 70 (`image-planning-right-wall`, bo-test):
+the first two island creates send `UKS2A90` with `mod_HobSupplier` Bora and `mod_HobId` PUXU;
+the root fails Error 13008 (`Legrabox - 533 - 0`) with both no-handle and curved-bow settings.
+The third create uses `UKB2A90` with the same hob and builds.
+
+## 18. A wide paired-door wall cabinet with a push opening the library cannot calculate
+
+**Library.** HOMAG Furniture_Smith. **Responsible.** HOMAG library development team.
+
+**Problem.** A 1500 mm-wide, 600 mm-high `O2TB90` with paired doors, no handle and
+`PushToOpenManual` cannot calculate. The create reports Error 15002 in
+`tab_HingePosition` and leaves the plan unchanged. The agent uses nominal-width hinged upper
+cabinets instead of the wide upper block of the image.
+
+**Cause.** The hinge lookup has no entry for `WallUnit`, `StandardPanel01`, front height 600,
+front width 750, `NoFingergrip` above and below, handle design 10 and handle position
+`HandleLine`. The request passes the tool's library-backed value checks without a range or
+invalid-value correction. Which dimension or opening combination needs another hinge configuration
+is not isolated; this is an accepted configuration the library cannot calculate (D99), separate
+from the door-direction lookup of issue 9.
+
+**How the library behaves.** The failing third create of run 72 sends `mod_Width` 1500,
+`mod_Height` 600, `mod_DoorDirectionSelection` `LeftRight`, `mod_HandleDesign` 10 and
+`mod_OpeningType` `PushToOpenManual` on `O2TB90`. The fourth create uses a nominal
+`O2TB90` and `OTB60` with handles, and builds. The supported dimensions and opening
+combinations between those configurations are not established.
+
+**To do.** The library: calculate each accepted width, height and opening configuration, or expose
+the supported combinations through verified options/ranges before calculation. Establish the
+missing hinge configuration before proposing article-description limits; no exact width limit
+or new desc is inferred from this one failing combination.
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `image-only-no-text-2`: a supported wide upper block builds on the first create, or
+the library's verified options guide the agent to compatible nominal-width units.
+
+**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 72 (`image-only-no-text-2`,
+bo-test), the third `create-or-replace-groups`: root `upper`, `O2TB90` with the values
+above, Error 15002. Its payload and diagnostic are in `run.json` and `planner-calls.json`.
+
+## 19. A traditional front program with a retained plain colour the library cannot calculate
+
+**Library.** HOMAG Furniture_Smith. **Responsible.** HOMAG library development team.
+
+**Problem.** Selecting `mod_FrontProgram` `Tradition` on a kitchen whose front colour is
+Light grey 178 cannot calculate its doors and drawers. The library returns Error 14036 in
+`tab_PanelWoodFrameConstruction`; the attribute transaction is not applied.
+
+**Cause.** The traditional frame lookup receives `TraditionFrame01 - NoGrain - NoGrain -
+WoodVertical` for both Door and Drawer. A program change keeps the incompatible plain colour
+without supplying a compatible wood colour through conflict resolution. The tool's value check
+permits the request, so the failure is an accepted library configuration (D99).
+
+**How the library behaves.** Light grey 178 with the program `Tradition` supplied in the create
+switches the program to `Classic`. Selecting `Tradition` alone afterwards fails Error 14036.
+Setting Maple 230, then selecting `Tradition`, calculates the framed fronts. Setting the
+program and wood colour together can resolve back to `Nature`, so the measured order matters.
+The supported full colour range of `Tradition` is not established by this run.
+
+**To do.** The library: selecting `Tradition` resolves its colour conflict to a compatible
+wood colour, or exposes the incompatible combination in verified options before calculation.
+Apply the proposed sequencing guidance of `Tradition` in
+[section 2.2](../../docs/library-information/suggested-library-changes.md#22-front-program),
+which keeps the compatibility information in library data.
+
+**Status.** The desc is proposed, not applied. The calculation error is not reported to the
+library development team.
+
+**Test.** `image-kitchen-tall-column-right-corner`: switching to the supported traditional
+frame style calculates or resolves the colour conflict before any failed transaction, with an
+accurate final answer about available colours.
+
+**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 73
+(`image-kitchen-tall-column-right-corner`, bo-test): the first `change-group-attribute`
+sets `mod_FrontProgram` `Tradition` on group `b8e61d93-d008-42fb-9910-4936b079a906`,
+whose roots retain front colour 178, and fails Error 14036. The same program calculates after
+front colour 230 is applied.

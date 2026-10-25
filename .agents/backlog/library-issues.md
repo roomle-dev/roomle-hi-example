@@ -12,13 +12,12 @@ that data lacks information, the fix is in the library, and the issue is here. W
 is intended; an issue asks for information, not for other geometry. A calculation error is no
 intended behaviour: a value the library accepts must calculate, so a calculation that fails for it
 is a library bug and is tracked here; a calculation error caused by an invalid attribute value the
-tools sent is an MCP issue in the [planning backlog](README.md#planning-by-the-mcp-server) (D99 of
+tools sent is an MCP issue in [mcp-issues.md](mcp-issues.md) (D99 of
 [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)). Each issue names the library,
 the problem, its cause, how the library behaves, the to-do for the library, the test, whether it is
 reported to the library development team, and how to reproduce it. MCP, chat and planner issues are
-tracked in the [planning backlog](README.md#planning-by-the-mcp-server). The **Status** of an issue
-says what the library already carries of it; the issue leaves this document when the library
-carries all of it. The description
+tracked in [mcp-issues.md](mcp-issues.md). The **Status** of an issue says what the library already
+carries of it; the issue leaves this document when the library carries all of it. The description
 texts proposed to the library are in
 [`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md), which
 keeps every suggested text, applied in the library or not.

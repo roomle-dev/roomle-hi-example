@@ -513,10 +513,9 @@ jumping to the run sections, the images embedded at most 640 px wide (about 3 MB
 
 ### 7. Open issues
 
-Update the [planning backlog](../backlog/README.md#planning-by-the-mcp-server). Numbered server
-issues go in `.agents/backlog/mcp-issues.md`: create that document when needed, index it in the
-backlog and master README, and delete it when empty. The backlog holds only what is still to be
-done — no history of runs, findings or fixes.
+Update [mcp-issues.md](../backlog/mcp-issues.md). Keep the document, its guidance, overview table
+and index links when no issues are open, ready for new issues. The backlog holds only what is
+still to be done — no history of runs, findings or fixes.
 
 - add every bug and hardening candidate of the report that is not listed yet: the problem in the
   present tense, the cause in the code, the to-do, its test, and a **Reproduce** line naming the run

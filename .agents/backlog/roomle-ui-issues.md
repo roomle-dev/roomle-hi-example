@@ -3,7 +3,7 @@
 > **Type**: Backlog — defects of the roomle-ui planner that the MCP prompt tests show
 > **Domain**: roomle-ui outside the HI tool commands — the renderer and the planner core; the HI
 > tool commands (`hi-tool-commands.ts` and the modules they use) are tracked in
-> the [planning backlog](README.md#planning-by-the-mcp-server)
+> [mcp-issues.md](mcp-issues.md)
 > **Maintained by**: the evaluation of the MCP prompt tests ([testing skill](../skills/hi-mcp-testing.md))
 
 These defects lie in roomle-ui, not in the MCP server, the chat or the library data: they change

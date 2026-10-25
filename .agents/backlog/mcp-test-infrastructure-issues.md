@@ -2,7 +2,7 @@
 
 > **Type**: Backlog — what is still to be done about running the tests themselves
 > **Domain**: `.agents/scripts/run-hi-mcp-tests.js`, `run-hi-mcp-prompt.js`, `.agents/skills/hi-mcp-testing.md` — the process of running "test the mcp", not what the runs find about planning
-> **Maintained by**: the analyses of the test infrastructure; what the runs find about planning is in the [planning backlog](README.md#planning-by-the-mcp-server)
+> **Maintained by**: the analyses of the test infrastructure; what the runs find about planning is in [mcp-issues.md](mcp-issues.md)
 
 Each issue names the problem, the cause, the to-do and its test. An issue leaves this document when
 its fix is in the code.

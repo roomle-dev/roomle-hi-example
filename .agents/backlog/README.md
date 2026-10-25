@@ -5,7 +5,8 @@ per item. The backlog holds open work only. An item leaves it when its fix is in
 
 ## Planning by the MCP server
 
-Details, causes, tests and how to reproduce are in the document each row links.
+Details, causes, tests and how to reproduce: [mcp-issues.md](mcp-issues.md), or
+the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|

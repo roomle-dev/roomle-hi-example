@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [discarded-exchange-names-staged-root-module-id.md](discarded-exchange-names-staged-root-module-id.md) | Open | [mcp-issues.md #107](../backlog/mcp-issues.md#107-a-discarded-exchange-names-the-root-module-id-of-the-unit-it-would-have-put-in) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

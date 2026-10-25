@@ -26,7 +26,7 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 107 | [A discarded exchange names the root module id of the unit it would have put in](#107-a-discarded-exchange-names-the-root-module-id-of-the-unit-it-would-have-put-in) | defect | roomle-ui `_stagedFailures`, `newLibraryFailures` (`hi-tools.ts`, `hi-tool-payload.ts`) | low | | |
+| 107 | [A discarded exchange names the root module id of the unit it would have put in](#107-a-discarded-exchange-names-the-root-module-id-of-the-unit-it-would-have-put-in) | defect | roomle-ui `_stagedFailures`, `newLibraryFailures` (`hi-tools.ts`, `hi-tool-payload.ts`) — [analysed](../bug-analysis/discarded-exchange-names-staged-root-module-id.md): the verdict names the new unit of the staged copy by the id `_expandArticlePick` drew for it, because `_stagedFailures` passes no names for the units its change adds; a create names the root modules of a discarded new group the same way | low | | |
 | 108 | [The glue logic holds implementation of the Planning Assistant](#108-the-glue-logic-holds-implementation-of-the-planning-assistant) | refactoring | roomle-ui HI tools (`hi-tools.ts`, `hi-tool-*.ts`); `glue-logic.ts` keeps the API functions | medium | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
@@ -41,11 +41,14 @@ staged copy gave it. That id is never in the plan: the agent sent the id of the 
 exchange and reads another one it cannot find. A discarded `merge-article-into-group` and
 `insert-article-into-group` name their new unit the same way.
 
-**Cause.** `newLibraryFailures` (roomle-ui `hi-tool-payload.ts`) names a root module by its id after
-the calculation, and the staged change builds the new unit with a fresh id (`_expandArticlePick`,
-`_stagedFailures`, `hi-tools.ts`). Only a create maps the plan's ids back to the call
-(`groupLabels`, the groups as `posGroups[i]`); no row edit maps a new root module to the root module
-it replaces or to the article it adds.
+**Cause.** [Analysed](../bug-analysis/discarded-exchange-names-staged-root-module-id.md).
+`newLibraryFailures` (roomle-ui `hi-tool-payload.ts:351-352`, `rootModulesLabel` at `:244-252`) names a
+root module by its id in the calculated copy, and the staged change builds the new unit with a fresh
+id (`_expandArticlePick`, `hi-tools.ts:1445`). `_stagedFailures` (`:575-601`) knows the units its
+change adds but passes no names for them; `newLibraryFailures` takes names for groups only
+(`labels`). A create names its groups as `posGroups[i]`, but the root modules of a discarded new
+group, and its group id in the message, are the calculation's ids as well (`_loadGroupLayout`,
+`:522`).
 
 **To do.** roomle-ui: the staged verdict of `exchange-root-module` names its new root module by the
 `rootModuleId` of the call; `insert-article-into-group` and `merge-article-into-group` name it as the

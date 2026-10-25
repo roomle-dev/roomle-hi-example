@@ -692,7 +692,7 @@ and `mod_Depth` are of type Dim without `selections`, like 21 of the 24 Dim attr
 (`mod_PlinthAreaHeight` has 9 values, `mod_IslandBackwallWidth` and `mod_GroupWidth` one each —
 these come with the vocabulary section of improvement 1). There is nothing for the catalog to
 pass through, and the sizes a flip-lift wall cabinet takes are the library's: its descs, library
-issue 64 ([library-issues.md](../backlog/library-issues.md)). The duplicated `notLoaded` sentences
+issue 2 ([library-issues.md](../backlog/library-issues.md)). The duplicated `notLoaded` sentences
 of that case are improvement 6.
 
 ### 10.3 What improved

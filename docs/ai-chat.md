@@ -262,6 +262,14 @@ them (`.agents/scripts/run-hi-mcp-prompt.js`).
 - The key is in the page: anyone with the page open can read it in the browser.
   Acceptable for a local example on this machine, not for a hosted page.
 
+## Token usage
+
+The assistant logs input, output and total tokens for each submitted prompt in the browser console.
+The [test reports](test-prompts.md#token-counts-in-reports) show those counts per prompt and per test.
+They include all calls of the turn, including tools and the final answer. Coverage can be complete,
+partial or unavailable: a provider failure may leave some consumption unreported. Unknown counts
+are not zero. These are usage measurements, without a price calculation.
+
 ## Troubleshooting
 
 | Symptom | Cause and fix |

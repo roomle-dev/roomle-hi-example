@@ -520,6 +520,13 @@ test('extracts the facts of a single-model session', async (t) => {
       planSnapshotId: 'ps_run01',
       exitCode: 0,
       attempts: 1,
+      attemptDirs: ['gpt-test-a/01-alpha-create'],
+      usage: {
+        status: 'unavailable',
+        inputTokens: null,
+        outputTokens: null,
+        totalTokens: null,
+      },
       runErrors: [],
       dir: 'gpt-test-a/01-alpha-create',
       turns: undefined,
@@ -758,6 +765,109 @@ test('extracts and builds a multi-model session', async (t) => {
 
   assert.equal((report.match(/^## .+ — \d{2} /gm) || []).length, 4);
   assert.deepEqual(brokenLinks(report), []);
+});
+
+test('reports prompt and selected-test usage per model without counting archived attempts or resumed results twice', async (t) => {
+  const session = await multiModelSession(t);
+  const suite = JSON.parse(await readFile(join(session, 'tests.json'), 'utf8'));
+  suite.categories[0].tests[0].prompt = ['first', 'second', 'unsubmitted'];
+  await writeJson(session, 'tests.json', suite);
+  const results = JSON.parse(
+    await readFile(join(session, 'results.json'), 'utf8')
+  );
+  const selected = results.runs[0];
+  const archived = `${selected.dir}.attempt-1`;
+  selected.attempts = [archived, selected.dir];
+  await writeJson(session, 'results.json', results);
+  const usage = {
+    provider: 'azure',
+    model: 'resolved-model',
+    status: 'complete',
+    inputTokens: 1200,
+    outputTokens: 180,
+    totalTokens: 1380,
+  };
+  const run = JSON.parse(
+    await readFile(join(session, selected.dir, 'run.json'), 'utf8')
+  );
+  run.turns = [
+    { ...run.turns[0], prompt: 'first', usage },
+    {
+      ...run.turns[0],
+      prompt: 'second',
+      usage: {
+        ...usage,
+        inputTokens: 2400,
+        outputTokens: 220,
+        totalTokens: 2620,
+      },
+    },
+  ];
+  await writeJson(join(session, selected.dir), 'run.json', run);
+  await writeJson(join(session, archived), 'run.json', {
+    turns: [{ usage: { ...usage, totalTokens: 999999 } }],
+  });
+  const second = results.runs[2];
+  const other = JSON.parse(
+    await readFile(join(session, second.dir, 'run.json'), 'utf8')
+  );
+  other.turns[0].usage = {
+    ...usage,
+    inputTokens: 0,
+    outputTokens: 0,
+    totalTokens: 0,
+  };
+  await writeJson(join(session, second.dir), 'run.json', other);
+  const factsFile = join(session, 'facts.json');
+  await exec(process.execPath, [extract, session, factsFile]);
+  const original = await readFile(factsFile, 'utf8');
+  await exec(process.execPath, [extract, session, factsFile]);
+  assert.equal(await readFile(factsFile, 'utf8'), original);
+  const facts = JSON.parse(original);
+  assert.deepEqual(facts.runs[0].usage, {
+    status: 'complete',
+    inputTokens: 3600,
+    outputTokens: 400,
+    totalTokens: 4000,
+  });
+  assert.equal(facts.runs[0].turns[0].usage.model, 'resolved-model');
+  assert.equal(facts.runs[2].usage.totalTokens, 0);
+  await exec(process.execPath, [build, session]);
+  const report = await readFile(join(session, 'report.md'), 'utf8');
+  assert.ok(report.includes('| 1 | 1,200 | 180 | 1,380 | complete |'));
+  assert.ok(report.includes('| 2 | 2,400 | 220 | 2,620 | complete |'));
+  assert.ok(report.includes('| 3 | — | — | — | not run |'));
+  assert.ok(
+    report.includes(
+      '| Test total (selected attempt) | 3,600 | 400 | 4,000 | complete |'
+    )
+  );
+  assert.ok(report.includes(`[1](${archived}/console.log)`));
+  assert.ok(report.includes('| 1 | 0 | 0 | 0 | complete |'));
+  assert.ok(!report.includes('999,999'));
+});
+
+test('labels partial, unavailable and legacy usage in minimum, random and image reports', async (t) => {
+  const { session } = await singleModelSession(t);
+  const suite = JSON.parse(await readFile(join(session, 'tests.json'), 'utf8'));
+  await writeJson(session, 'tests.json', { ...suite, testSet: 'minimum' });
+  const path = join(session, 'gpt-test-a/02-beta-random');
+  const run = JSON.parse(await readFile(join(path, 'run.json'), 'utf8'));
+  run.turns[0].usage = {
+    status: 'partial',
+    inputTokens: 100,
+    outputTokens: null,
+    totalTokens: null,
+  };
+  await writeJson(path, 'run.json', run);
+  await exec(process.execPath, [extract, session, join(session, 'facts.json')]);
+  await exec(process.execPath, [build, session]);
+  const report = await readFile(join(session, 'report.md'), 'utf8');
+  assert.ok(report.includes('| Test total | 100 | — | — | partial |'));
+  assert.ok(report.includes('| Test total | — | — | — | unavailable |'));
+  assert.ok(report.includes('# HI MCP test — minimum set'));
+  assert.ok(report.includes('Random: beta'));
+  assert.ok(report.includes('## 03 Gamma image'));
 });
 
 test('fails explicitly when a required session file is missing', async (t) => {

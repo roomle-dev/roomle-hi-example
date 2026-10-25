@@ -338,6 +338,22 @@ node .agents/scripts/run-hi-mcp-prompt.js gpt-5-mini "$AZURE_GPT_KEY" "add a gro
 The runner stores each run in `.temp/result/mcp-test-<time>/<model>/<NN>-<test id>/`; the second line
 runs a single prompt the same way.
 
+## Token counts in reports
+
+Each test's summary shows input, output and total token counts. Its detailed section lists every
+prompt and the test total. A prompt includes every model call needed to answer it, including the
+calls around tool use; conversation context counts again whenever it is sent.
+
+Usage is `complete`, `partial` or `unavailable`. Partial numbers show the known portion; a dash
+means the count is unknown, while zero is a reported measurement. A prompt that was never submitted
+is marked `not run`. Usage coverage is separate from the planning verdict.
+
+When a test is retried, its total covers the selected attempt. The report links the preserved
+attempts, which keep their own consumption records. The Markdown report and its PDF contain the
+same counts. Older runs without usage remain readable with unavailable counts.
+See the [accounting reference](../.agents/context/deployment-and-testing.md#prompt-token-accounting)
+for the stored fields and collection protocol.
+
 ## Related Documentation
 
 - [HI MCP Server Documentation](../.agents/context/hi-mcp-server.md)

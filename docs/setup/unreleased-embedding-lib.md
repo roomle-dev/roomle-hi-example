@@ -1,11 +1,11 @@
 # Using an unreleased embedding-lib
 
 The example page `minimal-hi-example/index.html` imports `@roomle/embedding-lib` and its `hi.js` from
-unpkg, pinned to the alpha release `9.0.0-alpha.5`:
+unpkg, pinned to the dev version `0.0.0-dev-c1bdbb4` with prompt token-usage logging:
 
 ```js
-import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@9.0.0-alpha.5';
-import { /* … */ setupHi } from 'https://unpkg.com/@roomle/embedding-lib@9.0.0-alpha.5/hi.js';
+import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-c1bdbb4';
+import { /* … */ setupHi } from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-c1bdbb4/hi.js';
 ```
 
 To try a change that exists only on a roomle-ui branch, point these two imports somewhere else. Two ways
@@ -102,8 +102,10 @@ dist-tag `dev` ([RML-18202](https://roomle.atlassian.net/browse/RML-18202)). The
 Pin the exact version: the dist-tag `dev` moves with every run of any branch.
 
 This works on every machine and needs no roomle-ui checkout. A run uses the workflow file of the chosen
-branch, so the branch needs the version of that file with the manual trigger. On 2026-10-20 it is on the
-roomle-ui branch `feat/hi-mcp-tools-in-embedding-lib-RML-18196` (commit `a4754cbab`), not on `master` yet.
+branch, so the branch needs the version of that file with the manual trigger. `feat/hi-mcp` and
+branches derived from it carry that trigger. Build from the branch containing the source change,
+then pin its verified SHA version in both imports. `--dev` changes the planner URL only and does not
+select an embedding-lib version.
 
 ## What does not work
 

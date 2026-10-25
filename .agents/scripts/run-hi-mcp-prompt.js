@@ -39,6 +39,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { recordNavigations } from './mcp-test-navigation.js';
 import { planImageFiles } from './plan-images.js';
+import { collectPromptUsage } from './planning-assistant-usage.js';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAUNCHER = join(REPO_DIR, 'minimal-hi-example', 'start.mjs');
@@ -349,6 +350,7 @@ const settleTurn = async (page, turn) => {
 // A turn as the chat window sends it: the prompt and the image go to the
 // planning assistant of the page, which answers in the output of the window.
 const sendPrompt = async (page, text, image) => {
+  const finishUsage = collectPromptUsage(page);
   const outputStart = await page.evaluate(
     () => window.hiPlanningAssistantOutput.length
   );
@@ -365,6 +367,7 @@ const sendPrompt = async (page, text, image) => {
     failure = error;
     settled = await settleTurn(page, turn);
   }
+  const { usage, usageWarnings } = await finishUsage();
   const parts = await page.evaluate(
     (start) => window.hiPlanningAssistantOutput.slice(start),
     outputStart
@@ -372,6 +375,8 @@ const sendPrompt = async (page, text, image) => {
   const texts = (type) =>
     parts.filter((part) => part.type === type).map((part) => part.text);
   return {
+    usage,
+    usageWarnings,
     answer: texts('text').join('').trim(),
     tools: texts('activity'),
     errors: [
@@ -662,6 +667,11 @@ const main = async () => {
     for (const [index, turn] of run.turns.entries()) {
       console.log(`  Turn ${index + 1}:  ${turn.answer || '(no answer)'}`);
       console.log(`  Tools:   ${turn.tools.join(', ') || '(none)'}`);
+      console.log(
+        `  Tokens:  ${turn.usage.inputTokens ?? 'unavailable'} in, ${turn.usage.outputTokens ?? 'unavailable'} out, ${turn.usage.totalTokens ?? 'unavailable'} total (${turn.usage.status})`
+      );
+      for (const warning of turn.usageWarnings)
+        console.log(`  Usage:   ${warning}`);
       for (const { tool, args: _args, ...feedback } of turn.toolCalls) {
         if (Object.keys(feedback).length > 0) {
           console.log(`  ${tool}:  ${JSON.stringify(feedback)}`);

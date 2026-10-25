@@ -20,6 +20,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { parseArgs } from 'node:util';
+import { unavailableUsage } from './planning-assistant-usage.js';
 
 const USAGE =
   'usage: node .agents/scripts/build-test-report.js <sessionDir> [--facts <file>] [--evals <file>] [--out <file>]';
@@ -187,6 +188,12 @@ const imageTable = (r) => {
   ];
 };
 
+const usageCells = (usage = unavailableUsage()) =>
+  [usage.inputTokens, usage.outputTokens, usage.totalTokens]
+    .map((count) => (count == null ? '—' : count.toLocaleString('en-US')))
+    .concat(usage.status)
+    .join(' | ');
+
 const runSection = (r) => {
   const e = evalOf(r);
   const L = [];
@@ -210,6 +217,29 @@ const runSection = (r) => {
   L.push(`- **Corrections**: ${correctionsLine(r)}`);
   L.push(`- **Doors**: ${e.doors ?? ''}`);
   L.push(`- **Answer**: ${answerLine(r)}`);
+  L.push('');
+  L.push('| Prompt | Input tokens | Output tokens | Total tokens | Usage |');
+  L.push('|---|---|---|---|---|');
+  for (let index = 0; index < r.promptTurns.length; index++) {
+    const turn = r.turns[index];
+    L.push(
+      `| ${index + 1} | ${turn ? usageCells(turn.usage) : '— | — | — | not run'} |`
+    );
+  }
+  L.push(
+    `| ${r.attempts > 1 ? 'Test total (selected attempt)' : 'Test total'} | ${usageCells(r.usage)} |`
+  );
+  L.push('');
+  if (r.attempts > 1) {
+    L.push(
+      `Usage covers the selected attempt. Preserved attempts: ${(r.attemptDirs || []).map((dir, index) => `[${index + 1}](${dir}/console.log)`).join(', ')}.`
+    );
+    L.push('');
+  }
+  for (const [index, turn] of r.turns.entries()) {
+    for (const warning of turn.usageWarnings || [])
+      L.push(`Prompt ${index + 1}: ${warning}`);
+  }
   L.push('');
   L.push(...imageTable(r));
   L.push('');
@@ -260,17 +290,23 @@ for (const model of facts.models) out.push(headerRow(model));
 out.push('');
 out.push('## Summary');
 out.push('');
+out.push(
+  'Token counts cover each test’s selected attempt, including every model call of its submitted prompts. Partial counts show the known portion; unavailable counts are not zero.'
+);
+out.push('');
 for (const model of facts.models) {
   if (multi) {
     out.push(`### ${model}`);
     out.push('');
   }
-  out.push('| # | Test | Verdict | Bug | Plan snapshot |');
-  out.push('|---|---|---|---|---|');
+  out.push(
+    '| # | Test | Verdict | Bug | Plan snapshot | Input tokens | Output tokens | Total tokens | Usage |'
+  );
+  out.push('|---|---|---|---|---|---|---|---|---|');
   for (const r of runsOf(model)) {
     const e = evalOf(r);
     out.push(
-      `| ${r.nn} | [${r.title}](${anchorOfRun(r)}) | ${e.verdict} | ${e.bug} | \`${r.planSnapshotId}\` |`
+      `| ${r.nn} | [${r.title}](${anchorOfRun(r)}) | ${e.verdict} | ${e.bug} | \`${r.planSnapshotId}\` | ${usageCells(r.usage)} |`
     );
   }
   out.push('');

@@ -20,6 +20,10 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
+import {
+  summarizeUsage,
+  unavailableUsage,
+} from './planning-assistant-usage.js';
 
 const USAGE =
   'usage: node .agents/scripts/extract-run-facts.js <sessionDir> [outFile]';
@@ -125,9 +129,13 @@ for (const model of models) {
       planSnapshotId: run.planSnapshotId || runJson.planSnapshotId || null,
       exitCode: run.exitCode ?? null,
       attempts: Array.isArray(run.attempts) ? run.attempts.length : 1,
+      attemptDirs: run.attempts || [run.dir],
+      usage: summarizeUsage((runJson.turns || []).map((turn) => turn.usage)),
       runErrors: runJson.errors || run.errors || [],
       turns: (runJson.turns || []).map((turn) => ({
         prompt: turn.prompt,
+        usage: turn.usage || unavailableUsage(),
+        usageWarnings: turn.usageWarnings || [],
         tools: turn.tools,
         toolCalls: (turn.toolCalls || []).map((c) => ({
           tool: c.tool,

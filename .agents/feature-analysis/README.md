@@ -39,6 +39,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Description |
 |---|---|---|
+| [planning-assistant-token-count-protocol.md](planning-assistant-token-count-protocol.md) | Implemented | Prompt usage logging and report totals verified with the SHA-pinned embedding-lib dev package |
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
 
 Add feature analysis documents as needed following the naming convention:

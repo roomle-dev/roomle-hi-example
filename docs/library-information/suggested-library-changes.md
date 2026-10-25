@@ -326,7 +326,7 @@ AI_SELECTION_HINT: Select for tall closed pantry storage. At 900 mm set Door dir
 
 **Status.** Proposed, not applied. A cabinet described with adjustable shelves renders this set
 while no fitting fills its interior, so adding the set changes nothing for the user
-([library issue 109](../../.agents/backlog/library-issues.md#109-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default)).
+([library issue 14](../../.agents/backlog/library-issues.md#14-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default)).
 
 `AdjShelves` (Adjustable Shelves) — 942 characters:
 
@@ -491,7 +491,7 @@ In the library, as proposed:
 **Attribute.** `mod_ShelfadjDescriptor` (Descriptor), carried by the door modules of the cabinets
 with adjustable shelves and by `me_ShelfadjMultiple01`. The format of the descriptor is not known;
 the library development team names it
-([library issue 110](../../.agents/backlog/library-issues.md#110-the-shelf-descriptor-names-no-format)).
+([library issue 15](../../.agents/backlog/library-issues.md#15-the-shelf-descriptor-names-no-format)).
 
 | Attribute | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|

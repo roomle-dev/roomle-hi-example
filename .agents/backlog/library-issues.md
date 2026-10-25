@@ -47,15 +47,15 @@ library cannot calculate.
 
 | # | Issue | Library | Responsible | Status | Priority |
 |---|---|---|---|---|---|
-| 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | the handle design descs done | medium — handled articles where the user asked for handleless ones |
-| 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; the heights not reported | low — the cabinets are not built, the agent needs a second create |
-| 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the upright descs done; the colour value descs not done; the calculation error not reported | low — the end panels are not built, the agent needs one or two extra calls |
-| 76 | [Articles with two doors that do not say how their doors stand](#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
-| 78 | [Tall-unit descriptions omit width-dependent door arrangements](#78-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | medium — a widened unit keeps an incompatible single-door hinge input |
-| 79 | [Base units narrowed to 150 mm the library cannot calculate](#79-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the unit is not built, the agent needs a second create |
-| 100 | [A worktop on the tall units from the group's countertop switch](#100-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
-| 109 | [The adjustable-shelf set does not say that a cabinet shows it by default](#109-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the agent adds the shelf set a cabinet already shows; the result says so (C34) |
-| 110 | [The shelf descriptor names no format](#110-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
+| 1 | [Handleless fronts done with a handle attribute](#1-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | the handle design descs done | medium — handled articles where the user asked for handleless ones |
+| 2 | [Flip-lift wall cabinets with sizes the library cannot calculate](#2-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; the heights not reported | low — the cabinets are not built, the agent needs a second create |
+| 3 | [End panels with a plain upright colour the library cannot calculate](#3-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the upright descs done; the colour value descs not done; the calculation error not reported | low — the end panels are not built, the agent needs one or two extra calls |
+| 6 | [Articles with two doors that do not say how their doors stand](#6-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
+| 7 | [Tall-unit descriptions omit width-dependent door arrangements](#7-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | medium — a widened unit keeps an incompatible single-door hinge input |
+| 8 | [Base units narrowed to 150 mm the library cannot calculate](#8-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the unit is not built, the agent needs a second create |
+| 12 | [A worktop on the tall units from the group's countertop switch](#12-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
+| 14 | [The adjustable-shelf set does not say that a cabinet shows it by default](#14-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the agent adds the shelf set a cabinet already shows; the result says so (C34) |
+| 15 | [The shelf descriptor names no format](#15-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
 
 ### Not solved entirely by descriptions
 
@@ -64,12 +64,12 @@ library cannot calculate.
 
 | # | Issue | Library | Responsible | Status | Solved by descriptions | Priority |
 |---|---|---|---|---|---|---|
-| 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the carcase colour descs done; the colour value descs and the outside program not done; the calculation error not reported | partly | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
-| 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet and front program descs done; the colour value descs not done; the calculation error not reported | partly | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
-| 80 | [Wall units resized with a fixed door direction the library cannot calculate](#80-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the cabinets are not built, the agent needs a second create |
-| 93 | [Backsplashes the library cannot calculate](#93-backsplashes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the backsplash is not built; the agent must drop it and report the omission |
-| 99 | [A handle strip the library cannot calculate](#99-a-handle-strip-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the units with a handle are not built, the agent needs a second create |
-| 106 | [A drawer sideboard lowered to 720 mm the library cannot calculate](#106-a-drawer-sideboard-lowered-to-720-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the drawer sideboard is not built, the agent needs a second create |
+| 4 | [Carcase side panels with a plain outside colour the library cannot calculate](#4-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the carcase colour descs done; the colour value descs and the outside program not done; the calculation error not reported | partly | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
+| 5 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#5-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet and front program descs done; the colour value descs not done; the calculation error not reported | partly | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
+| 9 | [Wall units resized with a fixed door direction the library cannot calculate](#9-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the cabinets are not built, the agent needs a second create |
+| 10 | [Backsplashes the library cannot calculate](#10-backsplashes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the backsplash is not built; the agent must drop it and report the omission |
+| 11 | [A handle strip the library cannot calculate](#11-a-handle-strip-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the units with a handle are not built, the agent needs a second create |
+| 13 | [A drawer sideboard lowered to 720 mm the library cannot calculate](#13-a-drawer-sideboard-lowered-to-720-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the drawer sideboard is not built, the agent needs a second create |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -91,7 +91,7 @@ the probed attribute on every module that carries it (`getExternalObjectAttribut
 then the value by `change-module-attribute` or `change-group-attribute`. The scripts and results are
 in `.temp/result/probe-values-the-library-cannot-calculate-2026-10-24/`.
 
-## 61. Handleless fronts done with a handle attribute
+## 1. Handleless fronts done with a handle attribute
 
 **Problem.** For "only handleless fronts" the agent keeps the handled articles and sets
 `mod_HandleDesign` to the value without a handle, where the test expects the handleless articles of
@@ -122,7 +122,7 @@ Then check that the served text needs nothing more.
 
 **Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 52 (`kitchen-conversation`, turn 5): `mod_HandleDesign` 10 on the handled articles of both groups.
 
-## 64. Flip-lift wall cabinets with sizes the library cannot calculate
+## 2. Flip-lift wall cabinets with sizes the library cannot calculate
 
 **Problem.** To copy the band of cabinets above the tall units of a photo, the agent puts flip-lift
 wall cabinets (`OSKB90`) on top of the tall units with `mod_Height` 360 and `mod_Depth` 561. The
@@ -164,7 +164,7 @@ Open, not reported: the heights the flap fitting takes.
 
 **Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 50 (`image-planning-right-wall`, the `create-or-replace-groups`): two flip-lift wall cabinets `OSKB90` with `mod_Height` 360 not calculated, Error 14023 (`tab_FlipliftSettings`); the model exchanged them for `O2TB90`.
 
-## 69. End panels with a plain upright colour the library cannot calculate
+## 3. End panels with a plain upright colour the library cannot calculate
 
 **Problem.** A create whose group attributes set a plain `mod_UprightColor` (Snow white 192, Sunny
 white 190) without `mod_UprightProgram` does not build its end and cover panels `W60H`, `W60U` and
@@ -221,7 +221,7 @@ a plain upright colour builds its end panels.
 
 **Reproduce.** `mcp-test-2026-10-17_13-28-41`: gpt-6-astra 53 (`kitchen-family-two-kids`, the `create-or-replace-groups`): `mod_UprightColor` 190 without `mod_UprightProgram`, the end panels `W60U` and `W60H` not calculated, Error 14034; the model set `mod_UprightProgram` Classic.
 
-## 70. Carcase side panels with a plain outside colour the library cannot calculate
+## 4. Carcase side panels with a plain outside colour the library cannot calculate
 
 **Problem.** A create whose group attributes set a plain front colour (Olive green 160) and a wood
 carcase colour (`mod_CarcaseColor` Maple 230, then Walnut 215) does not build the units whose side
@@ -236,7 +236,7 @@ them — three extra calls, and the carcase is no longer the wood colour the age
 `ModernNature` ("Carcase in wooden colors horizontal"; the server reports it as a correction, D59),
 while the outside carcase colour of the units follows the plain front colour (`mod_CarcaseOutsideColor`
 160 in the order data). A visible side panel then has a plain colour under a wood program, for which
-the library has no grain direction — as the end panels of issue 69. The descs of `mod_CarcaseColor`,
+the library has no grain direction — as the end panels of issue 3. The descs of `mod_CarcaseColor`,
 `mod_CarcaseOutsideColor` and `mod_CarcaseProgram` do not say which colour the visible sides take or
 which program a plain outside colour needs; `mod_CarcaseProgram` and `mod_CarcaseOutsideProgram`
 are not in the attribute vocabulary (`userRight` `Master`, not `isMain`).
@@ -280,7 +280,7 @@ every root module.
 
 **Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 46 (`image-kitchen-left-wall`, the first `create-or-replace-groups`): `mod_FrontColor` 160 and `mod_CarcaseColor` 230 in the group attributes, `HK260`, `USTB60` and `UTB60` not calculated, Error 14034; the `change-group-attribute` with `mod_CarcaseProgram` Classic and `mod_CarcaseColor` 192 builds them.
 
-## 71. Folding-flap wall cabinets with glass fronts the library cannot calculate
+## 5. Folding-flap wall cabinets with glass fronts the library cannot calculate
 
 **Problem.** To copy the glass wall cabinets of a photo, the agent gives two folding-flap wall
 cabinets (`OFKB60`) the front program Modern ("Mitred frame fronts with glass filling"). The library
@@ -329,7 +329,7 @@ articles that take the glass front.
 
 **Reproduce.** `mcp-test-2026-10-16_19-30-19`: gpt-6.1-sol 49 (`image-only-no-text`, the `create-or-replace-groups`): two `OFKB60` with `mod_FrontProgram` Modern not calculated, Error 14036, in one `notLoaded` error.
 
-## 76. Articles with two doors that do not say how their doors stand
+## 6. Articles with two doors that do not say how their doors stand
 
 **Problem.** In a row, the agent hinges the doors at the two ends at the outer sides of the row
 ([D84](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#doors)), with the value of
@@ -377,7 +377,7 @@ hinged at the outer sides, with values the library calculates.
 
 **Reproduce.** The planner probe of [RML-18203](https://roomle.atlassian.net/browse/RML-18203), without a model, on the bo-test planner: `create-or-replace-groups` with `U2TB90` and `mod_DoorDirectionSelection` `Left`, `Right`, `LeftLeft` or `RightRight`, or `H2TB60` with `LeftRight` — error 14019 in `notLoaded`.
 
-## 78. Tall-unit descriptions omit width-dependent door arrangements
+## 7. Tall-unit descriptions omit width-dependent door arrangements
 
 **Problem.** The description of `HTB60` says one door without qualifying its width. At
 900 mm, the calculated article has paired doors with `Automatic` or `LeftRight`;
@@ -385,7 +385,7 @@ retaining `mod_DoorDirectionSelection: Right` gives Error 14019 and an incomplet
 The attribute tools report the calculation diagnostic, but the article description does not
 explain which retained setting the agent needs to correct after resizing.
 
-**Cause.** A library bug (D99), the error of [issue 80](#80-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate)
+**Cause.** A library bug (D99), the error of [issue 9](#9-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate)
 on a tall unit: with `Automatic` the library chooses the door arrangement by the width, and a fixed
 `mod_DoorDirectionSelection` of the other arrangement has no entry in `tab_DoorSettings` at that
 width. The library's conflict resolution does not change the door direction with the width, and it
@@ -405,7 +405,7 @@ gives no verified options for `mod_Width` and `mod_DoorDirectionSelection`. The 
 and the proposed resize guidance in
 [section 2.6](../../docs/library-information/suggested-library-changes.md#26-door-direction).
 Keep the facts in library data; the verified nominal and widened configurations do not
-establish an intermediate-width threshold. The library bug: as in issue 80.
+establish an intermediate-width threshold. The library bug: as in issue 9.
 
 **Status.** Open, description proposals prepared; not reported to the library development team.
 
@@ -417,7 +417,7 @@ then swaps the complete paired-door unit into the back corner. The row is contig
 :5173): the last `HTB60` `8774cac2` widened to 900 mm retains `Right`; the correction carries Error
 14019 (`tab_DoorSettings`) and the model undoes the widening.
 
-## 79. Base units narrowed to 150 mm the library cannot calculate
+## 8. Base units narrowed to 150 mm the library cannot calculate
 
 **Problem.** To copy the narrow unit at the end of a row of a photo, the agent narrows a base
 storage unit to 150 mm (`UTB30` with `mod_Width` 150) in a group whose plinth height is 150 mm.
@@ -464,7 +464,7 @@ bo-test, the `create-or-replace-groups`): root `UTB30` with `mod_Width` 150
 `mod_PlinthAreaHeight` 150 in the group attributes, not calculated, Error 14011; the model exchanged
 it for the 150 mm filler `PU15L`.
 
-## 80. Wall units resized with a fixed door direction the library cannot calculate
+## 9. Wall units resized with a fixed door direction the library cannot calculate
 
 **Problem.** To copy the wide light band above the tall units of a photo, the agent widens two
 wall units to 900 mm (`OTB60` with `mod_Width` 900, `mod_DoorDirectionSelection` `Left` and
@@ -491,7 +491,7 @@ library's scripts throw after the missing entry ("Cannot read properties of unde
 'RealDoorDirection')", "\"undefined\" is not valid JSON"). The served rule and the desc of
 `mod_DoorDirectionSelection` ask for `Right` at the right end of a row (D84), and the descs of the
 single-door wall cabinets (`OTB30`, `OTB45`, `OTB60`) and of `mod_Width` do not say that a wider
-cabinet gets a pair of doors. [Issue 78](#78-tall-unit-descriptions-omit-width-dependent-door-arrangements)
+cabinet gets a pair of doors. [Issue 7](#7-tall-unit-descriptions-omit-width-dependent-door-arrangements)
 is the same error on a tall unit.
 
 **How the library behaves.** Checked in the stored runs and in the probe of 2026-10-24:
@@ -530,7 +530,7 @@ bo-test `205cc9bc8`, the first `create-or-replace-groups`): root `wallright` `O2
 `mod_Width` 600 and `LeftRight` in the group `57f72e90-329e-4053-8d27-03e860668a1d`, not calculated,
 Error 14019; the model undid the create and sent it again with `OTB30` wall units.
 
-## 93. Backsplashes the library cannot calculate
+## 10. Backsplashes the library cannot calculate
 
 **Problem.** The image tests ask for a kitchen like the photo, backsplash included; the agent sets
 `mod_CreateBacksplash` — its desc says it "Adds the contour for the backsplash and also starts
@@ -595,7 +595,7 @@ Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1200 - 660`)
 `change-group-attribute` with `mod_BacksplashColor` 240; the model switched the backsplash off and
 the answer reports the omission.
 
-## 99. A handle strip the library cannot calculate
+## 11. A handle strip the library cannot calculate
 
 **Problem.** For a modern kitchen the agent sets the handle strip (Furniture_Smith
 `mod_HandleDesign` 40) on the group. The library calculates none of the root modules with a handle:
@@ -644,7 +644,7 @@ changes the handle design of the three `KS_HT600` to 40 and does not calculate t
 `change-group-attribute` to the rectangular handle (60) at 128 mm in StainlessSteel fails on the
 handle mapping (Error 13003); the rail handle (20) at 160 mm in StainlessSteelMattBrushed calculates.
 
-## 100. A worktop on the tall units from the group's countertop switch
+## 12. A worktop on the tall units from the group's countertop switch
 
 **Problem.** The agent sets `mod_CreateCountertop` true in the group attributes of a kitchen with
 tall units. The library puts the worktop on every root that carries the attribute, tall units
@@ -668,7 +668,7 @@ default is confirmed, the text goes into
 bo-test): `mod_CreateCountertop` true in the group attributes of `3097c084`; the model switched it off
 on `HK260`, its end panel and the wall units, the worktop stays on `H2TB60` and `HOTS2AB60`.
 
-## 106. A drawer sideboard lowered to 720 mm the library cannot calculate
+## 13. A drawer sideboard lowered to 720 mm the library cannot calculate
 
 **Problem.** For a sideboard of "low cabinets" the agent lowers three living-room sideboards to
 720 mm (`mod_Height` 720 on two `SB_UB600` and one `SB_US600`). The library calculates the door
@@ -712,7 +712,7 @@ bo-test `205cc9bc8`, the first `create-or-replace-groups`): root `side-middle` `
 `32a54a57-4e53-48b4-b406-d415ac281f51`, not calculated, Error 13008; the model undid the create and
 sent it again with three `SB_UB600`.
 
-## 109. The adjustable-shelf set does not say that a cabinet shows it by default
+## 14. The adjustable-shelf set does not say that a cabinet shows it by default
 
 **Problem.** Asked for one more shelf in the middle tall cabinet `HTB60`, the agent adds the
 adjustable-shelf set `AdjShelves` and answers that a shelf was added. The cabinet shows the same four
@@ -745,7 +745,7 @@ bo-test `205cc9bc8`): `add-interior-fitting` of `AdjShelves` into the middle uni
 `plan.xml` holds 12 `part_ShelfadjWood`, as many as the unedited plan of 08. Model-free:
 `.temp/result/repro-one-more-shelf-2026-10-24/replay.mjs`.
 
-## 110. The shelf descriptor names no format
+## 15. The shelf descriptor names no format
 
 **Problem.** The number of adjustable shelves cannot be set. `AdjShelves` carries no input for it,
 and the library spaces its shelves over the free height. The only attribute that names a quantity,

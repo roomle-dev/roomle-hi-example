@@ -15,12 +15,12 @@ the code.
 
 | # | Issue | Kind | Responsible | Priority |
 |---|---|---|---|---|
-| 63 | [A dark worktop renders white under the top light](#63-a-dark-worktop-renders-white-under-the-top-light) | defect, known | roomle-ui renderer | medium |
-| 94 | [The water connection is an installation element only through a planner override](#94-the-water-connection-is-an-installation-element-only-through-a-planner-override) | catalog data, PoC override | Rubens Admin catalog (`room_designer`); roomle-ui `planner-kernel-access.ts` | medium |
+| 1 | [A dark worktop renders white under the top light](#1-a-dark-worktop-renders-white-under-the-top-light) | defect, known | roomle-ui renderer | medium |
+| 2 | [The water connection is an installation element only through a planner override](#2-the-water-connection-is-an-installation-element-only-through-a-planner-override) | catalog data, PoC override | Rubens Admin catalog (`room_designer`); roomle-ui `planner-kernel-access.ts` | medium |
 
 The run directories named under **Reproduce** are under `.temp/result/`.
 
-## 63. A dark worktop renders white under the top light
+## 1. A dark worktop renders white under the top light
 
 **Problem.** A dark countertop renders white in the planner's images, depending on the line of
 sight: in the object image of the handleless kitchen of the test `image-planning-right-wall` both
@@ -38,7 +38,7 @@ without the overexposure of the top light.
 
 **Reproduce.** `mcp-test-2026-10-21_12-49-36`: gpt-6-astra 66 (`image-planning-right-wall`, plan snapshot `ps_sgx7tozllj1jw7z1hdbwnkv3r2xggkd`, bo-test): light worktops on the wall run and the island in the object image, dark marble 324 with the program Style in `order-data.json`.
 
-## 94. The water connection is an installation element only through a planner override
+## 2. The water connection is an installation element only through a planner override
 
 **Problem.** The plan context lists a water connection in `installationElements` only because
 roomle-ui sets level 28 for every catalog item whose `externalIdentifier` is `water_connections`

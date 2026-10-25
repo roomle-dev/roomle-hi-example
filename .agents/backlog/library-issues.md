@@ -70,6 +70,8 @@ library cannot calculate.
 | 10 | [Backsplashes the library cannot calculate](#10-backsplashes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the backsplash is not built; the agent must drop it and report the omission |
 | 11 | [A handle strip the library cannot calculate](#11-a-handle-strip-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the units with a handle are not built, the agent needs a second create |
 | 13 | [A drawer sideboard lowered to 720 mm the library cannot calculate](#13-a-drawer-sideboard-lowered-to-720-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the drawer sideboard is not built, the agent needs a second create |
+| 16 | [A built-in microwave selected on the tall oven housing is not built](#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | medium — the agent reports an appliance that is not in the plan |
+| 17 | [A Bora hob on the base hob cabinet UKS2A90 the library cannot calculate](#17-a-bora-hob-on-the-base-hob-cabinet-uks2a90-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the unit is not built, the agent replaces it |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -588,12 +590,10 @@ the cause in the library.
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
 
-**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 66 (`image-kitchen-left-wall`, bo-test
-`205cc9bc8`): the create switches the backsplash on for one root with `mod_BacksplashColor` 326 and
-`mod_BacksplashHeight` 660 in the group attributes — the `mr_Backsplash` root is not calculated,
-Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1200 - 660`), also after
-`change-group-attribute` with `mod_BacksplashColor` 240; the model switched the backsplash off and
-the answer reports the omission.
+**Reproduce.** `mcp-test-2026-10-25_15-24-34`, gpt-6-astra 07 (`image-kitchen-left-wall`, local
+roomle-ui): the `change-group-attribute` that enables the backsplash answers "nothing was changed" —
+Error 14034 (`part_Backsplash - undefined - undefined - undefined - 620 - 110`); the model switches
+the backsplash off and the answer reports the omission.
 
 ## 11. A handle strip the library cannot calculate
 
@@ -637,12 +637,11 @@ the handle position is known.
 `kitchen-oven-fridge-sink-corner`: a kitchen with a handle strip is built at the first create, or
 the agent picks a handle the library keeps and calculates.
 
-**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 65 (`image-only-tall-units`, bo-test
-`205cc9bc8`, the `create-or-replace-groups`): group attributes with `mod_HandleDesign` 20,
-`mod_HandleColor` StainlessSteel, `mod_HandleLength` 128 and `mod_HandlePosType` 03; the library
-changes the handle design of the three `KS_HT600` to 40 and does not calculate them (Error 22025);
-`change-group-attribute` to the rectangular handle (60) at 128 mm in StainlessSteel fails on the
-handle mapping (Error 13003); the rail handle (20) at 160 mm in StainlessSteelMattBrushed calculates.
+**Reproduce.** `mcp-test-2026-10-25_15-24-34`, gpt-6-astra 10 (`image-only-no-text`, local
+roomle-ui): the create's group attributes are not set — Error 22025 (a HandleStripe selected, the
+HandlePosType not valid) on the handled roots and `Unexpected token 'N', "None" is not valid JSON`
+on the base units; two `change-group-attribute` calls with handle attributes fail the same way
+before the colours land without handles.
 
 ## 12. A worktop on the tall units from the group's countertop switch
 
@@ -775,3 +774,78 @@ adjustable shelves.
 **Reproduce.** `.temp/result/repro-one-more-shelf-2026-10-24/descriptor.mjs` on bo-test, the plan
 `ps_s3p5hmscmmsnshopj2tybjwmt7ijy5o`: after each of the four values the door module renders no
 `part_ShelfadjWood`.
+
+## 16. A built-in microwave selected on the tall oven housing is not built
+
+**Problem.** The image tests show a tall unit with a microwave built in above the oven; the agent
+selects the microwave — `mod_OvenId2` BE732R1B1, whose value desc is "Built-in microwave" — on the
+tall oven housing `HOTS2AB60`. The library accepts the code and keeps it on the oven module, but
+builds no microwave: the plan holds one `mf_Oven` and the equipment niche above the oven keeps an
+empty `md_EquipmentPlaceholder`. Nothing reports the drop — no error, no `notLoaded`, no
+`corrections` — and the plan context does not serve the appliance attributes on the built root, so
+the agent cannot detect it and reports the microwave as built.
+
+**Cause.** Not established. `HOTS2AB60` is the only tall oven housing of the kitchen catalog and
+its desc names one oven niche ("1 door, 1 oven niche, 1 drawer and 2 pull-outs"); the built unit
+carries three drawers, the oven at 816 mm and a door at 1804.5 mm over an empty equipment
+placeholder. The master data offers `mod_OvenId1`, `mod_OvenId2` and `mod_OvenId3` ("Article code
+1/2/3", group Oven) with the microwave among their selections, on a unit with one appliance niche;
+no kitchen unit of the catalog has a second appliance niche. Whether the library should build the
+second appliance in the placeholder niche, or rule the selection out (verified options), is open.
+
+**How the library behaves.** Checked in the stored runs:
+
+| Selection | Built | Where |
+|---|---|---|
+| `HOTS2AB60` with `mod_OvenId1` HB774G1B1 (oven) and `mod_OvenId2` BE732R1B1 (Built-in microwave) | one `mf_Oven` at 816 mm; no microwave; `mod_OvenId2` kept on the oven module; the niche above holds `md_EquipmentPlaceholder` only | `mcp-test-2026-10-25_15-24-34` gpt-6-astra 08 (local roomle-ui); the same payload in `mcp-test-2026-10-22_19-45-49` gpt-6-astra 67 (bo-test `205cc9bc8`) builds the same |
+
+**To do.** The library: build the second appliance in the equipment niche of `HOTS2AB60`, or rule
+the microwave out of `mod_OvenId2` on the single-niche units (an `Invalid` entry in its verified
+options, D107). Meanwhile the proposed desc of `HOTS2AB60` in
+[section 1.7](../../docs/library-information/suggested-library-changes.md#17-tall-oven-housing) and
+of `mod_OvenId1` to `mod_OvenId3` in
+[section 2.12](../../docs/library-information/suggested-library-changes.md#212-oven-article-codes)
+tell the agent that the unit carries one built-in appliance.
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `image-kitchen-back-right-corner`: the tall unit at the far end of the long leg carries
+the microwave above the oven, or the answer reports that the library cannot build it.
+
+**Reproduce.** `mcp-test-2026-10-25_15-24-34`, gpt-6-astra 08 (`image-kitchen-back-right-corner`):
+the create sends `HOTS2AB60` with `mod_OvenId1` HB774G1B1 and `mod_OvenId2` BE732R1B1 — `plan.xml`
+holds one `mf_Oven` and no microwave; the same in `mcp-test-2026-10-22_19-45-49` gpt-6-astra 67.
+
+## 17. A Bora hob on the base hob cabinet UKS2A90 the library cannot calculate
+
+**Problem.** The image tests put a hob with built-in extraction (a Bora `PUXU`) on the island; the
+agent selects it on the base hob cabinet `UKS2A90`. The library cannot calculate the unit —
+"Error 13008: Could not find entry in tab_DrawerBoxDimensionMapping for input values: Legrabox -
+533 - 0" — so it is not built; the server names it in `notLoaded` and builds the rest. The agent
+replaces it with the base appliance cabinet `UKB2A90`, which carries the same hob.
+
+**Cause.** A library bug (D99): the hob selection is accepted (the calculation fails in the drawer
+box mapping, not in a hob lookup), and `UKS2A90` calculates with a Siemens hob. Which input the
+missing entry needs — the Bora hob's installation depth, the drawer configuration under it, or the
+900 mm width — is open.
+
+**How the library behaves.** Checked in the stored runs:
+
+| Article | Hob | Built | Where |
+|---|---|---|---|
+| `UKS2A90` | Bora `PUXU`, `mod_HandleDesign` 20 | no: Error 13008 (`Legrabox - 533 - 0`) | `mcp-test-2026-10-25_15-24-34` gpt-6-astra 09, the first create |
+| `UKB2A90` | Bora `PUXU` | yes | `mcp-test-2026-10-25_15-24-34` gpt-6-astra 09, the rebuild |
+| `UKS2A90` | Siemens `EX975LXC1E` | yes | `mcp-test-2026-10-25_15-24-34` gpt-6-astra 06 |
+
+**To do.** The library: an entry in `tab_DrawerBoxDimensionMapping` for the drawer boxes of
+`UKS2A90` under a Bora hob, or the hob ruled out for the unit (verified options). No desc change
+proposed — the unit and the hob are both wanted.
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `image-planning-right-wall`: the island carries its hob unit with the Bora hob at the
+first create, without a replacement.
+
+**Reproduce.** `mcp-test-2026-10-25_15-24-34`, gpt-6-astra 09 (`image-planning-right-wall`): the
+first create's island sends `UKS2A90` with `mod_HobSupplier` Bora and `mod_HobId` PUXU — the unit
+is named in `notLoaded` with Error 13008.

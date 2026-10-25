@@ -61,8 +61,11 @@ is decided with RML-18023. Then remove the override in roomle-ui `planner-kernel
 list the water connection in `installationElements` and not in `obstacles`; roomle-ui
 `it('classifies the levels 27 and 28 as electric plug and water connection')` holds.
 
-**Reproduce.** `GET https://api.roomle.com/v2/items/room_designer:water_connections` answers `layer`
-43; roomle-ui `release/bo-test` `planner-kernel-access.ts:637` sets 28.
+**Reproduce.** `mcp-test-2026-10-25_15-24-34`, gpt-6-astra 02 (`sink-cabinet-at-water-connection`,
+local roomle-ui without the override): `get-plan-context` lists no `installationElements` for the
+plan `ps_sau169slquuapnhdz3fdmc0u24eplrcf` — the water connection comes as an obstacle object.
+`GET https://api.roomle.com/v2/items/room_designer:water_connections` answers `layer` 43; roomle-ui
+`release/bo-test` `planner-kernel-access.ts:637` sets 28.
 
 ## 105. Dragging a unit out of a group splits off the units hanging above the rest
 

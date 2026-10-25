@@ -40,7 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [Discarded creates report root identities the call never sent](discarded-create-root-identities.md) | Open | [MCP issue 111](../backlog/mcp-issues.md#111-a-discarded-new-group-of-a-create-names-its-root-modules-by-ids-the-call-never-sent) |
+| [Discarded creates report root identities the call never sent](discarded-create-root-identities.md) | Fixed — release verification pending | [RML-18295](https://roomle.atlassian.net/browse/RML-18295) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

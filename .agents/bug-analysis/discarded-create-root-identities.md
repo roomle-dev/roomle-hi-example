@@ -1,60 +1,29 @@
 # Discarded creates report root identities the call never sent
 
 - **Type:** Bug analysis
-- **Status:** Open
+- **Status:** Fixed — verified on `feat/hi-mcp`; release verification pending
 - **Date:** 2026-10-25
 - **Base:** roomle-hi-example `master` at `4d2430c03d3d8966eca749f6ce63dc830c40cbf1`; roomle-ui `feat/hi-mcp` at `7b39f30ef2481005cf22ac16a0fe35f72af10df5`
 - **Analysis branch:** roomle-hi-example `docs/analyse-discarded-group-root-ids`
-- **Backlog:** [MCP issue 111](../backlog/mcp-issues.md#111-a-discarded-new-group-of-a-create-names-its-root-modules-by-ids-the-call-never-sent)
+- **Source:** backlog issue 111; [RML-18295](https://roomle.atlassian.net/browse/RML-18295)
+- **Fix:** roomle-ui `3918ff2fbb4ae0ad19cb8a48a56702564e0ea5cd` — `fix(hi): name discarded create roots by their call ids`
 
 ## Affected repositories
 
-- **roomle-ui, `feat/hi-mcp`:** proposed correction in the HI tools' layout-load failure reporting and shared failure formatter, with regression tests and the HI behaviour reference.
-- **roomle-hi-example:** this analysis, its indexes and the backlog links. No productive-code change is part of this analysis.
+- **roomle-ui, `feat/hi-mcp`:** corrected layout-load failure reporting, added regression tests and updated the HI behaviour, tool and library-error references.
+- **roomle-hi-example:** updated the MCP tool skill, removed verified backlog issue 111 and closed out this analysis with its indexes.
 
-## Finding
+## Symptom and reproduction at the analysed base
 
-The defect is confirmed. A discarded new group reports a root sent as `u1` as `id0002` in both
-`notLoaded[].rootIds` and the error sentence. It also names `id0003` as the group, although that
-group never reaches the scene. A discarded replacement reports a newly added root the same way;
-retained roots already have the plan's IDs and are correctly identifiable.
+A failed new group of `create-or-replace-groups` reported a root sent as `u1` as `id0002` in both
+`notLoaded[].rootIds` and its error sentence. It named group `id0003`, although the failed group
+never reached the scene. A root added by a discarded replacement was reported by its fresh
+internal ID as well. Retained roots already had IDs the agent could identify in the plan.
 
-The tools correctly generate fresh internal IDs and correctly discard the failed calculation.
-The missing step is carrying the input identity into the discard verdict. `_loadGroupLayout`
-calls `newLibraryFailures` without the existing `newRoots` naming map. The formatter separately
-assumes that every group ID is meaningful to the agent, including a new group discarded before
-its first load.
-
-This is an output-identity defect, not an agent instruction or library-calculation defect. A valid
-call can encounter it. The recovery instruction asks the agent to change a root whose reported ID
-exists neither in its submitted payload nor in the resulting plan.
-
-## Reproduction and observed result
-
-Use the model-free test setup in roomle-ui
-`packages/web-sdk/packages/homag-intelligence/__tests__/hi-tools-test.ts:4619`:
-`discards a new group of a create the library could not calculate before the load and builds the others`.
-The test catalog offers `cabinet-600`; the library mock writes an `Error` with
-`Width cannot be calculated` on a root with `color: red`. The second group calculates normally.
-
-Send this through `glueLogic.executeGroupOperation('create-or-replace-groups', payload)`:
-
-```json
-{
-  "posGroups": [
-    {
-      "libraryId": "test-library",
-      "roots": [{ "id": "u1", "articleId": "cabinet-600", "attributes": [{ "id": "color", "value": "red" }] }]
-    },
-    {
-      "libraryId": "test-library",
-      "roots": [{ "id": "u2", "articleId": "cabinet-600" }]
-    }
-  ]
-}
-```
-
-Observed `notLoaded` entry:
+The model-free reproduction used the existing `hi-tools-test.ts` create-discard setup: the
+`cabinet-600` fixture, a library mock reporting `Width cannot be calculated` for `color: red`,
+and a second group that calculated normally. The failed root was `u1`; the valid group's root
+was `u2`. The observed entry was:
 
 ```json
 {
@@ -64,144 +33,75 @@ Observed `notLoaded` entry:
 }
 ```
 
-The second group loads as `id0005`; the failed group is absent from the group map. Expected:
-`rootIds: ["u1"]`, and the same error with `root module 'u1' (cabinet-600)` and no
-`of group 'id0003'`. `posGroups[0]` already identifies the discarded group.
+The valid group loaded and the failed group left the group map. Temporary probes also reproduced
+the replacement's added `u1` being reported as `id0004`, and a group's own diagnostic naming its
+discarded internal group ID. A multi-root article expanded one submitted pick into several roots,
+showing why equal-count positional matching could not preserve the named first root.
 
-Additional temporary probes through the same tool entry point establish:
+## Root cause at the analysed base
 
-| Case | Observation | Required result |
-|---|---|---|
-| Replace an existing group and add a failing root `u1` | Existing group `id0003` is retained; the error and `rootIds` name added root `id0004` | Name `u1`, retaining the existing group ID |
-| Put the error on the new group itself | `rootIds: []`; error says `could not calculate group 'id0003'` | The existing `posGroups[0]` prefix identifies it; say `could not calculate the group` |
-| Pick one article containing two roots, both failing | One input pick `u1` becomes roots `id0003`, `id0004`; the error groups both under `article-multi ×2` | Map the explicitly named first root to `u1`; leave the unnamed extra root's internal ID as the fallback |
+Source paths below were relative to roomle-ui
+`packages/web-sdk/packages/homag-intelligence/src/` at the recorded base.
 
-These are synthetic library diagnostics used to exercise the tools, not evidence of an actual
-catalog calculation defect. No model, browser session or external library service is required.
-
-## Investigation trace
-
-All source references below are relative to roomle-ui
-`packages/web-sdk/packages/homag-intelligence/src/` at the base above.
-
-| Location | What happens and why it matters |
+| Location | Finding |
 |---|---|
-| `hi-tool-commands.ts:508`, `:796` | The create command prepares buildable groups, retaining their original input indices, then sends the prepared layout to `loadExternalObjectGroupLayout`. |
-| `hi-tools.ts:713` | `_loadGroupLayout` snapshots replaced groups and calls `createOrReplacePosGroupsFromLayout`. Each outcome identifies its built group and layout index. |
-| `hi-tools.ts:797`, `:2055` | `_prepareArticlePickRoots` expands article picks. For a multi-root article the first template root gets the pick ID and additional roots get `<pick-id>:<index>` (`:2082`). |
-| `hi-tools.ts:820`, `:835`, `:961` | Both new groups and roots newly added during replacement pass through `_replaceRootModuleIdsAndRemapDockedRoots`. Existing root IDs are retained; new roots get planner IDs. Its local `idMap` records input-to-planner IDs but is used only for docking and placement references and is not returned. |
-| `hi-tools.ts:836` | `addNewGroup` assigns the new group's internal identity before calculation. It is not an identity the agent can read from the plan when the group is discarded. |
-| **`hi-tools.ts:736`** | **The discard verdict calls `newLibraryFailures(before, after)` without the root naming map. This is the immediate missing identity handoff.** |
-| **`hi-tool-payload.ts:376`, `:382`, `:383`** | **`rootIds` and `rootModulesLabel` fall back to internal root IDs; both group-level and root-level error sentences always include the internal group ID.** |
-| `hi-tools.ts:743`, `:999` | A failed group is discarded before loading: a replacement restores the previous group; a new group leaves the group map. Its internal IDs therefore cannot be recovered through a subsequent plan-context query. |
-| `hi-tool-payload.ts:395` | `readLoadOutcomes` copies the failure root IDs into `notLoaded`, adds the original `posGroups[i]` prefix, and retains a submitted group ID where present. |
-| `hi-tool-commands.ts:803`, `:811` | When every group is discarded, the command throws `DiscardedChange` with the same failure sentences and original input indices. Fixing only `notLoaded` would miss this path. |
-| `hi-tools.ts:1026`, `:1058`; `hi-tool-payload.ts:248` | Staged row edits already pass `newRoots`: comparison uses internal IDs while presentation uses the call's root ID, or “the new root module”. The create path lacks this handoff. |
+| `hi-tools.ts:797`, `:2055` | Article picks were expanded before calculation. The first template root received the pick ID; extra roots received intermediate `<pick-id>:<index>` IDs. |
+| `hi-tools.ts:961` | `_replaceRootModuleIdsAndRemapDockedRoots` generated new internal IDs and built a local input-to-internal `idMap`. It used that map for docking and placement but did not return it. |
+| **`hi-tools.ts:736`** | **`_loadGroupLayout` called `newLibraryFailures` without its existing `newRoots` naming map.** |
+| **`hi-tool-payload.ts:376`, `:382`, `:383`** | **The formatter fell back to internal root IDs in both the sentence and `rootIds`, and always included the internal group ID.** |
+| `hi-tool-payload.ts:395`; `hi-tool-commands.ts:811` | Both mixed-success `notLoaded` results and all-discarded errors forwarded those names. Correcting only one result shape would have left the other affected. |
+| `hi-tools-test.ts:4681`, `:4684` | The existing test accepted any string as the root ID and any quoted root/group IDs in the error sentence. |
 
-The tests leave the defect uncovered: `hi-tools-test.ts:4681` accepts any string in `rootIds`, and
-`:4684` matches any quoted root and group ID. The replacement test at `:4549` changes a retained
-root only, whose ID does not change. It does not add a root with a fresh ID.
+Fresh planner IDs and the discard itself were correct. Input identity was lost on the way to the
+failure verdict. This was a tool-output defect; changing agent instructions or the library's
+calculation would not have recovered those identities.
 
-## Proposed clean fix
+## Fix and durable outcome
 
-Keep the fix in the HI tools and their failure formatter on **roomle-ui `feat/hi-mcp`**.
-`glue-logic.ts`, the library calculation, the embedding bridge and the example page require no
-behaviour change. The host-notification defect in issue 112 is separate work.
+The fix returned the existing remap from `_replaceRootModuleIdsAndRemapDockedRoots`, retained
+explicitly named input roots as calculated-ID-to-call-ID `rootNames` beside the tools' built
+groups/outcomes, and passed the names to `newLibraryFailures` through `newRoots`.
 
-### Preserve root identity at the existing remap
+The formatter received the explicitly unnamed new groups through `unnamedGroups`. Their root
+errors omitted the generated group-ID suffix, and their own diagnostics named `the group`.
+`readLoadOutcomes` and the all-discarded command branch retained ownership of the original
+`posGroups[i]` prefix. Replacements retained the existing group ID.
 
-Retain the mapping `_replaceRootModuleIdsAndRemapDockedRoots` already computes and carry it with
-the corresponding built group to `_loadGroupLayout`. Keep this metadata within the tools' build
-result; do not add it to `PosGroup`, persisted plans, tool arguments or public load outcomes.
-Use the roots of `layout.posGroups[outcome.index]` to distinguish IDs actually supplied in the
-prepared call from synthetic expansion IDs, invert their remapped entries, and pass that map as
-`newRoots` to `newLibraryFailures`.
+Failure comparison continued to use internal IDs. Unnamed expanded roots and generated roots
+kept their calculated-ID fallback; retained roots and failures after loading kept real plan IDs.
+Metadata stayed outside `PosGroup`, persisted data and public load outcomes. `glue-logic.ts` was
+unchanged. Host notifications remained the separate open issue 112.
 
-A retained root needs no rename. A named root of a new group or an added root of a replacement
-gets its call ID in both the sentence and `rootIds`. Generated roots and extra roots from an
-article expansion have no explicit call ID and retain their internal ID fallback. IDs introduced
-by input normalization remain consistent with the correction already reported to the agent.
-Do not change the IDs used by `failedBefore`, docking, discard, loading or history.
+The durable contract and the reason to use the actual remap were promoted to roomle-ui
+`.agents/homag-intelligence/library-errors.md`, `hi-tools-behaviour.md` (D106/G68 and the create
+result), `hi-tools-reference.md`, and the example's [MCP tool skill](../skills/hi-mcp-tools.md).
+The guarding tests are `describe('the identities in a discarded layout')` and the strengthened
+mixed-success create-discard test in `__tests__/hi-tools-test.ts`.
 
-The backlog suggests matching by retained ID, then by root order when article IDs line up, as
-`loadedRootOf` does (`hi-tool-attributes.ts:582`). That is a smaller change for one-root articles,
-but its positional branch requires equal root counts (`:589`). One multi-root pick breaks that
-condition for the whole group; guessing by article ID also confuses repeated picks of one article.
-Its attribute-value fallback serves loaded accent values and cannot identify a failed root in
-general. Reusing the actual remap avoids guessing and preserves the named first root even when
-extra roots are expanded. The `<pick-id>:<index>` expansion names are intermediate: they too are
-regenerated before the verdict and must not be presented as IDs the call supplied.
+## Validation
 
-### Name only a group the agent can identify
+- Before the fix, the focused tests produced **8 failures and 3 passes**. Failures covered the
+  exact call IDs, new group names, repeated picks and expanded articles. Companion cases confirmed
+  existing-group names and the comparison against an already failed root.
+- After the fix, all **11 focused cases passed**. Ten new parameterized cases were added, and the
+  existing mixed-success test was strengthened with exact IDs/text, history and public-result checks.
+- The three affected suites passed: **272 tests** across `hi-tools-test.ts`,
+  `create-or-replace-groups-input-test.ts` and `run-tool-command-test.ts`. Existing tests guarded
+  post-load plan IDs, discarded-call forwarding and staged row-edit naming/comparison.
+- The complete HI suite passed: **1,638 tests in 32 files**, using Node 24.12.0 and the SDK's npm
+  test script. SDK type checking, code lint, formatting and touched Markdown links passed.
+  SDK lint reported one unrelated unused-variable warning in `planner-core/__tests__/plan-view-model.ts`.
+- The Jira description gained the agreed bullet. Its original 18 entries and document structure
+  were verified unchanged, with 19 bullets afterwards. The analysis/plan comment remained the
+  ticket record; no implementation or completion comment was added.
 
-Let the shared formatter distinguish an existing group from a new group being discarded before
-load, without changing its comparison identity. In `_loadGroupLayout`, the captured `previous`
-group supplies that distinction. A failed replacement retains `of group '<existing-id>'`; a new
-group omits that suffix, and its own diagnostic says `the group`.
+## Pending release verification and deletion
 
-Keep the original input-index prefix at `readLoadOutcomes` and the all-discarded branch of the
-create command. Earlier validation may have removed a group, so a layout outcome index is not
-necessarily the original `posGroups` index. Do not add another prefix inside `_loadGroupLayout`.
-The existing `labels` argument only adds a prefix; it does not remove a generated group ID and is
-not sufficient on its own.
+The fix was committed locally on `roomle-ui/feat/hi-mcp` and was not pushed, as requested. No
+remote branch contained the fix commit at close-out. Backlog issue 111 was removed after local
+verification; release status belongs here rather than in the backlog.
 
-Other callers of `newLibraryFailures` keep their current group names. In particular, a failure
-from a follow-up calculation **after a successful load** names a group and roots that really are
-in the plan (`hi-tool-commands.ts:1574`); absence from the before-state alone must not hide them.
-Do not repair the finished sentence by replacing substrings: one cause may name several roots,
-and the structured `rootIds` must agree with the text.
-
-This adds no guard or refusal. It preserves D106's discard and partial-success policy and improves
-the feedback required by §2.3 and G68 of the
-[HI behaviour reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md).
-Prompt changes or a library-description change cannot restore identity lost by the server.
-
-## Regression coverage and documentation
-
-The implementation should strengthen `__tests__/hi-tools-test.ts` through the real tool entry
-point, using exact IDs and output sentences:
-
-- The existing mixed-success create test names `u1` in both fields, omits the discarded new group
-  ID, loads only the valid group and retains the current history result.
-- A single failed new group returns the same call ID through the all-discarded error path and
-  performs no load or history step. A new group's own `Error`/`Fatal` names `the group` without its
-  generated ID.
-- A replacement that adds a failing root names its call ID and the existing group ID, leaves the
-  old group intact and does not load the failed replacement. A failing retained root keeps its
-  original ID; a root already failing before the call does not count as a new failure.
-- Repeated article picks report the correct failing root, including several roots with one cause.
-  A multi-root pick maps its named first root without misnaming extra or generated roots.
-- A group filtered out before the layout load does not shift the reported original `posGroups[i]`.
-  A failed follow-up calculation after a successful load keeps the actual plan IDs.
-
-Run the focused `hi-tools-test.ts` cases and the affected
-`__tests__/hi-tool-commands/create-or-replace-groups-input-test.ts` and
-`run-tool-command-test.ts` cases. The formatter's existing row-edit naming and failure-comparison
-behaviour must remain covered. No model-based prompt test is necessary to establish this defect.
-
-With the fix, update roomle-ui `.agents/homag-intelligence/library-errors.md` and
-`hi-tools-behaviour.md` (D106, G68, create result naming), and the result contract in
-`hi-tools-reference.md` and roomle-hi-example `.agents/skills/hi-mcp-tools.md` where needed.
-Those living references must describe implemented behaviour, so this analysis does not change them.
-
-## Verification performed
-
-- On the recorded roomle-ui base, the existing new-group and replacement discard tests pass:
-  **2 passed, 154 skipped**. Command from `roomle-ui/packages/web-sdk`, with Node 24.12.0 on `PATH`:
-
-  ```sh
-  npm run test -- --run packages/homag-intelligence/__tests__/hi-tools-test.ts -t 'discards a (new group of a create|replace)'
-  ```
-
-- Temporary probes assert the expected identity through that same entry point. The new-group
-  `['u1']` assertion fails against `['id0002']`; the added-root replacement assertion fails against
-  `['id0004']`; the assertion excluding a new group's generated ID fails as well. These are
-  **three reproduced defects**, not tests of an implementation.
-- The separate multi-root observation yields two generated root IDs for one submitted pick,
-  confirming the limitation of equal-count positional matching. It is an observation probe, not a
-  passing regression test for the proposed fix.
-- The first test launch fails before collection because the default test subprocess uses an older
-  Node runtime without `node:util.styleText`. Re-running with the installed project-pinned
-  Node 24.12.0 succeeds; no dependency or configuration change is needed.
-- Temporary test instrumentation is restored byte for byte. The roomle-ui checkout is clean on
-  `feat/hi-mcp`; no productive code or regression test is committed there. The fix remains open.
+Once the fix is verified on roomle-ui `origin/release/bo-test` or `origin/master`, delete this
+analysis, remove its rows from `.agents/bug-analysis/README.md` and `.agents/README.md`, repair
+inbound links and run the Markdown link checker. Git history and the Jira analysis/plan comment
+retain the historical record. No release or live planner verification was performed in this task.

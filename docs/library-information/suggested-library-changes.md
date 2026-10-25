@@ -9,6 +9,11 @@ The texts to paste into the library: the complete description of every article a
 every attribute and value. An article description holds at most 1000 characters; the count is in the
 heading of each. Every text stays here once the library carries it, with its status.
 
+Statuses compare the texts with the Furniture_Smith backend `HI_PRE_Roomle_Milestone_2`, in English:
+the [article list](article.json) and [master data](master-data.json), plus the unfiltered backend
+article list for `AdjShelves` (a sub-article excluded from `article.json`). Applied means the library
+carries the description; it does not mean the underlying calculation issue is resolved.
+
 ## Overview
 
 | Section | Articles or attributes | Status |
@@ -16,10 +21,10 @@ heading of each. Every text stays here once the library carries it, with its sta
 | [1.1 Sink base units](#11-sink-base-units) | `SUT60`, `SUBA60`, `SUB2A90`, `ESUT60`, `ESUB2A90` | applied |
 | [1.2 Articles with two doors](#12-articles-with-two-doors) | `H2TB60`, `HWR_HB600T2`, `U2TB90`, `O2TB90`, `US2TB90`, `EU2TB90` | applied |
 | [1.3 Flap wall cabinets](#13-flap-wall-cabinets) | `OSKB60`, `OSKB90`, `OFKB60`, `OFKB90` | applied |
-| [1.4 Wall units with a single door](#14-wall-units-with-a-single-door) | `OTB30`, `OTB45`, `OTB60` | open |
-| [1.5 Width-dependent tall-unit doors](#15-width-dependent-tall-unit-doors) | `HTB60` | open |
-| [1.6 Adjustable shelves](#16-adjustable-shelves) | `AdjShelves` | open |
-| [1.7 Tall oven housing](#17-tall-oven-housing) | `HOTS2AB60` | open |
+| [1.4 Wall units with a single door](#14-wall-units-with-a-single-door) | `OTB30`, `OTB45`, `OTB60` | applied |
+| [1.5 Width-dependent tall-unit doors](#15-width-dependent-tall-unit-doors) | `HTB60` | applied |
+| [1.6 Adjustable shelves](#16-adjustable-shelves) | `AdjShelves` | applied |
+| [1.7 Tall oven housing](#17-tall-oven-housing) | `HOTS2AB60` | applied |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
 | [2.2 Front program](#22-front-program) | `mod_FrontProgram` | applied |
 | [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
@@ -28,10 +33,10 @@ heading of each. Every text stays here once the library carries it, with its sta
 | [2.6 Door direction](#26-door-direction) | `mod_DoorDirectionSelection` | applied; resize guidance open |
 | [2.7 Handle position type](#27-handle-position-type) | `mod_HandlePosType` | applied |
 | [2.8 Sink](#28-sink) | `mod_SinkId` | applied |
-| [2.9 Width](#29-width) | `mod_Width` | open |
-| [2.10 Backsplash](#210-backsplash) | `mod_CreateBacksplash` | open |
-| [2.11 Shelf descriptor](#211-shelf-descriptor) | `mod_ShelfadjDescriptor` | open; the format comes from the library |
-| [2.12 Oven article codes](#212-oven-article-codes) | `mod_OvenId1`, `mod_OvenId2`, `mod_OvenId3` | open |
+| [2.9 Width](#29-width) | `mod_Width` | applied |
+| [2.10 Backsplash](#210-backsplash) | `mod_CreateBacksplash` | applied; result-field wording needs correction |
+| [2.11 Shelf descriptor](#211-shelf-descriptor) | `mod_ShelfadjDescriptor` | text applied; actual format and example open |
+| [2.12 Oven article codes](#212-oven-article-codes) | `mod_OvenId1`, `mod_OvenId2`, `mod_OvenId3` | applied |
 
 ## 1. Article descriptions
 
@@ -261,9 +266,11 @@ AI_SELECTION_HINT: Select for a wide wall cabinet with a folding upward flap, at
 
 ### 1.4 Wall units with a single door
 
+**Status.** Applied verbatim for all three articles.
+
 **Changed line.** `AI_SELECTION_HINT`.
 
-`OTB30` (OTB30) — 801 characters:
+`OTB30` (OTB30) — 793 characters:
 
 ```
 FUNCTION: Wall cabinet, 30 cm wide, with 1 door and adjustable shelves.
@@ -277,7 +284,7 @@ SEARCH_KEYWORDS: wall cabinet, wall unit, upper cabinet, door wall unit
 AI_SELECTION_HINT: Select for a narrow wall-hung kitchen cabinet behind a single door, at the width it comes with. For a wider cabinet, choose one with a pair of doors or two narrower units.
 ```
 
-`OTB45` (OTB45) — 813 characters:
+`OTB45` (OTB45) — 805 characters:
 
 ```
 FUNCTION: Wall cabinet, 45 cm wide, with 1 door and adjustable shelves.
@@ -291,7 +298,7 @@ SEARCH_KEYWORDS: wall cabinet, wall unit, upper cabinet, door wall unit, obersch
 AI_SELECTION_HINT: Select for a 45 cm wall-hung kitchen cabinet behind a single door, at the width it comes with. For a wider cabinet, choose one with a pair of doors or two narrower units.
 ```
 
-`OTB60` (OTB60) — 803 characters:
+`OTB60` (OTB60) — 795 characters:
 
 ```
 FUNCTION: Wall cabinet, 60 cm wide, with 1 door and adjustable shelves.
@@ -307,7 +314,7 @@ AI_SELECTION_HINT: Select for a standard wall-hung kitchen cabinet behind a sing
 
 ### 1.5 Width-dependent tall-unit doors
 
-**Status.** Proposed, not applied. The text states the verified 600 and 900 mm configurations;
+**Status.** Applied verbatim. The text states the verified 600 and 900 mm configurations;
 it does not infer a transition width or supported intermediate widths.
 
 `HTB60` (TDS60) — 885 characters:
@@ -326,9 +333,9 @@ AI_SELECTION_HINT: Select for tall closed pantry storage. At 900 mm set Door dir
 
 ### 1.6 Adjustable shelves
 
-**Status.** Proposed, not applied. A cabinet described with adjustable shelves renders this set
-while no fitting fills its interior, so adding the set changes nothing for the user
-([library issue 14](../../.agents/backlog/library-issues.md#14-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default)).
+**Status.** Applied verbatim in the unfiltered backend article list. A cabinet described with
+adjustable shelves renders this set while no fitting fills its interior, so adding the set changes
+nothing for the user.
 
 `AdjShelves` (Adjustable Shelves) — 942 characters:
 
@@ -346,12 +353,12 @@ AI_SELECTION_HINT: Select for a compartment that shows no shelves. A cabinet des
 
 ### 1.7 Tall oven housing
 
-**Status.** Proposed, not applied. The unit carries one built-in appliance; a second appliance
+**Status.** Applied verbatim. The unit carries one built-in appliance; a second appliance
 code (a microwave above the oven) is accepted but not built, and nothing reports the drop, so the
 agent reports a microwave that is not in the plan
 ([library issue 16](../../.agents/backlog/library-issues.md#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built)).
 
-`HOTS2AB60` (Tall oven housing) — 995 characters:
+`HOTS2AB60` (TODDR2PS60) — 995 characters:
 
 ```
 FUNCTION:
@@ -385,6 +392,9 @@ Select when a built-in oven at working height is requested. The unit carries one
 ## 2. Attribute descriptions
 
 ### 2.1 Colour values
+
+**Status.** Proposed, not applied. The colour selections name their colour and hex code, without
+the plain, wood or stone classification or the restriction on stone fronts.
 
 **Attributes.** The colour list shared by `mod_FrontColor`, `mod_CarcaseColor`,
 `mod_CarcaseOutsideColor`, `mod_UprightColor`, `mod_CountertopColor`, `mod_PaneltopColor`,
@@ -512,6 +522,9 @@ In the library, as proposed:
 
 ### 2.9 Width
 
+**Status.** Applied verbatim. The calculation issue remains open
+([library issue 8](../../.agents/backlog/library-issues.md#8-base-units-narrowed-to-150-mm-the-library-cannot-calculate)).
+
 **Attribute.** `mod_Width` (Width).
 
 | Attribute | Name | `desc` before | Proposed `desc` |
@@ -520,6 +533,11 @@ In the library, as proposed:
 
 ### 2.10 Backsplash
 
+**Status.** Applied verbatim. The result-field wording still needs correction: a failed attribute
+edit returns a calculation error rather than `notLoaded`. The cause of the calculation failure
+remains open
+([library issue 10](../../.agents/backlog/library-issues.md#10-backsplashes-the-library-cannot-calculate)).
+
 **Attribute.** `mod_CreateBacksplash` (Create backsplash).
 
 | Attribute | Name | `desc` before | Proposed `desc` |
@@ -527,6 +545,9 @@ In the library, as proposed:
 | `mod_CreateBacksplash` | Create backsplash | Adds the contour for the backsplash and also starts generating the backsplashes. | Adds the contour for the backsplash and also starts generating the backsplashes. Where the library cannot calculate the backsplash, the result names it in notLoaded; report it as not built. |
 
 ### 2.11 Shelf descriptor
+
+**Status.** Text applied verbatim, but incomplete: "the format, with an example (to be named by
+the library)" is still a placeholder. The actual format and an example remain open.
 
 **Attribute.** `mod_ShelfadjDescriptor` (Descriptor), carried by the door modules of the cabinets
 with adjustable shelves and by `me_ShelfadjMultiple01`. The format of the descriptor is not known;
@@ -539,9 +560,9 @@ the library development team names it
 
 ### 2.12 Oven article codes
 
-**Status.** Proposed, not applied. The three codes select the built-in appliance of a unit; on a
-unit with one appliance niche a second or third code is accepted but not built, and nothing reports
-the drop
+**Status.** Applied verbatim for all three attributes. The three codes select the built-in
+appliance of a unit; on a unit with one appliance niche a second or third code is accepted but not
+built, and nothing reports the drop
 ([library issue 16](../../.agents/backlog/library-issues.md#16-a-built-in-microwave-selected-on-the-tall-oven-housing-is-not-built)).
 
 **Attribute.** `mod_OvenId1`, `mod_OvenId2`, `mod_OvenId3` (Article code 1 / 2 / 3), group Oven.

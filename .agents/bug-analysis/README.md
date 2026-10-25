@@ -40,6 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
+| [unit-on-top-of-follower-stays-behind.md](unit-on-top-of-follower-stays-behind.md) | Open | [mcp-issues.md #103](../backlog/mcp-issues.md#103-a-unit-on-top-of-a-follower-in-another-group-stays-behind-when-the-row-below-moves) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

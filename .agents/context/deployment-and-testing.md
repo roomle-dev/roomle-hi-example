@@ -65,6 +65,35 @@ the images, the plan XML and the order data. Exit code 1 on an error or without 
 Frame navigation is logged to `console.log` and stored with its timestamp, URL, main-frame flag,
 run phase (`loading`, `chat`, `snapshot`, `complete`) and whether only the URL fragment changed.
 
+### Prompt token accounting
+
+`planning-assistant-usage.js` listens for `[planning-assistant] usage <JSON>` while one prompt runs.
+It verifies the console message's execution context is the host page, then validates the resolved
+provider/model, non-negative integer counts and coverage. The collector stops after the prompt
+callback and any abort settlement, and awaits the context checks already in flight. It uses no
+extra wait or timer. Missing, malformed, duplicate or inaccessible records produce `usageWarnings`
+and unavailable counts; these diagnostics are separate from planning errors and verdicts.
+
+`run.json.turns[].usage` holds `provider` and `model` when known, `inputTokens`, `outputTokens`,
+`totalTokens` and `status`: `complete`, `partial` or `unavailable`. Unknown counts are `null`, zero
+is measured, and partial numbers cover only the known portion. The embedding-lib measures all
+model calls of the prompt, including tool results and conversation context sent again; the final
+aggregate is not added to its steps. Interrupted requests can consume tokens the provider never
+reports. The record is not an invoice or the size of the final conversation.
+
+`extract-run-facts.js` preserves prompt usage and derives each selected test's total once from its
+submitted turns. It retains `attemptDirs` for links to retry diagnostics. Reports show exact token
+counts per prompt and test, the coverage, and `not run` for unsubmitted prompts. Test totals cover
+the selected attempt; archived attempts retain their own records and are linked separately. Resume
+does not add the same attempt twice or rerun an old result to fill missing measurements. Legacy
+results render with unavailable usage. `build-test-report.js` renders the same counts into the
+Markdown consumed by the generic PDF renderer; `evals.json` supplies no token counts.
+
+`tests/planning-assistant-usage.test.js` covers aggregation and real Chromium console delivery,
+including consecutive prompts, failed/aborted turns, invalid records and ignored planner-frame
+logs. `tests/report-scripts.test.js` covers selected-attempt totals, multiple models, minimum and
+random tests, images, known zero, legacy and partial measurements, and repeat extraction.
+
 ### Snapshot persistence and repository ownership
 
 `getExternalObjectSnapshot()` collects images, XML and order data. The separate

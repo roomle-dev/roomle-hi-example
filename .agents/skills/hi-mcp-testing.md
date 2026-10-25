@@ -408,10 +408,10 @@ category of `docs/test-prompts.json` with a fixed id/title and without the rando
 
 ## Summary
 
-| # | Test | Verdict | Bug | Plan snapshot |
-|---|---|---|---|---|
-| 01 | [<title>](#01-<title-slug>) | pass | no | `ps_…` |
-| 36 | [Random: <title>](#36-random-<title-slug>) | fail | no | `ps_…` |
+| # | Test | Verdict | Bug | Plan snapshot | Input tokens | Output tokens | Total tokens | Usage |
+|---|---|---|---|---|---|---|---|---|
+| 01 | [<title>](#01-<title-slug>) | pass | no | `ps_…` | 1,200 | 180 | 1,380 | complete |
+| 36 | [Random: <title>](#36-random-<title-slug>) | fail | no | `ps_…` | — | — | — | unavailable |
 
 ## Random tests
 
@@ -453,6 +453,11 @@ Plan: <plan name>
 - **Doors**: <per row with doors, the hinge side of the door at its left and at its right end, and whether a handle is on the outside of the row; or no doors>
 - **Answer**: <the model's final answer, shortened>
 
+| Prompt | Input tokens | Output tokens | Total tokens | Usage |
+|---|---|---|---|---|
+| 1 | 1,200 | 180 | 1,380 | complete |
+| Test total | 1,200 | 180 | 1,380 | complete |
+
 | Perspective | Perspective object | Top |
 |---|---|---|
 | <img src="gpt-5-mini/01-<test id>/perspective-image.png" width="280"> | <img src="gpt-5-mini/01-<test id>/perspective-object-image.png" width="280"> | <img src="gpt-5-mini/01-<test id>/top-image.png" width="280"> |
@@ -487,6 +492,21 @@ Plan: <plan name>
 
 - <title> — the model reads no images
 ````
+
+#### Token counts
+
+Always retain the usage fields extracted from `run.json`: per turn the `usage` record and
+`usageWarnings`, and per test the derived selected-attempt `usage`. The report builder renders
+input, output and total tokens in the test summary and a prompt table in each test section, plus
+the test total. Do not enter counts in `evals.json` or estimate them from the text.
+
+Every model call of a prompt counts, including the final answer and repeated conversation context.
+Use exact integers. `partial` means the numbers cover the known portion; `unavailable` and `null`
+mean no measurement, not zero. Unsubmitted prompts say `not run`. Coverage does not change the
+planning verdict. Retry totals are labelled as the selected attempt; preserved attempts are linked
+and retain their own usage. Legacy results with no usage stay readable and are not rerun just to
+fill the measurement. The [implementation reference](../context/deployment-and-testing.md#prompt-token-accounting)
+defines the protocol and aggregation.
 
 #### The PDF
 

@@ -53,8 +53,8 @@ the 403 for a foreign Host, and that the page port can be bound again after sign
 
 ## The chat of the example page
 
-`index.html` imports `@roomle/embedding-lib` and its `hi.js` from unpkg, pinned to the alpha release
-`9.0.0-alpha.5`
+`index.html` imports `@roomle/embedding-lib` and its `hi.js` from unpkg, pinned to the dev version
+`0.0.0-dev-c1bdbb4`
 ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`
 the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
 
@@ -79,7 +79,11 @@ which holds the images the agent saw) and every output part of the window in
 context in the agent's words, as the tool `get-plan-context` does, without being recorded. The
 tools log every tool call and planner call to the console of the planner's frame, which the page
 console carries (`[hi-mcp] tool …`, `[hi-mcp] call <n>: …`); the planning assistant logs its
-errors (`[planning-assistant] …`).
+errors (`[planning-assistant] …`) and one `[planning-assistant] usage <JSON>` record per accepted
+prompt. The record names the resolved provider/model, input/output/total tokens and coverage,
+without the key or prompt contents. The prompt runner collects this host-page record separately
+from the planner-frame tool log; the [testing reference](deployment-and-testing.md#prompt-token-accounting)
+defines the stored measurements and their report totals.
 
 ## Before you change these files
 

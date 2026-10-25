@@ -26,50 +26,12 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 108 | [The glue logic holds implementation of the Planning Assistant](#108-the-glue-logic-holds-implementation-of-the-planning-assistant) | refactoring | roomle-ui HI tools (`hi-tools.ts`, `hi-tool-*.ts`); `glue-logic.ts` keeps the API functions | medium | | |
 | 111 | [A discarded new group of a create names its root modules by ids the call never sent](#111-a-discarded-new-group-of-a-create-names-its-root-modules-by-ids-the-call-never-sent) | defect | roomle-ui `_loadGroupLayout` (`hi-tools.ts`) | low | | |
+| 112 | [A discarded group of a create is reported to the host as added and then deleted](#112-a-discarded-group-of-a-create-is-reported-to-the-host-as-added-and-then-deleted) | defect | roomle-ui the create of a `posGroups` layout (`hi-tools.ts`) | low | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 108. The glue logic holds implementation of the Planning Assistant
-
-**Problem.** `glue-logic.ts` implements manipulations that only the Planning Assistant makes. Its
-methods below are reached only from the HI tools (`hi-tools.ts`, `hi-tool-commands.ts`), never from
-the planner's UI. The glue logic serves the UI, the tools serve the Planning Assistant
-([Hard Rule](../../AGENTS.md#hard-rule-the-planning-assistant-stays-out-of-the-glue-logic)); a
-change for the Planning Assistant then has to touch the glue logic.
-
-- The create and replace of a `posGroups` layout: `createOrReplacePosGroupsFromLayout` (`:865`) with
-  `_isArticlePickRoot` (`:965`), `_applyRootAttributeOverrides` (`:978`), `overrideTargetsOf`
-  (`:1009`), `prepareArticlePickRoots` (`:1032`), `inheritNeighbourAttributes` (`:1665`),
-  `_keepSubModuleInputsOfKeptRoots` (`:1689`), `_inheritAttributesOfAddedRoots` (`:1745`) and the
-  outcome per group (`LayoutGroupOutcome`). The planner's API reaches it through
-  `createOrReplacePosDataFromArticleLayout(…, 'posGroups')` (`:743`, from `roomle-planner.ts:2512`).
-- The article template of the anchor: `calculateArticleTemplate` (`:1105`) with its cache.
-- The attributes of an exchange: `swapRootModuleWithAttributes` (`:2788`); the UI's
-  `swapRootModule` (`:2779`) delegates to it.
-- The staged loads of the discard (D106): `loadWithChangedAttributes` (`:2449`), `arrangeAndLoad`
-  (`:2876`).
-- The interior fittings: `getInteriorDesignOptions` (`:3031`), `editInterior` (`:3046`).
-
-The lines are those of `glue-logic.ts` on roomle-ui `feat/hi-mcp`.
-
-**Cause.** The tools grew on the glue logic's group map and calculation: what a tool needed was added
-to `glue-logic.ts`.
-
-**To do.** roomle-ui: confirm per method that only the tools reach it, then move its implementation
-into the tools. `glue-logic.ts` keeps the API functions the planner exposes —
-`createOrReplacePosDataFromArticleLayout` and the UI's `swapRootModule` —, which delegate to the
-implementation in the tools; the UI's behaviour is unchanged. Update the package layout in roomle-ui
-`.agents/homag-intelligence.md`.
-
-**Test.** roomle-ui `__tests__/glue-logic-test.ts`, `__tests__/hi-tools-test.ts` and
-`__tests__/hi-tool-commands/` pass; the tests of a moved method move with it.
-
-**Reproduce.** `grep` the moved methods in roomle-ui `packages/`: outside `glue-logic.ts`, only
-`hi-tools.ts` and `hi-tool-commands.ts` call them.
 
 ## 111. A discarded new group of a create names its root modules by ids the call never sent
 
@@ -80,8 +42,8 @@ could not calculate root module 'id0002' (cabinet-600) of group 'id0003' - …".
 root `u1` and no group id, and the plan never holds either id. A root module a replace adds is
 named the same way.
 
-**Cause.** The glue logic gives every root module of a new group, and a root module a replace adds,
-a fresh id (`_replaceRootModuleIdsAndRemapDockedRoots`, roomle-ui `glue-logic.ts:930`, `:1169`).
+**Cause.** The tools give every root module of a new group, and a root module a replace adds,
+a fresh id (`_replaceRootModuleIdsAndRemapDockedRoots`, roomle-ui `hi-tools.ts:961`, the map `:965`).
 `_loadGroupLayout` (`hi-tools.ts`) calls `newLibraryFailures` without names for them. The staged
 row edits name the units they add through `newRoots` of `newLibraryFailures`; the create does not.
 
@@ -100,3 +62,26 @@ the library cannot calculate names it by the call's id.
 **Reproduce.** Model-free, unit level: `create-or-replace-groups` with one new group, root `u1`, that
 the library cannot calculate (the setup of the create discard test) names
 `root module 'id0002' (cabinet-600) of group 'id0003'`.
+
+## 112. A discarded group of a create is reported to the host as added and then deleted
+
+**Problem.** A new group of a create that the tools discard before the load (D106) is reported to
+the host as added and then as deleted; a discarded replace is reported as changed twice. The host
+sees a group that never reached the scene.
+
+**Cause.** The create of a `posGroups` layout reports its groups to the host at its end
+(`groupsModified`, roomle-ui `hi-tools.ts:863`, `glue-logic.ts:2756`), and the discard of a group
+the library could not calculate removes it again: a new group through `removedGroup`
+(`glue-logic.ts:1251`), a replaced group back through `changedGroupFromHistory`
+(`glue-logic.ts:1265`). With the create in the tools, the verdict could come before the report.
+
+**To do.** roomle-ui `hi-tools.ts`, `createOrReplacePosGroupsFromLayout`: check the groups the
+library could not calculate before the report and report only what loads — a discarded new group
+is never reported as added, a discarded replace is reported once. No change to `glue-logic.ts`.
+
+**Test.** roomle-ui `__tests__/hi-tools-test.ts`: the host notifications of a discarded new group
+of a create name no added group; a discarded replace names one change.
+
+**Reproduce.** Model-free, unit level: `create-or-replace-groups` with one new group the library
+cannot calculate (the setup of the create discard test) reports the group to the host as added
+and then as deleted.

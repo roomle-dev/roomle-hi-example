@@ -286,9 +286,7 @@ operations of `hi-tools.ts`. The two stay apart (D110 of
   copy of the group, with conditions of their own. If that means splitting up logic or adding
   conditions in the tools, that is done; there is no alternative.
 - **For the Planning Assistant, `glue-logic.ts` holds API functions only**, and they delegate to the
-  implementation in the tools. Implementation specific to the Planning Assistant that is in
-  `glue-logic.ts` moves to the tools
-  ([mcp-issues 108](.agents/backlog/mcp-issues.md#108-the-glue-logic-holds-implementation-of-the-planning-assistant)).
+  implementation in the tools.
 - **Analyses, plans and backlog items place the fix there.** A gap of the agent's path against the
   UI's path — a library step a create skips, a check the tools do not run — is closed in the tools,
   never by changing the glue logic.

@@ -10,7 +10,7 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| 111 — A discarded new group of a create names its root modules by ids the call never sent | roomle-ui: name the root modules of a discarded new group by the root ids of the call, paired by their order, and the group by `posGroups[i]` | low |
+| 111 — A discarded new group of a create names its root modules by ids the call never sent | roomle-ui `feat/hi-mcp`: [preserve the call's root identities](../bug-analysis/discarded-create-root-identities.md) through the existing ID remap, and name a discarded new group by `posGroups[i]` | low |
 | 112 — A discarded group of a create is reported to the host as added and then deleted | roomle-ui: report the groups of a create to the host only when they load; a discarded group is never reported as added | low |
 | The models in the planner's coordinate system | Run "test the mcp" with every model on the planner build that carries D105 (the agent works in plan space, z up) and compare each test with its reference session; a placement by point — an island, a group of wall units only — is where the frame shows, the placement by wall names no coordinate | medium |
 | The models after a call the library cannot calculate | Run "test the mcp" with every model on the planner build that discards a change the library cannot calculate before the load (D106, D109) and check that a model whose create answers `notLoaded` with "nothing was changed - …", or whose edit answers that error, repairs the group in place or sends the group again with other values or another article, that the planning never leaves the scene between the attempts, and that a part the library generates is enabled after the group is built | medium |

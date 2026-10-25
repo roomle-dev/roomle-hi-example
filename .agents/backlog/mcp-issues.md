@@ -26,7 +26,7 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 111 | [A discarded new group of a create names its root modules by ids the call never sent](#111-a-discarded-new-group-of-a-create-names-its-root-modules-by-ids-the-call-never-sent) | defect | roomle-ui `_loadGroupLayout` (`hi-tools.ts`) | low | | |
+| 111 | [A discarded new group of a create names its root modules by ids the call never sent](#111-a-discarded-new-group-of-a-create-names-its-root-modules-by-ids-the-call-never-sent) | defect | roomle-ui `feat/hi-mcp`: [analysis](../bug-analysis/discarded-create-root-identities.md) — preserve the call's root identities and omit a discarded new group's internal ID | low | | |
 | 112 | [A discarded group of a create is reported to the host as added and then deleted](#112-a-discarded-group-of-a-create-is-reported-to-the-host-as-added-and-then-deleted) | defect | roomle-ui the create of a `posGroups` layout (`hi-tools.ts`) | low | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
@@ -47,17 +47,20 @@ a fresh id (`_replaceRootModuleIdsAndRemapDockedRoots`, roomle-ui `hi-tools.ts:9
 `_loadGroupLayout` (`hi-tools.ts`) calls `newLibraryFailures` without names for them. The staged
 row edits name the units they add through `newRoots` of `newLibraryFailures`; the create does not.
 
-**To do.** roomle-ui `hi-tools.ts`, `_loadGroupLayout`: pair the root modules of a built group with
-the roots of `layout.posGroups[outcome.index]` — a root kept in a replace by its id, the others by
-their order when the articles line up, as `loadedRootOf` (`hi-tool-attributes.ts`) does after the
-load — and hand the call's root ids to `newLibraryFailures` as `newRoots`; name a new group the plan
-does not hold by its `posGroups[i]` prefix alone. An article with several root modules expands into
-roots the call did not name (`<id>:<index>`), which keep their ids. No change to `glue-logic.ts`.
+**To do.** roomle-ui `feat/hi-mcp`, `hi-tools.ts`: retain the existing root-ID remap with each
+built group and pass the call's explicitly named root IDs to `newLibraryFailures` as `newRoots`
+in `_loadGroupLayout`. Equal-count ordering cannot pair a named root when a multi-root article
+expands the group; the extra roots keep their internal IDs, without claiming the call named them.
+In `hi-tool-payload.ts`, omit a new discarded group's internal ID from both root and group
+failure sentences; the result already names its original `posGroups[i]`. Keep the plan IDs for a
+replacement and for failures after loading. No change to `glue-logic.ts`.
+[Analysis and regression coverage](../bug-analysis/discarded-create-root-identities.md).
 
 **Test.** roomle-ui `__tests__/hi-tools-test.ts`:
 `it('discards a new group of a create the library could not calculate before the load and builds the others')`
 names `u1` in the error and in `notLoaded[].rootIds` instead of any id; a replace that adds a root
-the library cannot calculate names it by the call's id.
+the library cannot calculate names it by the call's id. Cover a new group's own diagnostic, the
+all-discarded error, repeated article picks, multi-root expansion and original input indices.
 
 **Reproduce.** Model-free, unit level: `create-or-replace-groups` with one new group, root `u1`, that
 the library cannot calculate (the setup of the create discard test) names

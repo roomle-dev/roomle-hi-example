@@ -419,9 +419,9 @@ Only when the user explicitly asks to add a recommended case, copy it into its c
 
 Generated for this session by the agent that ran it; not in `docs/test-prompts.json`.
 
-| # | Test | Plan | Verdict | Keep as a fixed test |
-|---|---|---|---|---|
-| 36 | [Random: <title>](#36-random-<title-slug>) | <plan name> | fail | yes — <what it covers that no fixed test does> |
+| # | Test | Plan | Verdict | Input tokens | Output tokens | Total tokens | Usage | Keep as a fixed test |
+|---|---|---|---|---|---|---|---|---|
+| 36 | [Random: <title>](#36-random-<title-slug>) | <plan name> | fail | 1,200 | 180 | 1,380 | complete | yes — <what it covers that no fixed test does> |
 
 ```json
 <the random tests as they are in tests.json>
@@ -499,8 +499,11 @@ Plan: <plan name>
 
 Always retain the usage fields extracted from `run.json`: per turn the `usage` record and
 `usageWarnings`, and per test the derived selected-attempt `usage`. The report builder renders
-input, output and total tokens in the test summary and a prompt table in each test section, plus
-the test total. Do not enter counts in `evals.json` or estimate them from the text.
+input, output and total tokens in the test summary, the Random tests table and a prompt table in
+each test section, plus the test total. The Random tests table also shows usage coverage; with
+multiple models, render one such table per model, as in the summary. Random cases use the same
+measured selected-attempt totals as fixed cases. Do not enter counts in `evals.json` or estimate them
+from the text.
 
 Every model call of a prompt counts, including the final answer and repeated conversation context.
 Use exact integers. `partial` means the numbers cover the known portion; `unavailable` and `null`

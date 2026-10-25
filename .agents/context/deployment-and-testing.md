@@ -87,7 +87,10 @@ counts per prompt and test, the coverage, and `not run` for unsubmitted prompts.
 the selected attempt; archived attempts retain their own records and are linked separately. Resume
 does not add the same attempt twice or rerun an old result to fill missing measurements. Legacy
 results render with unavailable usage. `build-test-report.js` renders the same counts into the
-Markdown consumed by the generic PDF renderer; `evals.json` supplies no token counts.
+Markdown consumed by the generic PDF renderer; `evals.json` supplies no token counts. The
+Random tests overview includes input, output and total tokens and coverage for every random run,
+using the same selected-attempt totals as the main summary. Multi-model reports render a random-test
+table per model and mark a missing run as `not run`; retention recommendations remain advisory.
 
 `tests/planning-assistant-usage.test.js` covers aggregation and real Chromium console delivery,
 including consecutive prompts, failed/aborted turns, invalid records and ignored planner-frame

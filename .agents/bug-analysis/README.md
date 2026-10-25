@@ -40,7 +40,6 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Issue |
 |---|---|---|
-| [unit-of-other-group-keeps-height-when-carrier-changes-height.md](unit-of-other-group-keeps-height-when-carrier-changes-height.md) | Open | [mcp-issues.md #104](../backlog/mcp-issues.md#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

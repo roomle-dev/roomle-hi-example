@@ -43,6 +43,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Description |
 |---|---|---|
+| [glue-logic-holds-planning-assistant-code.md](glue-logic-holds-planning-assistant-code.md) | Open | The methods of roomle-ui `glue-logic.ts` only the HI tools reach move into the tools; the UI's swap gets its own implementation back — [mcp-issues.md #108](../backlog/mcp-issues.md#108-the-glue-logic-holds-implementation-of-the-planning-assistant) |
 
 Add refactoring analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `mcp-bridge-simplification.md`).

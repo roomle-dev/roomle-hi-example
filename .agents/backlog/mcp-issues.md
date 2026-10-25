@@ -86,8 +86,8 @@ could not calculate root module 'id0002' (cabinet-600) of group 'id0003' - …".
 root `u1` and no group id, and the plan never holds either id. A root module a replace adds is
 named the same way.
 
-**Cause.** The glue logic gives every root module of a new group, and a root module a replace adds,
-a fresh id (`_replaceRootModuleIdsAndRemapDockedRoots`, roomle-ui `glue-logic.ts:930`, `:1169`).
+**Cause.** The tools give every root module of a new group, and a root module a replace adds,
+a fresh id (`_replaceRootModuleIdsAndRemapDockedRoots`, roomle-ui `hi-tools.ts:961`, the map `:965`).
 `_loadGroupLayout` (`hi-tools.ts`) calls `newLibraryFailures` without names for them. The staged
 row edits name the units they add through `newRoots` of `newLibraryFailures`; the create does not.
 

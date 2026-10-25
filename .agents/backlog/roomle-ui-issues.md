@@ -75,7 +75,7 @@ tools do not drag units out; a delete in place keeps such units in the group (D1
 **Cause.** RoomleCore `ModuleGroupDockConfigurator::tryUndockAndCreateSeparatePlanObject`
 (`external-module-group-dock-configurator.cpp:553`) splits the rest with
 `splitManipulatedGroupIntoAssemblies`, by docking vectors that touch. roomle-ui
-`splitRootModuleFromGroup` (`glue-logic.ts:1706`) carries out that report as it is.
+`splitRootModuleFromGroup` (`glue-logic.ts:1219`) carries out that report as it is.
 
 **To do.** roomle-ui: `splitRootModuleFromGroup` keeps the split-off parts that the docking still
 links to the remaining group, as `deleteRootModule` does with `splitOffGroupsStillDocked` and

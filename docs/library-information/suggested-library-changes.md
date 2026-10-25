@@ -26,7 +26,7 @@ carries the description; it does not mean the underlying calculation issue is re
 | [1.6 Adjustable shelves](#16-adjustable-shelves) | `AdjShelves` | applied |
 | [1.7 Tall oven housing](#17-tall-oven-housing) | `HOTS2AB60` | applied |
 | [2.1 Colour values](#21-colour-values) | the colour list of `mod_FrontColor`, `mod_CarcaseColor`, `mod_UprightColor` and the other colour attributes | open |
-| [2.2 Front program](#22-front-program) | `mod_FrontProgram` | applied |
+| [2.2 Front program](#22-front-program) | `mod_FrontProgram` | Modern applied; Tradition sequencing proposed |
 | [2.3 Carcase colours](#23-carcase-colours) | `mod_CarcaseColor`, `mod_CarcaseOutsideColor` | applied |
 | [2.4 Upright colour and program](#24-upright-colour-and-program) | `mod_UprightColor`, `mod_UprightProgram` | applied; the program values of `mod_CarcaseProgram` and `mod_CarcaseOutsideProgram` keep their old descs |
 | [2.5 Handle design](#25-handle-design) | `mod_HandleDesign` | applied |
@@ -431,6 +431,9 @@ the plain, wood or stone classification or the restriction on stone fronts.
 | Value | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
 | `Modern` | Modern | Mitred frame fronts with glass filling | Mitred frame doors with glass filling, in stone decors. Drawers, pull-outs and flaps are not built with it: an article with them takes another program. |
+| `Tradition` | Tradition | Traditional frame fronts with wooden filling | Traditional frame fronts with wooden filling. When changing from a plain front colour, choose a supported wood Front color before selecting this program. |
+
+**Status.** `Modern`: applied. `Tradition`: proposed, not applied. The program/colour conflict also needs the library change of [issue 19](../../.agents/backlog/library-issues.md#19-a-traditional-front-program-with-a-retained-plain-colour-the-library-cannot-calculate).
 
 ### 2.3 Carcase colours
 

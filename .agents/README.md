@@ -130,6 +130,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Token counts in the random-test table](bug-analysis/random-test-token-table.md) | Fixed | 2026-10-25 |
 
 ### Feature Analyses
 
@@ -168,8 +169,8 @@ Outstanding defects, performance optimizations, and refactoring follow-ups for r
 |---|---|
 | [Backlog](backlog/README.md) — the open work: planning by the MCP server, the planner, the chat, the test infrastructure, the deployment and the page sessions, the ligna-store | 2026-10-25 |
 | [Open MCP issues](backlog/mcp-issues.md) — defects and hardening in the HI tools, chat and planner | 2026-10-25 |
-| [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right and the calculation errors of values the library accepts, with description coverage and remaining work: colour classifications, door-resizing guidance, the shelf descriptor format, supported sizes, end-panel colours and missing appliances | 2026-10-25 |
-| [Open issues of roomle-ui](backlog/roomle-ui-issues.md) — defects of the planner outside the HI tool commands that the MCP prompt tests show: a dark worktop the renderer's top light makes look white | 2026-10-16 |
+| [Open issues of the libraries](backlog/library-issues.md) — what the library data lacks for the agent to plan right and the calculation errors of values the library accepts, with description coverage and remaining work: colour classifications, door-resizing guidance, the shelf descriptor format, supported sizes, hinge configurations, traditional frame colours, end-panel colours and missing appliances | 2026-10-25 |
+| [Open issues of roomle-ui](backlog/roomle-ui-issues.md) — defects of the planner outside the HI tool commands that the MCP prompt tests show: a dark worktop the renderer's top light makes look white | 2026-10-25 |
 | [Where Mistral Large falls short of the prompts](backlog/mistral-large-prompt-issues.md) — improvement candidates from the `mistral-large-latest` test run: where the MCP server could give a weaker model better information or hints | 2026-10-17 |
 | [Library-neutrality issues of the MCP server](backlog/mcp-policy-issues.md) — what in the MCP server still carries library-specific content: the served text's kitchen taxonomy, the search normalization and the result messages of the HI tool commands | 2026-10-14 |
 | [Open issues of the MCP test infrastructure](backlog/mcp-test-infrastructure-issues.md) — the object-only render under software GL | 2026-10-17 |

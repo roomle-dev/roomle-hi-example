@@ -321,33 +321,27 @@ const randomTests = facts.tests.filter((t) => t.random === true);
 const randomRows = randomTests.filter((t) =>
   facts.models.some((model) => byKey.has(`${model}|${nnOfTest.get(t.id)}`))
 );
-if (multi) {
+for (const model of facts.models) {
+  if (multi) {
+    out.push(`### ${model}`);
+    out.push('');
+  }
   out.push(
-    `| # | Test | Plan | ${facts.models.join(' | ')} | Keep as a fixed test |`
+    '| # | Test | Plan | Verdict | Input tokens | Output tokens | Total tokens | Usage | Keep as a fixed test |'
   );
-  out.push(`|---|---|---|${'---|'.repeat(facts.models.length + 1)}`);
+  out.push('|---|---|---|---|---|---|---|---|---|');
   for (const t of randomRows) {
     const nn = nnOfTest.get(t.id);
-    const cells = facts.models.map((model) => {
-      const r = byKey.get(`${model}|${nn}`);
-      return r ? `[${evalOf(r).verdict}](${anchorOfRun(r)})` : '—';
-    });
+    const r = byKey.get(`${model}|${nn}`);
+    const title = r ? `[${t.title}](${anchorOfRun(r)})` : t.title;
+    const verdict = r ? evalOf(r).verdict : 'not run';
+    const usage = r ? usageCells(r.usage) : '— | — | — | not run';
     out.push(
-      `| ${nn} | ${t.title} | ${t.plan} | ${cells.join(' | ')} | ${evals.randomKeep?.[nn] || '—'} |`
+      `| ${nn} | ${title} | ${t.plan} | ${verdict} | ${usage} | ${evals.randomKeep?.[nn] || '—'} |`
     );
   }
-} else {
-  out.push('| # | Test | Plan | Verdict | Keep as a fixed test |');
-  out.push('|---|---|---|---|---|');
-  for (const t of randomRows) {
-    const nn = nnOfTest.get(t.id);
-    const r = byKey.get(`${facts.models[0]}|${nn}`);
-    out.push(
-      `| ${nn} | [${t.title}](${anchorOfRun(r)}) | ${t.plan} | ${evalOf(r).verdict} | ${evals.randomKeep?.[nn] || '—'} |`
-    );
-  }
+  out.push('');
 }
-out.push('');
 out.push('```json');
 out.push(JSON.stringify(randomTests, null, 2));
 out.push('```');

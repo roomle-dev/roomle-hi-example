@@ -631,7 +631,7 @@ test('builds the report of a single-model session', async (t) => {
   );
   assert.ok(
     report.includes(
-      '| 02 | [Random: beta](#02-random-beta) | default-room | partial | yes — covers beta |'
+      '| 02 | [Random: beta](#02-random-beta) | default-room | partial | — | — | — | unavailable | yes — covers beta |'
     )
   );
   assert.ok(report.includes('"id": "beta-random"'));
@@ -744,12 +744,12 @@ test('extracts and builds a multi-model session', async (t) => {
 
   assert.ok(
     report.includes(
-      '| # | Test | Plan | gpt-test-a | gpt-test.b | Keep as a fixed test |'
+      '| # | Test | Plan | Verdict | Input tokens | Output tokens | Total tokens | Usage | Keep as a fixed test |'
     )
   );
   assert.ok(
     report.includes(
-      '| 02 | Random: beta | default-room | [pass](#gpt-test-a--02-random-beta) | [pass](#gpt-testb--02-random-beta) | — |'
+      '| 02 | [Random: beta](#gpt-test-a--02-random-beta) | default-room | pass | — | — | — | unavailable | — |'
     )
   );
   assert.ok(
@@ -764,6 +764,110 @@ test('extracts and builds a multi-model session', async (t) => {
   );
 
   assert.equal((report.match(/^## .+ — \d{2} /gm) || []).length, 4);
+  assert.deepEqual(brokenLinks(report), []);
+});
+
+test('shows measured random-conversation totals in the random overview for each model', async (t) => {
+  for (const multi of [false, true]) {
+    await t.test(multi ? 'multiple models' : 'one model', async (t) => {
+      const session = multi
+        ? await multiModelSession(t)
+        : (await singleModelSession(t)).session;
+      const suite = JSON.parse(
+        await readFile(join(session, 'tests.json'), 'utf8')
+      );
+      suite.categories
+        .flatMap((category) => category.tests)
+        .find((test) => test.random).prompt = ['first', 'second'];
+      await writeJson(session, 'tests.json', suite);
+      const results = JSON.parse(
+        await readFile(join(session, 'results.json'), 'utf8')
+      );
+      const randomRuns = results.runs.filter((run) => run.random);
+      for (const [index, selected] of randomRuns.entries()) {
+        const run = JSON.parse(
+          await readFile(join(session, selected.dir, 'run.json'), 'utf8')
+        );
+        const multiplier = index + 1;
+        run.turns = [
+          {
+            ...run.turns[0],
+            prompt: 'first',
+            usage: {
+              status: 'complete',
+              inputTokens: 1200 * multiplier,
+              outputTokens: 180 * multiplier,
+              totalTokens: 1380 * multiplier,
+            },
+          },
+          {
+            ...run.turns[0],
+            prompt: 'second',
+            usage: {
+              status: 'complete',
+              inputTokens: 2400 * multiplier,
+              outputTokens: 220 * multiplier,
+              totalTokens: 2620 * multiplier,
+            },
+          },
+        ];
+        await writeJson(join(session, selected.dir), 'run.json', run);
+      }
+      await exec(process.execPath, [
+        extract,
+        session,
+        join(session, 'facts.json'),
+      ]);
+      await exec(process.execPath, [build, session]);
+      const report = await readFile(join(session, 'report.md'), 'utf8');
+      const overview = report.split('## Random tests\n')[1].split('```json')[0];
+      for (const [index, selected] of randomRuns.entries()) {
+        const modelTable = multi
+          ? overview.split('### ' + selected.model + '\n')[1].split('### ')[0]
+          : overview;
+        const multiplier = index + 1;
+        const counts = [3600, 400, 4000].map((count) =>
+          (count * multiplier).toLocaleString('en-US')
+        );
+        assert.ok(
+          modelTable.includes('| ' + counts.join(' | ') + ' | complete |')
+        );
+        const anchor = multi
+          ? anchorOf(selected.model + ' — 02 Random: beta')
+          : '02-random-beta';
+        assert.ok(modelTable.includes('[Random: beta](#' + anchor + ')'));
+      }
+      assert.equal(
+        (overview.match(/^\| 02 \|/gm) || []).length,
+        randomRuns.length
+      );
+    });
+  }
+});
+
+test('labels a random test missing for one model without borrowing another model usage', async (t) => {
+  const session = await multiModelSession(t);
+  const results = JSON.parse(
+    await readFile(join(session, 'results.json'), 'utf8')
+  );
+  results.runs = results.runs.filter(
+    (run) => !(run.model === 'gpt-test.b' && run.random)
+  );
+  await writeJson(session, 'results.json', results);
+  const evals = JSON.parse(await readFile(join(session, 'evals.json'), 'utf8'));
+  delete evals.runs['gpt-test.b|02'];
+  evals.frontSections = [];
+  await writeJson(session, 'evals.json', evals);
+  await exec(process.execPath, [extract, session, join(session, 'facts.json')]);
+  await exec(process.execPath, [build, session]);
+  const report = await readFile(join(session, 'report.md'), 'utf8');
+  const overview = report.split('## Random tests\n')[1];
+  const modelTable = overview.split('### gpt-test.b\n')[1].split('```json')[0];
+  assert.ok(
+    modelTable.includes(
+      '| 02 | Random: beta | default-room | not run | — | — | — | not run | — |'
+    )
+  );
   assert.deepEqual(brokenLinks(report), []);
 });
 
@@ -864,6 +968,11 @@ test('labels partial, unavailable and legacy usage in minimum, random and image 
   await exec(process.execPath, [build, session]);
   const report = await readFile(join(session, 'report.md'), 'utf8');
   assert.ok(report.includes('| Test total | 100 | — | — | partial |'));
+  assert.ok(
+    report.includes(
+      '| 02 | [Random: beta](#02-random-beta) | default-room | partial | 100 | — | — | partial | yes — covers beta |'
+    )
+  );
   assert.ok(report.includes('| Test total | — | — | — | unavailable |'));
   assert.ok(report.includes('# HI MCP test — minimum set'));
   assert.ok(report.includes('Random: beta'));

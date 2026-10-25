@@ -385,8 +385,10 @@ both from `testSet`).
 
 The header row counts fixed and random tests separately. Preserve the `Random:` titles in the
 summary and run headings. Each random run names its origin; the "Random tests" section lists the
-random cases with their JSON. A random case worth keeping can be copied from there into its
-category of `docs/test-prompts.json` with a fixed id/title and without the random flag.
+random cases with their JSON and recommendations on whether they are worth keeping as fixed tests.
+These are recommendations only: never add random cases to the fixed suite as part of a test run.
+Only when the user explicitly asks to add a recommended case, copy it into its category of
+`docs/test-prompts.json` with a fixed id/title and without the random flag.
 
 - Copy the source image of every image test into `$SESSION/images/`:
 

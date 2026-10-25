@@ -10,7 +10,6 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| 104 — A unit of another group keeps its height when its carrier changes height | roomle-ui: apply the change of the carrier's docking top to the units of other groups | low |
 | 107 — A discarded exchange names the root module id of the unit it would have put in | roomle-ui: name the new root module of a discarded exchange, merge or insert by the `rootModuleId` of the call or as the new unit with its article | low |
 | 108 — The glue logic holds implementation of the Planning Assistant | roomle-ui: move the methods only the HI tools reach out of `glue-logic.ts` into the tools; the glue logic keeps the API functions, which delegate | medium |
 | The models in the planner's coordinate system | Run "test the mcp" with every model on the planner build that carries D105 (the agent works in plan space, z up) and compare each test with its reference session; a placement by point — an island, a group of wall units only — is where the frame shows, the placement by wall names no coordinate | medium |

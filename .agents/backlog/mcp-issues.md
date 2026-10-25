@@ -26,34 +26,12 @@ never drop the agent's content silently.
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 104 | [A unit of another group keeps its height when its carrier changes height](#104-a-unit-of-another-group-keeps-its-height-when-its-carrier-changes-height) | defect | roomle-ui `groupsFollowingTheirCarriers` (`hi-root-module-arrangement.ts`) | low | | |
 | 107 | [A discarded exchange names the root module id of the unit it would have put in](#107-a-discarded-exchange-names-the-root-module-id-of-the-unit-it-would-have-put-in) | defect | roomle-ui `_stagedFailures`, `newLibraryFailures` (`hi-tools.ts`, `hi-tool-payload.ts`) | low | | |
 | 108 | [The glue logic holds implementation of the Planning Assistant](#108-the-glue-logic-holds-implementation-of-the-planning-assistant) | refactoring | roomle-ui HI tools (`hi-tools.ts`, `hi-tool-*.ts`); `glue-logic.ts` keeps the API functions | medium | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 104. A unit of another group keeps its height when its carrier changes height
-
-**Problem.** A row edit puts a carrier of another height where the old one stood — a 900 mm base unit
-in place of a 720 mm one. A unit of another group that stood on the old carrier keeps its height and
-overlaps the new carrier by the difference.
-
-**Cause.** `groupsFollowingTheirCarriers` (roomle-ui `hi-root-module-arrangement.ts:417-432`) moves a
-unit by the change of its carrier's origin and rotation only. A carrier of another height at the same
-origin gives no move, and the unchanged-pose check (`:470`) drops the unit. Within the edited group,
-`moveUnitsAboveWithTheirCarriers` corrects a unit by the change of its carrier's docking top
-(`:285-300`).
-
-**To do.** roomle-ui: apply the change of the carrier's docking top to the units of other groups, as
-`moveUnitsAboveWithTheirCarriers` does, before the unchanged-pose check.
-
-**Test.** roomle-ui `hi-root-module-arrangement` tests: a 720 mm carrier exchanged for a 900 mm one
-lifts a unit of another group on top of it by 180 mm.
-
-**Reproduce.** No run yet: a unit of another group on top of a base unit; `exchange-root-module` of
-the base unit for a taller article.
 
 ## 107. A discarded exchange names the root module id of the unit it would have put in
 

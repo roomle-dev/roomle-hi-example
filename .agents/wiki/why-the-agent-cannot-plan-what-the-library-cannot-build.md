@@ -226,7 +226,7 @@ request from a mistake.
 
 | Failure | Where the fix belongs |
 |---|---|
-| The tools sent a value the library rules out | The MCP: the served text, the tool API or the check before the edit (D107) — [mcp-issues.md](../backlog/mcp-issues.md) |
+| The tools sent a value the library rules out | The MCP: the served text, the tool API or the check before the edit (D107) — [planning backlog](../backlog/README.md#planning-by-the-mcp-server) |
 | A value the library accepts does not calculate | The library — [library-issues.md](../backlog/library-issues.md) |
 | The agent picks the wrong article or value because the library data lacks the information | The `desc` in the library data — [library-issues.md](../backlog/library-issues.md) |
 | The agent's path lacks a step of the library that the planner's UI runs | The HI tools (`hi-tool-*.ts`, `hi-tools.ts`, `hi-mcp/`), never the glue logic, which serves the UI ([Hard Rule](../../AGENTS.md#hard-rule-the-planning-assistant-stays-out-of-the-glue-logic)) |

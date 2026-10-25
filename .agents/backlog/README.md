@@ -5,12 +5,10 @@ per item. The backlog holds open work only. An item leaves it when its fix is in
 
 ## Planning by the MCP server
 
-Details, causes, tests and how to reproduce: [mcp-issues.md](mcp-issues.md), or
-the document a row links.
+Details, causes, tests and how to reproduce are in the document each row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| [112 — A discarded group of a create is reported to the host as added and then deleted](mcp-issues.md#112-a-discarded-group-of-a-create-is-reported-to-the-host-as-added-and-then-deleted) | roomle-ui: complete the tool's discard before host publication; preserve direct layout callbacks — [analysis](../bug-analysis/discarded-create-host-notifications.md) | low |
 | The models in the planner's coordinate system | Run "test the mcp" with every model on the planner build that carries D105 (the agent works in plan space, z up) and compare each test with its reference session; a placement by point — an island, a group of wall units only — is where the frame shows, the placement by wall names no coordinate | medium |
 | The models after a call the library cannot calculate | Run "test the mcp" with every model on the planner build that discards a change the library cannot calculate before the load (D106, D109) and check that a model whose create answers `notLoaded` with "nothing was changed - …", or whose edit answers that error, repairs the group in place or sends the group again with other values or another article, that the planning never leaves the scene between the attempts, and that a part the library generates is enabled after the group is built | medium |
 | Test prompts for replacing, transferring and batch-deleting interior fittings | `docs/test-prompts.json` has no test that needs `replace-interior-fitting`, a `move-interior-fitting` into another root module of the group or a `delete-interior-fittings` of several fittings. Add tests on a plan with an installed fitting that has `replacementArticles`: replace it by one of them, move a shelf into the neighbouring carcass, delete two shelves in one request | low |

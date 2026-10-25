@@ -40,27 +40,36 @@ keeps every suggested text, applied in the library or not.
 
 ## Overview
 
+### Solved entirely by descriptions
+
+With the descriptions the agent builds at the first attempt what it wants, without a call the
+library cannot calculate.
+
+| # | Issue | Library | Responsible | Status | Priority |
+|---|---|---|---|---|---|
+| 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | the handle design descs done | medium — handled articles where the user asked for handleless ones |
+| 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; the heights not reported | low — the cabinets are not built, the agent needs a second create |
+| 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the upright descs done; the colour value descs not done; the calculation error not reported | low — the end panels are not built, the agent needs one or two extra calls |
+| 76 | [Articles with two doors that do not say how their doors stand](#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
+| 78 | [Tall-unit descriptions omit width-dependent door arrangements](#78-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | medium — a widened unit keeps an incompatible single-door hinge input |
+| 79 | [Base units narrowed to 150 mm the library cannot calculate](#79-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the unit is not built, the agent needs a second create |
+| 100 | [A worktop on the tall units from the group's countertop switch](#100-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
+| 109 | [The adjustable-shelf set does not say that a cabinet shows it by default](#109-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the agent adds the shelf set a cabinet already shows; the result says so (C34) |
+| 110 | [The shelf descriptor names no format](#110-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
+
+### Not solved entirely by descriptions
+
+"partly" names in the issue what only the library's logic or data can do; "no" is a library bug
+(D99) the descriptions do not solve.
+
 | # | Issue | Library | Responsible | Status | Solved by descriptions | Priority |
 |---|---|---|---|---|---|---|
-| 61 | [Handleless fronts done with a handle attribute](#61-handleless-fronts-done-with-a-handle-attribute) | HOMAG Furniture_Smith | HOMAG library development team | the handle design descs done | yes | medium — handled articles where the user asked for handleless ones |
-| 64 | [Flip-lift wall cabinets with sizes the library cannot calculate](#64-flip-lift-wall-cabinets-with-sizes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet descs done; the heights not reported | yes | low — the cabinets are not built, the agent needs a second create |
-| 69 | [End panels with a plain upright colour the library cannot calculate](#69-end-panels-with-a-plain-upright-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the upright descs done; the colour value descs not done; the calculation error not reported | yes | low — the end panels are not built, the agent needs one or two extra calls |
 | 70 | [Carcase side panels with a plain outside colour the library cannot calculate](#70-carcase-side-panels-with-a-plain-outside-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the carcase colour descs done; the colour value descs and the outside program not done; the calculation error not reported | partly | low — the end units are not built, the agent needs three extra calls and loses the wood carcase |
 | 71 | [Folding-flap wall cabinets with glass fronts the library cannot calculate](#71-folding-flap-wall-cabinets-with-glass-fronts-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the flap cabinet and front program descs done; the colour value descs not done; the calculation error not reported | partly | low — the cabinets are not built, the agent needs two attribute changes and loses the glass fronts |
-| 76 | [Articles with two doors that do not say how their doors stand](#76-articles-with-two-doors-that-do-not-say-how-their-doors-stand) | HOMAG Furniture_Smith | HOMAG library development team | the article and attribute descs done; `LeftLeft` and `RightRight` not reported | yes | low — two doors one above the other taken for a pair are not built, the agent needs a second call |
-| 78 | [Tall-unit descriptions omit width-dependent door arrangements](#78-tall-unit-descriptions-omit-width-dependent-door-arrangements) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | medium — a widened unit keeps an incompatible single-door hinge input |
-| 79 | [Base units narrowed to 150 mm the library cannot calculate](#79-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the unit is not built, the agent needs a second create |
 | 80 | [Wall units resized with a fixed door direction the library cannot calculate](#80-wall-units-resized-with-a-fixed-door-direction-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the cabinets are not built, the agent needs a second create |
 | 93 | [Backsplashes the library cannot calculate](#93-backsplashes-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the backsplash is not built; the agent must drop it and report the omission |
 | 99 | [A handle strip the library cannot calculate](#99-a-handle-strip-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the units with a handle are not built, the agent needs a second create |
-| 100 | [A worktop on the tall units from the group's countertop switch](#100-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — a worktop on top of the tall units |
 | 106 | [A drawer sideboard lowered to 720 mm the library cannot calculate](#106-a-drawer-sideboard-lowered-to-720-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the drawer sideboard is not built, the agent needs a second create |
-| 109 | [The adjustable-shelf set does not say that a cabinet shows it by default](#109-the-adjustable-shelf-set-does-not-say-that-a-cabinet-shows-it-by-default) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the agent adds the shelf set a cabinet already shows; the result says so (C34) |
-| 110 | [The shelf descriptor names no format](#110-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | yes | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
-
-**Solved by descriptions**: with the descriptions the agent builds at the first attempt what it
-wants, without a call the library cannot calculate; "partly" names in the issue what only the
-library's logic or data can do.
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.

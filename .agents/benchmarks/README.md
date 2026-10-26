@@ -1,12 +1,14 @@
 # Benchmarks
 
 One document per performance question: how long the HI agent takes for a kind of request, where the
-time goes, which flaws cost it steps, and what would make it faster — with the benchmark it is based
-on in a folder of the same name (`benchmark.md` step by step, `benchmark.json` for the next
-comparison).
+time goes, which flaws cost it steps, and what would make it faster. The report contains the
+measurements and source versions. Raw captures, generated summaries and PDFs stay in `.temp/`
+unless the user requests committed evidence; such evidence goes in a folder of the report's name.
 
 Written with the skill [hi-mcp-benchmarking.md](../skills/hi-mcp-benchmarking.md), which also
-says how to repeat a benchmark after an improvement.
+says how to repeat a benchmark after an improvement. For detailed per-step model/tool/planner
+deltas, skills-to-first-kitchen time and a local PDF, also use
+[hi-mcp-timing-benchmark.md](../skills/hi-mcp-timing-benchmark.md).
 
 ## What belongs here
 

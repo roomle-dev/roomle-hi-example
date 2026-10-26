@@ -153,6 +153,7 @@ done. The analysis and the report are the same document — the report is append
 | Document | Status | Last touched |
 |---|---|---|
 | [Planning Assistant: a shared prompt prefix for Azure](refactoring-analysis/planning-assistant-azure-prompt-caching.md) | Done on local branches — compact reference, verified Azure boundary, decisions and evaluated minimum tests; retained until merge | 2026-10-26 |
+| [Planning Assistant: stop uploading earlier context at every model step](refactoring-analysis/planning-assistant-response-chaining.md) | Open — turn-scoped Responses chaining, adapter evidence, tests and transport benchmark | 2026-10-26 |
 
 ### Benchmarks & Performance Analyses
 

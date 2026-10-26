@@ -543,10 +543,7 @@ the supported widths per door arrangement.
 **Test.** `image-planning-right-wall`, `image-kitchen-back-right-corner`: the first create builds
 the resized wall units, or the agent picks the articles that take the width at the first attempt.
 
-**Reproduce.** `mcp-test-2026-10-22_19-45-49`, gpt-6-astra 67 (`image-kitchen-back-right-corner`,
-bo-test `205cc9bc8`, the first `create-or-replace-groups`): root `wallright` `O2TB90` with
-`mod_Width` 600 and `LeftRight` in the group `57f72e90-329e-4053-8d27-03e860668a1d`, not calculated,
-Error 14019; the model undid the create and sent it again with `OTB30` wall units.
+**Reproduce.** `mcp-test-2026-10-26_11-51-16`, gpt-6-astra 08 (`image-kitchen-back-right-corner`, local `feat/hi-mcp-performance`, default reasoning): `change-module-attribute` sets root `f9c6aaf1-9cae-48b5-8836-67a7a6eb119a` (`O2TB90`) to width 600 while retaining `LeftRight`, causing Error 14019 (`WallUnit - All - Standard - 240 - mr_StorageunitSingle - 600 - Automatic - LeftRight - Automatic`); exchanging it for `OTB60` with `Left` succeeds.
 
 ## 10. Backsplashes the library cannot calculate
 
@@ -607,11 +604,7 @@ team until the replay places the cause in the library.
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
 
-**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 73
-(`image-kitchen-tall-column-right-corner`, bo-test): `change-group-attribute` enables
-`mod_CreateBacksplash` on group `b8e61d93-d008-42fb-9910-4936b079a906`; generated
-`mr_Backsplash` fails Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1761 - 110`).
-The transaction is not applied and the final answer names the missing backsplash.
+**Reproduce.** `mcp-test-2026-10-26_11-51-16`, gpt-6-astra 10 (`image-only-no-text`, local `feat/hi-mcp-performance`, default reasoning): `change-group-attribute` enables `mod_CreateBacksplash` on groups `e02adc37-8664-420c-a2f2-050193f1a7ab` and `7e84b230-2a5c-4c73-900b-f3dd306094f6`; generated `mr_Backsplash` fails Error 14034 with undefined grain inputs and widths 620 / 1220. Both transactions are unapplied and the answer discloses the missing splashbacks.
 
 ## 11. A handle strip the library cannot calculate
 
@@ -655,10 +648,7 @@ the handle position is known.
 `kitchen-oven-fridge-sink-corner`: a kitchen with a handle strip is built at the first create, or
 the agent picks a handle the library keeps and calculates.
 
-**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 71 (`image-only-no-text`, bo-test):
-both groups' finish/handle transactions fail with HandleStripe Error 22025 and the base-unit
-`None` JSON parse error. Repeated stainless-steel handle changes fail without changing the plan;
-`ChromedPolished` changes the curved bow to rectangular handle 60 and calculates.
+**Reproduce.** `mcp-test-2026-10-26_11-51-16`, gpt-6-astra 10 (`image-only-no-text`, local `feat/hi-mcp-performance`, default reasoning): both groups' finish/handle transactions fail with HandleStripe Error 22025 and the base-unit `None` JSON parse error. The agent sets finishes separately, sets handle position 01 and curved bow 100, and retains the library's Black colour after silver-finish retries fail; the final answer discloses that substitution.
 
 ## 12. A worktop on the tall units from the group's countertop switch
 
@@ -833,10 +823,7 @@ proposed — the unit and the hob are both wanted.
 **Test.** `image-planning-right-wall`: the island carries its hob unit with the Bora hob at the
 first create, without a replacement.
 
-**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 70 (`image-planning-right-wall`, bo-test):
-the first two island creates send `UKS2A90` with `mod_HobSupplier` Bora and `mod_HobId` PUXU;
-the root fails Error 13008 (`Legrabox - 533 - 0`) with both no-handle and curved-bow settings.
-The third create uses `UKB2A90` with the same hob and builds.
+**Reproduce.** `mcp-test-2026-10-26_11-51-16`, gpt-6-astra 09 (`image-planning-right-wall`, local `feat/hi-mcp-performance`, default reasoning): the first create sends `UKS2A90` with `mod_HobSupplier` Bora, `mod_HobId` PUXU and no-handle setting 10; the island fails Error 13008 (`Legrabox - 533 - 0`) while the tall bank builds. Resubmitting the island with `UKB2A90` and the same hob succeeds; snapshot `ps_sxj11r22858wir474hwiftq77oshh62c` contains both groups.
 
 ## 18. A wide paired-door wall cabinet with a push opening the library cannot calculate
 

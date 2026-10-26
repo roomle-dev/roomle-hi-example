@@ -16,6 +16,15 @@ npm start gpt-6-astra <api-key>      # or directly: node start.mjs gpt-6-astra <
 
 `gpt-6-astra` is a deployment on the HI Azure AI Foundry resource; the key is that resource's.
 
+For OpenAI's API, replace `<model-id>` with the model to use:
+
+```bash
+npm start "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY"
+npm run dev "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY"
+```
+
+The exact model ID is passed to OpenAI. `dev` selects the local planner on :5173.
+
 Without a model, `npm start` serves the example without the chat.
 
 To develop against a local Rubens UI dev server (start it first on

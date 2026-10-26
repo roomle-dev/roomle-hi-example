@@ -354,6 +354,17 @@ same counts. Older runs without usage remain readable with unavailable counts.
 See the [accounting reference](../.agents/context/deployment-and-testing.md#prompt-token-accounting)
 for the stored fields and collection protocol.
 
+Current reports also show per-prompt cache reads/writes with independent coverage, model-call
+counts, serialized request bytes and first visible text time when available. Cache reads are
+already included in input tokens, and reasoning in output tokens. A high cache-read count does
+not mean fewer transmitted bytes or establish a currency saving.
+
+For rate-limited Azure test deployments, `HI_MCP_REQUEST_INTERVAL_MS=20000` spaces model requests
+in the test browser. It defaults to zero and does not change the production assistant. Runs retain
+the interval, actual waits, local embedding modules and planner origins. Paced chat/model times
+include those waits and must not be presented as normal interactive latency. Use the same interval
+for compared variants. A fresh browser does not imply a cold provider cache.
+
 ## Related Documentation
 
 - [HI MCP Server Documentation](../.agents/context/hi-mcp-server.md)

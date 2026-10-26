@@ -40,6 +40,7 @@ deliberately rejected. Read these before proposing a change to an area they cove
 | [0011 — The HI tools live only in the roomle-ui embedding-lib](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tools-live-in-the-embedding-lib.md) | Accepted — its embedding-lib clause superseded by 0012; lives in roomle-ui |
 | [0012 — The HI tool set runs in the planner, the embedding-lib forwards to it](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tool-set-runs-in-the-planner.md) | Accepted; lives in roomle-ui |
 | [0013 — The library context is a planner method of its own](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-library-context-is-a-planner-method-of-its-own.md) | Accepted; lives in roomle-ui |
+| [0014 — The Planning Assistant uses a shared reference prefix](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-planning-assistant-uses-a-shared-reference-prefix.md) | Accepted; lives in roomle-ui |
 
 ---
 
@@ -140,6 +141,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | Document | Status | Last touched |
 |---|---|---|
 | [HI Planning Assistant token count protocol](feature-analysis/planning-assistant-token-count-protocol.md) | Implemented — prompt usage logging and report totals verified with the pinned embedding-lib dev | 2026-10-25 |
+| [Direct OpenAI models in the example launcher](feature-analysis/openai-provider-launcher.md) | Implemented — explicit CLI model, published dev provider and browser verification | 2026-10-26 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
 ### Refactoring Analyses
@@ -149,6 +151,7 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Planning Assistant: a shared prompt prefix for Azure](refactoring-analysis/planning-assistant-azure-prompt-caching.md) | Done on local branches — compact reference, verified Azure boundary, decisions and evaluated minimum tests; retained until merge | 2026-10-26 |
 
 ### Benchmarks & Performance Analyses
 
@@ -160,6 +163,7 @@ folder of the same name.
 | Document | Status | Last touched |
 |---|---|---|
 | [Where the time goes when the HI agent plans a kitchen from an image](benchmarks/kitchen-from-image-time.md) | Third measurement (RML-18164): the six improvements one after another on one build and the local planner — baseline 104 s, 8.4 steps, 531k; the vocabulary section takes the search steps away (75 s, 6.5, 383k), the rest is stable within the spread | 2026-10-14 |
+| [Planning Assistant shared-reference benchmark](benchmarks/planning-assistant-prompt-caching.md) | A/B/C content comparison, Azure cache-boundary checks, transport/input overhead and final minimum-suite validation | 2026-10-26 |
 
 ### Backlog
 

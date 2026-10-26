@@ -52,7 +52,7 @@ const statusWithHost = (port, path, host) =>
 
 // Starts the launcher with the arguments on an unused page port and waits
 // until it serves the page.
-const startLauncher = async (args) => {
+const startLauncher = async (args, env = {}) => {
   const port = await unusedPort();
   const launcher = spawn(
     process.execPath,
@@ -60,7 +60,7 @@ const startLauncher = async (args) => {
     {
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, EXAMPLE_PORT: String(port) },
+      env: { ...process.env, EXAMPLE_PORT: String(port), ...env },
     }
   );
   let output = '';
@@ -99,6 +99,61 @@ const startLauncher = async (args) => {
 };
 
 describe('example launcher', { skip: process.platform === 'win32' }, () => {
+  for (const dev of [false, true]) {
+    test(`selects the exact OpenAI model in ${dev ? 'dev' : 'start'} mode`, async () => {
+      const model = 'ft:gpt-4o:roomle:Kitchen:abc';
+      const example = await startLauncher(
+        [`OpEnAi:${model}`, 'openai-test-key', ...(dev ? ['--dev'] : [])],
+        {
+          HI_CHAT_MODEL: 'azure-override',
+          AZURE_RESOURCE_NAME: 'azure-resource',
+          HI_CHAT_REASONING_EFFORT: 'high',
+          EXAMPLE_SERVER_URL: undefined,
+        }
+      );
+      try {
+        assert.deepEqual(
+          await (
+            await example.fetchPath('/planning-assistant-config.json')
+          ).json(),
+          {
+            provider: 'openai',
+            model,
+            apiKey: 'openai-test-key',
+            readsImages: true,
+          }
+        );
+        assert.ok(example.output().includes(`Model:    openai ${model}`));
+        assert.ok(example.output().includes('&chat=true'));
+        assert.equal(
+          example
+            .output()
+            .includes(encodeURIComponent('http://localhost:5173/')),
+          dev
+        );
+        assert.ok(!example.output().includes('openai-test-key'));
+      } finally {
+        example.kill();
+      }
+    });
+  }
+
+  test('rejects an empty OpenAI model ID before starting the server', async () => {
+    const launcher = spawn(process.execPath, [
+      launcherPath,
+      'openai:',
+      'test-key',
+      '--no-open',
+    ]);
+    let error = '';
+    launcher.stderr.on('data', (chunk) => {
+      error += chunk;
+    });
+    assert.deepEqual(await once(launcher, 'exit'), [1, null]);
+    assert.match(error, /openai:<model-id>/);
+    assert.ok(!error.includes('test-key'));
+  });
+
   test(
     'serves the planning assistant config of the model to this machine',
     { timeout: 90_000 },
@@ -116,6 +171,7 @@ describe('example launcher', { skip: process.platform === 'win32' }, () => {
           apiKey: 'test-key',
           baseUrl: 'https://dfhifoundrysweden.services.ai.azure.com/openai/v1',
           chatCompletions: false,
+          referenceCacheBreakpoint: true,
           readsImages: true,
         });
         assert.ok(withModel.output().includes('&chat=true'));

@@ -1,0 +1,164 @@
+{
+  "protocol": "shared-reference-prefix-2026-10-26",
+  "requestIntervalMs": 20000,
+  "model": [
+    {
+      "provider": "gpt-6.1-sol",
+      "apiKey": "$AZURE_GPT_SOL_KEY"
+    }
+  ],
+  "reasoningEffort": "deployment default",
+  "promptSuffix": "Decide any open details yourself instead of asking.",
+  "plans": {
+    "default-room": "ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv",
+    "l-shaped-pass-through-room": "ps_sje41pva5egn6qp5xti55q6c7fcfin5",
+    "three-open-wardrobes-with-shelves": "ps_sbga21bftgc6paechjqf8x5qbk538sp"
+  },
+  "cases": [
+    {
+      "id": "full-kitchen-walnut-marble-corner",
+      "title": "Full kitchen, walnut, dark marble, around the corner",
+      "plan": "default-room",
+      "prompt": "create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room. Arrange the kitchen around the corner. The front of the kitchen should be made of walnut and the worktop should be made of dark marble",
+      "expect": "appliances: oven, hob, cooker hood, fridge, sink; storage: cabinet with drawers, wall cabinets; placement: back right corner, around the corner; materials: walnut front, dark marble worktop"
+    },
+    {
+      "id": "image-kitchen-left-wall",
+      "title": "Image: kitchen on the left-hand wall",
+      "plan": "default-room",
+      "prompt": "create a kitchen like the one in the image on the left-hand wall of the room",
+      "image": "docs/images/kitchen-1.png",
+      "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the kitchen of the image on the left-hand wall, in the order of the image; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
+    },
+    {
+      "id": "image-only-no-text",
+      "title": "Image only, no text",
+      "plan": "l-shaped-pass-through-room",
+      "image": "docs/images/kitchen-4.png",
+      "expect": "the model decides what to plan; the chat sends the image with the image prompt of the planner, which names the skill image-planning; the model fetches image-planning, and the kitchen skill for its checks, and plans the galley kitchen of the image as close to it as possible in the narrow wing of the L-shaped room, whose end wall has the window as in the image: one row along the left wall (x -780) from the window wall towards the door - the tall fridge unit, the sink unit, the dishwasher, the oven below the hob and drawer units, wall units above - and opposite it, along the wall at x 2220, base units with a worktop and a wall unit above them; under the window (top wall, x -330 to 1770, bottom 950) at most base units or a worktop, no tall unit and no wall unit in front of it; the passage between the two doors (left and right wall, z -210 to 690) stays free: no unit in a door opening or in the swing of the right door (x 3530 to 4420); cream fronts and a walnut worktop; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
+    },
+    {
+      "id": "edit-add-move-delete-subarticle",
+      "title": "Add, move and delete shelf sub-articles over three turns",
+      "plan": "three-open-wardrobes-with-shelves",
+      "prompt": [
+        "add a shelf to the middle of the left-most carcass of the wardrobe",
+        "move the shelf inside the right-most cabinet down by 500 mm",
+        "delete the shelf from the middle cabinet"
+      ],
+      "expect": "turn 1: get-interior-design-options on group ce854b3e-90d6-4e65-ba7b-461e125cc8da, then one add-interior-fitting of a compatible FixedShelf into left root ab0737ab-a681-48ed-995b-46ee788a2329, at about half the height of the cabinet's interior; the original left shelf 037ab69e-8475-4418-b6db-df6738b91df1 stays; shelves left / middle / right 2 / 1 / 1. turn 2: one move-interior-fitting of right shelf c585292d-26f7-41da-92ff-50a278161f95 in right root 22e7519d-4218-46e4-b1a5-5c92934ad420, in its current parent, with an insertPosition 500 mm lower in y than its measured position, x and z unchanged; the returned actual placement is 500 mm lower, a library adjustment is reported; shelves 2 / 1 / 1. turn 3: one delete-interior-fittings of only middle shelf 19d07551-c89b-43ee-8caa-e4c2bef10fb6 in middle root 7b8bd635-7f19-4e3c-b280-95b91d4c4916; shelves 2 / 0 / 1, the two left shelves and the moved right shelf where turns 1 and 2 put them. Recreation may change instance IDs; the agent uses the returned IDs or discovers them again. Every turn keeps the three cabinets, their placement, finishes and docking; no cabinet or whole group is deleted, no separate delete/add commands for the move."
+    }
+  ],
+  "images": [
+    {
+      "path": "docs/images/kitchen-1.png",
+      "bytes": 1951356,
+      "sha256": "07a3fe7a8cb1f57f392f356cc52b8a2af78afe9e2ec4fe6e88a9a13e8b3b3d95"
+    },
+    {
+      "path": "docs/images/kitchen-4.png",
+      "bytes": 1373806,
+      "sha256": "702df5c2f88d820f7537320b38f88906c40e9746d0158709da6ea01a63ccf017"
+    }
+  ],
+  "node": "24.12.0 for roomle-ui; runner from environment",
+  "runtime": {
+    "planner": "http://localhost:5173",
+    "embedding": [
+      "http://localhost:3001/src/roomle-embedding-lib.ts",
+      "http://localhost:3001/src/hi.ts"
+    ]
+  },
+  "cacheState": "unknown; baseline additionally prewarmed by unpaced pilot",
+  "price": "Customer tariff unavailable; no currency comparison",
+  "sdk": {
+    "ai": "7.0.122",
+    "azure": "4.0.85"
+  },
+  "capabilityProbe": [
+    {
+      "deployment": "gpt-6.1-sol",
+      "resource": "controller-mes-resource",
+      "request": 1,
+      "status": 200,
+      "responseModel": "gpt-6.1-sol",
+      "usage": {
+        "input_tokens": 3541,
+        "input_tokens_details": {
+          "cache_write_tokens": 3538,
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3546
+      },
+      "error": null,
+      "durationMs": 2196.6152500000003
+    },
+    {
+      "deployment": "gpt-6.1-sol",
+      "resource": "controller-mes-resource",
+      "request": 2,
+      "status": 200,
+      "responseModel": "gpt-6.1-sol",
+      "usage": {
+        "input_tokens": 3541,
+        "input_tokens_details": {
+          "cache_write_tokens": 11,
+          "cached_tokens": 3527
+        },
+        "output_tokens": 5,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3546
+      },
+      "error": null,
+      "durationMs": 2030.1079159999995
+    },
+    {
+      "deployment": "gpt-6-astra",
+      "resource": "dfhifoundrysweden",
+      "request": 1,
+      "status": 200,
+      "responseModel": "gpt-6-astra",
+      "usage": {
+        "input_tokens": 3541,
+        "input_tokens_details": {
+          "cache_write_tokens": 3538,
+          "cached_tokens": 0
+        },
+        "output_tokens": 5,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3546
+      },
+      "error": null,
+      "durationMs": 1999.178833
+    },
+    {
+      "deployment": "gpt-6-astra",
+      "resource": "dfhifoundrysweden",
+      "request": 2,
+      "status": 200,
+      "responseModel": "gpt-6-astra",
+      "usage": {
+        "input_tokens": 3541,
+        "input_tokens_details": {
+          "cache_write_tokens": 11,
+          "cached_tokens": 3527
+        },
+        "output_tokens": 5,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3546
+      },
+      "error": null,
+      "durationMs": 1984.3600410000008
+    }
+  ]
+}

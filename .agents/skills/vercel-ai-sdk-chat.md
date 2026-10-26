@@ -26,7 +26,12 @@ Deviations from the comment's example code, found during implementation:
 
 The store's browser `streamChat` has an eight-step budget (`MAX_CHAT_STEPS` in ligna-store `hi-mcp/chat.ts`). Its `prepareStep` disables tools on the final model step, reserving that call for an answer from the preceding tool results; earlier steps may call tools, and an early normal answer ends the turn. The policy applies to both Azure and Mistral. The example's planning assistant has a 16-step budget.
 
+Direct OpenAI requests use `npm start openai:<model-id> <api-key>` (also `npm run dev`), provider
+`openai` and the embedding-lib's `@ai-sdk/openai` Responses adapter. The model ID is preserved
+exactly and ignores Azure/model override variables. The unprefixed `openai` alias remains Azure.
+
 ## Interrupted turns
+
 
 The planning assistant of the example keeps no failed turn: it shows "The planning assistant
 failed: <message>" in the window, and the next turn sees the completed turns only, with their tool

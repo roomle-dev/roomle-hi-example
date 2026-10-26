@@ -36,10 +36,7 @@ without the overexposure of the top light.
 **Test.** `image-planning-right-wall`: the object image shows the worktops in the colour of
 `mod_CountertopColor`.
 
-**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 71 (`image-only-no-text`,
-plan snapshot `ps_sv5ngzarx0q25sl3eevrxo42g3cdrcv`, bo-test): the main run's worktop is
-light/white in the saved object/top views while the opposite top remains brown. Both generated
-worktops carry Tiepolo walnut 216 in `plan.xml`; the model's group attributes also request 216.
+**Reproduce.** `mcp-test-2026-10-26_11-51-16`, gpt-6-astra 10 (`image-only-no-text`, local `feat/hi-mcp-performance`, default reasoning), snapshot `ps_sxjs0nfgpo2b48bst6sggvt7kpra5j`: the main run's worktop is white in the saved object image while the opposite top is brown. Both generated worktops retain Tiepolo walnut 216 in `plan-context.json` and the order data.
 
 ## 2. The water connection is an installation element only through a planner override
 
@@ -63,8 +60,4 @@ is decided with RML-18023. Then remove the override in roomle-ui `planner-kernel
 list the water connection in `installationElements` and not in `obstacles`; roomle-ui
 `it('classifies the levels 27 and 28 as electric plug and water connection')` holds.
 
-**Reproduce.** `mcp-test-2026-10-25_15-24-34`, gpt-6-astra 02 (`sink-cabinet-at-water-connection`,
-local roomle-ui without the override): `get-plan-context` lists no `installationElements` for the
-plan `ps_sau169slquuapnhdz3fdmc0u24eplrcf` — the water connection comes as an obstacle object.
-`GET https://api.roomle.com/v2/items/room_designer:water_connections` answers `layer` 43; roomle-ui
-`release/bo-test` `planner-kernel-access.ts:637` sets 28.
+**Reproduce.** `mcp-test-2026-10-26_11-51-16`, gpt-6-astra 02 (`sink-cabinet-at-water-connection`, local `feat/hi-mcp-performance`, default reasoning): `get-plan-context` explicitly requests `installationElements` but returns the connection only as an anonymous obstacle, x 3143.2–3416.8, y 3685–3765, height 425–675 mm. Snapshot `ps_sxi14t9jrs59ujlnnltpdrl5xgk4ttxr` places the sink group to its right at [3525,3765,0]; the answer reports missing service metadata.

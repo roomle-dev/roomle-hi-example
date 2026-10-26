@@ -230,6 +230,21 @@ const runSection = (r) => {
     `| ${r.attempts > 1 ? 'Test total (selected attempt)' : 'Test total'} | ${usageCells(r.usage)} |`
   );
   L.push('');
+  if (r.turns.some((turn) => turn.usage?.diagnostics)) {
+    L.push(
+      '| Prompt | Cache read tokens / coverage | Cache write tokens / coverage | Model calls | Request bytes | First visible text ms |'
+    );
+    L.push('|---|---|---|---|---|---|');
+    r.turns.forEach((turn, index) => {
+      const d = turn.usage?.diagnostics;
+      const detail = (key) =>
+        `${d?.details?.[key]?.tokens ?? '—'} / ${d?.details?.[key]?.status ?? 'unavailable'}`;
+      L.push(
+        `| ${index + 1} | ${detail('cacheReadTokens')} | ${detail('cacheWriteTokens')} | ${d?.modelCalls?.length ?? '—'} | ${d?.requests?.reduce((sum, request) => sum + request.bytes, 0) ?? '—'} | ${d?.firstTextMs == null ? '—' : Math.round(d.firstTextMs)} |`
+      );
+    });
+    L.push('');
+  }
   if (r.attempts > 1) {
     L.push(
       `Usage covers the selected attempt. Preserved attempts: ${(r.attemptDirs || []).map((dir, index) => `[${index + 1}](${dir}/console.log)`).join(', ')}.`

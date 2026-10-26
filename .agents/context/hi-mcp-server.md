@@ -29,7 +29,7 @@ For the shortest path to a first chat turn in the example, see the
 A standalone, copy-paste version of the embedding-lib HI presets demo. It
 contains the complete interface and browser JavaScript in one
 [`index.html`](../../minimal-hi-example/index.html), requires no build step, and loads only
-`@roomle/embedding-lib` and its `hi.js` from unpkg, pinned to the dev version `0.0.0-dev-c1bdbb4`
+`@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version `0.0.0-dev-2de4423`
 ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)).
 
 The preset dropdown is filled from `GET <HI_SERVER_BASE_URL>/backends/list`,

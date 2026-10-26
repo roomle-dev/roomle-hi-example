@@ -1,5 +1,13 @@
 # AI Chat in the Example — Reference
 
+With a planning-assistant build that supports shared reference, common rules and compact library
+data precede the conversation. Library data refreshes each turn, and the assistant reads current
+plan state through tools. Azure may reuse matching input computation automatically, but every
+request still transmits its content. Cache-read/write coverage and request bytes are separate
+measurements in test reports; missing counts are not zero. See the
+[implementation and decisions](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md)
+and [local-build setup](setup/unreleased-embedding-lib.md).
+
 The example page has a built-in AI chat that plans with the HI tools: the model
 reads the plan context and creates, modifies, or positions object groups by
 calling the HI MCP tools. It turns the example into a self-contained demo — no
@@ -12,14 +20,16 @@ embedding-lib (`createHiMcpTools`) — the tools of
 `hi-mcp-server` without an MCP server. Its
 reference is roomle-ui `packages/embedding-lib/docs/homag-intelligence-embedding.md`,
 "The AI Planning Assistant agent" and "HI MCP tools for an AI agent". The page
-loads the embedding-lib alpha release `9.0.0-alpha.5` from unpkg
+loads the pinned embedding-lib dev build from the npm CDN
 ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
-Supported providers: **Mistral**, **Anthropic (Claude)**, **Google (Gemini)** and
+Supported providers: **OpenAI**, **Mistral**, **Anthropic (Claude)**, **Google (Gemini)** and
 **Azure OpenAI**.
 
 ## Running it
 
 ```bash
+npm start "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY"   # direct OpenAI API; replace <model-id>
+npm run dev "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY" # same model, local planner (:5173)
 npm start mistral <api-key>           # mistral-large-latest (default)
 npm start mistral-medium <api-key>   # mistral-medium-latest
 npm start mistral-large-4 <api-key>  # mistral-large-4-0
@@ -37,6 +47,7 @@ The model name selects the provider and the model:
 
 | Model name | Provider | Model |
 | ---------- | -------- | ----- |
+| `openai:<model-id>` | OpenAI Responses API | Exact model ID after the prefix, including case and additional colons |
 | `mistral` | Mistral | `mistral-large-latest` (default) |
 | `mistral-medium` | Mistral | `mistral-medium-latest` |
 | `mistral-large` | Mistral | `mistral-large-latest` |
@@ -55,7 +66,9 @@ The model name selects the provider and the model:
 | `gpt-6.1-sol` | Azure OpenAI (its own Foundry resource) | the `gpt-6.1-sol` deployment |
 
 Model names and ids are matched case-insensitively, so `Mistral-Large-3` and
-`mistral-large-3` are the same request.
+`mistral-large-3` are the same request. The `openai:` prefix is case-insensitive;
+its model ID is preserved exactly. An empty ID is rejected before the page starts.
+Choose an OpenAI model supporting the tools and image inputs used by the planning assistant.
 
 The launcher (`minimal-hi-example/start.mjs`) turns the model name and the key
 into the `PlanningAssistantConfig` of the embedding-lib — a JSON object with the
@@ -77,7 +90,9 @@ AZURE_RESOURCE_NAME=my-resource HI_CHAT_MODEL=my-gpt4o-deployment npm start azur
 ```
 
 `HI_CHAT_MODEL` replaces the model of every provider other than the Foundry
-deployments.
+deployments and explicit `openai:<model-id>` requests. OpenAI requests use the supplied OpenAI
+key and the model ID after the prefix; Azure resource and reasoning variables do not affect them.
+The unprefixed `openai` alias continues to select Azure.
 
 Every `gpt-*` model and `mistral-large-3` need neither: they are deployments on the HI
 Azure AI Foundry resource and are called through its OpenAI v1 endpoint
@@ -100,6 +115,13 @@ and does not make Chat Completions compatible.
 [Official OpenAI documentation](https://developers.openai.com/api/docs/guides/latest-model).
 Foundry `mistral-large-3` uses Chat Completions (`chatCompletions: true` in its
 config): its Responses endpoint rejects image input.
+
+With an embedding-lib that supports shared reference caching, the launcher's configured
+`gpt-6-astra` and `gpt-6.1-sol` deployments opt in to a cache boundary after library reference.
+Other deployment names retain their default cache behavior. The complete prompt is still sent
+on each request; this option concerns provider processing, not upload size. Integration details
+and compatibility restrictions are in the
+[prompt-caching reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md).
 
 **Reasoning effort.** The launcher gives the lightweight deployments gpt-5.4-mini and gpt-5-mini the
 reasoning effort `high` (`reasoningEffort` of the config, from `FOUNDRY_DEPLOYMENTS` in

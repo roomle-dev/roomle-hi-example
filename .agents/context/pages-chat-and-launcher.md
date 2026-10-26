@@ -14,7 +14,7 @@ example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`
 
 | Argument | Effect |
 | -------- | ------ |
-| `<model> <api-key>` | Also serve the model of the page's chat and open the page with the chat window. The model is a name of `MODEL_ALIASES`, a deployment of `FOUNDRY_DEPLOYMENTS` or a `gpt-*`, `mistral-*`, `claude-*`, `gemini-*` model id; an unknown model or a missing key exits with 1 |
+| `<model> <api-key>` | Also serve the model of the page's chat and open the page with the chat window. The model is `openai:<model-id>`, a name of `MODEL_ALIASES`, a deployment of `FOUNDRY_DEPLOYMENTS` or a `gpt-*`, `mistral-*`, `claude-*`, `gemini-*` model id; an unknown model or a missing key exits with 1 |
 | `--dev` | The planner loads from `http://localhost:5173/` (`EXAMPLE_SERVER_URL` overrides) |
 | `--no-open` | Do not open the browser |
 
@@ -22,7 +22,7 @@ example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`
 | -------- | ------- | ------ |
 | `EXAMPLE_PORT` | 3000 | page port |
 | `EXAMPLE_SERVER_URL` | — | the planner's Rubens UI, passed as `server_url` |
-| `HI_CHAT_MODEL` | — | replaces the model of every provider other than the Foundry deployments (an Azure deployment name for `azure`) |
+| `HI_CHAT_MODEL` | — | replaces the model of every provider other than the Foundry deployments and explicit `openai:<model-id>` requests (an Azure deployment name for `azure`) |
 | `AZURE_RESOURCE_NAME` | — | required for `azure` / `openai`: the resource of that deployment |
 | `HI_CHAT_REASONING_EFFORT` | per deployment | the reasoning effort of an Azure model on the Responses API |
 
@@ -30,13 +30,19 @@ example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`
 
 1. **Model:** `planningAssistantConfig` turns the model name and the key into the
    `PlanningAssistantConfig` of the embedding-lib — `{ provider, model, apiKey, baseUrl?,
-   chatCompletions?, reasoningEffort?, readsImages }`. Every `gpt-*` id and the names of
+   chatCompletions?, reasoningEffort?, referenceCacheBreakpoint?, readsImages }`. Every `gpt-*` id and the names of
    `FOUNDRY_DEPLOYMENTS` are Azure deployments on the HI Foundry resource (`FOUNDRY_BASE_URL`), or
    on the resource their entry names (`gpt-6.1-sol`); `mistral-large-3` uses Chat Completions;
    gpt-5-mini and gpt-5.4-mini get the reasoning effort `high`. The aliases map to Mistral,
    Anthropic, Google and an Azure deployment on `AZURE_RESOURCE_NAME`, whose base URL is the one the
    AI SDK builds from a resource name. `readsImages` holds for every Anthropic and Google model,
    every `gpt-*` deployment on a Foundry resource and the ids of `IMAGE_INPUT_MODELS`.
+   The two configured GPT-6 deployments opt in to `referenceCacheBreakpoint`; other deployment
+   names do not inherit that capability. It requires an embedding-lib that supports the option.
+   `openai:<model-id>` selects provider `openai` before alias/deployment matching and preserves
+   the complete suffix. It passes the supplied key, enables image input and uses the embedding-lib's
+   OpenAI Responses adapter. Azure variables and `HI_CHAT_MODEL` cannot redirect that request.
+   An empty suffix exits with the `openai:<model-id>` usage message.
 2. **Static server** for `minimal-hi-example/` (`/` → `index.html`; only `.html`, `.js`, `.md`, `.json`).
 3. **Config:** `/planning-assistant-config.json` answers the config as JSON with
    `Cache-Control: no-store`, to a request from this machine only (`127.0.0.1`, `::1`) under a
@@ -53,8 +59,8 @@ the 403 for a foreign Host, and that the page port can be bound again after sign
 
 ## The chat of the example page
 
-`index.html` imports `@roomle/embedding-lib` and its `hi.js` from unpkg, pinned to the dev version
-`0.0.0-dev-c1bdbb4`
+`index.html` imports `@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version
+`0.0.0-dev-2de4423`
 ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`
 the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
 
@@ -84,6 +90,15 @@ prompt. The record names the resolved provider/model, input/output/total tokens 
 without the key or prompt contents. The prompt runner collects this host-page record separately
 from the planner-frame tool log; the [testing reference](deployment-and-testing.md#prompt-token-accounting)
 defines the stored measurements and their report totals.
+
+The local planning assistant can supply a shared reference before conversation history: common
+rules plus a compact article/attribute projection refreshed each turn. The example owns neither
+the reference content. The launcher selects verified deployment capabilities; the embedding-lib
+owns prompt assembly and cache policy. Architecture, lifecycle and decisions live in roomle-ui's
+[prompt-caching reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md).
+Version 1 diagnostics preserve cache-read/write coverage, model-call timings and request/reference
+bytes and digests without storing prompt content or credentials. The runner records both local
+embedding imports and planner origins so a local benchmark can verify its actual runtime.
 
 ## Before you change these files
 

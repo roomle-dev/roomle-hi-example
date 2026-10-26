@@ -1,0 +1,282 @@
+{
+  "session": "mcp-test-2026-10-26_11-51-16",
+  "models": [
+    {
+      "provider": "gpt-6-astra",
+      "apiKey": "$AZURE_GPT_KEY"
+    }
+  ],
+  "measurement": {
+    "startedAt": "2026-10-26T10:51:16.542Z",
+    "finishedAt": "2026-10-26T11:10:20.608Z",
+    "input": 7861901,
+    "output": 21206,
+    "read": 7512800,
+    "write": 348789,
+    "noCache": 312,
+    "calls": 80,
+    "requests": 104,
+    "bytes": 113506907,
+    "coverage": "complete selected attempts",
+    "extraFailedAttemptKnownUsage": {
+      "input": 954629,
+      "output": 1798,
+      "status": "partial"
+    }
+  },
+  "runs": [
+    {
+      "test": "edit-add-move-delete-subarticle",
+      "number": "01",
+      "prompts": [
+        "add a shelf to the middle of the left-most carcass of the wardrobe",
+        "move the shelf inside the right-most cabinet down by 500 mm",
+        "delete the shelf from the middle cabinet"
+      ],
+      "expect": "turn 1: get-interior-design-options on group ce854b3e-90d6-4e65-ba7b-461e125cc8da, then one add-interior-fitting of a compatible FixedShelf into left root ab0737ab-a681-48ed-995b-46ee788a2329, at about half the height of the cabinet's interior; the original left shelf 037ab69e-8475-4418-b6db-df6738b91df1 stays; shelves left / middle / right 2 / 1 / 1. turn 2: one move-interior-fitting of right shelf c585292d-26f7-41da-92ff-50a278161f95 in right root 22e7519d-4218-46e4-b1a5-5c92934ad420, in its current parent, with an insertPosition 500 mm lower in y than its measured position, x and z unchanged; the returned actual placement is 500 mm lower, a library adjustment is reported; shelves 2 / 1 / 1. turn 3: one delete-interior-fittings of only middle shelf 19d07551-c89b-43ee-8caa-e4c2bef10fb6 in middle root 7b8bd635-7f19-4e3c-b280-95b91d4c4916; shelves 2 / 0 / 1, the two left shelves and the moved right shelf where turns 1 and 2 put them. Recreation may change instance IDs; the agent uses the returned IDs or discovers them again. Every turn keeps the three cabinets, their placement, finishes and docking; no cabinet or whole group is deleted, no separate delete/add commands for the move.",
+      "plan": "three-open-wardrobes-with-shelves",
+      "planSnapshotId": "ps_sximc2dh5wqrky792dyvsjgiod075u3",
+      "attempts": 3,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 1141557,
+        "outputTokens": 739,
+        "totalTokens": 1142296
+      },
+      "evaluation": {
+        "verdict": "pass",
+        "bug": "no",
+        "bugText": "No tool fault. The move reports the calculated shelf-setting replacement, and deleting the middle installed shelf reports restoration of the default interior.",
+        "doors": "All three wardrobes are open-front; no doors.",
+        "evaluation": "All three turns succeed. One FixedShelf is added to the left carcass at insertPosition [19,533,1050], retaining its original upper shelf. One move-interior-fitting lowers the existing right shelf to [19,533,1198.5], exactly 500 mm. One delete-interior-fittings removes only the middle explicit shelf. Final images and saved fittings show explicit counts 2 / 0 / 1; the middle carcass's four default adjustable shelves return and are disclosed. Original three cabinet identities, finishes, docking and group placement [2200,3765,0], rotation 0, remain."
+      }
+    },
+    {
+      "test": "sink-cabinet-at-water-connection",
+      "number": "02",
+      "prompts": ["add a cabinet with a sink"],
+      "expect": "one group with a sink cabinet standing at the water connection whose position the installationElements section lists; the answer names the water connection",
+      "plan": "empty-room-with-water-connection",
+      "planSnapshotId": "ps_sxi14t9jrs59ujlnnltpdrl5xgk4ttxr",
+      "attempts": 1,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 412616,
+        "outputTokens": 655,
+        "totalTokens": 413271
+      },
+      "evaluation": {
+        "verdict": "partial",
+        "bug": "yes: known catalog/planner issue",
+        "bugText": "Known roomle-ui backlog issue 2: the visible water connection is an anonymous obstacle at x 3143.2–3416.8, y 3685–3765, height 425–675 mm. The requested fresh get-plan-context includes installationElements, but none are returned. This checkout lacks the release planner's water_connections level override; the existing catalog classification issue prevents semantic supply placement. No caching regression is indicated.",
+        "doors": "New sink/base pair has Left / Right outer hinges; handles face inward.",
+        "evaluation": "A usable snow-white SUT60 sink cabinet plus a supporting UTB60 cabinet is built on the back wall, with Blanco sink and Grohe tap confirmed by order data and images. Final group position [3525,3765,0] leaves the water connection outside its left edge rather than behind the sink. The answer accurately says no water/drainage metadata is recorded. The cabinet request succeeds, but the test's water-connection placement is not fulfilled."
+      }
+    },
+    {
+      "test": "kitchen-oven-hood-sink-fridge-corner",
+      "number": "03",
+      "prompts": [
+        "plan a kitchen with an oven, a hob, a range hood, a sink and a fridge"
+      ],
+      "expect": "Create a coherent kitchen with oven, hob, range hood, sink and fridge. Use the water connection for the sink where feasible and report deviations. Preserve the room and existing unrelated contents. Confirm requested appliances from the saved plan and order data, placement from the top image, and any corrections from tool results.",
+      "plan": "empty-room-with-water-connection",
+      "planSnapshotId": "ps_sxib1c935o720w38vxgysmdp79tf79w",
+      "attempts": 1,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 430502,
+        "outputTokens": 1291,
+        "totalTokens": 431793
+      },
+      "evaluation": {
+        "verdict": "pass",
+        "bug": "yes: known renderer issue",
+        "bugText": "Known roomle-ui renderer issue 1: the saved object view renders the Walnut 215 worktop white, while the room view shows wood and saved attributes retain 215. The water-connection metadata gap from case 02 is also present and disclosed. No HI tool or prefix defect is identified.",
+        "doors": "Floor-row fridge is explicitly Left; the other free end is drawers/panel. The separate single upper uses Left, and the upper pair Left / Right. No outside end handle is visible.",
+        "evaluation": "The prompt does not require a corner despite the test title. A straight 4548 mm right-wall kitchen is a valid design: group [4815,3539,0], rotation 270, with fridge, sink, oven, hob and hood confirmed in nested order data. Images show the hood above its hob, wall units at hanging height, and the room/window/door clear. White fronts and walnut worktop match the answer. The plinth change to 150 mm and matching upper-height shift are reported. Utility placement remains a disclosed site check because the supplied plan context has no installationElements."
+      }
+    },
+    {
+      "test": "kitchen-oven-fridge-sink-corner",
+      "number": "04",
+      "prompts": [
+        "plan a kitchen with an oven, a hob, a range hood, a sink and a fridge in the back right corner of the room"
+      ],
+      "expect": "Create the kitchen requested by the prompt with oven, hob, range hood, fridge and sink, using the named corner/walls and the plan water connection where feasible. Preserve the room and unrelated contents. Check the exact requested components and layout against the saved plan, tool arguments, images and answer; disclose substitutions or placement limitations.",
+      "plan": "default-room",
+      "planSnapshotId": "ps_sxivga4huz2ozfasmizoaat94suaed1",
+      "attempts": 1,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 441812,
+        "outputTokens": 1274,
+        "totalTokens": 443086
+      },
+      "evaluation": {
+        "verdict": "pass",
+        "bug": "no",
+        "bugText": "No tool failure or wrong placement. The known utility-metadata gap is disclosed; no connection position was explicitly requested in the user prompt.",
+        "doors": "Rightmost fridge-freezer explicitly Right; the floor-row left end is drawers/panel. The upper double cabinet uses LeftRight. No outside row-end handle.",
+        "evaluation": "One coherent L-shaped group stands at the back-right corner [4815,3765,0], rotation 270, footprint 3880 × 3090 mm. It contains a 90 cm hob and hood on the back leg, sink and preparation storage, a raised Siemens oven and fridge-freezer on the right. Saved appliance configurations and images confirm all five requested items. Back-window and right-door clearance are retained, including 165 mm before the doorway. Reported 150 mm plinth and upper-height adjustments remain consistent with the plan."
+      }
+    },
+    {
+      "test": "full-kitchen-walnut-marble-corner",
+      "number": "05",
+      "prompts": [
+        "create a kitchen with an oven, hob, cooker hood, fridge, sink and cabinet with drawers, as well as wall cabinets in the back right corner of the room. Arrange the kitchen around the corner. The front of the kitchen should be made of walnut and the worktop should be made of dark marble"
+      ],
+      "expect": "appliances: oven, hob, cooker hood, fridge, sink; storage: cabinet with drawers, wall cabinets; placement: back right corner, around the corner; materials: walnut front, dark marble worktop",
+      "plan": "default-room",
+      "planSnapshotId": "ps_sxiqmxue39k5k62wx9bebjoiausv8p8",
+      "attempts": 1,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 431045,
+        "outputTokens": 1335,
+        "totalTokens": 432380
+      },
+      "evaluation": {
+        "verdict": "pass",
+        "bug": "yes: known renderer issue",
+        "bugText": "Known roomle-ui renderer issue 1: the top image shows the Dark marble 324 worktop white while the room/object images and saved material inputs confirm the intended dark surface. No planning-tool defect.",
+        "doors": "Floor-row fridge at the right end uses Right; left end is drawers. Back-wall upper pair is Left / Right; separated right-wall uppers have outward Left / Right hinges.",
+        "evaluation": "The requested kitchen wraps the back-right corner at [4815,3765,0], rotation 270, footprint 3561 × 3071 mm. It includes oven, hob, hood, fridge-freezer, sink, five drawer bases and four upper cabinets. Front attributes are Walnut 215 and generated worktop Dark marble 324; the compatible ModernNature carcase adjustment is reported. Saved views show clear window/door and correct upper/hob alignment. All requested planning content is present."
+      }
+    },
+    {
+      "test": "kitchen-family-two-kids",
+      "number": "06",
+      "prompts": ["create a kitchen for a family with 2 kids"],
+      "expect": "Create a usable kitchen for a family with two children with the components and finishes requested by the prompt. Keep doors/routes clear where possible, use the room connections and available catalog, and state assumptions/open checks. Evaluate the exact prompt against the saved plan, order data, images, tool feedback and final answer; do not treat unverified safety recommendations as an implemented guarantee.",
+      "plan": "default-room",
+      "planSnapshotId": "ps_sxj106hsyrjws0bmy5avy6gu06tdabeb",
+      "attempts": 2,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 449512,
+        "outputTokens": 1577,
+        "totalTokens": 451089
+      },
+      "evaluation": {
+        "verdict": "pass",
+        "bug": "no",
+        "bugText": "No tool or placement fault. The reported plinth and wall-unit height adjustments remain coherent with the final group.",
+        "doors": "Rightmost fridge-freezer explicitly Right. Other floor units are drawers/panels; the single upper at the right end is Right, with a decorative panel on its left.",
+        "evaluation": "A usable family kitchen occupies the back/right walls at [4815,3765,0], rotation 270, footprint 3880 × 3990 mm. It includes induction hob, hood, raised oven, fridge-freezer, a wide sink with adjacent dishwasher, substantial drawers and preparation space. Cloudy-blue fronts 152 and Bijoux oak top 224 match the answer. Saved images show low cabinets below the 950 mm window sill, tap beyond the window, an open centre and 165 mm before the right doorway. The answer explains storage zones and explicitly leaves child locks, organizers and installation verification unresolved; the broad family-kitchen prompt does not require those fittings."
+      }
+    },
+    {
+      "test": "image-kitchen-left-wall",
+      "number": "07",
+      "prompts": [
+        "create a kitchen like the one in the image on the left-hand wall of the room"
+      ],
+      "expect": "the model uses the supplied image-planning and kitchen guidance, or fetches it when missing, and plans the kitchen of the image on the left-hand wall, in the order of the image; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission",
+      "plan": "default-room",
+      "planSnapshotId": "ps_sxjadxfqhfhqp30h9crs6x4phc30vwr",
+      "attempts": 1,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 632061,
+        "outputTokens": 1254,
+        "totalTokens": 633315
+      },
+      "evaluation": {
+        "verdict": "partial",
+        "bug": "no: known library issue",
+        "bugText": "Known library issue 10: mod_CreateBacksplash true fails Error 14034 in tab_GrainDirectionSettings. The Bool input is valid, but generated mr_Backsplash cannot calculate; the transaction is rejected without removing the kitchen. Ownership remains library/planner integration under the existing investigation. Compatible handle correction is reported, not a silent tool failure.",
+        "doors": "Floor-row ends are fridge Left / sink Right. The single left upper is Left; the pair to the hood’s right is Automatic (Left) / Right. No outside end handles.",
+        "evaluation": "One 3010 mm straight run is centred on the requested left wall at [-685,-240,0], rotation 90, leaving about 995 mm at each end. It preserves the photo sequence of tall fridge, drawer/door storage, oven/hob/hood, storage and sink, with three upper cupboards. Olive-green lower fronts 160, wood upper fronts/top/plinth 224 and black handles approximate the image. The two-door fridge and curved handles are disclosed substitutions. The dark backsplash is absent after its calculation failure and clearly disclosed, so the image recreation is partial."
+      }
+    },
+    {
+      "test": "image-kitchen-back-right-corner",
+      "number": "08",
+      "prompts": [
+        "create a kitchen like the one shown in the image, in the back right corner of the room"
+      ],
+      "expect": "the model uses the supplied image-planning and kitchen guidance, or fetches it when missing, and plans the L-shaped kitchen of the image around the back right corner, one leg on the back wall and one on the right wall: the long leg with the tall units at its far end - among them one tall unit with the microwave built in above the oven - base units, a drawer unit below the hob, a chimney range hood above the hob and a wall unit on each side of the hood; the short leg with the sink unit at its end; anthracite fronts and a light oak worktop; no tall unit and no wall unit in front of the window (back wall, x -450 to 1650, bottom 950) - the base units may run below it - and nothing in the door opening (right wall, z 280 to 1180); the image shows no backsplash; the final answer names each leg at the wall it stands at in the plan and accurately reports any remaining omission",
+      "plan": "default-room",
+      "planSnapshotId": "ps_sxjjgum1mvmpgvmy2qtdqwcnci0gblx",
+      "attempts": 1,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 1719513,
+        "outputTokens": 5028,
+        "totalTokens": 1724541
+      },
+      "evaluation": {
+        "verdict": "partial",
+        "bug": "no: known library issues",
+        "bugText": "Known library issues 11 and 9 recur: handle calculation fails with missing mod_HandleDrill, then an attempted rebuild fails HandleMapping 13003 (100/128/Black); narrowing O2TB90 to 600 mm while retaining LeftRight fails DoorSettings 14019. Existing verified-option investigation in issue 9 establishes that width and direction are accepted separately with no range restriction. The agent recovers with compatible finishes and OTB60. The single-appliance housing limitation (issue 16) is disclosed before creating; no silently lost microwave is claimed.",
+        "doors": "Fridge at the floor-row right end is Right; the back-wall free end is dishwasher/panel, with the sink explicitly Left. Separate upper ends use Left / Right. No outside end-handle fault.",
+        "evaluation": "The photo is mirrored to keep tall units clear of the back window, with sink/dishwasher on the back leg and hob, raised oven, pantry and fridge on the right. Final corner [4815,3765,0], rotation 270, footprint 3680 × 2390 mm, leaves 365 mm to the doorway. The agent inspects an initial image, adds a 300 mm landing cabinet beside the hob and resolves upper/hood crowding before the final image. Ash grey fronts 240, walnut top 215 and black handles approximate the source. The upper arrangement is simplified and the microwave omitted, both disclosed; the recreation remains partial."
+      }
+    },
+    {
+      "test": "image-planning-right-wall",
+      "number": "09",
+      "prompts": [
+        "create a planning as to the one shown in the picture on the right-hand wall of the room."
+      ],
+      "expect": "the model uses the supplied image-planning and kitchen guidance, or fetches it when missing, and plans the kitchen of the image: one row of five tall units against the right-hand wall, in the order of the image, between the back right corner and the door (right wall, z 280 to 1180), clear of the door opening - white fronts, two neighbouring tall units with oak fronts, one white tall unit with the oven built in; and a separate island group of base units free in the room in front of the row, parallel to it with a walkway between, carrying the hob and the sink; white fronts and a light grey stone worktop on the island; no wall units; the image shows no backsplash; the final answer accurately reports any remaining omission",
+      "plan": "default-room",
+      "planSnapshotId": "ps_sxj11r22858wir474hwiftq77oshh62c",
+      "attempts": 1,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 545205,
+        "outputTokens": 2851,
+        "totalTokens": 548056
+      },
+      "evaluation": {
+        "verdict": "pass",
+        "bug": "no: known library issue",
+        "bugText": "Known library issue 17: Bora PUXU on UKS2A90 fails Error 13008, Legrabox - 533 - 0. The failed island transaction does not remove the successful tall bank. Resubmitting only the island with UKB2A90 succeeds. No new HI tool fault.",
+        "doors": "Tall-row outer fridge/pantry doors explicitly Left / Right. Island sink Left; opposite four-door row Left / Automatic / Automatic / Right. Outward ends retained.",
+        "evaluation": "The five-unit 3000 mm tall bank stands on the right wall at [4815,3242.5,0], rotation 270, in the source order: fridge, oven, two wood-accent units, white pantry. The separate 2420 × 993 mm island is parallel at [2350,542,0], rotation 90, with sink, Bora hob/extraction and four outward-facing handleless doors. Images and saved geometry show about 1.22 m clear aisle and unobstructed door/window. White 192, pale Maple 230 accents and light stone 380 approximate the source. Maple, curved black handles and chrome tap are expressly disclosed substitutions; the pale wood is an acceptable visual approximation, not an exact oak match. No wall units or backsplash are added."
+      }
+    },
+    {
+      "test": "image-only-no-text",
+      "number": "10",
+      "prompts": [null],
+      "expect": "the model decides what to plan; the chat sends the image with the image prompt of the planner, which names the skill image-planning; the model uses the supplied image-planning and kitchen guidance for its checks, or fetches it when missing, and plans the galley kitchen of the image as close to it as possible in the narrow wing of the L-shaped room, whose end wall has the window as in the image: one row along the left wall (x -780) from the window wall towards the door - the tall fridge unit, the sink unit, the dishwasher, the oven below the hob and drawer units, wall units above - and opposite it, along the wall at x 2220, base units with a worktop and a wall unit above them; under the window (top wall, x -330 to 1770, bottom 950) at most base units or a worktop, no tall unit and no wall unit in front of it; the passage between the two doors (left and right wall, z -210 to 690) stays free: no unit in a door opening or in the swing of the right door (x 3530 to 4420); cream fronts and a walnut worktop; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission",
+      "plan": "l-shaped-pass-through-room",
+      "planSnapshotId": "ps_sxjs0nfgpo2b48bst6sggvt7kpra5j",
+      "attempts": 1,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 1658078,
+        "outputTokens": 5202,
+        "totalTokens": 1663280
+      },
+      "evaluation": {
+        "verdict": "partial",
+        "bug": "yes: known renderer issue",
+        "bugText": "Known roomle-ui renderer issue 1: the main worktop looks white in the object view while its saved material is Tiepolo walnut 216, matching the brown opposite worktop. Existing library issues 10 and 11 also recur: backsplashes fail GrainDirectionSettings 14034, and silver-handle transactions fail HandleStripe 22025 / None JSON. Failed edits preserve the kitchen; compatible black curved handles recover. No new prefix/tool defect.",
+        "doors": "Main floor-row fridge end Left, other end drawers; four-upper row Left / Automatic / Automatic / Right. Opposite base pair Left / Right; single opposite upper Right. Outward row ends retained.",
+        "evaluation": "The image-only prompt produces opposing galley runs in the room’s narrow wing: 2700 mm left run at [-780,1065,0], rotation 90, and 1220 mm shallow opposite run at [2220,3355,0], rotation 270. Saved order data confirms fridge-freezer, sink, 450 mm dishwasher, oven and hob. Five upper cabinets and the opposite worktop/storage are present; the approximately 1.97 m aisle and room openings remain clear. Sunny-white fronts 190 and walnut tops 216 broadly match the photo. The answer discloses black handles, different glass fronts, missing wood splashbacks, counter bridge, radiator and extractor. The final two glass fronts use Modern/light-marble frames rather than the photo’s horizontal glass strips; this is a usable but incomplete recreation."
+      }
+    }
+  ],
+  "plans": {
+    "default-room": "ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv",
+    "living-room": "ps_nwzhfk8bjc2gu02gsyocsdragi0rxey",
+    "closets": "ps_n9zrz89zsyy46l34mkf5pd52cx2ea2y",
+    "utility-room": "ps_mq3m2wuhq6w23ry742eh50nb2vub5ej",
+    "room-and-attic": "ps_qn012p0tjux6dabt6oym0bzngmqex70u",
+    "three-tall-units": "ps_s3p5hmscmmsnshopj2tybjwmt7ijy5o",
+    "corner-kitchen-wall-units": "ps_s7hy5nqvtts37wl79u6q8tq67bc12s2",
+    "two-wardrobes-right-wall": "ps_s3qfqirqsvfwrr8em4d344h0c4sk8po",
+    "three-open-wardrobes-with-shelves": "ps_sbga21bftgc6paechjqf8x5qbk538sp",
+    "open-plan-room": "ps_qwm5odi6tyflyqwpdcxz1la791ho633",
+    "room-with-supplies": "ps_sa6laqmrrczr6wmo8jfk7pdyz36omon",
+    "empty-room-with-water-connection": "ps_sau169slquuapnhdz3fdmc0u24eplrcf",
+    "l-shaped-pass-through-room": "ps_sje41pva5egn6qp5xti55q6c7fcfin5"
+  },
+  "promptSuffix": "Decide any open details yourself instead of asking.",
+  "testSet": "minimum"
+}

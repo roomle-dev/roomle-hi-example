@@ -1,0 +1,3567 @@
+[
+  {
+    "session": ".temp/result/prompt-caching-paced-baseline-1",
+    "test": "01-full-kitchen-walnut-marble-corner",
+    "snapshot": "ps_sxasyyy5oow8p0d8pcuu7qi1aofd7n3",
+    "errors": [],
+    "answers": [
+      "Created an **L-shaped kitchen in the back-right corner**, extending roughly 3 metres along each wall, with walnut fronts, matching exposed side panels and a dark-marble worktop.\n\n- **Back wall:** 900 mm sink cabinet with an anthracite Blanco sink, a 900 mm drawer cabinet and corner storage, plus two 900 mm wall cabinets.\n- **Right wall:** oven and ceramic hob in the 600 mm BODR60 cooker cabinet, Siemens cooker hood above, two 600 mm drawer cabinets and an integrated fridge. Two wall cabinets complete this leg.\n\nThe back-wall window remains clear by approximately **185 mm**, and the right-wall doorway by **965 mm**. All requested items are in the plan. Service connections, appliance-opening clearances and extraction requirements still need professional verification before installation."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [4815, 3765, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [0, 3080],
+            "y": [-2990, 0],
+            "widthMm": 3080,
+            "depthMm": 2990
+          }
+        },
+        "roots": [
+          {
+            "articleId": "UELTB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "SUB2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "W60U",
+            "attributes": []
+          },
+          {
+            "articleId": "US2A60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "HK60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "W60H",
+            "attributes": []
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "324"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": []
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-baseline-1",
+    "test": "02-image-kitchen-left-wall",
+    "snapshot": "ps_sxayn6srq782ih4cscokzs8i3irez3v",
+    "errors": [],
+    "answers": [
+      "I’ll recreate the straight-run layout on the left wall: a tall fridge-freezer, drawer-and-door cabinet, oven with hob and stainless-steel hood, then a sink and storage cabinet, with three wood-effect wall cabinets. I’ll use the closest available green and oak finishes and centre the run to keep it away from the back-wall window.\n\nCreated a **3.01 m kitchen centred on the left-hand wall**, following the photo’s layout: tall fridge-freezer, drawer-and-door cabinet, oven and ceramic hob, sink, end storage, and three wall cabinets with a stainless-steel hood.\n\nI used **Olive green fronts and Bijoux oak finishes** as the closest available match, with black handles; the library substituted curved bow handles. The back-wall window and right-wall doorway remain clear.\n\nThe dark backsplash could not be generated, so it is **not included**. This is a concept: plumbing, electrical supply, ventilation and appliance clearances still need professional verification. Like the photo, it has limited preparation space between the hob and sink."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-685, -240, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 3010],
+            "y": [-622.3, 0],
+            "widthMm": 3010,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HK260",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "USTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "224"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "224"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "224"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "224"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module 'b0803b9a-c96b-4497-849f-01c2701c8e22' (mr_Backsplash) of group 'a6b813fc-4aca-4ca6-9428-df6ed51ab607' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 620 - 110. Change the failing values or replace the article, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-baseline-1",
+    "test": "03-image-only-no-text",
+    "snapshot": "ps_sxa6sx7tv1e61zbv40e0t0mtfdccq0u",
+    "errors": [],
+    "answers": [
+      "I’ll recreate the narrow galley kitchen: a tall cabinet followed by sink, dishwasher, oven/hob and drawers on one side, with a shorter worktop-and-storage run opposite. I’ll match the cream fronts, metal handles and wood-look worktops as closely as the catalog allows, while fitting the layout around the plan’s openings.\nThe plan’s room is wider than the photo, so I’ll preserve the two facing runs rather than add extra cabinets. I’ll set both runs back from the rear window to keep it clear, interpret the tall unit as pantry storage, and use a visible extractor as a substitute for the photo’s concealed extraction.\nCreated the photo-inspired galley kitchen as two facing runs:\n\n- **Left wall:** 600 mm tall pantry, 600 mm sink cabinet, 600 mm dishwasher housing, 600 mm oven/hob cabinet and 300 mm drawers, with wall storage and an extractor above.\n- **Right wall:** two 600 mm base cupboards beneath a continuous worktop, plus one wall cupboard.\n\nI matched the finishes with **Sunny white cream fronts**, **Tiepolo walnut worktops** and **brushed stainless-steel rail handles**, substituting these for the photo’s curved handles. The tall unit is treated as pantry storage, not a refrigerator.\n\nBoth runs stop about **650 mm before the rear window**, keeping its 2100 mm-wide opening clear; neither blocks the doors. The wider plan room leaves approximately **1760 mm between the closed runs**.\n\nThe photo’s wood backsplash could not be generated, and the under-window ledge is omitted. This remains a **concept**: plumbing, electrical supply, extraction, appliance-open clearances and worktop cut-outs need verification. The sink drainer also limits preparation space beside the hob, so the opposite worktop provides the main preparation area."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-780, 410, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 2710],
+            "y": [-622.3, 0],
+            "widthMm": 2710,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HTS2AB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "GSP",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "216"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      },
+      {
+        "position": {
+          "pos": [2220, 3105, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [-10, 1210],
+            "y": [-617, 0],
+            "widthMm": 1220,
+            "depthMm": 617
+          }
+        },
+        "roots": [
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "216"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '14be7cc7-3908-4fac-a6db-5dac1bd8b3b1', '777d6673-37d1-4107-b3df-0a68fde6a32f', 'e04d1e4f-f028-4b94-866d-2adf4577a612', 'b0f6386a-63e2-470e-a526-7bd2e355c304', '186a07a1-32e9-495d-83d0-23d49e238c92' (HTS2AB60, SUT60, OTB60 ×2, OTB30) of group '20cc8aa8-e234-470f-a668-bbe1fe380222' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root modules '6b12f993-994b-4edb-b065-9d01f0c133d3', 'b32541a2-43fa-48c7-8a75-462ea1b1dc82' (UHS60, US2A30) of group '20cc8aa8-e234-470f-a668-bbe1fe380222' - Unexpected token 'N', \"None\" is not valid JSON. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '97a5ae7b-c2b0-4fc3-a5d9-ec2738780fc6', '3b665aed-9e5a-4014-8276-3c0d6a46ce9d', 'b701a57c-a421-46f1-bb22-4944f3476f09' (UTB60 ×2, OTB60) of group 'fc6914c0-aadb-4232-9a84-8a794ed02a3e' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '14be7cc7-3908-4fac-a6db-5dac1bd8b3b1', '777d6673-37d1-4107-b3df-0a68fde6a32f', 'e04d1e4f-f028-4b94-866d-2adf4577a612', 'b0f6386a-63e2-470e-a526-7bd2e355c304', '186a07a1-32e9-495d-83d0-23d49e238c92' (HTS2AB60, SUT60, OTB60 ×2, OTB30) of group '20cc8aa8-e234-470f-a668-bbe1fe380222' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root modules '6b12f993-994b-4edb-b065-9d01f0c133d3', 'b32541a2-43fa-48c7-8a75-462ea1b1dc82' (UHS60, US2A30) of group '20cc8aa8-e234-470f-a668-bbe1fe380222' - Unexpected token 'N', \"None\" is not valid JSON; the library could not calculate root module '61bf1ec1-b071-4906-b52b-458cee55d21c' (mr_Backsplash) of group '20cc8aa8-e234-470f-a668-bbe1fe380222' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 620 - 110. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '97a5ae7b-c2b0-4fc3-a5d9-ec2738780fc6', '3b665aed-9e5a-4014-8276-3c0d6a46ce9d', 'b701a57c-a421-46f1-bb22-4944f3476f09' (UTB60 ×2, OTB60) of group 'fc6914c0-aadb-4232-9a84-8a794ed02a3e' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root module '17ae6281-6b62-476a-9bbc-569924ef7226' (mr_Backsplash) of group 'fc6914c0-aadb-4232-9a84-8a794ed02a3e' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 1220 - 110. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '14be7cc7-3908-4fac-a6db-5dac1bd8b3b1', '777d6673-37d1-4107-b3df-0a68fde6a32f', 'e04d1e4f-f028-4b94-866d-2adf4577a612', 'b0f6386a-63e2-470e-a526-7bd2e355c304', '186a07a1-32e9-495d-83d0-23d49e238c92' (HTS2AB60, SUT60, OTB60 ×2, OTB30) of group '20cc8aa8-e234-470f-a668-bbe1fe380222' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root modules '6b12f993-994b-4edb-b065-9d01f0c133d3', 'b32541a2-43fa-48c7-8a75-462ea1b1dc82' (UHS60, US2A30) of group '20cc8aa8-e234-470f-a668-bbe1fe380222' - Unexpected token 'N', \"None\" is not valid JSON. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '97a5ae7b-c2b0-4fc3-a5d9-ec2738780fc6', '3b665aed-9e5a-4014-8276-3c0d6a46ce9d', 'b701a57c-a421-46f1-bb22-4944f3476f09' (UTB60 ×2, OTB60) of group 'fc6914c0-aadb-4232-9a84-8a794ed02a3e' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid. Change the failing values or replace the articles, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-baseline-1",
+    "test": "04-edit-add-move-delete-subarticle",
+    "snapshot": "ps_sxa6mj1qkoqfxsfvqmgs6juvfxlmz8o",
+    "errors": [],
+    "answers": [
+      "Added a **fixed shelf (FixedShelf)** around mid-height inside the left-most wardrobe carcass on the back wall. The existing upper shelf and the other two carcasses remain unchanged.",
+      "Moved the fixed shelf inside the right-most wardrobe cabinet **down by exactly 500 mm**. All other shelves and cabinets remain unchanged.",
+      "Deleted the fixed shelf from the middle wardrobe cabinet. Its default interior—**four adjustable shelves**—is now shown again. The left and right cabinets remain unchanged."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [2200, 3765, 0],
+          "rotationZ": 0,
+          "footprint": {
+            "x": [0, 1800],
+            "y": [-561, 0],
+            "widthMm": 1800,
+            "depthMm": 561
+          }
+        },
+        "roots": [
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": [
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1665.5]
+          },
+          {
+            "rootId": "22e7519d-4218-46e4-b1a5-5c92934ad420",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1198.5]
+          },
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1050]
+          }
+        ]
+      }
+    ],
+    "toolErrors": []
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-baseline-2",
+    "test": "01-full-kitchen-walnut-marble-corner",
+    "snapshot": "ps_sxbienzwsrjkxhiv766gkx9ge31ofmk",
+    "errors": [],
+    "answers": [
+      "Created an **L-shaped kitchen around the back-right corner**, with **walnut fronts and a dark-marble worktop**.\n\n- **Back wall:** 900 mm sink cabinet, 900 mm drawer cabinet, and corner storage, with two wide wall cabinets above.\n- **Right wall:** drawer storage, an oven with ceramic hob and cooker hood above, another drawer cabinet, and a tall integrated fridge. Two additional wall cabinets complete this side.\n\nThe layout keeps the back-wall window and right-wall doorway clear. The library selected black curved-bow handles to suit the walnut fronts.\n\nAll requested items are included. This is a concept layout; plumbing, electrical supplies, extraction, appliance clearances and worktop fabrication still need professional verification."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [4815, 3765, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [0, 3061],
+            "y": [-2971, 0],
+            "widthMm": 3061,
+            "depthMm": 2971
+          }
+        },
+        "roots": [
+          {
+            "articleId": "UELTB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "SUB2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "HK60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "324"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": []
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-baseline-2",
+    "test": "02-image-kitchen-left-wall",
+    "snapshot": "ps_sxblgo0msrtz8634c5djremcpezk5gy",
+    "errors": [],
+    "answers": [
+      "I’ll recreate the photo’s single-row layout: a tall fridge on the left, drawer-and-door storage, an oven and hob, then a sink and base cupboard, with three wood-effect wall cabinets and a stainless-steel hood. I’ll centre it on the left wall and use the closest available green and wood finishes.Created a **3.01 m kitchen centred on the left-hand wall**, following the photo’s cabinet sequence, with a tall fridge, drawer-and-door cupboard, oven and ceramic hob, sink, and right-hand base cupboard. Three wall cabinets and a stainless-steel hood complete the layout.\n\nI used **Olive green fronts, Walnut wood-effect finishes, and black curved handles** as the closest supported substitutes. The placement keeps the back-wall window and right-wall doorway clear.\n\nThe photo’s dark backsplash could not be generated and is **not included**. This remains a concept: plumbing, electrical supply, extraction and appliance clearances need professional verification. As in the photo, preparation space between the sink and hob is limited."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-685, -240, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 3010],
+            "y": [-622.3, 0],
+            "widthMm": 3010,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HKTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "USTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "215"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "create-or-replace-groups",
+        "error": "create-or-replace-groups: nothing was changed - posGroups[0]: the library could not calculate root module 'fridge' (HKTB60) - Error 11017: Could not find entry in tab_FridgeNicheConstruction for input values :720 - 1380 - 1776 - false - 0 - Automatic. Change the failing values or replace the article, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module '9b63a413-ad9e-4571-8da0-4b0ddc3a861c' (mr_Backsplash) of group 'd7573666-471e-4a7a-b090-e9654f672f7f' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 620 - 110. Change the failing values or replace the article, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-baseline-2",
+    "test": "03-image-only-no-text",
+    "snapshot": "ps_sxb3acurrkwo7twav6n7ozrc5a9u6us",
+    "errors": [],
+    "answers": [
+      "The photo shows a galley kitchen: a tall fridge/storage unit followed by the sink, dishwasher, oven/hob and narrow drawers, with wall cabinets above and a shorter storage/worktop run opposite. I’ll keep that sequence and use warm-white fronts, curved metal handles and dark wood-effect worktops, adapting the two runs to the planner’s room and keeping its window and doors clear.Created a galley-kitchen approximation of the photo:\n\n- **Left wall:** a 2.7 m run with tall fridge/storage housing, sink pull-out cabinet, dishwasher, oven/ceramic hob and 30 cm drawers. Above are two satin-glass-segment cabinets, an extractor hood and a narrow cupboard.\n- **Opposite right wall:** two 60 cm storage cabinets with a continuous worktop and one wall cupboard.\n- **Finishes:** warm “Sunny white” plain fronts and carcases, with “Tiepolo walnut” worktops.\n\nThe room is wider than the photo, leaving approximately **1.76 m between the runs**. Both door openings and the 2.1 m rear window remain clear.\n\n**Differences:** the extractor is exposed rather than concealed; the requested curved-handle settings and wood backsplash could not be calculated, so the existing handles remain and no backsplash was added. The radiator, curtains and ceiling light are not included.\n\nThis is a **concept**, not an installation-ready design: no service points are recorded, and plumbing, electrical supply, extraction, appliance clearances and open-door operation still need verification. The photo’s limited preparation space between sink and hob is retained; the opposite worktop provides additional preparation space."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-780, 755, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 2710],
+            "y": [-622.3, 0],
+            "widthMm": 2710,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HKTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "SUBA60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "GSP",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "216"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      },
+      {
+        "position": {
+          "pos": [2220, 3455, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [-10, 1210],
+            "y": [-617, 0],
+            "widthMm": 1220,
+            "depthMm": 617
+          }
+        },
+        "roots": [
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "216"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '5513eff3-6758-41e1-ae0a-cafeb196ff22', '6467da78-c8cf-4201-8e46-c8eeda1f803c', 'e29ee30f-f9b2-4785-95c4-07e6674f65be', '5a356960-f0f0-4b17-a656-17f36aba3969' (HKTB60, OTB60 ×2, OTB30) of group '297c6e9e-4bd5-4c32-bb11-8e09a5b16bee' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root modules '265c0cca-49c7-4322-91a6-dbbcdfad3f43', 'a906d9ad-921f-4cf1-b626-aa2cd58c4a1f', '41ac0a5e-d49b-481a-ae81-1db1d0e1d1e3' (SUBA60, UHS60, US2A30) of group '297c6e9e-4bd5-4c32-bb11-8e09a5b16bee' - Unexpected token 'N', \"None\" is not valid JSON. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules 'b843a99e-5346-463e-b617-620bd7c62a54', '2a2771a5-0410-40f9-a02a-4b2ea641d6f7', '0bb82163-f7bc-43e5-adaf-43b6338acac9' (UTB60 ×2, OTB60) of group 'fad72b25-56b7-4e4c-b42f-6f12f459a079' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '5513eff3-6758-41e1-ae0a-cafeb196ff22', '6467da78-c8cf-4201-8e46-c8eeda1f803c', 'e29ee30f-f9b2-4785-95c4-07e6674f65be', '5a356960-f0f0-4b17-a656-17f36aba3969' (HKTB60, OTB60 ×2, OTB30) of group '297c6e9e-4bd5-4c32-bb11-8e09a5b16bee' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root modules '265c0cca-49c7-4322-91a6-dbbcdfad3f43', 'a906d9ad-921f-4cf1-b626-aa2cd58c4a1f', '41ac0a5e-d49b-481a-ae81-1db1d0e1d1e3' (SUBA60, UHS60, US2A30) of group '297c6e9e-4bd5-4c32-bb11-8e09a5b16bee' - Unexpected token 'N', \"None\" is not valid JSON. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules 'b843a99e-5346-463e-b617-620bd7c62a54', '2a2771a5-0410-40f9-a02a-4b2ea641d6f7', '0bb82163-f7bc-43e5-adaf-43b6338acac9' (UTB60 ×2, OTB60) of group 'fad72b25-56b7-4e4c-b42f-6f12f459a079' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '5513eff3-6758-41e1-ae0a-cafeb196ff22', '6467da78-c8cf-4201-8e46-c8eeda1f803c', 'e29ee30f-f9b2-4785-95c4-07e6674f65be', '5a356960-f0f0-4b17-a656-17f36aba3969' (HKTB60, OTB60 ×2, OTB30) of group '297c6e9e-4bd5-4c32-bb11-8e09a5b16bee' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root modules '265c0cca-49c7-4322-91a6-dbbcdfad3f43', 'a906d9ad-921f-4cf1-b626-aa2cd58c4a1f', '41ac0a5e-d49b-481a-ae81-1db1d0e1d1e3' (SUBA60, UHS60, US2A30) of group '297c6e9e-4bd5-4c32-bb11-8e09a5b16bee' - Unexpected token 'N', \"None\" is not valid JSON. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules 'b843a99e-5346-463e-b617-620bd7c62a54', '2a2771a5-0410-40f9-a02a-4b2ea641d6f7', '0bb82163-f7bc-43e5-adaf-43b6338acac9' (UTB60 ×2, OTB60) of group 'fad72b25-56b7-4e4c-b42f-6f12f459a079' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '5513eff3-6758-41e1-ae0a-cafeb196ff22', '6467da78-c8cf-4201-8e46-c8eeda1f803c', 'e29ee30f-f9b2-4785-95c4-07e6674f65be', '5a356960-f0f0-4b17-a656-17f36aba3969' (HKTB60, OTB60 ×2, OTB30) of group '297c6e9e-4bd5-4c32-bb11-8e09a5b16bee' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root modules '265c0cca-49c7-4322-91a6-dbbcdfad3f43', 'a906d9ad-921f-4cf1-b626-aa2cd58c4a1f', '41ac0a5e-d49b-481a-ae81-1db1d0e1d1e3' (SUBA60, UHS60, US2A30) of group '297c6e9e-4bd5-4c32-bb11-8e09a5b16bee' - Unexpected token 'N', \"None\" is not valid JSON. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules 'b843a99e-5346-463e-b617-620bd7c62a54', '2a2771a5-0410-40f9-a02a-4b2ea641d6f7', '0bb82163-f7bc-43e5-adaf-43b6338acac9' (UTB60 ×2, OTB60) of group 'fad72b25-56b7-4e4c-b42f-6f12f459a079' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module '54e3f0ad-d412-4313-8c3b-0f1f2dc77cca' (mr_Backsplash) of group '297c6e9e-4bd5-4c32-bb11-8e09a5b16bee' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 620 - 110. Change the failing values or replace the article, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module 'e0930648-c0af-44a0-a21e-756724df4f66' (mr_Backsplash) of group 'fad72b25-56b7-4e4c-b42f-6f12f459a079' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 1220 - 110. Change the failing values or replace the article, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-baseline-2",
+    "test": "04-edit-add-move-delete-subarticle",
+    "snapshot": "ps_sxc15agjqaaing5i5ww4226051686yqx",
+    "errors": [],
+    "answers": [
+      "Added a fixed shelf (FixedShelf) halfway up the left-most wardrobe carcass, at 1,050 mm relative to the carcass. The existing upper shelf and the other wardrobe sections remain unchanged.",
+      "Moved the shelf in the right-most wardrobe cabinet down by exactly 500 mm, from 1,698.5 mm to 1,198.5 mm relative to the carcass. All other shelves remain unchanged.",
+      "Deleted the fixed shelf from the middle wardrobe cabinet. Its default set of four adjustable shelves is now shown again. The left and right cabinets are unchanged."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [2200, 3765, 0],
+          "rotationZ": 0,
+          "footprint": {
+            "x": [0, 1800],
+            "y": [-561, 0],
+            "widthMm": 1800,
+            "depthMm": 561
+          }
+        },
+        "roots": [
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": [
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1665.5]
+          },
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1050]
+          },
+          {
+            "rootId": "22e7519d-4218-46e4-b1a5-5c92934ad420",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1198.5]
+          }
+        ]
+      }
+    ],
+    "toolErrors": []
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-library-rules-1",
+    "test": "01-full-kitchen-walnut-marble-corner",
+    "snapshot": "ps_sxcrf8bijk1fbh9b2gp45n842gc00rd",
+    "errors": [],
+    "answers": [
+      "I’ll build an L-shaped kitchen in the back-right corner, with the sink on the back wall and the oven, hob and fridge along the right wall. I’ll use walnut fronts and a dark-marble worktop, keeping the window and doorway clear. Service connections and appliance installation requirements will remain checks for a professional installer.Created the **L-shaped kitchen in the back-right corner** with walnut-decor fronts and a dark-marble-decor worktop.\n\n- **Back wall:** 900 mm drawer cabinet, 900 mm sink cabinet and two wall cabinets.\n- **Right wall:** corner storage, 900 mm preparation drawer cabinet, oven beneath a ceramic hob, cooker hood above, 600 mm drawer cabinet and a built-in fridge-freezer. Two wall cabinets complete this side.\n\nThe layout keeps the back-wall window clear by approximately **700 mm** and stops **184 mm before the right-wall doorway**.\n\nAll requested items are included. This is a concept plan: water, drainage and electrical connections are not recorded, and hood clearance, ventilation, wall fixings and appliance-opening clearances still need professional verification."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [4815, 3765, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [0, 3861],
+            "y": [-2471, 0],
+            "widthMm": 3861,
+            "depthMm": 2471
+          }
+        },
+        "roots": [
+          {
+            "articleId": "UERTB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "SUB2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "HK260",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "324"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": []
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-library-rules-1",
+    "test": "02-image-kitchen-left-wall",
+    "snapshot": "ps_sxc8wscw4xxld7a1jds0fhysbocgu9s",
+    "errors": [],
+    "answers": [
+      "I’ll recreate the straight run with a tall fridge on the left, drawer-and-door storage, an oven and hob, then a dishwasher beside the sink. I’ll use the closest available green and warm wood finishes, black handles, and three wall cabinets around a stainless-steel hood, centred on the left wall to keep clear of the window.Created a **3.05 m kitchen centred on the left-hand wall**, following the photo’s layout: tall fridge, drawer-and-door cabinet, oven/hob, dishwasher and sink, with three wall cabinets and a stainless-steel hood.\n\nI used **Olive green fronts**, **Walnut wood finishes** for the upper cabinets, worktop and plinth, and black rectangular handles—the closest available matches. The placement keeps the back-wall window and right-wall doorway clear.\n\nThe photo’s dark backsplash **could not be generated by the library** and is not included. This remains a concept: no service connections are recorded in the room, so plumbing, electrical supply, extraction and appliance clearances need professional verification. Preparation space between the hob and sink is also limited, as in the photo."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-685, -259, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 3048],
+            "y": [-622.3, 0],
+            "widthMm": 3048,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HKTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "USTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "GSP",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "W60H",
+            "attributes": []
+          },
+          {
+            "articleId": "W60U",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "215"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module 'ccdde973-760d-40e0-9cb5-5943191c1b30' (mr_Backsplash) of group '5bea1f5b-cd55-4f31-88d7-09ab5531b8f0' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 649 - 110. Change the failing values or replace the article, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-library-rules-1",
+    "test": "03-image-only-no-text",
+    "snapshot": "ps_sxc9og8bpgbfdvjcgqtzqiys46annio",
+    "errors": [],
+    "answers": [
+      "I see a galley kitchen with a tall fridge cabinet, sink, dishwasher, oven/hob and narrow drawers on the left, plus a shorter storage run on the right. I’ll keep that arrangement and use warm-white fronts, curved metal handles and walnut-look worktops, adapting it to the room’s window and doors.Created a close galley-style match to the photo:\n- **Left wall:** 600 mm fridge-freezer, sink, dishwasher and oven/hob units, followed by 300 mm drawers, with glass-accent wall cabinets and an extractor above.\n- **Right wall:** two 600 mm storage cabinets and one wall cabinet.\n\nUsed warm Sunny white fronts, bow handles and Tiepolo walnut-look worktops. Both runs stop 650 mm before the window wall, keeping the window approach and existing door openings clear; the wider room leaves approximately 1.76 m between the runs.\n\nThe visible extractor substitutes for the photo’s concealed arrangement. The wood backsplash could not be generated, and the radiator and ceiling light are not included. This remains a concept: service connections are absent from the plan, and appliance clearances, open-door use and installation details need verification."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-780, 405, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 2710],
+            "y": [-622.3, 0],
+            "widthMm": 2710,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HK260",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "GSP",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "216"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      },
+      {
+        "position": {
+          "pos": [2220, 3105, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [-10, 1210],
+            "y": [-617, 0],
+            "widthMm": 1220,
+            "depthMm": 617
+          }
+        },
+        "roots": [
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "216"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules 'bf4d9d4f-c21f-4341-b656-5ae3a9f2f015', '8f1e6561-6c9e-4ad2-b489-13b6aaf58d6e', '9208b648-8a10-4e5c-b237-5d87e71d183e', 'c3c99db7-a133-4239-9525-4a2bb57b566b', '27f7243e-1bac-42e5-823b-dbe92ba6ff38' (HK260, SUT60, OTB60 ×2, OTB30) of group 'b3f22ae8-eef0-48f6-b08c-8c0e80998f61' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root modules '2b37a939-ceed-4bec-8560-4191f15a01f9', '87218472-12d2-435d-bf43-6042b4d8468b' (UHS60, US2A30) of group 'b3f22ae8-eef0-48f6-b08c-8c0e80998f61' - Unexpected token 'N', \"None\" is not valid JSON; the library could not calculate root module 'a692ed03-ce36-4bb6-b0ed-e4045f3532be' (mr_Backsplash) of group 'b3f22ae8-eef0-48f6-b08c-8c0e80998f61' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 620 - 110. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules 'd2afc3e4-41b8-4a07-bd29-1fea993496dd', '324a9136-d110-40ae-8a37-860f1f5dc710', 'd2229093-426e-4620-850c-95b26ce6f45e' (UTB60 ×2, OTB60) of group '91534aa9-639b-45e6-a8a6-cd31b30785d8' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root module '0f79c1c3-00e0-404d-9392-432ace27c795' (mr_Backsplash) of group '91534aa9-639b-45e6-a8a6-cd31b30785d8' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 1220 - 110. Change the failing values or replace the articles, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-library-rules-1",
+    "test": "04-edit-add-move-delete-subarticle",
+    "snapshot": "ps_sxddanctsx5yl7wdbarsl4fbyymvymy",
+    "errors": [],
+    "answers": [
+      "Added a fixed interior shelf halfway up the left-most wardrobe carcass, at 1,050 mm relative to the carcass. The existing upper shelf and the other wardrobe units remain unchanged.",
+      "Moved the shelf in the right-most wardrobe cabinet down by exactly 500 mm. Its new height is 1,198.5 mm relative to the carcass; all other shelves remain unchanged.",
+      "Deleted the fixed shelf from the middle wardrobe cabinet. The cabinet now shows its default set of four adjustable shelves again. The left and right cabinets remain unchanged."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [2200, 3765, 0],
+          "rotationZ": 0,
+          "footprint": {
+            "x": [0, 1800],
+            "y": [-561, 0],
+            "widthMm": 1800,
+            "depthMm": 561
+          }
+        },
+        "roots": [
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": [
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1665.5]
+          },
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1050]
+          },
+          {
+            "rootId": "22e7519d-4218-46e4-b1a5-5c92934ad420",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1198.5]
+          }
+        ]
+      }
+    ],
+    "toolErrors": []
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-library-rules-2",
+    "test": "01-full-kitchen-walnut-marble-corner",
+    "snapshot": "ps_sxdzogxb71ryo0h7rn3wrloxzbgp3pk",
+    "errors": [],
+    "answers": [
+      "I’ll create an L-shaped kitchen in the back-right corner, with the sink on the back wall and the cooking zone, raised oven and fridge on the right wall. I’ll use walnut fronts and a dark-marble worktop finish, keeping the window and doorway clear.Created an **L-shaped kitchen in the back-right corner** with walnut-finish fronts and a dark-marble worktop finish.\n\n- **Back wall:** sink, 90 cm drawer cabinet and wall cabinets.\n- **Right wall:** preparation drawers, ceramic hob with cooker hood, additional pull-out storage, raised built-in oven and fridge-freezer, plus wall cabinets.\n\nI shortened the right-hand run to keep the doorway clear, leaving approximately **184 mm before the opening**. The back-wall cabinets also remain clear of the window.\n\nAll requested items are included. This is a planning concept; water and electrical connections, extraction, appliance clearances and the final material specifications still need professional verification."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [4815, 3765, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [0, 3861],
+            "y": [-2171, 0],
+            "widthMm": 3861,
+            "depthMm": 2171
+          }
+        },
+        "roots": [
+          {
+            "articleId": "UERTB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "UKS2A60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "HOTS2AB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "HK260",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "324"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": []
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-library-rules-2",
+    "test": "02-image-kitchen-left-wall",
+    "snapshot": "ps_sxd4cnfi90z1p3hz1hc9bcbe5g2titw",
+    "errors": [],
+    "answers": [
+      "I’ll recreate the straight run with a tall fridge, oven and hob, three wood-effect wall cabinets, green base fronts, black handles and a dark splashback. I’ll keep the five-unit layout, add an integrated dishwasher in the washing zone, and use the closest available finishes.Created a **3 m kitchen centred on the left-hand wall**, with a tall fridge, drawer-and-door cabinet, oven/hob, sink and integrated dishwasher, plus three wall cabinets and a stainless-steel hood.\n\nI used **olive-green fronts, walnut-effect wall cabinets, worktop and plinth, and black rectangular handles** as the closest available match. The sink’s drainer extends over the dishwasher rather than matching the photo’s basin position exactly. The placement leaves the back-wall window and right-wall doorway clear.\n\nThe **dark splashback is missing** because the library could not calculate it. This remains a concept: service connections, extraction, appliance clearances and the limited preparation space beside the hob need professional checking."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-685, -235, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 3000],
+            "y": [-622.3, 0],
+            "widthMm": 3000,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HKTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "USTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "GSP",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "215"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module 'eb26dcb5-6438-45e6-9994-20936cdd45e7' (mr_Backsplash) of group '4ea79d2a-d066-4359-a39e-8349d44b1784' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 620 - 110. Change the failing values or replace the article, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-library-rules-2",
+    "test": "03-image-only-no-text",
+    "snapshot": "ps_sxeuhwyelc5k5e6i397cmoqq1z7ix21",
+    "errors": [],
+    "answers": [
+      "I see a compact galley kitchen: a tall fridge, sink, dishwasher, oven/hob and narrow drawer unit on the left, with wall cupboards above, plus a shorter storage/worktop run opposite. I’ll preserve that arrangement and use warm-white fronts, curved metal handles and walnut-effect surfaces, adapting it to the planner’s room and window.Created a galley-kitchen concept matching the photo’s cabinet sequence:\n- **Left wall:** 600 mm fridge-freezer, 600 mm sink cabinet, 450 mm dishwasher, 600 mm oven/hob and 300 mm drawer unit, with cupboards and an extractor above.\n- **Opposite wall:** two 600 mm storage cabinets with a continuous worktop and one wall cupboard.\n\nApplied **warm-white Classic fronts and walnut-effect worktops**. The extractor is a visible catalog substitute; the photo’s curved handles and wood backsplash could not be applied because the library rejected those changes, so existing handles remain and no backsplash was built.\n\nBoth door openings and the **2100 mm-wide rear window** remain clear, with roughly **1760 mm between the closed runs**—wider than the photo. Cabinet widths are photo-based estimates; plumbing, electrical supply, extraction, fixings and open-door clearances still need verification."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-780, 510, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 2560],
+            "y": [-622.3, 0],
+            "widthMm": 2560,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HK260",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "GSP",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB45",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "215"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      },
+      {
+        "position": {
+          "pos": [2220, 3060, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [-10, 1210],
+            "y": [-617, 0],
+            "widthMm": 1220,
+            "depthMm": 617
+          }
+        },
+        "roots": [
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules 'ad2cb75c-a6c9-4db0-90ed-ea796b125726', 'd1a7c384-6390-434a-83f5-f806bd718e5b', '4a30e9ff-7d6b-42e5-91c7-a3785443d774', '8e9eec7f-eda8-4c74-8166-859270a41bf5', '967d2ec5-bf7a-4f2b-afa9-68cbcdd1a795' (HK260, SUT60, OTB60, OTB45, OTB30) of group '0028c639-395d-4669-a2f5-002189eb4105' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root modules '6a9428e8-8cab-48c0-8dcb-bf3bb6a5a077', '78f2b357-aecb-4d6b-a84c-aa3ff518f96d' (UHS60, US2A30) of group '0028c639-395d-4669-a2f5-002189eb4105' - Unexpected token 'N', \"None\" is not valid JSON. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '543b6ca0-4c00-4a40-90c6-6b80b3b25a36', '626e6e02-1dcb-4805-9ac1-2079a136ddb7', '2fcf109c-7dcc-44d5-bbb2-e21523cd4f80' (UTB60 ×2, OTB60) of group '535d8206-039b-4b5b-a7da-457e6d22608a' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module '33fc9301-2b27-43d1-9070-7f5c3631cf5a' (mr_Backsplash) of group '0028c639-395d-4669-a2f5-002189eb4105' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 620 - 110. Change the failing values or replace the article, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module 'd3b4e27b-0000-4000-b822-a499253deb0c' (mr_Backsplash) of group '535d8206-039b-4b5b-a7da-457e6d22608a' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 1220 - 110. Change the failing values or replace the article, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-library-rules-2",
+    "test": "04-edit-add-move-delete-subarticle",
+    "snapshot": "ps_sxeghess5msthev09l8mpff5w7d6hov",
+    "errors": [],
+    "answers": [
+      "Added a fixed interior shelf at mid-height in the wardrobe’s left-most carcass, 1,050 mm up in the carcass’s local coordinates. The existing upper shelf and the other two wardrobe units remain unchanged.",
+      "Moved the shelf inside the right-most wardrobe cabinet down by exactly 500 mm. All other shelves and cabinets remain unchanged.",
+      "Deleted the fixed shelf from the middle wardrobe cabinet. Its default interior—four adjustable wooden shelves—now shows again. The left and right cabinets remain unchanged."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [2200, 3765, 0],
+          "rotationZ": 0,
+          "footprint": {
+            "x": [0, 1800],
+            "y": [-561, 0],
+            "widthMm": 1800,
+            "depthMm": 561
+          }
+        },
+        "roots": [
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": [
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1665.5]
+          },
+          {
+            "rootId": "22e7519d-4218-46e4-b1a5-5c92934ad420",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1198.5]
+          },
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1050]
+          }
+        ]
+      }
+    ],
+    "toolErrors": []
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-operational-skills-1",
+    "test": "01-full-kitchen-walnut-marble-corner",
+    "snapshot": "ps_sxec8t81ecgaamx4cevt0amswrg556s",
+    "errors": [],
+    "answers": [
+      "I’ll build an L-shaped kitchen in the back-right corner, with an oven beneath the hob, a tall fridge-freezer, sink and drawer storage, plus wall cabinets on both legs. I’ll use walnut fronts and a dark-marble worktop, keeping the back-wall window and right-wall doorway clear.Created an **L-shaped kitchen in the back-right corner** with walnut-decor fronts and a **25 mm dark-marble-decor worktop**.\n\n- **Back wall:** 600 mm drawer cabinet, 900 mm sink cabinet and wall cabinets.\n- **Right wall:** corner storage, 900 mm preparation/drawer cabinet, oven beneath a ceramic hob, cooker hood, 300 mm drawer cabinet and tall fridge-freezer, with further wall cabinets.\n\nThe kitchen extends approximately **2.17 m along the back wall and 3.56 m along the right wall**, keeping the back-wall window and right-wall doorway clear. I chose the catalog’s plain walnut fronts; these are décor finishes, not confirmed solid walnut or natural marble.\n\nThis is a **concept plan**: no service connections are recorded, so plumbing, electrical supply, extraction, appliance clearances and wall fixings still require verification."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [4815, 3765, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [0, 3561],
+            "y": [-2171, 0],
+            "widthMm": 3561,
+            "depthMm": 2171
+          }
+        },
+        "roots": [
+          {
+            "articleId": "UERTB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "SUB2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "HK260",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "324"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": []
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-operational-skills-1",
+    "test": "02-image-kitchen-left-wall",
+    "snapshot": "ps_sxelldfqlvyatjl3yj1a0xrrl8rt5tc",
+    "errors": [],
+    "answers": [
+      "I’ll recreate the straight run with a tall fridge cabinet, green base fronts, wood-look upper cabinets and worktop, black handles, and a stainless-steel hood. I’ll centre it on the left wall to keep it away from the adjoining window.Created a **3.01 m kitchen centred on the left-hand wall**, following the image’s sequence: tall fridge cabinet, drawer-and-door cabinet, oven/hob, sink, and storage, with three upper cabinets and a stainless-steel hood.\n\nI chose **Olive green fronts and Walnut wood-look finishes** as the closest catalog matches. The library substituted black curved bow handles for the requested rail style. The adjoining back-wall window and room door remain clear.\n\nThe photo’s dark backsplash **could not be generated** because of a library calculation error; the kitchen remains intact without it. This is a concept: no service connections are recorded, and plumbing, electrics, extraction, and the tight sink–hob spacing still need professional checking."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-685, -240, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 3010],
+            "y": [-622.3, 0],
+            "widthMm": 3010,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HKTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "USTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "215"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module 'd2530496-cdd5-450c-8122-f848aa512bae' (mr_Backsplash) of group '366cbc20-d223-4175-8310-7d086f999854' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 620 - 110. Change the failing values or replace the article, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-operational-skills-1",
+    "test": "03-image-only-no-text",
+    "snapshot": "ps_sxfd0f18r8802c3q1vi4hgdswol1qfu",
+    "errors": [],
+    "answers": [
+      "The photo shows a galley kitchen: a tall unit at the near end of the left run, followed by the sink, dishwasher, oven/hob and drawers, with glazed upper storage. I’ll recreate that sequence and the shorter cupboard run opposite, using cream-white fronts and walnut-effect worktops, adapted to the planner’s window and door positions.Created a close galley-style recreation:\n- **Left wall:** tall drawer/pantry cabinet, sink, dishwasher, oven/hob and drawer cabinet, with upper storage and an extractor.\n- **Opposite wall:** a 900 mm two-door base cupboard and a 600 mm wall cupboard.\n- **Finishes:** cream-toned Sunny white fronts and 25 mm Tiepolo walnut worktops.\n\nThe planner’s wider room leaves approximately **1,760 mm between the runs**. Both door openings and the rear window remain clear.\n\nMain differences: the tall unit uses **HTS2AB60**, the extractor is exposed, and the photographed glazing is not faithfully reproduced. The backsplash could not be generated; the radiator, lighting and counter bridge beneath the window are also omitted.\n\nThis remains a **concept**: no service connections are recorded, and plumbing, electrical supply, extraction and appliance-opening checks still need verification."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-780, 365, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 3010],
+            "y": [-622.3, 0],
+            "widthMm": 3010,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HTS2AB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "GSP",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "216"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      },
+      {
+        "position": {
+          "pos": [2220, 3555, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [-10, 910],
+            "y": [-617, 0],
+            "widthMm": 920,
+            "depthMm": 617
+          }
+        },
+        "roots": [
+          {
+            "articleId": "U2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "216"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '1d6f1eba-f73c-463e-b177-31b15b1d1a14', 'f375a0eb-4309-43f7-b55b-e5f4c0238572', 'bf9211c0-b1a7-4e47-ad4e-e7a15344f2da', 'ea9497b5-173e-46c6-9bf7-ee60a19b091b', '9a17e367-ab33-444f-8631-b9c9b1b4d620' (HTS2AB60, SUT60, OTB60 ×3) of group '56e234aa-7596-4355-b75e-5fe3b1511f4f' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root modules '67e5a18b-1f11-4bef-aaf5-2f888ec99925', 'a90acde9-b627-4c18-987f-dabc44bc6c23' (UHS60, US2A60) of group '56e234aa-7596-4355-b75e-5fe3b1511f4f' - Unexpected token 'N', \"None\" is not valid JSON. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module '3330c09c-202a-4b00-ad1c-21c57bb7f44c' (mr_Backsplash) of group '56e234aa-7596-4355-b75e-5fe3b1511f4f' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 620 - 110. Change the failing values or replace the article, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-operational-skills-1",
+    "test": "04-edit-add-move-delete-subarticle",
+    "snapshot": "ps_sxf6vvfis3mdnappvqewbxgy4wgwfvc",
+    "errors": [],
+    "answers": [
+      "Added a fixed interior shelf at mid-height in the wardrobe’s left-most carcass, 1,050 mm above its base. The existing upper shelf, other carcasses, and wardrobe position remain unchanged.",
+      "Moved the shelf inside the right-most wardrobe cabinet down by exactly 500 mm. All other shelves and cabinets remain unchanged.",
+      "Deleted the fixed shelf from the middle wardrobe cabinet. The cabinet now shows its default four adjustable shelves again; the left and right cabinets are unchanged."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [2200, 3765, 0],
+          "rotationZ": 0,
+          "footprint": {
+            "x": [0, 1800],
+            "y": [-561, 0],
+            "widthMm": 1800,
+            "depthMm": 561
+          }
+        },
+        "roots": [
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": [
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1665.5]
+          },
+          {
+            "rootId": "22e7519d-4218-46e4-b1a5-5c92934ad420",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1198.5]
+          },
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1050]
+          }
+        ]
+      }
+    ],
+    "toolErrors": []
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-operational-skills-2",
+    "test": "01-full-kitchen-walnut-marble-corner",
+    "snapshot": "ps_sxfblvuc89flqyfgv6n6edxwsws3v6f",
+    "errors": [],
+    "answers": [
+      "I’ll build an L-shaped kitchen in the back-right corner, with walnut-effect fronts and a dark-marble-effect worktop. I’ll keep the back-wall window and right-wall doorway clear, and use a tall oven housing plus a fridge-freezer at the end of the right-hand run. No service connections are recorded, so plumbing, power and extraction will remain installation checks.Created an **L-shaped kitchen in the back-right corner**, with:\n- **Back wall:** a 900 mm drawer cabinet, a 900 mm sink cabinet and two wide wall cabinets.\n- **Right wall:** preparation drawers, a ceramic hob with cooker hood above, a narrow drawer cabinet, a raised built-in oven and a fridge-freezer, plus wall cabinets.\n\nThe fronts use **Walnut wood décor**, with matching cabinet sides and a **Dark marble décor worktop**—catalog finishes rather than confirmed solid walnut or natural stone. The library selected black curved bow handles.\n\nThe calculated layout keeps the back-wall window and right-wall doorway clear. All requested items were built; this remains a concept pending checks of plumbing, electrical supply, hood installation and door/drawer opening clearances."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [4815, 3765, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [0, 3861],
+            "y": [-2471, 0],
+            "widthMm": 3861,
+            "depthMm": 2471
+          }
+        },
+        "roots": [
+          {
+            "articleId": "UERTB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "SUB2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "UKS2A60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "HOTS2AB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              }
+            ]
+          },
+          {
+            "articleId": "HK260",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "O2TB90",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "LeftRight"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "215"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "324"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": []
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-operational-skills-2",
+    "test": "02-image-kitchen-left-wall",
+    "snapshot": "ps_sxfyh0v9vpn2o6ps94nim924w5j7e1k",
+    "errors": [],
+    "answers": [
+      "I’ll recreate the straight run with a tall fridge on the left, a drawer-and-door cabinet, an oven and hob, and sink storage on the right, with wood-look wall cabinets and black handles. I’ll centre it on the room’s left wall, away from the adjoining window, using olive-green fronts and the closest oak-look finish in the catalog.Created a **3.01 m kitchen centred on the left-hand wall**, matching the photo’s cabinet sequence: tall fridge, drawer-and-door storage, oven/hob, sink and right-hand storage, with three wall cabinets and an extractor hood.\n\nI used **Olive green** fronts and **Bijoux oak** for the upper fronts, worktop and plinth. The library substituted black curved bow handles for the requested rail handles. The adjoining back-wall window and right-wall doorway remain clear.\n\nThe dark backsplash could not be generated because of a library calculation error and is **not included**. This is a concept: no service connections are recorded, so plumbing, electrical supply, extraction and appliance clearances still need verification. As in the photo, preparation space between sink and hob is limited."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-685, -240, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 3010],
+            "y": [-622.3, 0],
+            "widthMm": 3010,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HKTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "USTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "224"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "224"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "224"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "224"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module 'eb319f15-d3ba-4355-ba93-9d64b9f05177' (mr_Backsplash) of group '0b169dac-53b5-491f-9f7e-76d299f92535' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 620 - 110. Change the failing values or replace the article, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-operational-skills-2",
+    "test": "03-image-only-no-text",
+    "snapshot": "ps_sxg14z6xf08gey076b5jj58ufqo6gks0",
+    "errors": [],
+    "answers": [
+      "The photo shows a compact galley kitchen: a tall storage cabinet, sink, dishwasher, oven/hob and narrow drawers on the left, with a short counter and wall cabinet opposite. I’ll preserve that arrangement and the pale fronts with wood-effect surfaces, adapting it to the planner’s window and doors.Created the photo’s galley arrangement:\n- **Left wall:** 2.7 m run with tall drawer/storage cabinet, sink, dishwasher, oven/hob, narrow drawers and upper cabinets.\n- **Right wall:** 1.2 m counter with two base cabinets and one wall cabinet.\n\nApplied Sunny white fronts and Tiepolo walnut worktops. Both runs stop 600 mm before the window wall, keeping the window and existing door openings clear.\n\nThe exposed extractor replaces the photo’s concealed arrangement; the curved handles and glass-front appearance were not fully reproduced. The wood backsplash could not be calculated, and the counter beneath the window is not included.\n\nThis remains a **concept**: no service connections are recorded, and plumbing, electrical supply, extraction and open-door clearances still need verification."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [-780, 455, 0],
+          "rotationZ": 90,
+          "footprint": {
+            "x": [0, 2710],
+            "y": [-622.3, 0],
+            "widthMm": 2710,
+            "depthMm": 622.3
+          }
+        },
+        "roots": [
+          {
+            "articleId": "HTS2AB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "SUT60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "GSP",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "UHS60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "US2A30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              }
+            ]
+          },
+          {
+            "articleId": "DU",
+            "attributes": []
+          },
+          {
+            "articleId": "OTB30",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "216"
+              }
+            ]
+          }
+        ],
+        "fittings": []
+      },
+      {
+        "position": {
+          "pos": [2220, 3155, 0],
+          "rotationZ": 270,
+          "footprint": {
+            "x": [-10, 1210],
+            "y": [-617, 0],
+            "widthMm": 1220,
+            "depthMm": 617
+          }
+        },
+        "roots": [
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Left"
+              }
+            ]
+          },
+          {
+            "articleId": "UTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "OTB60",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "190"
+              },
+              {
+                "id": "mod_DoorDirectionSelection",
+                "value": "Right"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Countertop",
+            "attributes": [
+              {
+                "id": "mod_CountertopColor",
+                "value": "216"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": []
+      }
+    ],
+    "toolErrors": [
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root modules '9f95ccf6-cc6c-402d-a795-87a949c3f49f', '3dca8261-6a69-43f5-9886-0145d65bd0b9', '29fc33f7-ea31-478e-8d41-105079b1b2dd', '361344b5-5191-45bb-8cb1-5bd6c595cf2e', 'aab4c3a2-e6a5-43a9-8fa9-c0cce616d7a5' (HTS2AB60, SUT60, OTB60 ×2, OTB30) of group 'f8ff4f5a-a653-43eb-a132-21a0349915a5' - Error 22025: There is a HandleStripe selected in the HandleDesign and the HandlePosType selected is not valid; the library could not calculate root modules '7dc883ca-b1f8-42b9-a2a1-a41fe8755d1c', 'b73efd91-5613-4541-8776-06a0f15799fc' (UHS60, US2A30) of group 'f8ff4f5a-a653-43eb-a132-21a0349915a5' - Unexpected token 'N', \"None\" is not valid JSON. Change the failing values or replace the articles, and send the call again."
+      },
+      {
+        "tool": "change-group-attribute",
+        "error": "change-group-attribute: nothing was changed - the library could not calculate root module 'fe33e4c9-d9b2-4fc4-ad5c-eb7f1bbf4963' (mr_Backsplash) of group 'f8ff4f5a-a653-43eb-a132-21a0349915a5' - Error 14034: Could not find entry in tab_GrainDirectionSettings for input values: part_Backsplash - undefined - undefined - undefined - 620 - 110. Change the failing values or replace the article, and send the call again."
+      }
+    ]
+  },
+  {
+    "session": ".temp/result/prompt-caching-paced-operational-skills-2",
+    "test": "04-edit-add-move-delete-subarticle",
+    "snapshot": "ps_sxg16738ixcrxr7wf591fs268nvhmp3o",
+    "errors": [],
+    "answers": [
+      "Added a fixed interior shelf at mid-height in the wardrobe’s left-most carcass. The existing upper shelf, other carcasses, finishes, and wardrobe position remain unchanged.",
+      "Moved the shelf inside the right-most wardrobe cabinet down by **500 mm**. All other shelves and cabinets remain unchanged.",
+      "Deleted the fixed shelf from the middle wardrobe cabinet. Its default set of four adjustable shelves is now shown again. The left and right cabinets remain unchanged."
+    ],
+    "groups": [
+      {
+        "position": {
+          "pos": [2200, 3765, 0],
+          "rotationZ": 0,
+          "footprint": {
+            "x": [0, 1800],
+            "y": [-561, 0],
+            "widthMm": 1800,
+            "depthMm": 561
+          }
+        },
+        "roots": [
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "KS_OF600",
+            "attributes": [
+              {
+                "id": "mod_FrontColor",
+                "value": "160"
+              }
+            ]
+          },
+          {
+            "articleId": "mr_Toekick",
+            "attributes": []
+          }
+        ],
+        "fittings": [
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1665.5]
+          },
+          {
+            "rootId": "ab0737ab-a681-48ed-995b-46ee788a2329",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1050]
+          },
+          {
+            "rootId": "22e7519d-4218-46e4-b1a5-5c92934ad420",
+            "articleId": "FixedShelf",
+            "position": [19, 533, 1198.5]
+          }
+        ]
+      }
+    ],
+    "toolErrors": []
+  }
+]

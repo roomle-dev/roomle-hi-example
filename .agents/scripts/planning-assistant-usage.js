@@ -68,6 +68,9 @@ export const collectPromptUsage = (page) => {
           model: record.model,
           status: record.status,
           ...Object.fromEntries(COUNTS.map((key) => [key, record[key]])),
+          ...(record.diagnostics?.version === 1
+            ? { diagnostics: record.diagnostics }
+            : {}),
         });
       })().catch(() =>
         usageWarnings.push(

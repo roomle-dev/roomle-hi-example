@@ -34,17 +34,16 @@ and their analyses live in [`.agents/benchmarks/`](../benchmarks/README.md).
 ## 1. The runs
 
 Existing runs: `.temp/result/<session>/<model>/<NN>-<test id>/`. A run is usable when its
-`console.log` has `[hi-chat] step` lines — the step log of the former chat backend. The planning
-assistant of the embedding-lib, which the example page runs
-([ADR 0010](../decisions/0010-the-example-chat-runs-in-the-page.md)), logs no steps, so new runs
-carry none and can be benchmarked only by their chat time and tool calls until it does
-([backlog](../backlog/README.md#chat)):
+`run.json.turns[].usage.diagnostics.version` is 1 for the current assistant's model-call,
+cache and request-byte measurements. The planning assistant logs one usage record per turn;
+the runner preserves it. Older `console.log` files with `[hi-chat] step` lines supply a legacy
+step breakdown. Runs with neither retain their available totals and chat time only:
 
 ```bash
 for d in .temp/result/*/*/*-<test id>; do echo "$d $(grep -c '\[hi-chat\] step' $d/console.log) steps"; done
 ```
 
-New runs, after the go (without a step breakdown, see above): [Test the MCP](./hi-mcp-testing.md#test-the-mcp) steps 1, 2 and 4 with a
+New runs, after the go: [Test the MCP](./hi-mcp-testing.md#test-the-mcp) steps 1, 2 and 4 with a
 test file of the chosen tests, no random tests, and no evaluation unless asked. One session per
 repetition:
 
@@ -83,6 +82,19 @@ It reads, per run, `run.json`, `console.log` and `planner-calls.json`, and write
 | per run | per step: turn, tools, step s, tools s, model s, input, output, reasoning, result tokens, planner calls per method (with their seconds when `planner-calls.json` has them per method — runs of the former chat backend; the in-page chat records tool calls there) |
 
 The derived values:
+
+- **Current measurements** use model-call callbacks directly. Tool-call durations come from
+  `planner-calls.json`; they are not subtracted from model time because work may overlap.
+  Cache reads/writes and reasoning each carry their own coverage. Missing raw counters are unknown,
+  including adapter-default zeroes. Request bytes include retries and images and still cross the
+  network when the provider reads cached tokens. First generated output and first visible text
+  are separate measurements; neither isolates prefill.
+- **Reproduction**: store a session `manifest.json` with both source SHAs, runtime URLs, model,
+  reasoning setting, fixtures, repetition and observed/unknown initial cache state. The benchmark
+  retains it per run. Keep resolved credentials out of the manifest. A new browser is not evidence
+  of a cold provider cache. Retain failed attempts and list exclusions.
+
+For legacy step logs only:
 
 - **Tools s** — the longest tool of the step: the tools of one step run side by side.
 - **Model s** — the step without its tools. A tool may start while the model still streams its

@@ -1,0 +1,477 @@
+{
+  "generatedAt": "2026-10-26T10:37:50.873Z",
+  "runs": [
+    {
+      "dir": ".temp/result/prompt-caching-boundary-1/gpt-6.1-sol/01-full-kitchen-walnut-marble-corner",
+      "model": "gpt-6.1-sol",
+      "test": "full-kitchen-walnut-marble-corner",
+      "manifest": {
+        "variant": "library-rules-with-reference-boundary",
+        "repetition": 1,
+        "roomleUi": "1db8ef92c3f8cff5876a98b22e99a582aedc0d4d",
+        "roomleHiExample": "6e041409ee3476c5858300b55f41d5d2aad62073",
+        "planner": "http://localhost:5173",
+        "embedding": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "cacheState": "unknown; new browser is not a cold provider cache",
+        "model": {
+          "provider": "gpt-6.1-sol",
+          "apiKey": "$AZURE_GPT_SOL_KEY"
+        },
+        "reasoningEffort": "deployment default",
+        "createdAt": "2026-10-26T10:34:04.085Z",
+        "requestIntervalMs": 20000,
+        "referenceCacheBreakpoint": true,
+        "cachePolicy": "implicit plus explicit library boundary and digest-derived key; default lifetime",
+        "checkout": "roomle-ui feat/hi-mcp-performance"
+      },
+      "turns": 1,
+      "chatMs": 1962,
+      "steps": 0,
+      "modelMs": null,
+      "toolsMs": null,
+      "otherMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "reasoningTokens": null,
+      "usage": {
+        "status": "unavailable",
+        "inputTokens": null,
+        "outputTokens": null,
+        "totalTokens": null
+      },
+      "diagnostics": [
+        {
+          "version": 1,
+          "details": {
+            "cacheReadTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "cacheWriteTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "noCacheTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "reasoningTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            }
+          },
+          "modelCalls": [],
+          "requests": [
+            {
+              "bytes": 339254,
+              "sha256": "05df947340dd568ee2b919834d72d3dad79c1b18f3e79a1fb7789dbe7f6f658f"
+            }
+          ],
+          "reference": {
+            "bytes": 295383,
+            "sha256": "ac8d9cfdec1783b554b3bb08dc3d3e8b2bdd5858203f1f33eb3f61b851cb3633"
+          },
+          "referenceAcquisitionMs": 13.5,
+          "firstTextMs": null,
+          "turnMs": 1955.9000000059605
+        }
+      ],
+      "runtime": {
+        "requestIntervalMs": 20000,
+        "embeddingModules": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "plannerOrigins": ["http://localhost:5173"]
+      },
+      "pacingWaitMs": 0,
+      "referenceToolCalls": {
+        "get-plan-context": 1,
+        "get-authoring-rules": 0,
+        "get-skill": 0,
+        "find-attributes": 0
+      },
+      "timingSource": "model-call callbacks; excludes tools",
+      "planChanges": 0,
+      "corrections": 0,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 1,
+      "chatErrors": [
+        "The planning assistant failed: Invalid 'prompt_cache_key': string too long. Expected a string with maximum length 64, but got a string with length 77 instead."
+      ],
+      "tools": {
+        "get-plan-context": {
+          "calls": 1,
+          "ms": 9
+        }
+      },
+      "stepLog": []
+    },
+    {
+      "dir": ".temp/result/prompt-caching-boundary-1/gpt-6.1-sol/02-image-kitchen-left-wall",
+      "model": "gpt-6.1-sol",
+      "test": "image-kitchen-left-wall",
+      "manifest": {
+        "variant": "library-rules-with-reference-boundary",
+        "repetition": 1,
+        "roomleUi": "1db8ef92c3f8cff5876a98b22e99a582aedc0d4d",
+        "roomleHiExample": "6e041409ee3476c5858300b55f41d5d2aad62073",
+        "planner": "http://localhost:5173",
+        "embedding": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "cacheState": "unknown; new browser is not a cold provider cache",
+        "model": {
+          "provider": "gpt-6.1-sol",
+          "apiKey": "$AZURE_GPT_SOL_KEY"
+        },
+        "reasoningEffort": "deployment default",
+        "createdAt": "2026-10-26T10:34:04.085Z",
+        "requestIntervalMs": 20000,
+        "referenceCacheBreakpoint": true,
+        "cachePolicy": "implicit plus explicit library boundary and digest-derived key; default lifetime",
+        "checkout": "roomle-ui feat/hi-mcp-performance"
+      },
+      "turns": 1,
+      "chatMs": 1018,
+      "steps": 0,
+      "modelMs": null,
+      "toolsMs": null,
+      "otherMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "reasoningTokens": null,
+      "usage": {
+        "status": "unavailable",
+        "inputTokens": null,
+        "outputTokens": null,
+        "totalTokens": null
+      },
+      "diagnostics": [
+        {
+          "version": 1,
+          "details": {
+            "cacheReadTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "cacheWriteTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "noCacheTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "reasoningTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            }
+          },
+          "modelCalls": [],
+          "requests": [
+            {
+              "bytes": 604018,
+              "sha256": "ba9dc2fd7a4aa38b469e57bb7081543d8e8c211b9ae31713bec9980360341b55"
+            }
+          ],
+          "reference": {
+            "bytes": 295383,
+            "sha256": "ac8d9cfdec1783b554b3bb08dc3d3e8b2bdd5858203f1f33eb3f61b851cb3633"
+          },
+          "referenceAcquisitionMs": 16.299999982118607,
+          "firstTextMs": null,
+          "turnMs": 848.0999999940395
+        }
+      ],
+      "runtime": {
+        "requestIntervalMs": 20000,
+        "embeddingModules": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "plannerOrigins": ["http://localhost:5173"]
+      },
+      "pacingWaitMs": 0,
+      "referenceToolCalls": {
+        "get-plan-context": 1,
+        "get-authoring-rules": 0,
+        "get-skill": 0,
+        "find-attributes": 0
+      },
+      "timingSource": "model-call callbacks; excludes tools",
+      "planChanges": 0,
+      "corrections": 0,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 1,
+      "chatErrors": [
+        "The planning assistant failed: Invalid 'prompt_cache_key': string too long. Expected a string with maximum length 64, but got a string with length 77 instead."
+      ],
+      "tools": {
+        "get-plan-context": {
+          "calls": 1,
+          "ms": 13
+        }
+      },
+      "stepLog": []
+    },
+    {
+      "dir": ".temp/result/prompt-caching-boundary-1/gpt-6.1-sol/03-image-only-no-text",
+      "model": "gpt-6.1-sol",
+      "test": "image-only-no-text",
+      "manifest": {
+        "variant": "library-rules-with-reference-boundary",
+        "repetition": 1,
+        "roomleUi": "1db8ef92c3f8cff5876a98b22e99a582aedc0d4d",
+        "roomleHiExample": "6e041409ee3476c5858300b55f41d5d2aad62073",
+        "planner": "http://localhost:5173",
+        "embedding": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "cacheState": "unknown; new browser is not a cold provider cache",
+        "model": {
+          "provider": "gpt-6.1-sol",
+          "apiKey": "$AZURE_GPT_SOL_KEY"
+        },
+        "reasoningEffort": "deployment default",
+        "createdAt": "2026-10-26T10:34:04.085Z",
+        "requestIntervalMs": 20000,
+        "referenceCacheBreakpoint": true,
+        "cachePolicy": "implicit plus explicit library boundary and digest-derived key; default lifetime",
+        "checkout": "roomle-ui feat/hi-mcp-performance"
+      },
+      "turns": 1,
+      "chatMs": 1034,
+      "steps": 0,
+      "modelMs": null,
+      "toolsMs": null,
+      "otherMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "reasoningTokens": null,
+      "usage": {
+        "status": "unavailable",
+        "inputTokens": null,
+        "outputTokens": null,
+        "totalTokens": null
+      },
+      "diagnostics": [
+        {
+          "version": 1,
+          "details": {
+            "cacheReadTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "cacheWriteTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "noCacheTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "reasoningTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            }
+          },
+          "modelCalls": [],
+          "requests": [
+            {
+              "bytes": 585078,
+              "sha256": "79f1e5ee274b7d469ef5ebb9cefcaca2b049be727a5468fad68894b0d6fb9186"
+            }
+          ],
+          "reference": {
+            "bytes": 295383,
+            "sha256": "ac8d9cfdec1783b554b3bb08dc3d3e8b2bdd5858203f1f33eb3f61b851cb3633"
+          },
+          "referenceAcquisitionMs": 14.599999994039536,
+          "firstTextMs": null,
+          "turnMs": 917.5
+        }
+      ],
+      "runtime": {
+        "requestIntervalMs": 20000,
+        "embeddingModules": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "plannerOrigins": ["http://localhost:5173"]
+      },
+      "pacingWaitMs": 0,
+      "referenceToolCalls": {
+        "get-plan-context": 1,
+        "get-authoring-rules": 0,
+        "get-skill": 0,
+        "find-attributes": 0
+      },
+      "timingSource": "model-call callbacks; excludes tools",
+      "planChanges": 0,
+      "corrections": 0,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 1,
+      "chatErrors": [
+        "The planning assistant failed: Invalid 'prompt_cache_key': string too long. Expected a string with maximum length 64, but got a string with length 77 instead."
+      ],
+      "tools": {
+        "get-plan-context": {
+          "calls": 1,
+          "ms": 12
+        }
+      },
+      "stepLog": []
+    },
+    {
+      "dir": ".temp/result/prompt-caching-boundary-1/gpt-6.1-sol/04-edit-add-move-delete-subarticle",
+      "model": "gpt-6.1-sol",
+      "test": "edit-add-move-delete-subarticle",
+      "manifest": {
+        "variant": "library-rules-with-reference-boundary",
+        "repetition": 1,
+        "roomleUi": "1db8ef92c3f8cff5876a98b22e99a582aedc0d4d",
+        "roomleHiExample": "6e041409ee3476c5858300b55f41d5d2aad62073",
+        "planner": "http://localhost:5173",
+        "embedding": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "cacheState": "unknown; new browser is not a cold provider cache",
+        "model": {
+          "provider": "gpt-6.1-sol",
+          "apiKey": "$AZURE_GPT_SOL_KEY"
+        },
+        "reasoningEffort": "deployment default",
+        "createdAt": "2026-10-26T10:34:04.085Z",
+        "requestIntervalMs": 20000,
+        "referenceCacheBreakpoint": true,
+        "cachePolicy": "implicit plus explicit library boundary and digest-derived key; default lifetime",
+        "checkout": "roomle-ui feat/hi-mcp-performance"
+      },
+      "turns": 1,
+      "chatMs": 815,
+      "steps": 0,
+      "modelMs": null,
+      "toolsMs": null,
+      "otherMs": null,
+      "inputTokens": null,
+      "outputTokens": null,
+      "reasoningTokens": null,
+      "usage": {
+        "status": "unavailable",
+        "inputTokens": null,
+        "outputTokens": null,
+        "totalTokens": null
+      },
+      "diagnostics": [
+        {
+          "version": 1,
+          "details": {
+            "cacheReadTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "cacheWriteTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "noCacheTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            },
+            "reasoningTokens": {
+              "tokens": null,
+              "status": "unavailable",
+              "reportedSteps": 0,
+              "observedSteps": 0
+            }
+          },
+          "modelCalls": [],
+          "requests": [
+            {
+              "bytes": 339035,
+              "sha256": "5b0dcf0c12cc95897a02874f5ee42381e514227d844f4885005d348de77dda9f"
+            }
+          ],
+          "reference": {
+            "bytes": 295383,
+            "sha256": "ac8d9cfdec1783b554b3bb08dc3d3e8b2bdd5858203f1f33eb3f61b851cb3633"
+          },
+          "referenceAcquisitionMs": 37.80000001192093,
+          "firstTextMs": null,
+          "turnMs": 768.1000000238419
+        }
+      ],
+      "runtime": {
+        "requestIntervalMs": 20000,
+        "embeddingModules": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "plannerOrigins": ["http://localhost:5173"]
+      },
+      "pacingWaitMs": 0,
+      "referenceToolCalls": {
+        "get-plan-context": 1,
+        "get-authoring-rules": 0,
+        "get-skill": 0,
+        "find-attributes": 0
+      },
+      "timingSource": "model-call callbacks; excludes tools",
+      "planChanges": 0,
+      "corrections": 0,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 1,
+      "chatErrors": [
+        "The planning assistant failed: Invalid 'prompt_cache_key': string too long. Expected a string with maximum length 64, but got a string with length 77 instead."
+      ],
+      "tools": {
+        "get-plan-context": {
+          "calls": 1,
+          "ms": 12
+        }
+      },
+      "stepLog": []
+    }
+  ]
+}

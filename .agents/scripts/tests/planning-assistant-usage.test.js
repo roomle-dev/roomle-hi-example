@@ -98,6 +98,29 @@ test('retains known usage from a failed or aborted prompt', async (t) => {
   }
 });
 
+test('preserves current diagnostics and keeps old records readable', async (t) => {
+  const page = await newPage(t);
+  const record = {
+    ...measured,
+    diagnostics: {
+      version: 1,
+      details: {
+        cacheReadTokens: { tokens: 0, status: 'complete' },
+        cacheWriteTokens: { tokens: null, status: 'unavailable' },
+      },
+      modelCalls: [{ responseTimeMs: 100 }],
+      requests: [{ bytes: 500, sha256: 'hash' }],
+    },
+  };
+  const finish = collectPromptUsage(page);
+  await page.evaluate(
+    (value) =>
+      console.log('[planning-assistant] usage ' + JSON.stringify(value)),
+    record
+  );
+  assert.deepEqual(await finish(), { usage: record, usageWarnings: [] });
+});
+
 test('diagnoses missing, malformed and duplicate records without inventing counts', async (t) => {
   const page = await newPage(t);
   for (const lines of [

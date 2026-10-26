@@ -60,7 +60,7 @@ the 403 for a foreign Host, and that the page port can be bound again after sign
 ## The chat of the example page
 
 `index.html` imports `@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version
-`0.0.0-dev-2de4423`
+`0.0.0-dev-80484dc`
 ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`
 the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
 
@@ -115,3 +115,15 @@ embedding imports and planner origins so a local benchmark can verify its actual
 - **The test scripts use page globals** — `window.instance`, `window.hiPosGroupsCompletelyLoaded`,
   `window.hiPlannerCalls`, `window.hiPlanningAssistantOutput`, `window.hiAgentPlanContext` and
   `window.hiPlanningAssistantAbort` (ends a turn that takes too long) of `index.html` ([Deployment and testing](./deployment-and-testing.md#end-to-end-runs)).
+
+### Responses request transport
+
+OpenAI and Azure Responses start each user turn with current library reference and successful
+history, then send new tool results with the preceding stored provider response ID. The chain
+ends with the turn. Other providers send full accumulated input. The embedding-lib owns this
+behavior; see roomle-ui [prompt caching and continuations](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md).
+
+Request diagnostics include zero-based SDK step association and input/tools/envelope sections.
+New/repeated serialized input items are measured within the turn using digests, independently of
+provider cache usage. Missing digest support leaves repetition unknown. No bodies or keys are
+stored. The benchmark displays model steps from 1 and each HTTP attempt separately.

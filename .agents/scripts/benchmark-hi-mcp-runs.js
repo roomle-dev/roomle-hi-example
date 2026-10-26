@@ -364,7 +364,7 @@ export const toMarkdown = (runs) => {
     '',
     'Coverage is per field and turn. Missing counters are unknown. Cache reads are a subset of input tokens; request bytes still cross the network. SDK model-call timings include any test request pacing, and may overlap tool execution. They do not isolate prefill. First output can be reasoning or a tool call.',
     '',
-    '| Run | Turn | Cache read / coverage | Cache write / coverage | Request bytes | Reference bytes | First output ms | First visible text ms |',
+    '| Run | Turn | Cache read / coverage | Cache write / coverage | Request bytes (turn total) | Reference bytes | First output ms | First visible text ms |',
     '|---|---|---|---|---|---|---|---|'
   );
   runs.forEach((run, index) =>
@@ -376,6 +376,26 @@ export const toMarkdown = (runs) => {
       );
     })
   );
+  lines.push(
+    '',
+    '## Individual model requests',
+    '',
+    'Each row is one HTTP request attempt, including retries. Step numbers are displayed from 1; an unavailable association is shown as unknown. Input bytes count serialized input items; new and repeated items partition that input when digests are available. Tools plus input plus other bytes equal the body bytes. Repeated means an identical serialized item appeared in an earlier attempt of this turn, not a provider cache hit. Bodies and credentials are not retained.',
+    '',
+    '| Run | Turn | Attempt | Model step | Body bytes | Input bytes | New input bytes | Repeated input bytes | Tools bytes | Other bytes |',
+    '|---|---|---|---|---|---|---|---|---|---|'
+  );
+  runs.forEach((run, index) =>
+    run.diagnostics.forEach((diagnostics, turn) =>
+      (diagnostics?.requests ?? []).forEach((request, attempt) => {
+        const section = request.sections ?? {};
+        lines.push(
+          `| ${index + 1} | ${turn + 1} | ${attempt + 1} | ${Number.isInteger(request.stepNumber) ? request.stepNumber + 1 : 'unknown'} | ${request.bytes} | ${section.inputBytes ?? '–'} | ${section.newInputBytes ?? '–'} | ${section.repeatedInputBytes ?? '–'} | ${section.toolsBytes ?? '–'} | ${section.otherBytes ?? '–'} |`
+        );
+      })
+    )
+  );
+
   lines.push(
     '',
     '## Tools',

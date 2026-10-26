@@ -193,3 +193,15 @@ is pending. They make no model requests and require the existing Playwright inst
 `.agents/scripts/`; the generated-case tests also require `jq`.
 
 When an interactive `npm start` holds port 3000, run with `EXAMPLE_PORT` set to a free port.
+
+### Per-request byte measurements
+
+The benchmark prints every HTTP attempt, including retries, with its SDK step association where
+available. Body bytes are the individual uncompressed UTF-8 JSON body. Input item bytes, tools
+and residual envelope bytes reconcile to that body; new plus repeated items partition input
+when digests are available. Repetition means an identical serialized item appeared earlier in
+the same turn, not a provider cache hit. Turn totals have a separate label.
+
+Responses chaining tests use the pinned SDK and provider adapters with mocked SSE responses.
+The browser benchmark checks actual local planner and embedding module URLs; source-server
+imports are temporary, while a published dev package is pinned to the exact verified commit.

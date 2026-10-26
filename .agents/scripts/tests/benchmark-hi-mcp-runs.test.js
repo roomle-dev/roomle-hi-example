@@ -5,6 +5,27 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { benchmarkRun, toMarkdown } from '../benchmark-hi-mcp-runs.js';
 
+test('reports individual request attempts with step association and unknown sections', async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), 'hi-request-benchmark-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  await writeFile(join(dir, 'run.json'), JSON.stringify({
+    provider: 'openai', turns: [{ usage: { diagnostics: {
+      version: 1, requests: [
+        { bytes: 500, stepNumber: 0, sections: { inputBytes: 300, newInputBytes: 300, repeatedInputBytes: 0, toolsBytes: 100, otherBytes: 100 } },
+        { bytes: 500, stepNumber: 0 },
+        { bytes: 200, stepNumber: 1 },
+        { bytes: 100 },
+      ],
+    } } }],
+  }));
+  const markdown = toMarkdown([benchmarkRun(dir)]);
+  assert.match(markdown, /Request bytes \(turn total\)/);
+  assert.match(markdown, /\| 1 \| 1 \| 1 \| 1 \| 500 \| 300 \| 300 \| 0 \| 100 \| 100 \|/);
+  assert.match(markdown, /\| 1 \| 1 \| 2 \| 1 \| 500 \| –/);
+  assert.match(markdown, /\| 1 \| 1 \| 3 \| 2 \| 200 \| –/);
+  assert.match(markdown, /\| 1 \| 1 \| 4 \| unknown \| 100 \| –/);
+});
+
 test('uses current model-call timing, preserves unknown counters and excludes errors', async (t) => {
   const dir = await mkdtemp(join(tmpdir(), 'hi-benchmark-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -45,6 +66,8 @@ test('uses current model-call timing, preserves unknown counters and excludes er
   assert.equal(run.diagnostics[0].details.cacheReadTokens.tokens, 0);
   assert.match(toMarkdown([run]), /fewer than 2/);
   assert.match(toMarkdown([run]), /0 \/ complete \| – \/ unavailable/);
+  const transportTable = toMarkdown([run]).split('## Cache and transport measurements')[1].split('## Individual model requests')[0];
+  assert.match(transportTable, /0 \/ complete \| – \/ unavailable/);
   data.turns[0].errors = ['provider unavailable'];
   await writeFile(join(dir, 'run.json'), JSON.stringify(data));
   assert.match(toMarkdown([benchmarkRun(dir)]), /Left out of the per-test/);

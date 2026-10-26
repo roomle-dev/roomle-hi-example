@@ -148,7 +148,11 @@ subtract cumulative timestamps to learn how long each agent step took.
 | Nested planner calls | Call/parent tool, method/arguments, start/end, **Delta s** and elapsed ms |
 | Skills to first kitchen | Initial skills complete, last required reference complete, create start/end; both interval deltas, with model/create/local-gap breakdown where measured |
 | Turn accounting | Model union, tool union, overlap, other work and total, with shares |
-| Usage and transport | Calls, tokens, independently covered cache counters, reference/request bytes and saved snapshot IDs |
+| Usage and transport | Calls, tokens, independently covered cache counters, reference bytes, each individual HTTP request body and available input/tools/envelope sections, retries and saved snapshot IDs |
+
+Request bytes are each call's actual UTF-8 body, with SDK step association where available. Label
+turn sums separately. Net growth is not the new-content payload; new/repeated item measurements
+are independent of provider cache reads.
 
 Explain that Start/End are timestamps relative to turn start and Delta is elapsed duration. Keep
 sub-millisecond gaps out of unsupported precision claims and note display rounding.

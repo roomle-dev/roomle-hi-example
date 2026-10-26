@@ -26,7 +26,7 @@ The initial investigation made no production changes or paid model requests. The
 
 ## 2. What the measured bytes mean
 
-The [image-kitchen-left-wall benchmark](../benchmarks/iklw-oa-orig-2026-10-26.md) measures each serialized UTF-8 JSON HTTP request body separately. A row is **the bytes of that call**, not a running sum. HTTP headers, TLS framing and actual compressed network traffic are outside this measurement.
+The [image-kitchen-left-wall benchmark](../benchmarks/01-iklw-oa-orig-2026-10-26.md) measures each serialized UTF-8 JSON HTTP request body separately. A row is **the bytes of that call**, not a running sum. HTTP headers, TLS framing and actual compressed network traffic are outside this measurement.
 
 The requests grow because their content includes earlier input plus new messages. Some stored assistant/reasoning items can become short provider item references; the original user image, library message and ordinary tool results are still serialized again. It would be inaccurate to say every previous assistant byte is always reuploaded.
 
@@ -242,7 +242,7 @@ The source changes are confined to `hi-planning-assistant.ts`, `hi-planning-usag
 
 ### Controlled comparison
 
-The [timing comparison](../benchmarks/iklw-oa-rc-cmp-2026-10-26.md) compares the independent [fresh baseline](../benchmarks/iklw-oa-base-2026-10-26.md) and [response-chaining run](../benchmarks/iklw-oa-rc-2026-10-26.md) reports. The [original measurement](../benchmarks/iklw-oa-orig-2026-10-26.md) remains unchanged. The four new repetitions use the approved direct OpenAI model/key, image, prompt and local planner. Baseline `f6f338fdc` received only the matching telemetry; source digests and temporary instrumentation are recorded locally. The example revision was `5a5708d`.
+The [timing comparison](../benchmarks/iklw-oa-rc-cmp-2026-10-26.md) compares the unchanged [original measurement 01](../benchmarks/01-iklw-oa-orig-2026-10-26.md) with the independent [response-chaining run 02](../benchmarks/02-iklw-oa-rc-2026-10-26.md). The additional same-session control captures remain local in `.temp/response-chaining-implementation/runs/baseline-1` and `baseline-2`; the table below describes that supplementary experiment, not the baseline of the main comparison. Its four repetitions use the direct OpenAI model/key, image, prompt and local planner. Control source `f6f338fdc` received only matching telemetry; source digests and instrumentation are recorded locally. The example revision was `5a5708d`.
 
 | Median / mean with two repetitions | Baseline | Candidate |
 |---|---|---|

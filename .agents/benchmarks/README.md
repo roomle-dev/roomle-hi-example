@@ -36,9 +36,9 @@ landed and are measured, the durable outcome — the step cost of a model, a rej
 promoted into the living reference, and the document can be deleted.
 
 Filename abbreviations: `iklw` = image kitchen left wall; `oa` = OpenAI Astra;
-`orig` = original; `base` = baseline; `rc` = response chaining; `cmp` = comparison.
+`orig` = original; `base` = baseline; `rc` = response chaining; `preloads` = scoped live context and first-image guidance; `cmp` = comparison.
 
-The series has two numbered run reports: **01 original** and **02 response chaining**. Each contains two repetitions. The comparison is unnumbered and is extended when future runs are added.
+The series has three numbered reports: **01 original**, **02 response chaining**, and **03 response chaining plus preloads**. Each contains two repetitions. The comparison is unnumbered and is extended when future runs are added.
 
 ## Current Documents
 
@@ -46,7 +46,8 @@ The series has two numbered run reports: **01 original** and **02 response chain
 |---|---|---|
 | [Original left-wall image kitchen timing](01-iklw-oa-orig-2026-10-26.md) | Measured | Original baseline, preserved unchanged |
 | [Left-wall image kitchen: response-chaining run](02-iklw-oa-rc-2026-10-26.md) | Measured | Two chained repetitions; independent timing and per-call byte report |
-| [Left-wall image kitchen: timing comparison](iklw-oa-rc-cmp-2026-10-26.md) | Measured | Unnumbered comparison of original 01, response chaining 02 and future runs; per-call bytes and duration deltas |
+| [Left-wall image kitchen: preloads run](03-iklw-oa-rc-preloads-2026-10-26.md) | Measured | Two repetitions with live context and first-image guidance; no completed-turn improvement established against 02 |
+| [Left-wall image kitchen: timing comparison](iklw-oa-rc-cmp-2026-10-26.md) | Measured | Original 01, chaining 02 and preloads 03; per-call bytes, timing/stage deltas and usage |
 | [planning-assistant-prompt-caching.md](planning-assistant-prompt-caching.md) | Complete | A/B/C comparison selects compact library/rules; Azure boundary verifies cross-prompt reuse; final Astra minimum suite: 6 pass, 4 partial, 0 fail |
 | [Shared-reference artifacts](planning-assistant-prompt-caching/README.md) | Evidence | Generated per-variant Markdown/JSON measurements and reproduction metadata |
 | [kitchen-from-image-time.md](kitchen-from-image-time.md) | Measured | RML-18064 and RML-18164: where the time goes when the agent plans a kitchen from an image — gpt-6-astra baseline 92 s, 10.2 steps, 699k input tokens per run (2026-10-08); the second measurement on the runs since the five improvements (2026-10-13, `kitchen-from-image-time-2026-10-13/`); the third measurement, the six improvements of RML-18164 one after another on one build and the local planner (2026-10-14, `kitchen-from-image-time-rml-18164/<step>/`): the vocabulary section takes the search steps away, 104 s → 75 s per run |

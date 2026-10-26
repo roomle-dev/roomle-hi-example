@@ -60,7 +60,7 @@ the 403 for a foreign Host, and that the page port can be bound again after sign
 ## The chat of the example page
 
 `index.html` imports `@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version
-`0.0.0-dev-80484dc`
+`0.0.0-dev-5426d65`
 ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`
 the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
 
@@ -93,12 +93,22 @@ defines the stored measurements and their report totals.
 
 The local planning assistant can supply a shared reference before conversation history: common
 rules plus a compact article/attribute projection refreshed each turn. The example owns neither
-the reference content. The launcher selects verified deployment capabilities; the embedding-lib
+the reference content nor its assembly. It also supplies current rooms/groups/obstacles/installation
+elements after history and before the latest user input. Automatic live snapshots are reacquired
+each turn and stay outside stored history and the stable library digest/cache boundary. On the
+first actual user-image turn it supplies the served image-planning main file with its session
+preamble; the actual guidance and supplied presence are retained only with successful history,
+including successful on-demand loading. Missing/stale information remains available through tools.
+Room/region skills stay on demand, and image guidance alone asks for no plan edit.
+The launcher selects verified deployment capabilities; the embedding-lib
 owns prompt assembly and cache policy. Architecture, lifecycle and decisions live in roomle-ui's
 [prompt-caching reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md).
 Version 1 diagnostics preserve cache-read/write coverage, model-call timings and request/reference
 bytes and digests without storing prompt content or credentials. The runner records both local
 embedding imports and planner origins so a local benchmark can verify its actual runtime.
+`referenceAcquisitionMs` covers the combined pre-model bootstrap, including live context and
+conditional image guidance; the shared reference digest still covers instructions/library only.
+Use the matching local planner to exercise the served supplied-state instructions of this branch.
 
 ## Before you change these files
 

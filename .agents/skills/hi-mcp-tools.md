@@ -580,7 +580,7 @@ is one call, which roomle-ui performs:
 
 ## Best Practices
 
-1. Always start with `get-plan-context`
+1. Use supplied current-turn rooms, groups, obstacles and installationElements; fetch missing or stale sections with `get-plan-context`. The Planning Assistant supplies these at turn start; custom hosts can read them on demand.
 2. Validate article IDs before using
 3. Use free docking vectors when extending
 4. Position every new group with a placement — at a wall or in a room corner by `wall`, `alignment` and `offsetMm`, anywhere else by `posGroup` and `posRotationZ`

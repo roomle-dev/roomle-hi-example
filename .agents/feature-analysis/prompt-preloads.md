@@ -1,7 +1,7 @@
 # Planning Assistant: live context and image-skill preloads
 
 > **Type**: Feature analysis
-> **Status**: Open — recommendations investigated; implementation and comparative validation pending
+> **Status**: Implemented on `feat/hi-mcp-performance` — two-repetition benchmark complete; awaiting merge
 > **Date**: 2026-10-26
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `3d01b27a4e2b2669c3bc92cdcc3bb29357bc753c`; roomle-ui `80484dc71e0889e24d3251e42090c1ff2eca10f7`, `feat/hi-mcp-performance`
@@ -181,3 +181,44 @@ Use deterministic unit/wire tests for empty and populated plans, manual edits be
 For performance, compare four versions with the current response-chaining implementation held fixed: **current**, **live context only**, **image skill only**, and **both**. Two valid `image-kitchen-left-wall` repetitions per version means **eight runs**, using `openai:gpt-6-astra`, `$OPENAI_ASSISTANT_API_KEY`, provider-default reasoning, the same image/prompt/plan and local planner. Keep each version's report independent and place comparisons in a separate document. The current observed input usage suggests roughly **4.3–4.5 million input tokens** for eight similar runs, plus setup/variation; this is a planning estimate, not an authorized experiment here. A four-run current-versus-both comparison is a smaller alternative but cannot isolate each preload's contribution.
 
 Include text-only/read-only and large-plan serialization checks without model calls first. Measure whether required model rounds actually disappear, whether references are redundantly fetched, how initial input/cache behavior changes, and whether saved-plan quality and skill scope remain correct. Keep the existing backsplash calculation finding separate. No new benchmark is run during this analysis.
+
+## 9. Implementation and measured outcome — 2026-10-26
+
+The approved implementation plan is [comment 156546 of RML-18303](https://roomle.atlassian.net/browse/RML-18303?focusedCommentId=156546).
+Both preloads are implemented in roomle-ui commit `5426d65c4845ba1371de92e48b49f8bb58c8a6b8`
+on `feat/hi-mcp-performance`. The example pins the verified published package
+`@roomle/embedding-lib@0.0.0-dev-5426d65` ([build](https://github.com/roomle-dev/roomle-ui/actions/runs/40379495687)).
+
+The assistant partitions one explicit context read into stable library reference and a transient
+current-turn snapshot. Its first user-image preload uses the served skill/preamble, retaining
+actual guidance and supplied presence only with successful history and recognizing successful
+on-demand loads. Missing/failed acquisition preserves ordinary tools. Freshness and history
+contracts are promoted to roomle-ui's prompt-caching, architecture, behaviour reference (D115)
+and ADR 0014; example integration is in [pages-chat-and-launcher.md](../context/pages-chat-and-launcher.md).
+
+Verification: **115 embedding tests**, **250 SDK tests**, types, code lint, formatting and the
+embedding build pass. Source and published-package browser preflights make zero provider requests
+and verify first/later-image retention, one live snapshot per turn and stable library bytes.
+The synthetic 100-group live snapshot is **2,282,198 bytes**, with no truncation or write tools;
+the whole offline source turn takes **28.7 ms**. This is not a physically loaded large scene or
+an isolated CPU measurement. Unit coverage additionally preserves 1,000 groups.
+
+The approved smaller measurement adds only the combined variant as
+[benchmark 03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md), reusing preserved 01/02 as
+historical comparisons in the [same comparison document](../benchmarks/iklw-oa-rc-cmp-2026-10-26.md).
+Both new kitchens are saved and centred on the left wall; both answers disclose the unchanged
+backsplash calculation failure. Mean first-kitchen time is **29.974 s** versus **30.815 s** in 02;
+mean complete-turn time is **54.359 s** versus **53.601 s**. Each new turn uses **eight** model
+calls versus **six** in 02; mean input is **730,936.5** versus **548,708.5** tokens. Initial
+image/context reads are supplied, but kitchen guidance/reference discovery remains and post-create
+reads run sequentially. **No overall completion-time benefit is established.**
+
+Full repository lint is not green: UI TypeDoc reports 22 warnings treated as errors; SDK TypeDoc
+reports type errors in `image-renderer.ts:156` and `bun-webgpu/src/structs_ffi.ts:703`. Identical
+findings reproduce in an isolated clean checkout of base `80484dc` with an identical lockfile
+and installed dependencies. These unrelated documentation/tooling findings remain outside this
+implementation. The optional four-variant experiment and paid large-scene latency testing are
+not performed; individual preload effects and broader workload overhead remain unmeasured.
+
+Keep this analysis until the implementation lands on the default/release branch; its durable
+contracts already live in the architecture reference. Raw evidence, logs and PDFs stay in `.temp/`.

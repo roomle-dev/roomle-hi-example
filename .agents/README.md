@@ -142,7 +142,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | Document | Status | Last touched |
 |---|---|---|
 | [HI Planning Assistant token count protocol](feature-analysis/planning-assistant-token-count-protocol.md) | Implemented — prompt usage logging and report totals verified with the pinned embedding-lib dev | 2026-10-25 |
-| [Planning Assistant: live context and image-skill preloads](feature-analysis/prompt-preloads.md) | Open — scoped per-turn state, first-image skill lifecycle and benchmark design | 2026-10-26 |
+| [Planning Assistant: live context and image-skill preloads](feature-analysis/prompt-preloads.md) | Implemented — awaiting merge; scoped state, successful-history skill retention and benchmark 03 | 2026-10-26 |
 | [Direct OpenAI models in the example launcher](feature-analysis/openai-provider-launcher.md) | Implemented — explicit CLI model, published dev provider and browser verification | 2026-10-26 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
@@ -168,7 +168,8 @@ folder of the same name.
 | [Where the time goes when the HI agent plans a kitchen from an image](benchmarks/kitchen-from-image-time.md) | Third measurement (RML-18164): the six improvements one after another on one build and the local planner — baseline 104 s, 8.4 steps, 531k; the vocabulary section takes the search steps away (75 s, 6.5, 383k), the rest is stable within the spread | 2026-10-14 |
 | [Original left-wall image kitchen timing](benchmarks/01-iklw-oa-orig-2026-10-26.md) | Original baseline, preserved unchanged | 2026-10-26 |
 | [Left-wall image kitchen: response-chaining run](benchmarks/02-iklw-oa-rc-2026-10-26.md) | Two chained repetitions; independent timing and per-call byte report | 2026-10-26 |
-| [Left-wall image kitchen: timing comparison](benchmarks/iklw-oa-rc-cmp-2026-10-26.md) | Unnumbered comparison of original 01, response chaining 02 and future runs; per-call bytes and duration deltas | 2026-10-26 |
+| [Left-wall image kitchen: preloads run](benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md) | Two repetitions with both preloads; no completed-turn improvement established over 02 | 2026-10-26 |
+| [Left-wall image kitchen: timing comparison](benchmarks/iklw-oa-rc-cmp-2026-10-26.md) | Original 01, chaining 02 and preloads 03; per-call bytes, timing/stage deltas and usage | 2026-10-26 |
 | [Planning Assistant shared-reference benchmark](benchmarks/planning-assistant-prompt-caching.md) | A/B/C content comparison, Azure cache-boundary checks, transport/input overhead and final minimum-suite validation | 2026-10-26 |
 
 ### Backlog

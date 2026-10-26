@@ -141,6 +141,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | Document | Status | Last touched |
 |---|---|---|
 | [HI Planning Assistant token count protocol](feature-analysis/planning-assistant-token-count-protocol.md) | Implemented — prompt usage logging and report totals verified with the pinned embedding-lib dev | 2026-10-25 |
+| [Direct OpenAI models in the example launcher](feature-analysis/openai-provider-launcher.md) | Open — explicit provider/model CLI syntax and embedding provider support | 2026-10-26 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
 ### Refactoring Analyses

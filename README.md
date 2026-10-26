@@ -20,13 +20,15 @@ All possibilities for `npm start`:
 e.g.
 
 ```bash
-npm start openai <api-key>
+npm start "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY"
+npm run dev "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY"
 ```
 
 | Invocation | What you get |
 | ---------- | ------------ |
 | `npm start` | Example page on :3000, browser opens; no chat |
 | `npm start -- --no-open` | Same, without opening the browser |
+| `npm start openai:<model-id> <api-key>` | Plus chat using OpenAI's API with the exact model ID after `openai:` and an OpenAI API key |
 | `npm start gpt-5-mini <api-key>` | Plus chat with the `gpt-5-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-5.4-mini <api-key>` | Plus chat with the `gpt-5.4-mini` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |
 | `npm start gpt-6-astra <api-key>` | Plus chat with the `gpt-6-astra` deployment on the HI Azure AI Foundry resource (`dfhifoundrysweden`) |

@@ -120,6 +120,13 @@ const providerModel = (lower) => {
 // through the Responses API.
 const planningAssistantConfig = (name, apiKey) => {
   const lower = name.toLowerCase();
+  if (lower.startsWith('openai:')) {
+    const model = name.slice('openai:'.length);
+    if (!model.trim()) {
+      throw new Error('missing OpenAI model ID - use openai:<model-id>');
+    }
+    return { provider: 'openai', model, apiKey, readsImages: true };
+  }
   const reasoningEffort = process.env.HI_CHAT_REASONING_EFFORT;
   if (Object.hasOwn(FOUNDRY_DEPLOYMENTS, lower) || lower.startsWith('gpt-')) {
     const deployment = FOUNDRY_DEPLOYMENTS[lower] ?? {};
@@ -146,7 +153,7 @@ const planningAssistantConfig = (name, apiKey) => {
         .flatMap(Object.keys)
         .join(
           ', '
-        )}, ${Object.keys(FOUNDRY_DEPLOYMENTS).join(', ')} or any gpt-*/mistral-*/claude-*/gemini-* model id`
+        )}, ${Object.keys(FOUNDRY_DEPLOYMENTS).join(', ')}, openai:<model-id> or any gpt-*/mistral-*/claude-*/gemini-* model id`
     );
   }
   const model = process.env.HI_CHAT_MODEL || resolved.model;

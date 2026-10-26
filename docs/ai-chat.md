@@ -20,14 +20,18 @@ embedding-lib (`createHiMcpTools`) — the tools of
 `hi-mcp-server` without an MCP server. Its
 reference is roomle-ui `packages/embedding-lib/docs/homag-intelligence-embedding.md`,
 "The AI Planning Assistant agent" and "HI MCP tools for an AI agent". The page
-loads the embedding-lib alpha release `9.0.0-alpha.5` from unpkg
+loads the pinned embedding-lib dev build from the npm CDN
 ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
-Supported providers: **Mistral**, **Anthropic (Claude)**, **Google (Gemini)** and
+Supported providers: **OpenAI**, **Mistral**, **Anthropic (Claude)**, **Google (Gemini)** and
 **Azure OpenAI**.
+
+Direct OpenAI support requires an embedding-lib build containing roomle-ui commit `2de442370`.
 
 ## Running it
 
 ```bash
+npm start "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY"   # direct OpenAI API; replace <model-id>
+npm run dev "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY" # same model, local planner (:5173)
 npm start mistral <api-key>           # mistral-large-latest (default)
 npm start mistral-medium <api-key>   # mistral-medium-latest
 npm start mistral-large-4 <api-key>  # mistral-large-4-0
@@ -45,6 +49,7 @@ The model name selects the provider and the model:
 
 | Model name | Provider | Model |
 | ---------- | -------- | ----- |
+| `openai:<model-id>` | OpenAI Responses API | Exact model ID after the prefix, including case and additional colons |
 | `mistral` | Mistral | `mistral-large-latest` (default) |
 | `mistral-medium` | Mistral | `mistral-medium-latest` |
 | `mistral-large` | Mistral | `mistral-large-latest` |
@@ -63,7 +68,9 @@ The model name selects the provider and the model:
 | `gpt-6.1-sol` | Azure OpenAI (its own Foundry resource) | the `gpt-6.1-sol` deployment |
 
 Model names and ids are matched case-insensitively, so `Mistral-Large-3` and
-`mistral-large-3` are the same request.
+`mistral-large-3` are the same request. The `openai:` prefix is case-insensitive;
+its model ID is preserved exactly. An empty ID is rejected before the page starts.
+Choose an OpenAI model supporting the tools and image inputs used by the planning assistant.
 
 The launcher (`minimal-hi-example/start.mjs`) turns the model name and the key
 into the `PlanningAssistantConfig` of the embedding-lib — a JSON object with the
@@ -85,7 +92,9 @@ AZURE_RESOURCE_NAME=my-resource HI_CHAT_MODEL=my-gpt4o-deployment npm start azur
 ```
 
 `HI_CHAT_MODEL` replaces the model of every provider other than the Foundry
-deployments.
+deployments and explicit `openai:<model-id>` requests. OpenAI requests use the supplied OpenAI
+key and the model ID after the prefix; Azure resource and reasoning variables do not affect them.
+The unprefixed `openai` alias continues to select Azure.
 
 Every `gpt-*` model and `mistral-large-3` need neither: they are deployments on the HI
 Azure AI Foundry resource and are called through its OpenAI v1 endpoint

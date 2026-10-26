@@ -25,8 +25,6 @@ loads the pinned embedding-lib dev build from the npm CDN
 Supported providers: **OpenAI**, **Mistral**, **Anthropic (Claude)**, **Google (Gemini)** and
 **Azure OpenAI**.
 
-Direct OpenAI support requires an embedding-lib build containing roomle-ui commit `2de442370`.
-
 ## Running it
 
 ```bash

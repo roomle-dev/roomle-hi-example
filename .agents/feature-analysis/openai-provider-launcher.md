@@ -1,7 +1,7 @@
 # Direct OpenAI models in the example launcher
 
 > **Type**: Feature analysis
-> **Status**: Open
+> **Status**: Implemented — published dev build, retained until merge
 > **Date**: 2026-10-26
 
 ## Affected repositories
@@ -50,5 +50,11 @@ Bearer key, exact model ID and request observation without a paid API call. UI, 
 type checks and code lint pass; the full lint pipeline stops at its existing UI TypeDoc warnings.
 Example formatting and lint pass.
 
-Activation remains pending approval to push the UI commit and publish its one dev build, then
-pin both example imports. The current pinned `b626163` package cannot execute provider `openai`.
+The user approved the new build. UI commit `2de442370` is pushed on `feat/hi-mcp-merge`, and
+[workflow 40318680232](https://github.com/roomle-dev/roomle-ui/actions/runs/40318680232) published
+`0.0.0-dev-2de4423`. Both example imports pin that exact package through jsDelivr's npm CDN.
+The browser verification loads both published entry points and the real CDN OpenAI adapter,
+checks all exports used by the page, and completes an OpenAI Responses request with a mocked
+HTTP response and a dummy key. No paid model call is made. Example formatting and lint pass.
+
+The feature is active in the example. This record is retained until merge to the default branch.

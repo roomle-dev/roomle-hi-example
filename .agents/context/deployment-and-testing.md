@@ -77,6 +77,15 @@ legacy step-log support for older runs. Absent counters stay unknown; tool time 
 from model-call time. A run with chat errors stays in the output and is excluded from successful-run
 comparisons.
 
+The assistant records automatic compact-library acquisition before the first model request;
+`referenceAcquisitionMs` includes that read and reference measurement. Live plan context and
+skills use model-requested tools, with genuine results retained in successful history. Historical
+benchmark 03 describes the discarded automatic live/image preloads with their original measured
+boundaries; its counters must not be reinterpreted as the current bootstrap. A byte-equivalent
+restoration of report 02's code uses existing unit/wire tests, build and offline package checks
+without another model run. `--dev` selects only the planner: local assistant measurements must
+also verify both embedding module URLs.
+
 `HI_MCP_REQUEST_INTERVAL_MS` optionally spaces Azure model requests in the test browser. The
 default is zero. The runner records the interval, loaded local embedding module URLs, planner
 origins and per-turn waits in `run.json`. This is test-only pacing for rate-limited deployments;
@@ -193,3 +202,15 @@ is pending. They make no model requests and require the existing Playwright inst
 `.agents/scripts/`; the generated-case tests also require `jq`.
 
 When an interactive `npm start` holds port 3000, run with `EXAMPLE_PORT` set to a free port.
+
+### Per-request byte measurements
+
+The benchmark prints every HTTP attempt, including retries, with its SDK step association where
+available. Body bytes are the individual uncompressed UTF-8 JSON body. Input item bytes, tools
+and residual envelope bytes reconcile to that body; new plus repeated items partition input
+when digests are available. Repetition means an identical serialized item appeared earlier in
+the same turn, not a provider cache hit. Turn totals have a separate label.
+
+Responses chaining tests use the pinned SDK and provider adapters with mocked SSE responses.
+The browser benchmark checks actual local planner and embedding module URLs; source-server
+imports are temporary, while a published dev package is pinned to the exact verified commit.

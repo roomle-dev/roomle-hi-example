@@ -84,6 +84,7 @@ It reads, per run, `run.json`, `console.log` and `planner-calls.json`, and write
 | per test | runs, chat seconds (mean, min, max), steps and input tokens (mean) per model and test — the runs whose chat ended with an error left out, a test with fewer than two runs marked |
 | runs | per run: chat s, steps, model s, tools s, other s (the chat time outside the steps), tokens in, out and reasoning, plan changes, corrections, groups not loaded, errors, and "chat error" for a run left out |
 | tools | per model and tool: calls, calls per run, total s, mean ms — without the runs left out |
+| individual requests | each HTTP attempt, SDK step association, body bytes, new/repeated input bytes where measured, tool-schema bytes and envelope; retries remain separate |
 | per run | per step: turn, tools, step s, tools s, model s, input, output, reasoning, result tokens, planner calls per method (with their seconds when `planner-calls.json` has them per method — runs of the former chat backend; the in-page chat records tool calls there) |
 
 The derived values:
@@ -133,6 +134,10 @@ tokens per run — computed from the step cost.
 
 ## 4. The document
 
+Create a standalone report for each measured source version/variant. Keep earlier run reports
+unchanged. A before/after comparison is a separate document linking the independent reports;
+do not combine their full timelines or append historical reports to the new-run report.
+
 Write `.agents/benchmarks/<slug>.md`. Keep raw evidence, generated summaries and PDFs in `.temp/`
 unless the user requests committed evidence; then put the companion benchmark in
 `.agents/benchmarks/<slug>/` (`--out`). For detailed timing, follow
@@ -170,3 +175,7 @@ to the document: chat seconds, steps and input tokens per test.
 - [hi-mcp-testing.md](./hi-mcp-testing.md) — the runs a benchmark reads
 - [vercel-ai-sdk-chat.md](./vercel-ai-sdk-chat.md) — the chat's step loop and its step log
 - [hi-tools-behaviour.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md) — what each tool returns, the corrections
+
+Request body bytes are per call, not cumulative. Any turn sum is labelled explicitly. New/repeated
+serialized input bytes are independent of provider cache reads. Smaller uploads do not remove
+earlier chained context from token usage or establish a latency improvement.

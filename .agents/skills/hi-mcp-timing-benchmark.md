@@ -16,8 +16,21 @@ report and its index entries unless the user requests evidence publication.
 
 Use [hi-mcp-benchmarking](hi-mcp-benchmarking.md) for the sampling, comparison and diagnosis rules,
 and [hi-mcp-testing](hi-mcp-testing.md) for the prompt runner. This skill adds the timing capture
-and report contract. The [left-wall image kitchen report](../benchmarks/image-kitchen-left-wall-openai-astra-2026-10-26.md)
+and report contract. The [left-wall image kitchen report](../benchmarks/01-iklw-oa-orig-2026-10-26.md)
 is an example of the output, not a set of timings or model defaults to reuse.
+
+## Independent reports
+
+Each measured source version or variant has its own report and PDF. A repeat creates a new
+report; keep earlier reports unchanged. Put before/after timings in a separate comparison
+document that links the standalone reports. Do not append earlier runs or another variant's
+timelines to the new-run report.
+
+When continuing an existing benchmark series, use the original report as the baseline and
+preserve its section order, table columns and per-call **Request bytes** column in the new report.
+Number only the standalone measurements (01, 02, 03, …). Keep one unnumbered comparison and
+extend it with future results; do not replace the original baseline with an extra measurement.
+Use existing captures for document corrections; a layout change needs no new model run.
 
 ## Procedure
 
@@ -143,12 +156,16 @@ subtract cumulative timestamps to learn how long each agent step took.
 |---|---|
 | Milestones, both runs and mean | Initialization, warm reference acquisition, first output/text, first kitchen, completed answer, snapshot/save and full run; name each origin |
 | Agent steps, per run | Step, work/following tools, Start s, End s, **Agent/model delta s**, **Tools delta s**, **Total step delta s** |
-| Model calls, per run | Call, start/end, **Delta s**, first-output wait, remaining stream time, input/output/reasoning tokens, request bytes and following tools |
+| Model calls, per run | Call, start/end, **Delta s**, first-output wait, remaining stream time, input/output/reasoning tokens, **Request bytes** and following tools |
 | Tools, per run | Call, requested information/operation, start/end, **Delta s**, elapsed ms, nested planner time, remaining time, result bytes and outcome |
 | Nested planner calls | Call/parent tool, method/arguments, start/end, **Delta s** and elapsed ms |
 | Skills to first kitchen | Initial skills complete, last required reference complete, create start/end; both interval deltas, with model/create/local-gap breakdown where measured |
 | Turn accounting | Model union, tool union, overlap, other work and total, with shares |
-| Usage and transport | Calls, tokens, independently covered cache counters, reference/request bytes and saved snapshot IDs |
+| Usage and transport | Calls, tokens, independently covered cache counters, reference bytes, each individual HTTP request body and available input/tools/envelope sections, retries and saved snapshot IDs |
+
+Keep the **Request bytes** column in each model-call table, alongside its duration and tokens; a separate transport breakdown supplements it. Request bytes are each call's actual UTF-8 body, with SDK step association where available. Label
+turn sums separately. Net growth is not the new-content payload; new/repeated item measurements
+are independent of provider cache reads.
 
 Explain that Start/End are timestamps relative to turn start and Delta is elapsed duration. Keep
 sub-millisecond gaps out of unsupported precision claims and note display rounding.

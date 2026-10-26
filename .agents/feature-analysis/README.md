@@ -39,6 +39,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Description |
 |---|---|---|
+| [prompt-preloads.md](prompt-preloads.md) | Rejected | Added lifecycle complexity without overall benefit; source restored to response-chaining behavior from 02; analysis and benchmark 03 retained |
 | [openai-provider-launcher.md](openai-provider-launcher.md) | Implemented | Direct OpenAI CLI prefix, exact model selection and verified published embedding provider |
 | [planning-assistant-token-count-protocol.md](planning-assistant-token-count-protocol.md) | Implemented | Prompt usage logging and report totals verified with the SHA-pinned embedding-lib dev package |
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |

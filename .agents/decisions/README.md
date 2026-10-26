@@ -34,6 +34,7 @@ Each ADR carries:
 | [0012 — The HI tool set runs in the planner, the embedding-lib forwards to it](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-hi-tool-set-runs-in-the-planner.md) | Accepted; lives in roomle-ui |
 | [0013 — The library context is a planner method of its own](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-library-context-is-a-planner-method-of-its-own.md) | Accepted; lives in roomle-ui |
 | [0014 — The Planning Assistant uses a shared reference prefix](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-planning-assistant-uses-a-shared-reference-prefix.md) | Accepted; lives in roomle-ui |
+| [0015 — Keep live plan state and image guidance on demand](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md) | Accepted — automatic live/image preloads rejected; lives in roomle-ui |
 
 ## Adding an ADR
 

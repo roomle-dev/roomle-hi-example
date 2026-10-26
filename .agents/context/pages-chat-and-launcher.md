@@ -60,7 +60,7 @@ the 403 for a foreign Host, and that the page port can be bound again after sign
 ## The chat of the example page
 
 `index.html` imports `@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version
-`0.0.0-dev-5426d65`
+`0.0.0-dev-432119f`
 ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`
 the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
 
@@ -93,22 +93,21 @@ defines the stored measurements and their report totals.
 
 The local planning assistant can supply a shared reference before conversation history: common
 rules plus a compact article/attribute projection refreshed each turn. The example owns neither
-the reference content nor its assembly. It also supplies current rooms/groups/obstacles/installation
-elements after history and before the latest user input. Automatic live snapshots are reacquired
-each turn and stay outside stored history and the stable library digest/cache boundary. On the
-first actual user-image turn it supplies the served image-planning main file with its session
-preamble; the actual guidance and supplied presence are retained only with successful history,
-including successful on-demand loading. Missing/stale information remains available through tools.
-Room/region skills stay on demand, and image guidance alone asks for no plan edit.
+the reference content nor its assembly. The model reads current rooms/groups/obstacles/installation
+elements through `get-plan-context` before changes and obtains relevant image/room/region skills
+through `get-skill`. Genuine successful tool calls/results remain in history; the automatic
+library message stays outside it. The host has no automatic live snapshot or first-image
+guidance/presence lifecycle. [ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md)
+rejects those automatic preloads because their added complexity has no demonstrated overall benefit.
 The launcher selects verified deployment capabilities; the embedding-lib
 owns prompt assembly and cache policy. Architecture, lifecycle and decisions live in roomle-ui's
 [prompt-caching reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md).
 Version 1 diagnostics preserve cache-read/write coverage, model-call timings and request/reference
 bytes and digests without storing prompt content or credentials. The runner records both local
 embedding imports and planner origins so a local benchmark can verify its actual runtime.
-`referenceAcquisitionMs` covers the combined pre-model bootstrap, including live context and
-conditional image guidance; the shared reference digest still covers instructions/library only.
-Use the matching local planner to exercise the served supplied-state instructions of this branch.
+`referenceAcquisitionMs` covers compact library acquisition and reference measurement before
+inference; the reference digest covers instructions/library only. Historical benchmark 03 keeps
+its measured preload semantics and is retained as evidence of the rejected attempt.
 
 ## Before you change these files
 

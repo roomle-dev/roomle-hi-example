@@ -77,13 +77,14 @@ legacy step-log support for older runs. Absent counters stay unknown; tool time 
 from model-call time. A run with chat errors stays in the output and is excluded from successful-run
 comparisons.
 
-The assistant's automatic context and first-image skill reads are recorded tool calls before
-the first model request. `referenceAcquisitionMs` includes their combined bootstrap and reference
-measurement, while `reference` excludes live snapshots and image guidance. Detailed timing
-captures mark those boundaries separately and measure labelled message bytes independently of
-MCP result bytes and HTTP request bodies. Automatic snapshots do not accumulate in successful
-history; retained image guidance remains visible on subsequent turns. `--dev` selects only the
-planner: local assistant measurements must also verify both embedding module URLs.
+The assistant records automatic compact-library acquisition before the first model request;
+`referenceAcquisitionMs` includes that read and reference measurement. Live plan context and
+skills use model-requested tools, with genuine results retained in successful history. Historical
+benchmark 03 describes the discarded automatic live/image preloads with their original measured
+boundaries; its counters must not be reinterpreted as the current bootstrap. A byte-equivalent
+restoration of report 02's code uses existing unit/wire tests, build and offline package checks
+without another model run. `--dev` selects only the planner: local assistant measurements must
+also verify both embedding module URLs.
 
 `HI_MCP_REQUEST_INTERVAL_MS` optionally spaces Azure model requests in the test browser. The
 default is zero. The runner records the interval, loaded local embedding module URLs, planner

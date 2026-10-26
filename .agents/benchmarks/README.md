@@ -40,13 +40,18 @@ Filename abbreviations: `iklw` = image kitchen left wall; `oa` = OpenAI Astra;
 
 The series has three numbered reports: **01 original**, **02 response chaining**, and **03 response chaining plus preloads**. Each contains two repetitions. The comparison is unnumbered and is extended when future runs are added.
 
+The selected implementation uses **02's response-chaining behavior**. The automatic preloads of
+03 are discarded because their added complexity has no demonstrated overall benefit. Report 03
+remains measured evidence; the source-equivalent rollback requires no new benchmark. See
+[ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md).
+
 ## Current Documents
 
 | Document | Status | Description |
 |---|---|---|
 | [Original left-wall image kitchen timing](01-iklw-oa-orig-2026-10-26.md) | Measured | Original baseline, preserved unchanged |
 | [Left-wall image kitchen: response-chaining run](02-iklw-oa-rc-2026-10-26.md) | Measured | Two chained repetitions; independent timing and per-call byte report |
-| [Left-wall image kitchen: preloads run](03-iklw-oa-rc-preloads-2026-10-26.md) | Measured | Two repetitions with live context and first-image guidance; no completed-turn improvement established against 02 |
+| [Left-wall image kitchen: preloads run](03-iklw-oa-rc-preloads-2026-10-26.md) | Discarded attempt — evidence retained | Two repetitions with both preloads; selected code uses response-chaining behavior from 02 |
 | [Left-wall image kitchen: timing comparison](iklw-oa-rc-cmp-2026-10-26.md) | Measured | Original 01, chaining 02 and preloads 03; per-call bytes, timing/stage deltas and usage |
 | [planning-assistant-prompt-caching.md](planning-assistant-prompt-caching.md) | Complete | A/B/C comparison selects compact library/rules; Azure boundary verifies cross-prompt reuse; final Astra minimum suite: 6 pass, 4 partial, 0 fail |
 | [Shared-reference artifacts](planning-assistant-prompt-caching/README.md) | Evidence | Generated per-variant Markdown/JSON measurements and reproduction metadata |

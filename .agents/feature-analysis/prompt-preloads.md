@@ -1,7 +1,7 @@
 # Planning Assistant: live context and image-skill preloads
 
 > **Type**: Feature analysis
-> **Status**: Implemented on `feat/hi-mcp-performance` — two-repetition benchmark complete; awaiting merge
+> **Status**: Rejected — automatic live/image preloads discarded; response-chaining behavior from 02 selected
 > **Date**: 2026-10-26
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `3d01b27a4e2b2669c3bc92cdcc3bb29357bc753c`; roomle-ui `80484dc71e0889e24d3251e42090c1ff2eca10f7`, `feat/hi-mcp-performance`
@@ -10,6 +10,13 @@
 
 - **roomle-ui** — the embedding-lib's prompt bootstrap and history lifecycle; the planner's instructions that distinguish supplied current state from information still needing a tool read; associated tests and architecture reference.
 - **roomle-hi-example** — this analysis and its indexes; independent benchmark reports and adoption of the resulting embedding version if implementation is approved.
+
+**Final decision:** discard this attempt. Its additional prompt assembly, live-snapshot handling
+and skill-retention/presence lifecycle have no demonstrated overall performance benefit. Restore
+the code measured in report 02, retain the analysis and all three reports, and publish a fresh dev
+package for that restored code. No additional benchmark is needed for a byte-equivalent rollback.
+See [ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md)
+and [the rejection record](#10-rejection-and-restoration-of-response-chaining-behavior--2026-10-26).
 
 ## 1. Answers and recommendation
 
@@ -220,5 +227,33 @@ and installed dependencies. These unrelated documentation/tooling findings remai
 implementation. The optional four-variant experiment and paid large-scene latency testing are
 not performed; individual preload effects and broader workload overhead remain unmeasured.
 
-Keep this analysis until the implementation lands on the default/release branch; its durable
-contracts already live in the architecture reference. Raw evidence, logs and PDFs stay in `.temp/`.
+This section records the measured implementation before the rejection below. Raw evidence,
+logs and PDFs stay in `.temp/`.
+
+## 10. Rejection and restoration of response-chaining behavior — 2026-10-26
+
+The user's decision is to discard automatic per-turn live context and first-image guidance:
+the process is more complicated and the measurement establishes no overall improvement. The
+complete-turn mean is **54.359 s** versus **53.601 s** in report 02, with eight versus six model
+calls and **33.21%** more mean input tokens. These small samples do not isolate causality; the
+decision is that the added complexity is not justified by the observed benefit.
+
+The nine source/test/fixture files introduced or changed by `5426d65c4` are restored exactly to
+roomle-ui `80484dc71e0889e24d3251e42090c1ff2eca10f7`, the source measured in report 02. This
+preserves compact library bootstrap, cache controls and turn-local response chaining. The model
+reads live state and relevant image/room skills through normal tools; genuine successful tool
+results remain in history. Automatic live snapshots, first-image preloads and their presence
+state are removed.
+
+The rollback is roomle-ui commit `432119f8093eafc93a990641ec8c5594b9b31c4e` on
+`feat/hi-mcp-performance`. The example pins `@roomle/embedding-lib@0.0.0-dev-432119f`, published by
+[workflow 40385465258](https://github.com/roomle-dev/roomle-ui/actions/runs/40385465258).
+All non-Markdown source files are byte-equivalent to report 02. **100 embedding tests**, **249
+SDK tests**, types, code lint and the embedding build pass. The published-package browser check
+uses a mocked SDK and blocked provider requests: library-only bootstrap, response chaining,
+successful history and image input/fallback pass with **zero model requests**. Automatic live
+context and image guidance are absent. **No additional model or benchmark run is performed.**
+Report 03, its raw evidence, this analysis and the three-run comparison remain.
+
+The accepted on-demand contract and rejection are recorded in ADR 0015 and the updated living
+reference. Retain this document as the requested explanation of the discarded attempt.

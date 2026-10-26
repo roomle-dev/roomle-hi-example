@@ -134,6 +134,10 @@ tokens per run — computed from the step cost.
 
 ## 4. The document
 
+Create a standalone report for each measured source version/variant. Keep earlier run reports
+unchanged. A before/after comparison is a separate document linking the independent reports;
+do not combine their full timelines or append historical reports to the new-run report.
+
 Write `.agents/benchmarks/<slug>.md`. Keep raw evidence, generated summaries and PDFs in `.temp/`
 unless the user requests committed evidence; then put the companion benchmark in
 `.agents/benchmarks/<slug>/` (`--out`). For detailed timing, follow

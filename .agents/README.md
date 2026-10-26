@@ -153,7 +153,7 @@ done. The analysis and the report are the same document — the report is append
 | Document | Status | Last touched |
 |---|---|---|
 | [Planning Assistant: a shared prompt prefix for Azure](refactoring-analysis/planning-assistant-azure-prompt-caching.md) | Done on local branches — compact reference, verified Azure boundary, decisions and evaluated minimum tests; retained until merge | 2026-10-26 |
-| [Planning Assistant: stop uploading earlier context at every model step](refactoring-analysis/planning-assistant-response-chaining.md) | Open — turn-scoped Responses chaining, adapter evidence, tests and transport benchmark | 2026-10-26 |
+| [Planning Assistant: stop uploading earlier context at every model step](refactoring-analysis/planning-assistant-response-chaining.md) | Done — verified implementation, dev package and four-run comparison; awaiting merge | 2026-10-26 |
 
 ### Benchmarks & Performance Analyses
 
@@ -165,7 +165,10 @@ folder of the same name.
 | Document | Status | Last touched |
 |---|---|---|
 | [Where the time goes when the HI agent plans a kitchen from an image](benchmarks/kitchen-from-image-time.md) | Third measurement (RML-18164): the six improvements one after another on one build and the local planner — baseline 104 s, 8.4 steps, 531k; the vocabulary section takes the search steps away (75 s, 6.5, 383k), the rest is stable within the spread | 2026-10-14 |
-| [Left-wall image kitchen: detailed OpenAI Astra timing](benchmarks/image-kitchen-left-wall-openai-astra-2026-10-26.md) | Two runs on local :5173; per-model/tool/planner timing, first kitchen, full duration, cache/transport and explicit step deltas | 2026-10-26 |
+| [Original left-wall image kitchen timing](benchmarks/iklw-oa-orig-2026-10-26.md) | Original two-run measurement, retained unchanged | 2026-10-26 |
+| [Left-wall image kitchen: fresh baseline](benchmarks/iklw-oa-base-2026-10-26.md) | Two full-history repetitions; independent model/tool/planner timing report | 2026-10-26 |
+| [Left-wall image kitchen: response-chaining run](benchmarks/iklw-oa-rc-2026-10-26.md) | Two chained repetitions; independent timing and per-call byte report | 2026-10-26 |
+| [Left-wall image kitchen: timing comparison](benchmarks/iklw-oa-rc-cmp-2026-10-26.md) | Separate comparison of fresh baseline and chaining, with duration deltas and measurement limits | 2026-10-26 |
 | [Planning Assistant shared-reference benchmark](benchmarks/planning-assistant-prompt-caching.md) | A/B/C content comparison, Azure cache-boundary checks, transport/input overhead and final minimum-suite validation | 2026-10-26 |
 
 ### Backlog

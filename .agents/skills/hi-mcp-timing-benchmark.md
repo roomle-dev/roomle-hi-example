@@ -16,8 +16,15 @@ report and its index entries unless the user requests evidence publication.
 
 Use [hi-mcp-benchmarking](hi-mcp-benchmarking.md) for the sampling, comparison and diagnosis rules,
 and [hi-mcp-testing](hi-mcp-testing.md) for the prompt runner. This skill adds the timing capture
-and report contract. The [left-wall image kitchen report](../benchmarks/image-kitchen-left-wall-openai-astra-2026-10-26.md)
+and report contract. The [left-wall image kitchen report](../benchmarks/iklw-oa-orig-2026-10-26.md)
 is an example of the output, not a set of timings or model defaults to reuse.
+
+## Independent reports
+
+Each measured source version or variant has its own report and PDF. A repeat creates a new
+report; keep earlier reports unchanged. Put before/after timings in a separate comparison
+document that links the standalone reports. Do not append earlier runs or another variant's
+timelines to the new-run report.
 
 ## Procedure
 

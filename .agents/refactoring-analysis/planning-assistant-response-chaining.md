@@ -1,7 +1,7 @@
 # Planning Assistant: stop uploading earlier context at every model step
 
 > **Type**: Refactoring analysis
-> **Status**: Open — investigated; implementation and live comparison pending
+> **Status**: Done — implemented and validated on feature branches; retained until merge to master
 > **Date**: 2026-10-26
 > **Ticket**: [RML-18303 — HI Planning Assistant: token usage and performance optimization](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master`, `ec82b2f1de74072f9deeb4ae3909ed1036bdfb69`; roomle-ui `feat/hi-mcp-merge`, `f2e10cd132a9556fdbb8c5df18633a64c508272e`
@@ -12,21 +12,21 @@
 - **roomle-ui** — change the embedding-lib assistant's Responses request construction, add adapter and lifecycle tests, extend request diagnostics where needed, and update its architecture reference.
 - **roomle-hi-example** — hold this analysis, report individual request payloads in benchmark output, and conduct the eventual before/after benchmark. Only this document and its index entries change during this analysis task.
 
-## 1. Recommendation
+## 1. Agreed target
 
-**Use Responses API response chaining within a user turn to upload earlier inputs once, then send only the new tool results.** Keep the existing AI SDK loop, tools and complete successful local history. Implement the change in the assistant's existing `prepareStep`; do not replace the agent loop or build a conversation service.
+**The refactoring used Responses API response chaining within a user turn to upload earlier inputs once, then send only the new tool results.** Keep the existing AI SDK loop, tools and complete successful local history. Implement the change in the assistant's existing `prepareStep`; do not replace the agent loop or build a conversation service.
 
 This addresses an avoidable transport inefficiency in the current implementation. Sending accumulated history is valid for requests without a server-side history reference, so the observed growth is not a malformed-request bug. The current Responses integration leaves an available optimization unused.
 
-The first implementation should chain **within each user turn**, for verified OpenAI and Azure Responses routes. Each new user turn starts with fresh reference acquisition and the existing successful history. Consequently, this candidate removes repeated uploads between model steps, but still uploads successful history at the beginning of the next user turn. Cross-turn chaining is a separate extension because it changes reference replacement and failure recovery.
+The implemented scope chained **within each user turn**, for verified OpenAI and Azure Responses routes. Each new user turn starts with fresh reference acquisition and the existing successful history. Consequently, this candidate removes repeated uploads between model steps, but still uploads successful history at the beginning of the next user turn. Cross-turn chaining is a separate extension because it changes reference replacement and failure recovery.
 
 This is an upload optimization. It does **not** remove earlier information from the model's context or guarantee fewer input tokens, lower cost, fewer model calls or a shorter response. OpenAI documents that earlier input in a response chain remains billable. Cache counters and latency must be measured independently. [OpenAI conversation state](https://developers.openai.com/api/docs/guides/conversation-state).
 
-No production code, paid model request, provider deployment, commit or publication is part of this analysis.
+The initial investigation made no production changes or paid model requests. The subsequently approved implementation, publication and comparison are recorded in section 10.
 
 ## 2. What the measured bytes mean
 
-The [image-kitchen-left-wall benchmark](../benchmarks/image-kitchen-left-wall-openai-astra-2026-10-26.md) measures each serialized UTF-8 JSON HTTP request body separately. A row is **the bytes of that call**, not a running sum. HTTP headers, TLS framing and actual compressed network traffic are outside this measurement.
+The [image-kitchen-left-wall benchmark](../benchmarks/iklw-oa-orig-2026-10-26.md) measures each serialized UTF-8 JSON HTTP request body separately. A row is **the bytes of that call**, not a running sum. HTTP headers, TLS framing and actual compressed network traffic are outside this measurement.
 
 The requests grow because their content includes earlier input plus new messages. Some stored assistant/reasoning items can become short provider item references; the original user image, library message and ordinary tool results are still serialized again. It would be inaccurate to say every previous assistant byte is always reuploaded.
 
@@ -129,7 +129,7 @@ Assertions pass for the provider response-ID chain, original call IDs, two tool 
 
 The script and compact result stay local at `.temp/response-chaining-probe.mjs` and `.temp/response-chaining-probe.json`. The retained findings and table above are sufficient to read the analysis without these files. The fixture uses synthetic text and image bytes, not a real kitchen or provider behavior. It proves serializer/loop feasibility, **not** instruction inheritance, provider acceptance, token savings, planning quality or latency.
 
-## 6. Change scope by file
+## 6. Planned change scope by file
 
 Paths in the first table are in roomle-ui. References identify the inspected locations; production edits are proposed, not performed.
 
@@ -156,7 +156,7 @@ Paths in the first table are in roomle-ui. References identify the inspected loc
 
 No launcher configuration flag or public planner API change is required by the proposed shape. No new dependency is needed: the installed adapters already have the required options.
 
-## 7. Required tests and expected output
+## 7. Test requirements agreed before implementation
 
 | Test | Expected result |
 |---|---|
@@ -176,7 +176,7 @@ The functional output should remain the same planning capabilities, complete loc
 
 Use repository npm scripts with their configured test suites, plus the focused Node reporting tests. Production implementation needs the relevant embedding TypeScript/lint checks. This documentation-only task requires Markdown link and diff checks; it does not need a paid test or a full application build.
 
-## 8. Before/after benchmark
+## 8. Benchmark design agreed before implementation
 
 Start with a freshly instrumented baseline from the chosen current roomle-ui commit and a candidate containing only request transport changes. The historical timing report cannot substitute for this pair. Keep the shared reference, tools, fixture, prompt, provider-default reasoning and image preparation identical.
 
@@ -189,7 +189,7 @@ Start with a freshly instrumented baseline from the chosen current roomle-ui com
 | Source provenance | Exact SHAs, clean/modified state, actual loaded module URLs, browser/Node versions, test suffix, image settings, request pacing and reasoning configuration |
 | Additional checks | Offline changed-reference, multiple-turn and failure cases first. A live Azure comparison is a separately sized extension using its actual endpoint/deployment; do not relabel OpenAI findings as Azure measurements. |
 
-The four-run comparison is a proposed experiment, not launched by this analysis. Historical assistant turns take 55–96 seconds and about 0.56–0.63 million input tokens each. That suggests roughly 4–7 minutes of model-turn time and 2.2–2.6 million input tokens for four similar runs, plus setup/snapshot overhead. These are planning estimates, not a candidate forecast. A two-run, one-per-variant pilot is smaller but cannot establish a repeated-run result. Obtain execution authorization before new paid runs unless the user explicitly requests the benchmark.
+The four-run comparison was proposed during analysis and executed after approval. Historical assistant turns take 55–96 seconds and about 0.56–0.63 million input tokens each. That suggests roughly 4–7 minutes of model-turn time and 2.2–2.6 million input tokens for four similar runs, plus setup/snapshot overhead. These are planning estimates, not a candidate forecast. A two-run, one-per-variant pilot is smaller but cannot establish a repeated-run result. Obtain execution authorization before new paid runs unless the user explicitly requests the benchmark.
 
 The report must show every model step and tool call with explicit durations, including the interval from the last required skill/reference response to the first completed kitchen. Preserve the existing conservative first-kitchen milestone; a first rendered frame needs separate instrumentation.
 
@@ -204,7 +204,7 @@ The report must show every model step and tool call with explicit durations, inc
 
 Historical model round trips occupy 96–97% of turn time, but include network, queueing, input processing, reasoning and generation. Upload throughput and pure provider compute were not isolated. The analysis therefore makes **no numerical latency-saving claim**. Prompt caching and chaining solve different costs; keep prefix content stable and measure cache behavior alongside transport. [OpenAI prompt caching](https://developers.openai.com/api/docs/guides/prompt-caching).
 
-## 9. Alternatives and unresolved evidence
+## 9. Alternatives and pre-implementation evidence gaps
 
 | Alternative | Assessment |
 |---|---|
@@ -218,4 +218,42 @@ Historical model round trips occupy 96–97% of turn time, but include network, 
 
 Established: the measured rows are per-call bytes; the SDK accumulates inputs; the actual pinned adapters can serialize deltas with response IDs; the offline loop retains tool execution and local history.
 
-Still unmeasured: live instruction inheritance for the chosen representation, actual endpoint/storage support, live Azure behavior, cache interaction, planning-quality parity, and any elapsed-time improvement. Resolve these through focused tests and the named benchmark before adopting the refactoring.
+Before implementation, instruction inheritance, endpoint/storage support, live Azure behavior, cache interaction and planning quality still needed verification. Section 10 records the completed checks. Isolated provider compute and a cache-controlled causal latency comparison remain unmeasured.
+
+## 10. Implementation and verification report
+
+### Delivered changes
+
+- **roomle-ui:** [80484dc71](https://github.com/roomle-dev/roomle-ui/commit/80484dc71e0889e24d3251e42090c1ff2eca10f7), on `feat/hi-mcp-performance`. OpenAI/Azure Responses continue within a user turn with new tool results only. Successful local history, fresh turn reference, other providers, abort/error behavior and the final text-only step retain their contracts.
+- **roomle-hi-example:** [5a5708d](https://github.com/roomle-dev/roomle-hi-example/commit/5a5708d9577c766f7c87e4731f06aa8dc59bc4c0) adopts the exact dev package and exposes individual request attempts/sections in the benchmark. This branch also contains the completed timing report and index updates.
+- **Dev package:** `0.0.0-dev-80484dc`, published by [workflow run 40364455231](https://github.com/roomle-dev/roomle-ui/actions/runs/40364455231). Local packaging/declarations passed, both CDN entry points returned successfully, and Chromium verified the exports and chaining implementation.
+
+The implementation reads `providerMetadata.openai.responseId` / `providerMetadata.azure.responseId`, rather than trusting the SDK's generic response ID: the latter can be generated locally without stored provider state. The new tests cover missing provider metadata even when a generic ID exists. This durable detail is documented in roomle-ui's prompt-caching reference.
+
+The source changes are confined to `hi-planning-assistant.ts`, `hi-planning-usage.ts`, their embedding tests and the matching architecture/decision documents. No glue logic, planner tool behavior, public context API or library calculation changes were required. Cross-turn stored state remains outside this change.
+
+### Checks
+
+- The new real-adapter regression failed on both original provider routes before implementation, then passed with the change.
+- `npm run test:unit -- tests/unit/embedding-lib/homag-intelligence/`: **12 files, 100 tests passed**. The command also ran the configured lint suite. Pre-push UI/SDK/embedding type checks and code lint passed; untouched SDK/docs warnings remain visible in the local logs.
+- Example launcher: **6 tests passed**. Focused benchmark/usage/report checks: **23 tests passed**. A structural regression additionally verified cache rows remain in their own table before the per-request table. Format and Markdown-link checks passed.
+- Two small live requests per provider verified stored response IDs and inheritance of the initial developer/system input on direct OpenAI and configured Azure Astra. These four probes consumed **162 input and 40 output tokens**, separate from the kitchen benchmark.
+- No-model browser preflight verified hook targets, local planner/imports and equal reference digests. The old `test:unit:debugNoWatch` script uses an unsupported Vitest `--poolOptions` flag; the standard configured test command was used successfully. That unrelated script was not changed.
+
+### Controlled comparison
+
+The [timing comparison](../benchmarks/iklw-oa-rc-cmp-2026-10-26.md) compares the independent [fresh baseline](../benchmarks/iklw-oa-base-2026-10-26.md) and [response-chaining run](../benchmarks/iklw-oa-rc-2026-10-26.md) reports. The [original measurement](../benchmarks/iklw-oa-orig-2026-10-26.md) remains unchanged. The four new repetitions use the approved direct OpenAI model/key, image, prompt and local planner. Baseline `f6f338fdc` received only the matching telemetry; source digests and temporary instrumentation are recorded locally. The example revision was `5a5708d`.
+
+| Median / mean with two repetitions | Baseline | Candidate |
+|---|---|---|
+| Uploaded request body bytes | 8,304,201 | 3,654,756 |
+| Repeated serialized input bytes | 4,685,281 | 0 |
+| First completed kitchen, seconds from turn start | 34.621 | 30.815 |
+| All required skill files → kitchen, seconds | 15.975 | 12.839 |
+| Complete assistant turn, seconds | 72.549 | 53.601 |
+
+Median uploaded bytes fell **55.99%**. All first serialized requests had the same digest. The first baseline call reported zero cache reads and the next three first calls reused the prefix. Baseline 1 made seven model calls; the other runs made six. These differences and provider variation prevent attributing the full elapsed-time difference to transport. The second repetitions used 541,035 versus 540,796 input tokens despite substantially smaller candidate uploads. No token-cost reduction is assumed.
+
+All four saved plans contain one 3,010 mm kitchen at [-685, -240, 0], rotationZ 90°, on the left wall. Rendered views and final answers were inspected. Finishes and the interpretation of one concealed unit vary between runs. All four backsplash enable attempts fail with Error 14034 / tab_GrainDirectionSettings, and all answers disclose the omission. This existing calculation finding remains separate from the transport result. No provider errors, retries or excluded kitchen runs occurred.
+
+Raw runs, manifest, calculations, endpoint probes, generated summaries and the separate readable PDFs remain under ignored `.temp/response-chaining-implementation/`. Only the report, analysis close-out and required documentation/index changes are tracked. The work is on feature branches, so this analysis remains until its normal merge close-out.

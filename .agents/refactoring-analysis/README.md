@@ -44,7 +44,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 | Document | Status | Description |
 |---|---|---|
 | [Planning Assistant: a shared prompt prefix for Azure](planning-assistant-azure-prompt-caching.md) | Done — local branches, awaiting merge | Compact library/common-rule prefix, verified Azure boundary, implementation decisions, comparative measurements and final Astra minimum tests |
-| [Planning Assistant: stop uploading earlier context at every model step](planning-assistant-response-chaining.md) | Open | Responses chaining, per-call payload growth, pinned-adapter evidence, change scope and before/after benchmark |
+| [Planning Assistant: stop uploading earlier context at every model step](planning-assistant-response-chaining.md) | Done — feature branches, awaiting merge | Verified turn-scoped chaining, dev package, 100 assistant tests and four-run transport/timing comparison |
 
 Add refactoring analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `mcp-bridge-simplification.md`).

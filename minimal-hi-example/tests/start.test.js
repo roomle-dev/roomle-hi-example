@@ -116,6 +116,7 @@ describe('example launcher', { skip: process.platform === 'win32' }, () => {
           apiKey: 'test-key',
           baseUrl: 'https://dfhifoundrysweden.services.ai.azure.com/openai/v1',
           chatCompletions: false,
+          referenceCacheBreakpoint: true,
           readsImages: true,
         });
         assert.ok(withModel.output().includes('&chat=true'));

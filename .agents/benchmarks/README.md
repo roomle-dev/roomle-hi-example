@@ -36,4 +36,6 @@ promoted into the living reference, and the document can be deleted.
 
 | Document | Status | Description |
 |---|---|---|
+| [planning-assistant-prompt-caching.md](planning-assistant-prompt-caching.md) | Complete | A/B/C comparison selects compact library/rules; Azure boundary verifies cross-prompt reuse; final Astra minimum suite: 6 pass, 4 partial, 0 fail |
+| [Shared-reference artifacts](planning-assistant-prompt-caching/README.md) | Evidence | Generated per-variant Markdown/JSON measurements and reproduction metadata |
 | [kitchen-from-image-time.md](kitchen-from-image-time.md) | Measured | RML-18064 and RML-18164: where the time goes when the agent plans a kitchen from an image — gpt-6-astra baseline 92 s, 10.2 steps, 699k input tokens per run (2026-10-08); the second measurement on the runs since the five improvements (2026-10-13, `kitchen-from-image-time-2026-10-13/`); the third measurement, the six improvements of RML-18164 one after another on one build and the local planner (2026-10-14, `kitchen-from-image-time-rml-18164/<step>/`): the vocabulary section takes the search steps away, 104 s → 75 s per run |

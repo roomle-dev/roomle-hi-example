@@ -37,6 +37,7 @@ import { constants } from 'node:os';
 import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { installModelRequestPacing } from './model-request-pacing.js';
 import { recordNavigations } from './mcp-test-navigation.js';
 import { planImageFiles } from './plan-images.js';
 import { collectPromptUsage } from './planning-assistant-usage.js';
@@ -433,6 +434,9 @@ const runConversation = async (page, prompts, image) => {
       `[run-hi-mcp-prompt] turn ${index + 1}/${prompts.length}: ${prompt}${turnImage ? ` [image: ${turnImage.file}]` : ''}`
     );
     const startedAt = Date.now();
+    const pacingStart = await page.evaluate(
+      () => window.hiModelRequestPacing?.length ?? 0
+    );
     toolCalls.turn = index;
     const plannerCallsBefore = await page.evaluate(
       () => window.hiPlannerCalls.length
@@ -457,6 +461,10 @@ const runConversation = async (page, prompts, image) => {
         .filter((entry) => entry.turn === index)
         .map(({ turn: _turn, open: _open, ...entry }) => entry),
       durationMs: Date.now() - startedAt,
+      requestPacing: await page.evaluate(
+        (start) => (window.hiModelRequestPacing ?? []).slice(start),
+        pacingStart
+      ),
     });
     if (turn.errors.length > 0) {
       break;
@@ -519,6 +527,18 @@ const runSession = async (options, launcher, browser) => {
     ? `${exampleUrl}&id=${encodeURIComponent(options.plan)}`
     : exampleUrl;
   const page = await browser.newPage();
+  const requestIntervalMs = Number(process.env.HI_MCP_REQUEST_INTERVAL_MS ?? 0);
+  await installModelRequestPacing(page, requestIntervalMs);
+  const embeddingModules = new Set();
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (
+      url.origin === 'http://localhost:3001' &&
+      ['/src/hi.ts', '/src/roomle-embedding-lib.ts'].includes(url.pathname)
+    ) {
+      embeddingModules.add(url.origin + url.pathname);
+    }
+  });
   const navigation = recordNavigations(page);
   recordPageConsole(page);
   await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
@@ -608,6 +628,14 @@ const runSession = async (options, launcher, browser) => {
   navigation.setPhase('complete');
   const run = {
     provider: options.provider,
+    runtime: {
+      requestIntervalMs,
+      embeddingModules: [...embeddingModules],
+      plannerOrigins: page
+        .frames()
+        .filter((frame) => frame !== page.mainFrame())
+        .map((frame) => new URL(frame.url()).origin),
+    },
     plan: options.plan ?? null,
     // after the snapshot, so a failure logged after its turn's response is in
     turns: turns.map((turn, index) => ({

@@ -24,6 +24,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { basename, join, relative, resolve as resolvePath } from 'node:path';
 import { parseArgs } from 'node:util';
+import { pathToFileURL } from 'node:url';
+import { summarizeUsage } from './planning-assistant-usage.js';
 
 const USAGE =
   'usage: node .agents/scripts/benchmark-hi-mcp-runs.js <dir> [<dir> ...] [--test <id>]... [--out <dir>]';
@@ -35,6 +37,9 @@ const INFO_TOOLS = new Set([
   'get-plan-images',
   'get-price',
   'get-order-data',
+  'get-interior-design-options',
+  'open-or-close-article',
+  'open-or-close-group',
 ]);
 const LINE = {
   turn: /^\[run-hi-mcp-prompt\] turn (\d+)\//,
@@ -152,17 +157,37 @@ const parseSteps = (log, plannerMs) => {
 
 const sum = (values) => values.reduce((total, value) => total + value, 0);
 
-const benchmarkRun = (dir) => {
+export const benchmarkRun = (dir) => {
   const run = readJson(join(dir, 'run.json'));
+  const recordedCalls = readJson(join(dir, 'planner-calls.json')) ?? [];
   const plannerMs = new Map(
-    (readJson(join(dir, 'planner-calls.json')) ?? [])
+    recordedCalls
       .filter((call) => call.method && typeof call.ms === 'number')
       .map((call) => [call.id, call.ms])
   );
   const log = existsSync(join(dir, 'console.log'))
     ? readFileSync(join(dir, 'console.log'), 'utf8')
     : '';
-  const steps = parseSteps(log, plannerMs);
+  const current = run.turns.some(
+    (turn) => turn.usage?.diagnostics?.version === 1
+  );
+  const steps = current
+    ? run.turns.flatMap((turn, index) =>
+        (turn.usage?.diagnostics?.modelCalls ?? []).map((call) => ({
+          ...call,
+          turn: index + 1,
+          ms: call.responseTimeMs,
+          modelMs: call.responseTimeMs,
+          toolsMs: null,
+          tools: [],
+          plannerCalls: [],
+          resultTokens: null,
+          finish: call.finishReason,
+        }))
+      )
+    : parseSteps(log, plannerMs);
+  const usage = summarizeUsage(run.turns.map((turn) => turn.usage));
+  const diagnostics = run.turns.map((turn) => turn.usage?.diagnostics ?? null);
   const toolCalls = run.turns.flatMap((turn) => turn.toolCalls ?? []);
   const tools = {};
   for (const tool of steps.flatMap((step) => step.tools)) {
@@ -170,20 +195,69 @@ const benchmarkRun = (dir) => {
     tools[tool.name].calls += 1;
     tools[tool.name].ms += tool.ms;
   }
+  if (current) {
+    for (const call of recordedCalls.filter(
+      (call) => typeof call.tool === 'string'
+    )) {
+      tools[call.tool] ??= { calls: 0, ms: 0 };
+      tools[call.tool].calls += 1;
+      tools[call.tool].ms += call.ms ?? 0;
+    }
+  }
   const chatMs = run.durationsMs?.chat ?? null;
   return {
     dir,
     model: run.provider,
-    test: basename(dir).replace(/^\d+-/, ''),
+    test: basename(dir)
+      .replace(/^\d+-/, '')
+      .replace(/\.attempt-\d+$/, ''),
+    manifest: readJson(join(dir, '..', '..', 'manifest.json')) ?? null,
     turns: run.turns.length,
     chatMs,
     steps: steps.length,
-    modelMs: sum(steps.map((step) => step.modelMs)),
-    toolsMs: sum(steps.map((step) => step.toolsMs)),
-    otherMs: chatMs === null ? null : chatMs - sum(steps.map((s) => s.ms)),
-    inputTokens: sum(steps.map((step) => step.inputTokens)),
-    outputTokens: sum(steps.map((step) => step.outputTokens)),
-    reasoningTokens: sum(steps.map((step) => step.reasoningTokens)),
+    modelMs: steps.length ? sum(steps.map((step) => step.modelMs)) : null,
+    toolsMs:
+      current || !steps.length ? null : sum(steps.map((step) => step.toolsMs)),
+    otherMs:
+      chatMs === null || current || !steps.length
+        ? null
+        : chatMs - sum(steps.map((s) => s.ms)),
+    inputTokens: current
+      ? usage.inputTokens
+      : steps.length
+        ? sum(steps.map((step) => step.inputTokens))
+        : usage.inputTokens,
+    outputTokens: current
+      ? usage.outputTokens
+      : steps.length
+        ? sum(steps.map((step) => step.outputTokens))
+        : usage.outputTokens,
+    reasoningTokens: steps.some((step) => step.reasoningTokens != null)
+      ? sum(steps.map((step) => step.reasoningTokens ?? 0))
+      : null,
+    usage,
+    diagnostics,
+    runtime: run.runtime ?? null,
+    pacingWaitMs: run.runtime?.requestIntervalMs
+      ? sum(
+          run.turns
+            .flatMap((turn) => turn.requestPacing ?? [])
+            .map((request) => request.waitMs)
+        )
+      : 0,
+    referenceToolCalls: Object.fromEntries(
+      [
+        'get-plan-context',
+        'get-authoring-rules',
+        'get-skill',
+        'find-attributes',
+      ].map((name) => [name, tools[name]?.calls ?? 0])
+    ),
+    timingSource: current
+      ? 'model-call callbacks; excludes tools'
+      : steps.length
+        ? 'legacy step logs'
+        : 'unavailable',
     planChanges: sum(
       Object.entries(tools)
         .filter(([name]) => !INFO_TOOLS.has(name))
@@ -200,8 +274,16 @@ const benchmarkRun = (dir) => {
 };
 
 const seconds = (ms) => (ms === null ? '–' : (ms / 1000).toFixed(1));
-const thousands = (tokens) => `${(tokens / 1000).toFixed(1)}k`;
+const thousands = (tokens) =>
+  tokens == null ? '–' : `${(tokens / 1000).toFixed(1)}k`;
 const mean = (values) => sum(values) / values.length;
+const median = (values) => {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2
+    ? sorted[middle]
+    : (sorted[middle - 1] + sorted[middle]) / 2;
+};
 
 const groupBy = (items, keyOf) => {
   const groups = new Map();
@@ -230,21 +312,22 @@ const plannerSummary = (calls) => {
     .join(', ');
 };
 
-const toMarkdown = (runs) => {
+export const toMarkdown = (runs) => {
   const measured = runs.filter((run) => run.chatErrors.length === 0);
   const lines = ['# HI MCP benchmark', ''];
   lines.push(
-    '| Model | Test | Runs | Chat s mean | min | max | Steps mean | Input tokens mean |',
-    '|---|---|---|---|---|---|---|---|'
+    '| Model | Test | Runs | Chat s mean | median | min | max | Steps mean | Input tokens mean |',
+    '|---|---|---|---|---|---|---|---|---|'
   );
   const groups = groupBy(measured, (run) => `${run.model}\t${run.test}`);
   for (const group of groups.values()) {
-    const chat = group.map((run) => run.chatMs ?? 0);
+    const chat = group.map((run) => run.chatMs);
+    const hasChatTiming = chat.every((ms) => ms !== null);
     lines.push(
-      `| ${group[0].model} | ${group[0].test} | ${group.length}${group.length < 2 ? ' (fewer than 2)' : ''} | ${seconds(mean(chat))} | ` +
-        `${seconds(Math.min(...chat))} | ${seconds(Math.max(...chat))} | ` +
+      `| ${group[0].model} | ${group[0].test} | ${group.length}${group.length < 2 ? ' (fewer than 2)' : ''} | ${seconds(hasChatTiming ? mean(chat) : null)} | ` +
+        `${seconds(hasChatTiming ? median(chat) : null)} | ${seconds(hasChatTiming ? Math.min(...chat) : null)} | ${seconds(hasChatTiming ? Math.max(...chat) : null)} | ` +
         `${mean(group.map((run) => run.steps)).toFixed(1)} | ` +
-        `${thousands(mean(group.map((run) => run.inputTokens)))} |`
+        `${group.every((run) => run.inputTokens !== null) ? thousands(mean(group.map((run) => run.inputTokens))) : 'unavailable'} |`
     );
   }
   if (measured.length < runs.length) {
@@ -275,6 +358,24 @@ const toMarkdown = (runs) => {
         `${run.chatErrors.length > 0 ? 'chat error' : ''} |`
     );
   });
+  lines.push(
+    '',
+    '## Cache and transport measurements',
+    '',
+    'Coverage is per field and turn. Missing counters are unknown. Cache reads are a subset of input tokens; request bytes still cross the network. SDK model-call timings include any test request pacing, and may overlap tool execution. They do not isolate prefill. First output can be reasoning or a tool call.',
+    '',
+    '| Run | Turn | Cache read / coverage | Cache write / coverage | Request bytes | Reference bytes | First output ms | First visible text ms |',
+    '|---|---|---|---|---|---|---|---|'
+  );
+  runs.forEach((run, index) =>
+    run.diagnostics.forEach((d, turn) => {
+      const detail = (key) =>
+        `${d?.details?.[key]?.tokens ?? '–'} / ${d?.details?.[key]?.status ?? 'unavailable'}`;
+      lines.push(
+        `| ${index + 1} | ${turn + 1} | ${detail('cacheReadTokens')} | ${detail('cacheWriteTokens')} | ${d?.requests?.reduce((total, request) => total + request.bytes, 0) ?? '–'} | ${d?.reference?.bytes ?? '–'} | ${d?.modelCalls?.[0]?.timeToFirstOutputMs ?? '–'} | ${d?.firstTextMs ?? '–'} |`
+      );
+    })
+  );
   lines.push(
     '',
     '## Tools',
@@ -355,7 +456,11 @@ const main = async () => {
   );
 };
 
-main().catch((error) => {
-  console.error(`[benchmark-hi-mcp-runs] ${error.message}`);
-  process.exitCode = 1;
-});
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(resolvePath(process.argv[1])).href
+)
+  main().catch((error) => {
+    console.error(`[benchmark-hi-mcp-runs] ${error.message}`);
+    process.exitCode = 1;
+  });

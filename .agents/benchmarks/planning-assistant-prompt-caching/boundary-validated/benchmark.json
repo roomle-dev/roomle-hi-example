@@ -1,0 +1,2061 @@
+{
+  "generatedAt": "2026-10-26T10:52:47.013Z",
+  "runs": [
+    {
+      "dir": ".temp/result/prompt-caching-boundary-validated-1/gpt-6.1-sol/01-full-kitchen-walnut-marble-corner",
+      "model": "gpt-6.1-sol",
+      "test": "full-kitchen-walnut-marble-corner",
+      "manifest": {
+        "variant": "library-rules-with-reference-boundary",
+        "repetition": 1,
+        "roomleUi": "1c3cbd6be7d84b67709a5acc0e600f7725b2edd7",
+        "roomleHiExample": "6e041409ee3476c5858300b55f41d5d2aad62073",
+        "planner": "http://localhost:5173",
+        "embedding": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "cacheState": "unknown; new browser is not a cold provider cache",
+        "model": {
+          "provider": "gpt-6.1-sol",
+          "apiKey": "$AZURE_GPT_SOL_KEY"
+        },
+        "reasoningEffort": "deployment default",
+        "createdAt": "2026-10-26T10:38:19.030Z",
+        "requestIntervalMs": 20000,
+        "referenceCacheBreakpoint": true,
+        "cachePolicy": "implicit plus explicit library boundary and digest-derived key; default lifetime",
+        "checkout": "roomle-ui feat/hi-mcp-performance",
+        "cacheKey": "64-character SHA-256 digest"
+      },
+      "turns": 1,
+      "chatMs": 154922,
+      "steps": 8,
+      "modelMs": 148086.9999999702,
+      "toolsMs": null,
+      "otherMs": null,
+      "inputTokens": 829849,
+      "outputTokens": 1489,
+      "reasoningTokens": 379,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 829849,
+        "outputTokens": 1489,
+        "totalTokens": 831338
+      },
+      "diagnostics": [
+        {
+          "version": 1,
+          "details": {
+            "cacheReadTokens": {
+              "tokens": 696021,
+              "status": "complete",
+              "reportedSteps": 8,
+              "observedSteps": 8
+            },
+            "cacheWriteTokens": {
+              "tokens": 133804,
+              "status": "complete",
+              "reportedSteps": 8,
+              "observedSteps": 8
+            },
+            "noCacheTokens": {
+              "tokens": 24,
+              "status": "complete",
+              "reportedSteps": 8,
+              "observedSteps": 8
+            },
+            "reasoningTokens": {
+              "tokens": 379,
+              "status": "complete",
+              "reportedSteps": 8,
+              "observedSteps": 8
+            }
+          },
+          "modelCalls": [
+            {
+              "inputTokens": 74884,
+              "outputTokens": 62,
+              "totalTokens": 74946,
+              "cacheReadTokens": 0,
+              "cacheWriteTokens": 74881,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 3745.699999988079,
+              "timeToFirstOutputMs": 3617.4000000059605,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 80528,
+              "outputTokens": 30,
+              "totalTokens": 80558,
+              "cacheReadTokens": 74881,
+              "cacheWriteTokens": 5644,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 18624.79999998212,
+              "timeToFirstOutputMs": 18236.29999998212,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 83602,
+              "outputTokens": 870,
+              "totalTokens": 84472,
+              "cacheReadTokens": 80525,
+              "cacheWriteTokens": 3074,
+              "noCacheTokens": 3,
+              "reasoningTokens": 254,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 39768.70000001788,
+              "timeToFirstOutputMs": 30554.09999999404,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 95671,
+              "outputTokens": 59,
+              "totalTokens": 95730,
+              "cacheReadTokens": 83599,
+              "cacheWriteTokens": 12069,
+              "noCacheTokens": 3,
+              "reasoningTokens": 29,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 3681.0999999940395,
+              "timeToFirstOutputMs": 3350.899999976158,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 109496,
+              "outputTokens": 153,
+              "totalTokens": 109649,
+              "cacheReadTokens": 95668,
+              "cacheWriteTokens": 13825,
+              "noCacheTokens": 3,
+              "reasoningTokens": 76,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 23351.20000001788,
+              "timeToFirstOutputMs": 22189.100000023842,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 120493,
+              "outputTokens": 117,
+              "totalTokens": 120610,
+              "cacheReadTokens": 109493,
+              "cacheWriteTokens": 10997,
+              "noCacheTokens": 3,
+              "reasoningTokens": 20,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 17837.79999998212,
+              "timeToFirstOutputMs": 16132.40000000596,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 131368,
+              "outputTokens": 15,
+              "totalTokens": 131383,
+              "cacheReadTokens": 120490,
+              "cacheWriteTokens": 10875,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 15900.09999999404,
+              "timeToFirstOutputMs": 15533,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 133807,
+              "outputTokens": 183,
+              "totalTokens": 133990,
+              "cacheReadTokens": 131365,
+              "cacheWriteTokens": 2439,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 25177.59999999404,
+              "timeToFirstOutputMs": 20851.5,
+              "finishReason": "stop"
+            }
+          ],
+          "requests": [
+            {
+              "bytes": 339241,
+              "sha256": "2676e2d7d3e760c152150ec4575dc6967412d87a2c5e4204685575e44650f06f"
+            },
+            {
+              "bytes": 365590,
+              "sha256": "1fbdd8e8909428ef1e31df1b9e6ecdd8af462f0ec55f5964fc6b91d1a34e556e"
+            },
+            {
+              "bytes": 381239,
+              "sha256": "c9f23c8ffe59d4ab1e48e388545c9481b7be6c20fd7d5a55df7b1d0b34ecc137"
+            },
+            {
+              "bytes": 425054,
+              "sha256": "e55cca46a55934e4876643e905a6d6e13e672b95a5dc7dc12a37dce39b695fbc"
+            },
+            {
+              "bytes": 473844,
+              "sha256": "cfe90f84c3f005bee60c5eb7b625a88d7f1977517abf2c565662f28daf3ccf5b"
+            },
+            {
+              "bytes": 514612,
+              "sha256": "c7bb911c7460e1c117fe7ca338ebb5d8c64deeb58230e70d45551994206231b8"
+            },
+            {
+              "bytes": 555148,
+              "sha256": "ddafe80e04e97dec45495431a26f7c6e66d95c195fca439b9bcfa9c7d0a5b0ec"
+            },
+            {
+              "bytes": 3060881,
+              "sha256": "78c0431c1fe1e2e6425fbabc09c08cba010b66cc0a9c74884e2a2b73aef691d2"
+            }
+          ],
+          "reference": {
+            "bytes": 295383,
+            "sha256": "ac8d9cfdec1783b554b3bb08dc3d3e8b2bdd5858203f1f33eb3f61b851cb3633"
+          },
+          "referenceAcquisitionMs": 14.5,
+          "firstTextMs": 52955.70000001788,
+          "turnMs": 154895.59999999404
+        }
+      ],
+      "runtime": {
+        "requestIntervalMs": 20000,
+        "embeddingModules": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "plannerOrigins": ["http://localhost:5173"]
+      },
+      "pacingWaitMs": 90195.89999997616,
+      "referenceToolCalls": {
+        "get-plan-context": 3,
+        "get-authoring-rules": 0,
+        "get-skill": 2,
+        "find-attributes": 0
+      },
+      "timingSource": "model-call callbacks; excludes tools",
+      "planChanges": 3,
+      "corrections": 0,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-plan-context": {
+          "calls": 3,
+          "ms": 39
+        },
+        "get-skill": {
+          "calls": 2,
+          "ms": 5
+        },
+        "create-or-replace-groups": {
+          "calls": 1,
+          "ms": 3493
+        },
+        "exchange-root-module": {
+          "calls": 2,
+          "ms": 2645
+        },
+        "get-plan-images": {
+          "calls": 1,
+          "ms": 605
+        }
+      },
+      "stepLog": [
+        {
+          "inputTokens": 74884,
+          "outputTokens": 62,
+          "totalTokens": 74946,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 74881,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 3745.699999988079,
+          "timeToFirstOutputMs": 3617.4000000059605,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 3745.699999988079,
+          "modelMs": 3745.699999988079,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 80528,
+          "outputTokens": 30,
+          "totalTokens": 80558,
+          "cacheReadTokens": 74881,
+          "cacheWriteTokens": 5644,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 18624.79999998212,
+          "timeToFirstOutputMs": 18236.29999998212,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 18624.79999998212,
+          "modelMs": 18624.79999998212,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 83602,
+          "outputTokens": 870,
+          "totalTokens": 84472,
+          "cacheReadTokens": 80525,
+          "cacheWriteTokens": 3074,
+          "noCacheTokens": 3,
+          "reasoningTokens": 254,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 39768.70000001788,
+          "timeToFirstOutputMs": 30554.09999999404,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 39768.70000001788,
+          "modelMs": 39768.70000001788,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 95671,
+          "outputTokens": 59,
+          "totalTokens": 95730,
+          "cacheReadTokens": 83599,
+          "cacheWriteTokens": 12069,
+          "noCacheTokens": 3,
+          "reasoningTokens": 29,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 3681.0999999940395,
+          "timeToFirstOutputMs": 3350.899999976158,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 3681.0999999940395,
+          "modelMs": 3681.0999999940395,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 109496,
+          "outputTokens": 153,
+          "totalTokens": 109649,
+          "cacheReadTokens": 95668,
+          "cacheWriteTokens": 13825,
+          "noCacheTokens": 3,
+          "reasoningTokens": 76,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 23351.20000001788,
+          "timeToFirstOutputMs": 22189.100000023842,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 23351.20000001788,
+          "modelMs": 23351.20000001788,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 120493,
+          "outputTokens": 117,
+          "totalTokens": 120610,
+          "cacheReadTokens": 109493,
+          "cacheWriteTokens": 10997,
+          "noCacheTokens": 3,
+          "reasoningTokens": 20,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 17837.79999998212,
+          "timeToFirstOutputMs": 16132.40000000596,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 17837.79999998212,
+          "modelMs": 17837.79999998212,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 131368,
+          "outputTokens": 15,
+          "totalTokens": 131383,
+          "cacheReadTokens": 120490,
+          "cacheWriteTokens": 10875,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 15900.09999999404,
+          "timeToFirstOutputMs": 15533,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 15900.09999999404,
+          "modelMs": 15900.09999999404,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 133807,
+          "outputTokens": 183,
+          "totalTokens": 133990,
+          "cacheReadTokens": 131365,
+          "cacheWriteTokens": 2439,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 25177.59999999404,
+          "timeToFirstOutputMs": 20851.5,
+          "finishReason": "stop",
+          "turn": 1,
+          "ms": 25177.59999999404,
+          "modelMs": 25177.59999999404,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "stop"
+        }
+      ]
+    },
+    {
+      "dir": ".temp/result/prompt-caching-boundary-validated-1/gpt-6.1-sol/02-image-kitchen-left-wall",
+      "model": "gpt-6.1-sol",
+      "test": "image-kitchen-left-wall",
+      "manifest": {
+        "variant": "library-rules-with-reference-boundary",
+        "repetition": 1,
+        "roomleUi": "1c3cbd6be7d84b67709a5acc0e600f7725b2edd7",
+        "roomleHiExample": "6e041409ee3476c5858300b55f41d5d2aad62073",
+        "planner": "http://localhost:5173",
+        "embedding": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "cacheState": "unknown; new browser is not a cold provider cache",
+        "model": {
+          "provider": "gpt-6.1-sol",
+          "apiKey": "$AZURE_GPT_SOL_KEY"
+        },
+        "reasoningEffort": "deployment default",
+        "createdAt": "2026-10-26T10:38:19.030Z",
+        "requestIntervalMs": 20000,
+        "referenceCacheBreakpoint": true,
+        "cachePolicy": "implicit plus explicit library boundary and digest-derived key; default lifetime",
+        "checkout": "roomle-ui feat/hi-mcp-performance",
+        "cacheKey": "64-character SHA-256 digest"
+      },
+      "turns": 1,
+      "chatMs": 133999,
+      "steps": 7,
+      "modelMs": 130658.70000001788,
+      "toolsMs": null,
+      "otherMs": null,
+      "inputTokens": 657370,
+      "outputTokens": 1434,
+      "reasoningTokens": 424,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 657370,
+        "outputTokens": 1434,
+        "totalTokens": 658804
+      },
+      "diagnostics": [
+        {
+          "version": 1,
+          "details": {
+            "cacheReadTokens": {
+              "tokens": 625637,
+              "status": "complete",
+              "reportedSteps": 7,
+              "observedSteps": 7
+            },
+            "cacheWriteTokens": {
+              "tokens": 31712,
+              "status": "complete",
+              "reportedSteps": 7,
+              "observedSteps": 7
+            },
+            "noCacheTokens": {
+              "tokens": 21,
+              "status": "complete",
+              "reportedSteps": 7,
+              "observedSteps": 7
+            },
+            "reasoningTokens": {
+              "tokens": 424,
+              "status": "complete",
+              "reportedSteps": 7,
+              "observedSteps": 7
+            }
+          },
+          "modelCalls": [
+            {
+              "inputTokens": 77193,
+              "outputTokens": 79,
+              "totalTokens": 77272,
+              "cacheReadTokens": 74806,
+              "cacheWriteTokens": 2384,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 7525.200000017881,
+              "timeToFirstOutputMs": 7205.300000011921,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 84062,
+              "outputTokens": 185,
+              "totalTokens": 84247,
+              "cacheReadTokens": 77190,
+              "cacheWriteTokens": 6869,
+              "noCacheTokens": 3,
+              "reasoningTokens": 153,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 22852.899999976158,
+              "timeToFirstOutputMs": 22227,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 87291,
+              "outputTokens": 609,
+              "totalTokens": 87900,
+              "cacheReadTokens": 84059,
+              "cacheWriteTokens": 3229,
+              "noCacheTokens": 3,
+              "reasoningTokens": 50,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 22304.5,
+              "timeToFirstOutputMs": 15083.699999988079,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 94746,
+              "outputTokens": 71,
+              "totalTokens": 94817,
+              "cacheReadTokens": 87288,
+              "cacheWriteTokens": 7455,
+              "noCacheTokens": 3,
+              "reasoningTokens": 41,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 11149.5,
+              "timeToFirstOutputMs": 10430.199999988079,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 103658,
+              "outputTokens": 101,
+              "totalTokens": 103759,
+              "cacheReadTokens": 94743,
+              "cacheWriteTokens": 8912,
+              "noCacheTokens": 3,
+              "reasoningTokens": 44,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 24493.5,
+              "timeToFirstOutputMs": 23739.5,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 103899,
+              "outputTokens": 142,
+              "totalTokens": 104041,
+              "cacheReadTokens": 103655,
+              "cacheWriteTokens": 241,
+              "noCacheTokens": 3,
+              "reasoningTokens": 49,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 15541.200000017881,
+              "timeToFirstOutputMs": 15374.200000017881,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 106521,
+              "outputTokens": 247,
+              "totalTokens": 106768,
+              "cacheReadTokens": 103896,
+              "cacheWriteTokens": 2622,
+              "noCacheTokens": 3,
+              "reasoningTokens": 87,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 26791.90000000596,
+              "timeToFirstOutputMs": 26113.30000001192,
+              "finishReason": "stop"
+            }
+          ],
+          "requests": [
+            {
+              "bytes": 604005,
+              "sha256": "58c34045a6ea14de3d2dfd86cfcdf5248ee8ba51b4c1261b06b7bba1168bc6d4"
+            },
+            {
+              "bytes": 636220,
+              "sha256": "c04c70acf7333dc930a03e74904ed419be90b8e002acd28c440cb49aac56702e"
+            },
+            {
+              "bytes": 651956,
+              "sha256": "b5092653f6de523d1a519f7c1bed4347c9e5c811f9116066a2d30b9713107007"
+            },
+            {
+              "bytes": 680112,
+              "sha256": "6b400177309fdf2c1fe413130b3d4e64681ad50cd6e63daf01af0b3465c981ab"
+            },
+            {
+              "bytes": 712082,
+              "sha256": "71b0f8159e319e86da99e9b0cac92e93a2895031f06bd24b87e23edb82f7d47f"
+            },
+            {
+              "bytes": 712926,
+              "sha256": "acc04fb591ffdc8505f13d3a0d0b2c37ed07b8bba29e569b4174d55953f29d9f"
+            },
+            {
+              "bytes": 3449417,
+              "sha256": "4f5487448f96d75616a9a075045d801bbbffadf2e33f77da67ebdf5f12a09307"
+            }
+          ],
+          "reference": {
+            "bytes": 295383,
+            "sha256": "ac8d9cfdec1783b554b3bb08dc3d3e8b2bdd5858203f1f33eb3f61b851cb3633"
+          },
+          "referenceAcquisitionMs": 14.900000005960464,
+          "firstTextMs": 45504,
+          "turnMs": 133816.90000000596
+        }
+      ],
+      "runtime": {
+        "requestIntervalMs": 20000,
+        "embeddingModules": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "plannerOrigins": ["http://localhost:5173"]
+      },
+      "pacingWaitMs": 64612.0000000298,
+      "referenceToolCalls": {
+        "get-plan-context": 3,
+        "get-authoring-rules": 0,
+        "get-skill": 3,
+        "find-attributes": 0
+      },
+      "timingSource": "model-call callbacks; excludes tools",
+      "planChanges": 3,
+      "corrections": 2,
+      "notLoaded": 0,
+      "toolErrors": 1,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-plan-context": {
+          "calls": 3,
+          "ms": 31
+        },
+        "get-skill": {
+          "calls": 3,
+          "ms": 15
+        },
+        "create-or-replace-groups": {
+          "calls": 1,
+          "ms": 1780
+        },
+        "change-group-attribute": {
+          "calls": 1,
+          "ms": 152
+        },
+        "change-module-attribute": {
+          "calls": 1,
+          "ms": 1159
+        },
+        "get-plan-images": {
+          "calls": 1,
+          "ms": 1161
+        }
+      },
+      "stepLog": [
+        {
+          "inputTokens": 77193,
+          "outputTokens": 79,
+          "totalTokens": 77272,
+          "cacheReadTokens": 74806,
+          "cacheWriteTokens": 2384,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 7525.200000017881,
+          "timeToFirstOutputMs": 7205.300000011921,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 7525.200000017881,
+          "modelMs": 7525.200000017881,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 84062,
+          "outputTokens": 185,
+          "totalTokens": 84247,
+          "cacheReadTokens": 77190,
+          "cacheWriteTokens": 6869,
+          "noCacheTokens": 3,
+          "reasoningTokens": 153,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 22852.899999976158,
+          "timeToFirstOutputMs": 22227,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 22852.899999976158,
+          "modelMs": 22852.899999976158,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 87291,
+          "outputTokens": 609,
+          "totalTokens": 87900,
+          "cacheReadTokens": 84059,
+          "cacheWriteTokens": 3229,
+          "noCacheTokens": 3,
+          "reasoningTokens": 50,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 22304.5,
+          "timeToFirstOutputMs": 15083.699999988079,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 22304.5,
+          "modelMs": 22304.5,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 94746,
+          "outputTokens": 71,
+          "totalTokens": 94817,
+          "cacheReadTokens": 87288,
+          "cacheWriteTokens": 7455,
+          "noCacheTokens": 3,
+          "reasoningTokens": 41,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 11149.5,
+          "timeToFirstOutputMs": 10430.199999988079,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 11149.5,
+          "modelMs": 11149.5,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 103658,
+          "outputTokens": 101,
+          "totalTokens": 103759,
+          "cacheReadTokens": 94743,
+          "cacheWriteTokens": 8912,
+          "noCacheTokens": 3,
+          "reasoningTokens": 44,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 24493.5,
+          "timeToFirstOutputMs": 23739.5,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 24493.5,
+          "modelMs": 24493.5,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 103899,
+          "outputTokens": 142,
+          "totalTokens": 104041,
+          "cacheReadTokens": 103655,
+          "cacheWriteTokens": 241,
+          "noCacheTokens": 3,
+          "reasoningTokens": 49,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 15541.200000017881,
+          "timeToFirstOutputMs": 15374.200000017881,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 15541.200000017881,
+          "modelMs": 15541.200000017881,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 106521,
+          "outputTokens": 247,
+          "totalTokens": 106768,
+          "cacheReadTokens": 103896,
+          "cacheWriteTokens": 2622,
+          "noCacheTokens": 3,
+          "reasoningTokens": 87,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 26791.90000000596,
+          "timeToFirstOutputMs": 26113.30000001192,
+          "finishReason": "stop",
+          "turn": 1,
+          "ms": 26791.90000000596,
+          "modelMs": 26791.90000000596,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "stop"
+        }
+      ]
+    },
+    {
+      "dir": ".temp/result/prompt-caching-boundary-validated-1/gpt-6.1-sol/03-image-only-no-text",
+      "model": "gpt-6.1-sol",
+      "test": "image-only-no-text",
+      "manifest": {
+        "variant": "library-rules-with-reference-boundary",
+        "repetition": 1,
+        "roomleUi": "1c3cbd6be7d84b67709a5acc0e600f7725b2edd7",
+        "roomleHiExample": "6e041409ee3476c5858300b55f41d5d2aad62073",
+        "planner": "http://localhost:5173",
+        "embedding": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "cacheState": "unknown; new browser is not a cold provider cache",
+        "model": {
+          "provider": "gpt-6.1-sol",
+          "apiKey": "$AZURE_GPT_SOL_KEY"
+        },
+        "reasoningEffort": "deployment default",
+        "createdAt": "2026-10-26T10:38:19.030Z",
+        "requestIntervalMs": 20000,
+        "referenceCacheBreakpoint": true,
+        "cachePolicy": "implicit plus explicit library boundary and digest-derived key; default lifetime",
+        "checkout": "roomle-ui feat/hi-mcp-performance",
+        "cacheKey": "64-character SHA-256 digest"
+      },
+      "turns": 1,
+      "chatMs": 217482,
+      "steps": 11,
+      "modelMs": 211346.20000001788,
+      "toolsMs": null,
+      "otherMs": null,
+      "inputTokens": 1049347,
+      "outputTokens": 2412,
+      "reasoningTokens": 629,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 1049347,
+        "outputTokens": 2412,
+        "totalTokens": 1051759
+      },
+      "diagnostics": [
+        {
+          "version": 1,
+          "details": {
+            "cacheReadTokens": {
+              "tokens": 1013525,
+              "status": "complete",
+              "reportedSteps": 11,
+              "observedSteps": 11
+            },
+            "cacheWriteTokens": {
+              "tokens": 35789,
+              "status": "complete",
+              "reportedSteps": 11,
+              "observedSteps": 11
+            },
+            "noCacheTokens": {
+              "tokens": 33,
+              "status": "complete",
+              "reportedSteps": 11,
+              "observedSteps": 11
+            },
+            "reasoningTokens": {
+              "tokens": 629,
+              "status": "complete",
+              "reportedSteps": 11,
+              "observedSteps": 11
+            }
+          },
+          "modelCalls": [
+            {
+              "inputTokens": 76122,
+              "outputTokens": 79,
+              "totalTokens": 76201,
+              "cacheReadTokens": 74806,
+              "cacheWriteTokens": 1313,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 4992,
+              "timeToFirstOutputMs": 4882.5999999940395,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 83752,
+              "outputTokens": 390,
+              "totalTokens": 84142,
+              "cacheReadTokens": 76119,
+              "cacheWriteTokens": 7630,
+              "noCacheTokens": 3,
+              "reasoningTokens": 275,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 37934.20000001788,
+              "timeToFirstOutputMs": 32609.70000001788,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 87186,
+              "outputTokens": 628,
+              "totalTokens": 87814,
+              "cacheReadTokens": 83749,
+              "cacheWriteTokens": 3434,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 11631.899999976158,
+              "timeToFirstOutputMs": 4444,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 95256,
+              "outputTokens": 363,
+              "totalTokens": 95619,
+              "cacheReadTokens": 87183,
+              "cacheWriteTokens": 8070,
+              "noCacheTokens": 3,
+              "reasoningTokens": 32,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 21073.90000000596,
+              "timeToFirstOutputMs": 20984.90000000596,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 96117,
+              "outputTokens": 105,
+              "totalTokens": 96222,
+              "cacheReadTokens": 95253,
+              "cacheWriteTokens": 861,
+              "noCacheTokens": 3,
+              "reasoningTokens": 24,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 10517.59999999404,
+              "timeToFirstOutputMs": 9570,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 96345,
+              "outputTokens": 98,
+              "totalTokens": 96443,
+              "cacheReadTokens": 96114,
+              "cacheWriteTokens": 228,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 21840.70000001788,
+              "timeToFirstOutputMs": 17456.09999999404,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 96754,
+              "outputTokens": 140,
+              "totalTokens": 96894,
+              "cacheReadTokens": 96342,
+              "cacheWriteTokens": 409,
+              "noCacheTokens": 3,
+              "reasoningTokens": 18,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 16515.40000000596,
+              "timeToFirstOutputMs": 16500.5,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 97165,
+              "outputTokens": 31,
+              "totalTokens": 97196,
+              "cacheReadTokens": 96751,
+              "cacheWriteTokens": 411,
+              "noCacheTokens": 3,
+              "reasoningTokens": 14,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 19637.5,
+              "timeToFirstOutputMs": 19081.09999999404,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 99658,
+              "outputTokens": 124,
+              "totalTokens": 99782,
+              "cacheReadTokens": 97162,
+              "cacheWriteTokens": 2493,
+              "noCacheTokens": 3,
+              "reasoningTokens": 94,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 22966,
+              "timeToFirstOutputMs": 22743.59999999404,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 110394,
+              "outputTokens": 154,
+              "totalTokens": 110548,
+              "cacheReadTokens": 99655,
+              "cacheWriteTokens": 10736,
+              "noCacheTokens": 3,
+              "reasoningTokens": 62,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 17951.40000000596,
+              "timeToFirstOutputMs": 17048.80000001192,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 110598,
+              "outputTokens": 300,
+              "totalTokens": 110898,
+              "cacheReadTokens": 110391,
+              "cacheWriteTokens": 204,
+              "noCacheTokens": 3,
+              "reasoningTokens": 110,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 26285.59999999404,
+              "timeToFirstOutputMs": 22453.90000000596,
+              "finishReason": "stop"
+            }
+          ],
+          "requests": [
+            {
+              "bytes": 585065,
+              "sha256": "4d346f13d693001406c7f66994cdccfd3b7c674f0a2820d575c91b8c62cb342b"
+            },
+            {
+              "bytes": 619741,
+              "sha256": "86a5f1e1b788076e9adf11c41e82ad52552345e3db9378b32db00151216d4d77"
+            },
+            {
+              "bytes": 635565,
+              "sha256": "ebae185af0a9a918104a9dd706a88736c668dc2f56eabe89fa8ce5a5f219f67b"
+            },
+            {
+              "bytes": 665585,
+              "sha256": "beb8625e8c9b33ae3600791cd8bc8f7fc8b7936b3f2f6d128763c9cdb401eae1"
+            },
+            {
+              "bytes": 668564,
+              "sha256": "72f9b5164b060c37bc0489a71db24a047fbed30ef6587712d33835c898232d86"
+            },
+            {
+              "bytes": 669383,
+              "sha256": "bff47a5b51dab5b818802ce11792671f8134474bf9547d712b0db7ad4bc29ed2"
+            },
+            {
+              "bytes": 670505,
+              "sha256": "a03b00df78801674a9cdd3093396e268070cb7f19404777dc12f1710cc22d6e5"
+            },
+            {
+              "bytes": 672106,
+              "sha256": "4bfbc334888160850a1d3aa42bba5613d686b371e925871aac2b33adef521e00"
+            },
+            {
+              "bytes": 2495970,
+              "sha256": "ec9a4046d888a79169796e4f69ea23704a000a3701bdf60e2074d1a7b9cc63e6"
+            },
+            {
+              "bytes": 2533771,
+              "sha256": "948dcfb69c76e3b08cb5a52d7363ab3d8d5e1e4a1361ae6914a9290ffa6a56b0"
+            },
+            {
+              "bytes": 2534385,
+              "sha256": "82b4909fdad6a648f78b58b98b344dc16205829c2f31ff0c0c189c9010f22e2d"
+            }
+          ],
+          "reference": {
+            "bytes": 295383,
+            "sha256": "ac8d9cfdec1783b554b3bb08dc3d3e8b2bdd5858203f1f33eb3f61b851cb3633"
+          },
+          "referenceAcquisitionMs": 12.199999988079071,
+          "firstTextMs": 37632.59999999404,
+          "turnMs": 217346.09999999404
+        }
+      ],
+      "runtime": {
+        "requestIntervalMs": 20000,
+        "embeddingModules": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "plannerOrigins": ["http://localhost:5173"]
+      },
+      "pacingWaitMs": 103819.29999998212,
+      "referenceToolCalls": {
+        "get-plan-context": 3,
+        "get-authoring-rules": 0,
+        "get-skill": 3,
+        "find-attributes": 0
+      },
+      "timingSource": "model-call callbacks; excludes tools",
+      "planChanges": 8,
+      "corrections": 3,
+      "notLoaded": 0,
+      "toolErrors": 4,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-plan-context": {
+          "calls": 3,
+          "ms": 30
+        },
+        "get-skill": {
+          "calls": 3,
+          "ms": 19
+        },
+        "create-or-replace-groups": {
+          "calls": 1,
+          "ms": 2084
+        },
+        "change-group-attribute": {
+          "calls": 6,
+          "ms": 2021
+        },
+        "get-plan-images": {
+          "calls": 1,
+          "ms": 700
+        },
+        "change-module-attribute": {
+          "calls": 1,
+          "ms": 1467
+        }
+      },
+      "stepLog": [
+        {
+          "inputTokens": 76122,
+          "outputTokens": 79,
+          "totalTokens": 76201,
+          "cacheReadTokens": 74806,
+          "cacheWriteTokens": 1313,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 4992,
+          "timeToFirstOutputMs": 4882.5999999940395,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 4992,
+          "modelMs": 4992,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 83752,
+          "outputTokens": 390,
+          "totalTokens": 84142,
+          "cacheReadTokens": 76119,
+          "cacheWriteTokens": 7630,
+          "noCacheTokens": 3,
+          "reasoningTokens": 275,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 37934.20000001788,
+          "timeToFirstOutputMs": 32609.70000001788,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 37934.20000001788,
+          "modelMs": 37934.20000001788,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 87186,
+          "outputTokens": 628,
+          "totalTokens": 87814,
+          "cacheReadTokens": 83749,
+          "cacheWriteTokens": 3434,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 11631.899999976158,
+          "timeToFirstOutputMs": 4444,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 11631.899999976158,
+          "modelMs": 11631.899999976158,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 95256,
+          "outputTokens": 363,
+          "totalTokens": 95619,
+          "cacheReadTokens": 87183,
+          "cacheWriteTokens": 8070,
+          "noCacheTokens": 3,
+          "reasoningTokens": 32,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 21073.90000000596,
+          "timeToFirstOutputMs": 20984.90000000596,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 21073.90000000596,
+          "modelMs": 21073.90000000596,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 96117,
+          "outputTokens": 105,
+          "totalTokens": 96222,
+          "cacheReadTokens": 95253,
+          "cacheWriteTokens": 861,
+          "noCacheTokens": 3,
+          "reasoningTokens": 24,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 10517.59999999404,
+          "timeToFirstOutputMs": 9570,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 10517.59999999404,
+          "modelMs": 10517.59999999404,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 96345,
+          "outputTokens": 98,
+          "totalTokens": 96443,
+          "cacheReadTokens": 96114,
+          "cacheWriteTokens": 228,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 21840.70000001788,
+          "timeToFirstOutputMs": 17456.09999999404,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 21840.70000001788,
+          "modelMs": 21840.70000001788,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 96754,
+          "outputTokens": 140,
+          "totalTokens": 96894,
+          "cacheReadTokens": 96342,
+          "cacheWriteTokens": 409,
+          "noCacheTokens": 3,
+          "reasoningTokens": 18,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 16515.40000000596,
+          "timeToFirstOutputMs": 16500.5,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 16515.40000000596,
+          "modelMs": 16515.40000000596,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 97165,
+          "outputTokens": 31,
+          "totalTokens": 97196,
+          "cacheReadTokens": 96751,
+          "cacheWriteTokens": 411,
+          "noCacheTokens": 3,
+          "reasoningTokens": 14,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 19637.5,
+          "timeToFirstOutputMs": 19081.09999999404,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 19637.5,
+          "modelMs": 19637.5,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 99658,
+          "outputTokens": 124,
+          "totalTokens": 99782,
+          "cacheReadTokens": 97162,
+          "cacheWriteTokens": 2493,
+          "noCacheTokens": 3,
+          "reasoningTokens": 94,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 22966,
+          "timeToFirstOutputMs": 22743.59999999404,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 22966,
+          "modelMs": 22966,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 110394,
+          "outputTokens": 154,
+          "totalTokens": 110548,
+          "cacheReadTokens": 99655,
+          "cacheWriteTokens": 10736,
+          "noCacheTokens": 3,
+          "reasoningTokens": 62,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 17951.40000000596,
+          "timeToFirstOutputMs": 17048.80000001192,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 17951.40000000596,
+          "modelMs": 17951.40000000596,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 110598,
+          "outputTokens": 300,
+          "totalTokens": 110898,
+          "cacheReadTokens": 110391,
+          "cacheWriteTokens": 204,
+          "noCacheTokens": 3,
+          "reasoningTokens": 110,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 26285.59999999404,
+          "timeToFirstOutputMs": 22453.90000000596,
+          "finishReason": "stop",
+          "turn": 1,
+          "ms": 26285.59999999404,
+          "modelMs": 26285.59999999404,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "stop"
+        }
+      ]
+    },
+    {
+      "dir": ".temp/result/prompt-caching-boundary-validated-1/gpt-6.1-sol/04-edit-add-move-delete-subarticle",
+      "model": "gpt-6.1-sol",
+      "test": "edit-add-move-delete-subarticle",
+      "manifest": {
+        "variant": "library-rules-with-reference-boundary",
+        "repetition": 1,
+        "roomleUi": "1c3cbd6be7d84b67709a5acc0e600f7725b2edd7",
+        "roomleHiExample": "6e041409ee3476c5858300b55f41d5d2aad62073",
+        "planner": "http://localhost:5173",
+        "embedding": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "cacheState": "unknown; new browser is not a cold provider cache",
+        "model": {
+          "provider": "gpt-6.1-sol",
+          "apiKey": "$AZURE_GPT_SOL_KEY"
+        },
+        "reasoningEffort": "deployment default",
+        "createdAt": "2026-10-26T10:38:19.030Z",
+        "requestIntervalMs": 20000,
+        "referenceCacheBreakpoint": true,
+        "cachePolicy": "implicit plus explicit library boundary and digest-derived key; default lifetime",
+        "checkout": "roomle-ui feat/hi-mcp-performance",
+        "cacheKey": "64-character SHA-256 digest"
+      },
+      "turns": 3,
+      "chatMs": 222843,
+      "steps": 12,
+      "modelMs": 221985.59999996424,
+      "toolsMs": null,
+      "otherMs": null,
+      "inputTokens": 1140730,
+      "outputTokens": 725,
+      "reasoningTokens": 25,
+      "usage": {
+        "status": "complete",
+        "inputTokens": 1140730,
+        "outputTokens": 725,
+        "totalTokens": 1141455
+      },
+      "diagnostics": [
+        {
+          "version": 1,
+          "details": {
+            "cacheReadTokens": {
+              "tokens": 315693,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            },
+            "cacheWriteTokens": {
+              "tokens": 15748,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            },
+            "noCacheTokens": {
+              "tokens": 12,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            },
+            "reasoningTokens": {
+              "tokens": 25,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            }
+          },
+          "modelCalls": [
+            {
+              "inputTokens": 74838,
+              "outputTokens": 28,
+              "totalTokens": 74866,
+              "cacheReadTokens": 74806,
+              "cacheWriteTokens": 29,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 3795.699999988079,
+              "timeToFirstOutputMs": 3253.7999999821186,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 79748,
+              "outputTokens": 67,
+              "totalTokens": 79815,
+              "cacheReadTokens": 74835,
+              "cacheWriteTokens": 4910,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 19502.69999998808,
+              "timeToFirstOutputMs": 18754.5,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 86310,
+              "outputTokens": 165,
+              "totalTokens": 86475,
+              "cacheReadTokens": 79745,
+              "cacheWriteTokens": 6562,
+              "noCacheTokens": 3,
+              "reasoningTokens": 25,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 22037.90000000596,
+              "timeToFirstOutputMs": 20084.90000000596,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 90557,
+              "outputTokens": 41,
+              "totalTokens": 90598,
+              "cacheReadTokens": 86307,
+              "cacheWriteTokens": 4247,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 19462.90000000596,
+              "timeToFirstOutputMs": 18882.90000000596,
+              "finishReason": "stop"
+            }
+          ],
+          "requests": [
+            {
+              "bytes": 339022,
+              "sha256": "619edccd93ea4f46b6ad579fd8d4613c52d3d615d71201f52174050d81f84129"
+            },
+            {
+              "bytes": 355287,
+              "sha256": "ec54ec2f062081bad2e4dce2b1b54307754ccaf9322ee16c5dc6dabae1fcab50"
+            },
+            {
+              "bytes": 379724,
+              "sha256": "4eef2bba46d5f99233d477919df8406aee97d85e4c54d22ce2d035d9c89c8bc7"
+            },
+            {
+              "bytes": 393355,
+              "sha256": "6b4ebfd408ccdcc1077a68e2f5fe41ee7e6348e1583d17069bf9e97ff69e2168"
+            }
+          ],
+          "reference": {
+            "bytes": 295383,
+            "sha256": "ac8d9cfdec1783b554b3bb08dc3d3e8b2bdd5858203f1f33eb3f61b851cb3633"
+          },
+          "referenceAcquisitionMs": 26.30000001192093,
+          "firstTextMs": 64506,
+          "turnMs": 65088.69999998808
+        },
+        {
+          "version": 1,
+          "details": {
+            "cacheReadTokens": {
+              "tokens": 373670,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            },
+            "cacheWriteTokens": {
+              "tokens": 10405,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            },
+            "noCacheTokens": {
+              "tokens": 12,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            },
+            "reasoningTokens": {
+              "tokens": 0,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            }
+          },
+          "modelCalls": [
+            {
+              "inputTokens": 90617,
+              "outputTokens": 28,
+              "totalTokens": 90645,
+              "cacheReadTokens": 90554,
+              "cacheWriteTokens": 60,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 21350.69999998808,
+              "timeToFirstOutputMs": 20776.29999998212,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 95750,
+              "outputTokens": 77,
+              "totalTokens": 95827,
+              "cacheReadTokens": 90614,
+              "cacheWriteTokens": 5133,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 17127.899999976158,
+              "timeToFirstOutputMs": 16225.399999976158,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 96758,
+              "outputTokens": 80,
+              "totalTokens": 96838,
+              "cacheReadTokens": 95747,
+              "cacheWriteTokens": 1008,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 22730.5,
+              "timeToFirstOutputMs": 21587.59999999404,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 100962,
+              "outputTokens": 28,
+              "totalTokens": 100990,
+              "cacheReadTokens": 96755,
+              "cacheWriteTokens": 4204,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 16402.30000001192,
+              "timeToFirstOutputMs": 15618.09999999404,
+              "finishReason": "stop"
+            }
+          ],
+          "requests": [
+            {
+              "bytes": 393562,
+              "sha256": "813f6ab80cb0d585c3cc0fc5ecda6f93f06e8979a9ff0eb9f333a0d586c0415f"
+            },
+            {
+              "bytes": 410417,
+              "sha256": "0a3e2f24567e6138359eb465e1bfd8a24148a42bc46e49b44a09d9e6e198c503"
+            },
+            {
+              "bytes": 413928,
+              "sha256": "dbc5261c0cc2528a3dd459cc9d6bbe12bd6c03e82fb959fd4059b45e457f0eb5"
+            },
+            {
+              "bytes": 427448,
+              "sha256": "b696c58f1f1d108ea671a4ed36e92c0f4bb2873f3272ceb6a289d6440e650870"
+            }
+          ],
+          "reference": {
+            "bytes": 295383,
+            "sha256": "ac8d9cfdec1783b554b3bb08dc3d3e8b2bdd5858203f1f33eb3f61b851cb3633"
+          },
+          "referenceAcquisitionMs": 14.099999994039536,
+          "firstTextMs": 77131.59999999404,
+          "turnMs": 77917.79999998212
+        },
+        {
+          "version": 1,
+          "details": {
+            "cacheReadTokens": {
+              "tokens": 415244,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            },
+            "cacheWriteTokens": {
+              "tokens": 9934,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            },
+            "noCacheTokens": {
+              "tokens": 12,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            },
+            "reasoningTokens": {
+              "tokens": 0,
+              "status": "complete",
+              "reportedSteps": 4,
+              "observedSteps": 4
+            }
+          },
+          "modelCalls": [
+            {
+              "inputTokens": 101003,
+              "outputTokens": 28,
+              "totalTokens": 101031,
+              "cacheReadTokens": 100959,
+              "cacheWriteTokens": 41,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 19587.40000000596,
+              "timeToFirstOutputMs": 19269.69999998808,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 106135,
+              "outputTokens": 79,
+              "totalTokens": 106214,
+              "cacheReadTokens": 101000,
+              "cacheWriteTokens": 5132,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 24796.40000000596,
+              "timeToFirstOutputMs": 23466.30000001192,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 107156,
+              "outputTokens": 71,
+              "totalTokens": 107227,
+              "cacheReadTokens": 106132,
+              "cacheWriteTokens": 1021,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 16058.59999999404,
+              "timeToFirstOutputMs": 15216.300000011921,
+              "finishReason": "tool-calls"
+            },
+            {
+              "inputTokens": 110896,
+              "outputTokens": 33,
+              "totalTokens": 110929,
+              "cacheReadTokens": 107153,
+              "cacheWriteTokens": 3740,
+              "noCacheTokens": 3,
+              "reasoningTokens": 0,
+              "rawUsageAvailable": true,
+              "responseTimeMs": 19132.59999999404,
+              "timeToFirstOutputMs": 18477.80000001192,
+              "finishReason": "stop"
+            }
+          ],
+          "requests": [
+            {
+              "bytes": 427636,
+              "sha256": "857f797bcf88bd660768e4fb762eac82ffebb1500dc5561f3badcaa5fc77e1d4"
+            },
+            {
+              "bytes": 444491,
+              "sha256": "4b67e6d60ad68faa42c19bc1c2345f54a47735cedd1248d7931c03015e635520"
+            },
+            {
+              "bytes": 448002,
+              "sha256": "8601f83cd51461fd790f411a261e40f90abfb76f46b5a3dfaa18cc13fab9a0c5"
+            },
+            {
+              "bytes": 460343,
+              "sha256": "9435ba2a3bc9c043af15e6b354ecb1a50801dc59a103a727a7fdd31114f2c5b7"
+            }
+          ],
+          "reference": {
+            "bytes": 295383,
+            "sha256": "ac8d9cfdec1783b554b3bb08dc3d3e8b2bdd5858203f1f33eb3f61b851cb3633"
+          },
+          "referenceAcquisitionMs": 13.300000011920929,
+          "firstTextMs": 79150.30000001192,
+          "turnMs": 79807.30000001192
+        }
+      ],
+      "runtime": {
+        "requestIntervalMs": 20000,
+        "embeddingModules": [
+          "http://localhost:3001/src/roomle-embedding-lib.ts",
+          "http://localhost:3001/src/hi.ts"
+        ],
+        "plannerOrigins": ["http://localhost:5173"]
+      },
+      "pacingWaitMs": 169131.90000000596,
+      "referenceToolCalls": {
+        "get-plan-context": 6,
+        "get-authoring-rules": 0,
+        "get-skill": 0,
+        "find-attributes": 0
+      },
+      "timingSource": "model-call callbacks; excludes tools",
+      "planChanges": 3,
+      "corrections": 2,
+      "notLoaded": 0,
+      "toolErrors": 0,
+      "errors": 0,
+      "chatErrors": [],
+      "tools": {
+        "get-plan-context": {
+          "calls": 6,
+          "ms": 68
+        },
+        "get-interior-design-options": {
+          "calls": 3,
+          "ms": 161
+        },
+        "add-interior-fitting": {
+          "calls": 1,
+          "ms": 186
+        },
+        "move-interior-fitting": {
+          "calls": 1,
+          "ms": 221
+        },
+        "delete-interior-fittings": {
+          "calls": 1,
+          "ms": 146
+        }
+      },
+      "stepLog": [
+        {
+          "inputTokens": 74838,
+          "outputTokens": 28,
+          "totalTokens": 74866,
+          "cacheReadTokens": 74806,
+          "cacheWriteTokens": 29,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 3795.699999988079,
+          "timeToFirstOutputMs": 3253.7999999821186,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 3795.699999988079,
+          "modelMs": 3795.699999988079,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 79748,
+          "outputTokens": 67,
+          "totalTokens": 79815,
+          "cacheReadTokens": 74835,
+          "cacheWriteTokens": 4910,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 19502.69999998808,
+          "timeToFirstOutputMs": 18754.5,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 19502.69999998808,
+          "modelMs": 19502.69999998808,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 86310,
+          "outputTokens": 165,
+          "totalTokens": 86475,
+          "cacheReadTokens": 79745,
+          "cacheWriteTokens": 6562,
+          "noCacheTokens": 3,
+          "reasoningTokens": 25,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 22037.90000000596,
+          "timeToFirstOutputMs": 20084.90000000596,
+          "finishReason": "tool-calls",
+          "turn": 1,
+          "ms": 22037.90000000596,
+          "modelMs": 22037.90000000596,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 90557,
+          "outputTokens": 41,
+          "totalTokens": 90598,
+          "cacheReadTokens": 86307,
+          "cacheWriteTokens": 4247,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 19462.90000000596,
+          "timeToFirstOutputMs": 18882.90000000596,
+          "finishReason": "stop",
+          "turn": 1,
+          "ms": 19462.90000000596,
+          "modelMs": 19462.90000000596,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "stop"
+        },
+        {
+          "inputTokens": 90617,
+          "outputTokens": 28,
+          "totalTokens": 90645,
+          "cacheReadTokens": 90554,
+          "cacheWriteTokens": 60,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 21350.69999998808,
+          "timeToFirstOutputMs": 20776.29999998212,
+          "finishReason": "tool-calls",
+          "turn": 2,
+          "ms": 21350.69999998808,
+          "modelMs": 21350.69999998808,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 95750,
+          "outputTokens": 77,
+          "totalTokens": 95827,
+          "cacheReadTokens": 90614,
+          "cacheWriteTokens": 5133,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 17127.899999976158,
+          "timeToFirstOutputMs": 16225.399999976158,
+          "finishReason": "tool-calls",
+          "turn": 2,
+          "ms": 17127.899999976158,
+          "modelMs": 17127.899999976158,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 96758,
+          "outputTokens": 80,
+          "totalTokens": 96838,
+          "cacheReadTokens": 95747,
+          "cacheWriteTokens": 1008,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 22730.5,
+          "timeToFirstOutputMs": 21587.59999999404,
+          "finishReason": "tool-calls",
+          "turn": 2,
+          "ms": 22730.5,
+          "modelMs": 22730.5,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 100962,
+          "outputTokens": 28,
+          "totalTokens": 100990,
+          "cacheReadTokens": 96755,
+          "cacheWriteTokens": 4204,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 16402.30000001192,
+          "timeToFirstOutputMs": 15618.09999999404,
+          "finishReason": "stop",
+          "turn": 2,
+          "ms": 16402.30000001192,
+          "modelMs": 16402.30000001192,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "stop"
+        },
+        {
+          "inputTokens": 101003,
+          "outputTokens": 28,
+          "totalTokens": 101031,
+          "cacheReadTokens": 100959,
+          "cacheWriteTokens": 41,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 19587.40000000596,
+          "timeToFirstOutputMs": 19269.69999998808,
+          "finishReason": "tool-calls",
+          "turn": 3,
+          "ms": 19587.40000000596,
+          "modelMs": 19587.40000000596,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 106135,
+          "outputTokens": 79,
+          "totalTokens": 106214,
+          "cacheReadTokens": 101000,
+          "cacheWriteTokens": 5132,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 24796.40000000596,
+          "timeToFirstOutputMs": 23466.30000001192,
+          "finishReason": "tool-calls",
+          "turn": 3,
+          "ms": 24796.40000000596,
+          "modelMs": 24796.40000000596,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 107156,
+          "outputTokens": 71,
+          "totalTokens": 107227,
+          "cacheReadTokens": 106132,
+          "cacheWriteTokens": 1021,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 16058.59999999404,
+          "timeToFirstOutputMs": 15216.300000011921,
+          "finishReason": "tool-calls",
+          "turn": 3,
+          "ms": 16058.59999999404,
+          "modelMs": 16058.59999999404,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "tool-calls"
+        },
+        {
+          "inputTokens": 110896,
+          "outputTokens": 33,
+          "totalTokens": 110929,
+          "cacheReadTokens": 107153,
+          "cacheWriteTokens": 3740,
+          "noCacheTokens": 3,
+          "reasoningTokens": 0,
+          "rawUsageAvailable": true,
+          "responseTimeMs": 19132.59999999404,
+          "timeToFirstOutputMs": 18477.80000001192,
+          "finishReason": "stop",
+          "turn": 3,
+          "ms": 19132.59999999404,
+          "modelMs": 19132.59999999404,
+          "toolsMs": null,
+          "tools": [],
+          "plannerCalls": [],
+          "resultTokens": null,
+          "finish": "stop"
+        }
+      ]
+    }
+  ]
+}

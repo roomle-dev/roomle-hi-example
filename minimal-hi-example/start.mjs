@@ -48,9 +48,10 @@ const FOUNDRY_BASE_URL =
 const FOUNDRY_DEPLOYMENTS = {
   'gpt-5-mini': { reasoningEffort: 'high' },
   'gpt-5.4-mini': { reasoningEffort: 'high' },
-  'gpt-6-astra': {},
+  'gpt-6-astra': { referenceCacheBreakpoint: true },
   'gpt-6.1-sol': {
     baseUrl: 'https://controller-mes-resource.services.ai.azure.com/openai/v1',
+    referenceCacheBreakpoint: true,
   },
   'mistral-large-3': {},
 };
@@ -131,6 +132,9 @@ const planningAssistantConfig = (name, apiKey) => {
       baseUrl: deployment.baseUrl ?? FOUNDRY_BASE_URL,
       chatCompletions,
       ...(effort && !chatCompletions && { reasoningEffort: effort }),
+      ...(deployment.referenceCacheBreakpoint && {
+        referenceCacheBreakpoint: true,
+      }),
       readsImages:
         lower.startsWith('gpt-') || IMAGE_INPUT_MODELS.includes(lower),
     };

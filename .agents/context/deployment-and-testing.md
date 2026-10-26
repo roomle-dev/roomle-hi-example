@@ -68,6 +68,20 @@ run phase (`loading`, `chat`, `snapshot`, `complete`) and whether only the URL f
 ### Prompt token accounting
 
 `planning-assistant-usage.js` listens for `[planning-assistant] usage <JSON>` while one prompt runs.
+
+Version 1 `diagnostics` travels unchanged from that record into each turn's usage and extracted
+facts. It holds per-model-call timings, independent cache/reasoning coverage, request byte counts
+and digests, reference metadata and whole-turn timing. Reports show cache coverage and transport
+bytes separately from the token totals. The benchmark reads these current records first, with
+legacy step-log support for older runs. Absent counters stay unknown; tool time is not inferred
+from model-call time. A run with chat errors stays in the output and is excluded from successful-run
+comparisons.
+
+`HI_MCP_REQUEST_INTERVAL_MS` optionally spaces Azure model requests in the test browser. The
+default is zero. The runner records the interval, loaded local embedding module URLs, planner
+origins and per-turn waits in `run.json`. This is test-only pacing for rate-limited deployments;
+it leaves production code unchanged. Compare runs with the same interval and report waits
+separately. Paced chat/model times are not normal interactive latency measurements.
 It verifies the console message's execution context is the host page, then validates the resolved
 provider/model, non-negative integer counts and coverage. The collector stops after the prompt
 callback and any abort settlement, and awaits the context checks already in flight. It uses no

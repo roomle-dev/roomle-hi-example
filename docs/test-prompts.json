@@ -599,7 +599,7 @@
           "title": "Image only, no text: tall units",
           "plan": "default-room",
           "image": "docs/images/three-tall-units.png",
-          "expect": "the model fetches the skill image-planning, identifies the furniture as tall units (a wardrobe or cabinet), not a kitchen, and plans it as close to the image as possible: three tall units side by side; no sink, hob, oven, worktop or base units"
+          "expect": "the model uses the supplied image-planning guidance, or fetches it when missing, identifies the furniture as tall units (a wardrobe or cabinet), not a kitchen, and plans it as close to the image as possible: three tall units side by side; no sink, hob, oven, worktop or base units"
         },
         {
           "id": "image-kitchen-left-wall",
@@ -607,7 +607,7 @@
           "plan": "default-room",
           "prompt": "create a kitchen like the one in the image on the left-hand wall of the room",
           "image": "docs/images/kitchen-1.png",
-          "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the kitchen of the image on the left-hand wall, in the order of the image; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
+          "expect": "the model uses the supplied image-planning and kitchen guidance, or fetches it when missing, and plans the kitchen of the image on the left-hand wall, in the order of the image; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
         },
         {
           "id": "image-kitchen-back-right-corner",
@@ -615,7 +615,7 @@
           "plan": "default-room",
           "prompt": "create a kitchen like the one shown in the image, in the back right corner of the room",
           "image": "docs/images/kitchen-2.png",
-          "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the L-shaped kitchen of the image around the back right corner, one leg on the back wall and one on the right wall: the long leg with the tall units at its far end - among them one tall unit with the microwave built in above the oven - base units, a drawer unit below the hob, a chimney range hood above the hob and a wall unit on each side of the hood; the short leg with the sink unit at its end; anthracite fronts and a light oak worktop; no tall unit and no wall unit in front of the window (back wall, x -450 to 1650, bottom 950) - the base units may run below it - and nothing in the door opening (right wall, z 280 to 1180); the image shows no backsplash; the final answer names each leg at the wall it stands at in the plan and accurately reports any remaining omission"
+          "expect": "the model uses the supplied image-planning and kitchen guidance, or fetches it when missing, and plans the L-shaped kitchen of the image around the back right corner, one leg on the back wall and one on the right wall: the long leg with the tall units at its far end - among them one tall unit with the microwave built in above the oven - base units, a drawer unit below the hob, a chimney range hood above the hob and a wall unit on each side of the hood; the short leg with the sink unit at its end; anthracite fronts and a light oak worktop; no tall unit and no wall unit in front of the window (back wall, x -450 to 1650, bottom 950) - the base units may run below it - and nothing in the door opening (right wall, z 280 to 1180); the image shows no backsplash; the final answer names each leg at the wall it stands at in the plan and accurately reports any remaining omission"
         },
         {
           "id": "image-planning-right-wall",
@@ -623,14 +623,14 @@
           "plan": "default-room",
           "prompt": "create a planning as to the one shown in the picture on the right-hand wall of the room.",
           "image": "docs/images/kitchen-3.png",
-          "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the kitchen of the image: one row of five tall units against the right-hand wall, in the order of the image, between the back right corner and the door (right wall, z 280 to 1180), clear of the door opening - white fronts, two neighbouring tall units with oak fronts, one white tall unit with the oven built in; and a separate island group of base units free in the room in front of the row, parallel to it with a walkway between, carrying the hob and the sink; white fronts and a light grey stone worktop on the island; no wall units; the image shows no backsplash; the final answer accurately reports any remaining omission"
+          "expect": "the model uses the supplied image-planning and kitchen guidance, or fetches it when missing, and plans the kitchen of the image: one row of five tall units against the right-hand wall, in the order of the image, between the back right corner and the door (right wall, z 280 to 1180), clear of the door opening - white fronts, two neighbouring tall units with oak fronts, one white tall unit with the oven built in; and a separate island group of base units free in the room in front of the row, parallel to it with a walkway between, carrying the hob and the sink; white fronts and a light grey stone worktop on the island; no wall units; the image shows no backsplash; the final answer accurately reports any remaining omission"
         },
         {
           "id": "image-only-no-text",
           "title": "Image only, no text",
           "plan": "l-shaped-pass-through-room",
           "image": "docs/images/kitchen-4.png",
-          "expect": "the model decides what to plan; the chat sends the image with the image prompt of the planner, which names the skill image-planning; the model fetches image-planning, and the kitchen skill for its checks, and plans the galley kitchen of the image as close to it as possible in the narrow wing of the L-shaped room, whose end wall has the window as in the image: one row along the left wall (x -780) from the window wall towards the door - the tall fridge unit, the sink unit, the dishwasher, the oven below the hob and drawer units, wall units above - and opposite it, along the wall at x 2220, base units with a worktop and a wall unit above them; under the window (top wall, x -330 to 1770, bottom 950) at most base units or a worktop, no tall unit and no wall unit in front of it; the passage between the two doors (left and right wall, z -210 to 690) stays free: no unit in a door opening or in the swing of the right door (x 3530 to 4420); cream fronts and a walnut worktop; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
+          "expect": "the model decides what to plan; the chat sends the image with the image prompt of the planner, which names the skill image-planning; the model uses the supplied image-planning and kitchen guidance for its checks, or fetches it when missing, and plans the galley kitchen of the image as close to it as possible in the narrow wing of the L-shaped room, whose end wall has the window as in the image: one row along the left wall (x -780) from the window wall towards the door - the tall fridge unit, the sink unit, the dishwasher, the oven below the hob and drawer units, wall units above - and opposite it, along the wall at x 2220, base units with a worktop and a wall unit above them; under the window (top wall, x -330 to 1770, bottom 950) at most base units or a worktop, no tall unit and no wall unit in front of it; the passage between the two doors (left and right wall, z -210 to 690) stays free: no unit in a door opening or in the swing of the right door (x 3530 to 4420); cream fronts and a walnut worktop; the backsplash visible in the image is generated when the library supports it, with its intended color and height applied after generation; the final answer accurately reports any remaining omission"
         },
         {
           "id": "image-only-no-text-2",
@@ -645,7 +645,7 @@
           "plan": "default-room",
           "prompt": "create a kitchen like the one shown in the image, in the back right corner of the room",
           "image": "docs/images/kitchen-11.png",
-          "expect": "the model fetches the skill image-planning beside the kitchen skill and plans the L-shaped kitchen of the image around the back right corner: the long leg on the back wall with the hob and wall units above its base units, the hood above the hob; the short leg on the right wall with the sink unit beside the corner unit and a column of two tall units - the oven housing and the fridge - at its far end, a wall unit hanging beside the tall units over the sink and another one left of it, over the corner unit; every wall unit stands inside the room, and the wall unit over the corner unit is turned as the right-wall row is, with its back to the right wall; no tall unit and no wall unit in front of the window (back wall, x -450 to 1650, bottom 950) and nothing in the door opening (right wall, y -1180 to -280); light grey frame fronts and a light oak worktop; the final answer accurately reports any remaining omission"
+          "expect": "the model uses the supplied image-planning and kitchen guidance, or fetches it when missing, and plans the L-shaped kitchen of the image around the back right corner: the long leg on the back wall with the hob and wall units above its base units, the hood above the hob; the short leg on the right wall with the sink unit beside the corner unit and a column of two tall units - the oven housing and the fridge - at its far end, a wall unit hanging beside the tall units over the sink and another one left of it, over the corner unit; every wall unit stands inside the room, and the wall unit over the corner unit is turned as the right-wall row is, with its back to the right wall; no tall unit and no wall unit in front of the window (back wall, x -450 to 1650, bottom 950) and nothing in the door opening (right wall, y -1180 to -280); light grey frame fronts and a light oak worktop; the final answer accurately reports any remaining omission"
         }
       ]
     },

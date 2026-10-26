@@ -43,6 +43,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Description |
 |---|---|---|
+| [Planning Assistant: a shared prompt prefix for Azure](planning-assistant-azure-prompt-caching.md) | Done — local branches, awaiting merge | Compact library/common-rule prefix, verified Azure boundary, implementation decisions, comparative measurements and final Astra minimum tests |
 
 Add refactoring analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `mcp-bridge-simplification.md`).

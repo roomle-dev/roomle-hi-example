@@ -1,5 +1,13 @@
 # AI Chat in the Example — Reference
 
+With a planning-assistant build that supports shared reference, common rules and compact library
+data precede the conversation. Library data refreshes each turn, and the assistant reads current
+plan state through tools. Azure may reuse matching input computation automatically, but every
+request still transmits its content. Cache-read/write coverage and request bytes are separate
+measurements in test reports; missing counts are not zero. See the
+[implementation and decisions](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md)
+and [local-build setup](setup/unreleased-embedding-lib.md).
+
 The example page has a built-in AI chat that plans with the HI tools: the model
 reads the plan context and creates, modifies, or positions object groups by
 calling the HI MCP tools. It turns the example into a self-contained demo — no
@@ -100,6 +108,13 @@ and does not make Chat Completions compatible.
 [Official OpenAI documentation](https://developers.openai.com/api/docs/guides/latest-model).
 Foundry `mistral-large-3` uses Chat Completions (`chatCompletions: true` in its
 config): its Responses endpoint rejects image input.
+
+With an embedding-lib that supports shared reference caching, the launcher's configured
+`gpt-6-astra` and `gpt-6.1-sol` deployments opt in to a cache boundary after library reference.
+Other deployment names retain their default cache behavior. The complete prompt is still sent
+on each request; this option concerns provider processing, not upload size. Integration details
+and compatibility restrictions are in the
+[prompt-caching reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md).
 
 **Reasoning effort.** The launcher gives the lightweight deployments gpt-5.4-mini and gpt-5-mini the
 reasoning effort `high` (`reasoningEffort` of the config, from `FOUNDRY_DEPLOYMENTS` in

@@ -16,12 +16,22 @@ work: the source of a local roomle-ui checkout, and a dev version on npm.
 The embedding dev server of roomle-ui compiles the source on request and answers a page on any
 `localhost` port, so the example page can import the lib straight from it. Nothing is built or published.
 
+For MCP tests run the planner with `npm run dev -- --port 5173 --strictPort` as well, then pass
+`--dev` to the test runner. That flag selects the local planner only; both import overrides below
+are also required to test a local assistant. `run.json.runtime` records loaded local embedding
+module URLs and planner origins. Verify them against the recorded source commit.
+
+`npm run build:embedding` in roomle-ui validates local packaging and declarations separately.
+Neither the source-server workflow nor that build publishes a dev package. Keep local imports
+uncommitted and restore them after testing; a remote publication needs a pushed commit and its
+own authorization.
+
 1. Check out the roomle-ui branch and run `npm ci` once.
 2. In roomle-ui, start the embedding dev server on a free port. Not 3000 — that is the port of this
    example:
 
    ```bash
-   npx vite --config config/vite.config.embedding.mts --port 3001 --strictPort
+   npm run dev:embedding -- --port 3001 --strictPort
    ```
 
 3. In `minimal-hi-example/index.html`, replace the two import URLs. Keep this change local and do not

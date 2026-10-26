@@ -163,6 +163,7 @@ folder of the same name.
 | Document | Status | Last touched |
 |---|---|---|
 | [Where the time goes when the HI agent plans a kitchen from an image](benchmarks/kitchen-from-image-time.md) | Third measurement (RML-18164): the six improvements one after another on one build and the local planner — baseline 104 s, 8.4 steps, 531k; the vocabulary section takes the search steps away (75 s, 6.5, 383k), the rest is stable within the spread | 2026-10-14 |
+| [Left-wall image kitchen: detailed OpenAI Astra timing](benchmarks/image-kitchen-left-wall-openai-astra-2026-10-26.md) | Two runs on local :5173; per-model/tool/planner timing, first kitchen, full duration, cache/transport and explicit step deltas | 2026-10-26 |
 | [Planning Assistant shared-reference benchmark](benchmarks/planning-assistant-prompt-caching.md) | A/B/C content comparison, Azure cache-boundary checks, transport/input overhead and final minimum-suite validation | 2026-10-26 |
 
 ### Backlog

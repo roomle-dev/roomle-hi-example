@@ -9,12 +9,17 @@ planner calls — names what costs the time, traces it to the served text, a too
 API or the library data, and keeps the numbers as the baseline for the next measurement. Benchmarks
 and their analyses live in [`.agents/benchmarks/`](../benchmarks/README.md).
 
+For detailed durations of every agent step, skills-to-first-kitchen latency and a PDF, also load
+[hi-mcp-timing-benchmark.md](hi-mcp-timing-benchmark.md). It defines the timestamp capture, explicit
+model/tool/planner delta tables, and the report-only layout with raw data and PDF in `.temp/`.
+
 ## Rules
 
 - **No model run without a go.** A benchmark reads runs of "test the mcp"
   ([hi-mcp-testing.md](./hi-mcp-testing.md)). Use the runs that exist first. When new runs are
-  needed, name the tests, models and repetitions, the wall-clock time and the input tokens, offer a
-  smaller variant, and wait until the user asks for the run in their own message.
+  needed and not already authorized, name the tests, models and repetitions, the wall-clock time
+  and the input tokens, offer a smaller variant, and wait for the user's go. An explicit request
+  to run the named benchmark is already a go; preserve that authorization.
 - **Compare like with like.** Same tests, plan, models, reasoning effort and planner (bo-test or
   `--dev`) before and after; name the commit each run used.
 - **At least two runs per test and model.** The same prompt and image take 60 s in one run and
@@ -128,9 +133,12 @@ tokens per run — computed from the step cost.
 
 ## 4. The document
 
-`.agents/benchmarks/<slug>.md`, the benchmark beside it in `.agents/benchmarks/<slug>/`
-(`--out`). The document, after the header block (type, domain, trigger, date, author, status, data,
-how to repeat) and the list of the repositories the improvements change:
+Write `.agents/benchmarks/<slug>.md`. Keep raw evidence, generated summaries and PDFs in `.temp/`
+unless the user requests committed evidence; then put the companion benchmark in
+`.agents/benchmarks/<slug>/` (`--out`). For detailed timing, follow
+[the timing skill](hi-mcp-timing-benchmark.md) for the PDF and required delta tables.
+The document, after the header block (type, domain, trigger, date, author, status, data, how to
+repeat) and the list of the repositories the improvements change:
 
 1. Executive summary — the mean time and steps, where the time goes, the flaws, the expected saving
 2. What was asked
@@ -145,9 +153,9 @@ how to repeat) and the list of the repositories the improvements change:
 Add the document to [the benchmarks index](../benchmarks/README.md) and to
 [`.agents/README.md`](../README.md). For a ticket, post the condensed document as a Jira comment.
 
-After an improvement, run the same tests again, write the new benchmark next to the old one
-(`<slug>-<YYYY-MM-DD>/`), and add a before/after table to the document: chat seconds, steps and
-input tokens per test.
+After an improvement and authorization for its new runs, use the same tests and keep a new dated
+report with its local session (or committed evidence when requested). Add a before/after table
+to the document: chat seconds, steps and input tokens per test.
 
 ## Measurement gaps
 

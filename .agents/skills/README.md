@@ -23,6 +23,7 @@ On-demand domain knowledge — procedures an agent loads when the task matches t
 | [`roomle-hi-concepts`](roomle-hi-concepts.md) | HI concepts: rooms, walls, articles, groups, docking vectors, positioning | HI concepts and data model |
 | [`vercel-ai-sdk-chat`](vercel-ai-sdk-chat.md) | Vercel AI SDK chat integration | Vercel AI SDK chat integration |
 | [`hi-mcp-testing`](hi-mcp-testing.md) | Testing the HI MCP end to end | "test the mcp", testing the HI MCP end to end |
+| [`hi-mcp-timing-benchmark`](hi-mcp-timing-benchmark.md) | Detailed step durations, first kitchen, full run and local PDF | Per-step model/tool/planner timing, skills-to-kitchen delta, detailed time measurement |
 | [`hi-mcp-benchmarking`](hi-mcp-benchmarking.md) | Benchmarking the HI agent | Benchmarking the HI agent |
 | [`update-planning-results`](update-planning-results.md) | Regenerate docs/planning-results.md | "update planning results" |
 | [`hi-furniture-smith-article-catalog`](hi-furniture-smith-article-catalog.md) | Furniture Smith article catalog | Article catalog reference |

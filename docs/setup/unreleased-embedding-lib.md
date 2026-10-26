@@ -1,11 +1,12 @@
 # Using an unreleased embedding-lib
 
 The example page `minimal-hi-example/index.html` imports `@roomle/embedding-lib` and its `hi.js` from
-unpkg, pinned to the dev version `0.0.0-dev-c1bdbb4` with prompt token-usage logging:
+jsDelivr's npm CDN, pinned to the dev version `0.0.0-dev-b626163` from roomle-ui `feat/hi-mcp-merge`
+([verified build](https://github.com/roomle-dev/roomle-ui/actions/runs/40316266255)):
 
 ```js
-import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-c1bdbb4';
-import { /* … */ setupHi } from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-c1bdbb4/hi.js';
+import RoomleConfiguratorApi from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-b626163/roomle-embedding-lib.js';
+import { /* … */ setupHi } from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-b626163/hi.js';
 ```
 
 To try a change that exists only on a roomle-ui branch, point these two imports somewhere else. Two ways
@@ -126,5 +127,5 @@ select an embedding-lib version.
 | An npm git dependency (`github:roomle-dev/roomle-ui#❬branch❭`) | npm cannot install a package from a subfolder of a repository, and the lib has to be built first |
 | `patch-package` or `npm patch` | They patch the built, hashed files of a published version; the page does not use `node_modules`, and new modules and exports cannot be expressed as a patch |
 | GitHub Packages or a workflow artifact | Downloads need a token, and unpkg cannot serve them |
-| jsDelivr or raw GitHub URLs | roomle-ui is private, and the built lib is not in git |
+| jsDelivr or raw GitHub URLs for roomle-ui source | roomle-ui is private, and the built lib is not in git; jsDelivr's npm CDN serves published packages |
 | The preview of a roomle-ui pull request (`test.roomle.com/t/cp/❬PR❭/examples/`) | It holds the example pages only, without the library files, and it is behind a Google login |

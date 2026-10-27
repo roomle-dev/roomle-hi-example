@@ -1,9 +1,10 @@
 # Planning Assistant: the time to the first attempt
 
 > **Type**: Feature analysis — the ticket's performance ideas evaluated, and how to proceed
-> **Status**: Open — D done and E implemented, its text-kitchen run open: roomle-hi-example on
-> `master` (#211), roomle-ui 43eda3a47 and bbac39fa7 pushed on `feat/hi-mcp-performance` and
-> `feat/hi-mcp-merge`, not on `release/bo-test`; B done on roomle-ui `feat/hi-mcp-performance`:
+> **Status**: Open — D and E done: roomle-hi-example on `master` (#211), roomle-ui 4b67bdc14 and
+> c1e9fa082 pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on
+> `release/bo-test`; E accepted with the minimum set of "test the mcp" and the two tests whose
+> renders the user asks for (session `mcp-test-2026-10-27_19-36-02`); B done on roomle-ui `feat/hi-mcp-performance`:
 > the tool named at the start of its call kept, the reasoning summary discarded after benchmark 05,
 > published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f` and loaded by the example
 > ([§10](#10-implementation-state)); A done on roomle-ui `feat/hi-mcp-performance` (e8964c3df),
@@ -291,11 +292,13 @@ saves a round and the heavy final request in a text creation, about 5 s of plann
 not change the first result. It is measured by the planning-time column of the suite, and it stays
 out if the answers get worse.
 
-**State.** Implemented: the occasions of a render in the description of `get-plan-images`, and
-the read after a change in the system prompt. Benchmark 04 shows both in the image kitchen: the
-render stays by design, after the last change, and the read after the create asks for the
-obstacles only. The text kitchens, where no render is due, are not measured yet
-([§10](#10-implementation-state)).
+**State.** Done: the occasions of a render in the description of `get-plan-images`, and the read
+after a change in the system prompt (roomle-ui c1e9fa082). Benchmark 04 shows both in the image
+kitchen: the render stays by design, after the last change, and the read after the create asks for
+the obstacles only. Accepted with the minimum set of "test the mcp" and the two tests whose renders
+the user asks for: the text kitchens answer without a render and without the read of the live
+sections after their create, the asked renders stay, and no verdict gets worse
+([§10](#proposal-e-measured)).
 
 ### F. Keep the compacted library context
 
@@ -391,10 +394,7 @@ the next, every benchmark on the Azure deployment (`gpt-6-astra` with `$AZURE_GP
 provider of every benchmark from 06 on; the series and its baseline in
 [the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md)):
 
-1. **E's run on the text kitchens** — the minimum set plus the two tests whose renders must stay,
-   measured by the planning times and the verdicts
-   ([§10](#proposal-e-measured-and-to-be-measured)).
-2. **C** — the worked example as an experiment on the benchmark of 08; the reasoning effort in
+1. **C** — the worked example as an experiment on the benchmark of 08; the reasoning effort in
    RML-18043.
 
 Beside the steps: what the window shows during the wait before a call's first output — the
@@ -437,8 +437,8 @@ selector would take.
 | A — one skill round | Done: roomle-ui e8964c3df on `feat/hi-mcp-performance`, not on `release/bo-test`; planner code, no embedding-lib build; accepted in [benchmark 06](../benchmarks/06-az-skill-2026-10-27.md) on the Azure deployment, the create at call 2 in every run ([below](#proposal-a-as-implemented-and-measured)) |
 | B — progress in the window | Done: the tool named at the start of its call kept (roomle-ui bd4d1d1c9), the reasoning summary discarded after [benchmark 05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md) (5e54d0f1a), both on `feat/hi-mcp-performance`; published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f`, which the example loads ([below](#proposal-b-as-implemented)) |
 | C — less to decide in the create call | Open |
-| D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
-| E — the rounds after the create | Implemented: roomle-ui bbac39fa7, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; the run on the text kitchens open ([below](#proposal-e-measured-and-to-be-measured)) |
+| D — plan images as JPEG | Done: roomle-ui 4b67bdc14, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
+| E — the rounds after the create | Done: roomle-ui c1e9fa082, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; accepted with the minimum set of "test the mcp" and the two asked-render tests, session `mcp-test-2026-10-27_19-36-02` ([below](#proposal-e-measured)) |
 | F — keep the compacted library context | Done as the library read before the first prompt: roomle-ui 1b4351d96 on `feat/hi-mcp-performance` (merged into `feat/hi-mcp-merge`), published as `@roomle/embedding-lib@0.0.0-dev-1b4351d`, which the example pins; accepted in [benchmark 08](../benchmarks/08-az-warm-2026-10-27.md); the compacted context kept rejected ([below](#proposal-f-as-implemented-and-measured)) |
 | G — the skills of the turn selected before the first call | Done without its selector: the plan state supplied per turn, roomle-ui d06fe91de on `feat/hi-mcp-performance`, published as `@roomle/embedding-lib@0.0.0-dev-d06fe91`, which the example pins; accepted in [benchmark 07](../benchmarks/07-az-state-2026-10-27.md) ([below](#proposal-g-without-its-selector-as-implemented-and-measured)); the selector deferred to [the backlog](../backlog/planning-assistant-skill-selector.md) with the choice of the models |
 
@@ -500,7 +500,7 @@ Guarded by a test on each sentence; the served-text fixture carries the new desc
 example's tool skill says the same. The change is planner code: the example gets it with the
 planner's deployment to bo-test, and no embedding-lib build is needed.
 
-### Proposal E, measured and to be measured
+### Proposal E, measured
 
 What the session of 2026-10-27 shows and E takes away: 17 renders in 16 of 79 runs, of which 5
 were asked for, 7 belong to image plannings and 5 are the five text kitchen creations, where
@@ -515,13 +515,31 @@ images show the final state (a round of its own, 5.7 / 6.9 s); after the create 
 obstacles only, 1,853 bytes, batched with the attribute lookup, because the create result carries
 the groups.
 
-The run on the text kitchens is open: the minimum set of "test the mcp" plus `plan-images-kitchen` and
-`open-cabinet-look-inside`, whose renders must stay, with gpt-6-astra on the local planner of
-`feat/hi-mcp-performance`; compared per test with the session of 2026-10-27 on the
-`get-plan-images` calls (text kitchens none, the two asked tests one), the plan context reads
-after a change, the planning time, the first result and the verdicts. E is accepted when the text
-kitchens answer without a render and without the read before their first edit, the asked renders
-stay and no verdict gets worse; otherwise the commit is reverted.
+The text kitchens and the renders the user asks for were measured with the minimum set of "test the
+mcp" (10 tests) plus `plan-images-kitchen` and `open-cabinet-look-inside`, gpt-6-astra on the
+Azure deployment, the local planner of `feat/hi-mcp-merge` (a8fe64618, E as c1e9fa082) and
+`@roomle/embedding-lib@0.0.0-dev-1b4351d` — session `mcp-test-2026-10-27_19-36-02`, compared test
+by test with the session of 2026-10-27. A read after a change is a `get-plan-context` of the model
+after the first plan change of its turn:
+
+| Test | Renders 2026-10-27 / now | Reads after a change 2026-10-27 / now | Verdict 2026-10-27 / now |
+|---|---|---|---|
+| Kitchen with five appliances | 1 / 0 | obstacles and installation elements / obstacles | pass / pass |
+| Kitchen in the back right corner | 1 / 0 | the live sections / obstacles | pass / pass |
+| Walnut kitchen | 1 / 0 | obstacles / none | pass / pass |
+| Family kitchen | 1 / 0 | the live sections / obstacles twice; groups and obstacles once | pass / pass |
+| Images of the kitchen (asked) | 1 / 1 | none / none | pass / pass |
+| Open one cabinet (asked) | 1 / 1 | none / none | pass / pass |
+| The four image plannings | 1 each / 2, 1, 1, 1 | one read in two runs / one read in each | 2 pass, 2 partial / 3 pass, 1 partial |
+| The sub-article edits and the sink at the water connection | 0 / 0 | none / none | pass / pass |
+
+The text kitchens answer without a render and none reads the live sections again after its
+create; three read only the obstacles, which a create result does not carry, and the family
+kitchen read the groups and obstacles once more after two width changes of its own refinement.
+The renders the user asks for stay, one each. The image plannings render for the comparison with
+the photo after their last change; the left-wall kitchen rendered, corrected the sink and rendered
+again. No verdict gets worse: 11 pass and 1 partial against 10 and 2 — the image-only kitchen now
+stays in the narrow wing. E is accepted.
 
 ### Proposal A, as implemented and measured
 

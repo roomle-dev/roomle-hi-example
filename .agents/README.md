@@ -101,6 +101,7 @@ Durable answers to recurring questions. Full index in [`wiki/README.md`](wiki/RE
 
 | Page | Covers |
 |---|---|
+| [Planning Assistant: response time targets](wiki/planning-assistant-response-time-targets.md) | How fast the assistant has to plan a kitchen from a text prompt and from an image, milestone by milestone |
 | [Group splitting in the UI and agent tools](wiki/group-splitting-in-the-ui-and-agent-tools.md) | Intentional splits when dragging out or deleting a middle module; UI behavior and agent tool contracts |
 | [An MCP endpoint for the HI tools at `…/hi-mcp`](wiki/hi-mcp-endpoint-for-external-clients.md) | Why the planner cannot serve an MCP endpoint itself; the relay and the page bridge in the planner, what needs to be done and the concerns |
 | [Why the agent cannot plan what the library cannot build](wiki/why-the-agent-cannot-plan-what-the-library-cannot-build.md) | The agent only chooses, the library calculates; what happens to wrong input and where the guarantee ends |
@@ -143,6 +144,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 | Document | Status | Last touched |
 |---|---|---|
 | [Planning Assistant: the time to the first attempt](feature-analysis/planning-assistant-time-to-first-attempt.md) | Open — the ticket's ideas evaluated, where the time to the first attempt goes, the improvements in order; A, B, D, E, F (the library read before the first prompt) and G's plan state per turn done on `feat/hi-mcp-performance`; C open | 2026-10-27 |
+| [Planning Assistant: the attribute information the agent gets](feature-analysis/planning-assistant-attribute-information.md) | Open — every attribute with its values is half of the cached library reference (121 KB, about 27,000 tokens); the agent set 47 of 397 in 79 runs, the look of the group at the create; the size is the library's and grows with its descriptions; the two-level design proposed, the same for every library, to be measured | 2026-10-27 |
 | [Planning Assistant: the skills of the turn selected before the first call](feature-analysis/planning-assistant-skill-selector.md) | Implemented in part — the plan state supplied per turn, accepted in benchmark 07 on the Azure deployment (the move at call 1); the selector of the skills deferred to the backlog with the choice of the models | 2026-10-27 |
 | [HI Planning Assistant token count protocol](feature-analysis/planning-assistant-token-count-protocol.md) | Implemented — prompt usage logging and report totals verified with the pinned embedding-lib dev | 2026-10-25 |
 | [Planning Assistant: live context and image-skill preloads](feature-analysis/prompt-preloads.md) | Rejected — added complexity without overall improvement; code uses response-chaining behavior from 02; evidence retained | 2026-10-26 |
@@ -172,6 +174,8 @@ folder of the same name.
 | [One skill round on the Azure deployment](benchmarks/06-az-skill-2026-10-27.md) | Proposal A measured on `gpt-6-astra` on Azure: every run creates at call 2, no reference fetch; first kitchen 29.655 s (image) and 30.290 s (text) against the session's 36.4 and 31.7 s | 2026-10-27 |
 | [The library read before the first prompt on the Azure deployment](benchmarks/08-az-warm-2026-10-27.md) | Proposal F measured on `gpt-6-astra` on Azure: every page reads the library before the first prompt (729–754 ms); the first turn reads it in 6–8 ms and sends its first request after 0.03–0.05 s instead of 0.78–0.81 s on the build of 07; the creations keep the shape of 06 | 2026-10-27 |
 | [The Azure series: benchmark comparison](benchmarks/az-cmp-2026-10-27.md) | The series from 06 on against the test session of 2026-10-27; A, the plan state per turn and the library read before the first prompt kept | 2026-10-27 |
+| [The baseline: walnut text kitchen on the Azure deployment](benchmarks/baseline-fkwm-az-2026-10-27.md) | The baseline of full-kitchen-walnut-marble-corner on `gpt-6-astra` on Azure, in the layout of 01: the kitchen at call 2 after 38.1 s in the mean, the create call the largest block | 2026-10-27 |
+| [The baseline: left-wall image kitchen on the Azure deployment](benchmarks/baseline-iklw-az-2026-10-27.md) | The baseline of image-kitchen-left-wall on `gpt-6-astra` on Azure, in the layout of 01: the kitchen at call 2 after 31.4 s in the mean, the create call the largest block | 2026-10-27 |
 | [Original left-wall image kitchen timing](benchmarks/01-iklw-oa-orig-2026-10-26.md) | Original baseline, preserved unchanged | 2026-10-26 |
 | [Left-wall image kitchen: response-chaining run](benchmarks/02-iklw-oa-rc-2026-10-26.md) | Two chained repetitions; independent timing and per-call byte report | 2026-10-26 |
 | [Left-wall image kitchen: preloads run](benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md) | Discarded attempt — two measured repetitions retained; response-chaining behavior from 02 selected | 2026-10-26 |

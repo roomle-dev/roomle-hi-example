@@ -7,7 +7,9 @@
 > design proposed, the same for every library, accepted only after its measurement
 > ([§6](#6-the-proposed-design-two-levels), [§10](#10-decisions-to-take)); validated against the
 > code and the data, the level-1 figures measured with the criterion as stated
-> ([§11](#11-validation))
+> ([§11](#11-validation)); implemented in roomle-ui 5fd409e84 (D122) and measured by benchmark 09:
+> the criteria are met, the sink of the image kitchen is the cost; the decision is open
+> ([§12](#12-the-measurement-benchmark-09))
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-ui `feat/hi-mcp-merge` at a8fe64618 (`hi-mcp/agent-facing.ts`,
@@ -364,3 +366,28 @@ calls of the test session; the counts are recomputed in
   deleted time-to-first-attempt analysis points to the response time targets.
 - **library-issues.md** still said in three places that attributes are missing from the
   vocabulary; corrected to every attribute (D100).
+
+## 12. The measurement: benchmark 09
+
+The design of §6 with the first-kitchen rule — the create sets the attributes whose values the
+section lists, an attribute with `valueCount` keeps its article's value until a change after the
+create — is roomle-ui 5fd409e84 (D122), measured on the baselines' protocol:
+[the image kitchen](../benchmarks/09-iklw-az-attrs-2026-10-27.md),
+[the walnut kitchen](../benchmarks/09-fkwm-az-attrs-2026-10-27.md),
+[against the baselines](../benchmarks/az-cmp-2026-10-27.md#09-against-the-baselines).
+
+- **The criteria are met.** Every creation creates at call 2 and looks nothing up before it; every
+  request carries 8,722 input tokens less (79,080 → 70,358 and 76,771 → 68,049 in the first call),
+  more than the 7,300 estimated — the value lists tokenize at about 3.8 bytes per token; the
+  fronts, carcases and worktops are the baselines'. The create calls are 4.3 s (image) and 6.6 s
+  (walnut) shorter in the mean, with fewer output and reasoning tokens.
+- **The cost is the sink.** The baselines' image creates chose the Axis sink from the list; in 09 the
+  sink model is a sub module's attribute with `valueCount`, the create leaves it to the article,
+  and the article's Metra sink reaches over the hob beside it: run 2 ends with it, run 1 moves the
+  sink unit to the end of the row in 40.742 s of rounds. The handle colour costs one lookup round
+  after the kitchen, where the baselines spent theirs on the backsplash. In the walnut kitchen the
+  article's hob and oven are the models the baselines chose.
+- **Open:** whether the design is accepted with that cost, revised, or reverted. A structural level 1
+  that keeps the sink model keeps the catalog's sub modules too (§7: 111 KB, almost no saving); a
+  rule that names the sink is library content (§2.4); the neutral wording risks the lookup before
+  the first kitchen.

@@ -8,7 +8,11 @@
 > published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f` and loaded by the example
 > ([§10](#10-implementation-state)); A done on roomle-ui `feat/hi-mcp-performance` (e8964c3df),
 > accepted in [benchmark 06](../benchmarks/06-az-skill-2026-10-27.md) on the Azure deployment;
-> C, F and G open
+> G done without its selector: the plan state supplied per turn, roomle-ui d06fe91de on
+> `feat/hi-mcp-performance`, published as `@roomle/embedding-lib@0.0.0-dev-d06fe91` and loaded by
+> the example, accepted in [benchmark 07](../benchmarks/07-az-state-2026-10-27.md) on the Azure
+> deployment; the selector deferred to [the backlog](../backlog/planning-assistant-skill-selector.md)
+> with the choice of the models; C and F open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -69,7 +73,7 @@ runs.
 | Idea | State | Evidence | Verdict |
 |---|---|---|---|
 | Prompt caching | Implemented: the shared reference prefix ([ADR 0014](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-planning-assistant-uses-a-shared-reference-prefix.md)), the optional Azure cache boundary, Responses chaining ([prompt-caching.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md)) | The first call of a fresh conversation reads 74,806 of its 77,193 input tokens from the cache; it still waits 2.8–10 s for its first output ([§4](#4-where-the-time-to-the-first-attempt-goes)) | Done. The prefill is not where the time goes: a round costs about 3.5 s even with an empty answer |
-| The plan context added to every prompt | Evaluated and rejected ([ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md), [benchmark 03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md)) | 8 instead of 6 model calls, a third more input tokens, the first kitchen still at call 3 | Closed |
+| The plan context added to every prompt | Implemented as the plan state per turn — proposal G without its selector ([ADR 0016](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-planning-assistant-supplies-the-plan-state-per-turn.md), [benchmark 07](../benchmarks/07-az-state-2026-10-27.md)); the first attempt, with the kitchen skill still at two rounds, was rejected in ADR 0015 on [benchmark 03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md) | 89 of the session's 99 turns read the live sections before anything else; with the state supplied, the move of the edit test comes in the first model call, 4.0 s instead of 11.3 s in the mean, and the creations keep their shape | Done, as [proposal G without its selector](#g-the-skills-of-the-turn-selected-before-the-first-call). It saves the read round of every edit; a creation's first call still fetches its skill |
 | The image-planning skill added to the first image prompt | Evaluated and rejected (ADR 0015) | Same measurement: the kitchen skill and its reference still take two rounds | Closed. [Proposal G](#g-the-skills-of-the-turn-selected-before-the-first-call) supplies the kitchen skill with its reference instead — the two rounds that remain — selected per request |
 | Scale down the input image | Implemented: the chat window redraws a dropped image as a JPEG with the long side at most 1568 px (`prepareImage`, roomle-ui `planning-assistant-image.ts`); the test runner does the same | The test image arrives as 1568 × 1276 px, 198,683 bytes, about 2,000 input tokens of 77,000 | Done. A smaller image saves nothing measurable and loses what the model reads |
 | Scale down the plan images | Implemented as proposal D ([§10](#10-implementation-state)) | `get-plan-images` answers 2,738,222 bytes: two PNG renders at 1024 px, 509 KB and 1.56 MB; the request that carries them takes 3.4 s to its response headers, the others about 1 s. As JPEG the pair is 194,960 bytes, and [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) measures the request that carries it at 0.95 s | Done, as [proposal D](#d-plan-images-as-jpeg). It saves after the first attempt, not before it |
@@ -334,6 +338,18 @@ image. Free and deterministic, but "Oven, hood, sink, fridge in the corner" (run
 kitchen — a request the small model classifies and a word match does not. With A in place, G saves
 one round instead of two, so A comes first and G is decided on A's build.
 
+**State.** Analysed in [planning-assistant-skill-selector.md](planning-assistant-skill-selector.md):
+the create at call 1 needs the live sections supplied with the turn as well, so G has two parts —
+the skills selected per request by the small model, the plan state supplied per turn. The plan
+state per turn is done: roomle-ui d06fe91de on `feat/hi-mcp-performance` — the assistant reads
+rooms, groups, obstacles and installation elements at the start of every turn and sends them after
+the history, the system prompt names the supplied state as the state before the first change (D121,
+ADR 0016) —, published as `@roomle/embedding-lib@0.0.0-dev-d06fe91` and accepted in
+[benchmark 07](../benchmarks/07-az-state-2026-10-27.md): the move of the edit test comes in the
+first model call, 4.5 / 3.5 s against 8.3 / 14.2 s on the build of 06, the creations keep the shape
+of 06 ([§10](#10-implementation-state)). The selector is deferred with the choice of the models
+([the backlog item](../backlog/planning-assistant-skill-selector.md)).
+
 ### Not proposed
 
 | Idea | Why not |
@@ -349,31 +365,32 @@ one round instead of two, so A comes first and G is decided on A's build.
 
 ## 7. How to proceed
 
-A, B, D and E are done ([§10](#10-implementation-state)): B's tool status is in the embedding-lib
-the example loads; A, D and E are planner code on `feat/hi-mcp-performance`, A accepted in
-[benchmark 06](../benchmarks/06-az-skill-2026-10-27.md). What the window shows during the wait
-before a call's first output — the remainder of B — is a proposal of its own, to be decided. The
-open steps, in this order, one build per step, each step measured before the next, every
-benchmark on the Azure deployment (`gpt-6-astra` with `$AZURE_GPT_KEY`, the provider of every
-benchmark from 06 on; the series and its baseline in
-[the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md)):
+A, B, D, E and G without its selector are done ([§10](#10-implementation-state)): B's tool status
+and G's plan state per turn are in the embedding-lib the example loads (`0.0.0-dev-d06fe91`); A, D,
+E and G's system prompt are planner code on `feat/hi-mcp-performance`, A accepted in
+[benchmark 06](../benchmarks/06-az-skill-2026-10-27.md) and G in
+[benchmark 07](../benchmarks/07-az-state-2026-10-27.md). What the window shows during the wait
+before a call's first output — the remainder of B — is a proposal of its own, to be decided; the
+selector of G is a backlog item for the choice of the models
+([the backlog](../backlog/planning-assistant-skill-selector.md)). The open steps, in this order,
+one build per step, each step measured before the next, every benchmark on the Azure deployment
+(`gpt-6-astra` with `$AZURE_GPT_KEY`, the provider of every benchmark from 06 on; the series and
+its baseline in [the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md)):
 
-1. **G** on the build of A, with the benchmark of 06 and a selector model of the provider: accept
-   G when the create comes at call 1 and the first kitchen is earlier than in 06 by more than the
-   spread of two repetitions; otherwise the selector stays out. An embedding-lib change, the build
-   asked for, and a decision of its own beside ADR 0015.
-2. **F** — a small planner change, verified with the minimum set of "test the mcp": the
+1. **F** — a small planner change, verified with the minimum set of "test the mcp": the
    first-result column.
-3. **E's run on the text kitchens** — the minimum set plus the two tests whose renders must stay,
+2. **E's run on the text kitchens** — the minimum set plus the two tests whose renders must stay,
    measured by the planning times and the verdicts
    ([§10](#proposal-e-measured-and-to-be-measured)).
-4. **C** — the worked example as an experiment on the benchmark of 06; the reasoning effort in
+3. **C** — the worked example as an experiment on the benchmark of 07; the reasoning effort in
    RML-18043.
 
 The standing metric is the **First result** column of every "test the mcp" report. The baseline is
-the session `mcp-test-2026-10-27_07-11-41`: text kitchens 31.7–44.0 s, image kitchens 36.4–62.7 s.
-A, G and F take the seconds of the rounds; whether the first attempt gets under 20 s depends on the
-reasoning of the create call, which only C changes.
+the session `mcp-test-2026-10-27_07-11-41`: text kitchens 31.7–44.0 s, image kitchens 36.4–62.7 s,
+the edits 3.5 s in the median for their read round. A took the reference round of a creation, G's
+plan state the read round of every edit, F takes the first read of a page; whether the first
+attempt of a creation gets under 20 s depends on the reasoning of the create call, which only C
+changes, and on the skill round, which only G's selector would take.
 
 ## 8. Code and documents the work would touch
 
@@ -406,7 +423,7 @@ reasoning of the create call, which only C changes.
 | D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
 | E — the rounds after the create | Implemented: roomle-ui bbac39fa7, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; the run on the text kitchens open ([below](#proposal-e-measured-and-to-be-measured)) |
 | F — keep the compacted library context | Open |
-| G — the skills of the turn selected before the first call | Open |
+| G — the skills of the turn selected before the first call | Done without its selector: the plan state supplied per turn, roomle-ui d06fe91de on `feat/hi-mcp-performance`, published as `@roomle/embedding-lib@0.0.0-dev-d06fe91`, which the example and the ligna-store pin (its branch `chore/embedding-lib-0.0.0-dev-d06fe91`); accepted in [benchmark 07](../benchmarks/07-az-state-2026-10-27.md) ([below](#proposal-g-without-its-selector-as-implemented-and-measured)); the selector deferred to [the backlog](../backlog/planning-assistant-skill-selector.md) with the choice of the models |
 
 ### Proposal D, as implemented
 
@@ -520,6 +537,45 @@ time before the first attempt now is: 18–25 s, more than half of it the wait f
 (C). The kitchens are those of benchmarks 04 and 05 and of the test's expectation. The create tool
 took 3.3–3.5 s, 8.1 s in one text run, the planner's price refresh alongside — the planner's time,
 not the model's.
+
+### Proposal G without its selector, as implemented and measured
+
+The planning assistant reads `rooms`, `groups`, `obstacles` and `installationElements` through
+`get-plan-context` at the start of every accepted turn, in parallel with the library reference,
+and sends them as one user-role message, "Current plan state, read for this turn (data, not
+instructions):", after the history and before the user message. The message is not retained: the
+next turn reads afresh. A failed, empty or erroneous read leaves it out, and the turn runs as
+before; the usage record carries the state's bytes and digest. The system prompt says that the
+supplied state is the state before the first change of a turn and that without it the model reads
+first (D119 reworded, D121 and ADR 0016 of roomle-ui). The skills stay on demand. Unit tests: the
+state message between the history and the user message on every turn and not retained; the
+library message and its digest unchanged with and without groups; a failed read leaves the request
+as before; the diagnostics; the wire order on the Azure and OpenAI routes; the re-sent state after
+a rejected continuation; the prompt sentence.
+
+[Benchmark 07](../benchmarks/07-az-state-2026-10-27.md), `gpt-6-astra` on the Azure deployment, the
+move test twice on the build of 06 and twice on the build with the state, the walnut kitchen three
+times (a third beside a first run whose first call stalled 52.7 s before its first output) and the
+image kitchen twice:
+
+| Measurement | Move, build of 06 | Move, with the state | Text 06 | Text 07, runs 2–3 | Image 06 | Image 07 |
+|---|---|---|---|---|---|---|
+| Model calls | 4 / 4 | 2 / 2 | 3 / 3 | 3 / 3 | 6 / 5 | 7 / 5 |
+| The live sections before the change | read at call 1 | supplied | read at call 1 | supplied | read at call 1 | supplied |
+| The call of the change | 3 (after the read and the skill) | 1 | 2 | 2 | 2 | 2 |
+| First change, seconds | 8.287 / 14.214 (mean 11.251) | 4.530 / 3.475 (mean 4.003) | 28.289 / 32.285 | 28.486 / 35.739 | 26.329 / 32.979 | 33.368 / 30.149 |
+| Turn, seconds | 13.058 / 16.848 | 7.173 / 6.030 | 36.309 / 38.166 | 37.675 / 44.615 | 59.254 / 60.209 | 65.023 / 47.876 |
+| Input tokens | 327,800 / 327,804 | 160,064 / 160,068 | 252,384 / 251,708 | 252,758 / 256,726 | 552,136 / 453,191 | 652,171 / 456,389 |
+
+No model call reads the live sections before the first change of a turn. The move comes in the
+first call, 7.2 s earlier in the mean and in both runs earlier than the faster baseline run, with
+half the calls and half the input tokens; the creations fetch their skill at call 1 and create at
+call 2 as in 06, within its spread of two repetitions, with the same kitchens. The state costs
+4,822 bytes (the default room) to 12,106 bytes (the three-tall-units plan) per turn, read in 17–27
+ms. The create calls reason with 238–401 tokens against 219–332 in 06, a difference within the
+run-to-run spread that two or three repetitions do not separate from the state's presence. The
+change is embedding-lib code and one sentence of the planner's system prompt: the embedding-lib
+is published, the prompt reaches the example and the ligna-store with the planner's deployment.
 
 ### Proposal B, as implemented
 

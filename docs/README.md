@@ -15,6 +15,7 @@ documented in roomle-ui.
 | [user-guide/README.md](user-guide/README.md) | User guide: what the HI MCP does, the ways to use it, prompts, limits |
 | [setup/](setup/) | Setup guides: local MCP server, Cloudflare, Azure, Ollama, Jan AI |
 | [setup/unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md) | Using an unreleased embedding-lib in the example page: the source of a local roomle-ui checkout, a dev version on npm, and what does not work |
+| [external/](external/) | Documents received from outside the development, kept as received: the skill architecture and context loading of the Kitchen AI Planner (German) |
 | [test-prompts.json](test-prompts.json) | MCP test cases (prompt, plan, expectations) |
 | [minimum-test-prompts.json](minimum-test-prompts.json) | The minimum set of the MCP test cases |
 | [test-prompts.md](test-prompts.md) | The test plans and how the tests run |

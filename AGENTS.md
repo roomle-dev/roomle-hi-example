@@ -127,6 +127,7 @@ The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) prov
 │   ├── user-guide/README.md      # User guide: what the HI MCP does, the ways to use it, prompts, limits
 │   ├── setup/                    # Setup guides
 │   │   └── unreleased-embedding-lib.md # Run the example with an unreleased embedding-lib
+│   ├── external/                 # Documents received from outside the development, kept as received
 │   ├── test-prompts.json         # MCP test cases (prompt, plan, expectations)
 │   ├── minimum-test-prompts.json # The minimum set of the MCP test cases
 │   ├── test-prompts.md           # The test plans and how the tests run

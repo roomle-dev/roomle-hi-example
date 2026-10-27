@@ -31,9 +31,11 @@ keeps every suggested text, applied in the library or not.
   [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md)); the full description only when the
   agent requests `articleDescriptions`. What the agent needs to pick an article goes into these two
   lines.
-- **The attribute vocabulary** of `get-plan-context` serves the customer-facing attributes —
-  `isMain`, or `userRight` `Simple` — with the `desc` of the attribute and the name and `desc` of each
-  value, in full (D76). A value list several attributes share is listed once.
+- **The attribute vocabulary** of `get-plan-context` serves every attribute of the library but
+  the element type — id, name, `desc`, group, type and every value with its name and `desc`, in
+  full (D76, D100). A value list several attributes share is listed once. What it costs and what
+  the agent uses of it: [the analysis of the attribute information](../feature-analysis/planning-assistant-attribute-information.md)
+  while it is open.
 - **Any other attribute** reaches the agent only when the library changes its value and the result
   names the change (D59) — `mod_CarcaseProgram`, `mod_CarcaseOutsideProgram` and
   `mod_FingergripType`, for example. A rule the agent needs goes into a customer-facing attribute.

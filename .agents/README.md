@@ -171,7 +171,8 @@ folder of the same name.
 | [Original left-wall image kitchen timing](benchmarks/01-iklw-oa-orig-2026-10-26.md) | Original baseline, preserved unchanged | 2026-10-26 |
 | [Left-wall image kitchen: response-chaining run](benchmarks/02-iklw-oa-rc-2026-10-26.md) | Two chained repetitions; independent timing and per-call byte report | 2026-10-26 |
 | [Left-wall image kitchen: preloads run](benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md) | Discarded attempt — two measured repetitions retained; response-chaining behavior from 02 selected | 2026-10-26 |
-| [Left-wall image kitchen: timing comparison](benchmarks/iklw-oa-rc-cmp-2026-10-26.md) | Original 01, chaining 02 and preloads 03; per-call bytes, timing/stage deltas and usage | 2026-10-26 |
+| [Left-wall image kitchen: JPEG images and renders when due](benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) | Two repetitions on the local planner: 02's chaining with JPEG plan images and the served text on renders and reads; first kitchen 29.661 s, turn 52.327 s, 69 % less upload than 02 | 2026-10-27 |
+| [Left-wall image kitchen: timing comparison](benchmarks/iklw-oa-rc-cmp-2026-10-26.md) | Original 01, chaining 02, preloads 03 and JPEG images with renders when due 04; per-call bytes, timing/stage deltas and usage | 2026-10-27 |
 | [Planning Assistant shared-reference benchmark](benchmarks/planning-assistant-prompt-caching.md) | A/B/C content comparison, Azure cache-boundary checks, transport/input overhead and final minimum-suite validation | 2026-10-26 |
 
 ### Backlog

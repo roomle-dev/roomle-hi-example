@@ -28,7 +28,7 @@ Keep this document, its guidance and its overview table when no issues are open,
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 113 | [The exchange command fails for every input on bo-test](#113-the-exchange-command-fails-for-every-input-on-bo-test) | defect | roomle-ui HI tool command `exchange-root-module` (`hi-tool-commands.ts`, `hi-tools.ts`) | high | gpt-6-astra | provider default |
+| 113 | [The exchange command fails for every input on bo-test](#113-the-exchange-command-fails-for-every-input-on-bo-test) | defect | roomle-ui `transferDockingContext` (`pos-group-docking.ts`) — [analysed](../bug-analysis/exchange-on-an-uncalculated-article-template.md): the staged exchange resolves vector indices on an uncalculated article template | high | gpt-6-astra | provider default |
 | 114 | [The provider rejects a chained model request of a turn](#114-the-provider-rejects-a-chained-model-request-of-a-turn) | defect | roomle-ui embedding-lib planning assistant (`hi-planning-assistant.ts`) | high | gpt-6-astra | provider default |
 | 115 | [An interior fitting added where the parent shows a default interior](#115-an-interior-fitting-added-where-the-parent-shows-a-default-interior) | hardening | roomle-ui served text: `get-interior-design-options`, `add-interior-fitting` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
 | 116 | [A conflict a row edit leaves is not resolved](#116-a-conflict-a-row-edit-leaves-is-not-resolved) | hardening | roomle-ui served text: the rule for corrections, `delete-article-and-compact` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |

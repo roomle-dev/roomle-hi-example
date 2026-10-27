@@ -134,6 +134,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | Document | Status | Last touched |
 |---|---|---|
 | [Token counts in the random-test table](bug-analysis/random-test-token-table.md) | Fixed | 2026-10-25 |
+| [The exchange command fails on an uncalculated article template](bug-analysis/exchange-on-an-uncalculated-article-template.md) | Open | 2026-10-27 |
 
 ### Feature Analyses
 

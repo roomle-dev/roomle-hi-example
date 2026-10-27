@@ -8,7 +8,8 @@
 > published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f` and loaded by the example
 > ([§10](#10-implementation-state)); A done on roomle-ui `feat/hi-mcp-performance` (e8964c3df),
 > accepted in [benchmark 06](../benchmarks/06-az-skill-2026-10-27.md) on the Azure deployment;
-> C, F and G open
+> G analysed in [planning-assistant-skill-selector.md](planning-assistant-skill-selector.md); C and
+> F open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -69,7 +70,7 @@ runs.
 | Idea | State | Evidence | Verdict |
 |---|---|---|---|
 | Prompt caching | Implemented: the shared reference prefix ([ADR 0014](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-planning-assistant-uses-a-shared-reference-prefix.md)), the optional Azure cache boundary, Responses chaining ([prompt-caching.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md)) | The first call of a fresh conversation reads 74,806 of its 77,193 input tokens from the cache; it still waits 2.8–10 s for its first output ([§4](#4-where-the-time-to-the-first-attempt-goes)) | Done. The prefill is not where the time goes: a round costs about 3.5 s even with an empty answer |
-| The plan context added to every prompt | Evaluated and rejected ([ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md), [benchmark 03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md)) | 8 instead of 6 model calls, a third more input tokens, the first kitchen still at call 3 | Closed |
+| The plan context added to every prompt | Evaluated and rejected ([ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md), [benchmark 03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md)) | 8 instead of 6 model calls, a third more input tokens, the first kitchen still at call 3 | Closed by ADR 0015; [the analysis of G](planning-assistant-skill-selector.md) reopens it with the session's first calls — 89 of 99 turns read the live sections before anything else, and the create at call 1 needs them supplied —, decided with benchmark 07 |
 | The image-planning skill added to the first image prompt | Evaluated and rejected (ADR 0015) | Same measurement: the kitchen skill and its reference still take two rounds | Closed. [Proposal G](#g-the-skills-of-the-turn-selected-before-the-first-call) supplies the kitchen skill with its reference instead — the two rounds that remain — selected per request |
 | Scale down the input image | Implemented: the chat window redraws a dropped image as a JPEG with the long side at most 1568 px (`prepareImage`, roomle-ui `planning-assistant-image.ts`); the test runner does the same | The test image arrives as 1568 × 1276 px, 198,683 bytes, about 2,000 input tokens of 77,000 | Done. A smaller image saves nothing measurable and loses what the model reads |
 | Scale down the plan images | Implemented as proposal D ([§10](#10-implementation-state)) | `get-plan-images` answers 2,738,222 bytes: two PNG renders at 1024 px, 509 KB and 1.56 MB; the request that carries them takes 3.4 s to its response headers, the others about 1 s. As JPEG the pair is 194,960 bytes, and [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) measures the request that carries it at 0.95 s | Done, as [proposal D](#d-plan-images-as-jpeg). It saves after the first attempt, not before it |
@@ -334,6 +335,11 @@ image. Free and deterministic, but "Oven, hood, sink, fridge in the corner" (run
 kitchen — a request the small model classifies and a word match does not. With A in place, G saves
 one round instead of two, so A comes first and G is decided on A's build.
 
+**State.** Analysed in [planning-assistant-skill-selector.md](planning-assistant-skill-selector.md):
+the create at call 1 needs the live sections supplied with the turn as well, so G has two parts —
+the skills selected per request by the small model, the plan state supplied per turn —; benchmark
+07 on the Azure deployment measures it ([§7](#7-how-to-proceed)).
+
 ### Not proposed
 
 | Idea | Why not |
@@ -358,10 +364,12 @@ benchmark on the Azure deployment (`gpt-6-astra` with `$AZURE_GPT_KEY`, the prov
 benchmark from 06 on; the series and its baseline in
 [the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md)):
 
-1. **G** on the build of A, with the benchmark of 06 and a selector model of the provider: accept
-   G when the create comes at call 1 and the first kitchen is earlier than in 06 by more than the
-   spread of two repetitions; otherwise the selector stays out. An embedding-lib change, the build
-   asked for, and a decision of its own beside ADR 0015.
+1. **G** on the build of A, analysed in [the analysis of G](planning-assistant-skill-selector.md):
+   the selector and the plan state supplied per turn, measured by benchmark 07 — the two creations
+   of 06 and the move of run 01, two repetitions each, on the local embedding source. Accept G when
+   the create and the move come at call 1 and the selector's call is shorter than the round it
+   replaces; otherwise the selector stays out. An embedding-lib change, the build asked for after
+   the measurement, and a decision of its own beside ADR 0015.
 2. **F** — a small planner change, verified with the minimum set of "test the mcp": the
    first-result column.
 3. **E's run on the text kitchens** — the minimum set plus the two tests whose renders must stay,
@@ -406,7 +414,7 @@ reasoning of the create call, which only C changes.
 | D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
 | E — the rounds after the create | Implemented: roomle-ui bbac39fa7, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; the run on the text kitchens open ([below](#proposal-e-measured-and-to-be-measured)) |
 | F — keep the compacted library context | Open |
-| G — the skills of the turn selected before the first call | Open |
+| G — the skills of the turn selected before the first call | Open — analysed in [planning-assistant-skill-selector.md](planning-assistant-skill-selector.md); measured by benchmark 07 on the Azure deployment |
 
 ### Proposal D, as implemented
 

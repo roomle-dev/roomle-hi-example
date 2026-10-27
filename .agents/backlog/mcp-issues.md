@@ -28,7 +28,6 @@ Keep this document, its guidance and its overview table when no issues are open,
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 113 | [The exchange command fails for every input on bo-test](#113-the-exchange-command-fails-for-every-input-on-bo-test) | defect | roomle-ui `transferDockingContext` (`pos-group-docking.ts`) — [analysed](../bug-analysis/exchange-on-an-uncalculated-article-template.md): the staged exchange resolves vector indices on an uncalculated article template | high | gpt-6-astra | provider default |
 | 114 | [The provider rejects a chained model request of a turn](#114-the-provider-rejects-a-chained-model-request-of-a-turn) | defect | roomle-ui embedding-lib planning assistant (`hi-planning-assistant.ts`) | high | gpt-6-astra | provider default |
 | 115 | [An interior fitting added where the parent shows a default interior](#115-an-interior-fitting-added-where-the-parent-shows-a-default-interior) | hardening | roomle-ui served text: `get-interior-design-options`, `add-interior-fitting` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
 | 116 | [A conflict a row edit leaves is not resolved](#116-a-conflict-a-row-edit-leaves-is-not-resolved) | hardening | roomle-ui served text: the rule for corrections, `delete-article-and-compact` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
@@ -36,34 +35,6 @@ Keep this document, its guidance and its overview table when no issues are open,
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 113. The exchange command fails for every input on bo-test
-
-**Problem.** `exchange-root-module` answers the TypeError "Cannot read properties of undefined
-(reading 'map')" for every input on the planner of `release/bo-test`, with and without
-`attributes`, and changes nothing. The agent rebuilds the whole group with
-`create-or-replace-groups` (and `place-group`) instead, which costs it two to three calls and
-20 to 40 s; the plans come out right.
-
-**Cause.** Not analysed. The error comes back from the planner's
-`externalObjectGroupOperation('exchange-root-module', …)`. `insert-article-into-group` and
-`merge-article-into-group`, which share `rowEditContext` and `catalogArticleId` with the
-exchange in `hi-tool-commands.ts`, work on the same planner, so the failure lies behind the
-command, in the exchange operation of `hi-tools.ts`. The bo-test planner of 2026-10-25 ran the
-same call; the deployments of 2026-10-26 carry `f6f338fdc` (the plan context returns no library
-sections) and `8d7537e6e` (edit validation and discovery in `hi-tools.ts`).
-
-**To do.** roomle-ui: analyse the bug — reproduce the call in a scratch vitest beside
-`hi-tools-test.ts` and find the undefined value the exchange maps over — then fix it in the HI
-tools.
-
-**Test.** roomle-ui `__tests__/hi-tool-commands/`: `exchange-root-module` of a tall unit with
-another article, with and without attributes, exchanges the root module; the prompt tests
-`edit-replace-unit`, `edit-replace-unit-wider`, `wardrobe-exchange-end-door-hinge` and
-`edit-exchange-drawer-end` pass with one `exchange-root-module` call.
-
-**Reproduce.** Model-free in the example page on the bo-test planner, plan `three-tall-units`:
-`callExternalObjectAgentTool('exchange-root-module', { groupId: '064a7d91-b583-4883-b71b-95c324d3d824', rootModuleId: 'a7271f1b-50d5-4b50-97ca-7a5bf75f77fa', articleId: 'HTS2AB60' })` answers the TypeError (`mcp-test-2026-10-27_07-11-41`, gpt-6-astra 18).
 
 ## 114. The provider rejects a chained model request of a turn
 

@@ -10,7 +10,6 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| [113 — The exchange command fails for every input on bo-test](mcp-issues.md#113-the-exchange-command-fails-for-every-input-on-bo-test) | roomle-ui: analyse why `exchange-root-module` answers "Cannot read properties of undefined (reading 'map')" on the bo-test planner, then fix it in the HI tools | high |
 | [114 — The provider rejects a chained model request of a turn](mcp-issues.md#114-the-provider-rejects-a-chained-model-request-of-a-turn) | roomle-ui embedding-lib: analyse the "No tool output found" and "Previous response not found" errors of the response chaining; chain every function call output, fall back to the whole history | high |
 | [115 — An interior fitting added where the parent shows a default interior](mcp-issues.md#115-an-interior-fitting-added-where-the-parent-shows-a-default-interior) | roomle-ui served text: the description of `add-interior-fitting` sends the agent to `defaultInteriors` before it adds | low |
 | [116 — A conflict a row edit leaves is not resolved](mcp-issues.md#116-a-conflict-a-row-edit-leaves-is-not-resolved) | roomle-ui served text: resolve a conflict a correction reports, or say why not; the turned-leg correction names an opening the row reaches | low |

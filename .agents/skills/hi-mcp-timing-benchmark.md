@@ -39,7 +39,13 @@ Use existing captures for document corrections; a layout change needs no new mod
 Preserve the requested test, model/provider, key variable, planner URL and reasoning setting.
 `openai:<model>` uses direct OpenAI; a bare `gpt-*` name selects an Azure deployment in the launcher.
 Do not substitute one for the other. Keep credentials in the environment and put only variable
-references such as `$OPENAI_ASSISTANT_API_KEY` in session files.
+references such as `$AZURE_GPT_KEY` in session files.
+
+**The provider of every benchmark from 06 on is the Azure deployment:** `gpt-6-astra` with the key
+`$AZURE_GPT_KEY` — in the runner's tests file `{ "provider": "gpt-6-astra", "apiKey": "$AZURE_GPT_KEY" }`,
+on the command line `gpt-6-astra "$AZURE_GPT_KEY"`. Benchmarks 01–05 ran on direct OpenAI
+(`openai:gpt-6-astra`, `$OPENAI_ASSISTANT_API_KEY`) and are not continued: compare their turns with
+the Azure series for the shape of a turn, not for the seconds.
 
 Reuse usable captures first. An explicit request to run the named benchmark is authorization;
 state the repetition count and expected cost without asking for the same approval again. When new

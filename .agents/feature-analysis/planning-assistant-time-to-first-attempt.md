@@ -6,7 +6,9 @@
 > `feat/hi-mcp-merge`, not on `release/bo-test`; B done on roomle-ui `feat/hi-mcp-performance`:
 > the tool named at the start of its call kept, the reasoning summary discarded after benchmark 05,
 > published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f` and loaded by the example
-> ([§10](#10-implementation-state)); A, C, F and G open
+> ([§10](#10-implementation-state)); A done on roomle-ui `feat/hi-mcp-performance` (e8964c3df),
+> accepted in [benchmark 06](../benchmarks/06-az-skill-2026-10-27.md) on the Azure deployment;
+> C, F and G open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -17,7 +19,8 @@
 > [03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md) /
 > [04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) /
 > [05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md) and
-> [their comparison](../benchmarks/iklw-oa-rc-cmp-2026-10-26.md), the
+> [their comparison](../benchmarks/iklw-oa-rc-cmp-2026-10-26.md), on the Azure deployment
+> [06](../benchmarks/06-az-skill-2026-10-27.md) and [the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md), the
 > [shared-reference benchmark](../benchmarks/planning-assistant-prompt-caching.md), the external
 > document [Kitchen AI Planner: Skill-Architektur und Context Loading](../../docs/external/planning-improvements.md)
 
@@ -204,6 +207,15 @@ requests both files in one round. It depends on the model doing so; the bundle i
 [shared-reference benchmark](../benchmarks/planning-assistant-prompt-caching.md#content-variant-results-and-decision)
 — fewer calls in the creations, but a larger input on every edit turn and no overall gain (ADR 0014).
 
+**State.** Done: roomle-ui e8964c3df on `feat/hi-mcp-performance` — `get-skill` answers a room
+skill with its planning reference under a line that names it as included, the image skill alone,
+a file requested with `file` alone (D120 of roomle-ui `hi-tools-behaviour.md`); planner code, no
+embedding-lib build. Accepted in [benchmark 06](../benchmarks/06-az-skill-2026-10-27.md) on the
+Azure deployment: every run creates at call 2 and none fetches the reference; the image kitchen
+after 26.3 / 33.0 s (the session's run 68 on the same deployment: 36.4 s), the text kitchen after
+28.3 / 32.3 s (run 52: 31.7 s); the reasoning of the reference round moved into the create call
+([§10](#10-implementation-state)).
+
 ### B. Progress in the window while the model thinks
 
 **What changes.** The planning assistant emits the `activity` part at `tool-input-start`, which
@@ -337,26 +349,25 @@ one round instead of two, so A comes first and G is decided on A's build.
 
 ## 7. How to proceed
 
-In this order, one build per step, each step measured before the next:
+A, B, D and E are done ([§10](#10-implementation-state)): B's tool status is in the embedding-lib
+the example loads; A, D and E are planner code on `feat/hi-mcp-performance`, A accepted in
+[benchmark 06](../benchmarks/06-az-skill-2026-10-27.md). What the window shows during the wait
+before a call's first output — the remainder of B — is a proposal of its own, to be decided. The
+open steps, in this order, one build per step, each step measured before the next, every
+benchmark on the Azure deployment (`gpt-6-astra` with `$AZURE_GPT_KEY`, the provider of every
+benchmark from 06 on; the series and its baseline in
+[the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md)):
 
-1. **B** — no model cost, no measurement needed beyond the window: the user sees progress from the
-   first seconds. An embedding-lib change; the build is asked for. B is done: the tool status
-   kept, the reasoning summary discarded after benchmark 05 ([§10](#10-implementation-state)).
-2. **A** with a **benchmark 04**: `image-kitchen-left-wall` and `full-kitchen-walnut-marble-corner`,
-   two repetitions each, `openai:gpt-6-astra` with the local planner as in reports 01–03, about five
-   minutes and 2.5 million input tokens; the report in `.agents/benchmarks/04-…` and a row in the
-   comparison. Accept A when the create comes at call 2 and the first kitchen is earlier.
-3. **G** on the build of A, with the same benchmark and a selector model of the provider: accept
-   G when the create comes at call 1 and the first kitchen is earlier than with A by more than the
+1. **G** on the build of A, with the benchmark of 06 and a selector model of the provider: accept
+   G when the create comes at call 1 and the first kitchen is earlier than in 06 by more than the
    spread of two repetitions; otherwise the selector stays out. An embedding-lib change, the build
    asked for, and a decision of its own beside ADR 0015.
-4. **F** — a small planner change, verified with the minimum set of "test the mcp": the
-   first-result column. D is done: implemented and measured in benchmark 04
-   ([§10](#10-implementation-state)).
-5. **E** as an instruction change measured by the planning times and verdicts of the minimum set
-   plus the two tests whose renders must stay. E is implemented and measured for the image kitchen
-   in benchmark 04; the run on the text kitchens is open ([§10](#10-implementation-state)).
-6. **C** — the worked example as an experiment on the benchmark of step 2; the reasoning effort in
+2. **F** — a small planner change, verified with the minimum set of "test the mcp": the
+   first-result column.
+3. **E's run on the text kitchens** — the minimum set plus the two tests whose renders must stay,
+   measured by the planning times and the verdicts
+   ([§10](#proposal-e-measured-and-to-be-measured)).
+4. **C** — the worked example as an experiment on the benchmark of 06; the reasoning effort in
    RML-18043.
 
 The standing metric is the **First result** column of every "test the mcp" report. The baseline is
@@ -389,7 +400,7 @@ reasoning of the create call, which only C changes.
 
 | Proposal | State |
 |---|---|
-| A — one skill round | Open |
+| A — one skill round | Done: roomle-ui e8964c3df on `feat/hi-mcp-performance`, not on `release/bo-test`; planner code, no embedding-lib build; accepted in [benchmark 06](../benchmarks/06-az-skill-2026-10-27.md) on the Azure deployment, the create at call 2 in every run ([below](#proposal-a-as-implemented-and-measured)) |
 | B — progress in the window | Done: the tool named at the start of its call kept (roomle-ui bd4d1d1c9), the reasoning summary discarded after [benchmark 05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md) (5e54d0f1a), both on `feat/hi-mcp-performance`; published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f`, which the example loads; the ligna-store pin open ([below](#proposal-b-as-implemented)) |
 | C — less to decide in the create call | Open |
 | D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
@@ -477,6 +488,38 @@ The run on the text kitchens is open: the minimum set of "test the mcp" plus `pl
 after a change, the planning time, the first result and the verdicts. E is accepted when the text
 kitchens answer without a render and without the read before their first edit, the asked renders
 stay and no verdict gets worse; otherwise the commit is reverted.
+
+### Proposal A, as implemented and measured
+
+`get-skill` answers a room skill with the reference its `SKILL.md` asks to read before planning in
+one result: the session preamble, the skill, then the reference under a separator and the line
+"The file references/planning-reference.md of this skill, included here:"; the image skill has
+none; a file requested with `file` comes alone, the source catalog among them. The required files
+are named per skill in roomle-ui `hi-mcp/skills.ts`, a required path that is no file of its skill
+fails the load, and the skill files stay as their authors deliver them (D75). The description of
+`get-skill` says what the result holds; the system prompt is unchanged. Decision D120 of roomle-ui
+`.agents/homag-intelligence/hi-tools-behaviour.md`; the kitchen skill result is 35,685 bytes
+instead of two results of 20,247 and 15,393 bytes.
+
+[Benchmark 06](../benchmarks/06-az-skill-2026-10-27.md), `gpt-6-astra` on the Azure deployment,
+two repetitions each of the image kitchen on the left wall and the walnut kitchen around the back
+right corner, on the local planner with A:
+
+| Measurement | Session run 68 (image) | 06 image | Session run 52 (text) | 06 text |
+|---|---|---|---|---|
+| Model calls | 7 | 6 / 5 | 5 | 3 / 3 |
+| The reference round | 11.7 s, 192 reasoning tokens | none | 3.9 s | none |
+| The create: call / delta s / reasoning tokens | 3 / 17.6 / 178 | 2 / 18.0 and 24.6 / 219 and 330 | 3 / 22.2 / 333 | 2 / 20.7 and 20.9 / 319 and 332 |
+| First kitchen, seconds | 36.4 | 26.3 / 33.0 (mean 29.7) | 31.7 | 28.3 / 32.3 (mean 30.3) |
+| Turn, seconds | 72.2 | 59.3 / 60.2 | 45.2 | 36.3 / 38.2 |
+| Input tokens | 660,980 | 552,136 / 453,191 | 431,096 | 252,384 / 251,708 |
+
+Every run creates at call 2 and none fetches the reference. A text creation gains the round, an
+image creation the round minus the reasoning that moves into the create call, which is where the
+time before the first attempt now is: 18–25 s, more than half of it the wait for its first output
+(C). The kitchens are those of benchmarks 04 and 05 and of the test's expectation. The create tool
+took 3.3–3.5 s, 8.1 s in one text run, the planner's price refresh alongside — the planner's time,
+not the model's.
 
 ### Proposal B, as implemented
 

@@ -14,7 +14,7 @@ them — is [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https
 | `create-or-replace-groups` | Create, modify and extend groups; position new groups |
 | `place-group` | Move an existing group against a wall or into a room corner |
 | `get-authoring-rules` | Get HI authoring rules |
-| `get-skill` | Get a planning skill (planning from an image, kitchen, kitchen in France, living room) or one of its files |
+| `get-skill` | Get a planning skill (planning from an image, kitchen, kitchen in France, living room) with the planning reference it asks to read before planning, or one of its files alone — the optional source catalog |
 
 A host with the Skills extension of MCP (`io.modelcontextprotocol/skills`) gets the same skill files
 without a tool: `skills/list`, `skills/get` and the resources `skill://<name>/<path>`, served as they

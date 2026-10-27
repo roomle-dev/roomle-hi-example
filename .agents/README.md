@@ -172,7 +172,8 @@ folder of the same name.
 | [Left-wall image kitchen: response-chaining run](benchmarks/02-iklw-oa-rc-2026-10-26.md) | Two chained repetitions; independent timing and per-call byte report | 2026-10-26 |
 | [Left-wall image kitchen: preloads run](benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md) | Discarded attempt — two measured repetitions retained; response-chaining behavior from 02 selected | 2026-10-26 |
 | [Left-wall image kitchen: JPEG images and renders when due](benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) | Two repetitions on the local planner: 02's chaining with JPEG plan images and the served text on renders and reads; first kitchen 29.661 s, turn 52.327 s, 69 % less upload than 02 | 2026-10-27 |
-| [Left-wall image kitchen: timing comparison](benchmarks/iklw-oa-rc-cmp-2026-10-26.md) | Original 01, chaining 02, preloads 03 and JPEG images with renders when due 04; per-call bytes, timing/stage deltas and usage | 2026-10-27 |
+| [Left-wall image kitchen: the status line of the window](benchmarks/05-iklw-oa-rc-status-2026-10-27.md) | Two repetitions on 04's planner with proposal B: the create named 5.6 / 3.7 s before it runs (04: 0.18 s); the reasoning summary is a call's first output and does not fill the wait for it; first kitchen 28.456 s, turn 59.954 s with 10 / 7 calls by the agent's post-create choices | 2026-10-27 |
+| [Left-wall image kitchen: timing comparison](benchmarks/iklw-oa-rc-cmp-2026-10-26.md) | Original 01, chaining 02, preloads 03, JPEG images with renders when due 04 and the status line 05; per-call bytes, timing/stage deltas, the status line and usage | 2026-10-27 |
 | [Planning Assistant shared-reference benchmark](benchmarks/planning-assistant-prompt-caching.md) | A/B/C content comparison, Azure cache-boundary checks, transport/input overhead and final minimum-suite validation | 2026-10-26 |
 
 ### Backlog

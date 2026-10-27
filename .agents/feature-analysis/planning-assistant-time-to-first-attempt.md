@@ -5,7 +5,8 @@
 > `master` (#211), roomle-ui 43eda3a47 and bbac39fa7 pushed on `feat/hi-mcp-performance` and
 > `feat/hi-mcp-merge`, not on `release/bo-test`; B implemented on roomle-ui
 > `feat/hi-mcp-performance`, published as `@roomle/embedding-lib@0.0.0-dev-bd4d1d1` and loaded
-> by the example, its live check open ([§10](#10-implementation-state)); A, C, F and G open
+> by the example, measured on OpenAI in benchmark 05, its Azure check open
+> ([§10](#10-implementation-state)); A, C, F and G open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -14,7 +15,8 @@
 > Azure, 79 runs, no request pacing), the benchmark series
 > [01](../benchmarks/01-iklw-oa-orig-2026-10-26.md) / [02](../benchmarks/02-iklw-oa-rc-2026-10-26.md) /
 > [03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md) /
-> [04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) and
+> [04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) /
+> [05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md) and
 > [their comparison](../benchmarks/iklw-oa-rc-cmp-2026-10-26.md), the
 > [shared-reference benchmark](../benchmarks/planning-assistant-prompt-caching.md), the external
 > document [Kitchen AI Planner: Skill-Architektur und Context Loading](../../docs/external/planning-improvements.md)
@@ -222,7 +224,9 @@ deployments stream summaries is to verify; without them the status falls back to
 **State.** Implemented on roomle-ui `feat/hi-mcp-performance`: the activity at the start of a tool
 call, and the first line of every reasoning summary as the status on the OpenAI and Azure
 Responses routes, published as `@roomle/embedding-lib@0.0.0-dev-bd4d1d1` and loaded by the
-example ([§10](#10-implementation-state)); the live check is open.
+example. Benchmark 05 measures it on OpenAI: the tool status comes with the start of the payload,
+the reasoning summary is a call's first output and does not fill the wait for it
+([§10](#10-implementation-state)); the Azure check is open.
 
 ### C. Less to decide in the create call
 
@@ -338,7 +342,7 @@ In this order, one build per step, each step measured before the next:
 
 1. **B** — no model cost, no measurement needed beyond the window: the user sees progress from the
    first seconds. An embedding-lib change; the build is asked for. B is implemented and built;
-   its live check is open ([§10](#10-implementation-state)).
+   measured on OpenAI in benchmark 05, the Azure check open ([§10](#10-implementation-state)).
 2. **A** with a **benchmark 04**: `image-kitchen-left-wall` and `full-kitchen-walnut-marble-corner`,
    two repetitions each, `openai:gpt-6-astra` with the local planner as in reports 01–03, about five
    minutes and 2.5 million input tokens; the report in `.agents/benchmarks/04-…` and a row in the
@@ -387,7 +391,7 @@ reasoning of the create call, which only C changes.
 | Proposal | State |
 |---|---|
 | A — one skill round | Open |
-| B — progress in the window | Implemented: roomle-ui bd4d1d1c9 on `feat/hi-mcp-performance`, pushed; published as `@roomle/embedding-lib@0.0.0-dev-bd4d1d1`, which the example loads; the ligna-store pin and the live check open ([below](#proposal-b-as-implemented)) |
+| B — progress in the window | Implemented: roomle-ui bd4d1d1c9 on `feat/hi-mcp-performance`, pushed; published as `@roomle/embedding-lib@0.0.0-dev-bd4d1d1`, which the example loads. Measured on OpenAI in [benchmark 05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md): the tool status works, the reasoning summary does not fill the wait ([below](#proposal-b-measured)); the Azure check and the ligna-store pin open |
 | C — less to decide in the create call | Open |
 | D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
 | E — the rounds after the create | Implemented: roomle-ui bbac39fa7, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; the run on the text kitchens open ([below](#proposal-e-measured-and-to-be-measured)) |
@@ -499,11 +503,32 @@ call; the first line of each summary, the truncation and the empty part; the pin
 The change is embedding-lib code, published as `@roomle/embedding-lib@0.0.0-dev-bd4d1d1` from
 roomle-ui `feat/hi-mcp-performance`; the example loads it, the pin of the ligna-store is open.
 
-### Proposal B, to be verified
+### Proposal B, measured
 
-The live check of the plan: one text kitchen with `openai:gpt-6-astra` and one with Azure
-gpt-6-astra — the status shows the summary headings during the create's reasoning and names
-`create-or-replace-groups` before the kitchen appears; the reasoning tokens of the usage record
-against a run without the option. A provider that rejects `reasoning.summary` for the deployment
-fails the turn with a 400; then the option becomes a host flag like `referenceCacheBreakpoint`,
-off by default. The First result column does not move; acceptance is what the window shows.
+[Benchmark 05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md) — the image kitchen on the
+left wall, `openai:gpt-6-astra`, two repetitions on the planner of 04 with
+`0.0.0-dev-bd4d1d1`; the 04 captures read with the same script as the baseline:
+
+| Measurement, seconds from turn start | 04 | 05 |
+|---|---|---|
+| The status names `create-or-replace-groups`, before the create tool starts | 0.178 / 0.182 | 5.587 / 3.667 |
+| First status | 5.203 / 4.081 | 3.224 / 3.150 |
+| Reasoning summary lines before the kitchen / in the turn | 0 / 0 and 0 / 0 | 0 / 2 and 1 / 4 |
+| Longest time without a window update before the kitchen | 11.056 / 10.729 | 8.992 / 11.568 |
+| First kitchen, mean | 29.661 | 28.456 |
+
+- **The tool status does what it should.** The window names the create with the call's first
+  output and keeps it for the 3.7–5.6 s the payload streams; in 04 the name came with the complete
+  input, 0.18 s before the tool ran.
+- **The reasoning summary does not.** OpenAI accepts `reasoning.summary: 'auto'` for gpt-6-astra
+  — no 400 —, but streams a summary on 2 of 10 and 4 of 7 calls, never on the create call, and each
+  summary line is its call's first output (0.4–1.8 ms after it). Those calls wait for their first
+  output no less than in 04. The 7–23 s of reasoning before a call's first output stay a status
+  that names the last tool; the longest silence is the reference round's wait in both runs.
+- **No measurable cost** on calls 1–3, the same work in 04 and 05; the summary tokens are not
+  reported apart from the output tokens.
+
+What the window could show during the wait is a status the assistant sets itself when it sends a
+request; that is a change of B, to be decided. Open: the Azure deployment — whether it accepts
+`reasoning.summary`; a 400 there makes the option a host flag like `referenceCacheBreakpoint`,
+off by default.

@@ -3,7 +3,10 @@
 > **Type**: Feature analysis — proposal A of
 > [the time-to-first-attempt analysis](planning-assistant-time-to-first-attempt.md), its design
 > and its measurement, benchmark 06
-> **Status**: Open
+> **Status**: Implemented — roomle-ui e8964c3df on `feat/hi-mcp-performance`, not pushed: the
+> required files, `readSkill` and `isSkillFile` in `skills.ts`, the executor and the registration
+> of `get-skill`, their tests, the served-text fixture and the living reference (D120); benchmark
+> 06 open ([§9](#9-as-implemented))
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-ui `feat/hi-mcp-performance` at 389b2b879 (the skills of `hi-mcp/skills.ts`
@@ -208,6 +211,38 @@ back to its text ([§4](#4-the-proposed-change)); A stays out only if the first 
 | ligna-store | — | — |
 
 ## 8. Measurement gaps
+
+## 9. As implemented
+
+roomle-ui e8964c3df on `feat/hi-mcp-performance`, as designed in [§4](#4-the-proposed-change),
+with one deviation: `loadSkills` validates the required files of the skills it loads — a required
+path that is no file of its skill fails the load — but not an entry that names no skill, because
+the default map would fail every synthetic skill set of the unit tests; the test on the bundled
+skills guards the three entries instead. The included line reads "The file <path> of this skill,
+included here:", after a separator. The decision is D120 of roomle-ui
+`.agents/homag-intelligence/hi-tools-behaviour.md`.
+
+Unit tests: the required files from the map and the load error of a missing one; `readSkill` in
+the order of the map with LF line endings, alone for a skill without required files, the unknown
+skill; `isSkillFile`; the bundled skills (the planning reference with each room skill, nothing
+with the image skill, never the source catalog); the `get-skill` result and description through
+the tool set and the executor; the served-text fixture rewritten for the description and the
+`file` schema, its key order kept. 212 tests of the four files pass; the SDK types and oxlint
+pass.
+
+Model-free check on the local planner of the branch (a dev server on :5174, the example on :3002
+in headless Chromium, `callExternalObjectAgentTool`):
+
+| Call | Bytes | Preamble | Included |
+|---|---|---|---|
+| `kitchen-planning` | 35,334 | yes | `references/planning-reference.md`, the result ends with the reference's last line |
+| `kitchen-planning`, `./SKILL.md` | 35,334 | yes | the same |
+| `image-planning` | 5,558 | yes | none |
+| `kitchen-planning`, `references/planning-reference.md` | 15,247 | no | none |
+| `living-room-planning` | 31,592 | yes | the planning reference |
+| `kitchen-planning-fr` | 32,001 | yes | the planning reference |
+
+The served description and the `file` schema are the new texts. Every call answers in 0–2 ms.
 
 - The session's reference rounds were measured on Azure with the planner of bo-test and the
   embedding-lib `0.0.0-dev-130245d`; benchmark 06 runs the local planner of the branch with the

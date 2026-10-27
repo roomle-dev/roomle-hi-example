@@ -28,4 +28,5 @@ Agent utility scripts for automating repository tasks: link checking, test runni
 | [`mcp-test-navigation.js`](mcp-test-navigation.js) | Navigate the MCP test infrastructure |
 | [`plan-images.js`](plan-images.js) | Name and decode the images `get-plan-images` showed the agent, per turn, for `run-hi-mcp-prompt.js` |
 | [`planning-assistant-usage.js`](planning-assistant-usage.js) | Collect prompt usage from host-page console events and sum measured counts with coverage for the report |
+| [`planning-time.js`](planning-time.js) | Record the planner's history events in the page, measure each prompt's first plan change and sum a test's planning time and time to the first result for the report |
 | [`render-report-pdf.js`](render-report-pdf.js) | Render a report to PDF |

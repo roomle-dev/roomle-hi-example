@@ -12,7 +12,8 @@ Runs the tests of [test-prompts.json](../../docs/test-prompts.json), or of the
 [minimum set](#the-minimum-set), with the runner `run-hi-mcp-tests.js` — each from its plan, with its prompt (or its turns) and image — stores every
 result under one session directory and ends with `report.md` and its PDF in `.temp/reports/`, named after the
 date and the models of the session ([the PDF](#the-pdf)): per test the plan snapshot id, the
-perspective, the perspective object and the top image, an evaluation and a bug verdict.
+planning time, the time to the first result, the token counts, the perspective, the perspective
+object and the top image, an evaluation and a bug verdict.
 
 The tests assess how well the agent understands the prompts and picks the right tools — not the tools
 themselves, which the unit tests in `hi-mcp/hi-mcp-server/tests` cover
@@ -230,7 +231,7 @@ Per run (`R` = `$SESSION/<model>/<NN>-<test id>`), read the test in `tests.json`
 | `turn-<n>-plan-images-<k>-perspective-object.png`, `-top.png` | what the agent saw: the group view and the top view of its k-th `get-plan-images` call in turn n (listed in the turn's `planImages` in `run.json`) — an opened cabinet, or the first turn of a conversation that later closes it again; an embedding-lib whose tools return the plan perspective gives `-perspective.png` instead of the group view |
 | `perspective-object-image.png` | the group alone — its fronts, appliances and materials, without the room |
 | `prompt-image.jpg` | image prompts: the image the model got — the layout, units, appliances, fronts and worktop to compare the plan with |
-| `run.json` | `plan`; per turn the answer, the tools, `planImages` and `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back; `errors`; `planSnapshotId`; `snapshotCaptured`; `navigations` (timestamp, phase, main frame, URL, `fragmentOnly`) |
+| `run.json` | `plan`; per turn the answer, the tools, `planImages`, `toolCalls` — per call of a plan-changing tool the `args` the model sent and the `corrections`, `notLoaded` or `error` it got back —, `durationMs` and `firstPlanChangeMs`; `errors`; `planSnapshotId`; `snapshotCaptured`; `navigations` (timestamp, phase, main frame, URL, `fragmentOnly`) |
 | `order-data.json` | the articles and attributes (materials, colours, dimensions) |
 | `plan-context.json` | as the `get-plan-context` tool returns it, in the agent's plan space (z up; a run folder of an older planner build has pos space, y up, with `…RotationY` fields): the room's walls (`rooms.rooms[].…walls[]`: `side`, `start`/`end`, `facingRotationZ`) the groups after the chat (`groups[].position`: `pos`, `rotationZ`, `footprint`; `groups[].roots[].desc`) and what stands in the room (`obstacles.objects[]`: `kind`, `outline`, `bottomMm`/`topMm`, a door or window with `wall` and `fromEndMm`; `obstacles.groups[].roots[]`: the room-space outline and height range of every root module) |
 | `planner-calls.json` | the tool calls the planner ran during the chat: `tool`, `input` = the arguments as the model sent them, before the tool validated them (for `create-or-replace-groups` `input.posGroups[]` with the roots, their relations and attributes, and the `placement`), `ms`; `ok: false` with the `error` — the text of an `isError` result. The docking the relations became is in `plan-context.json` (`groups[].roots[].contextData`) |
@@ -410,18 +411,18 @@ Only when the user explicitly asks to add a recommended case, copy it into its c
 
 ## Summary
 
-| # | Test | Verdict | Bug | Plan snapshot | Input tokens | Output tokens | Total tokens | Usage |
-|---|---|---|---|---|---|---|---|---|
-| 01 | [<title>](#01-<title-slug>) | pass | no | `ps_…` | 1,200 | 180 | 1,380 | complete |
-| 36 | [Random: <title>](#36-random-<title-slug>) | fail | no | `ps_…` | — | — | — | unavailable |
+| # | Test | Verdict | Bug | Plan snapshot | Planning time | First result | Input tokens | Output tokens | Total tokens | Usage |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 01 | [<title>](#01-<title-slug>) | pass | no | `ps_…` | 48.2 s | 31.5 s | 1,200 | 180 | 1,380 | complete |
+| 36 | [Random: <title>](#36-random-<title-slug>) | fail | no | `ps_…` | 12.0 s | none | — | — | — | unavailable |
 
 ## Random tests
 
 Generated for this session by the agent that ran it; not in `docs/test-prompts.json`.
 
-| # | Test | Plan | Verdict | Input tokens | Output tokens | Total tokens | Usage | Keep as a fixed test |
-|---|---|---|---|---|---|---|---|---|
-| 36 | [Random: <title>](#36-random-<title-slug>) | <plan name> | fail | 1,200 | 180 | 1,380 | complete | yes — <what it covers that no fixed test does> |
+| # | Test | Plan | Verdict | Planning time | First result | Input tokens | Output tokens | Total tokens | Usage | Keep as a fixed test |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 36 | [Random: <title>](#36-random-<title-slug>) | <plan name> | fail | 12.0 s | none | 1,200 | 180 | 1,380 | complete | yes — <what it covers that no fixed test does> |
 
 ```json
 <the random tests as they are in tests.json>
@@ -455,10 +456,10 @@ Plan: <plan name>
 - **Doors**: <per row with doors, the hinge side of the door at its left and at its right end, and whether a handle is on the outside of the row; or no doors>
 - **Answer**: <the model's final answer, shortened>
 
-| Prompt | Input tokens | Output tokens | Total tokens | Usage |
-|---|---|---|---|---|
-| 1 | 1,200 | 180 | 1,380 | complete |
-| Test total | 1,200 | 180 | 1,380 | complete |
+| Prompt | Planning time | First result | Input tokens | Output tokens | Total tokens | Usage |
+|---|---|---|---|---|---|---|
+| 1 | 48.2 s | 31.5 s | 1,200 | 180 | 1,380 | complete |
+| Test total | 48.2 s | 31.5 s | 1,200 | 180 | 1,380 | complete |
 
 | Perspective | Perspective object | Top |
 |---|---|---|
@@ -512,6 +513,26 @@ planning verdict. Retry totals are labelled as the selected attempt; preserved a
 and retain their own usage. Legacy results with no usage stay readable and are not rerun just to
 fill the measurement. The [implementation reference](../context/deployment-and-testing.md#prompt-token-accounting)
 defines the protocol and aggregation.
+
+#### Times
+
+The report builder renders two times per test from `run.json`, in the test summary, the Random
+tests table and the prompt table of each test section, beside the token counts:
+
+- **Planning time** — from the first prompt to the last answer: the sum of the turns'
+  `durationMs`.
+- **First result** — from the first prompt to the first change of the plan in the planner: the
+  `durationMs` of the turns before plus the `firstPlanChangeMs` of the first turn that changed the
+  plan. `none` means that no prompt changed the plan — a question, a model that asked back, a
+  create the library could not calculate.
+
+A prompt row shows its own turn: its duration and the time after its prompt to its first plan
+change. The times cover the selected attempt. A result recorded before the plan changes were
+measured shows `—` as its first result, and its planning time from the turns. Do not enter
+times in `evals.json`. A session with `HI_MCP_REQUEST_INTERVAL_MS` says under the summary that
+the times include the waits; they are no interactive latency. The
+[implementation reference](../context/deployment-and-testing.md#planning-time) defines the
+measurement.
 
 #### The PDF
 
@@ -645,7 +666,7 @@ The script:
 
 | File | Content |
 |---|---|
-| `run.json` | provider; `plan`; `turns` (per turn the prompt, the `image` file it carried, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` —, errors, duration); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
+| `run.json` | provider; `plan`; `turns` (per turn the prompt, the `image` file it carried, the model's answer, the tools in order, `toolCalls` — per call of a plan-changing tool the `args` the model sent and its `corrections`, `notLoaded` or `error` —, errors, `durationMs`, `firstPlanChangeMs` — the ms until the planner's history first changed, `null` when the turn did not change the plan); all `errors`; `planSnapshotId`; example URL, start time, durations (ready, chat, snapshot) |
 | `plan-context.json` | `get-plan-context` with rooms and groups after the chat — the walls and where the groups stand |
 | `planner-calls.json` | every tool call the planner ran during the chat: `tool`, the full `input`, `ok`, the `error`, and `ms` — how long the page waited from the call to its result |
 | `prompt-image.jpg` | with `--image` only: the image as the model got it |

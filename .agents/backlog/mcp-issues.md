@@ -28,7 +28,52 @@ Keep this document, its guidance and its overview table when no issues are open,
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
+| 115 | [An interior fitting added where the parent shows a default interior](#115-an-interior-fitting-added-where-the-parent-shows-a-default-interior) | hardening | roomle-ui served text: `get-interior-design-options`, `add-interior-fitting` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
+| 116 | [A conflict a row edit leaves is not resolved](#116-a-conflict-a-row-edit-leaves-is-not-resolved) | hardening | roomle-ui served text: the rule for corrections, `delete-article-and-compact` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
+
+## 115. An interior fitting added where the parent shows a default interior
+
+**Problem.** Asked to add one more shelf to a tall unit, the agent adds a `FixedShelf` to the
+parent whose `defaultInteriors` lists the four adjustable shelves it shows; the fixed shelf takes
+the place of the four, the correction says so, and the agent undoes it — one extra call and an undo
+for a request that cannot be met.
+
+**Cause.** The description of `get-interior-design-options` says that "an addition there takes its
+place", but the agent reads `defaultInteriors` only after the addition, from its correction. Nothing
+in the description of `add-interior-fitting` sends it to `defaultInteriors` before it adds.
+
+**To do.** roomle-ui served text: the description of `add-interior-fitting` says that an addition
+to a parent with a `defaultInteriors` entry replaces that default interior, so the agent checks
+the entry first and tells the user what the parent already holds.
+
+**Test.** `edit-add-subarticle-look-inside`: no `add-interior-fitting` replaces the four
+adjustable shelves; the answer says the cabinet holds them.
+
+**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 41 (`edit-add-subarticle-look-inside`): `add-interior-fitting` of `FixedShelf` into parent `5b581d05` of the middle `HTB60`, the correction about the replaced default interior, then `undo`.
+
+## 116. A conflict a row edit leaves is not resolved
+
+**Problem.** After a row edit the agent reports a conflict the edit left and stops: removing the
+corner unit turns a leg into one straight row whose fridge reaches 155 mm into the door opening,
+removing the unit next to the corner leaves the wall unit above it overlapping the hood that moved
+in. The answers name the conflict and leave it to the user; in earlier sessions the agent moved the
+wall unit in a follow-up call.
+
+**Cause.** The corrections of `delete-article-and-compact` name what the edit did — the unit above
+keeps its place and overlaps, "remove one of them or move the units above"; the turned leg — but the
+served text does not ask the agent to resolve a conflict a correction reports before it answers, and
+a turned leg's correction says nothing about the door it now reaches.
+
+**To do.** roomle-ui served text: the rule for corrections asks the agent to resolve a conflict a
+correction reports — an overlap, a unit in a door opening — with a follow-up call where the request
+leaves room for it, and to report it otherwise; the correction of a turned leg names an opening the
+row now reaches.
+
+**Test.** `edit-remove-next-to-corner` and `edit-remove-corner-unit`: the final plan holds no
+overlap and no unit in the door opening, or the answer says why it could not resolve it.
+
+**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 24 (`edit-remove-corner-unit`): `delete-article-and-compact` of the corner unit `814c6854` on `corner-kitchen-wall-units`; the fridge `ad52e21b` ends at y -435, the door opening spans y -1180 to -280.

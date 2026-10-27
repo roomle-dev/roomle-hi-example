@@ -9,8 +9,10 @@
  * outFile, or to stdout without one; a tests.json without categories is
  * rejected before anything is written. The facts are the working file of the
  * evaluation (skill hi-mcp-testing, section 5) and the input of
- * build-test-report.js: per run the test, the turns with their tools and tool
- * calls (corrections, the notLoaded errors, error) and the shortened answer,
+ * build-test-report.js: per run the test, the planning time and the time to
+ * the first plan change, whether model requests were spaced, the turns with
+ * their tools and tool calls (corrections, the notLoaded errors, error) and
+ * the shortened answer,
  * the groups after the chat and the tool calls the planner ran (in a session
  * recorded before the tools ran in the planner, its plan-changing calls), and
  * the testSet of a session run from a subset such as the minimum set. A
@@ -24,6 +26,7 @@ import {
   summarizeUsage,
   unavailableUsage,
 } from './planning-assistant-usage.js';
+import { summarizePlanningTime } from './planning-time.js';
 
 const USAGE =
   'usage: node .agents/scripts/extract-run-facts.js <sessionDir> [outFile]';
@@ -131,11 +134,14 @@ for (const model of models) {
       attempts: Array.isArray(run.attempts) ? run.attempts.length : 1,
       attemptDirs: run.attempts || [run.dir],
       usage: summarizeUsage((runJson.turns || []).map((turn) => turn.usage)),
+      time: summarizePlanningTime(runJson.turns || []),
+      requestIntervalMs: runJson.runtime?.requestIntervalMs ?? 0,
       runErrors: runJson.errors || run.errors || [],
       turns: (runJson.turns || []).map((turn) => ({
         prompt: turn.prompt,
         usage: turn.usage || unavailableUsage(),
         usageWarnings: turn.usageWarnings || [],
+        time: summarizePlanningTime([turn]),
         tools: turn.tools,
         toolCalls: (turn.toolCalls || []).map((c) => ({
           tool: c.tool,

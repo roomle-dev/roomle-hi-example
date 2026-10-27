@@ -338,6 +338,20 @@ node .agents/scripts/run-hi-mcp-prompt.js gpt-5-mini "$AZURE_GPT_KEY" "add a gro
 The runner stores each run in `.temp/result/mcp-test-<time>/<model>/<NN>-<test id>/`; the second line
 runs a single prompt the same way.
 
+## Times in reports
+
+Each test's summary shows two times beside the token counts:
+
+- **Planning time** — from the first prompt to the agent's last answer.
+- **First result** — from the first prompt until the plan first changes in the planner: the
+  moment the user sees the first planning. `none` means that the prompts did not change the plan.
+
+The detailed section of a test shows both times per prompt, counted from that prompt, and for the
+whole test. A retried test shows the times of the selected attempt. Older runs show their planning
+time and a dash as their first result. Runs with request pacing (see below) include its waits and
+are no measure of the interactive latency. See the
+[measurement reference](../.agents/context/deployment-and-testing.md#planning-time).
+
 ## Token counts in reports
 
 Each test's summary shows input, output and total token counts. Its detailed section lists every

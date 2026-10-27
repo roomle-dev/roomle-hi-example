@@ -60,7 +60,7 @@ the 403 for a foreign Host, and that the page port can be bound again after sign
 ## The chat of the example page
 
 `index.html` imports `@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version
-`0.0.0-dev-432119f`
+`0.0.0-dev-130245d`
 ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)). With `?chat=true`
 the page sets `featureFlags.planningAssistant` in the planner options, and `startChat`:
 

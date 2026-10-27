@@ -34,8 +34,7 @@ presence lifecycle complicates the process without a demonstrated overall perfor
 The selected code is the response-chaining implementation measured in **02**; the rollback is
 commit `432119f80` and embedding-lib dev `0.0.0-dev-432119f`, with the affected source/tests/fixture verified
 byte-equivalent to `80484dc71`. See
-[ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md)
-and [the retained analysis](../feature-analysis/prompt-preloads.md#10-rejection-and-restoration-of-response-chaining-behavior--2026-10-26).
+[ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md).
 
 All 01/02/03 measurements, the call-sequence explanation and raw evidence remain intact.
 **No additional benchmark is run for this restoration.** Unit/wire tests,

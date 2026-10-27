@@ -69,6 +69,8 @@ run phase (`loading`, `chat`, `snapshot`, `complete`) and whether only the URL f
 ### Prompt token accounting
 
 `planning-assistant-usage.js` listens for `[planning-assistant] usage <JSON>` while one prompt runs.
+The embedding-lib, which makes the model calls, writes the record; the example counts no tokens
+itself and does not read the provider's responses.
 
 Version 1 `diagnostics` travels unchanged from that record into each turn's usage and extracted
 facts. It holds per-model-call timings, independent cache/reasoning coverage, request byte counts
@@ -78,14 +80,14 @@ legacy step-log support for older runs. Absent counters stay unknown; tool time 
 from model-call time. A run with chat errors stays in the output and is excluded from successful-run
 comparisons.
 
-The assistant records automatic compact-library acquisition before the first model request;
-`referenceAcquisitionMs` includes that read and reference measurement. Live plan context and
-skills use model-requested tools, with genuine results retained in successful history. Historical
+Before the first model request the assistant reads the compact library and the plan state of the
+turn — rooms, groups, obstacles and installation elements — in parallel; `referenceAcquisitionMs`
+includes both reads and the reference measurement, and `diagnostics.planState` holds the bytes and
+digest of the supplied plan state. Skills use model-requested tools, with genuine results retained
+in successful history; the plan state is read afresh every turn and not retained. Historical
 benchmark 03 describes the discarded automatic live/image preloads with their original measured
-boundaries; its counters must not be reinterpreted as the current bootstrap. A byte-equivalent
-restoration of report 02's code uses existing unit/wire tests, build and offline package checks
-without another model run. `--dev` selects only the planner: local assistant measurements must
-also verify both embedding module URLs.
+boundaries; its counters must not be reinterpreted as the current bootstrap. `--dev` selects only
+the planner: local assistant measurements must also verify both embedding module URLs.
 
 `HI_MCP_REQUEST_INTERVAL_MS` optionally spaces Azure model requests in the test browser. The
 default is zero. The runner records the interval, loaded local embedding module URLs, planner

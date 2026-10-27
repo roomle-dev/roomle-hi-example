@@ -583,7 +583,7 @@ is one call, which roomle-ui performs:
 
 ## Best Practices
 
-1. Read fresh rooms, groups, obstacles and installationElements with `get-plan-context` before the first change of a turn; within the turn, build the next change on the result of the last one, and read again only for what a result does not carry, or after undo and redo. The Planning Assistant supplies compact library reference; live state and image/room guidance are obtained through tools, with genuine successful results retained in history.
+1. The Planning Assistant supplies the compact library reference and, with every turn, the plan state — rooms, groups, obstacles and installationElements — as the state before the first change of the turn; without it, read them with `get-plan-context` first. Within the turn, build the next change on the result of the last one, and read again only for what a result does not carry, or after undo and redo. Image and room guidance is obtained through `get-skill`, with genuine successful results retained in history.
 2. Validate article IDs before using
 3. Use free docking vectors when extending
 4. Position every new group with a placement — at a wall or in a room corner by `wall`, `alignment` and `offsetMm`, anywhere else by `posGroup` and `posRotationZ`

@@ -4,8 +4,8 @@
 > **Status**: Open — D done and E implemented, its text-kitchen run open: roomle-hi-example on
 > `master` (#211), roomle-ui 43eda3a47 and bbac39fa7 pushed on `feat/hi-mcp-performance` and
 > `feat/hi-mcp-merge`, not on `release/bo-test`; B implemented on roomle-ui
-> `feat/hi-mcp-performance`, its embedding-lib build and live check open
-> ([§10](#10-implementation-state)); A, C, F and G open
+> `feat/hi-mcp-performance`, published as `@roomle/embedding-lib@0.0.0-dev-bd4d1d1` and loaded
+> by the example, its live check open ([§10](#10-implementation-state)); A, C, F and G open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -221,8 +221,8 @@ deployments stream summaries is to verify; without them the status falls back to
 
 **State.** Implemented on roomle-ui `feat/hi-mcp-performance`: the activity at the start of a tool
 call, and the first line of every reasoning summary as the status on the OpenAI and Azure
-Responses routes ([§10](#10-implementation-state)); the embedding-lib build and the live check
-are open.
+Responses routes, published as `@roomle/embedding-lib@0.0.0-dev-bd4d1d1` and loaded by the
+example ([§10](#10-implementation-state)); the live check is open.
 
 ### C. Less to decide in the create call
 
@@ -337,8 +337,8 @@ one round instead of two, so A comes first and G is decided on A's build.
 In this order, one build per step, each step measured before the next:
 
 1. **B** — no model cost, no measurement needed beyond the window: the user sees progress from the
-   first seconds. An embedding-lib change; the build is asked for. B is implemented; its build and
-   live check are open ([§10](#10-implementation-state)).
+   first seconds. An embedding-lib change; the build is asked for. B is implemented and built;
+   its live check is open ([§10](#10-implementation-state)).
 2. **A** with a **benchmark 04**: `image-kitchen-left-wall` and `full-kitchen-walnut-marble-corner`,
    two repetitions each, `openai:gpt-6-astra` with the local planner as in reports 01–03, about five
    minutes and 2.5 million input tokens; the report in `.agents/benchmarks/04-…` and a row in the
@@ -387,7 +387,7 @@ reasoning of the create call, which only C changes.
 | Proposal | State |
 |---|---|
 | A — one skill round | Open |
-| B — progress in the window | Implemented: roomle-ui bd4d1d1c9 on `feat/hi-mcp-performance`, local, not pushed; the embedding-lib build and the live check open ([below](#proposal-b-as-implemented)) |
+| B — progress in the window | Implemented: roomle-ui bd4d1d1c9 on `feat/hi-mcp-performance`, pushed; published as `@roomle/embedding-lib@0.0.0-dev-bd4d1d1`, which the example loads; the ligna-store pin and the live check open ([below](#proposal-b-as-implemented)) |
 | C — less to decide in the create call | Open |
 | D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
 | E — the rounds after the create | Implemented: roomle-ui bbac39fa7, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; the run on the text kitchens open ([below](#proposal-e-measured-and-to-be-measured)) |
@@ -496,8 +496,8 @@ call; the first line of each summary, the truncation and the empty part; the pin
 `reasoning` with effort and summary. The decision row is in roomle-ui `prompt-caching.md`;
 `agent-architecture.md` and the chat guide here say the same.
 
-The change is embedding-lib code: the example and the ligna-store get it with a new embedding-lib
-version, built only on request.
+The change is embedding-lib code, published as `@roomle/embedding-lib@0.0.0-dev-bd4d1d1` from
+roomle-ui `feat/hi-mcp-performance`; the example loads it, the pin of the ligna-store is open.
 
 ### Proposal B, to be verified
 

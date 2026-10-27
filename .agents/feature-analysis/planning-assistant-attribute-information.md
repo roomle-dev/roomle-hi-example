@@ -5,16 +5,20 @@
 > against the code, a measurement without a model and the retained runs
 > **Status**: Open — the question answered ([§5](#5-what-the-agent-needs-and-when)); the two-level
 > design proposed, the same for every library, accepted only after its measurement
-> ([§6](#6-the-proposed-design-two-levels), [§10](#10-decisions-to-take))
+> ([§6](#6-the-proposed-design-two-levels), [§10](#10-decisions-to-take)); validated against the
+> code and the data, the level-1 figures measured with the criterion as stated
+> ([§11](#11-validation))
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-ui `feat/hi-mcp-merge` at a8fe64618 (`hi-mcp/agent-facing.ts`,
 > `hi-mcp/tool-executors.ts`, `hi-plan-context.ts`, `hi-tool-attributes.ts`, `hi-mcp-server.ts`,
-> the planning assistant of the embedding-lib); roomle-hi-example `master` at 8bc6329 with
+> the planning assistant of the embedding-lib) — `feat/hi-mcp-performance` at 1b4351d96 holds the
+> same HI code; roomle-hi-example `master` at 8bc6329 with
 > `@roomle/embedding-lib@0.0.0-dev-1b4351d`; the library Furniture_Smith as the example loads it
 > **Data**: the sections of `get-plan-context` read without a model from the example page on the
 > local planner, kept in `.temp/result/attribute-information-probe-2026-10-27/`
-> (`probe-attributes.mjs`, `sections/*.json`); the master data in
+> (`probe-attributes.mjs`, `sections/*.json`, the counts of §3, §4 and §6 in `validate/*.mjs`); the
+> master data in
 > [docs/library-information/master-data.json](../../docs/library-information/master-data.json); the
 > "test the mcp" session `.temp/result/mcp-test-2026-10-27_07-11-41` (gpt-6-astra on Azure, 79 runs,
 > their `planner-calls.json` and `plan-context.json`); [the baseline](../benchmarks/baseline-iklw-az-2026-10-27.md)
@@ -25,7 +29,10 @@
   (`hi-mcp/agent-facing.ts`, `hi-mcp/tool-executors.ts`), `find-attributes` for several attributes
   in one call (`tool-executors.ts`), the served text (`hi-mcp-server.ts`), their tests; the rows D76
   and D100 of `.agents/homag-intelligence/hi-tools-behaviour.md` and `hi-tools-reference.md`. No
-  change is proposed for the library as it is today.
+  change is proposed for the library as it is today. The embedding-lib stays as it is: the tool
+  definitions and the served text come from the planner (`getExternalObjectAgentTools`,
+  `getExternalObjectAgentPrompts`), and the assistant's reference read is unchanged — no new
+  embedding-lib build.
 - **roomle-hi-example** — this analysis; the row "Selective retrieval" of
   [the levers that do not shorten the response time](../wiki/planning-assistant-response-time-targets.md#levers-that-do-not-shorten-it); the attribute
   paragraph of [library-issues.md](../backlog/library-issues.md), corrected; the benchmark that
@@ -42,36 +49,43 @@ information can become huge. The questions: what information does the agent get 
 attributes, how many tokens does it consume, what does the agent need and when — all of it from the
 beginning, or the possibilities first (what can be changed) and the details later (how)?
 
-The time-to-first-attempt analysis evaluated the idea for the response time only — `find-attributes`
-answers in 13 ms, no kitchen creation calls it — and found nothing to save there. This analysis
-answers the size question.
+For the response time the idea saves nothing: `find-attributes` answers in 10–17 ms, and no
+creation calls it before its first kitchen ([the baselines](../benchmarks/baseline-iklw-az-2026-10-27.md),
+[the levers that do not shorten the response time](../wiki/planning-assistant-response-time-targets.md#levers-that-do-not-shorten-it)).
+This analysis answers the size question.
 
 ## 2. What the agent gets today
 
 **The attribute vocabulary** is the `attributes` section of `get-plan-context`, a default section
 (D76 of roomle-ui `hi-tools-behaviour.md`): per library every attribute of the compacted master
-data (D100) — `compactAttribute` keeps `id`, `name`, `desc`, `type`, `group` and `selections`
-(`hi-plan-context.ts`), `agentFacingAttributes` lists a value list several attributes share once,
-the later attributes naming the lister as `sameSelectionsAs` (`agent-facing.ts:198`, `:293`); the
-element type stays out (`isAgentFacingAttribute`, `:223`). A value is `value`, `name` and `desc`;
-no image URL reaches the agent. The modules with their attribute ids and the group settings stay in
-`masterData`, on request.
+data (D100) — `compactAttribute` keeps `id`, `name`, `desc`, `imageUrl`, `type`, `group` and
+`selections` (`hi-plan-context.ts:266`), `agentFacingAttributes` lists a value list several
+attributes share once, the later attributes naming the lister as `sameSelectionsAs`
+(`agent-facing.ts:199`, `:293`); the element type stays out (`isAgentFacingAttribute`, `:223`). A
+value is `value`, `name` and `desc`; the server strips every image URL from its results (D7). The
+modules with their attribute ids and the group settings — the attributes of the group
+orchestrator, in Furniture_Smith 7: the group's height and width with their adjustment, its
+generation logic, the visible sides and the distance to the wall — stay in `masterData`, on
+request.
 
 **The planning assistant sends it with every turn**: its library reference is `get-plan-context`
-with `articles` and `attributes` (`hi-planning-assistant.ts:239`), one user-role message before
+with `articles` and `attributes` (`hi-planning-assistant.ts:276`), one user-role message before
 the history, in the shared prefix of every request of the turn (ADR 0014); the assistant reads it
 afresh per turn, the provider reads it from its cache.
 
 **The catalog names the attributes a root module carries**: each article's root modules list their
 `dimensions` (the size attributes with their values) and `mainAttributes` (id, name, value) —
-`agentFacingArticle` (`agent-facing.ts:305`). In Furniture_Smith the catalog's `mainAttributes`
-name 11 attributes, the `dimensions` 10.
+`agentFacingArticle` (`agent-facing.ts:305`). `mainAttributes` are the attributes of the root
+that the master data marks `isMain`, the sizes left out (`hi-plan-context.ts:667`). In
+Furniture_Smith the catalog's `mainAttributes` name 11 attributes, the `dimensions` 10.
 
 **The served text** says where the ids and values are and how to use them: the authoring rule on
 attributes (`hi-mcp-server.ts:21` — the attributes section holds every attribute with its values,
 `sameSelectionsAs`, the colour code in a value's desc, `find-attributes` for a question about one
-attribute), the description of the section (`:344–352`) and of `find-attributes` (`:400–415`: "the
-attributes section already holds every attribute with its values, so a planning needs no search").
+attribute), the description of the section (`:347–350`), of `find-attributes` (`:403–416`: "the
+attributes section already holds every attribute with its values, so a planning needs no search")
+and of `change-module-attribute` (`:611`: "attribute ids and values are in the attributes section
+of get-plan-context").
 The image skill asks to read the fronts, handles, worktop and carcase from the image and set them
 as group attributes "with the values the attribute vocabulary of the plan context offers"
 (`skills/image-planning/SKILL.md:42`).
@@ -79,10 +93,12 @@ as group attributes "with the values the attribute vocabulary of the plan contex
 **The details come back with every result.** A value the article does not take is left out and
 the result names the values it takes — `takenValuesText`: "the values it takes: "152", "155"; and,
 changing another attribute with them, "214"" or "it takes 300 to 600 in steps of 10"
-(`hi-tool-attributes.ts:320`) —, on a create before the load (`checkRootOverrides`, `:473`, called
-from `hi-tool-commands.ts:649`), on the group attributes (`applyGroupWideAttributes`, `:665`) and
-on every edit; a value the library changes along is named with its desc (D59). So the agent
-learns the values of an attribute it set wrong without a round of its own.
+(`takenValuesText`, `hi-tool-attributes.ts:313`) —, on a create before the load
+(`checkRootOverrides`, `:473`, called from `hi-tool-commands.ts:649`), on the group attributes
+(`applyGroupWideAttributes`, `:665`) and on every edit; a value the library changes along is named
+with its desc (D59). So the agent learns the values of an attribute it set wrong without a round of
+its own — by their codes, without their names and descs: the group stands with the article's value,
+and setting the right one is a call of its own.
 
 ## 3. What it costs
 
@@ -143,16 +159,17 @@ fillers, shelves —, 18.5 KB.
 ## 4. What the agent uses, and when
 
 The 79 runs of the test session (gpt-6-astra, 99 turns, 49 creates, 39 attribute changes), from
-their recorded tool calls:
+the calls the planner ran (`planner-calls.json`; the `toolCalls` of `run.json` name a change by
+its `attributeId` only and miss the changes that set several attributes):
 
 | Measure | Value |
 |---|---|
-| Distinct attributes the agent set | 47 of 397 — 24,720 bytes of the section with their lists, 20 % |
-| Distinct values it set | 154 of 795 |
+| Distinct attributes the agent set | 50 of 397, 38 of them with a value list — 27,104 bytes of the section with their lists, 22 % |
+| Distinct values it set | 78 of the 795 list values; 135 distinct attribute–value pairs with the sizes |
 | Creates with group attributes | 42 of 49 |
 | Root modules with attributes | 180 of 278 |
 | `find-attributes` calls | 0 — also in the test that asks which front colours there are, which the agent answered from the section, correctly |
-| Attributes changed after a create | 8, in 39 calls |
+| Attributes changed after a create | 22, in 39 calls; 14 of the calls set several attributes; 25 of the calls follow a create in its own turn (11 of the 46 creating turns), 14 are in turns without a create |
 
 **Before the first kitchen**, in the create payload, the agent sets:
 
@@ -160,35 +177,43 @@ their recorded tool calls:
   (40 each), the carcase colours (41 and 37), the worktop colour (18) and thickness (6), the plinth
   height (17), the toekick colour (16), the handle design (15) and colour (12), programs of the
   panels and uprights; 28 distinct ids;
-- **per root module** — the hinge side of the doors (118 roots, the rule of the authoring rules),
-  the sizes width, depth and height (98, dimensions without a value list), the insertion height,
-  the appliance supplier and model of hobs, ovens, hoods and sinks (hob 12, sink 6, oven 5, hood
-  5), the generation flags of the toekick and the worktop; 30 distinct ids.
+- **per root module** — the hinge side of the doors (110 roots, the rule of the authoring rules),
+  the sizes width, depth and height (85, dimensions without a value list), the insertion height
+  (14), the appliance supplier and model of hobs, ovens, hoods and sinks (hob 12, sink 6, oven 5,
+  hood 5), the generation flags of the toekick and the worktop; 27 distinct ids.
 
-**After the first kitchen and in the edits**: 8 attributes in 39 calls — the hinge side, the width,
-the front colour, the sink model, the backsplash flag, the height, the front program, the handle
-design. **For a question**: the one test, answered from the prefix.
+45 distinct ids in the creates, 36 of them with a value list.
+
+**After the first kitchen and in the edits**: 22 attributes in 39 calls — the front colour and
+program, the carcase colours, the toekick and worktop colours, the hinge side, the handle design,
+colour, position and length, the backsplash switch with its colour, height and thickness, the
+width and the height, the sink model, the plinth height, the upright program and colour, the
+worktop thickness. Most of them follow the create in its own turn — the agent refines its kitchen
+—, the rest are edit turns. **For a question**: the one test, answered from the prefix.
 
 The look needs the value lists at the moment of the create — the colour codes in the value descs
 are what the agent tells light from dark by, and the image skill asks for the closest value of the
 vocabulary. The sizes need no list: the library's range comes back with a wrong value. The
-appliance models need their lists in a quarter of the creations. Everything else — 350 attributes
-— the agent needs when the user asks for that change, in an edit turn.
+appliance models need their lists in a quarter of the creations (13 of 49). Everything else — 347
+attributes — the agent needs when the user asks for that change or when it refines its kitchen
+after the first one.
 
-The library's own marks do not single out this set: `isMain` marks 65 attributes (24 KB with
-their lists) and covers 22 of the 47; `userRight` `Simple` marks 89 (32 KB) and covers 32 — the
-handle colour, the plinth design, the carcase and toekick programs, the opening type and the
-generation flags are outside both. That is why D100 rejected a filter by the user right.
+The library's own marks do not single out this set: `isMain` marks 64 of the attributes the agent
+sees (24 KB with their lists) and covers 22 of the 50; `userRight` `Simple` marks 89 (32 KB) and
+covers 34 — the handle colour and length, the plinth design, the carcase and toekick programs, the
+carcase back wall colour, the backsplash switch and thickness, the worktop thickness, the opening
+type, the insertion height and the generation flags are outside both. That is why D100 rejected a filter by the user right.
 
 ## 5. What the agent needs, and when
 
 **All of it from the beginning is not needed.** At the create, the agent needs the ids and the
-values of the attributes that make the look of a kitchen — about 10 to 15 attributes with their
-value lists, 11 KB with the shared lists — and the ids of the sizes; the existence of every other
+values of the attributes that make the look of a kitchen — the front, carcase, worktop and toekick
+colours and programs, the handle design — and the ids of the sizes; the existence of every other
 attribute — its id, name and desc — so that it knows what can be changed; the values of those only
-when a user asks for that change, in an edit turn, where one lookup costs a round of about 3.5 s
-against the 20–40 s of the final result, while before the first kitchen a round is a third of the
-10 s target ([the targets](../wiki/planning-assistant-response-time-targets.md)).
+when it changes them — after the first kitchen, when it refines it or the user asks for a change —,
+where one lookup costs a round of 4–8 s (the `find-attributes` rounds of the baselines: 3.9 and
+8.1 s) against the 20–40 s of the final result, while before the first kitchen a round is half of
+the 10 s target ([the targets](../wiki/planning-assistant-response-time-targets.md)).
 
 **The design has to hold for every library and every state of its descriptions.** That the full
 section of the measured library fits the cached prefix and costs no round is a property of one
@@ -196,53 +221,63 @@ library's present state — its descriptions not yet written —, not of the des
 cannot bound the section, and the descriptions are meant to grow (§3). What holds for every
 library is the structure of the need: the attributes and values a planning sets at the create are
 a small part of the vocabulary, and the library's structure marks them — the catalog's
-`mainAttributes`, the group settings, the generated root modules; every other attribute is needed
-in an edit, where a lookup round fits the targets. So the agent gets, for every library, what can
+`mainAttributes` and `dimensions`, the group settings, the generated root modules; every other
+attribute is needed after the first kitchen, where a lookup round fits the targets. So the agent gets, for every library, what can
 be changed from the beginning and how it can be changed when it changes it — the design of §6.
 
 ## 6. The proposed design: two levels
 
 **Level 1, in the prefix — what can be changed.** The `attributes` section lists every attribute
 with `id`, `name`, `desc`, `type`, `group`, as today, and keeps the value lists of the attributes
-the library's structure marks as the ones a planning sets: the attributes the catalog's
-`mainAttributes` name, the group settings and the attributes of the generated root modules (the
-worktop, the toekick, the backsplash, the panel top) — a structural criterion, the same for every
-library, not a choice of attributes by name (§2.4 of `hi-tools-behaviour.md`). Every attribute
-that shares one of those lists keeps `sameSelectionsAs`. Every other attribute with a value list
-carries the number of its values instead of the list, and a dimension its type as today. In
-Furniture_Smith: 57 attributes mark the level, 26 lists stay (10,938 bytes), the headers stay
-(60,864 bytes): about 72 KB instead of 121 KB, about 16,000 tokens instead of 26,700. The articles
-section stays as it is.
+the library's structure marks as the ones a planning sets: the attributes the catalog names per
+root module (`mainAttributes` and `dimensions`), the group settings and the attributes of the
+generated root modules — every module of the master data's `modules` that no catalog article
+names, the rule by which the tool commands move an override to the group (D36,
+`moveGeneratedRootOverrides`) — a structural criterion, the same for every library, not a choice of
+attributes by name (§2.4 of `hi-tools-behaviour.md`). Every attribute that shares one of those
+lists keeps `sameSelectionsAs`. Every other attribute with a value list carries the number of its
+values instead of the list, and a dimension its type as today.
+
+In Furniture_Smith 13 modules are generated roots: the panel top, the worktop, the backsplash, the
+toekick, the finger grip, the corner filler (86 attributes), the wall shelf, the plinth area
+baseboard (32), the mirror board, the coat board, the ceiling filler and two article builders. 187
+attributes mark the level, 64 lists stay (24,903 bytes): the section is 88,040 bytes instead of
+121,067, about 19,400 tokens instead of 26,700. The articles section stays as it is.
 
 **Level 2, on request — how it can be changed.** `find-attributes` answers several attributes in
 one call — by ids as well as by text —, so that a turn that needs the values of three attributes
 spends one round, not three; its description says that the values of an attribute without a list
 in the section are one call away. The results of the create and the edits keep naming the values
-an attribute takes when a value is wrong (§2), so a guessed value costs no round: the group is
-built, the result says what to send.
+an attribute takes when a value is wrong (§2), so a guessed value costs no round before the first
+kitchen: the group is built with the article's value, the result names the codes it takes, and
+the right value is a change after it.
 
 **What it saves.** What every request carries is bounded by the library's structure: the level-1
 part grows with the attributes and their descriptions, the value lists of the attributes a
 planning does not set at the create no longer reach the prefix, however many values and value
-descriptions a library has. In the measured library about 11,000 tokens of the cached prefix per
-call, a fifth of the first request; with complete value descriptions or a second library, more.
+descriptions a library has. In the measured library about 33 KB and 7,300 tokens of the cached
+prefix per call, a tenth of the first request; with complete value descriptions or a second
+library, more.
 
-**What it costs and risks.** Of the 37 list attributes the agent set in the session, 17 would have
-no list in the prefix — the appliance models and suppliers, the plinth height and design, the handle
-colour and position, the carcase programs, the opening type. A creation that sets them either
-guesses — the result then names the values, and the group stands with the article's value until
-the next call —, or looks them up first: one round before the first kitchen in a part of the
-creations (a quarter of the session's creates set an appliance model). Against the 10 s target for
-the first kitchen that round is the risk the measurement has to show or exclude. The change is in
-the planner and the served text; the embedding-lib's reference read is unchanged.
+**What it costs and risks.** Of the 38 list attributes the agent set in the session, 11 would have
+no list in the prefix — the hob, oven and sink models and suppliers, the mixer, the handle colour,
+position and length, the upright program, the opening type. 14 of the 49 creates set one of them
+(12 of the 43 first creates of a run), 13 of them an appliance model; every create of the two
+baselines does — the hob and oven models, the sink model, the handle colour and position, the
+upright program. A creation that sets them either guesses — the result then names the codes, and
+the group stands with the article's value until the next call —, leaves them to the article, or
+looks them up first: one round before the first kitchen. Against the 10 s target for the first
+kitchen that round is the risk the measurement has to show or exclude. The change is in the planner
+and the served text; the embedding-lib's reference read is unchanged.
 
 **The measurement.** The baseline's protocol on the Azure deployment: the image kitchen and the
-walnut kitchen, two repetitions each, plus the two creations of the session that set appliance
-models, on the planner with the two-level section. Accepted when the kitchens keep their look —
-the same values of the front, carcase, worktop and handle attributes as the baseline —, the first
-kitchen stays at call 2 in every run, no run spends a round on `find-attributes` before the create,
-and the input tokens of the first call drop by the section's difference; rejected when a creation
-needs the lookup round before its first kitchen.
+walnut kitchen, two repetitions each, on the planner with the two-level section — every create of
+the baselines sets attributes whose lists leave the prefix, so the two tests carry the risk
+themselves. Accepted when the kitchens keep their look — the front, carcase and worktop values the
+baselines chose from the lists that stay —, the first kitchen stays at call 2 in every run, no run
+spends a round on `find-attributes` before the create, and the input tokens of the first call drop
+by the section's difference; rejected when a creation needs the lookup round before its first
+kitchen.
 
 ## 7. Alternatives, rejected
 
@@ -254,23 +289,27 @@ needs the lookup round before its first kitchen.
 | Only the attributes the library marks `isMain` or `Simple` with values | The marks miss attributes the agent sets — the handle colour, the programs, the generation flags —, and D100 rejects a filter by the user right: the server cannot know which attribute a user asks for |
 | The colour, program, handle and plinth attributes by name | A choice of library content in the server (§2.4), rejected in D76 |
 | Only the attributes of the module types the loaded catalog uses | The generated root modules the library adds — the worktop, the toekick, the backsplash — are not in the catalog but carry attributes the agent sets; with them included, 80 attributes (18.5 KB) go — a smaller lever than the value lists, and a second filter to keep right |
+| The value lists of the generated modules a kitchen generates only — the panel top, the worktop, the backsplash, the toekick, the finger grip | 57 attributes, 26 lists, a section of 74 KB instead of 88 KB; but which generated modules a kitchen generates is library content, a choice the server would make per library (§2.4) |
+| The value lists of the catalog's sub modules too — the hob, the oven, the sink | Keeps the appliance models in the prefix, but 288 attributes and 113 lists, a section of 111 KB: 10 KB less than today, no bound |
 | The value names in the prefix, the codes resolved by the server | The agent sends a name, the server maps it to the value — step 2 of the guards policy; but the colour codes in the value descs are what the agent tells colours by, and a name without its desc loses them |
 | Shorter descriptions | The descriptions are the library's and authoritative; the server shortens article descriptions to two lines (D63) because the article catalog is picked from, while a value's desc is read once per set value |
-| Retrieval per request (RAG) | Breaks the shared prefix and adds a step per request; rejected in the time-to-first-attempt analysis for the response time |
+| Retrieval per request (RAG) | Breaks the shared prefix and adds a step per request; rejected for the response time ([the levers that do not shorten it](../wiki/planning-assistant-response-time-targets.md#levers-that-do-not-shorten-it)) |
 
 ## 8. Code and documents the work would touch
 
 | Repository | Code | Documents |
 |---|---|---|
-| roomle-ui | `hi-mcp/agent-facing.ts` (`agentFacingAttributes`: the level of an attribute from the catalog's `mainAttributes`, the group settings and the generated root modules; the count instead of the list), `hi-mcp/tool-executors.ts` (`get-plan-context`, `find-attributes` by ids and for several attributes), `hi-mcp/hi-mcp-server.ts` (the rule on attributes, the descriptions of the section and of `find-attributes`), `__tests__/hi-mcp/tool-executors-test.ts`, `hi-mcp-server-test.ts`, `test-helpers/unit/hi-mcp-fixture.json` | `.agents/homag-intelligence/hi-tools-behaviour.md` (D76 and D100 reworded, a decision row), `hi-tools-reference.md` |
-| roomle-hi-example | the benchmark of §6 | this analysis; the time-to-first-attempt analysis; `.agents/skills/hi-mcp-tools.md` (`get-plan-context`, `find-attributes`); `docs/user-guide` where it names the attributes section |
+| roomle-ui | `hi-mcp/agent-facing.ts` (`agentFacingAttributes`: the level of an attribute from the catalog's `mainAttributes` and `dimensions`, the group settings and the generated root modules; the count instead of the list), `hi-mcp/tool-executors.ts` (`get-plan-context` reads the articles with the attributes; `find-attributes` by ids and for several attributes), `hi-mcp/hi-mcp-server.ts` (the rule on attributes, the descriptions of the section, of `find-attributes` and of `change-module-attribute`, the input schema of `find-attributes`), `__tests__/hi-mcp/tool-executors-test.ts`, `hi-mcp-server-test.ts`, `test-helpers/unit/hi-mcp-fixture.json` | `.agents/homag-intelligence/hi-tools-behaviour.md` (D76 and D100 reworded, a decision row), `hi-tools-reference.md` |
+| roomle-hi-example | the benchmark of §6 | this analysis; [the response time targets](../wiki/planning-assistant-response-time-targets.md) (the row "Selective retrieval"); `.agents/skills/hi-mcp-tools.md` (`get-plan-context`, `find-attributes`); `.agents/context/hi-mcp-server.md` where it names `find-attributes`; the benchmark reports and [the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md) |
 
 ## 9. Measurement gaps
 
 - The tokens are estimated from bytes with one ratio; the provider's tokenizer counts JSON
   differently per section (ids and codes tokenize worse than prose). The order of magnitude holds.
 - The session is one model, gpt-6-astra, on 79 prompts of the test suite; another model or other
-  prompts set other attributes. The 47 attributes are what this suite asks for, not a bound.
+  prompts set other attributes. The 50 attributes are what this suite asks for, not a bound.
+- `planner-calls.json` records no turn; the turn of a change (§4) is read from the `toolCalls` of
+  `run.json`, which name the tools of a turn in order.
 - Whether the size of the section slows or misleads the model is not measured: the find-attributes
   test answered correctly from the section, and the creations set the right look in the baseline;
   a comparison of the planning quality with and without the lists is the measurement of §6.
@@ -284,11 +323,44 @@ needs the lookup round before its first kitchen.
    (D100) and chooses no attribute by its name or content (D76, §2.4). D76 and D100 are reworded:
    every attribute is in the section, the value lists of the attributes a planning sets at the
    create, the others through `find-attributes`.
-2. **Its acceptance is the measurement of §6**, four to six paid runs on the baseline's protocol:
-   whether a creation needs a lookup round before its first kitchen. If it does, the level-1
-   criterion is what to revise — still structural —, not a return to every list in the prefix.
+2. **Its acceptance is the measurement of §6**, four paid runs on the baselines' protocol, the two
+   baseline tests two times each: whether a creation needs a lookup round before its first
+   kitchen. If it does, the level-1 criterion is what to revise — still structural —, not a return
+   to every list in the prefix.
 3. **The descriptions are the library's to complete**: in the measured library 57 attribute descs
    repeat the name and 24 values have none, so the agent reads the names there. Complete
    descriptions are wanted, and the two-level design keeps them affordable — an item for
    [library-issues.md](../backlog/library-issues.md), whose attribute paragraph this analysis
    corrects to what the vocabulary serves (every attribute, D76 and D100).
+
+## 11. Validation
+
+The analysis was checked against the roomle-ui code of its base, the sections of the probe and the
+calls of the test session; the counts are recomputed in
+`.temp/result/attribute-information-probe-2026-10-27/validate/`. What held and what changed:
+
+- **Held**: the sizes of §3 (121,067 bytes, 397 attributes, 153 lists with 795 values, 59
+  attributes sharing a list, 57 descs repeating the name, 24 values without a desc, 1,495 values
+  before the sharing), the token estimates, the creates with group attributes (42 of 49) and the
+  roots with attributes (180 of 278), no `find-attributes` call, the appliance models in a quarter
+  of the creates; the code of §2 at its base and on `feat/hi-mcp-performance`.
+- **The level-1 figures** were measured with five of the 13 generated root modules — the panel
+  top, the worktop, the backsplash, the toekick and the finger grip, the ones a kitchen generates:
+  57 attributes, 26 lists, about 72 KB. The criterion as §6 states it, every generated root module,
+  gives 187 attributes, 64 lists and 88 KB; §6 states it precisely now and carries these figures,
+  the saving 33 KB and 7,300 tokens instead of 49 KB and 11,000. The five modules are a choice by
+  content and stand in §7 as an alternative.
+- **The risk** of §6: 11 of 38 list attributes and 14 of 49 creates instead of 17 of 37 and "a
+  quarter"; every create of the two baselines sets one of them, so the measurement needs no
+  further tests.
+- **The usage of §4** was counted from the `toolCalls` of `run.json`, which name an attribute
+  change by its `attributeId` only: 47 attributes and 8 changed attributes. From the calls the
+  planner ran: 50 attributes, 22 changed, most of the changes in the creating turn after its
+  first kitchen. The per-root counts and the coverage by `isMain` and `Simple` are corrected alike.
+- **Smaller corrections**: `compactAttribute` keeps `imageUrl` too, which the server strips (D7);
+  the group settings are the group orchestrator's attributes, not the look; `mainAttributes` are
+  the root's `isMain` attributes; a result names the values an attribute takes by their codes; the
+  line references; `change-module-attribute` names the attributes section as well; the link to the
+  deleted time-to-first-attempt analysis points to the response time targets.
+- **library-issues.md** still said in three places that attributes are missing from the
+  vocabulary; corrected to every attribute (D100).

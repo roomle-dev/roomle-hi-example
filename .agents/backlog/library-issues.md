@@ -36,9 +36,9 @@ keeps every suggested text, applied in the library or not.
   full (D76, D100). A value list several attributes share is listed once. What it costs and what
   the agent uses of it: [the analysis of the attribute information](../feature-analysis/planning-assistant-attribute-information.md)
   while it is open.
-- **Any other attribute** reaches the agent only when the library changes its value and the result
-  names the change (D59) — `mod_CarcaseProgram`, `mod_CarcaseOutsideProgram` and
-  `mod_FingergripType`, for example. A rule the agent needs goes into a customer-facing attribute.
+- **A value the library changes along** — a program switched by a colour — is named in the result
+  with its `desc` (D59). A rule the agent needs goes into the `desc` of the attribute or the value
+  it concerns.
 
 ## Overview
 
@@ -112,8 +112,8 @@ the agent that setting it on a handled article is not the same as choosing a han
 `mod_FingergripType` `Wood` and `mod_CreateFingergrip` `True` (`article.json`): fronts with a wooden
 fingergrip. A handled article set to `mod_HandleDesign` `10` keeps `mod_CreateFingergrip` `False`
 and `mod_FingergripType` `None`: fronts without a handle and without a grip (order data of
-`mcp-test-2026-10-17_13-28-41` gpt-6-astra 52). The two fingergrip attributes are not in the
-attribute vocabulary (`userRight` `Advanced`). The catalog has handleless variants of base units
+`mcp-test-2026-10-17_13-28-41` gpt-6-astra 52). The two fingergrip attributes are `userRight`
+`Advanced`; the attribute vocabulary lists them (D100). The catalog has handleless variants of base units
 only — sink, storage, corner and hob units. In `mcp-test-2026-10-16_19-30-19` gpt-6.1-sol 50, turn 5,
 the model answers "No fingergrip profiles were added—the existing units do not support that
 attribute".
@@ -256,7 +256,7 @@ while the outside carcase colour of the units follows the plain front colour (`m
 the library has no grain direction — as the end panels of issue 3. The descs of `mod_CarcaseColor`,
 `mod_CarcaseOutsideColor` and `mod_CarcaseProgram` do not say which colour the visible sides take or
 which program a plain outside colour needs; `mod_CarcaseProgram` and `mod_CarcaseOutsideProgram`
-are not in the attribute vocabulary (`userRight` `Master`, not `isMain`).
+are `userRight` `Master`, not `isMain`; the attribute vocabulary lists them (D100).
 
 **How the library behaves.** A visible side — at the end of a row — takes `mod_CarcaseOutsideColor`;
 where the create does not set it, it is the front colour (order data of

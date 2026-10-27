@@ -42,7 +42,7 @@ shapes are.
 
 Filename abbreviations: `iklw` = image kitchen left wall; `oa` = OpenAI Astra; `az` = Azure Astra;
 `orig` = original; `base` = baseline; `rc` = response chaining; `preloads` = scoped live context and first-image guidance; `jpg` = JPEG plan images;
-`due` = renders and context reads when due; `cmp` = comparison.
+`due` = renders and context reads when due; `skill` = one skill round, the reference served with the skill; `cmp` = comparison.
 
 The series has four numbered reports: **01 original**, **02 response chaining**, **03 response chaining plus preloads**, and **04 response chaining with JPEG plan images and renders when due**. Each contains two repetitions. The comparison is unnumbered and is extended when future runs are added.
 
@@ -60,6 +60,8 @@ remains measured evidence; the source-equivalent rollback requires no new benchm
 | [Left-wall image kitchen: preloads run](03-iklw-oa-rc-preloads-2026-10-26.md) | Discarded attempt — evidence retained | Two repetitions with both preloads; selected code uses response-chaining behavior from 02 |
 | [Left-wall image kitchen: JPEG images and renders when due](04-iklw-oa-rc-jpg-due-2026-10-27.md) | Measured | Two repetitions on the local planner: 02's chaining with JPEG plan images and the served text on renders and reads; first kitchen 29.661 s, turn 52.327 s, 69 % less upload than 02 |
 | [Left-wall image kitchen: the status line of the window](05-iklw-oa-rc-status-2026-10-27.md) | Measured | Two repetitions on 04's planner with proposal B: the create named 5.6 / 3.7 s before it runs (04: 0.18 s); the reasoning summary is a call's first output and does not fill the wait for it; first kitchen 28.456 s, turn 59.954 s with 10 / 7 calls by the agent's post-create choices |
+| [One skill round on the Azure deployment](06-az-skill-2026-10-27.md) | Measured | Two repetitions each of the image kitchen and the walnut kitchen with proposal A, `gpt-6-astra` on Azure, local planner: every run creates at call 2 with the kitchen skill and its reference in one result, no reference fetch; first kitchen 29.655 s (image, the session's run: 36.4 s) and 30.290 s (text, 31.7 s); the reasoning of the reference round moved into the create call |
+| [The Azure series: benchmark comparison](az-cmp-2026-10-27.md) | Measured | The series from 06 on against the test session of 2026-10-27 on the same deployment: the shape of a turn, the timing, the decision to keep A |
 | [Left-wall image kitchen: timing comparison](iklw-oa-rc-cmp-2026-10-26.md) | Measured | Original 01, chaining 02, preloads 03, JPEG images with renders when due 04 and the status line 05; per-call bytes, timing/stage deltas, the status line and usage |
 | [planning-assistant-prompt-caching.md](planning-assistant-prompt-caching.md) | Complete | A/B/C comparison selects compact library/rules; Azure boundary verifies cross-prompt reuse; final Astra minimum suite: 6 pass, 4 partial, 0 fail |
 | [Shared-reference artifacts](planning-assistant-prompt-caching/README.md) | Evidence | Generated per-variant Markdown/JSON measurements and reproduction metadata |

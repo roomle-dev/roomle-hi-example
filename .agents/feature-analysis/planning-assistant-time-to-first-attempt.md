@@ -337,26 +337,25 @@ one round instead of two, so A comes first and G is decided on A's build.
 
 ## 7. How to proceed
 
-In this order, one build per step, each step measured before the next:
+B, D and E are done ([§10](#10-implementation-state)): B's tool status is in the embedding-lib the
+example loads, D and E are planner code on `feat/hi-mcp-performance`. What the window shows during
+the wait before a call's first output — the remainder of B — is a proposal of its own, to be
+decided. The open steps, in this order, one build per step, each step measured before the next:
 
-1. **B** — no model cost, no measurement needed beyond the window: the user sees progress from the
-   first seconds. An embedding-lib change; the build is asked for. B is done: the tool status
-   kept, the reasoning summary discarded after benchmark 05 ([§10](#10-implementation-state)).
-2. **A** with a **benchmark 04**: `image-kitchen-left-wall` and `full-kitchen-walnut-marble-corner`,
-   two repetitions each, `openai:gpt-6-astra` with the local planner as in reports 01–03, about five
-   minutes and 2.5 million input tokens; the report in `.agents/benchmarks/04-…` and a row in the
+1. **A** with a **benchmark 06**: `image-kitchen-left-wall` and `full-kitchen-walnut-marble-corner`,
+   two repetitions each, `openai:gpt-6-astra` with the local planner as in reports 01–05, about five
+   minutes and 2.5 million input tokens; the report in `.agents/benchmarks/06-…` and a row in the
    comparison. Accept A when the create comes at call 2 and the first kitchen is earlier.
-3. **G** on the build of A, with the same benchmark and a selector model of the provider: accept
+2. **G** on the build of A, with the same benchmark and a selector model of the provider: accept
    G when the create comes at call 1 and the first kitchen is earlier than with A by more than the
    spread of two repetitions; otherwise the selector stays out. An embedding-lib change, the build
    asked for, and a decision of its own beside ADR 0015.
-4. **F** — a small planner change, verified with the minimum set of "test the mcp": the
-   first-result column. D is done: implemented and measured in benchmark 04
-   ([§10](#10-implementation-state)).
-5. **E** as an instruction change measured by the planning times and verdicts of the minimum set
-   plus the two tests whose renders must stay. E is implemented and measured for the image kitchen
-   in benchmark 04; the run on the text kitchens is open ([§10](#10-implementation-state)).
-6. **C** — the worked example as an experiment on the benchmark of step 2; the reasoning effort in
+3. **F** — a small planner change, verified with the minimum set of "test the mcp": the
+   first-result column.
+4. **E's run on the text kitchens** — the minimum set plus the two tests whose renders must stay,
+   measured by the planning times and the verdicts
+   ([§10](#proposal-e-measured-and-to-be-measured)).
+5. **C** — the worked example as an experiment on the benchmark of step 1; the reasoning effort in
    RML-18043.
 
 The standing metric is the **First result** column of every "test the mcp" report. The baseline is

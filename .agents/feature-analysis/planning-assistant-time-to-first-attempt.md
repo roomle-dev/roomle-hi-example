@@ -1,7 +1,8 @@
 # Planning Assistant: the time to the first attempt
 
 > **Type**: Feature analysis — the ticket's performance ideas evaluated, and how to proceed
-> **Status**: Open
+> **Status**: Open — proposal D implemented on `feat/hi-mcp-performance` (roomle-ui 43eda3a47,
+> not deployed; [§10](#10-implementation-state)); A, B, C, E and F open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 9ec622e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -44,7 +45,7 @@ and makes no model run; every number comes from retained runs.
 | The plan context added to every prompt | Evaluated and rejected ([ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md), [benchmark 03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md)) | 8 instead of 6 model calls, a third more input tokens, the first kitchen still at call 3 | Closed |
 | The image-planning skill added to the first image prompt | Evaluated and rejected (ADR 0015) | Same measurement: the kitchen skill and its reference still take two rounds | Closed |
 | Scale down the input image | Implemented: the chat window redraws a dropped image as a JPEG with the long side at most 1568 px (`prepareImage`, roomle-ui `planning-assistant-image.ts`); the test runner does the same | The test image arrives as 1568 × 1276 px, 198,683 bytes, about 2,000 input tokens of 77,000 | Done. A smaller image saves nothing measurable and loses what the model reads |
-| Scale down the plan images | Open | `get-plan-images` answers 2,738,222 bytes: two PNG renders at 1024 px, 509 KB and 1.56 MB; the request that carries them takes 3.4 s to its response headers, the others about 1 s | [Proposal D](#d-plan-images-as-jpeg): after the first attempt, not before it |
+| Scale down the plan images | Implemented as proposal D on `feat/hi-mcp-performance` ([§10](#10-implementation-state)) | `get-plan-images` answers 2,738,222 bytes: two PNG renders at 1024 px, 509 KB and 1.56 MB; the request that carries them takes 3.4 s to its response headers, the others about 1 s. As JPEG the pair is 194,960 bytes | [Proposal D](#d-plan-images-as-jpeg): after the first attempt, not before it |
 | Tool memoization | Open | The read tools answer in 0.3–13 ms, an attribute change in about 0.16 s, the renders in 0.4–0.5 s, the create in 1.2–1.8 s; no tool is called twice with the same input in a turn, and a later turn finds the result in its history | Rejected: nothing to save |
 | Precalculated docking vectors | Open: the planner compacts the library context on every read (ADR 0013) | 12–20 ms warm, 0.7 s on the first read after the library load | [Proposal F](#f-keep-the-compacted-library-context): the backlog item, worth its 0.7 s only on the first prompt of a page |
 | Attribute indexing | Open | `find-attributes` answers in 13 ms, and no kitchen creation calls it since the vocabulary is in the plan context | Rejected: nothing to save |
@@ -207,6 +208,9 @@ today). On the providers without response chaining the saving repeats with every
 turn, and the Mistral overflow of the backlog item "Images of a tool result for Mistral" shrinks
 with it. After the first attempt, not before it.
 
+**State.** Implemented on `feat/hi-mcp-performance`; the format is chosen in the renderer, not
+re-encoded in the tool ([§10](#10-implementation-state)).
+
 ### E. The rounds after the create
 
 Every kitchen run of the session renders the plan images once after the create and reads the
@@ -247,7 +251,8 @@ In this order, one build per step, each step measured before the next:
    minutes and 2.5 million input tokens; the report in `.agents/benchmarks/04-…` and a row in the
    comparison. Accept A when the create comes at call 2 and the first kitchen is earlier.
 3. **D** and **F** — small planner changes, verified with the minimum set of "test the mcp": the
-   first-result and planning-time columns, and the images' bytes in the runs.
+   first-result and planning-time columns, and the images' bytes in the runs. D is implemented and
+   measured without a model ([§10](#10-implementation-state)); its model run is open.
 4. **E** as an instruction change measured by the full suite's planning times and verdicts.
 5. **C** — the worked example as an experiment on the benchmark of step 2; the reasoning effort in
    RML-18043.
@@ -274,3 +279,54 @@ of the create call, which only C changes.
   their numbers are compared for the shape of a turn, not for the seconds.
 - Ten creations and two repetitions per benchmark establish the pattern and its spread, not a
   p95; the stall of run 71 shows the tail every protocol has to leave room for.
+
+## 10. Implementation state
+
+| Proposal | State |
+|---|---|
+| A — one skill round | Open |
+| B — progress in the window | Open |
+| C — less to decide in the create call | Open |
+| D — plan images as JPEG | Implemented on `feat/hi-mcp-performance`: roomle-ui 43eda3a47, roomle-hi-example the commit of this section; local, not pushed, not deployed |
+| E — the rounds after the create | Open |
+| F — keep the compacted library context | Open |
+
+### Proposal D, as implemented
+
+The format is decided where the image is rendered. `PrepareImageOptions` of the planner's image
+renderer takes `type` and `quality`; a JPEG of a prepared image is drawn on white in the same
+synchronous step as the encode, because the group view has a transparent background that a JPEG
+turns black. `getExternalObjectSnapshot` takes `imageType` and `imageQuality` and passes them to
+its renders only when they are set, so the saved plan snapshot and every other caller keep PNG.
+`get-plan-images` asks for JPEG at quality 0.8 and labels its image contents `image/jpeg`; its
+description and the served-text fixture are unchanged. The decision is D117 of roomle-ui
+`.agents/homag-intelligence/hi-tools-behaviour.md`. The example's prompt runner names a saved
+plan image by its format, `.jpg` or `.png`.
+
+The change is planner code: the example and the ligna-store get it with the planner's deployment
+to bo-test, and no embedding-lib build is needed.
+
+### Proposal D, measured without a model
+
+The local planner of `feat/hi-mcp-performance` on :5173, the example page in headless Chromium,
+the plan snapshot of the left-wall image kitchen (`ps_t0box9y3wtzgj3mksoeywi95ii1enue`, one group).
+Four rounds on one page alternate a snapshot without a format (PNG) with a `get-plan-images` call
+(JPEG).
+
+| Measure | PNG, snapshot without a format | JPEG, `get-plan-images` |
+|---|---|---|
+| Tool result bytes of the pair | 2,754,898 | 194,960 |
+| Group view, 1024 × 1024 | 508,363 bytes | 52,335 bytes |
+| Top view, 1024 × 936 | 1,557,621 bytes | 93,695 bytes |
+| First call | 413 ms | 350 ms |
+| Later calls | 284–288 ms | 250–261 ms |
+| Pixel at the corner of both images | transparent | white |
+
+The tool result is 93 % smaller and the call is not slower. The images show the same kitchen and
+room as the PNGs. What the smaller result saves on the model request that carries it needs a model
+run; benchmark 03 measured that request with the PNG pair at 3.4 s to its response headers,
+against about 1 s for the others.
+
+Unit tests: the renderer's format for the top view, the perspective and the dimensions composite;
+the four renders of a snapshot with a format; the tool's snapshot request and image contents; the
+embedding-lib's file parts; the runner's file names.

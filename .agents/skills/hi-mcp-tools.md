@@ -495,6 +495,7 @@ alone (D108).
 groups alone, seen from their front without the room (`perspectiveObjectImage`) — and the top view
 of the whole plan; without groups the text says so and the top view comes alone. It asks the
 snapshot for `keepOpenGeometry`: the images show the doors and drawers as they are in the planner.
+Both images are JPEG at 1024 px on a white background, about 0.2 MB of tool result for a kitchen.
 One camera serves all groups: where fronts face opposite directions one side is seen from behind,
 and a root module not seen is not missing — `get-plan-context` lists them.
 

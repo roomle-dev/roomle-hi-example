@@ -236,14 +236,13 @@ With images off, the window takes no dropped file and the chat is text-only.
 
 ### Images in tool results
 
-`get-plan-images` returns its two renders as file parts of the tool result.
-Anthropic, Google and Azure send those to the model as images. `@ai-sdk/mistral`
-writes a tool result's content as JSON text — two renders were 1.5 to 2.1
-million tokens of base64 against Mistral Large's 262k context. The planning
-assistant of the embedding-lib does not move the images of a Mistral tool result
-into a user message, so a Mistral model fails on a turn that calls
-`get-plan-images`. Use a GPT, Claude or Gemini
-model for plannings that look at the plan.
+`get-plan-images` returns its two renders as JPEG file parts of the tool
+result, about 0.2 MB of base64 for a kitchen. Anthropic, Google and Azure send
+those to the model as images. `@ai-sdk/mistral` writes a tool result's content
+as JSON text, and the planning assistant of the embedding-lib does not move the
+images of a Mistral tool result into a user message: a Mistral model gets the
+renders as base64 text, not as images, and the text takes a large part of its
+context. Use a GPT, Claude or Gemini model for plannings that look at the plan.
 
 The tools keep their results small for every model: compact JSON without the
 signed `imageUrl` of the master data

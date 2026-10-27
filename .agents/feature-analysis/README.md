@@ -39,7 +39,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Description |
 |---|---|---|
-| [planning-assistant-time-to-first-attempt.md](planning-assistant-time-to-first-attempt.md) | Open | The ticket's performance ideas evaluated against the measurements; where the time to the first attempt goes (three rounds and the reasoning of the create call); the improvements in order: one skill round, progress in the window, JPEG plan images, the library context kept, the rounds after the create |
+| [planning-assistant-time-to-first-attempt.md](planning-assistant-time-to-first-attempt.md) | Open — proposal D (JPEG plan images) implemented on `feat/hi-mcp-performance` | The ticket's performance ideas evaluated against the measurements; where the time to the first attempt goes (three rounds and the reasoning of the create call); the improvements in order: one skill round, progress in the window, JPEG plan images, the library context kept, the rounds after the create |
 | [prompt-preloads.md](prompt-preloads.md) | Rejected | Added lifecycle complexity without overall benefit; source restored to response-chaining behavior from 02; analysis and benchmark 03 retained |
 | [openai-provider-launcher.md](openai-provider-launcher.md) | Implemented | Direct OpenAI CLI prefix, exact model selection and verified published embedding provider |
 | [planning-assistant-token-count-protocol.md](planning-assistant-token-count-protocol.md) | Implemented | Prompt usage logging and report totals verified with the SHA-pinned embedding-lib dev package |

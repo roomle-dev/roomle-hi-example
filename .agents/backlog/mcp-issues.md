@@ -28,40 +28,12 @@ Keep this document, its guidance and its overview table when no issues are open,
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 114 | [The provider rejects a chained model request of a turn](#114-the-provider-rejects-a-chained-model-request-of-a-turn) | defect | roomle-ui embedding-lib planning assistant (`hi-planning-assistant.ts`) — [analysed](../bug-analysis/rejected-response-continuation-ends-the-turn.md): continue the turn with the whole history when the provider rejects a continuation | high | gpt-6-astra | provider default |
 | 115 | [An interior fitting added where the parent shows a default interior](#115-an-interior-fitting-added-where-the-parent-shows-a-default-interior) | hardening | roomle-ui served text: `get-interior-design-options`, `add-interior-fitting` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
 | 116 | [A conflict a row edit leaves is not resolved](#116-a-conflict-a-row-edit-leaves-is-not-resolved) | hardening | roomle-ui served text: the rule for corrections, `delete-article-and-compact` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 114. The provider rejects a chained model request of a turn
-
-**Problem.** A model request the planning assistant chains on the previous response of the turn
-fails, and the turn ends with "The planning assistant failed: …" and no answer: once with "No tool
-output found for function call call_…" after a plan-changing tool had answered — the plan holds the
-change, the user gets no answer —, once with "Previous response with id 'resp_…' not found" after
-the first model call — a conversation of seven turns ends in its first. The runner does not retry
-either error: neither is a transport failure.
-
-**Cause.** Not analysed. The page loads embedding-lib `0.0.0-dev-432119f`, the build that chains
-the model requests within a turn (roomle-ui `80484dc71`): a request sends the previous response id
-and only the new items. The first error says that the provider expected the output of a function
-call the request did not carry; the second, that the provider does not hold the response the
-request names. The planning assistant has no way back to a request with the turn's whole history.
-
-**To do.** roomle-ui: analyse the bug — which function call the first request lacked (a parallel
-tool call of the step, a call whose output went to another request), and when the provider does not
-hold a previous response; then send a chained request that carries every function call output of
-the step, and answer a rejected chained request with one request with the turn's whole history.
-
-**Test.** roomle-ui planning-assistant unit tests: a step with two tool calls chains a request with
-both outputs; a provider rejection of a chained request ("Previous response … not found") is
-answered with one request with the whole history and the turn ends with an answer; the prompt tests
-`sideboard-row-one-more-cabinet` and `kitchen-conversation` end without a planning assistant error.
-
-**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 28 (`sideboard-row-one-more-cabinet`, "No tool output found", console.log line 22) and 74 (`kitchen-conversation`, "Previous response … not found", console.log line 14).
 
 ## 115. An interior fitting added where the parent shows a default interior
 

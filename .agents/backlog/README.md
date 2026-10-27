@@ -10,7 +10,6 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| [114 — The provider rejects a chained model request of a turn](mcp-issues.md#114-the-provider-rejects-a-chained-model-request-of-a-turn) | roomle-ui embedding-lib: analyse the "No tool output found" and "Previous response not found" errors of the response chaining; chain every function call output, fall back to the whole history | high |
 | [115 — An interior fitting added where the parent shows a default interior](mcp-issues.md#115-an-interior-fitting-added-where-the-parent-shows-a-default-interior) | roomle-ui served text: the description of `add-interior-fitting` sends the agent to `defaultInteriors` before it adds | low |
 | [116 — A conflict a row edit leaves is not resolved](mcp-issues.md#116-a-conflict-a-row-edit-leaves-is-not-resolved) | roomle-ui served text: resolve a conflict a correction reports, or say why not; the turned-leg correction names an opening the row reaches | low |
 | The models in the planner's coordinate system | Run "test the mcp" with every model on the planner build that carries D105 (the agent works in plan space, z up) and compare each test with its reference session; a placement by point — an island, a group of wall units only — is where the frame shows, the placement by wall names no coordinate | medium |

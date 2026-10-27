@@ -1,28 +1,35 @@
 # Planning Assistant: the time to the first attempt
 
 > **Type**: Feature analysis — the ticket's performance ideas evaluated, and how to proceed
-> **Status**: Open — proposals D and E implemented on `feat/hi-mcp-performance` (roomle-ui 43eda3a47
-> and bbac39fa7, not deployed; [§10](#10-implementation-state)); A, B, C and F open
+> **Status**: Open — D done and E implemented, its text-kitchen run open: roomle-hi-example on
+> `master` (#211), roomle-ui 43eda3a47 and bbac39fa7 pushed on `feat/hi-mcp-performance` and
+> `feat/hi-mcp-merge`, not on `release/bo-test` ([§10](#10-implementation-state)); A, B, C, F and
+> G open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
-> **Base**: roomle-hi-example `master` at 9ec622e with `@roomle/embedding-lib@0.0.0-dev-130245d`
+> **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
 > (roomle-ui `feat/hi-mcp-merge` at 130245dbd); the planner of `release/bo-test`
 > **Data**: the "test the mcp" session `.temp/result/mcp-test-2026-10-27_07-11-41` (gpt-6-astra on
 > Azure, 79 runs, no request pacing), the benchmark series
 > [01](../benchmarks/01-iklw-oa-orig-2026-10-26.md) / [02](../benchmarks/02-iklw-oa-rc-2026-10-26.md) /
-> [03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md) and
+> [03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md) /
+> [04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) and
 > [their comparison](../benchmarks/iklw-oa-rc-cmp-2026-10-26.md), the
-> [shared-reference benchmark](../benchmarks/planning-assistant-prompt-caching.md)
+> [shared-reference benchmark](../benchmarks/planning-assistant-prompt-caching.md), the external
+> document [Kitchen AI Planner: Skill-Architektur und Context Loading](../../docs/external/planning-improvements.md)
 
 ## Affected repositories
 
 - **roomle-ui** — the served text of `get-skill` and the skill reading (`hi-mcp/skills.ts`,
   `hi-mcp-server.ts`); the planning assistant's stream handling and provider options
   (`hi-planning-assistant.ts`) with the status of the chat window; the plan images of
-  `get-plan-images` (`tool-executors.ts`); the library context cache (`hi-library-context.ts`).
-- **roomle-hi-example** — this analysis, a benchmark 04 per measured step, the "First result"
-  column of the test reports as the standing metric.
-- **ligna-store** — no change; it gets every improvement with the planner and the embedding-lib.
+  `get-plan-images` (`tool-executors.ts`); the library context cache (`hi-library-context.ts`);
+  the skills of a turn selected before its first model call (`hi-planning-assistant.ts`, G).
+- **roomle-hi-example** — this analysis, a benchmark per measured step, the "First result"
+  column of the test reports as the standing metric; the external document in `docs/external/`;
+  with G, the selector model of the launcher.
+- **ligna-store** — no change for A–F; it gets every improvement with the planner and the
+  embedding-lib. With G, the selector model in its chat options (`hi-mcp/chat-options.ts`).
 
 ## 1. What was asked
 
@@ -33,9 +40,23 @@ indexing and selective retrieval. Some are evaluated and implemented, some are n
 behind the ticket is the wall-clock time: the assistant is far too slow, above all until the first
 attempt appears in the plan when a complete kitchen is planned from a prompt or from an image.
 
-This analysis answers three questions: where the ticket's ideas stand, where the time to the first
-attempt goes today, and which changes shorten it, in which order. It changes no productive code
-and makes no model run; every number comes from retained runs.
+An external document,
+[Kitchen AI Planner: Skill-Architektur und Context Loading](../../docs/external/planning-improvements.md)
+(German, kept as received in `docs/external/`), answers a question of the ticket's author: whether
+the skills can be trained into gpt-6-astra on Azure Foundry, so that the model stops reading them
+on every request. It advises against fine-tuning and for an agent architecture with selective
+context loading: small permanent system instructions, a skill registry of names and descriptions,
+the instructions of a skill loaded only when it is activated, domain knowledge through tools and
+retrieval, a small router model in front of the planning model, and JSON schema for the output.
+[§2](#2-the-tickets-ideas-evaluated) holds its proposals against the implementation: most of them
+are in place; the router yields one new proposal,
+[G](#g-the-skills-of-the-turn-selected-before-the-first-call), and fine-tuning is rejected with
+the document's own reasons.
+
+This analysis answers three questions: where the ticket's ideas and the document's proposals
+stand, where the time to the first attempt goes today, and which changes shorten it, in which
+order. It changes no productive code and makes no model run; every number comes from retained
+runs.
 
 ## 2. The ticket's ideas, evaluated
 
@@ -43,13 +64,30 @@ and makes no model run; every number comes from retained runs.
 |---|---|---|---|
 | Prompt caching | Implemented: the shared reference prefix ([ADR 0014](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-planning-assistant-uses-a-shared-reference-prefix.md)), the optional Azure cache boundary, Responses chaining ([prompt-caching.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md)) | The first call of a fresh conversation reads 74,806 of its 77,193 input tokens from the cache; it still waits 2.8–10 s for its first output ([§4](#4-where-the-time-to-the-first-attempt-goes)) | Done. The prefill is not where the time goes: a round costs about 3.5 s even with an empty answer |
 | The plan context added to every prompt | Evaluated and rejected ([ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md), [benchmark 03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md)) | 8 instead of 6 model calls, a third more input tokens, the first kitchen still at call 3 | Closed |
-| The image-planning skill added to the first image prompt | Evaluated and rejected (ADR 0015) | Same measurement: the kitchen skill and its reference still take two rounds | Closed |
+| The image-planning skill added to the first image prompt | Evaluated and rejected (ADR 0015) | Same measurement: the kitchen skill and its reference still take two rounds | Closed. [Proposal G](#g-the-skills-of-the-turn-selected-before-the-first-call) supplies the kitchen skill with its reference instead — the two rounds that remain — selected per request |
 | Scale down the input image | Implemented: the chat window redraws a dropped image as a JPEG with the long side at most 1568 px (`prepareImage`, roomle-ui `planning-assistant-image.ts`); the test runner does the same | The test image arrives as 1568 × 1276 px, 198,683 bytes, about 2,000 input tokens of 77,000 | Done. A smaller image saves nothing measurable and loses what the model reads |
-| Scale down the plan images | Implemented as proposal D on `feat/hi-mcp-performance` ([§10](#10-implementation-state)) | `get-plan-images` answers 2,738,222 bytes: two PNG renders at 1024 px, 509 KB and 1.56 MB; the request that carries them takes 3.4 s to its response headers, the others about 1 s. As JPEG the pair is 194,960 bytes | [Proposal D](#d-plan-images-as-jpeg): after the first attempt, not before it |
+| Scale down the plan images | Implemented as proposal D ([§10](#10-implementation-state)) | `get-plan-images` answers 2,738,222 bytes: two PNG renders at 1024 px, 509 KB and 1.56 MB; the request that carries them takes 3.4 s to its response headers, the others about 1 s. As JPEG the pair is 194,960 bytes, and [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) measures the request that carries it at 0.95 s | Done, as [proposal D](#d-plan-images-as-jpeg). It saves after the first attempt, not before it |
 | Tool memoization | Open | The read tools answer in 0.3–13 ms, an attribute change in about 0.16 s, the renders in 0.4–0.5 s, the create in 1.2–1.8 s; no tool is called twice with the same input in a turn, and a later turn finds the result in its history | Rejected: nothing to save |
 | Precalculated docking vectors | Open: the planner compacts the library context on every read (ADR 0013) | 12–20 ms warm, 0.7 s on the first read after the library load | [Proposal F](#f-keep-the-compacted-library-context): the backlog item, worth its 0.7 s only on the first prompt of a page |
 | Attribute indexing | Open | `find-attributes` answers in 13 ms, and no kitchen creation calls it since the vocabulary is in the plan context | Rejected: nothing to save |
 | Selective retrieval (RAG) | Open | The input size costs about 13 ms per 1,000 tokens ([kitchen-from-image-time.md](../benchmarks/kitchen-from-image-time.md)), 97 % of the prefix is read from the cache, and a per-request selection would break the shared prefix and add a step | Rejected for the response time; reconsider when a library outgrows the prefix |
+
+### The external document's proposals
+
+The document describes its target as four layers — small permanent instructions, a skill registry,
+dynamic skill loading, domain knowledge through tools — with a router model in front. Held against
+the implementation (the sizes are bytes of the served text; a token is about four bytes):
+
+| The document proposes | What the assistant has | Verdict |
+|---|---|---|
+| No fine-tuning: the rules stay outside the model weights, because supervised fine-tuning teaches how to answer, not which rules to know, and every change of a rule would need training, data set and validation again | The rules are text: the authoring rules, the skills as HOMAG delivers them (D75 of [hi-tools-behaviour.md](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)) and the descriptions of the library data, changed without a model | Agreed — [Not proposed](#not-proposed) |
+| Small permanent system instructions, 500–1,500 tokens | The system prompt is 2,259 bytes (roomle-ui `hi-agent-prompts.ts`); the shared block in front of every call is the authoring rules, 21,855 bytes (ADR 0014, variant B of the [shared-reference benchmark](../benchmarks/planning-assistant-prompt-caching.md#content-variant-results-and-decision)); the tool definitions, 43,246 bytes, go with every call | In place. Together 67,360 bytes of a first call's 77,193 input tokens, read from the cache like the library |
+| A skill registry, always in the context: name, description, when to use | `skillIndex` in the description of `get-skill` (roomle-ui `hi-mcp/skills.ts`, `hi-mcp-server.ts`): one line per skill with its name and its description, which says when to use it | In place |
+| A skill in three parts — metadata, instructions loaded only when the skill is activated, resources — and the skill as a tool, `get_skill("kitchen-planning")` | The Agent Skills format: the frontmatter, `SKILL.md` on `get-skill name`, the references on `get-skill name file`; the source catalog stays optional | In place. What it costs is the rounds: the skill at call 1, its mandatory reference at call 2 ([§3](#3-how-a-kitchen-comes-about-today)) |
+| Domain knowledge through tools and retrieval — catalog search, article lookup, validation, price — not in the prompt | `find-attributes`, the sections of `get-plan-context`, `get-price`, the corrections of the create; the compact catalog itself, 270,617 bytes, is in the shared prefix (ADR 0014) | The catalog stays in the prefix: 97 % of it is read from the cache, and a search per article pick would cost a round each — the selective retrieval of the table above |
+| A small router model in front: it recognizes the intent, selects the skills and the data, and the planning model gets them with the request | Nothing: the planning model selects the skill itself in its first call and reads it in two rounds | [Proposal G](#g-the-skills-of-the-turn-selected-before-the-first-call) |
+| JSON schema for the output | Every tool input is a JSON Schema the planner validates (roomle-ui `hi-mcp/mcp-tool.ts`); the output of the assistant is the plan, not a JSON answer | In place as far as it applies |
+| Versioned skills, deployed apart from the model | The skills are files of the planner, deployed with it | Not a matter of the response time |
 
 ## 3. How a kitchen comes about today
 
@@ -208,8 +246,10 @@ today). On the providers without response chaining the saving repeats with every
 turn, and the Mistral overflow of the backlog item "Images of a tool result for Mistral" shrinks
 with it. After the first attempt, not before it.
 
-**State.** Implemented on `feat/hi-mcp-performance`; the format is chosen in the renderer, not
-re-encoded in the tool ([§10](#10-implementation-state)).
+**State.** Done: implemented, the format chosen in the renderer, not re-encoded in the tool, and
+measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) — the
+request that carries the images 0.95 s to its response headers against 2.9–3.2 s with the PNGs,
+the upload per turn 69 % below 02 ([§10](#10-implementation-state)).
 
 ### E. The rounds after the create
 
@@ -222,8 +262,10 @@ saves a round and the heavy final request in a text creation, about 5 s of plann
 not change the first result. It is measured by the planning-time column of the suite, and it stays
 out if the answers get worse.
 
-**State.** Implemented on `feat/hi-mcp-performance`: the occasions of a render in the description of
-`get-plan-images`, and the read after a change in the system prompt; the model run is open
+**State.** Implemented: the occasions of a render in the description of `get-plan-images`, and
+the read after a change in the system prompt. Benchmark 04 shows both in the image kitchen: the
+render stays by design, after the last change, and the read after the create asks for the
+obstacles only. The text kitchens, where no render is due, are not measured yet
 ([§10](#10-implementation-state)).
 
 ### F. Keep the compacted library context
@@ -234,11 +276,51 @@ keep the compacted context from the library load until the next catalog load
 host without the test runner's warm-up read — the ligna-store. Cheap; it does nothing for the
 later prompts.
 
+### G. The skills of the turn selected before the first call
+
+The router of the external document. **What changes.** Before the first model call of a turn,
+the planning assistant determines the skills of the request — the kitchen skill for a kitchen (the
+France skill in France), the living-room skill, the image-planning skill when an image comes — and
+supplies each one together with the reference its `SKILL.md` asks to read before planning, as
+supplied skill files in the turn's user message, before the user's text. The system prompt already
+provides for them: "Use supplied skill files; fetch missing skills and references with get-skill".
+The assistant reads the files through `get-skill`, with the session preamble the tool serves, as it
+reads the library through `get-plan-context`; a skill the conversation already holds, supplied or
+fetched, is not supplied again. The selection is one short call to a small, fast model named in the
+config — the document's GPT-6 Luna; on Azure a small deployment of the same family, on OpenAI a
+mini model — with the skill index of `get-skill`, the user's text and whether an image comes,
+answering the names of the skills to supply for a request that plans a room, and none for an edit,
+a question or a look. An unknown name or a failed call supplies nothing, and the turn runs as today.
+
+**What it saves.** The two rounds before the create: 7–14 s in a text creation, 15–40 s in an image
+creation, minus the selector call; the reasoning on the image and the reference does not go away
+but moves into the create call. The create comes at call 1. A wrong selection costs nothing beyond
+today: the model fetches what it misses with `get-skill`.
+
+**Cost and risk.** One more model call per turn, about 1–2 s for a small model with a short input —
+estimated, not measured ([§9](#9-measurement-gaps)); the step timing of the usage record measures
+it. The first request of a creation turn grows by the skill and its reference, 34,527 bytes for a
+kitchen, at the end of the input, so the cached prefix stays intact; an edit turn grows by nothing,
+which is what variant C of the shared-reference benchmark lacked. It is the preload lifecycle ADR
+0015 rejected — a supplied-skill state in the host —, so G needs the evidence that decision asks for
+and a decision of its own. Benchmark 03 preloaded the image skill and the live context, and the
+kitchen skill with its reference still took two rounds; G supplies those two. It is an embedding-lib
+change, so the build is asked for, and the hosts name the selector model in their config
+(`start.mjs`, ligna-store `chat-options.ts`); without one the assistant selects nothing.
+
+**Alternative.** No model: the words of the skill index matched against the user's text, plus the
+image. Free and deterministic, but "Oven, hood, sink, fridge in the corner" (run 44) names no
+kitchen — a request the small model classifies and a word match does not. With A in place, G saves
+one round instead of two, so A comes first and G is decided on A's build.
+
 ### Not proposed
 
 | Idea | Why not |
 |---|---|
 | The preloads of benchmark 03 again | ADR 0015: they add a lifecycle and no round goes away while the skill still takes two |
+| The skills trained into the model | The external document itself advises against it: supervised fine-tuning teaches how to answer, not which rules to know, every change of a rule means training, data set and validation again, and the document finds no fine-tuning offer for gpt-6-astra in Foundry. The rules change with the library, the region and the skills HOMAG delivers (D75); the price of a round and the reasoning of the create call do not depend on where the rules are |
+| The catalog behind a search tool instead of in the prefix | The selective retrieval of [§2](#2-the-tickets-ideas-evaluated): the prefix is read from the cache, a search per article pick is a round each |
+| Trimming the tool definitions, 43,246 bytes with every call | About 13 ms per 1,000 tokens, read from the cache: a tenth of a second per call |
 | A first partial kitchen (the base row first, the rest in a second call) | One more round (about 3.5 s) and a second group that must dock onto the first; the first attempt would be a half kitchen |
 | Streaming the tool input into the planner while the model still writes | The group is laid out from its relations; a partial group cannot be built, and the planner's create takes 1.5 s of the 30 |
 | A watchdog that resends a call without a first output after a limit | The p95 of the wait is 12 s, one call of 411 stalled for 65 s; a resend doubles the cost of a legitimate long reasoning. Measure the tail over more sessions first |
@@ -254,25 +336,31 @@ In this order, one build per step, each step measured before the next:
    two repetitions each, `openai:gpt-6-astra` with the local planner as in reports 01–03, about five
    minutes and 2.5 million input tokens; the report in `.agents/benchmarks/04-…` and a row in the
    comparison. Accept A when the create comes at call 2 and the first kitchen is earlier.
-3. **D** and **F** — small planner changes, verified with the minimum set of "test the mcp": the
-   first-result and planning-time columns, and the images' bytes in the runs. D is implemented and
-   measured without a model ([§10](#10-implementation-state)); its model run is open.
-4. **E** as an instruction change measured by the full suite's planning times and verdicts. E is
-   implemented; its model run is open ([§10](#10-implementation-state)).
-5. **C** — the worked example as an experiment on the benchmark of step 2; the reasoning effort in
+3. **G** on the build of A, with the same benchmark and a selector model of the provider: accept
+   G when the create comes at call 1 and the first kitchen is earlier than with A by more than the
+   spread of two repetitions; otherwise the selector stays out. An embedding-lib change, the build
+   asked for, and a decision of its own beside ADR 0015.
+4. **F** — a small planner change, verified with the minimum set of "test the mcp": the
+   first-result column. D is done: implemented and measured in benchmark 04
+   ([§10](#10-implementation-state)).
+5. **E** as an instruction change measured by the planning times and verdicts of the minimum set
+   plus the two tests whose renders must stay. E is implemented and measured for the image kitchen
+   in benchmark 04; the run on the text kitchens is open ([§10](#10-implementation-state)).
+6. **C** — the worked example as an experiment on the benchmark of step 2; the reasoning effort in
    RML-18043.
 
 The standing metric is the **First result** column of every "test the mcp" report. The baseline is
 the session `mcp-test-2026-10-27_07-11-41`: text kitchens 31.7–44.0 s, image kitchens 36.4–62.7 s.
-A and F take the sure seconds; whether the first attempt gets under 20 s depends on the reasoning
-of the create call, which only C changes.
+A, G and F take the seconds of the rounds; whether the first attempt gets under 20 s depends on the
+reasoning of the create call, which only C changes.
 
 ## 8. Code and documents the work would touch
 
 | Repository | Code | Documents |
 |---|---|---|
-| roomle-ui | `hi-mcp/skills.ts` (`readSkillFile`), the `get-skill` registration in `hi-mcp-server.ts`, `__tests__/hi-mcp/skills-test.ts`, `hi-mcp-server-test.ts`, `test-helpers/unit/hi-mcp-fixture.json` (A); `packages/embedding-lib/src/homag-intelligence/hi-planning-assistant.ts` (stream parts, provider options), `src/common/store/planning-assistant-store.ts`, `PlanningAssistantChat.vue` and their tests (B); `hi-mcp/tool-executors.ts` or `planner-core/src/roomle-planner.ts` (D); `hi-library-context.ts` (F); the served rules in `hi-mcp-server.ts` (C, E) | `.agents/homag-intelligence/hi-tools-behaviour.md` (a decision row per change), `hi-tools-reference.md`, `agent-architecture.md`, `prompt-caching.md` |
-| roomle-hi-example | the benchmark 04 session and report; `minimal-hi-example/index.html` for a new embedding-lib pin | this analysis; `.agents/skills/hi-mcp-tools.md` (`get-skill`), `docs/ai-chat.md` (the status of the window), `.agents/benchmarks/README.md`, the backlog rows of the accepted steps |
+| roomle-ui | `hi-mcp/skills.ts` (`readSkillFile`), the `get-skill` registration in `hi-mcp-server.ts`, `__tests__/hi-mcp/skills-test.ts`, `hi-mcp-server-test.ts`, `test-helpers/unit/hi-mcp-fixture.json` (A); `packages/embedding-lib/src/homag-intelligence/hi-planning-assistant.ts` (stream parts, provider options), `src/common/store/planning-assistant-store.ts`, `PlanningAssistantChat.vue` and their tests (B); `hi-mcp/tool-executors.ts` or `planner-core/src/roomle-planner.ts` (D); `hi-library-context.ts` (F); the served rules in `hi-mcp-server.ts` (C, E); `hi-planning-assistant.ts` (the selector call before the first model call, the supplied skill files, the selector model of `PlanningAssistantConfig`) and `tests/unit/embedding-lib/homag-intelligence/hi-planning-assistant.spec.ts` (G) | `.agents/homag-intelligence/hi-tools-behaviour.md` (a decision row per change), `hi-tools-reference.md`, `agent-architecture.md`, `prompt-caching.md`; with G an ADR beside ADR 0015 |
+| roomle-hi-example | the benchmark session and report of every measured step; `minimal-hi-example/index.html` for a new embedding-lib pin; `minimal-hi-example/start.mjs` (the selector model, G) | this analysis; `.agents/skills/hi-mcp-tools.md` (`get-skill`), `docs/ai-chat.md` (the status of the window; the selector model), `.agents/benchmarks/README.md`, the backlog rows of the accepted steps |
+| ligna-store | `hi-mcp/chat-options.ts` (the selector model, G) | — |
 
 ## 9. Measurement gaps
 
@@ -284,6 +372,8 @@ of the create call, which only C changes.
   their numbers are compared for the shape of a turn, not for the seconds.
 - Ten creations and two repetitions per benchmark establish the pattern and its spread, not a
   p95; the stall of run 71 shows the tail every protocol has to leave room for.
+- The selector call of G is estimated: no retained run has a call with a short input to a small
+  model. The 3.5 s of a round are gpt-6-astra's with the full input.
 
 ## 10. Implementation state
 
@@ -292,9 +382,10 @@ of the create call, which only C changes.
 | A — one skill round | Open |
 | B — progress in the window | Open |
 | C — less to decide in the create call | Open |
-| D — plan images as JPEG | Implemented on `feat/hi-mcp-performance`: roomle-ui 43eda3a47, roomle-hi-example the commit of this section; local, not pushed, not deployed |
-| E — the rounds after the create | Implemented on `feat/hi-mcp-performance`: roomle-ui bbac39fa7, roomle-hi-example the commit of this section; local, not pushed, not deployed; the model run open |
+| D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
+| E — the rounds after the create | Implemented: roomle-ui bbac39fa7, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; the run on the text kitchens open ([below](#proposal-e-measured-and-to-be-measured)) |
 | F — keep the compacted library context | Open |
+| G — the skills of the turn selected before the first call | Open |
 
 ### Proposal D, as implemented
 
@@ -354,7 +445,7 @@ Guarded by a test on each sentence; the served-text fixture carries the new desc
 example's tool skill says the same. The change is planner code: the example and the ligna-store
 get it with the planner's deployment to bo-test, and no embedding-lib build is needed.
 
-### Proposal E, to be measured
+### Proposal E, measured and to be measured
 
 What the session of 2026-10-27 shows and E takes away: 17 renders in 16 of 79 runs, of which 5
 were asked for, 7 belong to image plannings and 5 are the five text kitchen creations, where
@@ -362,7 +453,14 @@ nothing asked for a render; no other text creation renders. After a change, 30 o
 one read the plan context again, the kitchen creations right after their create and before their
 first edit.
 
-The model run is open: the minimum set of "test the mcp" plus `plan-images-kitchen` and
+[Benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) — the image kitchen, two
+repetitions — shows E in the case where a render is due: the agent renders once, after its last
+change, because the served text names the comparison with the user's image as an occasion, so the
+images show the final state (a round of its own, 5.7 / 6.9 s); after the create it reads the
+obstacles only, 1,853 bytes, batched with the attribute lookup, because the create result carries
+the groups.
+
+The run on the text kitchens is open: the minimum set of "test the mcp" plus `plan-images-kitchen` and
 `open-cabinet-look-inside`, whose renders must stay, with gpt-6-astra on the local planner of
 `feat/hi-mcp-performance`; compared per test with the session of 2026-10-27 on the
 `get-plan-images` calls (text kitchens none, the two asked tests one), the plan context reads

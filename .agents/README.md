@@ -142,7 +142,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Planning Assistant: the time to the first attempt](feature-analysis/planning-assistant-time-to-first-attempt.md) | Open — the ticket's ideas evaluated, where the time to the first attempt goes, the improvements in order; A, B, D, E and G's plan state per turn done on `feat/hi-mcp-performance`; C and F open | 2026-10-27 |
+| [Planning Assistant: the time to the first attempt](feature-analysis/planning-assistant-time-to-first-attempt.md) | Open — the ticket's ideas evaluated, where the time to the first attempt goes, the improvements in order; A, B, D, E, F (the library read before the first prompt) and G's plan state per turn done on `feat/hi-mcp-performance`; C open | 2026-10-27 |
 | [Planning Assistant: the skills of the turn selected before the first call](feature-analysis/planning-assistant-skill-selector.md) | Implemented in part — the plan state supplied per turn, accepted in benchmark 07 on the Azure deployment (the move at call 1); the selector of the skills deferred to the backlog with the choice of the models | 2026-10-27 |
 | [HI Planning Assistant token count protocol](feature-analysis/planning-assistant-token-count-protocol.md) | Implemented — prompt usage logging and report totals verified with the pinned embedding-lib dev | 2026-10-25 |
 | [Planning Assistant: live context and image-skill preloads](feature-analysis/prompt-preloads.md) | Rejected — added complexity without overall improvement; code uses response-chaining behavior from 02; evidence retained | 2026-10-26 |
@@ -170,7 +170,8 @@ folder of the same name.
 |---|---|---|
 | [Where the time goes when the HI agent plans a kitchen from an image](benchmarks/kitchen-from-image-time.md) | Third measurement (RML-18164): the six improvements one after another on one build and the local planner — baseline 104 s, 8.4 steps, 531k; the vocabulary section takes the search steps away (75 s, 6.5, 383k), the rest is stable within the spread | 2026-10-14 |
 | [One skill round on the Azure deployment](benchmarks/06-az-skill-2026-10-27.md) | Proposal A measured on `gpt-6-astra` on Azure: every run creates at call 2, no reference fetch; first kitchen 29.655 s (image) and 30.290 s (text) against the session's 36.4 and 31.7 s | 2026-10-27 |
-| [The Azure series: benchmark comparison](benchmarks/az-cmp-2026-10-27.md) | The series from 06 on against the test session of 2026-10-27; A kept | 2026-10-27 |
+| [The library read before the first prompt on the Azure deployment](benchmarks/08-az-warm-2026-10-27.md) | Proposal F measured on `gpt-6-astra` on Azure: every page reads the library before the first prompt (729–754 ms); the first turn reads it in 6–8 ms and sends its first request after 0.03–0.05 s instead of 0.78–0.81 s on the build of 07; the creations keep the shape of 06 | 2026-10-27 |
+| [The Azure series: benchmark comparison](benchmarks/az-cmp-2026-10-27.md) | The series from 06 on against the test session of 2026-10-27; A, the plan state per turn and the library read before the first prompt kept | 2026-10-27 |
 | [Original left-wall image kitchen timing](benchmarks/01-iklw-oa-orig-2026-10-26.md) | Original baseline, preserved unchanged | 2026-10-26 |
 | [Left-wall image kitchen: response-chaining run](benchmarks/02-iklw-oa-rc-2026-10-26.md) | Two chained repetitions; independent timing and per-call byte report | 2026-10-26 |
 | [Left-wall image kitchen: preloads run](benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md) | Discarded attempt — two measured repetitions retained; response-chaining behavior from 02 selected | 2026-10-26 |

@@ -66,7 +66,6 @@ Defects of the planner outside the HI tool commands. Details: [roomle-ui-issues.
 |---|---|---|
 | 1 — A dark worktop renders white under the top light | roomle-ui renderer: the top light overexposes the tabletop depending on the line of sight, so black appears white; render it in its material colour from every line of sight | [roomle-ui-issues.md, 1](roomle-ui-issues.md#1-a-dark-worktop-renders-white-under-the-top-light) |
 | 2 — The water connection is an installation element only through a planner override | Rubens Admin: set level 28 on the wall water connection items; then remove the `water_connections` level override in roomle-ui `planner-kernel-access.ts` | [roomle-ui-issues.md, 2](roomle-ui-issues.md#2-the-water-connection-is-an-installation-element-only-through-a-planner-override) |
-| Caching the library context | roomle-ui planner: keep the compacted library context (`createLibraryContext`, `hi-library-context.ts`) from `addLibrary` / `loadPosData` until the next catalog load — only when a measurement shows that compacting the catalog on every call costs | not measured; ADR 0013 of roomle-ui |
 
 ## Chat
 

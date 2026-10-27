@@ -106,7 +106,11 @@ Version 1 diagnostics preserve cache-read/write coverage, model-call timings and
 bytes and digests without storing prompt content or credentials. The runner records both local
 embedding imports and planner origins so a local benchmark can verify its actual runtime.
 `referenceAcquisitionMs` covers compact library acquisition and reference measurement before
-inference; the reference digest covers instructions/library only. Historical benchmark 03 keeps
+inference; the reference digest covers instructions/library only. Before the first prompt the
+assistant reads the planner's library context until the catalog has loaded, so that the planner
+has calculated the article templates when the first turn acquires its reference; the console line
+`[planning-assistant] library read before the first prompt` gives the articles and milliseconds.
+The runner's wait for the catalog makes the same read, so a run's first turn is warm either way. Historical benchmark 03 keeps
 its measured preload semantics and is retained as evidence of the rejected attempt.
 
 ## Before you change these files

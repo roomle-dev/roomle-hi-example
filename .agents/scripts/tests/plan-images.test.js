@@ -4,13 +4,15 @@ import { planImageFiles } from '../plan-images.js';
 
 const base64 = (text) => Buffer.from(text).toString('base64');
 
-const imagesResult = (...images) => ({
+const imagesResult = (...images) => imagesResultOf('image/png', ...images);
+
+const imagesResultOf = (mimeType, ...images) => ({
   content: [
     { type: 'text', text: 'Image 1: …' },
     ...images.map((image) => ({
       type: 'image',
       data: base64(image),
-      mimeType: 'image/png',
+      mimeType,
     })),
   ],
 });
@@ -31,6 +33,23 @@ test('names the images of every get-plan-images call by its turn and its order i
       [1, 'turn-2-plan-images-1-top.png', 't2'],
       [1, 'turn-2-plan-images-2-perspective-object.png', 'o3'],
       [1, 'turn-2-plan-images-2-top.png', 't3'],
+    ]
+  );
+});
+
+test('names a JPEG image .jpg and a PNG image .png', () => {
+  const files = planImageFiles([
+    { turn: 0, result: imagesResultOf('image/jpeg', 'o1', 't1') },
+    { turn: 0, result: imagesResultOf('image/png', 'o2', 't2') },
+  ]);
+
+  assert.deepEqual(
+    files.map(({ file, data }) => [file, data.toString()]),
+    [
+      ['turn-1-plan-images-1-perspective-object.jpg', 'o1'],
+      ['turn-1-plan-images-1-top.jpg', 't1'],
+      ['turn-1-plan-images-2-perspective-object.png', 'o2'],
+      ['turn-1-plan-images-2-top.png', 't2'],
     ]
   );
 });

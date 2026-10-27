@@ -76,10 +76,10 @@ when the models are chosen.
   conversation holds is derived from the history (the labels and the model's own `get-skill`
   calls); no state beside it.
 - **The plan state supplied per turn** is the selector's precondition: without the live sections —
-  rooms, groups, obstacles, installationElements, 5.6 KB, 7–11 ms — in the first request, the
+  rooms, groups, obstacles, installationElements, 5–14 KB, 10–20 ms — in the first request, the
   model reads them in its first call and the create stays the second call, with or without a
-  selector. It is a step of its own, decided apart from the selector (the time-to-first-attempt
-  analysis, §7).
+  selector. The planning assistant supplies it with every turn (D121 of roomle-ui
+  `hi-tools-behaviour.md`, ADR 0016), so the selector's precondition is met.
 - **The candidates**: on the Azure resource a small deployment at a low reasoning effort
   (`gpt-5.4-mini`), or the external document's router model if the resource has a deployment of
   it; on direct OpenAI a mini model. The launcher names it with `HI_CHAT_SELECTOR_MODEL`, the

@@ -1,8 +1,10 @@
 # AI Chat in the Example — Reference
 
 With a planning-assistant build that supports shared reference, common rules and compact library
-data precede the conversation. Library data refreshes each turn, and the assistant reads current
-plan state through tools. Azure may reuse matching input computation automatically, but every
+data precede the conversation. Library data refreshes each turn; the assistant also reads the plan
+state of the turn — rooms, groups, obstacles and installation elements — at the start of every
+turn and sends it after the conversation, before the new message, so the model's first call can be
+the change. Azure may reuse matching input computation automatically, but every
 request still transmits its content. Cache-read/write coverage and request bytes are separate
 measurements in test reports; missing counts are not zero. See the
 [implementation and decisions](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md)

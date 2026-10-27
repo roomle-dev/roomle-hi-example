@@ -3,10 +3,12 @@
 > **Type**: Feature analysis — proposal G of
 > [the time-to-first-attempt analysis](planning-assistant-time-to-first-attempt.md), its design
 > and its measurement, benchmark 07
-> **Status**: Open — the selector deferred to
-> [the backlog](../backlog/planning-assistant-skill-selector.md): the models of the assistant are
-> decided later; whether the plan state per turn is done without it is to be decided
-> ([§9](#9-decisions-to-take-before-the-plan))
+> **Status**: Implemented in part — the plan state supplied per turn, without the selector:
+> roomle-ui d06fe91de on `feat/hi-mcp-performance`, published as
+> `@roomle/embedding-lib@0.0.0-dev-d06fe91`, accepted in
+> [benchmark 07](../benchmarks/07-az-state-2026-10-27.md) on the Azure deployment; the selector
+> deferred to [the backlog](../backlog/planning-assistant-skill-selector.md) with the choice of
+> the models ([§9](#9-decisions-to-take-before-the-plan))
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-ui `feat/hi-mcp-merge` at 23c7a0113, which carries proposal A (the planning

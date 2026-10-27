@@ -194,6 +194,14 @@ const usageCells = (usage = unavailableUsage()) =>
     .concat(usage.status)
     .join(' | ');
 
+const seconds = (ms) => (ms == null ? '—' : `${(ms / 1000).toFixed(1)} s`);
+
+const timeCells = ({ planningMs, firstResultMs, planChanged } = {}) =>
+  [
+    seconds(planningMs),
+    planChanged === false ? 'none' : seconds(firstResultMs),
+  ].join(' | ');
+
 const runSection = (r) => {
   const e = evalOf(r);
   const L = [];
@@ -218,16 +226,18 @@ const runSection = (r) => {
   L.push(`- **Doors**: ${e.doors ?? ''}`);
   L.push(`- **Answer**: ${answerLine(r)}`);
   L.push('');
-  L.push('| Prompt | Input tokens | Output tokens | Total tokens | Usage |');
-  L.push('|---|---|---|---|---|');
+  L.push(
+    '| Prompt | Planning time | First result | Input tokens | Output tokens | Total tokens | Usage |'
+  );
+  L.push('|---|---|---|---|---|---|---|');
   for (let index = 0; index < r.promptTurns.length; index++) {
     const turn = r.turns[index];
     L.push(
-      `| ${index + 1} | ${turn ? usageCells(turn.usage) : '— | — | — | not run'} |`
+      `| ${index + 1} | ${turn ? `${timeCells(turn.time)} | ${usageCells(turn.usage)}` : '— | — | — | — | — | not run'} |`
     );
   }
   L.push(
-    `| ${r.attempts > 1 ? 'Test total (selected attempt)' : 'Test total'} | ${usageCells(r.usage)} |`
+    `| ${r.attempts > 1 ? 'Test total (selected attempt)' : 'Test total'} | ${timeCells(r.time)} | ${usageCells(r.usage)} |`
   );
   L.push('');
   if (r.turns.some((turn) => turn.usage?.diagnostics)) {
@@ -309,19 +319,26 @@ out.push(
   'Token counts cover each test’s selected attempt, including every model call of its submitted prompts. Partial counts show the known portion; unavailable counts are not zero.'
 );
 out.push('');
+out.push(
+  'Planning time runs from the first prompt to the last answer, first result from the first prompt to the first change of the plan in the planner (none: the prompts did not change the plan); both cover the selected attempt.' +
+    (facts.runs.some((r) => r.requestIntervalMs > 0)
+      ? ' Model requests were spaced (`HI_MCP_REQUEST_INTERVAL_MS`): the times include those waits and are no interactive latency.'
+      : '')
+);
+out.push('');
 for (const model of facts.models) {
   if (multi) {
     out.push(`### ${model}`);
     out.push('');
   }
   out.push(
-    '| # | Test | Verdict | Bug | Plan snapshot | Input tokens | Output tokens | Total tokens | Usage |'
+    '| # | Test | Verdict | Bug | Plan snapshot | Planning time | First result | Input tokens | Output tokens | Total tokens | Usage |'
   );
-  out.push('|---|---|---|---|---|---|---|---|---|');
+  out.push('|---|---|---|---|---|---|---|---|---|---|---|');
   for (const r of runsOf(model)) {
     const e = evalOf(r);
     out.push(
-      `| ${r.nn} | [${r.title}](${anchorOfRun(r)}) | ${e.verdict} | ${e.bug} | \`${r.planSnapshotId}\` | ${usageCells(r.usage)} |`
+      `| ${r.nn} | [${r.title}](${anchorOfRun(r)}) | ${e.verdict} | ${e.bug} | \`${r.planSnapshotId}\` | ${timeCells(r.time)} | ${usageCells(r.usage)} |`
     );
   }
   out.push('');
@@ -342,17 +359,18 @@ for (const model of facts.models) {
     out.push('');
   }
   out.push(
-    '| # | Test | Plan | Verdict | Input tokens | Output tokens | Total tokens | Usage | Keep as a fixed test |'
+    '| # | Test | Plan | Verdict | Planning time | First result | Input tokens | Output tokens | Total tokens | Usage | Keep as a fixed test |'
   );
-  out.push('|---|---|---|---|---|---|---|---|---|');
+  out.push('|---|---|---|---|---|---|---|---|---|---|---|');
   for (const t of randomRows) {
     const nn = nnOfTest.get(t.id);
     const r = byKey.get(`${model}|${nn}`);
     const title = r ? `[${t.title}](${anchorOfRun(r)})` : t.title;
     const verdict = r ? evalOf(r).verdict : 'not run';
+    const time = r ? timeCells(r.time) : '— | —';
     const usage = r ? usageCells(r.usage) : '— | — | — | not run';
     out.push(
-      `| ${nn} | ${title} | ${t.plan} | ${verdict} | ${usage} | ${evals.randomKeep?.[nn] || '—'} |`
+      `| ${nn} | ${title} | ${t.plan} | ${verdict} | ${time} | ${usage} | ${evals.randomKeep?.[nn] || '—'} |`
     );
   }
   out.push('');

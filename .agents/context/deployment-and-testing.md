@@ -60,7 +60,8 @@ node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt
    tool calls the planner ran during the chat come from `window.hiPlannerCalls`.
 
 Output in `--out` or `.temp/result/<time>-<model>/`: `run.json` (turns, answers, tool calls,
-errors, the snapshot id, `snapshotCaptured` and `navigations`), the plan context, the planner calls,
+the [times of the turns](#planning-time), errors, the snapshot id, `snapshotCaptured` and
+`navigations`), the plan context, the planner calls,
 the images, the plan XML and the order data. Exit code 1 on an error or without a snapshot id.
 Frame navigation is logged to `console.log` and stored with its timestamp, URL, main-frame flag,
 run phase (`loading`, `chat`, `snapshot`, `complete`) and whether only the URL fragment changed.
@@ -119,6 +120,37 @@ table per model and mark a missing run as `not run`; retention recommendations r
 including consecutive prompts, failed/aborted turns, invalid records and ignored planner-frame
 logs. `tests/report-scripts.test.js` covers selected-attempt totals, multiple models, minimum and
 random tests, images, known zero, legacy and partial measurements, and repeat extraction.
+
+### Planning time
+
+`planning-time.js` measures when a prompt first changes the plan. Once the planning assistant is
+available, the runner chains the host page's `instance.extended.callbacks.onHistoryChange`, which
+the embedding-lib calls for every history event of the planner; the handler before it keeps
+running. The page records the time (`Date.now()`) of each event in `window.hiPlanChanges`. The
+planner reports one event per step of a plan change. A tool call that reads the plan, renders
+images, opens or closes doors, fails, or makes a change the library cannot calculate (the
+planner discards it before it is loaded) reports none. The undo history the planner clears when
+the plan's groups have loaded lies before the recording.
+
+`run.json.turns[]` holds `durationMs`, from sending the prompt to the end of the turn, and
+`firstPlanChangeMs`, from sending the prompt to the first history event in the turn, `null` when
+there is none. Both count from the runner's clock before the prompt goes to the page; page and
+runner share the machine's clock. A turn that is aborted keeps the events up to the end of its
+settling. Results recorded before the measurement have no `firstPlanChangeMs`.
+
+`extract-run-facts.js` derives `time` per turn and per run (`summarizePlanningTime`):
+`planningMs` is the sum of the turns' `durationMs`, `firstResultMs` the `durationMs` of the turns
+before the first plan change plus its `firstPlanChangeMs`. The moments between the turns, the
+runner's own reads, are not part of either. `planChanged` is `false` when no turn changed the
+plan and `null` when a turn did not measure it; the report renders them as `none` and `—`. Per
+run, `requestIntervalMs` carries the request pacing of `run.json.runtime`: a session with pacing
+says under the report's summary that the times include the waits.
+
+`tests/planning-time.test.js` covers the sums across turns, an unchanged plan, unmeasured and
+empty turns, and the recording in real Chromium: events before the prompt are ignored, the first
+event of the prompt counts, and the page's own handler keeps running.
+`tests/report-scripts.test.js` covers the times in the summary, the random tests, the prompt
+tables and the test totals, legacy results and the pacing note.
 
 ### Snapshot persistence and repository ownership
 

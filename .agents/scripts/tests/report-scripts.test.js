@@ -47,8 +47,9 @@ const writeRun = async (session, dir, runJson, ctx, plannerCalls) => {
 };
 
 // A single-model session: three runs (a fixed test with corrections and an
-// error, a random test with a notLoaded group and a long answer, an image test
-// with no prompt and no perspective-object image) and a fourth test skipped.
+// error that changed the plan, a random test with a notLoaded group and a long
+// answer that did not, an image test with no prompt and no perspective-object
+// image, recorded before the plan changes were) and a fourth test skipped.
 const singleModelSession = async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'report-scripts-'));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -173,6 +174,7 @@ const singleModelSession = async (t) => {
             },
           ],
           durationMs: 900,
+          firstPlanChangeMs: 400,
         },
       ],
       errors: [],
@@ -268,6 +270,7 @@ const singleModelSession = async (t) => {
             },
           ],
           durationMs: 800,
+          firstPlanChangeMs: null,
         },
       ],
       errors: [],
@@ -527,6 +530,8 @@ test('extracts the facts of a single-model session', async (t) => {
         outputTokens: null,
         totalTokens: null,
       },
+      time: { planningMs: 900, firstResultMs: 400, planChanged: true },
+      requestIntervalMs: 0,
       runErrors: [],
       dir: 'gpt-test-a/01-alpha-create',
       turns: undefined,
@@ -582,10 +587,22 @@ test('extracts the facts of a single-model session', async (t) => {
     'second group, only error',
   ]);
 
+  assert.deepEqual(r2.time, {
+    planningMs: 800,
+    firstResultMs: null,
+    planChanged: false,
+  });
+  assert.deepEqual(r2.turns[0].time, r2.time);
+
   assert.equal(r3.nn, '03');
   assert.equal(r3.random, false);
   assert.equal(r3.image, 'docs/images/gamma.png');
   assert.deepEqual(r3.promptTurns, [null]);
+  assert.deepEqual(r3.time, {
+    planningMs: 700,
+    firstResultMs: null,
+    planChanged: null,
+  });
 });
 
 test('names the minimum set in the title and in a note under it', async (t) => {
@@ -626,13 +643,38 @@ test('builds the report of a single-model session', async (t) => {
   );
   assert.ok(
     report.includes(
-      '| 01 | [Alpha create](#01-alpha-create) | pass | no | `ps_run01` |'
+      '| # | Test | Verdict | Bug | Plan snapshot | Planning time | First result | Input tokens | Output tokens | Total tokens | Usage |'
     )
   );
   assert.ok(
     report.includes(
-      '| 02 | [Random: beta](#02-random-beta) | default-room | partial | — | — | — | unavailable | yes — covers beta |'
+      '| 01 | [Alpha create](#01-alpha-create) | pass | no | `ps_run01` | 0.9 s | 0.4 s | — | — | — | unavailable |'
     )
+  );
+  assert.ok(
+    report.includes(
+      '| 03 | [Gamma image](#03-gamma-image) | fail | yes: planner (roomle-ui) | `ps_run03` | 0.7 s | — |'
+    )
+  );
+  assert.ok(
+    report.includes(
+      'Planning time runs from the first prompt to the last answer, first result from the first prompt to the first change of the plan in the planner'
+    )
+  );
+  assert.ok(!report.includes('HI_MCP_REQUEST_INTERVAL_MS'));
+  assert.ok(
+    report.includes(
+      '| 02 | [Random: beta](#02-random-beta) | default-room | partial | 0.8 s | none | — | — | — | unavailable | yes — covers beta |'
+    )
+  );
+  assert.ok(
+    report.includes(
+      '| Prompt | Planning time | First result | Input tokens | Output tokens | Total tokens | Usage |'
+    )
+  );
+  assert.ok(report.includes('| 1 | 0.9 s | 0.4 s | — | — | — | unavailable |'));
+  assert.ok(
+    report.includes('| Test total | 0.7 s | — | — | — | — | unavailable |')
   );
   assert.ok(report.includes('"id": "beta-random"'));
   assert.ok(
@@ -744,12 +786,12 @@ test('extracts and builds a multi-model session', async (t) => {
 
   assert.ok(
     report.includes(
-      '| # | Test | Plan | Verdict | Input tokens | Output tokens | Total tokens | Usage | Keep as a fixed test |'
+      '| # | Test | Plan | Verdict | Planning time | First result | Input tokens | Output tokens | Total tokens | Usage | Keep as a fixed test |'
     )
   );
   assert.ok(
     report.includes(
-      '| 02 | [Random: beta](#gpt-test-a--02-random-beta) | default-room | pass | — | — | — | unavailable | — |'
+      '| 02 | [Random: beta](#gpt-test-a--02-random-beta) | default-room | pass | 0.5 s | — | — | — | — | unavailable | — |'
     )
   );
   assert.ok(
@@ -865,7 +907,7 @@ test('labels a random test missing for one model without borrowing another model
   const modelTable = overview.split('### gpt-test.b\n')[1].split('```json')[0];
   assert.ok(
     modelTable.includes(
-      '| 02 | Random: beta | default-room | not run | — | — | — | not run | — |'
+      '| 02 | Random: beta | default-room | not run | — | — | — | — | — | not run | — |'
     )
   );
   assert.deepEqual(brokenLinks(report), []);
@@ -895,10 +937,11 @@ test('reports prompt and selected-test usage per model without counting archived
     await readFile(join(session, selected.dir, 'run.json'), 'utf8')
   );
   run.turns = [
-    { ...run.turns[0], prompt: 'first', usage },
+    { ...run.turns[0], prompt: 'first', usage, firstPlanChangeMs: null },
     {
       ...run.turns[0],
       prompt: 'second',
+      firstPlanChangeMs: 300,
       usage: {
         ...usage,
         inputTokens: 2400,
@@ -934,20 +977,29 @@ test('reports prompt and selected-test usage per model without counting archived
     outputTokens: 400,
     totalTokens: 4000,
   });
+  assert.deepEqual(facts.runs[0].time, {
+    planningMs: 1000,
+    firstResultMs: 800,
+    planChanged: true,
+  });
   assert.equal(facts.runs[0].turns[0].usage.model, 'resolved-model');
   assert.equal(facts.runs[2].usage.totalTokens, 0);
   await exec(process.execPath, [build, session]);
   const report = await readFile(join(session, 'report.md'), 'utf8');
-  assert.ok(report.includes('| 1 | 1,200 | 180 | 1,380 | complete |'));
-  assert.ok(report.includes('| 2 | 2,400 | 220 | 2,620 | complete |'));
-  assert.ok(report.includes('| 3 | — | — | — | not run |'));
+  assert.ok(
+    report.includes('| 1 | 0.5 s | none | 1,200 | 180 | 1,380 | complete |')
+  );
+  assert.ok(
+    report.includes('| 2 | 0.5 s | 0.3 s | 2,400 | 220 | 2,620 | complete |')
+  );
+  assert.ok(report.includes('| 3 | — | — | — | — | — | not run |'));
   assert.ok(
     report.includes(
-      '| Test total (selected attempt) | 3,600 | 400 | 4,000 | complete |'
+      '| Test total (selected attempt) | 1.0 s | 0.8 s | 3,600 | 400 | 4,000 | complete |'
     )
   );
   assert.ok(report.includes(`[1](${archived}/console.log)`));
-  assert.ok(report.includes('| 1 | 0 | 0 | 0 | complete |'));
+  assert.ok(report.includes('| 1 | 0.5 s | — | 0 | 0 | 0 | complete |'));
   assert.ok(!report.includes('999,999'));
 });
 
@@ -967,16 +1019,41 @@ test('labels partial, unavailable and legacy usage in minimum, random and image 
   await exec(process.execPath, [extract, session, join(session, 'facts.json')]);
   await exec(process.execPath, [build, session]);
   const report = await readFile(join(session, 'report.md'), 'utf8');
-  assert.ok(report.includes('| Test total | 100 | — | — | partial |'));
+  assert.ok(
+    report.includes('| Test total | 0.8 s | none | 100 | — | — | partial |')
+  );
   assert.ok(
     report.includes(
-      '| 02 | [Random: beta](#02-random-beta) | default-room | partial | 100 | — | — | partial | yes — covers beta |'
+      '| 02 | [Random: beta](#02-random-beta) | default-room | partial | 0.8 s | none | 100 | — | — | partial | yes — covers beta |'
     )
   );
-  assert.ok(report.includes('| Test total | — | — | — | unavailable |'));
+  assert.ok(
+    report.includes('| Test total | 0.7 s | — | — | — | — | unavailable |')
+  );
   assert.ok(report.includes('# HI MCP test — minimum set'));
   assert.ok(report.includes('Random: beta'));
   assert.ok(report.includes('## 03 Gamma image'));
+});
+
+test('says that the times include the waits of spaced model requests', async (t) => {
+  const { session } = await singleModelSession(t);
+  const path = join(session, 'gpt-test-a/02-beta-random');
+  const run = JSON.parse(await readFile(join(path, 'run.json'), 'utf8'));
+  run.runtime = { requestIntervalMs: 20000 };
+  await writeJson(path, 'run.json', run);
+  await exec(process.execPath, [extract, session, join(session, 'facts.json')]);
+  const facts = JSON.parse(await readFile(join(session, 'facts.json'), 'utf8'));
+  assert.deepEqual(
+    facts.runs.map((r) => r.requestIntervalMs),
+    [0, 20000, 0]
+  );
+  await exec(process.execPath, [build, session]);
+  const report = await readFile(join(session, 'report.md'), 'utf8');
+  assert.ok(
+    report.includes(
+      ' Model requests were spaced (`HI_MCP_REQUEST_INTERVAL_MS`): the times include those waits and are no interactive latency.'
+    )
+  );
 });
 
 test('fails explicitly when a required session file is missing', async (t) => {

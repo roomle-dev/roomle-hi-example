@@ -18,7 +18,8 @@
  * writes --out (default .temp/result/<UTC timestamp>-<model>/): run.json
  * (with every call of a plan-changing MCP tool per turn: what the model sent,
  * and the corrections, groups not loaded or error it got back, read from the
- * [hi-mcp] lines the tools log in the console of the planner frame),
+ * [hi-mcp] lines the tools log in the console of the planner frame, and per
+ * turn its duration and the time until the planner's history first changed),
  * plan-context.json (rooms and groups after the chat, in the agent's words),
  * planner-calls.json (the chat's tool calls the planner ran, each with the page's time in ms), prompt-image.jpg (the image sent),
  * turn-<n>-plan-images-<k>-perspective-object.png and -top.png (the images the k-th
@@ -41,6 +42,7 @@ import { installModelRequestPacing } from './model-request-pacing.js';
 import { recordNavigations } from './mcp-test-navigation.js';
 import { planImageFiles } from './plan-images.js';
 import { collectPromptUsage } from './planning-assistant-usage.js';
+import { collectFirstPlanChange, recordPlanChanges } from './planning-time.js';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAUNCHER = join(REPO_DIR, 'minimal-hi-example', 'start.mjs');
@@ -434,6 +436,7 @@ const runConversation = async (page, prompts, image) => {
       `[run-hi-mcp-prompt] turn ${index + 1}/${prompts.length}: ${prompt}${turnImage ? ` [image: ${turnImage.file}]` : ''}`
     );
     const startedAt = Date.now();
+    const finishPlanChange = await collectFirstPlanChange(page, startedAt);
     const pacingStart = await page.evaluate(
       () => window.hiModelRequestPacing?.length ?? 0
     );
@@ -461,6 +464,7 @@ const runConversation = async (page, prompts, image) => {
         .filter((entry) => entry.turn === index)
         .map(({ turn: _turn, open: _open, ...entry }) => entry),
       durationMs: Date.now() - startedAt,
+      firstPlanChangeMs: await finishPlanChange(),
       requestPacing: await page.evaluate(
         (start) => (window.hiModelRequestPacing ?? []).slice(start),
         pacingStart
@@ -549,6 +553,7 @@ const runSession = async (options, launcher, browser) => {
   );
   await waitForLoadedPlanGroups(page);
   await waitForPlanningAssistant(page);
+  await recordPlanChanges(page);
   const readyAt = Date.now();
   console.log('[run-hi-mcp-prompt] page ready');
   const promptImage =

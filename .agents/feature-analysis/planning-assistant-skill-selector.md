@@ -3,7 +3,10 @@
 > **Type**: Feature analysis — proposal G of
 > [the time-to-first-attempt analysis](planning-assistant-time-to-first-attempt.md), its design
 > and its measurement, benchmark 07
-> **Status**: Open
+> **Status**: Open — the selector deferred to
+> [the backlog](../backlog/planning-assistant-skill-selector.md): the models of the assistant are
+> decided later; whether the plan state per turn is done without it is to be decided
+> ([§9](#9-decisions-to-take-before-the-plan))
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-ui `feat/hi-mcp-merge` at 23c7a0113, which carries proposal A (the planning
@@ -280,7 +283,10 @@ earlier, even if the selector goes.
 1. **The live sections on every turn** (recommended) or only with a selected skill — either
    supersedes the per-turn part of ADR 0015, with the session's first calls as the evidence it asks
    for and benchmark 07's edit turn as the measurement.
-2. **The selector deployment** on the Azure resource: `gpt-5.4-mini` at a low reasoning effort, or
-   GPT-6 Luna if the resource has it.
+2. **The selector** is a matter of the choice of the models, decided later: its deployment, its
+   effort and its skip rule are in [the backlog item](../backlog/planning-assistant-skill-selector.md).
+   G without the selector is the plan state supplied per turn, decided in 1; it takes the read
+   round of the edits and looks (50 of the session's 99 turns) and nothing of a creation, whose
+   first call still fetches the skill.
 3. **The embedding-lib build** after the code and the measurement on the local source, before the
    example's pin and the ligna-store get it — asked for, as the hard rule says.

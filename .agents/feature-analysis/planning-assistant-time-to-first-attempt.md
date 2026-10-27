@@ -8,8 +8,9 @@
 > published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f` and loaded by the example
 > ([§10](#10-implementation-state)); A done on roomle-ui `feat/hi-mcp-performance` (e8964c3df),
 > accepted in [benchmark 06](../benchmarks/06-az-skill-2026-10-27.md) on the Azure deployment;
-> G analysed in [planning-assistant-skill-selector.md](planning-assistant-skill-selector.md); C and
-> F open
+> G analysed in [planning-assistant-skill-selector.md](planning-assistant-skill-selector.md), its
+> selector deferred to [the backlog](../backlog/planning-assistant-skill-selector.md) with the
+> choice of the models, the plan state per turn to be decided; C and F open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -338,7 +339,9 @@ one round instead of two, so A comes first and G is decided on A's build.
 **State.** Analysed in [planning-assistant-skill-selector.md](planning-assistant-skill-selector.md):
 the create at call 1 needs the live sections supplied with the turn as well, so G has two parts —
 the skills selected per request by the small model, the plan state supplied per turn —; benchmark
-07 on the Azure deployment measures it ([§7](#7-how-to-proceed)).
+07 on the Azure deployment measures it ([§7](#7-how-to-proceed)). The selector is deferred with
+the choice of the models ([the backlog item](../backlog/planning-assistant-skill-selector.md)); the
+plan state per turn stands on its own, to be decided.
 
 ### Not proposed
 
@@ -364,12 +367,13 @@ benchmark on the Azure deployment (`gpt-6-astra` with `$AZURE_GPT_KEY`, the prov
 benchmark from 06 on; the series and its baseline in
 [the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md)):
 
-1. **G** on the build of A, analysed in [the analysis of G](planning-assistant-skill-selector.md):
-   the selector and the plan state supplied per turn, measured by benchmark 07 — the two creations
-   of 06 and the move of run 01, two repetitions each, on the local embedding source. Accept G when
-   the create and the move come at call 1 and the selector's call is shorter than the round it
-   replaces; otherwise the selector stays out. An embedding-lib change, the build asked for after
-   the measurement, and a decision of its own beside ADR 0015.
+1. **G without its selector** — the plan state supplied per turn, to be decided
+   ([the analysis of G](planning-assistant-skill-selector.md), §9); the selector is a backlog item
+   for the choice of the models ([the backlog](../backlog/planning-assistant-skill-selector.md)).
+   Measured by benchmark 07 as the edit turn of run 01 (the move) and one creation of 06, two
+   repetitions each, on the local embedding source: accept when the move comes at call 1 and the
+   creation is not worse. An embedding-lib change, the build asked for after the measurement, and a
+   decision of its own beside ADR 0015.
 2. **F** — a small planner change, verified with the minimum set of "test the mcp": the
    first-result column.
 3. **E's run on the text kitchens** — the minimum set plus the two tests whose renders must stay,
@@ -414,7 +418,7 @@ reasoning of the create call, which only C changes.
 | D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
 | E — the rounds after the create | Implemented: roomle-ui bbac39fa7, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; the run on the text kitchens open ([below](#proposal-e-measured-and-to-be-measured)) |
 | F — keep the compacted library context | Open |
-| G — the skills of the turn selected before the first call | Open — analysed in [planning-assistant-skill-selector.md](planning-assistant-skill-selector.md); measured by benchmark 07 on the Azure deployment |
+| G — the skills of the turn selected before the first call | Open — analysed in [planning-assistant-skill-selector.md](planning-assistant-skill-selector.md); the selector deferred to [the backlog](../backlog/planning-assistant-skill-selector.md) with the choice of the models; the plan state per turn to be decided, measured by benchmark 07 |
 
 ### Proposal D, as implemented
 

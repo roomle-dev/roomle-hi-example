@@ -101,6 +101,7 @@ Durable answers to recurring questions. Full index in [`wiki/README.md`](wiki/RE
 
 | Page | Covers |
 |---|---|
+| [Planning Assistant: response time targets](wiki/planning-assistant-response-time-targets.md) | How fast the assistant has to plan a kitchen from a text prompt and from an image, milestone by milestone |
 | [Group splitting in the UI and agent tools](wiki/group-splitting-in-the-ui-and-agent-tools.md) | Intentional splits when dragging out or deleting a middle module; UI behavior and agent tool contracts |
 | [An MCP endpoint for the HI tools at `…/hi-mcp`](wiki/hi-mcp-endpoint-for-external-clients.md) | Why the planner cannot serve an MCP endpoint itself; the relay and the page bridge in the planner, what needs to be done and the concerns |
 | [Why the agent cannot plan what the library cannot build](wiki/why-the-agent-cannot-plan-what-the-library-cannot-build.md) | The agent only chooses, the library calculates; what happens to wrong input and where the guarantee ends |

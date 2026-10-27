@@ -132,9 +132,7 @@ status block where one is present.
 
 One document per bug: root-cause analysis written **before** the fix, closed out **after** it.
 
-| Document | Status | Last touched |
-|---|---|---|
-| [Token counts in the random-test table](bug-analysis/random-test-token-table.md) | Fixed | 2026-10-25 |
+No bug analysis is open.
 
 ### Feature Analyses
 
@@ -143,12 +141,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Planning Assistant: the time to the first attempt](feature-analysis/planning-assistant-time-to-first-attempt.md) | Open — the ticket's ideas evaluated, where the time to the first attempt goes, the improvements in order; A, B, D, E, F (the library read before the first prompt) and G's plan state per turn done on `feat/hi-mcp-performance`; C open | 2026-10-27 |
 | [Planning Assistant: the attribute information the agent gets](feature-analysis/planning-assistant-attribute-information.md) | Open — every attribute with its values is half of the cached library reference (121 KB, about 27,000 tokens); the agent set 47 of 397 in 79 runs, the look of the group at the create; the size is the library's and grows with its descriptions; the two-level design proposed, the same for every library, to be measured | 2026-10-27 |
-| [Planning Assistant: the skills of the turn selected before the first call](feature-analysis/planning-assistant-skill-selector.md) | Implemented in part — the plan state supplied per turn, accepted in benchmark 07 on the Azure deployment (the move at call 1); the selector of the skills deferred to the backlog with the choice of the models | 2026-10-27 |
-| [HI Planning Assistant token count protocol](feature-analysis/planning-assistant-token-count-protocol.md) | Implemented — prompt usage logging and report totals verified with the pinned embedding-lib dev | 2026-10-25 |
-| [Planning Assistant: live context and image-skill preloads](feature-analysis/prompt-preloads.md) | Rejected — added complexity without overall improvement; code uses response-chaining behavior from 02; evidence retained | 2026-10-26 |
-| [Direct OpenAI models in the example launcher](feature-analysis/openai-provider-launcher.md) | Implemented — explicit CLI model, published dev provider and browser verification | 2026-10-26 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
 ### Refactoring Analyses
@@ -156,10 +149,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 One document per refactoring, written **before** the work and carrying the report once the work is
 done. The analysis and the report are the same document — the report is appended at close-out.
 
-| Document | Status | Last touched |
-|---|---|---|
-| [Planning Assistant: a shared prompt prefix for Azure](refactoring-analysis/planning-assistant-azure-prompt-caching.md) | Done on local branches — compact reference, verified Azure boundary, decisions and evaluated minimum tests; retained until merge | 2026-10-26 |
-| [Planning Assistant: stop uploading earlier context at every model step](refactoring-analysis/planning-assistant-response-chaining.md) | Done — verified implementation, dev package and four-run comparison; awaiting merge | 2026-10-26 |
+No refactoring analysis is open.
 
 ### Benchmarks & Performance Analyses
 

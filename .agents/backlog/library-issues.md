@@ -73,6 +73,7 @@ library cannot calculate.
 | 17 | [A Bora hob on the base hob cabinet UKS2A90 the library cannot calculate](#17-a-bora-hob-on-the-base-hob-cabinet-uks2a90-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the unit is not built, the agent replaces it |
 | 18 | [A wide paired-door wall cabinet with a push opening the library cannot calculate](#18-a-wide-paired-door-wall-cabinet-with-a-push-opening-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no | low — the requested upper cabinet needs a replacement |
 | 19 | [A traditional front program with a retained plain colour the library cannot calculate](#19-a-traditional-front-program-with-a-retained-plain-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the sequencing desc proposed; calculation error not reported | partly | medium — switching the program needs an extra colour change |
+| 20 | [A push-to-open sink unit without the front gap it needs the library cannot calculate](#20-a-push-to-open-sink-unit-without-the-front-gap-it-needs-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the unit is not built, the agent needs a second create |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -604,7 +605,7 @@ team until the replay places the cause in the library.
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
 
-**Reproduce.** `mcp-test-2026-10-26_11-51-16`, gpt-6-astra 10 (`image-only-no-text`, local `feat/hi-mcp-performance`, default reasoning): `change-group-attribute` enables `mod_CreateBacksplash` on groups `e02adc37-8664-420c-a2f2-050193f1a7ab` and `7e84b230-2a5c-4c73-900b-f3dd306094f6`; generated `mr_Backsplash` fails Error 14034 with undefined grain inputs and widths 620 / 1220. Both transactions are unapplied and the answer discloses the missing splashbacks.
+**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 68 (`image-kitchen-left-wall`, bo-test): after the create built the kitchen, `change-group-attribute` sets `mod_CreateBacksplash` true on group `98039b08`; the generated `mr_Backsplash` fails Error 14034 (`part_Backsplash - undefined - undefined - undefined - 620 - 110`), nothing is changed, and the answer names the missing splashback.
 
 ## 11. A handle strip the library cannot calculate
 
@@ -648,7 +649,7 @@ the handle position is known.
 `kitchen-oven-fridge-sink-corner`: a kitchen with a handle strip is built at the first create, or
 the agent picks a handle the library keeps and calculates.
 
-**Reproduce.** `mcp-test-2026-10-26_11-51-16`, gpt-6-astra 10 (`image-only-no-text`, local `feat/hi-mcp-performance`, default reasoning): both groups' finish/handle transactions fail with HandleStripe Error 22025 and the base-unit `None` JSON parse error. The agent sets finishes separately, sets handle position 01 and curved bow 100, and retains the library's Black colour after silver-finish retries fail; the final answer discloses that substitution.
+**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 67 (`image-only-tall-units`, bo-test): the group attributes of the create (`mod_HandleDesign` with `mod_HandlePosType`) and three `change-group-attribute` calls fail with HandleStripe Error 22025 on three `KS_HT600`; the finishes apply once the agent sends them without the handle.
 
 ## 12. A worktop on the tall units from the group's countertop switch
 
@@ -696,6 +697,8 @@ by 180 mm, the drawer box mapping has no entry for the resulting box. The descs 
 |---|---|---|---|
 | `SB_UB600` (1 door) | 720 mm, lowered from 900 | yes | `mcp-test-2026-10-22_19-45-49` gpt-6-astra 60, both creates |
 | `SB_US600` (4 drawers) | 720 mm, lowered from 900 | no: Error 13008 (`tab_DrawerBoxDimensionMapping`) | `mcp-test-2026-10-22_19-45-49` gpt-6-astra 60, the first create; the probe of 2026-10-24 (`Legrabox - 322 - 30.5`) |
+| `SB_US600` (4 drawers) | 800 mm, lowered from 900 | no: Error 13008 (`Legrabox - 322 - 40.5`) | `mcp-test-2026-10-27_07-11-41` gpt-6-astra 75, the first create |
+| `SB_US600` (4 drawers) | 900 mm, as it comes | yes | `mcp-test-2026-10-27_07-11-41` gpt-6-astra 75, the second create |
 
 Not known: the heights the drawer sideboard takes, and whether the other drawer articles of the
 library fail the same way when lowered.
@@ -712,10 +715,7 @@ With the heights known, the proposed desc of `SB_US600` naming them goes into
 **Test.** `sideboard-living-room-front-wall`: the first create builds every sideboard the agent
 sends, or the agent keeps a drawer sideboard at a height the library takes.
 
-**Reproduce.** `mcp-test-2026-10-25_18-06-08`, gpt-6-astra 62
-(`sideboard-living-room-front-wall`, bo-test): the first create sends root `sideboard-middle`,
-`SB_US600` with `mod_Height` 720, and fails Error 13008 (`Legrabox - 322 - 30.5`) before loading.
-The second create replaces it with `SB_UB600` at the same height and builds the three-cabinet row.
+**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 75 (`random-1-drawer-sideboard-under-window`, bo-test): the first create sends three `SB_US600` with `mod_Height` 800, fails Error 13008 (`Legrabox - 322 - 40.5`) and builds nothing; the second create sends them without `mod_Height` and builds the row under the window.
 
 ## 15. The shelf descriptor names no format
 
@@ -898,3 +898,41 @@ accurate final answer about available colours.
 sets `mod_FrontProgram` `Tradition` on group `b8e61d93-d008-42fb-9910-4936b079a906`,
 whose roots retain front colour 178, and fails Error 14036. The same program calculates after
 front colour 230 is applied.
+
+## 20. A push-to-open sink unit without the front gap it needs the library cannot calculate
+
+**Library.** HOMAG Furniture_Smith. **Responsible.** HOMAG library development team.
+
+**Problem.** A create of a handleless kitchen sends the sink unit `SUT60` with `mod_HandleDesign`
+10 (no handle, no fingergrip) and `mod_OpeningType` `PushToOpenManual`. The library cannot
+calculate it — "Error 22006: Could not calculate the position of the push to open: The gap between
+the front and the carcase needs to set to a minimum of: 3.1" — so the create builds nothing; the
+agent sends the kitchen again without the push opening.
+
+**Cause.** A library bug (D99): the library accepts `PushToOpenManual` on the unit but cannot place
+the push-to-open fitting with the gap between front and carcase (`mod_FrontGapCarcase`) the unit
+comes with. The library switches dependent attributes itself elsewhere — the front program with
+the front colour (D59) — but not the gap with the opening type; the descs of `mod_OpeningType` and
+its value name no gap.
+
+**How the library behaves.** Checked in the stored runs:
+
+| Article | Opening | Front gap | Built | Runs |
+|---|---|---|---|---|
+| `SUT60` | `PushToOpenManual`, `mod_HandleDesign` 10 | as the unit comes | no: Error 22006 | `mcp-test-2026-10-27_07-11-41` gpt-6-astra 72, the first create |
+
+Not known: the gap the unit comes with, whether a gap of 3.1 or more builds it, and which other
+articles fail the same way.
+
+**To do.** The library: set the front gap a push opening needs when `mod_OpeningType` selects it,
+as it switches the front program with the front colour, or rule the opening out in the verified
+options of the units whose gap is too small (D107). With the behaviour known, a proposed desc of
+`PushToOpenManual` naming the gap goes into
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md).
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `image-only-no-text-2`: a handleless kitchen with push-to-open fronts builds on the
+first create.
+
+**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 72 (`image-only-no-text-2`, bo-test): the first create sends root `sink`, `SUT60` with `mod_SinkId` `Axis_R`, `mod_HandleDesign` 10 and `mod_OpeningType` `PushToOpenManual`, and fails Error 22006.

@@ -28,7 +28,109 @@ Keep this document, its guidance and its overview table when no issues are open,
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
+| 113 | [The exchange command fails for every input on bo-test](#113-the-exchange-command-fails-for-every-input-on-bo-test) | defect | roomle-ui HI tool command `exchange-root-module` (`hi-tool-commands.ts`, `hi-tools.ts`) | high | gpt-6-astra | provider default |
+| 114 | [The provider rejects a chained model request of a turn](#114-the-provider-rejects-a-chained-model-request-of-a-turn) | defect | roomle-ui embedding-lib planning assistant (`hi-planning-assistant.ts`) | high | gpt-6-astra | provider default |
+| 115 | [An interior fitting added where the parent shows a default interior](#115-an-interior-fitting-added-where-the-parent-shows-a-default-interior) | hardening | roomle-ui served text: `get-interior-design-options`, `add-interior-fitting` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
+| 116 | [A conflict a row edit leaves is not resolved](#116-a-conflict-a-row-edit-leaves-is-not-resolved) | hardening | roomle-ui served text: the rule for corrections, `delete-article-and-compact` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
+
+## 113. The exchange command fails for every input on bo-test
+
+**Problem.** `exchange-root-module` answers the TypeError "Cannot read properties of undefined
+(reading 'map')" for every input on the planner of `release/bo-test`, with and without
+`attributes`, and changes nothing. The agent rebuilds the whole group with
+`create-or-replace-groups` (and `place-group`) instead, which costs it two to three calls and
+20 to 40 s; the plans come out right.
+
+**Cause.** Not analysed. The error comes back from the planner's
+`externalObjectGroupOperation('exchange-root-module', …)`. `insert-article-into-group` and
+`merge-article-into-group`, which share `rowEditContext` and `catalogArticleId` with the
+exchange in `hi-tool-commands.ts`, work on the same planner, so the failure lies behind the
+command, in the exchange operation of `hi-tools.ts`. The bo-test planner of 2026-10-25 ran the
+same call; the deployments of 2026-10-26 carry `f6f338fdc` (the plan context returns no library
+sections) and `8d7537e6e` (edit validation and discovery in `hi-tools.ts`).
+
+**To do.** roomle-ui: analyse the bug — reproduce the call in a scratch vitest beside
+`hi-tools-test.ts` and find the undefined value the exchange maps over — then fix it in the HI
+tools.
+
+**Test.** roomle-ui `__tests__/hi-tool-commands/`: `exchange-root-module` of a tall unit with
+another article, with and without attributes, exchanges the root module; the prompt tests
+`edit-replace-unit`, `edit-replace-unit-wider`, `wardrobe-exchange-end-door-hinge` and
+`edit-exchange-drawer-end` pass with one `exchange-root-module` call.
+
+**Reproduce.** Model-free in the example page on the bo-test planner, plan `three-tall-units`:
+`callExternalObjectAgentTool('exchange-root-module', { groupId: '064a7d91-b583-4883-b71b-95c324d3d824', rootModuleId: 'a7271f1b-50d5-4b50-97ca-7a5bf75f77fa', articleId: 'HTS2AB60' })` answers the TypeError (`mcp-test-2026-10-27_07-11-41`, gpt-6-astra 18).
+
+## 114. The provider rejects a chained model request of a turn
+
+**Problem.** A model request the planning assistant chains on the previous response of the turn
+fails, and the turn ends with "The planning assistant failed: …" and no answer: once with "No tool
+output found for function call call_…" after a plan-changing tool had answered — the plan holds the
+change, the user gets no answer —, once with "Previous response with id 'resp_…' not found" after
+the first model call — a conversation of seven turns ends in its first. The runner does not retry
+either error: neither is a transport failure.
+
+**Cause.** Not analysed. The page loads embedding-lib `0.0.0-dev-432119f`, the build that chains
+the model requests within a turn (roomle-ui `80484dc71`): a request sends the previous response id
+and only the new items. The first error says that the provider expected the output of a function
+call the request did not carry; the second, that the provider does not hold the response the
+request names. The planning assistant has no way back to a request with the turn's whole history.
+
+**To do.** roomle-ui: analyse the bug — which function call the first request lacked (a parallel
+tool call of the step, a call whose output went to another request), and when the provider does not
+hold a previous response; then send a chained request that carries every function call output of
+the step, and answer a rejected chained request with one request with the turn's whole history.
+
+**Test.** roomle-ui planning-assistant unit tests: a step with two tool calls chains a request with
+both outputs; a provider rejection of a chained request ("Previous response … not found") is
+answered with one request with the whole history and the turn ends with an answer; the prompt tests
+`sideboard-row-one-more-cabinet` and `kitchen-conversation` end without a planning assistant error.
+
+**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 28 (`sideboard-row-one-more-cabinet`, "No tool output found", console.log line 22) and 74 (`kitchen-conversation`, "Previous response … not found", console.log line 14).
+
+## 115. An interior fitting added where the parent shows a default interior
+
+**Problem.** Asked to add one more shelf to a tall unit, the agent adds a `FixedShelf` to the
+parent whose `defaultInteriors` lists the four adjustable shelves it shows; the fixed shelf takes
+the place of the four, the correction says so, and the agent undoes it — one extra call and an undo
+for a request that cannot be met.
+
+**Cause.** The description of `get-interior-design-options` says that "an addition there takes its
+place", but the agent reads `defaultInteriors` only after the addition, from its correction. Nothing
+in the description of `add-interior-fitting` sends it to `defaultInteriors` before it adds.
+
+**To do.** roomle-ui served text: the description of `add-interior-fitting` says that an addition
+to a parent with a `defaultInteriors` entry replaces that default interior, so the agent checks
+the entry first and tells the user what the parent already holds.
+
+**Test.** `edit-add-subarticle-look-inside`: no `add-interior-fitting` replaces the four
+adjustable shelves; the answer says the cabinet holds them.
+
+**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 41 (`edit-add-subarticle-look-inside`): `add-interior-fitting` of `FixedShelf` into parent `5b581d05` of the middle `HTB60`, the correction about the replaced default interior, then `undo`.
+
+## 116. A conflict a row edit leaves is not resolved
+
+**Problem.** After a row edit the agent reports a conflict the edit left and stops: removing the
+corner unit turns a leg into one straight row whose fridge reaches 155 mm into the door opening,
+removing the unit next to the corner leaves the wall unit above it overlapping the hood that moved
+in. The answers name the conflict and leave it to the user; in earlier sessions the agent moved the
+wall unit in a follow-up call.
+
+**Cause.** The corrections of `delete-article-and-compact` name what the edit did — the unit above
+keeps its place and overlaps, "remove one of them or move the units above"; the turned leg — but the
+served text does not ask the agent to resolve a conflict a correction reports before it answers, and
+a turned leg's correction says nothing about the door it now reaches.
+
+**To do.** roomle-ui served text: the rule for corrections asks the agent to resolve a conflict a
+correction reports — an overlap, a unit in a door opening — with a follow-up call where the request
+leaves room for it, and to report it otherwise; the correction of a turned leg names an opening the
+row now reaches.
+
+**Test.** `edit-remove-next-to-corner` and `edit-remove-corner-unit`: the final plan holds no
+overlap and no unit in the door opening, or the answer says why it could not resolve it.
+
+**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 24 (`edit-remove-corner-unit`): `delete-article-and-compact` of the corner unit `814c6854` on `corner-kitchen-wall-units`; the fridge `ad52e21b` ends at y -435, the door opening spans y -1180 to -280.

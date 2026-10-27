@@ -1,9 +1,10 @@
 # Planning Assistant: the time to the first attempt
 
 > **Type**: Feature analysis — the ticket's performance ideas evaluated, and how to proceed
-> **Status**: Open — proposals D and E implemented: roomle-hi-example on `master` (#211), roomle-ui
-> 43eda3a47 and bbac39fa7 pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on
-> `release/bo-test` ([§10](#10-implementation-state)); A, B, C, F and G open
+> **Status**: Open — D done and E implemented, its text-kitchen run open: roomle-hi-example on
+> `master` (#211), roomle-ui 43eda3a47 and bbac39fa7 pushed on `feat/hi-mcp-performance` and
+> `feat/hi-mcp-merge`, not on `release/bo-test` ([§10](#10-implementation-state)); A, B, C, F and
+> G open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -65,7 +66,7 @@ runs.
 | The plan context added to every prompt | Evaluated and rejected ([ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md), [benchmark 03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md)) | 8 instead of 6 model calls, a third more input tokens, the first kitchen still at call 3 | Closed |
 | The image-planning skill added to the first image prompt | Evaluated and rejected (ADR 0015) | Same measurement: the kitchen skill and its reference still take two rounds | Closed. [Proposal G](#g-the-skills-of-the-turn-selected-before-the-first-call) supplies the kitchen skill with its reference instead — the two rounds that remain — selected per request |
 | Scale down the input image | Implemented: the chat window redraws a dropped image as a JPEG with the long side at most 1568 px (`prepareImage`, roomle-ui `planning-assistant-image.ts`); the test runner does the same | The test image arrives as 1568 × 1276 px, 198,683 bytes, about 2,000 input tokens of 77,000 | Done. A smaller image saves nothing measurable and loses what the model reads |
-| Scale down the plan images | Implemented as proposal D ([§10](#10-implementation-state)) | `get-plan-images` answers 2,738,222 bytes: two PNG renders at 1024 px, 509 KB and 1.56 MB; the request that carries them takes 3.4 s to its response headers, the others about 1 s. As JPEG the pair is 194,960 bytes, and [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) measures the request that carries it at 0.95 s | [Proposal D](#d-plan-images-as-jpeg): after the first attempt, not before it |
+| Scale down the plan images | Implemented as proposal D ([§10](#10-implementation-state)) | `get-plan-images` answers 2,738,222 bytes: two PNG renders at 1024 px, 509 KB and 1.56 MB; the request that carries them takes 3.4 s to its response headers, the others about 1 s. As JPEG the pair is 194,960 bytes, and [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) measures the request that carries it at 0.95 s | Done, as [proposal D](#d-plan-images-as-jpeg). It saves after the first attempt, not before it |
 | Tool memoization | Open | The read tools answer in 0.3–13 ms, an attribute change in about 0.16 s, the renders in 0.4–0.5 s, the create in 1.2–1.8 s; no tool is called twice with the same input in a turn, and a later turn finds the result in its history | Rejected: nothing to save |
 | Precalculated docking vectors | Open: the planner compacts the library context on every read (ADR 0013) | 12–20 ms warm, 0.7 s on the first read after the library load | [Proposal F](#f-keep-the-compacted-library-context): the backlog item, worth its 0.7 s only on the first prompt of a page |
 | Attribute indexing | Open | `find-attributes` answers in 13 ms, and no kitchen creation calls it since the vocabulary is in the plan context | Rejected: nothing to save |
@@ -245,8 +246,10 @@ today). On the providers without response chaining the saving repeats with every
 turn, and the Mistral overflow of the backlog item "Images of a tool result for Mistral" shrinks
 with it. After the first attempt, not before it.
 
-**State.** Implemented on `feat/hi-mcp-performance`; the format is chosen in the renderer, not
-re-encoded in the tool ([§10](#10-implementation-state)).
+**State.** Done: implemented, the format chosen in the renderer, not re-encoded in the tool, and
+measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) — the
+request that carries the images 0.95 s to its response headers against 2.9–3.2 s with the PNGs,
+the upload per turn 69 % below 02 ([§10](#10-implementation-state)).
 
 ### E. The rounds after the create
 
@@ -259,8 +262,10 @@ saves a round and the heavy final request in a text creation, about 5 s of plann
 not change the first result. It is measured by the planning-time column of the suite, and it stays
 out if the answers get worse.
 
-**State.** Implemented on `feat/hi-mcp-performance`: the occasions of a render in the description of
-`get-plan-images`, and the read after a change in the system prompt; the model run is open
+**State.** Implemented: the occasions of a render in the description of `get-plan-images`, and
+the read after a change in the system prompt. Benchmark 04 shows both in the image kitchen: the
+render stays by design, after the last change, and the read after the create asks for the
+obstacles only. The text kitchens, where no render is due, are not measured yet
 ([§10](#10-implementation-state)).
 
 ### F. Keep the compacted library context
@@ -335,11 +340,12 @@ In this order, one build per step, each step measured before the next:
    G when the create comes at call 1 and the first kitchen is earlier than with A by more than the
    spread of two repetitions; otherwise the selector stays out. An embedding-lib change, the build
    asked for, and a decision of its own beside ADR 0015.
-4. **D** and **F** — small planner changes, verified with the minimum set of "test the mcp": the
-   first-result and planning-time columns, and the images' bytes in the runs. D is implemented and
-   measured ([§10](#10-implementation-state)); its model run is open.
-5. **E** as an instruction change measured by the full suite's planning times and verdicts. E is
-   implemented; its model run is open ([§10](#10-implementation-state)).
+4. **F** — a small planner change, verified with the minimum set of "test the mcp": the
+   first-result column. D is done: implemented and measured in benchmark 04
+   ([§10](#10-implementation-state)).
+5. **E** as an instruction change measured by the planning times and verdicts of the minimum set
+   plus the two tests whose renders must stay. E is implemented and measured for the image kitchen
+   in benchmark 04; the run on the text kitchens is open ([§10](#10-implementation-state)).
 6. **C** — the worked example as an experiment on the benchmark of step 2; the reasoning effort in
    RML-18043.
 
@@ -376,8 +382,8 @@ reasoning of the create call, which only C changes.
 | A — one skill round | Open |
 | B — progress in the window | Open |
 | C — less to decide in the create call | Open |
-| D — plan images as JPEG | Implemented: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211) |
-| E — the rounds after the create | Implemented: roomle-ui bbac39fa7, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); the model run open |
+| D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
+| E — the rounds after the create | Implemented: roomle-ui bbac39fa7, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; the run on the text kitchens open ([below](#proposal-e-measured-and-to-be-measured)) |
 | F — keep the compacted library context | Open |
 | G — the skills of the turn selected before the first call | Open |
 
@@ -439,7 +445,7 @@ Guarded by a test on each sentence; the served-text fixture carries the new desc
 example's tool skill says the same. The change is planner code: the example and the ligna-store
 get it with the planner's deployment to bo-test, and no embedding-lib build is needed.
 
-### Proposal E, to be measured
+### Proposal E, measured and to be measured
 
 What the session of 2026-10-27 shows and E takes away: 17 renders in 16 of 79 runs, of which 5
 were asked for, 7 belong to image plannings and 5 are the five text kitchen creations, where
@@ -447,7 +453,14 @@ nothing asked for a render; no other text creation renders. After a change, 30 o
 one read the plan context again, the kitchen creations right after their create and before their
 first edit.
 
-The model run is open: the minimum set of "test the mcp" plus `plan-images-kitchen` and
+[Benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) — the image kitchen, two
+repetitions — shows E in the case where a render is due: the agent renders once, after its last
+change, because the served text names the comparison with the user's image as an occasion, so the
+images show the final state (a round of its own, 5.7 / 6.9 s); after the create it reads the
+obstacles only, 1,853 bytes, batched with the attribute lookup, because the create result carries
+the groups.
+
+The run on the text kitchens is open: the minimum set of "test the mcp" plus `plan-images-kitchen` and
 `open-cabinet-look-inside`, whose renders must stay, with gpt-6-astra on the local planner of
 `feat/hi-mcp-performance`; compared per test with the session of 2026-10-27 on the
 `get-plan-images` calls (text kitchens none, the two asked tests one), the plan context reads

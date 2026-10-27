@@ -57,6 +57,7 @@ library cannot calculate.
 | 8 | [Base units narrowed to 150 mm the library cannot calculate](#8-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the width desc done; the calculation error not reported | low — the unit is not built, the agent needs a second create |
 | 12 | [A worktop on the tall units from the group's countertop switch](#12-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
 | 15 | [The shelf descriptor names no format](#15-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | the desc names the default spacing; the actual format and example open | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
+| 21 | [The description of SUT60 names the drainer on the right; its sink reaches over the unit on its left](#21-the-description-of-sut60-names-the-drainer-on-the-right-its-sink-reaches-over-the-unit-on-its-left) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported; the texts proposed (1.8, 2.13) | high — the sink stands over the hob, and the agent cannot see it before its render |
 
 ### Not solved entirely by descriptions
 
@@ -938,3 +939,42 @@ options of the units whose gap is too small (D107). With the behaviour known, a 
 first create.
 
 **Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 72 (`image-only-no-text-2`, bo-test): the first create sends root `sink`, `SUT60` with `mod_SinkId` `Axis_R`, `mod_HandleDesign` 10 and `mod_OpeningType` `PushToOpenManual`, and fails Error 22006.
+
+## 21. The description of SUT60 names the drainer on the right; its sink reaches over the unit on its left
+
+**Library.** HOMAG Furniture_Smith. **Responsible.** HOMAG library development team.
+
+**Problem.** An image kitchen puts the sink unit `SUT60` beside the oven-and-hob unit `UHS60`:
+the hob unit on the left of the sink unit, a base unit on its right, as the unit's
+`AI_SELECTION_HINT` asks ("Place a base unit on its right, not a hob unit"). The sink then reaches
+410 mm over the hob.
+
+**Cause.** The library delivers `SUT60` with `mod_SinkId` `Metra_R`, basin on the right, whose
+drainer reaches past the unit's left side. Its description still names the right side ("reaches 396
+mm past its right side, over the unit on its right"), written for `Axia_Grey_L`, the sink it came
+with (suggested change 1.1). No description says that the side follows the sink: the drainer lies
+opposite the basin. Since D122 the value descs of `mod_SinkId` are not in the prefix, so the
+article line is the only sink information of the create.
+
+**How the library behaves.** Measured on the planner, a row `UTB60` | sink unit | `UTB60`
+([the analysis](../bug-analysis/sink-unit-description-names-the-wrong-drainer-side.md#3-how-the-library-builds-the-sink)):
+`SUT60` with `Metra_R` reaches 410 mm past its left side; `SUBA60` and `ESUT60` with
+`Axia_Grey_L` 395.8 mm past their right side, `SUB2A90` and `ESUB2A90` 245.8 mm. A value ending in
+`_L` reaches right, one ending in `_R` left, about 400 mm past a 60 cm unit and 250 mm past a
+90 cm unit (Dinas 340 / 190 mm, Metra 410 / 260 mm). `None` leaves an outline like a basin-left
+sink.
+
+**To do.** The library: the descriptions of the five sink units (1.8 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#18-sink-base-units-the-drainer-side-follows-the-sink))
+and of `mod_SinkId` and its values
+([2.13](../../docs/library-information/suggested-library-changes.md#213-sink-the-drainer-side-and-its-reach));
+explain what `None` builds; when the sink a unit comes with changes, change its `FUNCTION` line
+with it.
+
+**Status.** Open, not reported to the library development team; the texts are proposed.
+
+**Test.** `image-kitchen-left-wall`, two runs on the build of D122: no run puts the hob unit on the
+drainer side of the sink unit; `edit-swap-hob-unit`: the drainer does not cover the hob.
+
+**Reproduce.** `.temp/result/benchmark-09-az-attrs-2026-10-27/iklw-rep-2`, plan
+`ps_t26104gn9m11h4qy8df24p5pfeh4sx2e`: the outline of `SUT60` spans y 1150–2160, `UHS60` 960–1560.

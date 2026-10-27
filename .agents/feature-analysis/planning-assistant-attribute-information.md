@@ -387,6 +387,10 @@ create — is roomle-ui 5fd409e84 (D122), measured on the baselines' protocol:
   sink unit to the end of the row in 40.742 s of rounds. The handle colour costs one lookup round
   after the kitchen, where the baselines spent theirs on the backsplash. In the walnut kitchen the
   article's hob and oven are the models the baselines chose.
+- **The cause of the sink** is the description of `SUT60`: it names the drainer on the right, the
+  sink it comes with reaches over the unit on its left, and no description says that the side
+  follows the sink ([the bug analysis](../bug-analysis/sink-unit-description-names-the-wrong-drainer-side.md));
+  the descriptions are proposed to the library.
 - **Open:** whether the design is accepted with that cost, revised, or reverted. A structural level 1
   that keeps the sink model keeps the catalog's sub modules too (§7: 111 KB, almost no saving); a
   rule that names the sink is library content (§2.4); the neutral wording risks the lookup before

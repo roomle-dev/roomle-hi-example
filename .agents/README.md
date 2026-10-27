@@ -132,7 +132,9 @@ status block where one is present.
 
 One document per bug: root-cause analysis written **before** the fix, closed out **after** it.
 
-No bug analysis is open.
+| Document | Status | Last touched |
+|---|---|---|
+| [The description of the sink unit names the wrong side for its drainer](bug-analysis/sink-unit-description-names-the-wrong-drainer-side.md) | Open — `SUT60` comes with the `Metra_R` sink, whose drainer reaches 410 mm past its left side, while its description names the right side and asks for a base unit there; no description says that the side follows the sink. The descriptions of the five sink units and of `mod_SinkId` proposed (suggested changes 1.8 and 2.13, library issue 21) | 2026-10-27 |
 
 ### Feature Analyses
 

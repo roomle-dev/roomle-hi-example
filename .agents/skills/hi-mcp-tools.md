@@ -491,8 +491,10 @@ built, without calculated dimensions and parts - say so in the answer, or change
 fails." — and the agent tells the user. An answer of `null` with such a root module is the hint
 alone (D108).
 
-`get-plan-images` returns one text content that names the images, then the group view — the
-groups alone, seen from their front without the room (`perspectiveObjectImage`) — and the top view
+`get-plan-images` renders when the user asks to see the plan or to look inside a cabinet, or to
+compare a planning from an image with that image; a create or edit result already carries the
+positions to verify, so a check needs no render. It returns one text content that names the
+images, then the group view — the groups alone, seen from their front without the room (`perspectiveObjectImage`) — and the top view
 of the whole plan; without groups the text says so and the top view comes alone. It asks the
 snapshot for `keepOpenGeometry`: the images show the doors and drawers as they are in the planner.
 Both images are JPEG at 1024 px on a white background, about 0.2 MB of tool result for a kitchen.
@@ -581,7 +583,7 @@ is one call, which roomle-ui performs:
 
 ## Best Practices
 
-1. Read fresh rooms, groups, obstacles and installationElements with `get-plan-context` before creating or editing groups. The Planning Assistant supplies compact library reference; live state and image/room guidance are obtained through tools, with genuine successful results retained in history.
+1. Read fresh rooms, groups, obstacles and installationElements with `get-plan-context` before the first change of a turn; within the turn, build the next change on the result of the last one, and read again only for what a result does not carry, or after undo and redo. The Planning Assistant supplies compact library reference; live state and image/room guidance are obtained through tools, with genuine successful results retained in history.
 2. Validate article IDs before using
 3. Use free docking vectors when extending
 4. Position every new group with a placement — at a wall or in a room corner by `wall`, `alignment` and `offsetMm`, anywhere else by `posGroup` and `posRotationZ`

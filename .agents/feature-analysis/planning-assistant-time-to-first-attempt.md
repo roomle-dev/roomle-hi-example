@@ -1,8 +1,8 @@
 # Planning Assistant: the time to the first attempt
 
 > **Type**: Feature analysis — the ticket's performance ideas evaluated, and how to proceed
-> **Status**: Open — proposal D implemented on `feat/hi-mcp-performance` (roomle-ui 43eda3a47,
-> not deployed; [§10](#10-implementation-state)); A, B, C, E and F open
+> **Status**: Open — proposals D and E implemented on `feat/hi-mcp-performance` (roomle-ui 43eda3a47
+> and bbac39fa7, not deployed; [§10](#10-implementation-state)); A, B, C and F open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 9ec622e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -222,6 +222,10 @@ saves a round and the heavy final request in a text creation, about 5 s of plann
 not change the first result. It is measured by the planning-time column of the suite, and it stays
 out if the answers get worse.
 
+**State.** Implemented on `feat/hi-mcp-performance`: the occasions of a render in the description of
+`get-plan-images`, and the read after a change in the system prompt; the model run is open
+([§10](#10-implementation-state)).
+
 ### F. Keep the compacted library context
 
 The backlog item of the planner ([Caching the library context](../backlog/README.md#planner-roomle-ui-roomlecore)):
@@ -253,7 +257,8 @@ In this order, one build per step, each step measured before the next:
 3. **D** and **F** — small planner changes, verified with the minimum set of "test the mcp": the
    first-result and planning-time columns, and the images' bytes in the runs. D is implemented and
    measured without a model ([§10](#10-implementation-state)); its model run is open.
-4. **E** as an instruction change measured by the full suite's planning times and verdicts.
+4. **E** as an instruction change measured by the full suite's planning times and verdicts. E is
+   implemented; its model run is open ([§10](#10-implementation-state)).
 5. **C** — the worked example as an experiment on the benchmark of step 2; the reasoning effort in
    RML-18043.
 
@@ -288,7 +293,7 @@ of the create call, which only C changes.
 | B — progress in the window | Open |
 | C — less to decide in the create call | Open |
 | D — plan images as JPEG | Implemented on `feat/hi-mcp-performance`: roomle-ui 43eda3a47, roomle-hi-example the commit of this section; local, not pushed, not deployed |
-| E — the rounds after the create | Open |
+| E — the rounds after the create | Implemented on `feat/hi-mcp-performance`: roomle-ui bbac39fa7, roomle-hi-example the commit of this section; local, not pushed, not deployed; the model run open |
 | F — keep the compacted library context | Open |
 
 ### Proposal D, as implemented
@@ -330,3 +335,37 @@ against about 1 s for the others.
 Unit tests: the renderer's format for the top view, the perspective and the dimensions composite;
 the four renders of a snapshot with a format; the tool's snapshot request and image contents; the
 embedding-lib's file parts; the runner's file names.
+
+### Proposal E, as implemented
+
+Two sentences of the served text, both instructions, no guard:
+
+- The description of `get-plan-images` opens with the occasions of a render: the user asks to see
+  the plan or to look inside a cabinet, or a planning from an image the user sent is compared with
+  that image; a create or edit result already carries the positions to verify, so a check needs no
+  render. The verification rule of the authoring rules stays as it is (D118 of roomle-ui
+  `.agents/homag-intelligence/hi-tools-behaviour.md`).
+- The system prompt asks for the fresh read of rooms, groups, obstacles and installation elements
+  before the first change of a turn; within a turn, the result of a change is the current state of
+  its groups, the next change builds on it, and a new read is due only for what a result does not
+  carry, or after undo and redo (D119).
+
+Guarded by a test on each sentence; the served-text fixture carries the new description. The
+example's tool skill says the same. The change is planner code: the example and the ligna-store
+get it with the planner's deployment to bo-test, and no embedding-lib build is needed.
+
+### Proposal E, to be measured
+
+What the session of 2026-10-27 shows and E takes away: 17 renders in 16 of 79 runs, of which 5
+were asked for, 7 belong to image plannings and 5 are the five text kitchen creations, where
+nothing asked for a render; no other text creation renders. After a change, 30 of the 72 runs with
+one read the plan context again, the kitchen creations right after their create and before their
+first edit.
+
+The model run is open: the minimum set of "test the mcp" plus `plan-images-kitchen` and
+`open-cabinet-look-inside`, whose renders must stay, with gpt-6-astra on the local planner of
+`feat/hi-mcp-performance`; compared per test with the session of 2026-10-27 on the
+`get-plan-images` calls (text kitchens none, the two asked tests one), the plan context reads
+after a change, the planning time, the first result and the verdicts. E is accepted when the text
+kitchens answer without a render and without the read before their first edit, the asked renders
+stay and no verdict gets worse; otherwise the commit is reverted.

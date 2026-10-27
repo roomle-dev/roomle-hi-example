@@ -3,8 +3,10 @@
 > **Type**: Feature analysis — the ticket's performance ideas evaluated, and how to proceed
 > **Status**: Open — D done and E implemented, its text-kitchen run open: roomle-hi-example on
 > `master` (#211), roomle-ui 43eda3a47 and bbac39fa7 pushed on `feat/hi-mcp-performance` and
-> `feat/hi-mcp-merge`, not on `release/bo-test` ([§10](#10-implementation-state)); A, B, C, F and
-> G open
+> `feat/hi-mcp-merge`, not on `release/bo-test`; B done on roomle-ui `feat/hi-mcp-performance`:
+> the tool named at the start of its call kept, the reasoning summary discarded after benchmark 05,
+> published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f` and loaded by the example
+> ([§10](#10-implementation-state)); A, C, F and G open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -13,7 +15,8 @@
 > Azure, 79 runs, no request pacing), the benchmark series
 > [01](../benchmarks/01-iklw-oa-orig-2026-10-26.md) / [02](../benchmarks/02-iklw-oa-rc-2026-10-26.md) /
 > [03](../benchmarks/03-iklw-oa-rc-preloads-2026-10-26.md) /
-> [04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) and
+> [04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) /
+> [05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md) and
 > [their comparison](../benchmarks/iklw-oa-rc-cmp-2026-10-26.md), the
 > [shared-reference benchmark](../benchmarks/planning-assistant-prompt-caching.md), the external
 > document [Kitchen AI Planner: Skill-Architektur und Context Loading](../../docs/external/planning-improvements.md)
@@ -218,6 +221,12 @@ is doing during the 7–23 s of reasoning; the chat window shows the status in i
 **Cost and risk.** Summary tokens are output tokens, a few hundred per turn. Whether the Azure
 deployments stream summaries is to verify; without them the status falls back to the activity.
 
+**State.** Done on roomle-ui `feat/hi-mcp-performance`. Benchmark 05 measured both parts on
+OpenAI: the tool status comes with the start of the payload; the reasoning summary is a call's
+first output and does not fill the wait for it. The tool status is kept, the reasoning summary
+discarded; published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f` and loaded by the example
+([§10](#10-implementation-state)).
+
 ### C. Less to decide in the create call
 
 The reasoning before the payload is the largest block and the model's own. Two levers:
@@ -331,7 +340,8 @@ one round instead of two, so A comes first and G is decided on A's build.
 In this order, one build per step, each step measured before the next:
 
 1. **B** — no model cost, no measurement needed beyond the window: the user sees progress from the
-   first seconds. An embedding-lib change; the build is asked for.
+   first seconds. An embedding-lib change; the build is asked for. B is done: the tool status
+   kept, the reasoning summary discarded after benchmark 05 ([§10](#10-implementation-state)).
 2. **A** with a **benchmark 04**: `image-kitchen-left-wall` and `full-kitchen-walnut-marble-corner`,
    two repetitions each, `openai:gpt-6-astra` with the local planner as in reports 01–03, about five
    minutes and 2.5 million input tokens; the report in `.agents/benchmarks/04-…` and a row in the
@@ -380,7 +390,7 @@ reasoning of the create call, which only C changes.
 | Proposal | State |
 |---|---|
 | A — one skill round | Open |
-| B — progress in the window | Open |
+| B — progress in the window | Done: the tool named at the start of its call kept (roomle-ui bd4d1d1c9), the reasoning summary discarded after [benchmark 05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md) (5e54d0f1a), both on `feat/hi-mcp-performance`; published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f`, which the example loads; the ligna-store pin open ([below](#proposal-b-as-implemented)) |
 | C — less to decide in the create call | Open |
 | D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
 | E — the rounds after the create | Implemented: roomle-ui bbac39fa7, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; the run on the text kitchens open ([below](#proposal-e-measured-and-to-be-measured)) |
@@ -467,3 +477,59 @@ The run on the text kitchens is open: the minimum set of "test the mcp" plus `pl
 after a change, the planning time, the first result and the verdicts. E is accepted when the text
 kitchens answer without a render and without the read before their first edit, the asked renders
 stay and no verdict gets worse; otherwise the commit is reverted.
+
+### Proposal B, as implemented
+
+One change in the planning assistant (roomle-ui
+`packages/embedding-lib/src/homag-intelligence/hi-planning-assistant.ts`), none in the window:
+the `activity` part goes out at `tool-input-start`, when the model starts writing a tool call,
+and again at `tool-call`, when its input is complete — the same tool name, so a provider that
+delivers a call whole still names it (roomle-ui bd4d1d1c9).
+
+The second part of the plan — a reasoning summary requested on the OpenAI and Azure Responses
+routes (`reasoningSummary: 'auto'`) and its first lines shown as the status — was built with it
+and measured in benchmark 05 ([below](#proposal-b-measured)). It is discarded (roomle-ui
+5e54d0f1a): the request option, the handling of the reasoning parts, their tests and the
+documentation of the summary. The assistant shows no reasoning text; with a configured reasoning
+effort, the pinned Azure adapter adds `reasoning.summary: 'detailed'` on its own, as it did before
+B, and the assistant ignores those parts.
+
+Unit tests: the activity at the start and at the completion of a call; the pinned SDK streams
+`tool-input-start` with the tool name before the complete call. The decision row — the tool status,
+and the reasoning summary rejected with the measurement — is in roomle-ui `prompt-caching.md`;
+`agent-architecture.md` and the chat guide here describe the status line.
+
+The change is embedding-lib code, published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f` from
+roomle-ui `feat/hi-mcp-performance`; the example loads it, the pin of the ligna-store is open.
+
+### Proposal B, measured
+
+[Benchmark 05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md) — the image kitchen on the
+left wall, `openai:gpt-6-astra`, two repetitions on the planner of 04 with
+`0.0.0-dev-bd4d1d1`; the 04 captures read with the same script as the baseline:
+
+| Measurement, seconds from turn start | 04 | 05 |
+|---|---|---|
+| The status names `create-or-replace-groups`, before the create tool starts | 0.178 / 0.182 | 5.587 / 3.667 |
+| First status | 5.203 / 4.081 | 3.224 / 3.150 |
+| Reasoning summary lines before the kitchen / in the turn | 0 / 0 and 0 / 0 | 0 / 2 and 1 / 4 |
+| Longest time without a window update before the kitchen | 11.056 / 10.729 | 8.992 / 11.568 |
+| First kitchen, mean | 29.661 | 28.456 |
+
+- **The tool status does what it should.** The window names the create with the call's first
+  output and keeps it for the 3.7–5.6 s the payload streams; in 04 the name came with the complete
+  input, 0.18 s before the tool ran.
+- **The reasoning summary does not.** OpenAI accepts `reasoning.summary: 'auto'` for gpt-6-astra
+  — no 400 —, but streams a summary on 2 of 10 and 4 of 7 calls, never on the create call, and each
+  summary line is its call's first output (0.4–1.8 ms after it). Those calls wait for their first
+  output no less than in 04. The wait before a call's first output stays a status that names the
+  last tool; the longest silence is the reference round's wait in both runs. Calls without any
+  reasoning tokens also wait about 3 s for their first output, so the wait is not reasoning alone.
+- **No measurable cost** on calls 1–3, the same work in 04 and 05; the summary tokens are not
+  reported apart from the output tokens.
+
+**Decision: keep the tool status, discard the reasoning summary.** The summary has no measured
+benefit, adds output tokens on every call it streams on, and would carry the unverified risk of a
+deployment that rejects `reasoning.summary` and fails every turn. Discarded in roomle-ui 5e54d0f1a;
+the tool status stays. What the window could show during the wait is a status the assistant sets
+itself when it sends a request; that is a new proposal, to be decided.

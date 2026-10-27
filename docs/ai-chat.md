@@ -172,11 +172,9 @@ prompts of the chat from the planner once —
 and the image prompt of the roomle-ui glue logic. The window renders the replies
 as **markdown** (bold, lists, headings, code) with [marked](https://marked.js.org)
 and sanitizes them with [DOMPurify](https://github.com/cure53/DOMPurify). While
-the model works, the window's status line says what it does: the tool it calls, named as soon as
-the model starts writing the call ("assistant is working… create-or-replace-groups", seconds
-before the groups appear), and on the OpenAI and Azure Responses models what it is thinking about
-— the first line of each reasoning summary the provider streams ("assistant is working… Planning
-the kitchen layout"). Tools run in the page and can take
+the model works, the window's status line names the tool it calls, as soon as the model starts
+writing the call ("assistant is working… create-or-replace-groups", seconds before the groups
+appear). Tools run in the page and can take
 seconds to minutes (`get-plan-images` up to 120 s) — the status line is what
 tells you the agent is still working. The tools log every call and every planner
 call to the page console (`[hi-mcp] tool …`, `[hi-mcp] call …`).

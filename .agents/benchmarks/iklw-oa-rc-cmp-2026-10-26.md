@@ -9,7 +9,7 @@
 | 03 — response chaining + preloads | [Live-context and first-image guidance measurement](03-iklw-oa-rc-preloads-2026-10-26.md) |
 | 04 — response chaining + JPEG images + renders when due | [Current performance changes measurement](04-iklw-oa-rc-jpg-due-2026-10-27.md) |
 | 05 — 04 + the status line of the window | [Status line measurement](05-iklw-oa-rc-status-2026-10-27.md) |
-| Selected implementation | 02 behavior; rollback commit 432119f80; embedding dev 0.0.0-dev-432119f; 03's preloads rejected |
+| Selected implementation | 02 behavior; rollback commit 432119f80; embedding dev 0.0.0-dev-432119f; 03's preloads rejected; 05's tool status kept and its reasoning summary discarded (roomle-ui 5e54d0f1a, embedding dev 0.0.0-dev-5e54d0f) |
 | Model / key reference | openai:gpt-6-astra / $OPENAI_ASSISTANT_API_KEY |
 | Settings | Direct OpenAI Responses; provider-default reasoning effort, in 05 with `reasoning.summary: 'auto'`; local planner :5173; embedding source from :3001 in 01–03, its published builds 0.0.0-dev-130245d in 04 and 0.0.0-dev-bd4d1d1 in 05; same exact prompt/image/starting plan; no suite suffix/pacing |
 | Data / PDF | Raw captures in ignored .temp; the captures of 01–03 are no longer on disk; 04 and 05 data, scripts and PDFs in .temp/result/benchmark-04-iklw-oa-2026-10-27/ and .temp/result/benchmark-05-iklw-oa-2026-10-27/ |
@@ -40,6 +40,18 @@ and [the retained analysis](../feature-analysis/prompt-preloads.md#10-rejection-
 All 01/02/03 measurements, the call-sequence explanation and raw evidence remain intact.
 **No additional benchmark is run for this restoration.** Unit/wire tests,
 the embedding build and offline package checks verify the restored implementation.
+
+## Decision: keep 05's tool status, discard its reasoning summary
+
+05 measures two changes to the status line. The tool named at the start of its call does what it
+should: the window names the create 3.7–5.6 s before it runs, instead of 0.18 s. The reasoning
+summary does not: it streams on 6 of 17 calls, never on a create, and each summary line is its
+call's first output, so it does not fill the wait before the first output. It has no measured
+benefit, adds output tokens, and would carry the risk of a deployment that rejects
+`reasoning.summary`. It is discarded in roomle-ui `5e54d0f1a` and the embedding-lib dev
+`0.0.0-dev-5e54d0f`; the tool status stays. 05 measured the build with the summary; it is not run
+again for the discard, which removes the request option and its handling and leaves the rest of 05's
+assistant unchanged.
 
 ## Reports compared
 

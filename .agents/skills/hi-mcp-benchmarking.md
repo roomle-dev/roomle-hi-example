@@ -49,8 +49,9 @@ for d in .temp/result/*/*/*-<test id>; do echo "$d $(grep -c '\[hi-chat\] step' 
 ```
 
 New runs, after the go: [Test the MCP](./hi-mcp-testing.md#test-the-mcp) steps 1, 2 and 4 with a
-test file of the chosen tests, no random tests, and no evaluation unless asked. One session per
-repetition:
+test file of the chosen tests, no random tests, and no evaluation unless asked. The provider of
+every benchmark from 06 on is the Azure deployment `gpt-6-astra` with `$AZURE_GPT_KEY`, as below;
+the OpenAI series 01–05 is not continued. One session per repetition:
 
 ```bash
 SESSION=".temp/result/benchmark-$(date +%Y-%m-%d_%H-%M-%S)"

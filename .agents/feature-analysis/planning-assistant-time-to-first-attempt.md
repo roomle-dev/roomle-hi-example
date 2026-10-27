@@ -6,7 +6,8 @@
 > `feat/hi-mcp-merge`, not on `release/bo-test`; B done on roomle-ui `feat/hi-mcp-performance`:
 > the tool named at the start of its call kept, the reasoning summary discarded after benchmark 05,
 > published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f` and loaded by the example
-> ([§10](#10-implementation-state)); A, C, F and G open
+> ([§10](#10-implementation-state)); A analysed in
+> [planning-assistant-one-skill-round.md](planning-assistant-one-skill-round.md); C, F and G open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -204,6 +205,10 @@ requests both files in one round. It depends on the model doing so; the bundle i
 [shared-reference benchmark](../benchmarks/planning-assistant-prompt-caching.md#content-variant-results-and-decision)
 — fewer calls in the creations, but a larger input on every edit turn and no overall gain (ADR 0014).
 
+**State.** Analysed in [planning-assistant-one-skill-round.md](planning-assistant-one-skill-round.md):
+the design against the code and the runs, and benchmark 06 as its measurement, on the Azure
+deployment ([§7](#7-how-to-proceed)).
+
 ### B. Progress in the window while the model thinks
 
 **What changes.** The planning assistant emits the `activity` part at `tool-input-start`, which
@@ -343,9 +348,11 @@ the wait before a call's first output — the remainder of B — is a proposal o
 decided. The open steps, in this order, one build per step, each step measured before the next:
 
 1. **A** with a **benchmark 06**: `image-kitchen-left-wall` and `full-kitchen-walnut-marble-corner`,
-   two repetitions each, `openai:gpt-6-astra` with the local planner as in reports 01–05, about five
-   minutes and 2.5 million input tokens; the report in `.agents/benchmarks/06-…` and a row in the
-   comparison. Accept A when the create comes at call 2 and the first kitchen is earlier.
+   two repetitions each, `gpt-6-astra` on the Azure deployment with `$AZURE_GPT_KEY` — the provider
+   of every benchmark from 06 on, unlike 01–05 on direct OpenAI — with the local planner, about six
+   minutes and 2.5–3.5 million input tokens; the report in `.agents/benchmarks/06-…` and a new
+   comparison for the Azure series. Accept A when the create comes at call 2 and the first kitchen
+   is earlier ([the analysis of A](planning-assistant-one-skill-round.md#6-benchmark-06)).
 2. **G** on the build of A, with the same benchmark and a selector model of the provider: accept
    G when the create comes at call 1 and the first kitchen is earlier than with A by more than the
    spread of two repetitions; otherwise the selector stays out. An embedding-lib change, the build
@@ -388,7 +395,7 @@ reasoning of the create call, which only C changes.
 
 | Proposal | State |
 |---|---|
-| A — one skill round | Open |
+| A — one skill round | Open — analysed in [planning-assistant-one-skill-round.md](planning-assistant-one-skill-round.md); measured by benchmark 06 on the Azure deployment |
 | B — progress in the window | Done: the tool named at the start of its call kept (roomle-ui bd4d1d1c9), the reasoning summary discarded after [benchmark 05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md) (5e54d0f1a), both on `feat/hi-mcp-performance`; published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f`, which the example loads; the ligna-store pin open ([below](#proposal-b-as-implemented)) |
 | C — less to decide in the create call | Open |
 | D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |

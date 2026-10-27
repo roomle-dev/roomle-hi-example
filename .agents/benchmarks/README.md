@@ -35,7 +35,12 @@ contains the before/after tables; earlier run reports stay unchanged. Once the i
 landed and are measured, the durable outcome — the step cost of a model, a rejected approach — is
 promoted into the living reference, and the document can be deleted.
 
-Filename abbreviations: `iklw` = image kitchen left wall; `oa` = OpenAI Astra;
+The provider of every benchmark from 06 on is the Azure deployment `gpt-6-astra` with
+`$AZURE_GPT_KEY` ([the timing skill](../skills/hi-mcp-timing-benchmark.md#1-define-the-run-and-its-clocks));
+01–05 ran on direct OpenAI, so their seconds are not compared with the Azure series, their turn
+shapes are.
+
+Filename abbreviations: `iklw` = image kitchen left wall; `oa` = OpenAI Astra; `az` = Azure Astra;
 `orig` = original; `base` = baseline; `rc` = response chaining; `preloads` = scoped live context and first-image guidance; `jpg` = JPEG plan images;
 `due` = renders and context reads when due; `cmp` = comparison.
 

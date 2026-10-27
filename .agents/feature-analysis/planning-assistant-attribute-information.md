@@ -26,8 +26,8 @@
   in one call (`tool-executors.ts`), the served text (`hi-mcp-server.ts`), their tests; the rows D76
   and D100 of `.agents/homag-intelligence/hi-tools-behaviour.md` and `hi-tools-reference.md`. No
   change is proposed for the library as it is today.
-- **roomle-hi-example** — this analysis; the row "Attribute indexing" of
-  [the time-to-first-attempt analysis](planning-assistant-time-to-first-attempt.md); the attribute
+- **roomle-hi-example** — this analysis; the row "Selective retrieval" of
+  [the levers that do not shorten the response time](../wiki/planning-assistant-response-time-targets.md#levers-that-do-not-shorten-it); the attribute
   paragraph of [library-issues.md](../backlog/library-issues.md), corrected; the benchmark that
   would decide the design.
 - **HOMAG library** — the descriptions of the attributes and their values, through

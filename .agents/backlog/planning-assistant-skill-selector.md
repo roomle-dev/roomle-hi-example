@@ -10,9 +10,9 @@
 > one of them
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303); the reasoning effort and
 > the models in [RML-18043](https://roomle.atlassian.net/browse/RML-18043)
-> **Source**: proposal G of the time-to-first-attempt analysis and
-> [its analysis](../feature-analysis/planning-assistant-skill-selector.md) while that is open; the
-> external document [Kitchen AI Planner: Skill-Architektur und Context Loading](../../docs/external/planning-improvements.md)
+> **Source**: proposal G of the time-to-first-attempt analysis and its own analysis of
+> [RML-18303](https://roomle.atlassian.net/browse/RML-18303), benchmark 07 for the plan state per
+> turn ([07-az-state-2026-10-27.md](../benchmarks/07-az-state-2026-10-27.md)); the external document [Kitchen AI Planner: Skill-Architektur und Context Loading](../../docs/external/planning-improvements.md)
 > (the router in front of the planning model)
 
 ---
@@ -87,6 +87,17 @@ when the models are chosen.
 - **A rule that skips the selector** once the conversation holds a skill, unless an image comes,
   saves its seconds on the later turns of a conversation at the price of a later request for
   another kind of room going unselected; added if the measured cost asks for it.
+
+## Rejected alternatives
+
+| Alternative | Why not |
+|---|---|
+| A word match of the skill index against the user's text, plus the image | The table above: the skill of a request is in the furniture vocabulary and the plan, which a word list does not hold |
+| The planning model as its own selector, a first call with the short input | A call of the planning model with the full prefix is the round the selector saves |
+| The skill derived from the plan — a kitchen in the plan, the kitchen skill | Library knowledge in the host; an empty room says nothing; the region stays unknown |
+| Every room skill supplied on the first turn, or every skill in the shared prefix | Every turn pays for every room's guidance (ADR 0014 of roomle-ui) |
+| The selector started beside the planning model's first call, the call restarted when the selection comes | Two calls where one is due; the restart costs what it saves |
+| The selector plans too — a structured create payload from the small model | The selector routes; the planning stays with the planning model |
 
 ## To do, when the models are chosen
 

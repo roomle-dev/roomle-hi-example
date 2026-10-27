@@ -93,20 +93,23 @@ defines the stored measurements and their report totals.
 
 The local planning assistant can supply a shared reference before conversation history: common
 rules plus a compact article/attribute projection refreshed each turn. The example owns neither
-the reference content nor its assembly. The model reads current rooms/groups/obstacles/installation
-elements through `get-plan-context` before changes and obtains relevant image/room/region skills
-through `get-skill`. Genuine successful tool calls/results remain in history; the automatic
-library message stays outside it. The host has no automatic live snapshot or first-image
-guidance/presence lifecycle. [ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md)
-rejects those automatic preloads because their added complexity has no demonstrated overall benefit.
+the reference content nor its assembly. At the start of every turn the assistant reads the current
+rooms/groups/obstacles/installation elements through `get-plan-context` and supplies them after the
+history as the plan state of the turn
+([ADR 0016](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/the-planning-assistant-supplies-the-plan-state-per-turn.md));
+the model obtains relevant image/room/region skills through `get-skill`. Genuine successful tool
+calls/results remain in history; the automatic library and plan state messages stay outside it.
+The host has no first-image guidance/presence lifecycle:
+[ADR 0015](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/decisions/keep-live-plan-state-and-image-guidance-on-demand.md)
+rejects that automatic preload because its added complexity has no demonstrated overall benefit.
 The launcher selects verified deployment capabilities; the embedding-lib
 owns prompt assembly and cache policy. Architecture, lifecycle and decisions live in roomle-ui's
 [prompt-caching reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md).
 Version 1 diagnostics preserve cache-read/write coverage, model-call timings and request/reference
 bytes and digests without storing prompt content or credentials. The runner records both local
 embedding imports and planner origins so a local benchmark can verify its actual runtime.
-`referenceAcquisitionMs` covers compact library acquisition and reference measurement before
-inference; the reference digest covers instructions/library only. Before the first prompt the
+`referenceAcquisitionMs` covers the library and plan state reads and the reference measurement
+before inference; the reference digest covers instructions/library only. Before the first prompt the
 assistant reads the planner's library context until the catalog has loaded, so that the planner
 has calculated the article templates when the first turn acquires its reference; the console line
 `[planning-assistant] library read before the first prompt` gives the articles and milliseconds.

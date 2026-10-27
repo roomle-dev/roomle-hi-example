@@ -14,8 +14,7 @@ roomle-hi-example on `docs/planning-assistant-prompt-caching`. All task commits 
 
 The source hypothesis comes from the
 [performance note](https://github.com/Rabbid76/desktop-vault/blob/master/projects/ai%20assistant/performance.md).
-Prompt caching can reuse input computation; it does not avoid sending the full request. The
-[analysis](../refactoring-analysis/planning-assistant-azure-prompt-caching.md) separates those goals.
+Prompt caching can reuse input computation; it does not avoid sending the full request.
 The implemented design and reasons live in roomle-ui's
 [prompt-caching reference](https://github.com/roomle-dev/roomle-ui/blob/feat/hi-mcp-performance/.agents/homag-intelligence/prompt-caching.md)
 and [ADR 0014](https://github.com/roomle-dev/roomle-ui/blob/feat/hi-mcp-performance/.agents/decisions/the-planning-assistant-uses-a-shared-reference-prefix.md).

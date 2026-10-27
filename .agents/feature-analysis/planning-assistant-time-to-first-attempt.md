@@ -12,10 +12,11 @@
 > `feat/hi-mcp-performance`, published as `@roomle/embedding-lib@0.0.0-dev-d06fe91` and loaded by
 > the example, accepted in [benchmark 07](../benchmarks/07-az-state-2026-10-27.md) on the Azure
 > deployment; the selector deferred to [the backlog](../backlog/planning-assistant-skill-selector.md)
-> with the choice of the models; F analysed in
-> [planning-assistant-library-context.md](planning-assistant-library-context.md): the compacted
-> context kept saves about 5 ms per read, proposed for rejection; a warm-up read of the assistant
-> takes the 0.75 s of a page's first read, to be decided; C open
+> with the choice of the models; F done as the library read before the first prompt: roomle-ui
+> 1b4351d96 on `feat/hi-mcp-performance`, published as `@roomle/embedding-lib@0.0.0-dev-1b4351d`
+> and loaded by the example and the ligna-store (its branch `chore/embedding-lib-0.0.0-dev-1b4351d`),
+> accepted in [benchmark 08](../benchmarks/08-az-warm-2026-10-27.md) on the Azure deployment; the
+> compacted library context kept in the planner rejected; C open
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -27,7 +28,8 @@
 > [04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) /
 > [05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md) and
 > [their comparison](../benchmarks/iklw-oa-rc-cmp-2026-10-26.md), on the Azure deployment
-> [06](../benchmarks/06-az-skill-2026-10-27.md) and [the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md), the
+> [06](../benchmarks/06-az-skill-2026-10-27.md) / [07](../benchmarks/07-az-state-2026-10-27.md) /
+> [08](../benchmarks/08-az-warm-2026-10-27.md) and [the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md), the
 > [shared-reference benchmark](../benchmarks/planning-assistant-prompt-caching.md), the external
 > document [Kitchen AI Planner: Skill-Architektur und Context Loading](../../docs/external/planning-improvements.md)
 
@@ -36,9 +38,8 @@
 - **roomle-ui** — the served text of `get-skill` and the skill reading (`hi-mcp/skills.ts`,
   `hi-mcp-server.ts`); the planning assistant's stream handling and provider options
   (`hi-planning-assistant.ts`) with the status of the chat window; the plan images of
-  `get-plan-images` (`tool-executors.ts`); the library context cache (`hi-library-context.ts`),
-  or, as [its analysis](planning-assistant-library-context.md) proposes, a warm-up read of the
-  library reference before the first prompt (`hi-planning-assistant.ts`, F);
+  `get-plan-images` (`tool-executors.ts`); the library read before the first prompt
+  (`hi-planning-assistant.ts`, F);
   the skills of a turn selected before its first model call (`hi-planning-assistant.ts`, G).
 - **roomle-hi-example** — this analysis, a benchmark per measured step, the "First result"
   column of the test reports as the standing metric; the external document in `docs/external/`;
@@ -83,7 +84,7 @@ runs.
 | Scale down the input image | Implemented: the chat window redraws a dropped image as a JPEG with the long side at most 1568 px (`prepareImage`, roomle-ui `planning-assistant-image.ts`); the test runner does the same | The test image arrives as 1568 × 1276 px, 198,683 bytes, about 2,000 input tokens of 77,000 | Done. A smaller image saves nothing measurable and loses what the model reads |
 | Scale down the plan images | Implemented as proposal D ([§10](#10-implementation-state)) | `get-plan-images` answers 2,738,222 bytes: two PNG renders at 1024 px, 509 KB and 1.56 MB; the request that carries them takes 3.4 s to its response headers, the others about 1 s. As JPEG the pair is 194,960 bytes, and [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) measures the request that carries it at 0.95 s | Done, as [proposal D](#d-plan-images-as-jpeg). It saves after the first attempt, not before it |
 | Tool memoization | Open | The read tools answer in 0.3–13 ms, an attribute change in about 0.16 s, the renders in 0.4–0.5 s, the create in 1.2–1.8 s; no tool is called twice with the same input in a turn, and a later turn finds the result in its history | Rejected: nothing to save |
-| Precalculated docking vectors | Open: the planner compacts the library context on every read (ADR 0013) and keeps the article templates, from which the docking vectors come, from the first read until the next catalog load | Measured without a model in [the analysis of F](planning-assistant-library-context.md#3-where-the-time-of-a-read-goes): 5 ms warm in the planner, 0.78–0.80 s on the first read after the catalog load, 0.75 s of it the templates of the 111 articles | [Proposal F](#f-keep-the-compacted-library-context): the compacted context kept saves the 5 ms; the templates calculated before the first prompt save the 0.75 s, once per page in the hosts |
+| Precalculated docking vectors | Implemented as proposal F: the planning assistant reads the library context before the first prompt, so the planner calculates the article templates, from which the docking vectors come, before the first turn and keeps them until the next catalog load | The first read after the catalog load takes 0.78–0.80 s, 0.75 s of it the templates of the 111 articles, a later read 5 ms in the planner ([§10](#proposal-f-as-implemented-and-measured)); in [benchmark 08](../benchmarks/08-az-warm-2026-10-27.md) the first turn reads in 6–8 ms and sends its first request after 0.03–0.05 s instead of 0.78–0.81 s | Done, as [proposal F](#f-keep-the-compacted-library-context). It saves 0.8 s on the first prompt of a page in the hosts; the compacted context kept, 5 ms per read, is rejected |
 | Attribute indexing | Open | `find-attributes` answers in 13 ms, and no kitchen creation calls it since the vocabulary is in the plan context | Rejected: nothing to save |
 | Selective retrieval (RAG) | Open | The input size costs about 13 ms per 1,000 tokens ([kitchen-from-image-time.md](../benchmarks/kitchen-from-image-time.md)), 97 % of the prefix is read from the cache, and a per-request selection would break the shared prefix and add a step | Rejected for the response time; reconsider when a library outgrows the prefix |
 
@@ -300,18 +301,21 @@ obstacles only. The text kitchens, where no render is due, are not measured yet
 
 ### F. Keep the compacted library context
 
-The backlog item of the planner ([Caching the library context](../backlog/README.md#planner-roomle-ui-roomlecore)):
-keep the compacted context from the library load until the next catalog load
+The backlog item "Caching the library context" of the planner: keep the compacted context from the
+library load until the next catalog load
 (`hi-library-context.ts`). It saves the 0.7 s of the first read after the load, once per page, in a
 host without the test runner's warm-up read — the ligna-store. Cheap; it does nothing for the
 later prompts.
 
-**State.** Analysed in [planning-assistant-library-context.md](planning-assistant-library-context.md)
-with a measurement without a model: the 0.75 s of the first read are the article templates, which
-the planner already keeps until the next catalog load; the compacted context kept saves about 5 ms
-per read, 10–25 ms per turn, and is proposed for rejection. What takes the 0.75 s on the first
-prompt of a page in the ligna-store and the example's chat window is a warm-up read of the planning
-assistant once the catalog has loaded — an embedding-lib change, to be decided.
+**State.** Done in another form. A measurement without a model shows that the 0.75 s of the first
+read are the article templates, which the planner already keeps until the next catalog load; the
+compacted context kept would save about 5 ms per read, 10–25 ms per turn, and is rejected, the
+backlog item with it. The planning assistant reads the library context before the first prompt
+instead (roomle-ui 1b4351d96, `@roomle/embedding-lib@0.0.0-dev-1b4351d`), so the planner
+calculates the templates before the first turn. Accepted in
+[benchmark 08](../benchmarks/08-az-warm-2026-10-27.md): the first turn reads the library in 6–8 ms
+and sends its first request 0.03–0.05 s after the turn start, against 0.78–0.81 s on the build of
+07 ([§10](#proposal-f-as-implemented-and-measured)).
 
 ### G. The skills of the turn selected before the first call
 
@@ -377,40 +381,42 @@ of 06 ([§10](#10-implementation-state)). The selector is deferred with the choi
 
 ## 7. How to proceed
 
-A, B, D, E and G without its selector are done ([§10](#10-implementation-state)): B's tool status
-and G's plan state per turn are in the embedding-lib the example loads (`0.0.0-dev-d06fe91`); A, D,
-E and G's system prompt are planner code on `feat/hi-mcp-performance`, A accepted in
-[benchmark 06](../benchmarks/06-az-skill-2026-10-27.md) and G in
-[benchmark 07](../benchmarks/07-az-state-2026-10-27.md). What the window shows during the wait
-before a call's first output — the remainder of B — is a proposal of its own, to be decided; the
-selector of G is a backlog item for the choice of the models
-([the backlog](../backlog/planning-assistant-skill-selector.md)). The open steps, in this order,
-one build per step, each step measured before the next, every benchmark on the Azure deployment
-(`gpt-6-astra` with `$AZURE_GPT_KEY`, the provider of every benchmark from 06 on; the series and
-its baseline in [the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md)):
+A, B, D, E, F and G without its selector are done ([§10](#10-implementation-state)). B's tool
+status, G's plan state per turn and F's library read before the first prompt are in the
+embedding-lib the example and the ligna-store load (`0.0.0-dev-1b4351d`); A, D, E and G's system
+prompt are planner code on `feat/hi-mcp-performance`. A is accepted in
+[benchmark 06](../benchmarks/06-az-skill-2026-10-27.md), G in
+[benchmark 07](../benchmarks/07-az-state-2026-10-27.md), F in
+[benchmark 08](../benchmarks/08-az-warm-2026-10-27.md); the compacted library context kept in the
+planner is rejected. The open steps, in this order, one build per step, each step measured before
+the next, every benchmark on the Azure deployment (`gpt-6-astra` with `$AZURE_GPT_KEY`, the
+provider of every benchmark from 06 on; the series and its baseline in
+[the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md)):
 
-1. **F**, decided on [its analysis](planning-assistant-library-context.md#9-decisions-to-take-before-the-plan):
-   the compacted context kept rejected, the warm-up read of the assistant taken or not — an
-   embedding-lib change, verified without a model, since "test the mcp" and the benchmarks read the
-   library before the first prompt and never see the first read.
-2. **E's run on the text kitchens** — the minimum set plus the two tests whose renders must stay,
+1. **E's run on the text kitchens** — the minimum set plus the two tests whose renders must stay,
    measured by the planning times and the verdicts
    ([§10](#proposal-e-measured-and-to-be-measured)).
-3. **C** — the worked example as an experiment on the benchmark of 07; the reasoning effort in
+2. **C** — the worked example as an experiment on the benchmark of 08; the reasoning effort in
    RML-18043.
+
+Beside the steps: what the window shows during the wait before a call's first output — the
+remainder of B — is a proposal of its own, to be decided; the selector of G is a backlog item for
+the choice of the models ([the backlog](../backlog/planning-assistant-skill-selector.md)).
 
 The standing metric is the **First result** column of every "test the mcp" report. The baseline is
 the session `mcp-test-2026-10-27_07-11-41`: text kitchens 31.7–44.0 s, image kitchens 36.4–62.7 s,
 the edits 3.5 s in the median for their read round. A took the reference round of a creation, G's
-plan state the read round of every edit, F's warm-up read would take the first read of a page; whether the first
-attempt of a creation gets under 20 s depends on the reasoning of the create call, which only C
-changes, and on the skill round, which only G's selector would take.
+plan state the read round of every edit, F the 0.8 s of the first read of a page in the hosts —
+which the First result does not show, because the runner of "test the mcp" reads the library
+before the first prompt itself. Whether the first attempt of a creation gets under 20 s depends on
+the reasoning of the create call, which only C changes, and on the skill round, which only G's
+selector would take.
 
 ## 8. Code and documents the work would touch
 
 | Repository | Code | Documents |
 |---|---|---|
-| roomle-ui | `hi-mcp/skills.ts` (`readSkillFile`), the `get-skill` registration in `hi-mcp-server.ts`, `__tests__/hi-mcp/skills-test.ts`, `hi-mcp-server-test.ts`, `test-helpers/unit/hi-mcp-fixture.json` (A); `packages/embedding-lib/src/homag-intelligence/hi-planning-assistant.ts` (stream parts, provider options), `src/common/store/planning-assistant-store.ts`, `PlanningAssistantChat.vue` and their tests (B); `hi-mcp/tool-executors.ts` or `planner-core/src/roomle-planner.ts` (D); `hi-library-context.ts`, or the warm-up read in `hi-planning-assistant.ts` as its analysis proposes (F); the served rules in `hi-mcp-server.ts` (C, E); `hi-planning-assistant.ts` (the selector call before the first model call, the supplied skill files, the selector model of `PlanningAssistantConfig`) and `tests/unit/embedding-lib/homag-intelligence/hi-planning-assistant.spec.ts` (G) | `.agents/homag-intelligence/hi-tools-behaviour.md` (a decision row per change), `hi-tools-reference.md`, `agent-architecture.md`, `prompt-caching.md`; with G an ADR beside ADR 0015 |
+| roomle-ui | `hi-mcp/skills.ts` (`readSkillFile`), the `get-skill` registration in `hi-mcp-server.ts`, `__tests__/hi-mcp/skills-test.ts`, `hi-mcp-server-test.ts`, `test-helpers/unit/hi-mcp-fixture.json` (A); `packages/embedding-lib/src/homag-intelligence/hi-planning-assistant.ts` (stream parts, provider options), `src/common/store/planning-assistant-store.ts`, `PlanningAssistantChat.vue` and their tests (B); `hi-mcp/tool-executors.ts` or `planner-core/src/roomle-planner.ts` (D); `hi-planning-assistant.ts` (the library read before the first prompt) and its spec (F); the served rules in `hi-mcp-server.ts` (C, E); `hi-planning-assistant.ts` (the selector call before the first model call, the supplied skill files, the selector model of `PlanningAssistantConfig`) and `tests/unit/embedding-lib/homag-intelligence/hi-planning-assistant.spec.ts` (G) | `.agents/homag-intelligence/hi-tools-behaviour.md` (a decision row per change), `hi-tools-reference.md`, `agent-architecture.md`, `prompt-caching.md`; with G an ADR beside ADR 0015 |
 | roomle-hi-example | the benchmark session and report of every measured step; `minimal-hi-example/index.html` for a new embedding-lib pin; `minimal-hi-example/start.mjs` (the selector model, G) | this analysis; `.agents/skills/hi-mcp-tools.md` (`get-skill`), `docs/ai-chat.md` (the status of the window; the selector model), `.agents/benchmarks/README.md`, the backlog rows of the accepted steps |
 | ligna-store | `hi-mcp/chat-options.ts` (the selector model, G) | — |
 
@@ -436,7 +442,7 @@ changes, and on the skill round, which only G's selector would take.
 | C — less to decide in the create call | Open |
 | D — plan images as JPEG | Done: roomle-ui 43eda3a47, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
 | E — the rounds after the create | Implemented: roomle-ui bbac39fa7, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; the run on the text kitchens open ([below](#proposal-e-measured-and-to-be-measured)) |
-| F — keep the compacted library context | Open — analysed in [planning-assistant-library-context.md](planning-assistant-library-context.md): the compacted context kept proposed for rejection (about 5 ms per read); a warm-up read of the assistant before the first prompt (0.75 s once per page in the hosts) to be decided |
+| F — keep the compacted library context | Done as the library read before the first prompt: roomle-ui 1b4351d96 on `feat/hi-mcp-performance` (merged into `feat/hi-mcp-merge`), published as `@roomle/embedding-lib@0.0.0-dev-1b4351d`, which the example and the ligna-store pin (its branch `chore/embedding-lib-0.0.0-dev-1b4351d`); accepted in [benchmark 08](../benchmarks/08-az-warm-2026-10-27.md); the compacted context kept rejected ([below](#proposal-f-as-implemented-and-measured)) |
 | G — the skills of the turn selected before the first call | Done without its selector: the plan state supplied per turn, roomle-ui d06fe91de on `feat/hi-mcp-performance`, published as `@roomle/embedding-lib@0.0.0-dev-d06fe91`, which the example and the ligna-store pin (its branch `chore/embedding-lib-0.0.0-dev-d06fe91`); accepted in [benchmark 07](../benchmarks/07-az-state-2026-10-27.md) ([below](#proposal-g-without-its-selector-as-implemented-and-measured)); the selector deferred to [the backlog](../backlog/planning-assistant-skill-selector.md) with the choice of the models |
 
 ### Proposal D, as implemented
@@ -590,6 +596,81 @@ ms. The create calls reason with 238–401 tokens against 219–332 in 06, a dif
 run-to-run spread that two or three repetitions do not separate from the state's presence. The
 change is embedding-lib code and one sentence of the planner's system prompt: the embedding-lib
 is published, the prompt reaches the example and the ligna-store with the planner's deployment.
+
+### Proposal F, as implemented and measured
+
+**Where the time of a library read goes.** A probe without a model — three fresh example pages on
+the local planner, Furniture_Smith with 111 articles and 16 sub-articles, the assistant's read
+`get-plan-context` with `articles` and `attributes` sent once on the fresh page and ten times
+after it, the sections of `getLibraryContext` timed in the planner frame:
+
+| Measure | Page 1 | Page 2 | Page 3 |
+|---|---|---|---|
+| The first read after the catalog load, from the page | 787.9 ms | 800.4 ms | 782.9 ms |
+| Of it, the article templates (calculated / asked) | 747.7 ms (111 / 111) | 764.6 ms (111 / 111) | 744.6 ms (111 / 111) |
+| The ten later reads, from the page | 7.6–10.1 ms | 7.7–9.1 ms | 7.4–8.8 ms |
+| `getLibraryContext` `articles` and `masterData` in the planner, median | 5.2 ms | 5.2 ms | 5.3 ms |
+| — `articles` alone / `masterData` alone | 4.2 / 1.0 ms | 4.0 / 1.0 ms | 4.1 / 1.0 ms |
+| — every template from the planner's cache | 0.1 ms | 0.0 ms | 0.0 ms |
+
+The 0.75 s of the first read are the templates: every one of the 111 articles lacks docking vectors
+of its own, each template takes about 6.8 ms, and the planner keeps them per article object and
+attribute overrides until the next catalog load (`_articleTemplates` of roomle-ui `hi-tools.ts`).
+The calculation is synchronous, so the planner frame is busy for the whole 0.75 s. Neither host
+page reads the library before the first prompt, so the hosts paid the 0.75 s in the first turn —
+and the plan state of the turn waited for it in the tools' queue (`oneAtATime`); the prompt
+runner's wait for the catalog made the read before the prompt, so no benchmark and no "test the
+mcp" run saw it.
+
+**Rejected:**
+
+- *The compacted context kept from the first read until the next catalog load*, the proposal as
+  written: it saves the warm read — about 5 ms per read, 10–25 ms per creation turn —, not the
+  templates. The catalog maps of the glue logic change in place, so the cache would compare the
+  identity of every article, sub-article and master data object on each read; a failed template
+  must not be frozen into it; and every reader would share one object.
+- *The templates calculated at the catalog load in the planner*: every planner page pays the
+  0.75 s, also the UI alone, which needs no template.
+- *The read when the chat window opens*: a new callback between the planner's window and the host's
+  assistant for the same effect.
+- *The templates in slices, so the view keeps reacting*: spreads the 0.75 s, does not take them.
+- *Docking vectors delivered with the article catalog*: a change of the data the library calculates.
+- *Templates kept across pages*, keyed by a digest of the catalog: a versioned browser cache for
+  0.75 s per page.
+
+**As implemented** (roomle-ui 1b4351d96, embedding-lib code only). Right before it reports itself
+available, `startPlanningAssistant` starts reading the planner's library context,
+`getExternalObjectLibraryContext` with `articles`, without waiting for it: every 500 ms until the
+catalog lists articles, at most 240 times, and no more once the first prompt has come or the
+signal has aborted. A rejected read counts as a read without articles; a planner API without the
+method skips the read. The result goes nowhere; the console line `[planning-assistant] library read
+before the first prompt: <n> articles in <ms> ms` reports it. It is the planner method, not the
+tool `get-plan-context`: the read is no call of the agent, so the page's record of the chat's tool
+calls stays the chat's. The turn's reads are unchanged. Six unit tests: one read once the catalog
+lists articles, logged once, no model request; the read repeated every interval while the catalog
+lists none; ended by the first prompt, whose turn reads as before; ended by the abort and after the
+bound; a failed read repeated with the availability reported; a planner API without the method.
+The decision row is in roomle-ui `prompt-caching.md`, the description in `agent-architecture.md`
+and the host guide `homag-intelligence-embedding.md`.
+
+[Benchmark 08](../benchmarks/08-az-warm-2026-10-27.md), `gpt-6-astra` on the Azure deployment,
+with a runner whose wait for the catalog calculates no template (an empty list of article ids) and
+a prompt 5 s after the page is ready: four invalid-key checks (the first turn up to its first
+request, rejected at 401 without inference) and the two creations of 06, two repetitions each:
+
+| Measurement | Cold checks (build of 07) | Warm checks and runs (six pages) | 06 (runner-warmed) |
+|---|---|---|---|
+| The assistant's read before the first prompt, planner ms | none | 729.2–753.7 | none |
+| The first turn's library read, planner ms | 755.2 / 780.9 | 6.3–8.4 | 5.7–10.3 |
+| `referenceAcquisitionMs` of the first turn, ms | 772.3 / 798.0 | 18.1–24.3 | 14.6–31.8 |
+| The first request after the turn start, s | 0.783 / 0.809 | 0.033–0.045 | 0.027–0.054 |
+| First kitchen, image / text mean, s | — | 28.091 / 27.705 | 29.654 / 30.287 |
+
+Every page of the new build reads the library before the first prompt, and its first turn starts
+as 06's runner-warmed turns did; the creations keep the shape and the kitchens of 06, within its
+spread. The page is ready after 4.9–5.9 s (06: 5.0–7.7 s); the plan's groups are reported 0.27–0.34
+s after the read on every page, a possible delay of the plan's load that six pages do not separate
+from its spread.
 
 ### Proposal B, as implemented
 

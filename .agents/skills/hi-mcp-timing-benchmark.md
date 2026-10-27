@@ -178,8 +178,12 @@ sub-millisecond gaps out of unsupported precision claims and note display roundi
 
 Use run/step/call identifiers to support findings. Tool elapsed minus nested planner time includes
 forwarding, scheduling, validation, projection and serialization; it is not pure assembly CPU time.
-The runner's readiness catalog read can populate article-template caches before the prompt, so
-label subsequent reads warm. A separate first-read probe needs its own settings and evidence.
+The runner's readiness catalog read calculates the article templates before the prompt, so label
+subsequent reads warm. A measurement of a page's first read waits for the catalog with an empty
+list of article ids (`getExternalObjectLibraryContext(['articles'], { articleIds: [] })`), which
+lists the articles without calculating a template, and lets the prompt follow the page's own reads
+— the planning assistant reads the library before the first prompt — as
+[benchmark 08](../benchmarks/08-az-warm-2026-10-27.md) does.
 Report provider queueing, prefill, reasoning, generation, network and kernel/render work as unknown
 where the markers do not separate them. Equal byte lengths do not establish equal reference
 content; compare digests before claiming reuse. Do not fit a performance model to a tiny sample.

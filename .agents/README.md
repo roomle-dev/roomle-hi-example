@@ -134,6 +134,7 @@ One document per bug: root-cause analysis written **before** the fix, closed out
 | Document | Status | Last touched |
 |---|---|---|
 | [Token counts in the random-test table](bug-analysis/random-test-token-table.md) | Fixed | 2026-10-25 |
+| [A rejected response continuation ends the turn](bug-analysis/rejected-response-continuation-ends-the-turn.md) | Open | 2026-10-27 |
 
 ### Feature Analyses
 

@@ -41,6 +41,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 | Document | Status | Issue |
 |---|---|---|
 | [Token counts in the random-test table](random-test-token-table.md) | Fixed | Measured random-test usage is omitted from the dedicated overview |
+| [A rejected response continuation ends the turn](rejected-response-continuation-ends-the-turn.md) | Open | A chained request the provider rejects ends the planning assistant's turn |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

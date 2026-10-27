@@ -17,7 +17,8 @@
 > 1b4351d96 on `feat/hi-mcp-performance`, published as `@roomle/embedding-lib@0.0.0-dev-1b4351d`
 > and loaded by the example,
 > accepted in [benchmark 08](../benchmarks/08-az-warm-2026-10-27.md) on the Azure deployment; the
-> compacted library context kept in the planner rejected; C open
+> compacted library context kept in the planner rejected; C has nothing to do: the worked example is
+> in the served text, the reasoning effort out of scope at the moment
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-hi-example `master` at 324138e with `@roomle/embedding-lib@0.0.0-dev-130245d`
@@ -32,7 +33,9 @@
 > [06](../benchmarks/06-az-skill-2026-10-27.md) / [07](../benchmarks/07-az-state-2026-10-27.md) /
 > [08](../benchmarks/08-az-warm-2026-10-27.md) and [the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md), the
 > [shared-reference benchmark](../benchmarks/planning-assistant-prompt-caching.md), the external
-> document [Kitchen AI Planner: Skill-Architektur und Context Loading](../../docs/external/planning-improvements.md)
+> document [Kitchen AI Planner: Skill-Architektur und Context Loading](../../docs/external/planning-improvements.md);
+> the baselines of the state of all done proposals, [the image kitchen](../benchmarks/baseline-iklw-az-2026-10-27.md)
+> and [the text kitchen](../benchmarks/baseline-fkwm-az-2026-10-27.md)
 
 ## Affected repositories
 
@@ -250,19 +253,32 @@ discarded; published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f` and loaded by 
 
 ### C. Less to decide in the create call
 
-The reasoning before the payload is the largest block and the model's own. Two levers:
+The reasoning before the payload is the largest block and the model's own. The two levers this
+analysis named are not open:
 
-- **The reasoning effort** is the direct one; it is decided in
-  [RML-18043](https://roomle.atlassian.net/browse/RML-18043), not here. The gpt-6-astra deployment
-  runs at the provider's default (`FOUNDRY_DEPLOYMENTS`, `start.mjs`).
-- **A worked example of a create payload** in the served text — a one-row kitchen with its
-  relations, placement and group attributes, with placeholder article ids so the text stays
-  library-neutral ([§2.4](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#24-instructions)).
-  A model that can copy a shape reasons about the content only. The gain is unknown; it is an
-  experiment with the benchmark of §7, and it is dropped if the measurement shows nothing.
+- **A worked example of a create payload** in the served text, so that the model copies a shape and
+  reasons about the content only. The served text has such examples: the authoring rules of
+  roomle-ui `hi-mcp-server.ts` show a row placed into a corner (Example 1), wall units above and
+  beside floor units (Example 2) and an L-shaped kitchen in the back right corner — the corner
+  article, the relations of both legs, the wall units and the placement (Example 3) —, with
+  placeholder article ids, library-neutral
+  ([§2.4](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#24-instructions)).
+  They leave out the group attributes, the look of a kitchen. An example of those is not needed:
+  the creates set the look already — group attributes in 42 of the 49 creates of the session of
+  2026-10-27, the requested walnut fronts and dark-marble worktop in every walnut kitchen of the
+  benchmarks —, and with the examples in place the create calls reason with 219–431 tokens and
+  wait 9.5–20.0 s for their first output (benchmarks 06 and 07 and the two baselines). Not proposed.
+- **The reasoning effort.** RML-18043, which set the effort per model, is closed: the lightweight
+  models run at `high`, the only effort that gives reasonable results with them — accuracy goes
+  over speed. The gpt-6-astra deployment runs at the provider's default (`FOUNDRY_DEPLOYMENTS`,
+  `start.mjs`); a lower effort for it is out of scope at the moment.
 
 The payload itself is already compact (31–45 tokens per root); a terser schema would save a second
 or two of streaming at the price of a tool API change for every client — not proposed.
+
+**State.** Nothing to do: the worked example is in the served text, and the reasoning effort is out
+of scope at the moment. What the create call costs is measured in the baselines of the image
+kitchen and the text kitchen ([§7](#7-how-to-proceed)).
 
 ### D. Plan images as JPEG
 
@@ -384,37 +400,44 @@ of 06 ([§10](#10-implementation-state)). The selector is deferred with the choi
 
 A, B, D, E, F and G without its selector are done ([§10](#10-implementation-state)). B's tool
 status, G's plan state per turn and F's library read before the first prompt are in the
-embedding-lib the example loads (`0.0.0-dev-1b4351d`); A, D, E and G's system
-prompt are planner code on `feat/hi-mcp-performance`. A is accepted in
+embedding-lib the example loads (`0.0.0-dev-1b4351d`); A, D, E and G's system prompt are planner
+code on `feat/hi-mcp-performance`. A is accepted in
 [benchmark 06](../benchmarks/06-az-skill-2026-10-27.md), G in
 [benchmark 07](../benchmarks/07-az-state-2026-10-27.md), F in
-[benchmark 08](../benchmarks/08-az-warm-2026-10-27.md); the compacted library context kept in the
-planner is rejected. The open steps, in this order, one build per step, each step measured before
-the next, every benchmark on the Azure deployment (`gpt-6-astra` with `$AZURE_GPT_KEY`, the
-provider of every benchmark from 06 on; the series and its baseline in
-[the comparison of the Azure series](../benchmarks/az-cmp-2026-10-27.md)):
+[benchmark 08](../benchmarks/08-az-warm-2026-10-27.md), E with the minimum set of "test the mcp";
+the compacted library context kept in the planner is rejected. C has nothing to do: the worked
+example of a create payload is in the served text, and the reasoning effort is out of scope at the
+moment ([C](#c-less-to-decide-in-the-create-call)). No step of this analysis is open.
 
-1. **C** — the worked example as an experiment on the benchmark of 08; the reasoning effort in
-   RML-18043.
+Beside them: what the window shows during the wait before a call's first output — the remainder of
+B — is a proposal of its own, to be decided; the selector of G is a backlog item for the choice of
+the models ([the backlog](../backlog/planning-assistant-skill-selector.md)).
 
-Beside the steps: what the window shows during the wait before a call's first output — the
-remainder of B — is a proposal of its own, to be decided; the selector of G is a backlog item for
-the choice of the models ([the backlog](../backlog/planning-assistant-skill-selector.md)).
+**The baselines.** The state of all done proposals is measured on the Azure deployment
+(`gpt-6-astra` with `$AZURE_GPT_KEY`) in the layout of benchmark 01, two runs each:
+[the image kitchen](../benchmarks/baseline-iklw-az-2026-10-27.md) and
+[the text kitchen](../benchmarks/baseline-fkwm-az-2026-10-27.md). A further step is measured
+against them, with the same test, the same settings and a report of the same layout. Against
+[the response time targets](../wiki/planning-assistant-response-time-targets.md):
 
-The standing metric is the **First result** column of every "test the mcp" report. The baseline is
-the session `mcp-test-2026-10-27_07-11-41`: text kitchens 31.7–44.0 s, image kitchens 36.4–62.7 s,
-the edits 3.5 s in the median for their read round. A took the reference round of a creation, G's
-plan state the read round of every edit, F the 0.8 s of the first read of a page —
-which the First result does not show, because the runner of "test the mcp" reads the library
-before the first prompt itself. Whether the first attempt of a creation gets under 20 s depends on
-the reasoning of the create call, which only C changes, and on the skill round, which only G's
-selector would take.
+| Milestone | Text kitchen: baseline | Text kitchen: target | Image kitchen: baseline | Image kitchen: target |
+|---|---|---|---|---|
+| First kitchen | 36.1 / 40.1 s | 10 s | 33.1 / 29.7 s | 15–20 s |
+| Final result | 68.4 / 47.4 s | 20–40 s | 96.9 / 54.5 s | 25–50 s |
+| The create call, until its first output | 30.0 / 26.8 s, 20.0 / 17.3 s | — | 27.9 / 23.7 s, 17.6 / 13.7 s | — |
+
+The first kitchen is three to four times its target from a text prompt and one and a half to two
+times its target from an image; the create call alone takes longer than the target of the first kitchen. No step of
+this analysis that shortens the create call is open.
+
+The **First result** column of every "test the mcp" report is the standing metric of the suite; its
+runner reads the library before the first prompt itself, so it does not show F.
 
 ## 8. Code and documents the work would touch
 
 | Repository | Code | Documents |
 |---|---|---|
-| roomle-ui | `hi-mcp/skills.ts` (`readSkillFile`), the `get-skill` registration in `hi-mcp-server.ts`, `__tests__/hi-mcp/skills-test.ts`, `hi-mcp-server-test.ts`, `test-helpers/unit/hi-mcp-fixture.json` (A); `packages/embedding-lib/src/homag-intelligence/hi-planning-assistant.ts` (stream parts, provider options), `src/common/store/planning-assistant-store.ts`, `PlanningAssistantChat.vue` and their tests (B); `hi-mcp/tool-executors.ts` or `planner-core/src/roomle-planner.ts` (D); `hi-planning-assistant.ts` (the library read before the first prompt) and its spec (F); the served rules in `hi-mcp-server.ts` (C, E); `hi-planning-assistant.ts` (the selector call before the first model call, the supplied skill files, the selector model of `PlanningAssistantConfig`) and `tests/unit/embedding-lib/homag-intelligence/hi-planning-assistant.spec.ts` (G) | `.agents/homag-intelligence/hi-tools-behaviour.md` (a decision row per change), `hi-tools-reference.md`, `agent-architecture.md`, `prompt-caching.md`; with G an ADR beside ADR 0015 |
+| roomle-ui | `hi-mcp/skills.ts` (`readSkillFile`), the `get-skill` registration in `hi-mcp-server.ts`, `__tests__/hi-mcp/skills-test.ts`, `hi-mcp-server-test.ts`, `test-helpers/unit/hi-mcp-fixture.json` (A); `packages/embedding-lib/src/homag-intelligence/hi-planning-assistant.ts` (stream parts, provider options), `src/common/store/planning-assistant-store.ts`, `PlanningAssistantChat.vue` and their tests (B); `hi-mcp/tool-executors.ts` or `planner-core/src/roomle-planner.ts` (D); `hi-planning-assistant.ts` (the library read before the first prompt) and its spec (F); the served rules in `hi-mcp-server.ts` (E); `hi-planning-assistant.ts` (the selector call before the first model call, the supplied skill files, the selector model of `PlanningAssistantConfig`) and `tests/unit/embedding-lib/homag-intelligence/hi-planning-assistant.spec.ts` (G) | `.agents/homag-intelligence/hi-tools-behaviour.md` (a decision row per change), `hi-tools-reference.md`, `agent-architecture.md`, `prompt-caching.md`; with G an ADR beside ADR 0015 |
 | roomle-hi-example | the benchmark session and report of every measured step; `minimal-hi-example/index.html` for a new embedding-lib pin; `minimal-hi-example/start.mjs` (the selector model, G) | this analysis; `.agents/skills/hi-mcp-tools.md` (`get-skill`), `docs/ai-chat.md` (the status of the window; the selector model), `.agents/benchmarks/README.md`, the backlog rows of the accepted steps |
 
 ## 9. Measurement gaps
@@ -436,7 +459,7 @@ selector would take.
 |---|---|
 | A — one skill round | Done: roomle-ui e8964c3df on `feat/hi-mcp-performance`, not on `release/bo-test`; planner code, no embedding-lib build; accepted in [benchmark 06](../benchmarks/06-az-skill-2026-10-27.md) on the Azure deployment, the create at call 2 in every run ([below](#proposal-a-as-implemented-and-measured)) |
 | B — progress in the window | Done: the tool named at the start of its call kept (roomle-ui bd4d1d1c9), the reasoning summary discarded after [benchmark 05](../benchmarks/05-iklw-oa-rc-status-2026-10-27.md) (5e54d0f1a), both on `feat/hi-mcp-performance`; published as `@roomle/embedding-lib@0.0.0-dev-5e54d0f`, which the example loads ([below](#proposal-b-as-implemented)) |
-| C — less to decide in the create call | Open |
+| C — less to decide in the create call | Nothing to do: the worked example is in the served text (Examples 1–3 of the authoring rules), an example of the group attributes not needed; the reasoning effort out of scope at the moment ([above](#c-less-to-decide-in-the-create-call)) |
 | D — plan images as JPEG | Done: roomle-ui 4b67bdc14, pushed on `feat/hi-mcp-performance` and `feat/hi-mcp-merge`, not on `release/bo-test`; roomle-hi-example on `master` (#211); measured with a model in [benchmark 04](../benchmarks/04-iklw-oa-rc-jpg-due-2026-10-27.md) |
 | E — the rounds after the create | Done: roomle-ui c1e9fa082, pushed as D; roomle-hi-example on `master` (#211). Measured for the image kitchen in benchmark 04; accepted with the minimum set of "test the mcp" and the two asked-render tests, session `mcp-test-2026-10-27_19-36-02` ([below](#proposal-e-measured)) |
 | F — keep the compacted library context | Done as the library read before the first prompt: roomle-ui 1b4351d96 on `feat/hi-mcp-performance` (merged into `feat/hi-mcp-merge`), published as `@roomle/embedding-lib@0.0.0-dev-1b4351d`, which the example pins; accepted in [benchmark 08](../benchmarks/08-az-warm-2026-10-27.md); the compacted context kept rejected ([below](#proposal-f-as-implemented-and-measured)) |

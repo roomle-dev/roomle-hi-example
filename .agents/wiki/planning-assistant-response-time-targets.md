@@ -1,9 +1,10 @@
 # Planning Assistant: response time targets
 
 How fast the Planning Assistant has to plan a kitchen. These are the targets the performance work
-is measured against; the targets are reached step by step. The current baseline is
-[baseline-iklw-az-2026-10-27.md](../benchmarks/baseline-iklw-az-2026-10-27.md), the kitchen from an
-image on the Azure deployment; all measurements are in [the benchmarks](../benchmarks/README.md).
+is measured against; the targets are reached step by step. The current baselines, on the Azure
+deployment, are [baseline-fkwm-az-2026-10-27.md](../benchmarks/baseline-fkwm-az-2026-10-27.md), the
+kitchen from a text prompt, and [baseline-iklw-az-2026-10-27.md](../benchmarks/baseline-iklw-az-2026-10-27.md),
+the kitchen from an image; all measurements are in [the benchmarks](../benchmarks/README.md).
 
 ## The targets
 

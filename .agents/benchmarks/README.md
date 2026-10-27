@@ -55,6 +55,7 @@ remains measured evidence; the source-equivalent rollback requires no new benchm
 
 | Document | Status | Description |
 |---|---|---|
+| [The baseline: walnut text kitchen on the Azure deployment](baseline-fkwm-az-2026-10-27.md) | Measured | The baseline of full-kitchen-walnut-marble-corner on `gpt-6-astra` on Azure with A, B, D, E, F and the plan state per turn, in the layout of 01: the kitchen at call 2 after 36.1 / 40.1 s (mean 38.1 s), the turn 68.4 / 47.4 s; the create call, 30.0 / 26.8 s, is the largest block before the kitchen |
 | [The baseline: left-wall image kitchen on the Azure deployment](baseline-iklw-az-2026-10-27.md) | Measured | The baseline of image-kitchen-left-wall on `gpt-6-astra` on Azure with A, B, D, E, F and the plan state per turn, in the layout of 01: the kitchen at call 2 after 33.1 / 29.7 s (mean 31.4 s), the turn 96.9 / 54.5 s; the create call, 27.9 / 23.7 s, is the largest block before the kitchen |
 | [Original left-wall image kitchen timing](01-iklw-oa-orig-2026-10-26.md) | Measured | Original baseline, preserved unchanged |
 | [Left-wall image kitchen: response-chaining run](02-iklw-oa-rc-2026-10-26.md) | Measured | Two chained repetitions; independent timing and per-call byte report |

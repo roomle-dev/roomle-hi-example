@@ -150,7 +150,7 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Planning Assistant performance: remaining work after the October 28 baselines](refactoring-analysis/planning-assistant-performance-next-steps.md) | Open — model-round reduction, creation-time information and benchmark criteria | 2026-10-28 |
+| [Planning Assistant performance: remaining work after the October 28 baselines](refactoring-analysis/planning-assistant-performance-next-steps.md) | Open — model-round reduction, staged article retrieval, description sharing and benchmark criteria | 2026-10-28 |
 
 ### Benchmarks & Performance Analyses
 

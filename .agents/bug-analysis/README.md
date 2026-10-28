@@ -38,7 +38,9 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 ## Current Documents
 
-No bug analysis is open.
+| Document | Status | Issue |
+|---|---|---|
+| [An interior fitting added where the parent shows a default interior](interior-fitting-added-where-the-parent-shows-a-default-interior.md) | Open | Backlog item 115 of [`../backlog/mcp-issues.md`](../backlog/mcp-issues.md) |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

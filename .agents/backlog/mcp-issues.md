@@ -28,7 +28,7 @@ Keep this document, its guidance and its overview table when no issues are open,
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 115 | [An interior fitting added where the parent shows a default interior](#115-an-interior-fitting-added-where-the-parent-shows-a-default-interior) | hardening | roomle-ui served text: `get-interior-design-options`, `add-interior-fitting` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
+| 115 | [An interior fitting added where the parent shows a default interior](#115-an-interior-fitting-added-where-the-parent-shows-a-default-interior) | hardening | roomle-ui served text: `get-interior-design-options`, `add-interior-fitting` (`hi-mcp-server.ts`) — analysed in [the bug analysis](../bug-analysis/interior-fitting-added-where-the-parent-shows-a-default-interior.md): the discovery clause reads as if only a filling fitting replaces the default interior, and the add says nothing of it | low | gpt-6-astra | provider default |
 | 116 | [A conflict a row edit leaves is not resolved](#116-a-conflict-a-row-edit-leaves-is-not-resolved) | hardening | roomle-ui served text: the rule for corrections, `delete-article-and-compact` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
 | 117 | [The catalog serves 19 descriptions in full](#117-the-catalog-serves-19-descriptions-in-full) | hardening | roomle-ui `shortDescription` (`hi-mcp/agent-facing.ts`) | low — about 11 KB, 2,400 tokens of the cached prefix | | |
 
@@ -43,16 +43,21 @@ parent whose `defaultInteriors` lists the four adjustable shelves it shows; the 
 the place of the four, the correction says so, and the agent undoes it — one extra call and an undo
 for a request that cannot be met.
 
-**Cause.** The description of `get-interior-design-options` says that "an addition there takes its
-place", but the agent reads `defaultInteriors` only after the addition, from its correction. Nothing
-in the description of `add-interior-fitting` sends it to `defaultInteriors` before it adds.
+**Cause.** The agent reads the `defaultInteriors` entry before it adds: discovery returns it
+with the four shelves. The description of `get-interior-design-options` says that the default
+interior shows "while no fitting fills its container" and that "an addition there takes its place";
+"fills" reads as a fitting that takes the whole compartment, not one shelf level. The description of
+`add-interior-fitting` says nothing of it. Every fitting added to the parent replaces all four
+shelves, and no fitting gives a fifth ([the bug
+analysis](../bug-analysis/interior-fitting-added-where-the-parent-shows-a-default-interior.md)).
 
-**To do.** roomle-ui served text: the description of `add-interior-fitting` says that an addition
-to a parent with a `defaultInteriors` entry replaces that default interior, so the agent checks
-the entry first and tells the user what the parent already holds.
+**To do.** roomle-ui served text: the discovery clause says that any fitting added to the parent
+replaces all the listed parts; the description of `add-interior-fitting` says that a fitting added
+to a parent listed in `defaultInteriors` replaces them and does not add to them. The `expect` of
+`edit-add-subarticle-look-inside` rules out any addition into the door of the middle unit.
 
-**Test.** `edit-add-subarticle-look-inside`: no `add-interior-fitting` replaces the four
-adjustable shelves; the answer says the cabinet holds them.
+**Test.** `edit-add-subarticle-look-inside`: no `add-interior-fitting` into the door of the middle
+unit; the answer says the cabinet holds four adjustable shelves.
 
 **Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 41 (`edit-add-subarticle-look-inside`): `add-interior-fitting` of `FixedShelf` into parent `5b581d05` of the middle `HTB60`, the correction about the replaced default interior, then `undo`.
 

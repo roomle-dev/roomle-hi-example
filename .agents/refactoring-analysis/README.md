@@ -41,7 +41,9 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 ## Current Documents
 
-No refactoring analysis is open.
+| Document | Status | Date |
+|---|---|---|
+| [Planning Assistant performance: remaining work after the October 28 baselines](planning-assistant-performance-next-steps.md) | Open — layout then refinement, staged article retrieval, description sharing and benchmark criteria | 2026-10-28 |
 
 Add refactoring analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `mcp-bridge-simplification.md`).

@@ -32,10 +32,14 @@ keeps every suggested text, applied in the library or not.
   agent requests `articleDescriptions`. What the agent needs to pick an article goes into these two
   lines.
 - **The attribute vocabulary** of `get-plan-context` serves every attribute of the library but
-  the element type — id, name, `desc`, group, type and every value with its name and `desc`, in
-  full (D76, D100). A value list several attributes share is listed once. What it costs and what
-  the agent uses of it: [the analysis of the attribute information](../feature-analysis/planning-assistant-attribute-information.md)
-  while it is open.
+  the element type — id, name, `desc`, group and type (D76, D100). The attributes a planning sets
+  at the create — those the catalog names per root module, the group settings and those of the
+  generated root modules — come with every value, its name and `desc`; every other attribute with
+  the number of its values, which `find-attributes` returns by its id (D122). A value list several
+  attributes share is listed once. The create leaves an attribute of the second kind to the
+  article — the sink of a sink unit, a sub module's attribute —, so what a planning needs to know
+  of it goes into the article's description: the sink unit names the side its sink's drainer
+  reaches over.
 - **A value the library changes along** — a program switched by a colour — is named in the result
   with its `desc` (D59). A rule the agent needs goes into the `desc` of the attribute or the value
   it concerns.

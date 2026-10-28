@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Type / domain | Benchmark / HI Planning Assistant |
-| Trigger | Benchmark 09: the two-level attribute section (D122) — the values of the attributes a planning sets at the create in the prefix, every other attribute with the number of its values and its values through find-attributes —, with the corrected descriptions of the sink units and of mod_SinkId in the library, measured against [the baseline](baseline-iklw-az-2026-10-27.md); RML-18303 |
+| Trigger | Benchmark 09: the two-level attribute section (D122) — the values of the attributes a planning sets at the create in the prefix, every other attribute with the number of its values and its values through find-attributes —, with the corrected descriptions of the sink units and of mod_SinkId in the library, measured against [the baseline](baseline-iklw-az-2026-10-28.md); RML-18303 |
 | Date / author | 2026-10-28 / Claude Code |
 | Status | Measured: two completed turns, two saved plans |
 | Ticket | [RML-18303](https://roomle.atlassian.net/browse/RML-18303) |

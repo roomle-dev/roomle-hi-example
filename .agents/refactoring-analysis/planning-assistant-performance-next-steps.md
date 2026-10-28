@@ -191,7 +191,7 @@ Scope: `agent-facing.ts` and the corresponding vocabulary tests; the authoring-r
 
 ### 7.2 Supply useful article summaries, retrieve details in batches, and scale discovery separately
 
-**Not yet tried properly.** A first attempt implemented two narrow pieces of this section only: the shortening of descriptions written on the line of their section name (MCP issue 117) and an `articleIds` filter on `get-plan-context`. [Benchmark 11](../benchmarks/11-iklw-az-arts-2026-10-28.md) measured that attempt. It is not the refactoring this section describes — the useful article summaries, the batch retrieval of details, the category directory for large libraries and the description sharing were not implemented —, and it is reverted: roomle-ui `c13969005` on `feat/hi-mcp-performance` reverts `3df328523` and `697f8101d`. The section stays open as a whole.
+**Not yet tried properly.** A first attempt implemented two narrow pieces of this section only: the shortening of descriptions written on the line of their section name (MCP issue 117) and an `articleIds` filter on `get-plan-context`. [Benchmark 11](../benchmarks/11-iklw-az-arts-2026-10-28.md) measured that attempt. It is not the refactoring this section describes — the useful article summaries, the batch retrieval of details, the category directory for large libraries and the description sharing were not implemented —, and it is reverted: roomle-ui `c13969005` on `feat/hi-mcp-performance` reverts `3df328523` and `697f8101d`. The section stays open as a whole; [the article catalog in three levels](article-catalog-overview-details-and-discovery.md) analyses it as a whole and plans its implementation.
 
 #### 7.2.1 What already exists, and what is missing
 

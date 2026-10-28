@@ -151,6 +151,7 @@ done. The analysis and the report are the same document — the report is append
 | Document | Status | Last touched |
 |---|---|---|
 | [Planning Assistant performance: remaining work after the October 28 baselines](refactoring-analysis/planning-assistant-performance-next-steps.md) | Open — layout then refinement, staged article retrieval, description sharing and benchmark criteria | 2026-10-28 |
+| [The article catalog in three levels: an overview the agent plans from, details by article id, and discovery for a large library](refactoring-analysis/article-catalog-overview-details-and-discovery.md) | Open — §7.2 of the remaining-work analysis as a whole: the overview shape of `articles`, `find-articles` with ids, categories and text, the `categories` directory, the assistant's budget; description sharing measured on four libraries and not built | 2026-10-28 |
 
 ### Benchmarks & Performance Analyses
 

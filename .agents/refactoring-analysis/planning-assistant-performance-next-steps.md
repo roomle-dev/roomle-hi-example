@@ -146,6 +146,8 @@ The executor guarantees submission order, not arbitrary model intent. The real p
 
 **Scope/tests:** served system/tool text; executor ordering/failure tests; real `streamText` forwarding and Azure/OpenAI wire tests for several calls/results and image content. Assert images represent the final queued state, useful edits survive another tool's error, each changed tool retains its undo step, and verification can still trigger a repair. Acceptance requires both lower completion time and retained image comparison.
 
+Analysed in depth, with the served text, the ordering the code guarantees, the tests and the benchmark, in [finishing-edits-and-render-in-one-model-response.md](finishing-edits-and-render-in-one-model-response.md).
+
 ## 7. Further proposals, ranked by evidence and scope
 
 ### Planning sequence: establish the layout, then refine the selected products

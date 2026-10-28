@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Type / domain | Benchmark / HI Planning Assistant |
-| Trigger | The baseline of the time measurement for image-kitchen-left-wall on the Azure deployment, with proposals A, B, D, E, F and the plan state per turn in place; RML-18303 |
-| Date / author | 2026-10-27 / Claude Code |
+| Trigger | The baseline of the time measurement for image-kitchen-left-wall on the Azure deployment, with proposals A, B, D, E, F, the plan state per turn and the two-level attribute section (D122) in place; RML-18303 |
+| Date / author | 2026-10-28 / Claude Code |
 | Status | Measured: two completed turns, two saved plans |
 | Ticket | [RML-18303](https://roomle.atlassian.net/browse/RML-18303) |
-| Data | Measurements are retained in the tables below; raw captures remain in the ignored .temp/result/baseline-iklw-az-2026-10-27 folder |
+| Data | Measurements are retained in the tables below; raw captures remain in the ignored .temp/result/baseline-iklw-az-2026-10-28 folder |
 | Repeat | Same fixture, the Azure deployment, the local planner and the published embedding-lib; procedure below |
 
 Affected repositories:
@@ -17,11 +17,11 @@ Affected repositories:
 
 ## Executive summary
 
-The first completed kitchen create took **33.099 s** and **29.657 s** from assistant turn start; mean **31.378 s**. The complete assistant turn took **96.941 s** and **54.451 s**; mean **75.696 s**. Model calls occupied **96.64%** and **94.24%** of those turns.
+The first completed kitchen create took **23.913 s** and **18.850 s** from assistant turn start; mean **21.381 s**. The complete assistant turn took **51.603 s** and **49.673 s**; mean **50.638 s**. Model calls occupied **93.46%** and **93.09%** of those turns.
 
-Both runs create the kitchen in **model call 2**. Call 1 fetches the image and the kitchen skill — the kitchen skill with its planning reference in one result — and the library reference and the plan state come with the turn, read in **19.5 ms** and **17.8 ms** before the first request. The create call is the largest block: **27.884 s** and **23.730 s**, of which **17.620 s** and **13.735 s** pass before its first output. Kitchen creation itself took **1.309 s** and **1.821 s**.
+Both runs create the kitchen in **model call 2**. Call 1 fetches the image and the kitchen skill — the kitchen skill with its planning reference in one result — and the library reference and the plan state come with the turn, read in **20.6 ms** and **19.0 ms** before the first request. The create call is the largest block: **17.167 s** and **13.618 s**, of which **8.913 s** and **5.736 s** pass before its first output. Kitchen creation itself took **2.010 s** and **2.150 s**.
 
-After the kitchen, the runs differ: run 1 spends **63.842 s** — the backsplash the library cannot calculate, two handle changes, a render and an answer whose first output waited 16.6 s —, run 2 **24.794 s**. These are request/response wall times, including network and provider work, not isolated server compute times. The first-kitchen milestone is successful create-tool completion: a conservative point by which the kitchen has been loaded into the plan, not a measured first painted GPU frame.
+After the kitchen, the runs do the same work: run 1 spends **27.691 s** — a lookup of the handle colour and the backsplash, the backsplash the library cannot calculate, the black handles, a render and the answer —, run 2 **30.823 s**, its lookup call waiting 13.5 s for its first output. These are request/response wall times, including network and provider work, not isolated server compute times. The first-kitchen milestone is successful create-tool completion: a conservative point by which the kitchen has been loaded into the plan, not a measured first painted GPU frame.
 
 ## What was asked and run
 
@@ -36,11 +36,11 @@ Image: [kitchen-1.png](../../docs/images/kitchen-1.png), SHA-256 07a3fe7a8cb1f57
 | Provider / key reference | `"provider": "gpt-6-astra", "apiKey": "$AZURE_GPT_KEY"`; resolved key never written to artifacts |
 | Actual provider endpoint | https://dfhifoundrysweden.services.ai.azure.com/openai/v1/responses (the HI Azure AI Foundry resource, Responses API, reference cache breakpoint on) |
 | Reasoning effort | Provider default; no explicit reasoning override |
-| Planner | http://localhost:5173/; the already running local roomle-ui, feat/hi-mcp-merge |
+| Planner | http://localhost:5173/; the already running local roomle-ui, feat/hi-mcp-performance |
 | Assistant / embedding source | https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-1b4351d (roomle-embedding-lib.js and hi.js), as the example pins it |
 | Example page | http://localhost:3103/ |
-| roomle-hi-example SHA | 8bc6329 (master) |
-| roomle-ui SHA | a8fe64618 (feat/hi-mcp-merge) |
+| roomle-hi-example SHA | f5b8368 (feat/hi-mcp-performance, at master) |
+| roomle-ui SHA | 5fd409e84 (feat/hi-mcp-performance) |
 | Node / Chromium | Node 23.5.0; Playwright 1.55.0 bundled Chromium, headless with --enable-gpu |
 | Initial provider cache state | Unknown for each run; measured cache counters below |
 
@@ -52,7 +52,7 @@ A copy of [run-hi-mcp-prompt.js](../scripts/run-hi-mcp-prompt.js), written by th
 - Browser events mark turn start and end around onPlanningAssistantPrompt, each model fetch (start, response headers, the end of the stream read through a clone), tool forwarding start/end through callExternalObjectAgentTool, every output part of the window, and every planner-method start/end in the planner frame with its [hi-mcp] log line.
 - Browser timestamps use performance.timeOrigin + performance.now(), so the host and iframe share an epoch. Tables use seconds relative to assistant turn start.
 - Tool result sizes are UTF-8 bytes of JSON.stringify(result), including the MCP wrapper and base64 image content where present. They are not model tokens or compressed HTTP bytes.
-- Nested planner calls are attributed by the [hi-mcp] tool and call log lines; the two reads before the first request run in parallel and are told apart by their planner method. Nested planner time is included in tool time. Overlapping tools are counted once for wall time. Model/tool overlap is measured from intervals and subtracted once; it is 0.000 s / 0.002 s here.
+- Nested planner calls are attributed by the [hi-mcp] tool and call log lines; the two reads before the first request run in parallel and are told apart by their planner method. Nested planner time is included in tool time. Overlapping tools are counted once for wall time. Model/tool overlap is measured from intervals and subtracted once; it is 0.000 s / 0.000 s here.
 - Recorded run start is the runner's runSession start, after browser launch. The subprocess measurement also includes browser launch, output writing and browser/launcher shutdown. Its result is distinct from the recorded ready + chat + snapshot phases.
 - The runner waits until the library context lists articles before it sends the prompt, and the assistant reads the library before the first prompt itself; both reads calculate the article templates. The reads of the turn are therefore warm, as in the hosts.
 
@@ -70,34 +70,34 @@ The skill responses of call 1 contain image-planning SKILL.md and kitchen-planni
 
 | Milestone / interval | Run 1 s | Run 2 s |
 |---|---|---|
-| Image/kitchen skill responses complete (timestamp) | 3.903 | 4.102 |
-| First kitchen create starts (timestamp) | 31.790 | 27.836 |
-| First kitchen create completes (timestamp) | 33.099 | 29.657 |
-| Delta: skill responses → first kitchen complete | 29.195 | 25.555 |
-| ↳ Agent/model call 2 within that interval | 27.884 | 23.730 |
-| ↳ Kitchen creation tool within that interval | 1.309 | 1.821 |
-| ↳ Local gaps within that interval | 0.002 | 0.004 |
+| Image/kitchen skill responses complete (timestamp) | 4.734 | 3.079 |
+| First kitchen create starts (timestamp) | 21.902 | 16.700 |
+| First kitchen create completes (timestamp) | 23.913 | 18.850 |
+| Delta: skill responses → first kitchen complete | 19.179 | 15.771 |
+| ↳ Agent/model call 2 within that interval | 17.167 | 13.618 |
+| ↳ Kitchen creation tool within that interval | 2.010 | 2.150 |
+| ↳ Local gaps within that interval | 0.002 | 0.002 |
 
-For example, run 1 takes **29.195 s** from the skill files (3.903 s) to the completed kitchen (33.099 s). The model spends **27.884 s** deciding and emitting the kitchen payload — **17.620 s** of it before its first output, with 378 reasoning tokens —; the create tool then takes **1.309 s**, with about **0.002 s** of local gaps. Run 2 takes **25.555 s** over the same interval.
+For example, run 1 takes **19.179 s** from the skill files (4.734 s) to the completed kitchen (23.913 s). The model spends **17.167 s** deciding and emitting the kitchen payload — **8.913 s** of it before its first output, with 200 reasoning tokens —; the create tool then takes **2.010 s**, with about **0.002 s** of local gaps. Run 2 takes **15.771 s** over the same interval.
 
 ## Results: milestones and total time
 
 | Measurement (seconds) | Run 1 | Run 2 | Mean |
 |---|---|---|---|
-| Page/library/assistant ready (recorded run start) | 6.142 | 5.611 | 5.877 |
-| Library reference and plan state acquisition inside turn (warm) | 0.019 | 0.018 | 0.019 |
-| First model generated output (turn start) | 3.728 | 3.862 | 3.795 |
-| First visible assistant text (turn start) | 21.525 | 17.842 | 19.683 |
-| First successful kitchen create completed (turn start) | 33.099 | 29.657 | 31.378 |
-| First successful kitchen create completed (recorded run start) | 39.409 | 35.437 | 37.423 |
-| First successful kitchen create completed (subprocess start) | 39.701 | 35.715 | 37.708 |
-| Create tool execution alone | 1.309 | 1.821 | 1.565 |
-| Assistant turn start → answer complete | 96.941 | 54.451 | 75.696 |
-| Time after the first kitchen until answer complete | 63.842 | 24.794 | 44.318 |
-| Runner chat phase (includes image preparation/collection) | 97.647 | 55.147 | 76.397 |
-| Post-chat context, images and saved snapshot | 4.626 | 4.726 | 4.676 |
-| Recorded run: ready + chat + snapshot | 108.415 | 65.484 | 86.950 |
-| Full subprocess: browser startup through launcher shutdown | 108.958 | 66.007 | 87.483 |
+| Page/library/assistant ready (recorded run start) | 6.567 | 4.847 | 5.707 |
+| Library reference and plan state acquisition inside turn (warm) | 0.021 | 0.019 | 0.020 |
+| First model generated output (turn start) | 4.609 | 2.876 | 3.743 |
+| First visible assistant text (turn start) | 13.648 | 8.817 | 11.232 |
+| First successful kitchen create completed (turn start) | 23.913 | 18.850 | 21.381 |
+| First successful kitchen create completed (recorded run start) | 30.660 | 23.865 | 27.263 |
+| First successful kitchen create completed (subprocess start) | 31.008 | 24.166 | 27.587 |
+| Create tool execution alone | 2.010 | 2.150 | 2.080 |
+| Assistant turn start → answer complete | 51.603 | 49.673 | 50.638 |
+| Time after the first kitchen until answer complete | 27.691 | 30.823 | 29.257 |
+| Runner chat phase (includes image preparation/collection) | 52.300 | 50.372 | 51.336 |
+| Post-chat context, images and saved snapshot | 4.588 | 3.577 | 4.082 |
+| Recorded run: ready + chat + snapshot | 63.455 | 58.796 | 61.126 |
+| Full subprocess: browser startup through launcher shutdown | 64.053 | 59.436 | 61.745 |
 
 "First kitchen" here means the first successful create-or-replace-groups result, including its placement and returned groups. Each run made one successful create and retained that kitchen. Actual scene insertion happens during the tool and can precede its result; see the limitations below.
 
@@ -105,11 +105,11 @@ For example, run 1 takes **29.195 s** from the skill files (3.903 s) to the comp
 
 | Wall time component | Run 1 s | Run 1 share | Run 2 s | Run 2 share |
 |---|---|---|---|---|
-| Model calls (union) | 93.688 | 96.64% | 51.314 | 94.24% |
-| Tools including the reads before the first request (union) | 3.229 | 3.33% | 3.112 | 5.71% |
-| Model/tool overlap (subtract once) | 0.000 | 0.00% | 0.002 | 0.00% |
-| Other client work / gaps | 0.024 | 0.02% | 0.027 | 0.05% |
-| Assistant turn | 96.941 | 100.00% | 54.451 | 100.00% |
+| Model calls (union) | 48.229 | 93.46% | 46.242 | 93.09% |
+| Tools including the reads before the first request (union) | 3.350 | 6.49% | 3.410 | 6.87% |
+| Model/tool overlap (subtract once) | 0.000 | 0.00% | 0.000 | 0.00% |
+| Other client work / gaps | 0.025 | 0.05% | 0.021 | 0.04% |
+| Assistant turn | 51.603 | 100.00% | 49.673 | 100.00% |
 
 The model sum is taken from the SDK's measured call durations; the tool union comes from browser start/end intervals. The remaining client time closes the measured turn exactly before display rounding. Summing individual tool durations would overcount the concurrent tools.
 
@@ -117,222 +117,206 @@ The model sum is taken from the SDK's measured call durations; the tool union co
 
 ### Run 1
 
-Recorded start: **2026-10-27T17:02:47.351Z** (27/10/2026 18:02:47 Europe/Vienna). Model/provider: Azure Responses, gpt-6-astra.
+Recorded start: **2026-10-28T06:34:20.025Z** (28/10/2026 07:34:20 Europe/Vienna). Model/provider: Azure Responses, gpt-6-astra.
 
 **Agent steps — duration per decision and tool execution**
 
 | Step | Result / following tools | Start s | End s | Agent/model delta s | Tools delta s | Total step delta s |
 |---|---|---|---|---|---|---|
-| 1 | get-skill (image-planning); get-skill (kitchen-planning) | 0.024 | 3.903 | 3.877 | 0.001 | 3.879 |
-| 2 | create-or-replace-groups | 3.905 | 33.099 | 27.884 | 1.309 | 29.194 |
-| 3 | find-attributes; get-plan-context | 33.100 | 41.202 | 8.085 | 0.017 | 8.103 |
-| 4 | change-group-attribute | 41.203 | 55.954 | 14.605 | 0.146 | 14.752 |
-| 5 | change-group-attribute | 55.955 | 65.149 | 8.538 | 0.655 | 9.195 |
-| 6 | change-group-attribute | 65.150 | 70.785 | 4.989 | 0.644 | 5.635 |
-| 7 | get-plan-images | 70.786 | 76.797 | 5.571 | 0.440 | 6.011 |
-| 8 | Final answer | 76.798 | 96.941 | 20.139 | 0.000 | 20.143 |
+| 1 | get-skill (image-planning); get-skill (kitchen-planning) | 0.026 | 4.734 | 4.707 | 0.001 | 4.708 |
+| 2 | create-or-replace-groups | 4.735 | 23.913 | 17.167 | 2.010 | 19.177 |
+| 3 | find-attributes | 23.913 | 26.138 | 2.214 | 0.011 | 2.225 |
+| 4 | change-group-attribute | 26.139 | 34.751 | 8.466 | 0.145 | 8.612 |
+| 5 | change-group-attribute | 34.758 | 38.175 | 2.699 | 0.717 | 3.416 |
+| 6 | get-plan-images | 38.175 | 46.738 | 8.114 | 0.448 | 8.562 |
+| 7 | Final answer | 46.739 | 51.603 | 4.863 | 0.000 | 4.864 |
 
 | Call | SDK start s | End s | Delta s (model) | First output s¹ | Remaining s² | Input tokens | Output / reasoning | Request bytes | Tools after model |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 0.024 | 3.901 | 3.877 | 3.704 | 0.173 | 79,080 | 55 / 0 | 610,274 | #3 get-skill; #4 get-skill |
-| 2 | 3.905 | 31.789 | 27.884 | 17.620 | 10.264 | 87,222 | 967 / 378 | 85,378 | #5 create-or-replace-groups |
-| 3 | 33.100 | 41.184 | 8.085 | 7.898 | 0.187 | 95,519 | 153 / 91 | 71,732 | #6 find-attributes; #7 get-plan-context |
-| 4 | 41.203 | 55.807 | 14.605 | 13.713 | 0.892 | 97,277 | 57 / 0 | 48,980 | #8 change-group-attribute |
-| 5 | 55.955 | 64.493 | 8.538 | 7.111 | 1.427 | 97,477 | 203 / 111 | 44,412 | #9 change-group-attribute |
-| 6 | 65.150 | 70.139 | 4.989 | 3.997 | 0.992 | 98,044 | 96 / 24 | 44,823 | #10 change-group-attribute |
-| 7 | 70.786 | 76.356 | 5.571 | 2.615 | 2.956 | 98,409 | 116 / 19 | 44,501 | #11 get-plan-images |
-| 8 | 76.798 | 96.937 | 20.139 | 16.553 | 3.586 | 100,949 | 134 / 0 | 238,989 | Final answer |
+| 1 | 0.026 | 4.733 | 4.707 | 4.583 | 0.124 | 70,547 | 55 / 0 | 573,377 | #3 get-skill; #4 get-skill |
+| 2 | 4.735 | 21.902 | 17.167 | 8.913 | 8.254 | 78,689 | 747 / 200 | 85,912 | #5 create-or-replace-groups |
+| 3 | 23.913 | 26.127 | 2.214 | 1.714 | 0.499 | 86,441 | 35 / 0 | 70,922 | #6 find-attributes |
+| 4 | 26.139 | 34.605 | 8.466 | 7.799 | 0.667 | 87,057 | 55 / 0 | 46,866 | #7 change-group-attribute |
+| 5 | 34.758 | 37.457 | 2.699 | 1.966 | 0.733 | 87,250 | 53 / 0 | 44,946 | #8 change-group-attribute |
+| 6 | 38.175 | 46.289 | 8.114 | 3.074 | 5.039 | 87,664 | 132 / 28 | 45,376 | #9 get-plan-images |
+| 7 | 46.739 | 51.602 | 4.863 | 1.968 | 2.895 | 90,220 | 119 / 0 | 237,647 | Final answer |
 
 ¹ From the SDK model-call start to its first generated output; this can be reasoning, a tool call or text. ² The remaining model-stream time is response duration minus first-output duration. It is not a pure text-generation or reasoning measurement. Request fetch starts and response-header times remain in the local timeline.json capture.
 
 | Call | Tool / requested information | Start s | End s | Delta s (tool) | Elapsed ms | Nested planner ms³ | Remaining ms⁴ | Result bytes | Result |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | get-plan-context: articles, attributes | 0.001 | 0.015 | 0.0148 | 14.8 | 5.5 | 9.3 | 270,617 | OK |
-| 2 | get-plan-context: rooms, groups, obstacles, installationElements | 0.001 | 0.017 | 0.0161 | 16.1 | 2.4 | 13.7 | 5,631 | OK |
-| 3 | get-skill: image-planning / SKILL.md | 3.902 | 3.903 | 0.0007 | 0.7 | 0.0 | 0.7 | 5,658 | OK |
-| 4 | get-skill: kitchen-planning / SKILL.md | 3.902 | 3.903 | 0.0007 | 0.7 | 0.0 | 0.7 | 35,685 | OK |
-| 5 | create-or-replace-groups: 1 group, 9 roots; placement left / center | 31.790 | 33.099 | 1.3090 | 1309.0 | 1264.0 | 45.0 | 27,775 | OK |
-| 6 | find-attributes: backsplash | 41.185 | 41.202 | 0.0171 | 17.1 | 10.5 | 6.6 | 3,094 | OK |
-| 7 | get-plan-context: obstacles | 41.185 | 41.202 | 0.0171 | 17.1 | 3.1 | 14.0 | 1,851 | OK |
-| 8 | change-group-attribute: mod_CreateBacksplash=true | 55.809 | 55.954 | 0.1456 | 145.6 | 139.8 | 5.8 | 470 | Library error |
-| 9 | change-group-attribute: mod_HandleDesign=110, mod_DishwasherSupplier=Siemens, mod_DishwasherId=SN87TX02CE | 64.494 | 65.149 | 0.6551 | 655.1 | 493.7 | 161.4 | 866 | OK |
-| 10 | change-group-attribute: mod_HandleDesign=100, mod_HandleColor=Black | 70.140 | 70.785 | 0.6445 | 644.5 | 479.6 | 164.9 | 544 | OK |
-| 11 | get-plan-images | 76.357 | 76.797 | 0.4401 | 440.1 | 413.8 | 26.3 | 195,012 | OK |
+| 1 | get-plan-context: articles, attributes | 0.000 | 0.014 | 0.0140 | 14.0 | 5.8 | 8.2 | 232,777 | OK |
+| 2 | get-plan-context: rooms, groups, obstacles, installationElements | 0.001 | 0.018 | 0.0169 | 16.9 | 2.5 | 14.4 | 5,631 | OK |
+| 3 | get-skill: image-planning / SKILL.md | 4.733 | 4.734 | 0.0005 | 0.5 | 0.0 | 0.5 | 5,658 | OK |
+| 4 | get-skill: kitchen-planning / SKILL.md | 4.733 | 4.734 | 0.0006 | 0.6 | 0.0 | 0.6 | 35,685 | OK |
+| 5 | create-or-replace-groups: 1 group, 9 roots; placement left / center | 21.902 | 23.913 | 2.0101 | 2010.1 | 1787.3 | 222.8 | 26,431 | OK |
+| 6 | find-attributes: ids mod_HandleColor, mod_CreateBacksplash | 26.127 | 26.138 | 0.0110 | 11.0 | 7.5 | 3.5 | 2,375 | OK |
+| 7 | change-group-attribute: mod_CreateBacksplash=true | 34.606 | 34.751 | 0.1449 | 144.9 | 139.3 | 5.6 | 470 | Library error |
+| 8 | change-group-attribute: mod_HandleColor=Black | 37.457 | 38.175 | 0.7174 | 717.4 | 521.8 | 195.6 | 885 | OK |
+| 9 | get-plan-images | 46.289 | 46.738 | 0.4484 | 448.4 | 420.5 | 27.9 | 193,136 | OK |
 
 ³ Union of the underlying planner-call intervals inside this tool. ⁴ Tool elapsed minus nested planner intervals: forwarding, scheduling, validation, projection, serialization and any uninstrumented work. This is not a pure CPU measurement. Calls #1 and #2 are the assistant's automatic reads of the library reference and the plan state, before the first model request, rather than model-requested tools.
 
 | Call | Containing tool | Planner method / arguments | Start s | End s | Delta s (planner) | Elapsed ms |
 |---|---|---|---|---|---|---|
-| 1 | #1 | getExternalObjectLibraryContext [["articles","masterData"]] | 0.002 | 0.007 | 0.0055 | 5.5 |
-| 2 | #2 | getExternalObjectPlanContext [["rooms","groups","obstacles","installationElements"]] | 0.009 | 0.012 | 0.0024 | 2.4 |
-| 3 | #5 | getExternalObjectPlanContext [["groups"]] | 31.792 | 31.792 | 0.0003 | 0.3 |
-| 4 | #5 | externalObjectGroupOperation ["create-or-replace-groups"] | 31.793 | 33.050 | 1.2578 | 1257.8 |
-| 5 | #5 | getExternalObjectPlanContext [["groups"]] | 33.051 | 33.057 | 0.0059 | 5.9 |
-| 6 | #6 | getExternalObjectPlanContext [["groups"]] | 41.186 | 41.196 | 0.0105 | 10.5 |
-| 7 | #6 | getExternalObjectLibraryContext [["masterData"]] | 41.186 | 41.196 | 0.0096 | 9.6 |
-| 8 | #7 | getExternalObjectPlanContext [["obstacles","rooms"]] | 41.198 | 41.202 | 0.0031 | 3.1 |
-| 9 | #8 | getExternalObjectPlanContext [["groups"]] | 55.810 | 55.821 | 0.0108 | 10.8 |
-| 10 | #8 | externalObjectGroupOperation ["change-group-attribute"] | 55.821 | 55.950 | 0.1290 | 129.0 |
-| 11 | #9 | getExternalObjectPlanContext [["groups"]] | 64.495 | 64.506 | 0.0102 | 10.2 |
-| 12 | #9 | externalObjectGroupOperation ["change-group-attribute"] | 64.506 | 64.984 | 0.4782 | 478.2 |
-| 13 | #9 | getExternalObjectPlanContext [["groups"]] | 64.984 | 64.990 | 0.0053 | 5.3 |
-| 14 | #10 | getExternalObjectPlanContext [["groups"]] | 70.141 | 70.151 | 0.0099 | 9.9 |
-| 15 | #10 | externalObjectGroupOperation ["change-group-attribute"] | 70.151 | 70.616 | 0.4645 | 464.5 |
-| 16 | #10 | getExternalObjectPlanContext [["groups"]] | 70.616 | 70.621 | 0.0052 | 5.2 |
-| 17 | #11 | getExternalObjectSnapshot [["perspectiveObjectImage","topImage","keepOpenGeometry","imageType","imageQuality"]] | 76.357 | 76.771 | 0.4138 | 413.8 |
+| 1 | #1 | getExternalObjectLibraryContext [["articles","masterData"]] | 0.002 | 0.007 | 0.0058 | 5.8 |
+| 2 | #2 | getExternalObjectPlanContext [["rooms","groups","obstacles","installationElements"]] | 0.011 | 0.013 | 0.0025 | 2.5 |
+| 3 | #5 | getExternalObjectPlanContext [["groups"]] | 21.903 | 21.903 | 0.0001 | 0.1 |
+| 4 | #5 | externalObjectGroupOperation ["create-or-replace-groups"] | 21.903 | 23.685 | 1.7815 | 1781.5 |
+| 5 | #5 | getExternalObjectPlanContext [["groups"]] | 23.685 | 23.691 | 0.0057 | 5.7 |
+| 6 | #6 | getExternalObjectPlanContext [["groups"]] | 26.128 | 26.135 | 0.0075 | 7.5 |
+| 7 | #6 | getExternalObjectLibraryContext [["masterData"]] | 26.128 | 26.134 | 0.0065 | 6.5 |
+| 8 | #7 | getExternalObjectPlanContext [["groups"]] | 34.608 | 34.620 | 0.0127 | 12.7 |
+| 9 | #7 | externalObjectGroupOperation ["change-group-attribute"] | 34.620 | 34.747 | 0.1266 | 126.6 |
+| 10 | #8 | getExternalObjectPlanContext [["groups"]] | 37.458 | 37.463 | 0.0056 | 5.6 |
+| 11 | #8 | externalObjectGroupOperation ["change-group-attribute"] | 37.463 | 37.974 | 0.5108 | 510.8 |
+| 12 | #8 | getExternalObjectPlanContext [["groups"]] | 37.974 | 37.980 | 0.0054 | 5.4 |
+| 13 | #9 | getExternalObjectSnapshot [["perspectiveObjectImage","topImage","keepOpenGeometry","imageType","imageQuality"]] | 46.290 | 46.710 | 0.4205 | 420.5 |
 
-The planner's own price refresh after the plan change, without a tool: 32.302–33.179 s, 33.180–33.840 s, 55.964–56.550 s, 65.192–65.621 s, 65.621–66.028 s, 70.797–71.268 s, 71.269–71.711 s.
+The planner's own price refresh after the plan change, without a tool: 22.431–25.336 s, 25.336–26.892 s, 34.768–35.329 s, 38.203–38.651 s, 38.651–39.152 s.
 
-Local capture: `.temp/result/baseline-iklw-az-2026-10-27/iklw-rep-1/` (run.json, timeline.json, planner-calls.json and plan-context.json).
+Local capture: `.temp/result/baseline-iklw-az-2026-10-28/iklw-rep-1/` (run.json, timeline.json, planner-calls.json and plan-context.json).
 
 ### Run 2
 
-Recorded start: **2026-10-27T17:04:36.314Z** (27/10/2026 18:04:36 Europe/Vienna). Model/provider: Azure Responses, gpt-6-astra.
+Recorded start: **2026-10-28T06:35:24.049Z** (28/10/2026 07:35:24 Europe/Vienna). Model/provider: Azure Responses, gpt-6-astra.
 
 **Agent steps — duration per decision and tool execution**
 
 | Step | Result / following tools | Start s | End s | Agent/model delta s | Tools delta s | Total step delta s |
 |---|---|---|---|---|---|---|
-| 1 | get-skill (image-planning); get-skill (kitchen-planning) | 0.022 | 4.102 | 4.076 | 0.002 | 4.080 |
-| 2 | create-or-replace-groups | 4.106 | 29.657 | 23.730 | 1.821 | 25.550 |
-| 3 | find-attributes | 29.658 | 33.553 | 3.885 | 0.010 | 3.895 |
-| 4 | change-group-attribute | 33.554 | 36.265 | 2.569 | 0.141 | 2.711 |
-| 5 | get-plan-context | 36.266 | 38.517 | 2.246 | 0.005 | 2.251 |
-| 6 | change-module-attribute | 38.515 | 42.778 | 3.584 | 0.676 | 4.263 |
-| 7 | get-plan-context | 42.779 | 44.813 | 2.030 | 0.004 | 2.034 |
-| 8 | get-plan-images | 44.813 | 48.565 | 3.312 | 0.438 | 3.752 |
-| 9 | Final answer | 48.566 | 54.451 | 5.884 | 0.000 | 5.885 |
+| 1 | get-skill (image-planning); get-skill (kitchen-planning) | 0.024 | 3.079 | 3.053 | 0.001 | 3.054 |
+| 2 | create-or-replace-groups | 3.080 | 18.850 | 13.618 | 2.150 | 15.769 |
+| 3 | find-attributes | 18.851 | 32.928 | 14.060 | 0.016 | 14.077 |
+| 4 | change-group-attribute | 32.928 | 36.116 | 2.523 | 0.664 | 3.188 |
+| 5 | change-group-attribute | 36.117 | 38.910 | 2.677 | 0.116 | 2.793 |
+| 6 | get-plan-images | 38.910 | 44.790 | 5.432 | 0.447 | 5.880 |
+| 7 | Final answer | 44.792 | 49.673 | 4.878 | 0.000 | 4.881 |
 
 | Call | SDK start s | End s | Delta s (model) | First output s¹ | Remaining s² | Input tokens | Output / reasoning | Request bytes | Tools after model |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 0.022 | 4.098 | 4.076 | 3.839 | 0.236 | 79,080 | 55 / 0 | 610,274 | #3 get-skill; #4 get-skill |
-| 2 | 4.106 | 27.836 | 23.730 | 13.735 | 9.995 | 87,222 | 852 / 269 | 85,378 | #5 create-or-replace-groups |
-| 3 | 29.658 | 33.543 | 3.885 | 3.252 | 0.633 | 95,173 | 43 / 21 | 70,986 | #6 find-attributes |
-| 4 | 33.554 | 36.123 | 2.569 | 1.806 | 0.762 | 95,387 | 57 / 0 | 44,716 | #7 change-group-attribute |
-| 5 | 36.266 | 38.511 | 2.246 | 2.000 | 0.245 | 95,584 | 33 / 10 | 44,412 | #8 get-plan-context |
-| 6 | 38.515 | 42.099 | 3.584 | 2.705 | 0.878 | 96,457 | 81 / 21 | 45,810 | #9 change-module-attribute |
-| 7 | 42.779 | 44.809 | 2.030 | 1.717 | 0.313 | 96,597 | 21 / 0 | 44,128 | #10 get-plan-context |
-| 8 | 44.813 | 48.125 | 3.312 | 2.433 | 0.879 | 97,458 | 56 / 11 | 45,810 | #11 get-plan-images |
-| 9 | 48.566 | 54.450 | 5.884 | 2.393 | 3.490 | 99,938 | 135 / 0 | 228,069 | Final answer |
+| 1 | 0.024 | 3.077 | 3.053 | 2.852 | 0.201 | 70,547 | 55 / 0 | 573,377 | #3 get-skill; #4 get-skill |
+| 2 | 3.080 | 16.699 | 13.618 | 5.736 | 7.883 | 78,689 | 645 / 123 | 85,912 | #5 create-or-replace-groups |
+| 3 | 18.851 | 32.911 | 14.060 | 13.480 | 0.580 | 86,287 | 40 / 0 | 70,591 | #6 find-attributes |
+| 4 | 32.928 | 35.451 | 2.523 | 1.673 | 0.850 | 87,816 | 67 / 0 | 50,841 | #7 change-group-attribute |
+| 5 | 36.117 | 38.794 | 2.677 | 2.076 | 0.601 | 88,219 | 68 / 13 | 45,310 | #8 change-group-attribute |
+| 6 | 38.910 | 44.343 | 5.432 | 3.078 | 2.354 | 88,424 | 112 / 19 | 44,946 | #9 get-plan-images |
+| 7 | 44.792 | 49.670 | 4.878 | 1.928 | 2.950 | 90,960 | 128 / 0 | 237,903 | Final answer |
 
 ¹ From the SDK model-call start to its first generated output; this can be reasoning, a tool call or text. ² The remaining model-stream time is response duration minus first-output duration. It is not a pure text-generation or reasoning measurement. Request fetch starts and response-header times remain in the local timeline.json capture.
 
 | Call | Tool / requested information | Start s | End s | Delta s (tool) | Elapsed ms | Nested planner ms³ | Remaining ms⁴ | Result bytes | Result |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | get-plan-context: articles, attributes | 0.001 | 0.014 | 0.0138 | 13.8 | 5.4 | 8.4 | 270,617 | OK |
-| 2 | get-plan-context: rooms, groups, obstacles, installationElements | 0.001 | 0.016 | 0.0150 | 15.0 | 2.3 | 12.7 | 5,631 | OK |
-| 3 | get-skill: image-planning / SKILL.md | 4.101 | 4.102 | 0.0015 | 1.5 | 0.0 | 1.5 | 5,658 | OK |
-| 4 | get-skill: kitchen-planning / SKILL.md | 4.101 | 4.102 | 0.0017 | 1.7 | 0.0 | 1.7 | 35,685 | OK |
-| 5 | create-or-replace-groups: 1 group, 9 roots; placement left / center | 27.836 | 29.657 | 1.8207 | 1820.7 | 1713.8 | 106.9 | 27,029 | OK |
-| 6 | find-attributes: Create backsplash | 33.544 | 33.553 | 0.0098 | 9.8 | 7.5 | 2.3 | 759 | OK |
-| 7 | change-group-attribute: mod_CreateBacksplash=true | 36.124 | 36.265 | 0.1412 | 141.2 | 135.2 | 6.0 | 470 | Library error |
-| 8 | get-plan-context: obstacles | 38.512 | 38.517 | 0.0051 | 5.1 | 4.3 | 0.8 | 1,853 | OK |
-| 9 | change-module-attribute: mod_SinkMoveWidth=0 | 42.103 | 42.778 | 0.6756 | 675.6 | 505.8 | 169.8 | 171 | OK |
-| 10 | get-plan-context: obstacles | 44.809 | 44.813 | 0.0038 | 3.8 | 3.3 | 0.5 | 1,853 | OK |
-| 11 | get-plan-images | 48.126 | 48.565 | 0.4383 | 438.3 | 412.0 | 26.3 | 184,092 | OK |
+| 1 | get-plan-context: articles, attributes | 0.001 | 0.016 | 0.0153 | 15.3 | 5.8 | 9.5 | 232,777 | OK |
+| 2 | get-plan-context: rooms, groups, obstacles, installationElements | 0.001 | 0.017 | 0.0163 | 16.3 | 2.5 | 13.8 | 5,631 | OK |
+| 3 | get-skill: image-planning / SKILL.md | 3.078 | 3.079 | 0.0007 | 0.7 | 0.0 | 0.7 | 5,658 | OK |
+| 4 | get-skill: kitchen-planning / SKILL.md | 3.078 | 3.079 | 0.0007 | 0.7 | 0.0 | 0.7 | 35,685 | OK |
+| 5 | create-or-replace-groups: 1 group, 9 roots; placement left / center | 16.700 | 18.850 | 2.1500 | 2150.0 | 1932.7 | 217.3 | 26,100 | OK |
+| 6 | find-attributes: ids mod_HandleColor, mod_HandlePosType, mod_CreateBacksplash | 32.911 | 32.928 | 0.0160 | 16.0 | 13.9 | 2.1 | 6,350 | OK |
+| 7 | change-group-attribute: mod_HandleColor=Black, mod_HandlePosType=01 | 35.452 | 36.116 | 0.6643 | 664.3 | 502.4 | 161.9 | 819 | OK |
+| 8 | change-group-attribute: mod_CreateBacksplash=true | 38.794 | 38.910 | 0.1159 | 115.9 | 112.4 | 3.5 | 470 | Library error |
+| 9 | get-plan-images | 44.344 | 44.790 | 0.4467 | 446.7 | 423.9 | 22.8 | 193,392 | OK |
 
 ³ Union of the underlying planner-call intervals inside this tool. ⁴ Tool elapsed minus nested planner intervals: forwarding, scheduling, validation, projection, serialization and any uninstrumented work. This is not a pure CPU measurement. Calls #1 and #2 are the assistant's automatic reads of the library reference and the plan state, before the first model request, rather than model-requested tools.
 
 | Call | Containing tool | Planner method / arguments | Start s | End s | Delta s (planner) | Elapsed ms |
 |---|---|---|---|---|---|---|
-| 1 | #1 | getExternalObjectLibraryContext [["articles","masterData"]] | 0.001 | 0.007 | 0.0054 | 5.4 |
-| 2 | #2 | getExternalObjectPlanContext [["rooms","groups","obstacles","installationElements"]] | 0.009 | 0.011 | 0.0023 | 2.3 |
-| 3 | #5 | getExternalObjectPlanContext [["groups"]] | 27.837 | 27.837 | 0.0001 | 0.1 |
-| 4 | #5 | externalObjectGroupOperation ["create-or-replace-groups"] | 27.837 | 29.544 | 1.7067 | 1706.7 |
-| 5 | #5 | getExternalObjectPlanContext [["groups"]] | 29.544 | 29.551 | 0.0070 | 7.0 |
-| 6 | #6 | getExternalObjectPlanContext [["groups"]] | 33.544 | 33.551 | 0.0075 | 7.5 |
-| 7 | #6 | getExternalObjectLibraryContext [["masterData"]] | 33.544 | 33.550 | 0.0065 | 6.5 |
-| 8 | #7 | getExternalObjectPlanContext [["groups"]] | 36.125 | 36.139 | 0.0142 | 14.2 |
-| 9 | #7 | externalObjectGroupOperation ["change-group-attribute"] | 36.140 | 36.261 | 0.1210 | 121.0 |
-| 10 | #8 | getExternalObjectPlanContext [["obstacles","rooms"]] | 38.512 | 38.517 | 0.0043 | 4.3 |
-| 11 | #9 | getExternalObjectPlanContext [["groups"]] | 42.104 | 42.118 | 0.0140 | 14.0 |
-| 12 | #9 | externalObjectGroupOperation ["change-module-attribute"] | 42.119 | 42.605 | 0.4863 | 486.3 |
-| 13 | #9 | getExternalObjectPlanContext [["groups"]] | 42.605 | 42.611 | 0.0055 | 5.5 |
-| 14 | #10 | getExternalObjectPlanContext [["obstacles","rooms"]] | 44.809 | 44.812 | 0.0033 | 3.3 |
-| 15 | #11 | getExternalObjectSnapshot [["perspectiveObjectImage","topImage","keepOpenGeometry","imageType","imageQuality"]] | 48.128 | 48.540 | 0.4120 | 412.0 |
+| 1 | #1 | getExternalObjectLibraryContext [["articles","masterData"]] | 0.002 | 0.008 | 0.0058 | 5.8 |
+| 2 | #2 | getExternalObjectPlanContext [["rooms","groups","obstacles","installationElements"]] | 0.011 | 0.013 | 0.0025 | 2.5 |
+| 3 | #5 | getExternalObjectPlanContext [["groups"]] | 16.702 | 16.703 | 0.0003 | 0.3 |
+| 4 | #5 | externalObjectGroupOperation ["create-or-replace-groups"] | 16.703 | 18.630 | 1.9270 | 1927.0 |
+| 5 | #5 | getExternalObjectPlanContext [["groups"]] | 18.630 | 18.635 | 0.0054 | 5.4 |
+| 6 | #6 | getExternalObjectPlanContext [["groups"]] | 32.913 | 32.927 | 0.0139 | 13.9 |
+| 7 | #6 | getExternalObjectLibraryContext [["masterData"]] | 32.913 | 32.926 | 0.0126 | 12.6 |
+| 8 | #7 | getExternalObjectPlanContext [["groups"]] | 35.454 | 35.463 | 0.0088 | 8.8 |
+| 9 | #7 | externalObjectGroupOperation ["change-group-attribute"] | 35.463 | 35.951 | 0.4882 | 488.2 |
+| 10 | #7 | getExternalObjectPlanContext [["groups"]] | 35.951 | 35.957 | 0.0054 | 5.4 |
+| 11 | #8 | getExternalObjectPlanContext [["groups"]] | 38.794 | 38.800 | 0.0054 | 5.4 |
+| 12 | #8 | externalObjectGroupOperation ["change-group-attribute"] | 38.800 | 38.907 | 0.1070 | 107.0 |
+| 13 | #9 | getExternalObjectSnapshot [["perspectiveObjectImage","topImage","keepOpenGeometry","imageType","imageQuality"]] | 44.345 | 44.769 | 0.4239 | 423.9 |
 
-The planner's own price refresh after the plan change, without a tool: 28.328–29.671 s, 29.678–30.209 s, 30.209–30.794 s, 36.274–36.708 s, 42.788–43.275 s, 43.275–43.675 s.
+The planner's own price refresh after the plan change, without a tool: 17.178–18.869 s, 18.904–19.446 s, 19.447–19.934 s, 36.171–36.682 s, 36.683–37.122 s, 38.921–39.425 s.
 
-Local capture: `.temp/result/baseline-iklw-az-2026-10-27/iklw-rep-2/` (run.json, timeline.json, planner-calls.json and plan-context.json).
+Local capture: `.temp/result/baseline-iklw-az-2026-10-28/iklw-rep-2/` (run.json, timeline.json, planner-calls.json and plan-context.json).
 
 ## Context, cache and transport
 
 | Measurement | Run 1 | Run 2 |
 |---|---|---|
-| Model calls | 8 | 9 |
-| Tools including the reads before the first request | 11 | 11 |
-| Input tokens | 753,977 | 842,896 |
-| Output tokens (include reasoning) | 1,781 | 1,333 |
-| Reasoning tokens | 623 | 332 |
-| Cache-read tokens / share of input | 740,226 / 98.18% | 830,153 / 98.49% |
-| Cache-write tokens | 13,727 | 12,716 |
-| First call: cache-read tokens | 79,077 | 79,077 |
-| Request JSON bytes, all calls | 1,189,089 | 1,219,583 |
-| Reference bytes (exclude tools/current input) | 295,682 | 295,682 |
-| Shared-reference SHA-256 | `2974a3a3ddd8857b8d789c90e6cf9c3588a47977df0abb285521d1692dd6fbf8` | `2974a3a3ddd8857b8d789c90e6cf9c3588a47977df0abb285521d1692dd6fbf8` |
+| Model calls | 7 | 7 |
+| Tools including the reads before the first request | 9 | 9 |
+| Input tokens | 587,868 | 590,942 |
+| Output tokens (include reasoning) | 1,196 | 1,115 |
+| Reasoning tokens | 228 | 155 |
+| Cache-read tokens / share of input | 576,316 / 98.03% | 578,650 / 97.92% |
+| Cache-write tokens | 11,531 | 12,271 |
+| First call: cache-read tokens | 70,544 | 70,544 |
+| Request JSON bytes, all calls | 1,105,046 | 1,108,880 |
+| Reference bytes (exclude tools/current input) | 258,251 | 258,251 |
+| Shared-reference SHA-256 | `b6d6b7dc146b5cd3af90c9d01e3cdce3a6b52ea12099c6234e5d4a48c976f4e8` | `b6d6b7dc146b5cd3af90c9d01e3cdce3a6b52ea12099c6234e5d4a48c976f4e8` |
 | Plan state bytes (supplied with the turn) | 4,822 | 4,822 |
-| Information tools, elapsed union ms | 34.3 | 35.7 |
-| Information tools, summed call ms (overlap included) | 66.5 | 50.7 |
-| Saved plan snapshot | `ps_t1p2n7x4pnqnmrlzrkq9jaqfzaoxq5y` | `ps_t1p153f0xga6rgqg8r04f1p19i6tu2w5` |
+| Information tools, elapsed union ms | 28.7 | 33.3 |
+| Information tools, summed call ms (overlap included) | 43.0 | 49.0 |
+| Saved plan snapshot | `ps_t3kn4cnoa4dtbrt8pc2tao6gz226bab` | `ps_t3l146qxav0kgkqwc184sfhl2ksatbus` |
 
-All token/cache/reasoning fields have complete coverage for completed calls. Cache reads are already part of input tokens and reasoning is already part of output tokens. Request bytes count the whole uncompressed JSON sent on every fetch, including image data. With Responses chaining a later request carries only its new input, so a whole turn sends **1,189,089** and **1,219,583 bytes**, of which the first request is **610,274 bytes**. Both runs read the same shared reference, **295,682 bytes** with the same SHA-256. The first call of each run reads **79,077 of its 79,080 input tokens** from the cache, written by earlier requests with the same prefix on this deployment; a fresh browser does not establish a cold provider cache.
+All token/cache/reasoning fields have complete coverage for completed calls. Cache reads are already part of input tokens and reasoning is already part of output tokens. Request bytes count the whole uncompressed JSON sent on every fetch, including image data. With Responses chaining a later request carries only its new input, so a whole turn sends **1,105,046** and **1,108,880 bytes**, of which the first request is **573,377 bytes**. Both runs read the same shared reference, **258,251 bytes** with the same SHA-256. The first call of each run reads **70,544 of its 70,547 input tokens** from the cache, written by earlier requests with the same prefix on this deployment; a fresh browser does not establish a cold provider cache.
 
-The library reference returns **270,617 bytes**, the plan state **5,631 bytes**; both come with the turn before the first request. The get-plan-images results are **195,012** and **184,092 bytes**, two JPEG renders, taking **440.1 ms** and **438.3 ms** locally; they are part of the next request.
+The library reference returns **232,777 bytes**, the plan state **5,631 bytes**; both come with the turn before the first request. The get-plan-images results are **193,136** and **193,392 bytes**, two JPEG renders, taking **448.4 ms** and **446.7 ms** locally; they are part of the next request.
 
 ## Findings and the evidence behind them
 
 ### 1. The create call is where the time before the first kitchen goes
 
-Call 1 ends after **3.877 / 4.076 s** with the two skill requests. Call 2, the create, then takes **27.884 / 23.730 s**: **17.620 / 13.735 s** until its first output and **10.264 / 9.995 s** streaming the payload, with **378 / 269 reasoning tokens** and **967 / 852 output tokens**. The create tool adds **1.309 / 1.821 s**, the local gaps a few milliseconds. Of the 33.099 / 29.657 s to the first kitchen, the create call is 84% / 80%.
+Call 1 ends after **4.733 / 3.077 s** with the two skill requests. Call 2, the create, then takes **17.167 / 13.618 s**: **8.913 / 5.736 s** until its first output and **8.254 / 7.883 s** streaming the payload, with **200 / 123 reasoning tokens** and **747 / 645 output tokens**. The create tool adds **2.010 / 2.150 s**, the local gaps a few milliseconds. Of the 23.913 / 18.850 s to the first kitchen, the create call is 72% / 72%.
 
 The request/model boundary localizes this to the model round trip, not planner execution. The cause inside that boundary is **unknown**: provider queueing, input processing, reasoning, generation and network are not separately exposed. Benchmark 01 — the same test on direct OpenAI with the original build — created at call 3, after a separate round for the planning reference; its turns are compared with this baseline for the shape, not for the seconds, since provider and deployment differ.
 
 ### 2. Information gathering is cheap locally; the reads come with the turn
 
-The library reference and the plan state are read in parallel before the first request: **14.8 / 16.1 ms** in run 1 and **13.8 / 15.0 ms** in run 2 as tools, **5.5 / 2.4 ms** and **5.4 / 2.3 ms** in the planner. The skills take **0.7–1.7 ms**. All information tools of a turn take **34.3 / 35.7 ms** in union. No model call reads the live plan sections before the create; the reads after it ask for the obstacles only (1,851–1,853 bytes).
+The library reference and the plan state are read in parallel before the first request: **14.0 / 16.9 ms** in run 1 and **15.3 / 16.3 ms** in run 2 as tools, **5.8 / 2.5 ms** and **5.8 / 2.5 ms** in the planner. The skills take **0.5–0.7 ms**. All information tools of a turn take **28.7 / 33.3 ms** in union. No model call reads the live plan sections, before the create or after it; the one read after it is `find-attributes` by ids (11.0 / 16.0 ms, 2,375 / 6,350 bytes).
 
-### 3. Post-create work makes most of the difference between the runs
+### 3. Post-create work has the same shape in both runs
 
-Run 1 spends **63.842 s** after the kitchen: call 3 looks up the backsplash and reads the obstacles (8.085 s), call 4 enables it and fails (14.605 s), call 5 sets handle design 110 together with a dishwasher supplier and model (8.538 s), call 6 sets handle design 100 in black (4.989 s), call 7 renders (5.571 s) and call 8 answers (20.139 s). Run 2 spends **24.794 s**: the backsplash lookup (3.885 s) and the failing change (2.569 s), an obstacles read (2.246 s), the sink's move width (3.584 s), another obstacles read (2.030 s), the render (3.312 s) and the answer (5.884 s). The create's corrections had already set the handles of the run to the curved bow handle; run 1 changes them twice more.
+Run 1 spends **27.691 s** after the kitchen: call 3 looks up the handle colour and the backsplash switch by ids (2.225 s), call 4 enables the backsplash and fails (8.612 s), call 5 sets the handles black (3.416 s), call 6 renders (8.562 s) and call 7 answers (4.864 s). Run 2 spends **30.823 s**: the lookup of the handle colour, the handle position and the backsplash switch (14.077 s, 13.480 s of it until its first output), the black handles with the horizontal position (3.188 s), the failing backsplash (2.793 s), the render (5.880 s) and the answer (4.881 s). With the black handle colour the library switches the rail handle the create set to the curved bow handle in both runs, and the result names it.
 
 ### 4. Some calls wait long for their first output without reasoning
 
-Run 1's call 4 waits **13.713 s** for its first output with 57 output tokens and no reasoning, its call 8 **16.553 s** with 134 output tokens and no reasoning; run 2's calls of the same kind wait **1.806 s** and **2.393 s**. The inputs are of the same size (95–101k tokens, almost all read from the cache). The cause is not exposed; it is the provider's side of the round trip.
+Run 2's call 3 waits **13.480 s** for its first output with 40 output tokens and no reasoning, run 1's call 4 **7.799 s** with 55 output tokens and no reasoning; run 1's call 3 and run 2's call 4, of the same kind, wait **1.714 s** and **1.673 s**. The inputs are of the same size (86–88k tokens, almost all read from the cache). The cause is not exposed; it is the provider's side of the round trip.
 
 ### 5. The backsplash remains absent
 
-Both runs enable `mod_CreateBacksplash`, and both get the same library error: Error 14034, no entry in `tab_GrainDirectionSettings` for the backsplash. The change takes **145.6 / 141.2 ms**; the model rounds around it cost seconds. The open issue is [library backlog §10](../backlog/library-issues.md#10-backsplashes-the-library-cannot-calculate). Both answers disclose the missing backsplash.
+Both runs enable `mod_CreateBacksplash`, and both get the same library error: Error 14034, no entry in `tab_GrainDirectionSettings` for the backsplash. The change takes **144.9 / 115.9 ms**; the model rounds around it cost seconds. The open issue is [library backlog §10](../backlog/library-issues.md#10-backsplashes-the-library-cannot-calculate). Both answers disclose the missing backsplash.
 
 ### 6. Plan verification
 
-Both snapshots contain one **3,010 mm** kitchen centred on the left wall at [-685, -240, 0] with **rotationZ = 90°**, about 1 m from each end of the wall. Run 1: fridge-freezer, drawer-and-door base, oven with hob, a dishwasher, the sink base, three wall cabinets and the chimney hood (HK260, USTB60, UHS60, GSP, SUT60, OTB60 ×3, DU). Run 2: the same row with a door base instead of the dishwasher (UTB60), the nine articles of benchmarks 04–08. The object perspectives and top views were inspected: olive-green fronts, oak-effect (run 1) and walnut-effect (run 2) carcases and wall cabinets, black bow handles. Approximate library finishes, a two-section fridge front and the absent dark backsplash limit fidelity to the photo; both answers name them. This is a latency benchmark of those resulting plans, not an assertion of pixel-identical image reproduction.
+Both snapshots contain one **3,010 mm** kitchen centred on the left wall at [-685, -240, 0] with **rotationZ = 90°**, about 1 m from each end of the wall. Both runs build the same row: fridge-freezer, drawer-and-door base, oven with hob, the dishwasher, the sink base, three wall cabinets and the chimney hood (HK260, USTB60, UHS60, GSP, SUT60, OTB60 ×3, DU); the dishwasher stands on the side the sink's drainer reaches over. The object perspectives and top views were inspected: olive-green Classic fronts, the oak decor 224 for the carcases, the worktop, the plinth and the wall cabinets, black bow handles — vertical in run 1, horizontal in run 2. Approximate library finishes, a two-section fridge front and the absent dark backsplash limit fidelity to the photo; both answers name them. This is a latency benchmark of those resulting plans, not an assertion of pixel-identical image reproduction.
 
 ## Proposed experiments and rejected conclusions
 
 | Candidate | What this run supports | Expected saving / limit |
 |---|---|---|
-| Less to decide in the create call (proposal C: a worked example of a create payload; the reasoning effort, RML-18043) | The create call takes 27.884 / 23.730 s, 17.620 / 13.735 s of it before its first output, with 378 / 269 reasoning tokens | The largest block before the first kitchen. Its saving is unknown until a run of the same layout is compared with this baseline. |
-| Set the attributes of an image kitchen in the create | Run 1 changes the handles twice after the create (8.538 + 4.989 s), run 2 the sink's move width (3.584 s) | Fewer rounds after the first kitchen. The changes depend on what the model reads in the image, so no saving is established. |
-| Resolve the backsplash calculation/advertised capability | Both runs look up the backsplash and fail to create it: 22.690 s in run 1 (calls 3–4), 6.454 s in run 2 | A working switch improves fidelity; a reliable capability description in the library data could avoid the futile round. Library issue 10. |
-| A watchdog for calls without a first output | Run 1's calls 4 and 8 wait 13.7 and 16.6 s for their first output without reasoning | A resend doubles the cost of a legitimate long reasoning. Measure the tail over more runs first. |
-| Tool memoization / attribute indexing / precalculated docking vectors | The information tools take 34.3 / 35.7 ms in union; the create tool 1.309 / 1.821 s | Local work is not the bottleneck: removing every information tool saves milliseconds. |
+| Less to decide in the create call (proposal C: a worked example of a create payload; the reasoning effort, RML-18043) | The create call takes 17.167 / 13.618 s, 8.913 / 5.736 s of it before its first output, with 200 / 123 reasoning tokens | The largest block before the first kitchen. Its saving is unknown until a run of the same layout is compared with this baseline. |
+| Set the attributes of an image kitchen in the create | Both runs look up the handle colour after the create and set it black: run 1 in calls 3 and 5 (2.225 + 3.416 s), run 2 in calls 3 and 4 (14.077 + 3.188 s) | Fewer rounds after the first kitchen. The changes depend on what the model reads in the image, so no saving is established. |
+| Resolve the backsplash calculation/advertised capability | Both runs look up the backsplash with the handle colour and fail to create it: the failing change costs 8.612 s in run 1 (call 4), 2.793 s in run 2 (call 5) | A working switch improves fidelity; a reliable capability description in the library data could avoid the futile round. Library issue 10. |
+| A watchdog for calls without a first output | Run 2's call 3 and run 1's call 4 wait 13.5 and 7.8 s for their first output without reasoning | A resend doubles the cost of a legitimate long reasoning. Measure the tail over more runs first. |
+| Tool memoization / attribute indexing / precalculated docking vectors | The information tools take 28.7 / 33.3 ms in union; the create tool 2.010 / 2.150 s | Local work is not the bottleneck: removing every information tool saves milliseconds. |
 
 ## Measurement gaps and open work
 
-- **First painted frame:** no GPU presentation/paint marker was captured. Create-tool completion is an upper bound for a loaded kitchen; first visible geometry could appear earlier within the 1.309–1.821 s create.
+- **First painted frame:** no GPU presentation/paint marker was captured. Create-tool completion is an upper bound for a loaded kitchen; first visible geometry could appear earlier within the 2.010–2.150 s create.
 - **Provider internals:** model time combines network, queueing, input processing, reasoning, generation and SDK stream handling. Time to first output does not isolate prefill; response-header time does not isolate network RTT.
 - **Tool internals:** the planner table separates planner access from the surrounding tool, but does not profile every individual filtering, projection, docking, library-calculation or kernel-load function. Remaining tool time must not be renamed CPU assembly time.
 - **Final text start:** first visible text refers to the first planning preamble; the end of the turn marks completion of the final answer. Final-answer text-delta start was not separately instrumented.
 - **Startup attribution:** page/module/library/plan/assistant initialization, the runner's readiness read and the assistant's library read before the first prompt overlap inside the ready phase. They were not profiled individually.
 - **Instrumentation overhead:** extra console events, UTF-8 size measurement and log delivery add unquantified overhead; both runs have the same hooks. The planner is a Vite development server; do not use these page-startup numbers as production cold-start numbers.
-- **Sampling:** two runs establish a repeated measurement and show large variation after the kitchen. They do not establish a p95, a stable service-level expectation or the cause of provider variability. Another pair costs about 3 minutes and 1.6M input tokens, most of them read from the cache.
+- **Sampling:** two runs establish a repeated measurement and show the variation of single calls. They do not establish a p95, a stable service-level expectation or the cause of provider variability. Another pair costs about 2 minutes and 1.2M input tokens, most of them read from the cache.
 
 ## The benchmark to repeat
 
-Use the commits, image digest and settings in manifest.json (local: `.temp/result/baseline-iklw-az-2026-10-27/manifest.json`). Keep the planner on port 5173 and check that its checkout is the one to measure; the example page pins the embedding-lib. Keep `"provider": "gpt-6-astra", "apiKey": "$AZURE_GPT_KEY"` with the key in AZURE_GPT_KEY. Do not silently substitute another provider.
+Use the commits, image digest and settings in manifest.json (local: `.temp/result/baseline-iklw-az-2026-10-28/manifest.json`). Keep the planner on port 5173 and check that its checkout is the one to measure; the example page pins the embedding-lib. Keep `"provider": "gpt-6-astra", "apiKey": "$AZURE_GPT_KEY"` with the key in AZURE_GPT_KEY. Do not silently substitute another provider.
 
 ```sh
-cd .temp/result/baseline-iklw-az-2026-10-27
+cd .temp/result/baseline-iklw-az-2026-10-28
 node make-timing-runner.mjs
 REPS=1,2 node run-reps.mjs iklw
 node analyze.mjs iklw-rep-1 iklw-rep-2
@@ -343,4 +327,4 @@ Before a new capture, copy these scripts into a fresh dated session directory an
 
 Retain run.json, timeline.json, planner-calls.json, plan-context.json, source SHAs, exclusions and snapshot IDs. Compute interval unions rather than summing concurrent tools; check the counts against the model usage and recorded calls.
 
-Verification performed: every model request paired with a completed model call and its diagnostics bytes; all tool starts paired with ends; the nested planner calls paired with their log lines, the two parallel reads before the first request by their method; the interval accounting reconciles with the full-turn duration; one failed backsplash call per run; both snapshot IDs present; the roomle-ui checkout stayed on a8fe64618 through both runs.
+Verification performed: every model request paired with a completed model call and its diagnostics bytes; all tool starts paired with ends; the nested planner calls paired with their log lines, the two parallel reads before the first request by their method; the interval accounting reconciles with the full-turn duration; one failed backsplash call per run; both snapshot IDs present; the roomle-ui checkout stayed on 5fd409e84 through both runs.

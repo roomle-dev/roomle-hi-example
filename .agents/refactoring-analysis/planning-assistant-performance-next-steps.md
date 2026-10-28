@@ -191,13 +191,15 @@ Scope: `agent-facing.ts` and the corresponding vocabulary tests; the authoring-r
 
 ### 7.2 Supply useful article summaries, retrieve details in batches, and scale discovery separately
 
+Outcome of the first two steps: the shortening reads both section forms and `get-plan-context` answers for the articles `articleIds` names — D63 and D124 of [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions), roomle-ui `3df328523` on `feat/hi-mcp-performance` —, measured by [benchmark 11](../benchmarks/11-iklw-az-arts-2026-10-28.md): every request 2,587 input tokens smaller, the calls of both fixtures unchanged. The overview, the category directory and the description sharing below remain experiments.
+
 #### 7.2.1 What already exists, and what is missing
 
 The initial article reference is already a projection, not the raw library. `compactArticle` in `hi-plan-context.ts:625` supplies identity, description, category, corner information and each root's module, dimensions, main attributes, docking vectors and submodules. `agentFacingArticle` at `hi-mcp/agent-facing.ts:362` removes the corner point and shortens sectioned descriptions. The assistant requests **all articles and the attribute vocabulary** in `hi-planning-assistant.ts:273`; that reference is acquired for each turn. A separate pre-prompt read warms article templates.
 
 D63 already separates short descriptions from full descriptions. However, `get-plan-context` currently selects sections, not article IDs: asking for `articleDescriptions` returns the descriptions of **every article**. This leaves a concrete gap between “more information about these seven articles” and the available API. Batch detail retrieval would close that gap without requiring a new library calculation API.
 
-First fix existing [MCP issue 117](../backlog/mcp-issues.md#117-the-catalog-serves-19-descriptions-in-full): `shortDescription` at `agent-facing.ts:185` only recognizes content on the line after its heading. Inline `FUNCTION: ...` and `AI_SELECTION_HINT: ...` leave 19 full descriptions in the reference. Support both formats, preserve unrecognized descriptions and the full-description path. Test that sink-selection information survives; removing the drainer constraint is a regression.
+First fix existing MCP issue 117, implemented as D63 in both section forms: `shortDescription` at `agent-facing.ts:185` only recognizes content on the line after its heading. Inline `FUNCTION: ...` and `AI_SELECTION_HINT: ...` leave 19 full descriptions in the reference. Support both formats, preserve unrecognized descriptions and the full-description path. Test that sink-selection information survives; removing the drainer constraint is a regression.
 
 Two existing contracts matter to this proposal:
 

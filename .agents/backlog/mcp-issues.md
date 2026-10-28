@@ -28,7 +28,7 @@ Keep this document, its guidance and its overview table when no issues are open,
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 116 | [A conflict a row edit leaves is not resolved](#116-a-conflict-a-row-edit-leaves-is-not-resolved) | hardening | roomle-ui served text: the rule for corrections, `delete-article-and-compact` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
+| 116 | [A conflict a row edit leaves is not resolved](#116-a-conflict-a-row-edit-leaves-is-not-resolved) | hardening | roomle-ui served text: the rule for results, `delete-article-and-compact` (`hi-mcp-server.ts`), the overlap correction (`hi-tools.ts`) — analysed in [the bug analysis](../bug-analysis/conflict-a-row-edit-leaves-is-not-resolved.md): the rule calls corrections changes already applied and has no sentence for two units a call leaves in one place; the door is named by the hint and handled as the rules ask | low | gpt-6-astra | provider default |
 | 117 | [The catalog serves 19 descriptions in full](#117-the-catalog-serves-19-descriptions-in-full) | hardening | roomle-ui `shortDescription` (`hi-mcp/agent-facing.ts`) | low — about 11 KB, 2,400 tokens of the cached prefix | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
@@ -43,18 +43,23 @@ removing the unit next to the corner leaves the wall unit above it overlapping t
 in. The answers name the conflict and leave it to the user; in earlier sessions the agent moved the
 wall unit in a follow-up call.
 
-**Cause.** The corrections of `delete-article-and-compact` name what the edit did — the unit above
-keeps its place and overlaps, "remove one of them or move the units above"; the turned leg — but the
-served text does not ask the agent to resolve a conflict a correction reports before it answers, and
-a turned leg's correction says nothing about the door it now reaches.
+**Cause.** The rule for results (`hi-mcp-server.ts`) calls `corrections` what the server changed
+and has already applied, and `hint` something to check; it has no sentence for two units a call
+leaves in one place. The overlap correction ends "remove one of them or move the units above" and
+does not say who makes the edit. The door is named by the row hint of the same result (D43, D55),
+and the answers do what the obstacles rule asks: keep the row and name the door. The analysis leaves
+to the review whether the agent should clear it ([the bug
+analysis](../bug-analysis/conflict-a-row-edit-leaves-is-not-resolved.md)).
 
-**To do.** roomle-ui served text: the rule for corrections asks the agent to resolve a conflict a
-correction reports — an overlap, a unit in a door opening — with a follow-up call where the request
-leaves room for it, and to report it otherwise; the correction of a turned leg names an opening the
-row now reaches.
+**To do.** roomle-ui served text: the rule for results says that a result naming two units that
+now overlap leaves a plan that cannot be built, and that the agent resolves it with one more call;
+the overlap correction ends "delete one of them or move it with one more call"; the description of
+`delete-article-and-compact` names the unit above that keeps its place. The `expect` of
+`edit-remove-next-to-corner` asks for the resolved overlap.
 
-**Test.** `edit-remove-next-to-corner` and `edit-remove-corner-unit`: the final plan holds no
-overlap and no unit in the door opening, or the answer says why it could not resolve it.
+**Test.** `edit-remove-next-to-corner`: the final plan holds no overlap above the right leg, and
+the answer says how it was resolved. `edit-remove-corner-unit`: the answer names the tall unit in
+front of the door and what would clear it.
 
 **Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 24 (`edit-remove-corner-unit`): `delete-article-and-compact` of the corner unit `814c6854` on `corner-kitchen-wall-units`; the fridge `ad52e21b` ends at y -435, the door opening spans y -1180 to -280.
 

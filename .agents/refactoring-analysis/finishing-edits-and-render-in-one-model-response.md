@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Type / domain | Refactoring analysis / HI Planning Assistant performance |
-| Status | Open |
+| Status | Open — implemented in roomle-ui 688705a39 on `feat/hi-mcp-performance`, unpushed; benchmark 10: the model keeps one call per response, the criterion of §7 is not met |
 | Date / author | 2026-10-28 / Claude Code |
 | Ticket | [RML-18303](https://roomle.atlassian.net/browse/RML-18303) |
 | Parent analysis | [§6 of the remaining-work analysis](planning-assistant-performance-next-steps.md#6-new-proposal-one-decision-for-independent-finishing-edits-and-verification) |
@@ -321,3 +321,25 @@ again. The run needs its own go.
 - **The saving is an upper bound.** 9.461 s of model time is what the removed calls cost; the
   combined call's extra generation and the provider's variance (call 3 of run 2 waited 13.5 s for
   its first output) decide the measured result.
+
+## 10. Implemented and measured
+
+The served text of §4 is in roomle-ui 688705a39 on `feat/hi-mcp-performance`, with the tests of
+§6 and decision D123; the existing continuation spec already asserts the Azure case of §6 (two
+calls of one response, both outputs chained in call order, an image among them), so no Azure test
+was added. No embedding-lib build was needed. The model-free check ran the baseline's create, then
+the backsplash edit, the handle edit and `get-plan-images` sent at once: the planner ran them in
+that order, the backsplash failed alone and the render shows the black handles.
+
+[Benchmark 10](../benchmarks/az-cmp-2026-10-27.md#10-against-the-baselines) — one warm-up turn, then
+two repetitions each of both fixtures — shows the sentence in every request and the shape
+unchanged. Both image kitchens keep seven calls, the handle edit, the backsplash attempt and the
+render one per response, although every argument was known after the lookup. The walnut kitchens
+keep three calls and no render. The first risk of §9 has happened: the text invites, the model
+does not follow. The seconds do not measure the change; the image kitchens' create calls waited
+longer before the kitchen than the baseline's.
+
+Open: reword or revert, the user's decision. The captures leave three readings, none established:
+"a correction" among the results to wait for, which every attribute edit can answer; the D119
+sentence to build the next change on the last result; and the render as the hand-over to the
+answer after a summary (§5 of the parent analysis). A reword needs another screen of the same size.

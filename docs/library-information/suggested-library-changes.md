@@ -52,7 +52,7 @@ opposite the basin, an `_L` sink reaches over the unit on the right, an `_R` sin
 the left. `PURPOSE`, `REQUIREMENTS`, `RESTRICTIONS`, `STYLE_COMPATIBILITY` and `SEARCH_KEYWORDS`
 are shortened to stay within 1000 characters. When the library changes the sink a unit comes with,
 its `FUNCTION` line follows it. The reaches are measured on the planner
-([the analysis](../../.agents/bug-analysis/sink-unit-description-names-the-wrong-drainer-side.md#3-how-the-library-builds-the-sink)).
+([library issue 21](../../.agents/backlog/library-issues.md#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds)).
 
 `SUT60` (SBD60) — 969 characters:
 
@@ -520,7 +520,7 @@ In the library, as proposed:
 2.8 | Blanco Axia sink in anthracite: …", without the final full stop; its desc is to be the proposed
 text alone. `None` keeps its desc: its outline still reaches 401 / 251 mm past the right side, which
 the library team is asked to explain
-([library issue 21](../../.agents/backlog/library-issues.md#21-the-description-of-sut60-names-the-drainer-on-the-right-its-sink-reaches-over-the-unit-on-its-left)).
+([library issue 21](../../.agents/backlog/library-issues.md#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds)).
 
 **Attribute.** `mod_SinkId` (Article code of the sink), group Sink. Its desc states the rule for
 every sink unit — the attributes section lists `mod_SinkId` with the number of its values (D122),

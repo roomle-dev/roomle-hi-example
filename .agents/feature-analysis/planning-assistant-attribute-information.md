@@ -7,9 +7,9 @@
 > design proposed, the same for every library, accepted only after its measurement
 > ([§6](#6-the-proposed-design-two-levels), [§10](#10-decisions-to-take)); validated against the
 > code and the data, the level-1 figures measured with the criterion as stated
-> ([§11](#11-validation)); implemented in roomle-ui 5fd409e84 (D122) and measured by benchmark 09:
-> the criteria are met, the sink of the image kitchen is the cost; the decision is open
-> ([§12](#12-the-measurement-benchmark-09))
+> ([§11](#11-validation)); implemented in roomle-ui 5fd409e84 (D122) and measured by benchmark 09
+> with the corrected sink descriptions of the library: the criteria are met, no measured cost; the
+> acceptance is the user's ([§12](#12-the-measurement-benchmark-09))
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-ui `feat/hi-mcp-merge` at a8fe64618 (`hi-mcp/agent-facing.ts`,
@@ -293,6 +293,7 @@ kitchen.
 | Only the attributes of the module types the loaded catalog uses | The generated root modules the library adds — the worktop, the toekick, the backsplash — are not in the catalog but carry attributes the agent sets; with them included, 80 attributes (18.5 KB) go — a smaller lever than the value lists, and a second filter to keep right |
 | The value lists of the generated modules a kitchen generates only — the panel top, the worktop, the backsplash, the toekick, the finger grip | 57 attributes, 26 lists, a section of 74 KB instead of 88 KB; but which generated modules a kitchen generates is library content, a choice the server would make per library (§2.4) |
 | The value lists of the catalog's sub modules too — the hob, the oven, the sink | Keeps the appliance models in the prefix, but 288 attributes and 113 lists, a section of 111 KB: 10 KB less than today, no bound |
+| The value lists of the attributes the library marks `isMain` on the catalog's sub modules too | Structural, 15 more lists — the sink, hob, oven, fridge, dishwasher and mixer models, the handle position —, a section of 95 KB instead of 88 KB. Not needed: with the descriptions of the sink units naming the side their drainer reaches over, every run of benchmark 09 keeps the sink clear of the hob without the values |
 | The value names in the prefix, the codes resolved by the server | The agent sends a name, the server maps it to the value — step 2 of the guards policy; but the colour codes in the value descs are what the agent tells colours by, and a name without its desc loses them |
 | Shorter descriptions | The descriptions are the library's and authoritative; the server shortens article descriptions to two lines (D63) because the article catalog is picked from, while a value's desc is read once per set value |
 | Retrieval per request (RAG) | Breaks the shared prefix and adds a step per request; rejected for the response time ([the levers that do not shorten it](../wiki/planning-assistant-response-time-targets.md#levers-that-do-not-shorten-it)) |
@@ -371,28 +372,25 @@ calls of the test session; the counts are recomputed in
 
 The design of §6 with the first-kitchen rule — the create sets the attributes whose values the
 section lists, an attribute with `valueCount` keeps its article's value until a change after the
-create — is roomle-ui 5fd409e84 (D122), measured on the baselines' protocol:
-[the image kitchen](../benchmarks/09-iklw-az-attrs-2026-10-27.md),
-[the walnut kitchen](../benchmarks/09-fkwm-az-attrs-2026-10-27.md),
+create — is roomle-ui 5fd409e84 (D122), measured on the baselines' protocol with the library's
+corrected sink descriptions:
+[the image kitchen](../benchmarks/09-iklw-az-attrs-2026-10-28.md),
+[the walnut kitchen](../benchmarks/09-fkwm-az-attrs-2026-10-28.md),
 [against the baselines](../benchmarks/az-cmp-2026-10-27.md#09-against-the-baselines).
 
 - **The criteria are met.** Every creation creates at call 2 and looks nothing up before it; every
-  request carries 8,722 input tokens less (79,080 → 70,358 and 76,771 → 68,049 in the first call),
+  request carries 8,533 input tokens less (79,080 → 70,547 and 76,771 → 68,238 in the first call),
   more than the 7,300 estimated — the value lists tokenize at about 3.8 bytes per token; the
-  fronts, carcases and worktops are the baselines'. The create calls are 4.3 s (image) and 6.6 s
-  (walnut) shorter in the mean, with fewer output and reasoning tokens.
-- **The cost is the sink.** The baselines' image creates chose the Axis sink from the list; in 09 the
-  sink model is a sub module's attribute with `valueCount`, the create leaves it to the article,
-  and the article's Metra sink reaches over the hob beside it: run 2 ends with it, run 1 moves the
-  sink unit to the end of the row in 40.742 s of rounds. The handle colour costs one lookup round
-  after the kitchen, where the baselines spent theirs on the backsplash. In the walnut kitchen the
-  article's hob and oven are the models the baselines chose.
-- **The cause of the sink** is the description of `SUT60`: it names the drainer on the right, the
-  sink it comes with reaches over the unit on its left, and no description says that the side
-  follows the sink ([the bug analysis](../bug-analysis/sink-unit-description-names-the-wrong-drainer-side.md));
-  the library carries the corrected descriptions (checked 2026-10-28), which benchmark 09 measures
-  again.
-- **Open:** whether the design is accepted with that cost, revised, or reverted. A structural level 1
-  that keeps the sink model keeps the catalog's sub modules too (§7: 111 KB, almost no saving); a
-  rule that names the sink is library content (§2.4); the neutral wording risks the lookup before
-  the first kitchen.
+  fronts, carcases and worktops are the baselines'. The create calls are 7.0 s (image) and 4.3 s
+  (walnut) shorter in the mean, with fewer output tokens.
+- **The sink stands clear of the hob.** The sink model is a sub module's attribute with
+  `valueCount`, so the create leaves it to the article. The description of every sink unit names
+  the sink it comes with and the side its drainer reaches over, and the rule for every other sink
+  (the drainer is opposite the basin; a base unit on that side, not a hob unit) — [suggested library
+  changes 1.1 and 2.8](../../docs/library-information/suggested-library-changes.md#11-sink-base-units),
+  in the library. In all four runs a base unit stands on the drainer side of the sink unit. The
+  first measurement of 09, with the former description of `SUT60` — the right side named, the sink
+  reaching over the left —, put the hob unit there in one image run.
+- **The handle colour** costs one lookup round after the kitchen, where the baselines spent theirs on
+  the backsplash. In the walnut kitchen the article's hob and oven are the models the baselines chose.
+- **Open:** the acceptance of D122, the user's decision.

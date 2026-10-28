@@ -57,7 +57,7 @@ library cannot calculate.
 | 8 | [Base units narrowed to 150 mm the library cannot calculate](#8-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the width desc done; the calculation error not reported | low — the unit is not built, the agent needs a second create |
 | 12 | [A worktop on the tall units from the group's countertop switch](#12-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
 | 15 | [The shelf descriptor names no format](#15-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | the desc names the default spacing; the actual format and example open | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
-| 21 | [The description of SUT60 names the drainer on the right; its sink reaches over the unit on its left](#21-the-description-of-sut60-names-the-drainer-on-the-right-its-sink-reaches-over-the-unit-on-its-left) | HOMAG Furniture_Smith | HOMAG library development team | the descs applied (1.1, 2.8); open: the desc of `Axia_Anthrazit_R`, `None` | high — the sink stands over the hob, and the agent cannot see it before its render |
+| 21 | [The sink descriptions: a value desc with its pasted table row, and what None builds](#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds) | HOMAG Furniture_Smith | HOMAG library development team | the sink descriptions done (1.1, 2.8); open: the desc of `Axia_Anthrazit_R`, `None` | low — the side rule and the reaches are in the library |
 
 ### Not solved entirely by descriptions
 
@@ -940,42 +940,35 @@ first create.
 
 **Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 72 (`image-only-no-text-2`, bo-test): the first create sends root `sink`, `SUT60` with `mod_SinkId` `Axis_R`, `mod_HandleDesign` 10 and `mod_OpeningType` `PushToOpenManual`, and fails Error 22006.
 
-## 21. The description of SUT60 names the drainer on the right; its sink reaches over the unit on its left
+## 21. The sink descriptions: a value desc with its pasted table row, and what None builds
 
 **Library.** HOMAG Furniture_Smith. **Responsible.** HOMAG library development team.
 
-**Problem.** An image kitchen puts the sink unit `SUT60` beside the oven-and-hob unit `UHS60`:
-the hob unit on the left of the sink unit, a base unit on its right, as the unit's
-`AI_SELECTION_HINT` asks ("Place a base unit on its right, not a hob unit"). The sink then reaches
-410 mm over the hob.
+**Problem.** The desc of the value `Axia_Anthrazit_R` of `mod_SinkId` begins with the pasted table
+row of the suggested changes — "Axia color anthrazit basin right | see 2.8 | Blanco Axia sink in
+anthracite: …" — and has no final full stop. The value `None` leaves an outline that reaches past
+the right side of the sink unit as a basin-left sink does.
 
-**Cause.** The library delivers `SUT60` with `mod_SinkId` `Metra_R`, basin on the right, whose
-drainer reaches past the unit's left side. Its description still names the right side ("reaches 396
-mm past its right side, over the unit on its right"), written for `Axia_Grey_L`, the sink it came
-with (suggested change 1.1). No description says that the side follows the sink: the drainer lies
-opposite the basin. Since D122 the value descs of `mod_SinkId` are not in the prefix, so the
-article line is the only sink information of the create.
+**Cause.** The paste of section 2.8 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#28-sink)
+took the whole row for this value. What `None` builds is not known.
 
-**How the library behaves.** Measured on the planner, a row `UTB60` | sink unit | `UTB60`
-([the analysis](../bug-analysis/sink-unit-description-names-the-wrong-drainer-side.md#3-how-the-library-builds-the-sink)):
-`SUT60` with `Metra_R` reaches 410 mm past its left side; `SUBA60` and `ESUT60` with
-`Axia_Grey_L` 395.8 mm past their right side, `SUB2A90` and `ESUB2A90` 245.8 mm. A value ending in
-`_L` reaches right, one ending in `_R` left, about 400 mm past a 60 cm unit and 250 mm past a
-90 cm unit (Dinas 340 / 190 mm, Metra 410 / 260 mm). `None` leaves an outline like a basin-left
-sink.
+**How the library behaves.** Measured on the planner, a row `UTB60` | sink unit | `UTB60`: the
+drainer lies opposite the basin — a value ending in `_L` reaches past the right side of the sink
+unit, one ending in `_R` past the left side —, Axia 396 mm past a 60 cm unit and 246 mm past a 90 cm
+unit, Axis 401 / 251 mm, Dinas 340 / 190 mm, Metra 410 / 260 mm; `None` 401 / 251 mm past the right
+side. `SUT60` comes with `Metra_R`, the four other sink units with `Axia_Grey_L`. The descriptions of
+the five sink units (1.1) and of `mod_SinkId` and its other values (2.8) say so; in benchmark 09 a
+base unit stands on the drainer side of the sink unit in all four runs
+([the comparison](../benchmarks/az-cmp-2026-10-27.md#09-against-the-baselines)).
 
-**To do.** The library: the desc of the value `Axia_Anthrazit_R` is the proposed text alone, without
-the pasted table row (2.8 of
-[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#28-sink)); explain what `None` builds; when the sink a unit
-comes with changes, change its `FUNCTION` line with it.
+**To do.** The library: the desc of `Axia_Anthrazit_R` is the proposed text of 2.8 alone; explain
+what `None` builds; when the sink a unit comes with changes, its `FUNCTION` line changes with it.
 
-**Status.** Done in the library: the descriptions of the five sink units (1.1) and of
-`mod_SinkId` and its values (2.8), checked 2026-10-28 against the article list and the master data.
-Open, not reported to the library development team: the desc of `Axia_Anthrazit_R`, which carries
-the pasted table row "Axia color anthrazit basin right | see 2.8 | …", and what `None` builds.
+**Status.** Done in the library: the descriptions of the five sink units and of `mod_SinkId` and ten
+of its values. Open, not reported to the library development team: the desc of `Axia_Anthrazit_R`
+and `None`.
 
-**Test.** `image-kitchen-left-wall`, two runs on the build of D122: no run puts the hob unit on the
-drainer side of the sink unit; `edit-swap-hob-unit`: the drainer does not cover the hob.
+**Test.** The master data: the desc of `Axia_Anthrazit_R` is the text of 2.8.
 
-**Reproduce.** `.temp/result/benchmark-09-az-attrs-2026-10-27/iklw-rep-2`, plan
-`ps_t26104gn9m11h4qy8df24p5pfeh4sx2e`: the outline of `SUT60` spans y 1150–2160, `UHS60` 960–1560.
+**Reproduce.** `docs/library-information/master-data.json`, the selections of `mod_SinkId`.

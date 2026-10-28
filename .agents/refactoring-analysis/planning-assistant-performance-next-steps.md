@@ -199,7 +199,7 @@ The initial article reference is already a projection, not the raw library. `com
 
 D63 already separates short descriptions from full descriptions. However, `get-plan-context` currently selects sections, not article IDs: asking for `articleDescriptions` returns the descriptions of **every article**. This leaves a concrete gap between “more information about these seven articles” and the available API. Batch detail retrieval would close that gap without requiring a new library calculation API.
 
-First fix existing [MCP issue 117](../backlog/mcp-issues.md#117-the-catalog-serves-19-descriptions-in-full): `shortDescription` at `agent-facing.ts:185` only recognizes content on the line after its heading. Inline `FUNCTION: ...` and `AI_SELECTION_HINT: ...` leave 19 full descriptions in the reference. Support both formats, preserve unrecognized descriptions and the full-description path. Test that sink-selection information survives; removing the drainer constraint is a regression.
+MCP issue 117 is fixed on its own, without `articleIds`: `shortDescription` (`agent-facing.ts`) reads a section's text on the line of its name and on the next line — roomle-ui `da0f50b80` on `feat/hi-mcp-performance`, guarded by `it('shortens a description that writes each section on the line of its name')` in `__tests__/hi-mcp/tool-executors-test.ts`. Of the 111 descriptions of the library data none stays in full, the `articles` section is 11,010 bytes smaller (193,090 to 182,080), and the sink units keep the drainer constraint in both their lines; a description without the sections and `articleDescriptions` stay as they are.
 
 Two existing contracts matter to this proposal:
 

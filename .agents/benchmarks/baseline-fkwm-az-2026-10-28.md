@@ -227,7 +227,7 @@ The library reference returns **232,777 bytes**, the plan state **5,631 bytes**;
 
 Call 1 ends after **3.190 / 1.958 s** with the skill request. Call 2, the create, then takes **17.615 / 18.714 s**: **10.132 / 11.346 s** until its first output and **7.483 / 7.368 s** streaming the payload, with **229 / 220 reasoning tokens** and **761 / 740 output tokens**. The create tool adds **3.473 / 2.999 s**, the local gaps a few milliseconds. Of the 24.285 / 23.676 s to the first kitchen, the create call is 73% / 79%.
 
-The request/model boundary localizes this to the model round trip, not planner execution. The cause inside that boundary is **unknown**: provider queueing, input processing, reasoning, generation and network are not separately exposed. The text kitchen reasons longer before its payload than the image kitchen of [the image baseline](baseline-iklw-az-2026-10-27.md) (8.913 / 5.736 s, 200 / 123 reasoning tokens): it composes 14 and 13 root modules around a corner where the image kitchen copies a row of nine.
+The request/model boundary localizes this to the model round trip, not planner execution. The cause inside that boundary is **unknown**: provider queueing, input processing, reasoning, generation and network are not separately exposed. The text kitchen reasons longer before its payload than the image kitchen of [the image baseline](baseline-iklw-az-2026-10-28.md) (8.913 / 5.736 s, 200 / 123 reasoning tokens): it composes 14 and 13 root modules around a corner where the image kitchen copies a row of nine.
 
 ### 2. Information gathering is cheap locally; the reads come with the turn
 

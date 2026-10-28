@@ -500,9 +500,7 @@ alone (D108).
 
 `get-plan-images` renders when the user asks to see the plan or to look inside a cabinet, or to
 compare a planning from an image with that image; a create or edit result already carries the
-positions to verify, so a check needs no render. Sent in the same response after edits, it renders
-after them: the tools run in the order the model sent them, and the system prompt asks the model to
-send the calls whose arguments it already holds in one response (D123). It returns one text content that names the
+positions to verify, so a check needs no render. It returns one text content that names the
 images, then the group view — the groups alone, seen from their front without the room (`perspectiveObjectImage`) — and the top view
 of the whole plan; without groups the text says so and the top view comes alone. It asks the
 snapshot for `keepOpenGeometry`: the images show the doors and drawers as they are in the planner.

@@ -167,7 +167,7 @@ Example: `"Dishwasher housing / front unit for a built-in dishwasher."` in the c
 
 ## Structured Description
 
-The library gives every article a structured `desc`: sections separated by a blank line, each a label line in capitals followed by its text. Every Furniture_Smith article has FUNCTION, PURPOSE, TYPICAL_PLACEMENT, REQUIREMENTS, RECOMMENDED_NEIGHBOURS, RESTRICTIONS, STYLE_COMPATIBILITY, SEARCH_KEYWORDS and AI_SELECTION_HINT; `H60M` also has RECOMMENDED_INTERIORS.
+The library gives every article a structured `desc`: sections, each a label in capitals followed by its text — on the next line, the sections separated by a blank line, or on the line of the label, one section per line. Every Furniture_Smith article has FUNCTION, PURPOSE, TYPICAL_PLACEMENT, REQUIREMENTS, RECOMMENDED_NEIGHBOURS, RESTRICTIONS, STYLE_COMPATIBILITY, SEARCH_KEYWORDS and AI_SELECTION_HINT; `H60M` also has RECOMMENDED_INTERIORS.
 
 ```text
 FUNCTION:

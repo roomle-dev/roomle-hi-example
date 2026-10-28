@@ -28,33 +28,12 @@ Keep this document, its guidance and its overview table when no issues are open,
 
 | # | Issue | Kind | Responsible | Priority | Model | Reasoning effort |
 |---|---|---|---|---|---|---|
-| 115 | [An interior fitting added where the parent shows a default interior](#115-an-interior-fitting-added-where-the-parent-shows-a-default-interior) | hardening | roomle-ui served text: `get-interior-design-options`, `add-interior-fitting` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
 | 116 | [A conflict a row edit leaves is not resolved](#116-a-conflict-a-row-edit-leaves-is-not-resolved) | hardening | roomle-ui served text: the rule for corrections, `delete-article-and-compact` (`hi-mcp-server.ts`) | low | gpt-6-astra | provider default |
 | 117 | [The catalog serves 19 descriptions in full](#117-the-catalog-serves-19-descriptions-in-full) | hardening | roomle-ui `shortDescription` (`hi-mcp/agent-facing.ts`) | low — about 11 KB, 2,400 tokens of the cached prefix | | |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`. The root `logMessages` in `plan.xml`'s
 `externalConfiguration` retain library calculation diagnostics that compact plan contexts omit.
-
-## 115. An interior fitting added where the parent shows a default interior
-
-**Problem.** Asked to add one more shelf to a tall unit, the agent adds a `FixedShelf` to the
-parent whose `defaultInteriors` lists the four adjustable shelves it shows; the fixed shelf takes
-the place of the four, the correction says so, and the agent undoes it — one extra call and an undo
-for a request that cannot be met.
-
-**Cause.** The description of `get-interior-design-options` says that "an addition there takes its
-place", but the agent reads `defaultInteriors` only after the addition, from its correction. Nothing
-in the description of `add-interior-fitting` sends it to `defaultInteriors` before it adds.
-
-**To do.** roomle-ui served text: the description of `add-interior-fitting` says that an addition
-to a parent with a `defaultInteriors` entry replaces that default interior, so the agent checks
-the entry first and tells the user what the parent already holds.
-
-**Test.** `edit-add-subarticle-look-inside`: no `add-interior-fitting` replaces the four
-adjustable shelves; the answer says the cabinet holds them.
-
-**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 41 (`edit-add-subarticle-look-inside`): `add-interior-fitting` of `FixedShelf` into parent `5b581d05` of the middle `HTB60`, the correction about the replaced default interior, then `undo`.
 
 ## 116. A conflict a row edit leaves is not resolved
 

@@ -44,6 +44,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 | Document | Status | Date |
 |---|---|---|
 | [Planning Assistant performance: remaining work after the October 28 baselines](planning-assistant-performance-next-steps.md) | Open — layout then refinement, staged article retrieval, description sharing and benchmark criteria | 2026-10-28 |
+| [The article catalog the agent reads: shortened descriptions, article details by id, discovery for large libraries](article-overview-and-batch-article-details.md) | Open — §7.2 of the remaining-work analysis: the inline-form shortening defect, `articleIds` on `get-plan-context`, the overview and the directory as experiments | 2026-10-28 |
 
 Add refactoring analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `mcp-bridge-simplification.md`).

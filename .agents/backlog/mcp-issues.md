@@ -98,6 +98,11 @@ its name; a test with both forms in `__tests__/hi-mcp/tool-executors-test.ts`
 (`describe('article descriptions')`). The library-neutral policy holds: the function reads the
 section names D63 names, no article.
 
+**Analysis.** Step 1 of
+[the article catalog analysis](../refactoring-analysis/article-overview-and-batch-article-details.md),
+to be implemented together with its step 2, `articleIds` on `get-plan-context`, on roomle-ui
+`feat/hi-mcp-performance`.
+
 **Test.** `get-plan-context` with `articles`: the catalog line of `SUT60` is its `FUNCTION` and
 `AI_SELECTION_HINT` text; the section is about 11 KB smaller.
 

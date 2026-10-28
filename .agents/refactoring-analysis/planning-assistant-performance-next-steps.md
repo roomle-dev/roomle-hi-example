@@ -191,6 +191,8 @@ Scope: `agent-facing.ts` and the corresponding vocabulary tests; the authoring-r
 
 ### 7.2 Supply useful article summaries, retrieve details in batches, and scale discovery separately
 
+Analysed in depth, with the code locations, the contract of the batch retrieval, the tests and the benchmark, in [the article catalog analysis](article-overview-and-batch-article-details.md).
+
 #### 7.2.1 What already exists, and what is missing
 
 The initial article reference is already a projection, not the raw library. `compactArticle` in `hi-plan-context.ts:625` supplies identity, description, category, corner information and each root's module, dimensions, main attributes, docking vectors and submodules. `agentFacingArticle` at `hi-mcp/agent-facing.ts:362` removes the corner point and shortens sectioned descriptions. The assistant requests **all articles and the attribute vocabulary** in `hi-planning-assistant.ts:273`; that reference is acquired for each turn. A separate pre-prompt read warms article templates.

@@ -81,6 +81,7 @@ library cannot calculate.
 | 18 | [A wide paired-door wall cabinet with a push opening the library cannot calculate](#18-a-wide-paired-door-wall-cabinet-with-a-push-opening-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no | low — the requested upper cabinet needs a replacement |
 | 19 | [A traditional front program with a retained plain colour the library cannot calculate](#19-a-traditional-front-program-with-a-retained-plain-colour-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the sequencing desc proposed; calculation error not reported | partly | medium — switching the program needs an extra colour change |
 | 20 | [A push-to-open sink unit without the front gap it needs the library cannot calculate](#20-a-push-to-open-sink-unit-without-the-front-gap-it-needs-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | no — a library bug (D99) | low — the unit is not built, the agent needs a second create |
+| 22 | [A marble worktop at 40 mm the library cannot calculate](#22-a-marble-worktop-at-40-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | partly | low — the finishes of the create are not set, the agent needs a second call |
 
 `run.json` and `planner-calls.json` of the run directories named under **Reproduce** hold the payload
 the model sent; the directories are under `.temp/result/`.
@@ -414,13 +415,14 @@ width. The library's conflict resolution does not change the door direction with
 gives no verified options for `mod_Width` and `mod_DoorDirectionSelection`. The shared Door direction
 description omits resize guidance.
 
-**How the library behaves.** Checked in the probe of 2026-10-24:
+**How the library behaves.** Checked in the probe of 2026-10-24 and in the stored runs:
 
 | Door direction | Width | Built |
 |---|---|---|
 | `Automatic` | 600 mm, as it comes | yes: a single door (`mod_DoorDirection` `Left` on `mf_Door`) |
 | `Automatic` | 900 mm, widened | yes: a pair of doors side by side (`LeftRight`) |
 | `Right`, then widened | 900 mm | no: Error 14019 ("… TallUnit - All - Standard - 240 - mr_StorageunitSingle - 900 - Automatic - Right - Automatic") |
+| `LeftRight`, before widening | 600 mm, as it comes | no: Error 14019 ("… 600 - Automatic - LeftRight - Automatic"); sent with `mod_Width` 900 in one exchange, built (`mcp-test-2026-10-28_19-47-49` gpt-6-astra 12, 27) |
 
 **To do.** Apply the proposed shared resize guidance in
 [section 2.6](../../docs/library-information/suggested-library-changes.md#26-door-direction).
@@ -435,9 +437,10 @@ the calculation error.
 then swaps the complete paired-door unit into the back corner. The row is contiguous at
 2100 mm, back end z −3765, with appropriate single/paired outer hinges.
 
-**Reproduce.** `mcp-test-2026-10-21_08-37-33`, gpt-6-astra 36 (`edit-swap-units`, local roomle-ui
-:5173): the last `HTB60` `8774cac2` widened to 900 mm retains `Right`; the correction carries Error
-14019 (`tab_DoorSettings`) and the model undoes the widening.
+**Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 27 (`edit-swap-units`, bo-test): to widen
+the last `HTB60` `8774cac2` to 900 mm, the model first sends `change-module-attribute`
+`mod_DoorDirectionSelection` `LeftRight` on the 600 mm unit, which fails Error 14019
+(`tab_DoorSettings`); the exchange with `mod_Width` 900 and `LeftRight` builds it.
 
 ## 8. Base units narrowed to 150 mm the library cannot calculate
 
@@ -551,7 +554,7 @@ the supported widths per door arrangement.
 **Test.** `image-planning-right-wall`, `image-kitchen-back-right-corner`: the first create builds
 the resized wall units, or the agent picks the articles that take the width at the first attempt.
 
-**Reproduce.** `mcp-test-2026-10-26_11-51-16`, gpt-6-astra 08 (`image-kitchen-back-right-corner`, local `feat/hi-mcp-performance`, default reasoning): `change-module-attribute` sets root `f9c6aaf1-9cae-48b5-8836-67a7a6eb119a` (`O2TB90`) to width 600 while retaining `LeftRight`, causing Error 14019 (`WallUnit - All - Standard - 240 - mr_StorageunitSingle - 600 - Automatic - LeftRight - Automatic`); exchanging it for `OTB60` with `Left` succeeds.
+**Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 73 (`image-kitchen-tall-column-right-corner`, bo-test): `exchange-root-module` of the 600 mm `OTB60` `110aec04` for `O2TB90` with `mod_Width` 600 and `LeftRight` fails Error 14019 (`WallUnit - All - Standard - 380 - mr_StorageunitSingle - 600 - Automatic - LeftRight - Automatic`); nothing is changed and the `OTB60` stays.
 
 ## 10. Backsplashes the library cannot calculate
 
@@ -612,7 +615,7 @@ team until the replay places the cause in the library.
 **Test.** `image-kitchen-left-wall`, `image-planning-right-wall`, `image-only-no-text`: the backsplash
 of the image is generated; where it is not, the answer reports the omission.
 
-**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 68 (`image-kitchen-left-wall`, bo-test): after the create built the kitchen, `change-group-attribute` sets `mod_CreateBacksplash` true on group `98039b08`; the generated `mr_Backsplash` fails Error 14034 (`part_Backsplash - undefined - undefined - undefined - 620 - 110`), nothing is changed, and the answer names the missing splashback.
+**Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 73 (`image-kitchen-tall-column-right-corner`, bo-test): after the create built the kitchen, `change-group-attribute` sets `mod_CreateBacksplash` true on group `688312fb`; the generated `mr_Backsplash` fails Error 14034 (`part_Backsplash - undefined - undefined - undefined - 1761 - 110`), nothing is changed, and the answer names the missing backsplash.
 
 ## 11. A handle strip the library cannot calculate
 
@@ -656,7 +659,7 @@ the handle position is known.
 `kitchen-oven-fridge-sink-corner`: a kitchen with a handle strip is built at the first create, or
 the agent picks a handle the library keeps and calculates.
 
-**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 67 (`image-only-tall-units`, bo-test): the group attributes of the create (`mod_HandleDesign` with `mod_HandlePosType`) and three `change-group-attribute` calls fail with HandleStripe Error 22025 on three `KS_HT600`; the finishes apply once the agent sends them without the handle.
+**Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 69 (`image-kitchen-back-right-corner`, bo-test): the group attributes of the create with `mod_HandleDesign` 40 and no `mod_HandlePosType` are not set — Error 22025 on the corner, tall and wall units, the raw "None" JSON error on `US2A60` and `UKS2A60`, the `mc_Handlestrip01` variant error on `SUBA60`; the finishes apply with `change-group-attribute` and the rail handle (20).
 
 ## 12. A worktop on the tall units from the group's countertop switch
 
@@ -927,9 +930,11 @@ its value name no gap.
 | Article | Opening | Front gap | Built | Runs |
 |---|---|---|---|---|
 | `SUT60` | `PushToOpenManual`, `mod_HandleDesign` 10 | as the unit comes | no: Error 22006 | `mcp-test-2026-10-27_07-11-41` gpt-6-astra 72, the first create |
+| `HT2AB60`, `OTB60` | `PushToOpenManual`, `mod_HandleDesign` 10 | as the unit comes | no: Error 22006, a minimum of 3.1 (`HT2AB60`) and 2.6 (`OTB60`) | `mcp-test-2026-10-28_19-47-49` gpt-6-astra 74, turn 5, the first create |
+| `HT2AB60`, `OTB60` | `PushToOpenManual`, `mod_HandleDesign` 10 | `mod_FrontGapCarcase` 4 | yes | the same turn, the second create |
 
-Not known: the gap the unit comes with, whether a gap of 3.1 or more builds it, and which other
-articles fail the same way.
+Not known: the gap the units come with, whether the sink unit builds with a gap of 3.1 or more, and
+which other articles fail the same way.
 
 **To do.** The library: set the front gap a push opening needs when `mod_OpeningType` selects it,
 as it switches the front program with the front colour, or rule the opening out in the verified
@@ -942,7 +947,7 @@ options of the units whose gap is too small (D107). With the behaviour known, a 
 **Test.** `image-only-no-text-2`: a handleless kitchen with push-to-open fronts builds on the
 first create.
 
-**Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 72 (`image-only-no-text-2`, bo-test): the first create sends root `sink`, `SUT60` with `mod_SinkId` `Axis_R`, `mod_HandleDesign` 10 and `mod_OpeningType` `PushToOpenManual`, and fails Error 22006.
+**Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 74 (`kitchen-conversation`, turn 5, bo-test): the first create of the handleless row sends `HT2AB60` and four `OTB60` with `mod_OpeningType` `PushToOpenManual`; the row is not loaded, Error 22006; the second create with `mod_FrontGapCarcase` 4 builds it.
 
 ## 21. The sink descriptions: a value desc with its pasted table row, and what None builds
 
@@ -976,3 +981,45 @@ and `None`.
 **Test.** The master data: the desc of `Axia_Anthrazit_R` is the text of 2.8.
 
 **Reproduce.** `docs/library-information/master-data.json`, the selections of `mod_SinkId`.
+
+## 22. A marble worktop at 40 mm the library cannot calculate
+
+**Library.** HOMAG Furniture_Smith. **Responsible.** HOMAG library development team.
+
+**Problem.** For a kitchen with a marble worktop the agent sends the group attributes of the create
+with `mod_CountertopColor` 324 (Dark marble) or 380 (Marble) and `mod_CountertopThk` 40, a
+thickness the attribute offers. The library cannot calculate the worktop — "Error 13002: Could not
+find entry in tab_EdgeMapping for input values: Program: All, Color: 324, EdgeClass: FrontClass1,
+BoardThickness: 40" — so none of the group attributes is set; the server builds the group with the
+finishes the articles come with and says so in `corrections`. The agent sends the finishes again
+with `change-group-attribute`, the countertop program Style and 25 mm, and they are set.
+
+**Cause.** A library bug (D99), as far as the stored runs show: `mod_CountertopThk` offers 19, 25 and
+40; the countertop programs say "Thickness 25" (Style) and "Thickness 38" (Cube), none 40; the edge
+mapping has no entry for the marble colours at 40 mm. The desc of `mod_CountertopThk`, "Thickness of
+the countertop", names neither the program nor the colours a thickness takes. Not probed: whether
+the verified options of the worktop rule 40 mm out with a marble colour — if they do, the tools let
+an invalid value through and the issue is an MCP issue (D99, D107).
+
+**How the library behaves.** Checked in the stored runs:
+
+| Colour | Thickness | Program | Built | Runs |
+|---|---|---|---|---|
+| 324 Dark marble | 40 mm | as the group comes | no: Error 13002 | `mcp-test-2026-10-28_19-47-49` gpt-6-astra 52, the create |
+| 324 Dark marble | 25 mm | Style | yes | the same run, `change-group-attribute` |
+| 380 Marble | 40 mm | as the group comes | no: Error 13002 | `mcp-test-2026-10-28_19-47-49` gpt-6-astra 70, the create's island group |
+| 380 Marble | 25 mm | Style | yes | the same run, `change-group-attribute` |
+
+Not known: whether 40 mm calculates with any colour, and which program builds it.
+
+**To do.** The library: calculate the worktop at 40 mm for every colour it offers, or rule 40 mm out
+in the verified options of the worktop where it does not calculate (D107), and say in the desc of
+`mod_CountertopThk` which program and colours each thickness takes. With the behaviour known, the
+proposed desc goes into
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md).
+
+**Status.** Open, not reported to the library development team.
+
+**Test.** `full-kitchen-walnut-marble-corner`: the dark marble worktop is set with the create.
+
+**Reproduce.** `mcp-test-2026-10-28_19-47-49`, gpt-6-astra 52 (`full-kitchen-walnut-marble-corner`, bo-test): the group attributes of the create with `mod_CountertopColor` 324 and `mod_CountertopThk` 40 are not set, Error 13002 (`tab_EdgeMapping`, BoardThickness 40); `change-group-attribute` with the Style program and 25 mm sets them.

@@ -191,7 +191,7 @@ Scope: `agent-facing.ts` and the corresponding vocabulary tests; the authoring-r
 
 ### 7.2 Supply useful article summaries, retrieve details in batches, and scale discovery separately
 
-Outcome of the first two steps: the shortening reads both section forms and `get-plan-context` answers for the articles `articleIds` names — D63 and D124 of [roomle-ui `.agents/homag-intelligence/hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions), roomle-ui `3df328523` on `feat/hi-mcp-performance` —, measured by [benchmark 11](../benchmarks/11-iklw-az-arts-2026-10-28.md): every request 2,587 input tokens smaller, the calls of both fixtures unchanged. The overview, the category directory and the description sharing below remain experiments.
+**Not yet tried properly.** A first attempt implemented two narrow pieces of this section only: the shortening of descriptions written on the line of their section name (MCP issue 117) and an `articleIds` filter on `get-plan-context`. [Benchmark 11](../benchmarks/11-iklw-az-arts-2026-10-28.md) measured that attempt. It is not the refactoring this section describes — the useful article summaries, the batch retrieval of details, the category directory for large libraries and the description sharing were not implemented —, and it is reverted: roomle-ui `c13969005` on `feat/hi-mcp-performance` reverts `3df328523` and `697f8101d`. The section stays open as a whole.
 
 #### 7.2.1 What already exists, and what is missing
 
@@ -199,7 +199,7 @@ The initial article reference is already a projection, not the raw library. `com
 
 D63 already separates short descriptions from full descriptions. However, `get-plan-context` currently selects sections, not article IDs: asking for `articleDescriptions` returns the descriptions of **every article**. This leaves a concrete gap between “more information about these seven articles” and the available API. Batch detail retrieval would close that gap without requiring a new library calculation API.
 
-First fix existing MCP issue 117, implemented as D63 in both section forms: `shortDescription` at `agent-facing.ts:185` only recognizes content on the line after its heading. Inline `FUNCTION: ...` and `AI_SELECTION_HINT: ...` leave 19 full descriptions in the reference. Support both formats, preserve unrecognized descriptions and the full-description path. Test that sink-selection information survives; removing the drainer constraint is a regression.
+First fix existing [MCP issue 117](../backlog/mcp-issues.md#117-the-catalog-serves-19-descriptions-in-full): `shortDescription` at `agent-facing.ts:185` only recognizes content on the line after its heading. Inline `FUNCTION: ...` and `AI_SELECTION_HINT: ...` leave 19 full descriptions in the reference. Support both formats, preserve unrecognized descriptions and the full-description path. Test that sink-selection information survives; removing the drainer constraint is a regression.
 
 Two existing contracts matter to this proposal:
 

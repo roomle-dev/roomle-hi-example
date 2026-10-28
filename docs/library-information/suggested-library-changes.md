@@ -32,7 +32,7 @@ carries the description; it does not mean the underlying calculation issue is re
 | [2.5 Handle design](#25-handle-design) | `mod_HandleDesign` | applied |
 | [2.6 Door direction](#26-door-direction) | `mod_DoorDirectionSelection` | applied; resize guidance open |
 | [2.7 Handle position type](#27-handle-position-type) | `mod_HandlePosType` | applied |
-| [2.8 Sink](#28-sink) | `mod_SinkId` | applied |
+| [2.8 Sink](#28-sink) | `mod_SinkId` | applied; the desc of `Axia_Anthrazit_R` carries the pasted table row |
 | [2.9 Width](#29-width) | `mod_Width` | applied |
 | [2.10 Backsplash](#210-backsplash) | `mod_CreateBacksplash` | applied; result-field wording needs correction |
 | [2.11 Shelf descriptor](#211-shelf-descriptor) | `mod_ShelfadjDescriptor` | text applied; actual format and example open |
@@ -44,76 +44,84 @@ Each article's complete description, one line per section.
 
 ### 1.1 Sink base units
 
-**Changed lines.** `FUNCTION` and `AI_SELECTION_HINT`.
+**Status.** Applied verbatim for all five units (checked 2026-10-28 against the article list).
 
-`SUT60` (SBD60) — 917 characters:
+**Changed lines.** `FUNCTION` names the sink each unit comes with and how far its drainer reaches
+over the neighbouring unit; `AI_SELECTION_HINT` gives the rule for every other sink: the drainer is
+opposite the basin, an `_L` sink reaches over the unit on the right, an `_R` sink over the unit on
+the left. `PURPOSE`, `REQUIREMENTS`, `RESTRICTIONS`, `STYLE_COMPATIBILITY` and `SEARCH_KEYWORDS`
+are shortened to stay within 1000 characters. When the library changes the sink a unit comes with,
+its `FUNCTION` line follows it. The reaches are measured on the planner
+([library issue 21](../../.agents/backlog/library-issues.md#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds)).
+
+`SUT60` (SBD60) — 969 characters:
 
 ```
-FUNCTION: Sink base unit, 60 cm wide, with 1 hinged door. Its sink with the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right.
+FUNCTION: Sink base unit, 60 cm wide, with 1 hinged door. Its sink, Blanco Metra with the basin on the right, reaches 410 mm over the unit on its left with its drainer.
 PURPOSE: Supports a kitchen sink and gives access to the plumbing below.
 TYPICAL_PLACEMENT: Base row, within the washing zone.
-REQUIREMENTS: Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+REQUIREMENTS: Water supply and waste-water connection. Base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
 RECOMMENDED_NEIGHBOURS: Dishwasher unit, drawer base units, worktop elements.
-RESTRICTIONS: Cannot house an oven; not suitable for islands without plumbing.
-STYLE_COMPATIBILITY: Modern handled kitchen. Also suits classic, Scandinavian and country-house designs.
-SEARCH_KEYWORDS: sink cabinet, sink base unit, wash basin cabinet, plumbing cabinet.
-AI_SELECTION_HINT: Select when the user requests a sink or washing area. Place a base unit on its right, not a hob unit.
+RESTRICTIONS: Cannot house an oven; not for islands without plumbing.
+STYLE_COMPATIBILITY: Modern handled kitchen; also classic, Scandinavian and country-house designs.
+SEARCH_KEYWORDS: sink cabinet, sink base unit, wash basin cabinet.
+AI_SELECTION_HINT: Select when the user requests a sink or washing area. The drainer is opposite the basin: an _L sink reaches over the unit on its right, an _R sink over the unit on its left; put a base unit there, not a hob unit.
 ```
 
-`SUBA60` (SBFP60) — 938 characters:
+`SUBA60` (SBFP60) — 989 characters:
 
 ```
-FUNCTION: Sink base unit, 60 cm wide, with 1 fixed front and 1 pull-out. Its sink with the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right.
+FUNCTION: Sink base unit, 60 cm wide, with 1 fixed front and 1 pull-out. Its sink, Blanco Axia with the basin on the left, reaches 396 mm over the unit on its right with its drainer.
 PURPOSE: Supports a sink while offering a lower pull-out for storage.
 TYPICAL_PLACEMENT: Base row, within the washing zone.
-REQUIREMENTS: Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+REQUIREMENTS: Water supply and waste-water connection. Base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
 RECOMMENDED_NEIGHBOURS: Dishwasher unit, drawer base units, worktop elements.
-RESTRICTIONS: Cannot house an oven; not suitable for islands without plumbing.
-STYLE_COMPATIBILITY: Modern handled kitchen. Also suits classic, Scandinavian and country-house designs.
-SEARCH_KEYWORDS: sink cabinet, sink base unit, pull-out sink unit, plumbing cabinet.
-AI_SELECTION_HINT: Select for a sink cabinet that also offers a storage pull-out. Place a base unit on its right, not a hob unit.
+RESTRICTIONS: Cannot house an oven; not for islands without plumbing.
+STYLE_COMPATIBILITY: Modern handled kitchen; also classic, Scandinavian and country-house designs.
+SEARCH_KEYWORDS: sink cabinet, sink base unit, pull-out sink unit.
+AI_SELECTION_HINT: Select for a sink cabinet that also offers a storage pull-out. The drainer is opposite the basin: an _L sink reaches over the unit on its right, an _R sink over the unit on its left; put a base unit there, not a hob unit.
 ```
 
-`SUB2A90` (SBF2P90) — 960 characters:
+`SUB2A90` (SBF2P90) — 997 characters:
 
 ```
-FUNCTION: Sink base unit, 90 cm wide, with 1 fixed front and 2 pull-outs. Its sink with the drainer is 980 mm wide and reaches 246 mm past its right side, over the unit on its right.
-PURPOSE: Wide sink cabinet combining plumbing access with two storage pull-outs.
+FUNCTION: Sink base unit, 90 cm wide, with 1 fixed front and 2 pull-outs. Its sink, Blanco Axia with the basin on the left, reaches 246 mm over the unit on its right with its drainer.
+PURPOSE: Wide sink cabinet with plumbing access and two pull-outs.
 TYPICAL_PLACEMENT: Base row, within the washing zone.
-REQUIREMENTS: Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+REQUIREMENTS: Water supply and waste-water connection. Base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
 RECOMMENDED_NEIGHBOURS: Dishwasher unit, drawer base units, worktop elements.
-RESTRICTIONS: Cannot house an oven; not suitable for islands without plumbing.
-STYLE_COMPATIBILITY: Modern handled kitchen. Also suits classic, Scandinavian and country-house designs.
-SEARCH_KEYWORDS: sink cabinet, wide sink base unit, sink pull-out cabinet, plumbing cabinet.
-AI_SELECTION_HINT: Select for a wide sink cabinet with additional pull-out storage. Place a base unit on its right, not a hob unit.
+RESTRICTIONS: Cannot house an oven; not for islands without plumbing.
+STYLE_COMPATIBILITY: Modern handled kitchen; also classic, Scandinavian and country-house designs.
+SEARCH_KEYWORDS: sink cabinet, wide sink base unit, sink pull-out cabinet.
+AI_SELECTION_HINT: Select for a wide sink cabinet with additional pull-out storage. The drainer is opposite the basin: an _L sink reaches over the unit on its right, an _R sink over the unit on its left; put a base unit there, not a hob unit.
 ```
 
-`ESUT60` (FSBD60) — 932 characters:
+`ESUT60` (FSBD60) — 988 characters:
 
 ```
-FUNCTION: Handleless sink base unit, 60 cm wide, with 1 door (fingergrip). Its sink with the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right.
+FUNCTION: Handleless sink base unit, 60 cm wide, with 1 door (fingergrip). Its sink, Blanco Axia with the basin on the left, reaches 396 mm over the unit on its right with its drainer.
 PURPOSE: Supports a kitchen sink in a handleless kitchen, with plumbing access.
 TYPICAL_PLACEMENT: Base row, within the washing zone.
-REQUIREMENTS: Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+REQUIREMENTS: Water supply and waste-water connection. Base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
 RECOMMENDED_NEIGHBOURS: Handleless dishwasher unit, handleless drawer base units.
 RESTRICTIONS: Cannot house an oven; not for islands without plumbing.
-STYLE_COMPATIBILITY: Modern handleless (fingergrip) kitchen. Minimalist and premium designs.
-SEARCH_KEYWORDS: handleless sink cabinet, fingergrip sink unit, grip-less sink base.
-AI_SELECTION_HINT: Select for a sink in a handleless kitchen with a single door. Place a base unit on its right, not a hob unit.
+STYLE_COMPATIBILITY: Modern handleless (fingergrip), minimalist and premium kitchens.
+SEARCH_KEYWORDS: handleless sink cabinet, fingergrip sink unit.
+AI_SELECTION_HINT: Select for a sink in a handleless kitchen with a single door. The drainer is opposite the basin: an _L sink reaches over the unit on its right, an _R sink over the unit on its left; put a base unit there, not a hob unit.
 ```
 
-`ESUB2A90` (FSBF2P90) — 943 characters:
+`ESUB2A90` (FSBF2P90) — 995 characters:
 
 ```
-FUNCTION: Handleless sink base unit, 90 cm wide, with 1 fixed front and 2 drawers (fingergrip). Its sink with the drainer is 980 mm wide and reaches 246 mm past its right side, over the unit on its right.
-PURPOSE: Wide handleless sink cabinet with plumbing access and drawer storage.
+FUNCTION: Handleless sink base unit, 90 cm wide, with 1 fixed front and 2 drawers (fingergrip). Its sink, Blanco Axia with the basin on the left, reaches 246 mm over the unit on its right with its drainer.
+PURPOSE: Wide handleless sink cabinet with plumbing access and drawers.
 TYPICAL_PLACEMENT: Base row, within the washing zone.
-REQUIREMENTS: Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+REQUIREMENTS: Water supply and waste-water connection. Base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
 RECOMMENDED_NEIGHBOURS: Handleless dishwasher unit, handleless drawer base units.
 RESTRICTIONS: Cannot house an oven; not for islands without plumbing.
-STYLE_COMPATIBILITY: Modern handleless (fingergrip) kitchen. Minimalist and premium designs.
-SEARCH_KEYWORDS: handleless sink cabinet, fingergrip sink unit, sink drawer base.
-AI_SELECTION_HINT: Select for a wide handleless sink cabinet with drawers. Place a base unit on its right, not a hob unit.
+STYLE_COMPATIBILITY: Modern handleless (fingergrip), minimalist and premium kitchens.
+SEARCH_KEYWORDS: handleless sink cabinet, fingergrip sink unit.
+AI_SELECTION_HINT: Select for a wide handleless sink cabinet with drawers. The drainer is opposite the basin: an _L sink reaches over the unit on its right, an _R sink over the unit on its left; put a base unit there, not a hob unit.
 ```
 
 ### 1.2 Articles with two doors
@@ -507,21 +515,35 @@ In the library, as proposed:
 
 ### 2.8 Sink
 
-**Attribute.** `mod_SinkId` (Article code of the sink).
+**Status.** Applied verbatim (checked 2026-10-28 against the master data), except the value
+`Axia_Anthrazit_R`: its desc carries the pasted table row, "Axia color anthrazit basin right | see
+2.8 | Blanco Axia sink in anthracite: …", without the final full stop; its desc is to be the proposed
+text alone. `None` keeps its desc: its outline still reaches 401 / 251 mm past the right side, which
+the library team is asked to explain
+([library issue 21](../../.agents/backlog/library-issues.md#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds)).
+
+**Attribute.** `mod_SinkId` (Article code of the sink), group Sink. Its desc states the rule for
+every sink unit — the attributes section lists `mod_SinkId` with the number of its values (D122),
+so its desc is what the agent reads at the create; the value descs add the reach of each sink,
+measured on `SUT60` (60 cm) and `SUB2A90` (90 cm).
+
+| Attribute | Name | `desc` before | Proposed `desc` |
+|---|---|---|---|
+| `mod_SinkId` | Article code of the sink | Article code of the sink | Article code of the sink. The drainer lies opposite the basin and reaches past the sink unit on that side: a value ending in _L (basin left) over the unit on its right, _R (basin right) over the unit on its left - about 400 mm past a 60 cm unit and 250 mm past a 90 cm unit (Dinas 340 / 190 mm, Metra 410 / 260 mm). Put a base unit on that side, not a hob unit. |
 
 | Value | Name | `desc` before | Proposed `desc` |
 |---|---|---|---|
-| `Axia_Grey_L` | Axia color grey basin left | Axia_Grey_L | Blanco Axia sink in grey, 980 mm wide with the drainer: basin on the left, drainer on the right. |
-| `Axia_Grey_R` | Axia color grey basin right | Axia_Grey_R | Blanco Axia sink in grey, 980 mm wide with the drainer: basin on the right, drainer on the left. |
-| `Axia_White_L` | Axia color white basin left | Axia_White_L | Blanco Axia sink in white, 980 mm wide with the drainer: basin on the left, drainer on the right. |
-| `Axia_White_R` | Axia color white basin right | Axia_White_R | Blanco Axia sink in white, 980 mm wide with the drainer: basin on the right, drainer on the left. |
-| `Axia_Anthrazit_L` | Axia color anthrazit basin left | Axia_Anthrazit_L | Blanco Axia sink in anthracite, 980 mm wide with the drainer: basin on the left, drainer on the right. |
-| `Axia_Anthrazit_R` | Axia color anthrazit basin right | Axia_Anthrazit_R | Blanco Axia sink in anthracite, 980 mm wide with the drainer: basin on the right, drainer on the left. |
-| `Axis_L` | Axis basin left | Axis_L | Blanco Axis sink: basin on the left, drainer on the right. |
-| `Axis_R` | Axis basin right | Axis_R | Blanco Axis sink: basin on the right, drainer on the left. |
-| `Dinas_L` | Dinas basin left | Dinas_L | Blanco Dinas sink: basin on the left, drainer on the right. |
-| `Dinas_R` | Dinas basin right | Dinas_R | Blanco Dinas sink: basin on the right, drainer on the left. |
-| `Metra_R` | Metra basing right | Metra_R | Blanco Metra sink: basin on the right, drainer on the left. |
+| `Axia_Grey_L` | Axia color grey basin left | Blanco Axia sink in grey, 980 mm wide with the drainer: basin on the left, drainer on the right. | Blanco Axia sink in grey: basin on the left, drainer on the right; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its right. |
+| `Axia_Grey_R` | Axia color grey basin right | Blanco Axia sink in grey, 980 mm wide with the drainer: basin on the right, drainer on the left. | Blanco Axia sink in grey: basin on the right, drainer on the left; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its left. |
+| `Axia_White_L` | Axia color white basin left | Blanco Axia sink in white, 980 mm wide with the drainer: basin on the left, drainer on the right. | Blanco Axia sink in white: basin on the left, drainer on the right; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its right. |
+| `Axia_White_R` | Axia color white basin right | Blanco Axia sink in white, 980 mm wide with the drainer: basin on the right, drainer on the left. | Blanco Axia sink in white: basin on the right, drainer on the left; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its left. |
+| `Axia_Anthrazit_L` | Axia color anthrazit basin left | Blanco Axia sink in anthracite, 980 mm wide with the drainer: basin on the left, drainer on the right. | Blanco Axia sink in anthracite: basin on the left, drainer on the right; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its right. |
+| `Axia_Anthrazit_R` | Axia color anthrazit basin right | Blanco Axia sink in anthracite, 980 mm wide with the drainer: basin on the right, drainer on the left. | Blanco Axia sink in anthracite: basin on the right, drainer on the left; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its left. |
+| `Axis_L` | Axis basin left | Blanco Axis sink: basin on the left, drainer on the right. | Blanco Axis sink: basin on the left, drainer on the right; it reaches 401 mm past a 60 cm sink unit and 251 mm past a 90 cm unit, over the unit on its right. |
+| `Axis_R` | Axis basin right | Blanco Axis sink: basin on the right, drainer on the left. | Blanco Axis sink: basin on the right, drainer on the left; it reaches 401 mm past a 60 cm sink unit and 251 mm past a 90 cm unit, over the unit on its left. |
+| `Dinas_L` | Dinas basin left | Blanco Dinas sink: basin on the left, drainer on the right. | Blanco Dinas sink: basin on the left, drainer on the right; it reaches 340 mm past a 60 cm sink unit and 190 mm past a 90 cm unit, over the unit on its right. |
+| `Dinas_R` | Dinas basin right | Blanco Dinas sink: basin on the right, drainer on the left. | Blanco Dinas sink: basin on the right, drainer on the left; it reaches 340 mm past a 60 cm sink unit and 190 mm past a 90 cm unit, over the unit on its left. |
+| `Metra_R` | Metra basin right | Blanco Metra sink: basin on the right, drainer on the left. | Blanco Metra sink: basin on the right, drainer on the left; it reaches 410 mm past a 60 cm sink unit and 260 mm past a 90 cm unit, over the unit on its left. |
 
 ### 2.9 Width
 

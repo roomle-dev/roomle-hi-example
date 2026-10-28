@@ -72,9 +72,12 @@ are, without the session preamble of `get-skill`.
 **Returns**: in the planner's plan space — millimetres, right-handed, Z up, `x` to the right and `y`
 to the top of the top-view image (D105); the tool turns the pos space of the planner methods into it
 at its dispatch. Rooms, articles, attributes (the vocabulary: per library every attribute the agent
-sees with its values (D100) — the attribute filter leaves out the element type `mod_TypeElement`
-in every section and result (D102) —, a shared value list listed once with `sameSelectionsAs` on the later
-attributes, D76), groups, obstacles, installationElements; masterData and articleDescriptions if requested. Like every JSON result of the
+sees (D100) — the attribute filter leaves out the element type `mod_TypeElement`
+in every section and result (D102) —, with its values for the attributes a planning sets at the
+create — those the catalog names per root module (`mainAttributes`, `dimensions`), the group
+settings and those of the generated root modules — and `valueCount`, the number of its values, for
+every other one, whose values `find-attributes` returns by id (D122); a shared value list listed
+once with `sameSelectionsAs` on the later attributes, D76), groups, obstacles, installationElements; masterData and articleDescriptions if requested. Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
 (back wall, front wall, left wall, right wall) beside its `side`, a door opening the `type`
@@ -444,16 +447,20 @@ the planner answers a call after its last reload, so `undo` never waits for one 
 
 **Parameters**:
 ```typescript
-{ text: string, libraryId?: string }
+{ text?: string, ids?: string[], libraryId?: string } // text or ids
 ```
 
 **Usage**:
 ```javascript
 const { matches } = await findAttributes({ text: 'front colour' });
+const { matches: models } = await findAttributes({ ids: ['mod_HobId', 'mod_HandleColor'] });
 ```
 
-The tool answers a question about one attribute; the `attributes` section of `get-plan-context`
-lists the whole vocabulary by default (D76), so a planning needs no search. Every word of the text
+The tool answers a question about an attribute; the `attributes` section of `get-plan-context`
+lists every attribute by default and the values of those a planning sets at the create (D76); the
+values of an attribute it shows with `valueCount` come from `ids` — several attributes in one call,
+first in the result, in their order and uncapped; an unknown id is named in `notFound` with a
+`hint`, the known ones are answered (D122). Every word of the text
 is matched on its own, in any order, and colour/color, grey/gray and worktop/countertop read alike:
 one search for `color` returns every colour attribute. A value
 list several attributes share is listed once; the later attributes carry `sameSelectionsAs`, the

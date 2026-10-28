@@ -36,9 +36,9 @@ keeps every suggested text, applied in the library or not.
   full (D76, D100). A value list several attributes share is listed once. What it costs and what
   the agent uses of it: [the analysis of the attribute information](../feature-analysis/planning-assistant-attribute-information.md)
   while it is open.
-- **Any other attribute** reaches the agent only when the library changes its value and the result
-  names the change (D59) — `mod_CarcaseProgram`, `mod_CarcaseOutsideProgram` and
-  `mod_FingergripType`, for example. A rule the agent needs goes into a customer-facing attribute.
+- **A value the library changes along** — a program switched by a colour — is named in the result
+  with its `desc` (D59). A rule the agent needs goes into the `desc` of the attribute or the value
+  it concerns.
 
 ## Overview
 
@@ -57,6 +57,7 @@ library cannot calculate.
 | 8 | [Base units narrowed to 150 mm the library cannot calculate](#8-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the width desc done; the calculation error not reported | low — the unit is not built, the agent needs a second create |
 | 12 | [A worktop on the tall units from the group's countertop switch](#12-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
 | 15 | [The shelf descriptor names no format](#15-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | the desc names the default spacing; the actual format and example open | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
+| 21 | [The sink descriptions: a value desc with its pasted table row, and what None builds](#21-the-sink-descriptions-a-value-desc-with-its-pasted-table-row-and-what-none-builds) | HOMAG Furniture_Smith | HOMAG library development team | the sink descriptions done (1.1, 2.8); open: the desc of `Axia_Anthrazit_R`, `None` | low — the side rule and the reaches are in the library |
 
 ### Not solved entirely by descriptions
 
@@ -112,8 +113,8 @@ the agent that setting it on a handled article is not the same as choosing a han
 `mod_FingergripType` `Wood` and `mod_CreateFingergrip` `True` (`article.json`): fronts with a wooden
 fingergrip. A handled article set to `mod_HandleDesign` `10` keeps `mod_CreateFingergrip` `False`
 and `mod_FingergripType` `None`: fronts without a handle and without a grip (order data of
-`mcp-test-2026-10-17_13-28-41` gpt-6-astra 52). The two fingergrip attributes are not in the
-attribute vocabulary (`userRight` `Advanced`). The catalog has handleless variants of base units
+`mcp-test-2026-10-17_13-28-41` gpt-6-astra 52). The two fingergrip attributes are `userRight`
+`Advanced`; the attribute vocabulary lists them (D100). The catalog has handleless variants of base units
 only — sink, storage, corner and hob units. In `mcp-test-2026-10-16_19-30-19` gpt-6.1-sol 50, turn 5,
 the model answers "No fingergrip profiles were added—the existing units do not support that
 attribute".
@@ -256,7 +257,7 @@ while the outside carcase colour of the units follows the plain front colour (`m
 the library has no grain direction — as the end panels of issue 3. The descs of `mod_CarcaseColor`,
 `mod_CarcaseOutsideColor` and `mod_CarcaseProgram` do not say which colour the visible sides take or
 which program a plain outside colour needs; `mod_CarcaseProgram` and `mod_CarcaseOutsideProgram`
-are not in the attribute vocabulary (`userRight` `Master`, not `isMain`).
+are `userRight` `Master`, not `isMain`; the attribute vocabulary lists them (D100).
 
 **How the library behaves.** A visible side — at the end of a row — takes `mod_CarcaseOutsideColor`;
 where the create does not set it, it is the front colour (order data of
@@ -938,3 +939,36 @@ options of the units whose gap is too small (D107). With the behaviour known, a 
 first create.
 
 **Reproduce.** `mcp-test-2026-10-27_07-11-41`, gpt-6-astra 72 (`image-only-no-text-2`, bo-test): the first create sends root `sink`, `SUT60` with `mod_SinkId` `Axis_R`, `mod_HandleDesign` 10 and `mod_OpeningType` `PushToOpenManual`, and fails Error 22006.
+
+## 21. The sink descriptions: a value desc with its pasted table row, and what None builds
+
+**Library.** HOMAG Furniture_Smith. **Responsible.** HOMAG library development team.
+
+**Problem.** The desc of the value `Axia_Anthrazit_R` of `mod_SinkId` begins with the pasted table
+row of the suggested changes — "Axia color anthrazit basin right | see 2.8 | Blanco Axia sink in
+anthracite: …" — and has no final full stop. The value `None` leaves an outline that reaches past
+the right side of the sink unit as a basin-left sink does.
+
+**Cause.** The paste of section 2.8 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#28-sink)
+took the whole row for this value. What `None` builds is not known.
+
+**How the library behaves.** Measured on the planner, a row `UTB60` | sink unit | `UTB60`: the
+drainer lies opposite the basin — a value ending in `_L` reaches past the right side of the sink
+unit, one ending in `_R` past the left side —, Axia 396 mm past a 60 cm unit and 246 mm past a 90 cm
+unit, Axis 401 / 251 mm, Dinas 340 / 190 mm, Metra 410 / 260 mm; `None` 401 / 251 mm past the right
+side. `SUT60` comes with `Metra_R`, the four other sink units with `Axia_Grey_L`. The descriptions of
+the five sink units (1.1) and of `mod_SinkId` and its other values (2.8) say so; in benchmark 09 a
+base unit stands on the drainer side of the sink unit in all four runs
+([the comparison](../benchmarks/az-cmp-2026-10-27.md#09-against-the-baselines)).
+
+**To do.** The library: the desc of `Axia_Anthrazit_R` is the proposed text of 2.8 alone; explain
+what `None` builds; when the sink a unit comes with changes, its `FUNCTION` line changes with it.
+
+**Status.** Done in the library: the descriptions of the five sink units and of `mod_SinkId` and ten
+of its values. Open, not reported to the library development team: the desc of `Axia_Anthrazit_R`
+and `None`.
+
+**Test.** The master data: the desc of `Axia_Anthrazit_R` is the text of 2.8.
+
+**Reproduce.** `docs/library-information/master-data.json`, the selections of `mod_SinkId`.

@@ -914,7 +914,8 @@
         "mod_HoodSupplier",
         "mod_HoodId",
         "mod_HeightPosInsertion",
-        "mod_GroupGenerationStatus"
+        "mod_GroupGenerationStatus",
+        "mod_Width"
       ],
       "isRoot": true,
       "moduleType": "RootModule"
@@ -11521,7 +11522,7 @@
     {
       "id": "mod_SinkId",
       "name": "Article code",
-      "desc": "Article code of the sink",
+      "desc": "Article code of the sink. The drainer lies opposite the basin and reaches past the sink unit on that side: a value ending in _L (basin left) over the unit on its right, _R (basin right) over the unit on its left - about 400 mm past a 60 cm unit and 250 mm past a 90 cm unit (Dinas 340 / 190 mm, Metra 410 / 260 mm). Put a base unit on that side, not a hob unit.",
       "isMain": true,
       "group": "Sink",
       "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/8578ba8d-9fe7-42db-b18e-bcc81ae587d8_sink_3.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=Z8aucm8aiQorARSEvKA1WzcjQhKdHRJrq2F5dcB%2BPl4%3D",
@@ -11533,61 +11534,61 @@
       "selections": [
         {
           "value": "Axis_R",
-          "desc": "Blanco Axis sink: basin on the right, drainer on the left.",
+          "desc": "Blanco Axis sink: basin on the right, drainer on the left; it reaches 401 mm past a 60 cm sink unit and 251 mm past a 90 cm unit, over the unit on its left.",
           "name": "Axis basin right",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/f8178fb7-3068-4ada-bc8f-80fabb5e8552_axis_r(axis%20iii%206%20s-if).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=2J5aA7WPoav%2BBDD6o610bbtKg21qoLr4kPH3fImSJxQ%3D"
         },
         {
           "value": "Axis_L",
-          "desc": "Blanco Axis sink: basin on the left, drainer on the right.",
+          "desc": "Blanco Axis sink: basin on the left, drainer on the right; it reaches 401 mm past a 60 cm sink unit and 251 mm past a 90 cm unit, over the unit on its right.",
           "name": "Axis basin left",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/7b5a7252-84e1-48de-ac53-0bc40de8827f_axis_l(axis%20iii%206%20s-if).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=eYqJtha1PSqwJaY4eclVG3fFZO7PI73ztZiso7ZxRqQ%3D"
         },
         {
           "value": "Axia_White_R",
-          "desc": "Blanco Axia sink in white, 980 mm wide with the drainer: basin on the right, drainer on the left.",
+          "desc": "Blanco Axia sink in white: basin on the right, drainer on the left; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its left.",
           "name": "Axis color white basin right",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/4b4fe8ff-9d1f-48f5-8946-139a7be0a3c8_axia_white_r(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=XYmoaf%2BTFPRl0yPyfTuU6E2wWD125z9iQV8GHwdTq0g%3D"
         },
         {
           "value": "Axia_White_L",
-          "desc": "Blanco Axia sink in white, 980 mm wide with the drainer: basin on the left, drainer on the right.",
+          "desc": "Blanco Axia sink in white: basin on the left, drainer on the right; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its right.",
           "name": "Axis color white basin left",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/9e7e91e2-29bd-4c2d-8b34-957be5b0514a_axia_white_l(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=SijgB%2BMxL%2Bp7zMyD15xof%2FB0OCDuKaITH9DJZxIePcM%3D"
         },
         {
           "value": "Axia_Grey_R",
-          "desc": "Blanco Axia sink in grey, 980 mm wide with the drainer: basin on the right, drainer on the left.",
+          "desc": "Blanco Axia sink in grey: basin on the right, drainer on the left; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its left.",
           "name": "Axis color grey basin right",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/616a5452-3b01-4c86-8728-b11191fa81d3_axia_grey_r(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=WvCqWT%2BHHvpmmYrmGHI6U2P1PfBJcnFJRff5ZOlUKEo%3D"
         },
         {
           "value": "Axia_Grey_L",
-          "desc": "Blanco Axia sink in grey, 980 mm wide with the drainer: basin on the left, drainer on the right.",
+          "desc": "Blanco Axia sink in grey: basin on the left, drainer on the right; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its right.",
           "name": "Axis color grey basin lefft",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/c787fd28-f13a-4052-bdc2-efbab6f2f4f7_axia_grey_l(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=ASf6IVPMtwzND%2BsFdQ8JzGm7mH0rmONUnVU03UYp1zc%3D"
         },
         {
           "value": "Axia_Anthrazit_R",
-          "desc": "Blanco Axia sink in anthracite, 980 mm wide with the drainer: basin on the right, drainer on the left.",
+          "desc": "Axia color anthrazit basin right | see 2.8 | Blanco Axia sink in anthracite: basin on the right, drainer on the left; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its left",
           "name": "Axis color anthrazit basin right",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/589cfdb2-9a9b-46cb-871e-c33b7410bc3a_axia_anthrazit_r(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=AIrQ1%2FMOyk5O7HW7G7jhTLZSxFB%2FYj6DfdAT2okPyY8%3D"
         },
         {
           "value": "Axia_Anthrazit_L",
-          "desc": "Blanco Axia sink in anthracite, 980 mm wide with the drainer: basin on the left, drainer on the right.",
+          "desc": "Blanco Axia sink in anthracite: basin on the left, drainer on the right; it reaches 396 mm past a 60 cm sink unit and 246 mm past a 90 cm unit, over the unit on its right.",
           "name": "Axis color anthrazit basin left",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/dc4aea0b-c335-4394-ba49-dfde30b69c5f_axia_anthrazit_l(axia%20iii%206%20s-f).png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=kgH0eQARrOHwIj10c4q9MFNg1R%2Bl9RjdA4bpoI94tB4%3D"
         },
         {
           "value": "Dinas_L",
-          "desc": "Blanco Dinas sink: basin on the left, drainer on the right.",
+          "desc": "Blanco Dinas sink: basin on the left, drainer on the right; it reaches 340 mm past a 60 cm sink unit and 190 mm past a 90 cm unit, over the unit on its right.",
           "name": "Dinas basin left",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/5ceb8222-ecc2-4e76-8b9a-e3d29ea8a98c_dinas_l.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=W%2FExqx9jmpi8G8KJkjL558QKyVFYs7%2FxRQ9wbi4NCcg%3D"
         },
         {
           "value": "Dinas_R",
-          "desc": "Blanco Dinas sink: basin on the right, drainer on the left.",
+          "desc": "Blanco Dinas sink: basin on the right, drainer on the left; it reaches 340 mm past a 60 cm sink unit and 190 mm past a 90 cm unit, over the unit on its left.",
           "name": "Dinas basin right",
           "imageUrl": "https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/library/furniture_smith/images/a5a887e1-7917-4204-b53a-1dff0e2fc799_dinas_r.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=jWrv%2FvBv16ggAcgGk4GtvtMo9IGoRwVwFSQTTMj1opc%3D"
         },
@@ -11599,7 +11600,7 @@
         },
         {
           "value": "Metra_R",
-          "desc": "Blanco Metra sink: basin on the right, drainer on the left.",
+          "desc": "Blanco Metra sink: basin on the right, drainer on the left; it reaches 410 mm past a 60 cm sink unit and 260 mm past a 90 cm unit, over the unit on its left.",
           "name": "Metra basin right"
         }
       ]

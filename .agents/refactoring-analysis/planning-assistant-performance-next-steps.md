@@ -146,6 +146,8 @@ The executor guarantees submission order, not arbitrary model intent. The real p
 
 **Scope/tests:** served system/tool text; executor ordering/failure tests; real `streamText` forwarding and Azure/OpenAI wire tests for several calls/results and image content. Assert images represent the final queued state, useful edits survive another tool's error, each changed tool retains its undo step, and verification can still trigger a repair. Acceptance requires both lower completion time and retained image comparison.
 
+Implemented as D123, measured in benchmark 10 and reverted: both image kitchens kept one call per response, the finishing edits and the render one by one, although the path runs the calls of one response in the order sent ([10 against the baselines](../benchmarks/az-cmp-2026-10-27.md#10-against-the-baselines)). D123 of roomle-ui’s behaviour reference records the rejected proposal.
+
 ## 7. Further proposals, ranked by evidence and scope
 
 ### Planning sequence: establish the layout, then refine the selected products

@@ -17,8 +17,8 @@ Image URLs are hosted on: `https://tecconfig-preview.homag.cloud/cdn/`
 | SB_UB600S | Living / Sideboard | SB_BD600DR | L 350 mm W 600 mm H 900 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/b4631d07-c7d0-481d-74f2-08df1a36d687/images/191865f8-bfce-462d-bc35-3d6f96c9bcf0/SB_UB600S.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=gv6p7ENYidCbjBsrJfac61RnwBu7pxoV3ymHQ%2FIqErU%3D) | Living-room sideboard, 60 cm wide, with 1 door and 1 drawer. | Living-room sideboard, 60 cm wide, 1 door and 1 drawer |
 | SM_TV | Living / Wallunits | SM_TV | L ? mm W ? mm H ? mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/08b2e0a5-f60c-42fe-74f3-08df1a36d687/images/3fe16621-e2cc-44e6-bde1-b62289981924/TV.png?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=Zn8HGWHtTAOVpZRHAHHeHzDQtdkAJzff7zkDzXlIUGI%3D) | Decorative television model for showroom and planning visualisation. | Decorative television model for showroom and planning visualisation |
 | DU | Kitchen / Appliances | DU | L ? mm W ? mm H ? mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/eeb289d0-78d8-44b8-74f4-08df1a36d687/images/3c3ff50d-945b-4825-b181-a4861d23a90a/DU.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=iVG%2BmvvX4Fy1%2Bbc%2BjGHt5DerZdmhvo6WufADApFGy%2Bw%3D) | Extractor hood (cooker hood) appliance. | Extractor hood (cooker hood) appliance |
-| ESUB2A90 | Kitchen handleless / Base Units / Sink | FSBF2P90 | L 561 mm W 900 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/58193d05-26e6-4ae4-74f5-08df1a36d687/images/2b5e3026-ab04-400c-b27d-284703d15ac3/ESUB2A90.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=Ad6AFwjCl3UFffyroWJWzFU%2BZ2xf1E0HzOEFJYl5Az0%3D) | Handleless sink base unit, 90 cm wide, with 1 fixed front and 2 drawers (fingergrip). Its sink with the drainer is 980 mm wide and reaches 246 mm past its right side, over the unit on its right. | Handleless sink base unit, 90 cm wide, 1 fixed front and 2 drawers (fingergrip). Its sink, the drainer is 980 mm wide and reaches 246 mm past its right side, over the unit on its right |
-| ESUT60 | Kitchen handleless / Base Units / Sink | FSBD60 | L 561 mm W 600 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/525494ac-be70-48a7-74f6-08df1a36d687/images/b56da188-5bab-4e69-bf22-a57a61548113/EUS60.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=q9yMnMC6wU09apXKuYcIb26p5NbOjvPeS%2F4YUttF3lE%3D) | Handleless sink base unit, 60 cm wide, with 1 door (fingergrip). Its sink with the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right. | Handleless sink base unit, 60 cm wide, 1 door (fingergrip). Its sink, the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right |
+| ESUB2A90 | Kitchen handleless / Base Units / Sink | FSBF2P90 | L 561 mm W 900 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/58193d05-26e6-4ae4-74f5-08df1a36d687/images/2b5e3026-ab04-400c-b27d-284703d15ac3/ESUB2A90.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=Ad6AFwjCl3UFffyroWJWzFU%2BZ2xf1E0HzOEFJYl5Az0%3D) | Handleless sink base unit, 90 cm wide, with 1 fixed front and 2 drawers (fingergrip). Its sink, Blanco Axia with the basin on the left, reaches 246 mm over the unit on its right with its drainer. | Handleless sink base unit, 90 cm wide, 1 fixed front and 2 drawers (fingergrip). Its sink, Blanco Axia with the basin on the left, reaches 246 mm over the unit on its right with its drainer |
+| ESUT60 | Kitchen handleless / Base Units / Sink | FSBD60 | L 561 mm W 600 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/525494ac-be70-48a7-74f6-08df1a36d687/images/b56da188-5bab-4e69-bf22-a57a61548113/EUS60.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=q9yMnMC6wU09apXKuYcIb26p5NbOjvPeS%2F4YUttF3lE%3D) | Handleless sink base unit, 60 cm wide, with 1 door (fingergrip). Its sink, Blanco Axia with the basin on the left, reaches 396 mm over the unit on its right with its drainer. | Handleless sink base unit, 60 cm wide, 1 door (fingergrip). Its sink, Blanco Axia with the basin on the left, reaches 396 mm over the unit on its right with its drainer |
 | EU2TB90 | Kitchen handleless / Base Units / Storage | FB2DS90 | L 561 mm W 900 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/e8b2c7b8-8ccb-4c90-74f7-08df1a36d687/images/a83af008-458f-4a08-8f86-abd61bb8c564/EU2TB90.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=yQ9Mv6F4FVcDYe%2F4%2FgC0A15UAcBBrdgl2eHhffm6tNY%3D) | Handleless base cabinet, 90 cm wide, with a pair of doors side by side and shelves (fingergrip). | Handleless base cabinet, 90 cm wide, a pair of doors side by side and shelves (fingergrip) |
 | EUELTB90 | Kitchen handleless / Base Units / Corner | FBCLDS90 | L 561 mm W 900 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/c6d4eaea-34b6-4bcd-74f8-08df1a36d687/images/ef6c976b-c4ac-4d9e-8693-084b3741383e/EUELTB90.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=ZYDmQpl%2BpT%2F0u07993PumM0qr%2BSZbZQzg%2BPYZoP4Hls%3D) | Handleless corner base unit, 90 cm nominal, opening left, 1 door, shelves (fingergrip). | Handleless corner base unit, 90 cm nominal, opening left, 1 door, shelves (fingergrip) |
 | EUERTB90 | Kitchen handleless / Base Units / Corner | FBCRDS90 | L 561 mm W 900 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/c7a8728a-555c-4988-74f9-08df1a36d687/images/5207517e-d7cf-4414-9658-0d4b3e8704f5/EUERTB90.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=sJdQlbMYK0CzyjNlFmq3sTuCeVt9e00WKrumbUPidgA%3D) | Handleless corner base unit, 90 cm nominal, opening right, 1 door, shelves (fingergrip). | Handleless corner base unit, 90 cm nominal, opening right, 1 door, shelves (fingergrip) |
@@ -64,9 +64,9 @@ Image URLs are hosted on: `https://tecconfig-preview.homag.cloud/cdn/`
 | PU15L | Kitchen / Cover Panels / Fillers | BFP15L | L 561 mm W 150 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/dca216b6-c0d3-4370-7525-08df1a36d687/images/6ffef4ad-097b-4736-a81b-6919b0345659/PU15R.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=GTFZN9VWl5kIJCqpa4rom1RAgsbUrhE3FosvWAzfh%2Fk%3D) | Filler panel for base units, 15 cm, left orientation. | Filler panel for base units, 15 cm, left orientation |
 | PU15R | Kitchen / Cover Panels / Fillers | BFP15R | L 561 mm W 150 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/aaa85bfb-b11e-453d-7526-08df1a36d687/images/7e1cfa65-fd9e-417c-b883-34b64f9fe10d/PU15L.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=k8qDtfUJo8gjtvtROs3KVf%2BcXlovGYaduV2mGy5Ptw4%3D) | Filler panel for base units, 15 cm, right orientation. | Filler panel for base units, 15 cm, right orientation |
 | RWV | Kitchen / Cover Panels / Kitchen Island | DP25KI | L 250 mm W 1000 mm H 1000 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/130c8832-2895-45f7-7527-08df1a36d687/images/5c41f3ef-bb4d-41f1-ba87-a391433c7d87/RWV.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=4mdBf%2BpHwvD1kby1T52oTQ8O9UMnLJfCw1DCkGSMC0w%3D) | Decorative back panel for a kitchen island. | Decorative back panel for a kitchen island |
-| SUB2A90 | Kitchen / Base Units / Sink | SBF2P90 | L 561 mm W 900 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/ee520521-2ccb-4287-7528-08df1a36d687/images/deaf8c26-5990-4e76-83ed-bcc10e510fab/SUB2A90.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=vP75l%2F8%2BS41I7hBq1C7j0CSCnMI7EvShb4IFNcSkZsE%3D) | Sink base unit, 90 cm wide, with 1 fixed front and 2 pull-outs. Its sink with the drainer is 980 mm wide and reaches 246 mm past its right side, over the unit on its right. | Sink base unit, 90 cm wide, 1 fixed front and 2 pull-outs. Its sink, the drainer is 980 mm wide and reaches 246 mm past its right side, over the unit on its right |
-| SUBA60 | Kitchen / Base Units / Sink | SBFP60 | L 561 mm W 600 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/a36c9df1-c659-49cd-7529-08df1a36d687/images/5a8e5429-52f0-4ed7-a957-b8272f6a1248/SUBA60.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=O3uE7l6niyYdjTZKcBDMkvHJvj19kobk3jo8rd5ZtuM%3D) | Sink base unit, 60 cm wide, with 1 fixed front and 1 pull-out. Its sink with the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right. | Sink base unit, 60 cm wide, 1 fixed front and 1 pull-out. Its sink, the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right |
-| SUT60 | Kitchen / Base Units / Sink | SBD60 | L 561 mm W 600 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/ba93e565-6149-414c-752a-08df1a36d687/images/a184f9e8-c662-4cc4-8e1b-03c42ccd3136/SUT60.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=kKAmGjvA%2FO78fkCUl9j9QRic5ivpY2Xttb%2FJ12tjaF0%3D) | Sink base unit, 60 cm wide, with 1 hinged door. Its sink with the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right. | Sink base unit, 60 cm wide, 1 hinged door. Its sink, the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right |
+| SUB2A90 | Kitchen / Base Units / Sink | SBF2P90 | L 561 mm W 900 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/ee520521-2ccb-4287-7528-08df1a36d687/images/deaf8c26-5990-4e76-83ed-bcc10e510fab/SUB2A90.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=vP75l%2F8%2BS41I7hBq1C7j0CSCnMI7EvShb4IFNcSkZsE%3D) | Sink base unit, 90 cm wide, with 1 fixed front and 2 pull-outs. Its sink, Blanco Axia with the basin on the left, reaches 246 mm over the unit on its right with its drainer. | Sink base unit, 90 cm wide, 1 fixed front and 2 pull-outs. Its sink, Blanco Axia with the basin on the left, reaches 246 mm over the unit on its right with its drainer |
+| SUBA60 | Kitchen / Base Units / Sink | SBFP60 | L 561 mm W 600 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/a36c9df1-c659-49cd-7529-08df1a36d687/images/5a8e5429-52f0-4ed7-a957-b8272f6a1248/SUBA60.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=O3uE7l6niyYdjTZKcBDMkvHJvj19kobk3jo8rd5ZtuM%3D) | Sink base unit, 60 cm wide, with 1 fixed front and 1 pull-out. Its sink, Blanco Axia with the basin on the left, reaches 396 mm over the unit on its right with its drainer. | Sink base unit, 60 cm wide, 1 fixed front and 1 pull-out. Its sink, Blanco Axia with the basin on the left, reaches 396 mm over the unit on its right with its drainer |
+| SUT60 | Kitchen / Base Units / Sink | SBD60 | L 561 mm W 600 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/ba93e565-6149-414c-752a-08df1a36d687/images/a184f9e8-c662-4cc4-8e1b-03c42ccd3136/SUT60.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=kKAmGjvA%2FO78fkCUl9j9QRic5ivpY2Xttb%2FJ12tjaF0%3D) | Sink base unit, 60 cm wide, with 1 hinged door. Its sink, Blanco Metra with the basin on the right, reaches 410 mm over the unit on its left with its drainer. | Sink base unit, 60 cm wide, 1 hinged door. Its sink, Blanco Metra with the basin on the right, reaches 410 mm over the unit on its left with its drainer |
 | U2TB90 | Kitchen / Base Units / Storage | B2DS90 | L 561 mm W 900 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/a7757ee8-fb47-4d4b-752b-08df1a36d687/images/dfc590d0-4dfc-43fa-80d9-39ae2eeb352c/U2TB90.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=aoLs53jlhoPaDHGNLqUxEQpqlT2MDJgm6TWr1yUyq%2Bk%3D) | Base cabinet, 90 cm wide, with a pair of doors side by side and adjustable shelves. | Base cabinet, 90 cm wide, a pair of doors side by side and adjustable shelves |
 | UELTB90 | Kitchen / Base Units / Corner | BCRDS90 | L 561 mm W 900 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/6cb9736c-f372-4a7d-752c-08df1a36d687/images/10ae320b-c102-4776-88ed-8162d5d02948/UELTB90.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=DuR1G%2FdEQuuIjkm0YVcPkcmjwxLCx603K8Jd4oJVY%2F0%3D) | Corner base unit, 90 cm nominal, opening to the right, with 1 door and shelves. | Corner base unit, 90 cm nominal, opening to the right, 1 door and shelves |
 | UERTB90 | Kitchen / Base Units / Corner | BCLDS90 | L 561 mm W 900 mm H 720 mm | ![](https://tecconfig-preview.homag.cloud/cdn/e2fe8b3d-da31-4a20-92ab-ab6e3839300e/articles/d4ede7d1-a364-4fb6-752d-08df1a36d687/images/ea59bbc0-19b8-497e-b866-1042ac9df801/UERTB90.jpg?sv=2023-11-03&st=2026-10-16T00%3A00%3A00Z&se=2026-11-18T00%3A00%3A00Z&sr=b&sp=r&sig=AmnUszJI36khzVGvoQwjQB1kZhYEDbtjQk%2BdV6PrxoU%3D) | Corner base unit, 90 cm nominal, opening to the left, with 1 door and shelves. | Corner base unit, 90 cm nominal, opening to the left, 1 door and shelves |
@@ -166,27 +166,27 @@ Image URLs are hosted on: `https://tecconfig-preview.homag.cloud/cdn/`
 
 ### ESUB2A90
 
-- **FUNCTION:** Handleless sink base unit, 90 cm wide, with 1 fixed front and 2 drawers (fingergrip). Its sink with the drainer is 980 mm wide and reaches 246 mm past its right side, over the unit on its right.
-- **PURPOSE:** Wide handleless sink cabinet with plumbing access and drawer storage.
+- **FUNCTION:** Handleless sink base unit, 90 cm wide, with 1 fixed front and 2 drawers (fingergrip). Its sink, Blanco Axia with the basin on the left, reaches 246 mm over the unit on its right with its drainer.
+- **PURPOSE:** Wide handleless sink cabinet with plumbing access and drawers.
 - **TYPICAL_PLACEMENT:** Base row, within the washing zone.
-- **REQUIREMENTS:** Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+- **REQUIREMENTS:** Water supply and waste-water connection. Base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
 - **RECOMMENDED_NEIGHBOURS:** Handleless dishwasher unit, handleless drawer base units.
 - **RESTRICTIONS:** Cannot house an oven; not for islands without plumbing.
-- **STYLE_COMPATIBILITY:** Modern handleless (fingergrip) kitchen. Minimalist and premium designs.
-- **SEARCH_KEYWORDS:** handleless sink cabinet, fingergrip sink unit, sink drawer base.
-- **AI_SELECTION_HINT:** Select for a wide handleless sink cabinet with drawers. Place a base unit on its right, not a hob unit.
+- **STYLE_COMPATIBILITY:** Modern handleless (fingergrip), minimalist and premium kitchens.
+- **SEARCH_KEYWORDS:** handleless sink cabinet, fingergrip sink unit.
+- **AI_SELECTION_HINT:** Select for a wide handleless sink cabinet with drawers. The drainer is opposite the basin: an _L sink reaches over the unit on its right, an _R sink over the unit on its left; put a base unit there, not a hob unit.
 
 ### ESUT60
 
-- **FUNCTION:** Handleless sink base unit, 60 cm wide, with 1 door (fingergrip). Its sink with the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right.
+- **FUNCTION:** Handleless sink base unit, 60 cm wide, with 1 door (fingergrip). Its sink, Blanco Axia with the basin on the left, reaches 396 mm over the unit on its right with its drainer.
 - **PURPOSE:** Supports a kitchen sink in a handleless kitchen, with plumbing access.
 - **TYPICAL_PLACEMENT:** Base row, within the washing zone.
-- **REQUIREMENTS:** Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+- **REQUIREMENTS:** Water supply and waste-water connection. Base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
 - **RECOMMENDED_NEIGHBOURS:** Handleless dishwasher unit, handleless drawer base units.
 - **RESTRICTIONS:** Cannot house an oven; not for islands without plumbing.
-- **STYLE_COMPATIBILITY:** Modern handleless (fingergrip) kitchen. Minimalist and premium designs.
-- **SEARCH_KEYWORDS:** handleless sink cabinet, fingergrip sink unit, grip-less sink base.
-- **AI_SELECTION_HINT:** Select for a sink in a handleless kitchen with a single door. Place a base unit on its right, not a hob unit.
+- **STYLE_COMPATIBILITY:** Modern handleless (fingergrip), minimalist and premium kitchens.
+- **SEARCH_KEYWORDS:** handleless sink cabinet, fingergrip sink unit.
+- **AI_SELECTION_HINT:** Select for a sink in a handleless kitchen with a single door. The drainer is opposite the basin: an _L sink reaches over the unit on its right, an _R sink over the unit on its left; put a base unit there, not a hob unit.
 
 ### EU2TB90
 
@@ -731,39 +731,39 @@ Image URLs are hosted on: `https://tecconfig-preview.homag.cloud/cdn/`
 
 ### SUB2A90
 
-- **FUNCTION:** Sink base unit, 90 cm wide, with 1 fixed front and 2 pull-outs. Its sink with the drainer is 980 mm wide and reaches 246 mm past its right side, over the unit on its right.
-- **PURPOSE:** Wide sink cabinet combining plumbing access with two storage pull-outs.
+- **FUNCTION:** Sink base unit, 90 cm wide, with 1 fixed front and 2 pull-outs. Its sink, Blanco Axia with the basin on the left, reaches 246 mm over the unit on its right with its drainer.
+- **PURPOSE:** Wide sink cabinet with plumbing access and two pull-outs.
 - **TYPICAL_PLACEMENT:** Base row, within the washing zone.
-- **REQUIREMENTS:** Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+- **REQUIREMENTS:** Water supply and waste-water connection. Base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
 - **RECOMMENDED_NEIGHBOURS:** Dishwasher unit, drawer base units, worktop elements.
-- **RESTRICTIONS:** Cannot house an oven; not suitable for islands without plumbing.
-- **STYLE_COMPATIBILITY:** Modern handled kitchen. Also suits classic, Scandinavian and country-house designs.
-- **SEARCH_KEYWORDS:** sink cabinet, wide sink base unit, sink pull-out cabinet, plumbing cabinet.
-- **AI_SELECTION_HINT:** Select for a wide sink cabinet with additional pull-out storage. Place a base unit on its right, not a hob unit.
+- **RESTRICTIONS:** Cannot house an oven; not for islands without plumbing.
+- **STYLE_COMPATIBILITY:** Modern handled kitchen; also classic, Scandinavian and country-house designs.
+- **SEARCH_KEYWORDS:** sink cabinet, wide sink base unit, sink pull-out cabinet.
+- **AI_SELECTION_HINT:** Select for a wide sink cabinet with additional pull-out storage. The drainer is opposite the basin: an _L sink reaches over the unit on its right, an _R sink over the unit on its left; put a base unit there, not a hob unit.
 
 ### SUBA60
 
-- **FUNCTION:** Sink base unit, 60 cm wide, with 1 fixed front and 1 pull-out. Its sink with the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right.
+- **FUNCTION:** Sink base unit, 60 cm wide, with 1 fixed front and 1 pull-out. Its sink, Blanco Axia with the basin on the left, reaches 396 mm over the unit on its right with its drainer.
 - **PURPOSE:** Supports a sink while offering a lower pull-out for storage.
 - **TYPICAL_PLACEMENT:** Base row, within the washing zone.
-- **REQUIREMENTS:** Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+- **REQUIREMENTS:** Water supply and waste-water connection. Base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
 - **RECOMMENDED_NEIGHBOURS:** Dishwasher unit, drawer base units, worktop elements.
-- **RESTRICTIONS:** Cannot house an oven; not suitable for islands without plumbing.
-- **STYLE_COMPATIBILITY:** Modern handled kitchen. Also suits classic, Scandinavian and country-house designs.
-- **SEARCH_KEYWORDS:** sink cabinet, sink base unit, pull-out sink unit, plumbing cabinet.
-- **AI_SELECTION_HINT:** Select for a sink cabinet that also offers a storage pull-out. Place a base unit on its right, not a hob unit.
+- **RESTRICTIONS:** Cannot house an oven; not for islands without plumbing.
+- **STYLE_COMPATIBILITY:** Modern handled kitchen; also classic, Scandinavian and country-house designs.
+- **SEARCH_KEYWORDS:** sink cabinet, sink base unit, pull-out sink unit.
+- **AI_SELECTION_HINT:** Select for a sink cabinet that also offers a storage pull-out. The drainer is opposite the basin: an _L sink reaches over the unit on its right, an _R sink over the unit on its left; put a base unit there, not a hob unit.
 
 ### SUT60
 
-- **FUNCTION:** Sink base unit, 60 cm wide, with 1 hinged door. Its sink with the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right.
+- **FUNCTION:** Sink base unit, 60 cm wide, with 1 hinged door. Its sink, Blanco Metra with the basin on the right, reaches 410 mm over the unit on its left with its drainer.
 - **PURPOSE:** Supports a kitchen sink and gives access to the plumbing below.
 - **TYPICAL_PLACEMENT:** Base row, within the washing zone.
-- **REQUIREMENTS:** Requires a compatible sink, water supply and waste-water connection. base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
+- **REQUIREMENTS:** Water supply and waste-water connection. Base unit: carcase height 720 mm, depth 561 mm, plinth height 20-200 mm.
 - **RECOMMENDED_NEIGHBOURS:** Dishwasher unit, drawer base units, worktop elements.
-- **RESTRICTIONS:** Cannot house an oven; not suitable for islands without plumbing.
-- **STYLE_COMPATIBILITY:** Modern handled kitchen. Also suits classic, Scandinavian and country-house designs.
-- **SEARCH_KEYWORDS:** sink cabinet, sink base unit, wash basin cabinet, plumbing cabinet.
-- **AI_SELECTION_HINT:** Select when the user requests a sink or washing area. Place a base unit on its right, not a hob unit.
+- **RESTRICTIONS:** Cannot house an oven; not for islands without plumbing.
+- **STYLE_COMPATIBILITY:** Modern handled kitchen; also classic, Scandinavian and country-house designs.
+- **SEARCH_KEYWORDS:** sink cabinet, sink base unit, wash basin cabinet.
+- **AI_SELECTION_HINT:** Select when the user requests a sink or washing area. The drainer is opposite the basin: an _L sink reaches over the unit on its right, an _R sink over the unit on its left; put a base unit there, not a hob unit.
 
 ### U2TB90
 

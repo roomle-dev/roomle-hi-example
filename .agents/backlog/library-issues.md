@@ -57,7 +57,7 @@ library cannot calculate.
 | 8 | [Base units narrowed to 150 mm the library cannot calculate](#8-base-units-narrowed-to-150-mm-the-library-cannot-calculate) | HOMAG Furniture_Smith | HOMAG library development team | the width desc done; the calculation error not reported | low — the unit is not built, the agent needs a second create |
 | 12 | [A worktop on the tall units from the group's countertop switch](#12-a-worktop-on-the-tall-units-from-the-groups-countertop-switch) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported | low — a worktop on top of the tall units |
 | 15 | [The shelf descriptor names no format](#15-the-shelf-descriptor-names-no-format) | HOMAG Furniture_Smith | HOMAG library development team | the desc names the default spacing; the actual format and example open | low — the number of adjustable shelves cannot be set, so "one more shelf" is not possible with adjustable shelves |
-| 21 | [The description of SUT60 names the drainer on the right; its sink reaches over the unit on its left](#21-the-description-of-sut60-names-the-drainer-on-the-right-its-sink-reaches-over-the-unit-on-its-left) | HOMAG Furniture_Smith | HOMAG library development team | open, not reported; the texts proposed (1.8, 2.13) | high — the sink stands over the hob, and the agent cannot see it before its render |
+| 21 | [The description of SUT60 names the drainer on the right; its sink reaches over the unit on its left](#21-the-description-of-sut60-names-the-drainer-on-the-right-its-sink-reaches-over-the-unit-on-its-left) | HOMAG Furniture_Smith | HOMAG library development team | the descs applied (1.1, 2.8); open: the desc of `Axia_Anthrazit_R`, `None` | high — the sink stands over the hob, and the agent cannot see it before its render |
 
 ### Not solved entirely by descriptions
 
@@ -964,14 +964,15 @@ article line is the only sink information of the create.
 90 cm unit (Dinas 340 / 190 mm, Metra 410 / 260 mm). `None` leaves an outline like a basin-left
 sink.
 
-**To do.** The library: the descriptions of the five sink units (1.8 of
-[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#18-sink-base-units-the-drainer-side-follows-the-sink))
-and of `mod_SinkId` and its values
-([2.13](../../docs/library-information/suggested-library-changes.md#213-sink-the-drainer-side-and-its-reach));
-explain what `None` builds; when the sink a unit comes with changes, change its `FUNCTION` line
-with it.
+**To do.** The library: the desc of the value `Axia_Anthrazit_R` is the proposed text alone, without
+the pasted table row (2.8 of
+[`suggested-library-changes.md`](../../docs/library-information/suggested-library-changes.md#28-sink)); explain what `None` builds; when the sink a unit
+comes with changes, change its `FUNCTION` line with it.
 
-**Status.** Open, not reported to the library development team; the texts are proposed.
+**Status.** Done in the library: the descriptions of the five sink units (1.1) and of
+`mod_SinkId` and its values (2.8), checked 2026-10-28 against the article list and the master data.
+Open, not reported to the library development team: the desc of `Axia_Anthrazit_R`, which carries
+the pasted table row "Axia color anthrazit basin right | see 2.8 | …", and what `None` builds.
 
 **Test.** `image-kitchen-left-wall`, two runs on the build of D122: no run puts the hob unit on the
 drainer side of the sink unit; `edit-swap-hob-unit`: the drainer does not cover the hob.

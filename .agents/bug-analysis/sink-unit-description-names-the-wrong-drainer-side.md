@@ -2,8 +2,9 @@
 
 > **Type**: Bug analysis — the sink of an image kitchen reaches over the hob; whether the
 > descriptions of the sink articles can prevent it
-> **Status**: Open — the cause is in the library data; the descriptions are proposed
-> ([§6](#6-the-fix-the-descriptions)), not yet in the library
+> **Status**: Open — the cause is in the library data; the descriptions of [§6](#6-the-fix-the-descriptions)
+> are in the library (checked 2026-10-28), one value desc pasted with its table row; the test of
+> the agent is open ([§9](#9-verification-of-the-library))
 > **Date**: 2026-10-27
 > **Ticket**: [RML-18303](https://roomle.atlassian.net/browse/RML-18303)
 > **Base**: roomle-ui `feat/hi-mcp-merge` at 4415cdffd (the two-level attribute section, D122);
@@ -20,7 +21,7 @@
 - **HOMAG library (Furniture_Smith)** — the descriptions of the five sink units and of `mod_SinkId`
   and its values; the fix ([§6](#6-the-fix-the-descriptions)), through
   [library issue 21](../backlog/library-issues.md#21-the-description-of-sut60-names-the-drainer-on-the-right-its-sink-reaches-over-the-unit-on-its-left)
-  and [the suggested library changes](../../docs/library-information/suggested-library-changes.md#18-sink-base-units-the-drainer-side-follows-the-sink).
+  and [the suggested library changes](../../docs/library-information/suggested-library-changes.md#11-sink-base-units).
 - **roomle-hi-example** — this analysis, the library issue and the suggested texts; the test that
   checks the fix once the library carries it.
 - **roomle-ui** — nothing for the fix. A structural option that brings the sink values back into
@@ -41,7 +42,9 @@ spans y 1150–2160, its neighbour `UHS60` 960–1560.
 
 ## 2. What the agent reads about the sink
 
-At the create the agent reads the catalog's two lines of `SUT60` (D63):
+At the create the agent reads the catalog's description of `SUT60` — all of it: its sections stand on
+one line each, and the catalog's shortening to `FUNCTION` and `AI_SELECTION_HINT` (D63) takes a
+section's text from the line after its name. Among its lines:
 
 ```text
 FUNCTION: Sink base unit, 60 cm wide, with 1 hinged door. Its sink with the drainer is 980 mm wide and reaches 396 mm past its right side, over the unit on its right.
@@ -111,8 +114,8 @@ model's choice, not something a text asked for.
 ## 6. The fix: the descriptions
 
 Three descriptions carry it. The first two reach the agent at the create, also with D122: the
-catalog serves `FUNCTION` and `AI_SELECTION_HINT`, and the attributes section serves the desc of
-every attribute.
+catalog serves the description of every article — `FUNCTION` and `AI_SELECTION_HINT` at least —,
+and the attributes section serves the desc of every attribute.
 
 1. **The article descriptions** name the sink the unit comes with and the side and reach that
    follow from it (`FUNCTION`), and the rule for every other sink (`AI_SELECTION_HINT`). `SUT60`, 969
@@ -127,7 +130,7 @@ every attribute.
    the unit on its right". To stay within 1000 characters, `REQUIREMENTS`, `STYLE_COMPATIBILITY`,
    `RESTRICTIONS`, `PURPOSE` and `SEARCH_KEYWORDS` are shortened (989–997 characters); the complete
    texts are in
-   [the suggested library changes, 1.8](../../docs/library-information/suggested-library-changes.md#18-sink-base-units-the-drainer-side-follows-the-sink).
+   [the suggested library changes, 1.1](../../docs/library-information/suggested-library-changes.md#11-sink-base-units).
 2. **The desc of `mod_SinkId`** states the rule for every sink unit:
 
    ```text
@@ -137,7 +140,7 @@ every attribute.
 3. **The value descs of `mod_SinkId`** add the reach of each sink, e.g. `Metra_R`: "Blanco Metra sink:
    basin on the right, drainer on the left; it reaches 410 mm past a 60 cm sink unit and 260 mm past
    a 90 cm unit, over the unit on its left." They answer the agent that looks a sink up
-   ([2.13](../../docs/library-information/suggested-library-changes.md#213-sink-the-drainer-side-and-its-reach)).
+   ([2.8](../../docs/library-information/suggested-library-changes.md#28-sink)).
 
 With 1 and 2 the description says that changing the sink changes the side, and the agent reads it
 before the create. The fix is the library team's; the texts are ready to paste.
@@ -163,3 +166,25 @@ before the create. The fix is the library team's; the texts are ready to paste.
 - **The default sink of the other units** may change like that of `SUT60`; the rule in the
   `AI_SELECTION_HINT` and in the desc of `mod_SinkId` keeps the agent right when it does, the reach
   in `FUNCTION` has to follow it.
+
+## 9. Verification of the library
+
+Checked on 2026-10-28 against the article list and the master data the backend serves
+(`docs/library-information`, refreshed):
+
+- **The five sink unit descriptions** are the proposed texts, character for character, and the
+  sinks the units come with are unchanged: `SUT60` `Metra_R`, the four others `Axia_Grey_L`.
+- **The desc of `mod_SinkId`** is the proposed text.
+- **Ten of the eleven value descs** are the proposed texts. `Axia_Anthrazit_R` carries the pasted
+  table row — "Axia color anthrazit basin right | see 2.8 | Blanco Axia sink in anthracite: …" —,
+  without its final full stop; it stays open in
+  [library issue 21](../backlog/library-issues.md#21-the-description-of-sut60-names-the-drainer-on-the-right-its-sink-reaches-over-the-unit-on-its-left).
+- **What the agent reads**, read without a model through the planner of bo-test, which loads the
+  library from the same backend: the catalog serves the new descriptions of the five units, the
+  attributes section the new desc of `mod_SinkId`, its values the new descs.
+- **The catalog serves 19 of the 111 descriptions in full**, the five sink units among them: their
+  sections stand on one line each (`FUNCTION: …`), while the shortening of D63 takes a section's
+  text from the line after its name (`shortDescription`, roomle-ui `hi-mcp/agent-facing.ts`). The
+  19 are the descriptions written in the format of the suggested library changes. For this fix it
+  makes no difference — the agent reads both lines of the rule —; for the size of the catalog it does.
+

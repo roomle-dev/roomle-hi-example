@@ -40,7 +40,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 | Document | Status | Description |
 |---|---|---|
-| [sink-unit-description-names-the-wrong-drainer-side.md](sink-unit-description-names-the-wrong-drainer-side.md) | Open | `SUT60` comes with the `Metra_R` sink, whose drainer reaches 410 mm past its left side, while its description names the right side and asks for a base unit there; no description says that the side follows the sink. The descriptions of the five sink units and of `mod_SinkId` proposed (suggested changes 1.8 and 2.13, library issue 21) |
+| [sink-unit-description-names-the-wrong-drainer-side.md](sink-unit-description-names-the-wrong-drainer-side.md) | Open | `SUT60` comes with the `Metra_R` sink, whose drainer reaches 410 mm past its left side, while its description names the right side and asks for a base unit there; no description says that the side follows the sink. The descriptions of the five sink units and of `mod_SinkId` are in the library (suggested changes 1.1 and 2.8, checked 2026-10-28); the desc of `Axia_Anthrazit_R` carries its pasted table row (library issue 21); the test of the agent is open |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

@@ -38,9 +38,7 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 ## Current Documents
 
-| Document | Status | Issue |
-|---|---|---|
-| [A conflict a row edit leaves is not resolved](conflict-a-row-edit-leaves-is-not-resolved.md) | Open | Backlog item 116 of [`../backlog/mcp-issues.md`](../backlog/mcp-issues.md) |
+No bug analysis is open.
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

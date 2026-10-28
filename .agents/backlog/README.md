@@ -10,7 +10,6 @@ the document a row links.
 
 | Item | To do | Priority |
 |---|---|---|
-| [116 — A conflict a row edit leaves is not resolved](mcp-issues.md#116-a-conflict-a-row-edit-leaves-is-not-resolved) | roomle-ui served text: resolve a conflict a correction reports, or say why not; the turned-leg correction names an opening the row reaches | low |
 | [117 — The catalog serves 19 descriptions in full](mcp-issues.md#117-the-catalog-serves-19-descriptions-in-full) | roomle-ui `shortDescription`: read a section's text on the line of its name too | low |
 | The models in the planner's coordinate system | Run "test the mcp" with every model on the planner build that carries D105 (the agent works in plan space, z up) and compare each test with its reference session; a placement by point — an island, a group of wall units only — is where the frame shows, the placement by wall names no coordinate | medium |
 | The models after a call the library cannot calculate | Run "test the mcp" with every model on the planner build that discards a change the library cannot calculate before the load (D106, D109) and check that a model whose create answers `notLoaded` with "nothing was changed - …", or whose edit answers that error, repairs the group in place or sends the group again with other values or another article, that the planning never leaves the scene between the attempts, and that a part the library generates is enabled after the group is built | medium |

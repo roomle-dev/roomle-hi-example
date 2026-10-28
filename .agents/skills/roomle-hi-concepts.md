@@ -259,7 +259,9 @@ instead of 270 or belong to another root. The sense is the same, the reference d
 The library's attributes come with the plan context (the `attributes` section of
 `get-plan-context`, by default; `find-attributes` searches them for a question about one). Each attribute has an `id` (e.g. `mod_FrontColor`, `mod_Width`), a `name`,
 a `desc`, a `type` (`Text`, `Bool`, `Dim`, `Integer`), a `group` and its `selections` (value, name
-and desc). The master data's root modules name the attribute ids assigned to them; a size is an
+and desc) — the section lists them for the attributes a planning sets at the create and the number
+of values, `valueCount`, for every other one, whose values `find-attributes` returns by its id
+(D122). The master data's root modules name the attribute ids assigned to them; a size is an
 attribute of type `Dim`.
 
 **Attribute groups** of Furniture_Smith, for example: `Carcase | Dimensions`, `Carcase | Design`,

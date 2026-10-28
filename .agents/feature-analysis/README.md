@@ -39,7 +39,6 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Description |
 |---|---|---|
-| [planning-assistant-attribute-information.md](planning-assistant-attribute-information.md) | Open — the question answered; the two-level design proposed, the same for every library, accepted only after its measurement; validated, the level-1 section 88 KB instead of 121 KB | What the agent gets about the attributes (every attribute with its values, 121 KB, about 27,000 tokens, half of the cached library reference), what it costs and how it grows, what the agent set in 79 runs (50 of 397 attributes, the look of the group at the create, the rest after the first kitchen) and when it needs the values; the size is the library's and grows with its descriptions, so the design cannot rest on one library's state; the two-level design: the possibilities in the prefix, the values of the attributes the library's structure marks for the create, the details on request; the alternatives and the measurement |
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
 
 Add feature analysis documents as needed following the naming convention:

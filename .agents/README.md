@@ -141,7 +141,6 @@ feature behaves the way it does. Written **before** the work, closed out **after
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Planning Assistant: the attribute information the agent gets](feature-analysis/planning-assistant-attribute-information.md) | Open — every attribute with its values is half of the cached library reference (121 KB, about 27,000 tokens); the agent set 50 of 397 in 79 runs, the look of the group at the create; the size is the library's and grows with its descriptions; the two-level design proposed, the same for every library, to be measured | 2026-10-27 |
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 
 ### Refactoring Analyses

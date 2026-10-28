@@ -66,8 +66,7 @@ are, without the session preamble of `get-skill`.
 
 **Parameters**:
 ```typescript
-{ include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'installationElements' | 'masterData' | 'articleDescriptions'>,
-  articleIds?: string[] }
+{ include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'installationElements' | 'masterData' | 'articleDescriptions'> }
 ```
 
 **Returns**: in the planner's plan space — millimetres, right-handed, Z up, `x` to the right and `y`
@@ -78,10 +77,7 @@ in every section and result (D102) —, with its values for the attributes a pla
 create — those the catalog names per root module (`mainAttributes`, `dimensions`), the group
 settings and those of the generated root modules — and `valueCount`, the number of its values, for
 every other one, whose values `find-attributes` returns by id (D122); a shared value list listed
-once with `sameSelectionsAs` on the later attributes, D76), groups, obstacles, installationElements; masterData and articleDescriptions if requested. `articleIds` restricts
-`articles` and `articleDescriptions` to the named articles, in the order of the ids, and adds both
-when `include` names neither; an unknown id is named in `notFound` with a `hint`, the known ones are
-answered, and the vocabulary is derived from every article (D124). Like every JSON result of the
+once with `sameSelectionsAs` on the later attributes, D76), groups, obstacles, installationElements; masterData and articleDescriptions if requested. Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
 (back wall, front wall, left wall, right wall) beside its `side`, a door opening the `type`
@@ -155,9 +151,8 @@ colour of that value, taken as it is: light, dark and the hue come from it, not 
 The rule covers only the catalog images, not the renderings of `get-plan-images` or an image the
 user attaches. It is in `get-authoring-rules` and in the descriptions of `get-plan-context` and
 `find-attributes`. The server strips every `imageUrl` from its results (D7). An article's `desc`
-in the catalog is short — of a description written in sections, the text of its FUNCTION and
-AI_SELECTION_HINT sections, on the line of the section name or the next; `articleDescriptions` with
-`articleIds` returns the full ones of the named articles, for a question about those articles —
+in the catalog is short — of a description written in sections, its FUNCTION and AI_SELECTION_HINT
+lines; `include: ['articleDescriptions']` returns the full ones, for a question about one article —
 the descriptions tell the agent that `desc` is enough to pick the articles of a planning (D63).
 
 **Usage**:

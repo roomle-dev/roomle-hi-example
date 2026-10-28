@@ -1,12 +1,12 @@
 # Using an unreleased embedding-lib
 
 The example page `minimal-hi-example/index.html` imports `@roomle/embedding-lib` and its `hi.js` from
-jsDelivr's npm CDN, pinned to the dev version `0.0.0-dev-1b4351d` from roomle-ui `feat/hi-mcp-performance`
-([verified build](https://github.com/roomle-dev/roomle-ui/actions/runs/40503769659)):
+jsDelivr's npm CDN, pinned to the dev version `0.0.0-dev-818b261` from roomle-ui `feat/hi-mcp-performance`
+([verified build](https://github.com/roomle-dev/roomle-ui/actions/runs/40766494119)):
 
 ```js
-import RoomleConfiguratorApi from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-1b4351d/roomle-embedding-lib.js';
-import { /* … */ setupHi } from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-1b4351d/hi.js';
+import RoomleConfiguratorApi from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-818b261/roomle-embedding-lib.js';
+import { /* … */ setupHi } from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-818b261/hi.js';
 ```
 
 To try a change that exists only on a roomle-ui branch, point these two imports somewhere else. Two ways

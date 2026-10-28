@@ -24,6 +24,7 @@ are, without the session preamble of `get-skill`.
 | Tool | Purpose |
 |---|---|
 | `find-attributes` | Look up attribute definitions |
+| `find-articles` | Read articles in full by id; the catalog overview of categories or of a text search; the category directory |
 
 ### Editing Tools
 | Tool | Purpose |
@@ -33,7 +34,7 @@ are, without the session preamble of `get-skill`.
 | `delete-group` | Delete a group |
 | `delete-article-in-place` | Delete an article and leave the gap — the tool for "delete" or "remove" unless the user asks to close the gap; the rest splits where it is no longer docked together |
 | `delete-article-and-compact` | Delete an article and close the gap, when the user asks for it |
-| `merge-article-into-group` | Dock one more article to a free docking vector of a root module; it inherits the neighbour's fronts, handles and carcase |
+| `merge-article-into-group` | Dock one more article to a free docking vector of a root module — its own vector can be left to the server; it inherits the neighbour's fronts, handles and carcase |
 | `insert-article-into-group` | Insert an article between two root modules that stand side by side, whatever the group and the article; the root modules away from the wall move; it inherits the fronts, handles and carcase of the first-named root |
 | `exchange-root-module` | Replace a root module with an article, keeping its docking and the fronts, handles and carcase of the replaced one |
 | `swap-root-modules` | Let two root modules of a group change places |
@@ -66,18 +67,22 @@ are, without the session preamble of `get-skill`.
 
 **Parameters**:
 ```typescript
-{ include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'installationElements' | 'masterData' | 'articleDescriptions'> }
+{ include?: Array<'rooms' | 'articles' | 'attributes' | 'groups' | 'obstacles' | 'installationElements' | 'masterData' | 'articleDescriptions' | 'categories'> }
 ```
 
 **Returns**: in the planner's plan space — millimetres, right-handed, Z up, `x` to the right and `y`
 to the top of the top-view image (D105); the tool turns the pos space of the planner methods into it
-at its dispatch. Rooms, articles, attributes (the vocabulary: per library every attribute the agent
+at its dispatch. Rooms, articles (the catalog overview, D125: per article `articleId`, `articleName`,
+the short `desc`, `category`, `libraryId`, `cornerArticle`, and per root module its `module` id and
+name, `dimensions`, `mainAttributes` and `subModules` with id and name — the full description, the
+module and sub module texts, the docking vector names and the insert levels come from
+`find-articles` with the article's id), attributes (the vocabulary: per library every attribute the agent
 sees (D100) — the attribute filter leaves out the element type `mod_TypeElement`
 in every section and result (D102) —, with its values for the attributes a planning sets at the
 create — those the catalog names per root module (`mainAttributes`, `dimensions`), the group
 settings and those of the generated root modules — and `valueCount`, the number of its values, for
 every other one, whose values `find-attributes` returns by id (D122); a shared value list listed
-once with `sameSelectionsAs` on the later attributes, D76), groups, obstacles, installationElements; masterData and articleDescriptions if requested. Like every JSON result of the
+once with `sameSelectionsAs` on the later attributes, D76), groups, obstacles, installationElements; masterData, articleDescriptions and categories (the category directory: per library its article count and every category value with its count, the articles without a category under `""`, D126) if requested. Like every JSON result of the
 server: compact JSON without the `imageUrl` fields of the planner's plan context (signed CDN URLs
 no agent can open, three quarters of the tokens). Every wall carries a `name` in the user's words
 (back wall, front wall, left wall, right wall) beside its `side`, a door opening the `type`
@@ -152,8 +157,12 @@ The rule covers only the catalog images, not the renderings of `get-plan-images`
 user attaches. It is in `get-authoring-rules` and in the descriptions of `get-plan-context` and
 `find-attributes`. The server strips every `imageUrl` from its results (D7). An article's `desc`
 in the catalog is short — of a description written in sections, the text of its FUNCTION and
-AI_SELECTION_HINT sections, on the line of the section name or the next; `include: ['articleDescriptions']` returns the full ones, for a question about one article —
-the descriptions tell the agent that `desc` is enough to pick the articles of a planning (D63).
+AI_SELECTION_HINT sections, on the line of the section name or the next; `find-articles` with the
+ids returns the full ones with the rest of those articles, for a question about a few articles —
+the descriptions tell the agent that `desc` is enough to pick the articles of a planning (D63). For
+a library whose catalog overview exceeds `libraryReferenceBudget` (256,000 bytes by default), the
+planning assistant supplies the `categories` directory and the attributes as the library reference,
+and the agent reads the articles of a category with `find-articles` (D126).
 
 **Usage**:
 ```javascript
@@ -288,7 +297,7 @@ performs the edit with the planner's own group features; the group keeps its pos
 'delete-article-and-compact': { groupId?: string, rootModuleId: string }
 'merge-article-into-group': {
   groupId: string, articleId: string, attributes?: { id, value }[],
-  dockTo: { rootId: string, ownDockingVector: string, dockingVector: string,
+  dockTo: { rootId: string, ownDockingVector: string, dockingVector?: string,
             mode?: 'StartStart' | 'EndEnd' | 'StartEnd' | 'EndStart', offset?: [x, y, z] },
 }
 'insert-article-into-group': { groupId: string, articleId: string, attributes?: { id, value }[], between: [string, string] }
@@ -306,7 +315,8 @@ the root's `freeDockingVectors`; the pairs are the docking pairs of the
 (case, whitespace) is read in the catalog's spelling. `merge-article-into-group` docks a unit sent
 to a taken side vector to the named root's free other side, else to the root at the free end of
 that row (a corner article ends a row: the unit then goes to the free end of the leg in the other
-direction), and a `dockingVector` the article does not have becomes the partner of `ownDockingVector`. A wall
+direction); a `dockTo` without `dockingVector` takes the vector that meets `ownDockingVector`, and a
+`dockingVector` the article does not have becomes the partner of `ownDockingVector`. A wall
 unit, range hood or unknown-category upper article merged `*Top -> *Bottom` on a floor unit gets
 the hang gap (D35) only when its offset is omitted; the offset's `z` is the clearance. Supplied numeric offsets, including zero,
 remain the requested clearance.
@@ -414,7 +424,7 @@ transform when either whole docking footprint cannot be measured.
 await mergeArticleIntoGroup({
   groupId: 'group-1',
   articleId: 'drawer-unit-600',
-  dockTo: { rootId: 'root-3', ownDockingVector: 'RightBottom', dockingVector: 'LeftBottom' },
+  dockTo: { rootId: 'root-3', ownDockingVector: 'RightBottom' }, // the unit meets it with its LeftBottom
 });
 await changeGroupAttribute({ groupId: 'group-1', attributeId: 'front', value: 'white' });
 ```
@@ -442,6 +452,33 @@ others by their id (D68); every group of the plan when nothing was reverted; `nu
 history no longer holds the call; an undo or redo that does not give back the plan before or after
 the call (the user changed the plan in the planner while the call ran) is taken back, with a `hint`;
 the planner answers a call after its last reload, so `undo` never waits for one (D77)
+
+### find-articles
+
+**Purpose**: Answer a question about articles, and find the articles of a part of the catalog (D125)
+
+**Parameters**:
+```typescript
+{ ids?: string[], categories?: string[], text?: string, libraryId?: string, offset?: number }
+```
+
+**Returns**: `{ articles, total, notFound?, hint? }`. `ids` return the named articles in full — the
+full `desc`, `catalog`, the module and sub module texts, the docking vector names, the insert levels
+— in the order of the ids, each once, uncapped. `categories` return the catalog overview of their
+articles, matched case-insensitively against the `categories` section; `""` names the articles
+without a category. `text` matches every word in id, name, full description and category, both
+spellings of colour/color, grey/gray and worktop/countertop alike, the articles in the plan first.
+Ids, then categories, then text matches, each article once; at most 50 overview entries from
+`offset`, `total` counting every match. An unknown id or category is named in `notFound` with a
+hint, the known ones are answered. A call without ids, categories and text answers
+`{ categories, hint }`, the directory.
+
+**Usage**:
+```javascript
+await findArticles({ ids: ['SUT60', 'HK60'] }); // the two articles in full
+await findArticles({ categories: ['Kitchen | Base Units | Sink', 'Kitchen | Base Units | Appliance'] });
+await findArticles({ text: 'kitchen', offset: 50 }); // the next page of a text search
+```
 
 ### find-attributes
 

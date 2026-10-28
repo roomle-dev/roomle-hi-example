@@ -25,6 +25,7 @@ example `npm start -- --no-open` or `npm run dev -- mistral <api-key> --no-open`
 | `HI_CHAT_MODEL` | — | replaces the model of every provider other than the Foundry deployments and explicit `openai:<model-id>` requests (an Azure deployment name for `azure`) |
 | `AZURE_RESOURCE_NAME` | — | required for `azure` / `openai`: the resource of that deployment |
 | `HI_CHAT_REASONING_EFFORT` | per deployment | the reasoning effort of an Azure model on the Responses API |
+| `HI_CHAT_LIBRARY_REFERENCE_BUDGET` | — (the assistant's 256,000) | `libraryReferenceBudget` of the config, a positive integer of bytes: above it the library reference is the category directory (`withLibraryReferenceBudget`) |
 
 ### What it does
 

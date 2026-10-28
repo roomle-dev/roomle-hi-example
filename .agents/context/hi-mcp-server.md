@@ -29,7 +29,7 @@ For the shortest path to a first chat turn in the example, see the
 A standalone, copy-paste version of the embedding-lib HI presets demo. It
 contains the complete interface and browser JavaScript in one
 [`index.html`](../../minimal-hi-example/index.html), requires no build step, and loads only
-`@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version `0.0.0-dev-818b261`
+`@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version `0.0.0-dev-1b4351d`
 ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)).
 
 The preset dropdown is filled from `GET <HI_SERVER_BASE_URL>/backends/list`,
@@ -126,10 +126,9 @@ example with `chat=true` and serves the model to the page — see [ai-chat.md](.
 
 With a connected agent, this sequence exercises every kind of tool:
 
-1. `get-plan-context` — rooms (with walls), the catalog overview (with
-   dimensions), current groups; `find-articles` for an article in full or the
-   articles of a category; `find-attributes` for the attribute behind a
-   requested property
+1. `get-plan-context` — rooms (with walls), compact articles (with docking
+   vectors and dimensions), current groups; `find-attributes` for the
+   attribute behind a requested property
 2. `create-or-replace-groups` — create one group of two cabinets, the second
    `rightOf` the first, and
    a `placement` `{ "wall": "right", "alignment": "back" }`; they appear arranged along the right
@@ -153,8 +152,6 @@ operations:
 | Prompt | Tools the agent should use |
 | ------ | -------------------------- |
 | "What articles are available in this library? Summarize them with their descriptions." | `get-plan-context` (`articles`) |
-| "What does the sink unit SUT60 need, and what goes next to it?" | `find-articles` (`ids`) |
-| "Which sink units does the catalog have?" | `find-articles` (`categories` or `text`) |
 | "Describe the room and the groups currently in the plan." | `get-plan-context` (`rooms`, `groups`) |
 | "Create a sideboard of three docked cabinets, 800 mm wide each, against the longest wall." | `get-plan-context`, `create-or-replace-groups` |
 | "Add a group of three tall units to the wall on the right." | `get-plan-context`, `create-or-replace-groups` (`placement` `{ wall: "right" }`) |

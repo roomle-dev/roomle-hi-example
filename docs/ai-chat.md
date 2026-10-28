@@ -134,15 +134,6 @@ does a deployment on Chat Completions. The defaults measured on the Foundry reso
 gpt-5.4-mini does not reason (0 reasoning tokens in every step), gpt-5-mini and gpt-6-astra reason
 as at `medium`. gpt-5-mini and gpt-5.4-mini read images and have a 400k context window.
 
-**Library reference.** The planning assistant sends the catalog overview of the library with every
-turn, or — for a library whose overview and attributes exceed 256,000 bytes — its category
-directory, from which the agent reads the articles of the categories it needs.
-`HI_CHAT_LIBRARY_REFERENCE_BUDGET` sets that boundary in bytes for every model
-(`libraryReferenceBudget` of the config); a value that is not a positive integer stops the
-launcher. Furniture_Smith and DeMaatFabriek_CabinetLibrary fit the default, nobilia_Minifabrik
-does not. How the reference works is in roomle-ui's
-[prompt-caching reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md).
-
 The effort was chosen from the 32 tests of `docs/test-prompts.json`, one run each, evaluated as
 "test the mcp" does (2026-10-07, with the chat backend of that time):
 

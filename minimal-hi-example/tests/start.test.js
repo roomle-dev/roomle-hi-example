@@ -155,42 +155,6 @@ describe('example launcher', { skip: process.platform === 'win32' }, () => {
   });
 
   test(
-    'passes the library reference budget into the planning assistant config',
-    { timeout: 90_000 },
-    async () => {
-      const example = await startLauncher(['gpt-6-astra', 'test-key'], {
-        HI_CHAT_LIBRARY_REFERENCE_BUDGET: '100000',
-      });
-      try {
-        const config = await (
-          await example.fetchPath('/planning-assistant-config.json')
-        ).json();
-        assert.equal(config.libraryReferenceBudget, 100000);
-      } finally {
-        example.kill();
-      }
-    }
-  );
-
-  test('rejects a library reference budget that is no positive integer', async () => {
-    const launcher = spawn(
-      process.execPath,
-      [launcherPath, 'gpt-6-astra', 'test-key', '--no-open'],
-      { env: { ...process.env, HI_CHAT_LIBRARY_REFERENCE_BUDGET: '-5' } }
-    );
-    let error = '';
-    launcher.stderr.on('data', (chunk) => {
-      error += chunk;
-    });
-    assert.deepEqual(await once(launcher, 'exit'), [1, null]);
-    assert.match(
-      error,
-      /HI_CHAT_LIBRARY_REFERENCE_BUDGET must be a positive integer of bytes, not "-5"/
-    );
-    assert.ok(!error.includes('test-key'));
-  });
-
-  test(
     'serves the planning assistant config of the model to this machine',
     { timeout: 90_000 },
     async () => {

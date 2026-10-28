@@ -181,21 +181,6 @@ const planningAssistantConfig = (name, apiKey) => {
   };
 };
 
-// The bytes of the catalog overview above which the planning assistant sends
-// the category directory as the library reference; its own default without it.
-const withLibraryReferenceBudget = (config) => {
-  const budget = process.env.HI_CHAT_LIBRARY_REFERENCE_BUDGET;
-  if (budget === undefined || budget === '') {
-    return config;
-  }
-  if (!/^[1-9][0-9]*$/.test(budget)) {
-    throw new Error(
-      `HI_CHAT_LIBRARY_REFERENCE_BUDGET must be a positive integer of bytes, not "${budget}"`
-    );
-  }
-  return { ...config, libraryReferenceBudget: Number(budget) };
-};
-
 const parseChatConfig = () => {
   const positionalArgs = process.argv
     .slice(2)
@@ -211,7 +196,7 @@ const parseChatConfig = () => {
     process.exit(1);
   }
   try {
-    return withLibraryReferenceBudget(planningAssistantConfig(name, apiKey));
+    return planningAssistantConfig(name, apiKey);
   } catch (error) {
     console.error(`[hi-example] ${error.message}`);
     process.exit(1);

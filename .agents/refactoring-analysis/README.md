@@ -43,7 +43,7 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Date |
 |---|---|---|
-| [Planning Assistant performance: remaining work after the October 28 baselines](planning-assistant-performance-next-steps.md) | Open — layout then refinement and benchmark criteria; §7.2, the article catalog in three levels, implemented (D125, D126) | 2026-10-28 |
+| [Planning Assistant performance: remaining work after the October 28 baselines](planning-assistant-performance-next-steps.md) | Open — layout then refinement and benchmark criteria; §7.2, the article catalog in three levels, rejected: no turn faster (D125) | 2026-10-28 |
 
 Add refactoring analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `mcp-bridge-simplification.md`).

@@ -352,7 +352,8 @@ placement's attributes, including a height the library adjusts:
   `merge-article-into-group`, two roots of `insert-article-into-group` that are no neighbours, a
   root id read as the plan's id it abbreviates or misspells — and what the planner corrected or
   could not keep, prefixed with the command: a docking the new unit of `exchange-root-module` or `swap-root-modules` cannot take,
-  a unit above that keeps its place, with the unit above that moved in and now overlaps it, or a deletion instead of
+  a unit above that keeps its place, with the unit above that moved in and now overlaps it and the two edits that
+  resolve the overlap — the agent makes one of them with one more call in the same turn (D124) —, or a deletion instead of
   closing the gap (`delete-article-and-compact`), with each named root labelled by its id and article id
   from the original group, falling back to its article name or id alone;
   after `change-module-attribute` and `change-group-attribute`, a value a root module does not take by
@@ -384,7 +385,8 @@ transform when either whole docking footprint cannot be measured.
   (worktop, toe kick) cannot be deleted
 - `delete-article-and-compact`: deletes the unit and closes the gap: its neighbours are docked to each
   other, the end of the row at a wall stays, a unit hung on it hangs on the neighbour that moves into
-  the gap; a unit at a row end is deleted and nothing else moves; a corner article between two legs
+  the gap, or keeps its place when that neighbour carries a unit above already, and `corrections`
+  names the units that now overlap (D42, D124); a unit at a row end is deleted and nothing else moves; a corner article between two legs
   is deleted and the gap closed by turning one leg by 90° with the units above it, and the
   `corrections` name the roots of the leg that turned, and `hint` names its original and destination wall when known (D52); wall
   units of other groups move with the units below them, each within its group, and their groups

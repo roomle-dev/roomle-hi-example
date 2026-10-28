@@ -216,14 +216,14 @@
           "title": "Remove the unit next to the corner",
           "plan": "corner-kitchen-wall-units",
           "prompt": "remove the base unit next to the corner unit on the right wall and close the gap",
-          "expect": "delete-article-and-compact of the drawer unit next to the corner: the gap closes towards the corner, the corner unit stays, the hob unit moves into the gap with the range hood; the wall unit above the removed unit keeps its place and the answer says so"
+          "expect": "delete-article-and-compact of the drawer unit next to the corner: the gap closes towards the corner, the corner unit stays, the hob unit moves into the gap with the range hood; the wall unit above the removed unit keeps its place and overlaps the range hood; one more call resolves the overlap - deletes that wall unit or moves it beside the hood - and the answer says how"
         },
         {
           "id": "edit-remove-corner-unit",
           "title": "Remove the corner unit",
           "plan": "corner-kitchen-wall-units",
           "prompt": "remove the corner unit and close the gap",
-          "expect": "delete-article-and-compact of the corner unit: one group; one leg turns by 90 degrees with its wall units and is docked to the other, so the legs form one straight row; the answer says which leg turned"
+          "expect": "delete-article-and-compact of the corner unit: one group; one leg turns by 90 degrees with its wall units and is docked to the other, so the legs form one straight row; the answer says which leg turned; the tall unit at the end of the row stands in front of the door: the answer names it and what would clear it"
         },
         {
           "id": "edit-swap-hob-unit",

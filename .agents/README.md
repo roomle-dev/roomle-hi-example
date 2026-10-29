@@ -150,7 +150,7 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
-| [Planning Assistant performance: remaining work after the October 28 baselines](refactoring-analysis/planning-assistant-performance-next-steps.md) | Open — layout then refinement and benchmark criteria; §7.2, the article catalog in three levels, rejected: no turn faster (D125) | 2026-10-28 |
+| [Planning Assistant performance: what a second of a turn is made of, and the levers that move it](refactoring-analysis/planning-assistant-performance-next-steps.md) | Open — the four prices of a turn (round, reasoning token, output token, planner load); levers A–E: the skills supplied with the request, the tool call before the narration, one load per create, the finishes in the create, the payload with the defaults; sections 6 and 7.2 of the earlier analysis failed and are replaced | 2026-10-29 |
 
 ### Benchmarks & Performance Analyses
 

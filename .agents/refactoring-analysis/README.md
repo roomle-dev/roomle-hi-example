@@ -43,7 +43,6 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 
 | Document | Status | Date |
 |---|---|---|
-| [One calculation and one load per create](one-calculation-and-one-load-per-create.md) | Open — proposal C of the performance analysis: the three or four rounds of calculate, publish and load of a create placed by wall with group materials become two calculations and one load; the two planner methods of the tools, `change-attributes` before the load, the model-free replay before and after, the decisions D23, D36, D70 and D106 | 2026-10-29 |
 | [Planning Assistant performance: what a second of a turn is made of, and the levers that move it](planning-assistant-performance-next-steps.md) | Open — the four prices of a turn (round, reasoning token, output token, planner load); levers A–E: the skills supplied with the request, the tool call before the narration, one load per create, the finishes in the create, the payload with the defaults; sections 6 and 7.2 of the earlier analysis failed and are replaced | 2026-10-29 |
 
 Add refactoring analysis documents as needed following the naming convention:

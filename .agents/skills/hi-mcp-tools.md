@@ -210,10 +210,10 @@ await createOrReplaceGroups({ posGroups: [group1, group2] });
 corner: `placement: { wall, alignment?, offsetMm?, roomIndex? }` — the parameters and defaults of
 `place-group`; the alignment `center` (default), the side label of the adjoining wall (flush into
 that corner, a corner article into the corner) or `end`, `offsetMm` from that corner or from the
-wall's end. The server loads the group, computes the target from the calculated group as
-`place-group` does (an overlap moves it along the wall), reloads it there, places it once more by
-its measure there when it does not stand as asked (D70), and sets its group materials after the
-last reload (D23). Anywhere else,
+wall's end. The server calculates the group, computes the target from the calculated group as
+`place-group` does (an overlap moves it along the wall), sets its group materials on it, loads it
+once there, and places it once more by its measure as built when it does not stand as asked (D70,
+D23). Anywhere else,
 and for a group of wall units only: `placement: { posGroup, posRotationZ, rootId? }` — `posGroup`
 the room point of the group's back left bottom corner (`z` 0 on the floor; a floor point `[x, y]` is
 completed to `[x, y, 0]`), `posRotationZ` the rotation in degrees,

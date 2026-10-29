@@ -150,7 +150,6 @@ done. The analysis and the report are the same document — the report is append
 
 | Document | Status | Last touched |
 |---|---|---|
-| [One calculation and one load per create](refactoring-analysis/one-calculation-and-one-load-per-create.md) | Open — proposal C of the performance analysis: the three or four rounds of calculate, publish and load of a create placed by wall with group materials become two calculations and one load; the two planner methods of the tools, `change-attributes` before the load, the model-free replay before and after, the decisions D23, D36, D70 and D106 | 2026-10-29 |
 | [Planning Assistant performance: what a second of a turn is made of, and the levers that move it](refactoring-analysis/planning-assistant-performance-next-steps.md) | Open — the four prices of a turn (round, reasoning token, output token, planner load); levers A–E: the skills supplied with the request, the tool call before the narration, one load per create, the finishes in the create, the payload with the defaults; sections 6 and 7.2 of the earlier analysis failed and are replaced | 2026-10-29 |
 
 ### Benchmarks & Performance Analyses
@@ -162,6 +161,9 @@ folder of the same name.
 
 | Document | Status | Last touched |
 |---|---|---|
+| [Benchmark 14: left-wall image kitchen, the create calculating first and loading once](benchmarks/14-iklw-az-load-2026-10-29.md) | Measured; accepted — the create tool 0.6 s against 2.1 s, the kitchen and the turn within the provider's spread except run 2's three handle rounds | 2026-10-29 |
+| [Benchmark 14: walnut text kitchen, the create calculating first and loading once](benchmarks/14-fkwm-az-load-2026-10-29.md) | Measured; accepted — the create tool 1.0 s against 3.2 s; the kitchen 1.1 s later in the mean by the model calls' waits | 2026-10-29 |
+| [The create replayed without a model](benchmarks/replay-create-loads-2026-10-29.md) | Measured; the change stays — the create tool 1.0 to 1.4 s faster on the two benchmark kitchens with one load, one kernel follow-up and two publications (D125), model-free, before and after | 2026-10-29 |
 | [Where the time goes when the HI agent plans a kitchen from an image](benchmarks/kitchen-from-image-time.md) | Third measurement (RML-18164): the six improvements one after another on one build and the local planner — baseline 104 s, 8.4 steps, 531k; the vocabulary section takes the search steps away (75 s, 6.5, 383k), the rest is stable within the spread | 2026-10-14 |
 | [One skill round on the Azure deployment](benchmarks/06-az-skill-2026-10-27.md) | Proposal A measured on `gpt-6-astra` on Azure: every run creates at call 2, no reference fetch; first kitchen 29.655 s (image) and 30.290 s (text) against the session's 36.4 and 31.7 s | 2026-10-27 |
 | [The library read before the first prompt on the Azure deployment](benchmarks/08-az-warm-2026-10-27.md) | Proposal F measured on `gpt-6-astra` on Azure: every page reads the library before the first prompt (729–754 ms); the first turn reads it in 6–8 ms and sends its first request after 0.03–0.05 s instead of 0.78–0.81 s on the build of 07; the creations keep the shape of 06 | 2026-10-27 |

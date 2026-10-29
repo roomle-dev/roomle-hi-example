@@ -3,17 +3,19 @@
 | Field | Value |
 |---|---|
 | Type / domain | Benchmark, model-free / the planner's work in `create-or-replace-groups` |
-| Trigger | Proposal C of [the performance analysis](../refactoring-analysis/planning-assistant-performance-next-steps.md), §5.3, whose refactoring analysis asked for the create measured model-free before and after and is closed out into D125 of the HI tools' decisions and this report; [RML-18303](https://roomle.atlassian.net/browse/RML-18303) |
+| Trigger | Proposal C of [the performance analysis](../refactoring-analysis/planning-assistant-performance-next-steps.md), §5.3, whose refactoring analysis asked for the create measured model-free before and after; [RML-18303](https://roomle.atlassian.net/browse/RML-18303) |
 | Date / author | 2026-10-29 / Claude Code |
-| Status | Measured; the change stays |
+| Status | Measured. The create tool is faster; the turn is not — the change failed in benchmark 14 and is rejected and reverted |
 | Before | roomle-ui `da0f50b80` (`feat/hi-mcp-performance`) |
-| After | roomle-ui `7a9f50fc8` (`feat/hi-mcp-performance`): the create calculates first and loads once (D125) |
+| After | roomle-ui `7a9f50fc8` (`feat/hi-mcp-performance`): the create calculates first and loads once; reverted by `d5904ab2f`, the rejected proposal D127 |
 | Data | `.temp/result/replay-create-loads-2026-10-29/`: `before/` and `after/` with one folder per replay (`replay.json`, the plan images), `collector/replay.mjs`, `collector/summarize.mjs`, `collector/probe-follow-up.mjs` and `probe-follow-up.log` |
 | How to repeat | §9 |
 
 Affected repositories: roomle-ui (the change measured, `feat/hi-mcp-performance`); roomle-hi-example (this report).
 
 ## 1. Executive summary
+
+**The change failed end to end and is reverted.** In [benchmark 14](az-cmp-2026-10-27.md#14-against-the-baselines), with the model, the walnut kitchen comes **1.1 s later** and the image turn ends **10.7 s later** than the baselines in the mean of two runs, although the create tool is 1.5 to 2.2 s shorter there as here. roomle-ui d5904ab2f reverts 7a9f50fc8; D127 of the [behaviour reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions) records the rejected proposal and what this replay found.
 
 The create tool of the two benchmark kitchens is **1.0 to 1.4 s faster**, in every replay: the walnut corner kitchen from 3.19 s to 1.97 s as the model sent it and from 3.75 s to 2.40 s with materials the library calculates, the image kitchen on the left wall from 2.82 s to 1.77 s (means of three replays each, the whole tool from the forward to its answer). The planner's work in the tool drops from two or three loads by the tools, one or two follow-ups of the kernel and four or five publications to the host, to **one load by the tools, one follow-up and two publications**; the library calculates the kitchen six times instead of nine (walnut) and five instead of eight (image). The loaded kitchens are the same: the same position, rotation and footprint in the plan context, the same root modules with the same input attributes.
 
@@ -104,7 +106,7 @@ The kernel reports a new object's planning situation only when the load asks for
 
 The plan context reports the same group in every replay of a payload: the walnut kitchen at [4815, 3765, 0] with 270° and a footprint of 3880 × 2190 mm, 16 root modules with 2 generated; the image kitchen at [−685, −240, 0] with 90° and 3010 × 622.3 mm, 11 root modules with 2 generated. Every root module carries the same input attributes before and after. The raw group's origin differs — before, the kernel re-anchored the group at the corner article after the reload ([4815, 0, −3765], 270°), after, the group keeps the calculation's frame ([4815, 0, −3504], −90°) —, which the plan context's position, read from the anchor root, does not show.
 
-The results differ in one place: the sentences that name what the library changed with the group attributes. Before, they were read from the group after the materials' own load and its follow-up; after, from the attribute command's answer on the calculated group, before the load. The image kitchen's result names the base units' insertion height (100 to 150) in both; before, it also named the wall units' (1480 to 1530) and the carcase program the colour switches (to ModernNature), which now show in the loaded group's attributes without a sentence (D125). The walnut kitchen's discard correction is the same in both.
+The results differ in one place: the sentences that name what the library changed with the group attributes. Before, they were read from the group after the materials' own load and its follow-up; after, from the attribute command's answer on the calculated group, before the load. The image kitchen's result names the base units' insertion height (100 to 150) in both; before, it also named the wall units' (1480 to 1530) and the carcase program the colour switches (to ModernNature), which now show in the loaded group's attributes without a sentence (D127). The walnut kitchen's discard correction is the same in both.
 
 ## 5. Findings
 
@@ -125,7 +127,7 @@ Neither is part of C; both are measured here, not proposed.
 
 ## 7. What is open
 
-Benchmark 14 — the two fixtures with the model on this build against the baselines — runs after this replay; its reports and the comparison follow in `.agents/benchmarks/`.
+Nothing of C: benchmark 14 measured the build with the model ([image](14-iklw-az-load-2026-10-29.md), [walnut](14-fkwm-az-load-2026-10-29.md)), not faster end to end, and the change is reverted. The two levers of §6 are unmeasured with the model.
 
 ## 8. Measurement gaps
 

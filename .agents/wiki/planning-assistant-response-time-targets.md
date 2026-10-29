@@ -48,19 +48,15 @@ The first kitchen is the model calls before the create plus the create call itse
   answer. The shared reference in front of every call is read from the provider's cache.
 - **The create call** reasons before it writes its payload — the largest block of the first
   kitchen, and the model's own — and then streams the payload in a few seconds.
-- **The planner** builds the kitchen in about one second: the create calculates the groups, sets
-  their materials and computes their wall targets on the calculated groups, and loads them once
-  (D125 of the HI tools' decisions) — 1.0 s for the walnut corner kitchen and 0.6 s for the image
-  kitchen in benchmark 14, up to two seconds with a dozen group materials. No tool and no planner
-  step is on the path to the first kitchen for more than two seconds.
+- **The planner** builds the kitchen in 1–2 s. No tool and no planner step is on the path to the
+  first kitchen for more than two seconds.
 
 The planning assistant supplies the plan state with every turn, and `get-skill` answers a room
 skill with its planning reference in one result, so a creation fetches its skill in the first call
 and creates in the second. The baselines measure every part. The levers in place — the shared
 reference prefix, response chaining within a turn, the plan state per turn, the skill with its
 reference in one result, the plan images as JPEG, a render only when it is due, the library read
-before the first prompt, the tool named as the model starts its call, the create that calculates
-first and loads once — are described with their
+before the first prompt, the tool named as the model starts its call — are described with their
 rejected alternatives in roomle-ui's
 [prompt-caching reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md)
 and the [decisions of the HI tools](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions).
@@ -77,6 +73,7 @@ A small model that selects the skills of a turn before its first call is
 | The skills and rules trained into the model | Fine-tuning teaches how to answer, not which rules to know; the rules change with the library, the region and the skills HOMAG delivers, and every change would mean training, data set and validation again. The price of a round and the reasoning of the create call do not depend on where the rules are |
 | A smaller input image | The chat sends the image at most 1568 px on the long side, about 2,000 of the about 77,000 input tokens of a first call; a smaller image saves nothing measurable and loses what the model reads |
 | Trimming the tool definitions | They are read from the cache with the prefix: about a tenth of a second per call |
+| One calculation and one load of the kitchen in the create, instead of a load at the planner's origin, a reload at the wall and a load for the materials | The create tool takes 1.0 s instead of 3.2 s for the walnut corner kitchen and 0.6 s instead of 2.1 s for the image kitchen, but the turn does not show it: the walnut kitchen comes 1.1 s later and the image turn ends 10.7 s later than the baselines in the mean of two runs — the model calls' waits of 2 to 5 s per call outweigh a saving of 1.5 to 2.2 s (D127 of [roomle-ui `hi-tools-behaviour.md`](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#3-decisions)) |
 | A terser create payload | A second or two of streaming, at the price of a tool API change for every client |
 | A first partial kitchen — the base row first, the rest in a second call | One more round and a second group that docks onto the first; the first attempt is half a kitchen |
 | Streaming the tool input into the planner while the model writes it | A group is laid out from its relations; a partial group cannot be built |

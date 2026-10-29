@@ -38,7 +38,9 @@ Once the fix has landed — on `master`, a roomle-ui fix on `release/bo-test` or
 
 ## Current Documents
 
-No bug analysis is open.
+| Document | Status | Description |
+|---|---|---|
+| [order-data-without-master-data.md](order-data-without-master-data.md) | Open | RML-18325: roomle-ui calls the library's `getOrderData` without its fourth parameter `masterData`, so the order data lacks the attributes' display information; open question on the value images in the agent's `get-order-data` result |
 
 Add bug analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `stale-group-position-after-move.md`).

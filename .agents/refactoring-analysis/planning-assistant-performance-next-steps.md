@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Type / domain | Refactoring analysis / HI Planning Assistant performance |
-| Status | Open — proposals, no productive implementation |
+| Status | Open — proposals; C was implemented and failed (benchmark 14: the walnut kitchen 1.1 s later, the image turn 10.7 s later than the baselines), reverted |
 | Date / author | 2026-10-29 / Claude Code |
 | Ticket | [RML-18303](https://roomle.atlassian.net/browse/RML-18303) |
 | Base | roomle-hi-example `e3f1de2` (`docs/article-catalog-three-levels-analysis`); roomle-ui `da0f50b80` (`feat/hi-mcp-performance`) |
@@ -172,6 +172,8 @@ D23 rejected "a probe of the whole group and one load at the target" because eve
 
 **Scope and tests.** roomle-ui `hi-tools.ts`, `hi-mcp/planner-api.ts`, `external-object-api.ts`, `roomle-planner.ts` (the two methods), `hi-tool-commands.ts` (the create and `place-group`, which shares `placeOnceMoreAsBuilt`), `hi-tool-attributes.ts` (the attributes before the load). Tests: `__tests__/hi-tool-commands/create-or-replace-groups-placement-test.ts` and `place-group-test.ts` carry the placements, the as-built case, the overlap corrections and the attribute order (`programsFirst`); they change their expectation of the planner calls — one load — and keep every expectation of the results; `__tests__/hi-tools-test.ts` for the calculation without a load (D106's discard, the replaced group's snapshot, no publication). Decisions D23, D36 and D70 are rewritten to the one-load order. Not touched: `glue-logic.ts` (the hard rule); the library's calculation.
 
+**Implemented and failed.** The replay of the two kitchens shows the create tool 1.0 to 1.4 s faster with one load; [benchmark 14](../benchmarks/az-cmp-2026-10-27.md#14-against-the-baselines) shows the create tool at 1.0 / 0.6 s against 3.2 / 2.1 s, but the walnut kitchen 1.1 s later and the image turn 10.7 s later than the baselines in the mean of two runs. roomle-ui d5904ab2f reverts 7a9f50fc8; D127 of the behaviour reference records the rejected proposal. The one load at a wall needs the kernel's plan answer, which the plain load reason does not ask for.
+
 ### 5.4 D — The finishes of a kitchen in the create
 
 **Finding.** After the image kitchen, both baseline runs look up the handle colour, set the handles black and try the backsplash, one round each: 2.2 + 3.4 + 8.6 s in run 1, 14.1 + 3.2 + 2.8 s in run 2 — **14.2 and 20.1 s** of the 27.7 and 30.8 s after the kitchen. In the session, every image kitchen makes 5–9 calls after its create, with `find-attributes` and `change-group-attribute` among them; the text kitchens 1–8.
@@ -235,7 +237,7 @@ Projected with the prices of §3.1 from the means of the baselines; a projection
 
 ### 8.1 Order
 
-1. **C** — measured model-free before and after (the replay of §5.3), its unit tests, the decisions.
+1. **C** — measured model-free before and after (the replay of §5.3), its unit tests, the decisions. Implemented, failed in benchmark 14, reverted (§5.3).
 2. **A** — its unit tests; the match checked against the prompts of `docs/test-prompts.json` and the session's 79 prompts without a model (a script over the prompts and the fetched skills of `planner-calls.json`, as §5.1's numbers were made).
 3. **B, D and E** — served text and projection; their unit tests and the fixture.
 4. **One paid screen** of the build with A–E (§8.3). Then the minimum test set on the build before anything is merged — a served-text change holds for every model ([the testing skill](../skills/hi-mcp-testing.md)).

@@ -150,7 +150,7 @@ authoritative, and `dimensions` give the size, over the catalog images of the ma
 colour of that value, taken as it is: light, dark and the hue come from it, not from the name (D53).
 The rule covers only the catalog images, not the renderings of `get-plan-images` or an image the
 user attaches. It is in `get-authoring-rules` and in the descriptions of `get-plan-context` and
-`find-attributes`. The server strips every `imageUrl` from its results (D7). An article's `desc`
+`find-attributes`. The server strips every `imageUrl` and `downloadUri` from its results (D7). An article's `desc`
 in the catalog is short — of a description written in sections, the text of its FUNCTION and
 AI_SELECTION_HINT sections, on the line of the section name or the next; `include: ['articleDescriptions']` returns the full ones, for a question about one article —
 the descriptions tell the agent that `desc` is enough to pick the articles of a planning (D63).
@@ -492,7 +492,9 @@ value carries its code — `Cloudy blue (#506080)` —, the colour of that value
 **Timeout**: 30 seconds for `get-price`; 2 minutes for `get-order-data` and `get-plan-images`
 (snapshots)
 
-`get-price` and `get-order-data` return the planner's answer as it is. The price and the order count
+`get-price` and `get-order-data` return the planner's answer as it is, without the `downloadUri` of
+its images (D7). The group and root attributes of the order data carry the library's `displayName`,
+`category`, `isMain` and `displayValue`. The price and the order count
 every root module of the plan, also one the library could not calculate; when the plan holds such a
 root module or group, a `hint` beside the answer names it with the first line of the library's
 message — "root module 'r1' (OTB60) of group 'g1' is not built - … The price includes what is not

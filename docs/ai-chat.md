@@ -248,7 +248,7 @@ renders as base64 text, not as images, and the text takes a large part of its
 context. Use a GPT, Claude or Gemini model for plannings that look at the plan.
 
 The tools keep their results small for every model: compact JSON without the
-signed `imageUrl` of the master data
+signed image URLs of the master data and the order data
 ([behaviour reference §5.3](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/hi-tools-behaviour.md#53-result-format)).
 
 ## Architecture

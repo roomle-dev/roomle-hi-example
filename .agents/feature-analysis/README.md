@@ -40,7 +40,6 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 | Document | Status | Description |
 |---|---|---|
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
-| [ligna-store-hi-library-load-warning.md](ligna-store-hi-library-load-warning.md) | Open | RML-18327: the ligna-store warns in a dialog when the HOMAG backend does not deliver the HI library, and the scene loads without it |
 
 Add feature analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `group-adjustment-to-wall-width.md`).

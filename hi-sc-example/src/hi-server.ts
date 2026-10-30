@@ -1,3 +1,5 @@
+import type { PlanningAssistantConfig } from '@roomle/embedding-lib/hi';
+
 const HI_SERVER_BASE_URL = 'https://dfscfgtest01-app.azurewebsites.net';
 
 /** A backend of the HI server, as `/backends/list` answers it. */
@@ -7,6 +9,13 @@ export interface HiBackend {
   planId: string | null;
   configureInRoom: boolean | null;
   additionalCatalogs: string[] | null;
+  enableAIPlanning?: boolean | null;
+}
+
+/** The sign-in: the backend of the backend ID, and whether the model proxy of the HI server serves the chat. */
+export interface SignIn {
+  backend?: HiBackend;
+  modelProxy: boolean;
 }
 
 /**
@@ -19,12 +28,13 @@ export const hiProxyBaseUrl = (backendId?: string) =>
 /**
  * Signs in to the HI server with the Basic `authorization` and returns the
  * backend of `backendId`, none without one: the backend list answers 401 to
- * a wrong user or password.
+ * a wrong user or password. The model proxy serves a user of exactly one
+ * backend, when that backend enables it.
  */
 export const fetchBackend = async (
   authorization: string,
   backendId: string
-): Promise<HiBackend | undefined> => {
+): Promise<SignIn> => {
   const response = await fetch(`${HI_SERVER_BASE_URL}/backends/list`, {
     headers: { Authorization: authorization },
   });
@@ -36,13 +46,29 @@ export const fetchBackend = async (
       `The HI server answered ${response.status} ${response.statusText}`
     );
   }
-  if (!backendId) {
-    return undefined;
-  }
   const backends: HiBackend[] = await response.json();
+  const modelProxy =
+    backends.length === 1 && backends[0].enableAIPlanning === true;
+  if (!backendId) {
+    return { modelProxy };
+  }
   const backend = backends.find((entry) => entry.backendId === backendId);
   if (!backend) {
     throw new Error(`The HI server has no backend "${backendId}"`);
   }
-  return backend;
+  return { backend, modelProxy };
 };
+
+/**
+ * The chat on the model proxy of the HI server: the model, its endpoint and
+ * its key stay in the backend; the page authorizes with the sign-in.
+ */
+export const modelProxyConfig = (
+  authorization: string
+): PlanningAssistantConfig => ({
+  provider: 'openai-compatible',
+  baseUrl: `${HI_SERVER_BASE_URL}/api/ai/v1`,
+  model: 'planning',
+  headers: { Authorization: authorization },
+  readsImages: true,
+});

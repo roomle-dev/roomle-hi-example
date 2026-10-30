@@ -1,5 +1,5 @@
 import { fieldsCookie, storedFields } from './fields-cookie.ts';
-import { fetchBackend } from './hi-server.ts';
+import { fetchBackend, modelProxyConfig } from './hi-server.ts';
 import { planningAssistantConfig, type Provider } from './model-config.ts';
 import { startPlanner, type PlannerSettings } from './planner.ts';
 import { plannerQueryOptions } from './query-options.ts';
@@ -48,12 +48,15 @@ const readSettings = async (fields: FormData): Promise<PlannerSettings> => {
       ? planningAssistantConfig(provider, model, apiKey)
       : undefined;
   const authorization = `Basic ${btoa(`${value('user')}:${fields.get('password')}`)}`;
-  const backend = await fetchBackend(authorization, value('backendId'));
+  const { backend, modelProxy } = await fetchBackend(
+    authorization,
+    value('backendId')
+  );
   return {
     authorization,
     backend,
     libraryId: value('libraryId'),
-    chat,
+    chat: chat ?? (modelProxy ? modelProxyConfig(authorization) : undefined),
     queryOptions: plannerQueryOptions(location.search, [...fields.keys()]),
   };
 };

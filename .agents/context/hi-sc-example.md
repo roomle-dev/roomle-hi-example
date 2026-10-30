@@ -22,6 +22,10 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
      optional: with one, a backend ID that is not in the list is an error, and the backend's
      `planId`, `additionalCatalogs` and `configureInRoom` go to the planner; without one, the planner
      gets no backend entry (default plan, no additional catalogs);
+   - without a provider, model and API key, the chat runs on the model proxy of the HI server
+     (`modelProxyConfig`, [The chat model](#the-chat-model)) when `fetchBackend` reports
+     `modelProxy`: the list has exactly one backend and its `enableAIPlanning` is `true` — the proxy
+     serves only a user of exactly one backend. Otherwise the planner opens without the chat;
    - after the sign-in is accepted and while no sign-in cookie exists, the dialog `#cookie-consent`
      asks to store the sign-in data ("Only the essential login data is stored"). **Allow** writes
      all seven fields to the cookie `hi-sc-sign-in` (`fields-cookie.ts`: JSON, one year,
@@ -48,7 +52,7 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 | `hi-sc-example/index.html` | the two views: the sign-in form with the cookie dialog, the planner container |
 | `hi-sc-example/src/main.ts` | the form: prefills it, reads the settings, signs in, asks for the cookie, swaps the views |
 | `hi-sc-example/src/fields-cookie.ts` | `storedFields`, `fieldsCookie`: the sign-in fields in the cookie |
-| `hi-sc-example/src/hi-server.ts` | `hiProxyBaseUrl`, `fetchBackend` |
+| `hi-sc-example/src/hi-server.ts` | `hiProxyBaseUrl`, `fetchBackend`, `modelProxyConfig` |
 | `hi-sc-example/src/model-config.ts` | `planningAssistantConfig`: provider, model ID and key → the `PlanningAssistantConfig` of the embedding-lib |
 | `hi-sc-example/src/planner.ts` | `startPlanner`: HI setup, planner, planning assistant |
 | `hi-sc-example/src/query-options.ts` | `plannerQueryOptions`: the query parameters other than the form fields → planner options |
@@ -56,7 +60,7 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 | `hi-sc-example/tests/model-config.test.ts` | the unit tests of `planningAssistantConfig` |
 | `hi-sc-example/tests/fields-cookie.test.ts` | the unit tests of the sign-in cookie |
 | `hi-sc-example/tests/query-options.test.ts` | the unit tests of `plannerQueryOptions` |
-| `hi-sc-example/tests/hi-server.test.ts` | the unit tests of `hiProxyBaseUrl` and `fetchBackend` |
+| `hi-sc-example/tests/hi-server.test.ts` | the unit tests of `hiProxyBaseUrl`, `fetchBackend` and `modelProxyConfig` |
 
 ## The planner options
 
@@ -84,10 +88,19 @@ model ID and the API key to the embedding-lib unchanged — no aliases, no mappi
   on the Responses API with its own default reasoning effort.
 - `readsImages` is `true` for every model, so the chat window offers the image drop.
 
+Without an entered model, `modelProxyConfig` (`hi-server.ts`) puts the chat on the model proxy of
+the HI server: the provider `openai-compatible`, the base URL `<HI server>/api/ai/v1`, the model
+name `planning` (the alias of the backend's `AIFeatures.Planning`), the sign-in's Basic
+authorization as the header `Authorization`, no key, `readsImages: true`. The model, its endpoint
+and its key stay in the backend. The proxy speaks Chat Completions; how the embedding-lib runs the
+provider:
+[`homag-intelligence-embedding.md`](https://github.com/roomle-dev/roomle-ui/blob/master/packages/embedding-lib/docs/homag-intelligence-embedding.md)
+of roomle-ui.
+
 ## Dependencies, build and tests
 
-- **`@roomle/embedding-lib`** comes from npm, pinned to the dev version the minimal example imports
-  from the CDN (`0.0.0-dev-1b4351d`) — see [unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md).
+- **`@roomle/embedding-lib`** comes from npm, pinned to the dev version `0.0.0-dev-4c2797a`, which
+  has the provider `openai-compatible` of the model proxy — see [unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md).
   Its declarations type `PlanningAssistantConfig` and `startPlanningAssistant`; the planner's init
   data and the HI callbacks refer to roomle-ui sources the package does not ship and are untyped
   (`skipLibCheck`).
@@ -103,7 +116,7 @@ model ID and the API key to the embedding-lib unchanged — no aliases, no mappi
 | `tests/model-config.test.ts` | provider, model ID and key passed through unchanged, the Foundry endpoint of an `azure` model, a chat without its provider, model or key |
 | `tests/fields-cookie.test.ts` | the fields stored and read back with any characters, among other cookies; the cookie attributes; no fields without the cookie |
 | `tests/query-options.test.ts` | every query parameter but the login fields forwarded; `true`, `false` and numbers converted; `language` sets `locale`; nothing without query parameters |
-| `tests/hi-server.test.ts` | the proxy URL with and without a backend ID; the backend of the ID, the sign-in check without an ID, an unknown backend ID (`fetch` mocked) |
+| `tests/hi-server.test.ts` | the proxy URL with and without a backend ID; the backend of the ID, the sign-in check without an ID, an unknown backend ID; the model proxy for the only backend that enables it, none for a backend without the flag or a user of several backends (`fetch` mocked); the config of the model proxy |
 
 ## GitHub Pages
 

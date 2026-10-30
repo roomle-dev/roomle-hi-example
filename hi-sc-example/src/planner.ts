@@ -53,7 +53,7 @@ export const startPlanner = async (
     container,
     {
       id: backend?.planId ?? DEFAULT_PLAN_ID,
-      overrideServerUrl: SERVER_URL,
+      overrideServerUrl: backend?.overrideServerUrl ?? SERVER_URL,
       customApiUrl: 'https://api.roomle.com/v2',
       moc: true,
       locale: LANGUAGE,

@@ -19,7 +19,7 @@ npm run start:sc        # in the repository root; or `npm run dev` in hi-sc-exam
 
 **3. Sign in** with the user and password of the HI server and, optionally, the backend ID and the
 library. The backend ID field lists the backend IDs of the HI server by stage (DEV, INT, PRE, PRD)
-and takes any other ID typed in. With a backend ID, the planner takes the backend's plan and additional catalogs, and its
+and takes any other ID typed in. With a backend ID, the planner takes the backend's plan, additional catalogs and server URL, and its
 library when you enter none; without one, the HI proxy uses the backend of the user, and you enter
 the library. For the chat, select the provider — Anthropic, Azure, Google, Mistral or OpenAI — and enter the exact model ID
 at that provider and its API key. An Azure model is a deployment on the HI Azure AI Foundry
@@ -48,7 +48,7 @@ http://localhost:3300/?backendId=<backend-id>&libraryId=<library>&provider=azure
 ```
 
 Every other query parameter goes to the planner (`createPlanner`) and overwrites its option of the
-same name — for example `id` (the plan), `overrideServerUrl`, `customApiUrl`. `true`, `false` and
+same name — for example `id` (the plan), `overrideServerUrl` (over the backend's server URL), `customApiUrl`. `true`, `false` and
 numbers keep their type. A `language` also sets the planner's `locale`:
 
 ```text

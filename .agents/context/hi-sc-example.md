@@ -25,12 +25,14 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
    - the user and password → the Basic authorization; `fetchBackend` (`hi-server.ts`) reads
      `GET <HI server>/backends/list` with it. 401 is "Wrong user or password". The backend ID is
      optional: with one, a backend ID that is not in the list is an error, and the backend's
-     `planId`, `additionalCatalogs` (beside the fixed root tags, each catalog once) and
-     `configureInRoom` go to the planner; without one, the planner gets no backend entry (default
-     plan, no additional catalogs);
+     `planId`, `additionalCatalogs` (beside the fixed root tags, each catalog once),
+     `configureInRoom` and `overrideServerUrl` (the planner's server, over
+     `https://www.roomle.com/t/bo-test/`) go to the planner; without one, the planner gets no
+     backend entry (default plan, no additional catalogs, the default server);
    - the library is optional as well: an entered one wins, otherwise the backend's `libraryId`
      (`resolveLibraryId`, `hi-server.ts`); without both, "Enter a library, or a backend ID that has
-     one" on the form. A `?id=` plan goes to the planner over the backend's plan;
+     one" on the form. A `?id=` plan goes to the planner over the backend's plan, a
+     `?overrideServerUrl=` over the backend's server URL;
    - without a provider, model and API key, the chat runs on the model proxy of the HI server
      (`modelProxyConfig`, [The chat model](#the-chat-model)) when `fetchBackend` reports
      `modelProxy`: the list has exactly one backend and its `enableAIPlanning` is `true` — the proxy

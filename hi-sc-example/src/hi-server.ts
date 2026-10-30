@@ -43,6 +43,7 @@ export interface HiBackend {
   configureInRoom: boolean | null;
   additionalCatalogs: string[] | null;
   enableAIPlanning?: boolean | null;
+  overrideServerUrl?: string | null;
 }
 
 /** The sign-in: the backend of the backend ID, and whether the model proxy of the HI server serves the chat. */

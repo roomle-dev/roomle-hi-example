@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HOMAG Intelligence Planner</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+
+  <body>
+    <main id="sign-in-view" class="sign-in">
+      <form id="sign-in" class="card">
+        <hgroup>
+          <h1>Sign in</h1>
+          <p>Plan with HOMAG Intelligence and its AI Planning Assistant.</p>
+        </hgroup>
+        <fieldset>
+          <legend>HI server</legend>
+          <label>
+            User
+            <input
+              name="user"
+              autocomplete="username"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+              required
+            />
+          </label>
+          <label>
+            Password
+            <input
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>Library</legend>
+          <label>
+            Backend ID
+            <input
+              name="backendId"
+              autocapitalize="off"
+              spellcheck="false"
+              required
+            />
+          </label>
+          <label>
+            Library
+            <input
+              name="libraryId"
+              autocapitalize="off"
+              spellcheck="false"
+              required
+            />
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>AI chat (optional)</legend>
+          <label>
+            Provider
+            <select name="provider">
+              <option value=""></option>
+              <option value="anthropic">Anthropic</option>
+              <option value="azure">Azure</option>
+              <option value="google">Google</option>
+              <option value="mistral">Mistral</option>
+              <option value="openai">OpenAI</option>
+            </select>
+          </label>
+          <label>
+            Model
+            <input name="model" autocapitalize="off" spellcheck="false" />
+          </label>
+          <label class="full-width">
+            API key
+            <input name="apiKey" type="password" autocomplete="off" />
+          </label>
+        </fieldset>
+        <p class="error" role="alert"></p>
+        <button type="submit">Start planning</button>
+      </form>
+      <dialog id="cookie-consent" aria-labelledby="cookie-consent-title">
+        <form method="dialog">
+          <h2 id="cookie-consent-title">Remember the sign-in?</h2>
+          <p>
+            A cookie stores the sign-in data, so the form is filled in on your
+            next visit. Only the essential login data is stored.
+          </p>
+          <div class="dialog-buttons">
+            <button value="decline" class="secondary">Decline</button>
+            <button value="allow">Allow</button>
+          </div>
+        </form>
+      </dialog>
+    </main>
+    <div id="planner" hidden></div>
+  </body>
+</html>

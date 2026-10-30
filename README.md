@@ -64,6 +64,17 @@ EXAMPLE_SERVER_URL='https://test.roomle.com/t/cp/3087/?customApiUrl=https://www.
 Details: [AI chat](./docs/ai-chat.md) ·
 [example and tool reference](.agents/context/hi-mcp-server.md)
 
+## Sign-in example (TypeScript)
+
+[`hi-sc-example/`](./hi-sc-example/README.md) is the planner with its chat in TypeScript, behind a
+sign-in page: the user and password of the HI server, the backend ID, the library, and the provider,
+model and API key of the chat are entered on the page instead of the command line.
+
+```bash
+npm install
+npm run start:sc     # Vite dev server on :3300, opens the sign-in page
+```
+
 ## Ask the agent
 
 Open the chat with the button at the bottom of the planner, type into it, and the model drives the

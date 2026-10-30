@@ -9,6 +9,9 @@ import RoomleConfiguratorApi from 'https://cdn.jsdelivr.net/npm/@roomle/embeddin
 import { /* … */ setupHi } from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-1b4351d/hi.js';
 ```
 
+The sign-in example `hi-sc-example/` depends on the same version from npm, pinned in
+`hi-sc-example/package.json`; a new pin changes both places.
+
 To try a change that exists only on a roomle-ui branch, point these two imports somewhere else. Two ways
 work: the source of a local roomle-ui checkout, and a dev version on npm.
 

@@ -143,6 +143,7 @@ feature behaves the way it does. Written **before** the work, closed out **after
 |---|---|---|
 | [Sales configurator AI integration: kickoff proposal](feature-analysis/sales-configurator-ai-integration.md) | Open — product integration scope; core MCP/chat prototype implemented | 2026-09-27 |
 | [The AI image chat through the model proxy of the HI server](feature-analysis/ai-rendering-through-the-model-proxy.md) | Open — RML-18350 | 2026-10-30 |
+| [The nobilia catalog example through the HI server](feature-analysis/nobilia-catalog-example-through-the-hi-server.md) | Open | 2026-10-30 |
 
 ### Refactoring Analyses
 

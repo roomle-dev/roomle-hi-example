@@ -9,9 +9,11 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 1. **Sign-in view** (`index.html`): a form over the background image
    `src/assets/say-hi-to-homag-intelligence.jpg` with the user and password of the HI server, the
    optional backend ID and library, and the optional provider, model and API key of the chat. The
-   backend ID is a text field with a list (`datalist` `#backend-ids`) of the backend IDs of the HI
-   server (df-salesPortal `Infrastructure/salesConfigurator/test01/appsettings.json`), sorted by
-   stage — DEV, INT, PRE, PRD, the stage as each entry's label —; any other ID can be typed. Every
+   backend ID is a text field with a ▾ button: the button opens the list `#backend-id-list` of the
+   backend IDs of the HI server (`BACKEND_IDS`, `hi-server.ts`, from df-salesPortal
+   `Infrastructure/salesConfigurator/test01/appsettings.json`), under the headings DEV, INT, PRE,
+   PRD (`setupBackendIdList`, `main.ts`). The list always shows every ID, whatever the field holds;
+   a click takes the ID into the field; any other ID can be typed. Every
    field starts blank; the provider is a selection of the providers of the embedding-lib. `main.ts` fills
    the fields from the sign-in cookie, then from the query parameter of each field's `name`
    (`user`, `password`, `backendId`, `libraryId`, `provider`, `model`, `apiKey`), so a query
@@ -59,7 +61,7 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 | `hi-sc-example/index.html` | the two views: the sign-in form with the cookie dialog, the planner container |
 | `hi-sc-example/src/main.ts` | the form: prefills it, reads the settings, signs in, asks for the cookie, swaps the views |
 | `hi-sc-example/src/fields-cookie.ts` | `storedFields`, `fieldsCookie`: the sign-in fields in the cookie |
-| `hi-sc-example/src/hi-server.ts` | `hiProxyBaseUrl`, `fetchBackend`, `modelProxyConfig` |
+| `hi-sc-example/src/hi-server.ts` | `BACKEND_IDS`, `hiProxyBaseUrl`, `fetchBackend`, `resolveLibraryId`, `modelProxyConfig` |
 | `hi-sc-example/src/model-config.ts` | `planningAssistantConfig`: provider, model ID and key → the `PlanningAssistantConfig` of the embedding-lib |
 | `hi-sc-example/src/planner.ts` | `startPlanner`: HI setup, planner, planning assistant |
 | `hi-sc-example/src/query-options.ts` | `plannerQueryOptions`: the query parameters other than the form fields → planner options |

@@ -40,39 +40,34 @@
         </fieldset>
         <fieldset>
           <legend>Library</legend>
-          <label>
-            Backend ID (optional)
-            <input
-              name="backendId"
-              list="backend-ids"
-              autocapitalize="off"
-              spellcheck="false"
-            />
-          </label>
-          <!-- the backends of the HI server, by stage; any other ID can be typed -->
-          <datalist id="backend-ids">
-            <option value="HI_DEV_HOMAG_DF_DEV_Testing" label="DEV"></option>
-            <option value="HI_DEV_Roomle_Milestone_2" label="DEV"></option>
-            <option value="HI_DEV_Homag_Roomle_Bath_Test" label="DEV"></option>
-            <option value="HI_INT_HOMAG_DF_DEV_Testing" label="INT"></option>
-            <option value="HI_INT_Roomle_Milestone_2" label="INT"></option>
-            <option value="HI_INT_Homag_Roomle_Bath_Test" label="INT"></option>
-            <option value="HI_PRE_HOMAG_DF_DEV_Testing" label="PRE"></option>
-            <option value="HI_PRE_Roomle_Milestone_2" label="PRE"></option>
-            <option value="HI_PRE_Homag_Roomle_Bath_Test" label="PRE"></option>
-            <option value="HI_PRE_DE_MAAT_FABRIEK" label="PRE"></option>
-            <option
-              value="HI_PRE_HOMAG_TecConfig_Library_Development_DeMaat"
-              label="PRE"
-            ></option>
-            <option value="PRE_FURNITURE_SMITH" label="PRE"></option>
-            <option value="HI_PRD_HOMAG_DF_DEV_Testing" label="PRD"></option>
-            <option value="HI_PRD_Roomle_Milestone_2" label="PRD"></option>
-            <option value="HI_PRD_Homag_Roomle_Bath_Test" label="PRD"></option>
-            <option value="HI_PRD_DE_MAAT_FABRIEK" label="PRD"></option>
-            <option value="PRIMA_SYSTEME_GMBH" label="PRD"></option>
-            <option value="PRD_FURNITURE_SMITH" label="PRD"></option>
-          </datalist>
+          <div class="combo">
+            <label>
+              Backend ID (optional)
+              <span class="combo-field">
+                <input
+                  name="backendId"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                />
+                <button
+                  type="button"
+                  class="combo-toggle"
+                  aria-label="Show the backend IDs"
+                  aria-controls="backend-id-list"
+                  aria-expanded="false"
+                >
+                  ▾
+                </button>
+              </span>
+            </label>
+            <div
+              id="backend-id-list"
+              class="combo-list"
+              role="listbox"
+              hidden
+            ></div>
+          </div>
           <label>
             Library (optional)
             <input name="libraryId" autocapitalize="off" spellcheck="false" />

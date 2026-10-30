@@ -1,5 +1,6 @@
 import { fieldsCookie, storedFields } from './fields-cookie.ts';
 import {
+  BACKEND_IDS,
   fetchBackend,
   modelProxyConfig,
   resolveLibraryId,
@@ -28,6 +29,59 @@ const prefill = (entries: Iterable<[string, string]>) => {
   }
 };
 
+// The backend ID: a text field and a list of every backend ID of the HI
+// server by stage, whatever the field holds.
+const setupBackendIdList = (combo: HTMLElement) => {
+  const input = combo.querySelector('input')!;
+  const toggle = combo.querySelector('button')!;
+  const list = combo.querySelector<HTMLElement>('[role=listbox]')!;
+  for (const [stage, ids] of Object.entries(BACKEND_IDS)) {
+    const heading = document.createElement('div');
+    heading.className = 'combo-stage';
+    heading.textContent = stage;
+    list.append(
+      heading,
+      ...ids.map((id) => {
+        const option = document.createElement('div');
+        option.setAttribute('role', 'option');
+        option.dataset.value = id;
+        option.textContent = id;
+        return option;
+      })
+    );
+  }
+  const show = (shown: boolean) => {
+    list.hidden = !shown;
+    toggle.setAttribute('aria-expanded', String(shown));
+  };
+  toggle.addEventListener('click', () => show(list.hidden !== false));
+  // the field keeps the focus while an ID is chosen
+  list.addEventListener('mousedown', (event) => event.preventDefault());
+  list.addEventListener('click', (event) => {
+    const option = (event.target as HTMLElement).closest<HTMLElement>(
+      '[role=option]'
+    );
+    if (option) {
+      input.value = option.dataset.value ?? '';
+      show(false);
+      input.focus();
+    }
+  });
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown') {
+      show(true);
+    } else if (event.key === 'Escape') {
+      show(false);
+    }
+  });
+  document.addEventListener('click', (event) => {
+    if (!combo.contains(event.target as Node)) {
+      show(false);
+    }
+  });
+};
+
+setupBackendIdList(form.querySelector<HTMLElement>('.combo')!);
 prefill(storedFields(document.cookie));
 prefill(new URLSearchParams(location.search));
 

@@ -2,6 +2,39 @@ import type { PlanningAssistantConfig } from '@roomle/embedding-lib/hi';
 
 const HI_SERVER_BASE_URL = 'https://dfscfgtest01-app.azurewebsites.net';
 
+/**
+ * The backend IDs of the HI server by stage (df-salesPortal
+ * `Infrastructure/salesConfigurator/test01/appsettings.json`).
+ */
+export const BACKEND_IDS: Record<string, string[]> = {
+  DEV: [
+    'HI_DEV_HOMAG_DF_DEV_Testing',
+    'HI_DEV_Roomle_Milestone_2',
+    'HI_DEV_Homag_Roomle_Bath_Test',
+  ],
+  INT: [
+    'HI_INT_HOMAG_DF_DEV_Testing',
+    'HI_INT_Roomle_Milestone_2',
+    'HI_INT_Homag_Roomle_Bath_Test',
+  ],
+  PRE: [
+    'HI_PRE_HOMAG_DF_DEV_Testing',
+    'HI_PRE_Roomle_Milestone_2',
+    'HI_PRE_Homag_Roomle_Bath_Test',
+    'HI_PRE_DE_MAAT_FABRIEK',
+    'HI_PRE_HOMAG_TecConfig_Library_Development_DeMaat',
+    'PRE_FURNITURE_SMITH',
+  ],
+  PRD: [
+    'HI_PRD_HOMAG_DF_DEV_Testing',
+    'HI_PRD_Roomle_Milestone_2',
+    'HI_PRD_Homag_Roomle_Bath_Test',
+    'HI_PRD_DE_MAAT_FABRIEK',
+    'PRIMA_SYSTEME_GMBH',
+    'PRD_FURNITURE_SMITH',
+  ],
+};
+
 /** A backend of the HI server, as `/backends/list` answers it. */
 export interface HiBackend {
   backendId: string;

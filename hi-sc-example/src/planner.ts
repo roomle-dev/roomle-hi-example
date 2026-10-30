@@ -6,6 +6,7 @@ import {
   type PlanningAssistantConfig,
 } from '@roomle/embedding-lib/hi';
 import { HI_SERVER_BASE_URL, type HiBackend } from './hi-server.ts';
+import type { QueryOptions } from './query-options.ts';
 
 const EMBEDDING_ID = '948zg40lbmdbthwcoym0m1e4coqa55z';
 const SERVER_URL = 'https://www.roomle.com/t/bo-test/';
@@ -21,15 +22,17 @@ export interface PlannerSettings {
   backend: HiBackend;
   libraryId: string;
   chat?: PlanningAssistantConfig;
+  queryOptions: QueryOptions;
 }
 
 /**
  * Starts the planner in `container` with the HI library of the backend and,
- * with a `chat` model, the AI Planning Assistant of the embedding-lib.
+ * with a `chat` model, the AI Planning Assistant of the embedding-lib. The
+ * `queryOptions` overwrite the planner options.
  */
 export const startPlanner = async (
   container: HTMLElement,
-  { authorization, backend, libraryId, chat }: PlannerSettings
+  { authorization, backend, libraryId, chat, queryOptions }: PlannerSettings
 ) => {
   const hiOptions = {
     libraryId,
@@ -79,6 +82,7 @@ export const startPlanner = async (
         debugConfiguration: { createDebugGeometry: false },
         tecConfigInfo: { language: LANGUAGE, libraryId },
       },
+      ...queryOptions,
     }
   );
   if (chat) {

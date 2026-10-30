@@ -34,7 +34,12 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 3. **Planner** (`planner.ts`, `startPlanner`): `setupHi` with the HI proxy of the backend
    (`proxy_request?backendId=…`) and the Basic authorization — `setupHi` loads the article catalog,
    master data and calc script itself, the page adds `onFetchPrice` for the prices —, then
-   `createPlanner` and, with a model, `startPlanningAssistant` of the embedding-lib.
+   `createPlanner` and, with a model, `startPlanningAssistant` of the embedding-lib. Every query
+   parameter that is not a field of the form goes to `createPlanner` and overwrites the option of
+   its name (`query-options.ts`, `plannerQueryOptions`): `true`, `false` and numbers are converted
+   as the Roomle SDK converts its URL parameters (`getAllParameters` of roomle-ui
+   `common-core/src/utils/query-params-helper.ts`), and a `language` also sets `locale`. The HI
+   library's language (`serverOptions.language`, `tecConfigInfo.language`) stays `en-US,en`.
 
 | File | Responsibility |
 | ---- | -------------- |
@@ -44,9 +49,11 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 | `hi-sc-example/src/hi-server.ts` | the HI server URL, `fetchBackend` |
 | `hi-sc-example/src/model-config.ts` | `planningAssistantConfig`: provider, model ID and key → the `PlanningAssistantConfig` of the embedding-lib |
 | `hi-sc-example/src/planner.ts` | `startPlanner`: HI setup, planner, planning assistant |
+| `hi-sc-example/src/query-options.ts` | `plannerQueryOptions`: the query parameters other than the form fields → planner options |
 | `hi-sc-example/src/style.css` | the sign-in page; the planner fills the window |
 | `hi-sc-example/tests/model-config.test.ts` | the unit tests of `planningAssistantConfig` |
 | `hi-sc-example/tests/fields-cookie.test.ts` | the unit tests of the sign-in cookie |
+| `hi-sc-example/tests/query-options.test.ts` | the unit tests of `plannerQueryOptions` |
 
 ## The planner options
 
@@ -59,7 +66,7 @@ the server URL `https://www.roomle.com/t/bo-test/`, the catalog root tags, the
   from the Roomle API, gets 403 and stays on "Loading catalog…" — see "Internal Catalog UI" in
   roomle-ui `packages/embedding-lib/docs/homag-intelligence-embedding.md`.
 - **Left out** against `minimal-hi-example/index.html`: the preset dropdown, the debug panel, the
-  order buttons and the price display, the query parameters (`server_url`, `id`, `language`, …),
+  order buttons and the price display, the query parameter `server_url` (here `overrideServerUrl`),
   the `dragIn` plugin, `saveToIdb`, and the page globals of the test scripts (`window.instance`,
   `window.hiPlannerCalls`, …). The end-to-end test scripts run against the minimal example only.
 
@@ -92,6 +99,7 @@ model ID and the API key to the embedding-lib unchanged — no aliases, no mappi
 | ---- | ------ |
 | `tests/model-config.test.ts` | provider, model ID and key passed through unchanged, the Foundry endpoint of an `azure` model, a chat without its provider, model or key |
 | `tests/fields-cookie.test.ts` | the fields stored and read back with any characters, among other cookies; the cookie attributes; no fields without the cookie |
+| `tests/query-options.test.ts` | every query parameter but the login fields forwarded; `true`, `false` and numbers converted; `language` sets `locale`; nothing without query parameters |
 
 ## GitHub Pages
 

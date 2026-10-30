@@ -42,6 +42,14 @@ parameter of its name, which overwrites the cookie — `user`, `password`, `back
 http://localhost:3300/?backendId=<backend-id>&libraryId=<library>&provider=azure&model=<deployment>
 ```
 
+Every other query parameter goes to the planner (`createPlanner`) and overwrites its option of the
+same name — for example `id` (the plan), `overrideServerUrl`, `customApiUrl`. `true`, `false` and
+numbers keep their type. A `language` also sets the planner's `locale`:
+
+```text
+http://localhost:3300/?id=<plan-id>&overrideServerUrl=http://localhost:5173/&language=de-DE
+```
+
 **4. Ask the agent** — the button at the bottom of the planner opens the chat.
 
 | Script (in `hi-sc-example/`) | Runs |

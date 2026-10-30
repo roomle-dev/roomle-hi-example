@@ -6,7 +6,10 @@
  *   node .agents/scripts/run-hi-mcp-tests.js [<tests.json>] [--out <dir>] [--dev]
  *
  * The test file (default docs/test-prompts.json) holds models
- * ({ provider, apiKey }; apiKey "$NAME" reads the environment variable NAME),
+ * ({ provider, apiKey, baseUrl?, reasoningEffort?, chatCompletions?,
+ * cacheBreakpoint? }; provider is <provider>:<model-id> as the launcher takes
+ * it, apiKey "$NAME" reads the environment variable NAME, the others are the
+ * launcher's options of the model),
  * plans ({ <name>: <plan snapshot id> }), categories ({ category, tests };
  * tests { id, title, plan, prompt?, image?, expect?, random? }, run in the
  * order of the file; a prompt list is sent as consecutive turns of one
@@ -14,7 +17,7 @@
  * the "test the mcp" skill adds; checked only) and promptSuffix (a text appended
  * to the first prompt of every test that has one). Before the first run it checks
  * the file, the images and the keys. A run goes
- * to <out>/<provider>/<NN>-<id>/ with its console.log. A missing run.json, a
+ * to <out>/<provider>-<model-id>/<NN>-<id>/ with its console.log. A missing run.json, a
  * navigation-interrupted capture or a transport failure is retried up to three
  * attempts; every superseded attempt is kept in <NN>-<id>.attempt-<n>/. A run
  * that completed without errors is never retried. Other stored results and an
@@ -91,6 +94,23 @@ const turnsOf = (prompt, suffix) => {
   return [`${first.trimEnd()}${separator}${suffix}`, ...rest];
 };
 
+// The directory of a model's runs: a colon would make its relative links
+// read as a URL scheme.
+const modelDir = (model) => model.provider.replaceAll(':', '-');
+
+// The launcher's options of a model.
+const modelOptions = ({
+  baseUrl,
+  reasoningEffort,
+  chatCompletions,
+  cacheBreakpoint,
+}) => [
+  ...(baseUrl ? ['--base-url', baseUrl] : []),
+  ...(reasoningEffort ? ['--reasoning-effort', reasoningEffort] : []),
+  ...(chatCompletions ? ['--chat-completions'] : []),
+  ...(cacheBreakpoint ? ['--cache-breakpoint'] : []),
+];
+
 const testsOf = (categories) =>
   (Array.isArray(categories) ? categories : []).flatMap((category) =>
     Array.isArray(category?.tests) ? category.tests : []
@@ -133,6 +153,10 @@ const problemsOf = ({
     ) {
       problems.push(
         `model ${JSON.stringify(model?.provider)}: needs provider and apiKey`
+      );
+    } else if (!/^[a-z-]+:./.test(model.provider)) {
+      problems.push(
+        `model ${model.provider}: provider is <provider>:<model-id>, e.g. azure:gpt-6-astra`
       );
     } else if (!resolveApiKey(model.apiKey)) {
       problems.push(
@@ -255,7 +279,7 @@ const main = async () => {
         break;
       }
       const number = String(index + 1).padStart(2, '0');
-      const dir = join(outDir, model.provider, `${number}-${test.id}`);
+      const dir = join(outDir, modelDir(model), `${number}-${test.id}`);
       const args = [
         model.provider,
         resolveApiKey(model.apiKey),
@@ -263,6 +287,7 @@ const main = async () => {
         '--plan',
         suite.plans[test.plan],
         ...(test.image ? ['--image', test.image] : []),
+        ...modelOptions(model),
         ...(options.dev ? ['--dev'] : []),
         '--out',
         dir,

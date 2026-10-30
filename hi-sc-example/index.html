@@ -40,18 +40,37 @@
         </fieldset>
         <fieldset>
           <legend>Library</legend>
+          <div class="combo">
+            <label>
+              Backend ID (optional)
+              <span class="combo-field">
+                <input
+                  name="backendId"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                />
+                <button
+                  type="button"
+                  class="combo-toggle"
+                  aria-label="Show the backend IDs"
+                  aria-controls="backend-id-list"
+                  aria-expanded="false"
+                >
+                  ▾
+                </button>
+              </span>
+            </label>
+            <div
+              id="backend-id-list"
+              class="combo-list"
+              role="listbox"
+              hidden
+            ></div>
+          </div>
           <label>
-            Backend ID (optional)
-            <input name="backendId" autocapitalize="off" spellcheck="false" />
-          </label>
-          <label>
-            Library
-            <input
-              name="libraryId"
-              autocapitalize="off"
-              spellcheck="false"
-              required
-            />
+            Library (optional)
+            <input name="libraryId" autocapitalize="off" spellcheck="false" />
           </label>
         </fieldset>
         <fieldset>

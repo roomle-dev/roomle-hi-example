@@ -11,10 +11,13 @@ Shortest path to a working session: the standalone HI presets example in one
 of its chat to this machine):
 
 ```bash
-npm start gpt-6-astra <api-key>      # or directly: node start.mjs gpt-6-astra <api-key>
+npm start azure:gpt-6-astra <api-key>      # or directly: node start.mjs azure:gpt-6-astra <api-key>
 ```
 
-`gpt-6-astra` is a deployment on the HI Azure AI Foundry resource; the key is that resource's.
+The model is `<provider>:<model-id>` with the exact model id — no aliases. `azure:gpt-6-astra` is a
+deployment on the HI Azure AI Foundry resource; the key is that resource's. The options of a model
+(`--base-url`, `--reasoning-effort`, `--chat-completions`, `--cache-breakpoint`) are in
+[ai-chat.md](../docs/ai-chat.md#running-it).
 
 For OpenAI's API, replace `<model-id>` with the model to use:
 
@@ -25,7 +28,8 @@ npm run dev "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY"
 
 The exact model ID is passed to OpenAI. `dev` selects the local planner on :5173.
 
-Without a model, `npm start` serves the example without the chat.
+Without a model, `npm start` serves the example with the chat on the model proxy of the HI server
+when the backend of the page's user enables it, and without a chat otherwise.
 
 To develop against a local Rubens UI dev server (start it first on
 <http://localhost:5173/>), run `npm run dev` instead — it opens the example

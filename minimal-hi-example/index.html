@@ -222,7 +222,7 @@
     </div>
 
     <script type="module">
-      import RoomleConfiguratorApi from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-1b4351d/roomle-embedding-lib.js';
+      import RoomleConfiguratorApi from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-4c2797a/roomle-embedding-lib.js';
       import {
         createHiMcpTools,
         libLoadArticleCatalog,
@@ -232,7 +232,7 @@
         omPostRequest,
         setupHi,
         startPlanningAssistant,
-      } from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-1b4351d/hi.js';
+      } from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-4c2797a/hi.js';
 
       const DEFAULT_PLAN_ID = 'ps_8jjg0zezlblb48vzn8qas9vwwn7fqbg';
       const DEFAULT_SERVER_URL = 'https://www.roomle.com/t/bo-test/';
@@ -421,17 +421,23 @@
       const presetSelect = document.getElementById('preset-select');
       const libraryIdInput = document.getElementById('library-id-input');
       const presetNames = Object.keys(presets);
+      // The model proxy of the HI server serves a user of exactly one backend,
+      // when that backend enables it.
+      const modelProxy =
+        presetNames.length === 1 &&
+        presets[presetNames[0]].enableAIPlanning === true;
       for (const presetName of presetNames) {
         const option = document.createElement('option');
         option.value = presetName;
         option.textContent = presetName;
         presetSelect.appendChild(option);
       }
+      // The backend of the URL with its library and its plan; a backend the
+      // list does not have takes nothing of another backend.
       const queryBackendId = getQueryParam('backendId');
-      const selectedPreset =
-        presets[queryBackendId] ??
-        presets[DEFAULT_PRESET] ??
-        presets[presetNames[0]];
+      const selectedPreset = queryBackendId
+        ? presets[queryBackendId]
+        : (presets[DEFAULT_PRESET] ?? presets[presetNames[0]]);
       const selectedBackendId =
         queryBackendId ?? selectedPreset?.backendId ?? '';
       const libraryId =
@@ -484,7 +490,7 @@
         },
         debugLogging: true,
       };
-      const chatEnabled = getQueryParam('chat') === 'true';
+      const chatEnabled = getQueryParam('chat') === 'true' || modelProxy;
       const options = {
         id: getQueryParam('id') ?? selectedPreset?.planId ?? DEFAULT_PLAN_ID,
         overrideServerUrl: getQueryParam('server_url') ?? DEFAULT_SERVER_URL,
@@ -510,7 +516,8 @@
           autoQualityMinFps: 0,
         },
         elements: { bottom_bar: false },
-        catalogRootTag: [...HI_ROOT_TAGS, ...additionalCatalogs],
+        // the additional catalogs of the backend, each catalog once
+        catalogRootTag: [...new Set([...HI_ROOT_TAGS, ...additionalCatalogs])],
         buttons: {
           swap_product: true,
           export3d: true,
@@ -929,11 +936,20 @@
         });
 
       // AI chat - active with the chat=true query parameter, which the
-      // launcher sets for `npm start <model> <api-key>`. The planner shows the
-      // AI Planning Assistant window (featureFlags.planningAssistant), and the
-      // planning assistant of the embedding-lib runs the agent in this page:
-      // the HI MCP tools, the planner's prompts and the model the launcher
-      // serves at /planning-assistant-config.json, to this machine only.
+      // launcher sets for `npm start <provider>:<model-id> <api-key>`, or with
+      // the model proxy of the HI server. The planner shows the AI Planning
+      // Assistant window (featureFlags.planningAssistant), and the planning
+      // assistant of the embedding-lib runs the agent in this page: the HI MCP
+      // tools, the planner's prompts and the model the launcher serves at
+      // /planning-assistant-config.json, to this machine only - without one,
+      // the model proxy, where the model and its key stay in the backend.
+      const MODEL_PROXY_CONFIG = {
+        provider: 'openai-compatible',
+        baseUrl: `${HI_SERVER_BASE_URL}/api/ai/v1`,
+        model: 'planning',
+        headers: { Authorization: HI_AUTH_DATA },
+        readsImages: true,
+      };
 
       // The planner method the HI MCP tools forward their calls to: the tools
       // run in the planner.
@@ -1020,8 +1036,8 @@
           return;
         }
         const response = await fetch('/planning-assistant-config.json');
-        if (!response.ok) {
-          const text = `No model for the planning assistant (HTTP ${response.status}) - start the example with npm start <model> <api-key>`;
+        if (!response.ok && !modelProxy) {
+          const text = `No model for the planning assistant (HTTP ${response.status}) - start the example with npm start <provider>:<model-id> <api-key>`;
           logMessage('chat', text);
           roomDesignerApi.extended.planningAssistantOutput({
             type: 'availability',
@@ -1030,7 +1046,7 @@
           });
           return;
         }
-        const config = await response.json();
+        const config = response.ok ? await response.json() : MODEL_PROXY_CONFIG;
         logMessage('chat', `${config.provider} ${config.model}`);
         await startPlanningAssistant(
           recordedPlannerApi(roomDesignerApi),

@@ -1,16 +1,18 @@
 # Using an unreleased embedding-lib
 
 The example page `minimal-hi-example/index.html` imports `@roomle/embedding-lib` and its `hi.js` from
-jsDelivr's npm CDN, pinned to the dev version `0.0.0-dev-1b4351d` from roomle-ui `feat/hi-mcp-performance`
-([verified build](https://github.com/roomle-dev/roomle-ui/actions/runs/40503769659)):
+jsDelivr's npm CDN, pinned to the dev version `0.0.0-dev-4c2797a` from roomle-ui
+`feat/planning-assistant-model-proxy-RML-18350`, a branch of `feat/hi-mcp-performance`
+([verified build](https://github.com/roomle-dev/roomle-ui/actions/runs/41078036262)):
 
 ```js
-import RoomleConfiguratorApi from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-1b4351d/roomle-embedding-lib.js';
-import { /* … */ setupHi } from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-1b4351d/hi.js';
+import RoomleConfiguratorApi from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-4c2797a/roomle-embedding-lib.js';
+import { /* … */ setupHi } from 'https://cdn.jsdelivr.net/npm/@roomle/embedding-lib@0.0.0-dev-4c2797a/hi.js';
 ```
 
 The sign-in example `hi-sc-example/` depends on the same version from npm, pinned in
-`hi-sc-example/package.json`; a new pin changes both places.
+`hi-sc-example/package.json`, and the sales portal example `df-salesPortal_sc-example/index.html`
+imports it from unpkg; a new pin changes all three places.
 
 To try a change that exists only on a roomle-ui branch, point these two imports somewhere else. Two ways
 work: the source of a local roomle-ui checkout, and a dev version on npm.

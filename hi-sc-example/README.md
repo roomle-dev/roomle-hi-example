@@ -17,10 +17,15 @@ and opens the browser:
 npm run start:sc        # in the repository root; or `npm run dev` in hi-sc-example/
 ```
 
-**3. Sign in** with the user and password of the HI server, the library and, optionally, the
-backend ID; without it, the HI proxy uses the backend of the user. For the chat, select the provider — Anthropic, Azure, Google, Mistral or OpenAI — and enter the exact model ID
+**3. Sign in** with the user and password of the HI server and, optionally, the backend ID and the
+library. The backend ID field lists the backend IDs of the HI server by stage (DEV, INT, PRE, PRD)
+and takes any other ID typed in. With a backend ID, the planner takes the backend's plan and additional catalogs, and its
+library when you enter none; without one, the HI proxy uses the backend of the user, and you enter
+the library. For the chat, select the provider — Anthropic, Azure, Google, Mistral or OpenAI — and enter the exact model ID
 at that provider and its API key. An Azure model is a deployment on the HI Azure AI Foundry
-resource, named by its deployment name. Without them the planner opens without the chat.
+resource, named by its deployment name. Without them, the chat runs on the model proxy of the HI
+server when your backend enables it (`enableAIPlanning`): the model and its key stay in the
+backend. Otherwise the planner opens without the chat.
 
 Example login:
 

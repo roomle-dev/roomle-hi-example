@@ -4,8 +4,9 @@
  * image of docs/images (kitchen-<n>.png, .jpeg, .jpg or .webp), the image
  * sent alone on the default room of docs/test-prompts.json:
  *
- *   node .agents/scripts/update-planning-results.js [--model <provider>]
- *     [--key-env <NAME>] [--out <dir>] [--dev]
+ *   node .agents/scripts/update-planning-results.js [--model <provider>:<model-id>]
+ *     [--key-env <NAME>] [--out <dir>] [--dev] [--base-url <url>]
+ *     [--reasoning-effort <effort>] [--chat-completions] [--cache-breakpoint]
  *
  * Writes <out>/tests.json and runs it with run-hi-mcp-tests.js, which runs
  * every kitchen with run-hi-mcp-prompt.js, saves its plan snapshot and
@@ -14,8 +15,9 @@
  * a plan snapshot id and its images, copies the top, perspective and
  * perspective object image of each to docs/images/planning-results/ and
  * rewrites docs/planning-results.md; otherwise it names the kitchens without a
- * planning, leaves the document unchanged and exits 1. Defaults: the model
- * gpt-6-astra, its key in AZURE_GPT_KEY, the out directory
+ * planning, leaves the document unchanged and exits 1. The model options go
+ * to the launcher. Defaults: the model azure:gpt-6-astra, its key in
+ * AZURE_GPT_KEY, the out directory
  * .temp/result/planning-results-<local time>/.
  */
 
@@ -57,16 +59,20 @@ const RESULT_IMAGES = [
   },
 ];
 const USAGE =
-  'usage: node .agents/scripts/update-planning-results.js [--model <provider>] [--key-env <NAME>] [--out <dir>] [--dev]';
+  'usage: node .agents/scripts/update-planning-results.js [--model <provider>:<model-id>] [--key-env <NAME>] [--out <dir>] [--dev] [--base-url <url>] [--reasoning-effort <effort>] [--chat-completions] [--cache-breakpoint]';
 
 const parseOptions = () => {
   try {
     const { values } = parseArgs({
       options: {
-        model: { type: 'string', default: 'gpt-6-astra' },
+        model: { type: 'string', default: 'azure:gpt-6-astra' },
         'key-env': { type: 'string', default: 'AZURE_GPT_KEY' },
         out: { type: 'string' },
         dev: { type: 'boolean', default: false },
+        'base-url': { type: 'string' },
+        'reasoning-effort': { type: 'string' },
+        'chat-completions': { type: 'boolean', default: false },
+        'cache-breakpoint': { type: 'boolean', default: false },
       },
     });
     return values;
@@ -162,7 +168,18 @@ const main = async () => {
     tests,
     JSON.stringify(
       {
-        models: [{ provider: options.model, apiKey: `$${options['key-env']}` }],
+        models: [
+          {
+            provider: options.model,
+            apiKey: `$${options['key-env']}`,
+            ...(options['base-url'] && { baseUrl: options['base-url'] }),
+            ...(options['reasoning-effort'] && {
+              reasoningEffort: options['reasoning-effort'],
+            }),
+            ...(options['chat-completions'] && { chatCompletions: true }),
+            ...(options['cache-breakpoint'] && { cacheBreakpoint: true }),
+          },
+        ],
         plans: { [PLAN]: plans[PLAN] },
         categories: [
           {

@@ -231,7 +231,7 @@ units across the wide part would block the passage between the doors.
 
 | Field | Content |
 |---|---|
-| `models` | the chat models to test, `{ provider, apiKey }`: a provider name of the launcher and its key — `"$NAME"` reads the key from the environment variable `NAME`, which keeps it out of the committed file |
+| `models` | the chat models to test, `{ provider, apiKey, baseUrl?, reasoningEffort?, chatCompletions?, cacheBreakpoint? }`: the model as `<provider>:<model-id>` (e.g. `azure:gpt-6-astra`), its key — `"$NAME"` reads the key from the environment variable `NAME`, which keeps it out of the committed file — and the options the launcher passes to the model ([ai-chat.md](ai-chat.md#running-it)) |
 | `randomTests` | how many random tests the "test the mcp" skill adds to each session: a whole number from 0 to the number of available plans (default 5, 0 for none); a custom suite with fewer than five plans sets a count within its range. The agent running it writes them for the plans drawn at random without repetition, marks them `"random": true` and appends them only to the end of the session's test file — the report shows them as random tests ([skill](../.agents/skills/hi-mcp-testing.md#random-tests)) |
 | `promptSuffix` | a text the runner appends to the first prompt of every test — after a `.` when that prompt does not end with `.`, `!` or `?`, after a blank otherwise; a test without a prompt sends its image alone, without it. The agent may ask a question instead of planning, which is fine for a user but leaves a test without a result, because the test answers nothing: the suffix asks it to decide open details itself. The prompts of the tests stay as a user writes them; the runs record the prompts as sent |
 | `testSet` | optional: the name of a subset of the tests — `"minimum"` in the [minimum set](#minimum-set); the report of a session names it in its title and in a note under it |
@@ -312,7 +312,7 @@ and run section.
 
 When testing a prompt by hand:
 
-1. **Start the example with a model** using `npm start <model> <api-key>` from the repository root
+1. **Start the example with a model** using `npm start <provider>:<model-id> <api-key>` from the repository root
 2. **Open the chat** of the example page at http://localhost:3000 with the button at the bottom of the planner
 3. **Send the prompt**; the agent uses the tools, e.g.:
    - `get-plan-context` - Retrieve current room and article information
@@ -332,10 +332,10 @@ mcp"** ([HI MCP testing skill](../.agents/skills/hi-mcp-testing.md)) for an eval
 ```bash
 node .agents/scripts/run-hi-mcp-tests.js                     # fixed cases, every model
 node .agents/scripts/run-hi-mcp-tests.js "$SESSION/tests.json" --out "$SESSION" # prepared skill session
-node .agents/scripts/run-hi-mcp-prompt.js gpt-5-mini "$AZURE_GPT_KEY" "add a group of three tall units to the wall on the right" --plan ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv
+node .agents/scripts/run-hi-mcp-prompt.js azure:gpt-5-mini "$AZURE_GPT_KEY" --reasoning-effort high "add a group of three tall units to the wall on the right" --plan ps_qn0wlxn7pdq5ki9mj999yrpefclmvtv
 ```
 
-The runner stores each run in `.temp/result/mcp-test-<time>/<model>/<NN>-<test id>/`; the second line
+The runner stores each run in `.temp/result/mcp-test-<time>/<provider>-<model-id>/<NN>-<test id>/`; the second line
 runs a single prompt the same way.
 
 ## Times in reports

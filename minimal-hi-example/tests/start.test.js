@@ -100,16 +100,11 @@ const startLauncher = async (args, env = {}) => {
 
 describe('example launcher', { skip: process.platform === 'win32' }, () => {
   for (const dev of [false, true]) {
-    test(`selects the exact OpenAI model in ${dev ? 'dev' : 'start'} mode`, async () => {
+    test(`passes the exact model id of the provider in ${dev ? 'dev' : 'start'} mode`, async () => {
       const model = 'ft:gpt-4o:roomle:Kitchen:abc';
       const example = await startLauncher(
-        [`OpEnAi:${model}`, 'openai-test-key', ...(dev ? ['--dev'] : [])],
-        {
-          HI_CHAT_MODEL: 'azure-override',
-          AZURE_RESOURCE_NAME: 'azure-resource',
-          HI_CHAT_REASONING_EFFORT: 'high',
-          EXAMPLE_SERVER_URL: undefined,
-        }
+        [`openai:${model}`, 'openai-test-key', ...(dev ? ['--dev'] : [])],
+        { EXAMPLE_SERVER_URL: undefined }
       );
       try {
         assert.deepEqual(
@@ -138,27 +133,40 @@ describe('example launcher', { skip: process.platform === 'win32' }, () => {
     });
   }
 
-  test('rejects an empty OpenAI model ID before starting the server', async () => {
-    const launcher = spawn(process.execPath, [
-      launcherPath,
-      'openai:',
-      'test-key',
-      '--no-open',
-    ]);
-    let error = '';
-    launcher.stderr.on('data', (chunk) => {
-      error += chunk;
+  for (const [args, message] of [
+    [['mistral', 'test-key'], /"mistral" is no <provider>:<model-id>/],
+    [['gpt-6-astra', 'test-key'], /"gpt-6-astra" is no <provider>:<model-id>/],
+    [['claude:claude-sonnet-4-5', 'test-key'], /provider: anthropic, azure/],
+    [['openai:', 'test-key'], /"openai:" is no <provider>:<model-id>/],
+    [['openai-compatible:planning', 'test-key'], /--base-url/],
+    [['azure:gpt-6-astra'], /missing API key/],
+    [['azure:gpt-6-astra', 'test-key', '--unknown'], /--unknown/],
+  ]) {
+    test(`rejects ${args.join(' ')} before starting the server`, async () => {
+      const launcher = spawn(process.execPath, [
+        launcherPath,
+        ...args,
+        '--no-open',
+      ]);
+      let error = '';
+      launcher.stderr.on('data', (chunk) => {
+        error += chunk;
+      });
+      assert.deepEqual(await once(launcher, 'exit'), [1, null]);
+      assert.match(error, message);
+      assert.ok(!error.includes('test-key'));
     });
-    assert.deepEqual(await once(launcher, 'exit'), [1, null]);
-    assert.match(error, /openai:<model-id>/);
-    assert.ok(!error.includes('test-key'));
-  });
+  }
 
   test(
     'serves the planning assistant config of the model to this machine',
     { timeout: 90_000 },
     async () => {
-      const withModel = await startLauncher(['gpt-6-astra', 'test-key']);
+      const withModel = await startLauncher([
+        'azure:gpt-6-astra',
+        'test-key',
+        '--cache-breakpoint',
+      ]);
       const withoutModel = await startLauncher([]);
       try {
         const config = await withModel.fetchPath(
@@ -170,7 +178,6 @@ describe('example launcher', { skip: process.platform === 'win32' }, () => {
           model: 'gpt-6-astra',
           apiKey: 'test-key',
           baseUrl: 'https://dfhifoundrysweden.services.ai.azure.com/openai/v1',
-          chatCompletions: false,
           referenceCacheBreakpoint: true,
           readsImages: true,
         });
@@ -181,6 +188,7 @@ describe('example launcher', { skip: process.platform === 'win32' }, () => {
             .status,
           404
         );
+        assert.ok(!withoutModel.output().includes('&chat=true'));
         assert.equal(
           await statusWithHost(
             withModel.port,
@@ -196,13 +204,43 @@ describe('example launcher', { skip: process.platform === 'win32' }, () => {
     }
   );
 
+  test('passes the options of an azure deployment', async () => {
+    const example = await startLauncher([
+      'azure:mistral-large-3',
+      'test-key',
+      '--base-url',
+      'https://other.services.ai.azure.com/openai/v1',
+      '--chat-completions',
+      '--reasoning-effort',
+      'high',
+    ]);
+    try {
+      assert.deepEqual(
+        await (
+          await example.fetchPath('/planning-assistant-config.json')
+        ).json(),
+        {
+          provider: 'azure',
+          model: 'mistral-large-3',
+          apiKey: 'test-key',
+          baseUrl: 'https://other.services.ai.azure.com/openai/v1',
+          chatCompletions: true,
+          reasoningEffort: 'high',
+          readsImages: true,
+        }
+      );
+    } finally {
+      example.kill();
+    }
+  });
+
   for (const signal of ['SIGTERM', 'SIGINT']) {
     test(
       `releases the page port when only the launcher receives ${signal}`,
       { timeout: 90_000 },
       async () => {
         const { launcher, port, exited, kill, output } = await startLauncher([
-          'mistral',
+          'mistral:mistral-large-latest',
           'test-key',
         ]);
         try {

@@ -29,7 +29,7 @@ For the shortest path to a first chat turn in the example, see the
 A standalone, copy-paste version of the embedding-lib HI presets demo. It
 contains the complete interface and browser JavaScript in one
 [`index.html`](../../minimal-hi-example/index.html), requires no build step, and loads only
-`@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version `0.0.0-dev-1b4351d`
+`@roomle/embedding-lib` and its `hi.js` from jsDelivr's npm CDN, pinned to the dev version `0.0.0-dev-4c2797a`
 ([unreleased-embedding-lib.md](../../docs/setup/unreleased-embedding-lib.md)).
 
 The preset dropdown is filled from `GET <HI_SERVER_BASE_URL>/backends/list`,
@@ -44,9 +44,9 @@ parameters:
 | Parameter | Effect |
 | --------- | ------ |
 | `chat` | `true` shows the AI Planning Assistant window and starts the chat with the model the launcher serves (the launcher appends it when it is started with a model) |
-| `backendId` | Selects the HI backend |
-| `library_id` | Overrides the preset's library |
-| `id` | Selects the plan loaded at startup |
+| `backendId` | Selects the HI backend: its library, its plan and its additional catalogs (`/backends/list`) are the defaults; a backend the list does not have takes nothing of another one. Without it, the default preset |
+| `library_id` | Overrides the backend's library |
+| `id` | Selects the plan loaded at startup, over the backend's plan; without both, the default plan |
 | `language` | Selects the HI and planner locale |
 | `user_right` | Accepts `Simple`, `Advanced`, or `Master` |
 | `server_url` | Overrides the Rubens UI server the planner is loaded from. Defaults to `https://www.roomle.com/t/bo-test/` |
@@ -117,10 +117,12 @@ too), start with another page port: `EXAMPLE_PORT=3101 npm start`. Ctrl+C or SIG
 launcher stops the page server.
 
 Without the chat the example can still be served by any static file
-server (e.g. `npx http-server -c-1 -p 39485`); only the chat needs the model the launcher serves.
+server (e.g. `npx http-server -c-1 -p 39485`); the chat then runs on the model proxy of the HI
+server when the backend of the page's user enables it.
 
-The chat: `npm start <model> <api-key>` (for example `npm start mistral <api-key>`) opens the
-example with `chat=true` and serves the model to the page — see [ai-chat.md](../../docs/ai-chat.md).
+The chat: `npm start <provider>:<model-id> <api-key>` (for example
+`npm start azure:gpt-6-astra "$AZURE_GPT_KEY"`) opens the example with `chat=true` and serves the
+model to the page — see [ai-chat.md](../../docs/ai-chat.md).
 
 ## Demo walkthrough
 

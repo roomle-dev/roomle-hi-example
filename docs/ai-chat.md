@@ -24,90 +24,82 @@ reference is roomle-ui `packages/embedding-lib/docs/homag-intelligence-embedding
 "The AI Planning Assistant agent" and "HI MCP tools for an AI agent". The page
 loads the pinned embedding-lib dev build from the npm CDN
 ([unreleased-embedding-lib.md](setup/unreleased-embedding-lib.md)).
-Supported providers: **OpenAI**, **Mistral**, **Anthropic (Claude)**, **Google (Gemini)** and
-**Azure OpenAI**.
+Supported providers: **Azure OpenAI** (`azure`), **OpenAI** (`openai`), **Mistral** (`mistral`),
+**Anthropic (Claude)** (`anthropic`), **Google (Gemini)** (`google`), any OpenAI-compatible endpoint
+(`openai-compatible`) and, without a model, the [model proxy](#the-model-proxy) of the HI server.
 
 ## Running it
 
 ```bash
-npm start "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY"   # direct OpenAI API; replace <model-id>
-npm run dev "openai:<model-id>" "$OPENAI_ASSISTANT_API_KEY" # same model, local planner (:5173)
-npm start mistral <api-key>           # mistral-large-latest (default)
-npm start mistral-medium <api-key>   # mistral-medium-latest
-npm start mistral-large-4 <api-key>  # mistral-large-4-0
-npm start claude <api-key>           # claude-sonnet-4-5
-npm start gemini <api-key>           # gemini-2.5-pro (Gemini API key from Google AI Studio)
-npm start azure <api-key>            # gpt-4o deployment (see below)
-npm start gpt-5-mini <api-key>       # gpt-5-mini on the HI Azure AI Foundry resource
-npm start gpt-5.4-mini <api-key>     # gpt-5.4-mini on the HI Azure AI Foundry resource
-npm start gpt-6-astra <api-key>      # gpt-6-astra on the HI Azure AI Foundry resource
-npm start gpt-6.1-sol <api-key>      # gpt-6.1-sol on its own Foundry resource (the key of that resource)
-npm run dev <model> <api-key>        # same, planner from the local Rubens UI dev server (:5173)
+npm start azure:gpt-6-astra "$AZURE_GPT_KEY"                     # a deployment on the HI Azure AI Foundry resource
+npm start azure:gpt-5-mini "$AZURE_GPT_KEY" -- --reasoning-effort high
+npm start mistral:mistral-large-4 "$MI_API_USAGE_KEY"            # the Mistral API
+npm start anthropic:claude-sonnet-4-5 "$ANTHROPIC_API_KEY"
+npm start google:gemini-2.5-pro "$GEMINI_API_KEY"                # Gemini API key from Google AI Studio
+npm start openai:<model-id> "$OPENAI_ASSISTANT_API_KEY"          # the OpenAI Responses API
+npm run dev azure:gpt-6-astra "$AZURE_GPT_KEY"                   # same, planner from the local Rubens UI dev server (:5173)
+npm start                                                         # no model: the model proxy, when the backend enables it
 ```
 
-The model name selects the provider and the model:
+The model is `<provider>:<model-id>`: a provider of the embedding-lib — `anthropic`, `azure`,
+`google`, `mistral`, `openai` or `openai-compatible` — and the exact model id at that provider, for
+`azure` the deployment name. The launcher maps no names: the id goes to the provider as written,
+with its case and any further colons (`openai:ft:gpt-4o:org:name:id`). A model without its provider
+(`npm start mistral …`, `npm start gpt-6-astra …`), an unknown provider, an empty id and a model
+without a key are rejected before the page starts. An id the provider does not have fails when the
+chat calls it, as the error of the first turn. Choose a model that supports the tools and image
+inputs the planning assistant uses.
 
-| Model name | Provider | Model |
-| ---------- | -------- | ----- |
-| `openai:<model-id>` | OpenAI Responses API | Exact model ID after the prefix, including case and additional colons |
-| `mistral` | Mistral | `mistral-large-latest` (default) |
-| `mistral-medium` | Mistral | `mistral-medium-latest` |
-| `mistral-large` | Mistral | `mistral-large-latest` |
-| `mistral-large-3` | Azure OpenAI (HI Azure AI Foundry resource) | the `mistral-large-3` deployment |
-| `mistral-large-4` | Mistral | `mistral-large-4-0` |
-| any `mistral-*` model id | Mistral | passed through (e.g. `mistral-small-latest`) |
-| `claude` / `anthropic` | Anthropic | `claude-sonnet-4-5` |
-| `claude-sonnet` | Anthropic | `claude-sonnet-4-5` |
-| `claude-opus` | Anthropic | `claude-opus-4-1` |
-| any `claude-*` model id | Anthropic | passed through |
-| `gemini` / `google` / `gemini-pro` | Google (Gemini API) | `gemini-2.5-pro` |
-| `gemini-flash` | Google (Gemini API) | `gemini-2.5-flash` |
-| any `gemini-*` model id | Google (Gemini API) | passed through (e.g. `gemini-3-pro-preview`) |
-| `azure` / `openai` | Azure OpenAI | `gpt-4o` (deployment name — see below) |
-| any `gpt-*` model id (e.g. `gpt-5-mini`, `gpt-5.4-mini`, `gpt-6-astra`) | Azure OpenAI (HI Azure AI Foundry resource) | the deployment of the same name |
-| `gpt-6.1-sol` | Azure OpenAI (its own Foundry resource) | the `gpt-6.1-sol` deployment |
+The options of a model follow its key. `npm start` passes them on after `--`
+(`npm start azure:gpt-5-mini "$AZURE_GPT_KEY" -- --reasoning-effort high`):
 
-Model names and ids are matched case-insensitively, so `Mistral-Large-3` and
-`mistral-large-3` are the same request. The `openai:` prefix is case-insensitive;
-its model ID is preserved exactly. An empty ID is rejected before the page starts.
-Choose an OpenAI model supporting the tools and image inputs used by the planning assistant.
+| Option | Provider | Effect |
+| ------ | -------- | ------ |
+| `--base-url <url>` | `azure`, `openai-compatible` | The endpoint. `azure` defaults to the HI Azure AI Foundry resource, `https://dfhifoundrysweden.services.ai.azure.com/openai/v1`; `openai-compatible` requires it |
+| `--reasoning-effort <effort>` | `azure` | The reasoning effort; without it, the deployment's default |
+| `--chat-completions` | `azure` | Chat Completions instead of the Responses API |
+| `--cache-breakpoint` | `azure` on Responses | The cache boundary after the library reference |
 
-The launcher (`minimal-hi-example/start.mjs`) turns the model name and the key
-into the `PlanningAssistantConfig` of the embedding-lib — a JSON object with the
-provider, the model, the key and, for an Azure deployment, the endpoint of its
-resource, the API and the reasoning effort, and whether the model reads images
-(`planningAssistantConfig` in `start.mjs`). It serves the config to the page at
-`/planning-assistant-config.json`, to this machine only, and opens the page with
-`&chat=true`, so the planner shows the button of the chat window. Without a model
-the page has no chat. Guarded by
-`it('serves the planning assistant config of the model to this machine')` in
+The models of the tests (`models` of `docs/test-prompts.json`, which the test runner passes to the
+launcher with these options):
+
+| Model | Key | Options |
+| ----- | --- | ------- |
+| `azure:gpt-6-astra` | `$AZURE_GPT_KEY` | `--cache-breakpoint` |
+| `azure:gpt-5-mini`, `azure:gpt-5.4-mini` | `$AZURE_GPT_KEY` | `--reasoning-effort high` |
+| `azure:gpt-6.1-sol` | `$AZURE_GPT_SOL_KEY`, the key of its own Foundry resource | `--base-url https://controller-mes-resource.services.ai.azure.com/openai/v1 --cache-breakpoint` |
+| `azure:mistral-large-3` | `$AZURE_GPT_KEY` | `--chat-completions` |
+
+The launcher (`minimal-hi-example/start.mjs`, `planningAssistantConfig`) turns the model, the key
+and the options into the `PlanningAssistantConfig` of the embedding-lib — the provider, the model,
+the key, the endpoint, the API, the reasoning effort and the cache breakpoint, and `readsImages`,
+which is `true` for every model. It serves the config to the page at
+`/planning-assistant-config.json`, to this machine only, and opens the page with `&chat=true`, so
+the planner shows the button of the chat window. Without a model the page runs the chat on the
+model proxy when the HI server offers it, and has no chat otherwise. Guarded by
 `minimal-hi-example/tests/start.test.js`.
 
-Azure needs two extra pieces: the resource name via the `AZURE_RESOURCE_NAME`
-environment variable, and the **deployment name** (not the model name) via
-`HI_CHAT_MODEL` — Azure deployments are user-named:
+## The model proxy
 
-```bash
-AZURE_RESOURCE_NAME=my-resource HI_CHAT_MODEL=my-gpt4o-deployment npm start azure <api-key>
-```
+Without a model, the chat runs on the model proxy of the HI server: the model, its endpoint and its
+key stay in the backend, and the page authorizes with the Basic authorization of the HI server. The
+page uses it when `/backends/list` answers exactly one backend and that backend's
+`enableAIPlanning` is `true` — the proxy serves only a user of exactly one backend. The page's user
+`test` has several backends, so the example opens without a chat when no model is given.
 
-`HI_CHAT_MODEL` replaces the model of every provider other than the Foundry
-deployments and explicit `openai:<model-id>` requests. OpenAI requests use the supplied OpenAI
-key and the model ID after the prefix; Azure resource and reasoning variables do not affect them.
-The unprefixed `openai` alias continues to select Azure.
+The page passes the planning assistant the provider `openai-compatible` with the base URL
+`https://dfscfgtest01-app.azurewebsites.net/api/ai/v1`, the model name `planning` (the alias of the
+backend's planning model), the header `Authorization` and no key. The proxy speaks Chat
+Completions: every step sends the whole conversation, and the images of a tool result go to the
+model in a user message after it. The sales portal example and the sign-in example use the proxy
+the same way ([roomle-ui `homag-intelligence-embedding.md`](https://github.com/roomle-dev/roomle-ui/blob/master/packages/embedding-lib/docs/homag-intelligence-embedding.md),
+"The AI Planning Assistant agent").
 
-Every `gpt-*` model and `mistral-large-3` need neither: they are deployments on the HI
-Azure AI Foundry resource and are called through its OpenAI v1 endpoint
-`https://dfhifoundrysweden.services.ai.azure.com/openai/v1` with the resource's
-API key. `gpt-6.1-sol` is deployed on another Foundry resource and is called through its endpoint
-`https://controller-mes-resource.services.ai.azure.com/openai/v1` with that resource's API key
-(`baseUrl` of its entry in `FOUNDRY_DEPLOYMENTS` of `start.mjs`). A base URL ends in `/openai/v1`: the AI SDK
-appends `/responses` or `/chat/completions` itself. `AZURE_RESOURCE_NAME` and `HI_CHAT_MODEL` are ignored for them, so values
-left in the shell from an `azure` run cannot redirect them. `mistral-large-3` is an
-exception to the mistral provider: it is served from the Foundry resource, not from
-the Mistral API. A `gpt-*` name is passed through as the deployment name
-without checking that the deployment exists: a missing deployment fails when the
-chat calls the provider, as the error of the first turn. The chat
+## Azure deployments
+
+An `azure` model is a deployment on the HI Azure AI Foundry resource, called through its OpenAI v1
+endpoint with the resource's API key; `--base-url` names a deployment on another resource. A base
+URL ends in `/openai/v1`: the AI SDK appends `/responses` or `/chat/completions` itself. The chat
 sets no `temperature`: the GPT deployments are reasoning models and reject it.
 
 **API per deployment.** The Foundry GPT deployments use the Responses API, which
@@ -115,24 +107,25 @@ supports image input, function tools and reasoning together. GPT-6 Astra tool
 calls require Responses; omitting reasoning effort retains the deployment default
 and does not make Chat Completions compatible.
 [Official OpenAI documentation](https://developers.openai.com/api/docs/guides/latest-model).
-Foundry `mistral-large-3` uses Chat Completions (`chatCompletions: true` in its
-config): its Responses endpoint rejects image input.
+Foundry `mistral-large-3` runs with `--chat-completions`: its Responses endpoint rejects image
+input.
 
-With an embedding-lib that supports shared reference caching, the launcher's configured
-`gpt-6-astra` and `gpt-6.1-sol` deployments opt in to a cache boundary after library reference.
-Other deployment names retain their default cache behavior. The complete prompt is still sent
-on each request; this option concerns provider processing, not upload size. Integration details
-and compatibility restrictions are in the
+**Cache breakpoint.** With an embedding-lib that supports shared reference caching,
+`--cache-breakpoint` opts a deployment in to a cache boundary after the library reference; the
+tests give it to `gpt-6-astra` and `gpt-6.1-sol`, deployments verified to support explicit
+breakpoints. Without it a deployment keeps its default cache behavior. The complete prompt is still
+sent on each request; this option concerns provider processing, not upload size. Integration
+details and compatibility restrictions are in the
 [prompt-caching reference](https://github.com/roomle-dev/roomle-ui/blob/master/.agents/homag-intelligence/prompt-caching.md).
 
-**Reasoning effort.** The launcher gives the lightweight deployments gpt-5.4-mini and gpt-5-mini the
-reasoning effort `high` (`reasoningEffort` of the config, from `FOUNDRY_DEPLOYMENTS` in
-`start.mjs`): accuracy goes over speed, and they plan worse than gpt-6-astra. gpt-6-astra and
-gpt-6.1-sol run at their default. `HI_CHAT_REASONING_EFFORT` overrides the effort of every Azure
-model reached through the Responses API; Mistral, Anthropic and Google models get none, and neither
-does a deployment on Chat Completions. The defaults measured on the Foundry resource (2026-10-07):
-gpt-5.4-mini does not reason (0 reasoning tokens in every step), gpt-5-mini and gpt-6-astra reason
-as at `medium`. gpt-5-mini and gpt-5.4-mini read images and have a 400k context window.
+**Reasoning effort.** The tests give the lightweight deployments gpt-5.4-mini and gpt-5-mini the
+reasoning effort `high` (`reasoningEffort` of their entries in the test JSONs,
+`--reasoning-effort high` on the command line): accuracy goes over speed, and they plan worse than
+gpt-6-astra. gpt-6-astra and gpt-6.1-sol run at their default. The option applies to `azure`
+models; Mistral, Anthropic and Google models get none. The defaults measured on the Foundry resource
+(2026-10-07): gpt-5.4-mini does not reason (0 reasoning tokens in every step), gpt-5-mini and
+gpt-6-astra reason as at `medium`. gpt-5-mini and gpt-5.4-mini read images and have a 400k context
+window.
 
 The effort was chosen from the 32 tests of `docs/test-prompts.json`, one run each, evaluated as
 "test the mcp" does (2026-10-07, with the chat backend of that time):
@@ -149,7 +142,7 @@ group instead of a merge) got worse. The runs at `high` are not evaluated.
 ## The chat window
 
 The chat window is the **AI Planning Assistant** of the planner (roomle-ui
-`PlanningAssistantChat.vue`). With `?chat=true` the page creates the planner
+`PlanningAssistantChat.vue`). With `?chat=true` or the model proxy the page creates the planner
 with `featureFlags.planningAssistant`, and the button with the adjust icon at
 the bottom of the planner opens the chat in the drawer, where it looks like the
 other panels of the planner. The window shows the messages and the replies; the
@@ -162,8 +155,9 @@ and whether the window takes images (roomle-ui
 `packages/embedding-lib/docs/homag-intelligence-embedding.md`, "The AI Planning
 Assistant window"). A planner without the window gets no chat; the debug log
 says "the planner has no AI Planning Assistant window - no chat". A page opened
-with `?chat=true` without a model from the launcher shows the window unavailable,
-with the message to start the example with `npm start <model> <api-key>`.
+with `?chat=true` without a model from the launcher and without the model proxy shows the window
+unavailable, with the message to start the example with
+`npm start <provider>:<model-id> <api-key>`.
 
 The **Show panel** checkbox shows and hides the debug panel (parameters,
 buttons, console log).
@@ -199,15 +193,10 @@ one model call and the tool calls it returns.
 
 ## Images in the chat
 
-The chat takes an image only when the model reads images: `readsImages` of the
-config, which the launcher sets for every Anthropic and Google model, every
-`gpt-*` deployment on a Foundry resource, and from the other providers the ids in
-`IMAGE_INPUT_MODELS` of `start.mjs`: `mistral-large-latest`,
-`mistral-medium-latest`, `mistral-large-3`, `mistral-large-4-0`, `gpt-4o`,
-`gpt-5-mini`, `gpt-5.4-mini` and `gpt-6-astra`. Any other id gets no image input.
-That includes a pass-through `mistral-*` id and an Azure deployment named with
-`HI_CHAT_MODEL`: an unknown model gets no image feature rather than a provider
-error halfway through a turn.
+The chat takes an image when the model reads images: `readsImages` of the config, which the
+launcher and the model proxy set for every model. A model that does not read images answers a
+dropped image with a provider error, as the error of the turn — choose a model with image input
+for plannings from images.
 
 In the window (only when the model reads images):
 
@@ -235,13 +224,12 @@ In the window (only when the model reads images):
   follow-up can refer to the image. Every step of a turn sends them again (up
   to 16 times), which is why the window scales them down.
 
-With images off, the window takes no dropped file and the chat is text-only.
-
 ### Images in tool results
 
 `get-plan-images` returns its two renders as JPEG file parts of the tool
-result, about 0.2 MB of base64 for a kitchen. Anthropic, Google and Azure send
-those to the model as images. `@ai-sdk/mistral` writes a tool result's content
+result, about 0.2 MB of base64 for a kitchen. Anthropic, Google and Azure on the Responses API
+send those to the model as images; on an OpenAI-compatible endpoint (the model proxy) the
+planning assistant moves them into a user message after the tool result. `@ai-sdk/mistral` writes a tool result's content
 as JSON text, and the planning assistant of the embedding-lib does not move the
 images of a Mistral tool result into a user message: a Mistral model gets the
 renders as base64 text, not as images, and the text takes a large part of its
@@ -257,7 +245,8 @@ signed image URLs of the master data and the order data
 [Launcher: minimal-hi-example/start.mjs]
   ├── serves the example page on :3000
   └── serves the PlanningAssistantConfig (model, key, endpoint) at
-      /planning-assistant-config.json, to this machine only
+      /planning-assistant-config.json, to this machine only; without a model,
+      the page takes the model proxy of the HI server
             │
             ▼
 [Browser: index.html]
@@ -285,6 +274,8 @@ them (`.agents/scripts/run-hi-mcp-prompt.js`).
   for a local dev example.
 - The key is in the page: anyone with the page open can read it in the browser.
   Acceptable for a local example on this machine, not for a hosted page.
+- On the model proxy no provider key reaches the page: the page sends the Basic
+  authorization of the HI server, which then also pays for the model calls.
 
 ## Token usage
 
@@ -298,13 +289,12 @@ are not zero. These are usage measurements, without a price calculation.
 
 | Symptom | Cause and fix |
 | ------- | ------------- |
-| The window says there is no model for the planning assistant | The page was opened with `?chat=true` without a model — start with `npm start <model> <api-key>` |
-| `unsupported model` when starting | The model name is not known — see the table above |
+| The window says there is no model for the planning assistant | The page was opened with `?chat=true` without a model and without the model proxy — start with `npm start <provider>:<model-id> <api-key>` |
+| `… is no <provider>:<model-id>` when starting | The model has no provider or an unknown one — write it as `<provider>:<model-id>`, for example `azure:gpt-6-astra` |
+| No chat window without a model | The user of the page has more than one backend, or its backend does not enable the model proxy (`enableAIPlanning`) — start with a model |
 | `the planner has no AI Planning Assistant window - no chat` in the debug log | The planner UI has no planning assistant yet — start with `npm run dev` against a roomle-ui that has it, or a server URL whose planner has it |
 | `failed to load: HI is not available` in the debug log, no chat | The planner was created without its HI module, so it has no prompts for the chat (`getExternalObjectAgentPrompts` rejects) |
-| `AZURE_RESOURCE_NAME is required` | The `azure` provider needs the resource name env var and the deployment name in `HI_CHAT_MODEL` |
-| `The planning assistant failed: …` in the window | The provider rejected the key or the model, or a Mistral model got the images of `get-plan-images` — check the key, or set `HI_CHAT_MODEL` |
-| A dropped image is not attached | Images are off: the model is not known to read images |
+| `The planning assistant failed: …` in the window | The provider rejected the key or the model id, the model reads no images, or a Mistral model got the images of `get-plan-images` — check the key, the exact model id and `--base-url` |
 
 ## The chat in the ligna-store
 

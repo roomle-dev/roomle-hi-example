@@ -50,13 +50,13 @@ const fixture = async (t, cases, suite = {}) => {
   const caseFile = join(root, 'cases.json');
   const calls = join(root, 'calls.json');
   const out = join(root, 'results');
-  const dir = join(out, 'mock', '01-navigation');
+  const dir = join(out, 'mock-model', '01-navigation');
   const first = `${dir}.attempt-1`;
   await writeFile(caseFile, JSON.stringify(cases));
   await writeFile(
     tests,
     JSON.stringify({
-      models: [{ provider: 'mock', apiKey: 'unused' }],
+      models: [{ provider: 'mock:model', apiKey: 'unused' }],
       plans: { room: 'ps_original' },
       categories: [
         {
@@ -109,8 +109,8 @@ test('retries navigation failure once and preserves the first result and log', a
   assert.equal(result.planSnapshotId, 'ps_fixture');
   assert.equal(result.exitCode, 0);
   assert.deepEqual(result.attempts, [
-    'mock/01-navigation.attempt-1',
-    'mock/01-navigation',
+    'mock-model/01-navigation.attempt-1',
+    'mock-model/01-navigation',
   ]);
   assert.deepEqual(
     JSON.parse(await readFile(join(f.first, 'run.json'), 'utf8')),
@@ -231,8 +231,8 @@ test('retries a transport failure and preserves the failed attempt', async (t) =
   assert.equal(result.planSnapshotId, 'ps_fixture');
   assert.equal(result.exitCode, 0);
   assert.deepEqual(result.attempts, [
-    'mock/01-navigation.attempt-1',
-    'mock/01-navigation',
+    'mock-model/01-navigation.attempt-1',
+    'mock-model/01-navigation',
   ]);
   assert.deepEqual(
     JSON.parse(await readFile(join(f.first, 'run.json'), 'utf8')),
@@ -258,9 +258,9 @@ test('stops a transport failure after three attempts', async (t) => {
   assert.equal((await f.calls()).length, 3);
   assert.equal(result.exitCode, 1);
   assert.deepEqual(result.attempts, [
-    'mock/01-navigation.attempt-1',
-    'mock/01-navigation.attempt-2',
-    'mock/01-navigation',
+    'mock-model/01-navigation.attempt-1',
+    'mock-model/01-navigation.attempt-2',
+    'mock-model/01-navigation',
   ]);
   assert.deepEqual(result.errors, transportFailure.errors);
   const resumed = await f.run();
@@ -284,7 +284,7 @@ test('never retries a completed error-free run', async (t) => {
   const result = await f.run();
   assert.equal((await f.calls()).length, 1);
   assert.equal(result.planSnapshotId, 'ps_fixture');
-  assert.deepEqual(result.attempts, ['mock/01-navigation']);
+  assert.deepEqual(result.attempts, ['mock-model/01-navigation']);
   assert.equal(existsSync(f.first), false);
 });
 
@@ -367,6 +367,45 @@ test('sends the prompts unchanged without a prompt suffix', async (t) => {
   );
 });
 
+test('passes the options of a model to its runs', async (t) => {
+  const f = await fixture(t, [{ run: success }], {
+    models: [
+      {
+        provider: 'azure:mistral-large-3',
+        apiKey: 'unused',
+        baseUrl: 'https://other.invalid/openai/v1',
+        reasoningEffort: 'high',
+        chatCompletions: true,
+        cacheBreakpoint: true,
+      },
+    ],
+  });
+  const result = await f.run();
+  const [{ args }] = await f.calls();
+  assert.deepEqual(args.slice(0, 2), ['azure:mistral-large-3', 'unused']);
+  for (const option of [
+    ['--base-url', 'https://other.invalid/openai/v1'],
+    ['--reasoning-effort', 'high'],
+    ['--chat-completions'],
+    ['--cache-breakpoint'],
+  ]) {
+    const index = args.indexOf(option[0]);
+    assert.deepEqual(args.slice(index, index + option.length), option);
+  }
+  assert.equal(result.dir, join('azure-mistral-large-3', '01-navigation'));
+});
+
+test('rejects a model without its provider before the first run', async (t) => {
+  const f = await fixture(t, [], {
+    models: [{ provider: 'gpt-6-astra', apiKey: 'unused' }],
+  });
+  await assert.rejects(
+    f.run(),
+    /model gpt-6-astra: provider is <provider>:<model-id>/
+  );
+  assert.deepEqual(await f.calls(), []);
+});
+
 test('rejects an empty prompt suffix before the first run', async (t) => {
   const f = await fixture(t, [], { promptSuffix: ' ' });
   await assert.rejects(f.run(), /promptSuffix: a non-empty text/);
@@ -388,7 +427,7 @@ test('runs the tests of every category in the order of the file, numbered across
   const runs = await f.runAll();
   assert.deepEqual(
     runs.map((run) => run.dir),
-    ['mock/01-first', 'mock/02-second', 'mock/03-third']
+    ['mock-model/01-first', 'mock-model/02-second', 'mock-model/03-third']
   );
   assert.deepEqual(
     (await f.calls()).map((call) => call.prompts),

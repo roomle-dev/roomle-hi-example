@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Minimum HI Example</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+
+  <body>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      #backend-bar {
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 40px;
+        padding: 7px 8px;
+        font-family: sans-serif;
+        font-size: 12px;
+      }
+
+      #backend-bar input,
+      #backend-bar select {
+        padding: 2px 4px;
+      }
+
+      #backend-bar button {
+        padding: 4px 8px;
+      }
+
+      #price-label {
+        display: flex;
+        align-items: center;
+        font-size: 12px;
+        padding: 0 8px;
+        min-width: 80px;
+      }
+
+      #om-result {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 8px;
+        border-left: 1px solid #ccc;
+        margin-left: 8px;
+      }
+
+      #om-result a {
+        color: #0078d4;
+        text-decoration: none;
+        font-size: 12px;
+      }
+
+      #om-result a:hover {
+        text-decoration: underline;
+      }
+
+      #rubens-planner {
+        width: 100%;
+        height: calc(100% - 40px);
+      }
+
+      #rubens-planner iframe {
+        border: none;
+      }
+    </style>
+
+    <div id="backend-bar">
+      <button id="send-to-om" disabled>Send To OM</button>
+      <div id="price-label">Price: -</div>
+      <div id="om-result"></div>
+    </div>
+    <div id="rubens-planner"></div>
+
+    <script type="module">
+      // This is the minimum example to instantiate the planner with HI
+      // it is plain javascript without any build step. This can be
+      // used as a starting point for your own implementation.
+      // It is based on the embedding-lib dev build 0.0.0-dev-4c2797a
+      // This is how an agency would typically implement the planner
+      import RoomleConfiguratorApi from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-4c2797a';
+      import {
+        omGetRequest,
+        omPostRequest,
+        setupHi,
+        startPlanningAssistant,
+      } from 'https://unpkg.com/@roomle/embedding-lib@0.0.0-dev-4c2797a/hi.js';
+      (async function () {
+        // BEGIN: ##################### SC specific settings
+
+        // ############## IMPORTANT ##############
+        // If you use an authenticated shop system, you should add a route in your authenticated backend
+        // so that you do not need to expose the authentication info in the frontend.
+        // The backend should then forward the request to the HI server with the authentication info.
+        const getHiServerBaseUrl = () =>
+          `https://dfscfgtest01-app.azurewebsites.net/proxy_request?url=`;
+        const getHiAuthData = () => 'Basic ' + btoa('smith:BGr0eRsQAxL2IQQ');
+        // The model proxy of the backend for the AI Planning Assistant
+        const getAiProxyBaseUrl = () =>
+          'https://dfscfgtest01-app.azurewebsites.net/api/ai/v1';
+
+        // Settings per shop system
+        // The library id which should be used in this shop system
+        const libraryId = 'Furniture_Smith';
+        // The initial plan id which is used to open the shop.
+        // We will provide a UI later to be able to create such default rooms
+        const initialPlanId = 'ps_bse5tc50687uh64hm8jul7j1kiuacyx';
+        // This is the configuration inside Roomle,
+        // In the future these settings are done in oM (customizing of SC, colors, ...)
+        const configId = '948zg40lbmdbthwcoym0m1e4coqa55z';
+        // We can add multiple additional catalogs to the SC
+        // Currently these needs to be defined inside Roomle
+        const additionalCatalogs = ['g1a15v0676q3kgibgvu7pqf1nsdykd'];
+        // The user rights, which are needed for displaying the properties.
+        // In the library you can define the access right for each module property
+        const userRights = 'Simple';
+        // END: ##################### SC specific settings
+
+        // This is only for testing... if should be provided by the sourrounding shop system
+        const sendToOmButton = document.getElementById('send-to-om');
+        const priceLabel = document.getElementById('price-label');
+
+        // Take planId optionally from query parameter, so we can open a specific plan on startup.
+        // This allows the shop system to open a specific plan in the planner,
+        // e.g. after a user has selected a room-template.
+        const url = new URL(window.location.href);
+        const planIdFromQuery = url.searchParams.get('planId')?.trim();
+        const resolvedInitialPlanId = planIdFromQuery || initialPlanId;
+
+        // TODO: Clean that up, so it is not needed anymore for HI
+        const EXTERNAL_ID_PREFIX = '__ext__obj__#';
+        const createExtObjId = (id) => `${EXTERNAL_ID_PREFIX}${id}`;
+        const FAKE_ROOT_TAG = 'external:root-tag';
+        const HI_ROOT_TAGS = [
+          createExtObjId(FAKE_ROOT_TAG),
+          ...additionalCatalogs,
+        ];
+        const externalObjectSettings = {
+          uiConfiguration: { userRight: userRights },
+        };
+        const hiOptions = {
+          libraryId: libraryId,
+          serverOptions: {
+            authData: getHiAuthData(),
+            baseUrl: getHiServerBaseUrl(),
+            language: 'en-US,en', // we can also use the language from the browser
+          },
+        };
+        // The backend of the user says whether the AI Planning Assistant is enabled
+        const backends = await (
+          await fetch(
+            'https://dfscfgtest01-app.azurewebsites.net/backends/list',
+            {
+              headers: { Authorization: getHiAuthData() },
+            }
+          )
+        ).json();
+        const enableAIPlanning =
+          backends.length === 1 && backends[0].enableAIPlanning === true;
+        const options = {
+          overrideServerUrl: 'https://www.roomle.com/t/bo-test/',
+          customApiUrl: 'https://api.roomle.com/v2',
+          moc: true,
+          // TODO: Clean that up, so it is not needed anymore for HI
+          catalogRootTag: HI_ROOT_TAGS,
+          locale: 'en', // we can also use the language from the browser
+          enableTwoLevelCatalog: true,
+          featureFlags: {
+            // globalCallbacks is something we want to remove in the future
+            globalCallbacks: false,
+            advancedDocking: true,
+            planningAssistant: enableAIPlanning,
+          },
+          elements: {
+            bottom_bar: false,
+          },
+          hi: hiOptions,
+          externalObjectSettings,
+        };
+        const requestHeaders = {};
+        if (options.hi.serverOptions.authData) {
+          requestHeaders.Authorization = options.hi.serverOptions.authData;
+        }
+
+        await setupHi(options.hi, {
+          onPriceCalc: async () => {
+            await instance.extended.fetchPrice();
+          },
+          onFetchPrice: async (orderData) => {
+            priceLabel.textContent = 'Price: ...calculating...';
+            const json = await omPostRequest(
+              options.hi,
+              { orderData },
+              '/api/price/calculate',
+              requestHeaders
+            );
+            if (json.orderData) {
+              console.log('FETCH-PRICE', json.orderData.id);
+              const calculatedPriceItem = json.orderData.items.find(
+                (i) =>
+                  i.type == 'Price' &&
+                  i.priceType == 'Total' &&
+                  i.totalPrice !== undefined
+              );
+              if (calculatedPriceItem !== undefined) {
+                priceLabel.textContent = `Price: ${calculatedPriceItem.totalPrice.toFixed(2)} ${calculatedPriceItem.currency}`;
+              } else {
+                priceLabel.textContent = 'Price: unavailable';
+              }
+            } else {
+              console.error('FETCH-PRICE-ERROR', json);
+              priceLabel.textContent = 'Price: unavailable (error)';
+            }
+            return json;
+          },
+          onPlaceOrder: async (orderData) => {
+            // INFO: A Shop-Frontend should send this data to the Shop-Backend
+            // Which then should send it to the OrderManager.
+            // The shop system must then add additional information like customer data, shipping address,
+            // payment method, etc. to the orderData before sending it to the OrderManager.
+
+            orderData.customerName = 'John Doe';
+            orderData.orderName = 'Test Order from SC';
+
+            // This is just a simple example to show how it works.
+            // DO NOT DO THIS IN REAL PRODUCTION SYSTEMS!
+            // This is just for demonstration purposes.
+            const url = '/api/orderManager/orders/import';
+            const json = await omPostRequest(
+              options.hi,
+              orderData,
+              url,
+              requestHeaders
+            );
+            console.log('ORDER-RESPONSE', json);
+            if (json.correlationId) {
+              const responseOrder = await omGetRequest(
+                options.hi,
+                `${url}/${json.correlationId}`,
+                {
+                  'Content-Type': 'application/json',
+                  ...requestHeaders,
+                }
+              );
+              console.log('IMPORT-STATUS', responseOrder);
+              if (responseOrder.link) {
+                const omResult = document.getElementById('om-result');
+                const a = document.createElement('a');
+                a.href = responseOrder.link;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer'; // also prevents tab-napping
+                a.textContent = 'Open Order in OM';
+                omResult.replaceChildren(a);
+              }
+            }
+          },
+        });
+        const instance = await RoomleConfiguratorApi.createPlanner(
+          configId,
+          document.getElementById('rubens-planner'),
+          options
+        );
+        sendToOmButton.disabled = false;
+        sendToOmButton.addEventListener('click', async () => {
+          sendToOmButton.disabled = true;
+          try {
+            await instance.extended.placeOrder(true);
+          } finally {
+            sendToOmButton.disabled = false;
+          }
+        });
+        await instance.ui.loadObject(resolvedInitialPlanId);
+        if (enableAIPlanning) {
+          // The model, its endpoint and its key stay in the backend
+          await startPlanningAssistant(
+            instance,
+            {
+              provider: 'openai-compatible',
+              baseUrl: getAiProxyBaseUrl(),
+              model: 'planning',
+              headers: { Authorization: getHiAuthData() },
+              readsImages: true,
+            },
+            new AbortController().signal
+          );
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -2,10 +2,13 @@
 /**
  * Runs prompts through the HI example chat and stores the resulting plan:
  *
- *   node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt>" ...]
+ *   node .agents/scripts/run-hi-mcp-prompt.js <provider>:<model-id> <api-key> "<prompt>" ["<prompt>" ...]
  *     [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]
+ *     [--base-url <url>] [--reasoning-effort <effort>] [--chat-completions] [--cache-breakpoint]
  *
- * Starts the launcher (minimal-hi-example/start.mjs <model> <api-key>), opens
+ * Starts the launcher (minimal-hi-example/start.mjs <provider>:<model-id> <api-key>
+ * with the model options --base-url, --reasoning-effort, --chat-completions
+ * and --cache-breakpoint), opens
  * the example page in Playwright Chromium (headless unless --headed; --dev is
  * passed to the launcher) on --plan, waits until the library context lists
  * articles, the HI library has loaded the plan's groups and the planning
@@ -15,7 +18,7 @@
  * prompt, prepared as the chat window prepares a dropped image. Then it reads
  * roomDesignerApi.extended.getExternalObjectSnapshot() without the object GLB,
  * saves the plan with saveExternalObjectSnapshot() for its plan snapshot id and
- * writes --out (default .temp/result/<UTC timestamp>-<model>/): run.json
+ * writes --out (default .temp/result/<UTC timestamp>-<provider>-<model-id>/): run.json
  * (with every call of a plan-changing MCP tool per turn: what the model sent,
  * and the corrections, groups not loaded or error it got back, read from the
  * [hi-mcp] lines the tools log in the console of the planner frame, and per
@@ -93,7 +96,7 @@ const SNAPSHOT_REQUEST = {
   keepOpenGeometry: true,
 };
 const USAGE =
-  'usage: node .agents/scripts/run-hi-mcp-prompt.js <model> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed]';
+  'usage: node .agents/scripts/run-hi-mcp-prompt.js <provider>:<model-id> <api-key> "<prompt>" ["<prompt>" ...] [--plan <plan snapshot id>] [--image <file>] [--out <dir>] [--dev] [--headed] [--base-url <url>] [--reasoning-effort <effort>] [--chat-completions] [--cache-breakpoint]';
 
 const parseOptions = () => {
   try {
@@ -105,13 +108,25 @@ const parseOptions = () => {
         out: { type: 'string' },
         dev: { type: 'boolean', default: false },
         headed: { type: 'boolean', default: false },
+        'base-url': { type: 'string' },
+        'reasoning-effort': { type: 'string' },
+        'chat-completions': { type: 'boolean', default: false },
+        'cache-breakpoint': { type: 'boolean', default: false },
       },
     });
     const [provider, apiKey, ...prompts] = positionals;
     if (prompts.length === 0) {
       throw new Error('no prompt');
     }
-    return { provider, apiKey, prompts, ...values };
+    const launcherOptions = [
+      ...(values['base-url'] ? ['--base-url', values['base-url']] : []),
+      ...(values['reasoning-effort']
+        ? ['--reasoning-effort', values['reasoning-effort']]
+        : []),
+      ...(values['chat-completions'] ? ['--chat-completions'] : []),
+      ...(values['cache-breakpoint'] ? ['--cache-breakpoint'] : []),
+    ];
+    return { provider, apiKey, prompts, launcherOptions, ...values };
   } catch {
     console.error(USAGE);
     process.exit(1);
@@ -210,10 +225,17 @@ const recordPageConsole = (page) =>
     }
   });
 
-const startLauncher = ({ provider, apiKey, dev }) => {
+const startLauncher = ({ provider, apiKey, dev, launcherOptions }) => {
   const launcher = spawn(
     process.execPath,
-    [LAUNCHER, provider, apiKey, '--no-open', ...(dev ? ['--dev'] : [])],
+    [
+      LAUNCHER,
+      provider,
+      apiKey,
+      '--no-open',
+      ...(dev ? ['--dev'] : []),
+      ...launcherOptions,
+    ],
     {
       cwd: REPO_DIR,
       detached: true,
@@ -694,7 +716,7 @@ const main = async () => {
       ? resolvePath(options.out)
       : join(
           RESULT_DIR,
-          `${run.startedAt.slice(0, 19).replaceAll(':', '-')}-${run.provider}`
+          `${run.startedAt.slice(0, 19).replaceAll(':', '-')}-${run.provider.replaceAll(':', '-')}`
         );
     await storeResult(runDir, result);
     console.log('');

@@ -50,13 +50,15 @@ const fixture = async (t, cases) => {
   const document = join(root, 'docs', 'planning-results.md');
   await writeFile(document, OLD_DOCUMENT);
   const resultImages = join(images, 'planning-results');
-  const run = () =>
+  const session = join(root, 'session');
+  const run = (options = []) =>
     exec(
       process.execPath,
       [
         join(scripts, 'update-planning-results.js'),
         '--out',
-        join(root, 'session'),
+        session,
+        ...options,
       ],
       {
         env: { ...process.env, PLANNING_RESULTS_CASES: JSON.stringify(cases) },
@@ -66,8 +68,40 @@ const fixture = async (t, cases) => {
       () => 0,
       (error) => error.code
     );
-  return { document, resultImages, run };
+  return { document, resultImages, run, session };
 };
+
+test('runs the kitchens with the model and its options', async (t) => {
+  const f = await fixture(t, {
+    'kitchen-2': { planSnapshotId: 'ps_two', files: IMAGES },
+    'kitchen-10': { planSnapshotId: 'ps_ten', files: IMAGES },
+  });
+  assert.equal(
+    await f.run([
+      '--model',
+      'azure:gpt-5-mini',
+      '--reasoning-effort',
+      'high',
+      '--cache-breakpoint',
+    ]),
+    0
+  );
+  const suite = JSON.parse(
+    await readFile(join(f.session, 'tests.json'), 'utf8')
+  );
+  assert.deepEqual(suite.models, [
+    {
+      provider: 'azure:gpt-5-mini',
+      apiKey: '$AZURE_GPT_KEY',
+      reasoningEffort: 'high',
+      cacheBreakpoint: true,
+    },
+  ]);
+  assert.match(
+    await readFile(f.document, 'utf8'),
+    /to `azure:gpt-5-mini` on the/
+  );
+});
 
 test('writes a section per kitchen image with its plan link and result images', async (t) => {
   const f = await fixture(t, {
@@ -78,7 +112,7 @@ test('writes a section per kitchen image with its plan link and result images', 
   const document = await readFile(f.document, 'utf8');
   assert.match(
     document,
-    /to `gpt-6-astra` on the .*\(`ps_room`\), 2026-10-13\./
+    /to `azure:gpt-6-astra` on the .*\(`ps_room`\), 2026-10-13\./
   );
   assert.deepEqual(
     [...document.matchAll(/^## (.+)$/gm)].map(([, title]) => title),

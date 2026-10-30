@@ -83,7 +83,7 @@ roomle-hi-example is a demonstration and development environment for:
 
 The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) provides:
 - Static file serving for the example HTML page on port 3000
-- With `npm start <model> <api-key>` (models: `mistral`/`mistral-medium`/`mistral-large`/`mistral-large-3`/`mistral-large-4`, `claude`/`anthropic`, `gemini`/`google`, `azure`, or any `gpt-*` (HI Azure AI Foundry), `mistral-*`/`claude-*`/`gemini-*` model id): the model of the chat for the page (`/planning-assistant-config.json`, to this machine only) and the page opened with the chat window visible
+- With `npm start <provider>:<model-id> <api-key>` (the provider of the embedding-lib — `azure`, `openai`, `mistral`, `anthropic`, `google`, `openai-compatible` — and the exact model id, no aliases, e.g. `npm start azure:gpt-6-astra $AZURE_GPT_KEY`; options such as `--reasoning-effort` after `--`): the model of the chat for the page (`/planning-assistant-config.json`, to this machine only) and the page opened with the chat window visible; without a model, the chat runs on the model proxy of the HI server when the backend enables it
 - Browser auto-open at the example URL
 
 ## Repository Structure
@@ -97,6 +97,8 @@ The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) prov
 │   ├── index.html              # Sign-in view and planner view
 │   ├── src/                    # main.ts, fields-cookie.ts, hi-server.ts, model-config.ts, planner.ts, query-options.ts, style.css, assets/
 │   └── tests/                  # Unit tests (Node test runner)
+├── df-salesPortal_sc-example/  # Sales portal example: the df-salesPortal page, the chat on the model proxy of the HI server
+│   └── index.html              # Single file, inline JS (.agents/context/df-sales-portal-sc-example.md)
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # This file - AI assistant instructions
@@ -474,7 +476,7 @@ npm start          # or: node minimal-hi-example/start.mjs
 ```
 
 This serves the example page `minimal-hi-example/index.html` on port 3000 and opens it;
-`npm start <model> <api-key>` adds the chat ([docs/ai-chat.md](./docs/ai-chat.md)), whose planning
+`npm start <provider>:<model-id> <api-key>` adds the chat ([docs/ai-chat.md](./docs/ai-chat.md)), whose planning
 assistant runs the HI tools. `npm run start:sc` starts the sign-in example (`hi-sc-example/`) on
 port 3300; a push to the branch `release/pages` publishes it to GitHub Pages
 (<https://roomle-dev.github.io/roomle-hi-example/>).

@@ -11,6 +11,9 @@ export const storedFields = (cookies: string): [string, string][] => {
     : [];
 };
 
-/** The cookie that stores the sign-in `fields` for a year. */
+/**
+ * The cookie that stores the sign-in `fields` for a year, for the path of the
+ * page only: other sites on the same host do not get it.
+ */
 export const fieldsCookie = (fields: FormData) =>
-  `${NAME}=${encodeURIComponent(JSON.stringify([...fields]))}; max-age=${MAX_AGE_SECONDS}; path=/; SameSite=Strict`;
+  `${NAME}=${encodeURIComponent(JSON.stringify([...fields]))}; max-age=${MAX_AGE_SECONDS}; SameSite=Strict`;

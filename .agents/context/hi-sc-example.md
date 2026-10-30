@@ -24,7 +24,9 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
    - after the sign-in is accepted and while no sign-in cookie exists, the dialog `#cookie-consent`
      asks to store the sign-in data ("Only the essential login data is stored"). **Allow** writes
      all seven fields to the cookie `hi-sc-sign-in` (`fields-cookie.ts`: JSON, one year,
-     `SameSite=Strict`, path `/`); **Decline** or Escape stores nothing, and the next sign-in asks
+     `SameSite=Strict`, no `path`, so the cookie belongs to the page's own path — on GitHub Pages
+     `/roomle-hi-example`, and the other sites of `roomle-dev.github.io` do not get it);
+     **Decline** or Escape stores nothing, and the next sign-in asks
      again. With the cookie, every sign-in rewrites it without asking;
    - the page swaps the sign-in view for the planner view, without a reload. The page writes
      nothing to the URL, so a reload returns to the sign-in;
@@ -90,3 +92,21 @@ model ID and the API key to the embedding-lib unchanged — no aliases, no mappi
 | ---- | ------ |
 | `tests/model-config.test.ts` | provider, model ID and key passed through unchanged, the Foundry endpoint of an `azure` model, a chat without its provider, model or key |
 | `tests/fields-cookie.test.ts` | the fields stored and read back with any characters, among other cookies; the cookie attributes; no fields without the cookie |
+
+## GitHub Pages
+
+The page is published at <https://roomle-dev.github.io/roomle-hi-example/> by the workflow
+`.github/workflows/deploy.yml`, which runs on every push to the branch `release/pages` and builds from
+it:
+
+1. `npm ci`, then `npm run build:pages --workspace hi-sc-example` — the type check and
+   `vite build --base /roomle-hi-example/`;
+2. `actions/upload-pages-artifact` uploads `hi-sc-example/dist`, `actions/deploy-pages` deploys it to
+   the environment `github-pages` (`permissions`: `pages: write`, `id-token: write`).
+
+To publish, push to `release/pages`, for example `git push origin master:release/pages`. No branch
+holds the build.
+
+The repository needs, once: Pages with the source **GitHub Actions** (settings → Pages), and
+`release/pages` among the deployment branches of the environment `github-pages` (settings →
+Environments), which allows only the default branch at first.

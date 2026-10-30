@@ -110,7 +110,8 @@ model (`npm start`) the page opens without a chat. The chat runs in the page.
 
 ### 3. The sign-in example
 
-In the repository folder:
+It is published on GitHub Pages — open <https://roomle-dev.github.io/roomle-hi-example/>; you need
+only a browser. Or run it in the repository folder:
 
 ```bash
 npm install

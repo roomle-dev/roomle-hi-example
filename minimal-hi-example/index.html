@@ -432,11 +432,12 @@
         option.textContent = presetName;
         presetSelect.appendChild(option);
       }
+      // The backend of the URL with its library and its plan; a backend the
+      // list does not have takes nothing of another backend.
       const queryBackendId = getQueryParam('backendId');
-      const selectedPreset =
-        presets[queryBackendId] ??
-        presets[DEFAULT_PRESET] ??
-        presets[presetNames[0]];
+      const selectedPreset = queryBackendId
+        ? presets[queryBackendId]
+        : (presets[DEFAULT_PRESET] ?? presets[presetNames[0]]);
       const selectedBackendId =
         queryBackendId ?? selectedPreset?.backendId ?? '';
       const libraryId =
@@ -515,7 +516,8 @@
           autoQualityMinFps: 0,
         },
         elements: { bottom_bar: false },
-        catalogRootTag: [...HI_ROOT_TAGS, ...additionalCatalogs],
+        // the additional catalogs of the backend, each catalog once
+        catalogRootTag: [...new Set([...HI_ROOT_TAGS, ...additionalCatalogs])],
         buttons: {
           swap_product: true,
           export3d: true,

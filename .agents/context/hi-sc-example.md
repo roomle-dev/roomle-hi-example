@@ -18,9 +18,10 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
    - a provider, model or API key → `planningAssistantConfig` (`model-config.ts`); one of them
      without the others is an error on the form;
    - the user and password → the Basic authorization; `fetchBackend` (`hi-server.ts`) reads
-     `GET <HI server>/backends/list` with it. 401 is "Wrong user or password", a backend ID that is
-     not in the list is an error, and the backend's `planId`, `additionalCatalogs` and
-     `configureInRoom` go to the planner;
+     `GET <HI server>/backends/list` with it. 401 is "Wrong user or password". The backend ID is
+     optional: with one, a backend ID that is not in the list is an error, and the backend's
+     `planId`, `additionalCatalogs` and `configureInRoom` go to the planner; without one, the planner
+     gets no backend entry (default plan, no additional catalogs);
    - after the sign-in is accepted and while no sign-in cookie exists, the dialog `#cookie-consent`
      asks to store the sign-in data ("Only the essential login data is stored"). **Allow** writes
      all seven fields to the cookie `hi-sc-sign-in` (`fields-cookie.ts`: JSON, one year,
@@ -31,8 +32,9 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
    - the page swaps the sign-in view for the planner view, without a reload. The page writes
      nothing to the URL, so a reload returns to the sign-in;
    - an error while the planner starts returns to the sign-in view with the message.
-3. **Planner** (`planner.ts`, `startPlanner`): `setupHi` with the HI proxy of the backend
-   (`proxy_request?backendId=…`) and the Basic authorization — `setupHi` loads the article catalog,
+3. **Planner** (`planner.ts`, `startPlanner`): `setupHi` with the HI proxy (`hiProxyBaseUrl`:
+   `proxy_request?backendId=…`, or `proxy_request?url=…` without a backend ID, where the proxy uses
+   the backend of the user; an empty `backendId=` is answered with 401) and the Basic authorization — `setupHi` loads the article catalog,
    master data and calc script itself, the page adds `onFetchPrice` for the prices —, then
    `createPlanner` and, with a model, `startPlanningAssistant` of the embedding-lib. Every query
    parameter that is not a field of the form goes to `createPlanner` and overwrites the option of
@@ -46,7 +48,7 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 | `hi-sc-example/index.html` | the two views: the sign-in form with the cookie dialog, the planner container |
 | `hi-sc-example/src/main.ts` | the form: prefills it, reads the settings, signs in, asks for the cookie, swaps the views |
 | `hi-sc-example/src/fields-cookie.ts` | `storedFields`, `fieldsCookie`: the sign-in fields in the cookie |
-| `hi-sc-example/src/hi-server.ts` | the HI server URL, `fetchBackend` |
+| `hi-sc-example/src/hi-server.ts` | `hiProxyBaseUrl`, `fetchBackend` |
 | `hi-sc-example/src/model-config.ts` | `planningAssistantConfig`: provider, model ID and key → the `PlanningAssistantConfig` of the embedding-lib |
 | `hi-sc-example/src/planner.ts` | `startPlanner`: HI setup, planner, planning assistant |
 | `hi-sc-example/src/query-options.ts` | `plannerQueryOptions`: the query parameters other than the form fields → planner options |
@@ -54,6 +56,7 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 | `hi-sc-example/tests/model-config.test.ts` | the unit tests of `planningAssistantConfig` |
 | `hi-sc-example/tests/fields-cookie.test.ts` | the unit tests of the sign-in cookie |
 | `hi-sc-example/tests/query-options.test.ts` | the unit tests of `plannerQueryOptions` |
+| `hi-sc-example/tests/hi-server.test.ts` | the unit tests of `hiProxyBaseUrl` and `fetchBackend` |
 
 ## The planner options
 
@@ -100,6 +103,7 @@ model ID and the API key to the embedding-lib unchanged — no aliases, no mappi
 | `tests/model-config.test.ts` | provider, model ID and key passed through unchanged, the Foundry endpoint of an `azure` model, a chat without its provider, model or key |
 | `tests/fields-cookie.test.ts` | the fields stored and read back with any characters, among other cookies; the cookie attributes; no fields without the cookie |
 | `tests/query-options.test.ts` | every query parameter but the login fields forwarded; `true`, `false` and numbers converted; `language` sets `locale`; nothing without query parameters |
+| `tests/hi-server.test.ts` | the proxy URL with and without a backend ID; the backend of the ID, the sign-in check without an ID, an unknown backend ID (`fetch` mocked) |
 
 ## GitHub Pages
 

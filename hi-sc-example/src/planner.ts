@@ -5,7 +5,7 @@ import {
   startPlanningAssistant,
   type PlanningAssistantConfig,
 } from '@roomle/embedding-lib/hi';
-import { HI_SERVER_BASE_URL, type HiBackend } from './hi-server.ts';
+import { hiProxyBaseUrl, type HiBackend } from './hi-server.ts';
 import type { QueryOptions } from './query-options.ts';
 
 const EMBEDDING_ID = '948zg40lbmdbthwcoym0m1e4coqa55z';
@@ -19,7 +19,7 @@ const HI_ROOT_TAGS = [
 
 export interface PlannerSettings {
   authorization: string;
-  backend: HiBackend;
+  backend?: HiBackend;
   libraryId: string;
   chat?: PlanningAssistantConfig;
   queryOptions: QueryOptions;
@@ -38,7 +38,7 @@ export const startPlanner = async (
     libraryId,
     serverOptions: {
       authData: authorization,
-      baseUrl: `${HI_SERVER_BASE_URL}/proxy_request?backendId=${encodeURIComponent(backend.backendId)}&url=`,
+      baseUrl: hiProxyBaseUrl(backend?.backendId),
       language: LANGUAGE,
     },
   };
@@ -52,7 +52,7 @@ export const startPlanner = async (
     EMBEDDING_ID,
     container,
     {
-      id: backend.planId ?? DEFAULT_PLAN_ID,
+      id: backend?.planId ?? DEFAULT_PLAN_ID,
       overrideServerUrl: SERVER_URL,
       customApiUrl: 'https://api.roomle.com/v2',
       moc: true,
@@ -64,8 +64,8 @@ export const startPlanner = async (
         openCloseAnimation: true,
         planningAssistant: chat !== undefined,
       },
-      catalogRootTag: [...HI_ROOT_TAGS, ...(backend.additionalCatalogs ?? [])],
-      configureInRoom: backend.configureInRoom ?? false,
+      catalogRootTag: [...HI_ROOT_TAGS, ...(backend?.additionalCatalogs ?? [])],
+      configureInRoom: backend?.configureInRoom ?? false,
       hi: hiOptions,
       externalObjectSettings: {
         enableArrangementCorrection: true,

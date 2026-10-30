@@ -29,6 +29,7 @@ page and needs no dependency here. Node 20 or later. The sign-in example depends
 | `hi-sc-example/tests/model-config.test.ts` | provider, model ID and key of the sign-in example → the `PlanningAssistantConfig` (`node --experimental-strip-types --test`) |
 | `hi-sc-example/tests/fields-cookie.test.ts` | the sign-in cookie of the sign-in example: the fields stored and read back, the cookie attributes |
 | `hi-sc-example/tests/query-options.test.ts` | the query parameters of the sign-in example → the planner options |
+| `hi-sc-example/tests/hi-server.test.ts` | the HI proxy URL and the sign-in check of the sign-in example |
 | `.agents/scripts/tests/*.test.js` | the test tooling (`node --test`) |
 
 The HI tools, their tool commands and the forwarding of the embedding-lib are tested in roomle-ui, see

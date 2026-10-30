@@ -46,7 +46,6 @@ export const startPlanner = async (
     onFetchPrice: (orderData: unknown) =>
       omPostRequest(hiOptions, { orderData }, '/api/price/calculate', {
         Authorization: authorization,
-        'x-aux-header': libraryId.includes('nobilia') ? 'nobilia' : 'none',
       }),
   });
   const planner = await RoomleEmbeddingApi.createPlanner(

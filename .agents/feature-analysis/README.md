@@ -41,7 +41,6 @@ Once the work is on `master`, ["cleanup analyses"](../skills/hi-analysis-cleanup
 |---|---|---|
 | [sales-configurator-ai-integration.md](sales-configurator-ai-integration.md) | Open — product integration scope | Core MCP/chat prototype implemented; reusable integration package, production agent loop and product qualification remain open |
 | [ai-rendering-through-the-model-proxy.md](ai-rendering-through-the-model-proxy.md) | Open | RML-18350: the AI image chat of the Rubens UI through the model proxy of the HI server — a host mode with a callback and an output, `startImageGeneration` in the embedding-lib, the sales portal page on `enableAIRendering` |
-| [nobilia-catalog-example-through-the-hi-server.md](nobilia-catalog-example-through-the-hi-server.md) | Open | The nobilia catalog example of roomle-ui on the HI server instead of the demo proxy: no backend ID serves its library (another subscription), the options |
 
 Add feature analysis documents as needed following the naming convention:
 `kebab-case-description.md` (e.g., `group-adjustment-to-wall-width.md`).

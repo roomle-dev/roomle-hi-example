@@ -8,8 +8,11 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
 
 1. **Sign-in view** (`index.html`): a form over the background image
    `src/assets/say-hi-to-homag-intelligence.jpg` with the user and password of the HI server, the
-   optional backend ID and library, and the optional provider, model and API key of the chat. Every field
-   starts blank; the provider is a selection of the providers of the embedding-lib. `main.ts` fills
+   optional backend ID and library, and the optional provider, model and API key of the chat. The
+   backend ID is a text field with a list (`datalist` `#backend-ids`) of the backend IDs of the HI
+   server (df-salesPortal `Infrastructure/salesConfigurator/test01/appsettings.json`), sorted by
+   stage — DEV, INT, PRE, PRD, the stage as each entry's label —; any other ID can be typed. Every
+   field starts blank; the provider is a selection of the providers of the embedding-lib. `main.ts` fills
    the fields from the sign-in cookie, then from the query parameter of each field's `name`
    (`user`, `password`, `backendId`, `libraryId`, `provider`, `model`, `apiKey`), so a query
    parameter overwrites the cookie; other parameters are ignored, and a provider that is not in the

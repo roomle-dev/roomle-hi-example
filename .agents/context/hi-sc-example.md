@@ -24,7 +24,9 @@ sign-in page. The user quickstart is the [README](../../hi-sc-example/README.md)
    - after the sign-in is accepted and while no sign-in cookie exists, the dialog `#cookie-consent`
      asks to store the sign-in data ("Only the essential login data is stored"). **Allow** writes
      all seven fields to the cookie `hi-sc-sign-in` (`fields-cookie.ts`: JSON, one year,
-     `SameSite=Strict`, path `/`); **Decline** or Escape stores nothing, and the next sign-in asks
+     `SameSite=Strict`, no `path`, so the cookie belongs to the page's own path — on GitHub Pages
+     `/roomle-hi-example`, and the other sites of `roomle-dev.github.io` do not get it);
+     **Decline** or Escape stores nothing, and the next sign-in asks
      again. With the cookie, every sign-in rewrites it without asking;
    - the page swaps the sign-in view for the planner view, without a reload. The page writes
      nothing to the URL, so a reload returns to the sign-in;
@@ -90,3 +92,23 @@ model ID and the API key to the embedding-lib unchanged — no aliases, no mappi
 | ---- | ------ |
 | `tests/model-config.test.ts` | provider, model ID and key passed through unchanged, the Foundry endpoint of an `azure` model, a chat without its provider, model or key |
 | `tests/fields-cookie.test.ts` | the fields stored and read back with any characters, among other cookies; the cookie attributes; no fields without the cookie |
+
+## GitHub Pages
+
+The page is published at <https://roomle-dev.github.io/roomle-hi-example/>, from the branch
+`gh-pages`.
+
+- **`npm run deploy`** (in the root or in `hi-sc-example/`): `predeploy` checks the types and builds
+  with the base `/roomle-hi-example/` (`vite build --base /roomle-hi-example/`), then `gh-pages -d dist`
+  pushes `dist/` to `gh-pages` of `origin` as a new commit. It pushes with the git credentials of
+  the machine.
+- **`.github/workflows/deploy.yml`** runs the same on every push to `master`: `npm ci`, then
+  `npm run deploy` with the workflow's `GITHUB_TOKEN` (`permissions: contents: write`) and the user
+  `github-actions-bot`.
+- **The `gh-pages` branch has to exist before the first deploy.** When it does not, `gh-pages`
+  clones `master`, makes an orphan branch of it and removes only the files without a leading dot:
+  `.agents/`, `.github/`, `.gitignore` and the other dot entries of `master` would stay on
+  `gh-pages`. An empty branch avoids that:
+  `git switch --orphan gh-pages && git commit --allow-empty -m "Create the gh-pages branch" && git push origin gh-pages`.
+- **Pages** serves the branch `gh-pages`, folder `/` (repository settings → Pages). The build has no
+  file with a leading `_`, which the Jekyll build of Pages would drop.

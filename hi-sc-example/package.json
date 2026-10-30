@@ -8,6 +8,8 @@
     "dev": "vite --port 3300 --open",
     "build": "tsc && vite build",
     "preview": "vite preview --port 3300",
+    "predeploy": "tsc && vite build --base /roomle-hi-example/",
+    "deploy": "gh-pages -d dist",
     "typecheck": "tsc",
     "test": "node --experimental-strip-types --test tests/*.test.ts"
   },
@@ -15,6 +17,7 @@
     "@roomle/embedding-lib": "0.0.0-dev-1b4351d"
   },
   "devDependencies": {
+    "gh-pages": "6.3.0",
     "typescript": "7.0.2",
     "vite": "8.3.5"
   }

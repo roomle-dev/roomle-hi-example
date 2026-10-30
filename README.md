@@ -68,11 +68,13 @@ Details: [AI chat](./docs/ai-chat.md) ·
 
 [`hi-sc-example/`](./hi-sc-example/README.md) is the planner with its chat in TypeScript, behind a
 sign-in page: the user and password of the HI server, the backend ID, the library, and the provider,
-model and API key of the chat are entered on the page instead of the command line.
+model and API key of the chat are entered on the page instead of the command line. It is published
+on GitHub Pages: <https://roomle-dev.github.io/roomle-hi-example/>
 
 ```bash
 npm install
 npm run start:sc     # Vite dev server on :3300, opens the sign-in page
+npm run deploy       # publishes it to GitHub Pages
 ```
 
 ## Ask the agent

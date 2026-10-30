@@ -12,6 +12,7 @@
     "start": "node minimal-hi-example/start.mjs",
     "dev": "node minimal-hi-example/start.mjs --dev",
     "start:sc": "npm run dev --workspace hi-sc-example",
+    "deploy": "npm run deploy --workspace hi-sc-example",
     "test": "npm test --workspaces",
     "plan:mistral": "npm start mistral $MISTRAL_API_KEY",
     "plan:gpt5": "npm start gpt-5-mini $AZURE_GPT_KEY",

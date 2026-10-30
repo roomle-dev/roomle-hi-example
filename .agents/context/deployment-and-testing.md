@@ -12,6 +12,7 @@ The repository root is an npm workspace root over `minimal-hi-example` and `hi-s
 | ----- | ------ | ---- |
 | root | `start`, `dev` | the launcher, plain / `--dev` |
 | root | `start:sc` | the Vite dev server of the sign-in example (`hi-sc-example/`, :3300) |
+| root | `deploy` | publishes the sign-in example to GitHub Pages (`gh-pages` branch); `.github/workflows/deploy.yml` runs it on every push to `master` — see [GitHub Pages](./hi-sc-example.md#github-pages) |
 | root | `test` | the tests of every workspace: the launcher (`minimal-hi-example/tests/`, `node --test`) and the sign-in example (`hi-sc-example/tests/`) |
 | root | `plan:mistral`, `plan:gpt5`, `plan:gpt5.4`, `plan:gpt6` | the launcher with a chat model and its key from the environment |
 | root | `format`, `format:check`, `lint`, `lint:fix` | Prettier, oxlint |

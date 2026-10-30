@@ -22,10 +22,10 @@ describe('fieldsCookie and storedFields', () => {
     assert.deepEqual(storedFields(`other=1; ${cookie}; more=2`), entries);
   });
 
-  it('keep the cookie a year for the whole page, same site only', () => {
+  it('keep the cookie a year for the path of the page, same site only', () => {
     assert.match(
       fieldsCookie(formData([])),
-      /^hi-sc-sign-in=.*; max-age=31536000; path=\/; SameSite=Strict$/
+      /^hi-sc-sign-in=.*; max-age=31536000; SameSite=Strict$/
     );
   });
 

@@ -6,6 +6,8 @@ key of the chat. **Start planning** checks the sign-in and opens the planner wit
 Planning Assistant, as the [minimal example](../minimal-hi-example/README.md) does. How it is built:
 [.agents/context/hi-sc-example.md](../.agents/context/hi-sc-example.md).
 
+**Published on GitHub Pages:** <https://roomle-dev.github.io/roomle-hi-example/>
+
 **1. Once:** install Node 22.12+ and run `npm install` in the repository root.
 
 **2. Start it** — the Vite dev server serves the page on :3300 (the next free port if it is taken)
@@ -49,3 +51,4 @@ http://localhost:3300/?backendId=<backend-id>&libraryId=<library>&provider=azure
 | `npm run preview` | serves the production build on :3300 |
 | `npm run typecheck` | `tsc` |
 | `npm test` | the unit tests (Node's test runner) |
+| `npm run deploy` | builds the page for GitHub Pages and publishes it to the `gh-pages` branch (also `npm run deploy` in the repository root) |

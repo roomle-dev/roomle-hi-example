@@ -6,7 +6,7 @@ the assistant builds it in the planner while you watch. In the same conversation
 add a unit, swap two cabinets, change a colour, move the whole kitchen to another wall.
 
 This guide is for everyone who wants to plan with the HI MCP. You need no programming knowledge for
-the [store chat](#1-the-store-chat); the example page needs a terminal.
+the [store chat](#1-the-store-chat); the example pages need a terminal.
 
 > **A proof of concept.** The HI MCP plans with the HOMAG Intelligence (HI) test backend and one
 > furniture library, Furniture_Smith. It is meant for demos and for trying out what AI-assisted
@@ -16,7 +16,7 @@ the [store chat](#1-the-store-chat); the example page needs a terminal.
 
 - [What you can do](#what-you-can-do)
 - [How it works](#how-it-works)
-- [Two ways to use it](#two-ways-to-use-it)
+- [Three ways to use it](#three-ways-to-use-it)
 - [Talking to the assistant](#talking-to-the-assistant)
 - [Example prompts](#example-prompts)
 - [What to expect](#what-to-expect)
@@ -67,12 +67,13 @@ you ──> AI assistant ──> HI planning tools ──> your open planner tab
 - Every change happens in the planner tab you have open. **Keep that tab open** while you work with
   the assistant.
 
-## Two ways to use it
+## Three ways to use it
 
 | Way | You need | Best for |
 | --- | -------- | -------- |
 | [1. The store chat](#1-the-store-chat) | a browser and an API key for the chat model | trying it out, demos |
 | [2. The example page with its chat](#2-the-example-page-with-its-chat) | the repository, Node.js and an API key | developers, demos with other models |
+| [3. The sign-in example](#3-the-sign-in-example) | the repository, Node.js, the HI server login and an API key | demos where the login and the model are entered on the page |
 
 Ask the team that runs the HI MCP for the API key of a chat model.
 
@@ -106,6 +107,21 @@ The browser opens `http://localhost:3000` with the planner; the button at the bo
 Instead of `gpt-5.4-mini` you can start other models — `mistral`, `claude`, `gemini`,
 `gpt-5-mini`, `gpt-6-astra` and more; the [README](../../README.md#usage) lists them all. Without a
 model (`npm start`) the page opens without a chat. The chat runs in the page.
+
+### 3. The sign-in example
+
+In the repository folder:
+
+```bash
+npm install
+npm run start:sc
+```
+
+The browser opens `http://localhost:3300` with a sign-in page. Enter the user and password of the HI
+server, the backend ID and the library (both are prefilled), and for the chat a model and its API
+key — the same model names as above. **Start planning** opens the planner; the button at the bottom
+opens the chat. Without a model the planner opens without a chat. More in the
+[README of the example](../../hi-sc-example/README.md).
 
 ## Talking to the assistant
 

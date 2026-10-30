@@ -1,0 +1,21 @@
+{
+  "name": "hi-sc-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "HI example in TypeScript: sign in to the HI server, then plan with the AI chat of the embedding-lib",
+  "scripts": {
+    "dev": "vite --port 3300 --open",
+    "build": "tsc && vite build",
+    "preview": "vite preview --port 3300",
+    "typecheck": "tsc",
+    "test": "node --experimental-strip-types --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@roomle/embedding-lib": "0.0.0-dev-1b4351d"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  }
+}

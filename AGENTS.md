@@ -79,6 +79,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 roomle-hi-example is a demonstration and development environment for:
 
 1. **HI Presets Example** — A standalone HTML page (`index.html`) that demonstrates HOMAG Intelligence (HI) room planning with preset configurations, with the AI chat of the roomle-ui embedding-lib: its planning assistant (`startPlanningAssistant`) runs the HI MCP tools (`createHiMcpTools`) in the page
+2. **HI Sign-in Example** (`hi-sc-example/`) — the same planner with its chat in TypeScript (Vite), behind a sign-in page where the HI server login, backend ID, library, model and API key are entered ([`.agents/context/hi-sc-example.md`](./.agents/context/hi-sc-example.md))
 
 The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) provides:
 - Static file serving for the example HTML page on port 3000
@@ -92,6 +93,10 @@ The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) prov
 ├── minimal-hi-example/         # Minimal standalone HI example
 │   ├── index.html              # HI presets example page (single file, inline JS)
 │   └── start.mjs               # Launcher: static serving (:3000), the model of the chat
+├── hi-sc-example/              # Sign-in example in TypeScript (Vite, :3300)
+│   ├── index.html              # Sign-in view and planner view
+│   ├── src/                    # main.ts, hi-server.ts, model-config.ts, planner.ts, style.css, assets/
+│   └── tests/                  # Unit tests (Node test runner)
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide
 ├── AGENTS.md                     # This file - AI assistant instructions
@@ -470,7 +475,8 @@ npm start          # or: node minimal-hi-example/start.mjs
 
 This serves the example page `minimal-hi-example/index.html` on port 3000 and opens it;
 `npm start <model> <api-key>` adds the chat ([docs/ai-chat.md](./docs/ai-chat.md)), whose planning
-assistant runs the HI tools.
+assistant runs the HI tools. `npm run start:sc` starts the sign-in example (`hi-sc-example/`) on
+port 3300.
 
 ### The Tools
 

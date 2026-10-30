@@ -22,6 +22,7 @@ deploy it in [setup](../../docs/setup/).
 | ---- | ------ |
 | [HI presets example](./hi-mcp-server.md) | The example page: architecture, running, a demo walkthrough, example prompts, troubleshooting |
 | [Pages, chat and launcher](./pages-chat-and-launcher.md) | `start.mjs`, the chat of the example page |
+| [HI sign-in example](./hi-sc-example.md) | `hi-sc-example/`: the planner with its chat in TypeScript behind a sign-in page |
 | [Scripts and testing](./deployment-and-testing.md) | The workspaces and scripts, the unit tests, the end-to-end test runs |
 
 ## The example
@@ -38,6 +39,7 @@ deploy it in [setup](../../docs/setup/).
 | Process | Started by | Port | Code |
 | ------- | ---------- | ---- | ---- |
 | Example page (static files, the model of its chat) | `npm start` (`minimal-hi-example/start.mjs`) | 3000 (`EXAMPLE_PORT`) | `minimal-hi-example/index.html` |
+| Sign-in example (Vite dev server) | `npm run start:sc` | 3300 | `hi-sc-example/` |
 
 ## Repository map
 
@@ -45,6 +47,7 @@ deploy it in [setup](../../docs/setup/).
 | ---- | ---------- |
 | `minimal-hi-example/index.html` | The example page: HI presets demo, the planning assistant of the embedding-lib in the planner's chat window |
 | `minimal-hi-example/start.mjs` | The launcher: static serving, the model of the chat at `/planning-assistant-config.json` |
+| `hi-sc-example/` | The sign-in example in TypeScript: the HI server login, backend, library and the chat model entered on the page |
 | `.agents/scripts/run-hi-mcp-prompt.js`, `run-hi-mcp-tests.js` | End-to-end runs of prompts through the chat of the example page in a headless planner |
 | `docs/test-prompts.json` | The end-to-end test cases |
 

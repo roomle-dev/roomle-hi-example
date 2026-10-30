@@ -6,23 +6,27 @@ evaluate the MCP tests is in the [testing skill](../../.agents/skills/hi-mcp-tes
 
 ## Workspaces and scripts
 
-The repository root is an npm workspace root over `minimal-hi-example`.
+The repository root is an npm workspace root over `minimal-hi-example` and `hi-sc-example`.
 
 | Where | Script | Runs |
 | ----- | ------ | ---- |
 | root | `start`, `dev` | the launcher, plain / `--dev` |
-| root | `test` | the tests of the launcher (`minimal-hi-example/tests/`, `node --test`) |
+| root | `start:sc` | the Vite dev server of the sign-in example (`hi-sc-example/`, :3300) |
+| root | `test` | the tests of every workspace: the launcher (`minimal-hi-example/tests/`, `node --test`) and the sign-in example (`hi-sc-example/tests/`) |
 | root | `plan:mistral`, `plan:gpt5`, `plan:gpt5.4`, `plan:gpt6` | the launcher with a chat model and its key from the environment |
 | root | `format`, `format:check`, `lint`, `lint:fix` | Prettier, oxlint |
 
 The chat of the example page loads the embedding-lib and the AI SDK from unpkg and esm.sh in the
-page and needs no dependency here. Node 20 or later.
+page and needs no dependency here. Node 20 or later. The sign-in example depends on
+`@roomle/embedding-lib`, Vite and TypeScript and needs Node 22.12 or later
+([HI sign-in example](./hi-sc-example.md#dependencies-build-and-tests)).
 
 ## Unit tests
 
 | File | Covers |
 | ---- | ------ |
 | `minimal-hi-example/tests/start.test.js` | starts the real launcher on unused ports, with a model and a dummy key and without a model: the planning assistant config of the model, `no-store`, the 404 without a model, the 403 for a foreign Host; SIGTERM/SIGINT to only the launcher PID release the page port (POSIX; no model request) |
+| `hi-sc-example/tests/model-config.test.ts` | the model names of the sign-in example → the `PlanningAssistantConfig` (`node --experimental-strip-types --test`) |
 | `.agents/scripts/tests/*.test.js` | the test tooling (`node --test`) |
 
 The HI tools, their tool commands and the forwarding of the embedding-lib are tested in roomle-ui, see

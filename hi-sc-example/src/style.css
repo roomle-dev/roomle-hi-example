@@ -1,0 +1,142 @@
+:root {
+  --navy: #04223d;
+  --cyan: #18a8e0;
+  --cyan-dark: #0f8fc2;
+  --text: #f2f8fc;
+  --muted: #a9c3d6;
+  --error: #ff9a9a;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--navy);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.sign-in {
+  box-sizing: border-box;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center end;
+  padding: 1rem clamp(1rem, 6vw, 6rem);
+  color-scheme: dark;
+  background:
+    linear-gradient(90deg, transparent 45%, rgb(4 34 61 / 0.8)),
+    url('./assets/say-hi-to-homag-intelligence.jpg') 30% center / cover
+      no-repeat;
+}
+
+.card {
+  box-sizing: border-box;
+  width: min(30rem, 100%);
+  display: grid;
+  gap: 1.25rem;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 1rem;
+  background: rgb(4 34 61 / 0.55);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.35);
+  color: var(--text);
+}
+
+hgroup h1 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+hgroup p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+}
+
+fieldset {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  margin-bottom: 0.5rem;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+}
+
+input {
+  font: inherit;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 0.5rem;
+  background: rgb(255 255 255 / 0.08);
+  color: inherit;
+}
+
+input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 1px;
+}
+
+input:user-invalid {
+  border-color: var(--error);
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.75rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--cyan);
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--cyan-dark);
+}
+
+button:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.error {
+  margin: 0;
+  color: var(--error);
+}
+
+.error:empty {
+  display: none;
+}
+
+#planner {
+  position: fixed;
+  inset: 0;
+}
+
+#planner iframe {
+  border: 0;
+}
+
+@media (max-width: 40rem) {
+  .sign-in {
+    place-items: center;
+  }
+}

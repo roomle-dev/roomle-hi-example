@@ -124,7 +124,8 @@ model ID and its API key. **Start planning** opens the planner; the button at th
 chat. Without a model the planner opens without a chat. On the first sign-in the page asks whether
 it may store the sign-in data in a cookie; if you allow it, the form is filled in on your next
 visit. Each field can also be prefilled by a query parameter of its name, for example
-`?backendId=<backend-id>&libraryId=<library>`. More in the
+`?backendId=<backend-id>&libraryId=<library>`; other query parameters go to the planner, for example
+`id=<plan-id>` for a saved plan or `language=de-DE`. More in the
 [README of the example](../../hi-sc-example/README.md).
 
 ## Talking to the assistant

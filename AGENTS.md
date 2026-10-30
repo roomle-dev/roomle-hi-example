@@ -95,7 +95,7 @@ The start script (`npm start`, the launcher `minimal-hi-example/start.mjs`) prov
 │   └── start.mjs               # Launcher: static serving (:3000), the model of the chat
 ├── hi-sc-example/              # Sign-in example in TypeScript (Vite, :3300)
 │   ├── index.html              # Sign-in view and planner view
-│   ├── src/                    # main.ts, fields-cookie.ts, hi-server.ts, model-config.ts, planner.ts, style.css, assets/
+│   ├── src/                    # main.ts, fields-cookie.ts, hi-server.ts, model-config.ts, planner.ts, query-options.ts, style.css, assets/
 │   └── tests/                  # Unit tests (Node test runner)
 ├── package.json                  # Project metadata and scripts
 ├── README.md                     # Quickstart and usage guide

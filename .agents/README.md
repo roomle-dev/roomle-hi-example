@@ -105,6 +105,7 @@ Durable answers to recurring questions. Full index in [`wiki/README.md`](wiki/RE
 | [Group splitting in the UI and agent tools](wiki/group-splitting-in-the-ui-and-agent-tools.md) | Intentional splits when dragging out or deleting a middle module; UI behavior and agent tool contracts |
 | [An MCP endpoint for the HI tools at `…/hi-mcp`](wiki/hi-mcp-endpoint-for-external-clients.md) | Why the planner cannot serve an MCP endpoint itself; the relay and the page bridge in the planner, what needs to be done and the concerns |
 | [Why the agent cannot plan what the library cannot build](wiki/why-the-agent-cannot-plan-what-the-library-cannot-build.md) | The agent only chooses, the library calculates; what happens to wrong input and where the guarantee ends |
+| [Adding a secret variable to the demo proxy](wiki/adding-a-secret-to-the-demo-proxy.md) | A Secret Manager secret as an environment variable of the demo proxy `proxy_request`: add, change, run locally |
 
 ### Decisions (Architecture Decision Records)
 

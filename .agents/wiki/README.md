@@ -12,6 +12,7 @@ A wiki page is **not** an analysis — it has no lifecycle. It says what holds t
 | [Group splitting in the UI and agent tools](group-splitting-in-the-ui-and-agent-tools.md) | Intentional splits when dragging out or deleting a middle module; UI behavior and agent tool contracts |
 | [An MCP endpoint for the HI tools at `…/hi-mcp`](hi-mcp-endpoint-for-external-clients.md) | Why the planner cannot serve an MCP endpoint itself; the relay and the page bridge in the planner, what needs to be done and the concerns: access to the plan, one agent per planner, the open tab, long calls, discovery, operations |
 | [Why the agent cannot plan what the library cannot build](why-the-agent-cannot-plan-what-the-library-cannot-build.md) | The agent only picks articles, values, relations and a place; the library calculates the rest. What happens to wrong input, and where the guarantee ends: failed calculations kept, values not checked before an edit, the create path, library bugs, room fit |
+| [Adding a secret variable to the demo proxy](adding-a-secret-to-the-demo-proxy.md) | How to add a Secret Manager secret to the Cloud Function `proxy_request` of `rml-showcases` (bo-api-tc-emulator) as an environment variable, change its value and run it locally; `--update-secrets`, never `--set-secrets` |
 
 ## Adding a Wiki Page
 
